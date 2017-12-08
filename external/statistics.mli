@@ -11,6 +11,6 @@ val performance
 
 val coverage
   :  ?flush: bool
-  -> percentages: (string * int) list
+  -> coverage: (string * int) list
   -> labels: (string * string) list
   -> (unit, Unix.Exit_or_signal.error) result

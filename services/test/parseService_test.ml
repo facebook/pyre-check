@@ -15,7 +15,11 @@ let test_parse_sources_list _ =
       ~content:(Some "def foo()->int:\n    return 1\n")
       (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:"a.py")
   in
-  let handles = ParseService.parse_sources_list (Service.mock ()) [file] in
+  let (handles, _) =
+    ParseService.parse_sources_list
+      (Service.mock ()) [file]
+      ~root:(Path.current_working_directory ())
+  in
   let handle = Option.value_exn (File.handle file) in
   assert_equal handles [handle];
 
@@ -30,8 +34,30 @@ let test_parse_sources_list _ =
    | _ -> assert_unreached ())
 
 
+let test_parse_sources_coverage _ =
+  let (_, (strict_coverage, declare_coverage)) =
+    ParseService.parse_sources_list
+      (Service.mock ())
+      [
+        File.create
+          ~content:(Some "#pyre-strict\ndef foo()->int:\n    return 1\n")
+          (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:"a.py");
+        File.create
+          ~content:(Some "#pyre-strict\ndef foo()->int:\n    return 1\n")
+          (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:"b.py");
+        File.create
+          ~content:(Some "#pyre-declare-but-dont-check\ndef foo()->int:\n    return 1\n")
+          (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:"c.py");
+      ]
+      ~root:(Path.current_working_directory ())
+  in
+  assert_equal strict_coverage 2;
+
+  assert_equal declare_coverage 1
+
 let () =
   "parser">:::[
-    "parse_sources_list">::test_parse_sources_list
+    "parse_sources_list">::test_parse_sources_list;
+    "parse_sources_coverage">::test_parse_sources_coverage;
   ]
   |> run_test_tt_main

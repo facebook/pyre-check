@@ -101,10 +101,11 @@ let rec process_request
             state.deferred_requests
         in
         let repopulate_handles = List.filter_map ~f:File.handle files in
-        let new_source_handles =
+        let (new_source_handles, _) =
           ParseService.parse_sources_list
             state.State.service
             files
+            ~root:project_root
         in
         let new_errors, lookups =
           let errors, lookups =

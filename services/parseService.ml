@@ -119,7 +119,7 @@ let parse_source_job files =
   List.fold ~init:[] ~f:parse_source files
 
 
-let parse_sources_list service files =
+let parse_sources_list service files ~root =
   AstSharedMemory.remove_paths (List.filter_map ~f:File.handle files);
   let sources =
     if Service.is_parallel service then
@@ -127,10 +127,38 @@ let parse_sources_list service files =
     else
       parse_source_job files
   in
+  let paths =
+    let is_python path =
+      String.suffix path 3 = ".py" in
+    File.list ~filter:is_python ~root:root in
+  let strict_coverage, declare_coverage =
+    List.fold
+      ~init:(0, 0)
+      ~f:(fun (prev_strict, prev_declare) handle ->
+          match AstSharedMemory.get_source handle with
+          | Some { Source.metadata = { Source.Metadata.strict; declare; _ }; _ } ->
+              (
+                prev_strict + (if strict then 1 else 0),
+                prev_declare + (if declare then 1 else 0)
+              )
+          | None -> (prev_strict, prev_declare)
+        )
+      sources
+  in
+  Statistics.coverage
+    ~flush:false
+    ~coverage:[
+      "strict_coverage", strict_coverage;
+      "declare_coverage", declare_coverage;
+      "default_coverage", List.length paths - strict_coverage - declare_coverage;
+      "source_files", List.length paths;
+    ]
+    ~labels:["root", root |> Path.show;]
+  |> ignore;
   let not_parsed = (List.length files) - (List.length sources) in
   if not_parsed > 0 then
     Log.info "Unable to parse %d paths" not_parsed;
-  sources
+  (sources, (strict_coverage, declare_coverage))
 
 
 let parse_sources service ~root =
@@ -140,20 +168,6 @@ let parse_sources service ~root =
       String.suffix path 3 = ".py" in
     File.list ~filter:is_python ~root:root in
   Log.info "Parsing %d sources in `%a`..." (List.length paths) Path.pp root;
-  let handles = parse_sources_list service (List.map ~f:File.create paths) in
-  let strict_number =
-    List.count
-      handles
-      ~f:(fun handle ->
-          match AstSharedMemory.get_source handle with
-          | Some { Source.metadata; _ } -> metadata.Source.Metadata.strict
-          | None -> false
-        )
-  in
-  Statistics.coverage
-    ~flush:true
-    ~percentages:["strict_coverage", strict_number]
-    ~labels:["root", root |> Path.show;]
-  |> ignore;
+  let (handles, _) = parse_sources_list service ~root (List.map ~f:File.create paths) in
   Log.log ~section:`Performance "Sources parsed in %fs" (Timer.stop timer);
   handles
