@@ -1,0 +1,1428 @@
+(** Copyright 2016-present Facebook. All rights reserved. **)
+
+open Core
+
+open Ast
+open Expression
+open Pyre
+open Statement
+
+
+let return_annotation { Define.return_annotation; async; _ } ~resolution =
+  let annotation =
+    Option.value_map
+      return_annotation
+      ~f:(Resolution.parse_annotation resolution)
+      ~default:Type.Top
+  in
+  if async then Type.awaitable annotation else annotation
+
+
+let parameter_annotations { Define.parameters; _ } ~resolution =
+  let element { Node.value = { Parameter.name; annotation; _ }; _ } =
+    let annotation =
+      (annotation
+       >>| fun annotation -> Resolution.parse_annotation resolution annotation)
+      |> Option.value ~default:Type.Top
+    in
+    name, annotation
+  in
+  List.map ~f:element parameters
+  |> Identifier.Map.of_alist_exn
+
+
+let parameter_annotations_positional { Define.parameters; _ } ~resolution =
+  let element index { Node.value = { Parameter.annotation; _ }; _ } =
+    let annotation =
+      (annotation
+       >>| fun annotation -> Resolution.parse_annotation resolution annotation)
+      |> Option.value ~default:Type.Top
+    in
+    index, annotation
+  in
+  List.mapi ~f:element parameters
+  |> Int.Map.of_alist_exn
+
+
+module Class = struct
+  type t = Statement.t Class.t
+  [@@deriving compare, eq, sexp, show]
+
+
+  type parent_class = t
+  [@@deriving compare, eq, sexp, show]
+
+
+  let create definition =
+    definition
+
+
+  let create_parent =
+    create
+
+
+  let name { Class.name; _ } =
+    name
+
+
+  let bases { Class.bases; _ } =
+    bases
+
+
+  let annotation { Class.name; _ } ~resolution =
+    Resolution.parse_annotation resolution (Node.create (Access name))
+
+
+  module Field = struct
+    type t = {
+      name: Expression.expression;
+      parent: parent_class;
+      annotation: Annotation.t;
+      value: Expression.t option;
+      location: Location.t;
+    }
+    [@@deriving eq, show]
+
+
+    let create ~name ~parent ~annotation ~value ~location =
+      { name; parent; annotation; value; location; }
+
+
+    let make_annotation ~resolution ~annotation ~value =
+      match annotation, value with
+      | Some annotation, Some value ->
+          Annotation.create_immutable
+            ~global:true
+            ~original:(Some (Resolution.parse_annotation resolution annotation))
+            (Resolution.parse_annotation resolution value)
+      | Some annotation, None ->
+          Annotation.create_immutable
+            ~global:true
+            (Resolution.parse_annotation resolution annotation)
+      | None, Some value ->
+          Annotation.create_immutable
+            ~global:true
+            ~original:(Some Type.Top)
+            (Resolution.parse_annotation resolution value)
+      | _ ->
+          Annotation.create_immutable ~global:true Type.Top
+
+
+    let create_from_assign ~resolution
+        {
+          Node.location;
+          value = {
+            Assign.target = { Node.value = target; _ };
+            annotation;
+            value;
+            parent;
+            _;
+          };
+        } =
+      parent
+      >>| (fun parent -> { Node.location; value = Access parent })
+      >>| Resolution.resolve resolution
+      >>= Resolution.class_definition resolution
+      >>| (fun parent ->
+          {
+            name = target;
+            parent;
+            annotation = make_annotation ~resolution ~annotation ~value;
+            value;
+            location;
+          })
+
+
+    let name { name; _ } =
+      name
+
+
+    let annotation { annotation; _ } =
+      annotation
+
+
+    let parent { parent; _ } =
+      parent
+
+
+    let value { value; _ } =
+      value
+
+
+    let location { location; _ } =
+      location
+  end
+
+
+  module Method = struct
+    type t = {
+      define: Statement.define;
+      parent: parent_class
+    }
+    [@@deriving compare, eq, sexp, show]
+
+
+    let create ~define ~parent =
+      { define; parent }
+
+
+    let name { define = { Define.name; _ }; _ } =
+      name
+
+
+    let define { define; _ } =
+      define
+
+
+    let parent { parent; _ } =
+      parent
+
+
+    let parameter_annotations { define; _ } ~resolution =
+      parameter_annotations define ~resolution
+
+
+    let parameter_annotations_positional { define; _ } ~resolution =
+      parameter_annotations_positional define ~resolution
+
+
+    let return_annotation { define; _ } ~resolution =
+      return_annotation define ~resolution
+
+
+    let overrides { define = { Define.name; _ }; parent } ~resolution =
+      let find_overrides sofar annotation =
+        match sofar with
+        | Some _ -> sofar
+        | None ->
+            Resolution.class_definition resolution annotation
+            >>= (fun ({ Class.body; _ } as parent) ->
+                let find_override { Node.value = statement; _ } =
+                  match statement with
+                  | Statement.Stub (Stub.Define ({ Define.name = other; _ } as define))
+                  | Statement.Define ({ Define.name = other; _ } as define)
+                    when Instantiated.Access.equal name other ->
+                      Some define
+                  | _ ->
+                      None
+                in
+                List.find_map ~f:find_override body
+                >>| fun define ->
+                create ~define ~parent:(create_parent parent))
+      in
+      TypeOrder.successors_fold
+        (Resolution.order resolution)
+        ~initial:None
+        ~f:find_overrides
+        (annotation parent ~resolution)
+
+
+    let implements
+        { define; _ }
+        ~resolution:_
+        ~protocol_method:{ define = protocol; _ } =
+      let open Define in
+      let parameter_equal
+          { Node.value = { Parameter.annotation; _ }; _ }
+          { Node.value = { Parameter.annotation = protocol_annotation; _ }; _ } =
+        Option.equal Expression.equal annotation protocol_annotation
+      in
+      Instantiated.Access.equal define.name protocol.name &&
+      Option.equal Expression.equal define.return_annotation protocol.return_annotation &&
+      List.equal ~equal:parameter_equal define.parameters protocol.parameters
+  end
+
+
+  let generics { Class.bases; _ } ~resolution =
+    let generic { Argument.value; _ } =
+      let annotation = Resolution.parse_annotation resolution value in
+      match annotation with
+      | Type.Parametric { Type.parameters; _ }
+        when Type.is_generic annotation ->
+          Some parameters
+      | _ ->
+          None in
+    List.find_map ~f:generic bases
+    |> Option.value ~default:[]
+
+
+  let free_variables { Class.bases; _ } ~resolution ~parameters =
+    let rec iterate ~free_variables ~bases ~parameters =
+      match bases, parameters with
+      | { Argument.value; _ } :: bases, Type.Bottom :: parameters ->
+          let free_variables =
+            match Resolution.parse_annotation resolution value with
+            | (Type.Parametric {
+                Type.parameters;
+                _;
+              } as annotation)
+              when Type.is_generic annotation ->
+                (* The parameters need to be added in reverse order here because they're reversed
+                   once again at the end. *)
+                (List.map ~f:Option.return parameters |> List.rev) @ free_variables
+            | _ ->
+                free_variables
+          in
+          iterate ~free_variables ~bases ~parameters
+      | _ :: bases, _ :: parameters ->
+          iterate ~free_variables:(None :: free_variables) ~bases ~parameters
+      | _ ->
+          free_variables
+    in
+    iterate ~free_variables:[] ~bases ~parameters |> List.rev
+
+
+  let superclasses definition ~resolution =
+    TypeOrder.successors (Resolution.order resolution) (annotation definition ~resolution)
+    |> List.filter_map ~f:(Resolution.class_definition resolution)
+    |> List.map ~f:create
+
+
+  let constructors ({ Class.name; body; docstring; _ } as definition) ~resolution =
+    let constructors =
+      let declared =
+        let extract_constructor = function
+          | { Node.value = Statement.Stub (Stub.Define define); _ }
+          | { Node.value = Statement.Define define; _ }
+            when Instantiated.Define.is_constructor define ->
+              Some define
+          | _ ->
+              None in
+        List.filter_map ~f:extract_constructor body
+      in
+      let constructors =
+        if List.is_empty declared then
+          [{
+            Define.name;
+            parameters = [];
+            body = [Node.create Pass];
+            decorators = [];
+            return_annotation = None;
+            async = false;
+            parent = Some name;
+            docstring;
+          }]
+        else
+          declared
+      in
+      let remove_self ({ Statement.Define.parameters; _ } as constructor) =
+        {
+          constructor with
+          Statement.Define.parameters = List.tl parameters |> Option.value ~default:[];
+        }
+      in List.map ~f:remove_self constructors
+    in
+    (* Adjust return name and return type. *)
+    let adjust constructor =
+      let annotation =
+        let generics = generics ~resolution definition in
+        let parsed =
+          Resolution.parse_annotation
+            resolution
+            (Node.create (Access name))
+        in
+        if List.is_empty generics then
+          parsed
+        else
+          match parsed with
+          | Type.Primitive name ->
+              Type.Parametric {
+                Type.name;
+                parameters = generics;
+              }
+          | Type.Parametric _ ->
+              parsed
+          | _ ->
+              failwith "Parsed type was not primitive!"
+      in
+      {
+        constructor with
+        Define.name;
+        return_annotation = Some (Type.expression annotation);
+      }
+    in
+    List.map ~f:adjust constructors
+
+
+  let methods ({ Class.body; _ } as definition) =
+    let extract_define = function
+      | { Node.value = Statement.Stub (Stub.Define define); _ }
+      | { Node.value = Define define; _ } ->
+          Some (Method.create ~define ~parent:definition)
+      | _ ->
+          None
+    in
+    List.filter_map ~f:extract_define body
+
+
+  let is_protocol { Class.bases; _ } =
+    let is_protocol { Argument.name; value } =
+      match name, Expression.show value with
+      | None , "typing.Protocol" ->
+          true
+      | Some name, "abc.ABCMeta" when Identifier.show name = "metaclass" ->
+          true
+      | _ ->
+          false
+    in
+    List.exists ~f:is_protocol bases
+
+
+  let implements definition ~resolution ~protocol =
+    let rec implements instance_methods protocol_methods =
+      match instance_methods, protocol_methods with
+      | _, [] ->
+          true
+      | [], _ :: _ ->
+          false
+      | instance_method :: instance_methods,
+        ((protocol_method :: protocol_methods) as old_protocol_methods) ->
+          if Method.implements ~resolution ~protocol_method instance_method then
+            implements instance_methods protocol_methods
+          else
+            implements instance_methods old_protocol_methods
+    in
+    implements (methods definition) (methods protocol)
+
+
+  let field_fold ~initial ~f ~resolution ({ Class.body; _ } as parent) =
+    let iterate initial { Node.location; value } =
+      match value with
+      | Assign {
+          Assign.target = { Node.value = Access access; _ };
+          annotation = annotation;
+          value;
+          compound = None;
+          _;
+        } ->
+          Field.create
+            ~name:(Access access)
+            ~parent:(create parent)
+            ~annotation:(Field.make_annotation ~resolution ~annotation ~value:value)
+            ~value:value
+            ~location
+          |> f initial
+      | Stub (Stub.Assign {
+          Stub.value = { Node.value = Access access; _ };
+          annotation = annotation;
+          _;
+        }) ->
+          Field.create
+            ~name:(Access access)
+            ~parent:(create parent)
+            ~annotation:(Field.make_annotation ~resolution ~annotation ~value:None)
+            ~value:None
+            ~location
+          |> f initial
+      | _ -> initial
+    in
+    List.fold ~f:iterate ~init:initial body
+
+
+  let fields ~resolution parent_class =
+    List.rev (field_fold ~initial:[] ~resolution ~f:(fun sofar next -> next :: sofar) parent_class)
+
+
+  let field_annotation parent_class ~resolution ~field =
+    let callback
+        sofar
+        current_field =
+      match Field.name current_field, Annotation.annotation sofar with
+      | Access name, Type.Top when Instantiated.Access.equal name field ->
+          current_field.Field.annotation
+      | _ -> sofar
+    in
+    field_fold
+      ~initial:(Annotation.create_immutable ~global:true Type.Top)
+      ~f:callback
+      ~resolution
+      parent_class
+
+
+  let field_location parent_class ~resolution ~field =
+    let callback
+        sofar
+        current_field =
+      match Field.name current_field with
+      | Access name when Instantiated.Access.equal name field ->
+          Field.location current_field
+      | _ -> sofar
+    in
+    field_fold ~initial:Location.any ~f:callback parent_class ~resolution
+end
+
+
+module Field = Class.Field
+module Method = Class.Method
+
+
+module Define = struct
+  type t = Statement.define
+  [@@deriving compare, eq, sexp, show]
+
+
+  let create definition =
+    definition
+
+
+  let parameter_annotations define ~resolution =
+    parameter_annotations define ~resolution
+
+
+  let parameter_annotations_positional define ~resolution =
+    parameter_annotations_positional define ~resolution
+
+
+  let return_annotation define ~resolution =
+    return_annotation define ~resolution
+
+
+  let parent_definition { Define.parent; _ } ~resolution =
+    match parent with
+    | Some parent ->
+        let annotation =
+          Resolution.parse_annotation
+            resolution
+            (Node.create (Access parent))
+        in
+        Resolution.class_definition resolution annotation
+        >>| Class.create
+    | _ -> None
+
+
+  let method_definition define ~resolution =
+    parent_definition define ~resolution
+    >>| fun parent -> Class.Method.create ~define ~parent
+
+
+  (* Given a callee f and an its argument at index index, evaluates to the parameter name the
+   *  argument corresponds to. *)
+  let infer_argument_name { Statement.Define.parameters; _ } ~index ~argument =
+    let parameter_names = List.map ~f:Parameter.name parameters in
+    let star_index =
+      List.find_mapi
+        ~f:(fun index name ->
+            if String.prefix (Identifier.show name) 1 = "*" then
+              Some index
+            else
+              None)
+        parameter_names
+    in
+    match argument.Argument.name, star_index with
+    | None, None ->
+        List.nth parameter_names index
+    | None, Some star_index ->
+        if star_index <= index then
+          List.nth parameter_names star_index
+        else
+          List.nth parameter_names index
+    | Some name, _ -> Some name
+end
+
+
+module BinaryOperator = struct
+  type t = Expression.t BinaryOperator.t
+  [@@deriving compare, eq, sexp, show]
+
+
+  let create operator =
+    operator
+
+
+  let override {
+      BinaryOperator.left = ({ Node.location; _ } as left);
+      operator;
+      right;
+    } =
+    let name =
+      let open BinaryOperator in
+      match operator with
+      | Add -> "__add__"
+      | At -> "__matmul__"
+      | BitAnd -> "__and__"
+      | BitOr -> "__or__"
+      | BitXor -> "__xor__"
+      | Divide -> "__truediv__"
+      | FloorDivide -> "__floordiv__"
+      | LeftShift -> "__lshift__"
+      | Modulo -> "__mod__"
+      | Multiply -> "__mul__"
+      | Power -> "__pow__"
+      | RightShift -> "__rshift__"
+      | Subtract -> "__sub__"
+    in
+    {
+      Node.location;
+      value = Access
+          ((Instantiated.Access.access left) @ [
+              Expression.Access.Call {
+                Node.location;
+                value = {
+                  Expression.Call.name = {
+                    Node.location;
+                    value = Access (Instantiated.Access.create name);
+                  };
+                  arguments = [{ Argument.name = None; value = right }];
+                };
+              }
+            ]);
+    }
+end
+
+
+module Call = struct
+  type t = Expression.t Call.t
+  [@@deriving compare, eq, sexp, show]
+
+
+  let create call =
+    call
+
+
+  let element call =
+    call
+
+
+  let arguments { Call.arguments; _ } =
+    arguments
+
+
+  let with_arguments call arguments =
+    { call with Call.arguments }
+
+
+  let prepend_self_argument call =
+    let self =
+      {
+        Argument.name = None;
+        value = Node.create (Access (Instantiated.Access.create "self"));
+      }
+    in
+    { call with Call.arguments = self :: call.Call.arguments }
+
+
+  let name { Call.name; _ } =
+    name
+
+
+  type redirect = {
+    access: access;
+    call: access;
+  }
+
+
+  let redirect { Expression.Call.name; arguments } =
+    match name, arguments with
+    | { Node.location; value = Access [Expression.Access.Identifier name]; _ },
+      [{
+        Argument.value = { Node.value = Access access; _ };
+        _;
+      } as argument] ->
+        (match Identifier.show name with
+         | "abs" -> Some "__abs__"
+         | "repr" -> Some "__repr__"
+         | "str" -> Some "__str__"
+         | _ -> None)
+        >>| (fun name ->
+            let call =
+              [Expression.Access.Call {
+                  Node.location;
+                  value = {
+                    Expression.Call.name = {
+                      Node.location;
+                      value = Access (Instantiated.Access.create name);
+                    };
+                    arguments = [argument];
+                  };
+                }]
+            in
+            { access; call })
+
+    | _ -> None
+
+
+  let backup { Expression.Call.name; arguments } =
+    match name with
+    | { Node.location; value = Access [Expression.Access.Identifier name]; _ } ->
+        (* cf. https://docs.python.org/3/reference/datamodel.html#object.__radd__ *)
+        (match Identifier.show name with
+         | "__add__" -> Some "__radd__"
+         | "__sub__" -> Some "__rsub__"
+         | "__mul__" -> Some "__rmul__"
+         | "__matmul__" -> Some "__rmatmul__"
+         | "__truediv__" -> Some "__rtruediv__"
+         | "__floordiv__" -> Some "__rfloordiv__"
+         | "__mod__" -> Some "__rmod__"
+         | "__divmod__" -> Some "__rdivmod__"
+         | "__pow__" -> Some "__rpow__"
+         | "__lshift__" -> Some "__rlshift__"
+         | "__rshift__" -> Some "__rrshift__"
+         | "__and__" -> Some "__rand__"
+         | "__xor__" -> Some "__rxor__"
+         | "__or__" -> Some "__ror__"
+         | _ -> None)
+        >>| (fun name ->
+            {
+              Expression.Call.name = {
+                Node.location;
+                value = Access (Instantiated.Access.create name);
+              };
+              arguments;
+            })
+    | _ -> None
+
+
+  let argument_annotations { Expression.Call.arguments; _ } ~resolution =
+    let extract_argument { Argument.value; _ } =
+      match value with
+      | { Node.location; Node.value = Starred (Starred.Once expression) } ->
+          {
+            Node.location;
+            value = Signature.Starred (Resolution.resolve resolution expression);
+          }
+      | { Node.location; _ } ->
+          {
+            Node.location;
+            value = Signature.Normal {
+                Signature.annotation = Resolution.resolve resolution value;
+                value;
+              }
+          }
+    in
+    List.map ~f:extract_argument arguments
+
+
+  let check_parameters
+      ~resolution
+      ~check_parameter
+      ~add_error
+      ~init
+      call
+      { Signature.instantiated = callee; _ } =
+    let call =
+      if not (Instantiated.Define.is_method callee) ||
+         Instantiated.Define.is_static_method callee ||
+         Instantiated.Define.is_constructor callee then
+        call
+      else
+        prepend_self_argument call
+    in
+    let parameter_ok
+        ~position
+        ~offset
+        { Node.location; value } =
+      (* Get the argument's name. *)
+      List.nth (arguments call) position
+      >>= fun argument ->
+      Define.infer_argument_name
+        (Define.create callee)
+        ~index:(position + offset)
+        ~argument
+      >>= fun name ->
+      (* Get the type of the argument. *)
+      let parameter_map = Define.parameter_annotations (Define.create callee) ~resolution in
+      (match Map.find parameter_map name with
+       | Some annotation when not (Type.is_meta annotation) -> Some annotation
+       | _ -> None)
+      >>= fun expected ->
+
+      (* Compare to the actual type. *)
+      (match value with
+       | Signature.Normal { Signature.annotation = actual; _ }
+       | Signature.Starred (Type.Parametric { Type.parameters = [actual]; _ }) ->
+           Some actual
+       | _ ->
+           None)
+      >>= fun actual ->
+      check_parameter ~argument ~position ~offset ~location ~name ~actual ~expected
+    in
+    let accumulate_errors position (offset, errors) = function
+      | { Node.value = Signature.Normal _; _ } as argument ->
+          (match parameter_ok ~position ~offset argument with
+           | Some error -> offset, add_error errors error
+           | _ -> offset, errors)
+      | { Node.value = Signature.Starred _; _ } as argument ->
+          (* Angelic assumption: if we get a type error with a starred argument we move on
+           * to the next argument, otherwise we keep consuming parameters. The offset tries
+           * to match the next argument to one left of where it would be normally matched.
+          *)
+          (match parameter_ok ~position ~offset argument with
+           | Some _ -> offset - 1, errors
+           | _ -> offset, errors)
+    in
+    argument_annotations ~resolution call
+    |> List.foldi ~init:(0, init) ~f:accumulate_errors
+    |> snd
+end
+
+
+module ComparisonOperator = struct
+  type t = Expression.t ComparisonOperator.t
+  [@@deriving compare, eq, sexp, show]
+
+
+  let override { ComparisonOperator.left; right } =
+    let simple_override ({ Node.location; _ } as left) (operator, right) =
+      let open ComparisonOperator in
+      (match operator with
+       | Equals -> Some "__eq__"
+       | GreaterThan -> Some "__gt__"
+       | GreaterThanOrEquals -> Some "__ge__"
+       | In -> Some "__contains__"
+       | Is
+       | IsNot -> None
+       | LessThan -> Some "__lt__"
+       | LessThanOrEquals -> Some "__le__"
+       | NotEquals -> Some "__ne__"
+       | NotIn -> None)
+      >>| (fun name ->
+          {
+            Node.location;
+            value = Access
+                ((Instantiated.Access.access left) @ [
+                    Expression.Access.Call {
+                      Node.location;
+                      value = {
+                        Expression.Call.name = {
+                          Node.location;
+                          value = Access (Instantiated.Access.create name);
+                        };
+                        arguments = [{ Argument.name = None; value = right }];
+                      };
+                    }
+                  ]);
+          })
+    in
+    let rec collect left operands =
+      match operands with
+      | (operator, right) :: operands ->
+          (simple_override left (operator, right)) :: (collect right operands)
+      | [] -> []
+    in
+    collect left right
+end
+
+
+module UnaryOperator = struct
+  type t = Expression.t UnaryOperator.t
+  [@@deriving compare, eq, sexp, show]
+
+
+  let override { UnaryOperator.operator; operand = ({ Node.location; _ } as operand) } =
+    let open UnaryOperator in
+    (match operator with
+     | Invert -> Some "__invert__"
+     | Negative -> Some "__neg__"
+     | Not -> None
+     | Positive -> Some "__pos__")
+    >>| (fun name ->
+        {
+          Node.location;
+          value = Access
+              ((Instantiated.Access.access operand) @ [
+                  Expression.Access.Call {
+                    Node.location;
+                    value = {
+                      Expression.Call.name = {
+                        Node.location;
+                        value = Access (Instantiated.Access.create name);
+                      };
+                      arguments = [];
+                    };
+                  }
+                ]);
+        })
+end
+
+
+module Access = struct
+  module Element = struct
+    type call = {
+      location: Location.t;
+      call: Call.t;
+      callee: Signature.t option
+    }
+
+    type method_call = {
+      location: Location.t;
+      access: access;
+      annotation: Annotation.t;
+      call: Call.t;
+      callee: Signature.t option;
+      backup: (Call.t * Signature.t) option;
+    }
+
+    type t =
+      | Array
+      | Call of call
+      | Expression
+      | Field of Class.Field.t
+      | Global
+      | Identifier
+      | Method of method_call
+  end
+
+
+  type t = Expression.access
+  [@@deriving compare, eq, sexp, show]
+
+
+  let create access =
+    access
+
+
+  (* Fold over an access path. Callbacks will be passed the current `accumulator`, the current
+      `annotations`, the `resolved` type of the expression so far, as well as the kind of `element`
+      we're currently folding over. *)
+  let fold ~resolution ~initial ~f access =
+    let return_annotation resolution = function
+      | Some { Signature.instantiated = callee; _ } ->
+          Define.create callee
+          |> Define.return_annotation ~resolution
+      | None ->
+          Type.Top
+    in
+
+    (* Calls on methods can determine previously undetermined annotations. E.g. `a.append(1)` can
+        determine the type of `a: List[Bottom]` to `a: List[int]`. *)
+    let determine_annotation ~element:{ Element.annotation; callee; _ } =
+      let annotation = Annotation.annotation annotation in
+      callee
+      >>| (fun { Signature.constraints; _ } ->
+          let primitive, parameters = Type.split annotation in
+          let free_variables =
+            (Resolution.class_definition resolution) primitive
+            >>| Class.free_variables ~resolution ~parameters
+            |> Option.value ~default:[]
+          in
+          let inferred =
+            let instantiate parameter = function
+              | Some variable ->
+                  Map.find constraints variable
+                  |> Option.value ~default:parameter
+              | _ -> parameter
+            in
+            match List.map2 ~f:instantiate parameters free_variables with
+            | List.Or_unequal_lengths.Ok inferred -> inferred
+            | List.Or_unequal_lengths.Unequal_lengths -> parameters
+          in
+          match annotation with
+          | Type.Parametric parametric ->
+              Type.Parametric { parametric with Type.parameters = inferred }
+          | _ -> annotation)
+      |> Option.value ~default:annotation
+    in
+
+    let rec fold ~accumulator ~reversed_lead ~tail ~annotation ~resolution =
+      let annotations = Resolution.annotations resolution in
+      let pick_signature call signatures =
+        match signatures with
+        (* This match is done for performance. In the overwhelming majority of cases,
+           there is only one signature for a call, and doing the redundant parameter check
+           would add 13 seconds of overhead on instagram (order of magnitude: 100k function
+           definitions, 95s total runtime beforehand). *)
+        | [signature] -> Some signature
+        | _ ->
+            let count_call_errors ~resolution call callee =
+              let order = Resolution.order resolution in
+              let check_parameter
+                  ~argument
+                  ~position:_
+                  ~offset:_
+                  ~location:_
+                  ~name
+                  ~actual
+                  ~expected =
+                if not (TypeOrder.less_or_equal order ~left:actual ~right:expected ||
+                        Type.mismatch_with_any actual expected) ||
+                   (String.is_prefix ~prefix:"**" (Identifier.show name) &&
+                    Argument.is_positional argument) then
+                  Some ()
+                else
+                  None
+              in
+              let add_error errors _ = errors + 1 in
+
+              Call.check_parameters ~resolution ~check_parameter ~add_error ~init:0 call callee
+            in
+
+            match
+              List.find
+                ~f:(fun signature -> count_call_errors ~resolution call signature = 0)
+                signatures
+            with
+            (* The find exists for performance reasons. Without it, typechecking would slow down by
+             * ~2.5x. *)
+            | Some signature -> Some signature
+            | None ->
+                List.map
+                  ~f:(fun signature -> signature, count_call_errors ~resolution call signature)
+                  signatures
+                |> List.min_elt ~cmp:(fun (_, left) (_, right) -> Int.compare left right)
+                >>| fst
+      in
+
+      let rec step annotation reversed_lead =
+        match annotation, reversed_lead with
+        | Some (access, annotation),
+          [Access.Call { Node.location; value = call }] ->
+            let arguments =
+              (Node.create
+                 (Signature.Normal {
+                     Signature.annotation = (Annotation.annotation annotation);
+                     value = Node.create (Access (Instantiated.Access.create "self"));
+                   })
+              ) :: (Call.argument_annotations ~resolution call)
+            in
+            let callee =
+              ((Resolution.method_signature resolution)
+                 (Annotation.annotation annotation)
+                 call
+                 arguments)
+              |> pick_signature call
+            in
+            let backup =
+              Call.backup call
+              >>= fun call ->
+              (match call with
+               | { Ast.Expression.Call.arguments = [{ Argument.value; _ }]; _ } ->
+                   let annotation = Resolution.resolve resolution value in
+                   (Resolution.method_signature resolution)
+                     annotation
+                     call
+                     arguments
+                   |> pick_signature call
+               | _ -> None)
+              >>= fun signature -> Some (call, signature)
+            in
+            let element =
+              {
+                Element.location;
+                access;
+                annotation;
+                call;
+                callee;
+                backup;
+              }
+            in
+
+            let determined = determine_annotation ~element in
+            let resolved = Annotation.create (return_annotation resolution callee) in
+            let annotations =
+              Map.find annotations access
+              >>| (fun existing ->
+                  Map.add
+                    ~key:access
+                    ~data:{ existing with Annotation.annotation = determined }
+                    annotations)
+              |> Option.value
+                ~default:(Map.add ~key:access ~data:(Annotation.create determined) annotations)
+            in
+
+            (Resolution.with_annotations resolution annotations),
+            resolved,
+            (f accumulator ~annotations ~resolved ~element:(Element.Method element))
+
+        | Some (_, annotation), ([Access.Identifier _] as field_access) -> (
+            (* Field access. *)
+            match Resolution.class_definition resolution (Annotation.annotation annotation) with
+            | Some parent -> (
+                let search_location location class_node =
+                  if (Location.equal location Location.any) then
+                    Class.field_location ~resolution ~field:field_access class_node
+                  else
+                    location
+                in
+                let location =
+                  List.fold
+                    ~init:(Class.field_location ~resolution ~field:field_access parent)
+                    ~f:search_location
+                    (Class.superclasses ~resolution parent)
+                in
+                match Map.find annotations access with
+                | Some annotation ->
+                    resolution,
+                    annotation,
+                    (f accumulator
+                       ~annotations
+                       ~resolved:annotation
+                       ~element:(Element.Field {
+                           Field.parent;
+                           name = (Access access);
+                           location;
+                           annotation;
+                           value = None
+                         }))
+                | None ->
+                    let search annotation class_node =
+                      match Annotation.annotation annotation with
+                      | Type.Top ->
+                          Class.field_annotation ~resolution ~field:field_access class_node
+                      | _ -> annotation
+                    in
+                    let annotation =
+                      List.fold
+                        ~init:(Class.field_annotation ~resolution ~field:field_access parent)
+                        ~f:search
+                        (Class.superclasses ~resolution parent)
+                    in
+                    resolution,
+                    annotation,
+                    (f accumulator
+                       ~annotations
+                       ~resolved:annotation
+                       ~element:(Element.Field {
+                           Field.parent;
+                           name = (Access access);
+                           location;
+                           annotation;
+                           value = None
+                         })))
+            | None ->
+                resolution,
+                Annotation.create Type.Top,
+                (f accumulator
+                   ~annotations
+                   ~resolved:(Annotation.create Type.Top)
+                   ~element:Element.Identifier))
+
+        | Some (_, annotation), (Access.Subscript subscript) :: _ ->
+            (* Array access. *)
+            let resolved =
+              match subscript, Annotation.annotation annotation with
+              | [Access.Index _],
+                (Type.Parametric {
+                    Type.parameters;
+                    _;
+                  }) ->
+                  (* TODO(T22845396): improve temporary fix *)
+                  (match parameters with
+                   | _ :: parameter :: _ -> parameter
+                   | parameter :: _ -> parameter
+                   | [] -> Type.Top)
+              | [Access.Slice _], _ ->
+                  (Annotation.annotation annotation)
+              | _ ->
+                  Type.Top
+            in
+            resolution,
+            Annotation.create resolved,
+            (f accumulator
+               ~annotations
+               ~resolved:(Annotation.create resolved)
+               ~element:Element.Array)
+
+        | None,
+          Access.Call { Node.location; value = call } :: qualifier ->
+            (* Call. *)
+            begin
+              match Call.redirect call with
+              | Some { Call.access; call } ->
+                  let annotation =
+                    Resolution.resolve
+                      resolution
+                      (Node.create (Access access))
+                  in
+                  step (Some (access, (Annotation.create annotation))) call
+              | None ->
+                  let callee =
+                    (Resolution.function_signature resolution)
+                      (List.rev qualifier)
+                      call
+                      (Call.argument_annotations ~resolution call)
+                    |> pick_signature call
+                  in
+                  let resolved = Annotation.create (return_annotation resolution callee) in
+                  let element = Element.Call { Element.location; call; callee } in
+                  resolution,
+                  resolved,
+                  (f accumulator ~annotations ~resolved ~element)
+            end
+
+        | None, Access.Expression expression :: _ ->
+            let resolved = Annotation.create (Resolution.resolve resolution expression) in
+            resolution,
+            resolved,
+            (f accumulator ~annotations ~resolved ~element:Element.Expression)
+
+        | None, [Access.Identifier identifier]
+          when Identifier.show identifier = "None" ->
+            let resolved = Annotation.create (Type.Optional Type.Bottom) in
+            resolution,
+            resolved,
+            (f accumulator ~annotations ~resolved ~element:Element.Identifier)
+
+        | _ ->
+            let resolved =
+              let lead = List.rev reversed_lead in
+              match Map.find annotations lead with
+              | Some resolved -> resolved
+              | None ->
+                  (Resolution.global resolution) lead
+                  |> Option.value ~default:(Annotation.create Type.Top)
+            in
+            resolution,
+            resolved,
+            (f accumulator ~annotations ~resolved ~element:Element.Global)
+      in
+      let resolution, resolved, accumulator = step annotation reversed_lead in
+
+      match Annotation.annotation resolved, tail with
+      | Type.Top, head :: tail ->
+          fold
+            ~resolution
+            ~accumulator
+            ~reversed_lead:(head :: reversed_lead)
+            ~tail
+            ~annotation:None
+      | _, head :: tail ->
+          fold
+            ~resolution
+            ~accumulator
+            ~reversed_lead:[head]
+            ~tail
+            ~annotation:(Some (List.rev reversed_lead, resolved))
+      | _ ->
+          accumulator
+    in
+    fold ~resolution ~accumulator:initial ~reversed_lead:[] ~tail:access ~annotation:None
+
+
+  let last_element ~resolution access =
+    fold
+      ~resolution
+      ~initial:Element.Global
+      ~f:(fun _ ~annotations:_ ~resolved:_ ~element -> element)
+      access
+end
+
+
+let rec resolve ~resolution expression =
+  let with_generators resolution generators =
+    let add_generator resolution {
+        Comprehension.target = { Node.value = target_value; _ } as target;
+        iterator;
+        conditions;
+        async = _; (* TODO(T23723699): resolve async comprehensions. *)
+      } =
+      let iterator_type =
+        match
+          TypeOrder.join
+            (Resolution.order resolution)
+            (resolve ~resolution iterator)
+            (Type.iterable Type.Bottom)
+        with
+        | Type.Parametric { Type.parameters = [parameter]; _ } ->
+            parameter
+        | _ ->
+            Type.Object
+      in
+      let rec collect_optionals { Node.value; _ } =
+        match value with
+        | BooleanOperator {
+            BooleanOperator.left;
+            operator = BooleanOperator.And;
+            right;
+          } ->
+            List.rev_append (collect_optionals left) (collect_optionals right)
+
+        | Access access ->
+            [access]
+
+        | ComparisonOperator {
+            Expression.ComparisonOperator.left = { Node.value = Access access; _ };
+            right =
+              [
+                Expression.ComparisonOperator.IsNot,
+                { Node.value = Access [ Expression.Access.Identifier identifier; ]; _ }
+              ];
+          } when Identifier.show identifier = "None" ->
+            [access]
+
+        | _ -> []
+      in
+      let optional_accesses = List.concat_map ~f:collect_optionals conditions in
+      let iterator_type = match iterator_type, target_value with
+        | Type.Optional annotation, Access target_value ->
+            if List.mem ~equal:Instantiated.Access.equal optional_accesses target_value then
+              annotation
+            else
+              iterator_type
+        | _ -> iterator_type
+      in
+      let annotations =
+        let rec add annotations_sofar target annotation =
+          match Node.value target, annotation with
+          | Access access, _ ->
+              Map.add annotations_sofar ~key:access ~data:(Annotation.create annotation)
+          | Tuple accesses, Type.Tuple (Type.Bounded parameters)
+            when List.length accesses = List.length parameters ->
+              List.fold2_exn ~init:annotations_sofar ~f:add accesses parameters
+          | Tuple accesses, Type.Tuple (Type.Unbounded parameter) ->
+              let parameters = List.map ~f:(fun _ -> parameter) accesses in
+              List.fold2_exn ~init:annotations_sofar ~f:add accesses parameters
+          | _ -> annotations_sofar
+        in
+        add (Resolution.annotations resolution) target iterator_type
+      in
+      Resolution.with_annotations resolution annotations
+    in
+    List.fold ~init:resolution ~f:add_generator generators;
+  in
+
+  match Node.value expression with
+  | Access access ->
+      let annotation _ ~annotations:_ ~resolved ~element:_ = resolved in
+      Access.fold
+        ~resolution
+        ~initial:(Annotation.create Type.Top)
+        ~f:annotation
+        (Access.create access)
+      |> Annotation.annotation
+
+  | Await expression ->
+      resolve ~resolution expression
+      |> Type.awaitable_value
+
+  | BinaryOperator _ ->
+      failwith "Binary Operator inference not supported"
+
+  | BooleanOperator { BooleanOperator.left; right; operator } ->
+      let left_type =
+        match operator with
+        | BooleanOperator.Or ->
+            Type.optional_value (resolve ~resolution left)
+        | _ ->
+            resolve ~resolution left
+      in
+      TypeOrder.join
+        (Resolution.order resolution)
+        left_type
+        (resolve ~resolution right)
+
+  | Bytes _ ->
+      Type.bytes
+
+  | ComparisonOperator operator ->
+      let fold_comparisons sofar = function
+        | Some call ->
+            TypeOrder.meet
+              (Resolution.order resolution)
+              sofar
+              (resolve ~resolution call)
+        | None ->
+            TypeOrder.meet
+              (Resolution.order resolution)
+              sofar
+              Type.bool
+      in
+      ComparisonOperator.override operator
+      |> List.fold ~init:Type.Top ~f:fold_comparisons
+
+  | Complex _ ->
+      Type.complex
+
+  | Dictionary { Dictionary.entries; _ } ->
+      let key, values =
+        let pair_wise_join (key_sofar, values) { Dictionary.key; value } =
+          TypeOrder.join (Resolution.order resolution) key_sofar (resolve ~resolution key),
+          (resolve ~resolution value) :: values
+        in
+        List.fold entries ~init:(Type.Bottom, []) ~f:pair_wise_join
+      in
+      if List.is_empty entries then
+        Type.dictionary ~key:Type.Bottom ~value:Type.Bottom
+      else
+        Type.dictionary ~key ~value:(Type.union values)
+
+  | DictionaryComprehension { Comprehension.element = { Dictionary.key; value }; generators } ->
+      let resolution = with_generators resolution generators in
+      Type.dictionary
+        ~key:(Type.assume_any (resolve ~resolution key))
+        ~value:(Type.assume_any (resolve ~resolution value))
+
+  | Generator { Comprehension.element; generators } ->
+      let resolution = with_generators resolution generators in
+      Type.generator (resolve ~resolution element |> Type.assume_any)
+
+  | False ->
+      Type.bool
+
+  | Float _ ->
+      Type.float
+
+  | Format _ ->
+      Type.string
+
+  | Integer _ ->
+      Type.integer
+
+  | Lambda { Lambda.body; _ } ->
+      Type.lambda (resolve ~resolution body)
+
+  | List elements ->
+      List.map ~f:(resolve ~resolution) elements
+      |> List.fold
+        ~init:Type.Bottom
+        ~f:(TypeOrder.join (Resolution.order resolution))
+      |> Type.list
+
+  | ListComprehension { Comprehension.element; generators } ->
+      let resolution = with_generators resolution generators in
+      Type.list (resolve ~resolution element)
+
+  | Set elements ->
+      List.map ~f:(resolve ~resolution) elements
+      |> List.fold
+        ~init:Type.Bottom
+        ~f:(TypeOrder.join (Resolution.order resolution))
+      |> Type.set
+
+  | SetComprehension { Comprehension.element; generators } ->
+      let resolution = with_generators resolution generators in
+      Type.set (resolve ~resolution element)
+
+  | Starred _ ->
+      Type.Object
+
+  | String _ ->
+      Type.string
+
+  | Ternary { Ternary.target; alternative; test; } ->
+      let target_annotation =
+        match Node.value test with
+        | Expression.ComparisonOperator {
+            Expression.ComparisonOperator.left = access;
+            right = [
+              Expression.ComparisonOperator.IsNot,
+              { Node.value = Access [ Expression.Access.Identifier identifier; ]; _ }
+            ];
+          } when Identifier.show identifier = "None" ->
+            if Expression.equal access target then
+              Type.optional_value (resolve ~resolution target)
+            else
+              resolve ~resolution target
+        | _ ->
+            if Expression.equal test target then
+              Type.optional_value (resolve ~resolution target)
+            else
+              resolve ~resolution target
+      in
+      TypeOrder.join
+        (Resolution.order resolution)
+        target_annotation
+        (resolve ~resolution alternative)
+
+  | True ->
+      Type.bool
+
+  | Tuple elements ->
+      Type.tuple (List.map elements ~f:(resolve ~resolution))
+
+  | UnaryOperator operator ->
+      UnaryOperator.override operator
+      >>| resolve ~resolution
+      |> Option.value ~default:Type.bool
+
+  | Expression.Yield _ ->
+      Type.yield Type.Object

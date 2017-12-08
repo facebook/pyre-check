@@ -1,0 +1,82 @@
+(** Copyright 2016-present Facebook. All rights reserved. **)
+
+open Core
+
+open Configuration
+open ServerConfiguration
+
+open State
+
+open Pyre
+
+
+let initialize ?old_state lock connections { configuration; _ } =
+  Log.log ~section:`Server  "Initializing server...";
+  let service =
+    match old_state with
+    | Some { service; _ } -> service
+    | None -> Service.create ~is_parallel:configuration.parallel ()
+  in
+  SharedMem.collect `aggressive;
+  let timer = Timer.start () in
+  let { Check.handles; environment; errors = initial_errors } =
+    Check.check configuration (Some service) () in
+  Log.performance
+    ~flush:true
+    ~name:"initialization"
+    ~timer
+    ~labels:["root", configuration.Configuration.project_root |> Path.show;];
+  Log.log ~section:`Server "Server initialized";
+  let handles = File.Handle.Set.of_list handles in
+  let errors =
+    let errors = File.Handle.Table.create () in
+    List.iter
+      initial_errors
+      ~f:(fun error ->
+          let { Ast.Location.path; _ } = Error.location error in
+          Hashtbl.add_multi
+            errors
+            ~key:(File.Handle.create path)
+            ~data:error);
+    errors
+  in
+  {
+    deferred_requests = [];
+    environment;
+    initial_errors = Error.Hash_set.of_list initial_errors;
+    errors;
+    handles;
+    service;
+    lock;
+    connections;
+    lookups = String.Table.create ();
+  }
+
+
+let remove_server_files { lock_path; socket_path; pid_path; socket_link; _ } =
+  Path.remove lock_path;
+  Path.remove socket_path;
+  Path.remove socket_link;
+  Path.remove pid_path
+
+
+let stop_server server_configuration socket =
+  (let watchman_path =
+     WatchmanConstants.pid_path server_configuration.configuration
+     |> Path.absolute
+   in
+   let watchman_pid =
+     try
+       Some (Sys_utils.cat watchman_path)
+     with
+     | Sys_error _ ->
+         None
+   in
+   watchman_pid
+   >>| Int.of_string
+   >>| (fun pid -> Signal.send_i Signal.int (`Pid (Pid.of_int pid)))
+   |> ignore);
+  remove_server_files server_configuration;
+  Unix.close socket;
+  Worker.killall ();
+  exit 0

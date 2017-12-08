@@ -1,0 +1,411 @@
+# Copyright 2004-present Facebook.  All rights reserved.
+
+import sys
+import textwrap
+import unittest
+
+from unittest.mock import (
+    MagicMock,
+    patch,
+)
+from tools.pyre.scripts.infer import (
+    dequalify,
+    FieldStub,
+    FunctionStub,
+    Infer,
+    main,
+    StubFile,
+)
+from tools.pyre.scripts import (
+    commands,
+    configuration,
+    log,
+)
+from tools.pyre.scripts.error import Error
+
+
+def build_json(inference):
+    return {
+        "line": 0,
+        "column": 0,
+        "code": 0,
+        "name": "name",
+        "path": "test.py",
+        "description": "",
+        "inference": inference,
+    }
+
+
+class PyreTest(unittest.TestCase):
+    def test_dequalify(self):
+        self.assertEqual(dequalify("typing.List"), "List")
+        self.assertEqual(
+            dequalify("typing.Union[typing.List[int]]"),
+            "Union[List[int]]")
+
+    def assert_imports(self, error_json, expected_imports):
+        error = Error(**error_json)
+        if FunctionStub.is_instance(error.inference):
+            stub = FunctionStub(error.inference)
+        elif FieldStub.is_instance(error.inference):
+            stub = FieldStub(error.inference)
+        self.assertEqual(
+            sorted(list(stub.get_typing_imports())),
+            expected_imports)
+
+    def test_get_typing_imports(self):
+        self.assert_imports(
+            build_json({
+                "annotation": "typing.Union[int, str]",
+                "function_name": "ret_int",
+                "parent": "test.Test",
+                "parameters": [{"name": "self", "type": None, "value": None}],
+                "decorators": ["classmethod"],
+                "async": False,
+            }),
+            ["Union"])
+
+        self.assert_imports(
+            build_json({
+                "annotation": "typing.Union[int, str]",
+                "function_name": "ret_int",
+                "parent": "test.Test",
+                "parameters": [{
+                    "name": "self",
+                    "type": "typing.List[typing.Union[int, str]]",
+                    "value": None}],
+                "decorators": ["classmethod"],
+                "async": False,
+            }),
+            ["List", "Union"])
+
+    def assert_stub(self, error_jsons, expected, full_only=False):
+        errors = [Error(**error_json) for error_json in error_jsons]
+        self.assertEqual(
+            StubFile(errors, full_only=full_only).to_string().strip(),
+            textwrap.dedent(expected.rstrip()))
+
+    def test_stubs(self):
+        self.assert_stub(
+            [build_json({
+                "annotation": "int",
+                "function_name": "ret_int",
+                "parent": "test.Test",
+                "parameters": [{"name": "self", "type": None, "value": None}],
+                "decorators": ["classmethod"],
+                "async": False,
+            })],
+            """\
+            class Test:
+                @classmethod
+                def ret_int(self) -> int: ...
+            """)
+
+        self.assert_stub(
+            [build_json({
+                "annotation": "int",
+                "function_name": "test.returns_int",
+                "parent": None,
+                "parameters": [],
+                "decorators": ["staticmethod"],
+                "async": True,
+            })],
+            """\
+            @staticmethod
+            async def returns_int() -> int: ...
+            """)
+
+        self.assert_stub(
+            [build_json({
+                "annotation": "int",
+                "function_name": "test.with_params",
+                "parent": None,
+                "parameters": [
+                    {"name": "y", "type": None, "value": "7"},
+                    {"name": "x", "type": "int", "value": "5"},
+                ],
+                "decorators": [],
+                "async": False,
+            })],
+            "def with_params(y=7, x: int = 5) -> int: ...")
+
+        self.assert_stub(
+            [build_json({
+                "annotation": "str",
+                "function_name": "test.returns_string",
+                "parent": None,
+                "parameters": [],
+                "decorators": [],
+                "async": False,
+            })],
+            "def returns_string() -> str: ...")
+
+        self.assert_stub(
+            [build_json({
+                "annotation": "bool",
+                "function_name": "test.returns_bool",
+                "parent": None,
+                "parameters": [],
+                "decorators": [],
+                "async": False,
+            })],
+            "def returns_bool() -> bool: ...")
+
+        self.assert_stub(
+            [build_json({
+                "annotation": "float",
+                "function_name": "test.returns_float",
+                "parent": None,
+                "parameters": [],
+                "decorators": [],
+                "async": False,
+            })],
+            "def returns_float() -> float: ...")
+
+        self.assert_stub(
+            [build_json({
+                "function_name": "test.missing_param_test",
+                "parent": None,
+                "parameters": [{"name": "x", "type": "int", "value": "5"}],
+                "decorators": [],
+                "async": False,
+            })],
+            "def missing_param_test(x: int = 5): ...")
+
+        self.assert_stub(
+            [build_json({
+                "annotation": "float",
+                "function_name": "test.some_fun.another_fun",
+                "parent": None,
+                "parameters": [],
+                "decorators": [],
+                "async": False,
+            })],
+            "")
+
+        self.assert_stub(
+            [build_json({
+                "annotation": "int",
+                "function_name": "ret_int",
+                "parent": "test.Test.Test2",
+                "parameters": [{"name": "self", "type": None, "value": None}],
+                "decorators": ["classmethod"],
+                "async": False,
+            })],
+            "")
+
+        self.assert_stub(
+            [build_json({
+                "annotation": "int",
+                "function_name": "test.with_params",
+                "parent": None,
+                "parameters": [
+                    {"name": "y", "type": None, "value": "7"},
+                    {"name": "x", "type": "int", "value": "5"},
+                ],
+                "decorators": [],
+                "async": False,
+            })],
+            "",
+            full_only=True)
+
+        self.assert_stub(
+            [build_json({
+                "annotation": "int",
+                "function_name": "test.full_only",
+                "parent": None,
+                "parameters": [{"name": "x", "type": "int", "value": "5"}],
+                "decorators": [],
+                "async": False,
+            })],
+            "def full_only(x: int = 5) -> int: ...",
+            full_only=True)
+
+        self.assert_stub(
+            [build_json({
+                "annotation": "int",
+                "function_name": "weird_function",
+                "parent": None,
+                "parameters": [],
+                "decorators": [],
+                "async": False,
+            })],
+            "")
+
+        self.assert_stub(
+            [
+                build_json({
+                    "annotation": "int",
+                    "function_name": "test.with_params",
+                    "parent": None,
+                    "parameters": [
+                        {"name": "y", "type": None, "value": "7"},
+                        {"name": "x", "type": None, "value": "5"},
+                    ],
+                    "decorators": [],
+                    "async": False,
+                }),
+                build_json({
+                    "function_name": "test.with_params",
+                    "parent": None,
+                    "parameters": [
+                        {"name": "y", "type": None, "value": "7"},
+                        {"name": "x", "type": "int", "value": "5"},
+                    ],
+                    "decorators": [],
+                    "async": False,
+                }),
+                build_json({
+                    "function_name": "test.with_params",
+                    "parent": None,
+                    "parameters": [
+                        {"name": "y", "type": "int", "value": "7"},
+                        {"name": "x", "type": None, "value": "5"},
+                    ],
+                    "decorators": [],
+                    "async": False,
+                })
+            ],
+            "def with_params(y: int = 7, x: int = 5) -> int: ...",
+            full_only=True)
+
+    def test_import_from_typing(self):
+        self.assert_stub(
+            [build_json({
+                "annotation": "typing.Union[int, str]",
+                "function_name": "ret_int",
+                "parent": "test.Test",
+                "parameters": [{"name": "self", "type": None, "value": None}],
+                "decorators": ["classmethod"],
+                "async": False,
+            })],
+            """\
+            from typing import Union
+
+
+            class Test:
+                @classmethod
+                def ret_int(self) -> Union[int, str]: ...
+            """)
+
+        self.assert_stub(
+            [build_json({
+                "annotation": "typing.Union[int, str]",
+                "function_name": "test.with_params",
+                "parent": None,
+                "parameters": [
+                    {"name": "y", "type": None, "value": "7"},
+                    {"name": "x", "type": "typing.List[int]", "value": "[5]"},
+                ],
+                "decorators": [],
+                "async": False,
+            })],
+            """\
+            from typing import List, Union
+
+            def with_params(y=7, x: List[int] = [5]) -> Union[int, str]: ...
+            """)
+
+        self.assert_stub(
+            [build_json({
+                "annotation": "Union[int, str]",
+                "function_name": "test.with_params",
+                "parent": None,
+                "parameters": [
+                    {"name": "y", "type": None, "value": "7"},
+                    {"name": "x", "type": "typing.List[int]", "value": "[5]"},
+                ],
+                "decorators": [],
+                "async": False,
+            })],
+            "from typing import List\n\n" +
+            "def with_params(y=7, x: List[int] = [5]) -> Union[int, str]: ...")
+
+        self.assert_stub(
+            [build_json({
+                "annotation": "typing.Union[typing.List[int], typing.Any]",
+                "function_name": "test.with_params",
+                "parent": None,
+                "parameters": [
+                    {"name": "y", "type": None, "value": "7"},
+                    {
+                        "name": "x",
+                        "type": "typing.Dict[int, int]",
+                        "value": "5",
+                    },
+                ],
+                "decorators": [],
+                "async": False,
+            })],
+            """\
+            from typing import Any, Dict, List, Union
+
+            def with_params(y=7, x: Dict[int, int] = 5) -> Union[List[int], Any]: ...
+            """)
+
+
+def mock_arguments():
+    arguments = MagicMock()
+
+    arguments.debug = False
+    arguments.show_error_traces = False
+    arguments.verbose = False
+    arguments.logging_sections = None
+    arguments.check_unannotated = False
+    arguments.current_directory = '.'
+
+    return arguments
+
+
+def mock_configuration():
+    configuration = MagicMock()
+    configuration.stub_roots = ['root']
+    return configuration
+
+
+class InferTest(unittest.TestCase):
+    def test_infer(self):
+        arguments = mock_arguments()
+        arguments.recursive = False
+
+        configuration = mock_configuration()
+
+        with patch.object(commands.Command, '_call_client') as call_client:
+            Infer(arguments, configuration, link_trees=['.']).run()
+            call_client.assert_called_once_with(
+                command=commands.CHECK,
+                link_trees=['.'],
+                flags=['-show-error-traces', '-check-unannotated', '-infer'])
+
+        with patch.object(commands.Command, '_call_client') as call_client:
+            arguments.recursive = True
+            Infer(arguments, configuration, link_trees=['.']).run()
+            call_client.assert_called_once_with(
+                command=commands.CHECK,
+                link_trees=['.'],
+                flags=[
+                    '-show-error-traces',
+                    '-check-unannotated',
+                    '-infer',
+                    '-recursive-infer',
+                ])
+
+    @patch.object(log, 'initialize')
+    @patch.object(log, 'cleanup')
+    @patch.object(configuration.Configuration, '_read')
+    @patch.object(configuration.Configuration, 'validate')
+    def test_version(self, validate, read, log_cleanup, log_initialize):
+        with patch.object(sys, 'argv', ['infer', '--version']), \
+                patch('tools.pyre.scripts.get_version') as get_version:
+            get_version.return_value = ''
+            self.assertEqual(main(), 0)
+            get_version.assert_called_once()
+
+    @patch.object(log, 'initialize')
+    @patch.object(log, 'cleanup')
+    @patch.object(configuration.Configuration, '_read')
+    @patch.object(configuration.Configuration, 'validate')
+    def test_main(self, validate, read, log_cleanup, log_initialize):
+        with patch.object(sys, 'argv', ['infer']), \
+                patch.object(Infer, 'run'):
+            self.assertEqual(main(), 0)

@@ -1,0 +1,69 @@
+(** Copyright 2016-present Facebook. All rights reserved. **)
+
+open Core
+open OUnit2
+
+open Analysis
+open Pyre
+open Test
+
+module Error = PyreError
+module Parallel = Hack_parallel.Std
+module Socket = PyreSocket
+
+
+let clean_environment () =
+  (* Clean up: hack library modifies the environment, causing OUnit to
+      scream. Unset the variables that the library modifies. *)
+  Unix.unsetenv "HH_SERVER_DAEMON_PARAM";
+  Unix.unsetenv "HH_SERVER_DAEMON";
+  Worker.killall ()
+
+
+let mock_analysis_configuration ?(project_root = Path.current_working_directory ()) () =
+  Configuration.create
+    ~debug:false
+    ~parallel:false
+    ~project_root
+    ()
+
+
+let mock_server_configuration
+    ?(project_root = Path.current_working_directory ())
+    () =
+  ServerConfiguration.create
+    ~log_path:(Path.create_absolute "/dev/null")
+    (mock_analysis_configuration ~project_root ())
+
+
+let start_server () =
+  Server.start (mock_server_configuration ())
+
+
+let environment () =
+  let environment = Environment.Builder.create () in
+  Environment.populate
+    (Environment.reader environment)
+    [
+      parse {|
+        class int(float): pass
+      |}
+    ];
+  environment
+
+
+let make_errors source =
+  let source = Preprocessing.preprocess (parse source) in
+  let environment_reader = Environment.reader (environment ()) in
+  Environment.populate environment_reader [source];
+  let configuration = mock_analysis_configuration () in
+  (Analysis.TypeCheck.check configuration environment_reader source).Analysis.TypeCheck.errors
+
+
+let run_command_tests test_category tests =
+  (* We need this to fork off processes *)
+  Parallel.Daemon.check_entry_point ();
+  Log.initialize_for_tests ();
+  let (!) f context = with_bracket_chdir context (bracket_tmpdir context) f in
+  test_category>:::(List.map ~f:(fun (name, test_function) -> name>::(!test_function)) tests)
+  |> run_test_tt_main

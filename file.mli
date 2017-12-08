@@ -1,0 +1,38 @@
+(** Copyright 2016-present Facebook. All rights reserved. **)
+
+open Core
+
+open Pyre
+
+
+type t
+[@@deriving eq, show]
+
+val create: ?content: string option -> Path.t -> t
+
+val path: t -> Path.t
+
+val content: t -> string option
+val lines: t -> (string list) option
+
+val write: t -> unit
+
+val list
+  :  ?filter:(string -> bool)
+  -> root: Path.t
+  -> Path.t list
+
+module Handle : sig
+  type t
+  [@@deriving compare, eq, show]
+
+  val create: string -> t
+
+  include Hashable with type t := t
+  module Map: Map.S with type Key.t = t
+  module Set: Set.S with type Elt.t = t
+end
+
+module Set: Set.S with type Elt.t = t
+
+val handle: t -> Handle.t option

@@ -1,0 +1,701 @@
+(** Copyright 2016-present Facebook. All rights reserved. **)
+
+open OUnit2
+
+open Ast
+open Expression
+
+open Test
+
+
+let identifier name =
+  Access.Identifier ~~name
+
+
+let variable name =
+  Type.Variable { Type.variable = name; constraints = [] }
+
+
+let test_create _ =
+  let aliases _ = None in
+
+  assert_equal
+    (Type.Build.create ~aliases (+Access []))
+    (Type.Primitive ~~"");
+  assert_equal
+    (Type.Build.create ~aliases (+Access (Instantiated.Access.create "foo")))
+    (Type.Primitive ~~"foo");
+  assert_equal
+    (Type.Build.create ~aliases (+Access (Instantiated.Access.create "foo.bar")))
+    (Type.Primitive ~~"foo.bar");
+
+  assert_equal
+    (Type.Build.create ~aliases (+Access (Instantiated.Access.create "object")))
+    Type.Object;
+
+  assert_equal
+    (Type.Build.create ~aliases (+Access (Instantiated.Access.create "$unknown")))
+    Type.Top;
+
+  assert_equal
+    (Type.Build.create
+       ~aliases
+       (+Access [
+          identifier "foo";
+          Access.Subscript [Access.Index !"bar"];
+        ]))
+    (Type.Parametric {
+        Type.name = ~~"foo";
+        parameters = [Type.Primitive ~~"bar"];
+      });
+  assert_equal
+    (Type.Build.create
+       ~aliases
+       (+Access [
+          identifier "foo";
+          Access.Subscript [Access.Index !"bar"; Access.Index !"baz"];
+        ]))
+    (Type.Parametric {
+        Type.name = ~~"foo";
+        parameters = [
+          Type.Primitive ~~"bar";
+          Type.Primitive ~~"baz";
+        ];
+      });
+  assert_equal
+    (Type.Build.create
+       ~aliases
+       (+Access [
+          identifier "foo";
+          Access.Subscript [
+            Access.Slice {
+              Access.lower = None;
+              upper = None;
+              step = None;
+            };
+          ];
+        ]))
+    (Type.Parametric {
+        Type.name = ~~"foo";
+        parameters = [Type.Top];
+      });
+
+  (* Check renaming. *)
+  assert_equal
+    (Type.Build.create
+       ~aliases
+       (+Access [
+          identifier "typing";
+          identifier "List";
+          Access.Subscript [Access.Index !"int"];
+        ]))
+    (Type.list Type.integer);
+  assert_equal
+    (Type.Build.create
+       ~aliases
+       (+Access [
+          identifier "typing";
+          identifier "DefaultDict";
+          Access.Subscript [
+            Access.Index !"int";
+            Access.Index !"str";
+          ];
+        ]))
+    (Type.parametric "collections.defaultdict" [Type.integer; Type.string]);
+  assert_equal
+    (Type.Build.create
+       ~aliases
+       (+Access [
+          identifier "typing";
+          identifier "Dict";
+          Access.Subscript [
+            Access.Index !"int";
+            Access.Index !"str";
+          ];
+        ]))
+    (Type.dictionary ~key:Type.integer ~value:Type.string);
+
+  assert_equal
+    (Type.Build.create
+       ~aliases
+       (+Access [
+          identifier "typing";
+          identifier "Tuple";
+          Access.Subscript [
+            Access.Index !"int";
+            Access.Index !"str";
+          ];
+        ]))
+    (Type.Tuple (Type.Bounded [Type.integer; Type.string]));
+  assert_equal
+    (Type.Build.create
+       ~aliases
+       (+Access [
+          identifier "typing";
+          identifier "Tuple";
+          Access.Subscript [
+            Access.Index !"int";
+            Access.Index !"...";
+          ];
+        ]))
+    (Type.Tuple (Type.Unbounded Type.integer));
+
+  assert_equal
+    ~printer:(Format.asprintf "%a" Type.pp)
+    (Type.Build.create
+       ~aliases
+       (+Access [
+          identifier "typing";
+          identifier "Any";
+        ]))
+    (Type.Object);
+  assert_equal
+    (Type.Build.create
+       ~aliases
+       (+Access [
+          identifier "typing";
+          identifier "Optional";
+          Access.Subscript [Access.Index !"int"];
+        ]))
+    (Type.Optional Type.integer);
+  assert_equal
+    (Type.Build.create
+       ~aliases
+       (+Access [
+          identifier "typing";
+          identifier "Set";
+          Access.Subscript [Access.Index !"int"];
+        ]))
+    (Type.set Type.integer);
+  assert_equal
+    (Type.Build.create
+       ~aliases
+       (+Access [
+          identifier "typing";
+          identifier "Union";
+          Access.Subscript [Access.Index !"int"; Access.Index !"str"];
+        ]))
+    (Type.Union [Type.integer; Type.string]);
+  assert_equal
+    (Type.Build.create
+       ~aliases
+       (+Access [
+          identifier "typing";
+          identifier "Union";
+          Access.Subscript [Access.Index !"int"; Access.Index !"typing.Any"];
+        ]))
+    (Type.Object);
+  assert_equal
+    ~printer:Type.show
+    (Type.Build.create
+       ~aliases
+       (+Access [
+          identifier "typing";
+          identifier "Union";
+          Access.Subscript [
+            Access.Index !"int";
+            Access.Index (+Access [
+                identifier "typing";
+                identifier "Optional";
+                Access.Subscript [Access.Index !"$bottom"];
+              ]);
+          ];
+        ]))
+    (Type.Optional Type.integer);
+
+  (* Nested renaming. *)
+  assert_equal
+    (Type.Build.create
+       ~aliases
+       (+Access [
+          identifier "typing";
+          identifier "Set";
+          Access.Subscript [Access.Index !"typing.Any"];
+        ]))
+    (Type.set Type.Object);
+  assert_equal
+    (Type.Build.create
+       ~aliases
+       (+Access [
+          identifier "typing";
+          identifier "Dict";
+          Access.Subscript [Access.Index !"str"; Access.Index !"typing.Any"];
+        ]))
+    (Type.dictionary ~key:Type.string ~value:Type.Object);
+
+  (* Renaming numbers (PEP 3141). *)
+  assert_equal
+    (Type.Build.create ~aliases (+Access (Instantiated.Access.create "numbers.Number")))
+    Type.complex;
+  assert_equal
+    (Type.Build.create ~aliases (+Access (Instantiated.Access.create "numbers.Complex")))
+    Type.complex;
+  assert_equal
+    (Type.Build.create ~aliases (+Access (Instantiated.Access.create "numbers.Real")))
+    Type.float;
+  assert_equal
+    (Type.Build.create ~aliases (+Access (Instantiated.Access.create "numbers.Integral")))
+    Type.integer;
+
+  (* Check variables. *)
+  assert_equal
+    ~printer:(Format.asprintf "%a" Type.pp)
+    (Type.Build.create
+       ~aliases
+       (+Access [
+          identifier "typing";
+          Access.Call (+{
+              Call.name = +Access [identifier "TypeVar"];
+              arguments = [
+                { Argument.name = None; value = +String "_T" }
+              ];
+            });
+        ]))
+    (variable ~~"_T");
+
+  (* Check that type variables are correctly created when they have multiple arguments *)
+  assert_equal
+    ~printer:(Format.asprintf "%a" Type.pp)
+    (Type.Build.create
+       ~aliases
+       (+Access [
+          identifier "typing";
+          Access.Call (+{
+              Call.name = +Access [identifier "TypeVar"];
+              arguments = [
+                { Argument.name = None; value = +String "_T" };
+                { Argument.name = Some ~~"covariant"; value = +True };
+              ];
+            });
+        ]))
+    (variable ~~"_T");
+
+  (* Check that type variables with value restrictions are created correctly.
+   * See http://mypy.readthedocs.io/en/latest/generics.html#type-variables-with-value-restriction *)
+  assert_equal
+    ~printer:(Format.asprintf "%a" Type.pp)
+    (Type.Build.create
+       ~aliases
+       (+Access [
+          identifier "typing";
+          Access.Call (+{
+              Call.name = !"TypeVar";
+              arguments = [
+                { Argument.name = None; value = +String "_T" };
+                {
+                  Argument.name = None;
+                  value = +Access (Instantiated.Access.create "numbers.Integral");
+                }
+              ];
+            });
+        ]))
+    (Type.Variable { Type.variable =  ~~"_T"; constraints = [Type.integer] });
+
+  assert_equal
+    ~printer:(Format.asprintf "%a" Type.pp)
+    (Type.Build.create
+       ~aliases
+       (+Access [
+          identifier "typing";
+          Access.Call (+{
+              Call.name = !"TypeVar";
+              arguments = [
+                { Argument.name = None; value = +String "_T" };
+                {
+                  Argument.name = Some ~~"name";
+                  value = +Access (Instantiated.Access.create "numbers.Integral")
+                }
+              ];
+            });
+        ]))
+    (variable ~~"_T");
+
+  assert_equal
+    ~printer:(Format.asprintf "%a" Type.pp)
+    (Type.Build.create
+       ~aliases
+       (+Access [
+          identifier "typing";
+          Access.Call (+{
+              Call.name = +Access [identifier "TypeVar"];
+              arguments = [
+                { Argument.name = None; value = +String "_T" };
+                {
+                  Argument.name = None;
+                  value = +Access (Instantiated.Access.create "numbers.Integral");
+                };
+                {
+                  Argument.name = Some ~~"name";
+                  value = +Access (Instantiated.Access.create "numbers.Real");
+                }
+              ];
+            });
+        ]))
+    (Type.Variable { Type.variable =  ~~"_T"; constraints = [Type.integer] });
+
+  (* Check that type aliases are resolved. *)
+  let aliases =
+    Type.Table.of_alist_exn [
+      Type.Primitive ~~"_T",
+      variable ~~"_T";
+    ] in
+  let aliases = Type.Table.find aliases in
+  assert_equal
+    ~printer:(Format.asprintf "%a" Type.pp)
+    (Type.Build.create ~aliases (+Access (Instantiated.Access.create "_T")))
+    (variable ~~"_T");
+  assert_equal
+    ~printer:(Format.asprintf "%a" Type.pp)
+    (Type.Build.create
+       ~aliases
+       (+Access [
+          identifier "foo";
+          Access.Subscript [Access.Index !"_T"];
+        ]))
+    (Type.Parametric {
+        Type.name = ~~"foo";
+        parameters = [variable ~~"_T"];
+      });
+
+  (* String literals. *)
+  assert_equal
+    (Type.Build.create ~aliases (+String "foo"))
+    (Type.Primitive ~~"foo");
+  assert_equal
+    (Type.Build.create ~aliases (+String "foo.bar"))
+    (Type.Primitive ~~"foo.bar");
+
+  assert_equal
+    ~printer:Type.show
+    (Type.Build.create
+       ~aliases
+       (+Access [
+          identifier "foo";
+          Access.Subscript [Access.Index (+String "bar")]]))
+    (Type.Parametric {
+        Type.name = ~~"foo";
+        parameters = [Type.Primitive ~~"bar"]
+      });
+
+  assert_equal
+    (Type.Build.create
+       ~aliases
+       (+String "Type[str]"))
+    (Type.parametric "Type" [Type.string]);
+  assert_equal
+    (Type.Build.create
+       ~aliases
+       (+String "Type[[[]str]"))
+    (Type.Primitive ~~"Type[[[]str]")
+
+
+let test_expression _ =
+  assert_equal
+    (Type.expression (Type.Primitive ~~"foo"))
+    (+Access (Instantiated.Access.create "foo"));
+
+  assert_equal
+    (Type.expression (Type.Primitive ~~"foo.bar"))
+    (+Access (Instantiated.Access.create "foo.bar"));
+
+  assert_equal
+    (Type.expression (Type.Top))
+    (+Access (Instantiated.Access.create "$unknown"));
+
+  assert_equal
+    (Type.expression
+       (Type.Parametric {
+           Type.name = ~~"foo.bar";
+           parameters = [Type.Primitive ~~"baz"];
+         }))
+    (+Access [
+       identifier "foo";
+       identifier "bar";
+       Access.Subscript [Access.Index (+Access (Instantiated.Access.create "baz"))];
+     ]);
+
+  assert_equal
+    (Type.expression (Type.Tuple (Type.Bounded [Type.integer; Type.string])))
+    (+Access [
+       identifier "typing";
+       identifier "Tuple";
+       Access.Subscript [
+         Access.Index (+Access (Instantiated.Access.create "int"));
+         Access.Index (+Access (Instantiated.Access.create "str"));
+       ];
+     ]);
+  assert_equal
+    (Type.expression (Type.Tuple (Type.Unbounded Type.integer)))
+    (+Access [
+       identifier "typing";
+       identifier "Tuple";
+       Access.Subscript [
+         Access.Index (+Access (Instantiated.Access.create "int"));
+         Access.Index (+Access (Instantiated.Access.create "..."));
+       ];
+     ]);
+  assert_equal
+    (Type.expression (Type.Parametric {
+         Type.name = ~~"list";
+         parameters = [Type.integer];
+       }))
+    (+Access [
+       identifier "typing";
+       identifier "List";
+       Access.Subscript [
+         Access.Index (+Access (Instantiated.Access.create "int"));
+       ];
+     ])
+
+
+let test_union _ =
+  assert_equal
+    (Type.union [Type.string; Type.float])
+    (Type.Union [Type.float; Type.string]);
+  assert_equal
+    (Type.union [Type.float; Type.string])
+    (Type.Union [Type.float; Type.string]);
+  assert_equal
+    (Type.union [Type.optional Type.string; Type.float])
+    (Type.Union [Type.optional Type.string; Type.float]);
+  assert_equal
+    (Type.union [Type.float; Type.string; Type.optional Type.float])
+    (Type.Union [Type.optional Type.float; Type.string]);
+
+  assert_true
+    (Type.equal (Type.union [Type.string; Type.float]) (Type.Union [Type.float; Type.string]));
+  assert_true
+    (Type.equal (Type.union [Type.float; Type.string]) (Type.Union [Type.float; Type.string]));
+  assert_true (Type.equal (Type.union [Type.float]) Type.float)
+
+
+let test_is_bottom _ =
+  assert_true (Type.is_bottom Type.Bottom);
+  assert_true (Type.is_bottom (Type.dictionary ~key:Type.Bottom ~value:Type.Bottom));
+  assert_true (Type.is_bottom (Type.Optional Type.Bottom));
+  assert_false (Type.is_bottom Type.Top);
+  assert_true
+    (Type.is_bottom (Type.Variable { Type.variable = Identifier.create "_T"; constraints = [] }))
+
+
+let test_is_meta _ =
+  assert_true
+    (Type.is_meta
+       (Type.Parametric { Type.name = ~~"typing.Type"; parameters = [Type.integer] }));
+  assert_false (Type.is_meta Type.integer)
+
+
+let test_is_unknown _ =
+  assert_false (Type.is_unknown Type.Bottom);
+  assert_false (Type.is_unknown Type.Object);
+
+  assert_true (Type.is_unknown (Type.optional Type.Top));
+  assert_false (Type.is_unknown (Type.optional Type.integer));
+
+  assert_true
+    (Type.is_unknown (
+        Type.Optional
+          (Type.Parametric {
+              Type.name = ~~"foo";
+              parameters = [Type.integer; Type.Top];
+            })));
+
+  assert_true
+    (Type.is_unknown (
+        (Type.Parametric {
+            Type.name = ~~"foo";
+            parameters = [Type.integer; Type.Top];
+          })));
+  assert_false
+    (Type.is_unknown (
+        (Type.Parametric {
+            Type.name = ~~"foo";
+            parameters = [Type.integer];
+          })));
+
+  assert_false (Type.is_unknown Type.integer);
+
+  assert_true (Type.is_unknown Type.Top);
+
+  assert_true (Type.is_unknown (Type.Union [Type.integer; Type.Top]));
+  assert_false (Type.is_unknown (Type.Union [Type.integer; Type.string]));
+
+  assert_false (Type.is_unknown (variable ~~"derp"));
+
+  assert_true (Type.is_unknown (Type.Tuple (Type.Bounded [Type.integer; Type.Top])));
+  assert_false (Type.is_unknown (Type.Tuple (Type.Bounded [Type.integer; Type.string])));
+  assert_true (Type.is_unknown (Type.Tuple (Type.Unbounded Type.Top)));
+  assert_false (Type.is_unknown (Type.Tuple (Type.Unbounded Type.integer)))
+
+
+let test_mismatch_with_any _ =
+  assert_false (Type.mismatch_with_any Type.Bottom Type.Top);
+  assert_false (Type.mismatch_with_any Type.integer Type.string);
+
+  assert_true (Type.mismatch_with_any Type.Object Type.string);
+  assert_true (Type.mismatch_with_any Type.integer Type.Object);
+
+  assert_false (Type.mismatch_with_any (Type.Optional Type.integer) (Type.Optional Type.string));
+  assert_true (Type.mismatch_with_any (Type.Optional Type.Object) (Type.Optional Type.string));
+
+  assert_false (Type.mismatch_with_any (Type.list Type.integer) (Type.list Type.string));
+  assert_true (Type.mismatch_with_any (Type.list Type.Object) (Type.list Type.string));
+  assert_false
+    (Type.mismatch_with_any
+       (Type.dictionary ~key:Type.string ~value:Type.integer)
+       (Type.dictionary ~key:Type.string ~value:Type.string));
+  assert_true
+    (Type.mismatch_with_any
+       (Type.dictionary ~key:Type.string ~value:Type.Object)
+       (Type.dictionary ~key:Type.string ~value:Type.string));
+  assert_true
+    (Type.mismatch_with_any
+       (Type.dictionary ~key:Type.Object ~value:Type.Object)
+       (Type.dictionary ~key:Type.string ~value:(Type.list Type.integer)));
+  assert_true
+    (Type.mismatch_with_any
+       (Type.dictionary ~key:Type.Object ~value:Type.Object)
+       (Type.dictionary
+          ~key:Type.string
+          ~value:(Type.dictionary ~key:Type.string ~value:Type.integer)));
+  assert_true
+    (Type.mismatch_with_any
+       (Type.dictionary ~key:Type.Object ~value:Type.Object)
+       (Type.Optional
+          (Type.dictionary
+             ~key:Type.string
+             ~value:Type.string)));
+  assert_true
+    (Type.mismatch_with_any
+       (Type.dictionary ~key:Type.Object ~value:Type.bool)
+       (Type.Parametric {
+           Type.name = ~~"typing.Mapping";
+           parameters = [Type.integer; Type.bool];
+         }));
+
+  assert_true
+    (Type.mismatch_with_any
+       (Type.iterable Type.string)
+       (Type.list Type.Object));
+  assert_true
+    (Type.mismatch_with_any
+       (Type.iterable Type.Object)
+       (Type.list Type.string));
+
+  assert_false
+    (Type.mismatch_with_any
+       (Type.tuple [Type.string; Type.string])
+       (Type.tuple [Type.string; Type.integer]));
+  assert_true
+    (Type.mismatch_with_any
+       (Type.tuple [Type.string; Type.string])
+       (Type.tuple [Type.string; Type.Object]));
+  assert_false
+    (Type.mismatch_with_any
+       (Type.Tuple (Type.Unbounded Type.integer))
+       (Type.Tuple (Type.Unbounded Type.string)));
+  assert_true
+    (Type.mismatch_with_any
+       (Type.Tuple (Type.Unbounded Type.integer))
+       (Type.Tuple (Type.Unbounded Type.Object)));
+
+  assert_false
+    (Type.mismatch_with_any
+       (Type.union [Type.integer; Type.string])
+       (Type.union [Type.integer; Type.float]));
+  assert_true
+    (Type.mismatch_with_any
+       (Type.union [Type.integer; Type.string])
+       (Type.union [Type.integer; Type.Object]));
+
+  assert_true
+    (Type.mismatch_with_any
+       (Type.union [Type.integer; Type.Object])
+       Type.integer);
+
+
+  assert_true (Type.mismatch_with_any (Type.iterator Type.integer) (Type.generator Type.Object));
+  assert_false (Type.mismatch_with_any (Type.iterator Type.integer) (Type.generator Type.float))
+
+
+let test_optional_value _ =
+  assert_equal
+    (Type.optional_value (
+        Type.Optional
+          (Type.Parametric {
+              Type.name = ~~"foo";
+              parameters = [Type.integer; Type.Top];
+            })))
+    (Type.Parametric {
+        Type.name = ~~"foo";
+        parameters = [Type.integer; Type.Top];
+      });
+  assert_equal
+    (Type.optional_value
+       (Type.Parametric {
+           Type.name = ~~"foo";
+           parameters = [Type.integer; Type.Top];
+         }))
+    (Type.Parametric {
+        Type.name = ~~"foo";
+        parameters = [Type.integer; Type.Top];
+      })
+
+
+let test_dequalify _ =
+  let map =
+    {|
+      from typing import (
+           Optional,
+           List,
+      )
+      import typing
+      from A.B import C
+      import d as e
+    |}
+  in
+  let assert_dequalify source expected =
+    assert_equal
+      ~cmp:Type.equal
+      ~printer:(Format.asprintf "%a" Type.pp)
+      ~pp_diff:(diff ~print:Type.pp)
+      (Type.dequalify
+         (Preprocessing.dequalify_map (parse map))
+         source)
+      expected
+  in
+  let create name = Type.Primitive ~~name in
+  assert_dequalify
+    (Type.optional (Type.string))
+    (Type.parametric "Optional" [Type.string]);
+
+  assert_dequalify
+    (Type.parametric "list" [Type.string])
+    (Type.parametric "List" [Type.string]);
+
+  assert_dequalify
+    (Type.Union [Type.string; create "A.B.C"])
+    (Type.parametric "typing.Union" [Type.string; create "C"]);
+
+  assert_dequalify
+    (create "d")
+    (create "e");
+
+  assert_dequalify
+    (Type.parametric "A.B.C" [Type.optional (Type.integer)])
+    (Type.parametric "C" [Type.parametric "Optional" [Type.integer]])
+
+
+let () =
+  "type">:::[
+    "create">::test_create;
+    "expression">::test_expression;
+    "union">::test_union;
+    "is_bottom">::test_is_bottom;
+    "is_meta">::test_is_meta;
+    "is_unknown">::test_is_unknown;
+    "mismatch_with_any">::test_mismatch_with_any;
+    "optional_value">::test_optional_value;
+    "dequalify">::test_dequalify;
+  ]
+  |> run_test_tt_main

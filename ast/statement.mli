@@ -1,0 +1,170 @@
+(** Copyright 2016-present Facebook. All rights reserved. **)
+
+module Define : sig
+  type 'statement t = {
+    name: Expression.access;
+    parameters: (Expression.t Parameter.t) list;
+    body: 'statement list;
+    decorators: Expression.t list;
+    docstring: string option;
+    return_annotation: Expression.t option;
+    async: bool;
+    parent: Expression.access option;
+  }
+  [@@deriving compare, eq, sexp, show]
+end
+
+module Class : sig
+  type 'statement t = {
+    name: Expression.access;
+    bases: (Expression.t Argument.t) list;
+    body: 'statement list;
+    decorators: Expression.t list;
+    docstring: string option;
+  }
+  [@@deriving compare, eq, sexp, show]
+end
+
+module For : sig
+  type 'statement t = {
+    target: Expression.t;
+    iterator: Expression.t;
+    body: 'statement list;
+    orelse: 'statement list;
+    async: bool;
+  }
+  [@@deriving compare, eq, sexp, show]
+end
+
+module While : sig
+  type 'statement t = {
+    test: Expression.t;
+    body: 'statement list;
+    orelse: 'statement list;
+  }
+  [@@deriving compare, eq, sexp, show]
+end
+
+module If : sig
+  type 'statement t = {
+    test: Expression.t;
+    body: 'statement list;
+    orelse: 'statement list;
+  }
+  [@@deriving compare, eq, sexp, show]
+end
+
+module With : sig
+  type 'statement t = {
+    items: (Expression.t * Expression.t option) list;
+    body: 'statement list;
+    async: bool;
+  }
+  [@@deriving compare, eq, sexp, show]
+end
+
+module Try : sig
+  type 'statement handler = {
+    kind: Expression.t option;
+    name: Identifier.t option;
+    handler_body: 'statement list;
+  }
+  [@@deriving compare, eq, sexp, show]
+
+  type 'statement t = {
+    body: 'statement list;
+    handlers: 'statement handler list;
+    orelse: 'statement list;
+    finally: 'statement list;
+  }
+  [@@deriving compare, eq, sexp, show]
+end
+
+module Assert : sig
+  type t = {
+    test: Expression.t;
+    message: Expression.t option;
+  }
+  [@@deriving compare, eq, sexp, show]
+end
+
+module Import : sig
+  type import = {
+    name: Expression.access;
+    alias: Expression.access option;
+  }
+  [@@deriving compare, eq, sexp, show]
+
+  type t = {
+    from: Expression.access option;
+    imports: import list;
+  }
+  [@@deriving compare, eq, sexp, show]
+end
+
+module Assign : sig
+  type t = {
+    target: Expression.t;
+    annotation: Expression.t option;
+    value: Expression.t option;
+    compound: Expression.BinaryOperator.operator option;
+    parent: Expression.access option;
+  }
+  [@@deriving compare, eq, sexp, show]
+
+  val is_static_field_initialization: t -> bool
+end
+
+module Stub : sig
+  type access = {
+    value: Expression.t;
+    annotation: Expression.t option;
+    parent: Expression.access option;
+  }
+
+  and 'statement t =
+    | Assign of access
+    | Class of 'statement Class.t
+    | Define of 'statement Define.t
+  [@@deriving compare, eq, sexp, show]
+end
+
+type statement =
+  | Assign of Assign.t
+  | Assert of Assert.t
+  | Break
+  | Class of t Class.t
+  | Continue
+  | Define of t Define.t
+  | Delete of Expression.t
+  | Expression of Expression.t
+  | For of t For.t
+  | Global of Identifier.t list
+  | If of t If.t
+  | Import of Import.t
+  | Nonlocal of Identifier.t list
+  | Pass
+  | Raise of Expression.t option
+  | Return of Expression.t option
+  | Stub of t Stub.t
+  | Try of t Try.t
+  | With of t With.t
+  | While of t While.t
+  | Yield of Expression.t
+  | YieldFrom of Expression.t
+
+and t = statement Node.t
+[@@deriving compare, eq, sexp, show]
+
+type define = t Define.t
+[@@deriving compare, eq, sexp, show]
+
+val assume: Expression.t -> t
+
+val terminates: t list -> bool
+
+val pp : Format.formatter -> t -> unit
+
+val show : t -> string
+
+val extract_docstring : t list -> string option

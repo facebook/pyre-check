@@ -1,0 +1,491 @@
+# Copyright 2004-present Facebook.  All rights reserved.
+
+import argparse
+import functools
+import logging
+import os
+import re
+import shutil
+import subprocess
+import sys
+import traceback
+
+from tools.pyre.scripts import log
+from collections import defaultdict
+from pathlib import Path
+
+import tools.pyre.scripts as pyre
+from tools.pyre.scripts import commands
+from tools.pyre.scripts.configuration import Configuration
+
+LOG = logging.getLogger(__name__)
+
+
+def dequalify(annotation):
+    return annotation.replace("typing.", "")
+
+
+def split_imports(types_list):
+    typing_imports = set()
+    for full_type in types_list:
+        if full_type:
+            split_type = re.findall(r"[\w]+", full_type)
+            if len(split_type) > 1 and split_type[0] == "typing":
+                typing_imports.add(split_type[1])
+    return typing_imports
+
+
+class FunctionStub:
+    def __init__(self, stub):
+        self.name = stub.get('function_name')
+        self.actual = stub.get('annotation', None)
+        self.parameters = stub.get('parameters')
+        self.decorators = stub.get('decorators')
+        self.is_async = stub.get('async')
+
+    @staticmethod
+    def is_instance(stub):
+        required_fields = ['parameters', 'decorators', 'async', 'function_name']
+        return all(field in stub.keys() for field in required_fields)
+
+    def _get_name(self):
+        """ The last part of the access path is the function name """
+        return self.name.split('.')[-1] if self.name.split('.') else ""
+
+    def _get_annotation(self):
+        return " -> " + dequalify(self.actual) if self.actual else ""
+
+    def _get_parameter_string(self):
+        """ Depending on if an argument has a type, the style for default values
+        changes. E.g.
+           def fun(x=5)
+           def fun(x : int = 5)
+        """
+        parameters = []
+        for parameter in self.parameters:
+            name = parameter['name']
+            if parameter['type']:
+                name += ": " + dequalify(parameter['type'])
+                if parameter['value']:
+                    name += " = " + parameter['value']
+            elif parameter['value']:
+                name += "=" + parameter['value']
+            parameters.append(name)
+        return ", ".join(parameters)
+
+    def _get_decorator_string(self):
+        decorator_string = ""
+        for decorator in self.decorators:
+            decorator_string += "@{}\n".format(decorator)
+        return decorator_string
+
+    def _get_async_string(self):
+        return "async " if self.is_async else ""
+
+    def is_complete(self):
+        """ Determines if a stub completely types a function """
+        if not self.actual:
+            return False
+        for parameter in self.parameters:
+            if parameter['name'] != 'self' and not parameter['type']:
+                return False
+        return True
+
+    def to_string(self):
+        return "{}{}def {}({}){}: ...".format(
+            self._get_decorator_string(),
+            self._get_async_string(),
+            self._get_name(),
+            self._get_parameter_string(),
+            self._get_annotation())
+
+    @functools.lru_cache(maxsize=1)
+    def get_typing_imports(self):
+        types_list = re.split("[^\\w.]+", self.actual) if self.actual else []
+        for parameter in self.parameters:
+            if parameter['type']:
+                types_list += re.split("[^\\w.]+", parameter['type'])
+        return split_imports(types_list)
+
+    def join_with(self, other):
+        if self.name != other.name and self.parent != other.parent:
+            raise Exception('Tried to join incompatible stubs')
+        if (not self.actual) and other.actual:
+            self.actual = other.actual
+        for parameter, other_parameter in zip(self.parameters, other.parameters):
+            if (not parameter['type']) and other_parameter['type']:
+                parameter['type'] = other_parameter['type']
+
+
+class FieldStub:
+    def __init__(self, stub):
+        self.name = stub.get('field_name')
+        self.actual = stub.get('annotation')
+
+    @staticmethod
+    def is_instance(stub):
+        required_fields = ['annotation', 'field_name']
+        return all(field in stub.keys() for field in required_fields)
+
+    def _get_name(self):
+        """ The last part of the access path is the function name """
+        return self.name.split('.')[-1] if self.name.split('.') else ""
+
+    def to_string(self):
+        return "{} : {} = ...".format(self._get_name(), dequalify(self.actual))
+
+    @functools.lru_cache(maxsize=1)
+    def get_typing_imports(self):
+        return split_imports(re.split("[^\\w.]+", self.actual))
+
+
+class Stub:
+    def __init__(self, error):
+        self.path = Path(error.path)
+        self.parent = error.inference.get('parent')
+        self.stub = None
+        if FunctionStub.is_instance(error.inference):
+            self.stub = FunctionStub(error.inference)
+        elif FieldStub.is_instance(error.inference):
+            self.stub = FieldStub(error.inference)
+
+    def is_function(self):
+        return isinstance(self.stub, FunctionStub) and not self.parent
+
+    def is_method(self):
+        return (isinstance(self.stub, FunctionStub) and self.parent)
+
+    def is_field(self):
+        return isinstance(self.stub, FieldStub)
+
+    def is_complete(self):
+        return isinstance(self.stub, FieldStub) or \
+            (isinstance(self.stub, FunctionStub) and self.stub.is_complete())
+
+    def to_string(self):
+        """ We currently ignore nested functions i.e.:
+        def fun():
+            [ALL FUNCTIONS AND CLASSES DEFINED IN HERE ARE IGNORED]
+        """
+        if self.is_field():
+            ""
+        else:
+            if self.parent and ('.' in self.stub.name):
+                # A function nested in a method in a class
+                return ""
+            elif not self.parent and len(self.stub.name.split('.')) < 2:
+                # Strange things are happening. Breaks our access path assumptions.
+                return ""
+            elif not self.parent and len(
+                self.stub.name.split('.')
+            ) >= 2 and self.stub.name.split('.')[-2] != self.path.stem:
+                # If the second last part of an access path for a function is not
+                # the file, then it is a nested function
+                return ""
+            else:
+                # TODO: Technically, it could still be nested under a
+                # function with the same name as the file
+                return self.stub.to_string()
+
+    def get_typing_imports(self):
+        return self.stub.get_typing_imports()
+
+    def join_with(self, other):
+        if not self.is_field() and not other.is_field():
+            self.stub.join_with(other.stub)
+        else:
+            raise Exception('Tried to join incompatible stubs')
+
+
+def join_stubs(stubs):
+    # Join function stubs if they have the same parent and name
+    stub_map = defaultdict(list)
+    new_stubs = []
+    for stub in stubs:
+        if stub.is_field():
+            new_stubs.append(stub)
+        else:
+            stub_map[(stub.parent, stub.stub.name)].append(stub)
+
+    for stubs in stub_map.values():
+        new_stub = stubs[0]
+        for stub in stubs[1:]:
+            new_stub.join_with(stub)
+        new_stubs.append(new_stub)
+    return new_stubs
+
+
+class StubFile:
+    def __init__(self, errors, full_only=False):
+        stubs = [Stub(error) for error in errors if Stub(error).stub]
+        stubs = join_stubs(stubs)
+        if full_only:
+            stubs = [stub for stub in stubs if stub.is_complete()]
+        self._stubs = stubs
+        self._functions = [stub for stub in stubs if stub.is_function()]
+        self._methods = [stub for stub in stubs if stub.is_method()]
+        self._path = Path(errors[0].path)
+
+    def to_string(self):
+        """We currently ignore nested classes, i.e.:
+          class X:
+              class Y:
+                  [ALL OF THIS IS IGNORED]
+        """
+        classes = defaultdict(list)
+        typing_imports = set()
+        contents = ""
+
+        # import necessary modules from typing
+        for stub in self._stubs:
+            typing_imports.update(stub.get_typing_imports())
+        alphabetical_imports = sorted(list(typing_imports))
+        if alphabetical_imports:
+            contents += "from typing import {}\n\n".format(
+                ", ".join(str(type_import) for type_import in alphabetical_imports))
+
+        for stub in self._methods:
+            parents = stub.parent.split('.')
+            if len(parents) >= 2 and parents[-2] == stub.path.stem:
+                # If the second last part of an access path for a class is
+                # the file, then it is not a nested class
+                # TODO: Unless the class it is nested in and the file have the
+                # same name...
+                classes[parents[-1]].append(stub)
+
+        for stub in self._functions:
+            contents += stub.to_string() + "\n"
+
+        for parent, stubs in classes.items():
+            contents += "\nclass {}:\n".format(parent)
+            for stub in stubs:
+                contents += "    {}\n".format(
+                    stub.to_string().replace("\n", "\n    "))
+        return contents
+
+    def is_empty(self):
+        return (self._functions == [] and self._methods == [])
+
+    def path(self, directory):
+        return directory / Path("{}i".format(self._path))
+
+    def output_to_file(self, path):
+        contents = self.to_string()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(contents)
+
+
+def generate_stub_files(arguments, errors):
+    errors = [error for error in errors if error.inference]
+    files = defaultdict(list)
+    errors.sort(key=lambda error: error.line)
+
+    for error in errors:
+        files[error.path].append(error)
+
+    stubs = []
+    for path, errors in files.items():
+        stub = StubFile(errors, full_only=arguments.full_only)
+        if not stub.is_empty():
+            path = Path(os.getcwd()) / Path(path)
+            stubs.append(stub)
+    return stubs
+
+
+def write_stubs_to_disk(arguments, stubs, type_directory):
+    if type_directory.exists():
+        LOG.info("Deleting {}".format(type_directory))
+        shutil.rmtree(type_directory)
+    type_directory.mkdir(parents=True, exist_ok=True)
+
+    LOG.info("Outputting inferred stubs to {}".format(type_directory))
+    for stub in stubs:
+        stub.output_to_file(stub.path(type_directory))
+
+
+def filter_paths(arguments, stubs, type_directory):
+    unused_annotates = \
+        [path
+            for path in arguments.in_place
+            if all(
+                [not str(stub.path(Path(""))).startswith(str(path))
+                    for stub in stubs])]
+    for path in unused_annotates:
+        LOG.info("No annotations for {}".format(path))
+
+    return [stub for stub in stubs
+            if any([str(stub.path(Path(""))).startswith(str(path))
+                    for path in arguments.in_place])]
+
+
+def annotate_paths(arguments, stubs, type_directory):
+    if arguments.in_place != []:
+        stubs = filter_paths(arguments, stubs, type_directory)
+
+    current_directory = os.getcwd()
+
+    for stub in stubs:
+        try:
+            subprocess.check_call([
+                'retype',
+                '--quiet',
+                '--incremental',
+                '--target-dir',
+                stub.path(current_directory).parent,
+                '--pyi-dir',
+                stub.path(type_directory).parent,
+                str(stub.path(current_directory)).rstrip("i"),
+            ])
+            LOG.info("Annotated {}".format(
+                str(stub.path(current_directory)).rstrip("i")))
+        except (subprocess.CalledProcessError):
+            LOG.warning("Failed to annotate {}".format(
+                str(stub.path(current_directory)).rstrip("i")))
+    with open(os.devnull, 'w') as FNULL:
+        subprocess.call(
+            ['arc', 'lint', '--apply-patches', '--only-changed'],
+            stdout=FNULL,
+            stderr=FNULL)
+
+
+def file_exists(path):
+    if not os.path.exists(path):
+        raise argparse.ArgumentTypeError("ERROR: " + str(path) + " does not exist")
+    return path
+
+
+class Infer(commands.ErrorHandling):
+    def __init__(self, arguments, configuration, link_trees):
+        arguments.show_error_traces = True
+        arguments.check_unannotated = True
+        arguments.output = pyre.JSON
+        super(Infer, self).__init__(arguments, configuration, link_trees)
+        self._recursive = arguments.recursive
+
+    def run(self):
+        flags = self._flags()
+        flags.extend([
+            '-infer',
+        ])
+        if self._recursive:
+            flags.append('-recursive-infer')
+
+        results = self._call_client(
+            command=commands.CHECK,
+            link_trees=self._link_trees,
+            flags=flags)
+        errors = self._get_errors(results)
+        type_directory = Path(os.getcwd()) / Path('.pyre/types')
+        stubs = generate_stub_files(self._arguments, errors)
+        write_stubs_to_disk(self._arguments, stubs, type_directory)
+        if self._arguments.in_place is not None:
+            LOG.info("Annotating files")
+            annotate_paths(self._arguments, stubs, type_directory)
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        epilog='environment variables:  `PYRE_BINARY` overrides the pyre '
+        'client binary used.')
+
+    parser.add_argument(
+        '--debug',
+        action='store_true',
+        help='Run in debug mode')
+    parser.add_argument(
+        '--verbose',
+        action='store_true',
+        help='Enable verbose logging')
+    parser.add_argument(
+        '--noninteractive',
+        action='store_true',
+        help='Disable interactive logging')
+
+    parser.add_argument(
+        '--logging-sections',
+        help='Enable sectional logging')
+
+    parser.add_argument(
+        '--version',
+        action='store_true',
+        help='Print the pyre version to be used')
+
+    parser.add_argument(
+        '-f',
+        '--full-only',
+        action='store_true',
+        help='Only output fully annotated functions. Requires infer flag.')
+    parser.add_argument(
+        '-r',
+        '--recursive',
+        action='store_true',
+        help='Recursively run infer until no new annotations are generated.' +
+        ' Requires infer flag.')
+    parser.add_argument(
+        '-i',
+        '--in-place',
+        nargs='*',
+        metavar='path',
+        type=file_exists,
+        help='Add annotations to functions in selected paths.' +
+        ' Takes a set of files and folders to add annotations to.' +
+        ' If no paths are given, all functions are annotated.' +
+        ' WARNING: Modifies original files and requires infer flag and retype')
+
+    buck = parser.add_argument_group('buck')
+    buck.add_argument(
+        '--build',
+        action='store_true',
+        help='Build all the necessary artifacts.')
+    buck.add_argument(
+        '--normalize',
+        action='store_true',
+        help='Normalize target with `buck targets`.')
+    buck.add_argument(
+        '--target',
+        action='append',
+        help='The buck target to check')
+
+    link_tree = parser.add_argument_group('link-tree')
+    link_tree.add_argument(
+        '--link-tree',
+        action='append',
+        help='The link tree to run the inference on.')
+
+    arguments = parser.parse_args()
+
+    arguments.targets = arguments.target
+    arguments.link_trees = arguments.link_tree
+
+    try:
+        exit_code = pyre.SUCCESS
+
+        log.initialize(arguments)
+        pyre.switch_root(arguments)
+
+        configuration = Configuration()
+
+        if arguments.version:
+            sys.stdout.write(pyre.get_version(configuration) + '\n')
+            return pyre.SUCCESS
+
+        configuration.validate()
+
+        link_trees = pyre.resolve_link_trees(arguments, configuration)
+        Infer(arguments, configuration, link_trees).run()
+    except (commands.ClientException, pyre.EnvironmentException) as error:
+        LOG.error(str(error))
+        LOG.error("For more information, run 'pyre-infer --help'.")
+        exit_code = pyre.FAILURE
+    except Exception as error:
+        LOG.error(str(error))
+        LOG.error("For more information, run 'pyre-infer --help'.")
+        LOG.info(traceback.format_exc())
+        exit_code = pyre.FAILURE
+    finally:
+        log.cleanup(arguments)
+        return exit_code
+
+
+if __name__ == '__main__':
+    sys.exit(main())

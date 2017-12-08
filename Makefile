@@ -1,0 +1,58 @@
+# Copyright 2016-present Facebook. All rights reserved.
+
+FLAGS = -use-ocamlfind -no-links -no-hygiene -cflags="-warn-error +a"
+INCLUDES = . parser analysis ast test services language_service commands commands/server facebook
+BUILD = ocamlbuild $(FLAGS) $(addprefix -I , $(INCLUDES))
+
+TEST_FLAGS = -runner sequential
+TESTS = $(foreach include, $(INCLUDES), $(patsubst %.ml, %.native, $(wildcard $(include)/test/*_test.ml)))
+
+.PHONY: all
+all: hack_parallel
+	$(BUILD) -build-dir _build/all main.native
+
+.PHONY: byte
+byte:
+	$(BUILD) -build-dir _build/byte main.byte
+
+
+RUN_TESTS = $(TESTS:%=_build/test/%)
+
+.PHONY: $(RUN_TESTS)
+$(RUN_TESTS):
+	@$@ $(TEST_FLAGS)
+
+.PHONY: test
+test: hack_parallel
+	$(BUILD) -pkg oUnit -build-dir _build/test $(TESTS)
+	@$(MAKE) --keep-going $(RUN_TESTS)
+
+.PHONY: clean
+clean:
+	$(BUILD) -clean
+
+.PHONY: hack_parallel
+hack_parallel:
+	@if [ ! -d hack_parallel/_build ]; then echo 'Hack_parallel is not installed...'; make -C hack_parallel; make install -C hack_parallel; fi
+	@mkdir -p _build/hack_parallel/heap
+	@mkdir -p _build/hack_parallel/utils
+	@mkdir -p _build/hack_parallel/third-party/lz4
+	@cp hack_parallel/_build/hack_parallel/heap/hh_shared.o _build/hack_parallel/heap/hh_shared.o
+	@cp hack_parallel/_build/hack_parallel/utils/files.o _build/hack_parallel/utils/files.o
+	@cp hack_parallel/_build/hack_parallel/utils/handle_stubs.o _build/hack_parallel/utils/handle_stubs.o
+	@cp hack_parallel/_build/hack_parallel/utils/nproc.o _build/hack_parallel/utils/nproc.o
+	@cp hack_parallel/_build/hack_parallel/utils/realpath.o _build/hack_parallel/utils/realpath.o
+	@cp hack_parallel/_build/hack_parallel/utils/sysinfo.o _build/hack_parallel/utils/sysinfo.o
+	@cp hack_parallel/_build/hack_parallel/utils/priorities.o _build/hack_parallel/utils/priorities.o
+	@cp hack_parallel/_build/hack_parallel/third-party/lz4/lz4.o _build/hack_parallel/third-party/lz4/lz4.o
+	@cp hack_parallel/_build/hack_parallel/third-party/lz4/lz4frame.o _build/hack_parallel/third-party/lz4/lz4frame.o
+	@cp hack_parallel/_build/hack_parallel/third-party/lz4/lz4hc.o _build/hack_parallel/third-party/lz4/lz4hc.o
+	@cp hack_parallel/_build/hack_parallel/third-party/lz4/xxhash.o _build/hack_parallel/third-party/lz4/xxhash.o
+	@mkdir -p _build/all
+	@cp -r _build/hack_parallel _build/all/
+	@mkdir -p _build/test
+	@cp -r _build/hack_parallel _build/test/
+
+.PHONY: remove_hack_parallel
+remove_hack_parallel:
+	@make -C hack_parallel clean && make -C hack_parallel remove
