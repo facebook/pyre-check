@@ -23,20 +23,6 @@ class EnvironmentException(Exception):
     pass
 
 
-def get_binary(configuration):
-    override = os.getenv('PYRE_BINARY')
-    if override:
-        if not os.path.exists(override):
-            raise EnvironmentException(
-                "Binary override `{}` does not exist.".format(override))
-        return override
-
-    return os.path.join(
-        '/mnt/dewey/fbsource/.commits/',
-        get_version(configuration),
-        'fbcode/builds/pyre/main.native')
-
-
 def get_version(configuration):
     override = os.getenv('PYRE_BINARY')
     if override:

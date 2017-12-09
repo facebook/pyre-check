@@ -50,3 +50,17 @@ class ConfigurationTest(unittest.TestCase):
         self.assertEqual(
             configuration.get_stub_roots(),
             ['additional/', 'TYPE/VERSION/SHED/'])
+
+        json_load.side_effect = [
+            {"binary": "/binary"},
+            {},
+        ]
+        configuration = Configuration()
+        self.assertEqual(configuration.get_binary(), '/binary')
+
+        json_load.side_effect = [
+            {"version": "VERSION", "binary": "/%V/binary"},
+            {},
+        ]
+        configuration = Configuration()
+        self.assertEqual(configuration.get_binary(), '/VERSION/binary')

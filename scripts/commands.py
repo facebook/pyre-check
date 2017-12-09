@@ -95,7 +95,7 @@ class Command:
                     '`{}` is not a link tree.'.format(link_tree))
 
             client_command = [
-                pyre.get_binary(self._configuration),
+                self._configuration.get_binary(),
                 command,
             ]
             client_command.extend(flags)

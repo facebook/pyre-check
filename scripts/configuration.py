@@ -50,6 +50,12 @@ class Configuration:
                     '`target` and `link_trees` fields must be lists of '
                     'strings.')
 
+            if not self._binary:
+                raise InvalidConfiguration('`binary` must be defined')
+            if not os.path.exists(self.get_binary()):
+                raise InvalidConfiguration(
+                    'Binary at `{}` does not exist'.format(self._binary))
+
             # Validate stub roots.
             if not self._typeshed:
                 raise InvalidConfiguration('`typeshed` must be defined')
@@ -66,6 +72,17 @@ class Configuration:
 
     def get_version_hash(self):
         return os.getenv('PYRE_VERSION_HASH') or self._version_hash
+
+    @functools.lru_cache(1)
+    def get_binary(self):
+        if not self._binary:
+            raise InvalidConfiguration('Configuration was not validated')
+
+        version_hash = self.get_version_hash()
+        if version_hash and '%V' in self._binary:
+            return self._binary.replace('%V', version_hash)
+        else:
+            return self._binary
 
     @functools.lru_cache(1)
     def get_stub_roots(self):
@@ -101,6 +118,9 @@ class Configuration:
 
                 self.logger = configuration.get('logger')
 
+                self._binary = configuration.get(
+                    'binary',
+                    os.getenv('PYRE_BINARY'))
                 self._stub_roots.extend(
                     configuration.get('additional_stub_roots', []))
                 self._version_hash = configuration.get('version')
