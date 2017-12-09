@@ -1,9 +1,11 @@
 # Copyright 2004-present Facebook.  All rights reserved.
 
 import argparse
+import json
 import logging
 import os
-import scubadata
+import shlex
+import subprocess
 import sys
 import time
 import traceback
@@ -140,6 +142,7 @@ def main():
     if not hasattr(arguments, 'command'):
         arguments.command = commands.Incremental
 
+    configuration = None
     try:
         start = time.time()
         exit_code = pyre.SUCCESS
@@ -178,9 +181,9 @@ def main():
         exit_code = pyre.SUCCESS
     finally:
         log.cleanup(arguments)
-        try:
-            with scubadata.ScubaData('pyre_usage') as scuba:
-                scuba.add_sample({
+        if configuration and configuration.logger:
+            try:
+                sample = {
                     'int': {
                         'exit_code': exit_code,
                         'runtime': int((time.time() - start) * 1000),  # ms
@@ -193,10 +196,15 @@ def main():
                         'user': os.getenv('USER'),
 
                     },
-                })
-        except Exception:
-            LOG.warn('Unable to log to scuba')
-            LOG.info(traceback.format_exc())
+                }
+                subprocess.run(
+                    "{} pyre_usage {}".format(
+                        shlex.quote(configuration.logger),
+                        shlex.quote(json.dumps(sample))),
+                    shell=True)
+            except Exception:
+                LOG.warning('Unable to log using `%s`', configuration.logger)
+                LOG.info(traceback.format_exc())
 
     return exit_code
 

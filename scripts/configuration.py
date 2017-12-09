@@ -24,6 +24,7 @@ class Configuration:
         self.targets = []
         self.version = None
         self.disabled = False
+        self.logger = None
 
         self.version_hash = None
         self.stub_roots = [self._get_typeshed_directory()]
@@ -33,7 +34,6 @@ class Configuration:
         self._read(CONFIGURATION_FILE)
 
     def _read(self, path):
-        # Read from file.
         try:
             with open(path) as file:
                 LOG.debug('Reading configuration `%s`...', path)
@@ -51,6 +51,8 @@ class Configuration:
 
                 if "disabled" in configuration:
                     self.disabled = True
+
+                self.logger = configuration.get('logger')
 
                 self.stub_roots.extend(
                     configuration.get('additional_stub_roots', []))
