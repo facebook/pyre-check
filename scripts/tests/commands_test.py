@@ -25,6 +25,7 @@ def mock_arguments():
 def mock_configuration():
     configuration = MagicMock()
     configuration.link_trees = ['.']
+    configuration.get_stub_roots = MagicMock()
     return configuration
 
 
@@ -72,7 +73,7 @@ class CheckTest(unittest.TestCase):
         arguments = mock_arguments()
 
         configuration = mock_configuration()
-        configuration.stub_roots = ['stub', 'root']
+        configuration.get_stub_roots.return_value = ['stub', 'root']
 
         with patch.object(commands.Command, '_call_client') as call_client:
             commands.Check(arguments, configuration, link_trees=['.']).run()
@@ -87,7 +88,7 @@ class CheckIncremental(unittest.TestCase):
         arguments = mock_arguments()
 
         configuration = mock_configuration()
-        configuration.stub_roots = ['stub', 'root']
+        configuration.get_stub_roots.return_value = ['stub', 'root']
 
         with patch.object(commands.Command, '_call_client') as call_client:
             commands.Incremental(
@@ -106,7 +107,7 @@ class StartTest(unittest.TestCase):
         arguments.terminal = False
 
         configuration = mock_configuration()
-        configuration.stub_roots = ['root']
+        configuration.get_stub_roots.return_value = ['root']
 
         # Check start without watchman.
         with patch.object(commands.Command, '_call_client') as call_client:
@@ -149,7 +150,7 @@ class RestartTest(unittest.TestCase):
         arguments.terminal = False
 
         configuration = mock_configuration()
-        configuration.stub_roots = ['root']
+        configuration.get_stub_roots.return_value = ['root']
 
         with patch.object(commands.Command, '_call_client') as call_client:
             arguments.no_watchman = True

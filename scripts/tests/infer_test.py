@@ -359,7 +359,6 @@ def mock_arguments():
 
 def mock_configuration():
     configuration = MagicMock()
-    configuration.stub_roots = ['root']
     return configuration
 
 

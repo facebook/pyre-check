@@ -6,8 +6,6 @@ import os
 import subprocess
 import sys
 
-from libfb.sitevar import get_sitevar
-
 
 LOG = logging.getLogger(__name__)
 
@@ -39,23 +37,20 @@ def get_binary(configuration):
         'fbcode/builds/pyre/main.native')
 
 
-def get_version_hash(configuration):
-    return os.getenv('PYRE_VERSION_HASH') or \
-        configuration.version_hash or \
-        get_sitevar('PYRE_VERSION_HASH')
-
-
 def get_version(configuration):
     override = os.getenv('PYRE_BINARY')
     if override:
         return 'override: {}'.format(override)
 
-    return get_version_hash(configuration)
+    configured = configuration.get_version_hash()
+    if configured:
+        return configured
+
+    return 'No version set'
 
 
 def is_disabled(configuration):
-    return configuration.disabled or \
-        (get_sitevar('PYRE_KILLSWITCH') == 1)
+    return configuration.disabled
 
 
 def find_project_root(original_directory=os.getcwd()):

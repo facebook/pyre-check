@@ -269,11 +269,13 @@ class ErrorHandling(Command):
 class Check(ErrorHandling):
     def __init__(self, arguments, configuration, link_trees):
         super(Check, self).__init__(arguments, configuration, link_trees)
-        self._stub_roots = configuration.stub_roots
 
     def run(self, retries=1):
         flags = self._flags()
-        flags.extend(['-stub-roots', ','.join(self._stub_roots)])
+        flags.extend([
+            '-stub-roots',
+            ','.join(self._configuration.get_stub_roots()),
+        ])
 
         results = self._call_client(
             command=CHECK,
@@ -288,12 +290,14 @@ class Incremental(ErrorHandling):
 
     def __init__(self, arguments, configuration, link_trees):
         super(Incremental, self).__init__(arguments, configuration, link_trees)
-        self._stub_roots = configuration.stub_roots
 
     def run(self, retries=1):
         arguments = self._arguments
         flags = self._flags()
-        flags.extend(['-stub-roots', ','.join(self._stub_roots)])
+        flags.extend([
+            '-stub-roots',
+            ','.join(self._configuration.get_stub_roots()),
+        ])
 
         LOG.info("Waiting for server...")
         results = self._call_client(
@@ -335,7 +339,6 @@ class Start(Command):
         super(Start, self).__init__(arguments, configuration, link_trees)
         self._terminal = arguments.terminal
         self._no_watchman = arguments.no_watchman
-        self._stub_roots = configuration.stub_roots
 
     def run(self):
         flags = self._flags()
@@ -349,7 +352,10 @@ class Start(Command):
         flags = self._flags()
         if self._terminal:
             flags.append('-terminal')
-        flags.extend(['-stub-roots', ','.join(self._stub_roots)])
+        flags.extend([
+            '-stub-roots',
+            ','.join(self._configuration.get_stub_roots()),
+        ])
 
         results = self._call_client(
             command=START,

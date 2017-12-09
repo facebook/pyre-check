@@ -27,6 +27,26 @@ class ConfigurationTest(unittest.TestCase):
         configuration = Configuration()
         self.assertEqual(configuration.targets, ["//a/b/c"])
         self.assertEqual(configuration.link_trees, [])
-        self.assertEqual(configuration.version_hash, None)
+        self.assertEqual(configuration.get_version_hash(), None)
         self.assertEqual(configuration.logger, None)
         self.assertTrue(configuration.disabled)
+
+        json_load.side_effect = [
+            {"typeshed": "TYPESHED/"},
+            {},
+        ]
+        configuration = Configuration()
+        self.assertEqual(configuration.get_stub_roots(), ['TYPESHED/'])
+
+        json_load.side_effect = [
+            {
+                "additional_stub_roots": ["additional/"],
+                "version": "VERSION",
+                "typeshed": "TYPE/%V/SHED/",
+            },
+            {},
+        ]
+        configuration = Configuration()
+        self.assertEqual(
+            configuration.get_stub_roots(),
+            ['additional/', 'TYPE/VERSION/SHED/'])
