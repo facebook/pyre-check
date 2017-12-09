@@ -1,8 +1,11 @@
-(* Copyright 2016-present Facebook. All rights reserved.
- *
- * Python lexer is heavily based on
- * https://github.com/jeremybuisson/ocaml-pythonlib/tree/master/src.
- * "Ported" to menhir. *)
+(** Copyright (c) 2016-present, Facebook, Inc.
+
+    This source code is licensed under the MIT license found in the
+    LICENSE file in the root directory of this source tree. *)
+
+(* The lexer is heavily based on
+   https://github.com/jeremybuisson/ocaml-pythonlib/tree/master/src.
+   "Ported" to menhir and made more complete. *)
 
 {
   open Core
