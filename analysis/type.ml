@@ -537,6 +537,31 @@ let rec is_unknown = function
       false
 
 
+let rec is_partially_typed = function
+  | Object ->
+      true
+  | Top ->
+      true
+  | Bottom ->
+      true
+  | Parametric { parameters; _ }
+  | Union parameters
+  | Tuple (Bounded parameters) ->
+      List.exists ~f:is_partially_typed parameters
+  | Optional annotation
+  | Tuple (Unbounded annotation) ->
+      is_partially_typed annotation
+  | _ ->
+      false
+
+
+let is_untyped = function
+  | Object
+  | Bottom
+  | Top -> true
+  | _ -> false
+
+
 let rec mismatch_with_any left right =
   let compatible left right =
     let symmetric left right =

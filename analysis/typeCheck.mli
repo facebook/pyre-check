@@ -46,6 +46,14 @@ type result = {
   lookup: Lookup.t option;
 }
 
+type type_coverage = {
+  full_coverage: int;
+  partial_coverage: int;
+  untyped_coverage: int;
+}
+
+val find_coverage: exit:State.t Core.Option.t -> type_coverage
+
 val check
   :  Configuration.t
   -> (module Environment.Reader)

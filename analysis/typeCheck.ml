@@ -1730,6 +1730,45 @@ type result = {
 }
 
 
+type type_coverage = {
+  full_coverage: int;
+  partial_coverage: int;
+  untyped_coverage: int;
+}
+
+
+type check_result = {
+  error_list: Error.t list;
+  type_coverage: type_coverage;
+}
+
+
+let find_coverage ~exit =
+  let check_typing
+      ~key: _
+      ~data: { Annotation.annotation; _ }
+      ({ full_coverage; partial_coverage; untyped_coverage; } as coverage)
+    =
+    if Type.is_untyped annotation then
+      { coverage with untyped_coverage = untyped_coverage + 1 }
+    else if Type.is_partially_typed annotation then
+      { coverage with partial_coverage = partial_coverage + 1 }
+    else
+      { coverage with full_coverage = full_coverage + 1 }
+  in
+  let type_coverage =
+    exit
+    >>| ( fun exit ->
+        Map.fold
+          ~init:{ full_coverage = 0; partial_coverage = 0; untyped_coverage = 0; }
+          ~f:check_typing
+          exit.State.annotations
+      )
+    |> Option.value ~default:{ full_coverage = 0; partial_coverage = 0; untyped_coverage = 0; }
+  in
+  type_coverage
+
+
 let check configuration environment source =
   Log.debug "Checking %s..." source.Source.path;
   let resolution = Environment.resolution environment () in
@@ -1856,19 +1895,71 @@ let check configuration environment source =
           >>| print_state "Entry"
           >>| State.check_entry resolution
       in
-      exit
-      >>| State.errors (Source.ignore_lines source) configuration
-      |> Option.value ~default:[]
+      let error_list =
+        exit
+        >>| State.errors (Source.ignore_lines source) configuration
+        |> Option.value ~default:[]
+      in
+      let type_coverage = find_coverage ~exit
+      in
+      { error_list; type_coverage }
     with
     | TypeOrder.Undefined annotation ->
-        if configuration.debug then
-          [{
-            Error.location;
-            kind = Error.UndefinedType annotation;
-            define = define_node;
-          }]
-        else
-          []
+        {
+          error_list =
+            if configuration.debug then
+              [{
+                Error.location;
+                kind = Error.UndefinedType annotation;
+                define = define_node;
+              }]
+            else
+              [];
+          type_coverage = { full_coverage = 0; partial_coverage = 0; untyped_coverage = 0; };
+        }
+  in
+
+  let calculate_coverage check_output =
+    let { full_coverage; partial_coverage; untyped_coverage } =
+      List.fold
+        ~init:{ full_coverage = 0; partial_coverage = 0; untyped_coverage = 0; }
+        ~f:(fun
+             { full_coverage; partial_coverage; untyped_coverage; }
+             {
+               type_coverage = {
+                 full_coverage = previous_full;
+                 partial_coverage = previous_partial;
+                 untyped_coverage = previous_untyped;
+               };
+               _;
+             } ->
+             {
+               full_coverage = full_coverage + previous_full;
+               partial_coverage = partial_coverage + previous_partial;
+               untyped_coverage = untyped_coverage + previous_untyped;
+             }
+           )
+        check_output
+    in
+    Statistics.coverage
+      ~flush:false
+      ~coverage:[
+        ("full_type_coverage", full_coverage);
+        ("partial_type_coverage", partial_coverage);
+        ("no_type_coverage", untyped_coverage);
+      ]
+      ~labels:["root", "root"]
+    |> ignore;
+    let error_list =
+      List.fold
+        ~init:[]
+        ~f:(fun errors current ->
+            let { error_list; _ } = current in
+            List.append errors error_list
+          )
+        check_output
+    in
+    error_list
   in
 
   let rec recursive_infer_source added_global_errors =
@@ -1977,7 +2068,7 @@ let check configuration environment source =
     let errors =
       Preprocessing.defines source
       |> List.map ~f:check
-      |> List.concat
+      |> calculate_coverage
       |> source_error_joins
     in
     let (changed, newly_added_global_errors) = add_errors_to_environment errors in
@@ -1995,7 +2086,7 @@ let check configuration environment source =
   else
     Preprocessing.defines source
     |> List.map ~f:check
-    |> List.concat
+    |> calculate_coverage
     |> source_error_joins
     |> List.map ~f:(Error.dequalify dequalify_map environment)
     |> List.sort ~cmp:Error.compare

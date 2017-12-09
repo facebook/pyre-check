@@ -77,6 +77,9 @@ val is_primitive: t -> bool
 val is_tuple: t -> bool
 val is_unknown: t -> bool
 
+val is_partially_typed: t -> bool
+val is_untyped: t -> bool
+
 val mismatch_with_any: t -> t -> bool
 
 val optional_value: t -> t
