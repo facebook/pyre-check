@@ -71,7 +71,7 @@ class Configuration:
                     str(error)))
 
     def get_version_hash(self):
-        return os.getenv('PYRE_VERSION_HASH') or self._version_hash
+        return self._version_hash
 
     @functools.lru_cache(1)
     def get_binary(self):
@@ -123,7 +123,9 @@ class Configuration:
                     os.getenv('PYRE_BINARY'))
                 self._stub_roots.extend(
                     configuration.get('additional_stub_roots', []))
-                self._version_hash = configuration.get('version')
+                self._version_hash = configuration.get(
+                    'version',
+                    os.getenv('PYRE_VERSION_HASH'))
                 self._typeshed = configuration.get('typeshed')
         except IOError:
             LOG.debug('No configuration found at `{}`.'.format(path))

@@ -1,5 +1,6 @@
 # Copyright 2004-present Facebook.  All rights reserved.
 
+import os
 import unittest
 
 from unittest.mock import patch
@@ -64,3 +65,8 @@ class ConfigurationTest(unittest.TestCase):
         ]
         configuration = Configuration()
         self.assertEqual(configuration.get_binary(), '/VERSION/binary')
+
+        with patch.object(os, 'getenv', return_value='VERSION_HASH'):
+            json_load.side_effect = [{}, {}]
+            configuration = Configuration()
+            self.assertEqual(configuration.get_version_hash(), 'VERSION_HASH')
