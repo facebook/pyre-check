@@ -62,11 +62,13 @@ def switch_root(arguments):
 def resolve_link_trees(arguments, configuration):
     link_trees = set(arguments.link_tree or [])
     link_trees.update(configuration.link_trees)
+    argument_target = arguments.target or []
 
-    if arguments.target:
-        link_trees.update(
-            buck.generate_link_trees(
-                arguments, configuration.targets + arguments.target))
+    link_trees.update(
+        buck.generate_link_trees(
+            arguments, configuration.targets + argument_target
+        )
+    )
 
     if len(link_trees) == 0:
         raise EnvironmentException(

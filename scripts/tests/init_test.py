@@ -53,3 +53,12 @@ class InitTest(unittest.TestCase):
                 'buck_link_tree',
                 'configuration_link_tree',
             ]))
+
+        arguments.target = None
+        self.assertEqual(
+            pyre.resolve_link_trees(arguments, configuration),
+            set([
+                'argument_link_tree',
+                'buck_link_tree',
+                'configuration_link_tree',
+            ]))
