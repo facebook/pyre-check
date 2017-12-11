@@ -86,22 +86,24 @@ def generate_link_trees(arguments, original_targets):
         buck_out = _find_link_trees(targets)
         if len(buck_out.link_trees) == 0 and arguments.build:
             raise BuckException(
-                'Could not find link trees for `{}`. See `{} --help` for more '
+                'Could not find link trees for `{}`.\n   '
+                'See `{} --help` for more '
                 'information.'.format(target, sys.argv[0]))
         elif len(buck_out.link_trees) == 0:
             LOG.error(
-                'Could not find link trees for `%s`. '
+                'Could not find link trees for `%s`.\n   '
                 'The target might not be built.',
                 target)
             if _get_yes_no_input("Build target?"):
                 arguments.build = True
                 return generate_link_trees(arguments, original_targets)
             raise BuckException(
-                'Could not find link trees for `{}`. See `{} --help` for more '
+                'Could not find link trees for `{}`.\n   '
+                'See `{} --help` for more '
                 'information.'.format(target, sys.argv[0]))
         elif len(buck_out.targets_not_found) > 0 and not arguments.build:
             LOG.error(
-                'Could not find link trees for all targets in `%s`. '
+                'Could not find link trees for all targets in `%s`.\n   '
                 'The target may only be partially built.',
                 target)
             LOG.error(
