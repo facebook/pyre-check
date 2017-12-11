@@ -537,20 +537,20 @@ let test_forward_immutables _ =
       (List.fold ~f:State.forward ~init:(create precondition ~immutables:pre_immutables) parsed)
   in
   assert_forward_immutables [] [] "global x" ["x", Type.Top] ["x", true];
-  assert_forward_immutables [] [] "y : int" ["y", Type.integer] ["y", false];
-  assert_forward_immutables [] [] "y : int = x" ["y", Type.integer] ["y", false];
-  assert_forward_immutables [] [] "y : int = 'string'" ["y", Type.integer] ["y", false];
+  assert_forward_immutables [] [] "y: int" ["y", Type.integer] ["y", false];
+  assert_forward_immutables [] [] "y: int = x" ["y", Type.integer] ["y", false];
+  assert_forward_immutables [] [] "y: int = 'string'" ["y", Type.integer] ["y", false];
   assert_forward_immutables ["y", Type.Top] ["y", false] "y = x" ["y", Type.Top] ["y", false];
   assert_forward_immutables
     ["x", Type.string]
     []
-    "y : int = x"
+    "y: int = x"
     ["x", Type.string; "y", Type.integer]
     ["y", false];
   assert_forward_immutables
     ["y", Type.string]
     ["y", false]
-    "y : int"
+    "y: int"
     ["y", Type.integer]
     ["y", false]
 
@@ -739,7 +739,7 @@ let test_fixpoint_forward _ =
       ]);
   assert_fixpoint_forward
     {|
-     def foo(y : int):
+     def foo(y: int):
        x = y
     |}
     (Int.Table.of_alist_exn [
@@ -752,7 +752,7 @@ let test_fixpoint_forward _ =
       ]);
   assert_fixpoint_forward
     {|
-     def foo(y : int):
+     def foo(y: int):
        if True:
          x = y
        else:
@@ -1018,7 +1018,7 @@ let test_show_error_traces _ =
   assert_type_errors ~show_error_traces:true
     {|
     class Foo:
-      test_field : int
+      test_field: int
       def __init__(self) -> None:
         self.test_field = ""
     |}
@@ -1030,7 +1030,7 @@ let test_show_error_traces _ =
 
   assert_type_errors ~show_error_traces:true
     {|
-    constant : int
+    constant: int
     def foo() -> None:
       global constant
       constant = "hi"
@@ -1043,7 +1043,7 @@ let test_show_error_traces _ =
   assert_type_errors ~show_error_traces:true
     {|
     class Foo:
-      test_field : int
+      test_field: int
       def __init__(self) -> None:
         test_field = 0
     |}
@@ -1076,7 +1076,7 @@ let test_coverage _ =
     };
   assert_find_coverage
     {|
-     def foo(y : int):
+     def foo(y: int):
        if True:
          x = y
        else:
@@ -1603,7 +1603,7 @@ let test_check_function_parameters _ =
 
   assert_type_errors
     {|
-      def foo(a : typing.Union[str, None]) -> None: pass
+      def foo(a: typing.Union[str, None]) -> None: pass
       foo(None)
     |}
     [];
@@ -1832,7 +1832,7 @@ let test_check_method_parameters _ =
     {|
       class Foo:
         def bar(self) -> None:
-          def baz(x : int) -> int:
+          def baz(x: int) -> int:
             return x
     |}
     [];
@@ -1840,7 +1840,7 @@ let test_check_method_parameters _ =
   assert_type_errors
     {|
       class Foo:
-        def bar(x : int) -> int:
+        def bar(x: int) -> int:
           return x
     |}
     ["Incompatible return type [7]: expected `int` but got `Foo`."]
@@ -1927,7 +1927,7 @@ let test_check_init _ =
   assert_type_errors
     {|
     class Foo:
-      test_field : int
+      test_field: int
       def __init__(self) -> None:
         pass
     |}
@@ -1939,7 +1939,7 @@ let test_check_init _ =
   assert_type_errors
     {|
     class Foo:
-      test_field : int = 1
+      test_field: int = 1
       def __init__(self) -> None:
         pass
     |}
@@ -1948,8 +1948,8 @@ let test_check_init _ =
   assert_type_errors
     {|
     class Foo:
-      test_field : int
-      test_field_two : str
+      test_field: int
+      test_field_two: str
       def __init__(self) -> None:
         pass
     |}
@@ -1963,7 +1963,7 @@ let test_check_init _ =
   assert_type_errors
     {|
     class Foo:
-      test_field : int
+      test_field: int
       def __init__(self) -> None:
         self.test_field = 0
     |}
@@ -1972,7 +1972,7 @@ let test_check_init _ =
   assert_type_errors
     {|
     class Foo:
-      test_field : int
+      test_field: int
       def __init__(self) -> None:
         test_field = 0
     |}
@@ -1996,7 +1996,7 @@ let test_check_init _ =
   assert_type_errors
     {|
     class Foo:
-      test_field : typing.Optional[int]
+      test_field: typing.Optional[int]
       def __init__(self) -> None:
         pass
     |}
@@ -2005,7 +2005,7 @@ let test_check_init _ =
   assert_type_errors
     {|
     class Foo:
-      test_field : int
+      test_field: int
       def __init__(self) -> None:
         self.test_field = ""
     |}
@@ -2094,7 +2094,7 @@ let test_check_fields _ =
   assert_type_errors
     {|
       class Foo:
-        bar : int
+        bar: int
         def foo(self) -> int:
           self.bar = 'foo'
           return self.bar
@@ -2107,8 +2107,8 @@ let test_check_fields _ =
   assert_type_errors
     {|
       class Foo:
-        bar : int
-      def foo(param : Foo) -> int:
+        bar: int
+      def foo(param: Foo) -> int:
         param.bar = 'foo'
         return param.bar
     |}
@@ -2119,7 +2119,7 @@ let test_check_fields _ =
 
   assert_type_errors
     {|
-      bar : int
+      bar: int
       def foo() -> int:
         bar = 'foo'
         return bar
@@ -2143,7 +2143,7 @@ let test_check_fields _ =
   assert_type_errors
     {|
       class Foo:
-        bar : int
+        bar: int
       def foo() -> int:
         foo_obj = Foo()
         foo_obj.bar = "foo"
@@ -2157,7 +2157,7 @@ let test_check_fields _ =
   assert_type_errors
     {|
       class Foo:
-        bar : int
+        bar: int
       class Bar(Foo):
         def foo(self) -> int:
           self.bar = "foo"
@@ -2171,7 +2171,7 @@ let test_check_fields _ =
   assert_type_errors
     {|
       class Foo:
-        bar : typing.Optional[int]
+        bar: typing.Optional[int]
       def foo() -> int:
         foo_obj = Foo()
         foo_obj.bar = 1
@@ -2182,7 +2182,7 @@ let test_check_fields _ =
   assert_type_errors
     {|
       class Foo:
-        bar : typing.Optional[int]
+        bar: typing.Optional[int]
       def foo(a: typing.Optional[Foo]) -> int:
         if a and a.bar:
           return a.bar
@@ -2193,7 +2193,7 @@ let test_check_fields _ =
   assert_type_errors
     {|
       class Foo:
-        bar : typing.Optional[int]
+        bar: typing.Optional[int]
       def foo(a: typing.Optional[Foo]) -> int:
         if a.bar and a:
           return a.bar
@@ -2217,7 +2217,7 @@ let test_check_fields _ =
   assert_type_errors
     {|
       class Foo:
-        bar : typing.ClassVar[int]
+        bar: typing.ClassVar[int]
       def foo() -> int:
         Foo.bar = "foo"
         return Foo.bar
@@ -2231,7 +2231,7 @@ let test_check_fields _ =
   assert_type_errors
     {|
       class Foo:
-        bar : typing.Generic[_T]
+        bar: typing.Generic[_T]
         def foo(self) -> int:
           self.bar = 0
           return self.bar
@@ -2268,7 +2268,7 @@ let test_check_globals _ =
 let test_check_immutables _ =
   assert_type_errors
     {|
-    constant : int
+    constant: int
     def foo() -> None:
       global constant
       constant = "hi"
@@ -2277,7 +2277,7 @@ let test_check_immutables _ =
 
   assert_type_errors
     {|
-    constant : int
+    constant: int
     def foo() -> None:
       constant = "hi"
     |}
@@ -2285,17 +2285,17 @@ let test_check_immutables _ =
 
   assert_type_errors
     {|
-    constant : int
+    constant: int
     def foo() -> None:
       global constant
-      constant : str
+      constant: str
       constant = "hi"
     |}
     [];
 
   assert_type_errors
     {|
-    constant : typing.Union[int, str]
+    constant: typing.Union[int, str]
     def foo() -> None:
       global constant
       constant = 1
@@ -2341,33 +2341,33 @@ let test_check_immutables _ =
 
   assert_type_errors
     {|
-    constant : int
+    constant: int
     def foo(x) -> str:
       if x > 10:
         global constant
-        constant : str
+        constant: str
       return constant
     |}
     [];
 
   assert_type_errors
     {|
-    def foo(x : int) -> None:
+    def foo(x: int) -> None:
       x = "hi"
     |}
     ["Incompatible type [9]: x is declared to have type `int` but is used as type `str`."];
 
   assert_type_errors
     {|
-    def foo(x : typing.Optional[int]) -> None:
+    def foo(x: typing.Optional[int]) -> None:
       x = 1
     |}
     [];
 
   assert_type_errors
     {|
-    def foo(x : int) -> None:
-      x : str
+    def foo(x: int) -> None:
+      x: str
       x = "hi"
     |}
     [];
@@ -2375,7 +2375,7 @@ let test_check_immutables _ =
   assert_type_errors
     {|
     def foo() -> None:
-      x : int = "hi"
+      x: int = "hi"
     |}
     [];
 
@@ -2383,7 +2383,7 @@ let test_check_immutables _ =
     {|
     def foo() -> None:
       x = 1
-      y : str
+      y: str
       y = x
       x = y
     |}
@@ -2393,9 +2393,9 @@ let test_check_immutables _ =
     {|
     def foo(x) -> None:
       if x > 10:
-        y : int
+        y: int
       else:
-        y : str
+        y: str
 
       y = "hi"
     |}
@@ -2405,9 +2405,9 @@ let test_check_immutables _ =
     {|
     def foo(x) -> None:
       if x > 10:
-        y : int
+        y: int
       else:
-        y : str
+        y: str
       y = 1
     |}
     [];
@@ -2440,8 +2440,8 @@ let test_check_immutables _ =
   assert_type_errors
     {|
       def foo() -> None:
-        x : typing.Dict[str, typing.Any] = {}
-        x = { 'a' : 'b' }
+        x: typing.Dict[str, typing.Any] = {}
+        x = { 'a': 'b' }
     |}
     [];
 
@@ -2811,8 +2811,8 @@ let test_check_ternary _ =
   assert_type_errors
     {|
       def foo() -> int:
-        x : typing.Optional[int]
-        y : int
+        x: typing.Optional[int]
+        y: int
         z = x if x else y
         return z
     |}
@@ -2820,13 +2820,13 @@ let test_check_ternary _ =
   assert_type_errors
     {|
       def foo() -> int:
-        y : typing.Optional[int]
+        y: typing.Optional[int]
         return y if y else 5
     |}
     [];
   assert_type_errors
     {|
-      def foo(x : int) -> int:
+      def foo(x: int) -> int:
         if x > 10:
           y = None
         else:
@@ -2838,8 +2838,8 @@ let test_check_ternary _ =
   assert_type_errors
     {|
       def foo() -> int:
-        y : typing.Optional[int]
-        x : int
+        y: typing.Optional[int]
+        x: int
         return y if x else 5
     |}
     ["Incompatible return type [7]: expected `int` but got `typing.Optional[int]`."];
@@ -2919,7 +2919,7 @@ let test_check_union _ =
 
   assert_type_errors
     {|
-      variable : typing.Union[typing.Optional[int], typing.Optional[str]] = None
+      variable: typing.Union[typing.Optional[int], typing.Optional[str]] = None
       def ret_opt_int() -> typing.Optional[int]:
           return None
       variable = ret_opt_int()
@@ -3040,7 +3040,7 @@ let test_check_value_restrictions _ =
 let test_check_conditional_refinement _ =
   assert_type_errors
     {|
-      def foo(x : typing.Optional[int]) -> int:
+      def foo(x: typing.Optional[int]) -> int:
         if not x:
           return 1
         return x
@@ -3048,7 +3048,7 @@ let test_check_conditional_refinement _ =
     [];
   assert_type_errors
     {|
-      def foo(x : typing.Optional[int]) -> int:
+      def foo(x: typing.Optional[int]) -> int:
         if not x:
           y = x
         return x
@@ -3056,7 +3056,7 @@ let test_check_conditional_refinement _ =
     ["Incompatible return type [7]: expected `int` but got `typing.Optional[int]`."];
   assert_type_errors
     {|
-      def foo(x : typing.Union[int, str]) -> int:
+      def foo(x: typing.Union[int, str]) -> int:
         if isinstance(x, str):
           return 1
         return x
@@ -3064,7 +3064,7 @@ let test_check_conditional_refinement _ =
     [];
   assert_type_errors
     {|
-      def foo(x : typing.Optional[int]) -> int:
+      def foo(x: typing.Optional[int]) -> int:
         if x is None:
           return 1
         return x
@@ -3072,7 +3072,7 @@ let test_check_conditional_refinement _ =
     [];
   assert_type_errors
     {|
-      def foo(x : typing.Optional[int]) -> int:
+      def foo(x: typing.Optional[int]) -> int:
         if x is None:
           raise
         return x
@@ -3080,7 +3080,7 @@ let test_check_conditional_refinement _ =
     [];
   assert_type_errors
     {|
-      def foo(x : typing.Optional[int]) -> int:
+      def foo(x: typing.Optional[int]) -> int:
         if x is None:
           x = 1
         return x
@@ -3088,7 +3088,7 @@ let test_check_conditional_refinement _ =
     [];
   assert_type_errors
     {|
-      def foo(x : typing.Optional[int]) -> int:
+      def foo(x: typing.Optional[int]) -> int:
         if x is None:
           continue
         return x
@@ -3096,7 +3096,7 @@ let test_check_conditional_refinement _ =
     [];
   assert_type_errors
     {|
-      def foo(x : typing.Optional[float]) -> typing.Optional[int]:
+      def foo(x: typing.Optional[float]) -> typing.Optional[int]:
         if x is not None:
           return int(x)
         return x
@@ -3466,7 +3466,7 @@ let test_infer _ =
 
   assert_infer ~fields:["inference.parameters"]
     {|
-      def with_params (x : int,y):
+      def with_params (x: int,y):
           return 5
     |}
     [{|[{"name":"x","type":"int","value":null},{"name":"y","type":null,"value":null}]|}];
@@ -3539,14 +3539,14 @@ let test_infer _ =
 
   assert_infer ~fields:["inference.parameters"]
     {|
-      def with_params (x : int = 5,y):
+      def with_params (x: int = 5,y):
           return 5
     |}
     [{|[{"name":"x","type":"int","value":"5"},{"name":"y","type":null,"value":null}]|}];
 
   assert_infer ~fields:["inference.parameters"]
     {|
-      def testing_assert_infer_fragility (x : int = 5):
+      def testing_assert_infer_fragility (x: int = 5):
           return 5
     |}
     [{|[{"type":"int","name":"x","value":"5"}]|}];
@@ -3572,7 +3572,7 @@ let test_infer _ =
   assert_infer ~fields:["inference.parameters"]
     {|
       from typing import Optional
-      def test_optional(x : Optional[str]):
+      def test_optional(x: Optional[str]):
           return 5
     |}
     [{|[{"name":"x","type":"Optional[str]","value":null}]|}];
@@ -3639,7 +3639,7 @@ let test_infer _ =
   (* The next two illustrate where we mess up with current simple dequalify implementation *)
   assert_infer ~fields:["inference.parameters"]
     {|
-      def test_optional_bad(x : Optional[str]):
+      def test_optional_bad(x: Optional[str]):
           return 5
       from typing import Optional
     |}
@@ -3650,7 +3650,7 @@ let test_infer _ =
       import A
       from A import C
       from B import C
-      def test_bad_import(x : A.C):
+      def test_bad_import(x: A.C):
           return 5
     |}
     [{|[{"name":"x","type":"C","value":null}]|}] (* Should be A.C *)
@@ -3740,7 +3740,7 @@ let test_recursive_infer _ =
   assert_infer ~recursive_infer:true ~fields:["inference.annotation";"inference.parameters"]
     {|
       def foo(a):
-        a : int
+        a: int
         return a
       def bar():
         b = foo(a)
