@@ -28,22 +28,31 @@ do
       fi
       OPAM_ROOT="$HOME/.opam/"
       ;;
-    "--release")
-      EXTERNAL="external"
-      ;;
     "--repository")
       OPAM_REPOSITORY="${arguments[$index+1]}"
+      ;;
+    "--configure")
+      CONFIGURE=1
       ;;
   esac
 done
 
+# Check if this is an internal build.
+if [ -e ".facebook" ]; then
+  BUILD="facebook"
+else
+  BUILD="external"
+fi
+
+sed "s/%VERSION%/$BUILD/" Makefile.template > Makefile
+
+# Abort early on `--configure`.
+if [ -n "${CONFIGURE+x}" ]; then exit 0; fi
+
 # Set default values.
-if [ -z "${EXTERNAL+x}" ]; then EXTERNAL="facebook"; fi
 if [ -z "${OPAM_ROOT+x}" ]; then OPAM_ROOT="$(mktemp -d)"; fi
 if [ -z "${OPAM_REPOSITORY+x}" ]; then OPAM_REPOSITORY="https://opam.ocaml.org"; fi
 COMPILER="4.04.1"
-
-sed "s/%VERSION%/$EXTERNAL/" Makefile.template > Makefile
 
 # Extract packaged repository.
 if [ ${OPAM_REPOSITORY: -7} == ".tar.gz" ]; then
