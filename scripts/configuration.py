@@ -122,14 +122,17 @@ class Configuration:
 
                 self.logger = configuration.get('logger')
 
-                self._binary = configuration.get(
-                    'binary',
-                    os.getenv('PYRE_BINARY'))
+                self._binary = os.getenv('PYRE_BINARY')
+                if not self._binary:
+                    self._binary = configuration.get('binary')
+
                 self._stub_roots.extend(
                     configuration.get('additional_stub_roots', []))
-                self._version_hash = configuration.get(
-                    'version',
-                    os.getenv('PYRE_VERSION_HASH'))
+
+                self._version_hash = os.getenv('PYRE_VERSION_HASH')
+                if not self._version_hash:
+                    self._version_hash = configuration.get('version')
+
                 self._typeshed = configuration.get('typeshed')
         except IOError:
             LOG.debug('No configuration found at `{}`.'.format(path))
