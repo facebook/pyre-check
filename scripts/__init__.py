@@ -67,4 +67,24 @@ def resolve_link_trees(arguments, configuration):
     if len(link_trees) == 0:
         raise EnvironmentException(
             "No targets or link trees to analyze.")
-    return link_trees
+
+    # Translate link trees if we switched directories earlier.
+    current_directory = os.getcwd()
+    if not arguments.original_directory.startswith(current_directory):
+        return link_trees
+
+    translation = arguments.original_directory[len(current_directory) + 1:]
+    if not translation:
+        return link_trees
+
+    def _translate(path):
+        if os.path.exists(path):
+            return path
+
+        translated = os.path.join(translation, path)
+        if os.path.exists(translated):
+            return translated
+
+        return path
+
+    return {_translate(path) for path in link_trees}

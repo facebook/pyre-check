@@ -35,6 +35,7 @@ class InitTest(unittest.TestCase):
     def test_resolve_link_trees(self, buck_link_trees):
         arguments = MagicMock()
         arguments.link_tree = []
+        arguments.original_directory = '/root'
         configuration = MagicMock()
         configuration.link_trees = []
         buck_link_trees.return_value = []
