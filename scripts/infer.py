@@ -459,6 +459,9 @@ def main():
     try:
         exit_code = pyre.SUCCESS
 
+        if arguments.debug:
+            arguments.noninteractive = True
+
         log.initialize(arguments)
         pyre.switch_root(arguments)
 
