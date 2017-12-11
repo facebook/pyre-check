@@ -34,28 +34,13 @@ module Class : sig
     }
     [@@deriving eq, show]
 
-    val create
-      :  resolution: Resolution.t
-      -> name: Expression.expression
-      -> parent: parent_class
-      -> annotation: Expression.t option
-      -> value: Expression.t option
-      -> location: Location.t
-      -> t
-
-    val create_from_assign: resolution: Resolution.t -> Statement.Assign.t Node.t -> t option
+    val create: resolution: Resolution.t -> Assign.t Node.t -> t option
 
     val name: t -> Expression.expression
     val annotation: t -> Annotation.t
     val parent: t -> parent_class
     val value: t -> Expression.t option
     val location: t -> Location.t
-
-    val make_annotation
-      : resolution: Resolution.t
-      -> annotation:Ast.Expression.t option
-      -> value:Ast.Expression.t option
-      -> Annotation.t
   end
 
   module Method : sig

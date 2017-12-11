@@ -523,6 +523,14 @@ let test_implements _ =
     true
 
 
+let create_assign
+    ?(value = None)
+    ?(annotation = Some !"int")
+    ?(parent = Some (Instantiated.Access.create "foo"))
+    name =
+  +{ Assign.target = !name; annotation; value; compound = None; parent }
+
+
 let test_class_fields _ =
   let resolution =
     populate {|
@@ -533,15 +541,6 @@ let test_class_fields _ =
       foo : foo
     |}
     |> resolution
-  in
-  let create_assign ?(value = None) name =
-    +{
-      Assign.target = !name;
-      annotation = Some !"int";
-      value;
-      compound = None;
-      parent = Some (Instantiated.Access.create "foo");
-    }
   in
   let create_statement ?(value = None) name =
     +Assign {
@@ -583,14 +582,14 @@ let test_class_fields _ =
           ~sep:"; "
           (List.map ~f:(Format.asprintf "%a" Annotated.Class.Field.pp) fields))
     (Class.fields ~resolution (Class.create parent_node))
-    ([Option.value_exn
-        (Field.create_from_assign ~resolution (create_assign "first"));
+    [
+      Option.value_exn (Field.create ~resolution (create_assign "first"));
+      Option.value_exn (Field.create ~resolution (create_assign "second"));
       Option.value_exn
-        (Field.create_from_assign ~resolution (create_assign "second"));
-      Option.value_exn
-        (Field.create_from_assign
+        (Field.create
            ~resolution
-           (create_assign "third" ~value:(Some (+Expression.Integer 1))));]);
+           (create_assign "third" ~value:(Some (+Expression.Integer 1))));
+    ];
 
 
   let callback
@@ -823,33 +822,23 @@ let test_backup _ =
 
 
 let test_field _ =
-  let resolution =
-    populate "" |> resolution
-  in
-  let mock_class =
-    {
-      Statement.Class.name = Instantiated.Access.create "";
-      bases = [];
-      body = [+Pass];
-      decorators = [];
-      docstring = None;
-    }
-    |> Class.create
-  in
-  let create_field name annotation =
+  let field =
+    let resolution =
+      populate {|
+        class foo:
+          field_name: int
+          def bar(): pass
+      |}
+      |> resolution in
     Field.create
       ~resolution
-      ~name:(Expression.Access (Instantiated.Access.create name))
-      ~parent:mock_class
-      ~annotation:(Some !annotation)
-      ~value:None
-      ~location:Location.any
+      (create_assign ~annotation:(Some !"int") "field_name")
+    |> (fun field -> Option.value_exn field)
   in
 
-  let field = create_field "f.field_name" "int" in
   assert_equal
     (Field.name field)
-    (Expression.Access (Instantiated.Access.create "f.field_name"));
+    (Expression.Access (Instantiated.Access.create "field_name"));
   assert_equal
     (Field.annotation field)
     (Annotation.create_immutable ~global:true (Type.Primitive ~~"int"))

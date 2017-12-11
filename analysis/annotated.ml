@@ -87,37 +87,7 @@ module Class = struct
     [@@deriving eq, show]
 
 
-    let make_annotation ~resolution ~annotation ~value =
-      match annotation, value with
-      | Some annotation, Some value ->
-          Annotation.create_immutable
-            ~global:true
-            ~original:(Some (Resolution.parse_annotation resolution annotation))
-            (Resolution.parse_annotation resolution value)
-      | Some annotation, None ->
-          Annotation.create_immutable
-            ~global:true
-            (Resolution.parse_annotation resolution annotation)
-      | None, Some value ->
-          Annotation.create_immutable
-            ~global:true
-            ~original:(Some Type.Top)
-            (Resolution.parse_annotation resolution value)
-      | _ ->
-          Annotation.create_immutable ~global:true Type.Top
-
-
-    let create ~resolution ~name ~parent ~annotation ~value ~location =
-      {
-        name;
-        parent;
-        annotation = make_annotation ~resolution ~annotation ~value;
-        value;
-        location;
-      }
-
-
-    let create_from_assign ~resolution
+    let create ~resolution
         {
           Node.location;
           value = {
@@ -129,17 +99,30 @@ module Class = struct
           };
         } =
       parent
-      >>| (fun parent -> { Node.location; value = Access parent })
-      >>| Resolution.resolve resolution
+      >>| (fun parent ->
+          Resolution.parse_annotation resolution { Node.location; value = Access parent })
       >>= Resolution.class_definition resolution
       >>| (fun parent ->
-          {
-            name = target;
-            parent;
-            annotation = make_annotation ~resolution ~annotation ~value;
-            value;
-            location;
-          })
+          let annotation =
+            match annotation, value with
+            | Some annotation, Some value ->
+                Annotation.create_immutable
+                  ~global:true
+                  ~original:(Some (Resolution.parse_annotation resolution annotation))
+                  (Resolution.parse_annotation resolution value)
+            | Some annotation, None ->
+                Annotation.create_immutable
+                  ~global:true
+                  (Resolution.parse_annotation resolution annotation)
+            | None, Some value ->
+                Annotation.create_immutable
+                  ~global:true
+                  ~original:(Some Type.Top)
+                  (Resolution.parse_annotation resolution value)
+            | _ ->
+                Annotation.create_immutable ~global:true Type.Top
+          in
+          { name = target; parent; annotation; value; location })
 
 
     let name { name; _ } =
@@ -394,39 +377,16 @@ module Class = struct
     implements (methods definition) (methods protocol)
 
 
-  let field_fold ~initial ~f ~resolution ({ Class.body; _ } as parent) =
+  let field_fold ~initial ~f ~resolution { Class.body; _ } =
     let iterate initial { Node.location; value } =
       match value with
-      | Assign {
-          Assign.target = { Node.value = Access access; _ };
-          annotation = annotation;
-          value;
-          compound = None;
-          _;
-        } ->
+      | Assign assign
+      | Stub (Stub.Assign assign) ->
           Field.create
             ~resolution
-            ~name:(Access access)
-            ~parent:(create parent)
-            ~annotation
-            ~value:value
-            ~location
-          |> f initial
-      | Stub (Stub.Assign {
-          Assign.target = { Node.value = Access access; _ };
-          annotation = annotation;
-          value;
-          compound = None;
-          _;
-        }) ->
-          Field.create
-            ~resolution
-            ~name:(Access access)
-            ~parent:(create parent)
-            ~annotation
-            ~value
-            ~location
-          |> f initial
+            { Node.location; value = assign }
+          >>| f initial
+          |> Option.value ~default:initial
       | _ -> initial
     in
     List.fold ~f:iterate ~init:initial body
