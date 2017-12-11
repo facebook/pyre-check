@@ -2044,6 +2044,14 @@ let test_check_fields _ =
     [];
   assert_type_errors
     {|
+      class Foo(Bar):
+        bar: typing.Optional[int] = None
+        def foo(self) -> typing.Optional[int]:
+          return self.bar
+    |}
+    [];
+  assert_type_errors
+    {|
       class Bar:
         bar: int
       class Foo(Bar):

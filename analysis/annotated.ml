@@ -109,7 +109,7 @@ module Class = struct
                 Annotation.create_immutable
                   ~global:true
                   ~original:(Some (Resolution.parse_annotation resolution annotation))
-                  (Resolution.parse_annotation resolution value)
+                  (Resolution.resolve resolution value)
             | Some annotation, None ->
                 Annotation.create_immutable
                   ~global:true
