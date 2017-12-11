@@ -62,7 +62,7 @@ let test_method_overrides _ =
         match methods with
         | [foo; bar] -> foo, bar
         | _ -> failwith "Could not find `foo` and `bar`")
-    |> (fun values -> Option.value_exn values)
+    |> value
   in
 
   assert_is_none (Method.overrides ~resolution baz);
@@ -523,75 +523,83 @@ let test_implements _ =
     true
 
 
-let create_assign
-    ?(value = None)
-    ?(annotation = Some !"int")
-    ?(parent = Some (Instantiated.Access.create "foo"))
-    name =
-  +{ Assign.target = !name; annotation; value; compound = None; parent }
-
-
 let test_class_fields _ =
-  let resolution =
-    populate {|
-      class foo():
-        first : int
-        second : int
-        third : int = 1
-      foo : foo
-    |}
-    |> resolution
-  in
-  let create_statement ?(value = None) name =
-    +Assign {
-      Assign.target = !name;
-      annotation = Some !"int";
-      value;
-      compound = None;
-      parent = Some (Instantiated.Access.create "foo");
-    }
-  in
-  let parent_node =
-    {
-      Statement.Class.name = Instantiated.Access.create "foo";
-      bases = [];
-      body = [
-        create_statement "first";
-        create_statement "second";
-        create_statement "third" ~value:(Some (+Expression.Integer 1));
-      ];
-      decorators = [];
-      docstring = None;
-    }
+  let resolution, parent =
+    let source =
+      {|
+        foo: foo
+        class foo():
+          first: int
+          second: int
+          third: int = 1
+      |}
+    in
+    let parent =
+      match parse_last_statement source with
+      | { Node.value = Class definition; _ } ->
+          definition
+      | _ ->
+          failwith "Could not parse class"
+    in
+    populate source |> resolution,
+    Class.create parent
   in
 
-  let assign_list_equal left right =
-    let equal sofar left right =
-      if not sofar then sofar else
+  let create_assign
+      ?(value = None)
+      ?(annotation = Some !"int")
+      ?(parent = Some (Instantiated.Access.create "foo"))
+      name =
+    +{ Assign.target = !name; annotation; value; compound = None; parent }
+  in
+
+  (* Test `Class.fields`. *)
+  let assert_fields definition fields =
+    let field_list_equal =
+      let equal left right =
         Expression.equal_expression (Field.name left) (Field.name right) &&
         Annotation.equal (Field.annotation left) (Field.annotation right) &&
         Class.equal (Field.parent left) (Field.parent right)
+      in
+      List.equal ~equal
     in
-    List.fold2_exn ~init:true ~f:equal left right
+    assert_equal
+      ~cmp:field_list_equal
+      ~printer:(fun fields ->
+          String.concat
+            ~sep:"; "
+            (List.map ~f:(Format.asprintf "%a" Annotated.Class.Field.pp) fields))
+      (Class.fields ~resolution definition)
+      (List.map ~f:value fields)
   in
 
-  assert_equal
-    ~cmp:assign_list_equal
-    ~printer:(fun fields ->
-        String.concat
-          ~sep:"; "
-          (List.map ~f:(Format.asprintf "%a" Annotated.Class.Field.pp) fields))
-    (Class.fields ~resolution (Class.create parent_node))
+  assert_fields
+    parent
     [
-      Option.value_exn (Field.create ~resolution (create_assign "first"));
-      Option.value_exn (Field.create ~resolution (create_assign "second"));
-      Option.value_exn
-        (Field.create
-           ~resolution
-           (create_assign "third" ~value:(Some (+Expression.Integer 1))));
+      Field.create ~resolution (create_assign "first");
+      Field.create ~resolution (create_assign "second");
+      Field.create
+        ~resolution
+        (create_assign "third" ~value:(Some (+Expression.Integer 1)));
     ];
 
 
+  (* Test `Field`. *)
+  let field =
+    Field.create
+      ~resolution
+      (create_assign ~annotation:(Some !"int") "first")
+    |> value
+  in
+  assert_equal
+    (Field.name field)
+    (Expression.Access (Instantiated.Access.create "first"));
+  assert_equal
+    (Field.annotation field)
+    (Annotation.create_immutable ~global:true (Type.Primitive ~~"int"));
+
+
+  (* Test `field_fold`. *)
   let callback
       string_names
       field =
@@ -600,8 +608,9 @@ let test_class_fields _ =
     | _ -> string_names
   in
   assert_equal
-    (Class.field_fold ~resolution ~initial:"" ~f:callback (Class.create parent_node))
+    (Class.field_fold ~resolution ~initial:"" ~f:callback parent)
     ("firstsecondthird")
+
 
 
 let test_return_annotation _ =
@@ -821,29 +830,6 @@ let test_backup _ =
     (Some { Expression.Call.name = !"__rsub__"; arguments = [] })
 
 
-let test_field _ =
-  let field =
-    let resolution =
-      populate {|
-        class foo:
-          field_name: int
-          def bar(): pass
-      |}
-      |> resolution in
-    Field.create
-      ~resolution
-      (create_assign ~annotation:(Some !"int") "field_name")
-    |> (fun field -> Option.value_exn field)
-  in
-
-  assert_equal
-    (Field.name field)
-    (Expression.Access (Instantiated.Access.create "field_name"));
-  assert_equal
-    (Field.annotation field)
-    (Annotation.create_immutable ~global:true (Type.Primitive ~~"int"))
-
-
 let test_fold _ =
   let fold_results access environment =
     let accumulate_returns accumulator ~annotations:_ ~resolved ~element =
@@ -960,7 +946,6 @@ let () =
   |> run_test_tt_main;
   "call">:::[
     "backup">::test_backup;
-    "field">::test_field;
   ]
   |> run_test_tt_main;
   "access">:::[
