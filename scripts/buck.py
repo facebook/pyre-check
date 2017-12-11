@@ -61,7 +61,7 @@ def _build_targets(original_target_name, targets):
 
 
 def _get_yes_no_input(prompt):
-    sys.stderr.write(prompt + ' [Y/n] ')
+    LOG.warning(prompt + ' [Y/n] ')
     choice = input().strip().lower()
     return choice in ['', 'y', 'ye', 'yes']
 
@@ -72,7 +72,7 @@ def generate_link_trees(arguments, original_targets):
 
     if len(buck_out.targets_not_found) > 0:
         LOG.warning(
-            'Passing in normalized buck targets will reduce runtime.\n'
+            'Passing in normalized buck targets will reduce runtime.\n   '
             'You can set up a .pyre_configuration file to reduce overhead.')
 
     for target in buck_out.targets_not_found:
@@ -103,8 +103,8 @@ def generate_link_trees(arguments, original_targets):
                 'The target may only be partially built.',
                 target)
             LOG.error(
-                'Potentially unbuilt targets:\n %s',
-                '\n'.join(buck_out.targets_not_found))
+                'Potentially unbuilt subtargets:\n   %s',
+                '\n   '.join(buck_out.targets_not_found))
             if _get_yes_no_input("Re-build target?"):
                 arguments.build = True
                 return generate_link_trees(arguments, original_targets)
