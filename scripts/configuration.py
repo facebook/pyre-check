@@ -25,9 +25,9 @@ class Configuration:
     def __init__(self):
         self.link_trees = []
         self.targets = []
-        self.disabled = False
         self.logger = None
 
+        self._disabled = False
         self._stub_roots = []
         self._version_hash = None
         self._binary = None
@@ -98,6 +98,9 @@ class Configuration:
 
         return self._stub_roots + [typeshed]
 
+    def disabled(self):
+        return self._disabled
+
     def _read(self, path):
         try:
             with open(path) as file:
@@ -115,7 +118,7 @@ class Configuration:
                     LOG.debug('Found targets `%s`', ', '.join(self.targets))
 
                 if "disabled" in configuration:
-                    self.disabled = True
+                    self._disabled = True
 
                 self.logger = configuration.get('logger')
 

@@ -20,7 +20,6 @@ from . import (
     EnvironmentException,
     FAILURE,
     get_version,
-    is_disabled,
     JSON,
     log,
     resolve_link_trees,
@@ -163,7 +162,7 @@ def main():
 
         configuration = Configuration()
         link_trees = []
-        if is_disabled(configuration):
+        if configuration.disabled():
             LOG.info("Pyre will not run due to being explicitly disabled")
             return SUCCESS
 

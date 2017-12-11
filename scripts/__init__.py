@@ -38,10 +38,6 @@ def get_version(configuration):
     return 'No version set'
 
 
-def is_disabled(configuration):
-    return configuration.disabled
-
-
 def find_project_root(original_directory=os.getcwd()):
     current_directory = original_directory
     while current_directory != "/":

@@ -6,7 +6,9 @@
 import unittest
 import sys
 
-from unittest.mock import patch
+from unittest.mock import (
+    patch,
+)
 
 from .. import (
     commands,
@@ -16,6 +18,13 @@ from .. import (
 
 
 class PyreTest(unittest.TestCase):
+    @patch.object(configuration.Configuration, 'validate')
+    @patch.object(configuration.Configuration, 'disabled', return_value=True)
+    def test_disabled(self, disabled, validate):
+        with patch.object(sys, 'argv', ['pyre', 'check']):
+            self.assertEqual(pyre.main(), 0)
+            validate.assert_not_called()
+
     @patch.object(configuration.Configuration, '_read')
     @patch.object(configuration.Configuration, 'validate')
     @patch.object(commands.Persistent, '_run_null_server')
