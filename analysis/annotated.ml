@@ -377,51 +377,46 @@ module Class = struct
     implements (methods definition) (methods protocol)
 
 
-  let field_fold ~initial ~f ~resolution { Class.body; _ } =
-    let iterate initial { Node.location; value } =
-      match value with
-      | Assign assign
-      | Stub (Stub.Assign assign) ->
-          Field.create
-            ~resolution
-            { Node.location; value = assign }
-          >>| f initial
-          |> Option.value ~default:initial
-      | _ -> initial
+  let field_fold ?(transitive = false) definition ~initial ~f ~resolution =
+    let fold_definition initial { Class.body; _ } =
+      let fold_body initial { Node.location; value } =
+        match value with
+        | Assign assign
+        | Stub (Stub.Assign assign) ->
+            Field.create
+              ~resolution
+              { Node.location; value = assign }
+            >>| f initial
+            |> Option.value ~default:initial
+        | _ -> initial
+      in
+      List.fold ~f:fold_body ~init:initial body
     in
-    List.fold ~f:iterate ~init:initial body
-
-
-  let fields ~resolution parent_class =
-    List.rev (field_fold ~initial:[] ~resolution ~f:(fun sofar next -> next :: sofar) parent_class)
-
-
-  let field_annotation parent_class ~resolution ~field =
-    let callback
-        sofar
-        current_field =
-      match Field.name current_field, Annotation.annotation sofar with
-      | Access name, Type.Top when Instantiated.Access.equal name field ->
-          current_field.Field.annotation
-      | _ -> sofar
+    let definitions =
+      if transitive then
+        definition :: superclasses ~resolution definition
+      else
+        [definition]
     in
-    field_fold
-      ~initial:(Annotation.create_immutable ~global:true Type.Top)
-      ~f:callback
-      ~resolution
-      parent_class
+    List.fold ~f:fold_definition ~init:initial definitions
 
 
-  let field_location parent_class ~resolution ~field =
-    let callback
-        sofar
-        current_field =
-      match Field.name current_field with
-      | Access name when Instantiated.Access.equal name field ->
-          Field.location current_field
-      | _ -> sofar
+  let fields ?(transitive = false) definition ~resolution  =
+    field_fold ~transitive ~initial:[] ~resolution ~f:(fun sofar next -> next :: sofar) definition
+    |> List.rev
+
+
+  let field ?(transitive = false) definition ~resolution ~name =
+    let search sofar field =
+      match sofar with
+      | Some field -> Some field
+      | None ->
+          if Expression.equal_expression (Access name) (Field.name field) then
+            Some field
+          else
+            None
     in
-    field_fold ~initial:Location.any ~f:callback parent_class ~resolution
+    field_fold ~transitive ~initial:None ~f:search ~resolution definition
 end
 
 
@@ -998,66 +993,34 @@ module Access = struct
 
         | Some (_, annotation), ([Access.Identifier _] as field_access) -> (
             (* Field access. *)
-            match Resolution.class_definition resolution (Annotation.annotation annotation) with
-            | Some parent -> (
-                let search_location location class_node =
-                  if (Location.equal location Location.any) then
-                    Class.field_location ~resolution ~field:field_access class_node
-                  else
-                    location
-                in
-                let location =
-                  List.fold
-                    ~init:(Class.field_location ~resolution ~field:field_access parent)
-                    ~f:search_location
-                    (Class.superclasses ~resolution parent)
-                in
+            Resolution.class_definition resolution (Annotation.annotation annotation)
+            >>= Class.field ~transitive:true ~resolution ~name:field_access
+            >>| (fun field ->
                 match Map.find annotations access with
                 | Some annotation ->
                     resolution,
                     annotation,
-                    (f accumulator
+                    (f
+                       accumulator
                        ~annotations
                        ~resolved:annotation
-                       ~element:(Element.Field {
-                           Field.parent;
-                           name = (Access access);
-                           location;
-                           annotation;
-                           value = None
-                         }))
+                       ~element:(Element.Field field))
                 | None ->
-                    let search annotation class_node =
-                      match Annotation.annotation annotation with
-                      | Type.Top ->
-                          Class.field_annotation ~resolution ~field:field_access class_node
-                      | _ -> annotation
-                    in
-                    let annotation =
-                      List.fold
-                        ~init:(Class.field_annotation ~resolution ~field:field_access parent)
-                        ~f:search
-                        (Class.superclasses ~resolution parent)
-                    in
                     resolution,
-                    annotation,
-                    (f accumulator
+                    Field.annotation field,
+                    (f
+                       accumulator
                        ~annotations
-                       ~resolved:annotation
-                       ~element:(Element.Field {
-                           Field.parent;
-                           name = (Access access);
-                           location;
-                           annotation;
-                           value = None
-                         })))
-            | None ->
+                       ~resolved:(Field.annotation field)
+                       ~element:(Element.Field field)))
+            |> Option.value
+              ~default:(
                 resolution,
                 Annotation.create Type.Top,
                 (f accumulator
                    ~annotations
                    ~resolved:(Annotation.create Type.Top)
-                   ~element:Element.Identifier))
+                   ~element:Element.Identifier)))
 
         | Some (_, annotation), (Access.Subscript subscript) :: _ ->
             (* Array access. *)

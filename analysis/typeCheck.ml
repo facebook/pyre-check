@@ -133,31 +133,33 @@ module State = struct
     let class_initialization_errors errors =
       let open Annotated in
       (* Ensure non-nullable typed fields are instantiated in init. *)
-      if not (Instantiated.Define.is_constructor define) then errors else
+      if not (Instantiated.Define.is_constructor define) then
+        errors
+      else
         let check_class_fields class_definition =
-          let assign_exists { Statement.Define.body; _ } name =
-            let iterate initial { Node.value; _ } =
-              match value with
-              | Assign {
-                  Assign.target = { Node.value = Access (self::access); _ };
-                  value = Some _;
-                  compound = None;
-                  _;
-                } ->
-                  if Instantiated.Access.equal [self] (Instantiated.Access.create "self") &&
-                     Instantiated.Access.equal access name then
-                    true
-                  else
-                    initial
-              | _ -> initial
-            in
-            List.fold ~f:iterate ~init:false body
-          in
           let propagate_initialization_errors errors field =
             let expected = Annotation.annotation (Field.annotation field) in
             match Field.name field with
             | Access name
               when not (Type.equal expected Type.Top || Option.is_some (Field.value field)) ->
+                let assign_exists { Statement.Define.body; _ } name =
+                  let iterate initial { Node.value; _ } =
+                    match value with
+                    | Assign {
+                        Assign.target = { Node.value = Access (self::access); _ };
+                        value = Some _;
+                        compound = None;
+                        _;
+                      } ->
+                        if Instantiated.Access.equal [self] (Instantiated.Access.create "self") &&
+                           Instantiated.Access.equal access name then
+                          true
+                        else
+                          initial
+                    | _ -> initial
+                  in
+                  List.fold ~f:iterate ~init:false body
+                in
                 if assign_exists define name || Type.is_optional expected then
                   errors
                 else

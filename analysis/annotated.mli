@@ -90,17 +90,17 @@ module Class : sig
   val implements: t -> resolution: Resolution.t -> protocol: t -> bool
 
   val field_fold
-    :  initial: 'accumulator
+    :  ?transitive: bool
+    -> t
+    -> initial: 'accumulator
     -> f: ('accumulator -> Field.t -> 'accumulator)
     -> resolution: Resolution.t
-    -> t
     -> 'accumulator
-  val fields : resolution:Resolution.t -> t -> Field.t list
-  val field_annotation
-    :  t
-    -> resolution: Resolution.t
-    -> field: Expression.access
-    -> Annotation.t
+  val fields
+    :  ?transitive: bool
+    -> t
+    -> resolution:Resolution.t
+    -> Field.t list
 end
 
 module Field = Class.Field
