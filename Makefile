@@ -1,4 +1,7 @@
-# Copyright 2016-present Facebook. All rights reserved.
+# Copyright (c) 2016-present, Facebook, Inc.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
 
 FLAGS = -use-ocamlfind -no-links -no-hygiene -cflags="-warn-error +a"
 INCLUDES = . parser analysis ast test services language_service commands commands/server facebook
