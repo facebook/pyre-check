@@ -1018,11 +1018,15 @@ module Access = struct
                   Element.parent = definition;
                 }
               in
+              let resolved =
+                Map.find annotations access
+                |> Option.value ~default:(Annotation.create Type.Top)
+              in
               resolution,
-              Annotation.create Type.Top,
+              resolved,
               (f accumulator
                  ~annotations
-                 ~resolved:(Annotation.create Type.Top)
+                 ~resolved
                  ~element:(Element.Field (Element.Undefined field)))
             in
             definition

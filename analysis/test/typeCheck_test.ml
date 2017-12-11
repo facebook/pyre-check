@@ -1981,16 +1981,16 @@ let test_check_init _ =
       "optional type `int` but is never initialized."
     ];
 
-  (* assert_type_errors
+  assert_type_errors
     {|
       class Foo:
         def __init__(self) -> None:
           self.test_field = 0
     |}
     [
-      "Missing annotation [4]: Field self.test_field of class Foo has type `int` but " ^
+      "Missing annotation [4]: Field test_field of class Foo has type `int` but " ^
       "no type is specified."
-    ]; *)
+    ];
 
   assert_type_errors
     {|
@@ -2070,7 +2070,7 @@ let test_check_fields _ =
     |}
     [];
 
-  (* assert_type_errors
+  assert_type_errors
     {|
       class Foo:
         def foo(self) -> int:
@@ -2078,10 +2078,10 @@ let test_check_fields _ =
           return self.bar
     |}
     [
-      "Missing annotation [4]: Field self.bar of class Foo has type `str` but no type " ^
+      "Missing annotation [4]: Field bar of class Foo has type `str` but no type " ^
       "is specified.";
       "Incompatible return type [7]: expected `int` but got `str`."
-    ]; *)
+    ];
 
   assert_type_errors
     {|
@@ -2132,19 +2132,18 @@ let test_check_fields _ =
     |}
     ["Incompatible return type [7]: expected `int` but got `str`."];
 
-  (* assert_type_errors
+  assert_type_errors
     {|
       class Foo:
-        bar
         def foo(self) -> int:
           self.bar = 'foo'
           return self.bar
     |}
     [
-      "Missing annotation [4]: Field self.bar of class Foo has type `str` but no type " ^
+      "Missing annotation [4]: Field bar of class Foo has type `str` but no type " ^
       "is specified.";
       "Incompatible return type [7]: expected `int` but got `str`.";
-    ]; *)
+    ];
 
   assert_type_errors
     {|
@@ -2160,7 +2159,7 @@ let test_check_fields _ =
       "used as type `str`.";
     ];
 
-  (* assert_type_errors
+  assert_type_errors
     {|
       class Foo:
         bar: int
@@ -2170,9 +2169,9 @@ let test_check_fields _ =
           return self.bar
     |}
     [
-      "Incompatible type [8]: field bar declared in class Bar has type `int` but is used as " ^
+      "Incompatible type [8]: field bar declared in class Foo has type `int` but is used as " ^
       "type `str`.";
-    ]; *)
+    ];
 
   assert_type_errors
     {|
@@ -2207,7 +2206,7 @@ let test_check_fields _ =
     |}
     ["Incompatible return type [7]: expected `int` but got `typing.Optional[int]`."];
 
-  (* assert_type_errors
+  assert_type_errors
     {|
       class Foo:
           def foo(self, bar: typing.Optional[int]) -> int:
@@ -2216,8 +2215,8 @@ let test_check_fields _ =
                   self.baz = 5
               return self.baz
     |}
-    ["Missing annotation [4]: Field self.baz of class Foo has type " ^
-     "`typing.Optional[int]` but no type is specified."]; *)
+    ["Missing annotation [4]: Field baz of class Foo has type " ^
+     "`typing.Optional[int]` but no type is specified."];
 
   (* TODO(szhu): support field tests for: class variables, generic annotations *)
   assert_type_errors
@@ -2418,7 +2417,7 @@ let test_check_immutables _ =
     |}
     [];
 
-  (* assert_type_errors
+  assert_type_errors
     {|
       class Foo():
         field
@@ -2427,9 +2426,9 @@ let test_check_immutables _ =
         foo.field = 1
     |}
     [
-      "Missing annotation [4]: Field foo.field of class Foo has type `int` but no type" ^
+      "Missing annotation [4]: Field field of class Foo has type `int` but no type" ^
       " is specified.";
-    ]; *)
+    ];
 
   assert_type_errors
     {|
@@ -2491,7 +2490,7 @@ let test_check_immutables _ =
       "Union[int, str]` but no type is specified."
     ];
 
-  (* assert_type_errors
+  assert_type_errors
     {|
       constant
       def foo() -> None:
@@ -2504,7 +2503,7 @@ let test_check_immutables _ =
     [
       "Missing annotation [5]: Globally accessible field constant has type `typing." ^
       "Optional[int]` but no type is specified."
-    ]; *)
+    ];
 
   assert_type_errors
     {|
@@ -2536,7 +2535,7 @@ let test_check_immutables _ =
       "type is specified."
     ];
 
-  (* assert_type_errors
+  assert_type_errors
     {|
       constant
       class Foo():
@@ -2549,11 +2548,11 @@ let test_check_immutables _ =
         constant = "hi"
     |}
     [
-      "Missing annotation [4]: Field foo.constant of class Foo has type `int` but no " ^
+      "Missing annotation [4]: Field constant of class Foo has type `int` but no " ^
       "type is specified.";
       "Missing annotation [5]: Globally accessible field constant has type `str` but " ^
       "no type is specified."
-    ]; *)
+    ];
 
   (* Illustrate refinement. *)
   assert_type_errors

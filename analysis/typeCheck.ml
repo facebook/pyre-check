@@ -1361,6 +1361,8 @@ module State = struct
                     ~expected
                     ~parent:(Some (Field.parent field))
                     ~name
+              | Access.Element.Field (Access.Element.Undefined { Access.Element.name; parent }) ->
+                  add_missing_annotation_error ~expected:Type.Top ~parent ~name errors
               | _ ->
                   let name = access in
                   match Map.find annotations access with
