@@ -20,7 +20,8 @@ class BuckException(Exception):
 def _find_link_trees(targets):
     targets_not_found = []
     link_trees = []
-    for target_path in targets:
+    for target in targets:
+        target_path = target
         if target_path.startswith('//'):
             target_path = target_path[2:]
         target_path = target_path.replace(':', '/')
@@ -29,7 +30,7 @@ def _find_link_trees(targets):
             os.path.join('buck-out/gen/', target_path + '*'))
         if (not target_path.endswith(('lib', 'library')) and
                 len(built_targets) == 0):
-            targets_not_found.append(target_path)
+            targets_not_found.append(target)
         link_trees.extend(glob.glob(
             os.path.join('buck-out/gen/', target_path + '#*link-tree')))
     return BuckOut(link_trees, targets_not_found)
@@ -44,7 +45,8 @@ def _normalize(target):
         return targets
     except subprocess.CalledProcessError:
         raise BuckException(
-            'Could not normalize target `{}`.'.format(target))
+            'Could not normalize target `{}`.\n   '.format(target),
+            'Check the target path or run `buck clean`.')
 
 
 def _build_targets(original_target_name, targets):
