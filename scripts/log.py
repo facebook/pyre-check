@@ -89,6 +89,10 @@ class TimedStreamHandler(logging.StreamHandler):
             record.msg += '\n'
             self._record = None
             active_lines = 0
+        elif record.levelname == 'PROMPT':
+            color = Color.GREEN
+            self._record = None
+            active_lines = 0
         elif age:
             if age > 10:
                 color = Color.GREEN
@@ -156,7 +160,7 @@ def initialize(arguments):
         file_handler.setFormatter(SectionFormatter())
         file_handler.setLevel(logging.DEBUG)
         handlers.append(file_handler)
-
+    logging.addLevelName(50, 'PROMPT')
     logging.basicConfig(level=logging.DEBUG, handlers=handlers)
 
 

@@ -63,7 +63,7 @@ def _build_targets(original_target_name, targets):
 
 
 def _get_yes_no_input(prompt):
-    LOG.warning(prompt + ' [Y/n] ')
+    LOG.log(50, prompt + ' [Y/n] ')
     choice = input().strip().lower()
     return choice in ['', 'y', 'ye', 'yes']
 
