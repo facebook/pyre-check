@@ -39,11 +39,9 @@ class Configuration:
 
     def validate(self):
         try:
-            if not self.targets and not self.link_trees:
-                raise EnvironmentException(
-                    'No targets or link trees to analyze.')
-
             def is_list_of_strings(list):
+                if len(list) == 0:
+                    return True
                 return not isinstance(list, str) and \
                     all(isinstance(element, str) for element in list)
 

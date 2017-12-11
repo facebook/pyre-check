@@ -18,7 +18,10 @@ from collections import defaultdict
 from pathlib import Path
 
 import tools.pyre.scripts as pyre
-from tools.pyre.scripts import commands
+from tools.pyre.scripts import (
+    buck,
+    commands,
+)
 from tools.pyre.scripts.configuration import Configuration
 
 LOG = logging.getLogger(__name__)
@@ -435,16 +438,12 @@ def main():
         ' If no paths are given, all functions are annotated.' +
         ' WARNING: Modifies original files and requires infer flag and retype')
 
-    buck = parser.add_argument_group('buck')
-    buck.add_argument(
+    buck_arguments = parser.add_argument_group('buck')
+    buck_arguments.add_argument(
         '--build',
         action='store_true',
         help='Build all the necessary artifacts.')
-    buck.add_argument(
-        '--normalize',
-        action='store_true',
-        help='Normalize target with `buck targets`.')
-    buck.add_argument(
+    buck_arguments.add_argument(
         '--target',
         action='append',
         help='The buck target to check')
@@ -456,9 +455,6 @@ def main():
         help='The link tree to run the inference on.')
 
     arguments = parser.parse_args()
-
-    arguments.targets = arguments.target
-    arguments.link_trees = arguments.link_tree
 
     try:
         exit_code = pyre.SUCCESS
@@ -476,7 +472,11 @@ def main():
 
         link_trees = pyre.resolve_link_trees(arguments, configuration)
         Infer(arguments, configuration, link_trees).run()
-    except (commands.ClientException, pyre.EnvironmentException) as error:
+    except (
+        buck.BuckException,
+        commands.ClientException,
+        pyre.EnvironmentException,
+    ) as error:
         LOG.error(str(error))
         LOG.error("For more information, run 'pyre-infer --help'.")
         exit_code = pyre.FAILURE

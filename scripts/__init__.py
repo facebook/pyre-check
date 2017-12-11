@@ -3,11 +3,11 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import glob
 import logging
 import os
-import subprocess
-import sys
+from tools.pyre.scripts import (
+    buck,
+)
 
 
 LOG = logging.getLogger(__name__)
@@ -65,70 +65,10 @@ def resolve_link_trees(arguments, configuration):
 
     if arguments.target:
         link_trees.update(
-            _buck_link_trees(arguments.target + configuration.targets))
+            buck.generate_link_trees(
+                arguments, configuration.targets + arguments.target))
 
-    return link_trees
-
-
-def _buck_link_trees(arguments):
-    """Get link tree link_tree for a given buck target."""
-    if not arguments.target:
-        return []
-
-    link_trees = []
-
-    for target in arguments.target:
-        if arguments.normalize:
-            LOG.info('Normalizing target `%s`', target)
-            try:
-                targets = subprocess.check_output(
-                    ['buck', 'targets', target],
-                    stderr=subprocess.DEVNULL).decode().strip().split('\n')
-            except subprocess.CalledProcessError:
-                raise EnvironmentException(
-                    'Could not normalize target `{}`.'.format(target))
-
-        if arguments.build:
-            LOG.info('Building `%s`', target)
-            build_command = ['buck', 'build']
-            for target in targets:
-                build_command.append(target)
-            try:
-                subprocess.check_output(
-                    build_command,
-                    stderr=sys.stdout.buffer)
-            except subprocess.CalledProcessError:
-                raise EnvironmentException(
-                    'Could not build target `{}`.'.format(target))
-
-        target_path = target
-        if target_path.startswith('//'):
-            target_path = target_path[2:]
-        target_path = target_path.replace(':', '/')
-
-        generated_link_trees = glob.glob(
-            os.path.join('buck-out/gen/', target_path + '#*link-tree'))
-
-        if len(generated_link_trees) != 1 and \
-                arguments.normalize and \
-                arguments.build:
-            raise EnvironmentException(
-                'Could not find link trees for `{}`. The target might not be '
-                'normalized or built. See `{} --help` for more '
-                'information.'.format(target, sys.argv[0]))
-        elif len(generated_link_trees) != 1:
-            LOG.error(
-                'Could not find link trees for `%s`. '
-                'The target might not be normalized or built.',
-                target)
-            sys.stderr.write("Normalize and build target? [Y/n] ")
-            choice = input().strip().lower()
-            if choice in ['', 'y', 'ye', 'yes']:
-                arguments.normalize = True
-                arguments.build = True
-                link_trees.extend(_buck_link_trees(arguments))
-            else:
-                sys.exit(0)
-        else:
-            link_trees.append(generated_link_trees[0])
+    if len(link_trees) == 0:
+        raise EnvironmentException(
+            "No targets or link trees to analyze.")
     return link_trees

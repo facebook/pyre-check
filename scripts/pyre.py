@@ -16,6 +16,7 @@ import traceback
 import tools.pyre.scripts as pyre
 
 from tools.pyre.scripts import (
+    buck,
     commands,
     log,
 )
@@ -70,16 +71,12 @@ def main():
         help='Print the pyre version to be used')
 
     # Link tree determination.
-    buck = parser.add_argument_group('buck')
-    buck.add_argument(
+    buck_arguments = parser.add_argument_group('buck')
+    buck_arguments.add_argument(
         '--build',
         action='store_true',
         help='Build all the necessary artifacts.')
-    buck.add_argument(
-        '--normalize',
-        action='store_true',
-        help='Normalize target with `buck targets`.')
-    buck.add_argument(
+    buck_arguments.add_argument(
         '--target',
         action='append',
         help='The buck target to check')
@@ -167,7 +164,11 @@ def main():
 
         link_trees = pyre.resolve_link_trees(arguments, configuration)
         arguments.command(arguments, configuration, link_trees).run()
-    except (commands.ClientException, pyre.EnvironmentException) as error:
+    except (
+        buck.BuckException,
+        commands.ClientException,
+        pyre.EnvironmentException
+    ) as error:
         LOG.error(str(error))
         arguments.command(
             arguments,

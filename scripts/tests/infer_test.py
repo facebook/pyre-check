@@ -6,6 +6,7 @@
 import sys
 import textwrap
 import unittest
+import tools.pyre.scripts as pyre
 
 from unittest.mock import (
     MagicMock,
@@ -407,7 +408,8 @@ class InferTest(unittest.TestCase):
     @patch.object(log, 'cleanup')
     @patch.object(configuration.Configuration, '_read')
     @patch.object(configuration.Configuration, 'validate')
-    def test_main(self, validate, read, log_cleanup, log_initialize):
-        with patch.object(sys, 'argv', ['infer']), \
+    @patch.object(pyre, 'resolve_link_trees')
+    def test_main(self, validate, read, log_cleanup, log_initialize, get_trees):
+        with patch.object(sys, 'argv', ['infer', '--target', '.']), \
                 patch.object(Infer, 'run'):
             self.assertEqual(main(), 0)
