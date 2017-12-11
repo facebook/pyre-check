@@ -1313,7 +1313,7 @@ module State = struct
         _;
       } ->
           let check_assign ~target:{ Node.location; _ } ~access ~value_annotation errors =
-            let add_immutable_error ~expected ~parent ~name ~declare_location errors =
+            let add_incompatible_type_error ~expected ~parent ~name ~declare_location errors =
               if Resolution.less_or_equal resolution ~left:value_annotation ~right:expected then
                 errors
               else
@@ -1331,7 +1331,7 @@ module State = struct
                 in
                 Map.add ~key:error.Error.location ~data:error errors
             in
-            let add_missing_immutable_error ~expected ~parent ~name errors =
+            let add_missing_annotation_error ~expected ~parent ~name errors =
               if ((Type.is_unknown expected) || (Type.equal expected Type.Object)) &&
                  not (Type.is_unknown value_annotation) then
                 let error =
@@ -1363,7 +1363,7 @@ module State = struct
                   let expected = Annotation.original annotation
                   in
                   errors
-                  |> add_immutable_error
+                  |> add_incompatible_type_error
                     ~expected
                     ~parent:(Some parent)
                     ~name:(Instantiated.Access.access {
@@ -1371,7 +1371,7 @@ module State = struct
                         value = name;
                       })
                     ~declare_location:location
-                  |> add_missing_immutable_error
+                  |> add_missing_annotation_error
                     ~expected
                     ~parent:(Some parent)
                     ~name:(Instantiated.Access.access {
@@ -1389,8 +1389,12 @@ module State = struct
                       _;
                     } ->
                       errors
-                      |> add_immutable_error ~expected ~parent:None ~name ~declare_location:location
-                      |> add_missing_immutable_error ~expected ~parent:None ~name
+                      |> add_incompatible_type_error
+                        ~expected
+                        ~parent:None
+                        ~name
+                        ~declare_location:location
+                      |> add_missing_annotation_error ~expected ~parent:None ~name
                   | Some {
                       Annotation.mutability = Annotation.Immutable {
                           Annotation.scope = Annotation.Local;
@@ -1398,7 +1402,7 @@ module State = struct
                         };
                       _;
                     } ->
-                      add_immutable_error
+                      add_incompatible_type_error
                         ~expected
                         ~parent:None
                         ~name
