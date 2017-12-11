@@ -25,6 +25,8 @@ class Format:
     CLEAR_LINE = '\x1b[0G\x1b[K'
     CLEAR = '\033[0m'
     CURSOR_UP_LINE = '\x1b[1A'
+    TRUNCATE_OVERFLOW = '\033[?7l'
+    WRAP_OVERFLOW = '\033[?7h'
 
 
 class Character:
@@ -53,6 +55,13 @@ class TimedStreamHandler(logging.StreamHandler):
 
         self._record = None
         self._active_lines = 0
+        # Terminal should truncate long lines instead of wrapping
+        sys.stderr.write(
+            Format.TRUNCATE_OVERFLOW +
+            Format.CLEAR_LINE +
+            Format.CURSOR_UP_LINE)
+        # Hide cursor.
+        sys.stderr.write('\x1b[?25l')
 
         self._terminate = False
         self._thread = threading.Thread(target=self._thread)
@@ -115,13 +124,17 @@ class TimedStreamHandler(logging.StreamHandler):
             time.sleep(0.1)
 
     def terminate(self):
+        # Reset terminal to wrap overflowing lines
+        sys.stderr.write(
+            Format.WRAP_OVERFLOW +
+            Format.CLEAR_LINE +
+            Format.CURSOR_UP_LINE)
+        # Show cursor.
+        sys.stderr.write("\x1b[?25h\n")
         self._terminate = True
 
 
 def initialize(arguments):
-    # Hide cursor.
-    sys.stderr.write('\x1b[?25l')
-
     if arguments.noninteractive:
         stream_handler = logging.StreamHandler()
         stream_handler.setFormatter(SectionFormatter())
@@ -148,9 +161,6 @@ def initialize(arguments):
 
 
 def cleanup(arguments):
-    # Show cursor.
-    sys.stderr.write("\x1b[?25h\n")
-
     if arguments.timed_stream_handler:
         arguments.timed_stream_handler.terminate()
 
