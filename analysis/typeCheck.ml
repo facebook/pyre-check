@@ -1360,24 +1360,18 @@ module State = struct
                   location;
                   _;
                 } ->
-                  let expected = Annotation.original annotation
-                  in
+                  let expected = Annotation.original annotation in
+                  let name = Instantiated.Access.access (Node.create name) in
                   errors
                   |> add_incompatible_type_error
                     ~expected
                     ~parent:(Some parent)
-                    ~name:(Instantiated.Access.access {
-                        Node.location = Location.any;
-                        value = name;
-                      })
+                    ~name
                     ~declare_location:location
                   |> add_missing_annotation_error
                     ~expected
                     ~parent:(Some parent)
-                    ~name:(Instantiated.Access.access {
-                        Node.location = Location.any;
-                        value = name;
-                      })
+                    ~name
               | _ ->
                   let name = access in
                   match Map.find annotations access with
@@ -1406,7 +1400,8 @@ module State = struct
                         ~expected
                         ~parent:None
                         ~name
-                        ~declare_location:location errors
+                        ~declare_location:location
+                        errors
                   | _ ->
                       errors
             in
