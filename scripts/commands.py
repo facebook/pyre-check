@@ -14,9 +14,13 @@ import threading
 import time
 import traceback
 
-import tools.pyre.scripts as pyre
-from tools.pyre.scripts.error import Error
-from tools.pyre.scripts import log
+from . import (
+    EnvironmentException,
+    log,
+    SUCCESS,
+    TEXT,
+)
+from .error import Error
 
 
 LOG = logging.getLogger(__name__)
@@ -43,7 +47,7 @@ class Result:
         self.output = output
 
     def check(self):
-        if self.code != pyre.SUCCESS:
+        if self.code != SUCCESS:
             raise ClientException(
                 'Client exited with error code {}'.format(self.code))
 
@@ -94,7 +98,7 @@ class Command:
         results = []
         for link_tree in link_trees:
             if not os.path.isdir(link_tree):
-                raise pyre.EnvironmentException(
+                raise EnvironmentException(
                     '`{}` is not a link tree.'.format(link_tree))
 
             client_command = [
@@ -235,7 +239,7 @@ class ErrorHandling(Command):
         else:
             LOG.info("No type errors found")
 
-        if self._output == pyre.TEXT:
+        if self._output == TEXT:
             sys.stdout.write("\n")
             sys.stdout.write(
                 '\n'.join([repr(error) for error in sorted(list(errors))]))

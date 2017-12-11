@@ -13,14 +13,22 @@ import sys
 import time
 import traceback
 
-import tools.pyre.scripts as pyre
 
-from tools.pyre.scripts import (
+from . import (
     buck,
     commands,
+    EnvironmentException,
+    FAILURE,
+    get_version,
+    is_disabled,
+    JSON,
     log,
+    resolve_link_trees,
+    SUCCESS,
+    switch_root,
+    TEXT,
 )
-from tools.pyre.scripts.configuration import Configuration
+from .configuration import Configuration
 
 
 LOG = logging.getLogger(__name__)
@@ -50,8 +58,8 @@ def main():
     # Logging.
     parser.add_argument(
         '--output',
-        choices=[pyre.TEXT, pyre.JSON],
-        default=pyre.TEXT,
+        choices=[TEXT, JSON],
+        default=TEXT,
         help='How to format output')
     parser.add_argument(
         '--verbose',
@@ -145,47 +153,47 @@ def main():
     configuration = None
     try:
         start = time.time()
-        exit_code = pyre.SUCCESS
+        exit_code = SUCCESS
 
         if arguments.debug:
             arguments.noninteractive = True
 
         log.initialize(arguments)
-        pyre.switch_root(arguments)
+        switch_root(arguments)
 
         configuration = Configuration()
         link_trees = []
-        if pyre.is_disabled(configuration):
+        if is_disabled(configuration):
             LOG.info("Pyre will not run due to being explicitly disabled")
-            return pyre.SUCCESS
+            return SUCCESS
 
         if arguments.version:
-            sys.stdout.write(pyre.get_version(configuration) + '\n')
-            return pyre.SUCCESS
+            sys.stdout.write(get_version(configuration) + '\n')
+            return SUCCESS
 
         configuration.validate()
 
-        link_trees = pyre.resolve_link_trees(arguments, configuration)
+        link_trees = resolve_link_trees(arguments, configuration)
         arguments.command(arguments, configuration, link_trees).run()
     except (
         buck.BuckException,
         commands.ClientException,
-        pyre.EnvironmentException
+        EnvironmentException
     ) as error:
         LOG.error(str(error))
         arguments.command(
             arguments,
             configuration,
             link_trees).on_client_exception()
-        exit_code = pyre.FAILURE
+        exit_code = FAILURE
     except Exception as error:
         LOG.error(str(error))
         LOG.info(traceback.format_exc())
-        exit_code = pyre.FAILURE
+        exit_code = FAILURE
     except KeyboardInterrupt:
         LOG.warning("Interrupted by user")
         LOG.debug(traceback.format_exc())
-        exit_code = pyre.SUCCESS
+        exit_code = SUCCESS
     finally:
         log.cleanup(arguments)
         if configuration and configuration.logger:

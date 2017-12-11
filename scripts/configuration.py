@@ -8,7 +8,7 @@ import json
 import os
 import logging
 
-from tools.pyre.scripts import (
+from . import (
     EnvironmentException,
     CONFIGURATION_FILE,
 )

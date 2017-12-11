@@ -7,26 +7,15 @@ import unittest
 import sys
 
 from unittest.mock import patch
-from tools.pyre.scripts import (
+
+from .. import (
     commands,
     configuration,
-    log,
     pyre,
 )
 
 
 class PyreTest(unittest.TestCase):
-    @patch.object(log, 'initialize')
-    @patch.object(log, 'cleanup')
-    @patch.object(configuration.Configuration, '_read')
-    @patch.object(configuration.Configuration, 'validate')
-    def test_version(self, validate, read, log_cleanup, log_initialize):
-        with patch.object(sys, 'argv', ['pyre', '--version']), \
-                patch('tools.pyre.scripts.get_version') as get_version:
-            get_version.return_value = ''
-            self.assertEqual(pyre.main(), 0)
-            get_version.assert_called_once()
-
     @patch.object(configuration.Configuration, '_read')
     @patch.object(configuration.Configuration, 'validate')
     @patch.object(commands.Persistent, '_run_null_server')

@@ -6,13 +6,19 @@
 import sys
 import textwrap
 import unittest
-import tools.pyre.scripts as pyre
 
 from unittest.mock import (
     MagicMock,
     patch,
 )
-from tools.pyre.scripts.infer import (
+
+from .. import (
+    commands,
+    configuration,
+    log,
+)
+from ..error import Error
+from ..infer import (
     dequalify,
     FieldStub,
     FunctionStub,
@@ -20,12 +26,6 @@ from tools.pyre.scripts.infer import (
     main,
     StubFile,
 )
-from tools.pyre.scripts import (
-    commands,
-    configuration,
-    log,
-)
-from tools.pyre.scripts.error import Error
 
 
 def build_json(inference):
@@ -397,19 +397,7 @@ class InferTest(unittest.TestCase):
     @patch.object(log, 'cleanup')
     @patch.object(configuration.Configuration, '_read')
     @patch.object(configuration.Configuration, 'validate')
-    def test_version(self, validate, read, log_cleanup, log_initialize):
-        with patch.object(sys, 'argv', ['infer', '--version']), \
-                patch('tools.pyre.scripts.get_version') as get_version:
-            get_version.return_value = ''
-            self.assertEqual(main(), 0)
-            get_version.assert_called_once()
-
-    @patch.object(log, 'initialize')
-    @patch.object(log, 'cleanup')
-    @patch.object(configuration.Configuration, '_read')
-    @patch.object(configuration.Configuration, 'validate')
-    @patch.object(pyre, 'resolve_link_trees')
-    def test_main(self, validate, read, log_cleanup, log_initialize, get_trees):
+    def test_main(self, validate, read, log_cleanup, log_initialize):
         with patch.object(sys, 'argv', ['infer', '--target', '.']), \
                 patch.object(Infer, 'run'):
-            self.assertEqual(main(), 0)
+            self.assertEqual(main(), 1)

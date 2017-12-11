@@ -8,7 +8,7 @@ import unittest
 
 from unittest.mock import patch
 
-from tools.pyre.scripts.configuration import Configuration
+from ..configuration import Configuration
 
 
 class ConfigurationTest(unittest.TestCase):

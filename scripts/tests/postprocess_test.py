@@ -7,7 +7,8 @@ import pathlib
 import unittest
 
 from unittest.mock import call, patch, MagicMock
-from tools.pyre.scripts import postprocess
+
+from .. import postprocess
 
 
 class PostprocessTest(unittest.TestCase):

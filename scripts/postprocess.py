@@ -12,9 +12,12 @@ import re
 import sys
 import traceback
 
-import tools.pyre.scripts as pyre
-
 from collections import defaultdict
+
+from . import (
+    FAILURE,
+    SUCCESS,
+)
 
 
 LOG = logging.getLogger(__name__)
@@ -93,15 +96,15 @@ if __name__ == '__main__':
         level=logging.DEBUG if arguments.verbose else logging.INFO)
 
     try:
-        exit_code = pyre.SUCCESS
+        exit_code = SUCCESS
         arguments.function(arguments)
     except PostprocessError as error:
         LOG.error(str(error))
         LOG.debug(traceback.format_exc())
-        exit_code = pyre.FAILURE
+        exit_code = FAILURE
     except Exception as error:
         LOG.error(str(error))
         LOG.info(traceback.format_exc())
-        exit_code = pyre.FAILURE
+        exit_code = FAILURE
 
     sys.exit(exit_code)

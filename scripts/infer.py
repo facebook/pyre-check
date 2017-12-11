@@ -13,16 +13,23 @@ import subprocess
 import sys
 import traceback
 
-from tools.pyre.scripts import log
 from collections import defaultdict
 from pathlib import Path
 
-import tools.pyre.scripts as pyre
-from tools.pyre.scripts import (
+from . import (
     buck,
     commands,
+    EnvironmentException,
+    FAILURE,
+    get_version,
+    JSON,
+    log,
+    resolve_link_trees,
+    SUCCESS,
+    switch_root,
 )
-from tools.pyre.scripts.configuration import Configuration
+from .configuration import Configuration
+
 
 LOG = logging.getLogger(__name__)
 
@@ -364,7 +371,7 @@ class Infer(commands.ErrorHandling):
     def __init__(self, arguments, configuration, link_trees):
         arguments.show_error_traces = True
         arguments.check_unannotated = True
-        arguments.output = pyre.JSON
+        arguments.output = JSON
         super(Infer, self).__init__(arguments, configuration, link_trees)
         self._recursive = arguments.recursive
 
@@ -457,37 +464,37 @@ def main():
     arguments = parser.parse_args()
 
     try:
-        exit_code = pyre.SUCCESS
+        exit_code = SUCCESS
 
         if arguments.debug:
             arguments.noninteractive = True
 
         log.initialize(arguments)
-        pyre.switch_root(arguments)
+        switch_root(arguments)
 
         configuration = Configuration()
 
         if arguments.version:
-            sys.stdout.write(pyre.get_version(configuration) + '\n')
-            return pyre.SUCCESS
+            sys.stdout.write(get_version(configuration) + '\n')
+            return SUCCESS
 
         configuration.validate()
 
-        link_trees = pyre.resolve_link_trees(arguments, configuration)
+        link_trees = resolve_link_trees(arguments, configuration)
         Infer(arguments, configuration, link_trees).run()
     except (
         buck.BuckException,
         commands.ClientException,
-        pyre.EnvironmentException,
+        EnvironmentException,
     ) as error:
         LOG.error(str(error))
         LOG.error("For more information, run 'pyre-infer --help'.")
-        exit_code = pyre.FAILURE
+        exit_code = FAILURE
     except Exception as error:
         LOG.error(str(error))
         LOG.error("For more information, run 'pyre-infer --help'.")
         LOG.info(traceback.format_exc())
-        exit_code = pyre.FAILURE
+        exit_code = FAILURE
     finally:
         log.cleanup(arguments)
         return exit_code

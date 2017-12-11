@@ -8,8 +8,10 @@ import signal
 
 from unittest.mock import call, patch, mock_open, MagicMock
 
-import tools.pyre.scripts as pyre
-import tools.pyre.scripts.commands as commands
+from .. import (
+    commands,
+    EnvironmentException,
+)
 
 
 def mock_arguments():
@@ -52,14 +54,14 @@ class PersistentTest(unittest.TestCase):
 
         # Check start of null server.
         with patch.object(commands.Command, '_call_client') as call_client:
-            call_client.side_effect = pyre.EnvironmentException('derp')
+            call_client.side_effect = EnvironmentException('derp')
             arguments.no_watchman = True
             try:
                 commands.Persistent(
                     arguments,
                     configuration,
                     link_trees=['.']).run()
-            except (commands.ClientException, pyre.EnvironmentException):
+            except (commands.ClientException, EnvironmentException):
                 commands.Persistent(
                     arguments,
                     configuration,
