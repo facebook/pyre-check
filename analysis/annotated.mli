@@ -223,11 +223,20 @@ module Access: sig
       backup: (Call.t * Signature.t) option;
     }
 
+    type undefined_field = {
+      name: Expression.access;
+      parent: Class.t option;
+    }
+
+    type field =
+      | Defined of Field.t
+      | Undefined of undefined_field
+
     type t =
       | Array
       | Call of call
       | Expression
-      | Field of Class.Field.t
+      | Field of field
       | Global
       | Identifier
       | Method of method_call

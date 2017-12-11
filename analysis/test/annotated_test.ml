@@ -831,77 +831,58 @@ let test_backup _ =
 
 
 let test_fold _ =
-  let fold_results access environment =
-    let accumulate_returns accumulator ~annotations:_ ~resolved ~element =
-      (resolved, element) :: accumulator
-    in
-    Access.fold
-      ~resolution:(resolution environment)
-      ~initial:[]
-      ~f:accumulate_returns
-      (Access.create access)
-  in
-  let equal left right =
-    match (snd left), (snd right) with
-    | Access.Element.Array, Access.Element.Array
-    | Access.Element.Call _, Access.Element.Call _
-    | Access.Element.Expression, Access.Element.Expression
-    | Access.Element.Field _, Access.Element.Field _
-    | Access.Element.Global, Access.Element.Global
-    | Access.Element.Identifier, Access.Element.Identifier
-    | Access.Element.Method _, Access.Element.Method _ -> Annotation.equal (fst left) (fst right)
-    | _, _ -> false
-  in
-  let printer elements =
-    let print sofar element =
-      match snd element with
-      | Access.Element.Array -> "(" ^ (Annotation.show (fst element)) ^ ", Array) " ^ sofar
-      | Access.Element.Call _ -> "(" ^ (Annotation.show (fst element)) ^ ", Call) " ^ sofar
-      | Access.Element.Expression -> "(" ^ (Annotation.show (fst element)) ^
-                                     ", Expression) " ^ sofar
-      | Access.Element.Field _ -> "(" ^ (Annotation.show (fst element)) ^ ", Field) " ^ sofar
-      | Access.Element.Global -> "(" ^ (Annotation.show (fst element)) ^ ", Global) " ^ sofar
-      | Access.Element.Identifier -> "(" ^ (Annotation.show (fst element)) ^
-                                     ", Identifier) " ^ sofar
-      | Access.Element.Method _ -> "(" ^ (Annotation.show (fst element)) ^ ", Method) " ^ sofar
-    in
-    List.fold ~init:"" ~f:print elements
-  in
   let assert_fold ~environment access expected =
+    let equal left right =
+      match (snd left), (snd right) with
+      | Access.Element.Array, Access.Element.Array
+      | Access.Element.Call _, Access.Element.Call _
+      | Access.Element.Expression, Access.Element.Expression
+      | Access.Element.Field _, Access.Element.Field _
+      | Access.Element.Global, Access.Element.Global
+      | Access.Element.Identifier, Access.Element.Identifier
+      | Access.Element.Method _, Access.Element.Method _ -> Annotation.equal (fst left) (fst right)
+      | _, _ -> false
+    in
+    let printer elements =
+      let print element =
+        match snd element with
+        | Access.Element.Array -> "(" ^ (Annotation.show (fst element)) ^ ", Array)"
+        | Access.Element.Call _ -> "(" ^ (Annotation.show (fst element)) ^ ", Call)"
+        | Access.Element.Expression ->
+            "(" ^ (Annotation.show (fst element)) ^ ", Expression)"
+        | Access.Element.Field _ -> "(" ^ (Annotation.show (fst element)) ^ ", Field)"
+        | Access.Element.Global -> "(" ^ (Annotation.show (fst element)) ^ ", Global)"
+        | Access.Element.Identifier ->
+            "(" ^ (Annotation.show (fst element)) ^ ", Identifier) "
+        | Access.Element.Method _ -> "(" ^ (Annotation.show (fst element)) ^ ", Method) "
+      in
+      List.map ~f:print elements
+      |> String.concat ~sep:"\n"
+    in
+    let fold_results access environment =
+      let accumulate_returns accumulator ~annotations:_ ~resolved ~element =
+        (resolved, element) :: accumulator
+      in
+      Access.fold
+        ~resolution:(resolution environment)
+        ~initial:[]
+        ~f:accumulate_returns
+        (Access.create access)
+    in
     assert_equal
       ~cmp:(List.equal ~equal)
       ~printer
       expected
       (fold_results access environment)
   in
-  let field_element =
-    let mock_class =
-      {
-        Statement.Class.name = Instantiated.Access.create "";
-        bases = [];
-        body = [+Pass];
-        decorators = [];
-        docstring = None;
-      }
-      |> Class.create
-    in
-    Access.Element.Field {
-      Field.parent = mock_class;
-      name = Ast.Expression.Access (Instantiated.Access.create "");
-      annotation = (Annotation.create_immutable ~global:true Type.Top);
-      location = Location.any;
-      value = None;
-    }
-  in
 
-  let environment = populate "" in
   assert_fold
-    ~environment
+    ~environment:(populate "")
     (Instantiated.Access.create "foo")
-    ([
-      (Annotation.create Type.Top, Access.Element.Global);
-      (Annotation.create Type.Top, Access.Element.Global);
-    ]);
+    [
+      Annotation.create Type.Top, Access.Element.Global;
+      Annotation.create Type.Top, Access.Element.Global;
+    ];
 
   let environment =
     populate {|
@@ -910,14 +891,49 @@ let test_fold _ =
       foo : Foo
     |}
   in
+  let mock_class =
+    {
+      Statement.Class.name = Instantiated.Access.create "";
+      bases = [];
+      body = [+Pass];
+      decorators = [];
+      docstring = None;
+    }
+    |> Class.create
+  in
+  let defined_field =
+    Access.Element.Field (Access.Element.Defined {
+      Field.parent = mock_class;
+      name = Ast.Expression.Access (Instantiated.Access.create "");
+      annotation = (Annotation.create_immutable ~global:true Type.Top);
+      location = Location.any;
+      value = None;
+    })
+  in
   assert_fold
     ~environment
     (Instantiated.Access.create "foo.bar")
-    ([
-      (Annotation.create_immutable ~global:true Type.integer, field_element);
-      (Annotation.create_immutable ~global:true (Type.Primitive ~~"Foo"), Access.Element.Global);
-      (Annotation.create Type.Top, Access.Element.Global);
-    ])
+    [
+      Annotation.create_immutable ~global:true Type.integer, defined_field;
+      Annotation.create_immutable ~global:true (Type.Primitive ~~"Foo"), Access.Element.Global;
+      Annotation.create Type.Top, Access.Element.Global;
+    ];
+
+  let undefined_field =
+    Access.Element.Field
+      (Access.Element.Undefined {
+        Access.Element.name = Instantiated.Access.create "baz";
+        parent = Some mock_class;
+      })
+  in
+  assert_fold
+    ~environment
+    (Instantiated.Access.create "foo.baz")
+    [
+      Annotation.create Type.Top, undefined_field;
+      Annotation.create_immutable ~global:true (Type.Primitive ~~"Foo"), Access.Element.Global;
+      Annotation.create Type.Top, Access.Element.Global;
+    ]
 
 
 let () =

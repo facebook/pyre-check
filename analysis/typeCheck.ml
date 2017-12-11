@@ -734,29 +734,28 @@ module State = struct
           in
           Map.add ~key:access ~data:annotation annotations
       | Assign { Assign.target; value = Some value; _ } ->
+          let open Annotated in
           let forward_annotations
               ~target:_
               ~access
               ~value_annotation
               annotations =
             let annotation = Map.find annotations access in
-            let element =
-              Annotated.Access.last_element ~resolution (Annotated.Access.create access)
-            in
+            let element = Access.last_element ~resolution (Annotated.Access.create access) in
             match annotation, element with
             | Some annotation, _ when Annotation.is_immutable annotation ->
                 Map.add
                   ~key:access
                   ~data:(AnnotationOrder.refine ~resolution annotation value_annotation)
                   annotations
-            | _, Annotated.Access.Element.Field { Annotated.Field.annotation; _ }->
-                Map.add
-                  ~key:access
-                  ~data:(AnnotationOrder.refine
-                           ~resolution
-                           annotation
-                           value_annotation)
-                  annotations
+            | _, Access.Element.Field (Access.Element.Defined field) ->
+                let refined =
+                  AnnotationOrder.refine
+                    ~resolution
+                    (Field.annotation field)
+                    value_annotation
+                in
+                Map.add ~key:access ~data:refined annotations
             | _, _ ->
                 Map.add ~key:access ~data:(Annotation.create value_annotation) annotations
           in
@@ -834,38 +833,35 @@ module State = struct
                 end
 
             | Access access ->
-                let element =
-                  Annotated.Access.last_element ~resolution (Annotated.Access.create access)
-                in
+                let open Annotated in
+                let element = Access.last_element ~resolution (Annotated.Access.create access) in
                 begin
                   match Map.find annotations access, element with
                   | Some { Annotation.annotation = Type.Optional parameter; _ }, _ ->
                       Map.add ~key:access ~data:(Annotation.create parameter) annotations
-                  | _,
-                    Annotated.Access.Element.Field {
-                      Annotated.Field.annotation;
-                      _;
-                    } ->
-                      (match annotation with
-                       | {
-                         Annotation.annotation = Type.Optional parameter;
-                         mutability = Annotation.Mutable
-                       }
-                       | {
-                         Annotation.annotation = _;
-                         mutability = Annotation.Immutable {
-                             Annotation.original = Type.Optional parameter; _ };
-                       }
-                         ->
-                           Map.add
-                             ~key:access
-                             ~data:
-                               (AnnotationOrder.refine
-                                  ~resolution
-                                  annotation
-                                  parameter)
-                             annotations
-                       | _ -> annotations)
+                  | _, Access.Element.Field (Access.Element.Defined field) ->
+                      begin
+                        match Field.annotation field with
+                        | {
+                          Annotation.annotation = Type.Optional parameter;
+                          mutability = Annotation.Mutable
+                        }
+                        | {
+                          Annotation.annotation = _;
+                          mutability = Annotation.Immutable {
+                              Annotation.original = Type.Optional parameter;
+                              _;
+                            };
+                        } ->
+                            let refined =
+                              AnnotationOrder.refine
+                                ~resolution
+                                (Field.annotation field)
+                                parameter
+                            in
+                            Map.add ~key:access ~data:refined annotations
+                        | _ -> annotations
+                      end
                   | _ ->
                       annotations
                 end
@@ -912,19 +908,18 @@ module State = struct
                   { Node.value = Access [ Access.Identifier identifier; ]; _ }
                 ];
               } when Identifier.show identifier = "None" ->
-                let element =
-                  Annotated.Access.last_element ~resolution (Annotated.Access.create access)
-                in
+                let open Annotated in
+                let element = Access.last_element ~resolution (Annotated.Access.create access) in
                 begin
                   match element with
-                  | Annotated.Access.Element.Field { Annotated.Field.annotation; _ } ->
-                      Map.add
-                        ~key:access
-                        ~data:(AnnotationOrder.refine
-                                 ~resolution
-                                 annotation
-                                 (Type.Optional Type.Bottom))
-                        annotations
+                  | Access.Element.Field (Access.Element.Defined field) ->
+                      let refined =
+                        AnnotationOrder.refine
+                          ~resolution
+                          (Field.annotation field)
+                          (Type.Optional Type.Bottom)
+                      in
+                      Map.add ~key:access ~data:refined annotations
                   | _ ->
                       Map.add
                         ~key:access
@@ -1353,24 +1348,18 @@ module State = struct
             let errors =
               let open Annotated in
               match Access.last_element ~resolution (Access.create access) with
-              | Access.Element.Field {
-                  Annotated.Field.parent;
-                  name;
-                  annotation;
-                  location;
-                  _;
-                } ->
-                  let expected = Annotation.original annotation in
-                  let name = Instantiated.Access.access (Node.create name) in
+              | Access.Element.Field (Access.Element.Defined field) ->
+                  let expected = Annotation.original (Field.annotation field) in
+                  let name = Instantiated.Access.access (Node.create (Field.name field)) in
                   errors
                   |> add_incompatible_type_error
                     ~expected
-                    ~parent:(Some parent)
+                    ~parent:(Some (Field.parent field))
                     ~name
-                    ~declare_location:location
+                    ~declare_location:(Field.location field)
                   |> add_missing_annotation_error
                     ~expected
-                    ~parent:(Some parent)
+                    ~parent:(Some (Field.parent field))
                     ~name
               | _ ->
                   let name = access in

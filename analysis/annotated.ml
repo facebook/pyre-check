@@ -811,6 +811,7 @@ module Access = struct
       callee: Signature.t option
     }
 
+
     type method_call = {
       location: Location.t;
       access: access;
@@ -820,11 +821,23 @@ module Access = struct
       backup: (Call.t * Signature.t) option;
     }
 
+
+    type undefined_field = {
+      name: Expression.access;
+      parent: Class.t option;
+    }
+
+
+    type field =
+      | Defined of Field.t
+      | Undefined of undefined_field
+
+
     type t =
       | Array
       | Call of call
       | Expression
-      | Field of Field.t
+      | Field of field
       | Global
       | Identifier
       | Method of method_call
@@ -993,7 +1006,26 @@ module Access = struct
 
         | Some (_, annotation), ([Access.Identifier _] as field_access) -> (
             (* Field access. *)
-            Resolution.class_definition resolution (Annotation.annotation annotation)
+            let definition =
+              Resolution.class_definition
+                resolution
+                (Annotation.annotation annotation)
+            in
+            let default =
+              let field =
+                {
+                  name = field_access;
+                  Element.parent = definition;
+                }
+              in
+              resolution,
+              Annotation.create Type.Top,
+              (f accumulator
+                 ~annotations
+                 ~resolved:(Annotation.create Type.Top)
+                 ~element:(Element.Field (Element.Undefined field)))
+            in
+            definition
             >>= Class.field ~transitive:true ~resolution ~name:field_access
             >>| (fun field ->
                 match Map.find annotations access with
@@ -1004,7 +1036,7 @@ module Access = struct
                        accumulator
                        ~annotations
                        ~resolved:annotation
-                       ~element:(Element.Field field))
+                       ~element:(Element.Field (Element.Defined field)))
                 | None ->
                     resolution,
                     Field.annotation field,
@@ -1012,15 +1044,8 @@ module Access = struct
                        accumulator
                        ~annotations
                        ~resolved:(Field.annotation field)
-                       ~element:(Element.Field field)))
-            |> Option.value
-              ~default:(
-                resolution,
-                Annotation.create Type.Top,
-                (f accumulator
-                   ~annotations
-                   ~resolved:(Annotation.create Type.Top)
-                   ~element:Element.Identifier)))
+                       ~element:(Element.Field (Element.Defined field))))
+            |> Option.value ~default)
 
         | Some (_, annotation), (Access.Subscript subscript) :: _ ->
             (* Array access. *)
