@@ -3062,8 +3062,10 @@ let test_stubs _ =
     [
       +Stub
         (Stub.Assign {
-            Stub.value = !"a";
+            Assign.target = !"a";
             annotation = None;
+            value = None;
+            compound = None;
             parent = None;
           });
     ];
@@ -3073,8 +3075,10 @@ let test_stubs _ =
     [
       +Stub
         (Stub.Assign {
-            Stub.value = !"a";
+            Assign.target = !"a";
             annotation = Some !"int";
+            value = None;
+            compound = None;
             parent = None;
           });
     ];
@@ -3084,8 +3088,10 @@ let test_stubs _ =
     [
       +Stub
         (Stub.Assign {
-            Stub.value = !"a";
+            Assign.target = !"a";
             annotation = Some !"int";
+            value = None;
+            compound = None;
             parent = None;
           });
     ];
@@ -3095,12 +3101,14 @@ let test_stubs _ =
     [
       +Stub
         (Stub.Assign {
-            Stub.value = !"a";
+            Assign.target = !"a";
             annotation = Some
                 (+Access [
                    Access.Identifier ~~"Tuple";
                    Access.Subscript [Access.Index !"str"];
                  ]);
+            value = None;
+            compound = None;
             parent = None;
           });
     ];
@@ -3110,7 +3118,7 @@ let test_stubs _ =
     [
       +Stub
         (Stub.Assign {
-            Stub.value = !"a";
+            Assign.target = !"a";
             annotation = Some
                 (+Access [
                    Access.Identifier ~~"Tuple";
@@ -3119,6 +3127,8 @@ let test_stubs _ =
                      Access.Index !"...";
                    ];
                  ]);
+            value = None;
+            compound = None;
             parent = None;
           });
     ];
@@ -3128,12 +3138,14 @@ let test_stubs _ =
     [
       +Stub
         (Stub.Assign {
-            Stub.value = !"a";
+            Assign.target = !"a";
             annotation = Some
                 (+Access [
                    Access.Identifier ~~"Optional";
                    Access.Subscript [Access.Index !"int"];
                  ]);
+            value = None;
+            compound = None;
             parent = None;
           });
     ];
@@ -3147,8 +3159,10 @@ let test_stubs _ =
         body = [
           +Stub
             (Stub.Assign {
-                Stub.value = !"a";
+                Assign.target = !"a";
                 annotation = Some !"int";
+                value = None;
+                compound = None;
                 parent = Some (Instantiated.Access.create "A");
               });
         ];

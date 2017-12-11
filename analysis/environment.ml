@@ -618,9 +618,11 @@ let populate
           }
           | {
             Node.value = Stub (Stub.Assign {
-                Stub.value = { Node.value = Access access; _ };
+                Assign.target = { Node.value = Access access; _ } ;
                 annotation = Some annotation;
+                compound = None;
                 parent = Some parent;
+                _;
               });
             _;
           } ->
@@ -810,8 +812,9 @@ let populate
       }
       | {
         Node.value = Stub (Stub.Assign {
-            Stub.value = { Node.value = Access access; _ };
+            Assign.target = { Node.value = Access access; _ };
             annotation = Some annotation;
+            compound = None;
             _;
           });
         _;

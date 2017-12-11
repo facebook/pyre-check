@@ -280,8 +280,10 @@ small_statement:
         Node.location = target.Node.location;
         value = Stub
           (Stub.Assign {
-            Stub.value = target;
+            Assign.target;
             annotation = None;
+            value = None;
+            compound = None;
             parent = None;
           });
       } in
@@ -293,8 +295,10 @@ small_statement:
         Node.location = target.Node.location;
         value = Stub
           (Stub.Assign {
-            Stub.value = target;
+            Assign.target;
             annotation = Some annotation;
+            value = None;
+            compound = None;
             parent = None;
           });
       } in
@@ -308,8 +312,10 @@ small_statement:
         Node.location = target.Node.location;
         value = Stub
           (Stub.Assign {
-            Stub.value = target;
+            Assign.target;
             annotation = Some annotation;
+            value = None;
+            compound = None;
             parent = None;
           });
       }]
@@ -458,7 +464,7 @@ compound_statement:
                   [{
                     Node.location;
                     value = Stub
-                      (Stub.Assign { assign with Stub.parent = Some name });
+                      (Stub.Assign { assign with Assign.parent = Some name });
                   }]
               | { Node.location; value = Define define } ->
                   [{

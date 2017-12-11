@@ -406,14 +406,16 @@ module Class = struct
             ~location
           |> f initial
       | Stub (Stub.Assign {
-          Stub.value = { Node.value = Access access; _ };
+          Assign.target = { Node.value = Access access; _ };
           annotation = annotation;
+          value;
+          compound = None;
           _;
         }) ->
           Field.create
             ~name:(Access access)
             ~parent:(create parent)
-            ~annotation:(Field.make_annotation ~resolution ~annotation ~value:None)
+            ~annotation:(Field.make_annotation ~resolution ~annotation ~value:value)
             ~value:None
             ~location
           |> f initial

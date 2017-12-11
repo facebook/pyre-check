@@ -269,21 +269,15 @@ let qualify source =
 
   let map =
     let collect_globals sofar = function
-      | { Node.value = Assign { Assign.target; _ }; _ } -> (
-          match target with
-          | { Node.value = Access access; _ } ->
-              Map.add ~key:access ~data:(qualifier @ access) sofar
-          | _ ->
-              sofar
-        )
-      | {
-        Node.value = Stub (Stub.Assign {
-            Stub.value = { Node.value = Access access; _ };
-            _;
-          });
-        _;
-      } ->
-          Map.add ~key:access ~data:(qualifier @ access) sofar
+      | { Node.value = Assign { Assign.target; _ }; _ }
+      | { Node.value = Stub (Stub.Assign { Assign.target; _ }); _ } ->
+          begin
+            match target with
+            | { Node.value = Access access; _ } ->
+                Map.add ~key:access ~data:(qualifier @ access) sofar
+            | _ ->
+                sofar
+          end
       | _ ->
           sofar
     in

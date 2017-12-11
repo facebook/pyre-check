@@ -335,10 +335,12 @@ module Make (Transformer : Transformer) = struct
           | Stub stub ->
               let stub =
                 match stub with
-                | Stub.Assign { Stub.value; annotation; parent } ->
+                | Stub.Assign { Assign.target; annotation; value; compound; parent } ->
                     Stub.Assign {
-                      Stub.value = transform_expression value;
+                      Assign.target = transform_expression target;
                       annotation = annotation >>| transform_expression;
+                      value = value >>| transform_expression;
+                      compound;
                       parent;
                     }
                 | Stub.Class { Class.name; bases; body; decorators; docstring; } ->

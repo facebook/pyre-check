@@ -135,15 +135,8 @@ module Assign = struct
 end
 
 module Stub = struct
-  type access = {
-    value: Expression.t;
-    annotation: Expression.t option;
-    parent: Expression.access option;
-  }
-
-
-  and 'statement t =
-    | Assign of access
+  type 'statement t =
+    | Assign of Assign.t
     | Class of 'statement Class.t
     | Define of 'statement Define.t
   [@@deriving compare, eq, sexp, show]
@@ -418,15 +411,11 @@ module PrettyPrinter = struct
           "return %a"
           pp_expression_option ("", expression)
 
-    | Stub (Stub.Assign stub_assign) ->
-        (* Weirdness: Stub.value corresponds to target for Assign statements *)
-        let to_assign { Stub.value; annotation; parent } =
-          { Assign.target = value; annotation; value = None; compound = None; parent }
-        in
+    | Stub (Stub.Assign assign) ->
         Format.fprintf
           formatter
           "%a"
-          pp_assign (to_assign stub_assign)
+          pp_assign assign
 
     | Stub (Stub.Class definition) ->
         Format.fprintf formatter "%a" pp_class definition

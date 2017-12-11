@@ -119,14 +119,8 @@ module Assign : sig
 end
 
 module Stub : sig
-  type access = {
-    value: Expression.t;
-    annotation: Expression.t option;
-    parent: Expression.access option;
-  }
-
-  and 'statement t =
-    | Assign of access
+  type 'statement t =
+    | Assign of Assign.t
     | Class of 'statement Class.t
     | Define of 'statement Define.t
   [@@deriving compare, eq, sexp, show]
