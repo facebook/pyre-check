@@ -183,6 +183,8 @@ class Buffer:
 
     def flush(self):
         with self._lock:
+            if self._flushed is True:
+                return
             self._flushed = True
         message = '\n'.join(self._data)
         if self._section == 'ERROR':
