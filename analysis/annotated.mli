@@ -35,9 +35,10 @@ module Class : sig
     [@@deriving eq, show]
 
     val create
-      :  name: Expression.expression
+      :  resolution: Resolution.t
+      -> name: Expression.expression
       -> parent: parent_class
-      -> annotation: Annotation.t
+      -> annotation: Expression.t option
       -> value: Expression.t option
       -> location: Location.t
       -> t

@@ -838,14 +838,10 @@ let test_field _ =
   in
   let create_field name annotation =
     Field.create
+      ~resolution
       ~name:(Expression.Access (Instantiated.Access.create name))
       ~parent:mock_class
-      ~annotation:(
-        Field.make_annotation
-          ~resolution
-          ~annotation:(Some !annotation)
-          ~value:None
-      )
+      ~annotation:(Some !annotation)
       ~value:None
       ~location:Location.any
   in

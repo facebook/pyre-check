@@ -87,10 +87,6 @@ module Class = struct
     [@@deriving eq, show]
 
 
-    let create ~name ~parent ~annotation ~value ~location =
-      { name; parent; annotation; value; location; }
-
-
     let make_annotation ~resolution ~annotation ~value =
       match annotation, value with
       | Some annotation, Some value ->
@@ -109,6 +105,16 @@ module Class = struct
             (Resolution.parse_annotation resolution value)
       | _ ->
           Annotation.create_immutable ~global:true Type.Top
+
+
+    let create ~resolution ~name ~parent ~annotation ~value ~location =
+      {
+        name;
+        parent;
+        annotation = make_annotation ~resolution ~annotation ~value;
+        value;
+        location;
+      }
 
 
     let create_from_assign ~resolution
@@ -399,9 +405,10 @@ module Class = struct
           _;
         } ->
           Field.create
+            ~resolution
             ~name:(Access access)
             ~parent:(create parent)
-            ~annotation:(Field.make_annotation ~resolution ~annotation ~value:value)
+            ~annotation
             ~value:value
             ~location
           |> f initial
@@ -413,10 +420,11 @@ module Class = struct
           _;
         }) ->
           Field.create
+            ~resolution
             ~name:(Access access)
             ~parent:(create parent)
-            ~annotation:(Field.make_annotation ~resolution ~annotation ~value:value)
-            ~value:None
+            ~annotation
+            ~value
             ~location
           |> f initial
       | _ -> initial
