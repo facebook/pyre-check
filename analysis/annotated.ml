@@ -824,7 +824,7 @@ module Access = struct
       | Array
       | Call of call
       | Expression
-      | Field of Class.Field.t
+      | Field of Field.t
       | Global
       | Identifier
       | Method of method_call
