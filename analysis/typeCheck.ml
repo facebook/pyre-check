@@ -1936,15 +1936,6 @@ let check configuration environment source =
            )
         check_output
     in
-    Statistics.coverage
-      ~flush:false
-      ~coverage:[
-        ("full_type_coverage", full_coverage);
-        ("partial_type_coverage", partial_coverage);
-        ("no_type_coverage", untyped_coverage);
-      ]
-      ~labels:["root", "root"]
-    |> ignore;
     let error_list =
       List.fold
         ~init:[]
@@ -1954,6 +1945,17 @@ let check configuration environment source =
           )
         check_output
     in
+    Statistics.coverage
+      ~flush:false
+      ~coverage:[
+        "full_type_coverage", full_coverage;
+        "partial_type_coverage", partial_coverage;
+        "no_type_coverage", untyped_coverage;
+        "ignore_coverage", List.length (Source.ignore_lines source);
+        "total_errors", List.length error_list;
+      ]
+      ~labels:["root", "root"]
+    |> ignore;
     error_list
   in
 
