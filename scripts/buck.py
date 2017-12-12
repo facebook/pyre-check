@@ -6,6 +6,7 @@ import os
 import subprocess
 import sys
 from collections import namedtuple
+from . import log
 
 LOG = logging.getLogger(__name__)
 
@@ -63,7 +64,7 @@ def _build_targets(original_target_name, targets):
 
 
 def _get_yes_no_input(prompt):
-    LOG.log(50, prompt + ' [Y/n] ')
+    LOG.log(log.PROMPT, prompt + ' [Y/n] ')
     choice = input().strip().lower()
     return choice in ['', 'y', 'ye', 'yes']
 

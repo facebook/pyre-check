@@ -307,11 +307,13 @@ def generate_stub_files(arguments, errors):
 
 def write_stubs_to_disk(arguments, stubs, type_directory):
     if type_directory.exists():
-        LOG.info("Deleting {}".format(type_directory))
+        LOG.log(log.SUCCESS, "Deleting {}".format(type_directory))
         shutil.rmtree(type_directory)
     type_directory.mkdir(parents=True, exist_ok=True)
 
-    LOG.info("Outputting inferred stubs to {}".format(type_directory))
+    LOG.log(
+        log.SUCCESS,
+        "Outputting inferred stubs to {}".format(type_directory))
     for stub in stubs:
         stub.output_to_file(stub.path(type_directory))
 
@@ -324,7 +326,7 @@ def filter_paths(arguments, stubs, type_directory):
                 [not str(stub.path(Path(""))).startswith(str(path))
                     for stub in stubs])]
     for path in unused_annotates:
-        LOG.info("No annotations for {}".format(path))
+        LOG.log(log.SUCESS, "No annotations for {}".format(path))
 
     return [stub for stub in stubs
             if any([str(stub.path(Path(""))).startswith(str(path))

@@ -163,7 +163,9 @@ def main():
         configuration = Configuration()
         link_trees = []
         if configuration.disabled():
-            LOG.info("Pyre will not run due to being explicitly disabled")
+            LOG.log(
+                log.SUCCESS,
+                "Pyre will not run due to being explicitly disabled")
             return SUCCESS
 
         if arguments.version:

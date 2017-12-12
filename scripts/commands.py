@@ -237,7 +237,7 @@ class ErrorHandling(Command):
             LOG.error(
                 "Found %d type error%s!", length, "s" if length > 1 else "")
         else:
-            LOG.info("No type errors found")
+            LOG.log(log.SUCCESS, "No type errors found")
 
         if self._output == TEXT:
             sys.stdout.write("\n")
