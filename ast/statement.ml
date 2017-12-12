@@ -15,6 +15,7 @@ module Define = struct
     docstring: string option;
     return_annotation: Expression.t option;
     async: bool;
+    generated: bool;
     parent: Expression.access option; (* The class owning the method. *)
   }
   [@@deriving compare, eq, sexp, show]

@@ -19,6 +19,8 @@ val single_job : t -> f:('a -> 'b) -> 'a -> 'b
 
 val is_parallel : t -> bool
 
+val with_parallel: is_parallel: bool -> t -> t
+
 val mock: unit -> t
 
 val destroy : t -> unit

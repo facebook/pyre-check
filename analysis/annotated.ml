@@ -270,7 +270,7 @@ module Class = struct
     |> List.map ~f:create
 
 
-  let constructors ({ Class.name; body; docstring; _ } as definition) ~resolution =
+  let constructors ({ Class.name; body; _ } as definition) ~resolution =
     let constructors =
       let declared =
         let extract_constructor = function
@@ -284,16 +284,7 @@ module Class = struct
       in
       let constructors =
         if List.is_empty declared then
-          [{
-            Define.name;
-            parameters = [];
-            body = [Node.create Pass];
-            decorators = [];
-            return_annotation = None;
-            async = false;
-            parent = Some name;
-            docstring;
-          }]
+          [Instantiated.Define.create_generated_constructor definition]
         else
           declared
       in

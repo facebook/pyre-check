@@ -415,6 +415,7 @@ let test_expand_returns _ =
         docstring = None;
         return_annotation = None;
         async = false;
+        generated = false;
         parent = None;
       };
     ]
@@ -427,6 +428,7 @@ let test_expand_returns _ =
         docstring = None;
         return_annotation = None;
         async = false;
+        generated = false;
         parent = None;
       };
     ];
@@ -441,6 +443,7 @@ let test_expand_returns _ =
         docstring = None;
         return_annotation = None;
         async = false;
+        generated = false;
         parent = None;
       };
     ]
@@ -453,6 +456,7 @@ let test_expand_returns _ =
         docstring = None;
         return_annotation = None;
         async = false;
+        generated = false;
         parent = None;
       };
     ];
@@ -467,6 +471,7 @@ let test_expand_returns _ =
         docstring = None;
         return_annotation = None;
         async = false;
+        generated = false;
         parent = None;
       };
     ]
@@ -479,6 +484,7 @@ let test_expand_returns _ =
         docstring = None;
         return_annotation = None;
         async = false;
+        generated = false;
         parent = None;
       };
     ]
@@ -634,6 +640,7 @@ let test_defines _ =
       docstring = None;
       return_annotation = None;
       async = false;
+      generated = false;
       parent = None;
     }
   in
@@ -646,6 +653,7 @@ let test_defines _ =
       docstring = None;
       return_annotation = Some (Type.expression Type.void);
       async = false;
+      generated = false;
       parent = None;
     }
   in
@@ -668,6 +676,7 @@ let test_defines _ =
       docstring = None;
       return_annotation = None;
       async = false;
+      generated = false;
       parent = None;
     }
   in
@@ -686,6 +695,7 @@ let test_defines _ =
       docstring = None;
       return_annotation = None;
       async = false;
+      generated = false;
       parent = None;
     }
   in
@@ -698,6 +708,7 @@ let test_defines _ =
       docstring = None;
       return_annotation = Some (Type.expression Type.void);
       async = false;
+      generated = false;
       parent = None;
     }
   in
@@ -727,6 +738,7 @@ let test_classes _ =
           docstring = None;
           return_annotation = None;
           async = false;
+          generated = false;
           parent = Some (Instantiated.Access.create "foo");
         };
       ];

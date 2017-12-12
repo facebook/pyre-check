@@ -111,6 +111,7 @@ let empty_define = {
   docstring = None;
   return_annotation = None;
   async = false;
+  generated = false;
   parent = None;
 }
 
@@ -161,6 +162,7 @@ let assert_initial
     docstring = None;
     return_annotation;
     async = false;
+    generated = false;
     parent = parent >>| Instantiated.Access.create;
   }
   in

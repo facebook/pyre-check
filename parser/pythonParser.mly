@@ -558,6 +558,7 @@ compound_statement:
               decorators = [];
               return_annotation = annotation;
               async = false;
+              generated = false;
               parent = None;
               docstring = docstring;
             };
@@ -573,6 +574,7 @@ compound_statement:
                 decorators = [];
                 return_annotation;
                 async = false;
+                generated = false;
                 parent = None;
                 docstring = None;
               });

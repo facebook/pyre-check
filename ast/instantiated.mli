@@ -36,8 +36,10 @@ module Define : sig
   val is_static_method: t -> bool
   val is_class_method: t -> bool
   val is_constructor: t -> bool
+  val is_generated_constructor: t -> bool
   val is_untyped: t -> bool
 
+  val create_generated_constructor: Statement.t Class.t -> t
   val dump: t -> bool
   val dump_cfg: t -> bool
 end

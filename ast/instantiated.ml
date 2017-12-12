@@ -118,9 +118,25 @@ module Define = struct
         string_name = "__init__"
 
 
+  let is_generated_constructor { Define.generated; _ } = generated
+
+
   let is_untyped { Define.return_annotation; _ } =
     Option.is_none return_annotation
 
+
+  let create_generated_constructor { Class.name; docstring; _ } =
+    {
+      Define.name;
+      parameters = [];
+      body = [Node.create Pass];
+      decorators = [];
+      return_annotation = None;
+      async = false;
+      generated = true;
+      parent = Some name;
+      docstring;
+    }
 
   let contains_call { Define.body; _ } name =
     let matches = function

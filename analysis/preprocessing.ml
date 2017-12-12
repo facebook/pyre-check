@@ -670,6 +670,7 @@ let defines ({ Source.statements; _ } as source) =
         docstring = None;
         return_annotation = Some (Type.expression Type.void);
         async = false;
+        generated = false;
         parent = None;
       }
   in

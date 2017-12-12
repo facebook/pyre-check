@@ -94,6 +94,7 @@ let test_method_implements _ =
         docstring = None;
         return_annotation;
         async = false;
+        generated = false;
         parent = Some (Instantiated.Access.create "Parent");
       }
       ~parent:(Class.create {
@@ -268,7 +269,7 @@ type constructor = {
 
 
 let test_constructors _ =
-  let assert_constructors source constructors =
+  let assert_constructors ?(is_generated = false) source constructors =
     match parse_last_statement source with
     | { Node.value = Statement.Class definition; _ }
     | { Node.value = Statement.Stub (Stub.Class definition); _ } ->
@@ -283,6 +284,7 @@ let test_constructors _ =
               docstring = None;
               return_annotation = annotation >>| Type.expression;
               async = false;
+              generated = is_generated;
               parent = Some definition.Statement.Class.name;
             }
           in
@@ -308,6 +310,7 @@ let test_constructors _ =
 
   (* Undefined constructors. *)
   assert_constructors
+    ~is_generated:true
     "class Foo: pass"
     [
       {
@@ -317,6 +320,7 @@ let test_constructors _ =
       };
     ];
   assert_constructors
+    ~is_generated:true
     "class Foo: ..."
     [
       {
@@ -630,6 +634,7 @@ let test_return_annotation _ =
         docstring = None;
         return_annotation;
         async;
+        generated = false;
         parent = None;
       }
       |> Define.create
@@ -651,6 +656,7 @@ let test_parent_definition _ =
       docstring = None;
       return_annotation = None;
       async = false;
+      generated = false;
       parent = parent >>| Instantiated.Access.create;
     }
     |> Define.create
@@ -708,6 +714,7 @@ let test_method_definition _ =
       docstring = None;
       return_annotation = None;
       async = false;
+      generated = false;
       parent = parent >>| Instantiated.Access.create;
     }
     |> Define.create
@@ -741,6 +748,7 @@ let test_parameter_annotations _ =
       docstring = None;
       return_annotation = None;
       async = false;
+      generated = false;
       parent = None;
     }
     |> Annotated.Define.create
@@ -789,6 +797,7 @@ let test_infer_argument_name _ =
       docstring = None;
       return_annotation = None;
       async = false;
+      generated = false;
       parent = None;
     }
     |> Annotated.Define.create

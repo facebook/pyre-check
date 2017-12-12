@@ -678,7 +678,7 @@ let populate
               in
               List.find_map ~f:enumeration definition.Class.bases
               >>| (fun enumeration ->
-                  (* Register dummy constructor. *)
+                  (* Register generated constructor. *)
                   Reader.register_definition
                     ~path
                     {
@@ -694,6 +694,7 @@ let populate
                             value = Access enumeration;
                           };
                         async = false;
+                        generated = true;
                         parent = Some enumeration;
                       };
                     };

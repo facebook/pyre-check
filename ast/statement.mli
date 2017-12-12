@@ -12,6 +12,7 @@ module Define : sig
     docstring: string option;
     return_annotation: Expression.t option;
     async: bool;
+    generated: bool;
     parent: Expression.access option;
   }
   [@@deriving compare, eq, sexp, show]

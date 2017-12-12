@@ -24,6 +24,7 @@ let assert_cfg body expected =
     docstring = None;
     return_annotation = None;
     async = false;
+    generated = false;
     parent = None;
   } in
   assert_equal
@@ -42,6 +43,7 @@ let assert_dot ?(precondition=fun _ -> "") body expected =
     docstring = None;
     return_annotation = None;
     async = false;
+    generated = false;
     parent = None;
   } in
   assert_equal

@@ -104,9 +104,10 @@ let rec process_request
             state.deferred_requests
         in
         let repopulate_handles = List.filter_map ~f:File.handle files in
+        let service = Service.with_parallel state.service ~is_parallel:(List.length files > 5) in
         let (new_source_handles, _) =
           ParseService.parse_sources_list
-            state.State.service
+            service
             files
             ~root:project_root
         in
@@ -114,7 +115,7 @@ let rec process_request
           let errors, lookups =
             TypeCheckService.analyze_sources
               ~repopulate_handles
-              state.service
+              service
               configuration
               state.environment
               new_source_handles

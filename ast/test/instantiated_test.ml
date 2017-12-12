@@ -23,6 +23,7 @@ let test_is_method _ =
       docstring = None;
       return_annotation = None;
       async = false;
+      generated = false;
       parent;
     } in
   assert_true (Instantiated.Define.is_method (define "foo" "path.source"));
@@ -40,6 +41,7 @@ let test_decorator _ =
       docstring = None;
       return_annotation = None;
       async = false;
+      generated = false;
       parent = None;
     } in
 
@@ -77,6 +79,7 @@ let test_is_constructor _ =
         docstring = None;
         return_annotation = None;
         async = false;
+        generated = false;
         parent;
       }
     in

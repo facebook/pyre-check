@@ -105,4 +105,7 @@ let mock () =
 let is_parallel { is_parallel; _ } = is_parallel
 
 
+let with_parallel ~is_parallel service = { service with is_parallel }
+
+
 let destroy _ = Worker.killall ()
