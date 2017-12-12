@@ -378,6 +378,7 @@ let run_start_command
     log_path
     terminal
     verbose
+    version
     sections
     not_gradual
     debug
@@ -393,6 +394,7 @@ let run_start_command
   let configuration =
     Configuration.create
       ~verbose
+      ?version
       ~sections
       ~gradual:(not not_gradual)
       ~debug

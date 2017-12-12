@@ -16,6 +16,7 @@ type t = {
   debug: bool;
   stub_roots: Path.t list;
   verbose: bool;
+  version: string option;
   strict: bool;
   declare: bool;
   show_error_traces: bool;
@@ -30,6 +31,7 @@ val create
   -> ?sections:string list
   -> ?stub_roots: Path.t list
   -> ?verbose:bool
+  -> ?version:string
   -> ?strict:bool
   -> ?declare:bool
   -> ?debug:bool

@@ -19,6 +19,7 @@ val check: Configuration.t -> Service.t option -> unit -> result
 
 val spec
   : (bool
+     -> string option
      -> string list
      -> bool
      -> bool
@@ -37,6 +38,7 @@ val spec
 
 val run_check
   : bool
+  -> string option
   -> string list
   -> bool
   -> bool
@@ -55,6 +57,7 @@ val check_command: Command.t
 val run_incremental
   :  bool
   -> bool
+  -> string option
   -> string list
   -> bool
   -> bool

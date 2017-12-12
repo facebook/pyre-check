@@ -26,6 +26,7 @@ type result = {
 let check
     {
       verbose;
+      version = _;
       sections;
       gradual;
       debug;
@@ -99,6 +100,7 @@ let check
 (** run_command prints out the errors, for a Check run *)
 let run_check
     verbose
+    version
     sections
     check_unannotated
     debug
@@ -114,6 +116,7 @@ let run_check
   let configuration =
     Configuration.create
       ~verbose
+      ?version
       ~sections
       ~gradual:(not check_unannotated)
       ~debug
@@ -148,6 +151,7 @@ let spec =
   Command.Spec.(
     empty
     +> flag "-verbose" no_arg ~doc:"Turn on verbose logging"
+    +> flag "-version" (optional string) ~doc:"Pyre version"
     +> flag
       "-logging-sections"
       (optional_with_default [] (Arg_type.comma_separated string))
@@ -183,6 +187,7 @@ let check_command =
 let run_incremental
     recheck_all
     verbose
+    version
     sections
     check_unannotated
     debug
@@ -200,6 +205,7 @@ let run_incremental
     let configuration =
       Configuration.create
         ~verbose
+        ?version
         ~sections
         ~gradual:(not check_unannotated)
         ~debug

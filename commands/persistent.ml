@@ -20,9 +20,9 @@ let log_path configuration =
   ^| "client.log"
 
 
-let run_command project_root () =
+let run_command version project_root () =
   let project_root = Path.create_absolute project_root in
-  let configuration = Configuration.create ~project_root () in
+  let configuration = Configuration.create ~project_root ?version () in
   let connect_to_server () =
     let server_socket =
       try
@@ -151,5 +151,6 @@ let command =
     ~summary:"Opens a persistent connection to the server (IDE integration)"
     Command.Spec.(
       empty
+      +> flag "-version" (optional string) ~doc:"Pyre version"
       +> anon (maybe_with_default "." ("project-root" %: string)))
     run_command

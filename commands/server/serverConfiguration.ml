@@ -19,7 +19,7 @@ type t = {
   log_path: Path.t;
   daemonize: bool;
   (* Analysis configuration *)
-  configuration: Configuration.t
+  configuration: Configuration.t;
 }
 
 
@@ -71,5 +71,5 @@ let create
     pid_path = server_root ^| "server.pid";
     log_path;
     daemonize;
-    configuration
+    configuration;
   }

@@ -18,6 +18,7 @@ type t = {
   debug: bool;
   stub_roots: Path.t list;
   verbose: bool;
+  version: string option;
   strict: bool;
   declare: bool;
   show_error_traces: bool;
@@ -33,6 +34,7 @@ let create
     ?(sections = [])
     ?(stub_roots = [])
     ?(verbose = false)
+    ?version
     ?(strict = false)
     ?(declare = false)
     ?(debug = false)
@@ -48,6 +50,7 @@ let create
     debug;
     stub_roots;
     verbose;
+    version;
     strict;
     declare;
     show_error_traces
