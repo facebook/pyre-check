@@ -1959,7 +1959,7 @@ let check configuration environment source =
     error_list
   in
 
-  let rec recursive_infer_source added_global_errors =
+  let rec recursive_infer_source added_global_errors iterations =
     let add_errors_to_environment errors =
       let add_error (changed, globals_added_sofar) error =
         let module Reader = (val environment : Environment.Reader) in
@@ -2069,8 +2069,8 @@ let check configuration environment source =
       |> source_error_joins
     in
     let (changed, newly_added_global_errors) = add_errors_to_environment errors in
-    if changed then
-      recursive_infer_source (newly_added_global_errors @ added_global_errors)
+    if changed && iterations <= State.widening_threshold then
+      recursive_infer_source (newly_added_global_errors @ added_global_errors) (iterations + 1)
     else
       errors @ added_global_errors
       |> List.map ~f:(Error.dequalify dequalify_map environment)
@@ -2079,7 +2079,7 @@ let check configuration environment source =
   in
 
   if configuration.infer && configuration.recursive_infer then
-    recursive_infer_source []
+    recursive_infer_source [] 0
   else
     Preprocessing.defines source
     |> List.map ~f:check
