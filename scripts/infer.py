@@ -344,6 +344,7 @@ def annotate_paths(arguments, stubs, type_directory):
         try:
             subprocess.check_call([
                 'retype',
+                '--replace-any',
                 '--quiet',
                 '--incremental',
                 '--target-dir',
