@@ -39,7 +39,12 @@ def _find_link_trees(targets):
         if (not target_path.endswith(('lib', 'library')) and
                 len(discovered_link_trees) == 0):
             targets_not_found.append(target)
-        link_trees.extend(discovered_link_trees)
+        link_trees.extend(
+            [tree for tree in discovered_link_trees
+                if not tree.endswith((
+                    '-vs_debugger#link-tree',
+                    '-interp#link-tree',
+                    '-ipython#link-tree'))])
     return BuckOut(link_trees, targets_not_found)
 
 

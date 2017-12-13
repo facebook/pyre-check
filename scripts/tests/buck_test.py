@@ -12,7 +12,7 @@ from unittest.mock import (
     patch,
 )
 
-BuckSearch = namedtuple('BuckSearch', 'link_trees targets_not_found')
+BuckOut = namedtuple('BuckOut', 'link_trees targets_not_found')
 
 
 class BuckTest(unittest.TestCase):
@@ -25,6 +25,15 @@ class BuckTest(unittest.TestCase):
             'path/directory')
 
     def test_find_link_trees(self):
+        trees = [
+            'blah-vs_debugger#link-tree',
+            'blah-blah#link-tree',
+            'blah-interp#link-tree',
+            'blah-ipython#link-tree']
+        with patch.object(glob, 'glob', return_value=trees) as glob_glob:
+            self.assertEqual(
+                buck._find_link_trees(['target']),
+                BuckOut(['blah-blah#link-tree'], []))
         with patch.object(glob, 'glob') as glob_glob:
             buck._find_link_trees([
                 '//path/targets:name',
@@ -54,7 +63,7 @@ class BuckTest(unittest.TestCase):
     def test_generate_link_trees(self, mock_input):
         arguments = MagicMock()
         mock_find_link_trees = patch.object(buck, '_find_link_trees')
-        mock_find_link_trees.return_value = BuckSearch(
+        mock_find_link_trees.return_value = BuckOut(
             ['new_tree'],
             ['empty_target'])
 
