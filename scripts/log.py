@@ -57,8 +57,10 @@ class TimedStreamHandler(logging.StreamHandler):
 
         self._record = None
         self._active_lines = 0
+
         # Terminal should truncate long lines instead of wrapping
         sys.stderr.write(
+            "\n" +
             Format.TRUNCATE_OVERFLOW +
             Format.CLEAR_LINE +
             Format.CURSOR_UP_LINE)
