@@ -56,6 +56,7 @@ let test_initialize_response _ =
         "result": {
           "capabilities": {
             "definitionProvider": true,
+            "rageProvider": true,
             "textDocumentSync": { "change": 0, "openClose": true }
           }
         }

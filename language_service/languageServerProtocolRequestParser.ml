@@ -146,6 +146,12 @@ let parse ~root request =
         end
 
     | "exit" -> Some (ClientExitRequest Persistent)
+    | "telemetry/rage" ->
+        begin
+          match RageRequest.of_yojson request with
+          | Ok { RageRequest.id; _ } -> Some (Protocol.Request.RageRequest id)
+          | Error yojson_error -> Log.log ~section:`Server "Error: %s" yojson_error; None
+        end
     | unmatched_method ->
         Log.log ~section:`Server "Unhandled %s" unmatched_method; None
   in

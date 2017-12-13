@@ -219,6 +219,14 @@ let rec process_request
                            ~location:definition
                          |> LanguageServerProtocol.TextDocumentDefinitionResponse.to_yojson
                          |> Yojson.Safe.to_string)))
+            | RageRequest id ->
+                let items = Rage.get_logs configuration in
+                Some
+                  (state,
+                   Some (Protocol.LanguageServerProtocolResponse
+                           (LanguageServerProtocol.RageResponse.create ~items ~id
+                            |> LanguageServerProtocol.RageResponse.to_yojson
+                            |> Yojson.Safe.to_string)))
             | _ -> None)
         |> Option.value ~default:(state, None)
 
@@ -228,6 +236,14 @@ let rec process_request
         Log.log ~section:`Server "Stopping %s client" (Protocol.show_client client);
         state, Some (ClientExitResponse client)
 
+    | RageRequest id ->
+        let items = Rage.get_logs configuration in
+        state,
+        Some
+          (Protocol.LanguageServerProtocolResponse
+             (LanguageServerProtocol.RageResponse.create ~items ~id
+              |> LanguageServerProtocol.RageResponse.to_yojson
+              |> Yojson.Safe.to_string))
     | ReinitializeStateRequest ->
         let state =
           ServerOperations.initialize

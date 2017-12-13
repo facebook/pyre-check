@@ -64,6 +64,16 @@ module TextDocumentDefinitionResponse : sig
   val create: ?root:Path.t -> id:int -> location:Ast.Location.t option -> t
 end
 
+module RageResponse : sig
+  type t
+  [@@deriving to_yojson]
+
+  val create
+    :  items: LanguageServerProtocolTypes.RageResponse.RageResult.rageItem list
+    -> id: int
+    -> t
+end
+
 (** Convert json to string content and set the conent length headers.
     cf. https://github.com/Microsoft/language-server-protocol/blob/master/protocol.md#base-protocol *)
 val to_message: Yojson.Safe.json -> string

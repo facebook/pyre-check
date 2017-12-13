@@ -42,6 +42,7 @@ module Request : sig
     | LanguageServerProtocolRequest of string
     | ClientConnectionRequest of client
     | ClientExitRequest of client
+    | RageRequest of int
     | ReinitializeStateRequest
     | DisplayTypeErrors of File.t list
     | TypeCheckRequest of type_check_request

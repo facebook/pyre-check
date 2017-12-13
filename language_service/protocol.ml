@@ -43,6 +43,7 @@ module Request = struct
     | LanguageServerProtocolRequest of string
     | ClientConnectionRequest of client
     | ClientExitRequest of client
+    | RageRequest of int
     | ReinitializeStateRequest
     | DisplayTypeErrors of File.t list
     | TypeCheckRequest of type_check_request
@@ -99,6 +100,7 @@ module Request = struct
     | LanguageServerProtocolRequest _ -> "LanguageServerProtocol"
     | ClientConnectionRequest _ -> "ClientConnection"
     | ClientExitRequest _ -> "ClientExit"
+    | RageRequest _ -> "Rage"
     | ReinitializeStateRequest -> "ReinitializeState"
     | DisplayTypeErrors _ -> "DisplayTypeErrors"
     | TypeCheckRequest _ -> "TypeCheck"

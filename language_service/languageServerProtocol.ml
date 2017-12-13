@@ -135,6 +135,7 @@ module InitializeResponse = struct
               document_link_provider = None;
               execute_command_provider = None;
               experimental = None;
+              rage_provider = Some true;
             });
         });
       error = None;
@@ -177,6 +178,20 @@ module TextDocumentDefinitionResponse = struct
                  Location.range = Range.create ~start ~stop;
                })
            |> Option.to_list);
+      error = None;
+    }
+end
+
+
+module RageResponse = struct
+  include LanguageServerProtocolTypes.RageResponse
+
+  let create ~items ~id =
+    {
+      jsonrpc = "2.0";
+      id;
+      result =
+        Some items;
       error = None;
     }
 end

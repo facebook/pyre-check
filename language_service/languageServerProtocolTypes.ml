@@ -358,6 +358,7 @@ module ServerCapabilities = struct
       document_link_provider: DocumentLinkOptions.t option;
       execute_command_provider: ExecuteCommandOptions.t option;
       experimental: experimental option;
+      rage_provider: bool option;
     }
     and experimental
     [@@deriving yojson]
@@ -419,6 +420,9 @@ module ServerCapabilities = struct
           [@default None];
       experimental: experimental option
           [@key "experimental"]
+          [@default None];
+      rage_provider: bool option
+          [@key "rageProvider"]
           [@default None];
     }
     and experimental = AnyExperimental.t
@@ -801,6 +805,12 @@ module TextDocumentDefinitionRequest = struct
 end
 
 
+module RageRequest = struct
+  module RageParameters = None
+  include RequestMessage.Make(RageParameters)
+end
+
+
 module DidCloseTextDocument = struct
   include NotificationMessage.Make(struct
       type t = DidCloseTextDocumentParams.t
@@ -883,6 +893,23 @@ module TextDocumentDefinitionResponse = struct
 
 
   include ResponseMessage.Make (DefinitionResult) (DefinitionError)
+end
+
+module RageResponse = struct
+  module RageResult = struct
+    type rageItem = {
+      title: string option;
+      data: string;
+    }
+    [@@deriving yojson]
+
+    type t = rageItem list
+    [@@deriving yojson]
+  end
+
+  module RageError = ResponseError.Make(Null)
+
+  include ResponseMessage.Make (RageResult) (RageError)
 end
 (** Notifications *)
 

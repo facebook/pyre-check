@@ -11,15 +11,6 @@ open Pyre
 module Time = Core_kernel.Time_ns.Span
 module Socket = PyreSocket
 
-open Path.AppendOperator
-
-
-let log_path configuration =
-  (Configuration.pyre_root configuration
-   ^| "persistent")
-  ^| "client.log"
-
-
 let run_command version project_root () =
   let project_root = Path.create_absolute project_root in
   let configuration = Configuration.create ~project_root ?version () in
