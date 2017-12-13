@@ -18,7 +18,7 @@ SUCCESS = 60
 
 
 class Color:
-    GREEN = '\033[33m'  # I'm colorblind, YMMV
+    YELLOW = '\033[33m'
     RED = '\033[31m'
 
 
@@ -93,12 +93,12 @@ class TimedStreamHandler(logging.StreamHandler):
             self._record = None
             active_lines = 0
         elif record.levelname == 'WARNING':
-            color = Color.GREEN
+            color = Color.YELLOW
             record.msg += '\n'
             self._record = None
             active_lines = 0
         elif record.levelname == 'PROMPT':
-            color = Color.GREEN
+            color = Color.YELLOW
             self._record = None
             active_lines = 0
         elif record.levelname == 'SUCCESS':
@@ -107,7 +107,7 @@ class TimedStreamHandler(logging.StreamHandler):
             active_lines = 0
         elif age:
             if age > 10:
-                color = Color.GREEN
+                color = Color.YELLOW
             if age > 30:
                 color = Color.RED
             suffix = ' {}[{:.1f}s]{}'.format(
