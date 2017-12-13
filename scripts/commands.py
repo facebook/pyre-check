@@ -240,7 +240,6 @@ class ErrorHandling(Command):
             LOG.log(log.SUCCESS, "No type errors found")
 
         if self._output == TEXT:
-            sys.stdout.write("\n")
             sys.stdout.write(
                 '\n'.join([repr(error) for error in sorted(list(errors))]))
         else:
