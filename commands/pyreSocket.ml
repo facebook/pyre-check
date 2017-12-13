@@ -31,3 +31,13 @@ let write =
 
 let read =
   Marshal_tools.from_fd_with_preamble
+
+
+let write_ignoring_epipe socket message =
+  try
+    Marshal_tools.to_fd_with_preamble socket message
+  with
+  | Unix.Unix_error (kind, name, parameter) ->
+      match kind with
+      | Unix.EPIPE -> Log.info "Ignoring error on write due to EPIPE"
+      | _ -> raise (Unix.Unix_error (kind, name, parameter))

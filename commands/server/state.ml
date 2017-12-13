@@ -10,9 +10,13 @@ open Analysis
 module Error = PyreError
 module Socket = PyreSocket
 
+type client = {
+  failures: int;
+}
+
 type connections = {
   socket: Socket.t;
-  persistent_clients: Socket.t list;
+  persistent_clients: client Unix.File_descr.Table.t;
   file_notifiers: Socket.t list;
 }
 
@@ -27,3 +31,5 @@ type t = {
   lock: Mutex.t;
   connections: connections ref;
 }
+
+let failure_threshold = 5

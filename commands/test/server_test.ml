@@ -192,7 +192,7 @@ let mock_server_state
     lock = Mutex.create ();
     connections = ref {
         State.socket = Unix.openfile ~mode:[Unix.O_RDONLY] "/dev/null";
-        persistent_clients = [];
+        persistent_clients = Unix.File_descr.Table.create ();
         file_notifiers = [];
       };
     service = Service.create ~is_parallel:false ();

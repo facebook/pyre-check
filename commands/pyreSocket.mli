@@ -14,5 +14,7 @@ val open_connection: Path.t -> [ `Failure | `Success of in_channel * out_channel
 
 val write: t -> 'a -> unit
 
+val write_ignoring_epipe: t -> 'a -> unit
+
 (** From channel without buffering *)
 val read: t -> 'a
