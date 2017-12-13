@@ -13,7 +13,8 @@ from ..configuration import Configuration
 
 class ConfigurationTest(unittest.TestCase):
     @patch('json.load')
-    def test_init(self, json_load):
+    @patch.object(os, 'getenv', return_value=None)
+    def test_init(self, os_environ, json_load):
         json_load.side_effect = [
             {"link_trees": ["a"], "logger": "/usr/logger"},
             {},
