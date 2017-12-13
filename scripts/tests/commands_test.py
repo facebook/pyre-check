@@ -3,6 +3,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import json
+import os
 import unittest
 import signal
 
@@ -12,6 +14,7 @@ from .. import (
     commands,
     EnvironmentException,
 )
+from ..error import Error
 
 
 def mock_arguments():
@@ -71,6 +74,55 @@ class PersistentTest(unittest.TestCase):
                 link_trees=['.'],
                 capture_output=False)
             run_null_server.assert_called_once()
+
+
+class ErrorHandlingTest(unittest.TestCase):
+    @patch.object(Error, '__init__', return_value=None)
+    @patch.object(Error, '__hash__', return_value=0)
+    def test_get_errors(self, error_hash, create_error):
+        arguments = mock_arguments()
+        directory = os.getcwd()
+        arguments.original_directory = directory
+        arguments.current_directory = directory[directory.find('/'):]
+        configuration = mock_configuration()
+        handler = commands.ErrorHandling(
+            arguments,
+            configuration,
+            link_trees=['d/e', 'f', 'f/g'])
+        result = MagicMock()
+        error = MagicMock()
+        error_dictionary = {'path': 'target'}
+        error.__getitem__.side_effect = error_dictionary.__getitem__
+
+        result.link_tree = 'f/g'
+        with patch.object(json, 'loads', return_value=[error]):
+            handler._get_errors([result])
+            handler._get_errors([result], True)
+            create_error.assert_has_calls([call(False), call(False)])
+
+        result.link_tree = 'h/i'
+        with patch.object(json, 'loads', return_value=[error]):
+            handler._get_errors([result])
+            handler._get_errors([result], True)
+            create_error.assert_has_calls([call(False), call(False)])
+
+        arguments.target = ['//f/g:target']
+        configuration.targets = []
+        handler = commands.ErrorHandling(
+            arguments,
+            configuration,
+            link_trees=[])
+        result.link_tree = 'f/g'
+        with patch.object(json, 'loads', return_value=[error]):
+            handler._get_errors([result])
+            handler._get_errors([result], True)
+            create_error.assert_has_calls([call(False), call(False)])
+
+        result.link_tree = 'h/i'
+        with patch.object(json, 'loads', return_value=[error]):
+            handler._get_errors([result])
+            handler._get_errors([result], True)
+            create_error.assert_has_calls([call(False), call(True)])
 
 
 class CheckTest(unittest.TestCase):

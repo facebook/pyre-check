@@ -16,6 +16,14 @@ BuckSearch = namedtuple('BuckSearch', 'link_trees targets_not_found')
 
 
 class BuckTest(unittest.TestCase):
+    def test_presumed_target_root(self):
+        self.assertEqual(
+            buck.presumed_target_root('//path/directory/...'),
+            'path/directory')
+        self.assertEqual(
+            buck.presumed_target_root('/path/directory:target'),
+            'path/directory')
+
     def test_find_link_trees(self):
         with patch.object(glob, 'glob') as glob_glob:
             buck._find_link_trees([

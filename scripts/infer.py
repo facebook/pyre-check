@@ -289,7 +289,8 @@ class StubFile:
 
 
 def generate_stub_files(arguments, errors):
-    errors = [error for error in errors if error.inference]
+    errors = [error for error in errors if
+                error.inference and not error.is_external()]
     files = defaultdict(list)
     errors.sort(key=lambda error: error.line)
 
@@ -389,7 +390,7 @@ class Infer(commands.ErrorHandling):
             command=commands.CHECK,
             link_trees=self._link_trees,
             flags=flags)
-        errors = self._get_errors(results)
+        errors = self._get_errors(results, exclude_dependencies=True)
         type_directory = Path(os.getcwd()) / Path('.pyre/types')
         stubs = generate_stub_files(self._arguments, errors)
         write_stubs_to_disk(self._arguments, stubs, type_directory)

@@ -15,6 +15,7 @@ import time
 import traceback
 
 from . import (
+    buck,
     EnvironmentException,
     log,
     SUCCESS,
@@ -227,6 +228,11 @@ class ErrorHandling(Command):
         self._verbose = arguments.verbose
         self._output = arguments.output
         self._original_directory = arguments.original_directory
+        self._local_paths = {
+            buck.presumed_target_root(target)
+            for target
+            in configuration.targets + (arguments.target or [])
+        }
 
     def _print(self, errors):
         if not self._verbose:
@@ -245,7 +251,7 @@ class ErrorHandling(Command):
         else:
             sys.stdout.write(json.dumps([error.__dict__ for error in errors]))
 
-    def _get_errors(self, results):
+    def _get_errors(self, results, exclude_dependencies=False):
         errors = set()
 
         for result in results:
@@ -261,12 +267,19 @@ class ErrorHandling(Command):
                 path = os.path.realpath(
                     os.path.join(result.link_tree, error['path']))
                 external = True
-                if path.startswith(self._original_directory):
-                    external = False
-                    # Relativize path.
-                    error['path'] = os.path.relpath(
-                        path,
-                        self._original_directory)
+                internal_paths = [self._original_directory]
+                if exclude_dependencies and len(self._local_paths) > 0:
+                    internal_paths = map(
+                        lambda path: self._original_directory + '/' + path,
+                        self._local_paths)
+
+                for internal_path in internal_paths:
+                    if path.startswith(internal_path):
+                        external = False
+                        # Relativize path.
+                        error['path'] = os.path.relpath(
+                            path,
+                            self._original_directory)
                 errors.add(Error(external, **error))
 
         return errors

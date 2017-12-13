@@ -18,6 +18,13 @@ class BuckException(Exception):
     pass
 
 
+def presumed_target_root(target):
+    target = target.lstrip('/')
+    target = target.replace('/...', '')
+    target = target.split(':')[0]
+    return target
+
+
 def _find_link_trees(targets):
     targets_not_found = []
     link_trees = []
