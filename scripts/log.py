@@ -24,11 +24,16 @@ class Color:
 
 class Format:
     BOLD = '\033[1m'
+
     CLEAR_LINE = '\x1b[0G\x1b[K'
     CLEAR = '\033[0m'
-    CURSOR_UP_LINE = '\x1b[1A'
     TRUNCATE_OVERFLOW = '\033[?7l'
     WRAP_OVERFLOW = '\033[?7h'
+    NEWLINE = '\n'
+
+    CURSOR_UP_LINE = '\x1b[1A'
+    HIDE_CURSOR = '\x1b[?25l'
+    SHOW_CURSOR = '\x1b[?25h'
 
 
 class Character:
@@ -58,14 +63,13 @@ class TimedStreamHandler(logging.StreamHandler):
         self._record = None
         self._active_lines = 0
 
-        # Terminal should truncate long lines instead of wrapping
+        # Preamble preparing terminal.
         sys.stderr.write(
-            "\n" +
+            Format.NEWLINE +
             Format.TRUNCATE_OVERFLOW +
             Format.CLEAR_LINE +
-            Format.CURSOR_UP_LINE)
-        # Hide cursor.
-        sys.stderr.write('\x1b[?25l')
+            Format.CURSOR_UP_LINE +
+            Format.HIDE_CURSOR)
 
         self._terminate = False
         self._thread = threading.Thread(target=self._thread)
@@ -136,13 +140,13 @@ class TimedStreamHandler(logging.StreamHandler):
             time.sleep(0.1)
 
     def terminate(self):
-        # Reset terminal to wrap overflowing lines
+        # Reset terminal.
         sys.stderr.write(
             Format.WRAP_OVERFLOW +
             Format.CLEAR_LINE +
-            Format.CURSOR_UP_LINE)
-        # Show cursor.
-        sys.stderr.write("\x1b[?25h\n")
+            Format.CURSOR_UP_LINE +
+            Format.SHOW_CURSOR +
+            Format.NEWLINE)
         self._terminate = True
 
 
