@@ -31,10 +31,8 @@ class BuckTest(unittest.TestCase):
                 '//path/targets:namelibrary',
                 '//path/...'])
             glob_glob.assert_has_calls([
-                call('buck-out/gen/path/targets/name*'),
                 call('buck-out/gen/path/targets/name#*link-tree'),
                 call('buck-out/gen/path/targets/namelibrary#*link-tree'),
-                call('buck-out/gen/path/...*'),
                 call('buck-out/gen/path/...#*link-tree'),
             ], any_order=True)
 

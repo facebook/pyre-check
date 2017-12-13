@@ -34,13 +34,12 @@ def _find_link_trees(targets):
             target_path = target_path[2:]
         target_path = target_path.replace(':', '/')
 
-        built_targets = glob.glob(
-            os.path.join('buck-out/gen/', target_path + '*'))
+        discovered_link_trees = glob.glob(
+            os.path.join('buck-out/gen/', target_path + '#*link-tree'))
         if (not target_path.endswith(('lib', 'library')) and
-                len(built_targets) == 0):
+                len(discovered_link_trees) == 0):
             targets_not_found.append(target)
-        link_trees.extend(glob.glob(
-            os.path.join('buck-out/gen/', target_path + '#*link-tree')))
+        link_trees.extend(discovered_link_trees)
     return BuckOut(link_trees, targets_not_found)
 
 
