@@ -137,7 +137,10 @@ let run_check
     ~flush:true
     ~name:"check"
     ~timer
-    ~labels:["root", configuration.Configuration.project_root |> Path.show;];
+    ~labels:[
+      "root", configuration.Configuration.project_root |> Path.show;
+      "request_kind", "FullCheck";
+    ];
   (* Print results. *)
   Log.print
     "%s"
