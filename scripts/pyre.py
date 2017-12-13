@@ -142,6 +142,10 @@ def main():
     restart.set_defaults(command=commands.Restart)
 
     kill = parsed_commands.add_parser(commands.KILL)
+    kill.add_argument(
+        '--with-fire',
+        action='store_true',
+        help='Adds emphasis to the command.')
     kill.set_defaults(command=commands.Kill)
 
     arguments = parser.parse_args()
