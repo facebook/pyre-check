@@ -417,7 +417,20 @@ let expand_returns source =
                 in
                 Visit.visit false (Source.create define.Define.body)
               in
-              if has_yield then
+              let has_return_in_finally =
+                match List.last define.Define.body with
+                | Some { Node.value = Try { Try.finally; _ }; _ } ->
+                    begin
+                      match List.last finally with
+                      | Some { Node.value = Return _; _ } ->
+                          true
+                      | _ ->
+                          false
+                    end
+                | _ ->
+                    false
+              in
+              if has_yield || has_return_in_finally then
                 define
               else
                 match List.last define.Define.body with

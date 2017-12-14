@@ -430,7 +430,41 @@ let test_expand_returns _ =
     {|
       def foo():
         yield None
+    |};
+
+  assert_expand
+    {|
+      def foo():
+        try:
+          pass
+        finally:
+          pass
     |}
+    {|
+      def foo():
+        try:
+          pass
+        finally:
+          pass
+        return
+    |};
+  assert_expand
+    {|
+      def foo():
+        try:
+          pass
+        finally:
+          return 1
+    |}
+    {|
+      def foo():
+        try:
+          pass
+        finally:
+          $return = 1
+          return $return
+    |}
+
 
 
 let test_expand_for _ =
