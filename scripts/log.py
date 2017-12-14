@@ -11,6 +11,8 @@ import sys
 import threading
 import time
 
+from typing import List
+
 
 LOG = logging.getLogger(__name__)
 PROMPT = 50
@@ -41,7 +43,7 @@ class Character:
 
 
 class SectionFormatter(logging.Formatter):
-    def __init__(self):
+    def __init__(self) -> None:
         super(SectionFormatter, self).__init__(
             '%(asctime)s %(levelname)s %(message)s')
 
@@ -54,7 +56,7 @@ class TimedStreamHandler(logging.StreamHandler):
 
     THRESHOLD = 0.5
 
-    def __init__(self):
+    def __init__(self) -> None:
         super(TimedStreamHandler, self).__init__()
         self.setFormatter(logging.Formatter('%(message)s'))
         self.terminator = ""
@@ -72,9 +74,9 @@ class TimedStreamHandler(logging.StreamHandler):
             Format.HIDE_CURSOR)
 
         self._terminate = False
-        self._thread = threading.Thread(target=self._thread)
-        self._thread.daemon = True
-        self._thread.start()
+        thread = threading.Thread(target=self._thread)
+        thread.daemon = True
+        thread.start()
 
     def clear_lines(self):
         if self._active_lines == 0:
@@ -83,7 +85,7 @@ class TimedStreamHandler(logging.StreamHandler):
             [Format.CURSOR_UP_LINE + Format.CLEAR_LINE
                 for n in range(self._active_lines - 1)])
 
-    def emit(self, record, age=None):
+    def emit(self, record, age=None) -> None:
         suffix = ''
         color = ''
         active_lines = record.msg.count('\n') + 1
@@ -131,7 +133,7 @@ class TimedStreamHandler(logging.StreamHandler):
         self._active_lines = active_lines
         super(TimedStreamHandler, self).emit(timed_record)
 
-    def _thread(self):
+    def _thread(self) -> None:
         while not self._terminate:
             if self._record:
                 age = time.time() - self._last_update
@@ -139,7 +141,7 @@ class TimedStreamHandler(logging.StreamHandler):
                     self.emit(self._record, age)
             time.sleep(0.1)
 
-    def terminate(self):
+    def terminate(self) -> None:
         # Reset terminal.
         sys.stderr.write(
             Format.WRAP_OVERFLOW +
@@ -148,7 +150,7 @@ class TimedStreamHandler(logging.StreamHandler):
         self._terminate = True
 
 
-def initialize(arguments):
+def initialize(arguments) -> None:
     if arguments.noninteractive:
         stream_handler = logging.StreamHandler()
         stream_handler.setFormatter(SectionFormatter())
@@ -158,7 +160,7 @@ def initialize(arguments):
         stream_handler = TimedStreamHandler()
         arguments.timed_stream_handler = stream_handler
 
-    handlers = [stream_handler]
+    handlers: List[logging.Handler] = [stream_handler]
 
     if not arguments.noninteractive:
         try:
@@ -175,7 +177,7 @@ def initialize(arguments):
     logging.basicConfig(level=logging.DEBUG, handlers=handlers)
 
 
-def cleanup(arguments):
+def cleanup(arguments) -> None:
     if arguments.timed_stream_handler:
         arguments.timed_stream_handler.terminate()
 
@@ -184,7 +186,7 @@ class Buffer:
 
     THRESHOLD = 0.1
 
-    def __init__(self, section, data):
+    def __init__(self, section, data) -> None:
         self._section = section
         self._data = data
         self._flushed = False
@@ -193,10 +195,10 @@ class Buffer:
         thread.daemon = True
         thread.start()
 
-    def append(self, line):
+    def append(self, line) -> None:
         self._data.append(line)
 
-    def flush(self):
+    def flush(self) -> None:
         with self._lock:
             if self._flushed is True:
                 return
@@ -211,7 +213,7 @@ class Buffer:
         else:
             LOG.debug('[%s] %s', self._section, message)
 
-    def _thread(self):
+    def _thread(self) -> None:
         time.sleep(self.THRESHOLD)
         with self._lock:
             if not self._flushed:

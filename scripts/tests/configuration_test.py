@@ -8,13 +8,13 @@ import unittest
 
 from unittest.mock import patch
 
-from ..configuration import Configuration
+from ..configuration import Configuration  # noqa
 
 
 class ConfigurationTest(unittest.TestCase):
     @patch('json.load')
     @patch.object(os, 'getenv', return_value=None)
-    def test_init(self, os_environ, json_load):
+    def test_init(self, os_environ, json_load) -> None:
         json_load.side_effect = [
             {"link_trees": ["a"], "logger": "/usr/logger"},
             {},

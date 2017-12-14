@@ -41,13 +41,13 @@ def build_json(inference):
 
 
 class PyreTest(unittest.TestCase):
-    def test_dequalify(self):
+    def test_dequalify(self) -> None:
         self.assertEqual(dequalify("typing.List"), "List")
         self.assertEqual(
             dequalify("typing.Union[typing.List[int]]"),
             "Union[List[int]]")
 
-    def assert_imports(self, error_json, expected_imports):
+    def assert_imports(self, error_json, expected_imports) -> None:
         error = Error(**error_json)
         if FunctionStub.is_instance(error.inference):
             stub = FunctionStub(error.inference)
@@ -57,7 +57,7 @@ class PyreTest(unittest.TestCase):
             sorted(list(stub.get_typing_imports())),
             expected_imports)
 
-    def test_get_typing_imports(self):
+    def test_get_typing_imports(self) -> None:
         self.assert_imports(
             build_json({
                 "annotation": "typing.Union[int, str]",
@@ -83,13 +83,17 @@ class PyreTest(unittest.TestCase):
             }),
             ["List", "Union"])
 
-    def assert_stub(self, error_jsons, expected, full_only=False):
+    def assert_stub(
+            self,
+            error_jsons,
+            expected,
+            full_only: bool = False) -> None:
         errors = [Error(**error_json) for error_json in error_jsons]
         self.assertEqual(
             StubFile(errors, full_only=full_only).to_string().strip(),
             textwrap.dedent(expected.rstrip()))
 
-    def test_stubs(self):
+    def test_stubs(self) -> None:
         self.assert_stub(
             [build_json({
                 "annotation": "int",
@@ -273,7 +277,7 @@ class PyreTest(unittest.TestCase):
             "def with_params(y: int = 7, x: int = 5) -> int: ...",
             full_only=True)
 
-    def test_import_from_typing(self):
+    def test_import_from_typing(self) -> None:
         self.assert_stub(
             [build_json({
                 "annotation": "typing.Union[int, str]",
@@ -367,7 +371,7 @@ def mock_configuration():
 
 
 class InferTest(unittest.TestCase):
-    def test_infer(self):
+    def test_infer(self) -> None:
         arguments = mock_arguments()
         arguments.recursive = False
 
@@ -397,7 +401,7 @@ class InferTest(unittest.TestCase):
     @patch.object(log, 'cleanup')
     @patch.object(configuration.Configuration, '_read')
     @patch.object(configuration.Configuration, 'validate')
-    def test_main(self, validate, read, log_cleanup, log_initialize):
+    def test_main(self, validate, read, log_cleanup, log_initialize) -> None:
         with patch.object(sys, 'argv', ['infer', '--target', '.']), \
                 patch.object(Infer, 'run'):
             self.assertEqual(main(), 1)

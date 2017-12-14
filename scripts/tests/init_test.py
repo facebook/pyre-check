@@ -17,7 +17,7 @@ from .. import (
 
 class InitTest(unittest.TestCase):
     @patch('os.path.isfile')
-    def test_find_configuration(self, os_mock_isfile):
+    def test_find_configuration(self, os_mock_isfile) -> None:
         os_mock_isfile.side_effect = [False, False, False, True]
         self.assertEqual(
             find_project_root("/a/b/c/d"),
@@ -32,7 +32,7 @@ class InitTest(unittest.TestCase):
             "/a/b")
 
     @patch.object(buck, 'generate_link_trees')
-    def test_resolve_link_trees(self, buck_link_trees):
+    def test_resolve_link_trees(self, buck_link_trees) -> None:
         arguments = MagicMock()
         arguments.link_tree = []
         arguments.original_directory = '/root'

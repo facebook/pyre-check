@@ -14,7 +14,7 @@ from .. import postprocess
 class PostprocessTest(unittest.TestCase):
     @patch('json.load')
     @patch.object(pathlib.Path, 'read_text')
-    def test_fixme(self, path_read_text, json_load):
+    def test_fixme(self, path_read_text, json_load) -> None:
         arguments = MagicMock()
         arguments.comment = None
 

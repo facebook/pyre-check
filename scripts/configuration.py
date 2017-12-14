@@ -22,7 +22,7 @@ class InvalidConfiguration(Exception):
 
 
 class Configuration:
-    def __init__(self):
+    def __init__(self) -> None:
         self.link_trees = []
         self.targets = []
         self.logger = None
@@ -37,7 +37,7 @@ class Configuration:
         self._read(CONFIGURATION_FILE + '.local')
         self._read(CONFIGURATION_FILE)
 
-    def validate(self):
+    def validate(self) -> None:
         try:
             def is_list_of_strings(list):
                 if len(list) == 0:
@@ -101,7 +101,7 @@ class Configuration:
     def disabled(self):
         return self._disabled
 
-    def _read(self, path):
+    def _read(self, path) -> None:
         try:
             with open(path) as file:
                 LOG.debug('Reading configuration `%s`...', path)

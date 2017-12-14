@@ -5,7 +5,7 @@
 
 
 class Error:
-    def __init__(self, external=False, **error):
+    def __init__(self, external: bool = False, **error) -> None:
         self.line = error['line']
         self.column = error['column']
         self.path = error['path']

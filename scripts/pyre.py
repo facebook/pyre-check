@@ -33,7 +33,7 @@ from .configuration import Configuration
 LOG = logging.getLogger(__name__)
 
 
-def main():
+def main() -> int:
     parser = argparse.ArgumentParser(
         epilog='environment variables:  `PYRE_BINARY` overrides the pyre '
         'client binary used.')

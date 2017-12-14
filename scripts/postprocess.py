@@ -27,7 +27,7 @@ class PostprocessError(Exception):
     pass
 
 
-def run_fixme(arguments):
+def run_fixme(arguments) -> None:
     try:
         def error_path(error):
             return error['path']

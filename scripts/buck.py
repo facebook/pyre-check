@@ -65,7 +65,7 @@ def _normalize(target):
             'Check the target path or run `buck clean`.')
 
 
-def _build_targets(original_target_name, targets):
+def _build_targets(original_target_name, targets) -> None:
     LOG.info('Building `%s`', original_target_name)
     command = ['buck', 'build']
     command.extend(targets)

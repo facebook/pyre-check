@@ -16,7 +16,7 @@ BuckOut = namedtuple('BuckOut', 'link_trees targets_not_found')
 
 
 class BuckTest(unittest.TestCase):
-    def test_presumed_target_root(self):
+    def test_presumed_target_root(self) -> None:
         self.assertEqual(
             buck.presumed_target_root('//path/directory/...'),
             'path/directory')
@@ -24,7 +24,7 @@ class BuckTest(unittest.TestCase):
             buck.presumed_target_root('/path/directory:target'),
             'path/directory')
 
-    def test_find_link_trees(self):
+    def test_find_link_trees(self) -> None:
         trees = [
             'blah-vs_debugger#link-tree',
             'blah-blah#link-tree',
@@ -68,14 +68,14 @@ class BuckTest(unittest.TestCase):
                     '//path/targets:another',
                     '//path/...']))
 
-    def test_normalize(self):
+    def test_normalize(self) -> None:
         with patch.object(subprocess, 'check_output') as buck_targets:
             buck._normalize('target_path')
             buck_targets.assert_called_once_with(
                 ['buck', 'targets', 'target_path', '--show-output'],
                 stderr=subprocess.DEVNULL)
 
-    def test_build_targets(self):
+    def test_build_targets(self) -> None:
         with patch.object(subprocess, 'check_output') as buck_build:
             buck._build_targets('target_path', ['subtarget1', 'subtarget2'])
             buck_build.assert_called_once_with(
@@ -83,10 +83,10 @@ class BuckTest(unittest.TestCase):
                 stderr=subprocess.DEVNULL)
 
     @patch.object(buck, '_get_yes_no_input', return_value=False)
-    def test_generate_link_trees(self, mock_input):
+    def test_generate_link_trees(self, mock_input) -> None:
         arguments = MagicMock()
         mock_find_link_trees = patch.object(buck, '_find_link_trees')
-        mock_find_link_trees.return_value = BuckOut(
+        mock_find_link_trees.return_value = BuckOut(  # noqa
             ['new_tree'],
             ['empty_target'])
 

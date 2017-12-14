@@ -42,19 +42,19 @@ class ClientException(Exception):
 
 
 class Result:
-    def __init__(self, link_tree, code, output):
+    def __init__(self, link_tree, code, output) -> None:
         self.link_tree = link_tree
         self.code = code
         self.output = output
 
-    def check(self):
+    def check(self) -> None:
         if self.code != SUCCESS:
             raise ClientException(
                 'Client exited with error code {}'.format(self.code))
 
 
 class Command:
-    def __init__(self, arguments, configuration, link_trees):
+    def __init__(self, arguments, configuration, link_trees) -> None:
         self._arguments = arguments
         self._configuration = configuration
 
@@ -65,7 +65,7 @@ class Command:
         self._logging_sections = arguments.logging_sections
         self._check_unannotated = arguments.check_unannotated
 
-    def run(self):
+    def run(self) -> None:
         pass
 
     def _flags(self):
@@ -82,7 +82,7 @@ class Command:
             flags.append("-check-unannotated")
         return flags
 
-    def _read_stdout(self, stdout):
+    def _read_stdout(self, stdout) -> None:
         self._buffer = []
         for line in stdout:
             self._buffer.append(line.decode())
@@ -92,7 +92,7 @@ class Command:
             command,
             link_trees,
             flags=None,
-            capture_output=True):
+            capture_output: bool = True):
         if not flags:
             flags = []
 
@@ -159,19 +159,19 @@ class Command:
                         output=output))
         return results
 
-    def _check_results(self, results):
+    def _check_results(self, results) -> None:
         for result in results:
             result.check()
 
-    def on_client_exception(self):
+    def on_client_exception(self) -> None:
         pass
 
 
 class Persistent(Command):
-    def __init__(self, arguments, configuration, link_trees):
+    def __init__(self, arguments, configuration, link_trees) -> None:
         super(Persistent, self).__init__(arguments, configuration, link_trees)
 
-    def run(self):
+    def run(self) -> None:
         arguments = self._arguments
         try:
             results = self._call_client(
@@ -189,10 +189,10 @@ class Persistent(Command):
                 capture_output=False)
             self._check_results(results)
 
-    def on_client_exception(self):
+    def on_client_exception(self) -> None:
         self._run_null_server()
 
-    def _run_null_server(self):
+    def _run_null_server(self) -> None:
         # Read content of the form Content-Length:n\r\n\r\n{jsonmessage}
         line = sys.stdin.readline()
         try:
@@ -220,7 +220,7 @@ class Persistent(Command):
 
 
 class ErrorHandling(Command):
-    def __init__(self, arguments, configuration, link_trees):
+    def __init__(self, arguments, configuration, link_trees) -> None:
         super(ErrorHandling, self).__init__(
             arguments,
             configuration,
@@ -251,7 +251,7 @@ class ErrorHandling(Command):
         else:
             sys.stdout.write(json.dumps([error.__dict__ for error in errors]))
 
-    def _get_errors(self, results, exclude_dependencies=False):
+    def _get_errors(self, results, exclude_dependencies: bool = False):
         errors = set()
 
         for result in results:
@@ -286,10 +286,10 @@ class ErrorHandling(Command):
 
 
 class Check(ErrorHandling):
-    def __init__(self, arguments, configuration, link_trees):
+    def __init__(self, arguments, configuration, link_trees) -> None:
         super(Check, self).__init__(arguments, configuration, link_trees)
 
-    def run(self, retries=1):
+    def run(self, retries: int = 1) -> None:
         flags = self._flags()
         flags.extend([
             '-stub-roots',
@@ -307,10 +307,10 @@ class Check(ErrorHandling):
 class Incremental(ErrorHandling):
     NOT_RUNNING = 2
 
-    def __init__(self, arguments, configuration, link_trees):
+    def __init__(self, arguments, configuration, link_trees) -> None:
         super(Incremental, self).__init__(arguments, configuration, link_trees)
 
-    def run(self, retries=1):
+    def run(self, retries: int = 1) -> None:
         arguments = self._arguments
         flags = self._flags()
         flags.extend([
@@ -341,11 +341,11 @@ class Incremental(ErrorHandling):
 
 
 class Rage(Command):
-    def __init__(self, arguments, configuration, link_trees):
+    def __init__(self, arguments, configuration, link_trees) -> None:
         super(Rage, self).__init__(arguments, configuration, link_trees)
         self._arguments.command = RAGE
 
-    def run(self):
+    def run(self) -> None:
         results = self._call_client(
             command=RAGE,
             link_trees=self._link_trees,
@@ -354,12 +354,12 @@ class Rage(Command):
 
 
 class Start(Command):
-    def __init__(self, arguments, configuration, link_trees):
+    def __init__(self, arguments, configuration, link_trees) -> None:
         super(Start, self).__init__(arguments, configuration, link_trees)
         self._terminal = arguments.terminal
         self._no_watchman = arguments.no_watchman
 
-    def run(self):
+    def run(self) -> None:
         flags = self._flags()
         flags.append('-daemonize')
         if not self._no_watchman:
@@ -384,10 +384,10 @@ class Start(Command):
 
 
 class Stop(Command):
-    def __init__(self, arguments, configuration, link_trees):
+    def __init__(self, arguments, configuration, link_trees) -> None:
         super(Stop, self).__init__(arguments, configuration, link_trees)
 
-    def run(self):
+    def run(self) -> None:
         results = self._call_client(
             command=STOP,
             link_trees=self._link_trees)
@@ -395,17 +395,17 @@ class Stop(Command):
 
 
 class Restart(Command):
-    def __init__(self, arguments, configuration, link_trees):
+    def __init__(self, arguments, configuration, link_trees) -> None:
         super(Restart, self).__init__(arguments, configuration, link_trees)
 
-    def run(self):
+    def run(self) -> None:
         Stop(self._arguments, self._configuration, self._link_trees).run()
         Kill(self._arguments, self._configuration, self._link_trees).run()
         Start(self._arguments, self._configuration, self._link_trees).run()
 
 
 class Kill(Command):
-    def __init__(self, arguments, configuration, link_trees):
+    def __init__(self, arguments, configuration, link_trees) -> None:
         super(Kill, self).__init__(arguments, configuration, link_trees)
 
     def run(self):
@@ -432,7 +432,7 @@ class Kill(Command):
                 's' if len(running) > 1 else '',
                 ', '.join('`{}`'.format(link_tree) for link_tree in running))
 
-    def _kill(self, path):
+    def _kill(self, path) -> None:
         if not os.path.exists(path):
             LOG.debug('No process running at `%s`', path)
             return
@@ -448,7 +448,7 @@ class Kill(Command):
             LOG.error("Encountered error during kill: %s", str(error))
             LOG.debug(traceback.format_exc())
 
-    def _remove_if_exists(self, path):
+    def _remove_if_exists(self, path) -> None:
         try:
             os.remove(path)
         except OSError:

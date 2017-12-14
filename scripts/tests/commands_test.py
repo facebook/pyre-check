@@ -39,7 +39,7 @@ def mock_configuration():
 
 class PersistentTest(unittest.TestCase):
     @patch.object(commands.Persistent, '_run_null_server', return_value=None)
-    def test_persistent(self, run_null_server):
+    def test_persistent(self, run_null_server) -> None:
         arguments = mock_arguments()
         configuration = mock_configuration()
 
@@ -79,7 +79,7 @@ class PersistentTest(unittest.TestCase):
 class ErrorHandlingTest(unittest.TestCase):
     @patch.object(Error, '__init__', return_value=None)
     @patch.object(Error, '__hash__', return_value=0)
-    def test_get_errors(self, error_hash, create_error):
+    def test_get_errors(self, error_hash, create_error) -> None:
         arguments = mock_arguments()
         directory = os.getcwd()
         arguments.original_directory = directory
@@ -126,7 +126,7 @@ class ErrorHandlingTest(unittest.TestCase):
 
 
 class CheckTest(unittest.TestCase):
-    def test_check(self):
+    def test_check(self) -> None:
         arguments = mock_arguments()
 
         configuration = mock_configuration()
@@ -141,7 +141,7 @@ class CheckTest(unittest.TestCase):
 
 
 class CheckIncremental(unittest.TestCase):
-    def test_incremental(self):
+    def test_incremental(self) -> None:
         arguments = mock_arguments()
 
         configuration = mock_configuration()
@@ -159,7 +159,7 @@ class CheckIncremental(unittest.TestCase):
 
 
 class StartTest(unittest.TestCase):
-    def test_start(self):
+    def test_start(self) -> None:
         arguments = mock_arguments()
         arguments.terminal = False
 
@@ -202,7 +202,7 @@ class StartTest(unittest.TestCase):
 
 
 class RestartTest(unittest.TestCase):
-    def test_restart(self):
+    def test_restart(self) -> None:
         arguments = mock_arguments()
         arguments.terminal = False
 
@@ -227,7 +227,7 @@ class RestartTest(unittest.TestCase):
 class KillTest(unittest.TestCase):
     @patch('os.kill')
     @patch('os.path.exists')
-    def test_kill(self, os_path_exists, os_kill):
+    def test_kill(self, os_path_exists, os_kill) -> None:
         os_path_exists.result = True
 
         arguments = mock_arguments()

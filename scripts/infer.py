@@ -49,7 +49,7 @@ def split_imports(types_list):
 
 
 class FunctionStub:
-    def __init__(self, stub):
+    def __init__(self, stub) -> None:
         self.name = stub.get('function_name')
         self.actual = stub.get('annotation', None)
         self.parameters = stub.get('parameters')
@@ -86,16 +86,16 @@ class FunctionStub:
             parameters.append(name)
         return ", ".join(parameters)
 
-    def _get_decorator_string(self):
+    def _get_decorator_string(self) -> str:
         decorator_string = ""
         for decorator in self.decorators:
             decorator_string += "@{}\n".format(decorator)
         return decorator_string
 
-    def _get_async_string(self):
+    def _get_async_string(self) -> str:
         return "async " if self.is_async else ""
 
-    def is_complete(self):
+    def is_complete(self) -> bool:
         """ Determines if a stub completely types a function """
         if not self.actual:
             return False
@@ -120,7 +120,7 @@ class FunctionStub:
                 types_list += re.split("[^\\w.]+", parameter['type'])
         return split_imports(types_list)
 
-    def join_with(self, other):
+    def join_with(self, other) -> None:
         if self.name != other.name and self.parent != other.parent:
             raise Exception('Tried to join incompatible stubs')
         if (not self.actual) and other.actual:
@@ -131,7 +131,7 @@ class FunctionStub:
 
 
 class FieldStub:
-    def __init__(self, stub):
+    def __init__(self, stub) -> None:
         self.name = stub.get('field_name')
         self.actual = stub.get('annotation')
 
@@ -153,7 +153,7 @@ class FieldStub:
 
 
 class Stub:
-    def __init__(self, error):
+    def __init__(self, error) -> None:
         self.path = Path(error.path)
         self.parent = error.inference.get('parent')
         self.stub = None
@@ -203,7 +203,7 @@ class Stub:
     def get_typing_imports(self):
         return self.stub.get_typing_imports()
 
-    def join_with(self, other):
+    def join_with(self, other) -> None:
         if not self.is_field() and not other.is_field():
             self.stub.join_with(other.stub)
         else:
@@ -229,7 +229,7 @@ def join_stubs(stubs):
 
 
 class StubFile:
-    def __init__(self, errors, full_only=False):
+    def __init__(self, errors, full_only: bool = False) -> None:
         stubs = [Stub(error) for error in errors if Stub(error).stub]
         stubs = join_stubs(stubs)
         if full_only:
@@ -239,7 +239,7 @@ class StubFile:
         self._methods = [stub for stub in stubs if stub.is_method()]
         self._path = Path(errors[0].path)
 
-    def to_string(self):
+    def to_string(self) -> str:
         """We currently ignore nested classes, i.e.:
           class X:
               class Y:
@@ -282,7 +282,7 @@ class StubFile:
     def path(self, directory):
         return directory / Path("{}i".format(self._path))
 
-    def output_to_file(self, path):
+    def output_to_file(self, path) -> None:
         contents = self.to_string()
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(contents)
@@ -306,7 +306,7 @@ def generate_stub_files(arguments, errors):
     return stubs
 
 
-def write_stubs_to_disk(arguments, stubs, type_directory):
+def write_stubs_to_disk(arguments, stubs, type_directory) -> None:
     if type_directory.exists():
         LOG.log(log.SUCCESS, "Deleting {}".format(type_directory))
         shutil.rmtree(type_directory)
@@ -334,7 +334,7 @@ def filter_paths(arguments, stubs, type_directory):
                     for path in arguments.in_place])]
 
 
-def annotate_paths(arguments, stubs, type_directory):
+def annotate_paths(arguments, stubs, type_directory) -> None:
     if arguments.in_place != []:
         stubs = filter_paths(arguments, stubs, type_directory)
 
@@ -372,14 +372,14 @@ def file_exists(path):
 
 
 class Infer(commands.ErrorHandling):
-    def __init__(self, arguments, configuration, link_trees):
+    def __init__(self, arguments, configuration, link_trees) -> None:
         arguments.show_error_traces = True
         arguments.check_unannotated = True
         arguments.output = JSON
         super(Infer, self).__init__(arguments, configuration, link_trees)
         self._recursive = arguments.recursive
 
-    def run(self):
+    def run(self) -> None:
         flags = self._flags()
         flags.extend([
             '-infer',

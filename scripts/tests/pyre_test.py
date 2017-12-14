@@ -20,7 +20,7 @@ from .. import (
 class PyreTest(unittest.TestCase):
     @patch.object(configuration.Configuration, 'validate')
     @patch.object(configuration.Configuration, 'disabled', return_value=True)
-    def test_disabled(self, disabled, validate):
+    def test_disabled(self, disabled, validate) -> None:
         with patch.object(sys, 'argv', ['pyre', 'check']):
             self.assertEqual(pyre.main(), 0)
             validate.assert_not_called()
@@ -32,7 +32,7 @@ class PyreTest(unittest.TestCase):
             self,
             run_null_server,
             validate,
-            read):
+            read) -> None:
         validate.side_effect = commands.ClientException
         with patch.object(sys, 'argv', ['pyre', 'persistent']):
             self.assertEqual(pyre.main(), 1)
