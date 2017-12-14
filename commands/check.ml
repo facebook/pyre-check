@@ -72,7 +72,7 @@ let check
   in
 
   (* Parsing. *)
-  let stubs = ParseService.parse_stubs service ~roots:stub_roots in
+  let stubs = ParseService.parse_stubs service ~roots:(project_root :: stub_roots) in
   let sources = ParseService.parse_sources service ~root:project_root in
 
   (* Build environment. *)
