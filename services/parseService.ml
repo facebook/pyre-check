@@ -40,20 +40,20 @@ let parse_parallel parse_job paths service =
 
 
 (** Adds the preprocessing for stubs *)
-let parse_stub_job paths =
-  let parse_stub handles path =
-    (File.create path
+let parse_stub_job files =
+  let parse_stub handles file =
+    (file
      |> parse_path_to_source
      >>= fun source ->
-     Path.relative path
+     Path.relative (File.path file)
      >>| fun relative ->
      let preprocess source =
        let source =
          (* Drop version from qualifier. *)
          let qualifier =
-           let is_digit access =
+           let is_digit qualifier =
              try
-               Instantiated.Access.show [access]
+               qualifier
                |> Int.of_string
                |> ignore;
                true
@@ -61,10 +61,14 @@ let parse_stub_job paths =
                false
            in
            match source.Source.qualifier with
-           | minor :: major :: tail when is_digit minor && is_digit major ->
+           | minor :: major :: tail
+             when is_digit (Instantiated.Access.show [minor]) &&
+                  is_digit (Instantiated.Access.show [major]) ->
+               tail
+           | major :: tail when is_digit (String.prefix (Instantiated.Access.show [major]) 1) ->
                tail
            | qualifier ->
-               List.tl_exn qualifier
+               qualifier
          in
          { source with Source.qualifier }
        in
@@ -76,8 +80,18 @@ let parse_stub_job paths =
      handle :: handles)
     |> Option.value ~default:handles
   in
-  List.fold ~init:[] ~f:parse_stub paths
+  List.fold ~init:[] ~f:parse_stub files
 
+
+
+let parse_stubs_list service files =
+  let handles =
+    if Service.is_parallel service then
+      parse_parallel parse_stub_job files service
+    else
+      parse_stub_job files
+  in
+  handles
 
 let parse_stubs service ~roots =
   let timer = Timer.start () in
@@ -92,18 +106,12 @@ let parse_stubs service ~roots =
   in
   let paths = List.fold ~init:[] ~f:paths roots in
 
-  let handles =
-    if Service.is_parallel service then
-      parse_parallel parse_stub_job paths service
-    else
-      parse_stub_job paths
-  in
+  let handles = parse_stubs_list service (List.map ~f:File.create paths) in
 
+  Log.log ~section:`Performance "Stubs parsed in %fs" (Timer.stop timer);
   let not_parsed = (List.length paths) - (List.length handles) in
   if not_parsed > 0 then
     Log.info "Unable to parse %d stubs" not_parsed;
-  Log.log ~section:`Performance "Stubs parsed in %fs" (Timer.stop timer);
-
   handles
 
 
