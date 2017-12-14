@@ -25,7 +25,8 @@ def presumed_target_root(target):
     return target
 
 
-def _find_link_trees(targets):
+def _find_link_trees(targets_map):
+    targets = list(targets_map.keys())
     targets_not_found = []
     link_trees = []
     for target in targets:
@@ -36,8 +37,11 @@ def _find_link_trees(targets):
 
         discovered_link_trees = glob.glob(
             os.path.join('buck-out/gen/', target_path + '#*link-tree'))
+        built = targets_map[target] and \
+            len(glob.glob(targets_map[target])) > 0
         if (not target_path.endswith(('lib', 'library')) and
-                len(discovered_link_trees) == 0):
+                len(discovered_link_trees) == 0 and
+                not built):
             targets_not_found.append(target)
         link_trees.extend(
             [tree for tree in discovered_link_trees
@@ -51,10 +55,10 @@ def _find_link_trees(targets):
 def _normalize(target):
     LOG.info('Normalizing target `%s`', target)
     try:
-        targets = subprocess.check_output(
-            ['buck', 'targets', target],
+        targets_to_destinations = subprocess.check_output(
+            ['buck', 'targets', target, '--show-output'],
             stderr=subprocess.DEVNULL).decode().strip().split('\n')
-        return targets
+        return targets_to_destinations
     except subprocess.CalledProcessError:
         raise BuckException(
             'Could not normalize target `{}`.\n   '.format(target),
@@ -81,7 +85,7 @@ def _get_yes_no_input(prompt):
 
 
 def generate_link_trees(arguments, original_targets):
-    buck_out = _find_link_trees(original_targets)
+    buck_out = _find_link_trees({target: None for target in original_targets})
     link_trees = buck_out.link_trees
 
     if len(buck_out.targets_not_found) > 0:
@@ -90,12 +94,18 @@ def generate_link_trees(arguments, original_targets):
             'You can set up a .pyre_configuration file to reduce overhead.')
 
     for target in buck_out.targets_not_found:
-        targets = _normalize(target)
+        targets_to_destinations = _normalize(target)
+        targets_map = {}
+
+        for target in targets_to_destinations:
+            pair = target.split(' ')
+            if len(pair) > 1:
+                targets_map[pair[0]] = pair[1]
 
         if arguments.build:
-            _build_targets(target, targets)
+            _build_targets(target, list(targets_map.keys()))
 
-        buck_out = _find_link_trees(targets)
+        buck_out = _find_link_trees(targets_map)
         if len(buck_out.link_trees) == 0 and arguments.build:
             raise BuckException(
                 'Could not find link trees for `{}`.\n   '

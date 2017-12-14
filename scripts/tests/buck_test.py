@@ -32,24 +32,47 @@ class BuckTest(unittest.TestCase):
             'blah-ipython#link-tree']
         with patch.object(glob, 'glob', return_value=trees) as glob_glob:
             self.assertEqual(
-                buck._find_link_trees(['target']),
+                buck._find_link_trees({'target': None}),
                 BuckOut(['blah-blah#link-tree'], []))
         with patch.object(glob, 'glob') as glob_glob:
-            buck._find_link_trees([
-                '//path/targets:name',
-                '//path/targets:namelibrary',
-                '//path/...'])
+            buck._find_link_trees({
+                '//path/targets:name': None,
+                '//path/targets:namelibrary': None,
+                '//path/...': None})
             glob_glob.assert_has_calls([
                 call('buck-out/gen/path/targets/name#*link-tree'),
                 call('buck-out/gen/path/targets/namelibrary#*link-tree'),
                 call('buck-out/gen/path/...#*link-tree'),
             ], any_order=True)
 
+        with patch.object(glob, 'glob', return_value=['new_tree']) as glob_glob:
+            found_trees = buck._find_link_trees({
+                '//path/targets:name': None,
+                '//path/targets:namelibrary': None,
+                '//path/targets:another': 'buck-out/path/another',
+                '//path/...': None})
+            self.assertEqual(
+                found_trees,
+                BuckOut(['new_tree', 'new_tree', 'new_tree', 'new_tree'], []))
+
+        with patch.object(glob, 'glob', return_value=[]) as glob_glob:
+            found_trees = buck._find_link_trees({
+                '//path/targets:name': None,
+                '//path/targets:namelibrary': None,
+                '//path/targets:another': 'buck-out/path/another',
+                '//path/...': None})
+            self.assertEqual(
+                found_trees,
+                BuckOut([], [
+                    '//path/targets:name',
+                    '//path/targets:another',
+                    '//path/...']))
+
     def test_normalize(self):
         with patch.object(subprocess, 'check_output') as buck_targets:
             buck._normalize('target_path')
             buck_targets.assert_called_once_with(
-                ['buck', 'targets', 'target_path'],
+                ['buck', 'targets', 'target_path', '--show-output'],
                 stderr=subprocess.DEVNULL)
 
     def test_build_targets(self):
