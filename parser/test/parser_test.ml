@@ -176,6 +176,7 @@ let test_await _ =
 
 let test_access _ =
   assert_parsed_equal "a" [+Expression !"a"];
+  assert_parsed_equal "$a" [+Expression !"$a"];
   assert_parsed_equal "_a" [+Expression !"_a"];
   assert_parsed_equal "_a0" [+Expression !"_a0"];
   assert_parsed_equal

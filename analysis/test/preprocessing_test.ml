@@ -385,109 +385,52 @@ let test_expand_operators _ =
 let test_expand_returns _ =
   let assert_expand source expected =
     assert_source_equal
-      (Preprocessing.expand_returns (Source.create source))
-      (Source.create expected) in
+      (Preprocessing.expand_returns (parse source))
+      (parse expected) in
 
   assert_expand
-    [+Return None]
-    [+Return None];
+    "return None"
+    {|
+      $return = None
+      return $return
+    |};
+  assert_expand
+    "return foo"
+    {|
+      $return = foo
+      return $return
+    |};
 
   assert_expand
-    [+Return (Some !"foo")]
-    [
-      +Assign {
-        Assign.target = !"$return";
-        annotation = None;
-        value = Some !"foo";
-        compound = None;
-        parent = None;
-      };
-      +Return (Some !"$return");
-    ];
+    {|
+      def foo():
+        return None
+    |}
+    {|
+      def foo():
+        $return = None
+        return $return
+    |};
+  assert_expand
+    {|
+      def foo():
+        pass
+    |}
+    {|
+      def foo():
+        pass
+        return
+    |};
 
   assert_expand
-    [
-      +Define {
-        Define.name = Instantiated.Access.create "foo";
-        parameters = [];
-        body = [+Return None];
-        decorators = [];
-        docstring = None;
-        return_annotation = None;
-        async = false;
-        generated = false;
-        parent = None;
-      };
-    ]
-    [
-      +Define {
-        Define.name = Instantiated.Access.create "foo";
-        parameters = [];
-        body = [+Return None];
-        decorators = [];
-        docstring = None;
-        return_annotation = None;
-        async = false;
-        generated = false;
-        parent = None;
-      };
-    ];
-
-  assert_expand
-    [
-      +Define {
-        Define.name = Instantiated.Access.create "foo";
-        parameters = [];
-        body = [+Pass];
-        decorators = [];
-        docstring = None;
-        return_annotation = None;
-        async = false;
-        generated = false;
-        parent = None;
-      };
-    ]
-    [
-      +Define {
-        Define.name = Instantiated.Access.create "foo";
-        parameters = [];
-        body = [+Pass; +Return None];
-        decorators = [];
-        docstring = None;
-        return_annotation = None;
-        async = false;
-        generated = false;
-        parent = None;
-      };
-    ];
-
-  assert_expand
-    [
-      +Define {
-        Define.name = Instantiated.Access.create "foo";
-        parameters = [];
-        body = [+Statement.Yield (+Expression.Yield None)];
-        decorators = [];
-        docstring = None;
-        return_annotation = None;
-        async = false;
-        generated = false;
-        parent = None;
-      };
-    ]
-    [
-      +Define {
-        Define.name = Instantiated.Access.create "foo";
-        parameters = [];
-        body = [+Statement.Yield (+Expression.Yield None)];
-        decorators = [];
-        docstring = None;
-        return_annotation = None;
-        async = false;
-        generated = false;
-        parent = None;
-      };
-    ]
+    {|
+      def foo():
+        yield None
+    |}
+    {|
+      def foo():
+        yield None
+    |}
 
 
 let test_expand_for _ =
