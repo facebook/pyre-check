@@ -1945,7 +1945,7 @@ let check configuration environment source =
           )
         check_output
     in
-    Statistics.coverage
+    Log.coverage
       ~flush:false
       ~coverage:[
         "full_type_coverage", full_coverage;

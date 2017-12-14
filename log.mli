@@ -40,6 +40,12 @@ val performance
   -> labels: (string * string) list
   -> unit
 
+val coverage
+  :  ?flush: bool
+  -> coverage: (string * int) list
+  -> labels: (string * string) list
+  -> unit
+
 module Color : sig
   val yellow: string -> string
 end

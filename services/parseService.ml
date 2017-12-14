@@ -149,7 +149,7 @@ let parse_sources_list service files ~root =
         )
       sources
   in
-  Statistics.coverage
+  Log.coverage
     ~flush:false
     ~coverage:[
       "strict_coverage", strict_coverage;
@@ -157,8 +157,8 @@ let parse_sources_list service files ~root =
       "default_coverage", List.length paths - strict_coverage - declare_coverage;
       "source_files", List.length paths;
     ]
-    ~labels:["root", root |> Path.show;]
-  |> ignore;
+    ~labels:["root", root |> Path.show;];
+
   let not_parsed = (List.length files) - (List.length sources) in
   if not_parsed > 0 then
     Log.info "Unable to parse %d paths" not_parsed;

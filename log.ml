@@ -40,6 +40,7 @@ let enabled =
     "Warning";
   ]
 
+let statistics_logging_enabled = ref true
 
 let initialize ~verbose ~sections =
   if verbose then
@@ -51,7 +52,8 @@ let initialize ~verbose ~sections =
 
 let initialize_for_tests () =
   Hash_set.clear enabled;
-  Hash_set.add enabled "Dump"
+  Hash_set.add enabled "Dump";
+  statistics_logging_enabled := false
 
 
 let log ~section format =
@@ -95,7 +97,13 @@ let performance ?(flush = false) ~name ~timer ~labels =
   let seconds = Timer.stop timer in
   let milliseconds = Int.of_float (seconds *. 1000.0) in
   log ~section:`Performance "Time elapsed for %s: %fs" name seconds;
-  Statistics.performance ~flush ~time:milliseconds ~labels |> ignore
+  if !statistics_logging_enabled then
+    Statistics.performance ~flush ~time:milliseconds ~labels |> ignore
+
+
+let coverage ?(flush = false) ~coverage ~labels =
+  if !statistics_logging_enabled then
+    Statistics.coverage ~flush ~coverage ~labels |> ignore
 
 
 module Color = struct
