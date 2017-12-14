@@ -34,7 +34,8 @@ let parse ?path lines : Statement.t list =
     PythonParser.parse (PythonLexer.read state) buffer
   with
   | Pyre.ParserError _
-  | PythonParser.Error ->
+  | PythonParser.Error
+  | Failure _ ->
     let location = Location.create ~start:buffer.Lexing.lex_curr_p ~stop:buffer.Lexing.lex_curr_p in
     let line = location.Location.start.Location.line - 1
     and column = location.Location.start.Location.column in

@@ -25,7 +25,8 @@ let parse_path_to_source file =
         ~qualifier:(Source.qualifier ~path)
         statements)
   with
-  | PythonParse.Error error ->
+  | PythonParse.Error error
+  | Failure error ->
       Log.error "%s" error;
       None
 
