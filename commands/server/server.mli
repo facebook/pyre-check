@@ -7,7 +7,14 @@ open Core
 
 module Socket = PyreSocket
 
+type version_mismatch = {
+  server_version: string;
+  client_version: string;
+}
+[@@deriving show]
+
 exception ConnectionFailure
+exception VersionMismatch of version_mismatch
 val connect: retries: int -> configuration: Configuration.t -> Socket.t
 
 val start: ServerConfiguration.t -> int

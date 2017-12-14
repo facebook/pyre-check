@@ -23,6 +23,13 @@ let run_command version project_root () =
       with
       | Server.ConnectionFailure ->
           exit 1
+      | Server.VersionMismatch { Server.server_version; client_version } ->
+          Log.error
+            "Exiting due to version mismatch. \
+             The server version is %s, but the client was called with %s"
+            server_version
+            client_version;
+          exit 1
     in
     Socket.write server_socket (Protocol.Request.ClientConnectionRequest Protocol.Persistent);
     (match Socket.read server_socket with

@@ -236,7 +236,7 @@ let run_incremental
       Log.log ~section:`Server "Waiting for server response...";
       let socket = Unix.descr_of_in_channel in_channel in
       Socket.read socket
-      |> fun Handshake.ServerConnected ->
+      |> fun (Handshake.ServerConnected _) ->
       Socket.write socket Handshake.ClientConnected;
       socket
     in

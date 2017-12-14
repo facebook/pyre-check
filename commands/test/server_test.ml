@@ -317,6 +317,18 @@ let test_query _ =
     (Protocol.TypeQueryResponse "`typing.List[C]`")
 
 
+let test_connect _ =
+  Command_test.start_server ~version:"A" () |> ignore;
+  let { ServerConfiguration.configuration; _ } =
+    Command_test.mock_server_configuration ~version:"B" ()
+  in
+  assert_raises
+    (Server.VersionMismatch { Server.server_version = "A"; client_version = "B" })
+    (fun () -> Server.connect ~retries:1 ~configuration);
+  Server.stop "." ();
+  Command_test.clean_environment ()
+
+
 let test_incremental_typecheck _ =
   let source =
     {|
@@ -630,6 +642,7 @@ let () =
     [
       "server_exists", test_server_exists;
       "server_stops", test_server_stops;
+      "connect", test_connect;
       "stop_handles_unix_errors", test_stop_handles_unix_errors;
       "protocol_type_check", test_protocol_type_check;
       "protocol_language_server_protocol", test_protocol_language_server_protocol;

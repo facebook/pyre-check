@@ -18,14 +18,21 @@ module Time = Core_kernel.Time_ns.Span
 module Socket = PyreSocket
 module Request = ServerRequest
 
+type version_mismatch = {
+  server_version: string;
+  client_version: string;
+}
+[@@deriving show]
+
 exception AlreadyRunning
 exception NotRunning
 exception ConnectionFailure
+exception VersionMismatch of version_mismatch
 
 open State
 
 
-let connect ~retries ~configuration =
+let connect ~retries ~configuration:({ version; _ } as configuration) =
   let rec connect attempt =
     if attempt >= retries then begin
       Log.error "Could not connect to server after %d retries" attempt;
@@ -67,9 +74,16 @@ let connect ~retries ~configuration =
   in
   Log.debug "Waiting for server response...";
   Socket.read socket
-  |> fun Handshake.ServerConnected ->
+  |> fun (Handshake.ServerConnected server_version) ->
   Socket.write socket Handshake.ClientConnected;
-  socket
+  match version with
+  | Some version when version = server_version ->
+      socket
+  | None ->
+      socket
+  | Some client_version ->
+      Unix.close socket;
+      raise (VersionMismatch { server_version; client_version })
 
 
 let computation_thread request_queue configuration state =
@@ -199,7 +213,7 @@ let computation_thread request_queue configuration state =
 
 
 let request_handler_thread (
-    server_configuration,
+    { configuration = { version; _ }; _ } as server_configuration,
     lock,
     connections,
     request_queue) =
@@ -292,11 +306,15 @@ let request_handler_thread (
             Log.log ~section:`Server "New client connection";
             Unix.accept server_socket
           in
-          Socket.write new_socket Handshake.ServerConnected;
-          Socket.read new_socket
-          |> fun Handshake.ClientConnected ->
-          let request = Socket.read new_socket in
-          queue_request ~origin:(Protocol.Request.NewConnectionSocket new_socket) request
+          Socket.write new_socket (Handshake.ServerConnected (Option.value ~default:"-1" version));
+          try
+            Socket.read new_socket
+            |> fun Handshake.ClientConnected ->
+            let request = Socket.read new_socket in
+            queue_request ~origin:(Protocol.Request.NewConnectionSocket new_socket) request
+          with
+          | End_of_file ->
+              Log.warning "New client socket unreadable"
         end
       else if Mutex.critical_section lock ~f:(fun () -> Hashtbl.mem persistent_clients socket) then
         handle_readable_persistent socket
@@ -497,7 +515,7 @@ let stop project_root () =
     if readable = [] then
       raise NotRunning;
     Socket.read socket
-    |> fun Handshake.ServerConnected ->
+    |> fun (Handshake.ServerConnected _) ->
     Socket.write socket Handshake.ClientConnected;
     Socket.write socket Protocol.Request.StopRequest;
     match Socket.read socket with

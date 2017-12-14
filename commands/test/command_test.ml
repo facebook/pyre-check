@@ -23,24 +23,26 @@ let clean_environment () =
   Worker.killall ()
 
 
-let mock_analysis_configuration ?(project_root = Path.current_working_directory ()) () =
+let mock_analysis_configuration ?(project_root = Path.current_working_directory ()) ?version () =
   Configuration.create
     ~debug:false
     ~parallel:false
+    ?version
     ~project_root
     ()
 
 
 let mock_server_configuration
     ?(project_root = Path.current_working_directory ())
+    ?version
     () =
   ServerConfiguration.create
     ~log_path:(Path.create_absolute "/dev/null")
-    (mock_analysis_configuration ~project_root ())
+    (mock_analysis_configuration ~project_root ?version ())
 
 
-let start_server () =
-  Server.start (mock_server_configuration ())
+let start_server ?version () =
+  Server.start (mock_server_configuration ?version ())
 
 
 let environment () =
