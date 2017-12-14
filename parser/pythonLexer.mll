@@ -33,6 +33,10 @@
       pos_lnum = position.pos_lnum + 1
     }
 
+  let line_breaks buffer string =
+    for _ = 1 to (String.count ~f:(fun character -> character = '\n') string) do
+      line_break buffer
+    done
 
   let string position prefix value =
     let is_byte_prefix prefix =
@@ -279,11 +283,13 @@ and offset state = parse
 
 and single_string position prefix = parse
   | (([^ '\\' '\r' '\n' '\''] | escape)* as value) '\'' {
+      line_breaks lexbuf value;
       string position prefix value
     }
 
 and double_string position prefix = parse
   | (([^ '\\' '\r' '\n' '"'] | escape)* as value) '"' {
+      line_breaks lexbuf value;
       string position prefix value
     }
 
