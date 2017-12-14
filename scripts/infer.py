@@ -11,6 +11,7 @@ import re
 import shutil
 import subprocess
 import sys
+import time
 import traceback
 
 from collections import defaultdict
@@ -24,6 +25,7 @@ from . import (
     get_version,
     JSON,
     log,
+    log_to_scuba,
     resolve_link_trees,
     SUCCESS,
     switch_root,
@@ -467,6 +469,9 @@ def main():
 
     arguments = parser.parse_args()
 
+    start = time.time()
+    stubs = []
+    error_message = ""
     try:
         exit_code = SUCCESS
 
@@ -491,16 +496,40 @@ def main():
         commands.ClientException,
         EnvironmentException,
     ) as error:
-        LOG.error(str(error))
+        error_message = str(error)
+        LOG.error(error_message)
         LOG.error("For more information, run 'pyre-infer --help'.")
         exit_code = FAILURE
     except Exception as error:
-        LOG.error(str(error))
+        error_message = str(error)
+        LOG.error(error_message)
         LOG.error("For more information, run 'pyre-infer --help'.")
         LOG.info(traceback.format_exc())
         exit_code = FAILURE
     finally:
         log.cleanup(arguments)
+        if configuration and configuration.logger:
+            sample = {
+                'int': {
+                    'exit_code': exit_code,
+                    'runtime': int((time.time() - start) * 1000),  # ms
+                    'stubs_generated': len(stubs),
+                },
+                'normal': {
+                    'command_line': " ".join(sys.argv),
+                    'arguments': str(arguments),
+                    'host': os.getenv('HOSTNAME'),
+                    'error_message': error_message,
+                    'link_tree': str(arguments.link_tree or []),
+                    'target': str(arguments.target or []),
+                    'user': os.getenv('USER'),
+                },
+            }
+            log_to_scuba(
+                'perfpipe_pyre_infer_performance',
+                configuration.logger,
+                sample)
+
         return exit_code
 
 

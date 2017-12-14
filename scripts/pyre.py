@@ -4,11 +4,8 @@
 # LICENSE file in the root directory of this source tree.
 
 import argparse
-import json
 import logging
 import os
-import shlex
-import subprocess
 import sys
 import time
 import traceback
@@ -22,6 +19,7 @@ from . import (
     get_version,
     JSON,
     log,
+    log_to_scuba,
     resolve_link_trees,
     SUCCESS,
     switch_root,
@@ -202,29 +200,21 @@ def main() -> int:
     finally:
         log.cleanup(arguments)
         if configuration and configuration.logger:
-            try:
-                sample = {
-                    'int': {
-                        'exit_code': exit_code,
-                        'runtime': int((time.time() - start) * 1000),  # ms
-                    },
-                    'normal': {
-                        'arguments': str(arguments),
-                        'host': os.getenv('HOSTNAME'),
-                        'link_tree': str(arguments.link_tree or []),
-                        'target': str(arguments.target or []),
-                        'user': os.getenv('USER'),
+            sample = {
+                'int': {
+                    'exit_code': exit_code,
+                    'runtime': int((time.time() - start) * 1000),  # ms
+                },
+                'normal': {
+                    'arguments': str(arguments),
+                    'host': os.getenv('HOSTNAME'),
+                    'link_tree': str(arguments.link_tree or []),
+                    'target': str(arguments.target or []),
+                    'user': os.getenv('USER'),
 
-                    },
-                }
-                subprocess.run(
-                    "{} pyre_usage {}".format(
-                        shlex.quote(configuration.logger),
-                        shlex.quote(json.dumps(sample))),
-                    shell=True)
-            except Exception:
-                LOG.warning('Unable to log using `%s`', configuration.logger)
-                LOG.info(traceback.format_exc())
+                },
+            }
+            log_to_scuba('pyre_usage', configuration.logger, sample)
 
     return exit_code
 

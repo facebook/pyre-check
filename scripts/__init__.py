@@ -3,8 +3,12 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import json
 import logging
 import os
+import shlex
+import subprocess
+import traceback
 from tools.pyre.scripts import (
     buck,
 )
@@ -88,3 +92,18 @@ def resolve_link_trees(arguments, configuration):
         return path
 
     return {_translate(path) for path in link_trees}
+
+
+def log_to_scuba(table_name, logger, sample):
+    try:
+        subprocess.run(
+            "{} {} {}".format(
+                shlex.quote(logger),
+                shlex.quote(table_name),
+                shlex.quote(json.dumps(sample)),
+            ),
+            shell=True
+        )
+    except Exception:
+        LOG.warning('Unable to log using `%s`', logger)
+        LOG.info(traceback.format_exc())
