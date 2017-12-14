@@ -416,16 +416,18 @@ let test_did_save_with_content context =
     (Protocol.TypeCheckResponse (associate_errors_and_filenames errors))
 
 let test_protocol_persistent _ =
-  let source =
-    {|
-        def foo() -> None:
-          return 1
-    |}
-  in
-  assert_request_gets_response
-    source
-    (Protocol.Request.ClientConnectionRequest Protocol.Persistent)
-    (Protocol.ClientConnectionResponse Protocol.Persistent)
+  let server_state = mock_server_state (File.Handle.Table.create ()) in
+  assert_raises
+    ServerRequest.InvalidRequest
+    (fun () ->
+       ServerRequest.process_request
+         mock_client_socket
+         server_state
+         (Command_test.mock_server_configuration ())
+         (Protocol.Request.ClientConnectionRequest Protocol.Persistent));
+  Service.destroy server_state.State.service;
+  Command_test.clean_environment ()
+
 
 
 let test_incremental_dependencies _ =

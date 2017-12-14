@@ -15,6 +15,8 @@ open Protocol.Request
 
 open Pyre
 
+exception InvalidRequest
+
 let rec process_request
     new_socket
     state
@@ -260,14 +262,7 @@ let rec process_request
             >>= fun lookup -> Lookup.get_definition lookup position))
 
     | ClientConnectionRequest _ ->
-        Log.error "Unexpected connection request; exiting.";
-        Mutex.critical_section
-          state.lock
-          ~f:(fun () ->
-              ServerOperations.stop_server
-                server_configuration
-                !(state.connections).socket);
-        state, None
+        raise InvalidRequest
   in
   Log.performance
     ~flush:false

@@ -129,6 +129,20 @@ let computation_thread request_queue configuration state =
       | _ -> ()
     in
     let handle_request state ~request:(origin, request) =
+      let process_request socket state configuration request =
+        try
+          Request.process_request socket state configuration request
+        with
+        | Request.InvalidRequest ->
+            Log.error "Exiting due to invalid request";
+            Mutex.critical_section
+              state.lock
+              ~f:(fun () ->
+                  ServerOperations.stop_server
+                    configuration
+                    !(state.connections).socket);
+            state, None
+      in
       match origin with
       | Protocol.Request.PersistentSocket socket ->
           let write_or_forget socket responses =
@@ -155,7 +169,7 @@ let computation_thread request_queue configuration state =
                  | _ ->
                      ())
           in
-          let state, response = Request.process_request socket state configuration request in
+          let state, response = process_request socket state configuration request in
           (match response with
            | Some (LanguageServerProtocolResponse _)
            | Some (ClientExitResponse Persistent) ->
@@ -173,7 +187,7 @@ let computation_thread request_queue configuration state =
           let { socket; persistent_clients; _ } =
             Mutex.critical_section state.lock ~f:(fun () -> !(state.connections))
           in
-          let state, response = Request.process_request socket state configuration request in
+          let state, response = process_request socket state configuration request in
           (match response with
            | Some response ->
                broadcast_response state.lock persistent_clients response
@@ -184,7 +198,7 @@ let computation_thread request_queue configuration state =
           let { persistent_clients; _ } =
             Mutex.critical_section state.lock ~f:(fun () -> !(state.connections))
           in
-          let state, response = Request.process_request socket state configuration request in
+          let state, response = process_request socket state configuration request in
           (match response with
            | Some response ->
                Socket.write_ignoring_epipe socket response;

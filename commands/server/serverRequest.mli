@@ -5,6 +5,7 @@
 
 open Core
 
+exception InvalidRequest
 val process_request
   :  Unix.File_descr.t
   -> State.t
