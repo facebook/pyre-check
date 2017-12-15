@@ -117,6 +117,16 @@ let test_file_exists context =
   assert_false (Path.create_relative ~root:!path ~relative:"durp" |> Path.file_exists)
 
 
+let test_last context =
+  let _, root = root context in
+  assert_equal
+    (Path.last (Path.create_relative ~root ~relative:"some"))
+    "some";
+  assert_equal
+    (Path.last (Path.create_relative ~root ~relative:"some/path"))
+    "path"
+
+
 let test_link context =
   let path, root = root context in
   let link = path ^ "-link" in
@@ -153,6 +163,7 @@ let () =
     "append">::test_append;
     "is_directory">::test_is_directory;
     "file_exists">::test_file_exists;
+    "last">::test_last;
     "link">::test_link;
     "remove">::test_remove;
   ]

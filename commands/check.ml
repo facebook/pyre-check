@@ -138,7 +138,7 @@ let run_check
     ~name:"check"
     ~timer
     ~labels:[
-      "root", configuration.Configuration.project_root |> Path.show;
+      "root", Path.last configuration.Configuration.project_root;
       "request_kind", "FullCheck";
     ];
   (* Print results. *)

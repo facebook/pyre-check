@@ -101,6 +101,12 @@ let file_exists path =
   |> fun path -> Sys.file_exists path = `Yes
 
 
+let last path =
+  let absolute = absolute path in
+  String.split ~on:'/' absolute
+  |> List.last
+  |> Option.value ~default:absolute
+
 let follow_symlinks path =
   let rec follow_symlinks absolute =
     let is_symlink =

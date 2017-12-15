@@ -22,6 +22,7 @@ type t =
 val absolute: t -> path
 val relative: t -> path option
 val uri: t -> path
+val last: t -> path
 
 val create_absolute: path -> t
 val create_relative: root: t -> relative: path -> t
