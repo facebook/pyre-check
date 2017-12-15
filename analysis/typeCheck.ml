@@ -1840,7 +1840,7 @@ let check configuration environment source =
     | TypeOrder.Undefined annotation ->
         {
           error_list =
-            if configuration.debug then
+            if configuration.strict || configuration.debug then
               [{
                 Error.location;
                 kind = Error.UndefinedType annotation;
