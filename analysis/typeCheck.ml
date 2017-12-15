@@ -2011,7 +2011,8 @@ let check configuration environment source =
     let errors =
       Preprocessing.defines source
       |> List.map ~f:check
-      |> calculate_coverage
+      |> List.map ~f:(fun { error_list; _ } -> error_list)
+      |> List.concat
       |> Error.join_at_source ~resolution
     in
     let (changed, newly_added_global_errors) = add_errors_to_environment errors in
