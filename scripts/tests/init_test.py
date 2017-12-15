@@ -55,7 +55,6 @@ class InitTest(unittest.TestCase):
             set([
                 'argument_link_tree',
                 'buck_link_tree',
-                'configuration_link_tree',
             ]))
 
         arguments.target = None
@@ -64,5 +63,13 @@ class InitTest(unittest.TestCase):
             set([
                 'argument_link_tree',
                 'buck_link_tree',
+            ]))
+
+        arguments.target = None
+        arguments.link_tree = None
+        self.assertEqual(
+            resolve_link_trees(arguments, configuration),
+            set([
                 'configuration_link_tree',
+                'buck_link_tree',
             ]))
