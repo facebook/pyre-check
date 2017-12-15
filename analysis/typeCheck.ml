@@ -1872,7 +1872,10 @@ let check configuration environment source =
     try
       let cfg = Cfg.create define in
       let initial_forward =
-        State.initial_forward ~lookup environment { Node.location; value = define }
+        State.initial_forward
+          ~lookup
+          environment
+          { Node.location; value = define }
       in
       let exit =
         if not configuration.infer then
@@ -1881,10 +1884,10 @@ let check configuration environment source =
           |> Fixpoint.exit
           >>| print_state "Exit"
         else
-          let initialize_backward =
-            State.initial_backward ~environment define_node
-          in
-          Fixpoint.backward cfg ~initial_forward ~initialize_backward
+          Fixpoint.backward
+            cfg
+            ~initial_forward
+            ~initialize_backward:(State.initial_backward ~environment define_node)
           |> Fixpoint.entry
           >>| print_state "Entry"
           >>| State.check_entry resolution
