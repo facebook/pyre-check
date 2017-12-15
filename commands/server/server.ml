@@ -370,6 +370,16 @@ let serve (socket, server_configuration) =
     (fun _ -> ());
   computation_thread request_queue server_configuration state
 
+(* Create lock file and pid file. Used for both daemon mode and in-terminal *)
+let setup { lock_path; pid_path; _ } =
+  let pid = Unix.getpid () |> Pid.to_int in
+  if Lock_file.create ~unlink_on_exit:true (Path.absolute lock_path) <> true then
+    raise AlreadyRunning;
+
+  Out_channel.with_file
+    (Path.absolute pid_path)
+    ~f:(fun out_channel ->
+        Format.fprintf (Format.formatter_of_out_channel out_channel) "%d%!" pid)
 
 (** Daemon forking code *)
 type run_server_daemon_entry =
@@ -387,6 +397,7 @@ let run_server_daemon_entry : run_server_daemon_entry =
        Daemon.close_out parent_out_channel;
        (* Detach the from a controlling terminal *)
        Unix.Terminal_io.setsid () |> ignore;
+       setup server_configuration;
        serve (socket, server_configuration))
 
 
@@ -394,7 +405,6 @@ let start ({
     lock_path;
     socket_path;
     log_path;
-    pid_path;
     daemonize;
     configuration;
     _;
@@ -406,19 +416,11 @@ let start ({
 
     Log.info "Starting up server...";
 
-    if Path.file_exists lock_path then raise AlreadyRunning;
+    if Lock_file.is_locked (Path.absolute lock_path) then
+      raise AlreadyRunning;
 
     Log.log ~section:`Server "Creating server socket at `%a`" Path.pp socket_path;
     let socket = Socket.initialize_unix_socket socket_path in
-
-    (* Create lock file and pid file. Used for both daemon mode and in-terminal *)
-    let setup pid =
-      Out_channel.create (Path.absolute lock_path) |> Out_channel.close;
-      Out_channel.with_file
-        (Path.absolute pid_path)
-        ~f:(fun out_channel ->
-            Format.fprintf (Format.formatter_of_out_channel out_channel) "%d%!" pid)
-    in
 
     if daemonize then
       let stdin = Daemon.null_fd () in
@@ -430,14 +432,12 @@ let start ({
           run_server_daemon_entry (socket, server_configuration)
       in
       Daemon.close handle;
-      setup pid;
       Log.log ~section:`Server "Forked off daemon with pid %d" pid;
       Log.info "Server running in background";
       pid
     else begin
-      let pid = Unix.getpid () |> Pid.to_int in
-      setup pid;
-      Log.log ~section:`Server "Server running in terminal as pid %d" pid;
+      setup server_configuration;
+      Log.log ~section:`Server "Server running in terminal as pid %d" (Pid.to_int (Unix.getpid ()));
       Signal.Expert.handle
         Signal.int
         (fun _ -> ServerOperations.stop_server server_configuration socket);
