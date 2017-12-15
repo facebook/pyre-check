@@ -591,6 +591,20 @@ let widen ~resolution ~previous ~next ~iteration:_ =
   join ~resolution previous next
 
 
+let join_at_define ~resolution ~location errors =
+  let return_errors, other_errors =
+    List.partition_tf
+      ~f:(function | { kind = MissingReturnAnnotation _; _ } -> true | _ -> false)
+      errors
+  in
+  match return_errors with
+  | [] ->
+      other_errors
+  | error :: errors ->
+      List.fold ~init:error ~f:(join ~resolution) errors
+      |> fun return_error -> { return_error with location } :: other_errors
+  
+
 let join_at_source ~resolution errors =
   let immutable_type_map, other_errors =
     let filter (error_map, errors) error =

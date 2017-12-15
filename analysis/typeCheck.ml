@@ -113,23 +113,6 @@ module State = struct
       } as state) =
     let resolution = resolution state in
 
-    let join_return_errors errors =
-      let return_errors, other_errors =
-        List.partition_tf
-          ~f:(function | { Error.kind = Error.MissingReturnAnnotation _; _ } -> true | _ -> false)
-          errors
-      in
-      match return_errors with
-      | [] -> other_errors
-      | error :: errors ->
-          List.fold
-            ~init:error
-            ~f:(Error.join ~resolution)
-            errors
-          |> fun return_error ->
-          { return_error with Error.location } :: other_errors
-    in
-
     let class_initialization_errors errors =
       let open Annotated in
       (* Ensure non-nullable typed fields are instantiated in init. *)
@@ -343,7 +326,7 @@ module State = struct
     in
 
     Map.data errors
-    |> join_return_errors
+    |> Error.join_at_define ~resolution ~location
     |> class_initialization_errors
     |> ignore_none_confusion
     |> ignore_unimplemented_returns
