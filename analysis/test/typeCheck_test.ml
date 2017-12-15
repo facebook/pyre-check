@@ -1057,26 +1057,22 @@ let test_show_error_traces _ =
 
 
 let test_coverage _ =
-  let assert_find_coverage source expected =
+  let assert_coverage source expected =
     let { Node.value = define; _ } as define_node = fixpoint_parse source in
-    let exit =
+    let coverage =
       Fixpoint.forward
         (Cfg.create define)
         ~initial:(State.initial_forward environment define_node)
       |> Fixpoint.exit
+      |> (fun exit -> Option.value_exn exit)
+      |> State.coverage
     in
-    let type_coverage = find_coverage ~exit
-    in
-    assert_equal type_coverage expected
+    assert_equal coverage expected
   in
-  assert_find_coverage
+  assert_coverage
     {| def foo(): pass |}
-    {
-      full_coverage = 0;
-      partial_coverage = 0;
-      untyped_coverage = 0;
-    };
-  assert_find_coverage
+    { State.full = 0; partial = 0; untyped = 0 };
+  assert_coverage
     {|
      def foo(y: int):
        if True:
@@ -1084,11 +1080,7 @@ let test_coverage _ =
        else:
          x = z
     |}
-    {
-      full_coverage = 1;
-      partial_coverage = 0;
-      untyped_coverage = 1;
-    }
+    { State.full = 1; partial = 0; untyped = 1 }
 
 
 let test_check _ =
@@ -3788,7 +3780,7 @@ let () =
     "fixpoint_backward">::test_fixpoint_backward;
     "ignore_lines">::test_ignore_lines;
     "check_error_traces">::test_show_error_traces;
-    "check_type_coverage">::test_coverage;
+    "coverage">::test_coverage;
     "check">::test_check;
     "check_strict">::test_strict;
     "check_declare">::test_declare;

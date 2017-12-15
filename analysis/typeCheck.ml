@@ -40,6 +40,13 @@ module State = struct
   }
 
 
+  type coverage = {
+    full: int;
+    partial: int;
+    untyped: int;
+  }
+
+
   let resolution { environment; annotations; _ } =
     Environment.resolution
       environment
@@ -332,6 +339,21 @@ module State = struct
     |> ignore_unimplemented_returns
     |> apply_if ~f:(ignore_errors ignore_lines) ~condition:configuration.gradual
     |> apply_if ~f:filter_errors ~condition:(not configuration.debug || configuration.infer)
+
+
+  let coverage { annotations; _ } =
+    let aggregate
+        ~key:_
+        ~data:{ Annotation.annotation; _ }
+        ({ full; partial; untyped } as coverage) =
+      if Type.is_untyped annotation then
+        { coverage with untyped = untyped + 1 }
+      else if Type.is_partially_typed annotation then
+        { coverage with partial = partial + 1 }
+      else
+        { coverage with full = full + 1 }
+    in
+    Map.fold ~init:{ full = 0; partial = 0; untyped = 0 } ~f:aggregate annotations
 
 
   let initial_forward
@@ -1707,43 +1729,10 @@ type result = {
 }
 
 
-type type_coverage = {
-  full_coverage: int;
-  partial_coverage: int;
-  untyped_coverage: int;
-}
-
-
 type check_result = {
   error_list: Error.t list;
-  type_coverage: type_coverage;
+  type_coverage: State.coverage;
 }
-
-
-let find_coverage ~exit =
-  let check_typing
-      ~key: _
-      ~data: { Annotation.annotation; _ }
-      ({ full_coverage; partial_coverage; untyped_coverage; } as coverage)
-    =
-    if Type.is_untyped annotation then
-      { coverage with untyped_coverage = untyped_coverage + 1 }
-    else if Type.is_partially_typed annotation then
-      { coverage with partial_coverage = partial_coverage + 1 }
-    else
-      { coverage with full_coverage = full_coverage + 1 }
-  in
-  let type_coverage =
-    exit
-    >>| ( fun exit ->
-        Map.fold
-          ~init:{ full_coverage = 0; partial_coverage = 0; untyped_coverage = 0; }
-          ~f:check_typing
-          exit.State.annotations
-      )
-    |> Option.value ~default:{ full_coverage = 0; partial_coverage = 0; untyped_coverage = 0; }
-  in
-  type_coverage
 
 
 let check configuration environment source =
@@ -1841,7 +1830,10 @@ let check configuration environment source =
         >>| State.errors (Source.ignore_lines source) configuration
         |> Option.value ~default:[]
       in
-      let type_coverage = find_coverage ~exit
+      let type_coverage =
+        exit
+        >>| State.coverage
+        |> Option.value ~default:{ State.full = 0; partial = 0; untyped = 0 }
       in
       { error_list; type_coverage }
     with
@@ -1856,28 +1848,28 @@ let check configuration environment source =
               }]
             else
               [];
-          type_coverage = { full_coverage = 0; partial_coverage = 0; untyped_coverage = 0; };
+          type_coverage = { State.full = 0; partial = 0; untyped = 0; };
         }
   in
 
   let calculate_coverage check_output =
-    let { full_coverage; partial_coverage; untyped_coverage } =
+    let { State.full; partial; untyped } =
       List.fold
-        ~init:{ full_coverage = 0; partial_coverage = 0; untyped_coverage = 0; }
+        ~init:{ State.full = 0; partial = 0; untyped = 0; }
         ~f:(fun
-             { full_coverage; partial_coverage; untyped_coverage; }
+             { State.full; partial; untyped; }
              {
                type_coverage = {
-                 full_coverage = previous_full;
-                 partial_coverage = previous_partial;
-                 untyped_coverage = previous_untyped;
+                 State.full = previous_full;
+                 partial = previous_partial;
+                 untyped = previous_untyped;
                };
                _;
              } ->
              {
-               full_coverage = full_coverage + previous_full;
-               partial_coverage = partial_coverage + previous_partial;
-               untyped_coverage = untyped_coverage + previous_untyped;
+               State.full = full + previous_full;
+               partial = partial + previous_partial;
+               untyped = untyped + previous_untyped;
              }
            )
         check_output
@@ -1894,9 +1886,9 @@ let check configuration environment source =
     Log.coverage
       ~flush:false
       ~coverage:[
-        "full_type_coverage", full_coverage;
-        "partial_type_coverage", partial_coverage;
-        "no_type_coverage", untyped_coverage;
+        "full_type_coverage", full;
+        "partial_type_coverage", partial;
+        "no_type_coverage", untyped;
         "ignore_coverage", List.length (Source.ignore_lines source);
         "total_errors", List.length error_list;
       ]
