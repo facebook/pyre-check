@@ -671,6 +671,12 @@ async_statement:
             Node.location;
             value = Define decorated;
           }
+      | { Node.value = Stub (Stub.Define value); _ } ->
+        let decorated = { value with Define.async = true } in
+        {
+          Node.location;
+          value = Stub (Stub.Define decorated);
+        }
       | { Node.value = For value; _ } ->
           let with_async = { value with For.async = true } in
           {

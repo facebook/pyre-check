@@ -471,6 +471,21 @@ let test_define _ =
       };
     ];
   assert_parsed_equal
+    "async def foo():\n  ..."
+    [
+      +Stub (Stub.Define {
+          Define.name = Instantiated.Access.create "foo";
+          parameters = [];
+          body = [];
+          decorators = [];
+          docstring = None;
+          return_annotation = None;
+          async = true;
+          generated = false;
+          parent = None;
+        })
+    ];
+  assert_parsed_equal
     "@foo\nasync def foo():\n  1"
     [
       +Define {
