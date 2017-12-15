@@ -1900,8 +1900,7 @@ let check configuration environment source =
         "ignore_coverage", List.length (Source.ignore_lines source);
         "total_errors", List.length error_list;
       ]
-      ~labels:["root", Path.absolute configuration.project_root]
-    |> ignore;
+      ~labels:["root", Path.absolute configuration.project_root];
     error_list
   in
 
