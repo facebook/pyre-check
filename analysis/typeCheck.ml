@@ -1770,45 +1770,6 @@ let check configuration environment source =
   let dequalify_map = Preprocessing.dequalify_map source in
 
   let lookup = Lookup.create () in
-  let source_error_joins errors =
-    let immutable_type_map, other_errors =
-      let filter (error_map, errors) error =
-        match error with
-        | { Error.kind = Error.MissingAnnotation { Error.name; parent; _ }; _ } ->
-            (try
-               let key =
-                 parent
-                 >>| Annotated.Class.show
-                 |> Option.value ~default:""
-                 |> (fun parent_string -> parent_string ^ (Instantiated.Access.show name))
-               in
-               let new_map =
-                 match Map.find error_map key with
-                 | Some existing_error ->
-                     let joined_error = Error.join ~resolution error existing_error in
-                     if joined_error.Error.kind <> Error.Top then
-                       Map.change ~f:(fun _ -> Some joined_error) error_map key
-                     else
-                       Map.add ~key ~data:error error_map
-                 | _ ->
-                     Map.add ~key ~data:error error_map
-               in
-               new_map, errors
-             with
-             | TypeOrder.Undefined _ ->
-                 error_map, error :: errors)
-        | _ -> error_map, error :: errors
-      in
-      List.fold ~init:(String.Map.empty, []) ~f:filter errors
-    in
-    let merge ~key:_ ~data:error errors =
-      if Error.due_to_analysis_limitations error then
-        errors
-      else
-        error :: errors
-    in
-    Map.fold ~init:other_errors ~f:merge immutable_type_map
-  in
 
   let check ({ Node.location; value = { Define.name; parent; _ } as define } as define_node) =
     let dump = Instantiated.Define.dump define in
@@ -2068,7 +2029,7 @@ let check configuration environment source =
       Preprocessing.defines source
       |> List.map ~f:check
       |> calculate_coverage
-      |> source_error_joins
+      |> Error.join_at_source ~resolution
     in
     let (changed, newly_added_global_errors) = add_errors_to_environment errors in
     if changed && iterations <= State.widening_threshold then
@@ -2086,7 +2047,7 @@ let check configuration environment source =
     Preprocessing.defines source
     |> List.map ~f:check
     |> calculate_coverage
-    |> source_error_joins
+    |> Error.join_at_source ~resolution
     |> List.map ~f:(Error.dequalify dequalify_map environment)
     |> List.sort ~cmp:Error.compare
     |> fun errors -> { errors; lookup = Some lookup }

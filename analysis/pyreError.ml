@@ -591,6 +591,46 @@ let widen ~resolution ~previous ~next ~iteration:_ =
   join ~resolution previous next
 
 
+let join_at_source ~resolution errors =
+  let immutable_type_map, other_errors =
+    let filter (error_map, errors) error =
+      match error with
+      | { kind = MissingAnnotation { name; parent; _ }; _ } ->
+          (try
+             let key =
+               parent
+               >>| Annotated.Class.show
+               |> Option.value ~default:""
+               |> (fun parent_string -> parent_string ^ (Instantiated.Access.show name))
+             in
+             let new_map =
+               match Map.find error_map key with
+               | Some existing_error ->
+                   let joined_error = join ~resolution error existing_error in
+                   if joined_error.kind <> Top then
+                     Map.change ~f:(fun _ -> Some joined_error) error_map key
+                   else
+                     Map.add ~key ~data:error error_map
+               | _ ->
+                   Map.add ~key ~data:error error_map
+             in
+             new_map, errors
+           with
+           | TypeOrder.Undefined _ ->
+               error_map, error :: errors)
+      | _ -> error_map, error :: errors
+    in
+    List.fold ~init:(String.Map.empty, []) ~f:filter errors
+  in
+  let merge ~key:_ ~data:error errors =
+    if due_to_analysis_limitations error then
+      errors
+    else
+      error :: errors
+  in
+  Map.fold ~init:other_errors ~f:merge immutable_type_map
+
+
 let dequalify
     dequalify_map
     environment

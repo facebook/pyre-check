@@ -117,6 +117,8 @@ val widen
   -> next:t
   -> iteration:int
   -> t
+  
+val join_at_source: resolution:Resolution.t -> t list -> t list
 
 val dequalify: access Instantiated.Access.Map.t -> (module Environment.Reader) -> t -> t
 
