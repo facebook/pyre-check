@@ -1852,7 +1852,7 @@ let check configuration environment source =
         }
   in
 
-  let calculate_coverage check_output =
+  let source_coverage check_output =
     let { State.full; partial; untyped } =
       List.fold
         ~init:{ State.full = 0; partial = 0; untyped = 0; }
@@ -2021,7 +2021,7 @@ let check configuration environment source =
   else
     Preprocessing.defines source
     |> List.map ~f:check
-    |> calculate_coverage
+    |> source_coverage
     |> Error.join_at_source ~resolution
     |> List.map ~f:(Error.dequalify dequalify_map environment)
     |> List.sort ~cmp:Error.compare
