@@ -209,10 +209,6 @@ module State = struct
     let ignore_none_confusion errors =
       (* Special-case ignore errors complaining that -> None function returns explicit None *)
       let is_none_confusion error =
-        let check expected actual =
-          Type.equal actual (Type.Optional Type.Bottom) &&
-          Resolution.less_or_equal resolution ~left:Type.void ~right:expected
-        in
         match error with
         | {
           Error.kind = Error.IncompatibleParameterType {
@@ -222,13 +218,16 @@ module State = struct
           _;
         }
         | { Error.kind = Error.IncompatibleReturnType { Error.actual; expected; }; _ }
-        | { Error.kind = Error.IncompatibleType {
-                Error.mismatch = { Error.actual; expected }; _ }; _ } ->
-            not (check expected actual)
-        | _ -> true
+        | {
+          Error.kind = Error.IncompatibleType { Error.mismatch = { Error.actual; expected }; _ };
+          _;
+        } ->
+            not (Type.equal actual (Type.Optional Type.Bottom) &&
+                 Resolution.less_or_equal resolution ~left:Type.void ~right:expected)
+        | _ ->
+            true
       in
-      let (filtered, _) = List.partition_tf ~f:is_none_confusion errors in
-      filtered
+      List.filter ~f:is_none_confusion errors
     in
 
     let ignore_unimplemented_returns errors =
