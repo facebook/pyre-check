@@ -169,6 +169,16 @@ let test_qualify _ =
       def some.qualifier.foo(foo: some.qualifier.Foo) -> some.qualifier.Foo:
         pass
     |};
+  assert_qualify
+    {|
+      class Foo: pass
+      def foo(foo: Foo) -> 'Foo': pass
+    |}
+    {|
+      class some.qualifier.Foo: pass
+      def some.qualifier.foo(foo: some.qualifier.Foo) -> 'some.qualifier.Foo':
+        pass
+    |};
 
   assert_qualify
     {|

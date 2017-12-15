@@ -206,6 +206,17 @@ let qualify source =
                 | None ->
                     expression
               end
+          | { Node.location; value = String value } ->
+              begin
+                match Map.find map (Instantiated.Access.create value) with
+                | Some replacement ->
+                    {
+                      Node.location;
+                      value = String (Instantiated.Access.show replacement);
+                    }
+                | None ->
+                    expression
+              end
           | _ ->
               expression
         in
