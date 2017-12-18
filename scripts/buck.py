@@ -37,11 +37,11 @@ def _find_link_trees(targets_map):
 
         discovered_link_trees = glob.glob(
             os.path.join('buck-out/gen/', target_path + '#*link-tree'))
-        built = targets_map[target] and \
-            len(glob.glob(targets_map[target])) > 0
-        if (not target_path.endswith(('lib', 'library')) and
-                len(discovered_link_trees) == 0 and
-                not built):
+        target_destination = targets_map[target]
+        built = (target_destination is not None and (
+            target_destination == '' or
+            len(glob.glob(target_destination)) > 0))
+        if not built and len(discovered_link_trees) == 0:
             targets_not_found.append(target)
         link_trees.extend(
             [tree for tree in discovered_link_trees
@@ -101,6 +101,8 @@ def generate_link_trees(arguments, original_targets):
             pair = target.split(' ')
             if len(pair) > 1:
                 targets_map[pair[0]] = pair[1]
+            else:
+                targets_map[pair[0]] = ''
 
         if arguments.build:
             _build_targets(target, list(targets_map.keys()))

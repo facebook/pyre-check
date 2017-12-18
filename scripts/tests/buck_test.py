@@ -65,7 +65,20 @@ class BuckTest(unittest.TestCase):
                 found_trees,
                 BuckOut([], [
                     '//path/targets:name',
+                    '//path/targets:namelibrary',
                     '//path/targets:another',
+                    '//path/...']))
+
+        with patch.object(glob, 'glob', return_value=[]) as glob_glob:
+            found_trees = buck._find_link_trees({
+                '//path/targets:name': None,
+                '//path/targets:namelibrary': '',
+                '//path/targets:another': '',
+                '//path/...': None})
+            self.assertEqual(
+                found_trees,
+                BuckOut([], [
+                    '//path/targets:name',
                     '//path/...']))
 
     def test_normalize(self) -> None:
