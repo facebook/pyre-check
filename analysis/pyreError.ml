@@ -446,7 +446,6 @@ let due_to_analysis_limitations { kind; _ } =
 
 let due_to_mismatch_with_any { kind; _ } =
   match kind with
-  | IncompatibleAwaitableType _
   | InconsistentOverride _
   | MissingAnnotation _
   | MissingParameterAnnotation _
@@ -455,6 +454,8 @@ let due_to_mismatch_with_any { kind; _ } =
   | UndefinedMethod _
   | UndefinedType _ ->
       false
+  | IncompatibleAwaitableType actual ->
+      Type.equal actual Type.Object
   | IncompatibleParameterType { mismatch = { actual; expected }; _ }
   | IncompatibleReturnType { actual; expected }
   | IncompatibleType { mismatch = { actual; expected }; _ }
@@ -603,7 +604,7 @@ let join_at_define ~resolution ~location errors =
   | error :: errors ->
       List.fold ~init:error ~f:(join ~resolution) errors
       |> fun return_error -> { return_error with location } :: other_errors
-  
+
 
 let join_at_source ~resolution errors =
   let immutable_type_map, other_errors =

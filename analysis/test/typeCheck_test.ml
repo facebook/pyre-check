@@ -3284,7 +3284,13 @@ let test_check_await _ =
       def bar(a: int) -> None:
         await a
     |}
-    ["Incompatible awaitable type [12]: expected an awaitable but got `int`."]
+    ["Incompatible awaitable type [12]: expected an awaitable but got `int`."];
+  assert_type_errors ~gradual:true ~debug:false
+    {|
+      def bar(a: typing.Any) -> None:
+        await a
+    |}
+    []
 
 
 let test_check_behavioral_subtyping _ =
