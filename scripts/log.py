@@ -59,6 +59,7 @@ class SectionFormatter(logging.Formatter):
 class TimedStreamHandler(logging.StreamHandler):
 
     THRESHOLD = 0.5
+    LINE_BREAKING_LEVELS = ['ERROR', 'WARNING', 'SUCCESS']
 
     def __init__(self) -> None:
         super(TimedStreamHandler, self).__init__()
@@ -67,6 +68,7 @@ class TimedStreamHandler(logging.StreamHandler):
         self.setLevel(logging.INFO)
 
         self._record = None
+        self._last_record = None
         self._active_lines = 0
 
         # Preamble preparing terminal.
@@ -90,17 +92,16 @@ class TimedStreamHandler(logging.StreamHandler):
                 for n in range(self._active_lines - 1)])
 
     def emit(self, record, age=None) -> None:
+        self._last_record = record
         suffix = ''
         color = ''
         active_lines = record.msg.count('\n') + 1
         if record.levelname == 'ERROR':
             color = Color.RED
-            record.msg += '\n'
             self._record = None
             active_lines = 0
         elif record.levelname == 'WARNING':
             color = Color.YELLOW
-            record.msg += '\n'
             self._record = None
             active_lines = 0
         elif record.levelname == 'PROMPT':
@@ -108,9 +109,12 @@ class TimedStreamHandler(logging.StreamHandler):
             self._record = None
             active_lines = 0
         elif record.levelname == 'SUCCESS':
-            record.msg += '\n'
             self._record = None
             active_lines = 0
+
+        if record.levelname in self.LINE_BREAKING_LEVELS:
+            record.msg += '\n'
+
         elif age:
             if age > 10:
                 color = Color.YELLOW
@@ -146,6 +150,10 @@ class TimedStreamHandler(logging.StreamHandler):
             time.sleep(0.1)
 
     def terminate(self) -> None:
+        if self._last_record and \
+                self._last_record.levelname not in self.LINE_BREAKING_LEVELS:
+            sys.stderr.write('\n')
+
         # Reset terminal.
         sys.stderr.write(
             Format.WRAP_OVERFLOW +
