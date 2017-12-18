@@ -145,8 +145,7 @@ class TimedStreamHandler(logging.StreamHandler):
         # Reset terminal.
         sys.stderr.write(
             Format.WRAP_OVERFLOW +
-            Format.SHOW_CURSOR +
-            Format.NEWLINE)
+            Format.SHOW_CURSOR)
         self._terminate = True
 
 
