@@ -184,6 +184,13 @@ let initialize watchman_directory configuration =
 type run_watchman_daemon_entry =
   (Configuration.t, unit Daemon.in_channel, unit Daemon.out_channel) Daemon.entry
 
+let setup configuration pid =
+  if Lock_file.create ~unlink_on_exit:true (Path.absolute (lock_path configuration)) <> true then
+    failwith "Watchman client exists (lock is held). Exiting.";
+  Out_channel.with_file
+    (pid_path configuration |> Path.absolute)
+    ~f:(fun out_channel ->
+        Format.fprintf (Format.formatter_of_out_channel out_channel) "%d%!" pid)
 
 let run_watchman_daemon_entry : run_watchman_daemon_entry =
   Daemon.register_entry_point
@@ -207,30 +214,23 @@ let run_command daemonize verbose sections project_root () =
   let configuration = Configuration.create ~project_root:project_root () in
   Log.initialize ~verbose ~sections;
   Unix.handle_unix_error (fun () -> Unix.mkdir_p (watchman_root configuration |> Path.absolute));
-  let setup pid =
-    Out_channel.create (lock_path configuration |> Path.absolute) |> Out_channel.close;
-    Out_channel.with_file
-      (pid_path configuration |> Path.absolute)
-      ~f:(fun out_channel ->
-          Format.fprintf (Format.formatter_of_out_channel out_channel) "%d%!" pid)
-  in
+  if Lock_file.is_locked (Path.absolute (lock_path configuration)) then
+    failwith "Watchman client exists (lock is held). Exiting.";
+
   if daemonize then
     begin
-      if not (Path.file_exists (lock_path configuration)) then
-        begin
-          let stdin = Daemon.null_fd () in
-          let stdout = Daemon.fd_of_path (Path.absolute (log_path configuration)) in
-          Log.info "Spawning the watchman daemon now.";
-          let { Daemon.pid; _ } as handle =
-            Daemon.spawn
-              (stdin, stdout, stdout)
-              run_watchman_daemon_entry
-              configuration
-          in
-          Daemon.close handle;
-          setup pid;
-          Log.info "Watchman daemon pid: %d" pid
-        end
+      let stdin = Daemon.null_fd () in
+      let stdout = Daemon.fd_of_path (Path.absolute (log_path configuration)) in
+      Log.info "Spawning the watchman daemon now.";
+      let { Daemon.pid; _ } as handle =
+        Daemon.spawn
+          (stdin, stdout, stdout)
+          run_watchman_daemon_entry
+          configuration
+      in
+      Daemon.close handle;
+      setup configuration pid;
+      Log.info "Watchman daemon pid: %d" pid
     end
   else
     begin
@@ -240,10 +240,8 @@ let run_command daemonize verbose sections project_root () =
       | Some watchman_directory ->
           begin
             let server_socket = initialize watchman_directory configuration in
-            if Path.file_exists (lock_path configuration) then
-              failwith "Watchman client exists (lock is held). Exiting.";
             let pid = Unix.getpid () |> Pid.to_int in
-            setup pid;
+            setup configuration pid;
             listen_for_changed_files server_socket watchman_directory configuration
           end
     end
