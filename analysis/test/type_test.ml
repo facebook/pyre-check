@@ -389,7 +389,53 @@ let test_create _ =
     (Type.Build.create
        ~aliases
        (+String "Type[[[]str]"))
-    (Type.Primitive ~~"Type[[[]str]")
+    (Type.Primitive ~~"Type[[[]str]");
+
+  (* Recursive aliasing. *)
+  let aliases = function
+    | Type.Primitive name when Identifier.show name = "A" ->
+        Some (Type.Primitive ~~"B")
+    | Type.Primitive name when Identifier.show name = "B" ->
+        Some (Type.Primitive ~~"C")
+    | _ ->
+        None
+  in
+  assert_equal
+    (Type.Build.create ~aliases (+String "A"))
+    (Type.Primitive ~~"C");
+
+  (* Recursion with loop. *)
+  let aliases = function
+    | Type.Primitive name when Identifier.show name = "A" ->
+        Some (Type.Primitive ~~"A")
+    | _ ->
+        None
+  in
+  assert_equal
+    (Type.Build.create ~aliases (+String "A"))
+    (Type.Primitive ~~"A");
+  let aliases = function
+    | Type.Primitive name when Identifier.show name = "A" ->
+        Some (Type.list (Type.Primitive ~~"A"))
+    | _ ->
+        None
+  in
+  assert_equal
+    (Type.Build.create ~aliases (+String "A"))
+    (Type.list (Type.list (Type.Primitive ~~"A")));
+
+  (* Nested aliasing. *)
+  let aliases = function
+    | Type.Primitive name when Identifier.show name = "A" ->
+        Some (Type.list (Type.Primitive ~~"B"))
+    | Type.Primitive name when Identifier.show name = "B" ->
+        Some (Type.Primitive ~~"C")
+    | _ ->
+        None
+  in
+  assert_equal
+    (Type.Build.create ~aliases (+String "A"))
+    (Type.list (Type.Primitive ~~"C"))
 
 
 let test_expression _ =

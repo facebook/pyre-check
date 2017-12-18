@@ -275,7 +275,7 @@ let yield parameter =
   }
 
 
-let create ~aliases:alias_lookup expression =
+let create ~aliases expression =
   let rec create reversed_lead tail =
     let name reversed_access =
       let show = function
@@ -317,8 +317,43 @@ let create ~aliases:alias_lookup expression =
 
     (* Resolve aliases. *)
     let resolved =
-      alias_lookup annotation
-      |> Option.value ~default:annotation
+      let rec resolve visited annotation =
+        if Set.mem visited annotation then
+          annotation
+        else
+          let visited = Set.add visited annotation in
+          match aliases annotation with
+          | Some alias ->
+              resolve visited alias
+          | _ ->
+              begin
+                match annotation with
+                | Optional annotation ->
+                    Optional (resolve visited annotation)
+                | Tuple (Bounded elements) ->
+                    Tuple (Bounded (List.map ~f:(resolve visited) elements))
+                | Tuple (Unbounded annotation) ->
+                    Tuple (Unbounded (resolve visited annotation))
+                | Parametric ({ parameters; _ } as parametric) ->
+                    Parametric {
+                      parametric with
+                      parameters = List.map ~f:(resolve visited) parameters;
+                    }
+                | Variable ({ constraints; _ } as variable) ->
+                    Variable {
+                      variable with
+                      constraints = List.map ~f:(resolve visited) constraints;
+                    }
+                | Union elements ->
+                    Union (List.map ~f:(resolve visited) elements)
+                | Bottom
+                | Object
+                | Primitive _
+                | Top ->
+                    annotation
+              end
+      in
+      resolve Set.empty annotation
     in
 
     (* Substitutions. *)
