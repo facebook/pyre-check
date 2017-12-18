@@ -22,6 +22,15 @@ let file ?(content = None) relative =
   let root = Path.current_working_directory () in
   File.create ~content (Path.create_relative ~root ~relative)
 
+let poll_for_deletion lock_path =
+  let rec poll () =
+    if Path.file_exists lock_path then
+      (Unix.nanosleep 0.1 |> ignore; poll ())
+    else
+      ()
+  in
+  poll ()
+
 
 let test_language_server_protocol_json_format context =
   let open TypeCheck.Error in
@@ -111,13 +120,7 @@ let test_server_exists _ =
   (* Clean up: Kill server *)
   Command.run ~argv:["_"] Server.stop_command;
   let { ServerConfiguration.lock_path; _ } = ServerConfiguration.create (Configuration.create ()) in
-  let rec poll_for_deletion () =
-    if Path.file_exists lock_path then
-      (Unix.nanosleep 0.1 |> ignore; poll_for_deletion ())
-    else
-      ()
-  in
-  with_timeout ~seconds:3 poll_for_deletion ();
+  with_timeout ~seconds:3 poll_for_deletion lock_path;
   Command_test.clean_environment ()
 
 
@@ -319,13 +322,19 @@ let test_query _ =
 
 let test_connect _ =
   Command_test.start_server ~version:"A" () |> ignore;
-  let { ServerConfiguration.configuration; _ } =
+  let { ServerConfiguration.configuration; lock_path; _ } =
     Command_test.mock_server_configuration ~version:"B" ()
   in
+  (* This sleep ensures that the server doesn't receive an EPIPE while the Hack_parallel library is
+   * iniitializing the daemon in the hack_parallel/utils/handle.ml. In that codepath, an external
+   * routine is called, and due to the nature of the Lazy library this is non-reentrant. *)
+  Unix.nanosleep 0.5
+  |> ignore;
   assert_raises
     (Server.VersionMismatch { Server.server_version = "A"; client_version = "B" })
     (fun () -> Server.connect ~retries:1 ~configuration);
   Server.stop "." ();
+  with_timeout ~seconds:3 poll_for_deletion lock_path;
   Command_test.clean_environment ()
 
 
