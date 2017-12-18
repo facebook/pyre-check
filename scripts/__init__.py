@@ -95,16 +95,15 @@ def resolve_link_trees(arguments, configuration):
     return {_translate(path) for path in link_trees}
 
 
-def log_to_scuba(table_name, logger, sample):
+def log_statistics(category, logger, statistics):
     try:
         subprocess.run(
             "{} {} {}".format(
                 shlex.quote(logger),
-                shlex.quote(table_name),
-                shlex.quote(json.dumps(sample)),
+                shlex.quote(category),
+                shlex.quote(json.dumps(statistics)),
             ),
-            shell=True
-        )
+            shell=True)
     except Exception:
         LOG.warning('Unable to log using `%s`', logger)
         LOG.info(traceback.format_exc())

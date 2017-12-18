@@ -25,7 +25,7 @@ from . import (
     get_version,
     JSON,
     log,
-    log_to_scuba,
+    log_statistics,
     resolve_link_trees,
     SUCCESS,
     switch_root,
@@ -525,7 +525,7 @@ def main():
                     'user': os.getenv('USER'),
                 },
             }
-            log_to_scuba(
+            log_statistics(
                 'perfpipe_pyre_infer_performance',
                 configuration.logger,
                 sample)

@@ -19,7 +19,7 @@ from . import (
     get_version,
     JSON,
     log,
-    log_to_scuba,
+    log_statistics,
     resolve_link_trees,
     SUCCESS,
     switch_root,
@@ -214,7 +214,7 @@ def main() -> int:
 
                 },
             }
-            log_to_scuba('pyre_usage', configuration.logger, sample)
+            log_statistics('pyre_usage', configuration.logger, sample)
 
     return exit_code
 
