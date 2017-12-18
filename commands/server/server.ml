@@ -433,7 +433,7 @@ let start ({
       in
       Daemon.close handle;
       Log.log ~section:`Server "Forked off daemon with pid %d" pid;
-      Log.info "Server running in background";
+      Log.info "Server starting in background";
       pid
     else begin
       setup server_configuration;
