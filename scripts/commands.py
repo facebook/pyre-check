@@ -246,10 +246,10 @@ class ErrorHandling(Command):
             LOG.log(log.SUCCESS, "No type errors found")
 
         if self._output == TEXT:
-            sys.stdout.write(
+            log.stdout.write(
                 '\n'.join([repr(error) for error in sorted(list(errors))]))
         else:
-            sys.stdout.write(json.dumps([error.__dict__ for error in errors]))
+            log.stdout.write(json.dumps([error.__dict__ for error in errors]))
 
     def _get_errors(self, results, exclude_dependencies: bool = False):
         errors = set()

@@ -171,7 +171,7 @@ def main() -> int:
             return SUCCESS
 
         if arguments.version:
-            sys.stdout.write(get_version(configuration) + '\n')
+            log.stdout.write(get_version(configuration))
             return SUCCESS
 
         configuration.validate()

@@ -4,6 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import copy
+import io
 import logging
 import os
 import re
@@ -17,6 +18,9 @@ from typing import List
 LOG = logging.getLogger(__name__)
 PROMPT = 50
 SUCCESS = 60
+
+
+stdout = io.StringIO()
 
 
 class Color:
@@ -179,6 +183,10 @@ def initialize(arguments) -> None:
 def cleanup(arguments) -> None:
     if arguments.timed_stream_handler:
         arguments.timed_stream_handler.terminate()
+
+    output = stdout.getvalue()
+    if output:
+        sys.stdout.write(Format.WRAP_OVERFLOW + output + '\n')
 
 
 class Buffer:
