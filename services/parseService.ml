@@ -132,7 +132,7 @@ let parse_source_job files =
 
 
 let parse_sources_list service files ~root =
-  AstSharedMemory.remove_paths (List.filter_map ~f:File.handle files);
+  AstSharedMemory.remove_paths (List.filter_map ~f:(File.handle ~root) files);
   let sources =
     if Service.is_parallel service then
       parse_parallel parse_source_job files service

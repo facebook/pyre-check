@@ -132,5 +132,5 @@ module Set = Set.Make(struct
   end)
 
 
-let handle { path; _ } =
-  Path.relative path >>| Handle.create
+let handle ?(root = Path.current_working_directory ()) { path; _ } =
+  Path.get_relative_to_root ~root ~path >>| Handle.create

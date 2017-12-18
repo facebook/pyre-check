@@ -46,7 +46,7 @@ let rec process_request
           Hashtbl.data state.errors
           |> List.concat
       | _ ->
-          List.filter_map ~f:File.handle files
+          List.filter_map ~f:(File.handle ~root:project_root) files
           |> List.filter_map ~f:(Hashtbl.find state.errors)
           |> List.concat
     in
@@ -105,7 +105,7 @@ let rec process_request
           else
             state.deferred_requests
         in
-        let repopulate_handles = List.filter_map ~f:File.handle files in
+        let repopulate_handles = List.filter_map ~f:(File.handle ~root:project_root) files in
         let service = Service.with_parallel state.service ~is_parallel:(List.length files > 5) in
         let (new_source_handles, _) =
           ParseService.parse_sources_list

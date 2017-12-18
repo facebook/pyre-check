@@ -743,7 +743,7 @@ let populate
                        |> List.map ~f:show_identifier
                        |> List.fold ~init:(Path.absolute project_root) ~f:(^/))
                   in
-                  if (not check_dependency_exists) || Sys.is_file path = `Yes then
+                  if (not check_dependency_exists) || Sys.is_file relative = `Yes then
                     Path.create_relative ~root:project_root ~relative
                     |> Path.relative
                   else

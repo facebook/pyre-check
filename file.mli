@@ -38,4 +38,4 @@ end
 
 module Set: Set.S with type Elt.t = t
 
-val handle: t -> Handle.t option
+val handle: ?root:Path.t -> t -> Handle.t option
