@@ -34,7 +34,8 @@ LOG = logging.getLogger(__name__)
 def main() -> int:
     parser = argparse.ArgumentParser(
         epilog='environment variables:  `PYRE_BINARY` overrides the pyre '
-        'client binary used.')
+        'client binary used.',
+        allow_abbrev=False)
 
     parser.add_argument(
         '--debug',
