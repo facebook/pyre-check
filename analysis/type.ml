@@ -246,7 +246,14 @@ let tuple parameters: t =
 
 let union parameters =
   let parameters =
-    let parameters = Set.of_list parameters in
+    let rec flattened parameters =
+      let flatten sofar = function
+        | Union parameters -> (flattened parameters) @ sofar
+        | parameter -> parameter :: sofar
+      in
+      List.fold ~init:[] ~f:flatten parameters
+    in
+    let parameters = Set.of_list (flattened parameters) in
     let filter_redundant_annotations sofar annotation =
       match annotation with
       | Primitive _ when  Set.mem parameters (optional annotation) ->
@@ -414,6 +421,8 @@ let create ~aliases expression =
              union parameters
          | _ ->
              resolved)
+    | Union elements ->
+        union elements
     | _ ->
         resolved
   in

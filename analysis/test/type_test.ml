@@ -435,7 +435,20 @@ let test_create _ =
   in
   assert_equal
     (Type.Build.create ~aliases (+String "A"))
-    (Type.list (Type.Primitive ~~"C"))
+    (Type.list (Type.Primitive ~~"C"));
+
+  (* Aliases with Unions. *)
+  let aliases = function
+    | Type.Primitive name when Identifier.show name = "A" ->
+        Some (Type.union [Type.string; Type.bytes])
+    | _ ->
+        None
+  in
+  assert_equal
+    (Type.Build.create ~aliases (+String "typing.Union[A, str]"))
+    (Type.union [Type.string; Type.bytes])
+
+
 
 
 let test_expression _ =
@@ -515,7 +528,12 @@ let test_union _ =
     (Type.equal (Type.union [Type.string; Type.float]) (Type.Union [Type.float; Type.string]));
   assert_true
     (Type.equal (Type.union [Type.float; Type.string]) (Type.Union [Type.float; Type.string]));
-  assert_true (Type.equal (Type.union [Type.float]) Type.float)
+  assert_true (Type.equal (Type.union [Type.float]) Type.float);
+
+  (* Flatten unions. *)
+  assert_equal
+    (Type.union [Type.float; Type.union[Type.string; Type.bytes]])
+    (Type.union [Type.float; Type.string; Type.bytes])
 
 
 let test_is_bottom _ =
