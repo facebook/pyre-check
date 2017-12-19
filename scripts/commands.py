@@ -408,6 +408,9 @@ class Server(Command):
 
         return State(running, dead)
 
+    def _server_string(self, link_trees):
+        return "server{}".format('' if len(link_trees) < 2 else 's')
+
 
 class Stop(Server):
     def __init__(self, arguments, configuration, link_trees) -> None:
@@ -448,11 +451,11 @@ class Kill(Server):
                 os.path.join(link_tree, '.pyre/watchman/watchman.lock'))
 
         if not running:
-            LOG.warning("No server%s running", 's' if len(running) > 1 else '')
+            LOG.warning("No %s running", self._server_string(running))
         else:
             LOG.info(
-                "Terminated server%s at %s",
-                's' if len(running) > 1 else '',
+                "Terminated %s at %s",
+                self._server_string(running),
                 ', '.join('`{}`'.format(link_tree) for link_tree in running))
 
     def _kill(self, path) -> None:
