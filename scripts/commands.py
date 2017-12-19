@@ -408,8 +408,13 @@ class Server(Command):
 
         return State(running, dead)
 
-    def _server_string(self, link_trees):
+    def _server_string(self, link_trees=None):
+        if not link_trees:
+            link_trees = self._link_trees
         return "server{}".format('' if len(link_trees) < 2 else 's')
+
+    def _link_tree_string(self, link_trees):
+        return ', '.join('`{}`'.format(link_tree) for link_tree in link_trees)
 
 
 class Stop(Server):
@@ -417,10 +422,18 @@ class Stop(Server):
         super(Stop, self).__init__(arguments, configuration, link_trees)
 
     def run(self) -> None:
-        results = self._call_client(
-            command=STOP,
-            link_trees=self._link_trees)
-        self._check_results(results)
+        running = self._state().running
+        if running:
+            results = self._call_client(
+                command=STOP,
+                link_trees=running)
+            self._check_results(results)
+            LOG.info(
+                'Stopped %s at %s',
+                self._server_string(running),
+                self._link_tree_string(running))
+        else:
+            LOG.info('No %s running', self._server_string())
 
 
 class Restart(Command):

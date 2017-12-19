@@ -222,8 +222,46 @@ class StartTest(unittest.TestCase):
                 flags=['-terminal', '-stub-roots', 'root'])
 
 
+class StopTest(unittest.TestCase):
+    @patch.object(commands.Server, '_state')
+    def test_restart(self, commands_Server_state) -> None:
+        state = MagicMock()
+        state.running = ['.']
+        commands_Server_state.return_value = state
+
+        arguments = mock_arguments()
+        arguments.terminal = False
+
+        configuration = mock_configuration()
+        configuration.get_stub_roots.return_value = ['root']
+
+        # Check start without watchman.
+        with patch.object(commands.Command, '_call_client') as call_client:
+            commands.Stop(
+                arguments,
+                configuration,
+                link_trees=['.', 'not_running']).run()
+            call_client.assert_called_once_with(
+                command=commands.STOP,
+                link_trees=['.'])
+
+        state.running = []
+        commands_Server_state.return_value = state
+        with patch.object(commands.Command, '_call_client') as call_client:
+            commands.Stop(
+                arguments,
+                configuration,
+                link_trees=['.', 'not_running']).run()
+            call_client.assert_not_called()
+
+
 class RestartTest(unittest.TestCase):
-    def test_restart(self) -> None:
+    @patch.object(commands.Server, '_state')
+    def test_restart(self, commands_Server_state) -> None:
+        state = MagicMock()
+        state.running = ['.']
+        commands_Server_state.return_value = state
+
         arguments = mock_arguments()
         arguments.terminal = False
 
@@ -235,11 +273,11 @@ class RestartTest(unittest.TestCase):
             commands.Restart(arguments, configuration, link_trees=['.']).run()
             call_client.assert_has_calls(
                 [
-                    call(command=commands.STOP,
-                         link_trees=['.']),
-                    call(command=commands.START,
-                         link_trees=['.'],
-                         flags=['-stub-roots', 'root']),
+                    call(command=commands.STOP, link_trees=['.']),
+                    call(
+                        command=commands.START,
+                        link_trees=['.'],
+                        flags=['-stub-roots', 'root']),
 
                 ],
                 any_order=True)
