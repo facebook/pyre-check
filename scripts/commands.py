@@ -397,10 +397,13 @@ class Server(Command):
         dead = []
 
         for link_tree in self._link_trees:
-            pid_file = os.path.join(link_tree, '.pyre/server/server.pid')
-            if os.path.isfile(pid_file):
+            pid_path = os.path.join(link_tree, '.pyre/server/server.pid')
+            try:
+                with open(pid_path) as file:
+                    pid = int(file.read())
+                    os.kill(pid, 0)  # throws if process is not running
                 running.append(link_tree)
-            else:
+            except Exception:
                 dead.append(link_tree)
 
         return State(running, dead)

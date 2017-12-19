@@ -3,6 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import io
 import json
 import os
 import unittest
@@ -159,9 +160,8 @@ class CheckIncremental(unittest.TestCase):
 
 
 class ServerTest(unittest.TestCase):
-    @patch('os.path.isfile')
-    @patch('os.path.exists')
-    def test_kill(self, os_path_exists, os_path_isfile) -> None:
+    @patch('os.kill')
+    def test_kill(self, os_kill) -> None:
         arguments = mock_arguments()
         configuration = mock_configuration()
 
@@ -169,16 +169,14 @@ class ServerTest(unittest.TestCase):
         self.assertEqual(state.running, [])
         self.assertEqual(state.dead, [])
 
-        os.path.isfile.side_effect = [True, False]
-        os.path.exists.side_effect = [True, False]
-
-        state = commands.Server(
-            arguments,
-            configuration,
-            ['link/tree/one', 'link/tree/two'])._state()
-        self.assertEqual(state.running, ['link/tree/one'])
-        self.assertEqual(state.dead, ['link/tree/two'])
-
+        with patch('builtins.open', mock_open()) as open:
+            open.side_effect = [io.StringIO('1'), io.StringIO('derp')]
+            state = commands.Server(
+                arguments,
+                configuration,
+                ['link/tree/one', 'link/tree/two'])._state()
+            self.assertEqual(state.running, ['link/tree/one'])
+            self.assertEqual(state.dead, ['link/tree/two'])
 
 
 class StartTest(unittest.TestCase):
@@ -249,11 +247,9 @@ class RestartTest(unittest.TestCase):
 
 class KillTest(unittest.TestCase):
     @patch('os.kill')
-    @patch('os.path.isfile')
     @patch('os.path.exists')
-    def test_kill(self, os_path_exists, os_path_isfile, os_kill) -> None:
+    def test_kill(self, os_path_exists, os_kill) -> None:
         os_path_exists.result = True
-        os_path_isfile.result = True
 
         arguments = mock_arguments()
         configuration = mock_configuration()
