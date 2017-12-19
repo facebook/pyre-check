@@ -400,7 +400,6 @@ class Restart(Command):
 
     def run(self) -> None:
         Stop(self._arguments, self._configuration, self._link_trees).run()
-        Kill(self._arguments, self._configuration, self._link_trees).run()
         Start(self._arguments, self._configuration, self._link_trees).run()
 
 
