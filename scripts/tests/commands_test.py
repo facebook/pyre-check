@@ -57,6 +57,24 @@ class CommandTest(unittest.TestCase):
                 [])._relative_path('/original/directory/'),
             '.')
 
+    @patch('os.kill')
+    def test_state(self, os_kill) -> None:
+        arguments = mock_arguments()
+        configuration = mock_configuration()
+
+        state = commands.Command(arguments, configuration, [])._state()
+        self.assertEqual(state.running, [])
+        self.assertEqual(state.dead, [])
+
+        with patch('builtins.open', mock_open()) as open:
+            open.side_effect = [io.StringIO('1'), io.StringIO('derp')]
+            state = commands.Command(
+                arguments,
+                configuration,
+                ['link/tree/one', 'link/tree/two'])._state()
+            self.assertEqual(state.running, ['link/tree/one'])
+            self.assertEqual(state.dead, ['link/tree/two'])
+
 
 class PersistentTest(unittest.TestCase):
     @patch.object(commands.Persistent, '_run_null_server', return_value=None)
@@ -161,8 +179,15 @@ class CheckTest(unittest.TestCase):
                 flags=['-stub-roots', 'stub,root'])
 
 
-class CheckIncremental(unittest.TestCase):
-    def test_incremental(self) -> None:
+class IncrementalTest(unittest.TestCase):
+    @patch.object(commands.Command, '_state')
+    @patch.object(commands, 'Start')
+    def test_incremental(self, commands_Start, commands_Command_state) -> None:
+        state = MagicMock()
+        state.running = ['running']
+        state.dead = []
+        commands_Command_state.return_value = state
+
         arguments = mock_arguments()
 
         configuration = mock_configuration()
@@ -172,31 +197,29 @@ class CheckIncremental(unittest.TestCase):
             commands.Incremental(
                 arguments,
                 configuration,
-                link_trees=['.']).run()
+                link_trees=['running']).run()
             call_client.assert_called_once_with(
                 command=commands.INCREMENTAL,
-                link_trees=['.'],
+                link_trees=['running'],
                 flags=['-stub-roots', 'stub,root'])
 
+        state.running = ['running']
+        state.dead = ['dead']
+        commands_Command_state.return_value = state
 
-class ServerTest(unittest.TestCase):
-    @patch('os.kill')
-    def test_kill(self, os_kill) -> None:
-        arguments = mock_arguments()
-        configuration = mock_configuration()
-
-        state = commands.Server(arguments, configuration, [])._state()
-        self.assertEqual(state.running, [])
-        self.assertEqual(state.dead, [])
-
-        with patch('builtins.open', mock_open()) as open:
-            open.side_effect = [io.StringIO('1'), io.StringIO('derp')]
-            state = commands.Server(
+        with patch.object(commands.Command, '_call_client') as call_client:
+            commands.Incremental(
                 arguments,
                 configuration,
-                ['link/tree/one', 'link/tree/two'])._state()
-            self.assertEqual(state.running, ['link/tree/one'])
-            self.assertEqual(state.dead, ['link/tree/two'])
+                link_trees=['running', 'dead']).run()
+            commands_Start.assert_called_with(
+                arguments,
+                configuration,
+                ['dead'])
+            call_client.assert_called_once_with(
+                command=commands.INCREMENTAL,
+                link_trees=['running', 'dead'],
+                flags=['-stub-roots', 'stub,root'])
 
 
 class StartTest(unittest.TestCase):
@@ -243,11 +266,11 @@ class StartTest(unittest.TestCase):
 
 
 class StopTest(unittest.TestCase):
-    @patch.object(commands.Server, '_state')
-    def test_restart(self, commands_Server_state) -> None:
+    @patch.object(commands.Command, '_state')
+    def test_restart(self, commands_Command_state) -> None:
         state = MagicMock()
         state.running = ['.']
-        commands_Server_state.return_value = state
+        commands_Command_state.return_value = state
 
         arguments = mock_arguments()
         arguments.terminal = False
@@ -266,7 +289,7 @@ class StopTest(unittest.TestCase):
                 link_trees=['.'])
 
         state.running = []
-        commands_Server_state.return_value = state
+        commands_Command_state.return_value = state
         with patch.object(commands.Command, '_call_client') as call_client:
             commands.Stop(
                 arguments,
@@ -276,11 +299,11 @@ class StopTest(unittest.TestCase):
 
 
 class RestartTest(unittest.TestCase):
-    @patch.object(commands.Server, '_state')
-    def test_restart(self, commands_Server_state) -> None:
+    @patch.object(commands.Command, '_state')
+    def test_restart(self, commands_Command_state) -> None:
         state = MagicMock()
         state.running = ['.']
-        commands_Server_state.return_value = state
+        commands_Command_state.return_value = state
 
         arguments = mock_arguments()
         arguments.terminal = False

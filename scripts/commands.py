@@ -170,6 +170,35 @@ class Command:
     def _relative_path(self, path) -> str:
         return os.path.relpath(path, self._original_directory)
 
+    def _state(self):
+        running = []
+        dead = []
+
+        for link_tree in self._link_trees:
+            pid_path = os.path.join(link_tree, '.pyre/server/server.pid')
+            try:
+                with open(pid_path) as file:
+                    pid = int(file.read())
+                    os.kill(pid, 0)  # throws if process is not running
+                running.append(link_tree)
+            except Exception:
+                dead.append(link_tree)
+
+        return State(running, dead)
+
+    def _server_string(self, link_trees=None):
+        if not link_trees:
+            link_trees = self._link_trees
+        return "server{}".format('' if len(link_trees) < 2 else 's')
+
+    def _link_tree_string(self, link_trees=None):
+        if not link_trees:
+            link_trees = self._link_trees
+        return ', '.join(
+            '`{}`'.format(self._relative_path(link_tree))
+            for link_tree
+            in link_trees)
+
     def on_client_exception(self) -> None:
         pass
 
@@ -314,8 +343,18 @@ class Incremental(ErrorHandling):
     def __init__(self, arguments, configuration, link_trees) -> None:
         super(Incremental, self).__init__(arguments, configuration, link_trees)
 
-    def run(self, retries: int = 1) -> None:
-        arguments = self._arguments
+    def run(self) -> None:
+        dead = self._state().dead
+        if dead:
+            LOG.warning(
+                '%s not running at %s. Starting...',
+                self._server_string(dead).capitalize(),
+                self._link_tree_string(dead))
+            arguments = self._arguments
+            arguments.terminal = False
+            arguments.no_watchman = False
+            Start(arguments, self._configuration, dead).run()
+
         flags = self._flags()
         flags.extend([
             '-stub-roots',
@@ -327,18 +366,6 @@ class Incremental(ErrorHandling):
             command=INCREMENTAL,
             link_trees=self._link_trees,
             flags=flags)
-
-        if any([result.code == Incremental.NOT_RUNNING for result in results]):
-            LOG.error('Not all servers running')
-            arguments.no_watchman = False
-            arguments.terminal = False
-            Start(arguments, self._configuration, self._link_trees).run()
-
-            if retries > 0:
-                self.run(retries - 1)
-                return
-            else:
-                raise ClientException('Unable to start servers')
 
         errors = self._get_errors(results)
         self._print(errors)
@@ -390,39 +417,7 @@ class Start(Command):
 State = namedtuple('State', ['running', 'dead'])
 
 
-class Server(Command):
-    def __init__(self, arguments, configuration, link_trees) -> None:
-        super(Server, self).__init__(arguments, configuration, link_trees)
-
-    def _state(self):
-        running = []
-        dead = []
-
-        for link_tree in self._link_trees:
-            pid_path = os.path.join(link_tree, '.pyre/server/server.pid')
-            try:
-                with open(pid_path) as file:
-                    pid = int(file.read())
-                    os.kill(pid, 0)  # throws if process is not running
-                running.append(link_tree)
-            except Exception:
-                dead.append(link_tree)
-
-        return State(running, dead)
-
-    def _server_string(self, link_trees=None):
-        if not link_trees:
-            link_trees = self._link_trees
-        return "server{}".format('' if len(link_trees) < 2 else 's')
-
-    def _link_tree_string(self, link_trees):
-        return ', '.join(
-            '`{}`'.format(self._relative_path(link_tree))
-            for link_tree
-            in link_trees)
-
-
-class Stop(Server):
+class Stop(Command):
     def __init__(self, arguments, configuration, link_trees) -> None:
         super(Stop, self).__init__(arguments, configuration, link_trees)
 
@@ -450,7 +445,7 @@ class Restart(Command):
         Start(self._arguments, self._configuration, self._link_trees).run()
 
 
-class Kill(Server):
+class Kill(Command):
     def __init__(self, arguments, configuration, link_trees) -> None:
         super(Kill, self).__init__(arguments, configuration, link_trees)
 
