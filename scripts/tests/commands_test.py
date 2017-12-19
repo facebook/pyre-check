@@ -158,6 +158,29 @@ class CheckIncremental(unittest.TestCase):
                 flags=['-stub-roots', 'stub,root'])
 
 
+class ServerTest(unittest.TestCase):
+    @patch('os.path.isfile')
+    @patch('os.path.exists')
+    def test_kill(self, os_path_exists, os_path_isfile) -> None:
+        arguments = mock_arguments()
+        configuration = mock_configuration()
+
+        state = commands.Server(arguments, configuration, [])._state()
+        self.assertEqual(state.running, [])
+        self.assertEqual(state.dead, [])
+
+        os.path.isfile.side_effect = [True, False]
+        os.path.exists.side_effect = [True, False]
+
+        state = commands.Server(
+            arguments,
+            configuration,
+            ['link/tree/one', 'link/tree/two'])._state()
+        self.assertEqual(state.running, ['link/tree/one'])
+        self.assertEqual(state.dead, ['link/tree/two'])
+
+
+
 class StartTest(unittest.TestCase):
     def test_start(self) -> None:
         arguments = mock_arguments()
@@ -226,9 +249,11 @@ class RestartTest(unittest.TestCase):
 
 class KillTest(unittest.TestCase):
     @patch('os.kill')
+    @patch('os.path.isfile')
     @patch('os.path.exists')
-    def test_kill(self, os_path_exists, os_kill) -> None:
+    def test_kill(self, os_path_exists, os_path_isfile, os_kill) -> None:
         os_path_exists.result = True
+        os_path_isfile.result = True
 
         arguments = mock_arguments()
         configuration = mock_configuration()

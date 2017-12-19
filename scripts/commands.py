@@ -14,6 +14,8 @@ import threading
 import time
 import traceback
 
+from collections import namedtuple
+
 from . import (
     buck,
     EnvironmentException,
@@ -383,7 +385,28 @@ class Start(Command):
         self._check_results(results)
 
 
-class Stop(Command):
+State = namedtuple('State', ['running', 'dead'])
+
+
+class Server(Command):
+    def __init__(self, arguments, configuration, link_trees) -> None:
+        super(Server, self).__init__(arguments, configuration, link_trees)
+
+    def _state(self):
+        running = []
+        dead = []
+
+        for link_tree in self._link_trees:
+            pid_file = os.path.join(link_tree, '.pyre/server/server.pid')
+            if os.path.isfile(pid_file):
+                running.append(link_tree)
+            else:
+                dead.append(link_tree)
+
+        return State(running, dead)
+
+
+class Stop(Server):
     def __init__(self, arguments, configuration, link_trees) -> None:
         super(Stop, self).__init__(arguments, configuration, link_trees)
 
@@ -403,17 +426,15 @@ class Restart(Command):
         Start(self._arguments, self._configuration, self._link_trees).run()
 
 
-class Kill(Command):
+class Kill(Server):
     def __init__(self, arguments, configuration, link_trees) -> None:
         super(Kill, self).__init__(arguments, configuration, link_trees)
 
     def run(self):
-        running = []
-        for link_tree in self._link_trees:
-            pid_file = os.path.join(link_tree, '.pyre/server/server.pid')
-            if os.path.isfile(pid_file):
-                running.append(link_tree)
-            self._kill(pid_file)
+        running = self._state().running
+
+        for link_tree in running:
+            self._kill(os.path.join(link_tree, '.pyre/server/server.pid'))
             self._remove_if_exists(
                 os.path.join(link_tree, '.pyre/server/server.lock'))
             self._remove_if_exists(
