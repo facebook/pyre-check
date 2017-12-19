@@ -424,7 +424,7 @@ class Kill(Command):
                 os.path.join(link_tree, '.pyre/watchman/watchman.lock'))
 
         if not running:
-            LOG.warning("No servers running")
+            LOG.warning("No server%s running", 's' if len(running) > 1 else '')
         else:
             LOG.info(
                 "Terminated server%s at %s",
