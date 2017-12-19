@@ -165,7 +165,8 @@ let parse_sources_list service files ~root =
       "default_coverage", List.length paths - strict_coverage - declare_coverage;
       "source_files", List.length paths;
     ]
-    ~labels:["root", root |> Path.show;];
+    ~root:(Path.last root)
+    ~labels:[];
 
   let not_parsed = (List.length files) - (List.length sources) in
   if not_parsed > 0 then

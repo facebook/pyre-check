@@ -268,8 +268,6 @@ let rec process_request
     ~flush:false
     ~name:"Server request"
     ~timer
-    ~labels:[
-      "request_kind", Protocol.Request.name request;
-      "root", Path.last configuration.project_root
-    ];
+    ~root:(Path.last configuration.project_root)
+    ~labels:["request_kind", Protocol.Request.name request];
   result

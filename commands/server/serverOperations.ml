@@ -28,7 +28,8 @@ let initialize ?old_state lock connections { configuration; _ } =
     ~flush:true
     ~name:"initialization"
     ~timer
-    ~labels:["root", configuration.Configuration.project_root |> Path.show;];
+    ~root:(Path.last configuration.Configuration.project_root)
+    ~labels:[];
   Log.log ~section:`Server "Server initialized";
   let handles = File.Handle.Set.of_list handles in
   let errors =

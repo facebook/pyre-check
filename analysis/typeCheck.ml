@@ -1883,7 +1883,8 @@ let check configuration environment source =
         "ignore_coverage", List.length (Source.ignore_lines source);
         "total_errors", List.length error_list;
       ]
-      ~labels:["root", Path.absolute configuration.project_root];
+      ~root:(Path.last configuration.project_root)
+      ~labels:[];
     error_list
   in
 

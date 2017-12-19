@@ -93,17 +93,17 @@ let print format =
   Format.printf format
 
 
-let performance ?(flush = false) ~name ~timer ~labels =
+let performance ?(flush = false) ~name ~timer ~root ~labels =
   let seconds = Timer.stop timer in
   let milliseconds = Int.of_float (seconds *. 1000.0) in
   log ~section:`Performance "Time elapsed for %s: %fs" name seconds;
   if !statistics_logging_enabled then
-    Statistics.performance ~flush ~time:milliseconds ~labels |> ignore
+    Statistics.performance ~flush ~time:milliseconds ~root ~labels |> ignore
 
 
-let coverage ?(flush = false) ~coverage ~labels =
+let coverage ?(flush = false) ~coverage ~root ~labels =
   if !statistics_logging_enabled then
-    Statistics.coverage ~flush ~coverage ~labels |> ignore
+    Statistics.coverage ~flush ~coverage ~root ~labels |> ignore
 
 
 module Color = struct

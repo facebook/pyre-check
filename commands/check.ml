@@ -137,10 +137,8 @@ let run_check
     ~flush:true
     ~name:"check"
     ~timer
-    ~labels:[
-      "root", Path.last configuration.Configuration.project_root;
-      "request_kind", "FullCheck";
-    ];
+    ~root:(Path.last configuration.Configuration.project_root)
+    ~labels:["request_kind", "FullCheck"];
   (* Print results. *)
   Log.print
     "%s"
