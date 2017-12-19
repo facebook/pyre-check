@@ -108,32 +108,38 @@ class Configuration:
 
                 configuration = json.load(file)
 
-                self.link_trees = configuration.get('link_trees', [])
+                if not self.link_trees:
+                    self.link_trees = configuration.get('link_trees', [])
                 if self.link_trees:
                     LOG.debug(
                         'Found link trees `%s`', ', '.join(self.link_trees))
 
-                self.targets = configuration.get('targets', [])
+                if not self.targets:
+                    self.targets = configuration.get('targets', [])
                 if self.targets:
                     LOG.debug('Found targets `%s`', ', '.join(self.targets))
 
                 if "disabled" in configuration:
                     self._disabled = True
 
-                self.logger = configuration.get('logger')
+                if not self.logger:
+                    self.logger = configuration.get('logger')
 
-                self._binary = os.getenv('PYRE_BINARY')
+                if not self._binary:
+                    self._binary = os.getenv('PYRE_BINARY')
                 if not self._binary:
                     self._binary = configuration.get('binary')
 
                 self._stub_roots.extend(
                     configuration.get('additional_stub_roots', []))
 
-                self._version_hash = os.getenv('PYRE_VERSION_HASH')
+                if not self._version_hash:
+                    self._version_hash = os.getenv('PYRE_VERSION_HASH')
                 if not self._version_hash:
                     self._version_hash = configuration.get('version')
 
-                self._typeshed = configuration.get('typeshed')
+                if not self._typeshed:
+                    self._typeshed = configuration.get('typeshed')
         except IOError:
             LOG.debug('No configuration found at `{}`.'.format(path))
         except json.JSONDecodeError as error:
