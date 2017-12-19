@@ -27,6 +27,7 @@ def mock_arguments():
     arguments.logging_sections = None
     arguments.check_unannotated = False
     arguments.current_directory = '.'
+    arguments.original_directory = '/original/directory/'
 
     return arguments
 
@@ -36,6 +37,25 @@ def mock_configuration():
     configuration.link_trees = ['.']
     configuration.get_stub_roots = MagicMock()
     return configuration
+
+
+class CommandTest(unittest.TestCase):
+    def test_relative_path(self) -> None:
+        arguments = mock_arguments()
+        configuration = mock_configuration()
+
+        self.assertEqual(
+            commands.Command(
+                arguments,
+                configuration,
+                [])._relative_path('/original/directory/path'),
+            'path')
+        self.assertEqual(
+            commands.Command(
+                arguments,
+                configuration,
+                [])._relative_path('/original/directory/'),
+            '.')
 
 
 class PersistentTest(unittest.TestCase):

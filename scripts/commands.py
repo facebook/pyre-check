@@ -67,6 +67,8 @@ class Command:
         self._logging_sections = arguments.logging_sections
         self._check_unannotated = arguments.check_unannotated
 
+        self._original_directory = arguments.original_directory
+
     def run(self) -> None:
         pass
 
@@ -165,6 +167,9 @@ class Command:
         for result in results:
             result.check()
 
+    def _relative_path(self, path) -> str:
+        return os.path.relpath(path, self._original_directory)
+
     def on_client_exception(self) -> None:
         pass
 
@@ -229,7 +234,6 @@ class ErrorHandling(Command):
             link_trees)
         self._verbose = arguments.verbose
         self._output = arguments.output
-        self._original_directory = arguments.original_directory
         self._local_paths = {
             buck.presumed_target_root(target)
             for target
@@ -279,9 +283,7 @@ class ErrorHandling(Command):
                     if path.startswith(internal_path):
                         external = False
                         # Relativize path.
-                        error['path'] = os.path.relpath(
-                            path,
-                            self._original_directory)
+                        error['path'] = self._relative_path(path)
                 errors.add(Error(external, **error))
 
         return errors
@@ -414,7 +416,10 @@ class Server(Command):
         return "server{}".format('' if len(link_trees) < 2 else 's')
 
     def _link_tree_string(self, link_trees):
-        return ', '.join('`{}`'.format(link_tree) for link_tree in link_trees)
+        return ', '.join(
+            '`{}`'.format(self._relative_path(link_tree))
+            for link_tree
+            in link_trees)
 
 
 class Stop(Server):
@@ -469,7 +474,7 @@ class Kill(Server):
             LOG.info(
                 "Terminated %s at %s",
                 self._server_string(running),
-                ', '.join('`{}`'.format(link_tree) for link_tree in running))
+                self._link_tree_string(running))
 
     def _kill(self, path) -> None:
         if not os.path.exists(path):
