@@ -1294,10 +1294,7 @@ module State = struct
                 Error.location;
                 kind = Error.MissingReturnAnnotation {
                     Error.type_annotation = actual;
-                    return_locations =
-                      Set.add
-                        Int.Set.empty
-                        location.Location.start.Location.line;
+                    return_locations = [location.Location.start.Location.line];
                     due_to_any = Type.equal expected Type.Object;
                   };
                 define = define_node;
@@ -1435,10 +1432,7 @@ module State = struct
                 Error.location;
                 kind = Error.MissingReturnAnnotation {
                     Error.type_annotation = actual;
-                    return_locations =
-                      Set.add
-                        Int.Set.empty
-                        location.Location.start.Location.line;
+                    return_locations = [location.Location.start.Location.line];
                     due_to_any = Type.equal expected Type.Object;
                   };
                 define = define_node;
@@ -1474,10 +1468,7 @@ module State = struct
                 Error.location;
                 kind = Error.MissingReturnAnnotation {
                     Error.type_annotation = actual;
-                    return_locations =
-                      Set.add
-                        Int.Set.empty
-                        location.Location.start.Location.line;
+                    return_locations = [location.Location.start.Location.line];
                     due_to_any = Type.equal expected Type.Object;
                   };
                 define = define_node;

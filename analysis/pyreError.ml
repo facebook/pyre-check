@@ -80,7 +80,7 @@ type inconsistent_override = {
 
 type missing_return = {
   type_annotation: Type.t;
-  return_locations: Int.Set.t;
+  return_locations: int list;
   due_to_any: bool;
 }
 [@@deriving compare, eq, sexp]
@@ -91,7 +91,7 @@ let pp_missing_return format missing_return =
     format
     "Annotation: %s, Return locations: %a"
     (Type.show missing_return.type_annotation)
-    Sexp.pp (sexp_of_list sexp_of_int (Set.to_list missing_return.return_locations))
+    Sexp.pp (sexp_of_list sexp_of_int missing_return.return_locations)
 
 
 let show_missing_return missing_return =
@@ -224,11 +224,11 @@ let description
           (Format.asprintf
              "Type %a was returned on %s %s, return type should be specified on line %d."
              Type.pp type_annotation
-             (if (Set.length return_locations) > 1 then "lines" else "line")
-             ( Set.to_list return_locations
-               |> List.map
-                 ~f:Int.to_string
-               |> String.concat ~sep:", ")
+             (if (List.length return_locations) > 1 then "lines" else "line")
+             (return_locations
+              |> List.map
+                ~f:Int.to_string
+              |> String.concat ~sep:", ")
              (Location.line location))
         ]
     | MissingReturnAnnotation { type_annotation; return_locations; due_to_any = true } ->
@@ -239,11 +239,11 @@ let description
           (Format.asprintf
              "Type %a was returned on %s %s, return type should be specified on line %d."
              Type.pp type_annotation
-             (if (Set.length return_locations) > 1 then "lines" else "line")
-             ( Set.to_list return_locations
-               |> List.map
-                 ~f:Int.to_string
-               |> String.concat ~sep:", ")
+             (if (List.length return_locations) > 1 then "lines" else "line")
+             (return_locations
+              |> List.map
+                ~f:Int.to_string
+              |> String.concat ~sep:", ")
              (Location.line location))
         ]
     | MissingAnnotation { name; annotation; parent = Some parent; due_to_any = false } ->
@@ -539,7 +539,9 @@ let join ~resolution left right =
     | MissingReturnAnnotation left, MissingReturnAnnotation right ->
         MissingReturnAnnotation {
           type_annotation = TypeOrder.join order left.type_annotation right.type_annotation;
-          return_locations = Set.union left.return_locations right.return_locations;
+          return_locations =
+            Int.Set.of_list (left.return_locations @ right.return_locations)
+            |> Set.to_list;
           due_to_any = left.due_to_any && right.due_to_any;
         }
     | MissingAnnotation left, MissingAnnotation right

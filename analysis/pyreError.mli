@@ -65,7 +65,7 @@ type inconsistent_override = {
 
 type missing_return = {
   type_annotation: Type.t;
-  return_locations: Int.Set.t;
+  return_locations: int list;
   due_to_any: bool;
 }
 [@@deriving compare, eq, sexp]

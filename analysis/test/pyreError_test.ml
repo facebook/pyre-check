@@ -129,7 +129,7 @@ let test_due_to_analysis_limitations _ =
        (error
           (Error.MissingReturnAnnotation {
               Error.type_annotation = Type.Top;
-              return_locations = Core.Int.Set.empty;
+              return_locations = [];
               due_to_any = false;
             })));
   assert_false
@@ -137,7 +137,7 @@ let test_due_to_analysis_limitations _ =
        (error
           (Error.MissingReturnAnnotation {
               Error.type_annotation = Type.string;
-              return_locations = Core.Int.Set.empty;
+              return_locations = [];
               due_to_any = false;
             })));
 
