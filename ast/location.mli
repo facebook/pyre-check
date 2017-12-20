@@ -19,6 +19,8 @@ type t = {
 }
 [@@deriving compare, eq, sexp, show]
 
+val pp_start: Format.formatter -> t -> unit
+
 module Map : Map.S with type Key.t = t
 
 include Hashable with type t := t

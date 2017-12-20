@@ -26,8 +26,12 @@ let show =
   Format.asprintf "%a" pp
 
 
-let pp format { path; start; stop;} =
+let pp format { path; start; stop; } =
   Format.fprintf format "%s:%d:%d-%d:%d" path start.line start.column stop.line stop.column
+
+
+let pp_start format { path; start; _ } =
+  Format.fprintf format "%s:%d:%d" path start.line start.column
 
 
 module Map = Map.Make(struct

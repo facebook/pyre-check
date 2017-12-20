@@ -265,36 +265,76 @@ let description
               |> String.concat ~sep:", ")
              (Location.line location))
         ]
-    | MissingAnnotation { name; annotation; parent = Some parent; due_to_any = false; _ } ->
-        [
-          Format.asprintf
-            "Field %a of class %a has type %a but no type is specified."
-            Instantiated.Access.pp name
-            Instantiated.Access.pp (Annotated.Class.name parent)
-            Type.pp annotation
-        ]
-    | MissingAnnotation { name; annotation; parent = Some parent; due_to_any = true; _ } ->
-        [
-          Format.asprintf
-            "Field %a of class %a has type %a but type `Any` is specified."
-            Instantiated.Access.pp name
-            Instantiated.Access.pp (Annotated.Class.name parent)
-            Type.pp annotation
-        ]
-    | MissingAnnotation { name; annotation; parent = None; due_to_any = false; _ } ->
-        [
-          Format.asprintf
-            "Globally accessible field %a has type %a but no type is specified."
-            Instantiated.Access.pp name
-            Type.pp annotation
-        ]
-    | MissingAnnotation { name; annotation; parent = None; due_to_any = true; _ } ->
-        [
-          Format.asprintf
-            "Globally accessible field %a has type %a but type `Any` is specified."
-            Instantiated.Access.pp name
-            Type.pp annotation
-        ]
+    | MissingAnnotation {
+        name;
+        annotation;
+        parent;
+        evidence_locations;
+        due_to_any;
+      } ->
+        begin
+          let evidence_string =
+            evidence_locations
+            |> List.map
+              ~f:(Format.asprintf "%a" Location.pp_start)
+            |> String.concat ~sep:", "
+          in
+          match parent, due_to_any with
+          | Some parent, false ->
+              [
+                Format.asprintf
+                  "Field %a of class %a has type %a but no type is specified."
+                  Instantiated.Access.pp name
+                  Instantiated.Access.pp (Annotated.Class.name parent)
+                  Type.pp annotation;
+                Format.asprintf
+                  "Field %a declared on line %d, type %a deduced from %s."
+                  Instantiated.Access.pp name
+                  (Location.line location)
+                  Type.pp annotation
+                  evidence_string
+              ]
+          | Some parent, true ->
+              [
+                Format.asprintf
+                  "Field %a of class %a has type %a but type `Any` is specified."
+                  Instantiated.Access.pp name
+                  Instantiated.Access.pp (Annotated.Class.name parent)
+                  Type.pp annotation;
+                Format.asprintf
+                  "Field %a declared on line %d, type %a deduced from %s."
+                  Instantiated.Access.pp name
+                  (Location.line location)
+                  Type.pp annotation
+                  evidence_string
+              ]
+          | None, false ->
+              [
+                Format.asprintf
+                  "Globally accessible field %a has type %a but no type is specified."
+                  Instantiated.Access.pp name
+                  Type.pp annotation;
+                Format.asprintf
+                  "Global %a declared on line %d, type %a deduced from %s."
+                  Instantiated.Access.pp name
+                  (Location.line location)
+                  Type.pp annotation
+                  evidence_string
+              ]
+          | None, true ->
+              [
+                Format.asprintf
+                  "Globally accessible field %a has type %a but type `Any` is specified."
+                  Instantiated.Access.pp name
+                  Type.pp annotation;
+                Format.asprintf
+                  "Global %a declared on line %d, type %a deduced from %s."
+                  Instantiated.Access.pp name
+                  (Location.line location)
+                  Type.pp annotation
+                  evidence_string
+              ]
+        end
     | IncompatibleParameterType {
         name;
         position;

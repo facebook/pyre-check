@@ -1053,6 +1053,21 @@ let test_show_error_traces _ =
       "Uninitialized field [13]: field test_field is declared in class Foo to have non-" ^
       "optional type `int` but is never initialized. Field test_field is declared on line 3, " ^
       "never initialized and therefore must be `typing.Optional[int]`."
+    ];
+
+  assert_type_errors ~show_error_traces:true
+    {|
+      class Foo:
+        field = x
+      class Bar:
+        def bar(self) -> str:
+          foo = Foo()
+          foo.field = 'string'
+          return foo.field
+    |}
+    [
+      "Missing annotation [4]: Field field of class Foo has type `str` but no type " ^
+      "is specified. Field field declared on line 3, type `str` deduced from test.py:7:4.";
     ]
 
 
