@@ -128,7 +128,7 @@ let test_due_to_analysis_limitations _ =
     (Error.due_to_analysis_limitations
        (error
           (Error.MissingReturnAnnotation {
-              Error.type_annotation = Type.Top;
+              Error.annotation = Type.Top;
               evidence_locations = [];
               due_to_any = false;
             })));
@@ -136,7 +136,7 @@ let test_due_to_analysis_limitations _ =
     (Error.due_to_analysis_limitations
        (error
           (Error.MissingReturnAnnotation {
-              Error.type_annotation = Type.string;
+              Error.annotation = Type.string;
               evidence_locations = [];
               due_to_any = false;
             })));

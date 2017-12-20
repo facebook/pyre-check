@@ -269,7 +269,7 @@ module State = struct
         due_to_mismatch_with_any error ||
         Instantiated.Define.is_untyped define ||
         (match kind with
-         | MissingReturnAnnotation { type_annotation = actual; _ }
+         | MissingReturnAnnotation { annotation = actual; _ }
          | MissingParameterAnnotation { annotation = actual; _ }
          | MissingAnnotation { annotation = actual; _ } ->
              Type.equal actual Type.Object ||
@@ -284,7 +284,7 @@ module State = struct
 
       let suppress_in_infer ({ kind; _ } as error) =
         match kind with
-        | MissingReturnAnnotation { type_annotation = actual; _ }
+        | MissingReturnAnnotation { annotation = actual; _ }
         | MissingParameterAnnotation { annotation = actual; _ }
         | MissingAnnotation { annotation = actual; _ } ->
             due_to_analysis_limitations error ||
@@ -1293,7 +1293,7 @@ module State = struct
               {
                 Error.location;
                 kind = Error.MissingReturnAnnotation {
-                    Error.type_annotation = actual;
+                    Error.annotation = actual;
                     evidence_locations = [location.Location.start.Location.line];
                     due_to_any = Type.equal expected Type.Object;
                   };
@@ -1449,7 +1449,7 @@ module State = struct
             add_errors errors [{
                 Error.location;
                 kind = Error.MissingReturnAnnotation {
-                    Error.type_annotation = actual;
+                    Error.annotation = actual;
                     evidence_locations = [location.Location.start.Location.line];
                     due_to_any = Type.equal expected Type.Object;
                   };
@@ -1485,7 +1485,7 @@ module State = struct
             add_errors errors [{
                 Error.location;
                 kind = Error.MissingReturnAnnotation {
-                    Error.type_annotation = actual;
+                    Error.annotation = actual;
                     evidence_locations = [location.Location.start.Location.line];
                     due_to_any = Type.equal expected Type.Object;
                   };
@@ -1912,14 +1912,14 @@ let check configuration environment source =
         let module Reader = (val environment : Environment.Reader) in
         match error with
         | {
-          Error.kind = Error.MissingReturnAnnotation { Error.type_annotation; _ };
+          Error.kind = Error.MissingReturnAnnotation { Error.annotation; _ };
           define = ({ Node.value = define; location } as define_node);
           _;
         } ->
             let is_redundant
                 ({ Node.value = { Statement.Define.return_annotation; _ }; _ } as define_node) =
               define_node.Node.location = location &&
-              return_annotation = Some (Type.expression type_annotation)
+              return_annotation = Some (Type.expression annotation)
             in
             begin
               match Reader.function_definitions define.Statement.Define.name with
@@ -1929,7 +1929,7 @@ let check configuration environment source =
                   let define =
                     {
                       define with
-                      Statement.Define.return_annotation = Some (Type.expression type_annotation)
+                      Statement.Define.return_annotation = Some (Type.expression annotation)
                     }
                   in
                   Reader.register_definition

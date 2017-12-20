@@ -65,7 +65,7 @@ type inconsistent_override = {
 [@@deriving compare, eq, show, sexp]
 
 type missing_return = {
-  type_annotation: Type.t;
+  annotation: Type.t;
   evidence_locations: int list;
   due_to_any: bool;
 }

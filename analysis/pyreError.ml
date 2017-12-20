@@ -97,19 +97,20 @@ type inconsistent_override = {
 
 
 type missing_return = {
-  type_annotation: Type.t;
+  annotation: Type.t;
   evidence_locations: int list;
   due_to_any: bool;
 }
 [@@deriving compare, eq, sexp]
 
 
-let pp_missing_return format missing_return =
+let pp_missing_return format ({ annotation; evidence_locations; due_to_any; } : missing_return) =
   Format.fprintf
     format
-    "Annotation: %s, Evidence locations: %a"
-    (Type.show missing_return.type_annotation)
-    Sexp.pp (sexp_of_list sexp_of_int missing_return.evidence_locations)
+    "Annotation: %s, Evidence locations: %a, Due to any: %b"
+    (Type.show annotation)
+    Sexp.pp (sexp_of_list sexp_of_int evidence_locations)
+    due_to_any
 
 
 let show_missing_return missing_return =
@@ -234,14 +235,14 @@ let description
             Identifier.pp name
             Type.pp annotation
         ]
-    | MissingReturnAnnotation { type_annotation; evidence_locations; due_to_any = false } ->
+    | MissingReturnAnnotation { annotation; evidence_locations; due_to_any = false } ->
         [
           (Format.asprintf
              "Returning %a but no return type is specified."
-             Type.pp type_annotation);
+             Type.pp annotation);
           (Format.asprintf
              "Type %a was returned on %s %s, return type should be specified on line %d."
-             Type.pp type_annotation
+             Type.pp annotation
              (if (List.length evidence_locations) > 1 then "lines" else "line")
              (evidence_locations
               |> List.map
@@ -249,14 +250,14 @@ let description
               |> String.concat ~sep:", ")
              (Location.line location))
         ]
-    | MissingReturnAnnotation { type_annotation; evidence_locations; due_to_any = true } ->
+    | MissingReturnAnnotation { annotation; evidence_locations; due_to_any = true } ->
         [
           (Format.asprintf
              "Returning %a but type `Any` is specified."
-             Type.pp type_annotation);
+             Type.pp annotation);
           (Format.asprintf
              "Type %a was returned on %s %s, return type should be specified on line %d."
-             Type.pp type_annotation
+             Type.pp annotation
              (if (List.length evidence_locations) > 1 then "lines" else "line")
              (evidence_locations
               |> List.map
@@ -453,7 +454,7 @@ let due_to_analysis_limitations { kind; _ } =
   | InconsistentOverride { mismatch = { actual; _ }; _ }
   | MissingAnnotation { annotation = actual; _ }
   | MissingParameterAnnotation { annotation = actual; _ }
-  | MissingReturnAnnotation { type_annotation = actual; _ }
+  | MissingReturnAnnotation { annotation = actual; _ }
   | UninitializedField { mismatch = {actual; _ }; _ }->
       Type.is_unknown actual
   | Top -> true
@@ -501,8 +502,8 @@ let less_or_equal ~resolution left right =
    | MissingReturnAnnotation left, MissingReturnAnnotation right ->
        TypeOrder.less_or_equal
          order
-         ~left: left.type_annotation
-         ~right: right.type_annotation
+         ~left: left.annotation
+         ~right: right.annotation
    | MissingAnnotation left, MissingAnnotation right
      when left.name = right.name && left.due_to_any = right.due_to_any ->
        TypeOrder.less_or_equal
@@ -556,7 +557,7 @@ let join ~resolution left right =
         MissingParameterAnnotation { left with annotation }
     | MissingReturnAnnotation left, MissingReturnAnnotation right ->
         MissingReturnAnnotation {
-          type_annotation = TypeOrder.join order left.type_annotation right.type_annotation;
+          annotation = TypeOrder.join order left.annotation right.annotation;
           evidence_locations =
             Int.Set.of_list (left.evidence_locations @ right.evidence_locations)
             |> Set.to_list;
@@ -679,8 +680,8 @@ let dequalify
     | Top -> Top
     | MissingParameterAnnotation { name; annotation; due_to_any; } ->
         MissingParameterAnnotation { annotation = dequalify annotation; name; due_to_any; }
-    | MissingReturnAnnotation ({ type_annotation; _ } as missing_return) ->
-        MissingReturnAnnotation { missing_return with type_annotation = dequalify type_annotation; }
+    | MissingReturnAnnotation ({ annotation; _ } as missing_return) ->
+        MissingReturnAnnotation { missing_return with annotation = dequalify annotation; }
     | MissingAnnotation ({ annotation; _ } as immutable_type) ->
         MissingAnnotation {
           immutable_type with  annotation = dequalify annotation;
@@ -777,9 +778,9 @@ let to_json ~detailed ({ kind; define = { Node.value = define; _ }; location; _ 
   in
   let inference_information =
     match kind with
-    | MissingReturnAnnotation { type_annotation; _ } ->
+    | MissingReturnAnnotation { annotation; _ } ->
         [
-          "annotation", `String (print_annotation type_annotation);
+          "annotation", `String (print_annotation annotation);
           "parent", print_parent define.Define.parent;
           "function_name", `String function_name;
           "parameters", `List parameters;
