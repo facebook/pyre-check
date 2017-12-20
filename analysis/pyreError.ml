@@ -44,10 +44,28 @@ type missing_immutable = {
   name: Expression.access;
   annotation: Type.t;
   parent: Annotated.Class.t option;
+  evidence_locations: Location.t list;
   due_to_any: bool;
 }
-[@@deriving compare, eq, show, sexp]
+[@@deriving compare, eq, sexp]
 
+let pp_missing_immutable format { name; annotation; parent; evidence_locations; due_to_any; } =
+  let parent_name =
+    match parent with
+    | Some parent_class -> Annotated.Class.show parent_class
+    | None -> "None"
+  in
+  Format.fprintf
+    format
+    "Name: %a, Annotation: %s, Parent: %s, Evidence Locations: %a, Due to any: %b"
+    Instantiated.Access.pp name
+    (Type.show annotation)
+    parent_name
+    Sexp.pp (sexp_of_list Location.sexp_of_t evidence_locations)
+    due_to_any
+
+let show_missing_immutable missing_immutable =
+  Format.asprintf "%a" pp missing_immutable
 
 type immutable_mismatch = {
   name: Expression.access;
@@ -80,7 +98,7 @@ type inconsistent_override = {
 
 type missing_return = {
   type_annotation: Type.t;
-  return_locations: int list;
+  evidence_locations: int list;
   due_to_any: bool;
 }
 [@@deriving compare, eq, sexp]
@@ -89,9 +107,9 @@ type missing_return = {
 let pp_missing_return format missing_return =
   Format.fprintf
     format
-    "Annotation: %s, Return locations: %a"
+    "Annotation: %s, Evidence locations: %a"
     (Type.show missing_return.type_annotation)
-    Sexp.pp (sexp_of_list sexp_of_int missing_return.return_locations)
+    Sexp.pp (sexp_of_list sexp_of_int missing_return.evidence_locations)
 
 
 let show_missing_return missing_return =
@@ -216,7 +234,7 @@ let description
             Identifier.pp name
             Type.pp annotation
         ]
-    | MissingReturnAnnotation { type_annotation; return_locations; due_to_any = false } ->
+    | MissingReturnAnnotation { type_annotation; evidence_locations; due_to_any = false } ->
         [
           (Format.asprintf
              "Returning %a but no return type is specified."
@@ -224,14 +242,14 @@ let description
           (Format.asprintf
              "Type %a was returned on %s %s, return type should be specified on line %d."
              Type.pp type_annotation
-             (if (List.length return_locations) > 1 then "lines" else "line")
-             (return_locations
+             (if (List.length evidence_locations) > 1 then "lines" else "line")
+             (evidence_locations
               |> List.map
                 ~f:Int.to_string
               |> String.concat ~sep:", ")
              (Location.line location))
         ]
-    | MissingReturnAnnotation { type_annotation; return_locations; due_to_any = true } ->
+    | MissingReturnAnnotation { type_annotation; evidence_locations; due_to_any = true } ->
         [
           (Format.asprintf
              "Returning %a but type `Any` is specified."
@@ -239,14 +257,14 @@ let description
           (Format.asprintf
              "Type %a was returned on %s %s, return type should be specified on line %d."
              Type.pp type_annotation
-             (if (List.length return_locations) > 1 then "lines" else "line")
-             (return_locations
+             (if (List.length evidence_locations) > 1 then "lines" else "line")
+             (evidence_locations
               |> List.map
                 ~f:Int.to_string
               |> String.concat ~sep:", ")
              (Location.line location))
         ]
-    | MissingAnnotation { name; annotation; parent = Some parent; due_to_any = false } ->
+    | MissingAnnotation { name; annotation; parent = Some parent; due_to_any = false; _ } ->
         [
           Format.asprintf
             "Field %a of class %a has type %a but no type is specified."
@@ -254,7 +272,7 @@ let description
             Instantiated.Access.pp (Annotated.Class.name parent)
             Type.pp annotation
         ]
-    | MissingAnnotation { name; annotation; parent = Some parent; due_to_any = true } ->
+    | MissingAnnotation { name; annotation; parent = Some parent; due_to_any = true; _ } ->
         [
           Format.asprintf
             "Field %a of class %a has type %a but type `Any` is specified."
@@ -262,14 +280,14 @@ let description
             Instantiated.Access.pp (Annotated.Class.name parent)
             Type.pp annotation
         ]
-    | MissingAnnotation { name; annotation; parent = None; due_to_any = false } ->
+    | MissingAnnotation { name; annotation; parent = None; due_to_any = false; _ } ->
         [
           Format.asprintf
             "Globally accessible field %a has type %a but no type is specified."
             Instantiated.Access.pp name
             Type.pp annotation
         ]
-    | MissingAnnotation { name; annotation; parent = None; due_to_any = true } ->
+    | MissingAnnotation { name; annotation; parent = None; due_to_any = true; _ } ->
         [
           Format.asprintf
             "Globally accessible field %a has type %a but type `Any` is specified."
@@ -539,8 +557,8 @@ let join ~resolution left right =
     | MissingReturnAnnotation left, MissingReturnAnnotation right ->
         MissingReturnAnnotation {
           type_annotation = TypeOrder.join order left.type_annotation right.type_annotation;
-          return_locations =
-            Int.Set.of_list (left.return_locations @ right.return_locations)
+          evidence_locations =
+            Int.Set.of_list (left.evidence_locations @ right.evidence_locations)
             |> Set.to_list;
           due_to_any = left.due_to_any && right.due_to_any;
         }

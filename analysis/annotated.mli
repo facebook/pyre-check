@@ -21,6 +21,7 @@ module Class : sig
 
   val name: t -> Expression.access
   val bases: t -> (Expression.t Argument.t) list
+  val body: t -> Statement.t list
 
   val annotation: t -> resolution: Resolution.t -> Type.t
 

@@ -1294,7 +1294,7 @@ module State = struct
                 Error.location;
                 kind = Error.MissingReturnAnnotation {
                     Error.type_annotation = actual;
-                    return_locations = [location.Location.start.Location.line];
+                    evidence_locations = [location.Location.start.Location.line];
                     due_to_any = Type.equal expected Type.Object;
                   };
                 define = define_node;
@@ -1327,16 +1327,17 @@ module State = struct
                 in
                 Map.add ~key:error.Error.location ~data:error errors
             in
-            let add_missing_annotation_error ~expected ~parent ~name errors =
+            let add_missing_annotation_error ~expected ~parent ~name ~declare_location errors =
               if ((Type.is_unknown expected) || (Type.equal expected Type.Object)) &&
                  not (Type.is_unknown value_annotation) then
                 let error =
                   {
-                    Error.location;
+                    Error.location = declare_location;
                     kind = Error.MissingAnnotation {
                         Error.name;
                         annotation = value_annotation;
                         parent;
+                        evidence_locations = [location];
                         due_to_any = Type.equal expected Type.Object;
                       };
                     define = define_node;
@@ -1362,8 +1363,21 @@ module State = struct
                     ~expected
                     ~parent:(Some (Field.parent field))
                     ~name
+                    ~declare_location:(Field.location field)
               | Access.Element.Field (Access.Element.Undefined { Access.Element.name; parent }) ->
-                  add_missing_annotation_error ~expected:Type.Top ~parent ~name errors
+                  parent
+                  >>= (fun parent ->
+                      (match Class.body parent with
+                       | { Node.location; _ } :: _ ->
+                           Some (
+                             add_missing_annotation_error
+                               ~expected:Type.Top
+                               ~parent:(Some parent)
+                               ~name
+                               ~declare_location:location
+                               errors)
+                       | _ -> None))
+                  |> Option.value ~default:errors
               | _ ->
                   let name = access in
                   match Map.find annotations access with
@@ -1380,7 +1394,11 @@ module State = struct
                         ~parent:None
                         ~name
                         ~declare_location:location
-                      |> add_missing_annotation_error ~expected ~parent:None ~name
+                      |> add_missing_annotation_error
+                        ~expected
+                        ~parent:None
+                        ~declare_location:location
+                        ~name
                   | Some {
                       Annotation.mutability = Annotation.Immutable {
                           Annotation.scope = Annotation.Local;
@@ -1432,7 +1450,7 @@ module State = struct
                 Error.location;
                 kind = Error.MissingReturnAnnotation {
                     Error.type_annotation = actual;
-                    return_locations = [location.Location.start.Location.line];
+                    evidence_locations = [location.Location.start.Location.line];
                     due_to_any = Type.equal expected Type.Object;
                   };
                 define = define_node;
@@ -1468,7 +1486,7 @@ module State = struct
                 Error.location;
                 kind = Error.MissingReturnAnnotation {
                     Error.type_annotation = actual;
-                    return_locations = [location.Location.start.Location.line];
+                    evidence_locations = [location.Location.start.Location.line];
                     due_to_any = Type.equal expected Type.Object;
                   };
                 define = define_node;

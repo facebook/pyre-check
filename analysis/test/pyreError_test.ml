@@ -129,7 +129,7 @@ let test_due_to_analysis_limitations _ =
        (error
           (Error.MissingReturnAnnotation {
               Error.type_annotation = Type.Top;
-              return_locations = [];
+              evidence_locations = [];
               due_to_any = false;
             })));
   assert_false
@@ -137,7 +137,7 @@ let test_due_to_analysis_limitations _ =
        (error
           (Error.MissingReturnAnnotation {
               Error.type_annotation = Type.string;
-              return_locations = [];
+              evidence_locations = [];
               due_to_any = false;
             })));
 
@@ -150,6 +150,7 @@ let test_due_to_analysis_limitations _ =
               annotation = Type.Top;
               parent = Some mock_parent;
               due_to_any = false;
+              evidence_locations = [];
             })));
   assert_false
     (Error.due_to_analysis_limitations
@@ -159,6 +160,7 @@ let test_due_to_analysis_limitations _ =
               annotation = Type.string;
               parent = Some mock_parent;
               due_to_any = false;
+              evidence_locations = [];
             })));
 
   (* Parameter. *)

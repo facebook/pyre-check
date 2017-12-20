@@ -39,9 +39,10 @@ type missing_immutable = {
   name: Expression.access;
   annotation: Type.t;
   parent: Annotated.Class.t option;
+  evidence_locations: Location.t list;
   due_to_any: bool;
 }
-[@@deriving compare, eq, show]
+[@@deriving compare, eq, sexp]
 
 type immutable_mismatch = {
   name: Expression.access;
@@ -65,7 +66,7 @@ type inconsistent_override = {
 
 type missing_return = {
   type_annotation: Type.t;
-  return_locations: int list;
+  evidence_locations: int list;
   due_to_any: bool;
 }
 [@@deriving compare, eq, sexp]

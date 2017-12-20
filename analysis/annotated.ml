@@ -72,6 +72,10 @@ module Class = struct
     bases
 
 
+  let body { Class.body; _ } =
+    body
+
+
   let annotation { Class.name; _ } ~resolution =
     Resolution.parse_annotation resolution (Node.create (Access name))
 
