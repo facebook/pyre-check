@@ -100,8 +100,11 @@ let rec process_request
                     |> File.create)
                 dependents
             in
-            (TypeCheckRequest { Protocol.files; check_dependents = false })
-            :: state.deferred_requests
+            if List.is_empty files then
+              state.deferred_requests
+            else
+              (TypeCheckRequest { Protocol.files; check_dependents = false })
+              :: state.deferred_requests
           else
             state.deferred_requests
         in
