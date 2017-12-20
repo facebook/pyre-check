@@ -59,28 +59,28 @@ def switch_root(arguments):
     arguments.current_directory = root
 
 
-def resolve_link_trees(arguments, configuration):
-    link_trees = set(configuration.link_trees)
-    if arguments.link_tree:
-        link_trees = set(arguments.link_tree)
+def resolve_source_directories(arguments, configuration):
+    source_directories = set(configuration.source_directories)
+    if arguments.source_directory:
+        source_directories = set(arguments.source_directory)
 
-    link_trees.update(
+    source_directories.update(
         buck.generate_link_trees(
             arguments,
             arguments.target or configuration.targets))
 
-    if len(link_trees) == 0:
+    if len(source_directories) == 0:
         raise EnvironmentException(
             "No targets or link trees to analyze.")
 
     # Translate link trees if we switched directories earlier.
     current_directory = os.getcwd()
     if not arguments.original_directory.startswith(current_directory):
-        return link_trees
+        return source_directories
 
     translation = arguments.original_directory[len(current_directory) + 1:]
     if not translation:
-        return link_trees
+        return source_directories
 
     def _translate(path):
         if os.path.exists(path):
@@ -92,7 +92,7 @@ def resolve_link_trees(arguments, configuration):
 
         return path
 
-    return {_translate(path) for path in link_trees}
+    return {_translate(path) for path in source_directories}
 
 
 def log_statistics(category, logger, statistics):

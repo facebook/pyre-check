@@ -26,7 +26,7 @@ from . import (
     JSON,
     log,
     log_statistics,
-    resolve_link_trees,
+    resolve_source_directories,
     SUCCESS,
     switch_root,
 )
@@ -374,11 +374,14 @@ def file_exists(path):
 
 
 class Infer(commands.ErrorHandling):
-    def __init__(self, arguments, configuration, link_trees) -> None:
+    def __init__(self, arguments, configuration, source_directories) -> None:
         arguments.show_error_traces = True
         arguments.check_unannotated = True
         arguments.output = JSON
-        super(Infer, self).__init__(arguments, configuration, link_trees)
+        super(Infer, self).__init__(
+            arguments,
+            configuration,
+            source_directories)
         self._recursive = arguments.recursive
 
     def run(self) -> None:
@@ -391,7 +394,7 @@ class Infer(commands.ErrorHandling):
 
         results = self._call_client(
             command=commands.CHECK,
-            link_trees=self._link_trees,
+            source_directories=self._source_directories,
             flags=flags)
         errors = self._get_errors(results, exclude_dependencies=True)
         type_directory = Path(os.getcwd()) / Path('.pyre/types')
@@ -461,11 +464,11 @@ def main():
         action='append',
         help='The buck target to check')
 
-    link_tree = parser.add_argument_group('link-tree')
-    link_tree.add_argument(
-        '--link-tree',
+    source_directory = parser.add_argument_group('source-directory')
+    source_directory.add_argument(
+        '--source-directory',
         action='append',
-        help='The link tree to run the inference on.')
+        help='The source directory to run the inference on.')
 
     arguments = parser.parse_args()
 
@@ -489,8 +492,10 @@ def main():
 
         configuration.validate()
 
-        link_trees = resolve_link_trees(arguments, configuration)
-        Infer(arguments, configuration, link_trees).run()
+        source_directories = resolve_source_directories(
+            arguments,
+            configuration)
+        Infer(arguments, configuration, source_directories).run()
     except (
         buck.BuckException,
         commands.ClientException,
@@ -520,7 +525,7 @@ def main():
                     'arguments': str(arguments),
                     'host': os.getenv('HOSTNAME'),
                     'error_message': error_message,
-                    'link_tree': str(arguments.link_tree or []),
+                    'source_directory': str(arguments.source_directory or []),
                     'target': str(arguments.target or []),
                     'user': os.getenv('USER'),
                 },

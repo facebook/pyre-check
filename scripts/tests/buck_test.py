@@ -12,7 +12,7 @@ from unittest.mock import (
     patch,
 )
 
-BuckOut = namedtuple('BuckOut', 'link_trees targets_not_found')
+BuckOut = namedtuple('BuckOut', 'source_directories targets_not_found')
 
 
 class BuckTest(unittest.TestCase):
@@ -98,7 +98,9 @@ class BuckTest(unittest.TestCase):
     @patch.object(buck, '_get_yes_no_input', return_value=False)
     def test_generate_link_trees(self, mock_input) -> None:
         arguments = MagicMock()
-        mock_find_link_trees = patch.object(buck, '_find_link_trees')
+        mock_find_link_trees = patch.object(
+            buck,
+            '_find_link_trees')
         mock_find_link_trees.return_value = BuckOut(  # noqa
             ['new_tree'],
             ['empty_target'])
@@ -109,5 +111,5 @@ class BuckTest(unittest.TestCase):
                 buck.generate_link_trees(arguments, ['target'])
                 mock_normalize.assert_called_once_with('empty_target')
                 self.assertEqual(
-                    arguments.link_trees,
-                    ['link_tree', 'new_tree'])
+                    arguments.source_directories,
+                    ['source_directory', 'new_tree'])

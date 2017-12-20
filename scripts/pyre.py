@@ -20,7 +20,7 @@ from . import (
     JSON,
     log,
     log_statistics,
-    resolve_link_trees,
+    resolve_source_directories,
     SUCCESS,
     switch_root,
     TEXT,
@@ -87,11 +87,11 @@ def main() -> int:
         action='append',
         help='The buck target to check')
 
-    link_tree = parser.add_argument_group('link-tree')
-    link_tree.add_argument(
-        '--link-tree',
+    source_directory = parser.add_argument_group('source-directory')
+    source_directory.add_argument(
+        '--source-directory',
         action='append',
-        help='The link tree to check')
+        help='The source directory to check')
 
     # Subcommands.
     parsed_commands = parser.add_subparsers()
@@ -164,7 +164,7 @@ def main() -> int:
         switch_root(arguments)
 
         configuration = Configuration()
-        link_trees = []
+        source_directories = []
         if configuration.disabled():
             LOG.log(
                 log.SUCCESS,
@@ -177,8 +177,10 @@ def main() -> int:
 
         configuration.validate()
 
-        link_trees = resolve_link_trees(arguments, configuration)
-        arguments.command(arguments, configuration, link_trees).run()
+        source_directories = resolve_source_directories(
+            arguments,
+            configuration)
+        arguments.command(arguments, configuration, source_directories).run()
     except (
         buck.BuckException,
         commands.ClientException,
@@ -188,7 +190,7 @@ def main() -> int:
         arguments.command(
             arguments,
             configuration,
-            link_trees).on_client_exception()
+            source_directories).on_client_exception()
         exit_code = FAILURE
     except Exception as error:
         LOG.error(str(error))
@@ -209,7 +211,7 @@ def main() -> int:
                 'normal': {
                     'arguments': str(arguments),
                     'host': os.getenv('HOSTNAME'),
-                    'link_tree': str(arguments.link_tree or []),
+                    'source_directory': str(arguments.source_directory or []),
                     'target': str(arguments.target or []),
                     'user': os.getenv('USER'),
 

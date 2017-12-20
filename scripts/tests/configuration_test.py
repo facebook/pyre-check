@@ -16,12 +16,12 @@ class ConfigurationTest(unittest.TestCase):
     @patch.object(os, 'getenv', return_value=None)
     def test_init(self, os_environ, json_load) -> None:
         json_load.side_effect = [
-            {"link_trees": ["a"], "logger": "/usr/logger"},
+            {"source_directories": ["a"], "logger": "/usr/logger"},
             {},
         ]
 
         configuration = Configuration()
-        self.assertEqual(configuration.link_trees, ["a"])
+        self.assertEqual(configuration.source_directories, ["a"])
         self.assertEqual(configuration.targets, [])
         self.assertEqual(configuration.logger, "/usr/logger")
 
@@ -31,7 +31,7 @@ class ConfigurationTest(unittest.TestCase):
         ]
         configuration = Configuration()
         self.assertEqual(configuration.targets, ["//a/b/c"])
-        self.assertEqual(configuration.link_trees, [])
+        self.assertEqual(configuration.source_directories, [])
         self.assertEqual(configuration.get_version_hash(), None)
         self.assertEqual(configuration.logger, None)
         self.assertTrue(configuration.disabled)

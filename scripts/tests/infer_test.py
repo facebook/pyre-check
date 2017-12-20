@@ -378,18 +378,18 @@ class InferTest(unittest.TestCase):
         configuration = mock_configuration()
 
         with patch.object(commands.Command, '_call_client') as call_client:
-            Infer(arguments, configuration, link_trees=['.']).run()
+            Infer(arguments, configuration, source_directories=['.']).run()
             call_client.assert_called_once_with(
                 command=commands.CHECK,
-                link_trees=['.'],
+                source_directories=['.'],
                 flags=['-show-error-traces', '-check-unannotated', '-infer'])
 
         with patch.object(commands.Command, '_call_client') as call_client:
             arguments.recursive = True
-            Infer(arguments, configuration, link_trees=['.']).run()
+            Infer(arguments, configuration, source_directories=['.']).run()
             call_client.assert_called_once_with(
                 command=commands.CHECK,
-                link_trees=['.'],
+                source_directories=['.'],
                 flags=[
                     '-show-error-traces',
                     '-check-unannotated',

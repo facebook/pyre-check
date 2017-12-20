@@ -23,7 +23,7 @@ class InvalidConfiguration(Exception):
 
 class Configuration:
     def __init__(self) -> None:
-        self.link_trees = []
+        self.source_directories = []
         self.targets = []
         self.logger = None
 
@@ -45,10 +45,10 @@ class Configuration:
                 return not isinstance(list, str) and \
                     all(isinstance(element, str) for element in list)
 
-            if not is_list_of_strings(self.link_trees) or \
+            if not is_list_of_strings(self.source_directories) or \
                     not is_list_of_strings(self.targets):
                 raise InvalidConfiguration(
-                    '`target` and `link_trees` fields must be lists of '
+                    '`target` and `source_directories` fields must be lists of '
                     'strings.')
 
             if not self._binary:
@@ -108,11 +108,18 @@ class Configuration:
 
                 configuration = json.load(file)
 
-                if not self.link_trees:
-                    self.link_trees = configuration.get('link_trees', [])
-                if self.link_trees:
+                if not self.source_directories:
+                    self.source_directories = configuration.get(
+                        'source_directories',
+                        [])
+                if not self.source_directories:
+                    self.source_directories = configuration.get(
+                        'link_trees',
+                        [])
+                if self.source_directories:
                     LOG.debug(
-                        'Found link trees `%s`', ', '.join(self.link_trees))
+                        'Found source directories `%s`', ', '.join(
+                            self.source_directories))
 
                 if not self.targets:
                     self.targets = configuration.get('targets', [])

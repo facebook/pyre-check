@@ -34,7 +34,7 @@ def mock_arguments():
 
 def mock_configuration():
     configuration = MagicMock()
-    configuration.link_trees = ['.']
+    configuration.source_directories = ['.']
     configuration.get_stub_roots = MagicMock()
     return configuration
 
@@ -88,10 +88,10 @@ class PersistentTest(unittest.TestCase):
             commands.Persistent(
                 arguments,
                 configuration,
-                link_trees=['.']).run()
+                source_directories=['.']).run()
             call_client.assert_called_once_with(
                 command=commands.PERSISTENT,
-                link_trees=['.'],
+                source_directories=['.'],
                 capture_output=False)
 
         # Check start of null server.
@@ -102,15 +102,15 @@ class PersistentTest(unittest.TestCase):
                 commands.Persistent(
                     arguments,
                     configuration,
-                    link_trees=['.']).run()
+                    source_directories=['.']).run()
             except (commands.ClientException, EnvironmentException):
                 commands.Persistent(
                     arguments,
                     configuration,
-                    link_trees=['.']).on_client_exception()
+                    source_directories=['.']).on_client_exception()
             call_client.assert_called_once_with(
                 command=commands.PERSISTENT,
-                link_trees=['.'],
+                source_directories=['.'],
                 capture_output=False)
             run_null_server.assert_called_once()
 
@@ -127,19 +127,19 @@ class ErrorHandlingTest(unittest.TestCase):
         handler = commands.ErrorHandling(
             arguments,
             configuration,
-            link_trees=['d/e', 'f', 'f/g'])
+            source_directories=['d/e', 'f', 'f/g'])
         result = MagicMock()
         error = MagicMock()
         error_dictionary = {'path': 'target'}
         error.__getitem__.side_effect = error_dictionary.__getitem__
 
-        result.link_tree = 'f/g'
+        result.source_directory = 'f/g'
         with patch.object(json, 'loads', return_value=[error]):
             handler._get_errors([result])
             handler._get_errors([result], True)
             create_error.assert_has_calls([call(False), call(False)])
 
-        result.link_tree = 'h/i'
+        result.source_directory = 'h/i'
         with patch.object(json, 'loads', return_value=[error]):
             handler._get_errors([result])
             handler._get_errors([result], True)
@@ -150,14 +150,14 @@ class ErrorHandlingTest(unittest.TestCase):
         handler = commands.ErrorHandling(
             arguments,
             configuration,
-            link_trees=[])
-        result.link_tree = 'f/g'
+            source_directories=[])
+        result.source_directory = 'f/g'
         with patch.object(json, 'loads', return_value=[error]):
             handler._get_errors([result])
             handler._get_errors([result], True)
             create_error.assert_has_calls([call(False), call(False)])
 
-        result.link_tree = 'h/i'
+        result.source_directory = 'h/i'
         with patch.object(json, 'loads', return_value=[error]):
             handler._get_errors([result])
             handler._get_errors([result], True)
@@ -172,10 +172,13 @@ class CheckTest(unittest.TestCase):
         configuration.get_stub_roots.return_value = ['stub', 'root']
 
         with patch.object(commands.Command, '_call_client') as call_client:
-            commands.Check(arguments, configuration, link_trees=['.']).run()
+            commands.Check(
+                arguments,
+                configuration,
+                source_directories=['.']).run()
             call_client.assert_called_once_with(
                 command=commands.CHECK,
-                link_trees=['.'],
+                source_directories=['.'],
                 flags=['-stub-roots', 'stub,root'])
 
 
@@ -197,10 +200,10 @@ class IncrementalTest(unittest.TestCase):
             commands.Incremental(
                 arguments,
                 configuration,
-                link_trees=['running']).run()
+                source_directories=['running']).run()
             call_client.assert_called_once_with(
                 command=commands.INCREMENTAL,
-                link_trees=['running'],
+                source_directories=['running'],
                 flags=['-stub-roots', 'stub,root'])
 
         state.running = ['running']
@@ -211,14 +214,14 @@ class IncrementalTest(unittest.TestCase):
             commands.Incremental(
                 arguments,
                 configuration,
-                link_trees=['running', 'dead']).run()
+                source_directories=['running', 'dead']).run()
             commands_Start.assert_called_with(
                 arguments,
                 configuration,
                 ['dead'])
             call_client.assert_called_once_with(
                 command=commands.INCREMENTAL,
-                link_trees=['running', 'dead'],
+                source_directories=['running', 'dead'],
                 flags=['-stub-roots', 'stub,root'])
 
 
@@ -233,24 +236,30 @@ class StartTest(unittest.TestCase):
         # Check start without watchman.
         with patch.object(commands.Command, '_call_client') as call_client:
             arguments.no_watchman = True
-            commands.Start(arguments, configuration, link_trees=['.']).run()
+            commands.Start(
+                arguments,
+                configuration,
+                source_directories=['.']).run()
             call_client.assert_called_once_with(
                 command=commands.START,
-                link_trees=['.'],
+                source_directories=['.'],
                 flags=['-stub-roots', 'root'])
 
         # Check start with watchman.
         with patch.object(commands.Command, '_call_client') as call_client:
             arguments.no_watchman = False
-            commands.Start(arguments, configuration, link_trees=['.']).run()
+            commands.Start(
+                arguments,
+                configuration,
+                source_directories=['.']).run()
             call_client.assert_has_calls([
                 call(
                     command=commands.WATCHMAN,
-                    link_trees=['.'],
+                    source_directories=['.'],
                     flags=['-daemonize']),
                 call(
                     command=commands.START,
-                    link_trees=['.'],
+                    source_directories=['.'],
                     flags=['-stub-roots', 'root']),
             ])
 
@@ -258,10 +267,13 @@ class StartTest(unittest.TestCase):
         with patch.object(commands.Command, '_call_client') as call_client:
             arguments.no_watchman = True
             arguments.terminal = True
-            commands.Start(arguments, configuration, link_trees=['.']).run()
+            commands.Start(
+                arguments,
+                configuration,
+                source_directories=['.']).run()
             call_client.assert_called_once_with(
                 command=commands.START,
-                link_trees=['.'],
+                source_directories=['.'],
                 flags=['-terminal', '-stub-roots', 'root'])
 
 
@@ -283,10 +295,10 @@ class StopTest(unittest.TestCase):
             commands.Stop(
                 arguments,
                 configuration,
-                link_trees=['.', 'not_running']).run()
+                source_directories=['.', 'not_running']).run()
             call_client.assert_called_once_with(
                 command=commands.STOP,
-                link_trees=['.'])
+                source_directories=['.'])
 
         state.running = []
         commands_Command_state.return_value = state
@@ -294,7 +306,7 @@ class StopTest(unittest.TestCase):
             commands.Stop(
                 arguments,
                 configuration,
-                link_trees=['.', 'not_running']).run()
+                source_directories=['.', 'not_running']).run()
             call_client.assert_not_called()
 
 
@@ -313,15 +325,17 @@ class RestartTest(unittest.TestCase):
 
         with patch.object(commands.Command, '_call_client') as call_client:
             arguments.no_watchman = True
-            commands.Restart(arguments, configuration, link_trees=['.']).run()
+            commands.Restart(
+                arguments,
+                configuration,
+                source_directories=['.']).run()
             call_client.assert_has_calls(
                 [
-                    call(command=commands.STOP, link_trees=['.']),
+                    call(command=commands.STOP, source_directories=['.']),
                     call(
                         command=commands.START,
-                        link_trees=['.'],
+                        source_directories=['.'],
                         flags=['-stub-roots', 'root']),
-
                 ],
                 any_order=True)
 
@@ -341,7 +355,7 @@ class KillTest(unittest.TestCase):
             commands.Kill(
                 arguments,
                 configuration,
-                link_trees=['/some/link/tree/']).run()
+                source_directories=['/some/link/tree/']).run()
             open.assert_called_with(
                 '/some/link/tree/.pyre/watchman/watchman.pid',
                 'r')

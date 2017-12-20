@@ -11,7 +11,7 @@ from .. import (
     buck,
     EnvironmentException,
     find_project_root,
-    resolve_link_trees,
+    resolve_source_directories,
 )
 
 
@@ -32,44 +32,44 @@ class InitTest(unittest.TestCase):
             "/a/b")
 
     @patch.object(buck, 'generate_link_trees')
-    def test_resolve_link_trees(self, buck_link_trees) -> None:
+    def test_resolve_source_directories(self, buck_source_directories) -> None:
         arguments = MagicMock()
-        arguments.link_tree = []
+        arguments.source_directory = []
         arguments.original_directory = '/root'
         configuration = MagicMock()
-        configuration.link_trees = []
-        buck_link_trees.return_value = []
+        configuration.source_directories = []
+        buck_source_directories.return_value = []
 
         with self.assertRaises(EnvironmentException):
-            resolve_link_trees(arguments, configuration)
+            resolve_source_directories(arguments, configuration)
 
-        arguments.link_tree = ['argument_link_tree']
-        buck_link_trees.return_value = ['buck_link_tree']
+        arguments.source_directory = ['argument_source_directory']
+        buck_source_directories.return_value = ['buck_source_directory']
         self.assertEqual(
-            resolve_link_trees(arguments, configuration),
-            set(['argument_link_tree', 'buck_link_tree']))
+            resolve_source_directories(arguments, configuration),
+            set(['argument_source_directory', 'buck_source_directory']))
 
-        configuration.link_trees = ['configuration_link_tree']
+        configuration.source_directories = ['configuration_source_directory']
         self.assertEqual(
-            resolve_link_trees(arguments, configuration),
+            resolve_source_directories(arguments, configuration),
             set([
-                'argument_link_tree',
-                'buck_link_tree',
+                'argument_source_directory',
+                'buck_source_directory',
             ]))
 
         arguments.target = None
         self.assertEqual(
-            resolve_link_trees(arguments, configuration),
+            resolve_source_directories(arguments, configuration),
             set([
-                'argument_link_tree',
-                'buck_link_tree',
+                'argument_source_directory',
+                'buck_source_directory',
             ]))
 
         arguments.target = None
-        arguments.link_tree = None
+        arguments.source_directory = None
         self.assertEqual(
-            resolve_link_trees(arguments, configuration),
+            resolve_source_directories(arguments, configuration),
             set([
-                'configuration_link_tree',
-                'buck_link_tree',
+                'configuration_source_directory',
+                'buck_source_directory',
             ]))

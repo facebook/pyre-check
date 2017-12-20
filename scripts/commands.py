@@ -44,8 +44,8 @@ class ClientException(Exception):
 
 
 class Result:
-    def __init__(self, link_tree, code, output) -> None:
-        self.link_tree = link_tree
+    def __init__(self, source_directory, code, output) -> None:
+        self.source_directory = source_directory
         self.code = code
         self.output = output
 
@@ -56,11 +56,11 @@ class Result:
 
 
 class Command:
-    def __init__(self, arguments, configuration, link_trees) -> None:
+    def __init__(self, arguments, configuration, source_directories) -> None:
         self._arguments = arguments
         self._configuration = configuration
 
-        self._link_trees = link_trees
+        self._source_directories = source_directories
         self._debug = arguments.debug
         self._show_error_traces = arguments.show_error_traces
         self._verbose = arguments.verbose
@@ -94,24 +94,24 @@ class Command:
     def _call_client(
             self,
             command,
-            link_trees,
+            source_directories,
             flags=None,
             capture_output: bool = True):
         if not flags:
             flags = []
 
         results = []
-        for link_tree in link_trees:
-            if not os.path.isdir(link_tree):
+        for source_directory in source_directories:
+            if not os.path.isdir(source_directory):
                 raise EnvironmentException(
-                    '`{}` is not a link tree.'.format(link_tree))
+                    '`{}` is not a link tree.'.format(source_directory))
 
             client_command = [
                 self._configuration.get_binary(),
                 command,
             ]
             client_command.extend(flags)
-            client_command.append(link_tree)
+            client_command.append(source_directory)
 
             LOG.debug('Running `%s`', ' '.join(client_command))
             with subprocess.Popen(
@@ -158,7 +158,7 @@ class Command:
 
                 results.append(
                     Result(
-                        link_tree=link_tree,
+                        source_directory=source_directory,
                         code=process.returncode,
                         output=output))
         return results
@@ -174,54 +174,60 @@ class Command:
         running = []
         dead = []
 
-        for link_tree in self._link_trees:
-            pid_path = os.path.join(link_tree, '.pyre/server/server.pid')
+        for source_directory in self._source_directories:
+            pid_path = os.path.join(source_directory, '.pyre/server/server.pid')
             try:
                 with open(pid_path) as file:
                     pid = int(file.read())
                     os.kill(pid, 0)  # throws if process is not running
-                running.append(link_tree)
+                running.append(source_directory)
             except Exception:
-                dead.append(link_tree)
+                dead.append(source_directory)
 
         return State(running, dead)
 
-    def _server_string(self, link_trees=None):
-        if not link_trees:
-            link_trees = self._link_trees
-        return "server{}".format('' if len(link_trees) < 2 else 's')
+    def _server_string(self, source_directories=None):
+        if not source_directories:
+            source_directories = self._source_directories
+        return "server{}".format('' if len(source_directories) < 2 else 's')
 
-    def _link_tree_string(self, link_trees=None):
-        if not link_trees:
-            link_trees = self._link_trees
+    def _source_directory_string(self, source_directories=None):
+        if not source_directories:
+            source_directories = self._source_directories
         return ', '.join(
-            '`{}`'.format(self._relative_path(link_tree))
-            for link_tree
-            in link_trees)
+            '`{}`'.format(self._relative_path(source_directory))
+            for source_directory
+            in source_directories)
 
     def on_client_exception(self) -> None:
         pass
 
 
 class Persistent(Command):
-    def __init__(self, arguments, configuration, link_trees) -> None:
-        super(Persistent, self).__init__(arguments, configuration, link_trees)
+    def __init__(self, arguments, configuration, source_directories) -> None:
+        super(Persistent, self).__init__(
+            arguments,
+            configuration,
+            source_directories)
 
     def run(self) -> None:
         arguments = self._arguments
         try:
             results = self._call_client(
                 command=PERSISTENT,
-                link_trees=self._link_trees,
+                source_directories=self._source_directories,
                 capture_output=False)
             self._check_results(results)
         except (ClientException, subprocess.CalledProcessError):
             arguments.terminal = False
-            Restart(arguments, self._configuration, self._link_trees).run()
+            Restart(
+                arguments,
+                self._configuration,
+                self._source_directories).run()
 
             results = self._call_client(
                 command=PERSISTENT,
-                link_trees=self._link_trees,
+                source_directories=self._source_directories,
                 capture_output=False)
             self._check_results(results)
 
@@ -256,11 +262,11 @@ class Persistent(Command):
 
 
 class ErrorHandling(Command):
-    def __init__(self, arguments, configuration, link_trees) -> None:
+    def __init__(self, arguments, configuration, source_directories) -> None:
         super(ErrorHandling, self).__init__(
             arguments,
             configuration,
-            link_trees)
+            source_directories)
         self._verbose = arguments.verbose
         self._output = arguments.output
         self._local_paths = {
@@ -300,7 +306,7 @@ class ErrorHandling(Command):
 
             for error in results:
                 path = os.path.realpath(
-                    os.path.join(result.link_tree, error['path']))
+                    os.path.join(result.source_directory, error['path']))
                 external = True
                 internal_paths = [self._original_directory]
                 if exclude_dependencies and len(self._local_paths) > 0:
@@ -319,8 +325,11 @@ class ErrorHandling(Command):
 
 
 class Check(ErrorHandling):
-    def __init__(self, arguments, configuration, link_trees) -> None:
-        super(Check, self).__init__(arguments, configuration, link_trees)
+    def __init__(self, arguments, configuration, source_directories) -> None:
+        super(Check, self).__init__(
+            arguments,
+            configuration,
+            source_directories)
 
     def run(self, retries: int = 1) -> None:
         flags = self._flags()
@@ -331,7 +340,7 @@ class Check(ErrorHandling):
 
         results = self._call_client(
             command=CHECK,
-            link_trees=self._link_trees,
+            source_directories=self._source_directories,
             flags=flags)
         errors = self._get_errors(results)
         self._print(errors)
@@ -340,8 +349,11 @@ class Check(ErrorHandling):
 class Incremental(ErrorHandling):
     NOT_RUNNING = 2
 
-    def __init__(self, arguments, configuration, link_trees) -> None:
-        super(Incremental, self).__init__(arguments, configuration, link_trees)
+    def __init__(self, arguments, configuration, source_directories) -> None:
+        super(Incremental, self).__init__(
+            arguments,
+            configuration,
+            source_directories)
 
     def run(self) -> None:
         dead = self._state().dead
@@ -349,7 +361,7 @@ class Incremental(ErrorHandling):
             LOG.warning(
                 '%s not running at %s. Starting...',
                 self._server_string(dead).capitalize(),
-                self._link_tree_string(dead))
+                self._source_directory_string(dead))
             arguments = self._arguments
             arguments.terminal = False
             arguments.no_watchman = False
@@ -364,7 +376,7 @@ class Incremental(ErrorHandling):
         LOG.info("Waiting for server...")
         results = self._call_client(
             command=INCREMENTAL,
-            link_trees=self._link_trees,
+            source_directories=self._source_directories,
             flags=flags)
 
         errors = self._get_errors(results)
@@ -372,21 +384,24 @@ class Incremental(ErrorHandling):
 
 
 class Rage(Command):
-    def __init__(self, arguments, configuration, link_trees) -> None:
-        super(Rage, self).__init__(arguments, configuration, link_trees)
+    def __init__(self, arguments, configuration, source_directories) -> None:
+        super(Rage, self).__init__(arguments, configuration, source_directories)
         self._arguments.command = RAGE
 
     def run(self) -> None:
         results = self._call_client(
             command=RAGE,
-            link_trees=self._link_trees,
+            source_directories=self._source_directories,
             capture_output=False)
         self._check_results(results)
 
 
 class Start(Command):
-    def __init__(self, arguments, configuration, link_trees) -> None:
-        super(Start, self).__init__(arguments, configuration, link_trees)
+    def __init__(self, arguments, configuration, source_directories) -> None:
+        super(Start, self).__init__(
+            arguments,
+            configuration,
+            source_directories)
         self._terminal = arguments.terminal
         self._no_watchman = arguments.no_watchman
 
@@ -396,7 +411,7 @@ class Start(Command):
         if not self._no_watchman:
             results = self._call_client(
                 command=WATCHMAN,
-                link_trees=self._link_trees,
+                source_directories=self._source_directories,
                 flags=flags)
 
         flags = self._flags()
@@ -409,7 +424,7 @@ class Start(Command):
 
         results = self._call_client(
             command=START,
-            link_trees=self._link_trees,
+            source_directories=self._source_directories,
             flags=flags)
         self._check_results(results)
 
@@ -418,50 +433,60 @@ State = namedtuple('State', ['running', 'dead'])
 
 
 class Stop(Command):
-    def __init__(self, arguments, configuration, link_trees) -> None:
-        super(Stop, self).__init__(arguments, configuration, link_trees)
+    def __init__(self, arguments, configuration, source_directories) -> None:
+        super(Stop, self).__init__(arguments, configuration, source_directories)
 
     def run(self) -> None:
         running = self._state().running
         if running:
             results = self._call_client(
                 command=STOP,
-                link_trees=running)
+                source_directories=running)
             self._check_results(results)
             LOG.info(
                 'Stopped %s at %s',
                 self._server_string(running),
-                self._link_tree_string(running))
+                self._source_directory_string(running))
         else:
             LOG.info('No %s running', self._server_string())
 
 
 class Restart(Command):
-    def __init__(self, arguments, configuration, link_trees) -> None:
-        super(Restart, self).__init__(arguments, configuration, link_trees)
+    def __init__(self, arguments, configuration, source_directories) -> None:
+        super(Restart, self).__init__(
+            arguments,
+            configuration,
+            source_directories)
 
     def run(self) -> None:
-        Stop(self._arguments, self._configuration, self._link_trees).run()
-        Start(self._arguments, self._configuration, self._link_trees).run()
+        Stop(
+            self._arguments,
+            self._configuration,
+            self._source_directories).run()
+        Start(
+            self._arguments,
+            self._configuration,
+            self._source_directories).run()
 
 
 class Kill(Command):
-    def __init__(self, arguments, configuration, link_trees) -> None:
-        super(Kill, self).__init__(arguments, configuration, link_trees)
+    def __init__(self, arguments, configuration, source_directories) -> None:
+        super(Kill, self).__init__(arguments, configuration, source_directories)
 
     def run(self):
         running = self._state().running
 
-        for link_tree in running:
-            self._kill(os.path.join(link_tree, '.pyre/server/server.pid'))
-            self._remove_if_exists(
-                os.path.join(link_tree, '.pyre/server/server.lock'))
-            self._remove_if_exists(
-                os.path.join(link_tree, '.pyre/server/server.sock'))
+        for source_directory in running:
             self._kill(
-                os.path.join(link_tree, '.pyre/watchman/watchman.pid'))
+                os.path.join(source_directory, '.pyre/server/server.pid'))
             self._remove_if_exists(
-                os.path.join(link_tree, '.pyre/watchman/watchman.lock'))
+                os.path.join(source_directory, '.pyre/server/server.lock'))
+            self._remove_if_exists(
+                os.path.join(source_directory, '.pyre/server/server.sock'))
+            self._kill(
+                os.path.join(source_directory, '.pyre/watchman/watchman.pid'))
+            self._remove_if_exists(
+                os.path.join(source_directory, '.pyre/watchman/watchman.lock'))
 
         if not running:
             LOG.warning("No %s running", self._server_string(running))
@@ -469,7 +494,7 @@ class Kill(Command):
             LOG.info(
                 "Terminated %s at %s",
                 self._server_string(running),
-                self._link_tree_string(running))
+                self._source_directory_string(running))
 
     def _kill(self, path) -> None:
         if not os.path.exists(path):
