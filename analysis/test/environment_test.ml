@@ -914,6 +914,35 @@ let test_function_signature_constructor _ =
     "A"
     []
     []
+    (Some (Type.expression (primitive "A")));
+
+  assert_instantiated
+    {|
+      class A:
+        def __init__(self, i: int): ...
+    |}
+    "A"
+    (normal [Type.integer])
+    ["i", Some Type.integer]
+    (Some (Type.expression (primitive "A")));
+
+  assert_instantiated
+    {|
+      class A:
+        def __init__(self, i: int = ...): ...
+    |}
+    "A"
+    (normal [Type.integer])
+    ["i", Some Type.integer]
+    (Some (Type.expression (primitive "A")));
+  assert_instantiated
+    {|
+      class A:
+        def __init__(self, i: int = ...): ...
+    |}
+    "A"
+    []
+    ["i", Some Type.integer]
     (Some (Type.expression (primitive "A")))
 
 
