@@ -272,9 +272,9 @@ let rec process_request
         raise InvalidRequest
   in
   Log.performance
-    ~flush:false
     ~name:"Server request"
     ~timer
     ~root:(Path.last configuration.project_root)
-    ~normals:["request_kind", Protocol.Request.name request];
+    ~normals:["request_kind", Protocol.Request.name request]
+    ();
   result

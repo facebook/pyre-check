@@ -158,7 +158,6 @@ let parse_sources_list service files ~root =
       sources
   in
   Log.coverage
-    ~flush:false
     ~coverage:[
       "strict_coverage", strict_coverage;
       "declare_coverage", declare_coverage;
@@ -166,7 +165,8 @@ let parse_sources_list service files ~root =
       "source_files", List.length paths;
     ]
     ~root:(Path.last root)
-    ~normals:[];
+    ~normals:[]
+    ();
 
   let not_parsed = (List.length files) - (List.length sources) in
   if not_parsed > 0 then

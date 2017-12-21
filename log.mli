@@ -40,12 +40,14 @@ val performance
   -> root: string
   -> normals: (string * string) list
   -> unit
+  -> unit
 
 val coverage
   :  ?flush: bool
   -> coverage: (string * int) list
   -> root: string
   -> normals: (string * string) list
+  -> unit
   -> unit
 
 val event
@@ -54,6 +56,7 @@ val event
   -> root: string
   -> integers: (string * int) list
   -> normals: (string * string) list
+  -> unit
   -> unit
 
 module Color : sig

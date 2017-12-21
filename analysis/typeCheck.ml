@@ -1848,7 +1848,6 @@ let check configuration environment ({ Source.path; _ } as source) =
     with
     | TypeOrder.Undefined annotation ->
         Log.event
-          ~flush:false
           ~name:"undefined type"
           ~root:(Path.last configuration.project_root)
           ~integers:[]
@@ -1856,7 +1855,8 @@ let check configuration environment ({ Source.path; _ } as source) =
             "path", path;
             "define", Instantiated.Access.show name;
             "type", Type.show annotation;
-          ];
+          ]
+          ();
         {
           error_list =
             if configuration.strict || configuration.debug then
@@ -1903,7 +1903,6 @@ let check configuration environment ({ Source.path; _ } as source) =
         check_output
     in
     Log.coverage
-      ~flush:false
       ~coverage:[
         "full_type_coverage", full;
         "partial_type_coverage", partial;
@@ -1912,7 +1911,8 @@ let check configuration environment ({ Source.path; _ } as source) =
         "total_errors", List.length error_list;
       ]
       ~root:(Path.last configuration.project_root)
-      ~normals:[];
+      ~normals:[]
+      ();
     error_list
   in
 

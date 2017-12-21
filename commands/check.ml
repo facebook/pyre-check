@@ -134,11 +134,11 @@ let run_check
   let timer = Timer.start () in
   let { errors; _ } = check configuration None () in
   Log.performance
-    ~flush:true
     ~name:"check"
     ~timer
     ~root:(Path.last configuration.Configuration.project_root)
-    ~normals:["request_kind", "FullCheck"];
+    ~normals:["request_kind", "FullCheck"]
+    ();
   (* Print results. *)
   Log.print
     "%s"

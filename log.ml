@@ -93,7 +93,7 @@ let print format =
   Format.printf format
 
 
-let performance ?(flush = false) ~name ~timer ~root ~normals =
+let performance ?(flush = false) ~name ~timer ~root ~normals () =
   let seconds = Timer.stop timer in
   let milliseconds = Int.of_float (seconds *. 1000.0) in
   log ~section:`Performance "Time elapsed for %s: %fs" name seconds;
@@ -101,12 +101,12 @@ let performance ?(flush = false) ~name ~timer ~root ~normals =
     Statistics.performance ~flush ~time:milliseconds ~root ~normals |> ignore
 
 
-let coverage ?(flush = false) ~coverage ~root ~normals =
+let coverage ?(flush = false) ~coverage ~root ~normals () =
   if !statistics_logging_enabled then
     Statistics.coverage ~flush ~coverage ~root ~normals |> ignore
 
 
-let event ?(flush = false) ~name ~root ~integers ~normals =
+let event ?(flush = false) ~name ~root ~integers ~normals () =
   if !statistics_logging_enabled then
     Statistics.event ~flush ~name ~root ~integers ~normals
 
