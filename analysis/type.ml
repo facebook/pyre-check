@@ -386,6 +386,9 @@ let create ~aliases expression =
          | "typing.Tuple" ->
              Tuple (Unbounded Object)
 
+         | "typing.List" ->
+             list Object
+
          | "$bottom" ->
              Bottom
          | "$unknown" ->

@@ -94,6 +94,9 @@ let test_create _ =
         ]))
     (Type.list Type.integer);
   assert_equal
+    (Type.Build.create ~aliases (+String "typing.List"))
+    (Type.list Type.Object);
+  assert_equal
     (Type.Build.create
        ~aliases
        (+Access [
