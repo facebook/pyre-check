@@ -584,6 +584,26 @@ let rec is_unknown = function
       false
 
 
+let rec is_fully_resolved = function
+  | Optional annotation ->
+      is_fully_resolved annotation
+  | Tuple (Bounded elements) ->
+      List.for_all ~f:is_fully_resolved elements
+  | Tuple (Unbounded annotation) ->
+      is_fully_resolved annotation
+  | Parametric { parameters; _ } ->
+      List.for_all ~f:is_fully_resolved parameters
+  | Variable _ ->
+      false
+  | Union elements ->
+      List.for_all ~f:is_fully_resolved elements
+  | Bottom
+  | Object
+  | Primitive _
+  | Top ->
+      true
+
+
 let rec is_partially_typed = function
   | Object ->
       true

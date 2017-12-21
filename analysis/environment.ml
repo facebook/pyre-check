@@ -413,9 +413,10 @@ let resolution
             match annotation with
             | Some annotation ->
                 begin
-                  match parse_annotation annotation with
-                  | Type.Variable _ -> false
-                  | _ -> sofar
+                  if parse_annotation annotation |> Type.is_fully_resolved then
+                    sofar
+                  else
+                    false
                 end
             | None ->
                 sofar)

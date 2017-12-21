@@ -79,6 +79,7 @@ val is_optional: t -> bool
 val is_primitive: t -> bool
 val is_tuple: t -> bool
 val is_unknown: t -> bool
+val is_fully_resolved: t -> bool
 
 val is_partially_typed: t -> bool
 val is_untyped: t -> bool

@@ -595,6 +595,14 @@ let test_is_unknown _ =
   assert_false (Type.is_unknown (Type.Tuple (Type.Unbounded Type.integer)))
 
 
+let test_is_fully_resolved _ =
+  assert_false (Type.is_fully_resolved (variable ~~"_T"));
+  assert_false (Type.is_fully_resolved (Type.union [Type.integer; variable ~~"_T"]));
+
+  assert_true (Type.is_fully_resolved Type.integer);
+  assert_true (Type.is_fully_resolved (Type.union [Type.integer; Type.string]))
+
+
 let test_mismatch_with_any _ =
   assert_false (Type.mismatch_with_any Type.Bottom Type.Top);
   assert_false (Type.mismatch_with_any Type.integer Type.string);
@@ -761,6 +769,7 @@ let () =
     "is_bottom">::test_is_bottom;
     "is_meta">::test_is_meta;
     "is_unknown">::test_is_unknown;
+    "is_fully_resolved">::test_is_fully_resolved;
     "mismatch_with_any">::test_mismatch_with_any;
     "optional_value">::test_optional_value;
     "dequalify">::test_dequalify;
