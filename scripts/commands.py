@@ -373,7 +373,11 @@ class Incremental(ErrorHandling):
             ','.join(self._configuration.get_stub_roots()),
         ])
 
-        LOG.info("Waiting for server...")
+        if dead:
+            LOG.info("Server initializing...")
+        else:
+            LOG.info("Waiting for server...")
+            
         results = self._call_client(
             command=INCREMENTAL,
             source_directories=self._source_directories,
