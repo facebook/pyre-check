@@ -1744,8 +1744,8 @@ type check_result = {
 }
 
 
-let check configuration environment source =
-  Log.debug "Checking %s..." source.Source.path;
+let check configuration environment ({ Source.path; _ } as source) =
+  Log.debug "Checking %s..." path;
   let resolution = Environment.resolution environment () in
 
   let dequalify_map = Preprocessing.dequalify_map source in
@@ -1847,6 +1847,16 @@ let check configuration environment source =
       { error_list; type_coverage }
     with
     | TypeOrder.Undefined annotation ->
+        Log.event
+          ~flush:false
+          ~name:"undefined type"
+          ~root:(Path.last configuration.project_root)
+          ~integers:[]
+          ~normals:[
+            "path", path;
+            "define", Instantiated.Access.show name;
+            "type", Type.show annotation;
+          ];
         {
           error_list =
             if configuration.strict || configuration.debug then
@@ -1933,7 +1943,7 @@ let check configuration environment source =
                     }
                   in
                   Reader.register_definition
-                    ~path:source.Source.path
+                    ~path
                     { define_node with Node.value = define };
                   true, globals_added_sofar
             end
@@ -1983,7 +1993,7 @@ let check configuration environment source =
                     }
                   in
                   Reader.register_definition
-                    ~path:source.Source.path
+                    ~path
                     { define_node with Node.value = define };
                   true, globals_added_sofar
             end
@@ -2001,7 +2011,7 @@ let check configuration environment source =
                   let data =
                     Annotation.create_immutable ~global:true ~original:(Some Type.Top) annotation
                   in
-                  Reader.register_global ~path:source.Source.path ~key ~data;
+                  Reader.register_global ~path ~key ~data;
                   true, error :: globals_added_sofar
             end
         | _ ->

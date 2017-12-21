@@ -17,3 +17,10 @@ val coverage
   -> coverage: (string * int) list
   -> labels: (string * string) list
   -> (unit, Unix.Exit_or_signal.error) result
+
+val event
+  :  ?flush: bool
+  -> name: string
+  -> integers: (string * int) list
+  -> normals: (string * string) list
+  -> unit

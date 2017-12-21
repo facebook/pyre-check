@@ -48,6 +48,14 @@ val coverage
   -> labels: (string * string) list
   -> unit
 
+val event
+  :  ?flush: bool
+  -> name: string
+  -> root: string
+  -> integers: (string * int) list
+  -> normals: (string * string) list
+  -> unit
+
 module Color : sig
   val yellow: string -> string
 end

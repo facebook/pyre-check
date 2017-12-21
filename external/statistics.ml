@@ -9,3 +9,5 @@ open Core
 let performance ?flush:_ ~name:_ ~time:_ ~labels:_ = Ok ()
 
 let coverage ?flush:_ ~coverage:_ ~labels:_ = Ok ()
+
+let event ?flush:_ ~name:_ ~integers:_ ~normals_ = ()

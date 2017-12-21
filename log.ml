@@ -106,6 +106,11 @@ let coverage ?(flush = false) ~coverage ~root ~labels =
     Statistics.coverage ~flush ~coverage ~root ~labels |> ignore
 
 
+let event ?(flush = false) ~name ~root ~integers ~normals =
+  if !statistics_logging_enabled then
+    Statistics.event ~flush ~name ~root ~integers ~normals
+
+
 module Color = struct
   let yellow string =
     Format.asprintf "\027[33m%s\027[0m" string
