@@ -6,8 +6,8 @@
 open Core
 
 
-let performance ?flush:_ ~name:_ ~time:_ ~normals:_ = Ok ()
+let performance ?flush:_ ~name:_ ~time:_ ~normals:_ = ()
 
-let coverage ?flush:_ ~coverage:_ ~normals:_ = Ok ()
+let coverage ?flush:_ ~coverage:_ ~normals:_ = ()
 
 let event ?flush:_ ~name:_ ~integers:_ ~normals_ = ()
