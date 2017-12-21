@@ -573,14 +573,10 @@ let environment =
   |}
 
 
-let instantiated { Signature.instantiated; _ } = instantiated
-
-
-let dummy = !"dummy"
-
-
 let normal =
+  let dummy = !"dummy" in
   List.map ~f:(fun argument -> Signature.Normal { Signature.annotation = argument; value = dummy })
+
 
 let base_environment =
   {|
@@ -611,7 +607,7 @@ let assert_instantiated
       qualifier
       { Call.name = !name; arguments = [] }
       (List.map ~f:(~+) arguments)
-    |> List.map ~f:instantiated
+    |> List.map ~f:(fun { Signature.instantiated; _ } -> instantiated)
   in
   let parameter (name, annotation) =
     {
