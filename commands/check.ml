@@ -145,7 +145,8 @@ let run_check
     (Yojson.Safe.to_string (
         `List (List.map
                  ~f:(fun error -> Error.to_json ~detailed:show_error_traces error)
-                 errors)))
+                 errors)));
+  Statistics.flush ()
 
 
 let spec =
@@ -258,7 +259,8 @@ let run_incremental
                        errors))
       | _ -> failwith "Unexpected response in incremental check."
     in
-    Log.print "%s" (Yojson.Safe.to_string response_json)
+    Log.print "%s" (Yojson.Safe.to_string response_json);
+    Statistics.flush ()
   with ServerConfiguration.ServerNotRunning ->
     Log.error "Server is not running";
     exit server_not_running
