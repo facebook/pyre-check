@@ -942,19 +942,11 @@ module Access = struct
         match annotation, reversed_lead with
         | Some (access, annotation),
           [Access.Call { Node.location; value = call }] ->
-            let arguments =
-              (Node.create
-                 (Signature.Normal {
-                     Signature.annotation = (Annotation.annotation annotation);
-                     value = Node.create (Access (Instantiated.Access.create "self"));
-                   })
-              ) :: (Call.argument_annotations ~resolution call)
-            in
             let callee =
-              ((Resolution.method_signature resolution)
+              Resolution.method_signature resolution
                  (Annotation.annotation annotation)
                  call
-                 arguments)
+                 (Call.argument_annotations ~resolution call)
               |> pick_signature call
             in
             let backup =
@@ -963,10 +955,10 @@ module Access = struct
               (match call with
                | { Ast.Expression.Call.arguments = [{ Argument.value; _ }]; _ } ->
                    let annotation = Resolution.resolve resolution value in
-                   (Resolution.method_signature resolution)
+                   Resolution.method_signature resolution
                      annotation
                      call
-                     arguments
+                     (Call.argument_annotations ~resolution call)
                    |> pick_signature call
                | _ -> None)
               >>= fun signature -> Some (call, signature)

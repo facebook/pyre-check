@@ -1107,7 +1107,7 @@ let test_method_signature _ =
        environment
        (primitive "foo")
        { Call.name = !"both"; arguments = [] }
-       [+(Signature.Normal { Signature.annotation = primitive "foo"; value = !"self"})]);
+       []);
 
   let environment =
     populate {|
@@ -1128,7 +1128,7 @@ let test_method_signature _ =
    | Some {
        Signature.instantiated = { Define.return_annotation = Some annotation; _ };
        _;
-     } -> assert_equal (parse_annotation environment annotation) (Type.string)
+     } -> assert_equal (parse_annotation environment annotation) Type.integer
    | _ -> assert_unreached ()
   );
 
