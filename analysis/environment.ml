@@ -279,7 +279,20 @@ let resolution
   in
 
   let instantiate_signature arguments definitions =
-    let arguments = List.map ~f:Node.value arguments in
+    let insert_implicit_arguments { Node.value = define; _ } =
+      let arguments = List.map ~f:Node.value arguments in
+      if Instantiated.Define.is_class_method define then
+        let self_or_class_argument =
+          Signature.Normal {
+            Signature.annotation = Type.Object;
+            value = Node.create (Access (Instantiated.Access.create "self_or_class"));
+          }
+        in
+        self_or_class_argument :: arguments
+      else
+        arguments
+    in
+
 
     let inferred_constraints parameters arguments =
       let rec inferred_constraints parameters arguments constraints =
@@ -422,6 +435,9 @@ let resolution
                 sofar)
     in
     let instantiate_signature ({ Node.value = { Define.parameters; _ }; location } as define) =
+      (* Add implicit arguments. *)
+      let arguments = insert_implicit_arguments define in
+
       (* Infer constraints. *)
       inferred_constraints parameters arguments
 
