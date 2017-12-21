@@ -11,7 +11,7 @@ open Request
 open Pyre
 
 
-let parse ~root request =
+let parse ~root ~check_on_save request =
   let open LanguageServerProtocolTypes in
   let log_method_error method_name =
     Log.error
@@ -113,30 +113,36 @@ let parse ~root request =
         end
 
     | "textDocument/didSave" ->
-        begin
-          match DidSaveTextDocument.of_yojson request with
-          | Ok {
-              DidSaveTextDocument.parameters = Some {
-                  DidSaveTextDocumentParams.textDocument = {
-                    TextDocumentIdentifier.uri;
-                    _;
+        if check_on_save then
+          begin
+            match DidSaveTextDocument.of_yojson request with
+            | Ok {
+                DidSaveTextDocument.parameters = Some {
+                    DidSaveTextDocumentParams.textDocument = {
+                      TextDocumentIdentifier.uri;
+                      _;
+                    };
+                    text;
                   };
-                  text;
-                };
-              _;
-            } ->
-              let file =
-                uri_to_contained_relative_path
-                  ~root:(Path.absolute root)
-                  ~uri
-                |> (fun relative ->
-                    Path.create_relative ~root ~relative)
-                |> File.create ~content:text
-              in
-              Some (TypeCheckRequest { Protocol.files = [file]; check_dependents = true })
-          | Ok _ -> log_method_error request_method; None
-          | Error yojson_error -> Log.log ~section:`Server "Error: %s" yojson_error; None
-        end
+                _;
+              } ->
+                let file =
+                  uri_to_contained_relative_path
+                    ~root:(Path.absolute root)
+                    ~uri
+                  |> (fun relative ->
+                      Path.create_relative ~root ~relative)
+                  |> File.create ~content:text
+                in
+                Some (TypeCheckRequest { Protocol.files = [file]; check_dependents = true })
+            | Ok _ -> log_method_error request_method; None
+            | Error yojson_error -> Log.log ~section:`Server "Error: %s" yojson_error; None
+          end
+        else
+          begin
+            Log.log ~section:`Server "Explicitly ignoring didSave request";
+            None
+          end
 
     | "shutdown" ->
         begin

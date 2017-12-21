@@ -231,11 +231,9 @@ let assert_request_gets_response
       (Command_test.mock_server_configuration ~project_root ())
       request
   in
-  assert_is_some response;
-  let response = Option.value_exn response in
   Service.destroy mock_server_state.State.service;
   Command_test.clean_environment ();
-  assert_equal ~printer:Protocol.show_response response expected_response
+  assert_equal response expected_response
 
 
 let test_shutdown _ =
@@ -243,10 +241,10 @@ let test_shutdown _ =
   assert_request_gets_response
     source
     (Protocol.Request.ClientShutdownRequest 1)
-    (Protocol.LanguageServerProtocolResponse
-       (LanguageServerProtocol.ShutdownResponse.default 1
-        |> LanguageServerProtocol.ShutdownResponse.to_yojson
-        |> Yojson.Safe.to_string))
+    (Some (Protocol.LanguageServerProtocolResponse
+             (LanguageServerProtocol.ShutdownResponse.default 1
+              |> LanguageServerProtocol.ShutdownResponse.to_yojson
+              |> Yojson.Safe.to_string)))
 
 
 let test_language_service_shutdown _ =
@@ -262,10 +260,10 @@ let test_language_service_shutdown _ =
            "params": null
         }
        |})
-    (Protocol.LanguageServerProtocolResponse
-       (LanguageServerProtocol.ShutdownResponse.default 2
-        |> LanguageServerProtocol.ShutdownResponse.to_yojson
-        |> Yojson.Safe.to_string))
+    (Some (Protocol.LanguageServerProtocolResponse
+             (LanguageServerProtocol.ShutdownResponse.default 2
+              |> LanguageServerProtocol.ShutdownResponse.to_yojson
+              |> Yojson.Safe.to_string)))
 
 
 let test_protocol_type_check _ =
@@ -279,13 +277,13 @@ let test_protocol_type_check _ =
   assert_request_gets_response
     source
     (Protocol.Request.TypeCheckRequest { Protocol.files = []; check_dependents = true })
-    (Protocol.TypeCheckResponse (associate_errors_and_filenames errors));
+    (Some (Protocol.TypeCheckResponse (associate_errors_and_filenames errors)));
 
   assert_request_gets_response
     ~initial_errors:(Error.Hash_set.of_list errors)
     source
     (Protocol.Request.TypeCheckRequest { Protocol.files = []; check_dependents = true })
-    (Protocol.TypeCheckResponse (associate_errors_and_filenames errors))
+    (Some (Protocol.TypeCheckResponse (associate_errors_and_filenames errors)))
 
 
 let test_query _ =
@@ -293,7 +291,7 @@ let test_query _ =
   assert_request_gets_response
     source
     (Protocol.Request.TypeQueryRequest (Protocol.LessOrEqual (Type.integer, Type.string)))
-    (Protocol.TypeQueryResponse "false");
+    (Some (Protocol.TypeQueryResponse "false"));
 
   assert_request_gets_response
     source
@@ -301,7 +299,7 @@ let test_query _ =
        (Protocol.LessOrEqual
           (Type.list (Type.Primitive (Identifier.create "C")),
            Type.list (Type.integer))))
-    (Protocol.TypeQueryResponse "true");
+    (Some (Protocol.TypeQueryResponse "true"));
 
   assert_request_gets_response
     source
@@ -309,7 +307,7 @@ let test_query _ =
        (Protocol.Join
           (Type.list (Type.Primitive (Identifier.create "C")),
            Type.list (Type.integer))))
-    (Protocol.TypeQueryResponse "`typing.List[int]`");
+    (Some (Protocol.TypeQueryResponse "`typing.List[int]`"));
 
   assert_request_gets_response
     source
@@ -317,7 +315,7 @@ let test_query _ =
        (Protocol.Meet
           (Type.list (Type.Primitive (Identifier.create "C")),
            Type.list (Type.integer))))
-    (Protocol.TypeQueryResponse "`typing.List[C]`")
+    (Some (Protocol.TypeQueryResponse "`typing.List[C]`"))
 
 
 let test_connect _ =
@@ -354,7 +352,7 @@ let test_incremental_typecheck _ =
     source
     (Protocol.Request.TypeCheckRequest
        { Protocol.files = [file "test.py"]; check_dependents = true })
-    (Protocol.TypeCheckResponse [(File.Handle.create "test.py"), []]);
+    (Some (Protocol.TypeCheckResponse [(File.Handle.create "test.py"), []]));
   let request_with_content =
     (Protocol.Request.TypeCheckRequest
        { Protocol.files = [file ~content:(Some source) "test.py"]; check_dependents = true })
@@ -362,19 +360,19 @@ let test_incremental_typecheck _ =
   assert_request_gets_response
     source
     request_with_content
-    (Protocol.TypeCheckResponse errors);
+    (Some (Protocol.TypeCheckResponse errors));
 
   let state = mock_server_state (File.Handle.Table.create ()) in
   assert_request_gets_response
     source
     ~state
     (Protocol.Request.TypeCheckRequest { Protocol.files = []; check_dependents = false })
-    (Protocol.TypeCheckResponse []);
+    (Some (Protocol.TypeCheckResponse []));
   assert_request_gets_response
     source
     ~state:{ state with State.deferred_requests = [request_with_content] }
     (Protocol.Request.TypeCheckRequest { Protocol.files = []; check_dependents = false })
-    (Protocol.TypeCheckResponse errors)
+    (Some (Protocol.TypeCheckResponse errors))
 
 
 let test_protocol_language_server_protocol _ =
@@ -405,10 +403,6 @@ let test_did_save_with_content context =
     |}
     |> trim_extra_indentation
   in
-  let errors =
-    make_errors
-      ~path:filename
-      ~qualifier:(Source.qualifier ~path:filename) source in
   let request =
     LanguageServerProtocol.DidSaveTextDocument.create
       ~root:(Path.create_absolute project_root)
@@ -422,7 +416,7 @@ let test_did_save_with_content context =
     ~project_root:(Path.create_absolute project_root)
     source
     (Protocol.Request.LanguageServerProtocolRequest request)
-    (Protocol.TypeCheckResponse (associate_errors_and_filenames errors))
+    None
 
 let test_protocol_persistent _ =
   let server_state = mock_server_state (File.Handle.Table.create ()) in
@@ -644,7 +638,7 @@ let test_language_service_definition context =
   assert_request_gets_response
     "a = 1"
     (Protocol.Request.LanguageServerProtocolRequest request)
-    (Protocol.LanguageServerProtocolResponse expected_response)
+    (Some (Protocol.LanguageServerProtocolResponse expected_response))
 
 
 let () =

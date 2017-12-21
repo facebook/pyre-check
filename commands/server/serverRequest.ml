@@ -206,6 +206,7 @@ let rec process_request
         Log.log ~section:`Server "Server received LSP request %s" request;
         LanguageServerProtocolRequestParser.parse
           ~root:configuration.project_root
+          ~check_on_save:false
           (Yojson.Safe.from_string request)
         >>= (function
             | TypeCheckRequest files -> Some (handle_type_check state files)

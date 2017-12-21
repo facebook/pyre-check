@@ -248,7 +248,10 @@ let test_request_parser context =
 
   assert_equal
     ~cmp:(Option.equal Protocol.Request.equal)
-    (LanguageServerProtocolRequestParser.parse ~root:(PyrePath.create_absolute "/tmp") save_message)
+    (LanguageServerProtocolRequestParser.parse
+       ~root:(PyrePath.create_absolute "/tmp")
+       ~check_on_save:true
+       save_message)
     (Some
        (Protocol.Request.TypeCheckRequest
           {
@@ -259,6 +262,7 @@ let test_request_parser context =
     ~cmp:(Option.equal Protocol.Request.equal)
     (LanguageServerProtocolRequestParser.parse
        ~root:(PyrePath.create_absolute "/tmp")
+       ~check_on_save:true
        change_message)
     None
 
