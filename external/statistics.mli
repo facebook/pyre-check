@@ -9,13 +9,13 @@ val performance
   :  ?flush: bool
   -> name: string
   -> time: int
-  -> labels: (string * string) list
+  -> normals: (string * string) list
   -> (unit, Unix.Exit_or_signal.error) result
 
 val coverage
   :  ?flush: bool
   -> coverage: (string * int) list
-  -> labels: (string * string) list
+  -> normals: (string * string) list
   -> (unit, Unix.Exit_or_signal.error) result
 
 val event

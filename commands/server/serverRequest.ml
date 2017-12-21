@@ -276,5 +276,5 @@ let rec process_request
     ~name:"Server request"
     ~timer
     ~root:(Path.last configuration.project_root)
-    ~labels:["request_kind", Protocol.Request.name request];
+    ~normals:["request_kind", Protocol.Request.name request];
   result

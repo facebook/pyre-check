@@ -38,14 +38,14 @@ val performance
   -> name: string
   -> timer: Timer.t
   -> root: string
-  -> labels: (string * string) list
+  -> normals: (string * string) list
   -> unit
 
 val coverage
   :  ?flush: bool
   -> coverage: (string * int) list
   -> root: string
-  -> labels: (string * string) list
+  -> normals: (string * string) list
   -> unit
 
 val event

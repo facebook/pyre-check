@@ -166,7 +166,7 @@ let parse_sources_list service files ~root =
       "source_files", List.length paths;
     ]
     ~root:(Path.last root)
-    ~labels:[];
+    ~normals:[];
 
   let not_parsed = (List.length files) - (List.length sources) in
   if not_parsed > 0 then

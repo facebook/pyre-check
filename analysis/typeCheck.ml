@@ -1912,7 +1912,7 @@ let check configuration environment ({ Source.path; _ } as source) =
         "total_errors", List.length error_list;
       ]
       ~root:(Path.last configuration.project_root)
-      ~labels:[];
+      ~normals:[];
     error_list
   in
 
