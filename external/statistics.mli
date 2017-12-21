@@ -4,24 +4,32 @@
     LICENSE file in the root directory of this source tree. *)
 
 
-val flush: unit -> unit
+val sample
+  :  ?system_time: float
+  -> ?integers: (string * int) list
+  -> ?normals: (string * string) list
+  -> unit
+  -> string
 
+val flush: unit -> unit
 
 val performance
   :  ?flush: bool
-  -> name: string
+  -> root: string
   -> time: int
   -> normals: (string * string) list
   -> unit
 
 val coverage
   :  ?flush: bool
+  -> root: string
   -> coverage: (string * int) list
   -> normals: (string * string) list
   -> unit
 
 val event
   :  ?flush: bool
+  -> root: string
   -> name: string
   -> integers: (string * int) list
   -> normals: (string * string) list

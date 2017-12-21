@@ -4,10 +4,16 @@
     LICENSE file in the root directory of this source tree. *)
 
 
+let sample ?(system_time = 0.0) ?(integers = []) ?(normals = []) () =
+  ignore system_time;
+  ignore integers;
+  ignore normals;
+  ""
+
 let flush () = ()
 
-let performance ?flush:_ ~name:_ ~time:_ ~normals:_ = ()
+let performance ?flush:_ ~root:_ ~time:_ ~normals:_ = ()
 
-let coverage ?flush:_ ~coverage:_ ~normals:_ = ()
+let coverage ?flush:_ ~root:_ ~coverage:_ ~normals:_ = ()
 
-let event ?flush:_ ~name:_ ~integers:_ ~normals:_ = ()
+let event ?flush:_ ~root:_ ~name:_ ~integers:_ ~normals:_ = ()
