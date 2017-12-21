@@ -633,7 +633,7 @@ let assert_instantiated
       (List.map ~f:parameter expected_parameters)
       (List.map ~f:Node.value define.Define.parameters)
     &&
-    (expected_return = define.Define.return_annotation)
+    (Option.equal Expression.equal expected_return define.Define.return_annotation)
   in
   assert_true (List.exists ~f:signature_instantiated defines)
 
@@ -906,6 +906,19 @@ let test_function_signature_starred _ =
     ([Signature.Starred (Type.list Type.integer)] @ (normal [Type.integer]))
     ["a", Some Type.integer; "b", Some Type.string]
     None
+
+
+let test_function_signature_constructor _ =
+  assert_instantiated
+    {|
+      class A:
+        def __init__(self):
+          pass
+    |}
+    "A"
+    []
+    []
+    (Some (Type.expression (primitive "A")))
 
 
 let test_function_overloading _ =
@@ -1366,6 +1379,7 @@ let () =
     "function_signature">::test_function_signature;
     "function_signature_variable_instantiate">::test_function_signature_variable_instantiation;
     "function_signature_starred">::test_function_signature_starred;
+    "function_signature_constructor">::test_function_signature_constructor;
     "function_overloading">::test_function_overloading;
     "supertypes">::test_supertypes;
     "method_signature">::test_method_signature;
