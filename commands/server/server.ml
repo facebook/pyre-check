@@ -343,7 +343,7 @@ let request_handler_thread (
 
 (** Main server either as a daemon or in terminal *)
 let serve (socket, server_configuration) =
-  let { Configuration.verbose; sections; _ } = server_configuration.configuration in
+  let { Configuration.verbose; sections; project_root; _ } = server_configuration.configuration in
   Log.initialize ~verbose ~sections;
   Log.log ~section:`Server "Starting daemon server loop...";
   let request_queue = Squeue.create 25 in
@@ -368,7 +368,19 @@ let serve (socket, server_configuration) =
   Signal.Expert.handle
     Signal.pipe
     (fun _ -> ());
-  computation_thread request_queue server_configuration state
+  try
+    computation_thread request_queue server_configuration state
+  with _ ->
+    let backtrace = Printexc.get_backtrace () in
+    Log.event
+      ~flush:true
+      ~name:"Uncaught exception"
+      ~root:(Path.last project_root)
+      ~integers:[]
+      ~normals:["exception backtrace", backtrace]
+      ();
+    ServerOperations.stop_server server_configuration socket
+
 
 (* Create lock file and pid file. Used for both daemon mode and in-terminal *)
 let setup { lock_path; pid_path; _ } =
@@ -441,7 +453,8 @@ let start ({
       Signal.Expert.handle
         Signal.int
         (fun _ -> ServerOperations.stop_server server_configuration socket);
-      serve (socket, server_configuration)
+      serve (socket, server_configuration);
+      0
     end
   with AlreadyRunning ->
     Log.info "Server is already running";
