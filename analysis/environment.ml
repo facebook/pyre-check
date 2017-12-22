@@ -294,8 +294,7 @@ let resolution
         arguments
     in
 
-
-    let inferred_constraints parameters arguments =
+    let inferred_constraints parameters arguments return_annotation =
       let rec inferred_constraints parameters arguments constraints =
         match parameters, arguments with
         | { Node.value = { Parameter.annotation = Some expression; _ }; _ } :: parameters,
@@ -393,7 +392,22 @@ let resolution
         | _ ->
             Some constraints
       in
+      let return_constraints constraints =
+        (* Map unresolved constraints in return type to `Bottom`. This is a heuristic to deal with
+           not fully resolved collection parameters, e.g. empty lists. *)
+        let update_to_bottom constraints variable =
+          match Map.find constraints variable with
+          | Some _ -> constraints
+          | None -> Map.add ~key:variable ~data:Type.Bottom constraints
+        in
+        return_annotation
+        >>| parse_annotation
+        >>| Type.variables
+        >>| List.fold ~init:constraints ~f:update_to_bottom
+        |> Option.value ~default:constraints
+      in
       inferred_constraints parameters arguments Type.Map.empty
+      >>| return_constraints
     in
 
     let sufficient_arguments_provided parameters arguments =
@@ -435,12 +449,15 @@ let resolution
             | None ->
                 sofar)
     in
-    let instantiate_signature ({ Node.value = { Define.parameters; _ }; location } as define) =
+    let instantiate_signature ({
+          Node.value = { Define.parameters; return_annotation; _ };
+          location;
+        } as define) =
       (* Add implicit arguments. *)
       let arguments = insert_implicit_arguments define in
 
       (* Infer constraints. *)
-      inferred_constraints parameters arguments
+      inferred_constraints parameters arguments return_annotation
 
       (* Apply constraints to formal parameters. *)
       >>| (fun constraints -> instantiate define ~constraints, constraints)
@@ -473,7 +490,6 @@ let resolution
     let primitive, _ = Type.split annotation in
     Reader.class_definition primitive
   in
-
 
   let method_signature ~resolution annotation call arguments =
     let definitions annotation =

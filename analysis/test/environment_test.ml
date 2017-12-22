@@ -954,7 +954,17 @@ let test_function_signature_constructor _ =
     "set"
     (normal [Type.iterable Type.integer])
     ["self", None; "iterable", Some (Type.iterable Type.integer)]
-    (Some (Type.expression (Type.set Type.integer)))
+    (Some (Type.expression (Type.set Type.integer)));
+
+  assert_instantiated
+    {|
+      class set(typing.Generic[_T]):
+        def __init__(self, iterable: typing.Iterable[_T] = ...) -> None: ...
+    |}
+    "set"
+    []
+    ["self", None; "iterable", Some (Type.iterable Type.Bottom)]
+    (Some (Type.expression (Type.set Type.Bottom)))
 
 
 let test_function_overloading _ =

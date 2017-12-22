@@ -3072,7 +3072,10 @@ let test_check_value_restrictions _ =
        def f(x:float)->str:
            return value_restricted_identity(x)
     |}
-    ["Incompatible return type [7]: expected `str` but got `unknown`.";]
+    [
+      "Incompatible parameter type [6]: 1st parameter `x` to call `value_restricted_identity` " ^
+      "expected `_T` but got `float`.";
+    ]
 
 
 let test_check_conditional_refinement _ =

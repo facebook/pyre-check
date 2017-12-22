@@ -587,24 +587,28 @@ let rec is_unknown = function
       false
 
 
-let rec is_fully_resolved = function
+let rec variables = function
   | Optional annotation ->
-      is_fully_resolved annotation
+      variables annotation
   | Tuple (Bounded elements) ->
-      List.for_all ~f:is_fully_resolved elements
+      List.concat_map ~f:variables elements
   | Tuple (Unbounded annotation) ->
-      is_fully_resolved annotation
+      variables annotation
   | Parametric { parameters; _ } ->
-      List.for_all ~f:is_fully_resolved parameters
-  | Variable _ ->
-      false
+      List.concat_map ~f:variables parameters
+  | (Variable _) as annotation ->
+      [annotation]
   | Union elements ->
-      List.for_all ~f:is_fully_resolved elements
+      List.concat_map ~f:variables elements
   | Bottom
   | Object
   | Primitive _
   | Top ->
-      true
+      []
+
+
+let is_fully_resolved annotation =
+  List.is_empty (variables annotation)
 
 
 let rec is_partially_typed = function
