@@ -286,18 +286,10 @@ module Class = struct
               None in
         List.filter_map ~f:extract_constructor body
       in
-      let constructors =
-        if List.is_empty declared then
-          [Instantiated.Define.create_generated_constructor definition]
-        else
-          declared
-      in
-      let remove_self ({ Statement.Define.parameters; _ } as constructor) =
-        {
-          constructor with
-          Statement.Define.parameters = List.tl parameters |> Option.value ~default:[];
-        }
-      in List.map ~f:remove_self constructors
+      if List.is_empty declared then
+        [Instantiated.Define.create_generated_constructor definition]
+      else
+        declared
     in
     (* Adjust return name and return type. *)
     let adjust constructor =
@@ -663,12 +655,11 @@ module Call = struct
       call
       { Signature.instantiated = callee; _ } =
     let call =
-      if not (Instantiated.Define.is_method callee) ||
-         Instantiated.Define.is_static_method callee ||
-         Instantiated.Define.is_constructor callee then
-        call
-      else
+      if Instantiated.Define.is_method callee &&
+         not (Instantiated.Define.is_static_method callee) then
         prepend_self_argument call
+      else
+        call
     in
     let parameter_ok
         ~position

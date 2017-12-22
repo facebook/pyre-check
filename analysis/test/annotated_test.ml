@@ -315,7 +315,7 @@ let test_constructors _ =
     [
       {
         name = Instantiated.Access.create "Foo";
-        parameters = [];
+        parameters = [Parameter.create ~name:~~"self" ()];
         annotation = Some (Type.Primitive ~~"Foo")
       };
     ];
@@ -325,7 +325,7 @@ let test_constructors _ =
     [
       {
         name = Instantiated.Access.create "Foo";
-        parameters = [];
+        parameters = [Parameter.create ~name:~~"self" ()];
         annotation = Some (Type.Primitive ~~"Foo");
       };
     ];
@@ -340,11 +340,8 @@ let test_constructors _ =
       {
         name = Instantiated.Access.create "Foo";
         parameters = [
-          +{
-            Parameter.name = ~~"a";
-            value = None;
-            annotation = Some (Type.expression Type.integer);
-          };
+          Parameter.create ~name:~~"self" ();
+          Parameter.create ~name:~~"a" ~annotation:(Type.expression Type.integer) ();
         ];
         annotation = Some (Type.Primitive ~~"Foo");
       };
@@ -359,22 +356,16 @@ let test_constructors _ =
       {
         name = Instantiated.Access.create "Foo";
         parameters = [
-          +{
-            Parameter.name = ~~"a";
-            value = None;
-            annotation = Some (Type.expression Type.integer);
-          };
+          Parameter.create ~name:~~"self" ();
+          Parameter.create ~name:~~"a" ~annotation:(Type.expression Type.integer) ();
         ];
         annotation = Some (Type.Primitive ~~"Foo");
       };
       {
         name = Instantiated.Access.create "Foo";
         parameters = [
-          +{
-            Parameter.name = ~~"b";
-            value = None;
-            annotation = Some (Type.expression Type.string);
-          };
+          Parameter.create ~name:~~"self" ();
+          Parameter.create ~name:~~"b" ~annotation:(Type.expression Type.string) ();
         ];
         annotation = Some (Type.Primitive ~~"Foo");
       };
@@ -391,7 +382,7 @@ let test_constructors _ =
     [
       {
         name = Instantiated.Access.create "Foo";
-        parameters = [];
+        parameters = [Parameter.create ~name:~~"self" ()];
         annotation =
           Some
             (Type.Parametric {

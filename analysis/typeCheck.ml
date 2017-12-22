@@ -994,8 +994,7 @@ module State = struct
                   let start_position =
                     (* Account for the `self` parameter in instance methods. *)
                     if Instantiated.Define.is_method callee &&
-                       not (Instantiated.Define.is_static_method callee) &&
-                       not (Instantiated.Define.is_constructor callee) then
+                       not (Instantiated.Define.is_static_method callee) then
                       0
                     else
                       1

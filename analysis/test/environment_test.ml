@@ -914,7 +914,7 @@ let test_function_signature_constructor _ =
     |}
     "A"
     []
-    []
+    ["self", None]
     (Some (Type.expression (primitive "A")));
 
   assert_instantiated
@@ -924,7 +924,7 @@ let test_function_signature_constructor _ =
     |}
     "A"
     (normal [Type.integer])
-    ["i", Some Type.integer]
+    ["self", None; "i", Some Type.integer]
     (Some (Type.expression (primitive "A")));
 
   assert_instantiated
@@ -934,7 +934,7 @@ let test_function_signature_constructor _ =
     |}
     "A"
     (normal [Type.integer])
-    ["i", Some Type.integer]
+    ["self", None; "i", Some Type.integer]
     (Some (Type.expression (primitive "A")));
   assert_instantiated
     {|
@@ -943,8 +943,18 @@ let test_function_signature_constructor _ =
     |}
     "A"
     []
-    ["i", Some Type.integer]
-    (Some (Type.expression (primitive "A")))
+    ["self", None; "i", Some Type.integer]
+    (Some (Type.expression (primitive "A")));
+
+  assert_instantiated
+    {|
+      class set(typing.Generic[_T]):
+        def __init__(self, iterable: typing.Iterable[_T] = ...) -> None: ...
+    |}
+    "set"
+    (normal [Type.iterable Type.integer])
+    ["self", None; "iterable", Some (Type.iterable Type.integer)]
+    (Some (Type.expression (Type.set Type.integer)))
 
 
 let test_function_overloading _ =

@@ -128,7 +128,7 @@ module Define = struct
   let create_generated_constructor { Class.name; docstring; _ } =
     {
       Define.name;
-      parameters = [];
+      parameters = [Parameter.create ~name:(Identifier.create "self") ()];
       body = [Node.create Pass];
       decorators = [];
       return_annotation = None;
