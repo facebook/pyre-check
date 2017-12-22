@@ -599,39 +599,40 @@ let assert_instantiated
     arguments
     expected_parameters
     expected_return =
-  let environment = populate environment in
-  Environment.populate ~check_dependency_exists:false environment [parse base_environment];
-  let defines =
-    Resolution.function_signature
-      (resolution environment)
-      qualifier
-      { Call.name = !name; arguments = [] }
-      (List.map ~f:(~+) arguments)
-    |> List.map ~f:(fun { Signature.instantiated; _ } -> instantiated)
-  in
-  let parameter (name, annotation) =
-    {
-      Parameter.name = ~~name;
-      value = None;
-      annotation = annotation >>| Type.expression;
-    }
-  in
-  let parameter_equal left right =
-    (* Ignore the value. *)
-    Identifier.equal left.Parameter.name right.Parameter.name &&
-    Option.equal
-      Expression.equal
-      left.Parameter.annotation
-      right.Parameter.annotation
-  in
-  let signature_instantiated define =
+  let instantiated define =
+    let parameter (name, annotation) =
+      {
+        Parameter.name = ~~name;
+        value = None;
+        annotation = annotation >>| Type.expression;
+      }
+    in
+    let parameter_equal left right =
+      (* Ignore the value. *)
+      Identifier.equal left.Parameter.name right.Parameter.name &&
+      Option.equal
+        Expression.equal
+        left.Parameter.annotation
+        right.Parameter.annotation
+    in
     (List.equal ~equal:parameter_equal)
       (List.map ~f:parameter expected_parameters)
       (List.map ~f:Node.value define.Define.parameters)
     &&
     (Option.equal Expression.equal expected_return define.Define.return_annotation)
   in
-  assert_true (List.exists ~f:signature_instantiated defines)
+
+  let environment = populate environment in
+  Environment.populate ~check_dependency_exists:false environment [parse base_environment];
+
+  Resolution.function_signature
+    (resolution environment)
+    qualifier
+    { Call.name = !name; arguments = [] }
+    (List.map ~f:(~+) arguments)
+  |> List.map ~f:(fun { Signature.instantiated; _ } -> instantiated)
+  |> List.exists ~f:instantiated
+  |> assert_true
 
 
 let assert_not_instantiated
