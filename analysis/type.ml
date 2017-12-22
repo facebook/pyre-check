@@ -87,7 +87,7 @@ let rec pp format annotation =
     |> String.substr_replace_all ~pattern:"`" ~with_:"" in
   match annotation with
   | Bottom ->
-      Format.fprintf format "`_T`"
+      Format.fprintf format "`typing.Any`"
   | Object ->
       Format.fprintf format "`typing.Any`"
   | Optional parameter ->

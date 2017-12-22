@@ -1012,9 +1012,9 @@ let test_show_error_traces _ =
         return None
     |}
     [
-      "Missing return annotation [3]: Returning `typing.Optional[_T]` but no return type is " ^
-      "specified. Type `typing.Optional[_T]` was returned on line 3, return type should be " ^
-      "specified on line 2.";
+      "Missing return annotation [3]: Returning `typing.Optional[typing.Any]` but no return type " ^
+      "is specified. Type `typing.Optional[typing.Any]` was returned on line 3, return type " ^
+      "should be specified on line 2.";
     ];
 
   assert_type_errors ~show_error_traces:true
@@ -1260,7 +1260,7 @@ let test_check _ =
         return None
     |}
     [
-      "Incompatible return type [7]: expected `int` but got `typing.Optional[_T]`."
+      "Incompatible return type [7]: expected `int` but got `typing.Optional[typing.Any]`."
     ];
 
   assert_type_errors
@@ -1507,7 +1507,7 @@ let test_check_comprehensions _ =
 let test_check_optional _ =
   assert_type_errors
     "def foo() -> str: return None"
-    ["Incompatible return type [7]: expected `str` but got `typing.Optional[_T]`."];
+    ["Incompatible return type [7]: expected `str` but got `typing.Optional[typing.Any]`."];
 
   assert_type_errors
     "def foo() -> typing.Optional[str]: return None"
@@ -2716,8 +2716,8 @@ let test_check_missing_return _ =
         return None
     |}
     [
-      "Missing return annotation [3]: Returning `typing.Optional[_T]` but no return type is " ^
-      "specified.";
+      "Missing return annotation [3]: Returning `typing.Optional[typing.Any]` but no return type " ^
+      "is specified.";
     ];
 
   assert_type_errors
@@ -3074,7 +3074,7 @@ let test_check_value_restrictions _ =
     |}
     [
       "Incompatible parameter type [6]: 1st parameter `x` to call `value_restricted_identity` " ^
-      "expected `_T` but got `float`.";
+      "expected `typing.Any` but got `float`.";
     ]
 
 
