@@ -609,6 +609,14 @@ and join ((module Reader: Reader) as order) left right =
         else
           Type.Object
 
+    (* Special case joins of optional collections with their uninstantated counterparts. *)
+    | Type.Parametric ({ Type.parameters = [Type.Bottom]; _ } as other),
+      Type.Optional (Type.Parametric ({ Type.parameters = [parameter]; _ } as collection))
+    | Type.Optional (Type.Parametric ({ Type.parameters = [parameter]; _ } as collection)),
+      Type.Parametric ({ Type.parameters = [Type.Bottom]; _ } as other)
+      when Identifier.equal other.Type.name collection.Type.name ->
+        Type.Parametric { other with Type.parameters = [parameter] }
+
     (* A <= B -> lub(A, Optional[B]) = Optional[B]. *)
     | other, Type.Optional parameter
     | Type.Optional parameter, other ->

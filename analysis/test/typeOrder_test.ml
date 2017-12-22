@@ -524,6 +524,16 @@ let test_join _ =
     (join default (Type.optional Type.Bottom) Type.string)
     (Type.optional Type.string);
 
+  assert_equal
+    (join default (Type.list Type.Bottom) (Type.optional (Type.list Type.integer)))
+    (Type.list Type.integer);
+  assert_equal
+    (join default (Type.optional (Type.list Type.integer)) (Type.list Type.Bottom))
+    (Type.list Type.integer);
+  assert_equal
+    (join default (Type.optional (Type.set Type.integer)) (Type.set Type.Bottom))
+    (Type.set Type.integer);
+
   (* Union types. *)
   assert_equal
     (join default (Type.Optional Type.bool) (Type.Union [Type.integer; Type.Optional Type.bool]))
@@ -615,8 +625,6 @@ let test_join _ =
        order
        (Type.Parametric { Type.name = ~~"A"; parameters = [Type.integer; Type.string] })
        (Type.Parametric { Type.name = ~~"C"; parameters = [Type.Bottom] }))
-
-
 
 
 let test_meet _ =

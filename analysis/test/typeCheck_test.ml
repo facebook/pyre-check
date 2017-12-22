@@ -3430,6 +3430,27 @@ let test_check_behavioral_subtyping _ =
     []
 
 
+let test_check_collections _ =
+  assert_type_errors
+    {|
+      def foo(input: typing.Optional[typing.List[int]]) -> typing.List[int]:
+        return input or []
+    |}
+    [];
+  assert_type_errors
+    {|
+      def foo(input: typing.Optional[typing.Set[int]]) -> typing.Set[int]:
+        return input or set()
+    |}
+    [];
+  assert_type_errors
+    {|
+      def foo(input: typing.Optional[typing.Dict[int, str]]) -> typing.Dict[int, str]:
+        return input or {}
+    |}
+    []
+
+
 let assert_infer
     ?(debug = false)
     ?(infer = true)
@@ -3857,6 +3878,7 @@ let () =
     "check_excepts">::test_check_excepts;
     "check_await">::test_check_await;
     "check_behavioral_subtyping">::test_check_behavioral_subtyping;
+    "check_collections">::test_check_collections;
     "infer">::test_infer;
     "infer_backward">::test_infer_backward;
     "recursive_infer">::test_recursive_infer;
