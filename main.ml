@@ -21,6 +21,7 @@ let commands = [
 
 
 let () =
+  Random.self_init ();
   Parallel.Daemon.check_entry_point ();
   Command.group
     ~summary:"Analyze Python files"

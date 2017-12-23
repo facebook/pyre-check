@@ -35,6 +35,7 @@ val print: ('a, Format.formatter, unit, unit, unit, unit) Core.format6 -> 'a
 
 val performance
   :  ?flush: bool
+  -> ?randomly_log_every: int
   -> name: string
   -> timer: Timer.t
   -> root: string

@@ -20,7 +20,7 @@ type analysis_results = {
 
 
 let analyze_source
-    ({ Configuration.verbose; sections; _ } as configuration)
+    ({ Configuration.verbose; sections; project_root; _ } as configuration)
     environment
     ({ Source.path; metadata; _ } as source) =
   (* Re-initialize log for subprocesses. *)
@@ -45,6 +45,14 @@ let analyze_source
       Log.log ~section:`Check "Checking `%s`..." path;
       let errors = TypeCheck.check configuration environment source in
       Log.log ~section:`Check "Checked `%s` in %fs" path (Timer.stop timer);
+      Log.performance
+        ~flush:false
+        ~randomly_log_every:100
+        ~name:"SingleFileTypeCheck"
+        ~timer
+        ~root:(Path.last project_root)
+        ~normals:["path", path; "RequestKind", "SingleFileTypeCheck"]
+        ();
       errors
     end
 
@@ -64,26 +72,30 @@ let analyze_sources_parallel
     service
     ~init:{ errors = []; lookups = String.Map.empty; number_files = 0 }
     ~map:(fun _ handles ->
-        List.fold ~init ~f:(
-          fun { errors; lookups; number_files } handle ->
-            match AstSharedMemory.get_source handle with
-            | Some source ->
-                let { TypeCheck.errors = new_errors; lookup } =
-                  analyze_source configuration environment source
-                in
-                {
-                  errors = List.append new_errors errors;
-                  lookups =
-                    (match lookup with
-                     | Some table ->
-                         Map.add ~key:(File.Handle.show handle) ~data:table lookups
-                     | None ->
-                         lookups);
-                  number_files = number_files + 1
-                }
+        let result =
+          List.fold ~init ~f:(
+            fun { errors; lookups; number_files } handle ->
+              match AstSharedMemory.get_source handle with
+              | Some source ->
+                  let { TypeCheck.errors = new_errors; lookup } =
+                    analyze_source configuration environment source
+                  in
+                  {
+                    errors = List.append new_errors errors;
+                    lookups =
+                      (match lookup with
+                       | Some table ->
+                           Map.add ~key:(File.Handle.show handle) ~data:table lookups
+                       | None ->
+                           lookups);
+                    number_files = number_files + 1
+                  }
+              | None -> { errors; lookups; number_files = number_files + 1 })
+            handles
+        in
+        Statistics.flush ();
+        result)
 
-            | None -> { errors; lookups; number_files = number_files + 1 })
-          handles)
     ~reduce:(fun left right ->
         let number_files = left.number_files + right.number_files in
         Log.info "Processed %d of %d sources" number_files (List.length handles);
