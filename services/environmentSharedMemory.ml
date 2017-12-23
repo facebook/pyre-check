@@ -39,22 +39,41 @@ end
 
 
 (** Values *)
-module AccessSetValue = struct
+module FunctionKeyValue = struct
   type t = Expression.t Access.t list
   let prefix = Prefix.make ()
-  let description = "Access hashset"
+  let description = "Function keys"
 end
 
-module TypeSetValue = struct
+module GlobalKeyValue = struct
+  type t = Expression.t Access.t list
+  let prefix = Prefix.make ()
+  let description = "Global keys"
+end
+
+module AliasKeyValue = struct
   type t = Type.t list
   let prefix = Prefix.make ()
-  let description = "Type hashset"
+  let description = "Alias keys"
 end
 
-module StringSetValue = struct
+module ClassKeyValue = struct
+  type t = Type.t list
+  let prefix = Prefix.make ()
+  let description = "Class keys"
+end
+
+module ProtocolValue = struct
+  type t = Type.t list
+  let prefix = Prefix.make ()
+  let description = "Protocols"
+end
+
+
+module DependentKeyValue = struct
   type t = string list
   let prefix = Prefix.make ()
-  let description = "String hashset"
+  let description = "Dependent keys"
 end
 
 module ClassValue = struct
@@ -87,28 +106,10 @@ module DependentValue = struct
   let description = "Dependent"
 end
 
-module IndexValue = struct
-  type t = int
-  let prefix = Prefix.make ()
-  let description = "Index"
-end
-
-module TypeValue = struct
-  type t = Type.t
-  let prefix = Prefix.make ()
-  let description = "Type"
-end
-
-module TypeValues = struct
+module ClassDefinitionKeyValue = struct
   type t = Type.t list
   let prefix = Prefix.make ()
-  let description = "Types"
-end
-
-module TargetsValue = struct
-  type t = TypeOrder.Target.t list
-  let prefix = Prefix.make ()
-  let description = "Targets"
+  let description = "Class definition keys"
 end
 
 module OrderTable = struct
@@ -128,7 +129,7 @@ module FunctionDefinitions = SharedMemory.WithCache (AccessKey) (FunctionValue)
 
 module ClassDefinitions = SharedMemory.WithCache (TypeKey) (ClassValue)
 
-module ClassDefinitionsKeys = SharedMemory.WithCache (StringKey) (TypeValues)
+module ClassDefinitionsKeys = SharedMemory.WithCache (StringKey) (ClassDefinitionKeyValue)
 
 module Aliases = SharedMemory.WithCache (TypeKey) (AliasValue)
 
@@ -138,14 +139,14 @@ module Dependents = SharedMemory.WithCache (StringKey) (DependentValue)
 
 module Order = SharedMemory.WithCache (StringKey) (OrderTable)
 
-module FunctionKeys = SharedMemory.WithCache (StringKey) (AccessSetValue)
+module FunctionKeys = SharedMemory.WithCache (StringKey) (FunctionKeyValue)
 
-module ClassKeys = SharedMemory.WithCache (StringKey) (TypeSetValue)
+module ClassKeys = SharedMemory.WithCache (StringKey) (ClassKeyValue)
 
-module AliasKeys = SharedMemory.WithCache (StringKey) (TypeSetValue)
+module AliasKeys = SharedMemory.WithCache (StringKey) (AliasKeyValue)
 
-module Protocols = SharedMemory.WithCache (StringKey) (TypeSetValue)
+module Protocols = SharedMemory.WithCache (StringKey) (ProtocolValue)
 
-module GlobalKeys = SharedMemory.WithCache (StringKey) (AccessSetValue)
+module GlobalKeys = SharedMemory.WithCache (StringKey) (GlobalKeyValue)
 
-module DependentKeys = SharedMemory.WithCache (StringKey) (StringSetValue)
+module DependentKeys = SharedMemory.WithCache (StringKey) (DependentKeyValue)
