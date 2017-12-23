@@ -10,7 +10,8 @@ module SharedMemory = SharedMem
 
 type t = {
   is_parallel: bool;
-  workers: Worker.t list
+  workers: Worker.t list;
+  bucket_multiplier: int;
 }
 
 
@@ -34,12 +35,12 @@ let gc_control =
   Gc.get ()
 
 
-let map_reduce { workers; _ } ~init ~map ~reduce work =
+let map_reduce { workers; bucket_multiplier; _ } ~init ~map ~reduce work =
   MultiWorker.call (Some workers)
     ~job:map
     ~merge:reduce
     ~neutral:init
-    ~next:(Bucket.make ~num_workers:number_of_processes work)
+    ~next:(Bucket.make ~num_workers:(number_of_processes * bucket_multiplier) work)
 
 
 let rec wait_until_ready handle =
@@ -82,7 +83,7 @@ let initialize_heap_handle () =
   | Some heap_handle -> heap_handle
 
 
-let create ~is_parallel () =
+let create ~is_parallel ?(bucket_multiplier = 10) () =
   let heap_handle = initialize_heap_handle () in
   let workers =
     Hack_parallel.Std.Worker.make
@@ -94,12 +95,12 @@ let create ~is_parallel () =
       ~gc_control
   in
   SharedMemory.connect heap_handle ~is_master:true;
-  { workers; is_parallel }
+  { workers; is_parallel; bucket_multiplier }
 
 
 let mock () =
   initialize_heap_handle () |> ignore;
-  { workers = []; is_parallel = false }
+  { workers = []; is_parallel = false; bucket_multiplier = 1 }
 
 
 let is_parallel { is_parallel; _ } = is_parallel

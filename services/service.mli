@@ -5,7 +5,7 @@
 
 type t
 
-val create : is_parallel:bool -> unit -> t
+val create : is_parallel:bool -> ?bucket_multiplier: int -> unit -> t
 
 val map_reduce:
   t ->
