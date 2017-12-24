@@ -3411,9 +3411,9 @@ let test_check_behavioral_subtyping _ =
   assert_type_errors
     {|
       class Foo():
-        def __init__(a: float) -> None: ...
+        def __init__(self, a: float) -> None: ...
       class Bar(Foo):
-        def __init__(a: int) -> None: pass
+        def __init__(self, a: int) -> None: pass
     |}
     [];
   assert_type_errors
@@ -3489,6 +3489,21 @@ let test_check_constructors _ =
     [
       "Incompatible parameter type [6]: 1st parameter `i` to call `Foo.Foo` expected `int` but " ^
       "got `str`.";
+    ];
+  assert_type_errors
+    {|
+      class Foo:
+        def __init__(self, i: int, s: typing.Optional[str] = None) -> None:
+          pass
+      def foo() -> None:
+        Foo('asdf')
+        Foo(1, 2)
+    |}
+    [
+      "Incompatible parameter type [6]: 1st parameter `i` to call `Foo.Foo` expected `int` but " ^
+      "got `str`.";
+      "Incompatible parameter type [6]: 2nd parameter `s` to call `Foo.Foo` expected " ^
+      "`typing.Optional[str]` but got `int`.";
     ]
 
 

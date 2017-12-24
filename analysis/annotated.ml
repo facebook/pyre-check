@@ -655,8 +655,9 @@ module Call = struct
       call
       { Signature.instantiated = callee; _ } =
     let call =
-      if Instantiated.Define.is_method callee &&
-         not (Instantiated.Define.is_static_method callee) then
+      if (Instantiated.Define.is_method callee &&
+          not (Instantiated.Define.is_static_method callee)) ||
+         Instantiated.Define.is_constructor callee then
         prepend_self_argument call
       else
         call
@@ -935,9 +936,9 @@ module Access = struct
           [Access.Call { Node.location; value = call }] ->
             let callee =
               Resolution.method_signature resolution
-                 (Annotation.annotation annotation)
-                 call
-                 (Call.argument_annotations ~resolution call)
+                (Annotation.annotation annotation)
+                call
+                (Call.argument_annotations ~resolution call)
               |> pick_signature call
             in
             let backup =
