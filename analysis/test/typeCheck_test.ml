@@ -3169,6 +3169,14 @@ let test_check_conditional_refinement _ =
           if x and math.intabs(x) < 0:
               y = 1
     |}
+    [];
+  assert_type_errors
+    {|
+      def bar(input: typing.Optional[typing.Set[int]]) -> typing.Set[int]:
+          if not input:
+            input = set()
+          return input
+    |}
     []
 
 
