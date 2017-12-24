@@ -194,7 +194,9 @@ def cleanup(arguments) -> None:
 
     output = stdout.getvalue()
     if output:
-        sys.stdout.write(Format.WRAP_OVERFLOW + output + '\n')
+        sys.stderr.write(Format.WRAP_OVERFLOW)
+        sys.stderr.flush()
+        sys.stdout.write(output + '\n')
 
 
 class Buffer:
