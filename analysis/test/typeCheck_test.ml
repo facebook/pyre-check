@@ -3459,6 +3459,39 @@ let test_check_collections _ =
     []
 
 
+let test_check_constructors _ =
+  assert_type_errors
+    {|
+      class Foo:
+        def __init__(self) -> None:
+          pass
+      def foo() -> Foo:
+        return Foo()
+    |}
+    [];
+  assert_type_errors
+    {|
+      class Foo:
+        def __init__(self, i: int) -> None:
+          pass
+      def foo() -> Foo:
+        return Foo(10)
+    |}
+    [];
+  assert_type_errors
+    {|
+      class Foo:
+        def __init__(self, i: int) -> None:
+          pass
+      def foo() -> Foo:
+        return Foo('asdf')
+    |}
+    [
+      "Incompatible parameter type [6]: 1st parameter `i` to call `Foo.Foo` expected `int` but " ^
+      "got `str`.";
+    ]
+
+
 let assert_infer
     ?(debug = false)
     ?(infer = true)
@@ -3887,6 +3920,7 @@ let () =
     "check_await">::test_check_await;
     "check_behavioral_subtyping">::test_check_behavioral_subtyping;
     "check_collections">::test_check_collections;
+    "check_constructors">::test_check_constructors;
     "infer">::test_infer;
     "infer_backward">::test_infer_backward;
     "recursive_infer">::test_recursive_infer;
