@@ -230,14 +230,20 @@ let test_due_to_analysis_limitations _ =
        (error
           (Error.UndefinedMethod {
               Error.annotation = Type.Top;
-              call = Annotated.Call.create { Expression.Call.name = !""; arguments = [] };
+              call =
+                Annotated.Call.create
+                  ~kind:Annotated.Call.Method
+                  { Expression.Call.name = !""; arguments = [] };
             })));
   assert_false
     (Error.due_to_analysis_limitations
        (error
           (Error.UndefinedMethod {
               Error.annotation = Type.string;
-              call = Annotated.Call.create { Expression.Call.name = !""; arguments = [] };
+              call =
+                Annotated.Call.create
+                  ~kind:Annotated.Call.Method
+                  { Expression.Call.name = !""; arguments = [] };
             })));
 
   (* UndefinedType. *)
@@ -267,7 +273,10 @@ let test_join _ =
     (error
        (Error.UndefinedMethod {
            Error.annotation = Type.string;
-           call = Annotated.Call.create { Expression.Call.name = !""; arguments = [] };
+           call =
+             Annotated.Call.create
+               ~kind:Annotated.Call.Method
+               { Expression.Call.name = !""; arguments = [] };
          }))
     (error Error.Top);
   assert_join

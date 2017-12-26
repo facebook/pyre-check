@@ -3504,6 +3504,17 @@ let test_check_constructors _ =
     ]
 
 
+let test_check_explicit_method_call _ =
+  assert_type_errors
+    {|
+      class Class:
+        def method(self, i: int) -> None:
+          pass
+      Class.method(object(), 1)
+    |}
+    []
+
+
 let assert_infer
     ?(debug = false)
     ?(infer = true)
@@ -3933,6 +3944,7 @@ let () =
     "check_behavioral_subtyping">::test_check_behavioral_subtyping;
     "check_collections">::test_check_collections;
     "check_constructors">::test_check_constructors;
+    "check_explicit_method_call">::test_check_explicit_method_call;
     "infer">::test_infer;
     "infer_backward">::test_infer_backward;
     "recursive_infer">::test_recursive_infer;

@@ -143,11 +143,16 @@ module BinaryOperator : sig
 end
 
 module Call : sig
+  type kind =
+    | Function
+    | Method
+  [@@deriving compare, eq, sexp, show]
+
   type t
   [@@deriving compare, eq, sexp, show]
 
-  val create: Expression.t Call.t -> t
-  val element: t -> Expression.t Call.t
+  val create: kind: kind -> Expression.t Call.t -> t
+  val call: t -> Expression.t Call.t
 
   val arguments: t -> (Expression.t Argument.t) list
   val with_arguments: t -> (Expression.t Argument.t) list -> t

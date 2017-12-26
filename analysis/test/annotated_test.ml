@@ -816,8 +816,9 @@ let test_infer_argument_name _ =
 
 let test_backup _ =
   let assert_backup call expected =
-    let open Annotated.Call in
-    assert_equal (backup (create call)) (expected >>| create)
+    let actual = Annotated.Call.create ~kind:Annotated.Call.Function call in
+    let expected = expected >>| Annotated.Call.create ~kind:Annotated.Call.Function in
+    assert_equal (Annotated.Call.backup actual) expected
   in
   assert_backup
     { Expression.Call.name = !"name"; arguments = [] }

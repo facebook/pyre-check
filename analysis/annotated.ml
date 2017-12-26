@@ -526,37 +526,46 @@ end
 
 
 module Call = struct
-  type t = Expression.t Call.t
+  type kind =
+    | Function
+    | Method
   [@@deriving compare, eq, sexp, show]
 
 
-  let create call =
+  type t = {
+    call: Expression.t Call.t;
+    kind: kind;
+  }
+  [@@deriving compare, eq, sexp, show]
+
+
+  let create ~kind call =
+    { call; kind }
+
+
+  let call { call; _ } =
     call
 
 
-  let element call =
-    call
-
-
-  let arguments { Call.arguments; _ } =
+  let arguments { call = { Call.arguments; _ }; _ } =
     arguments
 
 
-  let with_arguments call arguments =
-    { call with Call.arguments }
+  let with_arguments { call; kind } arguments =
+    { call = { call with Call.arguments }; kind }
 
 
-  let prepend_self_argument call =
+  let prepend_self_argument { call; kind } =
     let self =
       {
         Argument.name = None;
         value = Node.create (Access (Instantiated.Access.create "self"));
       }
     in
-    { call with Call.arguments = self :: call.Call.arguments }
+    { call = { call with Call.arguments = self :: call.Call.arguments }; kind }
 
 
-  let name { Call.name; _ } =
+  let name { call = { Call.name; _ }; _ } =
     name
 
 
@@ -566,7 +575,7 @@ module Call = struct
   }
 
 
-  let redirect { Expression.Call.name; arguments } =
+  let redirect { call = { Expression.Call.name; arguments }; kind = _ } =
     match name, arguments with
     | { Node.location; value = Access [Expression.Access.Identifier name]; _ },
       [{
@@ -596,7 +605,7 @@ module Call = struct
     | _ -> None
 
 
-  let backup { Expression.Call.name; arguments } =
+  let backup { call = { Expression.Call.name; arguments }; kind } =
     match name with
     | { Node.location; value = Access [Expression.Access.Identifier name]; _ } ->
         (* cf. https://docs.python.org/3/reference/datamodel.html#object.__radd__ *)
@@ -618,16 +627,19 @@ module Call = struct
          | _ -> None)
         >>| (fun name ->
             {
-              Expression.Call.name = {
-                Node.location;
-                value = Access (Instantiated.Access.create name);
+              call = {
+                Expression.Call.name = {
+                  Node.location;
+                  value = Access (Instantiated.Access.create name);
+                };
+                arguments;
               };
-              arguments;
+              kind;
             })
     | _ -> None
 
 
-  let argument_annotations { Expression.Call.arguments; _ } ~resolution =
+  let argument_annotations { call = { Expression.Call.arguments; _ }; kind = _ } ~resolution =
     let extract_argument { Argument.value; _ } =
       match value with
       | { Node.location; Node.value = Starred (Starred.Once expression) } ->
@@ -652,15 +664,18 @@ module Call = struct
       ~check_parameter
       ~add_error
       ~init
-      call
+      ({ kind; _ } as call)
       { Signature.instantiated = callee; _ } =
     let call =
-      if (Instantiated.Define.is_method callee &&
-          not (Instantiated.Define.is_static_method callee)) ||
-         Instantiated.Define.is_constructor callee then
-        prepend_self_argument call
-      else
-        call
+      match kind with
+      | Method ->
+          prepend_self_argument call
+      | Function ->
+          if Instantiated.Define.is_class_method callee ||
+              Instantiated.Define.is_constructor callee then
+            prepend_self_argument call
+          else
+            call
     in
     let parameter_ok
         ~position
@@ -935,10 +950,11 @@ module Access = struct
         match annotation, reversed_lead with
         | Some (access, annotation),
           [Access.Call { Node.location; value = call }] ->
+            let call = Call.create ~kind:Call.Method call in
             let callee =
               Resolution.method_signature resolution
                 (Annotation.annotation annotation)
-                call
+                (Call.call call)
                 (Call.argument_annotations ~resolution call)
               |> pick_signature call
             in
@@ -946,11 +962,14 @@ module Access = struct
               Call.backup call
               >>= fun call ->
               (match call with
-               | { Ast.Expression.Call.arguments = [{ Argument.value; _ }]; _ } ->
+               | {
+                  Call.call = { Ast.Expression.Call.arguments = [{ Argument.value; _ }]; _ };
+                  _;
+               } ->
                    let annotation = Resolution.resolve resolution value in
                    Resolution.method_signature resolution
                      annotation
-                     call
+                     (Call.call call)
                      (Call.argument_annotations ~resolution call)
                    |> pick_signature call
                | _ -> None)
@@ -1061,6 +1080,7 @@ module Access = struct
           Access.Call { Node.location; value = call } :: qualifier ->
             (* Call. *)
             begin
+              let call = Call.create ~kind:Call.Function call in
               match Call.redirect call with
               | Some { Call.access; call } ->
                   let annotation =
@@ -1073,7 +1093,7 @@ module Access = struct
                   let callee =
                     (Resolution.function_signature resolution)
                       (List.rev qualifier)
-                      call
+                      (Call.call call)
                       (Call.argument_annotations ~resolution call)
                     |> pick_signature call
                   in
