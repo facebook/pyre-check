@@ -912,17 +912,16 @@ module Access = struct
                   None
               in
               let add_error errors _ = errors + 1 in
-
               Call.check_parameters ~resolution ~check_parameter ~add_error ~init:0 call callee
             in
-
-            match
+            let no_error_call =
+              (* The find exists for performance reasons. Without it, typechecking would slow down
+                 by ~2.5x. *)
               List.find
                 ~f:(fun signature -> count_call_errors ~resolution call signature = 0)
                 signatures
-            with
-            (* The find exists for performance reasons. Without it, typechecking would slow down by
-             * ~2.5x. *)
+            in
+            match no_error_call with
             | Some signature -> Some signature
             | None ->
                 List.map
