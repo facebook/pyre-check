@@ -55,7 +55,6 @@ let check
     try Int.of_string (Sys.getenv "BUCKET_MULTIPLIER" |> Option.value ~default:"1")
     with _ -> 1
   in
-  Log.dump "Bucket multiplier is %d" bucket_multiplier;
   let service =
     match original_service with
     | None -> Service.create ~is_parallel:parallel ~bucket_multiplier ()
