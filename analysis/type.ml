@@ -640,7 +640,8 @@ let rec mismatch_with_any left right =
   let compatible left right =
     let symmetric left right =
       (Identifier.show left = "typing.Mapping" && Identifier.show right = "dict") ||
-      (Identifier.show left = "typing.Iterable" && Identifier.show right = "list")
+      (Identifier.show left = "typing.Iterable" && Identifier.show right = "list") ||
+      (Identifier.show left = "typing.Iterable" && Identifier.show right = "set")
     in
     Identifier.equal left right ||
     symmetric left right ||
@@ -676,12 +677,14 @@ let rec mismatch_with_any left right =
          List.length left.parameters = List.length right.parameters ->
       List.exists2_exn ~f:mismatch_with_any left.parameters right.parameters
 
-  | Parametric { name = iterator; _ }, Parametric { name = generator; parameters = Object :: _ }
-  | Parametric { name = generator; parameters = Object :: _ }, Parametric { name = iterator; _ }
+  | Parametric { name = iterator; parameters = [iterator_parameter] },
+    Parametric { name = generator; parameters = generator_parameter :: _ }
+  | Parametric { name = generator; parameters = generator_parameter :: _ },
+    Parametric { name = iterator; parameters = [iterator_parameter] }
     when (Identifier.show iterator = "typing.Iterator" ||
           Identifier.show iterator = "typing.Iterable") &&
          Identifier.show generator = "typing.Generator" ->
-      true
+      mismatch_with_any iterator_parameter generator_parameter
 
   | Tuple (Bounded left), Tuple (Bounded right) when List.length left = List.length right ->
       List.exists2_exn ~f:mismatch_with_any left right

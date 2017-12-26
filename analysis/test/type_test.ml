@@ -659,6 +659,10 @@ let test_mismatch_with_any _ =
     (Type.mismatch_with_any
        (Type.iterable Type.Object)
        (Type.list Type.string));
+  assert_true
+    (Type.mismatch_with_any
+       (Type.iterable Type.integer)
+       (Type.set Type.Object));
 
   assert_false
     (Type.mismatch_with_any
@@ -693,6 +697,10 @@ let test_mismatch_with_any _ =
 
 
   assert_true (Type.mismatch_with_any (Type.iterator Type.integer) (Type.generator Type.Object));
+  assert_true
+    (Type.mismatch_with_any
+       (Type.iterator (Type.list Type.integer))
+       (Type.generator (Type.list Type.Object)));
   assert_false (Type.mismatch_with_any (Type.iterator Type.integer) (Type.generator Type.float))
 
 
