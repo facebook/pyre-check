@@ -847,7 +847,21 @@ let test_function_signature_variable_instantiation _ =
         pass
     |}
     "max"
-    (normal [Type.Top; Type.Top])
+    (normal [Type.Top; Type.Top]);
+
+  (* Indirect constraints. *)
+  assert_instantiated
+    {|
+      class range(typing.Sequence[int]):
+        pass
+      _T = typing.TypeVar('_T')
+      def reversed(i: typing.Sequence[_T]) -> typing.Iterable[_T]:
+        pass
+    |}
+    "reversed"
+    (normal [primitive "range"])
+    ["i", Some (Type.parametric "typing.Sequence" [Type.integer])]
+    (Some (Type.expression (Type.iterable Type.integer)))
 
 
 let test_function_signature_starred _ =

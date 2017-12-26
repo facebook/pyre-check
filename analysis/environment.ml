@@ -304,8 +304,14 @@ let resolution
               match parameter, argument with
               | Type.Optional parameter, Type.Optional argument ->
                   update_constraints constraints parameter argument
+              | Type.Parametric { Type.parameters = [variable]; _ }, _
+                when Type.is_meta parameter ->
+                  (* From `typing.Type[_T]` and the actual argument extract constraint
+                     `_T` -> `type(argument)`. *)
+                  let annotation = parse_annotation value in
+                  Some (Map.add constraints ~key:variable ~data:annotation)
               | Type.Parametric { Type.parameters = parameters; name },
-                Type.Parametric _ ->
+                _ ->
                   let arguments =
                     let primitive, _ = Type.split parameter in
                     TypeOrder.instantiate_parameters
@@ -353,12 +359,6 @@ let resolution
                       | _ ->
                           Some constraints
                     end
-              | Type.Parametric { Type.parameters = [variable]; _ }, _
-                when Type.is_meta parameter ->
-                  (* From `typing.Type[_T]` and the actual argument extract constraint
-                     `_T` -> `type(argument)`. *)
-                  let annotation = parse_annotation value in
-                  Some (Map.add constraints ~key:variable ~data:annotation)
               | _, Type.Top ->
                   (* Don't constrain based on unknown arguments. *)
                   Some constraints
