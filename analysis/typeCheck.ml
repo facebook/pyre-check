@@ -1073,6 +1073,10 @@ module State = struct
                             [
                               {
                                 Argument.name = None;
+                                value = Node.create (Access (Instantiated.Access.create "self"));
+                              };
+                              {
+                                Argument.name = None;
                                 value = Node.create (Access access);
                               };
                             ]
@@ -1592,11 +1596,9 @@ module State = struct
           | Call { call; callee; _ } ->
               infer_annotations type_accumulator call callee
           | Method { call; callee; _ } ->
-              infer_annotations
-                type_accumulator
-                (Annotated.Call.prepend_self_argument call)
-                callee
-          | _ -> type_accumulator
+              infer_annotations type_accumulator call callee
+          | _ ->
+              type_accumulator
         in
         Annotated.Access.fold
           ~resolution

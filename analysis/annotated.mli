@@ -156,7 +156,6 @@ module Call : sig
 
   val arguments: t -> (Expression.t Argument.t) list
   val with_arguments: t -> (Expression.t Argument.t) list -> t
-  val prepend_self_argument: t -> t
 
   val name: t -> Expression.t
 

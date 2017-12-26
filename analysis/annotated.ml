@@ -555,14 +555,31 @@ module Call = struct
     { call = { call with Call.arguments }; kind }
 
 
-  let prepend_self_argument { call; kind } =
-    let self =
-      {
-        Argument.name = None;
-        value = Node.create (Access (Instantiated.Access.create "self"));
-      }
+  let insert_implicit_arguments ~callee { call; kind } =
+    let call =
+      callee
+      >>| (fun { Signature.instantiated = callee; _ } ->
+      let prepend_self call =
+        let self =
+          {
+            Argument.name = None;
+            value = Node.create (Access (Instantiated.Access.create "self"));
+          }
+        in
+        { call with Call.arguments = self :: call.Call.arguments }
+      in
+      match kind with
+      | Method ->
+          prepend_self call
+      | Function ->
+          if Instantiated.Define.is_class_method callee ||
+              Instantiated.Define.is_constructor callee then
+            prepend_self call
+          else
+            call)
+      |> Option.value ~default:call
     in
-    { call = { call with Call.arguments = self :: call.Call.arguments }; kind }
+    { call; kind }
 
 
   let name { call = { Call.name; _ }; _ } =
@@ -664,19 +681,8 @@ module Call = struct
       ~check_parameter
       ~add_error
       ~init
-      ({ kind; _ } as call)
+      call
       { Signature.instantiated = callee; _ } =
-    let call =
-      match kind with
-      | Method ->
-          prepend_self_argument call
-      | Function ->
-          if Instantiated.Define.is_class_method callee ||
-              Instantiated.Define.is_constructor callee then
-            prepend_self_argument call
-          else
-            call
-    in
     let parameter_ok
         ~position
         ~offset
@@ -980,12 +986,11 @@ module Access = struct
                 Element.location;
                 access;
                 annotation;
-                call;
+                call = Call.insert_implicit_arguments ~callee call;
                 callee;
                 backup;
               }
             in
-
             let determined = determine_annotation ~element in
             let resolved = Annotation.create (return_annotation resolution callee) in
             let annotations =
@@ -998,7 +1003,6 @@ module Access = struct
               |> Option.value
                 ~default:(Map.add ~key:access ~data:(Annotation.create determined) annotations)
             in
-
             (Resolution.with_annotations resolution annotations),
             resolved,
             (f accumulator ~annotations ~resolved ~element:(Element.Method element))
@@ -1098,7 +1102,13 @@ module Access = struct
                     |> pick_signature call
                   in
                   let resolved = Annotation.create (return_annotation resolution callee) in
-                  let element = Element.Call { Element.location; call; callee } in
+                  let element =
+                    Element.Call {
+                      Element.location;
+                      call = Call.insert_implicit_arguments ~callee call;
+                      callee;
+                    }
+                  in
                   resolution,
                   resolved,
                   (f accumulator ~annotations ~resolved ~element)
