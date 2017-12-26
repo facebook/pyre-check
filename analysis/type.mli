@@ -96,7 +96,7 @@ val split: t -> t * (t list)
 val class_variable: t -> t option
 
 val assume_any: t -> t
-val instantiate: t -> constraints:(t -> t option) -> t
+val instantiate: ?widen: bool -> t -> constraints:(t -> t option) -> t
 
 (* Takes a map generated from Preprocessing.dequalify_map and a type and dequalifies the type *)
 val dequalify: access Instantiated.Access.Map.t -> t -> t

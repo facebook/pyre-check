@@ -3072,10 +3072,7 @@ let test_check_value_restrictions _ =
        def f(x:float)->str:
            return value_restricted_identity(x)
     |}
-    [
-      "Incompatible parameter type [6]: 1st parameter `x` to call `value_restricted_identity` " ^
-      "expected `typing.Any` but got `float`.";
-    ]
+    []
 
 
 let test_check_conditional_refinement _ =

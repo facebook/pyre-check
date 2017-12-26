@@ -977,7 +977,7 @@ let test_function_signature_constructor _ =
     |}
     "set"
     []
-    ["self", None; "iterable", Some (Type.iterable Type.Bottom)]
+    ["self", None; "iterable", Some (Type.iterable Type.Top)]
     (Some (Type.expression (Type.set Type.Bottom)))
 
 

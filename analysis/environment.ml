@@ -252,11 +252,11 @@ let resolution
   let instantiate
       ({ Node.location; value = { Define.parameters; return_annotation; _ } as define })
       ~constraints =
-    let instantiate_aliases expression =
+    let instantiate_aliases ?(widen = false) expression =
       expression
       >>| fun expression ->
       let annotation = parse_annotation expression in
-      Type.instantiate ~constraints:(Map.find constraints) annotation
+      Type.instantiate ~widen ~constraints:(Map.find constraints) annotation
       |> Type.expression in
     let resolve_parameter parameter_node =
       let { Parameter.annotation; _ } as parameter = Node.value parameter_node in
@@ -265,7 +265,7 @@ let resolution
         Node.value =
           {
             parameter with
-            Parameter.annotation = instantiate_aliases annotation
+            Parameter.annotation = instantiate_aliases ~widen:true annotation
           };
       } in
     {

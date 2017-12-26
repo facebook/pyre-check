@@ -754,9 +754,11 @@ let assume_any = function
   | annotation -> annotation
 
 
-let instantiate annotation ~constraints =
+let instantiate ?(widen = false) annotation ~constraints =
   let rec instantiate annotation =
     match constraints annotation with
+    | Some Bottom when widen ->
+        Top
     | Some replacement ->
         replacement
     | None ->
