@@ -282,7 +282,8 @@ let resolution
     let insert_implicit_arguments { Node.value = define; _ } =
       let arguments = List.map ~f:Node.value arguments in
       if Instantiated.Define.is_class_method define ||
-          Instantiated.Define.is_method define then
+          Instantiated.Define.is_method define ||
+          Instantiated.Define.is_constructor define then
         let self_or_class_argument =
           Signature.Normal {
             Signature.annotation = Type.Object;
