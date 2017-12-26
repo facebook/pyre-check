@@ -152,7 +152,7 @@ module Call : sig
   [@@deriving compare, eq, sexp, show]
 
   val create: kind: kind -> Expression.t Call.t -> t
-  
+
   val call: t -> Expression.t Call.t
   val name: t -> Expression.t
 
@@ -254,6 +254,7 @@ module Access: sig
 
   val fold
     :  resolution: Resolution.t
+    -> ?define: Instantiated.Define.t
     -> initial: 'accumulator
     -> f:
          ('accumulator

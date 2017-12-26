@@ -3515,6 +3515,21 @@ let test_check_constructors _ =
     [
       "Incompatible parameter type [6]: 1st parameter `i` to call `Foo.__init__` expected `int` " ^
       "but got `str`.";
+    ];
+
+  (* Super calls. *)
+  assert_type_errors
+    {|
+      class Super:
+        def __init__(self, i: int) -> None:
+          pass
+      class Foo(Super):
+        def __init__(self, i: int) -> None:
+          super().__init__(self, 'asdf')
+    |}
+    [
+      "Incompatible parameter type [6]: 1st parameter `i` to call `Super.__init__` expected " ^
+      "`int` but got `str`.";
     ]
 
 

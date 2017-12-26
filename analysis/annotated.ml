@@ -865,7 +865,7 @@ module Access = struct
   (* Fold over an access path. Callbacks will be passed the current `accumulator`, the current
       `annotations`, the `resolved` type of the expression so far, as well as the kind of `element`
       we're currently folding over. *)
-  let fold ~resolution ~initial ~f access =
+  let fold ~resolution ?define ~initial ~f access =
     let return_annotation resolution = function
       | Some { Signature.instantiated = callee; _ } ->
           Define.create callee
@@ -902,6 +902,26 @@ module Access = struct
               Type.Parametric { parametric with Type.parameters = inferred }
           | _ -> annotation)
       |> Option.value ~default:annotation
+    in
+
+    (* Resolve `super()` calls. *)
+    let access =
+      match access with
+      | (Access.Call { Node.value = { Expression.Call.name; _ }; _ }) :: tail
+        when Expression.show name = "super" ->
+          (define
+          >>= (fun define ->
+            Define.create define
+            |> Define.parent_definition ~resolution)
+          >>| Class.superclasses ~resolution
+          >>| function
+              | superclass :: _ ->
+                  (Class.name superclass) @ tail
+              | _ ->
+                  access)
+          |> Option.value ~default:access
+      | _ ->
+          access
     in
 
     let rec fold ~accumulator ~reversed_lead ~tail ~annotation ~resolution =

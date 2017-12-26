@@ -957,6 +957,7 @@ module State = struct
               in
               Annotated.Access.fold
                 ~resolution:(Resolution.with_annotations resolution annotations)
+                ~define
                 ~initial:annotations
                 ~f:propagate
                 (Annotated.Access.create access)
@@ -1099,6 +1100,7 @@ module State = struct
         in
         Annotated.Access.fold
           ~resolution
+          ~define
           ~initial:[]
           ~f:check_access
           (Annotated.Access.create access)
