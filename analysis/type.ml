@@ -527,21 +527,6 @@ let is_awaitable = function
       false
 
 
-let rec is_bottom = function
-  | Bottom ->
-      true
-  | Optional annotation ->
-      is_bottom annotation
-  | Parametric { parameters; _ } ->
-      List.exists ~f:is_bottom parameters
-  | Union parameters ->
-      List.exists ~f:is_bottom parameters
-  | Variable { constraints; _ } when constraints = [] ->
-      true
-  | _ ->
-      false
-
-
 let is_generic = function
   | Parametric { name; _ } ->
       Identifier.show name = "typing.Generic"
@@ -583,6 +568,21 @@ let rec is_unknown = function
       List.exists ~f:is_unknown tuple
   | Tuple (Unbounded annotation) ->
       is_unknown annotation
+  | _ ->
+      false
+
+
+let rec is_instantiated = function
+  | Bottom ->
+      true
+  | Optional annotation ->
+      is_instantiated annotation
+  | Parametric { parameters; _ } ->
+      List.exists ~f:is_instantiated parameters
+  | Union parameters ->
+      List.exists ~f:is_instantiated parameters
+  | Variable { constraints; _ } when constraints = [] ->
+      true
   | _ ->
       false
 

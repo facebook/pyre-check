@@ -539,13 +539,14 @@ let test_union _ =
     (Type.union [Type.float; Type.string; Type.bytes])
 
 
-let test_is_bottom _ =
-  assert_true (Type.is_bottom Type.Bottom);
-  assert_true (Type.is_bottom (Type.dictionary ~key:Type.Bottom ~value:Type.Bottom));
-  assert_true (Type.is_bottom (Type.Optional Type.Bottom));
-  assert_false (Type.is_bottom Type.Top);
+let test_is_instantiated _ =
+  assert_true (Type.is_instantiated Type.Bottom);
+  assert_true (Type.is_instantiated (Type.dictionary ~key:Type.Bottom ~value:Type.Bottom));
+  assert_true (Type.is_instantiated (Type.Optional Type.Bottom));
+  assert_false (Type.is_instantiated Type.Top);
   assert_true
-    (Type.is_bottom (Type.Variable { Type.variable = Identifier.create "_T"; constraints = [] }))
+    (Type.is_instantiated
+       (Type.Variable { Type.variable = Identifier.create "_T"; constraints = [] }))
 
 
 let test_is_meta _ =
@@ -777,7 +778,7 @@ let () =
     "create">::test_create;
     "expression">::test_expression;
     "union">::test_union;
-    "is_bottom">::test_is_bottom;
+    "is_instantiated">::test_is_instantiated;
     "is_meta">::test_is_meta;
     "is_unknown">::test_is_unknown;
     "is_fully_resolved">::test_is_fully_resolved;

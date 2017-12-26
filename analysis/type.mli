@@ -70,9 +70,7 @@ val create
 
 val expression: t -> Expression.t
 
-
 val is_awaitable: t -> bool
-val is_bottom: t -> bool
 val is_generic: t -> bool
 val is_meta: t -> bool
 val is_optional: t -> bool
@@ -80,7 +78,11 @@ val is_primitive: t -> bool
 val is_tuple: t -> bool
 val is_unknown: t -> bool
 
+(* Does not contain `Bottom`. *)
+val is_instantiated: t -> bool
+
 val variables: t -> t list
+(* Does not contain `Variable`. *)
 val is_fully_resolved: t -> bool
 
 val is_partially_typed: t -> bool

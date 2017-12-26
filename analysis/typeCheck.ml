@@ -288,7 +288,7 @@ module State = struct
         | MissingParameterAnnotation { annotation = actual; _ }
         | MissingAnnotation { annotation = actual; _ } ->
             due_to_analysis_limitations error ||
-            Type.equal actual Type.Object || Type.is_bottom actual
+            Type.equal actual Type.Object || Type.is_instantiated actual
         | _ ->
             true
       in
@@ -597,7 +597,7 @@ module State = struct
     let combine_annotations left right =
       let add_annotation ~key ~data map =
         if Type.is_unknown data.Annotation.annotation ||
-           Type.is_bottom data.Annotation.annotation ||
+           Type.is_instantiated data.Annotation.annotation ||
            Instantiated.Access.equal key Preprocessing.return_access then
           map
         else
