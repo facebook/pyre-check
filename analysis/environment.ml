@@ -677,7 +677,6 @@ let populate
                 Annotated.Class.create definition
                 |> Annotated.Class.constructors ~resolution
               in
-
               List.iter
                 ~f:(fun constructor ->
                     Reader.register_definition
