@@ -3501,6 +3501,20 @@ let test_check_constructors _ =
       "got `str`.";
       "Incompatible parameter type [6]: 2nd parameter `s` to call `Foo.Foo` expected " ^
       "`typing.Optional[str]` but got `int`.";
+    ];
+
+  (* Explicit call. *)
+  assert_type_errors
+    {|
+      class Foo:
+        def __init__(self, i: int) -> None:
+          pass
+        def foo(self) -> None:
+          Foo.__init__(self, 'asdf')
+    |}
+    [
+      "Incompatible parameter type [6]: 1st parameter `i` to call `Foo.__init__` expected `int` " ^
+      "but got `str`.";
     ]
 
 

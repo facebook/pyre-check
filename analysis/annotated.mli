@@ -152,12 +152,12 @@ module Call : sig
   [@@deriving compare, eq, sexp, show]
 
   val create: kind: kind -> Expression.t Call.t -> t
+  
   val call: t -> Expression.t Call.t
+  val name: t -> Expression.t
 
   val arguments: t -> (Expression.t Argument.t) list
   val with_arguments: t -> (Expression.t Argument.t) list -> t
-
-  val name: t -> Expression.t
 
   (* Some calls are redirected to method calls, e.g. `repr(x)` will call
      `x.__repr__()`. *)

@@ -547,6 +547,11 @@ module Call = struct
     call
 
 
+  let name { call = { Call.name; _ }; _ } =
+    name
+
+
+
   let arguments { call = { Call.arguments; _ }; _ } =
     arguments
 
@@ -573,17 +578,14 @@ module Call = struct
           prepend_self call
       | Function ->
           if Instantiated.Define.is_class_method callee ||
-              Instantiated.Define.is_constructor callee then
+              (Instantiated.Define.is_constructor callee &&
+                not (Instantiated.Call.is_explicit_constructor_call call)) then
             prepend_self call
           else
             call)
       |> Option.value ~default:call
     in
     { call; kind }
-
-
-  let name { call = { Call.name; _ }; _ } =
-    name
 
 
   type redirect = {

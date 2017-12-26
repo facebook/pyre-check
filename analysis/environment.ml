@@ -278,12 +278,13 @@ let resolution
     }
   in
 
-  let instantiate_signature arguments definitions =
+  let instantiate_signature call arguments definitions =
     let insert_implicit_arguments { Node.value = define; _ } =
       let arguments = List.map ~f:Node.value arguments in
       if Instantiated.Define.is_class_method define ||
           Instantiated.Define.is_method define ||
-          Instantiated.Define.is_constructor define then
+          (Instantiated.Define.is_constructor define &&
+            not (Instantiated.Call.is_explicit_constructor_call call)) then
         let self_or_class_argument =
           Signature.Normal {
             Signature.annotation = Type.Object;
@@ -485,7 +486,7 @@ let resolution
            [])
     in
     Reader.function_definitions name
-    >>| instantiate_signature arguments
+    >>| instantiate_signature call arguments
     |> Option.value ~default:[]
   in
 
@@ -541,7 +542,7 @@ let resolution
     in
     (annotation :: successors)
     |> List.find_map ~f:definitions
-    >>| instantiate_signature arguments
+    >>| instantiate_signature call arguments
     |> Option.value ~default:[]
   in
 

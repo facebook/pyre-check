@@ -63,6 +63,20 @@ type access = Access.t
 [@@deriving compare, eq, sexp, show]
 
 
+module Call = struct
+  type t = Expression.t Call.t
+  [@@deriving compare, eq, sexp, show]
+
+  
+  let is_explicit_constructor_call { Call.name; _ } =
+    match name with
+    | { Node.value = Access ((_ :: _) as access); _ } ->
+        (Access.show [List.last_exn access]) = "__init__"
+    | _ ->
+        false
+end
+
+
 module Define = struct
   type t = Statement.t Define.t
   [@@deriving compare, eq, sexp, show]

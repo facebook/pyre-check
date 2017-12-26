@@ -26,6 +26,13 @@ end
 type access = Access.t
 [@@deriving compare, eq, sexp, show]
 
+module Call : sig
+  type t = Expression.t Call.t
+  [@@deriving compare, eq, sexp, show]
+
+  val is_explicit_constructor_call: t -> bool
+end
+
 module Define : sig
   type t = Statement.t Define.t
   [@@deriving compare, eq, sexp, show]
