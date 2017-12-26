@@ -849,6 +849,16 @@ let test_function_signature_variable_instantiation _ =
     "max"
     (normal [Type.Top; Type.Top]);
 
+  (* Don't ever return just bottom. *)
+  assert_not_instantiated
+    {|
+      _T = typing.TypeVar('_T')
+      def identity(a: _T) -> _T:
+        pass
+    |}
+    "identity"
+    (normal [Type.Top]);
+
   (* Indirect constraints. *)
   assert_instantiated
     {|

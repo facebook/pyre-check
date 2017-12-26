@@ -402,7 +402,9 @@ let resolution
         in
         return_annotation
         >>| parse_annotation
-        >>| Type.variables
+        >>= (function
+          | Type.Variable _ -> None  (* Never return bottom as return type. *)
+          | annotation -> Some (Type.variables annotation))
         >>| List.fold ~init:constraints ~f:update_to_bottom
         |> Option.value ~default:constraints
       in
