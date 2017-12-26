@@ -902,7 +902,9 @@ module Access = struct
                   ~actual
                   ~expected =
                 if not (TypeOrder.less_or_equal order ~left:actual ~right:expected ||
-                        Type.mismatch_with_any actual expected) ||
+                        Type.mismatch_with_any actual expected ||
+                        Type.equal actual Type.Top ||
+                        Type.equal expected Type.Top) ||
                    (String.is_prefix ~prefix:"**" (Identifier.show name) &&
                     Argument.is_positional argument) then
                   Some ()
