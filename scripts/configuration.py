@@ -134,6 +134,8 @@ class Configuration:
 
                 if not self._binary:
                     self._binary = os.getenv('PYRE_BINARY')
+                    if self._binary:
+                        LOG.warning('Binary overridden with `%s`', self._binary)
                 if not self._binary:
                     self._binary = configuration.get('binary')
 
