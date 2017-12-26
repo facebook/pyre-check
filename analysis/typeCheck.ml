@@ -1858,7 +1858,7 @@ let check configuration environment ({ Source.path; _ } as source) =
           ();
         {
           error_list =
-            if configuration.strict || configuration.debug then
+            if configuration.debug then
               [{
                 Error.location;
                 kind = Error.UndefinedType annotation;
