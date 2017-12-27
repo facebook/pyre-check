@@ -11,25 +11,28 @@
   open Statement
   open Pyre
 
+  module ExpressionRecord = Expression.Record
+  module StatementRecord = Statement.Record
+
   let with_decorators decorators = function
     | { Node.location; value = Class value } ->
         let decorated = { value with Class.decorators = decorators; } in
         { Node.location; value = Class decorated }
     | { Node.location; value = Define value } ->
-        let decorated = { value with Define.decorators = decorators; } in
+        let decorated = { value with StatementRecord.Define.decorators = decorators; } in
         { Node.location; value = Define decorated }
     | { Node.location; value = Stub (Stub.Class definition) } ->
         let decorated = { definition with Class.decorators = decorators; } in
         { Node.location; value = Stub (Stub.Class decorated) }
     | { Node.location; value = Stub (Stub.Define definition) } ->
-        let decorated = { definition with Define.decorators = decorators; } in
+        let decorated = { definition with StatementRecord.Define.decorators = decorators; } in
         { Node.location; value = Stub (Stub.Define decorated) }
     | _ -> raise (ParserError "Cannot decorate statement")
 
   let extract_access access =
     match access with
     | { Node.value = Access access; _ } -> access
-    | _ -> [Record.Access.Expression access]
+    | _ -> [ExpressionRecord.Access.Expression access]
 
   type entry =
     | Entry of Expression.t Dictionary.entry
@@ -469,13 +472,13 @@ compound_statement:
               | { Node.location; value = Define define } ->
                   [{
                     Node.location;
-                    value = Define { define with Define.parent = Some name };
+                    value = Define { define with StatementRecord.Define.parent = Some name };
                   }]
               | { Node.location; value = Stub (Stub.Define define) } ->
                   [{
                     Node.location;
                     value = Stub
-                      (Stub.Define { define with Define.parent = Some name });
+                      (Stub.Define { define with StatementRecord.Define.parent = Some name });
                   }]
               | {
                   Node.value = If {
@@ -552,7 +555,7 @@ compound_statement:
           {
             Node.location;
             value = Define {
-              Define.name = snd name;
+              StatementRecord.Define.name = snd name;
               parameters;
               body;
               decorators = [];
@@ -568,7 +571,7 @@ compound_statement:
             Node.location = Location.create ~start:definition ~stop:colon_position;
             value = Stub
               (Stub.Define {
-                Define.name = snd name;
+                StatementRecord.Define.name = snd name;
                 parameters;
                 body = [];
                 decorators = [];
@@ -666,13 +669,13 @@ async_statement:
       let location = location_create_with_stop ~start:(fst position) ~stop:(Node.stop statement) in
       match statement with
       | { Node.value = Define value; _ } ->
-          let decorated = { value with Define.async = true } in
+          let decorated = { value with StatementRecord.Define.async = true } in
           {
             Node.location;
             value = Define decorated;
           }
       | { Node.value = Stub (Stub.Define value); _ } ->
-        let decorated = { value with Define.async = true } in
+        let decorated = { value with StatementRecord.Define.async = true } in
         {
           Node.location;
           value = Stub (Stub.Define decorated);
@@ -770,7 +773,7 @@ simple_access:
         { start with Location.stop = stop.Location.stop } in
       let identifiers =
         List.map ~f:snd identifiers
-        |> List.map ~f:(fun identifier -> Record.Access.Identifier identifier) in
+        |> List.map ~f:(fun identifier -> ExpressionRecord.Access.Identifier identifier) in
       location, identifiers
     }
   ;
@@ -830,7 +833,7 @@ simple_access:
   | expression = expression {
       let rec identifier expression =
         match expression with
-        | { Node.location; value = Access [Record.Access.Identifier identifier] } ->
+        | { Node.location; value = Access [ExpressionRecord.Access.Identifier identifier] } ->
             (location, identifier)
         | { Node.location; value = Starred (Starred.Once expression) } ->
            (location,
@@ -944,7 +947,7 @@ import:
       {(fst name) with Location.stop = (fst alias).Location.stop},
       {
         Import.name = snd name;
-        alias = Some [Record.Access.Identifier (snd alias)];
+        alias = Some [ExpressionRecord.Access.Identifier (snd alias)];
       }
     }
   ;
@@ -965,7 +968,7 @@ atom:
   | identifier = identifier {
       {
         Node.location = fst identifier;
-        value = Access [Record.Access.Identifier (snd identifier)];
+        value = Access [ExpressionRecord.Access.Identifier (snd identifier)];
       }
     }
 
@@ -1004,9 +1007,9 @@ atom:
       {
         Node.location = name.Node.location;
         value = Access [
-          Record.Access.Call {
+          ExpressionRecord.Access.Call {
             Node.location = name.Node.location;
-            value = { Record.Call.name; arguments };
+            value = { ExpressionRecord.Call.name; arguments };
           };
         ];
       }
@@ -1179,7 +1182,7 @@ expression:
     RIGHTBRACKET {
       {
         Node.location = head.Node.location;
-        value = Access ((extract_access head) @ [Record.Access.Subscript subscripts]);
+        value = Access ((extract_access head) @ [ExpressionRecord.Access.Subscript subscripts]);
       }
     }
 
@@ -1387,15 +1390,15 @@ argument:
   ;
 
 subscript:
-  | index = test { Record.Access.Index index }
+  | index = test { ExpressionRecord.Access.Index index }
   | ELLIPSES {
-      Record.Access.Index (Node.create (Access (Access.create "...")))
+      ExpressionRecord.Access.Index (Node.create (Access (Access.create "...")))
     }
   | lower = test?; COLON; upper = test? {
-      Record.Access.Slice { Record.Access.lower; upper; step = None }
+      ExpressionRecord.Access.Slice { ExpressionRecord.Access.lower; upper; step = None }
     }
   | lower = test?; COLON; upper = test?; COLON; step = test? {
-      Record.Access.Slice { Record.Access.lower; upper; step }
+      ExpressionRecord.Access.Slice { ExpressionRecord.Access.lower; upper; step }
     }
   ;
 

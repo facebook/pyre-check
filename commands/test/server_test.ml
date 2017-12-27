@@ -573,7 +573,7 @@ let test_incremental_repopulate _ =
   in
   let get_annotation access_name =
     match Reader.function_definitions (Ast.Expression.Access.create access_name) with
-    | Some [ { Ast.Node.value = { Ast.Statement.Define.return_annotation; _ }; _ } ] ->
+    | Some [ { Ast.Node.value = { Ast.Statement.Record.Define.return_annotation; _ }; _ } ] ->
         return_annotation
     | _ -> None
   in

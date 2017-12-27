@@ -286,7 +286,7 @@ let shared_memory_reader
       let register_definition
           ~path
           ?name_override
-          ({ Ast.Node.value = { Ast.Statement.Define.name; _ }; _ } as definition) =
+          ({ Ast.Node.value = { Ast.Statement.Record.Define.name; _ }; _ } as definition) =
         let name = Option.value ~default:name name_override in
         DependencyReader.add_function_key ~path name;
         let definitions =

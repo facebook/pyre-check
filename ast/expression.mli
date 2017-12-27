@@ -226,6 +226,10 @@ module Call : sig
   val is_explicit_constructor_call: t -> bool
 end
 
+(* Aliases for when we open both Statement and Expression. *)
+module RecordAccess = Record.Access
+module RecordCall = Record.Call
+
 val negate: t -> t
 
 val normalize: t -> t

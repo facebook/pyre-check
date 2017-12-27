@@ -15,7 +15,7 @@ module Error = PyreError
 
 let mock_define =
   +{
-    Statement.Define.name = Access.create "foo";
+    Statement.Record.Define.name = Access.create "foo";
     parameters = [];
     body = [];
     decorators = [];

@@ -47,7 +47,7 @@ let qualify source =
         and qualify_define
             ?(parent=None)
             qualifier
-            ({ Define.name; Define.body; _ } as definition) =
+            ({ RecordDefine.name; body; _ } as definition) =
           let qualified_name = qualifier @ name in
           let rec qualify_in_define node =
             match node.Node.value with
@@ -122,7 +122,7 @@ let qualify source =
           in
           {
             definition with
-            Define.name = qualified_name;
+            RecordDefine.name = qualified_name;
             body = List.map ~f:qualify_in_define body;
             parent;
           }
@@ -140,13 +140,13 @@ let qualify source =
               [{ Node.location; value = Stub (Stub.Class qualified) }]
 
           (* Add `name -> qualifier.name` for functions, not methods. *)
-          | Define definition when not (Instantiated.Define.is_method definition) ->
+          | Define definition when not (Define.is_method definition) ->
               let qualified = qualify_define qualifier definition in
-              Map.add map ~key:definition.Define.name ~data:qualified.Define.name,
+              Map.add map ~key:definition.RecordDefine.name ~data:qualified.RecordDefine.name,
               [{ Node.location; value = Define qualified }]
-          | Stub (Stub.Define definition) when not (Instantiated.Define.is_method definition) ->
+          | Stub (Stub.Define definition) when not (Define.is_method definition) ->
               let qualified = qualify_define qualifier definition in
-              Map.add map ~key:definition.Define.name ~data:qualified.Define.name,
+              Map.add map ~key:definition.RecordDefine.name ~data:qualified.RecordDefine.name,
               [{ Node.location; value = Stub (Stub.Define qualified) }]
           | _ ->
               map, [statement]
@@ -167,9 +167,9 @@ let qualify source =
           | {
             Node.location;
             value = Access [
-                Record.Access.Call {
+                RecordAccess.Call {
                   Node.value = ({
-                      Record.Call.name = { Node.value = Access access; _; };
+                      RecordCall.name = { Node.value = Access access; _; };
                       _;
                     } as call);
                   _;
@@ -180,11 +180,11 @@ let qualify source =
                 match List.rev access with
                 | name :: qualifier ->
                     let call_access =
-                      Record.Access.Call {
+                      RecordAccess.Call {
                         Node.location;
                         value = {
                           call with
-                          Record.Call.name = { Node.location; value = Access [name] };
+                          RecordCall.name = { Node.location; value = Access [name] };
                         };
                       }
                     in
@@ -240,7 +240,7 @@ let qualify source =
             let from =
               let dots, postfix =
                 let is_dot = function
-                  | Record.Access.Identifier identifier when Identifier.show identifier = "" -> true
+                  | RecordAccess.Identifier identifier when Identifier.show identifier = "" -> true
                   | _ -> false
                 in
                 List.split_while ~f:is_dot from
@@ -426,10 +426,10 @@ let expand_returns source =
                       | _ -> sofar
                   end)
                 in
-                Visit.visit false (Source.create define.Define.body)
+                Visit.visit false (Source.create define.RecordDefine.body)
               in
               let has_return_in_finally =
-                match List.last define.Define.body with
+                match List.last define.RecordDefine.body with
                 | Some { Node.value = Try { Try.finally; _ }; _ } ->
                     begin
                       match List.last finally with
@@ -444,13 +444,13 @@ let expand_returns source =
               if has_yield || has_return_in_finally then
                 define
               else
-                match List.last define.Define.body with
+                match List.last define.RecordDefine.body with
                 | Some { Node.value = Return _; _ } ->
                     define
                 | Some statement ->
                     {
                       define with
-                      Define.body = define.Define.body @ [{
+                      RecordDefine.body = define.RecordDefine.body @ [{
                           Node.location = statement.Node.location;
                           value = Return None;
                         }];
@@ -484,14 +484,14 @@ let expand_yield_from source =
               })
           } ->
             let call name =
-              Record.Access.Call
+              RecordAccess.Call
                 (Node.create
                    {
-                     Record.Call.name = Node.create (Access (Access.create name));
+                     RecordCall.name = Node.create (Access (Access.create name));
                      arguments = [];
                    })
             in
-            let add_call = [Record.Access.Expression yield; call "__iter__"] in
+            let add_call = [RecordAccess.Expression yield; call "__iter__"] in
             state,
             [{ Node.location;
                value = YieldFrom {
@@ -531,10 +531,10 @@ let expand_for_loop source =
                 let value =
                   let next =
                     let call name =
-                      Record.Access.Call
+                      RecordAccess.Call
                         (Node.create
                            {
-                             Record.Call.name = Node.create (Access (Access.create name));
+                             RecordCall.name = Node.create (Access (Access.create name));
                              arguments = [];
                            })
                     in
@@ -547,7 +547,7 @@ let expand_for_loop source =
                    | Access access ->
                        access @ next
                    | expression ->
-                       [Record.Access.Expression (Node.create expression)] @ next)
+                       [RecordAccess.Expression (Node.create expression)] @ next)
                 in
                 {
                   Node.location;
@@ -612,8 +612,8 @@ let expand_excepts source =
                     let assume =
                       let annotation: Expression.t =
                         let subscript =
-                          let index value = Record.Access.Index value in
-                          [Record.Access.Subscript (List.map ~f:index values)]
+                          let index value = RecordAccess.Index value in
+                          [RecordAccess.Subscript (List.map ~f:index values)]
                         in
                         {
                           Node.location;
@@ -687,7 +687,7 @@ let defines ({ Source.statements; _ } as source) =
   let toplevel =
     Node.create
       {
-        Define.name = Access.create "$toplevel";
+        RecordDefine.name = Access.create "$toplevel";
         parameters = [];
         body = statements;
         decorators = [];
@@ -699,7 +699,7 @@ let defines ({ Source.statements; _ } as source) =
       }
   in
   let module Collector = Visit.StatementCollector(struct
-      type t = Statement.define Node.t
+      type t = Define.t Node.t
       let predicate = function
         | { Node.location; value = Define define } ->
             Some ({ Node.location; Node.value = define })

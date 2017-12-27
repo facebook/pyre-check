@@ -30,7 +30,7 @@ val expand_ternary_assign: Source.t -> Source.t
 (* List of function definitions in a source. *)
 val defines
   :  Source.t
-  -> Statement.define Node.t list
+  -> Statement.Define.t Node.t list
 
 (* List of class definitions in a source. *)
 val classes

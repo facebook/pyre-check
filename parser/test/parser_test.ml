@@ -193,8 +193,8 @@ let test_access _ =
     "1.0.b"
     [
       +Expression (+Access [
-          Record.Access.Expression (+Float 1.0);
-          Record.Access.Identifier ~~"b";
+          RecordAccess.Expression (+Float 1.0);
+          RecordAccess.Identifier ~~"b";
         ]);
     ];
   assert_parsed_equal
@@ -207,17 +207,17 @@ let test_access _ =
     "a[1]"
     [
       +Expression (+Access [
-          Record.Access.Identifier ~~"a";
-          Record.Access.Subscript [Record.Access.Index (+Integer 1)];
+          RecordAccess.Identifier ~~"a";
+          RecordAccess.Subscript [RecordAccess.Index (+Integer 1)];
         ])
     ];
   assert_parsed_equal
     "a[1 < 2]"
     [
       +Expression (+Access [
-          Record.Access.Identifier ~~"a";
-          Record.Access.Subscript [
-            Record.Access.Index (+ComparisonOperator {
+          RecordAccess.Identifier ~~"a";
+          RecordAccess.Subscript [
+            RecordAccess.Index (+ComparisonOperator {
                 ComparisonOperator.left = +Integer 1;
                 right = [ComparisonOperator.LessThan, +Integer 2];
               });
@@ -228,27 +228,27 @@ let test_access _ =
     "a[1].b"
     [
       +Expression (+Access [
-          Record.Access.Identifier ~~"a";
-          Record.Access.Subscript [Record.Access.Index (+Integer 1)];
-          Record.Access.Identifier ~~"b";
+          RecordAccess.Identifier ~~"a";
+          RecordAccess.Subscript [RecordAccess.Index (+Integer 1)];
+          RecordAccess.Identifier ~~"b";
         ])
     ];
   assert_parsed_equal
     "a[b]"
     [
       +Expression (+Access [
-          Record.Access.Identifier ~~"a";
-          Record.Access.Subscript [Record.Access.Index !"b"];
+          RecordAccess.Identifier ~~"a";
+          RecordAccess.Subscript [RecordAccess.Index !"b"];
         ])
     ];
   assert_parsed_equal
     "a[:]"
     [
       +Expression (+Access [
-          Record.Access.Identifier ~~"a";
-          Record.Access.Subscript [
-            Record.Access.Slice {
-              Record.Access.lower = None;
+          RecordAccess.Identifier ~~"a";
+          RecordAccess.Subscript [
+            RecordAccess.Slice {
+              RecordAccess.lower = None;
               upper = None;
               step = None;
             };
@@ -259,10 +259,10 @@ let test_access _ =
     "a[1:]"
     [
       +Expression (+Access [
-          Record.Access.Identifier ~~"a";
-          Record.Access.Subscript [
-            Record.Access.Slice {
-              Record.Access.lower = Some (+Integer 1);
+          RecordAccess.Identifier ~~"a";
+          RecordAccess.Subscript [
+            RecordAccess.Slice {
+              RecordAccess.lower = Some (+Integer 1);
               upper = None;
               step = None;
             };
@@ -273,10 +273,10 @@ let test_access _ =
     "a[::2]"
     [
       +Expression (+Access [
-          Record.Access.Identifier ~~"a";
-          Record.Access.Subscript [
-            Record.Access.Slice {
-              Record.Access.lower = None;
+          RecordAccess.Identifier ~~"a";
+          RecordAccess.Subscript [
+            RecordAccess.Slice {
+              RecordAccess.lower = None;
               upper = None;
               step = Some (+Integer 2);
             };
@@ -287,10 +287,10 @@ let test_access _ =
     "a[:1]"
     [
       +Expression (+Access [
-          Record.Access.Identifier ~~"a";
-          Record.Access.Subscript [
-            Record.Access.Slice {
-              Record.Access.lower = None;
+          RecordAccess.Identifier ~~"a";
+          RecordAccess.Subscript [
+            RecordAccess.Slice {
+              RecordAccess.lower = None;
               upper = Some (+Integer 1);
               step = None;
             };
@@ -301,10 +301,10 @@ let test_access _ =
     "a[:1 if True else 2]"
     [
       +Expression (+Access [
-          Record.Access.Identifier ~~"a";
-          Record.Access.Subscript [
-            Record.Access.Slice {
-              Record.Access.lower = None;
+          RecordAccess.Identifier ~~"a";
+          RecordAccess.Subscript [
+            RecordAccess.Slice {
+              RecordAccess.lower = None;
               upper = Some
                   (+Ternary {
                      Ternary.target = +Integer 1;
@@ -320,10 +320,10 @@ let test_access _ =
     "a[1:1]"
     [
       +Expression (+Access [
-          Record.Access.Identifier ~~"a";
-          Record.Access.Subscript [
-            Record.Access.Slice {
-              Record.Access.lower = Some (+Integer 1);
+          RecordAccess.Identifier ~~"a";
+          RecordAccess.Subscript [
+            RecordAccess.Slice {
+              RecordAccess.lower = Some (+Integer 1);
               upper = Some (+Integer 1);
               step = None;
             };
@@ -334,10 +334,10 @@ let test_access _ =
     "a[1,2]"
     [
       +Expression (+Access [
-          Record.Access.Identifier ~~"a";
-          Record.Access.Subscript [
-            Record.Access.Index (+Integer 1);
-            Record.Access.Index (+Integer 2);
+          RecordAccess.Identifier ~~"a";
+          RecordAccess.Subscript [
+            RecordAccess.Index (+Integer 1);
+            RecordAccess.Index (+Integer 2);
           ];
         ]);
     ];
@@ -345,14 +345,14 @@ let test_access _ =
     "a[:1,2]"
     [
       +Expression (+Access [
-          Record.Access.Identifier ~~"a";
-          Record.Access.Subscript [
-            Record.Access.Slice {
-              Record.Access.lower = None;
+          RecordAccess.Identifier ~~"a";
+          RecordAccess.Subscript [
+            RecordAccess.Slice {
+              RecordAccess.lower = None;
               upper = Some (+Integer 1);
               step = None;
             };
-            Record.Access.Index (+Integer 2);
+            RecordAccess.Index (+Integer 2);
           ];
         ]);
     ]
@@ -391,7 +391,7 @@ let test_define _ =
     "def foo(a):\n  1"
     [
       +Define {
-        Define.name = Access.create "foo";
+        RecordDefine.name = Access.create "foo";
         parameters = [
           +{
             Parameter.name = ~~"a";
@@ -412,7 +412,7 @@ let test_define _ =
     "def foo(*, a):\n  1"
     [
       +Define {
-        Define.name = Access.create "foo";
+        RecordDefine.name = Access.create "foo";
         parameters = [
           +{
             Parameter.name = ~~"*";
@@ -438,7 +438,7 @@ let test_define _ =
     "def foo(**a):\n  1"
     [
       +Define {
-        Define.name = Access.create "foo";
+        RecordDefine.name = Access.create "foo";
         parameters = [
           +{
             Parameter.name = ~~"**a";
@@ -459,7 +459,7 @@ let test_define _ =
     "async def foo():\n  1"
     [
       +Define {
-        Define.name = Access.create "foo";
+        RecordDefine.name = Access.create "foo";
         parameters = [];
         body = [+Expression (+Integer 1)];
         decorators = [];
@@ -474,7 +474,7 @@ let test_define _ =
     "async def foo():\n  ..."
     [
       +Stub (Stub.Define {
-          Define.name = Access.create "foo";
+          RecordDefine.name = Access.create "foo";
           parameters = [];
           body = [];
           decorators = [];
@@ -489,7 +489,7 @@ let test_define _ =
     "@foo\nasync def foo():\n  1"
     [
       +Define {
-        Define.name = Access.create "foo";
+        RecordDefine.name = Access.create "foo";
         parameters = [];
         body = [+Expression (+Integer 1)];
         decorators = [!"foo"];
@@ -504,7 +504,7 @@ let test_define _ =
     "@decorator\ndef foo(a):\n  1"
     [
       +Define {
-        Define.name = Access.create "foo";
+        RecordDefine.name = Access.create "foo";
         parameters = [
           +{
             Parameter.name = ~~"a";
@@ -525,7 +525,7 @@ let test_define _ =
     "@foo\n\n@bar\ndef foo(a):\n  1"
     [
       +Define {
-        Define.name = Access.create "foo";
+        RecordDefine.name = Access.create "foo";
         parameters = [
           +{
             Parameter.name = ~~"a";
@@ -546,7 +546,7 @@ let test_define _ =
     "def foo(a, b):\n  1"
     [
       +Define {
-        Define.name = Access.create "foo";
+        RecordDefine.name = Access.create "foo";
         parameters = [
           +{
             Parameter.name = ~~"a";
@@ -572,7 +572,7 @@ let test_define _ =
     "def foo(a = 1, b):\n  1"
     [
       +Define {
-        Define.name = Access.create "foo";
+        RecordDefine.name = Access.create "foo";
         parameters = [
           +{
             Parameter.name = ~~"a";
@@ -598,7 +598,7 @@ let test_define _ =
     "def foo(a=()):\n  1"
     [
       +Define {
-        Define.name = Access.create "foo";
+        RecordDefine.name = Access.create "foo";
         parameters = [
           +{
             Parameter.name = ~~"a";
@@ -619,7 +619,7 @@ let test_define _ =
     "def foo(): 1; 2"
     [
       +Define {
-        Define.name = Access.create "foo";
+        RecordDefine.name = Access.create "foo";
         parameters = [];
         body = [+Expression (+Integer 1); +Expression (+Integer 2)];
         decorators = [];
@@ -634,7 +634,7 @@ let test_define _ =
     "def foo():\n  1\n  2\n3"
     [
       +Define {
-        Define.name = Access.create "foo";
+        RecordDefine.name = Access.create "foo";
         parameters = [];
         body = [+Expression (+Integer 1); +Expression (+Integer 2)];
         decorators = [];
@@ -650,11 +650,11 @@ let test_define _ =
     "def foo():\n  def bar():\n    1\n    2\n3"
     [
       +Define {
-        Define.name = Access.create "foo";
+        RecordDefine.name = Access.create "foo";
         parameters = [];
         body = [
           +Define {
-            Define.name = Access.create "bar";
+            RecordDefine.name = Access.create "bar";
             parameters = [];
             body = [+Expression (+Integer 1); +Expression (+Integer 2)];
             decorators = [];
@@ -679,7 +679,7 @@ let test_define _ =
     "def foo(a: int):  1"
     [
       +Define {
-        Define.name = Access.create "foo";
+        RecordDefine.name = Access.create "foo";
         parameters = [
           +{
             Parameter.name = ~~"a";
@@ -700,7 +700,7 @@ let test_define _ =
     "def foo(a: int = 1):  1"
     [
       +Define {
-        Define.name = Access.create "foo";
+        RecordDefine.name = Access.create "foo";
         parameters = [
           +{
             Parameter.name = ~~"a";
@@ -721,7 +721,7 @@ let test_define _ =
     "def foo(a: int, b: string):  1"
     [
       +Define {
-        Define.name = Access.create "foo";
+        RecordDefine.name = Access.create "foo";
         parameters = [
           +{
             Parameter.name = ~~"a";
@@ -747,15 +747,15 @@ let test_define _ =
     "def foo(a: Tuple[int, str]):\n  1"
     [
       +Define {
-        Define.name = Access.create "foo";
+        RecordDefine.name = Access.create "foo";
         parameters = [
           +{
             Parameter.name = ~~"a";
             value = None;
             annotation = Some
                 (+Access [
-                   Record.Access.Identifier ~~"Tuple";
-                   Record.Access.Subscript [Record.Access.Index !"int"; Record.Access.Index !"str"];
+                   RecordAccess.Identifier ~~"Tuple";
+                   RecordAccess.Subscript [RecordAccess.Index !"int"; RecordAccess.Index !"str"];
                  ]);
           };
         ];
@@ -772,7 +772,7 @@ let test_define _ =
     "def foo(a, b,) -> c:\n  1"
     [
       +Define {
-        Define.name = Access.create "foo";
+        RecordDefine.name = Access.create "foo";
         parameters = [
           +{
             Parameter.name = ~~"a";
@@ -798,7 +798,7 @@ let test_define _ =
     "def foo() -> str:\n  1\n  2"
     [
       +Define {
-        Define.name = Access.create "foo";
+        RecordDefine.name = Access.create "foo";
         parameters = [];
         body = [+Expression (+Integer 1); +Expression (+Integer 2)];
         decorators = [];
@@ -817,7 +817,7 @@ let test_define _ =
     |})
     [
       +Define {
-        Define.name = Access.create "foo";
+        RecordDefine.name = Access.create "foo";
         parameters = [];
         body = [+Return (Some (+Integer 4))];
         decorators = [];
@@ -837,7 +837,7 @@ let test_define _ =
     |})
     [
       +Define {
-        Define.name = Access.create "foo";
+        RecordDefine.name = Access.create "foo";
         parameters = [];
         body = [+Return (Some (+Integer 4))];
         decorators = [];
@@ -857,7 +857,7 @@ let test_define _ =
     |})
     [
       +Define {
-        Define.name = Access.create "foo";
+        RecordDefine.name = Access.create "foo";
         parameters = [];
         body = [+Return (Some (+Integer 4))];
         decorators = [];
@@ -1588,14 +1588,14 @@ let test_comparison _ =
 let test_call _ =
   assert_parsed_equal
     "foo()"
-    [+Expression (+Access [Record.Access.Call (+{ Record.Call.name = !"foo"; arguments = []; })])];
+    [+Expression (+Access [RecordAccess.Call (+{ RecordCall.name = !"foo"; arguments = []; })])];
   assert_parsed_equal
     "foo(a for a in [])"
     [
       +Expression
         (+Access [
-           Record.Access.Call (+{
-               Record.Call.name = !"foo";
+           RecordAccess.Call (+{
+               RecordCall.name = !"foo";
                arguments = [{
                    Argument.name = None;
                    value = +Generator {
@@ -1616,8 +1616,8 @@ let test_call _ =
     [
       +Expression
         (+Access [
-           Record.Access.Call (+{
-               Record.Call.name = !"foo";
+           RecordAccess.Call (+{
+               RecordCall.name = !"foo";
                arguments = [{
                    Argument.name = None;
                    value = +Generator {
@@ -1638,8 +1638,8 @@ let test_call _ =
     [
       +Expression
         (+Access [
-           Record.Access.Call (+{
-               Record.Call.name = !"foo";
+           RecordAccess.Call (+{
+               RecordCall.name = !"foo";
                arguments = [
                  { Argument.name = None; value = +Integer 1 };
                  { Argument.name = None; value = +Integer 2 };
@@ -1652,8 +1652,8 @@ let test_call _ =
     [
       +Expression
         (+Access [
-           Record.Access.Call  (+{
-               Record.Call.name = !"foo";
+           RecordAccess.Call  (+{
+               RecordCall.name = !"foo";
                arguments = [
                  { Argument.name = None; value = (+Tuple [+Integer 1; +Integer 2]) };
                ];
@@ -1665,8 +1665,8 @@ let test_call _ =
     [
       +Expression
         (+Access [
-           Record.Access.Call (+{
-               Record.Call.name = !"foo";
+           RecordAccess.Call (+{
+               RecordCall.name = !"foo";
                arguments = [
                  { Argument.name = None; value = !"x"; };
                  { Argument.name = None; value = +Integer 1 };
@@ -1680,9 +1680,9 @@ let test_call _ =
     [
       +Expression
         (+Access [
-           Record.Access.Identifier ~~"a";
-           Record.Access.Call (+{
-               Record.Call.name = !"foo";
+           RecordAccess.Identifier ~~"a";
+           RecordAccess.Call (+{
+               RecordCall.name = !"foo";
                arguments = [
                  { Argument.name = None; value = !"x"; };
                ];
@@ -1694,8 +1694,8 @@ let test_call _ =
     [
       +Expression
         (+Access [
-           Record.Access.Call (+{
-               Record.Call.name = !"foo";
+           RecordAccess.Call (+{
+               RecordCall.name = !"foo";
                arguments = [
                  { Argument.name = None; value = +Integer 1 };
                  {
@@ -1715,8 +1715,8 @@ let test_call _ =
     [
       +Expression
         (+Access [
-           Record.Access.Call (+{
-               Record.Call.name = !"foo";
+           RecordAccess.Call (+{
+               RecordCall.name = !"foo";
                arguments = [
                  { Argument.name = None; value = +Integer 1 };
                  {
@@ -1835,7 +1835,7 @@ let test_class _ =
         bases = [];
         body = [
           +Define {
-            Define.name = Access.create "bar";
+            RecordDefine.name = Access.create "bar";
             parameters = [];
             body = [+Pass];
             decorators = [];
@@ -1859,11 +1859,11 @@ let test_class _ =
         bases = [];
         body = [
           +Define {
-            Define.name = Access.create "bar";
+            RecordDefine.name = Access.create "bar";
             parameters = [];
             body = [
               +Define {
-                Define.name = Access.create "baz";
+                RecordDefine.name = Access.create "baz";
                 parameters = [];
                 body = [+Pass];
                 decorators = [];
@@ -1978,7 +1978,7 @@ let test_class _ =
         bases = [{ Argument.name = None; value = !"superfoo" }];
         body = [
           +Define {
-            Define.name = Access.create "bar";
+            RecordDefine.name = Access.create "bar";
             parameters = [];
             body = [+Pass];
             decorators = [];
@@ -2002,7 +2002,7 @@ let test_class _ =
         bases = [];
         body = [
           +Define {
-            Define.name = Access.create "__init__";
+            RecordDefine.name = Access.create "__init__";
             parameters = [
               +{
                 Parameter.name = ~~"self";
@@ -2046,7 +2046,7 @@ let test_class _ =
         bases = [];
         body = [
           +Define {
-            Define.name = Access.create "bar";
+            RecordDefine.name = Access.create "bar";
             parameters = [];
             body = [+Pass];
             decorators = [];
@@ -2076,7 +2076,7 @@ let test_class _ =
         bases = [];
         body = [
           +Define {
-            Define.name = Access.create "bar";
+            RecordDefine.name = Access.create "bar";
             parameters = [];
             body = [+Pass];
             decorators = [];
@@ -2158,8 +2158,8 @@ let test_assign _ =
         annotation = None;
         value = Some (
             +Access [
-              Record.Access.Call (+{ Record.Call.name = !"a"; arguments = []; });
-              Record.Access.Call (+{ Record.Call.name = !"foo"; arguments = []; })]
+              RecordAccess.Call (+{ RecordCall.name = !"a"; arguments = []; });
+              RecordAccess.Call (+{ RecordCall.name = !"foo"; arguments = []; })]
           );
         compound = None;
         parent = None;
@@ -2431,8 +2431,8 @@ let test_if _ =
       +If {
         If.test = +BooleanOperator {
           BooleanOperator.left = +Access [
-            Record.Access.Call (+{
-                Record.Call.name = !"isinstance";
+            RecordAccess.Call (+{
+                RecordCall.name = !"isinstance";
                 arguments = [
                   { Argument.name = None; value = !"x"; };
                   { Argument.name = None; value = !"int" };
@@ -2458,8 +2458,8 @@ let test_if _ =
           operator = BooleanOperator.And;
           right = +ComparisonOperator {
             ComparisonOperator.left = +Access [
-              Record.Access.Call (+{
-                  Record.Call.name = !"foo";
+              RecordAccess.Call (+{
+                  RecordCall.name = !"foo";
                   arguments = [
                     { Argument.name = None; value = !"x"; };
                   ];
@@ -3150,8 +3150,8 @@ let test_stubs _ =
             Assign.target = !"a";
             annotation = Some
                 (+Access [
-                   Record.Access.Identifier ~~"Tuple";
-                   Record.Access.Subscript [Record.Access.Index !"str"];
+                   RecordAccess.Identifier ~~"Tuple";
+                   RecordAccess.Subscript [RecordAccess.Index !"str"];
                  ]);
             value = None;
             compound = None;
@@ -3167,10 +3167,10 @@ let test_stubs _ =
             Assign.target = !"a";
             annotation = Some
                 (+Access [
-                   Record.Access.Identifier ~~"Tuple";
-                   Record.Access.Subscript [
-                     Record.Access.Index !"str";
-                     Record.Access.Index !"...";
+                   RecordAccess.Identifier ~~"Tuple";
+                   RecordAccess.Subscript [
+                     RecordAccess.Index !"str";
+                     RecordAccess.Index !"...";
                    ];
                  ]);
             value = None;
@@ -3187,8 +3187,8 @@ let test_stubs _ =
             Assign.target = !"a";
             annotation = Some
                 (+Access [
-                   Record.Access.Identifier ~~"Optional";
-                   Record.Access.Subscript [Record.Access.Index !"int"];
+                   RecordAccess.Identifier ~~"Optional";
+                   RecordAccess.Subscript [RecordAccess.Index !"int"];
                  ]);
             value = None;
             compound = None;
@@ -3222,7 +3222,7 @@ let test_stubs _ =
     [
       +Stub
         (Stub.Define {
-            Define.name = Access.create "foo";
+            RecordDefine.name = Access.create "foo";
             parameters = [
               +{
                 Parameter.name = ~~"a";
@@ -3244,7 +3244,7 @@ let test_stubs _ =
     [
       +Stub
         (Stub.Define {
-            Define.name = Access.create "foo";
+            RecordDefine.name = Access.create "foo";
             parameters = [
               +{
                 Parameter.name = ~~"a";
@@ -3266,7 +3266,7 @@ let test_stubs _ =
     [
       +Stub
         (Stub.Define {
-            Define.name = Access.create "foo";
+            RecordDefine.name = Access.create "foo";
             parameters = [
               +{
                 Parameter.name = ~~"a";
@@ -3289,7 +3289,7 @@ let test_stubs _ =
     [
       +Stub
         (Stub.Define {
-            Define.name = Access.create "foo";
+            RecordDefine.name = Access.create "foo";
             parameters = [
               +{
                 Parameter.name = ~~"a";

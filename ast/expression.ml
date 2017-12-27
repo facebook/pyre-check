@@ -377,6 +377,11 @@ module Call = struct
 end
 
 
+(* Aliases for when we open both Statement and Expression. *)
+module RecordAccess = Record.Access
+module RecordCall = Record.Call
+
+
 let negate ({ Node.location; _ } as node) =
   {
     Node.location;

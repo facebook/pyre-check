@@ -10,14 +10,12 @@ open Ast.Expression
 open Ast.Statement
 open Cfg
 
-module Instantiated = Ast.Instantiated
-
 open Test
 
 
 let assert_cfg body expected =
   let define = {
-    Define.name = Access.create "foo";
+    Record.Define.name = Access.create "foo";
     parameters = [];
     body;
     decorators = [];
@@ -36,7 +34,7 @@ let assert_cfg body expected =
 
 let assert_dot ?(precondition=fun _ -> "") body expected =
   let define = {
-    Define.name = Access.create "foo";
+    Record.Define.name = Access.create "foo";
     parameters = [];
     body;
     decorators = [];

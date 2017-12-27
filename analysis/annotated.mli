@@ -48,11 +48,11 @@ module Class : sig
     type t
     [@@deriving compare, eq, sexp, show]
 
-    val create: define: Statement.define -> parent: parent_class -> t
+    val create: define: Define.t -> parent: parent_class -> t
 
     val name: t -> Access.t
 
-    val define: t -> Statement.define
+    val define: t -> Define.t
     val parent: t -> parent_class
 
     val parameter_annotations
@@ -84,7 +84,7 @@ module Class : sig
     -> resolution: Resolution.t
     -> t list
 
-  val constructors: t -> resolution: Resolution.t -> Statement.define list
+  val constructors: t -> resolution: Resolution.t -> Define.t list
   val methods: t -> Method.t list
 
   val is_protocol: t -> bool
@@ -111,7 +111,7 @@ module Define : sig
   type t
   [@@deriving compare, eq, sexp, show]
 
-  val create: Statement.t Define.t -> t
+  val create: Define.t -> t
 
   val parameter_annotations
     :  t
@@ -254,7 +254,7 @@ module Access: sig
 
   val fold
     :  resolution: Resolution.t
-    -> ?define: Instantiated.Define.t
+    -> ?define: Statement.Define.t
     -> initial: 'accumulator
     -> f:
          ('accumulator

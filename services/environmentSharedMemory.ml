@@ -14,9 +14,9 @@ module SharedMemory = Hack_parallel.Std.SharedMem
 
 (** Keys *)
 module AccessKey = struct
-  type t = Expression.t Record.Access.t
-  let to_string = Format.asprintf "%a" Expression.pp_expression_access_list
-  let compare = Record.Access.compare Expression.compare
+  type t = Access.t
+  let to_string = Access.show
+  let compare = Access.compare
 end
 
 module TypeKey = struct
@@ -40,13 +40,13 @@ end
 
 (** Values *)
 module FunctionKeyValue = struct
-  type t = Expression.t Record.Access.t list
+  type t = Access.t list
   let prefix = Prefix.make ()
   let description = "Function keys"
 end
 
 module GlobalKeyValue = struct
-  type t = Expression.t Record.Access.t list
+  type t = Access.t list
   let prefix = Prefix.make ()
   let description = "Global keys"
 end
@@ -83,7 +83,7 @@ module ClassValue = struct
 end
 
 module FunctionValue = struct
-  type t = (Statement.define Node.t) list
+  type t = (Define.t Node.t) list
   let prefix = Prefix.make ()
   let description = "Function"
 end

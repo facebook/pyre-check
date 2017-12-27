@@ -104,7 +104,7 @@ let environment =
 
 
 let empty_define = {
-  Define.name = Access.create "$empty";
+  Record.Define.name = Access.create "$empty";
   parameters = [];
   body = [];
   decorators = [];
@@ -136,7 +136,12 @@ let create
     in
     List.map ~f:annotify annotations
   in
-  let define = +{ define with Define.return_annotation = Some (Type.expression expected_return) } in
+  let define =
+    +{
+      define with
+      Record.Define.return_annotation = Some (Type.expression expected_return);
+    }
+  in
   State.create ~environment ~annotations ~define ()
 
 
@@ -155,7 +160,7 @@ let assert_initial
     ?(initial = (fun environment define -> State.initial_forward environment define))
     expected =
   let define = {
-    Define.name = Access.create "foo";
+    Record.Define.name = Access.create "foo";
     parameters = List.map ~f:(~+) parameters;
     body = [];
     decorators;

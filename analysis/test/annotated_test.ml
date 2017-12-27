@@ -87,7 +87,7 @@ let test_method_implements _ =
   let definition ?(parameters = []) ?return_annotation name =
     Method.create
       ~define:{
-        Statement.Define.name = Expression.Access.create name;
+        Statement.Record.Define.name = Expression.Access.create name;
         parameters;
         body = [+Pass];
         decorators = [];
@@ -277,7 +277,7 @@ let test_constructors _ =
         let defines =
           let define { name; parameters; annotation } =
             {
-              Statement.Define.name;
+              Statement.Record.Define.name;
               parameters;
               body = [+Pass];
               decorators = [];
@@ -295,11 +295,11 @@ let test_constructors _ =
           |> Class.constructors ~resolution
         in
         assert_equal
-          ~cmp:(List.equal ~equal:(Statement.Define.equal Statement.equal))
+          ~cmp:(List.equal ~equal:Statement.Define.equal)
           ~printer:(fun constructors ->
               let constructors =
                 List.map
-                  ~f:(fun constructor -> Statement.Define.show Statement.pp constructor)
+                  ~f:(fun constructor -> Statement.Define.show constructor)
                   constructors in
               Format.asprintf "%a" Sexp.pp (sexp_of_list sexp_of_string constructors))
           defines
@@ -399,7 +399,7 @@ let test_methods _ =
     | { Node.value = Statement.Class definition; _ }
     | { Node.value = Statement.Stub (Stub.Class definition); _ } ->
         let actuals =
-          let method_name { Statement.Define.name; _ } =
+          let method_name { Statement.Record.Define.name; _ } =
             Expression.Access.show name
           in
           Class.create definition
@@ -618,7 +618,7 @@ let test_return_annotation _ =
         |}
       in
       {
-        Statement.Define.name = Expression.Access.create "derp";
+        Statement.Record.Define.name = Expression.Access.create "derp";
         parameters = [];
         body = [+Pass];
         decorators = [];
@@ -640,7 +640,7 @@ let test_return_annotation _ =
 let test_parent_definition _ =
   let parent_class_definition environment name parent =
     {
-      Statement.Define.name = Expression.Access.create name;
+      Statement.Record.Define.name = Expression.Access.create name;
       parameters = [];
       body = [+Pass];
       decorators = [];
@@ -698,7 +698,7 @@ let test_parent_definition _ =
 let test_method_definition _ =
   let parent_class_definition environment name parent =
     {
-      Statement.Define.name = Expression.Access.create name;
+      Statement.Record.Define.name = Expression.Access.create name;
       parameters = [];
       body = [+Pass];
       decorators = [];
@@ -732,7 +732,7 @@ let test_parameter_annotations _ =
   in
   let define parameters =
     {
-      Statement.Define.name = Expression.Access.create "";
+      Statement.Record.Define.name = Expression.Access.create "";
       parameters;
       body = [+Pass];
       decorators = [];
@@ -781,7 +781,7 @@ let test_infer_argument_name _ =
   in
   let define parameters =
     {
-      Statement.Define.name = Expression.Access.create "";
+      Statement.Record.Define.name = Expression.Access.create "";
       parameters;
       body = [+Pass];
       decorators = [];

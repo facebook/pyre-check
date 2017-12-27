@@ -9,7 +9,7 @@ open Pyre
 open Statement
 
 type t = {
-  function_definitions: ((Statement.define Node.t) list) Access.Table.t;
+  function_definitions: ((Define.t Node.t) list) Access.Table.t;
   class_definitions: (Statement.t Class.t) Type.Table.t;
   protocols: Type.Hash_set.t;
   order: TypeOrder.t;
@@ -26,7 +26,7 @@ module type Reader = sig
   val register_definition
     :  path: string
     -> ?name_override: Access.t
-    -> (Statement.define Node.t)
+    -> (Define.t Node.t)
     -> unit
   val register_dependency: path: string -> dependency: string -> unit
   val register_global: path: string -> key: Access.t -> data:Annotation.t -> unit
@@ -39,7 +39,7 @@ module type Reader = sig
   val register_alias: path: string -> key: Type.t -> data: Type.t -> unit
   val purge: File.Handle.t -> unit
 
-  val function_definitions: Access.t -> (Statement.define Node.t) list option
+  val function_definitions: Access.t -> (Define.t Node.t) list option
   val class_definition: Type.t -> (Statement.t Class.t) option
   val protocols: Type.Hash_set.t
   val in_class_definition_keys: Type.t -> bool

@@ -3,19 +3,21 @@
     This source code is licensed under the MIT license found in the
     LICENSE file in the root directory of this source tree. *)
 
-module Define : sig
-  type 'statement t = {
-    name: Expression.Access.t;
-    parameters: (Expression.t Parameter.t) list;
-    body: 'statement list;
-    decorators: Expression.t list;
-    docstring: string option;
-    return_annotation: Expression.t option;
-    async: bool;
-    generated: bool;
-    parent: Expression.Access.t option;
-  }
-  [@@deriving compare, eq, sexp, show]
+module Record : sig
+  module Define : sig
+    type 'statement t = {
+      name: Expression.Access.t;
+      parameters: (Expression.t Parameter.t) list;
+      body: 'statement list;
+      decorators: Expression.t list;
+      docstring: string option;
+      return_annotation: Expression.t option;
+      async: bool;
+      generated: bool;
+      parent: Expression.Access.t option;
+    }
+    [@@deriving compare, eq, sexp, show]
+  end
 end
 
 module Class : sig
@@ -123,7 +125,7 @@ module Stub : sig
   type 'statement t =
     | Assign of Assign.t
     | Class of 'statement Class.t
-    | Define of 'statement Define.t
+    | Define of 'statement Record.Define.t
   [@@deriving compare, eq, sexp, show]
 end
 
@@ -133,7 +135,7 @@ type statement =
   | Break
   | Class of t Class.t
   | Continue
-  | Define of t Define.t
+  | Define of t Record.Define.t
   | Delete of Expression.t
   | Expression of Expression.t
   | For of t For.t
@@ -154,8 +156,30 @@ type statement =
 and t = statement Node.t
 [@@deriving compare, eq, sexp, show]
 
-type define = t Define.t
+(* Oh ffs ohcaml... *)
+type statement_node = t
 [@@deriving compare, eq, sexp, show]
+
+module Define : sig
+  type t = statement_node Record.Define.t
+  [@@deriving compare, eq, sexp, show]
+
+  val is_method: t -> bool
+  val is_abstract_method: t -> bool
+  val is_overloaded_method: t -> bool
+  val is_static_method: t -> bool
+  val is_class_method: t -> bool
+  val is_constructor: t -> bool
+  val is_generated_constructor: t -> bool
+  val is_untyped: t -> bool
+
+  val create_generated_constructor: statement_node Class.t -> t
+  val dump: t -> bool
+  val dump_cfg: t -> bool
+end
+
+(* Alias for when we open both Statment and Expression. *)
+module RecordDefine = Record.Define
 
 val assume: Expression.t -> t
 

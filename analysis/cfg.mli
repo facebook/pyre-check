@@ -47,6 +47,6 @@ val to_dot:
   -> (int, Node.t) Hashtbl.t
   -> string
 
-val create: Statement.define -> t
+val create: Define.t -> t
 
 val node: t -> id:int -> Node.t

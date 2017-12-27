@@ -30,7 +30,7 @@ type missing_parameter = {
 type parameter_mismatch = {
   name: Identifier.t;
   position: int;
-  callee: Statement.define;
+  callee: Statement.Define.t;
   mismatch: mismatch;
 }
 [@@deriving compare, eq, show]
@@ -96,7 +96,7 @@ type kind =
 type t = {
   location: Location.t;
   kind: kind;
-  define: Statement.define Node.t;
+  define: Statement.Define.t Node.t;
 }
 [@@deriving compare, eq, show]
 

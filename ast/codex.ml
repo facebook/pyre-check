@@ -223,7 +223,14 @@ let rec source_statement_codex_representation
         ty = "class";
       };
     ]
-  | Statement.Define { Statement.Define.name; docstring; parent; decorators; parameters; _ } -> [
+  | Statement.Define {
+      Statement.Record.Define.name;
+      docstring;
+      parent;
+      decorators;
+      parameters;
+      _;
+    } -> [
       let source =
         try
           project_root ^/ path

@@ -35,7 +35,7 @@ module State = struct
     environment: (module Environment.Reader);
     errors: Error.t Location.Map.t;
     annotations: Annotation.t Access.Map.t;
-    define: Statement.define Node.t;
+    define: Define.t Node.t;
     lookup: Lookup.t option;
   }
 
@@ -123,7 +123,7 @@ module State = struct
     let class_initialization_errors errors =
       let open Annotated in
       (* Ensure non-nullable typed fields are instantiated in init. *)
-      if not (Instantiated.Define.is_constructor define) then
+      if not (Statement.Define.is_constructor define) then
         errors
       else
         let check_class_fields class_definition =
@@ -132,7 +132,7 @@ module State = struct
             match Field.name field with
             | Access name
               when not (Type.equal expected Type.Top || Option.is_some (Field.value field)) ->
-                let assign_exists { Statement.Define.body; _ } name =
+                let assign_exists { Record.Define.body; _ } name =
                   let iterate initial { Node.value; _ } =
                     match value with
                     | Assign {
@@ -225,7 +225,7 @@ module State = struct
         match error with
         | {
           Error.kind = Error.IncompatibleReturnType _;
-          define = { Node.value = { Statement.Define.body; _ }; _ };
+          define = { Node.value = { RecordDefine.body; _ }; _ };
           _;
         } ->
             let rec check_statements = function
@@ -267,7 +267,7 @@ module State = struct
       let suppress_in_default ({ kind; Error.define = { Node.value = define; _ }; _ } as error) =
         due_to_analysis_limitations error ||
         due_to_mismatch_with_any error ||
-        Instantiated.Define.is_untyped define ||
+        Define.is_untyped define ||
         (match kind with
          | MissingReturnAnnotation { annotation = actual; _ }
          | MissingParameterAnnotation { annotation = actual; _ }
@@ -361,7 +361,7 @@ module State = struct
       environment
       ({
         Node.location;
-        value = ({ Define.parent; parameters; _ } as define);
+        value = ({ RecordDefine.parent; parameters; _ } as define);
       } as define_node) =
     let { annotations; errors; _ } as initial =
       create ~environment ~annotations:[]  ~define:define_node ?lookup ()
@@ -374,13 +374,13 @@ module State = struct
           index
           (annotations, errors)
           { Node.location; value = { Parameter.name; value; annotation }} =
-        let access = [Record.Access.Identifier name] in
+        let access = [RecordAccess.Identifier name] in
         match index, parent with
         | 0, Some parent
-          when Instantiated.Define.is_method define &&
-               not (Instantiated.Define.is_static_method define) ->
+          when Define.is_method define &&
+               not (Define.is_static_method define) ->
             let annotation =
-              if Instantiated.Define.is_class_method define then
+              if Define.is_class_method define then
                 (* First parameter of a method is a class object. *)
                 Type.Object
               else
@@ -433,9 +433,9 @@ module State = struct
 
     (* Check behavioral subtyping. *)
     let errors =
-      if Instantiated.Define.is_constructor define ||
-         Instantiated.Define.is_class_method define ||
-         Instantiated.Define.is_static_method define then
+      if Define.is_constructor define ||
+         Define.is_class_method define ||
+         Define.is_static_method define then
         errors
       else
         let open Annotated in
@@ -658,7 +658,7 @@ module State = struct
       ({ environment;
          errors;
          annotations;
-         define = ({ Node.value = { Define.async; _ } as define; _ } as define_node);
+         define = ({ Node.value = { RecordDefine.async; _ } as define; _ } as define_node);
          lookup } as state)
       statement =
     let update_resolution = resolution in
@@ -771,9 +771,9 @@ module State = struct
           let rec asserted annotations expression =
             match Node.value expression with
             | Access [
-                Record.Access.Call {
+                RecordAccess.Call {
                   Node.value = {
-                    Record.Call.name = { Node.value = Access [Record.Access.Identifier name]; _ };
+                    RecordCall.name = { Node.value = Access [RecordAccess.Identifier name]; _ };
                     arguments = [
                       { Argument.name = None; value = { Node.value = Access access; _ } };
                       { Argument.name = None; value = annotation };
@@ -798,9 +798,12 @@ module State = struct
                 operand = {
                   Node.value =
                     Access [
-                      Record.Access.Call {
+                      RecordAccess.Call {
                         Node.value = {
-                          Record.Call.name = { Node.value = Access [Record.Access.Identifier name]; _ };
+                          RecordCall.name = {
+                            Node.value = Access [RecordAccess.Identifier name];
+                            _;
+                          };
                           arguments = [
                             { Argument.name = None; value = { Node.value = Access access; _ } };
                             { Argument.name = None; value = annotation };
@@ -901,7 +904,7 @@ module State = struct
                 ComparisonOperator.left;
                 right = [
                   ComparisonOperator.IsNot,
-                  { Node.value = Access [Record.Access.Identifier identifier; ]; _ }
+                  { Node.value = Access [RecordAccess.Identifier identifier; ]; _ }
                 ];
               } when Identifier.show identifier = "None" ->
                 asserted annotations left
@@ -909,7 +912,7 @@ module State = struct
                 ComparisonOperator.left = { Node.value = Access access; _ };
                 right = [
                   ComparisonOperator.Is,
-                  { Node.value = Access [Record.Access.Identifier identifier; ]; _ }
+                  { Node.value = Access [RecordAccess.Identifier identifier; ]; _ }
                 ];
               } when Identifier.show identifier = "None" ->
                 let open Annotated in
@@ -994,8 +997,8 @@ module State = struct
                 begin
                   let start_position =
                     (* Account for the `self` parameter in instance methods. *)
-                    if Instantiated.Define.is_method callee &&
-                       not (Instantiated.Define.is_static_method callee) then
+                    if Define.is_method callee &&
+                       not (Define.is_static_method callee) then
                       0
                     else
                       1
@@ -1127,21 +1130,22 @@ module State = struct
             let errors = check_access ~resolution errors access in
             let check_single_access errors access =
               match access with
-              | Record.Access.Identifier _ ->
+              | RecordAccess.Identifier _ ->
                   errors
 
-              | Record.Access.Call { Node.value = { Record.Call.name; arguments }; _ } ->
+              | RecordAccess.Call { Node.value = { RecordCall.name; arguments }; _ } ->
                   let check_argument errors { Argument.value; _ } =
                     check_expression ~resolution errors value
                   in
                   let errors = check_expression ~resolution errors name in
                   List.fold ~f:check_argument ~init:errors arguments
 
-              | Record.Access.Expression expression -> check_expression ~resolution errors expression
-              | Record.Access.Subscript subscripts ->
+              | RecordAccess.Expression expression -> check_expression ~resolution errors expression
+              | RecordAccess.Subscript subscripts ->
                   let check_subscript errors = function
-                    | Record.Access.Index expression -> check_expression ~resolution errors expression
-                    | Record.Access.Slice { Record.Access.lower; upper; step } ->
+                    | RecordAccess.Index expression ->
+                        check_expression ~resolution errors expression
+                    | RecordAccess.Slice { RecordAccess.lower; upper; step } ->
                         let check_optional_expression expression errors =
                           match expression with
                           | Some expression -> check_expression ~resolution errors expression
@@ -1279,8 +1283,8 @@ module State = struct
               ~f:(Annotated.resolve ~resolution)
           in
           if not (Resolution.less_or_equal resolution ~left:actual ~right:expected) &&
-             not (Instantiated.Define.is_abstract_method define) &&
-             not (Instantiated.Define.is_overloaded_method define)
+             not (Define.is_abstract_method define) &&
+             not (Define.is_overloaded_method define)
           then
             let error =
               {
@@ -1537,7 +1541,7 @@ module State = struct
               { Node.value = Tuple arguments; _ } ->
                 let rec remove_initial_identifiers annotation =
                   match annotation with
-                  | Access ((Record.Access.Identifier _) :: tail) ->
+                  | Access ((RecordAccess.Identifier _) :: tail) ->
                       remove_initial_identifiers (Access tail)
                   | Access no_identifiers -> no_identifiers
                   | _ -> []
@@ -1547,9 +1551,9 @@ module State = struct
                   | Type.Tuple (Type.Bounded _) ->
                       begin
                         match remove_initial_identifiers (Node.value parameter_annotation) with
-                        | [Record.Access.Subscript subscript] ->
+                        | [RecordAccess.Subscript subscript] ->
                             let extract_index = function
-                              | Record.Access.Index index -> Some index
+                              | RecordAccess.Index index -> Some index
                               | _ -> None
                             in
                             List.map ~f:extract_index subscript
@@ -1571,7 +1575,7 @@ module State = struct
           match signature with
           | Some {
               Signature.instantiated = {
-                Define.parameters;
+                RecordDefine.parameters;
                 _;
               };
               _;
@@ -1632,7 +1636,7 @@ module State = struct
             | Access value_access ->
                 let annotations =
                   match value_access with
-                  | [Record.Access.Identifier _] ->
+                  | [RecordAccess.Identifier _] ->
                       resolve_assign target_annotation (Annotated.resolve ~resolution value)
                       >>| (fun refined ->
                           Map.add ~key:value_access ~data:(Annotation.create refined) annotations)
@@ -1690,14 +1694,14 @@ module State = struct
       resolution
       ({
         annotations;
-        define = ({ Node.value = { Define.parameters; _ } as define; _ } as define_node);
+        define = ({ Node.value = { RecordDefine.parameters; _ } as define; _ } as define_node);
         errors;
         _;
       } as state) =
     let add_parameter_errors
         errors
         { Node.value = { Parameter.name; annotation; _ }; location } =
-      let access = [Record.Access.Identifier name] in
+      let access = [RecordAccess.Identifier name] in
       let add_missing_parameter_error ~due_to_any =
         Map.find annotations access
         >>| (fun { Annotation.annotation; _ } ->
@@ -1721,8 +1725,8 @@ module State = struct
       | _ -> errors
     in
     let parameters =
-      if Instantiated.Define.is_method define &&
-         not (Instantiated.Define.is_static_method define) then
+      if Define.is_method define &&
+         not (Define.is_static_method define) then
         List.tl parameters
         |> Option.value ~default:[]
       else
@@ -1755,8 +1759,8 @@ let check configuration environment ({ Source.path; _ } as source) =
 
   let lookup = Lookup.create () in
 
-  let check ({ Node.location; value = { Define.name; parent; _ } as define } as define_node) =
-    let dump = Instantiated.Define.dump define in
+  let check ({ Node.location; value = { RecordDefine.name; parent; _ } as define } as define_node) =
+    let dump = Define.dump define in
 
     if dump then
       begin
@@ -1786,7 +1790,7 @@ let check configuration environment ({ Source.path; _ } as source) =
             Map.fold ~f:stringify ~init:"" annotations
         | None -> ""
       in
-      if Instantiated.Define.dump_cfg define then
+      if Define.dump_cfg define then
         begin
           let name =
             match parent with
@@ -1930,19 +1934,19 @@ let check configuration environment ({ Source.path; _ } as source) =
           _;
         } ->
             let is_redundant
-                ({ Node.value = { Statement.Define.return_annotation; _ }; _ } as define_node) =
+                ({ Node.value = { RecordDefine.return_annotation; _ }; _ } as define_node) =
               define_node.Node.location = location &&
               return_annotation = Some (Type.expression annotation)
             in
             begin
-              match Reader.function_definitions define.Statement.Define.name with
+              match Reader.function_definitions define.RecordDefine.name with
               | Some define_node_list when List.exists ~f:is_redundant define_node_list ->
                   changed, globals_added_sofar
               | _ ->
                   let define =
                     {
                       define with
-                      Statement.Define.return_annotation = Some (Type.expression annotation)
+                      RecordDefine.return_annotation = Some (Type.expression annotation)
                     }
                   in
                   Reader.register_definition
@@ -1956,7 +1960,7 @@ let check configuration environment ({ Source.path; _ } as source) =
           _;
         } ->
             let is_redundant
-                ({ Node.value = { Statement.Define.parameters; _ }; _ } as define_node) =
+                ({ Node.value = { RecordDefine.parameters; _ }; _ } as define_node) =
               let find_parameter { Node.value = parameter; _ } =
                 parameter.Parameter.name = name &&
                 parameter.Parameter.annotation = Some (Type.expression annotation)
@@ -1965,7 +1969,7 @@ let check configuration environment ({ Source.path; _ } as source) =
               List.exists ~f:find_parameter parameters
             in
             begin
-              match Reader.function_definitions define.Statement.Define.name with
+              match Reader.function_definitions define.RecordDefine.name with
               | Some define_node_list when List.exists ~f:is_redundant define_node_list ->
                   changed, globals_added_sofar
               | _ ->
@@ -1991,8 +1995,8 @@ let check configuration environment ({ Source.path; _ } as source) =
                     let annotation = Type.expression annotation in
                     {
                       define with
-                      Statement.Define.parameters =
-                        update_parameter define.Statement.Define.parameters name annotation
+                      RecordDefine.parameters =
+                        update_parameter define.RecordDefine.parameters name annotation
                     }
                   in
                   Reader.register_definition

@@ -34,7 +34,7 @@ type missing_parameter = {
 type parameter_mismatch = {
   name: Identifier.t;
   position: int;
-  callee: Statement.define;
+  callee: Define.t;
   mismatch: mismatch;
 }
 [@@deriving compare, eq, show, sexp]
@@ -136,7 +136,7 @@ type kind =
 type t = {
   location: Location.t;
   kind: kind;
-  define: Statement.define Node.t;
+  define: Define.t Node.t;
 }
 [@@deriving compare, eq, show, sexp]
 
@@ -199,7 +199,7 @@ let description
     ({
       kind;
       location;
-      define = { Node.value = { Define.name = define_name; _ }; _ };
+      define = { Node.value = { Record.Define.name = define_name; _ }; _ };
     } as error)
     ~detailed =
   let ordinal number =
@@ -338,7 +338,7 @@ let description
     | IncompatibleParameterType {
         name;
         position;
-        callee = { Define.name = callee_name; parent; _ };
+        callee = { Record.Define.name = callee_name; parent; _ };
         mismatch = { actual; expected };
       } ->
         let parent =
@@ -611,8 +611,7 @@ let join ~resolution left right =
         MissingAnnotation { left with annotation }
     | IncompatibleParameterType left, IncompatibleParameterType right
       when left.name = right.name &&
-           left.position = right.position &&
-           (Define.equal Statement.equal) left.callee right.callee ->
+           left.position = right.position && Define.equal left.callee right.callee ->
         IncompatibleParameterType {
           left with mismatch = join_mismatch left.mismatch right.mismatch
         }
@@ -761,21 +760,21 @@ let dequalify
       |> fun annotation ->
       { parameter with Node.value = { value with Parameter.annotation }}
     in
-    let parameters = List.map ~f:dequalify_parameter define.Define.parameters in
+    let parameters = List.map ~f:dequalify_parameter define.Record.Define.parameters in
     let return_annotation =
-      define.Define.return_annotation
+      define.Record.Define.return_annotation
       >>| Resolution.parse_annotation resolution
       >>| dequalify
       >>| Type.expression
     in
-    { define with Define.parameters; Define.return_annotation }
+    { define with Record.Define.parameters; return_annotation }
   in
   { error with kind; define = { Node.location; value = define} }
 
 
 
 let to_json ~detailed ({ kind; define = { Node.value = define; _ }; location; _ } as error) =
-  let function_name = Access.show define.Define.name in
+  let function_name = Access.show define.Record.Define.name in
   let print_annotation annotation =
     Format.asprintf "%a" Type.pp annotation
     |> String.strip ~drop:((=) '`')
@@ -804,11 +803,11 @@ let to_json ~detailed ({ kind; define = { Node.value = define; _ }; location; _ 
       in
       `Assoc [ "name", `String (Identifier.show name); "type", annotation ; "value", value ]
     in
-    List.map ~f:to_json define.Define.parameters
+    List.map ~f:to_json define.Record.Define.parameters
   in
   let decorators =
     let decorator_to_json decorator = `String (Expression.show decorator) in
-    List.map ~f:decorator_to_json define.Define.decorators
+    List.map ~f:decorator_to_json define.Record.Define.decorators
   in
   let print_parent parent =
     parent
@@ -821,26 +820,26 @@ let to_json ~detailed ({ kind; define = { Node.value = define; _ }; location; _ 
     | MissingReturnAnnotation { annotation; _ } ->
         [
           "annotation", `String (print_annotation annotation);
-          "parent", print_parent define.Define.parent;
+          "parent", print_parent define.Record.Define.parent;
           "function_name", `String function_name;
           "parameters", `List parameters;
           "decorators", `List decorators;
-          "async", `Bool define.Define.async;
+          "async", `Bool define.Record.Define.async;
         ]
     | MissingParameterAnnotation _ ->
         let return_annotation =
-          define.Define.return_annotation
+          define.Record.Define.return_annotation
           >>| Format.asprintf "%a" Expression.pp
           >>| (fun string -> `String string)
           |> Option.value ~default:`Null
         in
         [
           "annotation", return_annotation;
-          "parent", print_parent define.Define.parent;
+          "parent", print_parent define.Record.Define.parent;
           "function_name", `String function_name;
           "parameters", `List parameters;
           "decorators", `List decorators;
-          "async", `Bool define.Define.async;
+          "async", `Bool define.Record.Define.async;
         ]
     | MissingAnnotation { name; annotation; parent; _ } ->
         [

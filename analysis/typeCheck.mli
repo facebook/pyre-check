@@ -19,9 +19,9 @@ module State : sig
   }
 
   val create
-    :  environment:(module Environment.Reader)
-    -> annotations:(Access.t * Annotation.t) list
-    -> define:Statement.define Node.t
+    :  environment: (module Environment.Reader)
+    -> annotations: (Access.t * Annotation.t) list
+    -> define: Statement.Define.t Node.t
     -> ?lookup: Lookup.t
     -> unit
     -> t
@@ -37,12 +37,12 @@ module State : sig
   val initial_forward
     : ?lookup: Lookup.t
     -> (module Environment.Reader)
-    -> Statement.define Node.t
+    -> Statement.Define.t Node.t
     -> t
 
   val initial_backward
-    :  environment:(module Environment.Reader)
-    -> Statement.define Node.t
+    :  environment: (module Environment.Reader)
+    -> Statement.Define.t Node.t
     -> forward:t
     -> t
 

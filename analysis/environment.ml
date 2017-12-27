@@ -11,7 +11,7 @@ open Pyre
 open Statement
 
 type t = {
-  function_definitions: ((Statement.define Node.t) list) Access.Table.t;
+  function_definitions: ((Define.t Node.t) list) Access.Table.t;
   class_definitions: (Statement.t Class.t) Type.Table.t;
   protocols: Type.Hash_set.t;
   order: TypeOrder.t;
@@ -24,7 +24,7 @@ module type Reader = sig
   val register_definition
     :  path: string
     -> ?name_override: Access.t
-    -> (Statement.define Node.t)
+    -> (Define.t Node.t)
     -> unit
   val register_dependency: path: string -> dependency: string -> unit
   val register_global: path: string -> key: Access.t -> data:Annotation.t -> unit
@@ -37,7 +37,7 @@ module type Reader = sig
   val register_alias: path: string -> key: Type.t -> data: Type.t -> unit
   val purge: File.Handle.t -> unit
 
-  val function_definitions: Access.t -> (Statement.define Node.t) list option
+  val function_definitions: Access.t -> (Define.t Node.t) list option
   val class_definition: Type.t -> (Statement.t Class.t) option
   val protocols: Type.Hash_set.t
   val in_class_definition_keys: Type.t -> bool
@@ -144,7 +144,7 @@ let reader
     let register_definition
         ~path
         ?name_override
-        ({ Node.value = { Define.name; _ }; _ } as definition) =
+        ({ Node.value = { Record.Define.name; _ }; _ } as definition) =
       let name = Option.value ~default:name name_override in
       DependencyReader.add_function_key ~path name;
       let definitions =
@@ -250,7 +250,7 @@ let resolution
   let parse_annotation = Type.create ~aliases:Reader.aliases in
 
   let instantiate
-      ({ Node.location; value = { Define.parameters; return_annotation; _ } as define })
+      ({ Node.location; value = { Record.Define.parameters; return_annotation; _ } as define })
       ~constraints =
     let instantiate_aliases ?(widen = false) expression =
       expression
@@ -271,7 +271,7 @@ let resolution
     {
       Node.value = {
         define with
-        Define.parameters = List.map ~f:resolve_parameter parameters;
+        Record.Define.parameters = List.map ~f:resolve_parameter parameters;
         return_annotation = instantiate_aliases return_annotation;
       };
       location;
@@ -281,10 +281,10 @@ let resolution
   let instantiate_signature call arguments definitions =
     let insert_implicit_arguments { Node.value = define; _ } =
       let arguments = List.map ~f:Node.value arguments in
-      if Instantiated.Define.is_class_method define ||
-          Instantiated.Define.is_method define ||
-          (Instantiated.Define.is_constructor define &&
-            not (Call.is_explicit_constructor_call call)) then
+      if Define.is_class_method define ||
+         Define.is_method define ||
+         (Define.is_constructor define &&
+          not (Call.is_explicit_constructor_call call)) then
         let self_or_class_argument =
           Signature.Normal {
             Signature.annotation = Type.Object;
@@ -405,8 +405,8 @@ let resolution
         return_annotation
         >>| parse_annotation
         >>= (function
-          | Type.Variable _ -> None  (* Never return bottom as return type. *)
-          | annotation -> Some (Type.variables annotation))
+            | Type.Variable _ -> None  (* Never return bottom as return type. *)
+            | annotation -> Some (Type.variables annotation))
         >>| List.fold ~init:constraints ~f:update_to_bottom
         |> Option.value ~default:constraints
       in
@@ -454,9 +454,9 @@ let resolution
                 sofar)
     in
     let instantiate_signature ({
-          Node.value = { Define.parameters; return_annotation; _ };
-          location;
-        } as define) =
+        Node.value = { Record.Define.parameters; return_annotation; _ };
+        location;
+      } as define) =
       (* Add implicit arguments. *)
       let arguments = insert_implicit_arguments define in
 
@@ -467,7 +467,7 @@ let resolution
       >>| (fun constraints -> instantiate define ~constraints, constraints)
 
       (* Check additional constraints. *)
-      >>= (fun ({ Node.value = { Define.parameters; _ } as instantiated; _ }, constraints) ->
+      >>= (fun ({ Node.value = { Record.Define.parameters; _ } as instantiated; _ }, constraints) ->
           if sufficient_arguments_provided parameters arguments &&
              all_variables_resolved parameters then
             Some { Signature.constraints; instantiated; location }
@@ -479,7 +479,7 @@ let resolution
 
   let function_signature qualifier call arguments =
     let name =
-      (match call.Record.Call.name with
+      (match call.Expression.Record.Call.name with
        | { Node.value = Access access; _ } ->
            qualifier @ access
        | _ ->
@@ -499,7 +499,7 @@ let resolution
     let definitions annotation =
       let primitive, parameters = Type.split annotation in
       let name =
-        match Type.expression primitive, call.Record.Call.name with
+        match Type.expression primitive, call.Expression.Record.Call.name with
         | { Node.value = Access qualifier; _ },
           { Node.value = Access access; _ } ->
             qualifier @ access
@@ -721,7 +721,7 @@ let populate
                     {
                       Node.location;
                       value = {
-                        Define.name = enumeration @ (Access.create "__init__");
+                        Record.Define.name = enumeration @ (Access.create "__init__");
                         parameters = [Parameter.create ~name:(Identifier.create "a") ()];
                         body = [];
                         decorators = [];
@@ -758,11 +758,11 @@ let populate
 
           | { Node.value = Define definition; location }
           | { Node.value = Stub (Stub.Define definition); location } ->
-              if Instantiated.Define.is_method definition then
-                let parent = Option.value_exn definition.Define.parent in
+              if Define.is_method definition then
+                let parent = Option.value_exn definition.Record.Define.parent in
                 Reader.register_definition
                   ~path
-                  ~name_override:(parent @ definition.Define.name)
+                  ~name_override:(parent @ definition.Record.Define.name)
                   { Node.value = definition; location }
               else
                 Reader.register_definition ~path { Node.value = definition; location }

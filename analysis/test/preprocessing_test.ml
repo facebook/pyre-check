@@ -607,14 +607,14 @@ let test_expand_ternary _ =
 let test_defines _ =
   let assert_defines statements defines =
     assert_equal
-      ~cmp:(List.equal ~equal:(Define.equal Statement.equal))
+      ~cmp:(List.equal ~equal:Define.equal)
       (Preprocessing.defines (Source.create statements)
        |> List.map ~f:Node.value)
       defines in
 
   let define =
     {
-      Define.name = Access.create "foo";
+      Record.Define.name = Access.create "foo";
       parameters = [
         +{
           Parameter.name = ~~"a";
@@ -633,7 +633,7 @@ let test_defines _ =
   in
   let toplevel =
     {
-      Define.name = Access.create "$toplevel";
+      Record.Define.name = Access.create "$toplevel";
       parameters = [];
       body = [+Define define];
       decorators = [];
@@ -650,7 +650,7 @@ let test_defines _ =
 
   let inner =
     {
-      Define.name = Access.create "foo";
+      Record.Define.name = Access.create "foo";
       parameters = [
         +{
           Parameter.name = ~~"a";
@@ -669,7 +669,7 @@ let test_defines _ =
   in
   let define =
     {
-      Define.name = Access.create "foo";
+      Record.Define.name = Access.create "foo";
       parameters = [
         +{
           Parameter.name = ~~"a";
@@ -688,7 +688,7 @@ let test_defines _ =
   in
   let toplevel =
     {
-      Define.name = Access.create "$toplevel";
+      Record.Define.name = Access.create "$toplevel";
       parameters = [];
       body = [+Define define];
       decorators = [];
@@ -718,7 +718,7 @@ let test_classes _ =
       bases = [];
       body = [
         +Define {
-          Define.name = Access.create "bar";
+          Record.Define.name = Access.create "bar";
           parameters = [];
           body = [+Pass];
           decorators = [];

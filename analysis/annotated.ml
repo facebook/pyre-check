@@ -11,7 +11,7 @@ open Pyre
 open Statement
 
 
-let return_annotation { Define.return_annotation; async; _ } ~resolution =
+let return_annotation { RecordDefine.return_annotation; async; _ } ~resolution =
   let annotation =
     Option.value_map
       return_annotation
@@ -21,7 +21,7 @@ let return_annotation { Define.return_annotation; async; _ } ~resolution =
   if async then Type.awaitable annotation else annotation
 
 
-let parameter_annotations { Define.parameters; _ } ~resolution =
+let parameter_annotations { RecordDefine.parameters; _ } ~resolution =
   let element { Node.value = { Parameter.name; annotation; _ }; _ } =
     let annotation =
       (annotation
@@ -34,7 +34,7 @@ let parameter_annotations { Define.parameters; _ } ~resolution =
   |> Identifier.Map.of_alist_exn
 
 
-let parameter_annotations_positional { Define.parameters; _ } ~resolution =
+let parameter_annotations_positional { RecordDefine.parameters; _ } ~resolution =
   let element index { Node.value = { Parameter.annotation; _ }; _ } =
     let annotation =
       (annotation
@@ -152,7 +152,7 @@ module Class = struct
 
   module Method = struct
     type t = {
-      define: Statement.define;
+      define: Define.t;
       parent: parent_class
     }
     [@@deriving compare, eq, sexp, show]
@@ -162,7 +162,7 @@ module Class = struct
       { define; parent }
 
 
-    let name { define = { Define.name; _ }; _ } =
+    let name { define = { RecordDefine.name; _ }; _ } =
       name
 
 
@@ -186,7 +186,7 @@ module Class = struct
       return_annotation define ~resolution
 
 
-    let overrides { define = { Define.name; _ }; parent } ~resolution =
+    let overrides { define = { RecordDefine.name; _ }; parent } ~resolution =
       let find_overrides sofar annotation =
         match sofar with
         | Some _ -> sofar
@@ -195,8 +195,8 @@ module Class = struct
             >>= (fun ({ Class.body; _ } as parent) ->
                 let find_override { Node.value = statement; _ } =
                   match statement with
-                  | Statement.Stub (Stub.Define ({ Define.name = other; _ } as define))
-                  | Statement.Define ({ Define.name = other; _ } as define)
+                  | Statement.Stub (Stub.Define ({ RecordDefine.name = other; _ } as define))
+                  | Statement.Define ({ RecordDefine.name = other; _ } as define)
                     when Access.equal name other ->
                       Some define
                   | _ ->
@@ -217,7 +217,7 @@ module Class = struct
         { define; _ }
         ~resolution:_
         ~protocol_method:{ define = protocol; _ } =
-      let open Define in
+      let open RecordDefine in
       let parameter_equal
           { Node.value = { Parameter.annotation; _ }; _ }
           { Node.value = { Parameter.annotation = protocol_annotation; _ }; _ } =
@@ -280,14 +280,14 @@ module Class = struct
         let extract_constructor = function
           | { Node.value = Statement.Stub (Stub.Define define); _ }
           | { Node.value = Statement.Define define; _ }
-            when Instantiated.Define.is_constructor define ->
+            when Define.is_constructor define ->
               Some define
           | _ ->
               None in
         List.filter_map ~f:extract_constructor body
       in
       if List.is_empty declared then
-        [Instantiated.Define.create_generated_constructor definition]
+        [Define.create_generated_constructor definition]
       else
         declared
     in
@@ -316,7 +316,7 @@ module Class = struct
       in
       {
         constructor with
-        Define.name;
+        RecordDefine.name;
         return_annotation = Some (Type.expression annotation);
       }
     in
@@ -412,7 +412,7 @@ module Method = Class.Method
 
 
 module Define = struct
-  type t = Statement.define
+  type t = Define.t
   [@@deriving compare, eq, sexp, show]
 
 
@@ -432,7 +432,7 @@ module Define = struct
     return_annotation define ~resolution
 
 
-  let parent_definition { Define.parent; _ } ~resolution =
+  let parent_definition { RecordDefine.parent; _ } ~resolution =
     match parent with
     | Some parent ->
         let annotation =
@@ -452,7 +452,7 @@ module Define = struct
 
   (* Given a callee f and an its argument at index index, evaluates to the parameter name the
    *  argument corresponds to. *)
-  let infer_argument_name { Statement.Define.parameters; _ } ~index ~argument =
+  let infer_argument_name { RecordDefine.parameters; _ } ~index ~argument =
     let parameter_names = List.map ~f:Parameter.name parameters in
     let star_index =
       List.find_mapi
@@ -510,10 +510,10 @@ module BinaryOperator = struct
       Node.location;
       value = Access
           ((Access.access left) @ [
-              Expression.Record.Access.Call {
+              RecordAccess.Call {
                 Node.location;
                 value = {
-                  Record.Call.name = {
+                  RecordCall.name = {
                     Node.location;
                     value = Access (Access.create name);
                   };
@@ -547,42 +547,42 @@ module Call = struct
     call
 
 
-  let name { call = { Record.Call.name; _ }; _ } =
+  let name { call = { RecordCall.name; _ }; _ } =
     name
 
 
 
-  let arguments { call = { Record.Call.arguments; _ }; _ } =
+  let arguments { call = { RecordCall.arguments; _ }; _ } =
     arguments
 
 
   let with_arguments { call; kind } arguments =
-    { call = { call with Record.Call.arguments }; kind }
+    { call = { call with RecordCall.arguments }; kind }
 
 
   let insert_implicit_arguments ~callee { call; kind } =
     let call =
       callee
       >>| (fun { Signature.instantiated = callee; _ } ->
-      let prepend_self call =
-        let self =
-          {
-            Argument.name = None;
-            value = Node.create (Access (Access.create "self"));
-          }
-        in
-        { call with Record.Call.arguments = self :: call.Record.Call.arguments }
-      in
-      match kind with
-      | Method ->
-          prepend_self call
-      | Function ->
-          if Instantiated.Define.is_class_method callee ||
-              (Instantiated.Define.is_constructor callee &&
-                not (Call.is_explicit_constructor_call call)) then
-            prepend_self call
-          else
-            call)
+          let prepend_self call =
+            let self =
+              {
+                Argument.name = None;
+                value = Node.create (Access (Access.create "self"));
+              }
+            in
+            { call with RecordCall.arguments = self :: call.RecordCall.arguments }
+          in
+          match kind with
+          | Method ->
+              prepend_self call
+          | Function ->
+              if Statement.Define.is_class_method callee ||
+                 (Statement.Define.is_constructor callee &&
+                  not (Call.is_explicit_constructor_call call)) then
+                prepend_self call
+              else
+                call)
       |> Option.value ~default:call
     in
     { call; kind }
@@ -594,9 +594,9 @@ module Call = struct
   }
 
 
-  let redirect { call = { Record.Call.name; arguments }; kind = _ } =
+  let redirect { call = { RecordCall.name; arguments }; kind = _ } =
     match name, arguments with
-    | { Node.location; value = Access [Record.Access.Identifier name]; _ },
+    | { Node.location; value = Access [RecordAccess.Identifier name]; _ },
       [{
         Argument.value = { Node.value = Access access; _ };
         _;
@@ -608,10 +608,10 @@ module Call = struct
          | _ -> None)
         >>| (fun name ->
             let call =
-              [Expression.Record.Access.Call {
+              [RecordAccess.Call {
                   Node.location;
                   value = {
-                    Record.Call.name = {
+                    RecordCall.name = {
                       Node.location;
                       value = Access (Access.create name);
                     };
@@ -624,9 +624,9 @@ module Call = struct
     | _ -> None
 
 
-  let backup { call = { Record.Call.name; arguments }; kind } =
+  let backup { call = { RecordCall.name; arguments }; kind } =
     match name with
-    | { Node.location; value = Access [Expression.Record.Access.Identifier name]; _ } ->
+    | { Node.location; value = Access [RecordAccess.Identifier name]; _ } ->
         (* cf. https://docs.python.org/3/reference/datamodel.html#object.__radd__ *)
         (match Identifier.show name with
          | "__add__" -> Some "__radd__"
@@ -647,7 +647,7 @@ module Call = struct
         >>| (fun name ->
             {
               call = {
-                Record.Call.name = {
+                RecordCall.name = {
                   Node.location;
                   value = Access (Access.create name);
                 };
@@ -658,7 +658,7 @@ module Call = struct
     | _ -> None
 
 
-  let argument_annotations { call = { Record.Call.arguments; _ }; kind = _ } ~resolution =
+  let argument_annotations { call = { RecordCall.arguments; _ }; kind = _ } ~resolution =
     let extract_argument { Argument.value; _ } =
       match value with
       | { Node.location; Node.value = Starred (Starred.Once expression) } ->
@@ -758,10 +758,10 @@ module ComparisonOperator = struct
             Node.location;
             value = Access
                 ((Access.access left) @ [
-                    Expression.Record.Access.Call {
+                    RecordAccess.Call {
                       Node.location;
                       value = {
-                        Record.Call.name = {
+                        RecordCall.name = {
                           Node.location;
                           value = Access (Access.create name);
                         };
@@ -798,10 +798,10 @@ module UnaryOperator = struct
           Node.location;
           value = Access
               ((Access.access operand) @ [
-                  Expression.Record.Access.Call {
+                  RecordAccess.Call {
                     Node.location;
                     value = {
-                      Record.Call.name = {
+                      RecordCall.name = {
                         Node.location;
                         value = Access (Access.create name);
                       };
@@ -907,18 +907,18 @@ module Access = struct
     (* Resolve `super()` calls. *)
     let access =
       match access with
-      | (Record.Access.Call { Node.value = { Record.Call.name; _ }; _ }) :: tail
+      | (RecordAccess.Call { Node.value = { RecordCall.name; _ }; _ }) :: tail
         when Expression.show name = "super" ->
           (define
-          >>= (fun define ->
-            Define.create define
-            |> Define.parent_definition ~resolution)
-          >>| Class.superclasses ~resolution
-          >>| function
-              | superclass :: _ ->
-                  (Class.name superclass) @ tail
-              | _ ->
-                  access)
+           >>= (fun define ->
+               Define.create define
+               |> Define.parent_definition ~resolution)
+           >>| Class.superclasses ~resolution
+           >>| function
+           | superclass :: _ ->
+               (Class.name superclass) @ tail
+           | _ ->
+               access)
           |> Option.value ~default:access
       | _ ->
           access
@@ -977,7 +977,7 @@ module Access = struct
       let rec step annotation reversed_lead =
         match annotation, reversed_lead with
         | Some (access, annotation),
-          [Record.Access.Call { Node.location; value = call }] ->
+          [RecordAccess.Call { Node.location; value = call }] ->
             let call = Call.create ~kind:Call.Method call in
             let callee =
               Resolution.method_signature resolution
@@ -991,8 +991,8 @@ module Access = struct
               >>= fun call ->
               (match call with
                | {
-                  Call.call = { Record.Call.arguments = [{ Argument.value; _ }]; _ };
-                  _;
+                 Call.call = { RecordCall.arguments = [{ Argument.value; _ }]; _ };
+                 _;
                } ->
                    let annotation = Resolution.resolve resolution value in
                    Resolution.method_signature resolution
@@ -1029,7 +1029,7 @@ module Access = struct
             resolved,
             (f accumulator ~annotations ~resolved ~element:(Element.Method element))
 
-        | Some (_, annotation), ([Record.Access.Identifier _] as field_access) -> (
+        | Some (_, annotation), ([RecordAccess.Identifier _] as field_access) -> (
             (* Field access. *)
             let definition =
               Resolution.class_definition
@@ -1076,11 +1076,11 @@ module Access = struct
                        ~element:(Element.Field (Element.Defined field))))
             |> Option.value ~default)
 
-        | Some (_, annotation), (Record.Access.Subscript subscript) :: _ ->
+        | Some (_, annotation), (RecordAccess.Subscript subscript) :: _ ->
             (* Array access. *)
             let resolved =
               match subscript, Annotation.annotation annotation with
-              | [Record.Access.Index _],
+              | [RecordAccess.Index _],
                 (Type.Parametric {
                     Type.parameters;
                     _;
@@ -1090,7 +1090,7 @@ module Access = struct
                    | _ :: parameter :: _ -> parameter
                    | parameter :: _ -> parameter
                    | [] -> Type.Top)
-              | [Record.Access.Slice _], _ ->
+              | [RecordAccess.Slice _], _ ->
                   (Annotation.annotation annotation)
               | _ ->
                   Type.Top
@@ -1103,7 +1103,7 @@ module Access = struct
                ~element:Element.Array)
 
         | None,
-          Record.Access.Call { Node.location; value = call } :: qualifier ->
+          RecordAccess.Call { Node.location; value = call } :: qualifier ->
             (* Call. *)
             begin
               let call = Call.create ~kind:Call.Function call in
@@ -1136,13 +1136,13 @@ module Access = struct
                   (f accumulator ~annotations ~resolved ~element)
             end
 
-        | None, Record.Access.Expression expression :: _ ->
+        | None, RecordAccess.Expression expression :: _ ->
             let resolved = Annotation.create (Resolution.resolve resolution expression) in
             resolution,
             resolved,
             (f accumulator ~annotations ~resolved ~element:Element.Expression)
 
-        | None, [Record.Access.Identifier identifier]
+        | None, [RecordAccess.Identifier identifier]
           when Identifier.show identifier = "None" ->
             let resolved = Annotation.create (Type.Optional Type.Bottom) in
             resolution,
@@ -1231,7 +1231,7 @@ let rec resolve ~resolution expression =
             right =
               [
                 Expression.ComparisonOperator.IsNot,
-                { Node.value = Access [ Expression.Record.Access.Identifier identifier; ]; _ }
+                { Node.value = Access [RecordAccess.Identifier identifier]; _ }
               ];
           } when Identifier.show identifier = "None" ->
             [access]
@@ -1392,7 +1392,7 @@ let rec resolve ~resolution expression =
             Expression.ComparisonOperator.left = access;
             right = [
               Expression.ComparisonOperator.IsNot,
-              { Node.value = Access [ Expression.Record.Access.Identifier identifier; ]; _ }
+              { Node.value = Access [RecordAccess.Identifier identifier]; _ }
             ];
           } when Identifier.show identifier = "None" ->
             if Expression.equal access target then

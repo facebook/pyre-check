@@ -6,19 +6,21 @@
 open Core
 
 
-module Define = struct
-  type 'statement t = {
-    name: Expression.Access.t;
-    parameters: (Expression.t Parameter.t) list;
-    body: 'statement list;
-    decorators: Expression.t list;
-    docstring: string option;
-    return_annotation: Expression.t option;
-    async: bool;
-    generated: bool;
-    parent: Expression.Access.t option; (* The class owning the method. *)
-  }
-  [@@deriving compare, eq, sexp, show]
+module Record = struct
+  module Define = struct
+    type 'statement t = {
+      name: Expression.Access.t;
+      parameters: (Expression.t Parameter.t) list;
+      body: 'statement list;
+      decorators: Expression.t list;
+      docstring: string option;
+      return_annotation: Expression.t option;
+      async: bool;
+      generated: bool;
+      parent: Expression.Access.t option; (* The class owning the method. *)
+    }
+    [@@deriving compare, eq, sexp, show]
+  end
 end
 
 
@@ -139,7 +141,7 @@ module Stub = struct
   type 'statement t =
     | Assign of Assign.t
     | Class of 'statement Class.t
-    | Define of 'statement Define.t
+    | Define of 'statement Record.Define.t
   [@@deriving compare, eq, sexp, show]
 end
 
@@ -150,7 +152,7 @@ type statement =
   | Break
   | Class of t Class.t
   | Continue
-  | Define of t Define.t
+  | Define of t Record.Define.t
   | Delete of Expression.t
   | Expression of Expression.t
   | For of t For.t
@@ -173,8 +175,123 @@ and t = statement Node.t
 [@@deriving compare, eq, sexp, show]
 
 
-type define = t Define.t
+type statement_node = t
 [@@deriving compare, eq, sexp, show]
+
+
+module Define = struct
+  type t = statement_node Record.Define.t
+  [@@deriving compare, eq, sexp, show]
+
+
+  let is_method { Record.Define.name; parent; _ } =
+    Option.is_some parent && List.length name = 1
+
+
+  let has_decorator { Record.Define.decorators; _ } decorator =
+    let open Expression in
+    let rec is_decorator expected actual =
+      match expected, actual with
+      | (expected_decorator :: expected_decorators),
+        { Node.location; value = Access ((Record.Access.Identifier identifier) :: identifiers) }
+        when Identifier.show identifier = expected_decorator ->
+          if List.is_empty expected_decorators && List.is_empty identifiers then
+            true
+          else
+            is_decorator expected_decorators { Node.location; value = Access identifiers }
+      | _ ->
+          false
+    in
+    List.exists ~f:(is_decorator (String.split ~on:'.' decorator)) decorators
+
+
+  let is_abstract_method define =
+    has_decorator define "abstractmethod" ||
+    has_decorator define "abc.abstractmethod" ||
+    has_decorator define "abstractproperty" ||
+    has_decorator define "abc.abstractproperty"
+
+
+  let is_overloaded_method define =
+    has_decorator define "overload" ||
+    has_decorator define "typing.overload"
+
+
+  let is_static_method define =
+    has_decorator define "staticmethod"
+
+
+  let is_class_method define =
+    has_decorator define "classmethod"
+
+
+  let is_constructor { Record.Define.name; parent; _ } =
+    let string_name = Expression.Access.show name in
+    match parent with
+    | None -> false
+    | Some parent ->
+        Expression.Access.show parent = string_name ||
+        string_name = "__init__"
+
+
+  let is_generated_constructor { Record.Define.generated; _ } = generated
+
+
+  let is_untyped { Record.Define.return_annotation; _ } =
+    Option.is_none return_annotation
+
+
+  let create_generated_constructor { Class.name; docstring; _ } =
+    {
+      Record.Define.name;
+      parameters = [Parameter.create ~name:(Identifier.create "self") ()];
+      body = [Node.create Pass];
+      decorators = [];
+      return_annotation = None;
+      async = false;
+      generated = true;
+      parent = Some name;
+      docstring;
+    }
+
+  let contains_call { Record.Define.body; _ } name =
+    let matches = function
+      | {
+        Node.value = Expression {
+            Node.value = Expression.Access [
+                Expression.Record.Access.Call {
+                  Node.value = {
+                    Expression.Record.Call.name = {
+                      Node.value = Expression.Access access;
+                      _;
+                    };
+                    _;
+                  };
+                  _;
+                };
+              ];
+            _;
+          };
+        _;
+      } when Expression.Access.show access = name ->
+          true
+      | _ ->
+          false
+    in
+    List.exists ~f:matches body
+
+
+  let dump define =
+    contains_call define "pyre_dump"
+
+
+  let dump_cfg define =
+    contains_call define "pyre_dump_cfg"
+end
+
+
+(* Alias for when we open both Statment and Expression. *)
+module RecordDefine = Record.Define
 
 
 let assume ({ Node.location; _ } as test) =
@@ -299,7 +416,7 @@ module PrettyPrinter = struct
 
   and pp_define
       formatter
-      { Define.name; parameters; body; decorators; return_annotation; async; parent; _ } =
+      { Record.Define.name; parameters; body; decorators; return_annotation; async; parent; _ } =
     let return_annotation =
       match return_annotation with
       | Some annotation -> Format.asprintf " -> %a" Expression.pp annotation

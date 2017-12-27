@@ -8,7 +8,7 @@ open Ast
 
 type t = {
   constraints: Type.t Type.Map.t;
-  instantiated: Statement.define;
+  instantiated: Statement.Define.t;
   location: Location.t;
 }
 
