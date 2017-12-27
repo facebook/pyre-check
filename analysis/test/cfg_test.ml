@@ -17,7 +17,7 @@ open Test
 
 let assert_cfg body expected =
   let define = {
-    Define.name = Instantiated.Access.create "foo";
+    Define.name = Access.create "foo";
     parameters = [];
     body;
     decorators = [];
@@ -36,7 +36,7 @@ let assert_cfg body expected =
 
 let assert_dot ?(precondition=fun _ -> "") body expected =
   let define = {
-    Define.name = Instantiated.Access.create "foo";
+    Define.name = Access.create "foo";
     parameters = [];
     body;
     decorators = [];
@@ -130,7 +130,7 @@ let test_block _ =
 
 let test_for _ =
   let loop = {
-    For.target = +Access (Instantiated.Access.create "a");
+    For.target = +Access (Access.create "a");
     iterator = +List [];
     body = [!!"body"];
     orelse = [!!"orelse"];

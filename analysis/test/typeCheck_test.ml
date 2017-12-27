@@ -104,7 +104,7 @@ let environment =
 
 
 let empty_define = {
-  Define.name = Instantiated.Access.create "$empty";
+  Define.name = Access.create "$empty";
   parameters = [];
   body = [];
   decorators = [];
@@ -132,7 +132,7 @@ let create
         in
         create annotation
       in
-      Instantiated.Access.create name, annotation
+      Access.create name, annotation
     in
     List.map ~f:annotify annotations
   in
@@ -155,7 +155,7 @@ let assert_initial
     ?(initial = (fun environment define -> State.initial_forward environment define))
     expected =
   let define = {
-    Define.name = Instantiated.Access.create "foo";
+    Define.name = Access.create "foo";
     parameters = List.map ~f:(~+) parameters;
     body = [];
     decorators;
@@ -163,7 +163,7 @@ let assert_initial
     return_annotation;
     async = false;
     generated = false;
-    parent = parent >>| Instantiated.Access.create;
+    parent = parent >>| Access.create;
   }
   in
   assert_state_equal

@@ -6,6 +6,7 @@
 open Core
 
 open Pyre
+open Expression
 
 
 (** Given a JSON that's an assoc at the top level, change the key's binding to value,
@@ -31,8 +32,8 @@ let get_access_basename name =
 
 let access_with_parent name parent =
   parent
-  >>| (fun parent -> (Instantiated.Access.show parent) ^ "." ^ (Instantiated.Access.show name))
-  |> Option.value ~default:(Instantiated.Access.show name)
+  >>| (fun parent -> (Access.show parent) ^ "." ^ (Access.show name))
+  |> Option.value ~default:(Access.show name)
 
 
 module ArgumentData = struct
@@ -211,7 +212,7 @@ let rec source_statement_codex_representation
   | Statement.Class { Statement.Class.body; name; docstring; _ } -> [
       CodexNode.ClassNode {
         CodexNode.Class.docstring;
-        name = Instantiated.Access.show name;
+        name = Access.show name;
         rank = 0;
         comments = None;
         location = [start_line; column];

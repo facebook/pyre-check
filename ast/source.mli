@@ -33,7 +33,7 @@ type t = {
   docstring: string option;
   metadata: Metadata.t;
   path: string;
-  qualifier: Expression.t Access.t;
+  qualifier: Expression.t Record.Access.t;
   statements: Statement.t list;
 }
 [@@deriving compare, eq, show]
@@ -43,11 +43,11 @@ val create
   :  ?docstring: string option
   -> ?metadata: Metadata.t
   -> ?path: string
-  -> ?qualifier: Expression.t Access.t
+  -> ?qualifier: Expression.t Record.Access.t
   -> Statement.t list
   -> t
 
 
 val ignore_lines: t -> (int * int list) list
 
-val qualifier: path:string -> Expression.t Access.t
+val qualifier: path:string -> Expression.t Record.Access.t

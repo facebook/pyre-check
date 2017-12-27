@@ -97,7 +97,7 @@ let test_parse _ =
 let test_qualifier _ =
   let qualifier modules =
     List.map
-      ~f:Instantiated.Access.create
+      ~f:Expression.Access.create
       modules
     |> List.concat
   in

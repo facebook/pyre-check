@@ -15,7 +15,7 @@ let qualify source =
   let qualifier = source.Source.qualifier in
 
   let module OrderIndependent = Transform.Make(struct
-      type t = (access) Instantiated.Access.Map.t
+      type t = Access.t Access.Map.t
 
       let expression map expression =
         map, expression
@@ -159,7 +159,7 @@ let qualify source =
   let module OrderDependent = Transform.Make(struct
       (* Keeps track of transformations we need to make. E.g. `import a as b` will
          result in a transformation rule from `b` to `a`. *)
-      type t = access * access Instantiated.Access.Map.t
+      type t = Access.t * Access.t Access.Map.t
 
       let expression (qualifier, map) expression =
         let rebased =
@@ -167,7 +167,7 @@ let qualify source =
           | {
             Node.location;
             value = Access [
-                Access.Call {
+                Record.Access.Call {
                   Node.value = ({
                       Call.name = { Node.value = Access access; _; };
                       _;
@@ -180,7 +180,7 @@ let qualify source =
                 match List.rev access with
                 | name :: qualifier ->
                     let call_access =
-                      Access.Call {
+                      Record.Access.Call {
                         Node.location;
                         value = {
                           call with
@@ -208,11 +208,11 @@ let qualify source =
               end
           | { Node.location; value = String value } ->
               begin
-                match Map.find map (Instantiated.Access.create value) with
+                match Map.find map (Access.create value) with
                 | Some replacement ->
                     {
                       Node.location;
-                      value = String (Instantiated.Access.show replacement);
+                      value = String (Access.show replacement);
                     }
                 | None ->
                     expression
@@ -240,7 +240,7 @@ let qualify source =
             let from =
               let dots, postfix =
                 let is_dot = function
-                  | Access.Identifier identifier when Identifier.show identifier = "" -> true
+                  | Record.Access.Identifier identifier when Identifier.show identifier = "" -> true
                   | _ -> false
                 in
                 List.split_while ~f:is_dot from
@@ -294,7 +294,7 @@ let qualify source =
     in
     List.fold
       ~f:collect_globals
-      ~init:Instantiated.Access.Map.empty
+      ~init:Access.Map.empty
       source.Source.statements
   in
 
@@ -379,7 +379,7 @@ let expand_operators source =
   Transform.transform () source |> snd
 
 
-let return_access = Instantiated.Access.create "$return"
+let return_access = Access.create "$return"
 
 
 let expand_returns source =
@@ -484,14 +484,14 @@ let expand_yield_from source =
               })
           } ->
             let call name =
-              Access.Call
+              Record.Access.Call
                 (Node.create
                    {
-                     Call.name = Node.create (Access (Instantiated.Access.create name));
+                     Call.name = Node.create (Access (Access.create name));
                      arguments = [];
                    })
             in
-            let add_call = [Access.Expression yield; call "__iter__"] in
+            let add_call = [Record.Access.Expression yield; call "__iter__"] in
             state,
             [{ Node.location;
                value = YieldFrom {
@@ -531,10 +531,10 @@ let expand_for_loop source =
                 let value =
                   let next =
                     let call name =
-                      Access.Call
+                      Record.Access.Call
                         (Node.create
                            {
-                             Call.name = Node.create (Access (Instantiated.Access.create name));
+                             Call.name = Node.create (Access (Access.create name));
                              arguments = [];
                            })
                     in
@@ -547,7 +547,7 @@ let expand_for_loop source =
                    | Access access ->
                        access @ next
                    | expression ->
-                       [Access.Expression (Node.create expression)] @ next)
+                       [Record.Access.Expression (Node.create expression)] @ next)
                 in
                 {
                   Node.location;
@@ -589,7 +589,7 @@ let expand_excepts source =
         } ->
             let handlers =
               let transform_handler ({ Try.kind; name; handler_body } as handler) =
-                let name = name >>| fun name -> Instantiated.Access.create (Identifier.show name) in
+                let name = name >>| fun name -> Access.create (Identifier.show name) in
                 let assume ~target ~annotation =
                   {
                     Node.location;
@@ -612,12 +612,12 @@ let expand_excepts source =
                     let assume =
                       let annotation: Expression.t =
                         let subscript =
-                          let index value = Access.Index value in
-                          [Access.Subscript (List.map ~f:index values)]
+                          let index value = Record.Access.Index value in
+                          [Record.Access.Subscript (List.map ~f:index values)]
                         in
                         {
                           Node.location;
-                          value = Access ((Instantiated.Access.create "typing.Union") @ subscript);
+                          value = Access ((Access.create "typing.Union") @ subscript);
                         }
                       in
                       assume ~target:{ Node.location; value = Access name } ~annotation
@@ -687,7 +687,7 @@ let defines ({ Source.statements; _ } as source) =
   let toplevel =
     Node.create
       {
-        Define.name = Instantiated.Access.create "$toplevel";
+        Define.name = Access.create "$toplevel";
         parameters = [];
         body = statements;
         decorators = [];
@@ -725,7 +725,7 @@ let classes source =
 
 let dequalify_map source =
   let module ImportDequalifier = Transform.Make(struct
-      type t = access Instantiated.Access.Map.t
+      type t = Access.t Access.Map.t
 
       let expression map expression =
         map, expression
@@ -761,7 +761,7 @@ let dequalify_map source =
   in
   (* Note that map keys are reversed accesses because it makes life much easier in dequalify *)
   let map =
-    Map.add ~key:(List.rev source.Source.qualifier) ~data:[] Instantiated.Access.Map.empty
+    Map.add ~key:(List.rev source.Source.qualifier) ~data:[] Access.Map.empty
   in
   ImportDequalifier.transform map source |> fst
 

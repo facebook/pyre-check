@@ -42,7 +42,7 @@ let test_parse_stubs_list _ =
     let { Source.statements; _ } = Option.value_exn source in
     (match statements with
      | [{ Node.value = Statement.Stub (Statement.Stub.Define { Statement.Define.name; _ }); _ }] ->
-         assert_equal name (Instantiated.Access.create_from_identifiers define_name)
+         assert_equal name (Expression.Access.create_from_identifiers define_name)
      | _ -> assert_unreached ())
   in
   assert_stub_matches_name (get_handle_at 0) [~~"a"; ~~"f"];
@@ -72,7 +72,7 @@ let test_parse_sources_list _ =
   assert_equal path "a.py";
   (match statements with
    | [{ Node.value = Statement.Define { Statement.Define.name; _ }; _ }] ->
-       assert_equal name (Instantiated.Access.create_from_identifiers [~~"a"; ~~"foo"])
+       assert_equal name (Expression.Access.create_from_identifiers [~~"a"; ~~"foo"])
    | _ -> assert_unreached ())
 
 

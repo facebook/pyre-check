@@ -6,13 +6,14 @@
 open Core
 
 open Ast
+open Expression
 
 
 type index = {
-  function_keys: (Instantiated.Access.t Hash_set.t) String.Table.t;
+  function_keys: (Access.t Hash_set.t) String.Table.t;
   class_keys: (Type.t Hash_set.t) String.Table.t;
   alias_keys: (Type.t Hash_set.t) String.Table.t;
-  global_keys: (Instantiated.Access.t Hash_set.t) String.Table.t;
+  global_keys: (Access.t Hash_set.t) String.Table.t;
   dependent_keys: (string Hash_set.t) String.Table.t;
 }
 
@@ -22,20 +23,20 @@ type t = {
 }
 
 module type Reader = sig
-  val add_function_key: path: string -> Instantiated.Access.t -> unit
+  val add_function_key: path: string -> Access.t -> unit
   val add_class_key: path: string -> Type.t -> unit
   val add_alias_key: path: string -> Type.t -> unit
-  val add_global_key: path: string -> Instantiated.Access.t -> unit
+  val add_global_key: path: string -> Access.t -> unit
   val add_dependent_key: path: string -> string -> unit
 
   val add_dependent: path: string -> string -> unit
 
   val dependents: string -> (string list) option
 
-  val get_function_keys: path: string -> Instantiated.Access.t list
+  val get_function_keys: path: string -> Access.t list
   val get_class_keys: path: string -> Type.t list
   val get_alias_keys: path: string -> Type.t list
-  val get_global_keys: path: string -> Instantiated.Access.t list
+  val get_global_keys: path: string -> Access.t list
   val get_dependent_keys: path: string -> string list
 
   val clear_all_keys: path: string -> unit

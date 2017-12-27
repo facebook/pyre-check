@@ -15,7 +15,7 @@ val expand_optional_assigns: Source.t -> Source.t
 val expand_operators: Source.t -> Source.t
 
 (* Transform returns to make them more amenable for analysis. *)
-val return_access: access
+val return_access: Access.t
 val expand_returns: Source.t -> Source.t
 
 (* Tranforms for loops to handle variable typing inside *)
@@ -38,7 +38,7 @@ val classes
   -> (Statement.t Statement.Class.t) Node.t list
 
 (* Creates a map used for dequalification from imports in the source *)
-val dequalify_map: Source.t -> access Instantiated.Access.Map.t
+val dequalify_map: Source.t -> Access.t Access.Map.t
 
 (* Most of the above. *)
 val preprocess: Source.t -> Source.t

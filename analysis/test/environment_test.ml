@@ -16,7 +16,7 @@ open Test
 
 let access names =
   List.map
-    ~f:Instantiated.Access.create
+    ~f:Access.create
     names
   |> List.concat
 
@@ -171,8 +171,8 @@ let test_populate _ =
     (parse_annotation
        environment
        (+Access
-         ((Instantiated.Access.create "Optional") @
-          [Access.Subscript [Access.Index (+Access (access ["foo.foo"]))]])))
+         ((Access.create "Optional") @
+          [Record.Access.Subscript [Record.Access.Index (+Access (access ["foo.foo"]))]])))
     (Type.Parametric {
         Type.name = ~~"Optional";
         parameters = [primitive "foo.foo"];
@@ -1242,7 +1242,7 @@ let test_method_signature _ =
        Signature.instantiated = { Define.name; Define.return_annotation = Some annotation; _ };
        _;
      }->
-       assert_equal name (Instantiated.Access.create "head");
+       assert_equal name (Access.create "head");
        assert_equal
          (parse_annotation environment annotation)
          Type.integer
@@ -1259,7 +1259,7 @@ let test_method_signature _ =
        Signature.instantiated = { Define.name; Define.return_annotation = Some annotation; _ };
        _;
      }->
-       assert_equal name (Instantiated.Access.create "append");
+       assert_equal name (Access.create "append");
        assert_equal
          ~printer:(Format.asprintf "%a" Type.pp)
          (parse_annotation environment annotation)
@@ -1279,7 +1279,7 @@ let test_method_signature _ =
        Signature.instantiated = { Define.name; Define.return_annotation = Some annotation; _ };
        _;
      }->
-       assert_equal name (Instantiated.Access.create "get");
+       assert_equal name (Access.create "get");
        assert_equal
          ~printer:(Format.asprintf "%a" Type.pp)
          (parse_annotation environment annotation)
@@ -1301,7 +1301,7 @@ let test_method_signature _ =
            ])) in
   (match callee with
    | Some { Signature.instantiated = { Define.name; _ }; _ } ->
-       assert_equal name (Instantiated.Access.create "update");
+       assert_equal name (Access.create "update");
    | _ ->
        assert_unreached ());
 
@@ -1314,7 +1314,7 @@ let test_method_signature _ =
       (List.map ~f:(~+) (normal [Type.dictionary ~key:Type.string ~value:Type.integer])) in
   (match callee with
    | Some { Signature.instantiated = { Define.name; _ }; _ } ->
-       assert_equal name (Instantiated.Access.create "add");
+       assert_equal name (Access.create "add");
    | _ ->
        assert_unreached ())
 
@@ -1423,7 +1423,7 @@ let test_purge _ =
   in
   Environment.populate ~check_dependency_exists:false reader [parse ~path:"test.py" source];
   assert_is_some (Reader.class_definition (primitive "baz.baz"));
-  assert_is_some (Reader.function_definitions (Instantiated.Access.create "foo"));
+  assert_is_some (Reader.function_definitions (Access.create "foo"));
   assert_is_some (Reader.aliases (primitive "_T"));
   assert_is_some (Reader.globals (access ["Color"; "RED"]));
   assert_equal (Reader.dependencies "a.py") (Some ["test.py"]);
@@ -1431,7 +1431,7 @@ let test_purge _ =
   Reader.purge (File.Handle.create "test.py");
 
   assert_is_none (Reader.class_definition (primitive "baz.baz"));
-  assert_is_none (Reader.function_definitions (Instantiated.Access.create "foo"));
+  assert_is_none (Reader.function_definitions (Access.create "foo"));
   assert_is_none (Reader.aliases (primitive "_T"));
   assert_is_none (Reader.globals (access ["Color"; "RED"]));
   assert_equal (Reader.dependencies "a.py") (Some [])

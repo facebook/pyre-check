@@ -62,10 +62,10 @@ let parse_stub_job files =
            in
            match source.Source.qualifier with
            | minor :: major :: tail
-             when is_digit (Instantiated.Access.show [minor]) &&
-                  is_digit (Instantiated.Access.show [major]) ->
+             when is_digit (Expression.Access.show [minor]) &&
+                  is_digit (Expression.Access.show [major]) ->
                tail
-           | major :: tail when is_digit (String.prefix (Instantiated.Access.show [major]) 1) ->
+           | major :: tail when is_digit (String.prefix (Expression.Access.show [major]) 1) ->
                tail
            | qualifier ->
                qualifier

@@ -71,22 +71,22 @@ module Make (Transformer : Transformer) = struct
           | Access access ->
               let transform_access access =
                 let transform_subscript subscript =
-                  let transform_slice { Access.lower; upper; step } =
+                  let transform_slice { Record.Access.lower; upper; step } =
                     {
-                      Access.lower = lower >>| transform_expression;
+                      Record.Access.lower = lower >>| transform_expression;
                       upper = upper >>| transform_expression;
                       step = step >>| transform_expression;
                     }
                   in
                   match subscript with
-                  | Access.Index index ->
-                      Access.Index (transform_expression index)
-                  | Access.Slice slice ->
-                      Access.Slice (transform_slice slice)
+                  | Record.Access.Index index ->
+                      Record.Access.Index (transform_expression index)
+                  | Record.Access.Slice slice ->
+                      Record.Access.Slice (transform_slice slice)
                 in
                 match access with
-                | Access.Call { Node.location; value = { Call.name; arguments } } ->
-                    Access.Call {
+                | Record.Access.Call { Node.location; value = { Call.name; arguments } } ->
+                    Record.Access.Call {
                       Node.location;
                       value = {
                         Call.name = transform_expression name;
@@ -95,11 +95,11 @@ module Make (Transformer : Transformer) = struct
                             ~f:(transform_argument ~transform_expression);
                       };
                     }
-                | Access.Identifier _ -> access
-                | Access.Expression expression ->
-                    Access.Expression (transform_expression expression)
-                | Access.Subscript subscripts ->
-                    Access.Subscript
+                | Record.Access.Identifier _ -> access
+                | Record.Access.Expression expression ->
+                    Record.Access.Expression (transform_expression expression)
+                | Record.Access.Subscript subscripts ->
+                    Record.Access.Subscript
                       (transform_list subscripts ~f:transform_subscript)
               in
               Access (transform_list access ~f:transform_access)

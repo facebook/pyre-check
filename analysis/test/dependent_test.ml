@@ -16,7 +16,7 @@ let populate ?project_root source =
   environment |> Environment.reader
 
 
-let access names = List.map ~f:Instantiated.Access.create names |> List.concat
+let access names = List.map ~f:Expression.Access.create names |> List.concat
 
 
 let primitive name = Type.Primitive ~~name

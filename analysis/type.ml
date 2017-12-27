@@ -286,7 +286,7 @@ let create ~aliases expression =
   let rec create reversed_lead tail =
     let name reversed_access =
       let show = function
-        | Access.Identifier element ->
+        | Record.Access.Identifier element ->
             Identifier.show element
         | _ ->
             "?" in
@@ -297,15 +297,15 @@ let create ~aliases expression =
 
     let annotation =
       match tail with
-      | (Access.Identifier _ as access) :: tail ->
+      | (Record.Access.Identifier _ as access) :: tail ->
           create (access :: reversed_lead) tail
-      | (Access.Subscript subscript) :: [] ->
+      | (Record.Access.Subscript subscript) :: [] ->
           let parameters =
             let parameter = function
-              | Access.Index { Node.value = Access access; _ } ->
+              | Record.Access.Index { Node.value = Access access; _ } ->
                   create [] access
-              | Access.Index { Node.value = String string; _ } ->
-                  create [] (Instantiated.Access.create string)
+              | Record.Access.Index { Node.value = String string; _ } ->
+                  create [] (Access.create string)
               | _ ->
                   Top
             in
@@ -432,11 +432,11 @@ let create ~aliases expression =
   match expression with
   | {
     Node.value = Access [
-        Access.Identifier typing;
-        Access.Call {
+        Record.Access.Identifier typing;
+        Record.Access.Call {
           Node.value = {
             Call.name = {
-              Node.value = Access [Access.Identifier typevar];
+              Node.value = Access [Record.Access.Identifier typevar];
               _;
             };
             arguments = { Argument.value = { Node.value = String name; _ }; _ } :: arguments;
@@ -471,9 +471,9 @@ let create ~aliases expression =
           | [{ Node.value = Statement.Expression { Node.value = Access access; _ }; _ }] ->
               access
           | _ ->
-              Instantiated.Access.create string
+              Access.create string
         with _ ->
-          Instantiated.Access.create string
+          Access.create string
       in
       create [] access
   | _ -> Top
@@ -484,37 +484,37 @@ let expression annotation =
     Identifier.show name
     |> String.split ~on:'.'
     |> List.map
-      ~f:Instantiated.Access.create
+      ~f:Access.create
     |> List.concat
   in
 
   let rec access annotation =
-    let index parameter = Access.Index (Node.create (Access (access parameter))) in
+    let index parameter = Record.Access.Index (Node.create (Access (access parameter))) in
     match annotation with
-    | Bottom -> Instantiated.Access.create "$bottom"
-    | Object -> Instantiated.Access.create "object"
+    | Bottom -> Access.create "$bottom"
+    | Object -> Access.create "object"
     | Optional parameter ->
-        (Instantiated.Access.create "typing.Optional") @
-        [Access.Subscript [index parameter]]
+        (Access.create "typing.Optional") @
+        [Record.Access.Subscript [index parameter]]
     | Parametric { name; parameters } ->
-        let subscript = Access.Subscript (List.map ~f:index parameters) in
+        let subscript = Record.Access.Subscript (List.map ~f:index parameters) in
         (split (reverse_substitute name)) @ [subscript]
     | Primitive name -> split name
-    | Top -> Instantiated.Access.create "$unknown"
+    | Top -> Access.create "$unknown"
     | Tuple tuple ->
         let subscript =
           match tuple with
           | Bounded parameters -> List.map ~f:index parameters
           | Unbounded parameter ->
               let ellipses =
-                Access.Index (Node.create (Access [Access.Identifier (Identifier.create "...")]))
+                Record.Access.Index (Node.create (Access [Record.Access.Identifier (Identifier.create "...")]))
               in
               [index parameter; ellipses]
         in
-        (Instantiated.Access.create "typing.Tuple") @ [Access.Subscript subscript]
+        (Access.create "typing.Tuple") @ [Record.Access.Subscript subscript]
     | Union parameters ->
-        let subscript = Access.Subscript (List.map ~f:index parameters) in
-        (Instantiated.Access.create "typing.Union") @ [subscript]
+        let subscript = Record.Access.Subscript (List.map ~f:index parameters) in
+        (Access.create "typing.Union") @ [subscript]
     | Variable { variable; _ } -> split variable
   in
   Node.create (Access (access annotation))
@@ -795,8 +795,8 @@ let instantiate ?(widen = false) annotation ~constraints =
 let rec dequalify map annotation =
   let dequalify_identifier identifier =
     let rec fold accumulator access =
-      if Instantiated.Access.Map.mem map access then
-        (Instantiated.Access.Map.find_exn map access) @ accumulator
+      if Access.Map.mem map access then
+        (Access.Map.find_exn map access) @ accumulator
       else
         match access with
         | tail :: rest ->
@@ -804,10 +804,10 @@ let rec dequalify map annotation =
         | [] -> accumulator
     in
     Identifier.show identifier
-    |> Instantiated.Access.create
+    |> Access.create
     |> List.rev
     |> fold []
-    |> Instantiated.Access.show
+    |> Access.show
     |> Identifier.create
   in
   let dequalify_string string = Identifier.create string |> dequalify_identifier in

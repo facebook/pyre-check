@@ -172,45 +172,47 @@ module ComparisonOperator = struct
 end
 
 
-module Access = struct
-  type 'expression slice = {
-    lower: 'expression option;
-    upper: 'expression option;
-    step: 'expression option;
-  }
-  [@@deriving compare, eq, sexp, show]
+module Record = struct
+  module Access = struct
+    type 'expression slice = {
+      lower: 'expression option;
+      upper: 'expression option;
+      step: 'expression option;
+    }
+    [@@deriving compare, eq, sexp, show]
 
 
-  type 'expression subscript =
-    | Index of 'expression
-    | Slice of 'expression slice
-  [@@deriving compare, eq, sexp, show]
+    type 'expression subscript =
+      | Index of 'expression
+      | Slice of 'expression slice
+    [@@deriving compare, eq, sexp, show]
 
 
-  type 'expression access =
-    | Call of ('expression Call.t) Node.t
-    | Expression of 'expression
-    | Identifier of Identifier.t
-    | Subscript of ('expression subscript) list
-  [@@deriving compare, eq, sexp, show]
+    type 'expression access =
+      | Call of ('expression Call.t) Node.t
+      | Expression of 'expression
+      | Identifier of Identifier.t
+      | Subscript of ('expression subscript) list
+    [@@deriving compare, eq, sexp, show]
 
 
-  type 'expression t = ('expression access) list
-  [@@deriving compare, eq, sexp, show]
+    type 'expression t = ('expression access) list
+    [@@deriving compare, eq, sexp, show]
 
 
-  let show _ access =
-    let identifier = function
-      | Identifier identifier ->
-          Identifier.show identifier
-      | _ ->
-          "?" in
-    List.map ~f:identifier access
-    |> String.concat ~sep:"."
+    let show _ access =
+      let identifier = function
+        | Identifier identifier ->
+            Identifier.show identifier
+        | _ ->
+            "?" in
+      List.map ~f:identifier access
+      |> String.concat ~sep:"."
 
 
-  let pp print_expression format access =
-    Format.fprintf format "%s" (show print_expression access)
+    let pp print_expression format access =
+      Format.fprintf format "%s" (show print_expression access)
+  end
 end
 
 
@@ -276,7 +278,7 @@ end
 
 
 type expression =
-  | Access of t Access.t
+  | Access of t Record.Access.t
   | Await of t
   | BinaryOperator of t BinaryOperator.t
   | BooleanOperator of t BooleanOperator.t
@@ -308,8 +310,57 @@ and t = expression Node.t
 [@@deriving compare, eq, sexp, show]
 
 
-type access = t Access.t
+type expression_node = t
 [@@deriving compare, eq, sexp, show]
+
+
+module Access = struct
+  type t = expression_node Record.Access.t
+  [@@deriving compare, eq, sexp, show]
+
+
+  module Set = Set.Make(struct
+      type nonrec t = t
+      let compare = compare
+      let sexp_of_t = sexp_of_t
+      let t_of_sexp = t_of_sexp
+    end)
+
+
+  module Map = Map.Make(struct
+      type nonrec t = t
+      let compare = compare
+      let sexp_of_t = sexp_of_t
+      let t_of_sexp = t_of_sexp
+    end)
+
+
+  include Hashable.Make(struct
+      type nonrec t = t
+      let compare = compare
+      let hash = Hashtbl.hash
+      let sexp_of_t = sexp_of_t
+      let t_of_sexp = t_of_sexp
+    end)
+
+
+  let create name =
+    if String.equal name "..." then
+      [Record.Access.Identifier (Identifier.create name)]
+    else
+      String.split ~on:'.' name
+      |> List.map ~f:(fun name -> Record.Access.Identifier (Identifier.create name))
+
+
+  let create_from_identifiers identifiers =
+    List.map ~f:(fun identifier -> Record.Access.Identifier identifier) identifiers
+
+
+  let access ({ Node.value; _ } as expression) =
+    match value with
+    | Access access -> access
+    | _ -> [Record.Access.Expression expression]
+end
 
 
 let negate ({ Node.location; _ } as node) =
@@ -394,7 +445,7 @@ module PrettyPrinter = struct
         Format.fprintf formatter "%a" pp_expression expression
 
 
-  and pp_slice formatter { Access.lower; upper; step } =
+  and pp_slice formatter { Record.Access.lower; upper; step } =
     match lower,upper,step with
     | Some lower,None,None ->
         Format.fprintf formatter "%a" pp_expression_node lower
@@ -430,9 +481,9 @@ module PrettyPrinter = struct
 
   and pp_subscript formatter subscript =
     match subscript with
-    | Access.Index index ->
+    | Record.Access.Index index ->
         Format.fprintf formatter "%a" pp_expression_node index
-    | Access.Slice slice ->
+    | Record.Access.Slice slice ->
         Format.fprintf formatter "%a" pp_slice slice
 
 
@@ -450,17 +501,17 @@ module PrettyPrinter = struct
 
   and pp_access formatter access =
     match access with
-    | Access.Call { Node.value = { Call.name; arguments }; _ } ->
+    | Record.Access.Call { Node.value = { Call.name; arguments }; _ } ->
         Format.fprintf
           formatter
           "%a(%a)"
           pp_expression_node name
           pp_argument_list arguments
-    | Access.Expression expression ->
+    | Record.Access.Expression expression ->
         Format.fprintf formatter "%a" pp_expression_node expression
-    | Access.Identifier identifier ->
+    | Record.Access.Identifier identifier ->
         Format.fprintf formatter "%s" @@ Identifier.show identifier
-    | Access.Subscript subscript_list ->
+    | Record.Access.Subscript subscript_list ->
         Format.fprintf formatter "%a" pp_subscript_list subscript_list
 
 
@@ -468,7 +519,7 @@ module PrettyPrinter = struct
     match access_list with
     | [] -> ()
     | access :: [] -> Format.fprintf formatter "%a" pp_access access
-    | access :: ([ Access.Subscript _ ] as access_list) ->
+    | access :: ([ Record.Access.Subscript _ ] as access_list) ->
         Format.fprintf
           formatter
           "%a[%a]"

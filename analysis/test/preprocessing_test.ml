@@ -614,7 +614,7 @@ let test_defines _ =
 
   let define =
     {
-      Define.name = Instantiated.Access.create "foo";
+      Define.name = Access.create "foo";
       parameters = [
         +{
           Parameter.name = ~~"a";
@@ -633,7 +633,7 @@ let test_defines _ =
   in
   let toplevel =
     {
-      Define.name = Instantiated.Access.create "$toplevel";
+      Define.name = Access.create "$toplevel";
       parameters = [];
       body = [+Define define];
       decorators = [];
@@ -650,7 +650,7 @@ let test_defines _ =
 
   let inner =
     {
-      Define.name = Instantiated.Access.create "foo";
+      Define.name = Access.create "foo";
       parameters = [
         +{
           Parameter.name = ~~"a";
@@ -669,7 +669,7 @@ let test_defines _ =
   in
   let define =
     {
-      Define.name = Instantiated.Access.create "foo";
+      Define.name = Access.create "foo";
       parameters = [
         +{
           Parameter.name = ~~"a";
@@ -688,7 +688,7 @@ let test_defines _ =
   in
   let toplevel =
     {
-      Define.name = Instantiated.Access.create "$toplevel";
+      Define.name = Access.create "$toplevel";
       parameters = [];
       body = [+Define define];
       decorators = [];
@@ -714,11 +714,11 @@ let test_classes _ =
 
   let class_define =
     {
-      Class.name = Instantiated.Access.create "foo";
+      Class.name = Access.create "foo";
       bases = [];
       body = [
         +Define {
-          Define.name = Instantiated.Access.create "bar";
+          Define.name = Access.create "bar";
           parameters = [];
           body = [+Pass];
           decorators = [];
@@ -726,7 +726,7 @@ let test_classes _ =
           return_annotation = None;
           async = false;
           generated = false;
-          parent = Some (Instantiated.Access.create "foo");
+          parent = Some (Access.create "foo");
         };
       ];
       decorators = [];
@@ -739,7 +739,7 @@ let test_classes _ =
 
   let inner =
     {
-      Class.name = Instantiated.Access.create "bar";
+      Class.name = Access.create "bar";
       bases = [];
       body = [+Pass];
       decorators = [];
@@ -748,7 +748,7 @@ let test_classes _ =
   in
   let class_define =
     {
-      Class.name = Instantiated.Access.create "foo";
+      Class.name = Access.create "foo";
       bases = [];
       body = [
         +Class inner;

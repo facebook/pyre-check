@@ -91,7 +91,7 @@ end
 let collect_accesses statement =
   let open Expression in
   let module Collector = ExpressionCollector(struct
-      type t = Expression.t Expression.Access.t
+      type t = Expression.t Expression.Record.Access.t
       let predicate = function
         | { Node.value = Access access; _ } ->
             Some access
@@ -104,7 +104,7 @@ let collect_accesses statement =
 let collect_accesses_with_location statement =
   let open Expression in
   let module Collector = ExpressionCollector(struct
-      type t = Expression.t Expression.Access.t Node.t
+      type t = Expression.t Expression.Record.Access.t Node.t
       let predicate = function
         | { Node.value = Access access; location } ->
             Some { Node.value = access; location }
@@ -117,7 +117,7 @@ let collect_accesses_with_location statement =
 let collect_accesses_in_position statement { Location.line; column } =
   let open Expression in
   let module Collector = ExpressionCollector(struct
-      type t = (Expression.t Expression.Access.t) Node.t
+      type t = (Expression.t Expression.Record.Access.t) Node.t
       let predicate = function
         | {
           Node.value = Access access;

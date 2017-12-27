@@ -3,6 +3,8 @@
     This source code is licensed under the MIT license found in the
     LICENSE file in the root directory of this source tree. *)
 
+open Core
+
 
 module Call : sig
   type 'expression t = {
@@ -89,28 +91,30 @@ module ComparisonOperator : sig
   [@@deriving compare, eq, sexp, show]
 end
 
-module Access : sig
-  type 'expression slice = {
-    lower: 'expression option;
-    upper: 'expression option;
-    step: 'expression option;
-  }
-  [@@deriving compare, eq, sexp, show]
+module Record : sig
+  module Access : sig
+    type 'expression slice = {
+      lower: 'expression option;
+      upper: 'expression option;
+      step: 'expression option;
+    }
+    [@@deriving compare, eq, sexp, show]
 
-  type 'expression subscript =
-    | Index of 'expression
-    | Slice of 'expression slice
-  [@@deriving compare, eq, sexp, show]
+    type 'expression subscript =
+      | Index of 'expression
+      | Slice of 'expression slice
+    [@@deriving compare, eq, sexp, show]
 
-  type 'expression access =
-    | Call of ('expression Call.t) Node.t
-    | Expression of 'expression
-    | Identifier of Identifier.t
-    | Subscript of ('expression subscript) list
-  [@@deriving compare, eq, sexp, show]
+    type 'expression access =
+      | Call of ('expression Call.t) Node.t
+      | Expression of 'expression
+      | Identifier of Identifier.t
+      | Subscript of ('expression subscript) list
+    [@@deriving compare, eq, sexp, show]
 
-  type 'expression t = ('expression access) list
-  [@@deriving compare, eq, sexp, show]
+    type 'expression t = ('expression access) list
+    [@@deriving compare, eq, sexp, show]
+  end
 end
 
 module Lambda : sig
@@ -168,7 +172,7 @@ module Starred : sig
 end
 
 type expression =
-  | Access of t Access.t
+  | Access of t Record.Access.t
   | Await of t
   | BinaryOperator of t BinaryOperator.t
   | BooleanOperator of t BooleanOperator.t
@@ -198,8 +202,22 @@ type expression =
 and t = expression Node.t
 [@@deriving compare, eq, sexp, show]
 
-type access = t Access.t
+and expression_node = t
 [@@deriving compare, eq, sexp, show]
+
+module Access : sig
+  type t = expression_node Record.Access.t
+  [@@deriving compare, eq, sexp, show]
+
+  module Set: Set.S with type Elt.t = t
+  module Map: Map.S with type Key.t = t
+  include Hashable with type t := t
+
+  val create: string -> t
+  val create_from_identifiers: Identifier.t list -> t
+
+  val access: expression_node -> t
+end
 
 val negate: t -> t
 
@@ -211,7 +229,7 @@ val show : t -> string
 
 val pp_expression_list : Format.formatter -> t list -> unit
 
-val pp_expression_access_list : Format.formatter -> t Access.t -> unit
+val pp_expression_access_list : Format.formatter -> t Record.Access.t -> unit
 
 val pp_expression_argument_list : Format.formatter -> (t Argument.t) list -> unit
 

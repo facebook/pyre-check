@@ -7,6 +7,7 @@ open Core
 open OUnit2
 
 open Ast
+open Expression
 open Statement
 
 open Test
@@ -62,7 +63,7 @@ module CountingFixpoint = Fixpoint.Make(CountingState)
 
 let assert_fixpoint body expected =
   let define = {
-    Define.name = Instantiated.Access.create "foo";
+    Define.name = Access.create "foo";
     parameters = [];
     body;
     decorators = [];

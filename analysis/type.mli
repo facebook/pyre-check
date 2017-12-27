@@ -101,7 +101,7 @@ val assume_any: t -> t
 val instantiate: ?widen: bool -> t -> constraints:(t -> t option) -> t
 
 (* Takes a map generated from Preprocessing.dequalify_map and a type and dequalifies the type *)
-val dequalify: access Instantiated.Access.Map.t -> t -> t
+val dequalify: Access.t Access.Map.t -> t -> t
 
 module Build : sig
   val create

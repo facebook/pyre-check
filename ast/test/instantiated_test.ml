@@ -7,6 +7,7 @@ open Core
 open OUnit2
 
 open Ast
+open Expression
 open Statement
 
 open Test
@@ -15,7 +16,7 @@ open Test
 let test_is_explicit_constructor_call _ =
   let call name =
     {
-      Expression.Call.name = Node.create (Expression.Access (Instantiated.Access.create name));
+      Expression.Call.name = Node.create (Expression.Access (Access.create name));
       arguments = [];
     }
   in
@@ -26,9 +27,9 @@ let test_is_explicit_constructor_call _ =
 
 let test_is_method _ =
   let define name parent =
-    let parent = if parent = "" then None else (Some (Instantiated.Access.create parent)) in
+    let parent = if parent = "" then None else (Some (Access.create parent)) in
     {
-      Define.name = Instantiated.Access.create name;
+      Define.name = Access.create name;
       parameters = [];
       body = [+Pass];
       decorators = [];
@@ -46,7 +47,7 @@ let test_is_method _ =
 let test_decorator _ =
   let define decorators =
     {
-      Define.name = Instantiated.Access.create "foo";
+      Define.name = Access.create "foo";
       parameters = [];
       body = [+Pass];
       decorators;
@@ -79,12 +80,12 @@ let test_is_constructor _ =
   let assert_is_constructor ~name ?(parent = None) expected =
     let parent =
       if Option.is_some parent then
-        Some (Instantiated.Access.create (Option.value_exn parent))
+        Some (Access.create (Option.value_exn parent))
       else None
     in
     let define =
       {
-        Define.name = Instantiated.Access.create name;
+        Define.name = Access.create name;
         parameters = [];
         body = [+Pass];
         decorators = [];

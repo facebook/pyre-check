@@ -69,9 +69,9 @@ let test_method_overrides _ =
   let overrides = Method.overrides ~resolution foo in
   assert_is_some overrides;
   assert_equal
-    ~cmp:Instantiated.Access.equal
+    ~cmp:Expression.Access.equal
     (Method.parent (Option.value_exn overrides) |> Class.name)
-    (Instantiated.Access.create "Foo")
+    (Expression.Access.create "Foo")
 
 
 let test_method_implements _ =
@@ -87,7 +87,7 @@ let test_method_implements _ =
   let definition ?(parameters = []) ?return_annotation name =
     Method.create
       ~define:{
-        Statement.Define.name = Instantiated.Access.create name;
+        Statement.Define.name = Expression.Access.create name;
         parameters;
         body = [+Pass];
         decorators = [];
@@ -95,10 +95,10 @@ let test_method_implements _ =
         return_annotation;
         async = false;
         generated = false;
-        parent = Some (Instantiated.Access.create "Parent");
+        parent = Some (Expression.Access.create "Parent");
       }
       ~parent:(Class.create {
-          Statement.Class.name = Instantiated.Access.create "Parent";
+          Statement.Class.name = Expression.Access.create "Parent";
           bases = [];
           body = [+Pass];
           decorators = [];
@@ -218,7 +218,7 @@ let test_generics _ =
 
 let test_superclasses _ =
   let assert_superclasses result expected =
-    let equal left right = Instantiated.Access.equal (Class.name left) (Class.name right) in
+    let equal left right = Expression.Access.equal (Class.name left) (Class.name right) in
     assert_equal
       ~printer:(fun classes -> Format.asprintf "%a" Sexp.pp (sexp_of_list Class.sexp_of_t classes))
       ~cmp:(List.equal ~equal) result expected
@@ -235,7 +235,7 @@ let test_superclasses _ =
     |} in
   let (!) name =
     {
-      Statement.Class.name = Instantiated.Access.create name;
+      Statement.Class.name = Expression.Access.create name;
       bases = [];
       body = [+Pass];
       decorators = [];
@@ -262,7 +262,7 @@ let test_superclasses _ =
 
 
 type constructor = {
-  name: Expression.access;
+  name: Expression.Access.t;
   parameters: (Expression.t Parameter.t) list;
   annotation: Type.t option;
 }
@@ -314,7 +314,7 @@ let test_constructors _ =
     "class Foo: pass"
     [
       {
-        name = Instantiated.Access.create "Foo";
+        name = Expression.Access.create "Foo";
         parameters = [Parameter.create ~name:~~"self" ()];
         annotation = Some (Type.Primitive ~~"Foo")
       };
@@ -324,7 +324,7 @@ let test_constructors _ =
     "class Foo: ..."
     [
       {
-        name = Instantiated.Access.create "Foo";
+        name = Expression.Access.create "Foo";
         parameters = [Parameter.create ~name:~~"self" ()];
         annotation = Some (Type.Primitive ~~"Foo");
       };
@@ -338,7 +338,7 @@ let test_constructors _ =
     |}
     [
       {
-        name = Instantiated.Access.create "Foo";
+        name = Expression.Access.create "Foo";
         parameters = [
           Parameter.create ~name:~~"self" ();
           Parameter.create ~name:~~"a" ~annotation:(Type.expression Type.integer) ();
@@ -354,7 +354,7 @@ let test_constructors _ =
     |}
     [
       {
-        name = Instantiated.Access.create "Foo";
+        name = Expression.Access.create "Foo";
         parameters = [
           Parameter.create ~name:~~"self" ();
           Parameter.create ~name:~~"a" ~annotation:(Type.expression Type.integer) ();
@@ -362,7 +362,7 @@ let test_constructors _ =
         annotation = Some (Type.Primitive ~~"Foo");
       };
       {
-        name = Instantiated.Access.create "Foo";
+        name = Expression.Access.create "Foo";
         parameters = [
           Parameter.create ~name:~~"self" ();
           Parameter.create ~name:~~"b" ~annotation:(Type.expression Type.string) ();
@@ -381,7 +381,7 @@ let test_constructors _ =
     |}
     [
       {
-        name = Instantiated.Access.create "Foo";
+        name = Expression.Access.create "Foo";
         parameters = [Parameter.create ~name:~~"self" ()];
         annotation =
           Some
@@ -400,7 +400,7 @@ let test_methods _ =
     | { Node.value = Statement.Stub (Stub.Class definition); _ } ->
         let actuals =
           let method_name { Statement.Define.name; _ } =
-            Instantiated.Access.show name
+            Expression.Access.show name
           in
           Class.create definition
           |> Class.methods
@@ -428,7 +428,7 @@ let test_is_protocol _ =
   let assert_is_protocol bases expected =
     let is_protocol =
       {
-        Statement.Class.name = Instantiated.Access.create "Derp";
+        Statement.Class.name = Expression.Access.create "Derp";
         bases;
         body = [];
         decorators = [];
@@ -543,7 +543,7 @@ let test_class_fields _ =
   let create_assign
       ?(value = None)
       ?(annotation = Some !"int")
-      ?(parent = Some (Instantiated.Access.create "foo"))
+      ?(parent = Some (Expression.Access.create "foo"))
       name =
     +{ Assign.target = !name; annotation; value; compound = None; parent }
   in
@@ -588,7 +588,7 @@ let test_class_fields _ =
   in
   assert_equal
     (Field.name field)
-    (Expression.Access (Instantiated.Access.create "first"));
+    (Expression.Access (Expression.Access.create "first"));
   assert_equal
     (Field.annotation field)
     (Annotation.create_immutable ~global:true (Type.Primitive ~~"int"));
@@ -599,7 +599,7 @@ let test_class_fields _ =
       string_names
       field =
     match Field.name field with
-    | Expression.Access access -> string_names ^ (Instantiated.Access.show access)
+    | Expression.Access access -> string_names ^ (Expression.Access.show access)
     | _ -> string_names
   in
   assert_equal
@@ -618,7 +618,7 @@ let test_return_annotation _ =
         |}
       in
       {
-        Statement.Define.name = Instantiated.Access.create "derp";
+        Statement.Define.name = Expression.Access.create "derp";
         parameters = [];
         body = [+Pass];
         decorators = [];
@@ -640,7 +640,7 @@ let test_return_annotation _ =
 let test_parent_definition _ =
   let parent_class_definition environment name parent =
     {
-      Statement.Define.name = Instantiated.Access.create name;
+      Statement.Define.name = Expression.Access.create name;
       parameters = [];
       body = [+Pass];
       decorators = [];
@@ -648,7 +648,7 @@ let test_parent_definition _ =
       return_annotation = None;
       async = false;
       generated = false;
-      parent = parent >>| Instantiated.Access.create;
+      parent = parent >>| Expression.Access.create;
     }
     |> Define.create
     |> Define.parent_definition ~resolution:(resolution environment)
@@ -663,7 +663,7 @@ let test_parent_definition _ =
     parent_class_definition environment "bar" (Some "foo")
     |> value
   in
-  assert_equal (Class.name parent) (Instantiated.Access.create "foo");
+  assert_equal (Class.name parent) (Expression.Access.create "foo");
 
   let environment =
     populate {|
@@ -691,14 +691,14 @@ let test_parent_definition _ =
         |> (fun resolution -> Resolution.parse_annotation resolution value)
     | _ -> Type.Top
   in
-  assert_equal (Class.name parent) (Instantiated.Access.create "foo");
+  assert_equal (Class.name parent) (Expression.Access.create "foo");
   assert_equal base_type (Type.Primitive ~~"superfoo")
 
 
 let test_method_definition _ =
   let parent_class_definition environment name parent =
     {
-      Statement.Define.name = Instantiated.Access.create name;
+      Statement.Define.name = Expression.Access.create name;
       parameters = [];
       body = [+Pass];
       decorators = [];
@@ -706,7 +706,7 @@ let test_method_definition _ =
       return_annotation = None;
       async = false;
       generated = false;
-      parent = parent >>| Instantiated.Access.create;
+      parent = parent >>| Expression.Access.create;
     }
     |> Define.create
     |> Define.method_definition ~resolution:(resolution environment)
@@ -732,7 +732,7 @@ let test_parameter_annotations _ =
   in
   let define parameters =
     {
-      Statement.Define.name = Instantiated.Access.create "";
+      Statement.Define.name = Expression.Access.create "";
       parameters;
       body = [+Pass];
       decorators = [];
@@ -781,7 +781,7 @@ let test_infer_argument_name _ =
   in
   let define parameters =
     {
-      Statement.Define.name = Instantiated.Access.create "";
+      Statement.Define.name = Expression.Access.create "";
       parameters;
       body = [+Pass];
       decorators = [];
@@ -879,7 +879,7 @@ let test_fold _ =
 
   assert_fold
     ~environment:(populate "")
-    (Instantiated.Access.create "foo")
+    (Expression.Access.create "foo")
     [
       Annotation.create Type.Top, Access.Element.Global;
       Annotation.create Type.Top, Access.Element.Global;
@@ -894,7 +894,7 @@ let test_fold _ =
   in
   let mock_class =
     {
-      Statement.Class.name = Instantiated.Access.create "";
+      Statement.Class.name = Expression.Access.create "";
       bases = [];
       body = [+Pass];
       decorators = [];
@@ -905,7 +905,7 @@ let test_fold _ =
   let defined_field =
     Access.Element.Field (Access.Element.Defined {
       Field.parent = mock_class;
-      name = Ast.Expression.Access (Instantiated.Access.create "");
+      name = Ast.Expression.Access (Expression.Access.create "");
       annotation = (Annotation.create_immutable ~global:true Type.Top);
       location = Location.any;
       value = None;
@@ -913,7 +913,7 @@ let test_fold _ =
   in
   assert_fold
     ~environment
-    (Instantiated.Access.create "foo.bar")
+    (Expression.Access.create "foo.bar")
     [
       Annotation.create_immutable ~global:true Type.integer, defined_field;
       Annotation.create_immutable ~global:true (Type.Primitive ~~"Foo"), Access.Element.Global;
@@ -923,13 +923,13 @@ let test_fold _ =
   let undefined_field =
     Access.Element.Field
       (Access.Element.Undefined {
-        Access.Element.name = Instantiated.Access.create "baz";
+        Access.Element.name = Expression.Access.create "baz";
         parent = Some mock_class;
       })
   in
   assert_fold
     ~environment
-    (Instantiated.Access.create "foo.baz")
+    (Expression.Access.create "foo.baz")
     [
       Annotation.create Type.Top, undefined_field;
       Annotation.create_immutable ~global:true (Type.Primitive ~~"Foo"), Access.Element.Global;

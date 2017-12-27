@@ -43,6 +43,6 @@ end
 val collect_accesses_in_position
   :  Statement.t
   -> Location.position
-  -> ((Expression.t Expression.Access.t) Node.t) list
+  -> ((Expression.t Expression.Record.Access.t) Node.t) list
 
-val collect_accesses: Statement.t -> Expression.access list
+val collect_accesses: Statement.t -> Expression.Access.t list

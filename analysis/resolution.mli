@@ -11,14 +11,14 @@ open Statement
 type t
 
 val create
-  :  annotations: Annotation.t Instantiated.Access.Map.t
+  :  annotations: Annotation.t Access.Map.t
   -> order: (module TypeOrder.Reader)
   -> resolve: (resolution: t -> Expression.t -> Type.t)
   -> parse_annotation: (Expression.t -> Type.t)
-  -> global: (access -> Annotation.t option)
+  -> global: (Access.t -> Annotation.t option)
   -> class_definition:(Type.t -> (Statement.t Class.t) option)
   -> function_signature:
-       (access
+       (Access.t
         -> Expression.t Call.t
         -> Signature.argument list
         -> Signature.t list)
@@ -29,20 +29,20 @@ val create
         -> Signature.argument list
         -> Signature.t list)
   -> t
-val with_annotations: t -> Annotation.t Instantiated.Access.Map.t -> t
+val with_annotations: t -> Annotation.t Access.Map.t -> t
 
-val annotations: t -> Annotation.t Instantiated.Access.Map.t
+val annotations: t -> Annotation.t Access.Map.t
 val order: t -> (module TypeOrder.Reader)
 
 val resolve: t -> Expression.t -> Type.t
 val parse_annotation: t -> Expression.t -> Type.t
 
-val global: t -> access -> Annotation.t option
+val global: t -> Access.t -> Annotation.t option
 val class_definition: t -> Type.t -> (Statement.t Class.t) option
 
 val function_signature
   :  t
-  -> access
+  -> Access.t
   -> Expression.t Call.t
   -> Signature.argument list
   -> Signature.t list

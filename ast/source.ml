@@ -116,7 +116,7 @@ type t = {
   docstring: string option;
   metadata: Metadata.t;
   path: string;
-  qualifier: Expression.t Access.t;
+  qualifier: Expression.t Record.Access.t;
   statements: Statement.t list;
 }
 [@@deriving compare, eq, show]
@@ -163,5 +163,5 @@ let qualifier ~path =
   (last_without_suffix :: (List.tl_exn reversed_elements))
   |> strip
   |> List.rev_map
-    ~f:Instantiated.Access.create
+    ~f:Access.create
   |> List.concat

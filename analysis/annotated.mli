@@ -19,7 +19,7 @@ module Class : sig
 
   val create: Statement.t Class.t -> t
 
-  val name: t -> Expression.access
+  val name: t -> Access.t
   val bases: t -> (Expression.t Argument.t) list
   val body: t -> Statement.t list
 
@@ -50,7 +50,7 @@ module Class : sig
 
     val create: define: Statement.define -> parent: parent_class -> t
 
-    val name: t -> Instantiated.Access.t
+    val name: t -> Access.t
 
     val define: t -> Statement.define
     val parent: t -> parent_class
@@ -162,8 +162,8 @@ module Call : sig
   (* Some calls are redirected to method calls, e.g. `repr(x)` will call
      `x.__repr__()`. *)
   type redirect = {
-    access: access;
-    call: access;
+    access: Access.t;
+    call: Access.t;
   }
   val redirect: t -> redirect option
 
@@ -221,7 +221,7 @@ module Access: sig
 
     type method_call = {
       location: Location.t;
-      access: access;
+      access: Access.t;
       annotation: Annotation.t;
       call: Call.t;
       callee: Signature.t option;
@@ -229,7 +229,7 @@ module Access: sig
     }
 
     type undefined_field = {
-      name: Expression.access;
+      name: Access.t;
       parent: Class.t option;
     }
 
@@ -250,7 +250,7 @@ module Access: sig
   type t
   [@@deriving compare, eq, sexp, show]
 
-  val create: Expression.access -> t
+  val create: Access.t -> t
 
   val fold
     :  resolution: Resolution.t
@@ -258,7 +258,7 @@ module Access: sig
     -> initial: 'accumulator
     -> f:
          ('accumulator
-          -> annotations: Annotation.t Instantiated.Access.Map.t
+          -> annotations: Annotation.t Access.Map.t
           -> resolved: Annotation.t
           -> element: Element.t
           -> 'accumulator)

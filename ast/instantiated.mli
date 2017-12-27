@@ -3,28 +3,8 @@
     This source code is licensed under the MIT license found in the
     LICENSE file in the root directory of this source tree. *)
 
-open Core
-
 open Expression
 open Statement
-
-
-module Access : sig
-  type t = Expression.t Access.t
-  [@@deriving compare, eq, sexp, show]
-
-  module Set: Set.S with type Elt.t = t
-  module Map : Map.S with type Key.t = t
-  include Hashable with type t := t
-
-  val create: string -> t
-  val create_from_identifiers: Identifier.t list -> t
-
-  val access: Expression.t -> t
-end
-
-type access = Access.t
-[@@deriving compare, eq, sexp, show]
 
 module Call : sig
   type t = Expression.t Call.t

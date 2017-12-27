@@ -34,7 +34,7 @@ module State = struct
   type t = {
     environment: (module Environment.Reader);
     errors: Error.t Location.Map.t;
-    annotations: Annotation.t Instantiated.Access.Map.t;
+    annotations: Annotation.t Access.Map.t;
     define: Statement.define Node.t;
     lookup: Lookup.t option;
   }
@@ -72,7 +72,7 @@ module State = struct
       let annotation_to_string (name, annotation) =
         Format.asprintf
           "    %a -> %a"
-          Instantiated.Access.pp name
+          Access.pp name
           Annotation.pp annotation
       in
       List.map (Map.to_alist annotations) ~f:annotation_to_string
@@ -104,7 +104,7 @@ module State = struct
     {
       environment;
       errors = Location.Map.empty;
-      annotations = Instantiated.Access.Map.of_alist_exn annotations;
+      annotations = Access.Map.of_alist_exn annotations;
       define;
       lookup;
     }
@@ -141,8 +141,8 @@ module State = struct
                         compound = None;
                         _;
                       } ->
-                        if Instantiated.Access.equal [self] (Instantiated.Access.create "self") &&
-                           Instantiated.Access.equal access name then
+                        if Expression.Access.equal [self] (Expression.Access.create "self") &&
+                           Expression.Access.equal access name then
                           true
                         else
                           initial
@@ -374,7 +374,7 @@ module State = struct
           index
           (annotations, errors)
           { Node.location; value = { Parameter.name; value; annotation }} =
-        let access = [Access.Identifier name] in
+        let access = [Record.Access.Identifier name] in
         match index, parent with
         | 0, Some parent
           when Instantiated.Define.is_method define &&
@@ -598,7 +598,7 @@ module State = struct
       let add_annotation ~key ~data map =
         if Type.is_unknown data.Annotation.annotation ||
            Type.is_instantiated data.Annotation.annotation ||
-           Instantiated.Access.equal key Preprocessing.return_access then
+           Access.equal key Preprocessing.return_access then
           map
         else
           Map.add ~key ~data map
@@ -771,9 +771,9 @@ module State = struct
           let rec asserted annotations expression =
             match Node.value expression with
             | Access [
-                Access.Call {
+                Record.Access.Call {
                   Node.value = {
-                    Call.name = { Node.value = Access [Access.Identifier name]; _ };
+                    Call.name = { Node.value = Access [Record.Access.Identifier name]; _ };
                     arguments = [
                       { Argument.name = None; value = { Node.value = Access access; _ } };
                       { Argument.name = None; value = annotation };
@@ -798,9 +798,9 @@ module State = struct
                 operand = {
                   Node.value =
                     Access [
-                      Access.Call {
+                      Record.Access.Call {
                         Node.value = {
-                          Call.name = { Node.value = Access [Access.Identifier name]; _ };
+                          Call.name = { Node.value = Access [Record.Access.Identifier name]; _ };
                           arguments = [
                             { Argument.name = None; value = { Node.value = Access access; _ } };
                             { Argument.name = None; value = annotation };
@@ -901,7 +901,7 @@ module State = struct
                 ComparisonOperator.left;
                 right = [
                   ComparisonOperator.IsNot,
-                  { Node.value = Access [ Access.Identifier identifier; ]; _ }
+                  { Node.value = Access [Record.Access.Identifier identifier; ]; _ }
                 ];
               } when Identifier.show identifier = "None" ->
                 asserted annotations left
@@ -909,7 +909,7 @@ module State = struct
                 ComparisonOperator.left = { Node.value = Access access; _ };
                 right = [
                   ComparisonOperator.Is,
-                  { Node.value = Access [ Access.Identifier identifier; ]; _ }
+                  { Node.value = Access [Record.Access.Identifier identifier; ]; _ }
                 ];
               } when Identifier.show identifier = "None" ->
                 let open Annotated in
@@ -940,7 +940,7 @@ module State = struct
           annotations
 
       | Global identifiers ->
-          let access = Instantiated.Access.create_from_identifiers identifiers in
+          let access = Access.create_from_identifiers identifiers in
           let annotation =
             Resolution.resolve resolution (Node.create (Access access))
             |> Annotation.create_immutable ~global:true
@@ -1074,7 +1074,7 @@ module State = struct
                             [
                               {
                                 Argument.name = None;
-                                value = Node.create (Access (Instantiated.Access.create "self"));
+                                value = Node.create (Access (Access.create "self"));
                               };
                               {
                                 Argument.name = None;
@@ -1127,21 +1127,21 @@ module State = struct
             let errors = check_access ~resolution errors access in
             let check_single_access errors access =
               match access with
-              | Access.Identifier _ ->
+              | Record.Access.Identifier _ ->
                   errors
 
-              | Access.Call { Node.value = { Call.name; arguments }; _ } ->
+              | Record.Access.Call { Node.value = { Call.name; arguments }; _ } ->
                   let check_argument errors { Argument.value; _ } =
                     check_expression ~resolution errors value
                   in
                   let errors = check_expression ~resolution errors name in
                   List.fold ~f:check_argument ~init:errors arguments
 
-              | Access.Expression expression -> check_expression ~resolution errors expression
-              | Access.Subscript subscripts ->
+              | Record.Access.Expression expression -> check_expression ~resolution errors expression
+              | Record.Access.Subscript subscripts ->
                   let check_subscript errors = function
-                    | Access.Index expression -> check_expression ~resolution errors expression
-                    | Access.Slice { Access.lower; upper; step } ->
+                    | Record.Access.Index expression -> check_expression ~resolution errors expression
+                    | Record.Access.Slice { Record.Access.lower; upper; step } ->
                         let check_optional_expression expression errors =
                           match expression with
                           | Some expression -> check_expression ~resolution errors expression
@@ -1357,7 +1357,7 @@ module State = struct
               match Access.last_element ~resolution (Access.create access) with
               | Access.Element.Field (Access.Element.Defined field) ->
                   let expected = Annotation.original (Field.annotation field) in
-                  let name = Instantiated.Access.access (Node.create (Field.name field)) in
+                  let name = Expression.Access.access (Node.create (Field.name field)) in
                   errors
                   |> add_incompatible_type_error
                     ~expected
@@ -1537,7 +1537,7 @@ module State = struct
               { Node.value = Tuple arguments; _ } ->
                 let rec remove_initial_identifiers annotation =
                   match annotation with
-                  | Access ((Access.Identifier _) :: tail) ->
+                  | Access ((Record.Access.Identifier _) :: tail) ->
                       remove_initial_identifiers (Access tail)
                   | Access no_identifiers -> no_identifiers
                   | _ -> []
@@ -1547,9 +1547,9 @@ module State = struct
                   | Type.Tuple (Type.Bounded _) ->
                       begin
                         match remove_initial_identifiers (Node.value parameter_annotation) with
-                        | [ Access.Subscript subscript ] ->
+                        | [Record.Access.Subscript subscript] ->
                             let extract_index = function
-                              | Access.Index index -> Some index
+                              | Record.Access.Index index -> Some index
                               | _ -> None
                             in
                             List.map ~f:extract_index subscript
@@ -1632,7 +1632,7 @@ module State = struct
             | Access value_access ->
                 let annotations =
                   match value_access with
-                  | [Access.Identifier _] ->
+                  | [Record.Access.Identifier _] ->
                       resolve_assign target_annotation (Annotated.resolve ~resolution value)
                       >>| (fun refined ->
                           Map.add ~key:value_access ~data:(Annotation.create refined) annotations)
@@ -1697,7 +1697,7 @@ module State = struct
     let add_parameter_errors
         errors
         { Node.value = { Parameter.name; annotation; _ }; location } =
-      let access = [Access.Identifier name] in
+      let access = [Record.Access.Identifier name] in
       let add_missing_parameter_error ~due_to_any =
         Map.find annotations access
         >>| (fun { Annotation.annotation; _ } ->
@@ -1762,7 +1762,7 @@ let check configuration environment ({ Source.path; _ } as source) =
       begin
         Log.dump
           "Checking `%s`..."
-          (Log.Color.yellow (Instantiated.Access.show name));
+          (Log.Color.yellow (Access.show name));
         Log.dump "AST:\n%s" (Annotated.Define.create define |> Annotated.Define.show);
       end;
 
@@ -1781,7 +1781,7 @@ let check configuration environment ({ Source.path; _ } as source) =
                 Type.show (Annotation.annotation data)
                 |> String.strip ~drop:((=) '`')
               in
-              label ^ "\n" ^ Instantiated.Access.show key ^ ": " ^ annotation_string
+              label ^ "\n" ^ Access.show key ^ ": " ^ annotation_string
             in
             Map.fold ~f:stringify ~init:"" annotations
         | None -> ""
@@ -1793,10 +1793,10 @@ let check configuration environment ({ Source.path; _ } as source) =
             | Some parent ->
                 Format.sprintf
                   "%s.%s"
-                  (Instantiated.Access.show parent)
-                  (Instantiated.Access.show name)
+                  (Access.show parent)
+                  (Access.show name)
             | None ->
-                Instantiated.Access.show name
+                Access.show name
           in
           let file =
             let path =
@@ -1856,7 +1856,7 @@ let check configuration environment ({ Source.path; _ } as source) =
           ~integers:[]
           ~normals:[
             "path", path;
-            "define", Instantiated.Access.show name;
+            "define", Access.show name;
             "type", Type.show annotation;
           ]
           ();

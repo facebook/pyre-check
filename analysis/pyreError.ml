@@ -41,7 +41,7 @@ type parameter_mismatch = {
 
 
 type missing_immutable = {
-  name: Expression.access;
+  name: Access.t;
   annotation: Type.t;
   parent: Annotated.Class.t option;
   evidence_locations: Location.t list;
@@ -58,7 +58,7 @@ let pp_missing_immutable format { name; annotation; parent; evidence_locations; 
   Format.fprintf
     format
     "Name: %a, Annotation: %s, Parent: %s, Evidence Locations: %a, Due to any: %b"
-    Instantiated.Access.pp name
+    Access.pp name
     (Type.show annotation)
     parent_name
     Sexp.pp (sexp_of_list Location.sexp_of_t evidence_locations)
@@ -68,7 +68,7 @@ let show_missing_immutable missing_immutable =
   Format.asprintf "%a" pp missing_immutable
 
 type immutable_mismatch = {
-  name: Expression.access;
+  name: Access.t;
   parent: Annotated.Class.t option;
   mismatch: mismatch;
   declare_location: Location.t;
@@ -76,7 +76,7 @@ type immutable_mismatch = {
 [@@deriving compare, eq, show, sexp]
 
 type initialization_mismatch = {
-  name: Expression.access;
+  name: Access.t;
   parent: Annotated.Class.t;
   mismatch: mismatch;
 }
@@ -284,12 +284,12 @@ let description
               [
                 Format.asprintf
                   "Field %a of class %a has type %a but no type is specified."
-                  Instantiated.Access.pp name
-                  Instantiated.Access.pp (Annotated.Class.name parent)
+                  Access.pp name
+                  Access.pp (Annotated.Class.name parent)
                   Type.pp annotation;
                 Format.asprintf
                   "Field %a declared on line %d, type %a deduced from %s."
-                  Instantiated.Access.pp name
+                  Access.pp name
                   (Location.line location)
                   Type.pp annotation
                   evidence_string
@@ -298,12 +298,12 @@ let description
               [
                 Format.asprintf
                   "Field %a of class %a has type %a but type `Any` is specified."
-                  Instantiated.Access.pp name
-                  Instantiated.Access.pp (Annotated.Class.name parent)
+                  Access.pp name
+                  Access.pp (Annotated.Class.name parent)
                   Type.pp annotation;
                 Format.asprintf
                   "Field %a declared on line %d, type %a deduced from %s."
-                  Instantiated.Access.pp name
+                  Access.pp name
                   (Location.line location)
                   Type.pp annotation
                   evidence_string
@@ -312,11 +312,11 @@ let description
               [
                 Format.asprintf
                   "Globally accessible field %a has type %a but no type is specified."
-                  Instantiated.Access.pp name
+                  Access.pp name
                   Type.pp annotation;
                 Format.asprintf
                   "Global %a declared on line %d, type %a deduced from %s."
-                  Instantiated.Access.pp name
+                  Access.pp name
                   (Location.line location)
                   Type.pp annotation
                   evidence_string
@@ -325,11 +325,11 @@ let description
               [
                 Format.asprintf
                   "Globally accessible field %a has type %a but type `Any` is specified."
-                  Instantiated.Access.pp name
+                  Access.pp name
                   Type.pp annotation;
                 Format.asprintf
                   "Global %a declared on line %d, type %a deduced from %s."
-                  Instantiated.Access.pp name
+                  Access.pp name
                   (Location.line location)
                   Type.pp annotation
                   evidence_string
@@ -343,7 +343,7 @@ let description
       } ->
         let parent =
           match parent with
-          | Some parent -> Format.asprintf "%a." Instantiated.Access.pp parent
+          | Some parent -> Format.asprintf "%a." Access.pp parent
           | _ -> ""
         in
         [
@@ -352,7 +352,7 @@ let description
             (ordinal position)
             Identifier.pp name
             parent
-            Instantiated.Access.pp callee_name
+            Access.pp callee_name
             Type.pp expected
             Type.pp actual
         ]
@@ -377,13 +377,13 @@ let description
         [
           (Format.asprintf
              "field %a declared in class %a has type %a but is used as type %a."
-             Instantiated.Access.pp name
-             Instantiated.Access.pp (Annotated.Class.name parent)
+             Access.pp name
+             Access.pp (Annotated.Class.name parent)
              Type.pp expected
              Type.pp actual);
           (Format.asprintf
              "Field %a declared on line %d, incorrectly used on line %d."
-             Instantiated.Access.pp name
+             Access.pp name
              declare_location.Location.start.Location.line
              (Location.line location))
         ]
@@ -396,12 +396,12 @@ let description
         [
           (Format.asprintf
              "%a is declared to have type %a but is used as type %a."
-             Instantiated.Access.pp name
+             Access.pp name
              Type.pp expected
              Type.pp actual);
           (Format.asprintf
              "%a incorrectly used on line %d."
-             Instantiated.Access.pp name
+             Access.pp name
              (Location.line location))
         ]
     | InconsistentOverride { overridden_method; override; mismatch = { actual; expected } } ->
@@ -424,8 +424,8 @@ let description
         [
           Format.asprintf
             "`%a` overrides method defined in `%a` inconsistently."
-            Instantiated.Access.pp define_name
-            Instantiated.Access.pp
+            Access.pp define_name
+            Access.pp
             (Annotated.Method.parent overridden_method |> Annotated.Class.name);
           detail;
         ]
@@ -433,7 +433,7 @@ let description
         let name =
           match Annotated.Call.name call with
           | { Node.value = Access access; _ } ->
-              Instantiated.Access.show access
+              Access.show access
           | name ->
               Expression.show name
         in
@@ -458,12 +458,12 @@ let description
           (Format.asprintf
              "field %a is declared in class %a to have non-optional type %a but is never \
               initialized."
-             Instantiated.Access.pp name
-             Instantiated.Access.pp (Annotated.Class.name parent)
+             Access.pp name
+             Access.pp (Annotated.Class.name parent)
              Type.pp expected);
           (Format.asprintf
              "Field %a is declared on line %d, never initialized and therefore must be %a."
-             Instantiated.Access.pp name
+             Access.pp name
              (Location.line location)
              Type.pp actual)
         ]
@@ -581,7 +581,7 @@ let join ~resolution left right =
     }
   in
   let class_equal left right =
-    Instantiated.Access.equal
+    Access.equal
       (Annotated.Class.name left)
       (Annotated.Class.name right)
   in
@@ -677,7 +677,7 @@ let join_at_source ~resolution errors =
                parent
                >>| Annotated.Class.show
                |> Option.value ~default:""
-               |> (fun parent_string -> parent_string ^ (Instantiated.Access.show name))
+               |> (fun parent_string -> parent_string ^ (Access.show name))
              in
              let new_map =
                match Map.find error_map key with
@@ -775,7 +775,7 @@ let dequalify
 
 
 let to_json ~detailed ({ kind; define = { Node.value = define; _ }; location; _ } as error) =
-  let function_name = Instantiated.Access.show define.Define.name in
+  let function_name = Access.show define.Define.name in
   let print_annotation annotation =
     Format.asprintf "%a" Type.pp annotation
     |> String.strip ~drop:((=) '`')
@@ -812,7 +812,7 @@ let to_json ~detailed ({ kind; define = { Node.value = define; _ }; location; _ 
   in
   let print_parent parent =
     parent
-    >>| Instantiated.Access.show
+    >>| Access.show
     >>| (fun string -> `String string)
     |> Option.value ~default:`Null
   in
@@ -846,7 +846,7 @@ let to_json ~detailed ({ kind; define = { Node.value = define; _ }; location; _ 
         [
           "annotation", `String (print_annotation annotation);
           "parent", print_parent (parent >>| Annotated.Class.name);
-          "field_name", `String (Instantiated.Access.show name);
+          "field_name", `String (Access.show name);
         ]
     | _ -> []
   in

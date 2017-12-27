@@ -5,7 +5,7 @@
 
 module Define : sig
   type 'statement t = {
-    name: Expression.access;
+    name: Expression.Access.t;
     parameters: (Expression.t Parameter.t) list;
     body: 'statement list;
     decorators: Expression.t list;
@@ -13,14 +13,14 @@ module Define : sig
     return_annotation: Expression.t option;
     async: bool;
     generated: bool;
-    parent: Expression.access option;
+    parent: Expression.Access.t option;
   }
   [@@deriving compare, eq, sexp, show]
 end
 
 module Class : sig
   type 'statement t = {
-    name: Expression.access;
+    name: Expression.Access.t;
     bases: (Expression.t Argument.t) list;
     body: 'statement list;
     decorators: Expression.t list;
@@ -94,13 +94,13 @@ end
 
 module Import : sig
   type import = {
-    name: Expression.access;
-    alias: Expression.access option;
+    name: Expression.Access.t;
+    alias: Expression.Access.t option;
   }
   [@@deriving compare, eq, sexp, show]
 
   type t = {
-    from: Expression.access option;
+    from: Expression.Access.t option;
     imports: import list;
   }
   [@@deriving compare, eq, sexp, show]
@@ -112,7 +112,7 @@ module Assign : sig
     annotation: Expression.t option;
     value: Expression.t option;
     compound: Expression.BinaryOperator.operator option;
-    parent: Expression.access option;
+    parent: Expression.Access.t option;
   }
   [@@deriving compare, eq, sexp, show]
 

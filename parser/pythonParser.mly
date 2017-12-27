@@ -29,7 +29,7 @@
   let extract_access access =
     match access with
     | { Node.value = Access access; _ } -> access
-    | _ -> [Access.Expression access]
+    | _ -> [Record.Access.Expression access]
 
   type entry =
     | Entry of Expression.t Dictionary.entry
@@ -545,7 +545,7 @@ compound_statement:
               >>= (fun signature_comment ->
                   Some {
                     Node.location;
-                    value = Access (Instantiated.Access.create signature_comment)
+                    value = Access (Access.create signature_comment)
                   }
                 )
           in
@@ -770,7 +770,7 @@ simple_access:
         { start with Location.stop = stop.Location.stop } in
       let identifiers =
         List.map ~f:snd identifiers
-        |> List.map ~f:(fun identifier -> Access.Identifier identifier) in
+        |> List.map ~f:(fun identifier -> Record.Access.Identifier identifier) in
       location, identifiers
     }
   ;
@@ -804,7 +804,7 @@ simple_access:
         Node.location = fst name;
         value = {
             Parameter.name = snd name;
-            value = Some (Node.create (Access (Instantiated.Access.create "...")));
+            value = Some (Node.create (Access (Access.create "...")));
             annotation;
         };
       }
@@ -830,7 +830,7 @@ simple_access:
   | expression = expression {
       let rec identifier expression =
         match expression with
-        | { Node.location; value = Access [Access.Identifier identifier] } ->
+        | { Node.location; value = Access [Record.Access.Identifier identifier] } ->
             (location, identifier)
         | { Node.location; value = Starred (Starred.Once expression) } ->
            (location,
@@ -885,7 +885,7 @@ handler:
 
 from:
   | from = from_string {
-      Instantiated.Access.create from
+      Access.create from
       |> Option.some
     }
   ;
@@ -928,7 +928,7 @@ import:
       let start, stop = position in
       Location.create ~start ~stop,
       {
-        Import.name = Instantiated.Access.create "*";
+        Import.name = Access.create "*";
         alias = None;
       }
     }
@@ -944,7 +944,7 @@ import:
       {(fst name) with Location.stop = (fst alias).Location.stop},
       {
         Import.name = snd name;
-        alias = Some [Access.Identifier (snd alias)];
+        alias = Some [Record.Access.Identifier (snd alias)];
       }
     }
   ;
@@ -965,7 +965,7 @@ atom:
   | identifier = identifier {
       {
         Node.location = fst identifier;
-        value = Access [Access.Identifier (snd identifier)];
+        value = Access [Record.Access.Identifier (snd identifier)];
       }
     }
 
@@ -1004,7 +1004,7 @@ atom:
       {
         Node.location = name.Node.location;
         value = Access [
-          Access.Call {
+          Record.Access.Call {
             Node.location = name.Node.location;
             value = { Call.name; arguments };
           };
@@ -1179,7 +1179,7 @@ expression:
     RIGHTBRACKET {
       {
         Node.location = head.Node.location;
-        value = Access ((extract_access head) @ [Access.Subscript subscripts]);
+        value = Access ((extract_access head) @ [Record.Access.Subscript subscripts]);
       }
     }
 
@@ -1387,15 +1387,15 @@ argument:
   ;
 
 subscript:
-  | index = test { Access.Index index }
+  | index = test { Record.Access.Index index }
   | ELLIPSES {
-      Access.Index (Node.create (Access (Instantiated.Access.create "...")))
+      Record.Access.Index (Node.create (Access (Access.create "...")))
     }
   | lower = test?; COLON; upper = test? {
-      Access.Slice { Access.lower; upper; step = None }
+      Record.Access.Slice { Record.Access.lower; upper; step = None }
     }
   | lower = test?; COLON; upper = test?; COLON; step = test? {
-      Access.Slice { Access.lower; upper; step }
+      Record.Access.Slice { Record.Access.lower; upper; step }
     }
   ;
 

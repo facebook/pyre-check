@@ -9,12 +9,12 @@ open Pyre
 open Statement
 
 type t = {
-  function_definitions: ((Statement.define Node.t) list) Instantiated.Access.Table.t;
+  function_definitions: ((Statement.define Node.t) list) Access.Table.t;
   class_definitions: (Statement.t Class.t) Type.Table.t;
   protocols: Type.Hash_set.t;
   order: TypeOrder.t;
   aliases: Type.t Type.Table.t;
-  globals: Annotation.t Instantiated.Access.Table.t;
+  globals: Annotation.t Access.Table.t;
   dependencies: Dependencies.t;
 }
 
@@ -25,26 +25,26 @@ type t = {
 module type Reader = sig
   val register_definition
     :  path: string
-    -> ?name_override: access
+    -> ?name_override: Access.t
     -> (Statement.define Node.t)
     -> unit
   val register_dependency: path: string -> dependency: string -> unit
-  val register_global: path: string -> key: access -> data:Annotation.t -> unit
+  val register_global: path: string -> key: Access.t -> data:Annotation.t -> unit
   val register_type
     :  path: string
     -> Type.t
-    -> access
+    -> Access.t
     -> (Statement.t Class.t option)
     -> (Type.t * Type.t list)
   val register_alias: path: string -> key: Type.t -> data: Type.t -> unit
   val purge: File.Handle.t -> unit
 
-  val function_definitions: access -> (Statement.define Node.t) list option
+  val function_definitions: Access.t -> (Statement.define Node.t) list option
   val class_definition: Type.t -> (Statement.t Class.t) option
   val protocols: Type.Hash_set.t
   val in_class_definition_keys: Type.t -> bool
   val aliases: Type.t -> Type.t option
-  val globals: access -> Annotation.t option
+  val globals: Access.t -> Annotation.t option
   val dependencies: string -> string list option
 
   module DependencyReader: Dependencies.Reader
@@ -58,7 +58,7 @@ val reader: t -> (module Reader)
 
 val resolution
   :  (module Reader)
-  -> ?annotations: Annotation.t Instantiated.Access.Map.t
+  -> ?annotations: Annotation.t Access.Map.t
   -> unit
   -> Resolution.t
 
@@ -70,7 +70,7 @@ val register_type
   -> add_class_definition: (key: Type.t -> data: Statement.t Class.t -> unit)
   -> add_class_key: (path: string -> Type.t -> unit)
   -> add_protocol: (Type.t -> unit)
-  -> (path: string -> Type.t -> access -> (Statement.t Class.t option) -> (Type.t * Type.t list))
+  -> (path: string -> Type.t -> Access.t -> (Statement.t Class.t option) -> (Type.t * Type.t list))
 
 val populate
   :  (module Reader)

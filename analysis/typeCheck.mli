@@ -20,7 +20,7 @@ module State : sig
 
   val create
     :  environment:(module Environment.Reader)
-    -> annotations:(access * Annotation.t) list
+    -> annotations:(Access.t * Annotation.t) list
     -> define:Statement.define Node.t
     -> ?lookup: Lookup.t
     -> unit

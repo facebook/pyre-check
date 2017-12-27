@@ -197,7 +197,7 @@ module Class = struct
                   match statement with
                   | Statement.Stub (Stub.Define ({ Define.name = other; _ } as define))
                   | Statement.Define ({ Define.name = other; _ } as define)
-                    when Instantiated.Access.equal name other ->
+                    when Access.equal name other ->
                       Some define
                   | _ ->
                       None
@@ -223,7 +223,7 @@ module Class = struct
           { Node.value = { Parameter.annotation = protocol_annotation; _ }; _ } =
         Option.equal Expression.equal annotation protocol_annotation
       in
-      Instantiated.Access.equal define.name protocol.name &&
+      Access.equal define.name protocol.name &&
       Option.equal Expression.equal define.return_annotation protocol.return_annotation &&
       List.equal ~equal:parameter_equal define.parameters protocol.parameters
   end
@@ -509,13 +509,13 @@ module BinaryOperator = struct
     {
       Node.location;
       value = Access
-          ((Instantiated.Access.access left) @ [
-              Expression.Access.Call {
+          ((Access.access left) @ [
+              Expression.Record.Access.Call {
                 Node.location;
                 value = {
                   Expression.Call.name = {
                     Node.location;
-                    value = Access (Instantiated.Access.create name);
+                    value = Access (Access.create name);
                   };
                   arguments = [{ Argument.name = None; value = right }];
                 };
@@ -568,7 +568,7 @@ module Call = struct
         let self =
           {
             Argument.name = None;
-            value = Node.create (Access (Instantiated.Access.create "self"));
+            value = Node.create (Access (Access.create "self"));
           }
         in
         { call with Call.arguments = self :: call.Call.arguments }
@@ -589,14 +589,14 @@ module Call = struct
 
 
   type redirect = {
-    access: access;
-    call: access;
+    access: Access.t;
+    call: Access.t;
   }
 
 
   let redirect { call = { Expression.Call.name; arguments }; kind = _ } =
     match name, arguments with
-    | { Node.location; value = Access [Expression.Access.Identifier name]; _ },
+    | { Node.location; value = Access [Expression.Record.Access.Identifier name]; _ },
       [{
         Argument.value = { Node.value = Access access; _ };
         _;
@@ -608,12 +608,12 @@ module Call = struct
          | _ -> None)
         >>| (fun name ->
             let call =
-              [Expression.Access.Call {
+              [Expression.Record.Access.Call {
                   Node.location;
                   value = {
                     Expression.Call.name = {
                       Node.location;
-                      value = Access (Instantiated.Access.create name);
+                      value = Access (Access.create name);
                     };
                     arguments = [argument];
                   };
@@ -626,7 +626,7 @@ module Call = struct
 
   let backup { call = { Expression.Call.name; arguments }; kind } =
     match name with
-    | { Node.location; value = Access [Expression.Access.Identifier name]; _ } ->
+    | { Node.location; value = Access [Expression.Record.Access.Identifier name]; _ } ->
         (* cf. https://docs.python.org/3/reference/datamodel.html#object.__radd__ *)
         (match Identifier.show name with
          | "__add__" -> Some "__radd__"
@@ -649,7 +649,7 @@ module Call = struct
               call = {
                 Expression.Call.name = {
                   Node.location;
-                  value = Access (Instantiated.Access.create name);
+                  value = Access (Access.create name);
                 };
                 arguments;
               };
@@ -757,13 +757,13 @@ module ComparisonOperator = struct
           {
             Node.location;
             value = Access
-                ((Instantiated.Access.access left) @ [
-                    Expression.Access.Call {
+                ((Access.access left) @ [
+                    Expression.Record.Access.Call {
                       Node.location;
                       value = {
                         Expression.Call.name = {
                           Node.location;
-                          value = Access (Instantiated.Access.create name);
+                          value = Access (Access.create name);
                         };
                         arguments = [{ Argument.name = None; value = right }];
                       };
@@ -797,13 +797,13 @@ module UnaryOperator = struct
         {
           Node.location;
           value = Access
-              ((Instantiated.Access.access operand) @ [
-                  Expression.Access.Call {
+              ((Access.access operand) @ [
+                  Expression.Record.Access.Call {
                     Node.location;
                     value = {
                       Expression.Call.name = {
                         Node.location;
-                        value = Access (Instantiated.Access.create name);
+                        value = Access (Access.create name);
                       };
                       arguments = [];
                     };
@@ -824,7 +824,7 @@ module Access = struct
 
     type method_call = {
       location: Location.t;
-      access: access;
+      access: Access.t;
       annotation: Annotation.t;
       call: Call.t;
       callee: Signature.t option;
@@ -833,7 +833,7 @@ module Access = struct
 
 
     type undefined_field = {
-      name: Expression.access;
+      name: Access.t;
       parent: Class.t option;
     }
 
@@ -854,7 +854,7 @@ module Access = struct
   end
 
 
-  type t = Expression.access
+  type t = Access.t
   [@@deriving compare, eq, sexp, show]
 
 
@@ -907,7 +907,7 @@ module Access = struct
     (* Resolve `super()` calls. *)
     let access =
       match access with
-      | (Access.Call { Node.value = { Expression.Call.name; _ }; _ }) :: tail
+      | (Record.Access.Call { Node.value = { Expression.Call.name; _ }; _ }) :: tail
         when Expression.show name = "super" ->
           (define
           >>= (fun define ->
@@ -977,7 +977,7 @@ module Access = struct
       let rec step annotation reversed_lead =
         match annotation, reversed_lead with
         | Some (access, annotation),
-          [Access.Call { Node.location; value = call }] ->
+          [Record.Access.Call { Node.location; value = call }] ->
             let call = Call.create ~kind:Call.Method call in
             let callee =
               Resolution.method_signature resolution
@@ -1029,7 +1029,7 @@ module Access = struct
             resolved,
             (f accumulator ~annotations ~resolved ~element:(Element.Method element))
 
-        | Some (_, annotation), ([Access.Identifier _] as field_access) -> (
+        | Some (_, annotation), ([Record.Access.Identifier _] as field_access) -> (
             (* Field access. *)
             let definition =
               Resolution.class_definition
@@ -1076,11 +1076,11 @@ module Access = struct
                        ~element:(Element.Field (Element.Defined field))))
             |> Option.value ~default)
 
-        | Some (_, annotation), (Access.Subscript subscript) :: _ ->
+        | Some (_, annotation), (Record.Access.Subscript subscript) :: _ ->
             (* Array access. *)
             let resolved =
               match subscript, Annotation.annotation annotation with
-              | [Access.Index _],
+              | [Record.Access.Index _],
                 (Type.Parametric {
                     Type.parameters;
                     _;
@@ -1090,7 +1090,7 @@ module Access = struct
                    | _ :: parameter :: _ -> parameter
                    | parameter :: _ -> parameter
                    | [] -> Type.Top)
-              | [Access.Slice _], _ ->
+              | [Record.Access.Slice _], _ ->
                   (Annotation.annotation annotation)
               | _ ->
                   Type.Top
@@ -1103,7 +1103,7 @@ module Access = struct
                ~element:Element.Array)
 
         | None,
-          Access.Call { Node.location; value = call } :: qualifier ->
+          Record.Access.Call { Node.location; value = call } :: qualifier ->
             (* Call. *)
             begin
               let call = Call.create ~kind:Call.Function call in
@@ -1136,13 +1136,13 @@ module Access = struct
                   (f accumulator ~annotations ~resolved ~element)
             end
 
-        | None, Access.Expression expression :: _ ->
+        | None, Record.Access.Expression expression :: _ ->
             let resolved = Annotation.create (Resolution.resolve resolution expression) in
             resolution,
             resolved,
             (f accumulator ~annotations ~resolved ~element:Element.Expression)
 
-        | None, [Access.Identifier identifier]
+        | None, [Record.Access.Identifier identifier]
           when Identifier.show identifier = "None" ->
             let resolved = Annotation.create (Type.Optional Type.Bottom) in
             resolution,
@@ -1231,7 +1231,7 @@ let rec resolve ~resolution expression =
             right =
               [
                 Expression.ComparisonOperator.IsNot,
-                { Node.value = Access [ Expression.Access.Identifier identifier; ]; _ }
+                { Node.value = Access [ Expression.Record.Access.Identifier identifier; ]; _ }
               ];
           } when Identifier.show identifier = "None" ->
             [access]
@@ -1241,7 +1241,7 @@ let rec resolve ~resolution expression =
       let optional_accesses = List.concat_map ~f:collect_optionals conditions in
       let iterator_type = match iterator_type, target_value with
         | Type.Optional annotation, Access target_value ->
-            if List.mem ~equal:Instantiated.Access.equal optional_accesses target_value then
+            if List.mem ~equal:Access.equal optional_accesses target_value then
               annotation
             else
               iterator_type
@@ -1392,7 +1392,7 @@ let rec resolve ~resolution expression =
             Expression.ComparisonOperator.left = access;
             right = [
               Expression.ComparisonOperator.IsNot,
-              { Node.value = Access [ Expression.Access.Identifier identifier; ]; _ }
+              { Node.value = Access [ Expression.Record.Access.Identifier identifier; ]; _ }
             ];
           } when Identifier.show identifier = "None" ->
             if Expression.equal access target then

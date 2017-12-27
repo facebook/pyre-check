@@ -11,38 +11,38 @@ open Pyre
 open Statement
 
 type t = {
-  function_definitions: ((Statement.define Node.t) list) Instantiated.Access.Table.t;
+  function_definitions: ((Statement.define Node.t) list) Access.Table.t;
   class_definitions: (Statement.t Class.t) Type.Table.t;
   protocols: Type.Hash_set.t;
   order: TypeOrder.t;
   aliases: Type.t Type.Table.t;
-  globals: Annotation.t Instantiated.Access.Table.t;
+  globals: Annotation.t Access.Table.t;
   dependencies: Dependencies.t;
 }
 
 module type Reader = sig
   val register_definition
     :  path: string
-    -> ?name_override: access
+    -> ?name_override: Access.t
     -> (Statement.define Node.t)
     -> unit
   val register_dependency: path: string -> dependency: string -> unit
-  val register_global: path: string -> key: access -> data:Annotation.t -> unit
+  val register_global: path: string -> key: Access.t -> data:Annotation.t -> unit
   val register_type
     :  path: string
     -> Type.t
-    -> access
+    -> Access.t
     -> (Statement.t Class.t option)
     -> (Type.t * Type.t list)
   val register_alias: path: string -> key: Type.t -> data: Type.t -> unit
   val purge: File.Handle.t -> unit
 
-  val function_definitions: access -> (Statement.define Node.t) list option
+  val function_definitions: Access.t -> (Statement.define Node.t) list option
   val class_definition: Type.t -> (Statement.t Class.t) option
   val protocols: Type.Hash_set.t
   val in_class_definition_keys: Type.t -> bool
   val aliases: Type.t -> Type.t option
-  val globals: access -> Annotation.t option
+  val globals: Access.t -> Annotation.t option
   val dependencies: string -> string list option
 
   module DependencyReader: Dependencies.Reader
@@ -245,7 +245,7 @@ let reader
 
 let resolution
     (module Reader: Reader)
-    ?(annotations = Instantiated.Access.Map.empty)
+    ?(annotations = Access.Map.empty)
     () =
   let parse_annotation = Type.create ~aliases:Reader.aliases in
 
@@ -288,7 +288,7 @@ let resolution
         let self_or_class_argument =
           Signature.Normal {
             Signature.annotation = Type.Object;
-            value = Node.create (Access (Instantiated.Access.create "self_or_class"));
+            value = Node.create (Access (Access.create "self_or_class"));
           }
         in
         self_or_class_argument :: arguments
@@ -571,7 +571,7 @@ let populate
   let resolution =
     resolution
       (module Reader: Reader)
-      ~annotations:Instantiated.Access.Map.empty ()
+      ~annotations:Access.Map.empty ()
   in
 
   (* TODO(T19628746) Handle type aliases when building the environment instead of relying on this
@@ -709,7 +709,7 @@ let populate
                 match parse_annotation value with
                 | Type.Primitive identifier
                   when List.mem ~equal:String.equal enumerations (Identifier.show identifier) ->
-                    Some (Instantiated.Access.create (Identifier.show identifier))
+                    Some (Access.create (Identifier.show identifier))
                 | _ ->
                     None
               in
@@ -721,7 +721,7 @@ let populate
                     {
                       Node.location;
                       value = {
-                        Define.name = enumeration @ (Instantiated.Access.create "__init__");
+                        Define.name = enumeration @ (Access.create "__init__");
                         parameters = [Parameter.create ~name:(Identifier.create "a") ()];
                         body = [];
                         decorators = [];
@@ -770,9 +770,9 @@ let populate
               let imports =
                 let path_of_import access =
                   let show_identifier = function
-                    | Expression.Access.Identifier identifier ->
+                    | Expression.Record.Access.Identifier identifier ->
                         Identifier.show identifier
-                    | access -> Expression.Access.show_access Expression.pp access
+                    | access -> Expression.Record.Access.show_access Expression.pp access
                   in
                   let relative =
                     Format.sprintf "%s.py"
@@ -885,7 +885,7 @@ let infer_implementations (module Reader: Reader) ~protocol =
       (* Skip useless protocols for better performance. *)
       let skip_protocol =
         let whitelisted = ["typing.Hashable"] in
-        let name = Class.name protocol_definition |> Instantiated.Access.show in
+        let name = Class.name protocol_definition |> Expression.Access.show in
         List.is_empty (Class.methods protocol_definition) ||
         List.mem ~equal:String.equal whitelisted name
       in
@@ -925,12 +925,12 @@ let infer_implementations (module Reader: Reader) ~protocol =
 
 module Builder = struct
   let create () =
-    let function_definitions = Instantiated.Access.Table.create () in
+    let function_definitions = Access.Table.create () in
     let class_definitions = Type.Table.create () in
     let protocols = Type.Hash_set.create () in
     let order = TypeOrder.Builder.default () in
     let aliases = Type.Table.create () in
-    let globals = Instantiated.Access.Table.create () in
+    let globals = Access.Table.create () in
     let dependencies = Dependencies.create () in
     { function_definitions; class_definitions; protocols; order; aliases; globals; dependencies }
 
@@ -975,7 +975,7 @@ module Builder = struct
   let pp format { function_definitions; order; aliases; globals; _ } =
     let functions =
       Hashtbl.keys function_definitions
-      |> List.map ~f:(fun access -> "  " ^  (Format.asprintf "%a" Instantiated.Access.pp access))
+      |> List.map ~f:(fun access -> "  " ^  (Format.asprintf "%a" Access.pp access))
       |> String.concat ~sep:"\n" in
     let aliases =
       let alias (key, data) =
@@ -990,7 +990,7 @@ module Builder = struct
       let global (key, data) =
         Format.asprintf
           "  %a -> %a"
-          Instantiated.Access.pp key
+          Access.pp key
           Annotation.pp data in
       Hashtbl.to_alist globals
       |> List.map ~f:global

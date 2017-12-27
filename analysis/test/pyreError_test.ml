@@ -6,6 +6,7 @@
 open OUnit2
 
 open Ast
+open Expression
 open Test
 
 
@@ -14,7 +15,7 @@ module Error = PyreError
 
 let mock_define =
   +{
-    Statement.Define.name = Instantiated.Access.create "foo";
+    Statement.Define.name = Access.create "foo";
     parameters = [];
     body = [];
     decorators = [];
@@ -28,7 +29,7 @@ let mock_define =
 
 let mock_parent =
   Annotated.Class.create {
-    Statement.Class.name = Instantiated.Access.create "foo";
+    Statement.Class.name = Access.create "foo";
     bases = [];
     body = [];
     decorators = [];
@@ -47,7 +48,7 @@ let test_due_to_analysis_limitations _ =
     (Error.due_to_analysis_limitations
        (error
           (Error.IncompatibleType {
-              Error.name = [Expression.Access.Identifier (~~"")];
+              Error.name = [Expression.Record.Access.Identifier (~~"")];
               parent = Some mock_parent;
               mismatch = {
                 Error.actual = Type.Top;
@@ -59,7 +60,7 @@ let test_due_to_analysis_limitations _ =
     (Error.due_to_analysis_limitations
        (error
           (Error.IncompatibleType {
-              Error.name = [Expression.Access.Identifier (~~"")];
+              Error.name = [Expression.Record.Access.Identifier (~~"")];
               parent = Some mock_parent;
               mismatch = {
                 Error.actual = Type.Top;
@@ -71,7 +72,7 @@ let test_due_to_analysis_limitations _ =
     (Error.due_to_analysis_limitations
        (error
           (Error.IncompatibleType {
-              Error.name = [Expression.Access.Identifier (~~"")];
+              Error.name = [Expression.Record.Access.Identifier (~~"")];
               parent = Some mock_parent;
               mismatch = {
                 Error.actual = Type.string;
@@ -85,7 +86,7 @@ let test_due_to_analysis_limitations _ =
     (Error.due_to_analysis_limitations
        (error
           (Error.UninitializedField{
-              Error.name = [Expression.Access.Identifier (~~"")];
+              Error.name = [Expression.Record.Access.Identifier (~~"")];
               parent = mock_parent;
               mismatch = {
                 Error.actual = Type.Top;
@@ -97,7 +98,7 @@ let test_due_to_analysis_limitations _ =
     (Error.due_to_analysis_limitations
        (error
           (Error.UninitializedField {
-              Error.name = [Expression.Access.Identifier (~~"")];
+              Error.name = [Expression.Record.Access.Identifier (~~"")];
               parent = mock_parent;
               mismatch = {
                 Error.actual = Type.string;
@@ -146,7 +147,7 @@ let test_due_to_analysis_limitations _ =
     (Error.due_to_analysis_limitations
        (error
           (Error.MissingAnnotation {
-              Error.name = [Expression.Access.Identifier (~~"")];
+              Error.name = [Expression.Record.Access.Identifier (~~"")];
               annotation = Type.Top;
               parent = Some mock_parent;
               due_to_any = false;
@@ -156,7 +157,7 @@ let test_due_to_analysis_limitations _ =
     (Error.due_to_analysis_limitations
        (error
           (Error.MissingAnnotation {
-              Error.name = [Expression.Access.Identifier (~~"")];
+              Error.name = [Expression.Record.Access.Identifier (~~"")];
               annotation = Type.string;
               parent = Some mock_parent;
               due_to_any = false;
@@ -262,7 +263,7 @@ let test_join _ =
   in
   assert_join
     (error (Error.IncompatibleType {
-         Error.name = [Expression.Access.Identifier (~~"")];
+         Error.name = [Expression.Record.Access.Identifier (~~"")];
          parent = Some mock_parent;
          mismatch = {
            Error.actual = Type.Top;
@@ -281,7 +282,7 @@ let test_join _ =
     (error Error.Top);
   assert_join
     (error (Error.IncompatibleType {
-         Error.name = [Expression.Access.Identifier (~~"")];
+         Error.name = [Expression.Record.Access.Identifier (~~"")];
          parent = Some mock_parent;
          mismatch = {
            Error.actual = Type.Top;
@@ -290,7 +291,7 @@ let test_join _ =
          declare_location = Location.any;
        }))
     (error (Error.IncompatibleType {
-         Error.name = [Expression.Access.Identifier (~~"")];
+         Error.name = [Expression.Record.Access.Identifier (~~"")];
          parent = None;
          mismatch = {
            Error.actual = Type.Top;

@@ -4,70 +4,16 @@
     LICENSE file in the root directory of this source tree. *)
 
 open Core
-open Sexplib.Std
 
 open Expression
 open Statement
-
-
-module Access = struct
-  type t = Expression.t Access.t
-  [@@deriving compare, eq, sexp, show]
-
-
-  module Set = Set.Make(struct
-      type nonrec t = t
-      let compare = compare
-      let sexp_of_t = sexp_of_t
-      let t_of_sexp = t_of_sexp
-    end)
-
-
-  module Map = Map.Make(struct
-      type nonrec t = t
-      let compare = compare
-      let sexp_of_t = sexp_of_t
-      let t_of_sexp = t_of_sexp
-    end)
-
-
-  include Hashable.Make(struct
-      type nonrec t = t
-      let compare = compare
-      let hash = Hashtbl.hash
-      let sexp_of_t = sexp_of_t
-      let t_of_sexp = t_of_sexp
-    end)
-
-
-  let create name =
-    if String.equal name "..." then
-      [Access.Identifier (Identifier.create name)]
-    else
-      String.split ~on:'.' name
-      |> List.map ~f:(fun name -> Access.Identifier (Identifier.create name))
-
-
-  let create_from_identifiers identifiers =
-    List.map ~f:(fun identifier -> Access.Identifier identifier) identifiers
-
-
-  let access ({ Node.value; _ } as expression) =
-    match value with
-    | Access access -> access
-    | _ -> [Access.Expression expression]
-end
-
-
-type access = Access.t
-[@@deriving compare, eq, sexp, show]
 
 
 module Call = struct
   type t = Expression.t Call.t
   [@@deriving compare, eq, sexp, show]
 
-  
+
   let is_explicit_constructor_call { Call.name; _ } =
     match name with
     | { Node.value = Access ((_ :: _) as access); _ } ->
@@ -91,7 +37,7 @@ module Define = struct
     let rec is_decorator expected actual =
       match expected, actual with
       | (expected_decorator :: expected_decorators),
-        { Node.location; value = Access ((Access.Identifier identifier) :: identifiers) }
+        { Node.location; value = Access ((Record.Access.Identifier identifier) :: identifiers) }
         when Identifier.show identifier = expected_decorator ->
           if List.is_empty expected_decorators && List.is_empty identifiers then
             true
@@ -157,7 +103,7 @@ module Define = struct
       | {
           Node.value = Expression {
             Node.value = Expression.Access [
-              Expression.Access.Call {
+              Expression.Record.Access.Call {
                 Node.value = {
                   Expression.Call.name = {
                     Node.value = Expression.Access access;
