@@ -5,7 +5,7 @@
 
 module Record : sig
   module Define : sig
-    type 'statement t = {
+    type 'statement record = {
       name: Expression.Access.t;
       parameters: (Expression.t Parameter.t) list;
       body: 'statement list;
@@ -125,7 +125,7 @@ module Stub : sig
   type 'statement t =
     | Assign of Assign.t
     | Class of 'statement Class.t
-    | Define of 'statement Record.Define.t
+    | Define of 'statement Record.Define.record
   [@@deriving compare, eq, sexp, show]
 end
 
@@ -135,7 +135,7 @@ type statement =
   | Break
   | Class of t Class.t
   | Continue
-  | Define of t Record.Define.t
+  | Define of t Record.Define.record
   | Delete of Expression.t
   | Expression of Expression.t
   | For of t For.t
@@ -161,7 +161,9 @@ type statement_node = t
 [@@deriving compare, eq, sexp, show]
 
 module Define : sig
-  type t = statement_node Record.Define.t
+  include module type of struct include Record.Define end
+
+  type t = statement_node Record.Define.record
   [@@deriving compare, eq, sexp, show]
 
   val is_method: t -> bool
@@ -177,9 +179,6 @@ module Define : sig
   val dump: t -> bool
   val dump_cfg: t -> bool
 end
-
-(* Alias for when we open both Statment and Expression. *)
-module RecordDefine = Record.Define
 
 val assume: Expression.t -> t
 

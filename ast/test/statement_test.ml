@@ -17,7 +17,7 @@ let test_is_method _ =
   let define name parent =
     let parent = if parent = "" then None else (Some (Access.create parent)) in
     {
-      Record.Define.name = Access.create name;
+      Define.name = Access.create name;
       parameters = [];
       body = [+Pass];
       decorators = [];
@@ -35,7 +35,7 @@ let test_is_method _ =
 let test_decorator _ =
   let define decorators =
     {
-      Record.Define.name = Access.create "foo";
+      Define.name = Access.create "foo";
       parameters = [];
       body = [+Pass];
       decorators;
@@ -73,7 +73,7 @@ let test_is_constructor _ =
     in
     let define =
       {
-        Record.Define.name = Access.create name;
+        Define.name = Access.create name;
         parameters = [];
         body = [+Pass];
         decorators = [];
@@ -150,7 +150,7 @@ let test_docstring _ =
            pass
     |}
      |> (function
-         | { Node.value = Define { Record.Define.docstring; _ }; _ } -> docstring
+         | { Node.value = Define { Define.docstring; _ }; _ } -> docstring
          | _ -> None))
     (Some "doc\nstring\n end")
 

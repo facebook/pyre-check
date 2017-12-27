@@ -144,7 +144,7 @@ let reader
     let register_definition
         ~path
         ?name_override
-        ({ Node.value = { Record.Define.name; _ }; _ } as definition) =
+        ({ Node.value = { Define.name; _ }; _ } as definition) =
       let name = Option.value ~default:name name_override in
       DependencyReader.add_function_key ~path name;
       let definitions =
@@ -250,7 +250,7 @@ let resolution
   let parse_annotation = Type.create ~aliases:Reader.aliases in
 
   let instantiate
-      ({ Node.location; value = { Record.Define.parameters; return_annotation; _ } as define })
+      ({ Node.location; value = { Define.parameters; return_annotation; _ } as define })
       ~constraints =
     let instantiate_aliases ?(widen = false) expression =
       expression
@@ -271,7 +271,7 @@ let resolution
     {
       Node.value = {
         define with
-        Record.Define.parameters = List.map ~f:resolve_parameter parameters;
+        Define.parameters = List.map ~f:resolve_parameter parameters;
         return_annotation = instantiate_aliases return_annotation;
       };
       location;
@@ -454,7 +454,7 @@ let resolution
                 sofar)
     in
     let instantiate_signature ({
-        Node.value = { Record.Define.parameters; return_annotation; _ };
+        Node.value = { Define.parameters; return_annotation; _ };
         location;
       } as define) =
       (* Add implicit arguments. *)
@@ -467,7 +467,7 @@ let resolution
       >>| (fun constraints -> instantiate define ~constraints, constraints)
 
       (* Check additional constraints. *)
-      >>= (fun ({ Node.value = { Record.Define.parameters; _ } as instantiated; _ }, constraints) ->
+      >>= (fun ({ Node.value = { Define.parameters; _ } as instantiated; _ }, constraints) ->
           if sufficient_arguments_provided parameters arguments &&
              all_variables_resolved parameters then
             Some { Signature.constraints; instantiated; location }
@@ -479,7 +479,7 @@ let resolution
 
   let function_signature qualifier call arguments =
     let name =
-      (match call.Expression.Record.Call.name with
+      (match call.Expression.Call.name with
        | { Node.value = Access access; _ } ->
            qualifier @ access
        | _ ->
@@ -499,7 +499,7 @@ let resolution
     let definitions annotation =
       let primitive, parameters = Type.split annotation in
       let name =
-        match Type.expression primitive, call.Expression.Record.Call.name with
+        match Type.expression primitive, call.Expression.Call.name with
         | { Node.value = Access qualifier; _ },
           { Node.value = Access access; _ } ->
             qualifier @ access
@@ -721,7 +721,7 @@ let populate
                     {
                       Node.location;
                       value = {
-                        Record.Define.name = enumeration @ (Access.create "__init__");
+                        Define.name = enumeration @ (Access.create "__init__");
                         parameters = [Parameter.create ~name:(Identifier.create "a") ()];
                         body = [];
                         decorators = [];
@@ -759,10 +759,10 @@ let populate
           | { Node.value = Define definition; location }
           | { Node.value = Stub (Stub.Define definition); location } ->
               if Define.is_method definition then
-                let parent = Option.value_exn definition.Record.Define.parent in
+                let parent = Option.value_exn definition.Define.parent in
                 Reader.register_definition
                   ~path
-                  ~name_override:(parent @ definition.Record.Define.name)
+                  ~name_override:(parent @ definition.Define.name)
                   { Node.value = definition; location }
               else
                 Reader.register_definition ~path { Node.value = definition; location }
@@ -770,9 +770,9 @@ let populate
               let imports =
                 let path_of_import access =
                   let show_identifier = function
-                    | Expression.Record.Access.Identifier identifier ->
+                    | Expression.Access.Identifier identifier ->
                         Identifier.show identifier
-                    | access -> Expression.Record.Access.show_access Expression.pp access
+                    | access -> Expression.Access.show_access Expression.pp access
                   in
                   let relative =
                     Format.sprintf "%s.py"

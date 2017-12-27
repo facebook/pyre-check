@@ -224,7 +224,7 @@ let rec source_statement_codex_representation
       };
     ]
   | Statement.Define {
-      Statement.Record.Define.name;
+      Statement.Define.name;
       docstring;
       parent;
       decorators;

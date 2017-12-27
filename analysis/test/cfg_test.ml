@@ -15,7 +15,7 @@ open Test
 
 let assert_cfg body expected =
   let define = {
-    Record.Define.name = Access.create "foo";
+    Define.name = Access.create "foo";
     parameters = [];
     body;
     decorators = [];
@@ -34,7 +34,7 @@ let assert_cfg body expected =
 
 let assert_dot ?(precondition=fun _ -> "") body expected =
   let define = {
-    Record.Define.name = Access.create "foo";
+    Define.name = Access.create "foo";
     parameters = [];
     body;
     decorators = [];

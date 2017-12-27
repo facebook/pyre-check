@@ -286,7 +286,7 @@ let create ~aliases expression =
   let rec create reversed_lead tail =
     let name reversed_access =
       let show = function
-        | Record.Access.Identifier element ->
+        | Access.Identifier element ->
             Identifier.show element
         | _ ->
             "?" in
@@ -297,14 +297,14 @@ let create ~aliases expression =
 
     let annotation =
       match tail with
-      | (Record.Access.Identifier _ as access) :: tail ->
+      | (Access.Identifier _ as access) :: tail ->
           create (access :: reversed_lead) tail
-      | (Record.Access.Subscript subscript) :: [] ->
+      | (Access.Subscript subscript) :: [] ->
           let parameters =
             let parameter = function
-              | Record.Access.Index { Node.value = Access access; _ } ->
+              | Access.Index { Node.value = Access access; _ } ->
                   create [] access
-              | Record.Access.Index { Node.value = String string; _ } ->
+              | Access.Index { Node.value = String string; _ } ->
                   create [] (Access.create string)
               | _ ->
                   Top
@@ -432,11 +432,11 @@ let create ~aliases expression =
   match expression with
   | {
     Node.value = Access [
-        Record.Access.Identifier typing;
-        Record.Access.Call {
+        Access.Identifier typing;
+        Access.Call {
           Node.value = {
-            Record.Call.name = {
-              Node.value = Access [Record.Access.Identifier typevar];
+            Call.name = {
+              Node.value = Access [Access.Identifier typevar];
               _;
             };
             arguments = { Argument.value = { Node.value = String name; _ }; _ } :: arguments;
@@ -489,15 +489,15 @@ let expression annotation =
   in
 
   let rec access annotation =
-    let index parameter = Record.Access.Index (Node.create (Access (access parameter))) in
+    let index parameter = Access.Index (Node.create (Access (access parameter))) in
     match annotation with
     | Bottom -> Access.create "$bottom"
     | Object -> Access.create "object"
     | Optional parameter ->
         (Access.create "typing.Optional") @
-        [Record.Access.Subscript [index parameter]]
+        [Access.Subscript [index parameter]]
     | Parametric { name; parameters } ->
-        let subscript = Record.Access.Subscript (List.map ~f:index parameters) in
+        let subscript = Access.Subscript (List.map ~f:index parameters) in
         (split (reverse_substitute name)) @ [subscript]
     | Primitive name -> split name
     | Top -> Access.create "$unknown"
@@ -507,13 +507,13 @@ let expression annotation =
           | Bounded parameters -> List.map ~f:index parameters
           | Unbounded parameter ->
               let ellipses =
-                Record.Access.Index (Node.create (Access [Record.Access.Identifier (Identifier.create "...")]))
+                Access.Index (Node.create (Access [Access.Identifier (Identifier.create "...")]))
               in
               [index parameter; ellipses]
         in
-        (Access.create "typing.Tuple") @ [Record.Access.Subscript subscript]
+        (Access.create "typing.Tuple") @ [Access.Subscript subscript]
     | Union parameters ->
-        let subscript = Record.Access.Subscript (List.map ~f:index parameters) in
+        let subscript = Access.Subscript (List.map ~f:index parameters) in
         (Access.create "typing.Union") @ [subscript]
     | Variable { variable; _ } -> split variable
   in

@@ -614,7 +614,7 @@ let test_defines _ =
 
   let define =
     {
-      Record.Define.name = Access.create "foo";
+      Define.name = Access.create "foo";
       parameters = [
         +{
           Parameter.name = ~~"a";
@@ -633,7 +633,7 @@ let test_defines _ =
   in
   let toplevel =
     {
-      Record.Define.name = Access.create "$toplevel";
+      Define.name = Access.create "$toplevel";
       parameters = [];
       body = [+Define define];
       decorators = [];
@@ -650,7 +650,7 @@ let test_defines _ =
 
   let inner =
     {
-      Record.Define.name = Access.create "foo";
+      Define.name = Access.create "foo";
       parameters = [
         +{
           Parameter.name = ~~"a";
@@ -669,7 +669,7 @@ let test_defines _ =
   in
   let define =
     {
-      Record.Define.name = Access.create "foo";
+      Define.name = Access.create "foo";
       parameters = [
         +{
           Parameter.name = ~~"a";
@@ -688,7 +688,7 @@ let test_defines _ =
   in
   let toplevel =
     {
-      Record.Define.name = Access.create "$toplevel";
+      Define.name = Access.create "$toplevel";
       parameters = [];
       body = [+Define define];
       decorators = [];
@@ -718,7 +718,7 @@ let test_classes _ =
       bases = [];
       body = [
         +Define {
-          Record.Define.name = Access.create "bar";
+          Define.name = Access.create "bar";
           parameters = [];
           body = [+Pass];
           decorators = [];

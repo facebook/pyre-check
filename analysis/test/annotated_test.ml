@@ -87,7 +87,7 @@ let test_method_implements _ =
   let definition ?(parameters = []) ?return_annotation name =
     Method.create
       ~define:{
-        Statement.Record.Define.name = Expression.Access.create name;
+        Statement.Define.name = Expression.Access.create name;
         parameters;
         body = [+Pass];
         decorators = [];
@@ -277,7 +277,7 @@ let test_constructors _ =
         let defines =
           let define { name; parameters; annotation } =
             {
-              Statement.Record.Define.name;
+              Statement.Define.name;
               parameters;
               body = [+Pass];
               decorators = [];
@@ -399,7 +399,7 @@ let test_methods _ =
     | { Node.value = Statement.Class definition; _ }
     | { Node.value = Statement.Stub (Stub.Class definition); _ } ->
         let actuals =
-          let method_name { Statement.Record.Define.name; _ } =
+          let method_name { Statement.Define.name; _ } =
             Expression.Access.show name
           in
           Class.create definition
@@ -618,7 +618,7 @@ let test_return_annotation _ =
         |}
       in
       {
-        Statement.Record.Define.name = Expression.Access.create "derp";
+        Statement.Define.name = Expression.Access.create "derp";
         parameters = [];
         body = [+Pass];
         decorators = [];
@@ -640,7 +640,7 @@ let test_return_annotation _ =
 let test_parent_definition _ =
   let parent_class_definition environment name parent =
     {
-      Statement.Record.Define.name = Expression.Access.create name;
+      Statement.Define.name = Expression.Access.create name;
       parameters = [];
       body = [+Pass];
       decorators = [];
@@ -698,7 +698,7 @@ let test_parent_definition _ =
 let test_method_definition _ =
   let parent_class_definition environment name parent =
     {
-      Statement.Record.Define.name = Expression.Access.create name;
+      Statement.Define.name = Expression.Access.create name;
       parameters = [];
       body = [+Pass];
       decorators = [];
@@ -732,7 +732,7 @@ let test_parameter_annotations _ =
   in
   let define parameters =
     {
-      Statement.Record.Define.name = Expression.Access.create "";
+      Statement.Define.name = Expression.Access.create "";
       parameters;
       body = [+Pass];
       decorators = [];
@@ -781,7 +781,7 @@ let test_infer_argument_name _ =
   in
   let define parameters =
     {
-      Statement.Record.Define.name = Expression.Access.create "";
+      Statement.Define.name = Expression.Access.create "";
       parameters;
       body = [+Pass];
       decorators = [];
@@ -821,14 +821,14 @@ let test_backup _ =
     assert_equal (Annotated.Call.backup actual) expected
   in
   assert_backup
-    { Expression.Record.Call.name = !"name"; arguments = [] }
+    { Expression.Call.name = !"name"; arguments = [] }
     None;
   assert_backup
-    { Expression.Record.Call.name = !"__add__"; arguments = [] }
-    (Some { Expression.Record.Call.name = !"__radd__"; arguments = [] });
+    { Expression.Call.name = !"__add__"; arguments = [] }
+    (Some { Expression.Call.name = !"__radd__"; arguments = [] });
   assert_backup
-    { Expression.Record.Call.name = !"__sub__"; arguments = [] }
-    (Some { Expression.Record.Call.name = !"__rsub__"; arguments = [] })
+    { Expression.Call.name = !"__sub__"; arguments = [] }
+    (Some { Expression.Call.name = !"__rsub__"; arguments = [] })
 
 
 let test_fold _ =

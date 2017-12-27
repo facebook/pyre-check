@@ -9,10 +9,6 @@ open Expression
 open Pyre
 open Statement
 
-module RecordAccess = Expression.Record.Access
-module RecordCall = Expression.Record.Call
-module DefineRecord = Statement.Record.Define
-
 
 module type Transformer = sig
   type t
@@ -75,35 +71,35 @@ module Make (Transformer : Transformer) = struct
           | Access access ->
               let transform_access access =
                 let transform_subscript subscript =
-                  let transform_slice { RecordAccess.lower; upper; step } =
+                  let transform_slice { Access.lower; upper; step } =
                     {
-                      RecordAccess.lower = lower >>| transform_expression;
+                      Access.lower = lower >>| transform_expression;
                       upper = upper >>| transform_expression;
                       step = step >>| transform_expression;
                     }
                   in
                   match subscript with
-                  | RecordAccess.Index index ->
-                      RecordAccess.Index (transform_expression index)
-                  | RecordAccess.Slice slice ->
-                      RecordAccess.Slice (transform_slice slice)
+                  | Access.Index index ->
+                      Access.Index (transform_expression index)
+                  | Access.Slice slice ->
+                      Access.Slice (transform_slice slice)
                 in
                 match access with
-                | RecordAccess.Call { Node.location; value = { RecordCall.name; arguments } } ->
-                    RecordAccess.Call {
+                | Access.Call { Node.location; value = { Call.name; arguments } } ->
+                    Access.Call {
                       Node.location;
                       value = {
-                        RecordCall.name = transform_expression name;
+                        Call.name = transform_expression name;
                         arguments = transform_list
                             arguments
                             ~f:(transform_argument ~transform_expression);
                       };
                     }
-                | RecordAccess.Identifier _ -> access
-                | RecordAccess.Expression expression ->
-                    RecordAccess.Expression (transform_expression expression)
-                | RecordAccess.Subscript subscripts ->
-                    RecordAccess.Subscript
+                | Access.Identifier _ -> access
+                | Access.Expression expression ->
+                    Access.Expression (transform_expression expression)
+                | Access.Subscript subscripts ->
+                    Access.Subscript
                       (transform_list subscripts ~f:transform_subscript)
               in
               Access (transform_list access ~f:transform_access)
@@ -259,7 +255,7 @@ module Make (Transformer : Transformer) = struct
           | Continue ->
               value
           | Define {
-              DefineRecord.name;
+              Define.name;
               parameters;
               body;
               decorators;
@@ -270,7 +266,7 @@ module Make (Transformer : Transformer) = struct
               docstring;
             } ->
               Define {
-                DefineRecord.name;
+                Define.name;
                 parameters = transform_list
                     parameters
                     ~f:(transform_parameter ~transform_expression);
@@ -363,7 +359,7 @@ module Make (Transformer : Transformer) = struct
                       docstring;
                     }
                 | Stub.Define {
-                    DefineRecord.name;
+                    Define.name;
                     parameters;
                     body;
                     decorators;
@@ -374,7 +370,7 @@ module Make (Transformer : Transformer) = struct
                     docstring;
                   } ->
                     Stub.Define {
-                      DefineRecord.name;
+                      Define.name;
                       parameters = transform_list
                           parameters
                           ~f:(transform_parameter ~transform_expression);

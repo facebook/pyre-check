@@ -116,7 +116,7 @@ type t = {
   docstring: string option;
   metadata: Metadata.t;
   path: string;
-  qualifier: Expression.t Record.Access.t;
+  qualifier: Access.t;
   statements: Statement.t list;
 }
 [@@deriving compare, eq, show]

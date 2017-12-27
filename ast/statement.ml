@@ -8,7 +8,7 @@ open Core
 
 module Record = struct
   module Define = struct
-    type 'statement t = {
+    type 'statement record = {
       name: Expression.Access.t;
       parameters: (Expression.t Parameter.t) list;
       body: 'statement list;
@@ -141,7 +141,7 @@ module Stub = struct
   type 'statement t =
     | Assign of Assign.t
     | Class of 'statement Class.t
-    | Define of 'statement Record.Define.t
+    | Define of 'statement Record.Define.record
   [@@deriving compare, eq, sexp, show]
 end
 
@@ -152,7 +152,7 @@ type statement =
   | Break
   | Class of t Class.t
   | Continue
-  | Define of t Record.Define.t
+  | Define of t Record.Define.record
   | Delete of Expression.t
   | Expression of Expression.t
   | For of t For.t
@@ -180,20 +180,23 @@ type statement_node = t
 
 
 module Define = struct
-  type t = statement_node Record.Define.t
+  include Record.Define
+
+
+  type t = statement_node Record.Define.record
   [@@deriving compare, eq, sexp, show]
 
 
-  let is_method { Record.Define.name; parent; _ } =
+  let is_method { name; parent; _ } =
     Option.is_some parent && List.length name = 1
 
 
-  let has_decorator { Record.Define.decorators; _ } decorator =
+  let has_decorator { decorators; _ } decorator =
     let open Expression in
     let rec is_decorator expected actual =
       match expected, actual with
       | (expected_decorator :: expected_decorators),
-        { Node.location; value = Access ((Record.Access.Identifier identifier) :: identifiers) }
+        { Node.location; value = Access ((Access.Identifier identifier) :: identifiers) }
         when Identifier.show identifier = expected_decorator ->
           if List.is_empty expected_decorators && List.is_empty identifiers then
             true
@@ -225,7 +228,7 @@ module Define = struct
     has_decorator define "classmethod"
 
 
-  let is_constructor { Record.Define.name; parent; _ } =
+  let is_constructor { name; parent; _ } =
     let string_name = Expression.Access.show name in
     match parent with
     | None -> false
@@ -234,16 +237,16 @@ module Define = struct
         string_name = "__init__"
 
 
-  let is_generated_constructor { Record.Define.generated; _ } = generated
+  let is_generated_constructor { generated; _ } = generated
 
 
-  let is_untyped { Record.Define.return_annotation; _ } =
+  let is_untyped { return_annotation; _ } =
     Option.is_none return_annotation
 
 
   let create_generated_constructor { Class.name; docstring; _ } =
     {
-      Record.Define.name;
+      name;
       parameters = [Parameter.create ~name:(Identifier.create "self") ()];
       body = [Node.create Pass];
       decorators = [];
@@ -254,14 +257,14 @@ module Define = struct
       docstring;
     }
 
-  let contains_call { Record.Define.body; _ } name =
+  let contains_call { body; _ } name =
     let matches = function
       | {
         Node.value = Expression {
             Node.value = Expression.Access [
-                Expression.Record.Access.Call {
+                Expression.Access.Call {
                   Node.value = {
-                    Expression.Record.Call.name = {
+                    Expression.Call.name = {
                       Node.value = Expression.Access access;
                       _;
                     };
@@ -288,10 +291,6 @@ module Define = struct
   let dump_cfg define =
     contains_call define "pyre_dump_cfg"
 end
-
-
-(* Alias for when we open both Statment and Expression. *)
-module RecordDefine = Record.Define
 
 
 let assume ({ Node.location; _ } as test) =
@@ -416,7 +415,7 @@ module PrettyPrinter = struct
 
   and pp_define
       formatter
-      { Record.Define.name; parameters; body; decorators; return_annotation; async; parent; _ } =
+      { Define.name; parameters; body; decorators; return_annotation; async; parent; _ } =
     let return_annotation =
       match return_annotation with
       | Some annotation -> Format.asprintf " -> %a" Expression.pp annotation

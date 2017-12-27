@@ -85,7 +85,7 @@ end
 
 module Record : sig
   module Call : sig
-    type 'expression t = {
+    type 'expression record = {
       name: 'expression;
       arguments: ('expression Argument.t) list;
     }
@@ -106,13 +106,13 @@ module Record : sig
     [@@deriving compare, eq, sexp, show]
 
     type 'expression access =
-      | Call of ('expression Call.t) Node.t
+      | Call of ('expression Call.record) Node.t
       | Expression of 'expression
       | Identifier of Identifier.t
       | Subscript of ('expression subscript) list
     [@@deriving compare, eq, sexp, show]
 
-    type 'expression t = ('expression access) list
+    type 'expression record = ('expression access) list
     [@@deriving compare, eq, sexp, show]
   end
 end
@@ -172,7 +172,7 @@ module Starred : sig
 end
 
 type expression =
-  | Access of t Record.Access.t
+  | Access of t Record.Access.record
   | Await of t
   | BinaryOperator of t BinaryOperator.t
   | BooleanOperator of t BooleanOperator.t
@@ -206,7 +206,9 @@ and expression_node = t
 [@@deriving compare, eq, sexp, show]
 
 module Access : sig
-  type t = expression_node Record.Access.t
+  include module type of struct include Record.Access end
+
+  type t = expression_node Record.Access.record
   [@@deriving compare, eq, sexp, show]
 
   module Set: Set.S with type Elt.t = t
@@ -220,15 +222,13 @@ module Access : sig
 end
 
 module Call : sig
-  type t = expression_node Record.Call.t
+  include module type of struct include Record.Call end
+
+  type t = expression_node Record.Call.record
   [@@deriving compare, eq, sexp, show]
 
   val is_explicit_constructor_call: t -> bool
 end
-
-(* Aliases for when we open both Statement and Expression. *)
-module RecordAccess = Record.Access
-module RecordCall = Record.Call
 
 val negate: t -> t
 
@@ -240,7 +240,7 @@ val show : t -> string
 
 val pp_expression_list : Format.formatter -> t list -> unit
 
-val pp_expression_access_list : Format.formatter -> t Record.Access.t -> unit
+val pp_expression_access_list : Format.formatter -> Access.t -> unit
 
 val pp_expression_argument_list : Format.formatter -> (t Argument.t) list -> unit
 

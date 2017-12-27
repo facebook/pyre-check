@@ -349,7 +349,7 @@ let create define =
         Some predecessor in
 
   let jumps = { break = exit; continue = exit; error; exit = exit; yield} in
-  let node = create define.Record.Define.body jumps entry in
+  let node = create define.Define.body jumps entry in
   Node.connect_option node exit;
   graph
 

@@ -12,7 +12,7 @@ open Test
 
 
 let identifier name =
-  Record.Access.Identifier ~~name
+  Access.Identifier ~~name
 
 
 let variable name =
@@ -45,7 +45,7 @@ let test_create _ =
        ~aliases
        (+Access [
           identifier "foo";
-          Record.Access.Subscript [Record.Access.Index !"bar"];
+          Access.Subscript [Access.Index !"bar"];
         ]))
     (Type.Parametric {
         Type.name = ~~"foo";
@@ -56,7 +56,7 @@ let test_create _ =
        ~aliases
        (+Access [
           identifier "foo";
-          Record.Access.Subscript [Record.Access.Index !"bar"; Record.Access.Index !"baz"];
+          Access.Subscript [Access.Index !"bar"; Access.Index !"baz"];
         ]))
     (Type.Parametric {
         Type.name = ~~"foo";
@@ -70,9 +70,9 @@ let test_create _ =
        ~aliases
        (+Access [
           identifier "foo";
-          Record.Access.Subscript [
-            Record.Access.Slice {
-              Record.Access.lower = None;
+          Access.Subscript [
+            Access.Slice {
+              Access.lower = None;
               upper = None;
               step = None;
             };
@@ -90,7 +90,7 @@ let test_create _ =
        (+Access [
           identifier "typing";
           identifier "List";
-          Record.Access.Subscript [Record.Access.Index !"int"];
+          Access.Subscript [Access.Index !"int"];
         ]))
     (Type.list Type.integer);
   assert_equal
@@ -102,9 +102,9 @@ let test_create _ =
        (+Access [
           identifier "typing";
           identifier "DefaultDict";
-          Record.Access.Subscript [
-            Record.Access.Index !"int";
-            Record.Access.Index !"str";
+          Access.Subscript [
+            Access.Index !"int";
+            Access.Index !"str";
           ];
         ]))
     (Type.parametric "collections.defaultdict" [Type.integer; Type.string]);
@@ -114,9 +114,9 @@ let test_create _ =
        (+Access [
           identifier "typing";
           identifier "Dict";
-          Record.Access.Subscript [
-            Record.Access.Index !"int";
-            Record.Access.Index !"str";
+          Access.Subscript [
+            Access.Index !"int";
+            Access.Index !"str";
           ];
         ]))
     (Type.dictionary ~key:Type.integer ~value:Type.string);
@@ -127,9 +127,9 @@ let test_create _ =
        (+Access [
           identifier "typing";
           identifier "Tuple";
-          Record.Access.Subscript [
-            Record.Access.Index !"int";
-            Record.Access.Index !"str";
+          Access.Subscript [
+            Access.Index !"int";
+            Access.Index !"str";
           ];
         ]))
     (Type.Tuple (Type.Bounded [Type.integer; Type.string]));
@@ -139,9 +139,9 @@ let test_create _ =
        (+Access [
           identifier "typing";
           identifier "Tuple";
-          Record.Access.Subscript [
-            Record.Access.Index !"int";
-            Record.Access.Index !"...";
+          Access.Subscript [
+            Access.Index !"int";
+            Access.Index !"...";
           ];
         ]))
     (Type.Tuple (Type.Unbounded Type.integer));
@@ -161,7 +161,7 @@ let test_create _ =
        (+Access [
           identifier "typing";
           identifier "Optional";
-          Record.Access.Subscript [Record.Access.Index !"int"];
+          Access.Subscript [Access.Index !"int"];
         ]))
     (Type.Optional Type.integer);
   assert_equal
@@ -170,7 +170,7 @@ let test_create _ =
        (+Access [
           identifier "typing";
           identifier "Set";
-          Record.Access.Subscript [Record.Access.Index !"int"];
+          Access.Subscript [Access.Index !"int"];
         ]))
     (Type.set Type.integer);
   assert_equal
@@ -179,7 +179,7 @@ let test_create _ =
        (+Access [
           identifier "typing";
           identifier "Union";
-          Record.Access.Subscript [Record.Access.Index !"int"; Record.Access.Index !"str"];
+          Access.Subscript [Access.Index !"int"; Access.Index !"str"];
         ]))
     (Type.Union [Type.integer; Type.string]);
   assert_equal
@@ -188,7 +188,7 @@ let test_create _ =
        (+Access [
           identifier "typing";
           identifier "Union";
-          Record.Access.Subscript [Record.Access.Index !"int"; Record.Access.Index !"typing.Any"];
+          Access.Subscript [Access.Index !"int"; Access.Index !"typing.Any"];
         ]))
     (Type.Object);
   assert_equal
@@ -198,12 +198,12 @@ let test_create _ =
        (+Access [
           identifier "typing";
           identifier "Union";
-          Record.Access.Subscript [
-            Record.Access.Index !"int";
-            Record.Access.Index (+Access [
+          Access.Subscript [
+            Access.Index !"int";
+            Access.Index (+Access [
                 identifier "typing";
                 identifier "Optional";
-                Record.Access.Subscript [Record.Access.Index !"$bottom"];
+                Access.Subscript [Access.Index !"$bottom"];
               ]);
           ];
         ]))
@@ -216,7 +216,7 @@ let test_create _ =
        (+Access [
           identifier "typing";
           identifier "Set";
-          Record.Access.Subscript [Record.Access.Index !"typing.Any"];
+          Access.Subscript [Access.Index !"typing.Any"];
         ]))
     (Type.set Type.Object);
   assert_equal
@@ -225,7 +225,7 @@ let test_create _ =
        (+Access [
           identifier "typing";
           identifier "Dict";
-          Record.Access.Subscript [Record.Access.Index !"str"; Record.Access.Index !"typing.Any"];
+          Access.Subscript [Access.Index !"str"; Access.Index !"typing.Any"];
         ]))
     (Type.dictionary ~key:Type.string ~value:Type.Object);
 
@@ -250,8 +250,8 @@ let test_create _ =
        ~aliases
        (+Access [
           identifier "typing";
-          Record.Access.Call (+{
-              Record.Call.name = +Access [identifier "TypeVar"];
+          Access.Call (+{
+              Call.name = +Access [identifier "TypeVar"];
               arguments = [
                 { Argument.name = None; value = +String "_T" }
               ];
@@ -266,8 +266,8 @@ let test_create _ =
        ~aliases
        (+Access [
           identifier "typing";
-          Record.Access.Call (+{
-              Record.Call.name = +Access [identifier "TypeVar"];
+          Access.Call (+{
+              Call.name = +Access [identifier "TypeVar"];
               arguments = [
                 { Argument.name = None; value = +String "_T" };
                 { Argument.name = Some ~~"covariant"; value = +True };
@@ -284,8 +284,8 @@ let test_create _ =
        ~aliases
        (+Access [
           identifier "typing";
-          Record.Access.Call (+{
-              Record.Call.name = !"TypeVar";
+          Access.Call (+{
+              Call.name = !"TypeVar";
               arguments = [
                 { Argument.name = None; value = +String "_T" };
                 {
@@ -303,8 +303,8 @@ let test_create _ =
        ~aliases
        (+Access [
           identifier "typing";
-          Record.Access.Call (+{
-              Record.Call.name = !"TypeVar";
+          Access.Call (+{
+              Call.name = !"TypeVar";
               arguments = [
                 { Argument.name = None; value = +String "_T" };
                 {
@@ -322,8 +322,8 @@ let test_create _ =
        ~aliases
        (+Access [
           identifier "typing";
-          Record.Access.Call (+{
-              Record.Call.name = +Access [identifier "TypeVar"];
+          Access.Call (+{
+              Call.name = +Access [identifier "TypeVar"];
               arguments = [
                 { Argument.name = None; value = +String "_T" };
                 {
@@ -356,7 +356,7 @@ let test_create _ =
        ~aliases
        (+Access [
           identifier "foo";
-          Record.Access.Subscript [Record.Access.Index !"_T"];
+          Access.Subscript [Access.Index !"_T"];
         ]))
     (Type.Parametric {
         Type.name = ~~"foo";
@@ -377,7 +377,7 @@ let test_create _ =
        ~aliases
        (+Access [
           identifier "foo";
-          Record.Access.Subscript [Record.Access.Index (+String "bar")]]))
+          Access.Subscript [Access.Index (+String "bar")]]))
     (Type.Parametric {
         Type.name = ~~"foo";
         parameters = [Type.Primitive ~~"bar"]
@@ -476,7 +476,7 @@ let test_expression _ =
     (+Access [
        identifier "foo";
        identifier "bar";
-       Record.Access.Subscript [Record.Access.Index (+Access (Access.create "baz"))];
+       Access.Subscript [Access.Index (+Access (Access.create "baz"))];
      ]);
 
   assert_equal
@@ -484,9 +484,9 @@ let test_expression _ =
     (+Access [
        identifier "typing";
        identifier "Tuple";
-       Record.Access.Subscript [
-         Record.Access.Index (+Access (Access.create "int"));
-         Record.Access.Index (+Access (Access.create "str"));
+       Access.Subscript [
+         Access.Index (+Access (Access.create "int"));
+         Access.Index (+Access (Access.create "str"));
        ];
      ]);
   assert_equal
@@ -494,9 +494,9 @@ let test_expression _ =
     (+Access [
        identifier "typing";
        identifier "Tuple";
-       Record.Access.Subscript [
-         Record.Access.Index (+Access (Access.create "int"));
-         Record.Access.Index (+Access (Access.create "..."));
+       Access.Subscript [
+         Access.Index (+Access (Access.create "int"));
+         Access.Index (+Access (Access.create "..."));
        ];
      ]);
   assert_equal
@@ -507,8 +507,8 @@ let test_expression _ =
     (+Access [
        identifier "typing";
        identifier "List";
-       Record.Access.Subscript [
-         Record.Access.Index (+Access (Access.create "int"));
+       Access.Subscript [
+         Access.Index (+Access (Access.create "int"));
        ];
      ])
 

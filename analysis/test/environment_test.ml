@@ -85,7 +85,7 @@ let test_create _ =
     (function_signature
        (Environment.reader environment)
        (access ["foo"])
-       { RecordCall.name = !"foo"; arguments = [] }
+       { Call.name = !"foo"; arguments = [] }
        [])
 
 
@@ -106,19 +106,19 @@ let test_copy _ =
     (function_signature
        environment
        (access ["foo"])
-       { RecordCall.name = !"foo"; arguments = [] }
+       { Call.name = !"foo"; arguments = [] }
        []);
   assert_is_none
     (function_signature
        environment
        (access ["foo"])
-       { RecordCall.name = !"bar"; arguments = [] }
+       { Call.name = !"bar"; arguments = [] }
        []);
   assert_is_some
     (function_signature
        environment
        (access [])
-       { RecordCall.name = !"A"; arguments = [] }
+       { Call.name = !"A"; arguments = [] }
        []);
 
   let localized =
@@ -131,13 +131,13 @@ let test_copy _ =
     (function_signature
        environment
        (access ["foo"])
-       { RecordCall.name = !"foo"; arguments = [] }
+       { Call.name = !"foo"; arguments = [] }
        []);
   assert_is_none
     (function_signature
        environment
        (access ["foo"])
-       { RecordCall.name = !"bar"; arguments = [] }
+       { Call.name = !"bar"; arguments = [] }
        []);
 
   (* New environment contains everything. *)
@@ -145,13 +145,13 @@ let test_copy _ =
     (function_signature
        localized
        (access ["foo"])
-       { RecordCall.name = !"foo"; arguments = [] }
+       { Call.name = !"foo"; arguments = [] }
        []);
   assert_is_some
     (function_signature
        localized
        (access ["foo"])
-       { RecordCall.name = !"bar"; arguments = [] }
+       { Call.name = !"bar"; arguments = [] }
        [])
 
 
@@ -172,7 +172,7 @@ let test_populate _ =
        environment
        (+Access
          ((Access.create "Optional") @
-          [RecordAccess.Subscript [RecordAccess.Index (+Access (access ["foo.foo"]))]])))
+          [Access.Subscript [Access.Index (+Access (access ["foo.foo"]))]])))
     (Type.Parametric {
         Type.name = ~~"Optional";
         parameters = [primitive "foo.foo"];
@@ -617,9 +617,9 @@ let assert_instantiated
     in
     (List.equal ~equal:parameter_equal)
       (List.map ~f:parameter expected_parameters)
-      (List.map ~f:Node.value define.RecordDefine.parameters)
+      (List.map ~f:Node.value define.Define.parameters)
     &&
-    (Option.equal Expression.equal expected_return define.RecordDefine.return_annotation)
+    (Option.equal Expression.equal expected_return define.Define.return_annotation)
   in
 
   let environment = populate environment in
@@ -628,7 +628,7 @@ let assert_instantiated
   Resolution.function_signature
     (resolution environment)
     qualifier
-    { RecordCall.name = !name; arguments = [] }
+    { Call.name = !name; arguments = [] }
     (List.map ~f:(~+) arguments)
   |> List.map ~f:(fun { Signature.instantiated; _ } -> instantiated)
   |> List.exists ~f:instantiated
@@ -645,7 +645,7 @@ let assert_not_instantiated
     (function_signature
        environment
        []
-       { RecordCall.name = !name; arguments = [] }
+       { Call.name = !name; arguments = [] }
        (List.map ~f:(~+) arguments))
 
 
@@ -1129,25 +1129,25 @@ let test_method_signature _ =
     (method_signature
        environment
        Type.Top
-       { RecordCall.name = !"bar"; arguments = [] }
+       { Call.name = !"bar"; arguments = [] }
        []);
   assert_is_some
     (method_signature
        environment
        Type.Object
-       { RecordCall.name = !"foo"; arguments = [] }
+       { Call.name = !"foo"; arguments = [] }
        []);
   assert_is_some
     (method_signature
        environment
        Type.Object
-       { RecordCall.name = !"bar"; arguments = [] }
+       { Call.name = !"bar"; arguments = [] }
        []);
   assert_is_none
     (method_signature
        environment
        Type.Object
-       { RecordCall.name = !"baz"; arguments = [] }
+       { Call.name = !"baz"; arguments = [] }
        []);
 
   let environment =
@@ -1163,25 +1163,25 @@ let test_method_signature _ =
     (method_signature
        environment
        (primitive "foo")
-       { RecordCall.name = !"foo"; arguments = [] }
+       { Call.name = !"foo"; arguments = [] }
        []);
   assert_is_some
     (method_signature
        environment
        (primitive "bar")
-       { RecordCall.name = !"bar"; arguments = [] }
+       { Call.name = !"bar"; arguments = [] }
        []);
   assert_is_some
     (method_signature
        environment
        (primitive "foo")
-       { RecordCall.name = !"bar"; arguments = [] }
+       { Call.name = !"bar"; arguments = [] }
        []);
   assert_is_none
     (method_signature
        environment
        (primitive "bar")
-       { RecordCall.name = !"foo"; arguments = [] }
+       { Call.name = !"foo"; arguments = [] }
        []);
 
   (* Test that we don't overload with methods from the superclass. *)
@@ -1189,7 +1189,7 @@ let test_method_signature _ =
     (method_signature
        environment
        (primitive "foo")
-       { RecordCall.name = !"both"; arguments = [] }
+       { Call.name = !"both"; arguments = [] }
        []);
 
   let environment =
@@ -1204,12 +1204,12 @@ let test_method_signature _ =
   let callee = method_signature
       environment
       (primitive "bar")
-      { RecordCall.name = !"f"; arguments = [] }
+      { Call.name = !"f"; arguments = [] }
       (List.map ~f:(~+) (normal [primitive "bar"]))
   in
   (match callee with
    | Some {
-       Signature.instantiated = { RecordDefine.return_annotation = Some annotation; _ };
+       Signature.instantiated = { Define.return_annotation = Some annotation; _ };
        _;
      } -> assert_equal (parse_annotation environment annotation) Type.integer
    | _ -> assert_unreached ()
@@ -1235,11 +1235,11 @@ let test_method_signature _ =
     method_signature
       environment
       (Type.list Type.integer)
-      { RecordCall.name = !"head"; arguments = [] }
+      { Call.name = !"head"; arguments = [] }
       (List.map ~f:(~+) (normal [Type.list Type.integer])) in
   (match callee with
    | Some {
-       Signature.instantiated = { RecordDefine.name; return_annotation = Some annotation; _ };
+       Signature.instantiated = { Define.name; return_annotation = Some annotation; _ };
        _;
      }->
        assert_equal name (Access.create "head");
@@ -1252,11 +1252,11 @@ let test_method_signature _ =
     method_signature
       environment
       (Type.list Type.integer)
-      { RecordCall.name = !"append"; arguments = [] }
+      { Call.name = !"append"; arguments = [] }
       (List.map ~f:(~+) (normal [Type.list Type.integer; Type.integer])) in
   (match callee with
    | Some {
-       Signature.instantiated = { RecordDefine.name; return_annotation = Some annotation; _ };
+       Signature.instantiated = { Define.name; return_annotation = Some annotation; _ };
        _;
      }->
        assert_equal name (Access.create "append");
@@ -1272,11 +1272,11 @@ let test_method_signature _ =
     method_signature
       environment
       (Type.dictionary ~key:Type.string ~value:Type.integer)
-      { RecordCall.name = !"get"; arguments = [] }
+      { Call.name = !"get"; arguments = [] }
       (List.map ~f:(~+) (normal [Type.dictionary ~key:Type.string ~value:Type.integer])) in
   (match callee with
    | Some {
-       Signature.instantiated = { RecordDefine.name; return_annotation = Some annotation; _ };
+       Signature.instantiated = { Define.name; return_annotation = Some annotation; _ };
        _;
      }->
        assert_equal name (Access.create "get");
@@ -1292,7 +1292,7 @@ let test_method_signature _ =
     method_signature
       environment
       (Type.dictionary ~key:Type.string ~value:Type.integer)
-      { RecordCall.name = !"update"; arguments = [] }
+      { Call.name = !"update"; arguments = [] }
       (List.map
          ~f:(~+)
          (normal [
@@ -1300,7 +1300,7 @@ let test_method_signature _ =
              Type.dictionary ~key:Type.string ~value:Type.integer;
            ])) in
   (match callee with
-   | Some { Signature.instantiated = { RecordDefine.name; _ }; _ } ->
+   | Some { Signature.instantiated = { Define.name; _ }; _ } ->
        assert_equal name (Access.create "update");
    | _ ->
        assert_unreached ());
@@ -1310,10 +1310,10 @@ let test_method_signature _ =
     method_signature
       environment
       (Type.dictionary ~key:Type.string ~value:Type.integer)
-      { RecordCall.name = !"add"; arguments = [] }
+      { Call.name = !"add"; arguments = [] }
       (List.map ~f:(~+) (normal [Type.dictionary ~key:Type.string ~value:Type.integer])) in
   (match callee with
-   | Some { Signature.instantiated = { RecordDefine.name; _ }; _ } ->
+   | Some { Signature.instantiated = { Define.name; _ }; _ } ->
        assert_equal name (Access.create "add");
    | _ ->
        assert_unreached ())
