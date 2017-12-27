@@ -68,7 +68,7 @@ let test_language_server_protocol_json_format context =
             "diagnostics": [
               {
                 "message":
-                  "Incompatible return type [7]: expected `None (void)` but got `int`. Type `None (void)` expected on line 3, specified on line 2.",
+                  "Incompatible return type [7]: expected `None` but got `int`. Type `None` expected on line 3, specified on line 2.",
                 "range": {
                   "end": { "character": 10, "line": 2 },
                   "start": { "character": 2, "line": 2 }

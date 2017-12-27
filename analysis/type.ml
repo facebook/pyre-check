@@ -100,7 +100,6 @@ let rec pp format annotation =
         (Identifier.show (reverse_substitute name))
         (without_backtick parameters)
   | Primitive name ->
-      let name = if Identifier.show name = "None" then Identifier.create "None (void)" else name in
       Format.fprintf format "%a" Identifier.pp name
   | Top ->
       Format.fprintf format "`unknown`"
@@ -536,6 +535,11 @@ let is_generic = function
 
 let is_meta = function
   | Parametric { name; _ } -> Identifier.show name = "typing.Type"
+  | _ -> false
+
+
+let is_none = function
+  | Primitive name -> Identifier.show name = "None"
   | _ -> false
 
 

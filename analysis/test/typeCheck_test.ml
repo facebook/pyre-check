@@ -982,8 +982,7 @@ let test_show_error_traces _ =
   assert_type_errors ~show_error_traces:true
     "def foo() -> str: return"
     [
-      "Incompatible return type [7]: expected `str` but got `None (void)`. Type `str` expected " ^
-      "on line 1, specified on line 1."
+      "Incompatible return type [7]: expected `str` but function does not return."
     ];
 
   assert_type_errors ~show_error_traces:true
@@ -1007,8 +1006,8 @@ let test_show_error_traces _ =
   assert_type_errors ~show_error_traces:true
     "def foo(): pass"
     [
-      "Missing return annotation [3]: Returning `None (void)` but no return type is specified. " ^
-      "Type `None (void)` was returned on line 1, return type should be specified on line 1.";
+      "Missing return annotation [3]: Function does not return; " ^
+      "return type should be specified as `None`."
     ];
 
   assert_type_errors ~show_error_traces:true
@@ -1130,7 +1129,7 @@ let test_check _ =
 
   assert_type_errors
     "def foo() -> str: return"
-    ["Incompatible return type [7]: expected `str` but got `None (void)`."];
+    ["Incompatible return type [7]: expected `str` but function does not return."];
 
   assert_type_errors
     "def foo() -> typing.List[str]: return 1"
@@ -1295,8 +1294,8 @@ let test_check _ =
         return (x for x in l if x is not None)
     |}
     [
-      "Incompatible return type [7]: expected `typing.Generator[str, None (void), None (void)]` " ^
-      "but got `typing.Generator[int, None (void), None (void)]`.";
+      "Incompatible return type [7]: expected `typing.Generator[str, None, None]` " ^
+      "but got `typing.Generator[int, None, None]`.";
     ];
 
   assert_type_errors
@@ -1380,7 +1379,10 @@ let test_strict _ =
 
   assert_strict_errors
     "def foo(): pass"
-    ["Missing return annotation [3]: Returning `None (void)` but no return type is specified."];
+    [
+      "Missing return annotation [3]: Function does not return; " ^
+      "return type should be specified as `None`."
+    ];
   assert_strict_errors "def foo() -> None: return" [];
   assert_strict_errors "def foo() -> float: return 1.0" [];
   assert_strict_errors "def foo() -> float: return 1" [];
@@ -1393,7 +1395,7 @@ let test_strict _ =
   assert_strict_errors
     "def foo() -> str: return"
     [
-      "Incompatible return type [7]: expected `str` but got `None (void)`."
+      "Incompatible return type [7]: expected `str` but function does not return."
     ];
   assert_strict_errors
     "def foo() -> typing.List[str]: return 1"
@@ -2706,14 +2708,17 @@ let test_check_missing_return _ =
       def foo() -> None:
         return 1
     |}
-    ["Incompatible return type [7]: expected `None (void)` but got `int`."];
+    ["Incompatible return type [7]: expected `None` but got `int`."];
 
   assert_type_errors
     {|
       def foo():
         return
     |}
-    ["Missing return annotation [3]: Returning `None (void)` but no return type is specified."];
+    [
+      "Missing return annotation [3]: Function does not return; " ^
+      "return type should be specified as `None`."
+    ];
 
   assert_type_errors
     {|
@@ -2754,7 +2759,7 @@ let test_check_missing_return _ =
           return 1
     |}
     [
-      "Incompatible return type [7]: expected `None (void)` but got `int`."
+      "Incompatible return type [7]: expected `None` but got `int`."
     ];
 
   (* Don't report in non-debug mode. *)
@@ -2788,8 +2793,8 @@ let test_check_yield _ =
         yield 1.0
     |}
     [
-      "Incompatible return type [7]: expected `typing.Generator[int, None (void), None (void)]` " ^
-      "but got `typing.Generator[float, None (void), None (void)]`.";
+      "Incompatible return type [7]: expected `typing.Generator[int, None, None]` " ^
+      "but got `typing.Generator[float, None, None]`.";
     ];
 
   assert_type_errors
@@ -2805,8 +2810,8 @@ let test_check_yield _ =
         yield from [""]
     |}
     [
-      "Incompatible return type [7]: expected `typing.Generator[int, None (void), None (void)]` " ^
-      "but got `typing.Generator[str, None (void), None (void)]`."
+      "Incompatible return type [7]: expected `typing.Generator[int, None, None]` " ^
+      "but got `typing.Generator[str, None, None]`."
     ];
 
   assert_type_errors
@@ -2828,8 +2833,8 @@ let test_check_yield _ =
         yield
     |}
     [
-      "Missing return annotation [3]: Returning `typing.Generator[None (void), None (void), None " ^
-      "(void)]` but type `Any` is specified."
+      "Missing return annotation [3]: Returning `typing.Generator[None, None, None]` " ^
+      "but type `Any` is specified."
     ];
 
   assert_type_errors
@@ -2838,8 +2843,8 @@ let test_check_yield _ =
         yield
     |}
     [
-      "Missing return annotation [3]: Returning `typing.Generator[None (void), None (void), None " ^
-      "(void)]` but no return type is specified."
+      "Missing return annotation [3]: Returning `typing.Generator[None, None, None]` " ^
+      "but no return type is specified."
     ];
 
   assert_type_errors
@@ -3372,7 +3377,8 @@ let test_check_behavioral_subtyping _ =
     |}
     [
       "Inconsistent override [15]: `foo` overrides method defined in `Foo` inconsistently.";
-      "Missing return annotation [3]: Returning `None (void)` but no return type is specified.";
+      "Missing return annotation [3]: Function does not return; " ^
+      "return type should be specified as `None`."
     ];
 
   (* Weakened precondition. *)
@@ -3675,13 +3681,19 @@ let test_infer _ =
       def return_none ():
           pass
     |}
-    ["\"Missing return annotation [3]: Returning `None (void)` but no return type is specified.\""];
+    [
+      "\"Missing return annotation [3]: Function does not return; " ^
+      "return type should be specified as `None`.\""
+    ];
   assert_infer
     {|
       def return_none ():
           return
     |}
-    ["\"Missing return annotation [3]: Returning `None (void)` but no return type is specified.\""];
+    [
+      "\"Missing return annotation [3]: Function does not return; " ^
+      "return type should be specified as `None`.\""
+    ];
   assert_infer
     {|
       def return_none ():

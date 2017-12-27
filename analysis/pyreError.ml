@@ -235,36 +235,46 @@ let description
             Identifier.pp name
             Type.pp annotation
         ]
-    | MissingReturnAnnotation { annotation; evidence_locations; due_to_any = false } ->
+    | MissingReturnAnnotation { annotation; _ }
+      when Type.is_none annotation ->
         [
           (Format.asprintf
-             "Returning %a but no return type is specified."
-             Type.pp annotation);
-          (Format.asprintf
-             "Type %a was returned on %s %s, return type should be specified on line %d."
-             Type.pp annotation
-             (if (List.length evidence_locations) > 1 then "lines" else "line")
-             (evidence_locations
-              |> List.map
-                ~f:Int.to_string
-              |> String.concat ~sep:", ")
-             (Location.line location))
+             "Function does not return; return type should be specified as `None`.");
         ]
-    | MissingReturnAnnotation { annotation; evidence_locations; due_to_any = true } ->
-        [
-          (Format.asprintf
-             "Returning %a but type `Any` is specified."
-             Type.pp annotation);
-          (Format.asprintf
-             "Type %a was returned on %s %s, return type should be specified on line %d."
-             Type.pp annotation
-             (if (List.length evidence_locations) > 1 then "lines" else "line")
-             (evidence_locations
-              |> List.map
-                ~f:Int.to_string
-              |> String.concat ~sep:", ")
-             (Location.line location))
-        ]
+    | MissingReturnAnnotation { annotation; evidence_locations; due_to_any } ->
+        begin
+          match due_to_any with
+          | false ->
+              [
+                (Format.asprintf
+                   "Returning %a but no return type is specified."
+                   Type.pp annotation);
+                (Format.asprintf
+                   "Type %a was returned on %s %s, return type should be specified on line %d."
+                   Type.pp annotation
+                   (if (List.length evidence_locations) > 1 then "lines" else "line")
+                   (evidence_locations
+                    |> List.map
+                      ~f:Int.to_string
+                    |> String.concat ~sep:", ")
+                   (Location.line location))
+              ]
+          | true ->
+              [
+                (Format.asprintf
+                   "Returning %a but type `Any` is specified."
+                   Type.pp annotation);
+                (Format.asprintf
+                   "Type %a was returned on %s %s, return type should be specified on line %d."
+                   Type.pp annotation
+                   (if (List.length evidence_locations) > 1 then "lines" else "line")
+                   (evidence_locations
+                    |> List.map
+                      ~f:Int.to_string
+                    |> String.concat ~sep:", ")
+                   (Location.line location))
+              ]
+        end
     | MissingAnnotation {
         name;
         annotation;
@@ -357,17 +367,27 @@ let description
             Type.pp actual
         ]
     | IncompatibleReturnType { actual; expected } ->
-        [
-          (Format.asprintf
-             "expected %a but got %a."
-             Type.pp expected
-             Type.pp actual);
-          (Format.asprintf
-             "Type %a expected on line %d, specified on line %d."
-             Type.pp expected
-             error.location.Location.stop.Location.line
-             error.define.Node.location.Location.start.Location.line)
-        ]
+        begin
+          match Type.is_none actual with
+          | false ->
+              [
+                (Format.asprintf
+                   "expected %a but got %a."
+                   Type.pp expected
+                   Type.pp actual);
+                (Format.asprintf
+                   "Type %a expected on line %d, specified on line %d."
+                   Type.pp expected
+                   error.location.Location.stop.Location.line
+                   error.define.Node.location.Location.start.Location.line)
+              ]
+          | true ->
+              [
+                (Format.asprintf
+                   "expected %a but function does not return."
+                   Type.pp expected);
+              ]
+        end
     | IncompatibleType {
         name;
         parent = Some parent;
@@ -778,7 +798,6 @@ let to_json ~detailed ({ kind; define = { Node.value = define; _ }; location; _ 
   let print_annotation annotation =
     Format.asprintf "%a" Type.pp annotation
     |> String.strip ~drop:((=) '`')
-    |> String.substr_replace_all ~pattern:" (void)" ~with_:""
   in
   let parameters =
     let to_json { Node.value = { Parameter.name; annotation; value }; _ } =

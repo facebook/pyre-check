@@ -73,6 +73,7 @@ val expression: t -> Expression.t
 val is_awaitable: t -> bool
 val is_generic: t -> bool
 val is_meta: t -> bool
+val is_none: t -> bool
 val is_optional: t -> bool
 val is_primitive: t -> bool
 val is_tuple: t -> bool

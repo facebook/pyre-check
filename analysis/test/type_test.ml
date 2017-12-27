@@ -556,6 +556,13 @@ let test_is_meta _ =
   assert_false (Type.is_meta Type.integer)
 
 
+let test_is_none _ =
+  assert_true (Type.is_none (Type.Primitive ~~"None"));
+  assert_false (Type.is_none Type.integer);
+  assert_false (Type.is_none (Type.Primitive ~~"foo"));
+  assert_false (Type.is_none (Type.Optional Type.Bottom))
+
+
 let test_is_unknown _ =
   assert_false (Type.is_unknown Type.Bottom);
   assert_false (Type.is_unknown Type.Object);
@@ -780,6 +787,7 @@ let () =
     "union">::test_union;
     "is_instantiated">::test_is_instantiated;
     "is_meta">::test_is_meta;
+    "is_none">::test_is_none;
     "is_unknown">::test_is_unknown;
     "is_fully_resolved">::test_is_fully_resolved;
     "mismatch_with_any">::test_mismatch_with_any;
