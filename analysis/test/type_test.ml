@@ -251,7 +251,7 @@ let test_create _ =
        (+Access [
           identifier "typing";
           Record.Access.Call (+{
-              Call.name = +Access [identifier "TypeVar"];
+              Record.Call.name = +Access [identifier "TypeVar"];
               arguments = [
                 { Argument.name = None; value = +String "_T" }
               ];
@@ -267,7 +267,7 @@ let test_create _ =
        (+Access [
           identifier "typing";
           Record.Access.Call (+{
-              Call.name = +Access [identifier "TypeVar"];
+              Record.Call.name = +Access [identifier "TypeVar"];
               arguments = [
                 { Argument.name = None; value = +String "_T" };
                 { Argument.name = Some ~~"covariant"; value = +True };
@@ -285,7 +285,7 @@ let test_create _ =
        (+Access [
           identifier "typing";
           Record.Access.Call (+{
-              Call.name = !"TypeVar";
+              Record.Call.name = !"TypeVar";
               arguments = [
                 { Argument.name = None; value = +String "_T" };
                 {
@@ -304,7 +304,7 @@ let test_create _ =
        (+Access [
           identifier "typing";
           Record.Access.Call (+{
-              Call.name = !"TypeVar";
+              Record.Call.name = !"TypeVar";
               arguments = [
                 { Argument.name = None; value = +String "_T" };
                 {
@@ -323,7 +323,7 @@ let test_create _ =
        (+Access [
           identifier "typing";
           Record.Access.Call (+{
-              Call.name = +Access [identifier "TypeVar"];
+              Record.Call.name = +Access [identifier "TypeVar"];
               arguments = [
                 { Argument.name = None; value = +String "_T" };
                 {

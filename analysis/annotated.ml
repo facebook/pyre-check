@@ -513,7 +513,7 @@ module BinaryOperator = struct
               Expression.Record.Access.Call {
                 Node.location;
                 value = {
-                  Expression.Call.name = {
+                  Record.Call.name = {
                     Node.location;
                     value = Access (Access.create name);
                   };
@@ -533,7 +533,7 @@ module Call = struct
 
 
   type t = {
-    call: Expression.t Call.t;
+    call: Call.t;
     kind: kind;
   }
   [@@deriving compare, eq, sexp, show]
@@ -547,17 +547,17 @@ module Call = struct
     call
 
 
-  let name { call = { Call.name; _ }; _ } =
+  let name { call = { Record.Call.name; _ }; _ } =
     name
 
 
 
-  let arguments { call = { Call.arguments; _ }; _ } =
+  let arguments { call = { Record.Call.arguments; _ }; _ } =
     arguments
 
 
   let with_arguments { call; kind } arguments =
-    { call = { call with Call.arguments }; kind }
+    { call = { call with Record.Call.arguments }; kind }
 
 
   let insert_implicit_arguments ~callee { call; kind } =
@@ -571,7 +571,7 @@ module Call = struct
             value = Node.create (Access (Access.create "self"));
           }
         in
-        { call with Call.arguments = self :: call.Call.arguments }
+        { call with Record.Call.arguments = self :: call.Record.Call.arguments }
       in
       match kind with
       | Method ->
@@ -579,7 +579,7 @@ module Call = struct
       | Function ->
           if Instantiated.Define.is_class_method callee ||
               (Instantiated.Define.is_constructor callee &&
-                not (Instantiated.Call.is_explicit_constructor_call call)) then
+                not (Call.is_explicit_constructor_call call)) then
             prepend_self call
           else
             call)
@@ -594,9 +594,9 @@ module Call = struct
   }
 
 
-  let redirect { call = { Expression.Call.name; arguments }; kind = _ } =
+  let redirect { call = { Record.Call.name; arguments }; kind = _ } =
     match name, arguments with
-    | { Node.location; value = Access [Expression.Record.Access.Identifier name]; _ },
+    | { Node.location; value = Access [Record.Access.Identifier name]; _ },
       [{
         Argument.value = { Node.value = Access access; _ };
         _;
@@ -611,7 +611,7 @@ module Call = struct
               [Expression.Record.Access.Call {
                   Node.location;
                   value = {
-                    Expression.Call.name = {
+                    Record.Call.name = {
                       Node.location;
                       value = Access (Access.create name);
                     };
@@ -624,7 +624,7 @@ module Call = struct
     | _ -> None
 
 
-  let backup { call = { Expression.Call.name; arguments }; kind } =
+  let backup { call = { Record.Call.name; arguments }; kind } =
     match name with
     | { Node.location; value = Access [Expression.Record.Access.Identifier name]; _ } ->
         (* cf. https://docs.python.org/3/reference/datamodel.html#object.__radd__ *)
@@ -647,7 +647,7 @@ module Call = struct
         >>| (fun name ->
             {
               call = {
-                Expression.Call.name = {
+                Record.Call.name = {
                   Node.location;
                   value = Access (Access.create name);
                 };
@@ -658,7 +658,7 @@ module Call = struct
     | _ -> None
 
 
-  let argument_annotations { call = { Expression.Call.arguments; _ }; kind = _ } ~resolution =
+  let argument_annotations { call = { Record.Call.arguments; _ }; kind = _ } ~resolution =
     let extract_argument { Argument.value; _ } =
       match value with
       | { Node.location; Node.value = Starred (Starred.Once expression) } ->
@@ -761,7 +761,7 @@ module ComparisonOperator = struct
                     Expression.Record.Access.Call {
                       Node.location;
                       value = {
-                        Expression.Call.name = {
+                        Record.Call.name = {
                           Node.location;
                           value = Access (Access.create name);
                         };
@@ -801,7 +801,7 @@ module UnaryOperator = struct
                   Expression.Record.Access.Call {
                     Node.location;
                     value = {
-                      Expression.Call.name = {
+                      Record.Call.name = {
                         Node.location;
                         value = Access (Access.create name);
                       };
@@ -907,7 +907,7 @@ module Access = struct
     (* Resolve `super()` calls. *)
     let access =
       match access with
-      | (Record.Access.Call { Node.value = { Expression.Call.name; _ }; _ }) :: tail
+      | (Record.Access.Call { Node.value = { Record.Call.name; _ }; _ }) :: tail
         when Expression.show name = "super" ->
           (define
           >>= (fun define ->
@@ -991,7 +991,7 @@ module Access = struct
               >>= fun call ->
               (match call with
                | {
-                  Call.call = { Ast.Expression.Call.arguments = [{ Argument.value; _ }]; _ };
+                  Call.call = { Record.Call.arguments = [{ Argument.value; _ }]; _ };
                   _;
                } ->
                    let annotation = Resolution.resolve resolution value in

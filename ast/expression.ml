@@ -7,15 +7,6 @@ open Core
 open Sexplib.Std
 
 
-module Call = struct
-  type 'expression t = {
-    name: 'expression;
-    arguments: ('expression Argument.t) list;
-  }
-  [@@deriving compare, eq, sexp, show]
-end
-
-
 module BooleanOperator = struct
   type operator =
     | And
@@ -173,6 +164,15 @@ end
 
 
 module Record = struct
+  module Call = struct
+    type 'expression t = {
+      name: 'expression;
+      arguments: ('expression Argument.t) list;
+    }
+    [@@deriving compare, eq, sexp, show]
+  end
+
+
   module Access = struct
     type 'expression slice = {
       lower: 'expression option;
@@ -363,6 +363,20 @@ module Access = struct
 end
 
 
+module Call = struct
+  type t = expression_node Record.Call.t
+  [@@deriving compare, eq, sexp, show]
+
+
+  let is_explicit_constructor_call { Record.Call.name; _ } =
+    match name with
+    | { Node.value = Access ((_ :: _) as access); _ } ->
+        (Access.show [List.last_exn access]) = "__init__"
+    | _ ->
+        false
+end
+
+
 let negate ({ Node.location; _ } as node) =
   {
     Node.location;
@@ -501,7 +515,7 @@ module PrettyPrinter = struct
 
   and pp_access formatter access =
     match access with
-    | Record.Access.Call { Node.value = { Call.name; arguments }; _ } ->
+    | Record.Access.Call { Node.value = { Record.Call.name; arguments }; _ } ->
         Format.fprintf
           formatter
           "%a(%a)"

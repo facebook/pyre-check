@@ -169,7 +169,7 @@ let qualify source =
             value = Access [
                 Record.Access.Call {
                   Node.value = ({
-                      Call.name = { Node.value = Access access; _; };
+                      Record.Call.name = { Node.value = Access access; _; };
                       _;
                     } as call);
                   _;
@@ -184,7 +184,7 @@ let qualify source =
                         Node.location;
                         value = {
                           call with
-                          Call.name = { Node.location; value = Access [name] };
+                          Record.Call.name = { Node.location; value = Access [name] };
                         };
                       }
                     in
@@ -487,7 +487,7 @@ let expand_yield_from source =
               Record.Access.Call
                 (Node.create
                    {
-                     Call.name = Node.create (Access (Access.create name));
+                     Record.Call.name = Node.create (Access (Access.create name));
                      arguments = [];
                    })
             in
@@ -534,7 +534,7 @@ let expand_for_loop source =
                       Record.Access.Call
                         (Node.create
                            {
-                             Call.name = Node.create (Access (Access.create name));
+                             Record.Call.name = Node.create (Access (Access.create name));
                              arguments = [];
                            })
                     in

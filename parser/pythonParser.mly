@@ -1006,7 +1006,7 @@ atom:
         value = Access [
           Record.Access.Call {
             Node.location = name.Node.location;
-            value = { Call.name; arguments };
+            value = { Record.Call.name; arguments };
           };
         ];
       }

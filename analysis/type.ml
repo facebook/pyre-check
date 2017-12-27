@@ -435,7 +435,7 @@ let create ~aliases expression =
         Record.Access.Identifier typing;
         Record.Access.Call {
           Node.value = {
-            Call.name = {
+            Record.Call.name = {
               Node.value = Access [Record.Access.Identifier typevar];
               _;
             };

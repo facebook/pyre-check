@@ -1588,14 +1588,14 @@ let test_comparison _ =
 let test_call _ =
   assert_parsed_equal
     "foo()"
-    [+Expression (+Access [Record.Access.Call (+{ Call.name = !"foo"; arguments = []; })])];
+    [+Expression (+Access [Record.Access.Call (+{ Record.Call.name = !"foo"; arguments = []; })])];
   assert_parsed_equal
     "foo(a for a in [])"
     [
       +Expression
         (+Access [
            Record.Access.Call (+{
-               Call.name = !"foo";
+               Record.Call.name = !"foo";
                arguments = [{
                    Argument.name = None;
                    value = +Generator {
@@ -1617,7 +1617,7 @@ let test_call _ =
       +Expression
         (+Access [
            Record.Access.Call (+{
-               Call.name = !"foo";
+               Record.Call.name = !"foo";
                arguments = [{
                    Argument.name = None;
                    value = +Generator {
@@ -1639,7 +1639,7 @@ let test_call _ =
       +Expression
         (+Access [
            Record.Access.Call (+{
-               Call.name = !"foo";
+               Record.Call.name = !"foo";
                arguments = [
                  { Argument.name = None; value = +Integer 1 };
                  { Argument.name = None; value = +Integer 2 };
@@ -1653,7 +1653,7 @@ let test_call _ =
       +Expression
         (+Access [
            Record.Access.Call  (+{
-               Call.name = !"foo";
+               Record.Call.name = !"foo";
                arguments = [
                  { Argument.name = None; value = (+Tuple [+Integer 1; +Integer 2]) };
                ];
@@ -1666,7 +1666,7 @@ let test_call _ =
       +Expression
         (+Access [
            Record.Access.Call (+{
-               Call.name = !"foo";
+               Record.Call.name = !"foo";
                arguments = [
                  { Argument.name = None; value = !"x"; };
                  { Argument.name = None; value = +Integer 1 };
@@ -1682,7 +1682,7 @@ let test_call _ =
         (+Access [
            Record.Access.Identifier ~~"a";
            Record.Access.Call (+{
-               Call.name = !"foo";
+               Record.Call.name = !"foo";
                arguments = [
                  { Argument.name = None; value = !"x"; };
                ];
@@ -1695,7 +1695,7 @@ let test_call _ =
       +Expression
         (+Access [
            Record.Access.Call (+{
-               Call.name = !"foo";
+               Record.Call.name = !"foo";
                arguments = [
                  { Argument.name = None; value = +Integer 1 };
                  {
@@ -1716,7 +1716,7 @@ let test_call _ =
       +Expression
         (+Access [
            Record.Access.Call (+{
-               Call.name = !"foo";
+               Record.Call.name = !"foo";
                arguments = [
                  { Argument.name = None; value = +Integer 1 };
                  {
@@ -2158,8 +2158,8 @@ let test_assign _ =
         annotation = None;
         value = Some (
             +Access [
-              Record.Access.Call (+{ Call.name = !"a"; arguments = []; });
-              Record.Access.Call (+{ Call.name = !"foo"; arguments = []; })]
+              Record.Access.Call (+{ Record.Call.name = !"a"; arguments = []; });
+              Record.Access.Call (+{ Record.Call.name = !"foo"; arguments = []; })]
           );
         compound = None;
         parent = None;
@@ -2432,7 +2432,7 @@ let test_if _ =
         If.test = +BooleanOperator {
           BooleanOperator.left = +Access [
             Record.Access.Call (+{
-                Call.name = !"isinstance";
+                Record.Call.name = !"isinstance";
                 arguments = [
                   { Argument.name = None; value = !"x"; };
                   { Argument.name = None; value = !"int" };
@@ -2459,7 +2459,7 @@ let test_if _ =
           right = +ComparisonOperator {
             ComparisonOperator.left = +Access [
               Record.Access.Call (+{
-                  Call.name = !"foo";
+                  Record.Call.name = !"foo";
                   arguments = [
                     { Argument.name = None; value = !"x"; };
                   ];

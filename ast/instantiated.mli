@@ -3,15 +3,7 @@
     This source code is licensed under the MIT license found in the
     LICENSE file in the root directory of this source tree. *)
 
-open Expression
 open Statement
-
-module Call : sig
-  type t = Expression.t Call.t
-  [@@deriving compare, eq, sexp, show]
-
-  val is_explicit_constructor_call: t -> bool
-end
 
 module Define : sig
   type t = Statement.t Define.t

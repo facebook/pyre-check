@@ -19,13 +19,13 @@ val create
   -> class_definition:(Type.t -> (Statement.t Class.t) option)
   -> function_signature:
        (Access.t
-        -> Expression.t Call.t
+        -> Call.t
         -> Signature.argument list
         -> Signature.t list)
   -> method_signature:
        (resolution: t
         -> Type.t
-        -> Expression.t Call.t
+        -> Call.t
         -> Signature.argument list
         -> Signature.t list)
   -> t
@@ -43,13 +43,13 @@ val class_definition: t -> Type.t -> (Statement.t Class.t) option
 val function_signature
   :  t
   -> Access.t
-  -> Expression.t Call.t
+  -> Call.t
   -> Signature.argument list
   -> Signature.t list
 val method_signature
   :  t
   -> Type.t
-  -> Expression.t Call.t
+  -> Call.t
   -> Signature.argument list
   -> Signature.t list
 

@@ -10,6 +10,19 @@ open Expression
 
 open Test
 
+
+let test_is_explicit_constructor_call _ =
+  let call name =
+    {
+      Record.Call.name = Node.create (Expression.Access (Access.create name));
+      arguments = [];
+    }
+  in
+  assert_true (Call.is_explicit_constructor_call (call "Foo.__init__"));
+  assert_false (Call.is_explicit_constructor_call (call "Foo.foo"));
+  assert_false (Call.is_explicit_constructor_call (call "foo"))
+
+
 let assert_expression_equal =
   assert_equal
     ~printer:(Expression.show)
@@ -198,6 +211,10 @@ let test_pp _ =
     {|lambda (x=1, y=2) ((x, "y"))|}
 
 let () =
+  "call">:::[
+    "is_explicit_constructor_call">::test_is_explicit_constructor_call;
+  ]
+  |> run_test_tt_main;
   "expression">:::[
     "negate">::test_negate;
     "normalize">::test_normalize;

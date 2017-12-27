@@ -20,13 +20,13 @@ type t = {
 
   function_signature:
     Access.t
-    -> Expression.t Call.t
+    -> Call.t
     -> Signature.argument list
     -> Signature.t list;
   method_signature:
     resolution: t
     -> Type.t
-    -> Expression.t Call.t
+    -> Call.t
     -> Signature.argument list
     -> Signature.t list;
 }

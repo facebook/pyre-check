@@ -234,7 +234,7 @@ let test_due_to_analysis_limitations _ =
               call =
                 Annotated.Call.create
                   ~kind:Annotated.Call.Method
-                  { Expression.Call.name = !""; arguments = [] };
+                  { Record.Call.name = !""; arguments = [] };
             })));
   assert_false
     (Error.due_to_analysis_limitations
@@ -244,7 +244,7 @@ let test_due_to_analysis_limitations _ =
               call =
                 Annotated.Call.create
                   ~kind:Annotated.Call.Method
-                  { Expression.Call.name = !""; arguments = [] };
+                  { Record.Call.name = !""; arguments = [] };
             })));
 
   (* UndefinedType. *)
@@ -277,7 +277,7 @@ let test_join _ =
            call =
              Annotated.Call.create
                ~kind:Annotated.Call.Method
-               { Expression.Call.name = !""; arguments = [] };
+               { Record.Call.name = !""; arguments = [] };
          }))
     (error Error.Top);
   assert_join

@@ -13,18 +13,6 @@ open Statement
 open Test
 
 
-let test_is_explicit_constructor_call _ =
-  let call name =
-    {
-      Expression.Call.name = Node.create (Expression.Access (Access.create name));
-      arguments = [];
-    }
-  in
-  assert_true (Instantiated.Call.is_explicit_constructor_call (call "Foo.__init__"));
-  assert_false (Instantiated.Call.is_explicit_constructor_call (call "Foo.foo"));
-  assert_false (Instantiated.Call.is_explicit_constructor_call (call "foo"))
-
-
 let test_is_method _ =
   let define name parent =
     let parent = if parent = "" then None else (Some (Access.create parent)) in
@@ -42,7 +30,7 @@ let test_is_method _ =
   assert_true (Instantiated.Define.is_method (define "foo" "path.source"));
   assert_false (Instantiated.Define.is_method (define "foo" ""));
   assert_false (Instantiated.Define.is_method (define "foo.bar" "path.source"))
-
+  
 
 let test_decorator _ =
   let define decorators =
@@ -122,10 +110,6 @@ let test_dump _ =
 
 
 let () =
-  "call">:::[
-    "is_explicit_constructor_call">::test_is_explicit_constructor_call;
-  ]
-  |> run_test_tt_main;
   "define">:::[
     "is_method">::test_is_method;
     "decorator">::test_decorator;

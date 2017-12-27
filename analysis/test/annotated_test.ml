@@ -821,14 +821,14 @@ let test_backup _ =
     assert_equal (Annotated.Call.backup actual) expected
   in
   assert_backup
-    { Expression.Call.name = !"name"; arguments = [] }
+    { Expression.Record.Call.name = !"name"; arguments = [] }
     None;
   assert_backup
-    { Expression.Call.name = !"__add__"; arguments = [] }
-    (Some { Expression.Call.name = !"__radd__"; arguments = [] });
+    { Expression.Record.Call.name = !"__add__"; arguments = [] }
+    (Some { Expression.Record.Call.name = !"__radd__"; arguments = [] });
   assert_backup
-    { Expression.Call.name = !"__sub__"; arguments = [] }
-    (Some { Expression.Call.name = !"__rsub__"; arguments = [] })
+    { Expression.Record.Call.name = !"__sub__"; arguments = [] }
+    (Some { Expression.Record.Call.name = !"__rsub__"; arguments = [] })
 
 
 let test_fold _ =

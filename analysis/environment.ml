@@ -284,7 +284,7 @@ let resolution
       if Instantiated.Define.is_class_method define ||
           Instantiated.Define.is_method define ||
           (Instantiated.Define.is_constructor define &&
-            not (Instantiated.Call.is_explicit_constructor_call call)) then
+            not (Call.is_explicit_constructor_call call)) then
         let self_or_class_argument =
           Signature.Normal {
             Signature.annotation = Type.Object;
@@ -479,7 +479,7 @@ let resolution
 
   let function_signature qualifier call arguments =
     let name =
-      (match call.Call.name with
+      (match call.Record.Call.name with
        | { Node.value = Access access; _ } ->
            qualifier @ access
        | _ ->
@@ -499,7 +499,7 @@ let resolution
     let definitions annotation =
       let primitive, parameters = Type.split annotation in
       let name =
-        match Type.expression primitive, call.Call.name with
+        match Type.expression primitive, call.Record.Call.name with
         | { Node.value = Access qualifier; _ },
           { Node.value = Access access; _ } ->
             qualifier @ access

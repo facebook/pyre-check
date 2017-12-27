@@ -773,7 +773,7 @@ module State = struct
             | Access [
                 Record.Access.Call {
                   Node.value = {
-                    Call.name = { Node.value = Access [Record.Access.Identifier name]; _ };
+                    Record.Call.name = { Node.value = Access [Record.Access.Identifier name]; _ };
                     arguments = [
                       { Argument.name = None; value = { Node.value = Access access; _ } };
                       { Argument.name = None; value = annotation };
@@ -800,7 +800,7 @@ module State = struct
                     Access [
                       Record.Access.Call {
                         Node.value = {
-                          Call.name = { Node.value = Access [Record.Access.Identifier name]; _ };
+                          Record.Call.name = { Node.value = Access [Record.Access.Identifier name]; _ };
                           arguments = [
                             { Argument.name = None; value = { Node.value = Access access; _ } };
                             { Argument.name = None; value = annotation };
@@ -1130,7 +1130,7 @@ module State = struct
               | Record.Access.Identifier _ ->
                   errors
 
-              | Record.Access.Call { Node.value = { Call.name; arguments }; _ } ->
+              | Record.Access.Call { Node.value = { Record.Call.name; arguments }; _ } ->
                   let check_argument errors { Argument.value; _ } =
                     check_expression ~resolution errors value
                   in

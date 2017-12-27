@@ -85,11 +85,11 @@ module Make (Transformer : Transformer) = struct
                       Record.Access.Slice (transform_slice slice)
                 in
                 match access with
-                | Record.Access.Call { Node.location; value = { Call.name; arguments } } ->
+                | Record.Access.Call { Node.location; value = { Record.Call.name; arguments } } ->
                     Record.Access.Call {
                       Node.location;
                       value = {
-                        Call.name = transform_expression name;
+                        Record.Call.name = transform_expression name;
                         arguments = transform_list
                             arguments
                             ~f:(transform_argument ~transform_expression);

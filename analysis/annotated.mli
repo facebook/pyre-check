@@ -151,9 +151,9 @@ module Call : sig
   type t
   [@@deriving compare, eq, sexp, show]
 
-  val create: kind: kind -> Expression.t Call.t -> t
+  val create: kind: kind -> Call.t -> t
 
-  val call: t -> Expression.t Call.t
+  val call: t -> Call.t
   val name: t -> Expression.t
 
   val arguments: t -> (Expression.t Argument.t) list

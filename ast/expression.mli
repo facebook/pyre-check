@@ -6,14 +6,6 @@
 open Core
 
 
-module Call : sig
-  type 'expression t = {
-    name: 'expression;
-    arguments: ('expression Argument.t) list;
-  }
-  [@@deriving compare, eq, sexp, show]
-end
-
 module BooleanOperator : sig
   type operator =
     | And
@@ -92,6 +84,14 @@ module ComparisonOperator : sig
 end
 
 module Record : sig
+  module Call : sig
+    type 'expression t = {
+      name: 'expression;
+      arguments: ('expression Argument.t) list;
+    }
+    [@@deriving compare, eq, sexp, show]
+  end
+
   module Access : sig
     type 'expression slice = {
       lower: 'expression option;
@@ -217,6 +217,13 @@ module Access : sig
   val create_from_identifiers: Identifier.t list -> t
 
   val access: expression_node -> t
+end
+
+module Call : sig
+  type t = expression_node Record.Call.t
+  [@@deriving compare, eq, sexp, show]
+
+  val is_explicit_constructor_call: t -> bool
 end
 
 val negate: t -> t
