@@ -778,6 +778,19 @@ let test_function_signature_variable_instantiation _ =
     ["a", Some Type.string; "b", Some Type.integer]
     None;
 
+  assert_instantiated
+    {|
+      class int(): pass
+      _T = typing.TypeVar('_T')
+      _S = typing.TypeVar('_S')
+      def foo(a: _T, b: typing.Optional[_S] = ...):
+        pass
+    |}
+    "foo"
+    (normal [Type.string]) (* Not all parameter types provided. *)
+    ["a", Some Type.string; "b", Some (Type.optional (variable ~~"_S"))]
+    None;
+
   assert_not_instantiated
     {|
       class str(): pass

@@ -438,21 +438,18 @@ let resolution
       in
       sufficient_arguments_provided parameters arguments
     in
-    let all_variables_resolved =
-      List.fold
-        ~init:true
-        ~f:(fun sofar { Node.value = { Parameter.annotation; _ }; _ } ->
-            match annotation with
-            | Some annotation ->
-                begin
-                  if parse_annotation annotation |> Type.is_fully_resolved then
-                    sofar
-                  else
-                    false
-                end
-            | None ->
-                sofar)
+
+    let all_variables_resolved parameters =
+      let variable_resolved { Node.value = { Parameter.annotation; _ }; _ } =
+        (annotation
+         >>| parse_annotation
+         >>| Type.is_fully_resolved)
+        |> Option.value ~default:true
+      in
+      List.take parameters (List.length arguments)
+      |> List.for_all ~f:variable_resolved
     in
+
     let instantiate_signature ({
         Node.value = { Define.parameters; return_annotation; _ };
         location;
