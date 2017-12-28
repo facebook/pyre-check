@@ -628,7 +628,12 @@ let join ~resolution left right =
         let annotation =
           TypeOrder.join order left.annotation right.annotation
         in
-        MissingAnnotation { left with annotation }
+        let evidence_locations =
+          Location.Set.of_list (left.evidence_locations @ right.evidence_locations)
+          |> Set.to_list;
+        in
+        let due_to_any = left.due_to_any && right.due_to_any in
+        MissingAnnotation { left with annotation; evidence_locations; due_to_any }
     | IncompatibleParameterType left, IncompatibleParameterType right
       when left.name = right.name &&
            left.position = right.position && Define.equal left.callee right.callee ->
@@ -723,7 +728,7 @@ let join_at_source ~resolution errors =
     else
       error :: errors
   in
-  Map.fold ~init:other_errors ~f:merge immutable_type_map
+  Map.fold ~init:(List.rev other_errors) ~f:merge immutable_type_map
 
 
 let dequalify

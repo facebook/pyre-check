@@ -42,6 +42,14 @@ module Map = Map.Make(struct
   end)
 
 
+module Set = Set.Make(struct
+    type nonrec t = t
+    let compare = compare
+    let sexp_of_t = sexp_of_t
+    let t_of_sexp = t_of_sexp
+  end)
+
+
 include Hashable.Make(struct
     type nonrec t = t
     let compare = compare

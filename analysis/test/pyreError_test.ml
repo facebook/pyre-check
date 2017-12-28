@@ -36,6 +36,11 @@ let mock_parent =
     docstring = None;
   }
 
+let create_mock_location path =
+  let start = { Location.line = 1; column = 1 } in
+  let stop = { Location.line = 1; column = 1 } in
+  { Location.path; start; stop; }
+
 
 let error kind =
   { Error.location = Location.any; kind; define = mock_define }
@@ -330,6 +335,31 @@ let test_join _ =
              Error.actual = Type.float;
              expected = Type.string;
            };
+         }));
+  assert_join
+    (error
+       (Error.MissingAnnotation {
+           Error.name = [Expression.Access.Identifier (~~"")];
+           annotation = Type.integer;
+           parent = None;
+           evidence_locations = [create_mock_location "derp.py"];
+           due_to_any = false;
+         }))
+    (error
+       (Error.MissingAnnotation {
+           Error.name = [Expression.Access.Identifier (~~"")];
+           annotation = Type.float;
+           parent = None;
+           evidence_locations = [create_mock_location "durp.py"];
+           due_to_any = false;
+         }))
+    (error
+       (Error.MissingAnnotation {
+           Error.name = [Expression.Access.Identifier (~~"")];
+           annotation = Type.float;
+           parent = None;
+           evidence_locations = [create_mock_location "derp.py"; create_mock_location "durp.py"];
+           due_to_any = false;
          }))
 
 

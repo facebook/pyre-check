@@ -3929,8 +3929,6 @@ let test_recursive_infer _ =
     [
       {|"int"|};{|[{"name":"a","type":null,"value":null}]|};
       {|null|};{|[{"name":"a","type":"int","value":null}]|};
-      {|"int"|};{|[]|};
-      {|"int"|};{|[]|};
     ]
 
 

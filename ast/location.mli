@@ -23,6 +23,8 @@ val pp_start: Format.formatter -> t -> unit
 
 module Map : Map.S with type Key.t = t
 
+module Set : Set.S with type Elt.t = t
+
 include Hashable with type t := t
 
 val create: start:Lexing.position -> stop:Lexing.position -> t
