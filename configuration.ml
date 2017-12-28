@@ -65,12 +65,5 @@ let localize ({ debug; _ } as configuration) ~local_debug ~strict ~declare =
   }
 
 
-let apply_if ~condition ~f argument =
-  if condition then
-    f argument
-  else
-    argument
-
-
 let pyre_root { project_root; _ } =
   Path.append project_root ~element:".pyre"

@@ -336,6 +336,8 @@ module State = struct
       errors
     in
 
+    let apply_if ~condition ~f argument = if condition then f argument else argument in
+
     Map.data errors
     |> Error.join_at_define ~resolution ~location
     |> class_initialization_errors

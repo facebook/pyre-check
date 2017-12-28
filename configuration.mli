@@ -41,6 +41,4 @@ val create
 
 val localize: t -> local_debug:bool -> strict:bool -> declare:bool -> t
 
-val apply_if: condition:bool -> f:('a -> 'a) -> 'a -> 'a
-
 val pyre_root: t -> Path.t
