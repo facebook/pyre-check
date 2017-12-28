@@ -3043,7 +3043,16 @@ let test_check_missing_parameter _ =
       def foo(x: typing.Any = 5) -> None:
         pass
     |}
-    ["Missing parameter annotation [2]: Parameter `x` has type `int` but type `Any` is specified."]
+    ["Missing parameter annotation [2]: Parameter `x` has type `int` but type `Any` is specified."];
+
+  assert_type_errors
+    ~debug:false
+    ~strict:true
+    {|
+      def ohgod(derp: typing.Optional[typing.Any] = None) -> None:
+        pass
+    |}
+    []
 
 
 let test_check_nested _ =

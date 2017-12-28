@@ -261,7 +261,11 @@ module State = struct
           | _ ->
               true
         else
-          false
+          match kind with
+          | MissingParameterAnnotation { due_to_any; _ } ->
+              due_to_any
+          | _ ->
+              false
       in
 
       let suppress_in_default ({ kind; Error.define = { Node.value = define; _ }; _ } as error) =
