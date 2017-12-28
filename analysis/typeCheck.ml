@@ -181,7 +181,7 @@ module State = struct
         |> Option.value ~default:errors
     in
 
-    let ignore_errors ignore_lines errors =
+    let ignore_suppressed_errors errors =
       let _, errors =
         let ignore_map = Int.Map.of_alist_exn ignore_lines in
         let ignore error =
@@ -330,7 +330,7 @@ module State = struct
     |> class_initialization_errors
     |> ignore_none_confusion
     |> ignore_unimplemented_returns
-    |> apply_if ~f:(ignore_errors ignore_lines) ~condition:configuration.gradual
+    |> apply_if ~f:ignore_suppressed_errors ~condition:configuration.gradual
     |> apply_if ~f:filter_errors ~condition:(not configuration.debug || configuration.infer)
 
 
