@@ -299,41 +299,28 @@ module State = struct
 
       (* Angelic assumption: `Top` indicates we've hit a limitation of the
          analysis and decide not to report on it. *)
-      let filtered, errors =
-        let filter ({ kind; _ } as error) =
-          if configuration.gradual then
-            if configuration.strict then
-              suppress_in_strict error
-            else if configuration.declare then
-              true
-            else
-              suppress_in_default error
-          else if configuration.infer then
-            suppress_in_infer error
+      let suppress ({ kind; _ } as error) =
+        if configuration.gradual then
+          if configuration.strict then
+            suppress_in_strict error
+          else if configuration.declare then
+            true
           else
-            match kind with
-            | MissingReturnAnnotation _
-            | MissingParameterAnnotation _
-            | MissingAnnotation _
-            | UndefinedMethod _
-            | UndefinedType _ ->
-                true
-            | _ ->
-                due_to_analysis_limitations error
-        in
-        List.partition_tf ~f:filter errors
+            suppress_in_default error
+        else if configuration.infer then
+          suppress_in_infer error
+        else
+          match kind with
+          | MissingReturnAnnotation _
+          | MissingParameterAnnotation _
+          | MissingAnnotation _
+          | UndefinedMethod _
+          | UndefinedType _ ->
+              true
+          | _ ->
+              due_to_analysis_limitations error
       in
-      List.iter
-        ~f:(fun error -> Log.debug "Not reporting %a" pp error)
-        filtered;
-      if List.is_empty filtered then
-        Log.debug "Verified"
-      else
-        Log.debug
-          "Suppressed %d of %d errors"
-          (List.length filtered)
-          (List.length filtered + List.length errors);
-      errors
+      List.filter ~f:(fun error -> not (suppress error)) errors
     in
 
     let apply_if ~condition ~f argument = if condition then f argument else argument in
