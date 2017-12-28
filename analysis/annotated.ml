@@ -1155,8 +1155,9 @@ module Access = struct
               match Map.find annotations lead with
               | Some resolved -> resolved
               | None ->
-                  (Resolution.global resolution) lead
-                  |> Option.value ~default:(Annotation.create Type.Top)
+                  match (Resolution.global resolution) lead with
+                  | Some { Resolution.annotation; _ } -> annotation
+                  | _ -> Annotation.create Type.Top
             in
             resolution,
             resolved,

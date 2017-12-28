@@ -16,7 +16,7 @@ type t = {
   protocols: Type.Hash_set.t;
   order: TypeOrder.t;
   aliases: Type.t Type.Table.t;
-  globals: Annotation.t Access.Table.t;
+  globals: Resolution.global Access.Table.t;
   dependencies: Dependencies.t;
 }
 
@@ -27,7 +27,7 @@ module type Reader = sig
     -> (Define.t Node.t)
     -> unit
   val register_dependency: path: string -> dependency: string -> unit
-  val register_global: path: string -> key: Access.t -> data:Annotation.t -> unit
+  val register_global: path: string -> key: Access.t -> data:Resolution.global -> unit
   val register_type
     :  path: string
     -> Type.t
@@ -42,7 +42,7 @@ module type Reader = sig
   val protocols: Type.Hash_set.t
   val in_class_definition_keys: Type.t -> bool
   val aliases: Type.t -> Type.t option
-  val globals: Access.t -> Annotation.t option
+  val globals: Access.t -> Resolution.global option
   val dependencies: string -> string list option
 
   module DependencyReader: Dependencies.Reader
@@ -629,7 +629,7 @@ let populate
                 annotation = None;
                 _;
               };
-            _;
+            location;
           } ->
               (try
                  let annotation = Resolution.resolve resolution value in
@@ -637,10 +637,14 @@ let populate
                    Reader.register_global
                      ~path
                      ~key:(parent @ access)
-                     ~data:(Annotation.create_immutable
-                              ~global:true
-                              ~original:(Some Type.Top)
-                              annotation)
+                     ~data:{
+                       Resolution.annotation =
+                         (Annotation.create_immutable
+                            ~global:true
+                            ~original:(Some Type.Top)
+                            annotation);
+                       location;
+                     }
                with _ ->
                  (* TODO(T19628746): joins are not sound when building the environment. *)
                  ())
@@ -652,7 +656,7 @@ let populate
                 parent = Some parent;
                 _;
               };
-            _;
+            location;
           }
           | {
             Node.value = Stub (Stub.Assign {
@@ -662,14 +666,17 @@ let populate
                 parent = Some parent;
                 _;
               });
-            _;
+            location;
           } ->
               Type.class_variable (parse_annotation annotation)
               >>| (fun annotation ->
                   Reader.register_global
                     ~path
                     ~key:(parent @ access)
-                    ~data:(Annotation.create_immutable ~global:true annotation))
+                    ~data:{
+                      Resolution.annotation = (Annotation.create_immutable ~global:true annotation);
+                      location;
+                    })
               |> ignore
 
           | { Node.location; value = Class definition }
@@ -745,12 +752,16 @@ let populate
                           parent = Some _;
                           _;
                         };
-                      _;
+                      location;
                     } ->
                         Reader.register_global
                           ~path
                           ~key:(definition.Class.name @ access)
-                          ~data:(Annotation.create_immutable ~global:true primitive)
+                          ~data:{
+                            Resolution.annotation =
+                              (Annotation.create_immutable ~global:true primitive);
+                            location;
+                          }
                     | _ ->
                         () in
                   List.iter ~f:visit definition.Class.body)
@@ -817,7 +828,7 @@ let populate
             value = Some value;
             _;
           };
-        _;
+        location;
       } ->
           (try
              match target.Node.value, (Resolution.resolve resolution value) with
@@ -826,10 +837,14 @@ let populate
                  Reader.register_global
                    ~path
                    ~key:access
-                   ~data:(Annotation.create_immutable
-                            ~global:true
-                            ~original:(Some Type.Top)
-                            annotation)
+                   ~data:{
+                     Resolution.annotation =
+                       (Annotation.create_immutable
+                          ~global:true
+                          ~original:(Some Type.Top)
+                          annotation);
+                     location;
+                   }
              | _ -> ()
            with _ ->
              (* TODO(T19628746): joins are not sound when building the environment. *)
@@ -846,7 +861,7 @@ let populate
             compound = None;
             _;
           };
-        _;
+        location;
       }
       | {
         Node.value = Stub (Stub.Assign {
@@ -855,12 +870,16 @@ let populate
             compound = None;
             _;
           });
-        _;
+        location;
       } ->
           Reader.register_global
             ~path
             ~key:access
-            ~data:(Annotation.create_immutable ~global:true (parse_annotation annotation))
+            ~data:{
+              Resolution.annotation =
+                (Annotation.create_immutable ~global:true (parse_annotation annotation));
+              location;
+            }
       | _ ->
           ()
     in
@@ -987,11 +1006,11 @@ module Builder = struct
       |> List.map ~f:alias
       |> String.concat ~sep:"\n" in
     let globals =
-      let global (key, data) =
+      let global (key, { Resolution.annotation; _ }) =
         Format.asprintf
           "  %a -> %a"
           Access.pp key
-          Annotation.pp data in
+          Annotation.pp annotation in
       Hashtbl.to_alist globals
       |> List.map ~f:global
       |> String.concat ~sep:"\n" in

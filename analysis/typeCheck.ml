@@ -2004,10 +2004,14 @@ let check configuration environment ({ Source.path; _ } as source) =
                     { define_node with Node.value = define };
                   true, globals_added_sofar
             end
-        | { Error.kind = Error.MissingAnnotation { Error.name; annotation; parent; _ }; _ } ->
+        | {
+          Error.kind = Error.MissingAnnotation { Error.name; annotation; parent; _ };
+          location;
+          _ } ->
             begin
               match Reader.globals name with
-              | Some annotation when not (Type.is_unknown (Annotation.annotation annotation)) ->
+              | Some { Resolution.annotation; _ }
+                when not (Type.is_unknown (Annotation.annotation annotation)) ->
                   changed, globals_added_sofar
               | _ ->
                   let key =
@@ -2015,8 +2019,11 @@ let check configuration environment ({ Source.path; _ } as source) =
                     | Some parent -> (Annotated.Class.name parent) @ name
                     | _ -> name
                   in
-                  let data =
-                    Annotation.create_immutable ~global:true ~original:(Some Type.Top) annotation
+                  let data = {
+                    Resolution.annotation =
+                      Annotation.create_immutable ~global:true ~original:(Some Type.Top) annotation;
+                    location;
+                  }
                   in
                   Reader.register_global ~path ~key ~data;
                   true, error :: globals_added_sofar

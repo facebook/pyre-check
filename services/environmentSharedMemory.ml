@@ -95,7 +95,7 @@ module AliasValue = struct
 end
 
 module GlobalValue = struct
-  type t = Annotation.t
+  type t = Resolution.global
   let prefix = Prefix.make ()
   let description = "Global"
 end

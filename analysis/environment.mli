@@ -14,7 +14,7 @@ type t = {
   protocols: Type.Hash_set.t;
   order: TypeOrder.t;
   aliases: Type.t Type.Table.t;
-  globals: Annotation.t Access.Table.t;
+  globals: Resolution.global Access.Table.t;
   dependencies: Dependencies.t;
 }
 
@@ -29,7 +29,7 @@ module type Reader = sig
     -> (Define.t Node.t)
     -> unit
   val register_dependency: path: string -> dependency: string -> unit
-  val register_global: path: string -> key: Access.t -> data:Annotation.t -> unit
+  val register_global: path: string -> key: Access.t -> data:Resolution.global -> unit
   val register_type
     :  path: string
     -> Type.t
@@ -44,7 +44,7 @@ module type Reader = sig
   val protocols: Type.Hash_set.t
   val in_class_definition_keys: Type.t -> bool
   val aliases: Type.t -> Type.t option
-  val globals: Access.t -> Annotation.t option
+  val globals: Access.t -> Resolution.global option
   val dependencies: string -> string list option
 
   module DependencyReader: Dependencies.Reader

@@ -78,6 +78,12 @@ let parse_annotation environment =
   |> Resolution.parse_annotation
 
 
+let create_location path start_line start_column end_line end_column =
+  let start = { Location.line = start_line; column = start_column } in
+  let stop = { Location.line = end_line; column = end_column } in
+  { Location.path; start; stop; }
+
+
 let test_create _ =
   let environment =
     Environment.Builder.create () in
@@ -210,14 +216,22 @@ let test_populate _ =
     |} in
   assert_equal
     (global environment (access ["Color"; "RED"]))
-    (Some (Annotation.create_immutable ~global:true (Type.Primitive ~~"Color")));
+    (Some {
+        Resolution.annotation =
+          (Annotation.create_immutable ~global:true (Type.Primitive ~~"Color"));
+        location = create_location "test.py" 4 2 4 5;
+      });
   assert_is_some (global environment (access ["Other"; "FIELD"]));
   assert_equal
     (global environment (access ["Other"; "TUPLE"]))
-    (Some (Annotation.create_immutable
+    (Some {
+        Resolution.annotation =
+          (Annotation.create_immutable
              ~global:true
              ~original:(Some Type.Top)
-             (Type.tuple [Type.integer; Type.string; Type.bool])));
+             (Type.tuple [Type.integer; Type.string; Type.bool]));
+        location = create_location "test.py" 9 2 9 7;
+      });
 
   let module Reader = (val environment) in
   let order = (module Reader.TypeOrderReader : TypeOrder.Reader) in
@@ -233,13 +247,25 @@ let test_populate _ =
     |} in
   assert_equal
     (global environment (access ["A"]))
-    (Some (Annotation.create_immutable ~global:true Type.integer));
+    (Some {
+        Resolution.annotation =
+          (Annotation.create_immutable ~global:true Type.integer);
+        location = create_location "test.py" 3 0 3 1;
+      });
   assert_equal
     (global environment (access ["B"]))
-    (Some (Annotation.create_immutable ~global:true ~original:(Some Type.Top) Type.integer));
+    (Some {
+        Resolution.annotation =
+          (Annotation.create_immutable ~global:true ~original:(Some Type.Top) Type.integer);
+        location = create_location "test.py" 4 0 4 1;
+      });
   assert_equal
     (global environment (access ["C"]))
-    (Some (Annotation.create_immutable ~global:true Type.integer));
+    (Some {
+        Resolution.annotation =
+          (Annotation.create_immutable ~global:true Type.integer);
+        location = create_location "test.py" 5 0 5 1;
+      });
 
   let environment =
     populate {|
@@ -250,10 +276,18 @@ let test_populate _ =
     |} in
   assert_equal
     (global environment (access ["Other"; "FIELD"]))
-    (Some (Annotation.create_immutable ~global:true Type.integer));
+    (Some {
+        Resolution.annotation =
+          (Annotation.create_immutable ~global:true Type.integer);
+        location = create_location "test.py" 4 2 4 7;
+      });
   assert_equal
     (global environment (access ["Other"; "STUB"]))
-    (Some (Annotation.create_immutable ~global:true Type.integer));
+    (Some {
+        Resolution.annotation =
+          (Annotation.create_immutable ~global:true Type.integer);
+        location = create_location "test.py" 5 2 5 6;
+      });
 
   (* Loops. *)
   try

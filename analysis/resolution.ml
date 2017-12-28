@@ -8,6 +8,12 @@ open Expression
 open Statement
 
 
+type global = {
+  annotation: Annotation.t;
+  location: Location.t;
+}
+
+
 type t = {
   annotations: Annotation.t Access.Map.t;
   order: (module TypeOrder.Reader);
@@ -15,7 +21,7 @@ type t = {
   resolve: resolution: t -> Expression.t -> Type.t;
   parse_annotation: Expression.t -> Type.t;
 
-  global: Access.t -> Annotation.t option;
+  global: Access.t -> global option;
   class_definition: Type.t -> (Statement.t Class.t) option;
 
   function_signature:
