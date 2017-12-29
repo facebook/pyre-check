@@ -50,7 +50,13 @@ module type Reader = sig
   module TypeOrderReader: TypeOrder.Reader
 end
 
-let register_type ~order ~aliases ~add_class_definition ~add_class_key ~add_protocol =
+let register_type
+    ~order
+    ~aliases
+    ~add_class_definition
+    ~add_class_key
+    ~add_protocol
+    ~register_global =
   let rec register_type ~path subtype name definition =
     let annotation =
       Type.create
@@ -58,6 +64,19 @@ let register_type ~order ~aliases ~add_class_definition ~add_class_key ~add_prot
         (Node.create (Access name))
     in
     let primitive, parameters = Type.split annotation in
+
+    (* Register meta annotation. *)
+    register_global
+      ~path
+      ~key:name
+      ~data:{
+        Resolution.annotation =
+          Annotation.create_immutable
+            ~global:true
+            ~original:(Some Type.Top)
+            (Type.meta primitive);
+        location = Location.any;
+      };
 
     (* Insert type into hierarchy. *)
     if not (TypeOrder.contains order primitive) &&
@@ -177,6 +196,7 @@ let reader
         ~add_class_definition:(Hashtbl.set class_definitions)
         ~add_class_key:DependencyReader.add_class_key
         ~add_protocol:(Hash_set.add protocols)
+        ~register_global
 
 
     let register_alias ~path ~key ~data =

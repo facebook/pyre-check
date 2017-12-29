@@ -297,7 +297,23 @@ let test_populate _ =
     |}
     |> ignore
   with TypeOrder.Cyclic ->
-    assert_unreached ()
+    assert_unreached ();
+
+  (* Check meta variables are registered. *)
+  let environment =
+    populate {|
+    class A:
+      pass
+  |} in
+  assert_equal
+    (global environment (access ["A"]))
+    (Some {
+        Resolution.annotation =
+          primitive "A"
+          |> Type.meta
+          |> Annotation.create_immutable ~global:true;
+        location = Location.any;
+      })
 
 
 let test_infer_protocols _ =

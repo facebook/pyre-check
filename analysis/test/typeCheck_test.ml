@@ -3564,6 +3564,17 @@ let test_check_explicit_method_call _ =
     []
 
 
+let test_check_meta_annotations _ =
+  assert_type_errors
+    {|
+      class Class:
+        pass
+      def foo() -> typing.Type[Class]:
+        return Class
+    |}
+    []
+
+
 let assert_infer
     ?(debug = false)
     ?(infer = true)
@@ -3998,6 +4009,7 @@ let () =
     "check_collections">::test_check_collections;
     "check_constructors">::test_check_constructors;
     "check_explicit_method_call">::test_check_explicit_method_call;
+    "check_meta_annotations">::test_check_meta_annotations;
     "infer">::test_infer;
     "infer_backward">::test_infer_backward;
     "recursive_infer">::test_recursive_infer;

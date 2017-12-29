@@ -70,6 +70,7 @@ val register_type
   -> add_class_definition: (key: Type.t -> data: Statement.t Class.t -> unit)
   -> add_class_key: (path: string -> Type.t -> unit)
   -> add_protocol: (Type.t -> unit)
+  -> register_global: (path: string -> key: Access.t -> data: Resolution.global -> unit)
   -> (path: string -> Type.t -> Access.t -> (Statement.t Class.t option) -> (Type.t * Type.t list))
 
 val populate

@@ -976,6 +976,10 @@ module Access = struct
 
       let rec step annotation reversed_lead =
         match annotation, reversed_lead with
+        | Some (access, annotation), _ when Type.is_meta (Annotation.annotation annotation) ->
+            (* Don't try to resolve type variables, e.g. in static calls. *)
+            step None (reversed_lead @ access)
+
         | Some (access, annotation),
           [Access.Call { Node.location; value = call }] ->
             let call = Call.create ~kind:Call.Method call in

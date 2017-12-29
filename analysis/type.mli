@@ -55,6 +55,7 @@ val iterator: t -> t
 val lambda: t -> t
 val list: t -> t
 val optional: t -> t
+val meta: t -> t
 val parametric: string -> t list -> t
 val set: t -> t
 val string: t

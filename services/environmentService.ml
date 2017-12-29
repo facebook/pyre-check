@@ -323,6 +323,7 @@ let shared_memory_reader
           ~add_class_definition:(fun ~key ~data -> ClassDefinitions.add key data)
           ~add_class_key:(DependencyReader.add_class_key)
           ~add_protocol:(fun protocol -> Protocols.add "Protocols" (protocol :: protocols))
+          ~register_global
 
       let register_alias ~path ~key ~data =
         DependencyReader.add_alias_key ~path key;

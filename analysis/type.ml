@@ -222,6 +222,13 @@ let rec optional parameter =
       Optional parameter
 
 
+let meta annotation =
+  Parametric {
+    name = Identifier.create "typing.Type";
+    parameters = [annotation];
+  }
+
+
 let parametric name parameters =
   Parametric { name = Identifier.create name; parameters }
 
