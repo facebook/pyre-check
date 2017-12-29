@@ -66,8 +66,8 @@ def resolve_source_directories(arguments, configuration):
 
     source_directories.update(
         buck.generate_link_trees(
-            arguments,
-            arguments.target or configuration.targets))
+            arguments.target or configuration.targets,
+            build=arguments.build))
 
     if len(source_directories) == 0:
         raise EnvironmentException(

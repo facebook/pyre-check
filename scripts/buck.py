@@ -84,7 +84,7 @@ def _get_yes_no_input(prompt):
     return choice in ['', 'y', 'ye', 'yes']
 
 
-def generate_link_trees(arguments, original_targets):
+def generate_link_trees(original_targets, build):
     buck_out = _find_link_trees(
         {target: None for target in original_targets})
     link_trees = buck_out.link_trees
@@ -105,11 +105,11 @@ def generate_link_trees(arguments, original_targets):
             else:
                 targets_map[pair[0]] = ''
 
-        if arguments.build:
+        if build:
             _build_targets(target, list(targets_map.keys()))
 
         buck_out = _find_link_trees(targets_map)
-        if len(buck_out.link_trees) == 0 and arguments.build:
+        if len(buck_out.link_trees) == 0 and build:
             raise BuckException(
                 'Could not find link trees for `{}`.\n   '
                 'See `{} --help` for more '
@@ -120,13 +120,12 @@ def generate_link_trees(arguments, original_targets):
                 'The target might not be built.',
                 target)
             if _get_yes_no_input("Build target?"):
-                arguments.build = True
-                return generate_link_trees(arguments, original_targets)
+                return generate_link_trees(original_targets, build=True)
             raise BuckException(
                 'Could not find link trees for `{}`.\n   '
                 'See `{} --help` for more '
                 'information.'.format(target, sys.argv[0]))
-        elif len(buck_out.targets_not_found) > 0 and not arguments.build:
+        elif len(buck_out.targets_not_found) > 0 and not build:
             LOG.error(
                 'Could not find link trees for all targets in `%s`.\n   '
                 'The target may only be partially built.',
@@ -135,8 +134,7 @@ def generate_link_trees(arguments, original_targets):
                 'Potentially unbuilt subtargets:\n   %s',
                 '\n   '.join(buck_out.targets_not_found))
             if _get_yes_no_input("Re-build target?"):
-                arguments.build = True
-                return generate_link_trees(arguments, original_targets)
+                return generate_link_trees(original_targets, build=True)
             else:
                 link_trees.extend(buck_out.link_trees)
         else:

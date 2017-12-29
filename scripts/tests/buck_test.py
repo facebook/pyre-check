@@ -8,7 +8,6 @@ import unittest
 from tools.pyre.scripts import buck
 from unittest.mock import (
     call,
-    MagicMock,
     patch,
 )
 
@@ -97,7 +96,6 @@ class BuckTest(unittest.TestCase):
 
     @patch.object(buck, '_get_yes_no_input', return_value=False)
     def test_generate_link_trees(self, mock_input) -> None:
-        arguments = MagicMock()
         mock_find_link_trees = patch.object(
             buck,
             '_find_link_trees')
@@ -105,11 +103,6 @@ class BuckTest(unittest.TestCase):
             ['new_tree'],
             ['empty_target'])
 
-        with patch.object(buck, '_normalize') as mock_normalize:
-            arguments.build = False
+        with patch.object(buck, '_normalize'):
             with self.assertRaises(buck.BuckException):
-                buck.generate_link_trees(arguments, ['target'])
-                mock_normalize.assert_called_once_with('empty_target')
-                self.assertEqual(
-                    arguments.source_directories,
-                    ['source_directory', 'new_tree'])
+                buck.generate_link_trees(['target'], build=False)
