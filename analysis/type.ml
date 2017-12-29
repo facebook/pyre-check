@@ -838,9 +838,3 @@ let rec dequalify map annotation =
         constraints = List.map ~f:(dequalify map) constraints;
       }
   | _ -> annotation
-
-
-module Build = struct
-  let create ~aliases expression =
-    create ~aliases expression
-end

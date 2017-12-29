@@ -23,25 +23,25 @@ let test_create _ =
   let aliases _ = None in
 
   assert_equal
-    (Type.Build.create ~aliases (+Access []))
+    (Type.create ~aliases (+Access []))
     (Type.Primitive ~~"");
   assert_equal
-    (Type.Build.create ~aliases (+Access (Access.create "foo")))
+    (Type.create ~aliases (+Access (Access.create "foo")))
     (Type.Primitive ~~"foo");
   assert_equal
-    (Type.Build.create ~aliases (+Access (Access.create "foo.bar")))
+    (Type.create ~aliases (+Access (Access.create "foo.bar")))
     (Type.Primitive ~~"foo.bar");
 
   assert_equal
-    (Type.Build.create ~aliases (+Access (Access.create "object")))
+    (Type.create ~aliases (+Access (Access.create "object")))
     Type.Object;
 
   assert_equal
-    (Type.Build.create ~aliases (+Access (Access.create "$unknown")))
+    (Type.create ~aliases (+Access (Access.create "$unknown")))
     Type.Top;
 
   assert_equal
-    (Type.Build.create
+    (Type.create
        ~aliases
        (+Access [
           identifier "foo";
@@ -52,7 +52,7 @@ let test_create _ =
         parameters = [Type.Primitive ~~"bar"];
       });
   assert_equal
-    (Type.Build.create
+    (Type.create
        ~aliases
        (+Access [
           identifier "foo";
@@ -66,7 +66,7 @@ let test_create _ =
         ];
       });
   assert_equal
-    (Type.Build.create
+    (Type.create
        ~aliases
        (+Access [
           identifier "foo";
@@ -85,7 +85,7 @@ let test_create _ =
 
   (* Check renaming. *)
   assert_equal
-    (Type.Build.create
+    (Type.create
        ~aliases
        (+Access [
           identifier "typing";
@@ -94,10 +94,10 @@ let test_create _ =
         ]))
     (Type.list Type.integer);
   assert_equal
-    (Type.Build.create ~aliases (+String "typing.List"))
+    (Type.create ~aliases (+String "typing.List"))
     (Type.list Type.Object);
   assert_equal
-    (Type.Build.create
+    (Type.create
        ~aliases
        (+Access [
           identifier "typing";
@@ -109,7 +109,7 @@ let test_create _ =
         ]))
     (Type.parametric "collections.defaultdict" [Type.integer; Type.string]);
   assert_equal
-    (Type.Build.create
+    (Type.create
        ~aliases
        (+Access [
           identifier "typing";
@@ -122,7 +122,7 @@ let test_create _ =
     (Type.dictionary ~key:Type.integer ~value:Type.string);
 
   assert_equal
-    (Type.Build.create
+    (Type.create
        ~aliases
        (+Access [
           identifier "typing";
@@ -134,7 +134,7 @@ let test_create _ =
         ]))
     (Type.Tuple (Type.Bounded [Type.integer; Type.string]));
   assert_equal
-    (Type.Build.create
+    (Type.create
        ~aliases
        (+Access [
           identifier "typing";
@@ -148,7 +148,7 @@ let test_create _ =
 
   assert_equal
     ~printer:(Format.asprintf "%a" Type.pp)
-    (Type.Build.create
+    (Type.create
        ~aliases
        (+Access [
           identifier "typing";
@@ -156,7 +156,7 @@ let test_create _ =
         ]))
     (Type.Object);
   assert_equal
-    (Type.Build.create
+    (Type.create
        ~aliases
        (+Access [
           identifier "typing";
@@ -165,7 +165,7 @@ let test_create _ =
         ]))
     (Type.Optional Type.integer);
   assert_equal
-    (Type.Build.create
+    (Type.create
        ~aliases
        (+Access [
           identifier "typing";
@@ -174,7 +174,7 @@ let test_create _ =
         ]))
     (Type.set Type.integer);
   assert_equal
-    (Type.Build.create
+    (Type.create
        ~aliases
        (+Access [
           identifier "typing";
@@ -183,7 +183,7 @@ let test_create _ =
         ]))
     (Type.Union [Type.integer; Type.string]);
   assert_equal
-    (Type.Build.create
+    (Type.create
        ~aliases
        (+Access [
           identifier "typing";
@@ -193,7 +193,7 @@ let test_create _ =
     (Type.Object);
   assert_equal
     ~printer:Type.show
-    (Type.Build.create
+    (Type.create
        ~aliases
        (+Access [
           identifier "typing";
@@ -211,7 +211,7 @@ let test_create _ =
 
   (* Nested renaming. *)
   assert_equal
-    (Type.Build.create
+    (Type.create
        ~aliases
        (+Access [
           identifier "typing";
@@ -220,7 +220,7 @@ let test_create _ =
         ]))
     (Type.set Type.Object);
   assert_equal
-    (Type.Build.create
+    (Type.create
        ~aliases
        (+Access [
           identifier "typing";
@@ -231,22 +231,22 @@ let test_create _ =
 
   (* Renaming numbers (PEP 3141). *)
   assert_equal
-    (Type.Build.create ~aliases (+Access (Access.create "numbers.Number")))
+    (Type.create ~aliases (+Access (Access.create "numbers.Number")))
     Type.complex;
   assert_equal
-    (Type.Build.create ~aliases (+Access (Access.create "numbers.Complex")))
+    (Type.create ~aliases (+Access (Access.create "numbers.Complex")))
     Type.complex;
   assert_equal
-    (Type.Build.create ~aliases (+Access (Access.create "numbers.Real")))
+    (Type.create ~aliases (+Access (Access.create "numbers.Real")))
     Type.float;
   assert_equal
-    (Type.Build.create ~aliases (+Access (Access.create "numbers.Integral")))
+    (Type.create ~aliases (+Access (Access.create "numbers.Integral")))
     Type.integer;
 
   (* Check variables. *)
   assert_equal
     ~printer:(Format.asprintf "%a" Type.pp)
-    (Type.Build.create
+    (Type.create
        ~aliases
        (+Access [
           identifier "typing";
@@ -262,7 +262,7 @@ let test_create _ =
   (* Check that type variables are correctly created when they have multiple arguments *)
   assert_equal
     ~printer:(Format.asprintf "%a" Type.pp)
-    (Type.Build.create
+    (Type.create
        ~aliases
        (+Access [
           identifier "typing";
@@ -280,7 +280,7 @@ let test_create _ =
    * See http://mypy.readthedocs.io/en/latest/generics.html#type-variables-with-value-restriction *)
   assert_equal
     ~printer:(Format.asprintf "%a" Type.pp)
-    (Type.Build.create
+    (Type.create
        ~aliases
        (+Access [
           identifier "typing";
@@ -299,7 +299,7 @@ let test_create _ =
 
   assert_equal
     ~printer:(Format.asprintf "%a" Type.pp)
-    (Type.Build.create
+    (Type.create
        ~aliases
        (+Access [
           identifier "typing";
@@ -318,7 +318,7 @@ let test_create _ =
 
   assert_equal
     ~printer:(Format.asprintf "%a" Type.pp)
-    (Type.Build.create
+    (Type.create
        ~aliases
        (+Access [
           identifier "typing";
@@ -348,11 +348,11 @@ let test_create _ =
   let aliases = Type.Table.find aliases in
   assert_equal
     ~printer:(Format.asprintf "%a" Type.pp)
-    (Type.Build.create ~aliases (+Access (Access.create "_T")))
+    (Type.create ~aliases (+Access (Access.create "_T")))
     (variable ~~"_T");
   assert_equal
     ~printer:(Format.asprintf "%a" Type.pp)
-    (Type.Build.create
+    (Type.create
        ~aliases
        (+Access [
           identifier "foo";
@@ -365,15 +365,15 @@ let test_create _ =
 
   (* String literals. *)
   assert_equal
-    (Type.Build.create ~aliases (+String "foo"))
+    (Type.create ~aliases (+String "foo"))
     (Type.Primitive ~~"foo");
   assert_equal
-    (Type.Build.create ~aliases (+String "foo.bar"))
+    (Type.create ~aliases (+String "foo.bar"))
     (Type.Primitive ~~"foo.bar");
 
   assert_equal
     ~printer:Type.show
-    (Type.Build.create
+    (Type.create
        ~aliases
        (+Access [
           identifier "foo";
@@ -384,12 +384,12 @@ let test_create _ =
       });
 
   assert_equal
-    (Type.Build.create
+    (Type.create
        ~aliases
        (+String "Type[str]"))
     (Type.parametric "Type" [Type.string]);
   assert_equal
-    (Type.Build.create
+    (Type.create
        ~aliases
        (+String "Type[[[]str]"))
     (Type.Primitive ~~"Type[[[]str]");
@@ -404,7 +404,7 @@ let test_create _ =
         None
   in
   assert_equal
-    (Type.Build.create ~aliases (+String "A"))
+    (Type.create ~aliases (+String "A"))
     (Type.Primitive ~~"C");
 
   (* Recursion with loop. *)
@@ -415,7 +415,7 @@ let test_create _ =
         None
   in
   assert_equal
-    (Type.Build.create ~aliases (+String "A"))
+    (Type.create ~aliases (+String "A"))
     (Type.Primitive ~~"A");
   let aliases = function
     | Type.Primitive name when Identifier.show name = "A" ->
@@ -424,7 +424,7 @@ let test_create _ =
         None
   in
   assert_equal
-    (Type.Build.create ~aliases (+String "A"))
+    (Type.create ~aliases (+String "A"))
     (Type.list (Type.list (Type.Primitive ~~"A")));
 
   (* Nested aliasing. *)
@@ -437,7 +437,7 @@ let test_create _ =
         None
   in
   assert_equal
-    (Type.Build.create ~aliases (+String "A"))
+    (Type.create ~aliases (+String "A"))
     (Type.list (Type.Primitive ~~"C"));
 
   (* Aliases with Unions. *)
@@ -448,7 +448,7 @@ let test_create _ =
         None
   in
   assert_equal
-    (Type.Build.create ~aliases (+String "typing.Union[A, str]"))
+    (Type.create ~aliases (+String "typing.Union[A, str]"))
     (Type.union [Type.string; Type.bytes])
 
 

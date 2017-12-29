@@ -103,10 +103,3 @@ val instantiate: ?widen: bool -> t -> constraints:(t -> t option) -> t
 
 (* Takes a map generated from Preprocessing.dequalify_map and a type and dequalifies the type *)
 val dequalify: Access.t Access.Map.t -> t -> t
-
-module Build : sig
-  val create
-    :  aliases:(t -> t option)
-    -> Expression.t
-    -> t
-end

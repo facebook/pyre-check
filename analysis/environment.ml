@@ -53,7 +53,7 @@ end
 let register_type ~order ~aliases ~add_class_definition ~add_class_key ~add_protocol =
   let rec register_type ~path subtype name definition =
     let annotation =
-      Type.Build.create
+      Type.create
         ~aliases
         (Node.create (Access name))
     in
@@ -846,8 +846,8 @@ let populate
            with _ ->
              (* TODO(T19628746): joins are not sound when building the environment. *)
              ());
-          let value = Type.Build.create ~aliases:Reader.aliases value in
-          let target = Type.Build.create ~aliases:Reader.aliases target in
+          let value = Type.create ~aliases:Reader.aliases value in
+          let target = Type.create ~aliases:Reader.aliases target in
           if not (Type.equal target Type.Top || Type.equal value Type.Top) then
             Reader.register_alias ~path ~key:target ~data:value
 
