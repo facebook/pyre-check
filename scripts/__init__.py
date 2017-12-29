@@ -60,14 +60,16 @@ def switch_root(arguments):
 
 
 def resolve_source_directories(arguments, configuration):
-    source_directories = set(configuration.source_directories)
-    if arguments.source_directory:
-        source_directories = set(arguments.source_directory)
+    source_directories = set(arguments.source_directory or [])
+    targets = set(arguments.target or [])
+
+    # Only read configuration if no arguments were provided.
+    if not source_directories and not targets:
+        source_directories = set(configuration.source_directories)
+        targets = set(configuration.targets)
 
     source_directories.update(
-        buck.generate_link_trees(
-            arguments.target or configuration.targets,
-            build=arguments.build))
+        buck.generate_link_trees(targets, build=arguments.build))
 
     if len(source_directories) == 0:
         raise EnvironmentException(
