@@ -443,7 +443,7 @@ let resolution
       let variable_resolved { Node.value = { Parameter.annotation; _ }; _ } =
         (annotation
          >>| parse_annotation
-         >>| Type.is_fully_resolved)
+         >>| Type.is_resolved)
         |> Option.value ~default:true
       in
       List.take parameters (List.length arguments)

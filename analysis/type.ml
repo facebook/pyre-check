@@ -611,7 +611,7 @@ let rec variables = function
       []
 
 
-let is_fully_resolved annotation =
+let is_resolved annotation =
   List.is_empty (variables annotation)
 
 

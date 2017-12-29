@@ -84,7 +84,7 @@ val is_instantiated: t -> bool
 
 val variables: t -> t list
 (* Does not contain `Variable`. *)
-val is_fully_resolved: t -> bool
+val is_resolved: t -> bool
 
 val is_partially_typed: t -> bool
 val is_untyped: t -> bool
