@@ -1952,7 +1952,16 @@ let test_check_static _ =
     [
       "Incompatible parameter type [6]: 1st parameter `input` to call `Foo.foo` expected `int` " ^
       "but got `str`.";
-    ]
+    ];
+
+  assert_type_errors
+    {|
+      class Foo:
+        @classmethod
+        def foo(cls) -> typing.Type[Foo]:
+          return cls
+    |}
+    []
 
 
 let test_check_init _ =

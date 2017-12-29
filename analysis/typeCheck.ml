@@ -373,14 +373,17 @@ module State = struct
           when Define.is_method define &&
                not (Define.is_static_method define) ->
             let annotation =
-              if Define.is_class_method define then
-                (* First parameter of a method is a class object. *)
-                Type.Object
-              else
-                (* First parameter of a method is the callee object. *)
+              let annotation =
                 Resolution.parse_annotation
                   resolution
                   (Node.create (Access parent))
+              in
+              if Define.is_class_method define then
+                (* First parameter of a method is a class object. *)
+                Type.meta annotation
+              else
+                (* First parameter of a method is the callee object. *)
+                annotation
             in
             Map.add ~key:access ~data:(Annotation.create annotation) annotations, errors
         | _ ->
