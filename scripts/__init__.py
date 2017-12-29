@@ -42,7 +42,10 @@ def get_version(configuration):
     return 'No version set'
 
 
-def find_project_root(original_directory=os.getcwd()):
+def find_project_root(original_directory=None):
+    if not original_directory:
+        original_directory = os.getcwd()
+
     current_directory = original_directory
     while current_directory != "/":
         absolute = os.path.join(current_directory, CONFIGURATION_FILE)
