@@ -484,7 +484,8 @@ def main():
         log.initialize(arguments)
         switch_root(arguments)
 
-        configuration = Configuration()
+        configuration = Configuration(
+            original_directory=arguments.original_directory)
 
         if arguments.version:
             sys.stdout.write(get_version(configuration) + '\n')

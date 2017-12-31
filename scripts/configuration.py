@@ -22,7 +22,7 @@ class InvalidConfiguration(Exception):
 
 
 class Configuration:
-    def __init__(self) -> None:
+    def __init__(self, original_directory=None) -> None:
         self.source_directories = []
         self.targets = []
         self.logger = None
@@ -34,6 +34,11 @@ class Configuration:
         self._typeshed = None
 
         # Order matters. The values will only be updated if a field is None.
+        if original_directory:
+            self._read(
+                os.path.join(
+                    original_directory,
+                    CONFIGURATION_FILE + '.local'))
         self._read(CONFIGURATION_FILE + '.local')
         self._read(CONFIGURATION_FILE)
 

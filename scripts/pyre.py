@@ -163,7 +163,8 @@ def main() -> int:
         log.initialize(arguments)
         switch_root(arguments)
 
-        configuration = Configuration()
+        configuration = Configuration(
+            original_directory=arguments.original_directory)
         source_directories = []
         if configuration.disabled():
             LOG.log(
