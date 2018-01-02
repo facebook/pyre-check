@@ -1003,7 +1003,7 @@ module Access = struct
             let callee =
               Resolution.method_signature
                 resolution
-                (Annotation.annotation annotation)
+                (Annotation.original annotation)
                 (Call.call call)
                 (Call.argument_annotations ~resolution call)
               |> pick_signature call

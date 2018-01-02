@@ -83,6 +83,7 @@ let plain_environment =
           def items(self) -> typing.Iterable[typing.Tuple[_T, _S]]: pass
         class list(typing.Iterable[_T], typing.Generic[_T]):
           def __add__(self, x: list[_T]) -> list[_T]: ...
+          def append(self, element: _T) -> None: ...
         class set(typing.Iterable[_T], typing.Generic[_T]): pass
         _V = typing.TypeVar('_V')
         class typing.Generator(typing.Generic[_T, _S, _V], typing.Iterable[_T]):
@@ -2679,19 +2680,7 @@ let test_check_immutables _ =
       "type is specified.";
       "Missing annotation [5]: Globally accessible field constant has type `str` but " ^
       "no type is specified."
-    ];
-
-  (* Illustrate refinement. *)
-  assert_type_errors
-    {|
-    def takes_int(a: int) -> None: pass
-    def foo() -> None:
-      x: float
-      x = 1
-      takes_int(x)
-      x = 1.0
-    |}
-    []
+    ]
 
 
 let test_check_named_arguments _ =
@@ -3181,7 +3170,27 @@ let test_check_value_restrictions _ =
     ["Incompatible return type [7]: expected `str` but got `unknown`."]
 
 
-let test_check_conditional_refinement _ =
+let test_check_refinement _ =
+  assert_type_errors
+    {|
+    def takes_int(a: int) -> None: pass
+    def foo() -> None:
+      x: float
+      x = 1
+      takes_int(x)
+      x = 1.0
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      def foo() -> None:
+        l: typing.List[typing.Any] = []
+        l = [1]
+        l.append('asdf')
+    |}
+    [];
+
   assert_type_errors
     {|
       def foo(x: typing.Optional[int]) -> int:
@@ -4085,7 +4094,7 @@ let () =
     "check_missing_parameter">::test_check_missing_parameter;
     "check_nested">::test_check_nested;
     "check_value_restrictions">::test_check_value_restrictions;
-    "check_conditional_refinement">::test_check_conditional_refinement;
+    "check_refinement">::test_check_refinement;
     "check_toplevel">::test_check_toplevel;
     "check_tuple">::test_check_tuple;
     "check_meta">::test_check_meta;
