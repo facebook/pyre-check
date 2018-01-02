@@ -1001,7 +1001,8 @@ module Access = struct
           [Access.Call { Node.location; value = call }] ->
             let call = Call.create ~kind:Call.Method call in
             let callee =
-              Resolution.method_signature resolution
+              Resolution.method_signature
+                resolution
                 (Annotation.annotation annotation)
                 (Call.call call)
                 (Call.argument_annotations ~resolution call)
@@ -1016,7 +1017,8 @@ module Access = struct
                  _;
                } ->
                    let annotation = Resolution.resolve resolution value in
-                   Resolution.method_signature resolution
+                   Resolution.method_signature
+                     resolution
                      annotation
                      (Call.call call)
                      (Call.argument_annotations ~resolution call)
@@ -1139,7 +1141,8 @@ module Access = struct
                   step (Some (access, (Annotation.create annotation))) call
               | None ->
                   let callee =
-                    (Resolution.function_signature resolution)
+                    Resolution.function_signature
+                      resolution
                       (List.rev qualifier)
                       (Call.call call)
                       (Call.argument_annotations ~resolution call)
