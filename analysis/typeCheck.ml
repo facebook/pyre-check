@@ -1106,20 +1106,51 @@ module State = struct
         |> add_errors errors
       in
 
+      let forward_expression state expression =
+        forward state (Node.create (Expression expression))
+      in
+
       let rec check_entry ~resolution errors { Dictionary.key; value } =
         let errors = check_expression ~resolution errors key in
         check_expression ~resolution errors value
 
       and check_generator
-          ~resolution
           errors
           { Comprehension.target; iterator; conditions; _ } = (* TODO(T23723699): check async. *)
-        let errors = check_expression ~resolution errors target in
-        let errors = check_expression ~resolution errors iterator in
-        List.fold
-          ~init:errors
-          ~f:(check_expression ~resolution)
-          conditions
+        (* Propagate `target = iterator.__iter__().__next__()`. *)
+        let assign =
+          let access =
+            let iterator =
+              match iterator with
+              | { Node.value = Access access; _ } -> access
+              | _ -> []
+            in
+            let call name =
+              Access.Call
+                (Node.create {
+                    Call.name = (Node.create (Access [Access.Identifier (Identifier.create name)]));
+                    arguments = [];
+                  })
+            in
+            iterator @ [call "__iter__"; call "__next__"]
+          in
+          Assign {
+            Assign.target;
+            annotation = None;
+            value = Some (Node.create (Access access));
+            compound = None;
+            parent = None;
+          }
+          |> Node.create
+        in
+
+        (* Check conditions. *)
+        let { errors; _ } =
+          forward { state with errors } assign
+          |> fun state -> List.fold ~init:state ~f:forward_expression conditions
+        in
+        errors
+
       and check_expression ~resolution errors expression =
         match expression.Node.value with
         | Access access ->
@@ -1181,18 +1212,17 @@ module State = struct
 
         | BooleanOperator { BooleanOperator.left; operator; right } ->
             let { errors; _ } =
-              let forward state expression = forward state (Node.create (Expression expression)) in
               match operator with
               | BooleanOperator.And ->
                   let annotations = forward_annotations state (Statement.assume left) in
-                  let right = forward { state with annotations } right in
-                  let left = forward state left in
+                  let right = forward_expression { state with annotations } right in
+                  let left = forward_expression state left in
                   meet left right
               | BooleanOperator.Or ->
                   let negated_left = Expression.normalize (Expression.negate left) in
                   let annotations = forward_annotations state (Statement.assume negated_left) in
-                  let right = forward { state with annotations } right in
-                  let left = forward state left in
+                  let right = forward_expression { state with annotations } right in
+                  let left = forward_expression state left in
                   join left right
             in
             errors
@@ -1217,10 +1247,7 @@ module State = struct
 
         | DictionaryComprehension { Comprehension.element; generators } ->
             let errors = check_entry ~resolution errors element in
-            List.fold
-              ~f:(check_generator ~resolution)
-              ~init:errors
-              generators
+            List.fold ~f:check_generator ~init:errors generators
 
         | Lambda { Lambda.body; _ } ->
             check_expression ~resolution errors body
@@ -1237,10 +1264,7 @@ module State = struct
         | ListComprehension { Comprehension.element; generators }
         | SetComprehension { Comprehension.element; generators } ->
             let errors = check_expression ~resolution errors element in
-            List.fold
-              ~f:(check_generator ~resolution)
-              ~init:errors
-              generators
+            List.fold ~f:check_generator ~init:errors generators
 
         | Starred starred ->
             (match starred with
@@ -1253,7 +1277,7 @@ module State = struct
             let errors = check_expression ~resolution errors alternative in
             let { errors; _ } =
               let annotations = forward_annotations state (Statement.assume test) in
-              forward { state with annotations; errors } (Node.create (Expression target))
+              forward_expression { state with annotations; errors } target
             in
             errors
 

@@ -25,6 +25,9 @@ let plain_environment =
     (Environment.reader environment)
     [
       parse {|
+        class typing.Sized: ...
+        def len(o: typing.Sized) -> int: ...
+
         class bool(): ...
         class bytes(): ...
         class float():
@@ -40,7 +43,7 @@ let plain_environment =
           def __str__(self) -> str: ...
         class complex():
           def __radd__(self, other: int) -> int: ...
-        class str():
+        class str(typing.Sized):
           def lower(self) -> str: pass
           def upper(self) -> str: ...
           def substr(self, index: int) -> str: pass
@@ -66,7 +69,8 @@ let plain_environment =
         class typing.Generic(): pass
         class typing.Iterable(typing.Generic[_T]):
           def __iter__(self)->typing.Iterator[_T]: pass
-        class typing.Iterator(typing.Iterable[_T], typing.Generic[_T]): pass
+        class typing.Iterator(typing.Iterable[_T], typing.Generic[_T]):
+          def __next__(self) -> _T: ...
         class typing.Sized(): pass
         class tuple(typing.Sized):
           def __init__(self, a:typing.List[int]): ...
@@ -1300,7 +1304,7 @@ let test_check _ =
 
   assert_type_errors
     {|
-      def foo(l)->typing.Generator[typing.Any, None, None]:
+      def foo(l: typing.Iterable[typing.Any])->typing.Generator[typing.Any, None, None]:
         return (x for x in l)
     |}
     [];
