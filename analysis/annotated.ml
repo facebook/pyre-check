@@ -908,7 +908,7 @@ module Access = struct
     in
 
     (* Resolve `super()` calls. *)
-    let access =
+    let access, resolution =
       match access with
       | (Access.Call { Node.value = { Expression.Call.name; _ }; _ }) :: tail
         when Expression.show name = "super" ->
@@ -919,12 +919,26 @@ module Access = struct
            >>| Class.superclasses ~resolution
            >>| function
            | superclass :: _ ->
-               (Class.name superclass) @ tail
+               let super = Access.Identifier (Identifier.create "$super") in
+               let resolution =
+                 let annotation =
+                   Class.annotation ~resolution superclass
+                   |> Annotation.create
+                 in
+                 let annotations =
+                   Map.add
+                     ~key:[super]
+                     ~data:annotation
+                     (Resolution.annotations resolution)
+                 in
+                 Resolution.with_annotations resolution annotations
+               in
+               super :: tail, resolution
            | _ ->
-               access)
-          |> Option.value ~default:access
+               access, resolution)
+          |> Option.value ~default:(access, resolution)
       | _ ->
-          access
+          access, resolution
     in
 
     let rec fold ~accumulator ~reversed_lead ~tail ~annotation ~resolution =

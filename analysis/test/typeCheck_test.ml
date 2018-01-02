@@ -3637,11 +3637,24 @@ let test_check_constructors _ =
   assert_type_errors
     {|
       class Super:
+        def foo(self, i: int) -> None:
+          pass
+      class Foo(Super):
+        def foo(self, i: int) -> None:
+          super().foo('asdf')
+    |}
+    [
+      "Incompatible parameter type [6]: 1st parameter `i` to call `Super.foo` expected " ^
+      "`int` but got `str`.";
+    ];
+  assert_type_errors
+    {|
+      class Super:
         def __init__(self, i: int) -> None:
           pass
       class Foo(Super):
         def __init__(self, i: int) -> None:
-          super().__init__(self, 'asdf')
+          super().__init__('asdf')
     |}
     [
       "Incompatible parameter type [6]: 1st parameter `i` to call `Super.__init__` expected " ^
