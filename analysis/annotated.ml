@@ -1047,8 +1047,9 @@ module Access = struct
             resolved,
             (f accumulator ~annotations ~resolved ~element:(Element.Method element))
 
-        | Some (_, annotation), ([Access.Identifier _] as field_access) -> (
+        | Some (access, annotation), ([Access.Identifier _] as field_access) -> (
             (* Field access. *)
+            let access = access @ field_access in
             let definition =
               Resolution.class_definition
                 resolution

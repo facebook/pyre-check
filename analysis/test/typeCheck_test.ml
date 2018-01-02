@@ -2147,6 +2147,19 @@ let test_check_fields _ =
           return self.bar
     |}
     [];
+  assert_type_errors
+    ~debug:true
+    ~strict:true
+    {|
+      class Bar:
+        def bar() -> None:
+          pass
+      class Foo:
+        bar: Optional[Bar] = None
+        def foo() -> None:
+          self.bar.bar()
+    |}
+    [];
 
   assert_type_errors
     {|
