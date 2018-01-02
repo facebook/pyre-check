@@ -1453,37 +1453,37 @@ let test_check_comprehensions _ =
     {|
     def foo(input: typing.List[str]) -> typing.List[str]:
       return [a for a in input]
-  |}
+    |}
     [];
   assert_type_errors
     {|
     def foo(input: typing.List[str]) -> typing.List[str]:
       return [a for a in input if len(a) < 5]
-  |}
+    |}
     [];
   assert_type_errors
     {|
     def foo(input: typing.List[str]) -> typing.List[str]:
       return [a.lower() for a in input]
-  |}
+    |}
     [];
   assert_type_errors
     {|
     def foo(input: typing.Set[str]) -> typing.Set[str]:
       return {a for a in input}
-  |}
+    |}
     [];
   assert_type_errors
     {|
     def foo(input: typing.Set[str]) -> typing.Set[str]:
       return {a.lower() for a in input}
-  |}
+    |}
     [];
   assert_type_errors
     {|
     def foo(a: typing.List[str], b: typing.List[str]) -> int:
       return {x + y for x in a for y in b}
-  |}
+    |}
     ["Incompatible return type [7]: expected `int` but got `typing.Set[str]`."];
 
   assert_type_errors
