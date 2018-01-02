@@ -134,9 +134,9 @@ let test_collect_accesses_in_position _ =
       expected_accesses
   in
   assert_collected_accesses source 2 0 ["s"];
-  assert_collected_accesses source 2 4 ["ham.?.bake"];
+  assert_collected_accesses source 2 4 ["ham.egg(...).bake"];
   assert_collected_accesses source 2 2 [];
-  assert_collected_accesses source 2 8 ["ham.?.bake"; "egg"]
+  assert_collected_accesses source 2 8 ["ham.egg(...).bake"; "egg"]
 
 let () =
   "visit">:::[

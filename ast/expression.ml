@@ -295,6 +295,7 @@ type expression =
 and t = expression Node.t
 [@@deriving compare, eq, sexp, show]
 
+let pp_expression_node = pp
 
 type expression_node = t
 [@@deriving compare, eq, sexp, show]
@@ -307,15 +308,17 @@ module Access = struct
   [@@deriving compare, eq, sexp, show]
 
 
-  let show access =
-    let identifier = function
+  let rec show access =
+    let identifier (element: expression_node Record.Access.access): string =
+      match element with
       | Identifier identifier ->
           Identifier.show identifier
+      | Call { Node.value = { Record.Call.name = { Node.value = Access access; _ }; _ }; _ } ->
+          Format.asprintf "%s(...)" (show access)
       | _ ->
           "?" in
     List.map ~f:identifier access
     |> String.concat ~sep:"."
-
 
 
   let pp format access =
