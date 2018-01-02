@@ -575,7 +575,10 @@ module Call = struct
           in
           match kind with
           | Method ->
-              prepend_self call
+              if Statement.Define.is_static_method callee then
+                call
+              else
+                prepend_self call
           | Function ->
               if Statement.Define.is_class_method callee ||
                  (Statement.Define.is_constructor callee &&

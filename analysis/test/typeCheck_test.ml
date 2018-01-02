@@ -1948,6 +1948,21 @@ let test_check_static _ =
       "Incompatible parameter type [6]: 1st parameter `input` to call `Foo.foo` expected `int` " ^
       "but got `str`.";
     ];
+  assert_type_errors
+    {|
+      class Foo:
+        @staticmethod
+        def foo(input: int) -> int:
+          return input
+
+        def bar(self) -> None:
+          self.foo('asdf')
+
+    |}
+    [
+      "Incompatible parameter type [6]: 1st parameter `input` to call `Foo.foo` expected `int` " ^
+      "but got `str`.";
+    ];
 
   (* Class method calls are properly resolved. *)
   assert_type_errors
