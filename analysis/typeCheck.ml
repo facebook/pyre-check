@@ -521,7 +521,7 @@ module State = struct
       left.errors &&
     Map.fold
       ~init:true
-      ~f:(entry_less_or_equal right.annotations (AnnotationOrder.less_or_equal ~resolution))
+      ~f:(entry_less_or_equal right.annotations (Refinement.less_or_equal ~resolution))
       left.annotations
 
 
@@ -549,7 +549,7 @@ module State = struct
           right.errors;
       annotations =
         Map.merge
-          ~f:(merge (AnnotationOrder.join ~resolution))
+          ~f:(merge (Refinement.join ~resolution))
           left.annotations
           right.annotations;
     }
@@ -574,7 +574,7 @@ module State = struct
           right.errors;
       annotations =
         Map.merge
-          ~f:(merge (AnnotationOrder.meet ~resolution))
+          ~f:(merge (Refinement.meet ~resolution))
           left.annotations
           right.annotations;
     }
@@ -644,7 +644,7 @@ module State = struct
           next.errors;
       annotations =
         Map.merge
-          ~f:(merge (AnnotationOrder.widen ~resolution ~widening_threshold))
+          ~f:(merge (Refinement.widen ~resolution ~widening_threshold))
           previous.annotations
           next.annotations;
     }
@@ -746,11 +746,11 @@ module State = struct
             | Some annotation, _ when Annotation.is_immutable annotation ->
                 Map.add
                   ~key:access
-                  ~data:(AnnotationOrder.refine ~resolution annotation value_annotation)
+                  ~data:(Refinement.refine ~resolution annotation value_annotation)
                   annotations
             | _, Access.Element.Field (Access.Element.Defined field) ->
                 let refined =
-                  AnnotationOrder.refine
+                  Refinement.refine
                     ~resolution
                     (Field.annotation field)
                     value_annotation
@@ -857,7 +857,7 @@ module State = struct
                             };
                         } ->
                             let refined =
-                              AnnotationOrder.refine
+                              Refinement.refine
                                 ~resolution
                                 (Field.annotation field)
                                 parameter
@@ -881,7 +881,7 @@ module State = struct
                       let left = update state left in
                       let right = update { state with annotations } right in
                       let merge ~key:_ = function
-                        | `Both (left, right) -> Some (AnnotationOrder.meet ~resolution left right)
+                        | `Both (left, right) -> Some (Refinement.meet ~resolution left right)
                         | `Left left -> Some left
                         | `Right right -> Some right
                       in
@@ -917,7 +917,7 @@ module State = struct
                   match element with
                   | Access.Element.Field (Access.Element.Defined field) ->
                       let refined =
-                        AnnotationOrder.refine
+                        Refinement.refine
                           ~resolution
                           (Field.annotation field)
                           (Type.Optional Type.Bottom)
