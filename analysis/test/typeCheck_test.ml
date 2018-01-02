@@ -1961,7 +1961,46 @@ let test_check_static _ =
         def foo(cls) -> typing.Type[Foo]:
           return cls
     |}
-    []
+    [];
+
+  assert_type_errors
+    {|
+      class Foo:
+        @classmethod
+        def classmethod(cls, i: int) -> None:
+          cls.classmethod('1234')
+    |}
+    [
+      "Incompatible parameter type [6]: 1st parameter `i` to call `Foo.classmethod` expected " ^
+      "`int` but got `str`.";
+    ];
+  assert_type_errors
+    {|
+      class Foo:
+        @staticmethod
+        def staticmethod(i: int) -> None:
+          pass
+        @classmethod
+        def classmethod(cls, i: int) -> None:
+          cls.staticmethod('1234')
+    |}
+    [
+      "Incompatible parameter type [6]: 1st parameter `i` to call `Foo.staticmethod` expected " ^
+      "`int` but got `str`.";
+    ];
+  assert_type_errors
+    {|
+      class Foo:
+        def instancemethod(self, i: int) -> None:
+          pass
+        @classmethod
+        def classmethod(cls, i: int) -> None:
+          cls.instancemethod(Foo(), '1234')
+    |}
+    [
+      "Incompatible parameter type [6]: 1st parameter `i` to call `Foo.instancemethod` expected " ^
+      "`int` but got `str`.";
+    ]
 
 
 let test_check_init _ =

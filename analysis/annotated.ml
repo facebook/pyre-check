@@ -976,9 +976,23 @@ module Access = struct
 
       let rec step annotation reversed_lead =
         match annotation, reversed_lead with
-        | Some (access, annotation), _ when Type.is_meta (Annotation.annotation annotation) ->
-            (* Don't try to resolve type variables, e.g. in static calls. *)
-            step None (reversed_lead @ access)
+        | Some (_, annotation), _ when Type.is_meta (Annotation.annotation annotation) ->
+            (* Pretend that we're calling a method on the class object. This is not entierly
+               acurate: `Type[A]` has a slightly broader interface than `A`. *)
+            let annotation_name =
+              let extract_access { Node.value; _ } =
+                match value with
+                | Access access -> access
+                | _ -> failwith "Annotation expression is not an access"
+              in
+              Annotation.annotation annotation
+              |> Type.parameters
+              |> List.hd_exn
+              |> Type.expression
+              |> extract_access
+              |> List.rev
+            in
+            step None (reversed_lead @ annotation_name)
 
         | Some (access, annotation),
           [Access.Call { Node.location; value = call }] ->
