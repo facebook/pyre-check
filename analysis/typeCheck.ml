@@ -1115,7 +1115,7 @@ module State = struct
         check_expression ~resolution errors value
 
       and check_generator
-          errors
+          state
           { Comprehension.target; iterator; conditions; _ } = (* TODO(T23723699): check async. *)
         (* Propagate `target = iterator.__iter__().__next__()`. *)
         let assign =
@@ -1145,11 +1145,8 @@ module State = struct
         in
 
         (* Check conditions. *)
-        let { errors; _ } =
-          forward { state with errors } assign
-          |> fun state -> List.fold ~init:state ~f:forward_expression conditions
-        in
-        errors
+        forward state assign
+        |> fun state -> List.fold ~init:state ~f:forward_expression conditions
 
       and check_expression ~resolution errors expression =
         match expression.Node.value with
@@ -1246,8 +1243,9 @@ module State = struct
              | Some keyword -> check_expression ~resolution errors keyword)
 
         | DictionaryComprehension { Comprehension.element; generators } ->
-            let errors = check_entry ~resolution errors element in
-            List.fold ~f:check_generator ~init:errors generators
+            let ({ errors; _ } as state) = List.fold ~f:check_generator ~init:state generators in
+            check_entry ~resolution:(update_resolution state) errors element
+
 
         | Lambda { Lambda.body; _ } ->
             check_expression ~resolution errors body
@@ -1263,8 +1261,8 @@ module State = struct
         | Generator { Comprehension.element; generators }
         | ListComprehension { Comprehension.element; generators }
         | SetComprehension { Comprehension.element; generators } ->
-            let errors = check_expression ~resolution errors element in
-            List.fold ~f:check_generator ~init:errors generators
+            let ({ errors; _ } as state) = List.fold ~f:check_generator ~init:state generators in
+            check_expression ~resolution:(update_resolution state) errors element
 
         | Starred starred ->
             (match starred with

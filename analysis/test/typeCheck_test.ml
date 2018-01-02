@@ -58,6 +58,7 @@ let plain_environment =
           def __sizeof__() -> int: pass
         def math.intabs(i: int) -> int: pass
         def int_to_str(i: int) -> str: ...
+        def str_to_int(i: str) -> int: ...
         def int_to_bool(i: int) -> bool: ...
         def str_float_to_int(i: str, f: float) -> int: ...
         def str_float_tuple_to_int(t: typing.Tuple[str, float]) -> int: ...
@@ -1469,6 +1470,12 @@ let test_check_comprehensions _ =
     {|
     def foo(input: typing.List[str]) -> typing.List[str]:
       return [a.lower() for a in input]
+    |}
+    [];
+  assert_type_errors
+    {|
+    def foo(input: typing.List[str]) -> typing.List[int]:
+      return [str_to_int(a) for a in input]
     |}
     [];
   assert_type_errors
