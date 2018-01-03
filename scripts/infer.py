@@ -147,7 +147,7 @@ class FieldStub:
         return self.name.split('.')[-1] if self.name.split('.') else ""
 
     def to_string(self):
-        return "{} : {} = ...".format(self._get_name(), dequalify(self.actual))
+        return "{}: {} = ...".format(self._get_name(), dequalify(self.actual))
 
     @functools.lru_cache(maxsize=1)
     def get_typing_imports(self):
@@ -182,25 +182,23 @@ class Stub:
         def fun():
             [ALL FUNCTIONS AND CLASSES DEFINED IN HERE ARE IGNORED]
         """
-        if self.is_field():
-            ""
+        if self.parent and ('.' in self.stub.name):
+            # A function nested in a method in a class
+            return ""
+        elif not self.is_field() and \
+                not self.parent and len(self.stub.name.split('.')) < 2:
+            # Strange things are happening. Breaks our access path assumptions.
+            return ""
+        elif not self.parent and \
+                len(self.stub.name.split('.')) >= 2 and \
+                self.stub.name.split('.')[-2] != self.path.stem:
+            # If the second last part of an access path for a function is not
+            # the file, then it is a nested function
+            return ""
         else:
-            if self.parent and ('.' in self.stub.name):
-                # A function nested in a method in a class
-                return ""
-            elif not self.parent and len(self.stub.name.split('.')) < 2:
-                # Strange things are happening. Breaks our access path assumptions.
-                return ""
-            elif not self.parent and len(
-                self.stub.name.split('.')
-            ) >= 2 and self.stub.name.split('.')[-2] != self.path.stem:
-                # If the second last part of an access path for a function is not
-                # the file, then it is a nested function
-                return ""
-            else:
-                # TODO: Technically, it could still be nested under a
-                # function with the same name as the file
-                return self.stub.to_string()
+            # TODO: Technically, it could still be nested under a
+            # function with the same name as the file
+            return self.stub.to_string()
 
     def get_typing_imports(self):
         return self.stub.get_typing_imports()
@@ -237,6 +235,7 @@ class StubFile:
         if full_only:
             stubs = [stub for stub in stubs if stub.is_complete()]
         self._stubs = stubs
+        self._fields = [stub for stub in stubs if stub.is_field()]
         self._functions = [stub for stub in stubs if stub.is_function()]
         self._methods = [stub for stub in stubs if stub.is_method()]
         self._path = Path(errors[0].path)
@@ -257,10 +256,19 @@ class StubFile:
         alphabetical_imports = sorted(list(typing_imports))
         if alphabetical_imports:
             contents += "from typing import {}\n\n".format(
-                ", ".join(str(type_import) for type_import in alphabetical_imports))
+                ", ".join(
+                    str(type_import)
+                    for type_import in alphabetical_imports))
+
+        for stub in self._fields:
+            parents = stub.parent.split('.') if stub.parent else []
+            if len(parents) >= 2 and parents[-2] == stub.path.stem:
+                classes[parents[-1]].append(stub)
+            else:
+                contents += stub.to_string() + "\n"
 
         for stub in self._methods:
-            parents = stub.parent.split('.')
+            parents = stub.parent.split('.') if stub.parent else []
             if len(parents) >= 2 and parents[-2] == stub.path.stem:
                 # If the second last part of an access path for a class is
                 # the file, then it is not a nested class
@@ -279,7 +287,7 @@ class StubFile:
         return contents
 
     def is_empty(self):
-        return (self._functions == [] and self._methods == [])
+        return self._stubs == []
 
     def path(self, directory):
         return directory / Path("{}i".format(self._path))

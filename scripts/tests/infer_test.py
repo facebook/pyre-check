@@ -277,6 +277,27 @@ class PyreTest(unittest.TestCase):
             "def with_params(y: int = 7, x: int = 5) -> int: ...",
             full_only=True)
 
+    def test_field_stubs(self) -> None:
+        self.assert_stub(
+            [build_json({
+                "annotation": "int",
+                "field_name": "global",
+                "parent": None,
+            })],
+            """\
+            global: int = ...
+            """)
+        self.assert_stub(
+            [build_json({
+                "annotation": "int",
+                "field_name": "field_name",
+                "parent": "test.Test",
+            })],
+            """\
+            class Test:
+                field_name: int = ...
+            """)
+
     def test_import_from_typing(self) -> None:
         self.assert_stub(
             [build_json({
@@ -349,6 +370,18 @@ class PyreTest(unittest.TestCase):
             from typing import Any, Dict, List, Union
 
             def with_params(y=7, x: Dict[int, int] = 5) -> Union[List[int], Any]: ...
+            """)
+
+        self.assert_stub(
+            [build_json({
+                "annotation": "typing.Union[typing.List[int], typing.Any]",
+                "field_name": "global",
+                "parent": None,
+            })],
+            """\
+            from typing import Any, List, Union
+
+            global: Union[List[int], Any] = ...
             """)
 
 
