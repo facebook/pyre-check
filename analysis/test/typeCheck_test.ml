@@ -101,7 +101,8 @@ let plain_environment =
         class C(A): ...
         class D(B,C): ...
         class obj():
-          def non_method_int_to_str(i: int) -> str: ...
+          @staticmethod
+          def static_int_to_str(i: int) -> str: ...
 
         _VR = typing.TypeVar("_VR", str, int)
         def value_restricted_identity(x: _VR) -> _VR: pass
@@ -711,7 +712,7 @@ let test_backward _ =
   assert_backward [] "'a'.substr(x)" ["x", Type.integer];
   assert_backward
     ["y", Type.float]
-    "y = obj.non_method_int_to_str(x)"
+    "y = obj.static_int_to_str(x)"
     ["y", Type.float; "x", Type.integer];
   assert_backward [] "str_float_tuple_to_int((x, y))" ["x", Type.string; "y", Type.float];
   assert_backward
