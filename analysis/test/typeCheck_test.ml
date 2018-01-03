@@ -44,6 +44,10 @@ let plain_environment =
         class complex():
           def __radd__(self, other: int) -> int: ...
         class str(typing.Sized):
+          @overload
+          def __init__(self, o: object = ...) -> None: ...
+          @overload
+          def __init__(self, o: bytes, encoding: str = ..., errors: str = ...) -> None: ...
           def lower(self) -> str: pass
           def upper(self) -> str: ...
           def substr(self, index: int) -> str: pass
@@ -3736,7 +3740,11 @@ let test_check_constructors _ =
     [
       "Incompatible parameter type [6]: 1st parameter `i` to call `Super.__init__` expected " ^
       "`int` but got `str`.";
-    ]
+    ];
+
+  (* Overloaded constructors. *)
+  assert_type_errors "str(True)" []
+
 
 
 let test_check_explicit_method_call _ =

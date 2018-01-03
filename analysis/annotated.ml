@@ -972,7 +972,13 @@ module Access = struct
                   None
               in
               let add_error errors _ = errors + 1 in
-              Call.check_parameters ~resolution ~check_parameter ~add_error ~init:0 call callee
+              Call.check_parameters
+                ~resolution
+                ~check_parameter
+                ~add_error
+                ~init:0
+                (Call.insert_implicit_arguments ~callee:(Some callee) call)
+                callee
             in
             let no_error_call =
               (* The find exists for performance reasons. Without it, typechecking would slow down
