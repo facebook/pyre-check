@@ -1370,7 +1370,10 @@ module State = struct
                     define = define_node;
                   }
                 in
-                Map.add ~key:error.Error.location ~data:error errors
+                Map.find errors declare_location
+                >>| Error.join ~resolution error
+                |> Option.value ~default:error
+                |> fun data -> Map.add ~key:declare_location ~data errors
               else
                 errors
             in
@@ -1735,9 +1738,7 @@ module State = struct
               define = define_node;
             }
             in
-            Map.find errors location
-            |> Option.value ~default:error
-            |> fun data -> Map.add ~key:error.Error.location ~data errors)
+            Map.add ~key:error.Error.location ~data:error errors)
         |> Option.value ~default:errors
       in
       match annotation with

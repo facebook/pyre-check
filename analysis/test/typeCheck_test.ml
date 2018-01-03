@@ -1103,10 +1103,10 @@ let test_show_error_traces _ =
     |}
     [
       "Missing annotation [5]: Globally accessible field constant has type " ^
-      "`int` but no type is specified. Global constant " ^
-      "declared on line 2, type `int` deduced from test.py:6:2."
-    ]; (* TODO:T22574599 Errors are being recorded per location; need a workaround so this makes it
-          to the join and displays Union[int,str] rather than only the second type *)
+      "`typing.Union[int, str]` but no type is specified. Global constant " ^
+      "declared on line 2, type `typing.Union[int, str]` deduced from test.py:5:2, " ^
+      "test.py:6:2."
+    ];
 
   assert_type_errors ~show_error_traces:true
     {|
