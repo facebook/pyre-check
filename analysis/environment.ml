@@ -459,7 +459,7 @@ let resolution
       sufficient_arguments_provided parameters arguments
     in
 
-    let all_variables_resolved parameters =
+    let sufficient_variables_resolved parameters =
       let variable_resolved { Node.value = { Parameter.annotation; _ }; _ } =
         (annotation
          >>| parse_annotation
@@ -486,7 +486,7 @@ let resolution
       (* Check additional constraints. *)
       >>= (fun ({ Node.value = { Define.parameters; _ } as instantiated; _ }, constraints) ->
           if sufficient_arguments_provided parameters arguments &&
-             all_variables_resolved parameters then
+             sufficient_variables_resolved parameters then
             Some { Signature.constraints; instantiated; location }
           else
             None)
