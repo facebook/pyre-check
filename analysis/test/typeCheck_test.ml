@@ -52,27 +52,31 @@ let plain_environment =
           def __add__(self, other: str) -> str: ...
           def __pos__(self) -> float: ...
           def __repr__(self) -> float: ...
-        class obj():
-          def non_method_int_to_str(i: int) -> str: ...
         class object():
           def __sizeof__() -> int: pass
-        def math.intabs(i: int) -> int: pass
+
+        def to_int(x: typing.Any) -> int: ...
         def int_to_str(i: int) -> str: ...
         def str_to_int(i: str) -> int: ...
         def int_to_bool(i: int) -> bool: ...
+        def int_to_int(i: int) -> int: pass
         def str_float_to_int(i: str, f: float) -> int: ...
         def str_float_tuple_to_int(t: typing.Tuple[str, float]) -> int: ...
         def nested_tuple_to_int(t: typing.Tuple[typing.Tuple[str, float], float]) -> int: ...
         def return_tuple() -> typing.Tuple[int, int]: ...
         def unknown_to_int(i) -> int: ...
+
         _T = typing.TypeVar('_T')
         _S = typing.TypeVar('_S')
+        _V = typing.TypeVar('_V')
+
         class typing.Generic(): pass
+
         class typing.Iterable(typing.Generic[_T]):
           def __iter__(self)->typing.Iterator[_T]: pass
         class typing.Iterator(typing.Iterable[_T], typing.Generic[_T]):
           def __next__(self) -> _T: ...
-        class typing.Sized(): pass
+
         class tuple(typing.Sized):
           def __init__(self, a:typing.List[int]): ...
           def tuple_method(self, a: int): ...
@@ -85,18 +89,22 @@ let plain_environment =
           def __add__(self, x: list[_T]) -> list[_T]: ...
           def append(self, element: _T) -> None: ...
         class set(typing.Iterable[_T], typing.Generic[_T]): pass
-        _V = typing.TypeVar('_V')
         class typing.Generator(typing.Generic[_T, _S, _V], typing.Iterable[_T]):
           pass
+
         class A: ...
         class B(A): ...
         class C(A): ...
         class D(B,C): ...
+        class obj():
+          def non_method_int_to_str(i: int) -> str: ...
+
         _VR = typing.TypeVar("_VR", str, int)
         def value_restricted_identity(x: _VR) -> _VR: pass
+
         def typing.cast(tp: typing.Type[_T], o) -> _T: ...
+
         class typing.Awaitable: pass
-        def to_int(x: typing.Any) -> int: ...
         class IsAwaitable(typing.Awaitable[int]): pass
 
         def sum(iterable: typing.Iterable[_T]) -> typing.Union[_T, int]: ...
@@ -1648,34 +1656,34 @@ let test_check_function_parameters _ =
   assert_type_errors
     {|
       def foo() -> None:
-        math.intabs(1)
+        int_to_int(1)
     |}
     [];
 
   assert_type_errors
     {|
       def foo() -> None:
-        math.intabs(1.0)
+        int_to_int(1.0)
     |}
     [
-      "Incompatible parameter type [6]: 1st parameter `i` to call `math.intabs` expected `int` " ^
+      "Incompatible parameter type [6]: 1st parameter `i` to call `int_to_int` expected `int` " ^
       "but got `float`.";
     ];
 
   assert_type_errors
     {|
       def foo() -> int:
-        return math.intabs(1.0)
+        return int_to_int(1.0)
     |}
     [
-      "Incompatible parameter type [6]: 1st parameter `i` to call `math.intabs` expected `int` " ^
+      "Incompatible parameter type [6]: 1st parameter `i` to call `int_to_int` expected `int` " ^
       "but got `float`.";
     ];
 
   assert_type_errors
     {|
       def foo(i) -> None:
-        math.intabs(i)
+        int_to_int(i)
     |}
     [];
 
@@ -1683,10 +1691,10 @@ let test_check_function_parameters _ =
     {|
       class A:
         def foo(self) -> None:
-          math.intabs(self.field)
+          int_to_int(self.field)
     |}
     [
-      "Incompatible parameter type [6]: 1st parameter `i` to call `math.intabs` expected `int` " ^
+      "Incompatible parameter type [6]: 1st parameter `i` to call `int_to_int` expected `int` " ^
       "but got `unknown`.";
     ];
 
@@ -3039,19 +3047,19 @@ let test_check_ternary _ =
   assert_type_errors
     {|
       def foo(x: typing.Optional[int]) -> None:
-          math.intabs(x) if x else 0
+          int_to_int(x) if x else 0
     |}
     [];
   assert_type_errors
     {|
       def foo(x: typing.Optional[int]) -> int:
-          return math.intabs(x if x is not None else 1)
+          return int_to_int(x if x is not None else 1)
     |}
     [];
   assert_type_errors
     {|
       def foo(x: typing.Optional[int]) -> int:
-        a, b = ("hi", math.intabs(x) if x is not None else 1)
+        a, b = ("hi", int_to_int(x) if x is not None else 1)
         return b
     |}
     []
@@ -3205,13 +3213,13 @@ let test_check_nested _ =
     {|
       def foo() -> None:
         def nested() -> None:
-          math.intabs(1.0)
-        math.intabs(1.0)
+          int_to_int(1.0)
+        int_to_int(1.0)
     |}
     [
-      "Incompatible parameter type [6]: 1st parameter `i` to call `math.intabs` expected `int` " ^
+      "Incompatible parameter type [6]: 1st parameter `i` to call `int_to_int` expected `int` " ^
       "but got `float`.";
-      "Incompatible parameter type [6]: 1st parameter `i` to call `math.intabs` expected `int` " ^
+      "Incompatible parameter type [6]: 1st parameter `i` to call `int_to_int` expected `int` " ^
       "but got `float`.";
     ]
 
@@ -3347,7 +3355,7 @@ let test_check_refinement _ =
   assert_type_errors
     {|
       def bar(x: typing.Optional[int]) -> None:
-          if x and math.intabs(x) < 0:
+          if x and int_to_int(x) < 0:
               y = 1
     |}
     [];
@@ -3363,9 +3371,9 @@ let test_check_refinement _ =
 
 let test_check_toplevel _ =
   assert_type_errors
-    "math.intabs(1.0)"
+    "int_to_int(1.0)"
     [
-      "Incompatible parameter type [6]: 1st parameter `i` to call `math.intabs` expected `int` " ^
+      "Incompatible parameter type [6]: 1st parameter `i` to call `int_to_int` expected `int` " ^
       "but got `float`.";
     ]
 
@@ -3438,7 +3446,7 @@ let test_check_tuple _ =
   assert_type_errors
     {|
       def bar(z: typing.Optional[int]) -> typing.Tuple[int, typing.Optional[int]]:
-          return 1, math.intabs(z) if z is not None else None
+          return 1, int_to_int(z) if z is not None else None
     |}
     []
 
