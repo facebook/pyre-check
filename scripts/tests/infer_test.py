@@ -20,6 +20,7 @@ from .. import (
 from ..error import Error
 from ..infer import (
     dequalify,
+    _relativize_access,
     FieldStub,
     FunctionStub,
     Infer,
@@ -40,13 +41,42 @@ def build_json(inference):
     }
 
 
-class PyreTest(unittest.TestCase):
+class HelperTest(unittest.TestCase):
     def test_dequalify(self) -> None:
         self.assertEqual(dequalify("typing.List"), "List")
         self.assertEqual(
             dequalify("typing.Union[typing.List[int]]"),
             "Union[List[int]]")
 
+    def test__relativize_access(self) -> None:
+        self.assertEqual(
+            _relativize_access(
+                'tools.pyre.scripts.infer.Stub',
+                'tools/pyre/scripts/infer.py'),
+            ['Stub'])
+        self.assertEqual(
+            _relativize_access(
+                'function_name',
+                'tools/pyre/scripts/infer.py'),
+            ['function_name'])
+        self.assertEqual(
+            _relativize_access(
+                'tools.pyre.scripts.infer.toplevel_function',
+                'tools/pyre/scripts/infer.py'),
+            ['toplevel_function'])
+        self.assertEqual(
+            _relativize_access(
+                'tools.pyre.scripts.infer.Class.function',
+                'tools/pyre/scripts/infer.py'),
+            ['Class', 'function'])
+        self.assertEqual(
+            _relativize_access(
+                'tools.pyre.scripts.function',
+                'tools/pyre/scripts/__init__.py'),
+            ['function'])
+
+
+class PyreTest(unittest.TestCase):
     def assert_imports(self, error_json, expected_imports) -> None:
         error = Error(**error_json)
         if FunctionStub.is_instance(error.inference):
@@ -228,17 +258,6 @@ class PyreTest(unittest.TestCase):
             })],
             "def full_only(x: int = 5) -> int: ...",
             full_only=True)
-
-        self.assert_stub(
-            [build_json({
-                "annotation": "int",
-                "function_name": "weird_function",
-                "parent": None,
-                "parameters": [],
-                "decorators": [],
-                "async": False,
-            })],
-            "")
 
         self.assert_stub(
             [

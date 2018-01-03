@@ -50,6 +50,13 @@ def split_imports(types_list):
     return typing_imports
 
 
+def _relativize_access(access, path):
+    if not access:
+        return []
+    path = str(path).split('.', 1)[0].replace('/', '.').replace('.__init__', '')
+    return access.replace(path, '', 1).strip('.').split('.')
+
+
 class FunctionStub:
     def __init__(self, stub) -> None:
         self.name = stub.get('function_name')
@@ -182,22 +189,10 @@ class Stub:
         def fun():
             [ALL FUNCTIONS AND CLASSES DEFINED IN HERE ARE IGNORED]
         """
-        if self.parent and ('.' in self.stub.name):
-            # A function nested in a method in a class
-            return ""
-        elif not self.is_field() and \
-                not self.parent and len(self.stub.name.split('.')) < 2:
-            # Strange things are happening. Breaks our access path assumptions.
-            return ""
-        elif not self.parent and \
-                len(self.stub.name.split('.')) >= 2 and \
-                self.stub.name.split('.')[-2] != self.path.stem:
-            # If the second last part of an access path for a function is not
-            # the file, then it is a nested function
+        if (len(_relativize_access(self.parent, self.path)) >= 2 or
+                len(_relativize_access(self.stub.name, self.path)) >= 2):
             return ""
         else:
-            # TODO: Technically, it could still be nested under a
-            # function with the same name as the file
             return self.stub.to_string()
 
     def get_typing_imports(self):
@@ -261,20 +256,18 @@ class StubFile:
                     for type_import in alphabetical_imports))
 
         for stub in self._fields:
-            parents = stub.parent.split('.') if stub.parent else []
-            if len(parents) >= 2 and parents[-2] == stub.path.stem:
-                classes[parents[-1]].append(stub)
+            parent = _relativize_access(stub.parent, stub.path)
+            # Ignore nested classes
+            if len(parent) == 1:
+                classes[parent[0]].append(stub)
             else:
                 contents += stub.to_string() + "\n"
 
         for stub in self._methods:
-            parents = stub.parent.split('.') if stub.parent else []
-            if len(parents) >= 2 and parents[-2] == stub.path.stem:
-                # If the second last part of an access path for a class is
-                # the file, then it is not a nested class
-                # TODO: Unless the class it is nested in and the file have the
-                # same name...
-                classes[parents[-1]].append(stub)
+            parent = _relativize_access(stub.parent, stub.path)
+            # Ignore nested classes
+            if len(parent) == 1:
+                classes[parent[0]].append(stub)
 
         for stub in self._functions:
             contents += stub.to_string() + "\n"
