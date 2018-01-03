@@ -289,6 +289,45 @@ let test_populate _ =
         location = create_location "test.py" 5 2 5 6;
       });
 
+  (* Globals *)
+  let environment =
+    populate {|
+      global_value_set = 1
+      global_annotated: int
+      global_both: int = 1
+      global_unknown = x
+      class Foo():
+        pass
+    |} in
+  assert_equal
+    (global environment (access ["global_value_set"]))
+    (Some {
+        Resolution.annotation =
+          (Annotation.create_immutable ~global:true ~original:(Some Type.Top) Type.integer);
+        location = create_location "test.py" 2 0 2 16;
+      });
+  assert_equal
+    (global environment (access ["global_annotated"]))
+    (Some {
+        Resolution.annotation =
+          (Annotation.create_immutable ~global:true Type.integer);
+        location = create_location "test.py" 3 0 3 16;
+      });
+  assert_equal
+    (global environment (access ["global_both"]))
+    (Some {
+        Resolution.annotation =
+          (Annotation.create_immutable ~global:true Type.integer);
+        location = create_location "test.py" 4 0 4 11;
+      });
+  assert_equal
+    (global environment (access ["global_unknown"]))
+    (Some {
+        Resolution.annotation =
+          (Annotation.create_immutable ~global:true Type.Top);
+        location = create_location "test.py" 5 0 5 14;
+      });
+
   (* Loops. *)
   try
     populate {|

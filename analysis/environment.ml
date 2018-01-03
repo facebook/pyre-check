@@ -650,18 +650,17 @@ let populate
           } ->
               (try
                  let annotation = Resolution.resolve resolution value in
-                 if annotation <> Type.Top then
-                   Reader.register_global
-                     ~path
-                     ~key:(parent @ access)
-                     ~data:{
-                       Resolution.annotation =
-                         (Annotation.create_immutable
-                            ~global:true
-                            ~original:(Some Type.Top)
-                            annotation);
-                       location;
-                     }
+                 Reader.register_global
+                   ~path
+                   ~key:(parent @ access)
+                   ~data:{
+                     Resolution.annotation =
+                       (Annotation.create_immutable
+                          ~global:true
+                          ~original:(Some Type.Top)
+                          annotation);
+                     location;
+                   }
                with _ ->
                  (* TODO(T19628746): joins are not sound when building the environment. *)
                  ())
@@ -849,8 +848,7 @@ let populate
       } ->
           (try
              match target.Node.value, (Resolution.resolve resolution value) with
-             | Access access, annotation
-               when annotation <> Type.Top ->
+             | Access access, annotation ->
                  Reader.register_global
                    ~path
                    ~key:access

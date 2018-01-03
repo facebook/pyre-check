@@ -1078,8 +1078,69 @@ let test_show_error_traces _ =
     [
       "Missing annotation [4]: Field field of class Foo has type `str` but no type " ^
       "is specified. Field field declared on line 3, type `str` deduced from test.py:7:4.";
-    ]
+    ];
 
+  assert_type_errors ~show_error_traces:true
+    {|
+    constant = x
+    def foo() -> None:
+      global constant
+      constant = 1
+    |}
+    [
+      "Missing annotation [5]: Globally accessible field constant has type `int` but " ^
+      "no type is specified. Global constant declared on line 2, type `int` deduced " ^
+      "from test.py:5:2."
+    ];
+
+  assert_type_errors ~show_error_traces:true
+    {|
+    constant = x
+    def foo() -> None:
+      global constant
+      constant = "hi"
+      constant = 1
+    |}
+    [
+      "Missing annotation [5]: Globally accessible field constant has type " ^
+      "`int` but no type is specified. Global constant " ^
+      "declared on line 2, type `int` deduced from test.py:6:2."
+    ]; (* TODO:T22574599 Errors are being recorded per location; need a workaround so this makes it
+          to the join and displays Union[int,str] rather than only the second type *)
+
+  assert_type_errors ~show_error_traces:true
+    {|
+      class Other():
+        field = x
+        def foo(self) -> None:
+          self.field = 1
+    |}
+    [
+      "Missing annotation [4]: Field field of class Other has type " ^
+      "`int` but no type is specified. Field field declared on line 3, " ^
+      "type `int` deduced from test.py:5:4."
+    ];
+
+
+  assert_type_errors ~show_error_traces:true
+    {|
+      def foo() -> None:
+        global x
+        x = 5
+      def bar() -> None:
+        global x
+        x = "str"
+    |}
+    [
+      "Missing annotation [5]: Globally accessible field x has type " ^
+      "`typing.Union[int, str]` but no type is specified. Global x " ^
+      "declared on line 4, type `typing.Union[int, str]` deduced from test.py:4:2, " ^
+      "test.py:7:2.";
+      "Missing annotation [5]: Globally accessible field x has type " ^
+      "`typing.Union[int, str]` but no type is specified. Global x " ^
+      "declared on line 7, type `typing.Union[int, str]` deduced from test.py:4:2, " ^
+      "test.py:7:2."
+    ]
 
 let test_coverage _ =
   let assert_coverage source expected =
@@ -2615,6 +2676,8 @@ let test_check_immutables _ =
     |}
     [
       "Missing annotation [5]: Globally accessible field constant has type `typing." ^
+      "Union[int, str]` but no type is specified.";
+      "Missing annotation [5]: Globally accessible field constant has type `typing." ^
       "Union[int, str]` but no type is specified."
     ];
 
@@ -2629,6 +2692,8 @@ let test_check_immutables _ =
         constant = None
     |}
     [
+      "Missing annotation [5]: Globally accessible field constant has type `typing." ^
+      "Optional[int]` but no type is specified.";
       "Missing annotation [5]: Globally accessible field constant has type `typing." ^
       "Optional[int]` but no type is specified."
     ];
@@ -2645,6 +2710,8 @@ let test_check_immutables _ =
     |}
     [
       "Missing annotation [5]: Globally accessible field constant has type `float` but" ^
+      " no type is specified.";
+      "Missing annotation [5]: Globally accessible field constant has type `float` but" ^
       " no type is specified."
     ];
 
@@ -2659,6 +2726,8 @@ let test_check_immutables _ =
         constant = B()
     |}
     [
+      "Missing annotation [5]: Globally accessible field constant has type `A` but no " ^
+      "type is specified.";
       "Missing annotation [5]: Globally accessible field constant has type `A` but no " ^
       "type is specified."
     ];

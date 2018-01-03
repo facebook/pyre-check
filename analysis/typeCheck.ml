@@ -1407,6 +1407,12 @@ module State = struct
                   |> Option.value ~default:errors
               | _ ->
                   let name = access in
+                  let module Reader = (val environment : Environment.Reader) in
+                  let location =
+                    match Reader.globals access with
+                    | Some { Resolution.location; _ } -> location
+                    | _ -> location
+                  in
                   match Map.find annotations access with
                   | Some {
                       Annotation.mutability = Annotation.Immutable {

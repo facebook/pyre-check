@@ -692,17 +692,18 @@ let join_at_define ~resolution ~location errors =
 
 
 let join_at_source ~resolution errors =
-  let immutable_type_map, other_errors =
-    let filter (error_map, errors) error =
+  let get_key parent name =
+    parent
+    >>| Annotated.Class.show
+    |> Option.value ~default:""
+    |> (fun parent_string -> parent_string ^ (Access.show name))
+  in
+  let joined_missing_annotations =
+    let filter error_map error =
       match error with
       | { kind = MissingAnnotation { name; parent; _ }; _ } ->
           (try
-             let key =
-               parent
-               >>| Annotated.Class.show
-               |> Option.value ~default:""
-               |> (fun parent_string -> parent_string ^ (Access.show name))
-             in
+             let key = get_key parent name in
              let new_map =
                match Map.find error_map key with
                | Some existing_error ->
@@ -714,21 +715,27 @@ let join_at_source ~resolution errors =
                | _ ->
                    Map.add ~key ~data:error error_map
              in
-             new_map, errors
+             new_map
            with
-           | TypeOrder.Undefined _ ->
-               error_map, error :: errors)
-      | _ -> error_map, error :: errors
+           | TypeOrder.Undefined _ -> error_map)
+      | _ -> error_map
     in
-    List.fold ~init:(String.Map.empty, []) ~f:filter errors
+    List.fold ~init:String.Map.empty ~f:filter errors
   in
-  let merge ~key:_ ~data:error errors =
-    if due_to_analysis_limitations error then
-      errors
-    else
-      error :: errors
+  let add_joins final_errors error =
+    match error with
+    | { kind = MissingAnnotation { name; parent; _ }; _ }
+      when not (due_to_analysis_limitations error) ->
+        let key = get_key parent name in
+        (match Map.find joined_missing_annotations key with
+         | Some { kind; _ } ->
+             let new_error = { error with kind } in
+             Map.add ~key:(show new_error) ~data:new_error final_errors
+         | _ -> Map.add ~key:(show error) ~data:error final_errors)
+    | _ -> Map.add ~key:(show error) ~data:error final_errors
   in
-  Map.fold ~init:(List.rev other_errors) ~f:merge immutable_type_map
+  List.fold ~init:String.Map.empty ~f:add_joins errors
+  |> Map.data
 
 
 let dequalify
