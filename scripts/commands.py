@@ -75,7 +75,7 @@ class Command:
     def _flags(self):
         flags = []
         if self._debug:
-            flags.append('-debug')
+            flags.extend(['-debug', '-sequential'])
         if self._show_error_traces:
             flags.append('-show-error-traces')
         if self._verbose:
@@ -377,7 +377,7 @@ class Incremental(ErrorHandling):
             LOG.info("Server initializing...")
         else:
             LOG.info("Waiting for server...")
-            
+
         results = self._call_client(
             command=INCREMENTAL,
             source_directories=self._source_directories,
