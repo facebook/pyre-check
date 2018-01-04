@@ -7,11 +7,13 @@
 type section = [
     `Check
   | `Debug
+  | `Dependencies
   | `Dump
   | `Environment
   | `Error
   | `Info
   | `Performance
+  | `Protocols
   | `Server
   | `Warning
 ]

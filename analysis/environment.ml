@@ -177,7 +177,7 @@ let reader
 
     let register_dependency ~path ~dependency =
       Log.log
-        ~section:`Environment
+        ~section:`Dependencies
         "Adding dependency from %s to %s"
         dependency
         path;
@@ -812,7 +812,7 @@ let populate
                     |> Path.relative
                   else
                     begin
-                      Log.log ~section:`Environment "Import path %s not found" path;
+                      Log.log ~section:`Dependencies "Import path %s not found" path;
                       None
                     end
                 in
@@ -951,7 +951,7 @@ let infer_implementations (module Reader: Reader) ~protocol =
             List.fold ~init:Edge.Set.empty ~f:add_edge implementations
           in
           Log.log
-            ~section:`Environment
+            ~section:`Protocols
             "Found implementations for protocol %a: %s"
             Type.pp protocol
             (List.map ~f:Type.show implementations |> String.concat ~sep:", ");

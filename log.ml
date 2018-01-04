@@ -9,11 +9,13 @@ open Core
 type section = [
     `Check
   | `Debug
+  | `Dependencies
   | `Dump
   | `Environment
   | `Error
   | `Info
   | `Performance
+  | `Protocols
   | `Server
   | `Warning
 ]
@@ -22,11 +24,13 @@ type section = [
 let section_to_string = function
   | `Check -> "Check"
   | `Debug -> "Debug"
+  | `Dependencies -> "Dependencies"
   | `Dump -> "Dump"
   | `Environment -> "Environment"
   | `Error -> "Error"
   | `Info -> "Info"
   | `Performance -> "Performance"
+  | `Protocols -> "Protocols"
   | `Server -> "Server"
   | `Warning -> "Warning"
 

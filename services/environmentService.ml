@@ -300,7 +300,7 @@ let shared_memory_reader
 
       let register_dependency ~path ~dependency =
         Log.log
-          ~section:`Environment
+          ~section:`Dependencies
           "Adding dependency from %s to %s"
           dependency
           path;
