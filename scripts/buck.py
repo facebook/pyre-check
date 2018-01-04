@@ -84,12 +84,12 @@ def _get_yes_no_input(prompt):
     return choice in ['', 'y', 'ye', 'yes']
 
 
-def generate_link_trees(original_targets, build):
+def generate_link_trees(original_targets, build, warn=True):
     buck_out = _find_link_trees(
         {target: None for target in original_targets})
     link_trees = buck_out.link_trees
 
-    if len(buck_out.targets_not_found) > 0:
+    if warn and len(buck_out.targets_not_found) > 0:
         LOG.warning(
             'Passing in normalized buck targets will reduce runtime.\n   '
             'You can set up a .pyre_configuration file to reduce overhead.')
@@ -120,7 +120,10 @@ def generate_link_trees(original_targets, build):
                 'The target might not be built.',
                 target)
             if _get_yes_no_input("Build target?"):
-                return generate_link_trees(original_targets, build=True)
+                return generate_link_trees(
+                    original_targets,
+                    build=True,
+                    warn=False)
             raise BuckException(
                 'Could not find link trees for `{}`.\n   '
                 'See `{} --help` for more '
@@ -134,7 +137,10 @@ def generate_link_trees(original_targets, build):
                 'Potentially unbuilt subtargets:\n   %s',
                 '\n   '.join(buck_out.targets_not_found))
             if _get_yes_no_input("Re-build target?"):
-                return generate_link_trees(original_targets, build=True)
+                return generate_link_trees(
+                    original_targets,
+                    build=True,
+                    warn=False)
             else:
                 link_trees.extend(buck_out.link_trees)
         else:
