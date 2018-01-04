@@ -910,7 +910,6 @@ let infer_implementations (module Reader: Reader) ~protocol =
   let module Edge = TypeOrder.Edge in
   let resolution = resolution (module Reader) () in
 
-  Log.log ~section:`Environment "Inferring classes implementing %a" Type.pp protocol;
   Resolution.class_definition resolution protocol
   >>| (fun protocol_definition ->
       let open Annotated in
@@ -940,19 +939,23 @@ let infer_implementations (module Reader: Reader) ~protocol =
             in
             TypeOrder.greatest (module Reader.TypeOrderReader) ~matches:implements
           in
-          Log.log ~section:`Environment "Found %d implementations" (List.length implementations);
 
           (* Get edges to protocol. *)
-          let add_edge sofar source =
-            if Type.equal source protocol then
-              sofar
-            else
-              Set.add sofar { Edge.source; target = protocol }
+          let edges =
+            let add_edge sofar source =
+              if Type.equal source protocol then
+                sofar
+              else
+                Set.add sofar { Edge.source; target = protocol }
+            in
+            List.fold ~init:Edge.Set.empty ~f:add_edge implementations
           in
-          List.fold
-            ~init:Edge.Set.empty
-            ~f:add_edge
-            implementations
+          Log.log
+            ~section:`Environment
+            "Found implementations for protocol %a: %s"
+            Type.pp protocol
+            (List.map ~f:Type.show implementations |> String.concat ~sep:", ");
+          edges
         end)
   |> Option.value ~default:Edge.Set.empty
 
