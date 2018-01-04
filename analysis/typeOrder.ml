@@ -211,8 +211,9 @@ let connect
   let disconnect ~predecessor ~successor =
     (* Remove back-edges from successor. *)
     let predecessors =
-      Reader.find_unsafe backedges successor
-      |> List.filter ~f:(fun { Target.target; _ } -> target <> predecessor)
+      Reader.find backedges successor
+      >>| List.filter ~f:(fun { Target.target; _ } -> target <> predecessor)
+      |> Option.value ~default:[]
     in
     Reader.set backedges ~key:successor ~data:predecessors;
 
@@ -224,9 +225,16 @@ let connect
     in
     Reader.set edges ~key:predecessor ~data:successors;
   in
+  (* Disconnect successor from Bottom. *)
   let bottom = index_of order Type.Bottom in
   if predecessor <> bottom then
-    disconnect ~predecessor:bottom ~successor
+    disconnect ~predecessor:bottom ~successor;
+  (* Disconnect predecessor from Object. *)
+  match Reader.find (Reader.indices ()) Type.Object with
+  | Some any ->
+      if successor <> any then
+        disconnect ~predecessor ~successor:any
+  | _ -> ()
 
 
 let find (module Reader: Reader) annotation =
