@@ -187,7 +187,6 @@ let connect
     ~successor =
   let predecessor = index_of order predecessor in
   let successor = index_of order successor in
-  let bottom = index_of order Type.Bottom in
 
   let edges = Reader.edges () in
   let backedges = Reader.backedges () in
@@ -196,6 +195,7 @@ let connect
   let connect ~edges ~predecessor ~successor =
     let successors =
       Reader.find edges predecessor
+      >>| List.filter ~f:(fun { Target.target; _ } -> target <> successor)
       |> Option.value ~default:[]
     in
     let target = { Target.target = successor; parameters} in
@@ -208,20 +208,25 @@ let connect
   connect ~edges ~predecessor ~successor;
   connect ~edges:backedges ~predecessor:successor ~successor:predecessor;
 
-  (* Remove extra back-edges to Bottom. *)
-  let predecessors =
-    Reader.find_unsafe backedges successor
-    |> List.filter ~f:(fun { Target.target; _ } -> target <> bottom)
-  in
-  if not (List.is_empty predecessors) then
+  let disconnect ~predecessor ~successor =
+    (* Remove back-edges from successor. *)
+    let predecessors =
+      Reader.find_unsafe backedges successor
+      |> List.filter ~f:(fun { Target.target; _ } -> target <> predecessor)
+    in
     Reader.set backedges ~key:successor ~data:predecessors;
 
-  (* Remove extra in-edges from Bottom. *)
+    (* Remove extra in-edges from predecessor. *)
+    let successors =
+      Reader.find edges predecessor
+      >>| List.filter ~f:(fun { Target.target; _ } -> target <> successor)
+      |> Option.value ~default:[]
+    in
+    Reader.set edges ~key:predecessor ~data:successors;
+  in
+  let bottom = index_of order Type.Bottom in
   if predecessor <> bottom then
-    Reader.find edges bottom
-    >>| List.filter ~f:(fun { Target.target; _ } -> target <> successor)
-    >>| (fun successors -> Reader.set edges ~key:bottom ~data:successors)
-    |> ignore
+    disconnect ~predecessor:bottom ~successor
 
 
 let find (module Reader: Reader) annotation =
