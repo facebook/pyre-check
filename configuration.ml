@@ -23,6 +23,7 @@ type t = {
   declare: bool;
   show_error_traces: bool;
 }
+[@@deriving show]
 
 
 let create
