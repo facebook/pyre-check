@@ -52,8 +52,8 @@ let check
     stub_roots;
 
   let bucket_multiplier =
-    try Int.of_string (Sys.getenv "BUCKET_MULTIPLIER" |> Option.value ~default:"1")
-    with _ -> 1
+    try Int.of_string (Sys.getenv "BUCKET_MULTIPLIER" |> (fun value -> Option.value_exn value))
+    with _ -> 10
   in
   let service =
     match original_service with
