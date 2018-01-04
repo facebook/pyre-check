@@ -42,7 +42,10 @@ let build ~project_root ~stubs ~sources =
   environment
 
 
-let infer_protocols service ((module Reader: Environment.Reader) as reader) =
+let infer_protocols
+    ~service
+    ~reader:((module Reader: Environment.Reader) as reader)
+    ~configuration:{ Configuration.sections; verbose; _ } =
   let module Edge = TypeOrder.Edge in
   Log.info "Inferring protocol implementations...";
   let timer = Timer.start () in
@@ -51,7 +54,9 @@ let infer_protocols service ((module Reader: Environment.Reader) as reader) =
     List.fold
       ~init:Edge.Set.empty
       ~f:(fun edges protocol ->
-          Environment.infer_implementations reader ~protocol |> Set.union edges)
+          Log.initialize ~verbose ~sections;
+          Environment.infer_implementations reader ~protocol
+          |> Set.union edges)
       protocols
   in
   Service.map_reduce
@@ -68,12 +73,16 @@ let infer_protocols service ((module Reader: Environment.Reader) as reader) =
   Log.log ~section:`Performance "Inferred protocol implementations in %fs" (Timer.stop timer)
 
 
-let in_process_reader service ~configuration:{ Configuration.project_root; _ } ~stubs ~sources =
+let in_process_reader
+    service
+    ~configuration:({ Configuration.project_root; _ } as configuration)
+    ~stubs
+    ~sources =
   let reader =
     build ~project_root ~stubs ~sources
     |> Environment.reader
   in
-  infer_protocols service reader;
+  infer_protocols ~service ~reader ~configuration;
   reader
 
 
@@ -81,7 +90,7 @@ let in_process_reader service ~configuration:{ Configuration.project_root; _ } ~
     Environment_reader *)
 let shared_memory_reader
     service
-    ~configuration:{ Configuration.sections; verbose; project_root; _ }
+    ~configuration:({ Configuration.sections; verbose; project_root; _ } as configuration)
     ~stubs
     ~sources =
   let add_to_shared_memory
@@ -358,7 +367,7 @@ let shared_memory_reader
     end: Environment.Reader)
   in
 
-  infer_protocols service reader;
+  infer_protocols ~service ~reader ~configuration;
 
   reader
 
