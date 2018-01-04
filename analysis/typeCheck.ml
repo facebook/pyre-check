@@ -254,6 +254,10 @@ module State = struct
           | MissingReturnAnnotation _ ->
               false
           (* Temporarily suppressing the missing parameter errors, to be investigated later *)
+          | IncompatibleAwaitableType _
+          | IncompatibleType _
+          | InconsistentOverride _
+          | MissingAnnotation _
           | MissingParameterAnnotation _
           | UndefinedMethod _
           | UndefinedType _
@@ -279,8 +283,7 @@ module State = struct
              Type.equal actual Type.Object ||
              not (Type.is_primitive actual && configuration.infer)
          | UndefinedMethod _
-         | UndefinedType _
-         | UninitializedField _ ->
+         | UndefinedType _ ->
              true
          | _ ->
              false)

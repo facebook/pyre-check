@@ -2118,6 +2118,19 @@ let test_check_init _ =
     ];
 
   assert_type_errors
+    ~gradual:true
+    {|
+    class Foo:
+      test_field: int
+      def __init__(self) -> None:
+        pass
+    |}
+    [
+      "Uninitialized field [13]: field test_field is declared in class Foo to have non-" ^
+      "optional type `int` but is never initialized."
+    ];
+
+  assert_type_errors
     {|
     class Foo:
       test_field: int = 1
@@ -3521,7 +3534,9 @@ let test_check_await _ =
         await a
     |}
     ["Incompatible awaitable type [12]: expected an awaitable but got `int`."];
-  assert_type_errors ~gradual:true ~debug:false
+  assert_type_errors
+    ~gradual:true
+    ~debug:false
     {|
       def bar(a: typing.Any) -> None:
         await a
