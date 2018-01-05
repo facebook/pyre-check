@@ -8,7 +8,7 @@ import unittest
 
 from unittest.mock import call, patch, MagicMock
 
-from .. import postprocess
+from .. import upgrade
 
 
 class PostprocessTest(unittest.TestCase):
@@ -20,7 +20,7 @@ class PostprocessTest(unittest.TestCase):
 
         # Test empty.
         json_load.return_value = []
-        postprocess.run_fixme(arguments)
+        upgrade.run_fixme(arguments)
 
         # Test single error.
         with patch.object(pathlib.Path, 'write_text') as path_write_text:
@@ -33,7 +33,7 @@ class PostprocessTest(unittest.TestCase):
             ]
 
             path_read_text.return_value = "  1\n2"
-            postprocess.run_fixme(arguments)
+            upgrade.run_fixme(arguments)
             path_write_text.assert_called_once_with("  # pyre-fixme[0]\n  1\n2")
 
         # Test error with comment.
@@ -48,7 +48,7 @@ class PostprocessTest(unittest.TestCase):
 
             path_read_text.return_value = "  1\n2"
             arguments.comment = 'T1234'
-            postprocess.run_fixme(arguments)
+            upgrade.run_fixme(arguments)
             arguments.comment = None
             path_write_text.assert_called_once_with("  # pyre-fixme[0]: T1234\n  1\n2")
 
@@ -72,7 +72,7 @@ class PostprocessTest(unittest.TestCase):
                 },
             ]
             path_read_text.return_value = "1\n2"
-            postprocess.run_fixme(arguments)
+            upgrade.run_fixme(arguments)
             path_write_text.assert_called_once_with(
                 "# pyre-fixme[0]\n1\n# pyre-fixme[0, 1]\n2")
 
@@ -91,7 +91,7 @@ class PostprocessTest(unittest.TestCase):
                 },
             ]
             path_read_text.return_value = "1\n2"
-            postprocess.run_fixme(arguments)
+            upgrade.run_fixme(arguments)
             path_write_text.has_calls([
                 call("# pyre-fixme[0]\n1\n2"),
                 call("1\n#pyre-fixme[1]\n2"),
