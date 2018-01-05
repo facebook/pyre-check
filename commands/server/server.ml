@@ -372,7 +372,7 @@ let serve (socket, server_configuration) =
     computation_thread request_queue server_configuration state
   with _ ->
     let backtrace = Printexc.get_backtrace () in
-    Log.event
+    Statistics.event
       ~flush:true
       ~name:"Uncaught exception"
       ~root:(Path.last project_root)

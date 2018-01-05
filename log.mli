@@ -35,33 +35,6 @@ val warning: ('a, Format.formatter, unit, unit, unit, unit) Core.format6 -> 'a
 (* Logs directly to the standard output. *)
 val print: ('a, Format.formatter, unit, unit, unit, unit) Core.format6 -> 'a
 
-val performance
-  :  ?flush: bool
-  -> ?randomly_log_every: int
-  -> name: string
-  -> timer: Timer.t
-  -> root: string
-  -> normals: (string * string) list
-  -> unit
-  -> unit
-
-val coverage
-  :  ?flush: bool
-  -> coverage: (string * int) list
-  -> root: string
-  -> normals: (string * string) list
-  -> unit
-  -> unit
-
-val event
-  :  ?flush: bool
-  -> name: string
-  -> root: string
-  -> integers: (string * int) list
-  -> normals: (string * string) list
-  -> unit
-  -> unit
-
 module Color : sig
   val yellow: string -> string
 end

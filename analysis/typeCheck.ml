@@ -1867,7 +1867,7 @@ let check configuration environment ({ Source.path; _ } as source) =
       { error_list; type_coverage }
     with
     | TypeOrder.Undefined annotation ->
-        Log.event
+        Statistics.event
           ~name:"undefined type"
           ~root:(Path.last configuration.project_root)
           ~integers:[]
@@ -1922,7 +1922,7 @@ let check configuration environment ({ Source.path; _ } as source) =
           )
         check_output
     in
-    Log.coverage
+    Statistics.coverage
       ~coverage:[
         "full_type_coverage", full;
         "partial_type_coverage", partial;

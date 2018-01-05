@@ -7,6 +7,12 @@ open Core
 open OUnit2
 
 open Ast
+open Pyre
+
+
+let () =
+  Log.initialize_for_tests ();
+  Statistics.disable ()
 
 
 let parse_untrimmed

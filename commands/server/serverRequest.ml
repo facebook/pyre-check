@@ -272,7 +272,7 @@ let rec process_request
     | ClientConnectionRequest _ ->
         raise InvalidRequest
   in
-  Log.performance
+  Statistics.performance
     ~name:"Server request"
     ~timer
     ~root:(Path.last configuration.project_root)

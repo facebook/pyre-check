@@ -45,7 +45,7 @@ let analyze_source
       Log.log ~section:`Check "Checking `%s`..." path;
       let errors = TypeCheck.check configuration environment source in
       Log.log ~section:`Check "Checked `%s` in %fs" path (Timer.stop timer);
-      Log.performance
+      Statistics.performance
         ~flush:false
         ~randomly_log_every:100
         ~name:"SingleFileTypeCheck"

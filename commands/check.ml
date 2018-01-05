@@ -74,8 +74,8 @@ let check
   in
 
   (* Parsing. *)
-  let stubs = ParseService.parse_stubs service ~roots:(project_root :: stub_roots) in
-  let sources = ParseService.parse_sources service ~root:project_root in
+  let stubs = ParseService.parse_stubs service ~configuration in
+  let sources = ParseService.parse_sources service ~configuration in
 
   (* Build environment. *)
   let environment =
@@ -133,7 +133,7 @@ let run_check
 
   let timer = Timer.start () in
   let { errors; _ } = check configuration None () in
-  Log.performance
+  Statistics.performance
     ~name:"check"
     ~timer
     ~root:(Path.last configuration.Configuration.project_root)

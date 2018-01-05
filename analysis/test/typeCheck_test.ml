@@ -4149,7 +4149,6 @@ let test_recursive_infer _ =
 
 
 let () =
-  Log.initialize_for_tests ();
   "type">:::[
     "initial">::test_initial;
     "less_or_equal">::test_less_or_equal;

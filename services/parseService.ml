@@ -93,7 +93,7 @@ let parse_stubs_list service files =
   in
   handles
 
-let parse_stubs service ~roots =
+let parse_stubs service ~configuration:{ Configuration.project_root; stub_roots; _ } =
   let timer = Timer.start () in
   let paths sofar root =
     Log.info "Parsing type stubs in `%a`..." Path.pp root;
@@ -104,11 +104,9 @@ let parse_stubs service ~roots =
       String.suffix path 4 = ".pyi" && not (is_python_2 path) in
     sofar @ File.list ~filter:is_stub ~root
   in
-  let paths = List.fold ~init:[] ~f:paths roots in
-
+  let paths = List.fold ~init:[] ~f:paths (project_root :: stub_roots) in
   let handles = parse_stubs_list service (List.map ~f:File.create paths) in
-
-  Log.log ~section:`Performance "Stubs parsed in %fs" (Timer.stop timer);
+  Statistics.performance ~name:"stubs parsed" ~timer ~root:(Path.last project_root) ();
   let not_parsed = (List.length paths) - (List.length handles) in
   if not_parsed > 0 then
     Log.info "Unable to parse %d stubs" not_parsed;
@@ -157,7 +155,7 @@ let parse_sources_list service files ~root =
         )
       sources
   in
-  Log.coverage
+  Statistics.coverage
     ~coverage:[
       "strict_coverage", strict_coverage;
       "declare_coverage", declare_coverage;
@@ -165,7 +163,6 @@ let parse_sources_list service files ~root =
       "source_files", List.length paths;
     ]
     ~root:(Path.last root)
-    ~normals:[]
     ();
 
   let not_parsed = (List.length files) - (List.length sources) in
@@ -174,13 +171,15 @@ let parse_sources_list service files ~root =
   (sources, (strict_coverage, declare_coverage))
 
 
-let parse_sources service ~root =
+let parse_sources service ~configuration:{ Configuration.project_root; _ } =
   let timer = Timer.start () in
   let paths =
     let is_python path =
       String.suffix path 3 = ".py" in
-    File.list ~filter:is_python ~root:root in
-  Log.info "Parsing %d sources in `%a`..." (List.length paths) Path.pp root;
-  let (handles, _) = parse_sources_list service ~root (List.map ~f:File.create paths) in
-  Log.log ~section:`Performance "Sources parsed in %fs" (Timer.stop timer);
+    File.list ~filter:is_python ~root:project_root in
+  Log.info "Parsing %d sources in `%a`..." (List.length paths) Path.pp project_root;
+  let (handles, _) =
+    parse_sources_list service ~root:project_root (List.map ~f:File.create paths)
+  in
+  Statistics.performance ~name:"sources parsed" ~timer ~root:(Path.last project_root) ();
   handles

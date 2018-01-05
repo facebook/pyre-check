@@ -28,7 +28,8 @@ let run is_parallel project_root () =
   let root = Path.create_absolute project_root in
 
   Log.info "Parsing...";
-  let source_handles = ParseService.parse_sources service ~root in
+  let configuration = Configuration.create ~project_root:(Path.create_absolute project_root) () in
+  let source_handles = ParseService.parse_sources service ~configuration in
 
   Log.info "Generating JSON for Codex...";
   to_json ~root:(Path.absolute root) source_handles

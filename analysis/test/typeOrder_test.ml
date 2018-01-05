@@ -764,8 +764,6 @@ let test_complete _ =
 
 
 let test_check_integrity _ =
-  Log.initialize_for_tests ();
-
   check_integrity order;
   check_integrity butterfly;
 

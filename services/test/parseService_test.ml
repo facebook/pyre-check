@@ -101,7 +101,6 @@ let test_parse_sources_coverage _ =
   assert_equal declare_coverage 1
 
 let () =
-  Log.initialize_for_tests ();
   "parser">:::[
     "parse_stubs_list">::test_parse_stubs_list;
     "parse_sources_list">::test_parse_sources_list;

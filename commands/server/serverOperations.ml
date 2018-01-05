@@ -24,7 +24,7 @@ let initialize ?old_state lock connections { configuration; _ } =
   let timer = Timer.start () in
   let { Check.handles; environment; errors = initial_errors } =
     Check.check configuration (Some service) () in
-  Log.performance
+  Statistics.performance
     ~name:"initialization"
     ~timer
     ~root:(Path.last configuration.Configuration.project_root)

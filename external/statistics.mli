@@ -4,6 +4,8 @@
     LICENSE file in the root directory of this source tree. *)
 
 
+val disable: unit -> unit
+
 val sample
   :  ?system_time: float
   -> ?integers: (string * int) list
@@ -15,22 +17,27 @@ val flush: unit -> unit
 
 val performance
   :  ?flush: bool
+  -> ?randomly_log_every: int
+  -> name: string
+  -> timer: Timer.t
   -> root: string
-  -> time: int
-  -> normals: (string * string) list
+  -> ?normals: (string * string) list
+  -> unit
   -> unit
 
 val coverage
   :  ?flush: bool
-  -> root: string
   -> coverage: (string * int) list
-  -> normals: (string * string) list
+  -> root: string
+  -> ?normals: (string * string) list
+  -> unit
   -> unit
 
 val event
   :  ?flush: bool
-  -> root: string
   -> name: string
-  -> integers: (string * int) list
-  -> normals: (string * string) list
+  -> root: string
+  -> ?integers: (string * int) list
+  -> ?normals: (string * string) list
+  -> unit
   -> unit

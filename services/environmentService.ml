@@ -29,15 +29,15 @@ let build ~project_root ~stubs ~sources =
   let timer = Timer.start () in
   let stubs = get_sources stubs in
   Environment.populate ~project_root (reader environment) stubs;
-  Log.log ~section:`Performance "Stub environment built in %fs" (Timer.stop timer);
+  Statistics.performance ~name:"stub environment built" ~timer ~root:(Path.last project_root) ();
 
   let timer = Timer.start () in
   let sources = get_sources sources in
   Environment.populate ~project_root (reader environment) sources;
-  Log.log ~section:`Performance "Full environment built in %fs." (Timer.stop timer);
+  Statistics.performance ~name:"full environment built" ~timer ~root:(Path.last project_root) ();
 
   Log.log ~section:`Environment "%a" Environment.Builder.pp environment;
-  Log.log ~section:`Performance "%s" (Environment.Builder.statistics environment);
+  Log.info "%s" (Environment.Builder.statistics environment);
 
   environment
 
@@ -45,7 +45,7 @@ let build ~project_root ~stubs ~sources =
 let infer_protocols
     ~service
     ~reader:((module Reader: Environment.Reader) as reader)
-    ~configuration:{ Configuration.sections; verbose; _ } =
+    ~configuration:{ Configuration.project_root; sections; verbose; _ } =
   let module Edge = TypeOrder.Edge in
   Log.info "Inferring protocol implementations...";
   let timer = Timer.start () in
@@ -70,7 +70,11 @@ let infer_protocols
 
   TypeOrder.check_integrity (module Reader.TypeOrderReader);
 
-  Log.log ~section:`Performance "Inferred protocol implementations in %fs" (Timer.stop timer)
+  Statistics.performance
+    ~name:"inferred protocol implementations"
+    ~timer
+    ~root:(Path.last project_root)
+    ()
 
 
 let in_process_reader
@@ -157,7 +161,7 @@ let shared_memory_reader
     |> (fun size -> size /. 1.0e6)
     |> Int.of_float
   in
-  Log.log ~section:`Performance "Initial shared memory size: %dmb" heap_size;
+  Log.info "Initial shared memory size: %dmb" heap_size;
 
   let reader =
     (module struct
