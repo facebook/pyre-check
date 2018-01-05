@@ -474,7 +474,7 @@ class Kill(Command):
     def __init__(self, arguments, configuration, source_directories) -> None:
         super(Kill, self).__init__(arguments, configuration, source_directories)
 
-    def run(self):
+    def run(self) -> None:
         running = self._state().running
 
         for source_directory in running:

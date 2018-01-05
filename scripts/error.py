@@ -5,6 +5,8 @@
 
 
 class Error:
+    external: bool
+
     def __init__(self, external: bool = False, **error) -> None:
         self.line = error['line']
         self.column = error['column']
@@ -30,5 +32,5 @@ class Error:
     def __hash__(self):
         return hash(self.__key())
 
-    def is_external(self):
+    def is_external(self) -> bool:
         return self.external

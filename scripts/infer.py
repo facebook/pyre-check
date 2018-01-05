@@ -16,6 +16,7 @@ import traceback
 
 from collections import defaultdict
 from pathlib import Path
+from typing import Optional, Union
 
 from . import (
     buck,
@@ -162,6 +163,8 @@ class FieldStub:
 
 
 class Stub:
+    stub: Optional[Union[FieldStub, FunctionStub]]
+
     def __init__(self, error) -> None:
         self.path = Path(error.path)
         self.parent = error.inference.get('parent')

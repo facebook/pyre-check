@@ -84,7 +84,7 @@ def _get_yes_no_input(prompt):
     return choice in ['', 'y', 'ye', 'yes']
 
 
-def generate_link_trees(original_targets, build, warn=True):
+def generate_link_trees(original_targets, build, warn: bool = True):
     buck_out = _find_link_trees(
         {target: None for target in original_targets})
     link_trees = buck_out.link_trees

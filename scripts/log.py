@@ -57,9 +57,10 @@ class SectionFormatter(logging.Formatter):
 
 
 class TimedStreamHandler(logging.StreamHandler):
-
     THRESHOLD = 0.5
     LINE_BREAKING_LEVELS = ['ERROR', 'WARNING', 'SUCCESS']
+
+    _terminate: bool
 
     def __init__(self) -> None:
         super(TimedStreamHandler, self).__init__()
@@ -200,8 +201,9 @@ def cleanup(arguments) -> None:
 
 
 class Buffer:
-
     THRESHOLD = 0.1
+
+    _flushed: bool
 
     def __init__(self, section, data) -> None:
         self._section = section

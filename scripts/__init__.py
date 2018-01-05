@@ -55,7 +55,7 @@ def find_project_root(original_directory=None):
     return original_directory
 
 
-def switch_root(arguments):
+def switch_root(arguments) -> None:
     arguments.original_directory = os.getcwd()
     root = find_project_root()
     os.chdir(root)
@@ -100,7 +100,7 @@ def resolve_source_directories(arguments, configuration):
     return {_translate(path) for path in source_directories}
 
 
-def log_statistics(category, logger, statistics):
+def log_statistics(category, logger, statistics) -> None:
     try:
         subprocess.run(
             "{} {} {}".format(

@@ -22,6 +22,8 @@ class InvalidConfiguration(Exception):
 
 
 class Configuration:
+    _disabled: bool
+
     def __init__(self, original_directory=None) -> None:
         self.source_directories = []
         self.targets = []
@@ -103,7 +105,7 @@ class Configuration:
 
         return self._stub_roots + [typeshed]
 
-    def disabled(self):
+    def disabled(self) -> bool:
         return self._disabled
 
     def _read(self, path) -> None:
