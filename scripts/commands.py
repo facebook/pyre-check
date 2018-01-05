@@ -65,7 +65,6 @@ class Command:
         self._show_error_traces = arguments.show_error_traces
         self._verbose = arguments.verbose
         self._logging_sections = arguments.logging_sections
-        self._check_unannotated = arguments.check_unannotated
 
         self._original_directory = arguments.original_directory
 
@@ -82,8 +81,6 @@ class Command:
             flags.append('-verbose')
         if self._logging_sections:
             flags.extend(['-logging-sections', self._logging_sections])
-        if self._check_unannotated:
-            flags.append("-check-unannotated")
         return flags
 
     def _read_stdout(self, stdout) -> None:

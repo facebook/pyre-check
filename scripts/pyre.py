@@ -47,12 +47,6 @@ def main() -> int:
         action='store_true',
         help='Display errors trace information')
 
-    parser.add_argument(
-        '--check-unannotated',
-        action='store_true',
-        help='Run typechecking on the whole codebase, including untyped'
-        'functions.')
-
     # Logging.
     parser.add_argument(
         '--output',

@@ -7,7 +7,6 @@ open Pyre
 
 
 type t = {
-  gradual: bool;
   infer: bool;
   recursive_infer: bool;
   parallel: bool;
@@ -24,8 +23,7 @@ type t = {
 [@@deriving show]
 
 val create
-  :  ?gradual:bool
-  -> ?infer:bool
+  :  ?infer:bool
   -> ?recursive_infer:bool
   -> ?parallel:bool
   -> ?project_root:Path.t

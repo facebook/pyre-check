@@ -25,7 +25,6 @@ def mock_arguments():
     arguments.show_error_traces = False
     arguments.verbose = False
     arguments.logging_sections = None
-    arguments.check_unannotated = False
     arguments.current_directory = '.'
     arguments.original_directory = '/original/directory/'
 

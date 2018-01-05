@@ -9,7 +9,6 @@ open Pyre
 
 
 type t = {
-  gradual: bool;
   infer: bool;
   recursive_infer: bool;
   parallel: bool;
@@ -27,7 +26,6 @@ type t = {
 
 
 let create
-    ?(gradual = false)
     ?(infer = false)
     ?(recursive_infer = false)
     ?(parallel = true)
@@ -42,7 +40,6 @@ let create
     ?(show_error_traces = false)
     () =
   {
-    gradual;
     infer;
     recursive_infer;
     parallel;

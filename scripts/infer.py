@@ -377,7 +377,6 @@ def file_exists(path):
 class Infer(commands.ErrorHandling):
     def __init__(self, arguments, configuration, source_directories) -> None:
         arguments.show_error_traces = True
-        arguments.check_unannotated = True
         arguments.output = JSON
         super(Infer, self).__init__(
             arguments,

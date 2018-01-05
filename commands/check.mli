@@ -28,7 +28,6 @@ val spec
      -> bool
      -> bool
      -> bool
-     -> bool
      -> string list
      -> string
      -> unit
@@ -47,7 +46,6 @@ val run_check
   -> bool
   -> bool
   -> bool
-  -> bool
   -> string list
   -> string
   -> unit
@@ -59,7 +57,6 @@ val run_incremental
   -> bool
   -> string option
   -> string list
-  -> bool
   -> bool
   -> bool
   -> bool

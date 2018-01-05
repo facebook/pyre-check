@@ -273,20 +273,17 @@ module State = struct
       in
 
       let suppress_in_default ({ kind; Error.define = { Node.value = define; _ }; _ } as error) =
-        due_to_analysis_limitations error ||
-        due_to_mismatch_with_any error ||
-        Define.is_untyped define ||
-        (match kind with
-         | MissingReturnAnnotation { annotation = actual; _ }
-         | MissingParameterAnnotation { annotation = actual; _ }
-         | MissingAnnotation { annotation = actual; _ } ->
-             Type.equal actual Type.Object ||
-             not (Type.is_primitive actual && configuration.infer)
-         | UndefinedMethod _
-         | UndefinedType _ ->
-             true
-         | _ ->
-             false)
+        match kind with
+        | MissingReturnAnnotation _
+        | MissingParameterAnnotation _
+        | MissingAnnotation _
+        | UndefinedMethod _
+        | UndefinedType _ ->
+            true
+        | _ ->
+            due_to_analysis_limitations error ||
+            due_to_mismatch_with_any error ||
+            Define.is_untyped define
       in
 
       let suppress_in_infer ({ kind; _ } as error) =
@@ -302,26 +299,15 @@ module State = struct
 
       (* Angelic assumption: `Top` indicates we've hit a limitation of the
          analysis and decide not to report on it. *)
-      let suppress ({ kind; _ } as error) =
-        if configuration.gradual then
-          if configuration.strict then
-            suppress_in_strict error
-          else if configuration.declare then
-            true
-          else
-            suppress_in_default error
-        else if configuration.infer then
+      let suppress error =
+        if configuration.infer then
           suppress_in_infer error
+        else if configuration.strict then
+          suppress_in_strict error
+        else if configuration.declare then
+          true
         else
-          match kind with
-          | MissingReturnAnnotation _
-          | MissingParameterAnnotation _
-          | MissingAnnotation _
-          | UndefinedMethod _
-          | UndefinedType _ ->
-              true
-          | _ ->
-              due_to_analysis_limitations error
+          suppress_in_default error
       in
       List.filter ~f:(fun error -> not (suppress error)) errors
     in
@@ -333,8 +319,8 @@ module State = struct
     |> class_initialization_errors
     |> ignore_none_confusion
     |> ignore_unimplemented_returns
-    |> apply_if ~f:ignore_suppressed_errors ~condition:configuration.gradual
-    |> apply_if ~f:filter_errors ~condition:(not configuration.debug || configuration.infer)
+    |> ignore_suppressed_errors
+    |> apply_if ~f:filter_errors ~condition:(not configuration.debug)
 
 
   let coverage { annotations; _ } =

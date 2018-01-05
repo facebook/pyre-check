@@ -468,7 +468,6 @@ let run_start_command
     verbose
     version
     sections
-    not_gradual
     debug
     strict
     declare
@@ -484,7 +483,6 @@ let run_start_command
       ~verbose
       ?version
       ~sections
-      ~gradual:(not not_gradual)
       ~debug
       ~infer
       ~recursive_infer

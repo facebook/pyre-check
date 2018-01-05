@@ -28,7 +28,6 @@ let check
       verbose;
       version = _;
       sections;
-      gradual;
       debug;
       infer;
       recursive_infer;
@@ -64,7 +63,6 @@ let check
     Configuration.create
       ~verbose
       ~sections
-      ~gradual
       ~project_root
       ~debug
       ~strict
@@ -106,7 +104,6 @@ let run_check
     verbose
     version
     sections
-    check_unannotated
     debug
     strict
     declare
@@ -122,7 +119,6 @@ let run_check
       ~verbose
       ?version
       ~sections
-      ~gradual:(not check_unannotated)
       ~debug
       ~strict
       ~declare
@@ -162,10 +158,6 @@ let spec =
       "-logging-sections"
       (optional_with_default [] (Arg_type.comma_separated string))
       ~doc:"Comma-separated list of logging sections."
-    +> flag
-      "-check-unannotated"
-      no_arg
-      ~doc:("Run typechecking on the whole codebase, including untyped functions.")
     +> flag "-debug" no_arg ~doc:"Turn on debug mode"
     +> flag "-strict" no_arg ~doc:"Turn on strict mode"
     +> flag "-declare" no_arg ~doc:"Turn on declare mode"
@@ -195,7 +187,6 @@ let run_incremental
     verbose
     version
     sections
-    check_unannotated
     debug
     strict
     declare
@@ -213,7 +204,6 @@ let run_incremental
         ~verbose
         ?version
         ~sections
-        ~gradual:(not check_unannotated)
         ~debug
         ~strict
         ~declare
