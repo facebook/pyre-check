@@ -11,7 +11,7 @@ open EnvironmentSharedMemory
 open Pyre
 
 
-let build ~project_root ~stubs ~sources =
+let build ~configuration:({ Configuration.project_root; _ } as configuration) ~stubs ~sources =
   Log.info "Building type environment...";
   let environment = Environment.Builder.create () in
   (* This grabs all sources from shared memory. It is unavoidable: Environment
@@ -29,12 +29,12 @@ let build ~project_root ~stubs ~sources =
   let timer = Timer.start () in
   let stubs = get_sources stubs in
   Environment.populate ~project_root (reader environment) stubs;
-  Statistics.performance ~name:"stub environment built" ~timer ~root:(Path.last project_root) ();
+  Statistics.performance ~name:"stub environment built" ~timer ~configuration ();
 
   let timer = Timer.start () in
   let sources = get_sources sources in
   Environment.populate ~project_root (reader environment) sources;
-  Statistics.performance ~name:"full environment built" ~timer ~root:(Path.last project_root) ();
+  Statistics.performance ~name:"full environment built" ~timer ~configuration ();
 
   Log.log ~section:`Environment "%a" Environment.Builder.pp environment;
   Log.info "%s" (Environment.Builder.statistics environment);
@@ -45,7 +45,7 @@ let build ~project_root ~stubs ~sources =
 let infer_protocols
     ~service
     ~reader:((module Reader: Environment.Reader) as reader)
-    ~configuration:{ Configuration.project_root; sections; verbose; _ } =
+    ~configuration:({ Configuration.sections; verbose; _ } as configuration) =
   let module Edge = TypeOrder.Edge in
   Log.info "Inferring protocol implementations...";
   let timer = Timer.start () in
@@ -70,20 +70,12 @@ let infer_protocols
 
   TypeOrder.check_integrity (module Reader.TypeOrderReader);
 
-  Statistics.performance
-    ~name:"inferred protocol implementations"
-    ~timer
-    ~root:(Path.last project_root)
-    ()
+  Statistics.performance ~name:"inferred protocol implementations" ~timer ~configuration ()
 
 
-let in_process_reader
-    service
-    ~configuration:({ Configuration.project_root; _ } as configuration)
-    ~stubs
-    ~sources =
+let in_process_reader service ~configuration ~stubs ~sources =
   let reader =
-    build ~project_root ~stubs ~sources
+    build ~configuration ~stubs ~sources
     |> Environment.reader
   in
   infer_protocols ~service ~reader ~configuration;
@@ -94,7 +86,7 @@ let in_process_reader
     Environment_reader *)
 let shared_memory_reader
     service
-    ~configuration:({ Configuration.sections; verbose; project_root; _ } as configuration)
+    ~configuration:({ Configuration.sections; verbose; _ } as configuration)
     ~stubs
     ~sources =
   let add_to_shared_memory
@@ -151,7 +143,7 @@ let shared_memory_reader
     service
     ~f:(fun sources ->
         Log.initialize ~verbose ~sections;
-        let environment = build ~project_root ~stubs ~sources in
+        let environment = build ~configuration ~stubs ~sources in
         add_to_shared_memory environment)
     sources;
 
@@ -161,11 +153,7 @@ let shared_memory_reader
     |> (fun size -> size /. 1.0e6)
     |> Int.of_float
   in
-  Statistics.event
-    ~name:"shared memory size"
-    ~root:(Path.last project_root)
-    ~integers:["size", heap_size]
-    ();
+  Statistics.event ~name:"shared memory size" ~integers:["size", heap_size] ~configuration ();
 
   let reader =
     (module struct

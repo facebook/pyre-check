@@ -10,6 +10,8 @@ val sample
   :  ?system_time: float
   -> ?integers: (string * int) list
   -> ?normals: (string * string) list
+  -> ?metadata: bool
+  -> configuration: Configuration.t
   -> unit
   -> string
 
@@ -20,7 +22,7 @@ val performance
   -> ?randomly_log_every: int
   -> name: string
   -> timer: Timer.t
-  -> root: string
+  -> configuration: Configuration.t
   -> ?normals: (string * string) list
   -> unit
   -> unit
@@ -28,7 +30,7 @@ val performance
 val coverage
   :  ?flush: bool
   -> coverage: (string * int) list
-  -> root: string
+  -> configuration: Configuration.t
   -> ?normals: (string * string) list
   -> unit
   -> unit
@@ -36,7 +38,7 @@ val coverage
 val event
   :  ?flush: bool
   -> name: string
-  -> root: string
+  -> configuration: Configuration.t
   -> ?integers: (string * int) list
   -> ?normals: (string * string) list
   -> unit

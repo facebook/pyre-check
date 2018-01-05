@@ -115,7 +115,7 @@ let rec process_request
             ParseService.parse_sources_list
               service
               files
-              ~root:project_root
+              ~configuration
             |> fst
           else
             [], List.filter_map ~f:(File.handle ~root:project_root) files
@@ -275,7 +275,7 @@ let rec process_request
   Statistics.performance
     ~name:"Server request"
     ~timer
-    ~root:(Path.last configuration.project_root)
+    ~configuration
     ~normals:["request_kind", Protocol.Request.name request]
     ();
   result

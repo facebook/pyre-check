@@ -343,7 +343,9 @@ let request_handler_thread (
 
 (** Main server either as a daemon or in terminal *)
 let serve (socket, server_configuration) =
-  let { Configuration.verbose; sections; project_root; _ } = server_configuration.configuration in
+  let ({ Configuration.verbose; sections; _ } as configuration) =
+    server_configuration.configuration
+  in
   Log.initialize ~verbose ~sections;
   Log.log ~section:`Server "Starting daemon server loop...";
   let request_queue = Squeue.create 25 in
@@ -375,7 +377,7 @@ let serve (socket, server_configuration) =
     Statistics.event
       ~flush:true
       ~name:"Uncaught exception"
-      ~root:(Path.last project_root)
+      ~configuration
       ~integers:[]
       ~normals:["exception backtrace", backtrace]
       ();

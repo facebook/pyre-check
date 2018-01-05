@@ -7,10 +7,17 @@
 let disable () = ()
 
 
-let sample ?(system_time = 0.0) ?(integers = []) ?(normals = []) () =
+let sample
+    ?(system_time = 0.0)
+    ?(integers = [])
+    ?(normals = [])
+    ?(metadata = false)
+    ~configuration:_
+    () =
   ignore system_time;
   ignore integers;
   ignore normals;
+  ignore metadata;
   ""
 
 
@@ -22,7 +29,7 @@ let performance
     ?(randomly_log_every = 1)
     ~name:_
     ~timer:_
-    ~root:_
+    ~configuration:_
     ?(normals = [])
     () =
   ignore flush;
@@ -30,12 +37,12 @@ let performance
   ignore normals
 
 
-let coverage ?(flush = false) ~coverage:_ ~root:_ ?(normals = []) () =
+let coverage ?(flush = false) ~coverage:_ ~configuration:_ ?(normals = []) () =
   ignore flush;
   ignore normals
 
 
-let event ?(flush = false) ~name:_ ~root:_ ?(integers = []) ?(normals = []) () =
+let event ?(flush = false) ~name:_ ~configuration:_ ?(integers = []) ?(normals = []) () =
   ignore flush;
   ignore integers;
   ignore normals

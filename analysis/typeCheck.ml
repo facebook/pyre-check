@@ -1869,7 +1869,7 @@ let check configuration environment ({ Source.path; _ } as source) =
     | TypeOrder.Undefined annotation ->
         Statistics.event
           ~name:"undefined type"
-          ~root:(Path.last configuration.project_root)
+          ~configuration
           ~integers:[]
           ~normals:[
             "path", path;
@@ -1930,7 +1930,7 @@ let check configuration environment ({ Source.path; _ } as source) =
         "ignore_coverage", List.length (Source.ignore_lines source);
         "total_errors", List.length error_list;
       ]
-      ~root:(Path.last configuration.project_root)
+      ~configuration
       ~normals:[]
       ();
     error_list

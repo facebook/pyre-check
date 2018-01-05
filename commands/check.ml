@@ -136,7 +136,7 @@ let run_check
   Statistics.performance
     ~name:"check"
     ~timer
-    ~root:(Path.last configuration.Configuration.project_root)
+    ~configuration
     ~normals:["request_kind", "FullCheck"]
     ();
   (* Print results. *)

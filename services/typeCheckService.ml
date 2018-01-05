@@ -20,7 +20,7 @@ type analysis_results = {
 
 
 let analyze_source
-    ({ Configuration.verbose; sections; project_root; _ } as configuration)
+    ({ Configuration.verbose; sections; _ } as configuration)
     environment
     ({ Source.path; metadata; _ } as source) =
   (* Re-initialize log for subprocesses. *)
@@ -50,8 +50,8 @@ let analyze_source
         ~randomly_log_every:100
         ~name:"SingleFileTypeCheck"
         ~timer
-        ~root:(Path.last project_root)
         ~normals:["path", path; "RequestKind", "SingleFileTypeCheck"]
+        ~configuration
         ();
       errors
     end

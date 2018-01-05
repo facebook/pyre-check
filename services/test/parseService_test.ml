@@ -62,8 +62,9 @@ let test_parse_sources_list _ =
   in
   let (handles, _) =
     ParseService.parse_sources_list
-      (Service.mock ()) [file]
-      ~root:(Path.current_working_directory ())
+      (Service.mock ())
+      [file]
+      ~configuration:(Configuration.create ~project_root:(Path.current_working_directory ()) ())
   in
   let handle = Option.value_exn (File.handle file) in
   assert_equal handles [handle];
@@ -94,7 +95,7 @@ let test_parse_sources_coverage _ =
           ~content:(Some "#pyre-declare-but-dont-check\ndef foo()->int:\n    return 1\n")
           (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:"c.py");
       ]
-      ~root:(Path.current_working_directory ())
+      ~configuration:(Configuration.create ~project_root:(Path.current_working_directory ()) ())
   in
   assert_equal strict_coverage 2;
 
