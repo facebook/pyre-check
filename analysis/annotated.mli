@@ -25,7 +25,7 @@ module Class : sig
 
   val annotation: t -> resolution: Resolution.t -> Type.t
 
-  module Field : sig
+  module Attribute : sig
     type t = {
       name: Expression.expression;
       parent: parent_class;
@@ -90,21 +90,21 @@ module Class : sig
   val is_protocol: t -> bool
   val implements: t -> resolution: Resolution.t -> protocol: t -> bool
 
-  val field_fold
+  val attribute_fold
     :  ?transitive: bool
     -> t
     -> initial: 'accumulator
-    -> f: ('accumulator -> Field.t -> 'accumulator)
+    -> f: ('accumulator -> Attribute.t -> 'accumulator)
     -> resolution: Resolution.t
     -> 'accumulator
-  val fields
+  val attributes
     :  ?transitive: bool
     -> t
     -> resolution:Resolution.t
-    -> Field.t list
+    -> Attribute.t list
 end
 
-module Field = Class.Field
+module Attribute = Class.Attribute
 module Method = Class.Method
 
 module Define : sig
@@ -228,20 +228,20 @@ module Access: sig
       backup: (Call.t * Signature.t) option;
     }
 
-    type undefined_field = {
+    type undefined_attribute = {
       name: Access.t;
       parent: Class.t option;
     }
 
-    type field =
-      | Defined of Field.t
-      | Undefined of undefined_field
+    type attribute =
+      | Defined of Attribute.t
+      | Undefined of undefined_attribute
 
     type t =
       | Array
       | Call of call
       | Expression
-      | Field of field
+      | Attribute of attribute
       | Global
       | Identifier
       | Method of method_call

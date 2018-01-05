@@ -80,7 +80,7 @@ module Class = struct
     Resolution.parse_annotation resolution (Node.create (Access name))
 
 
-  module Field = struct
+  module Attribute = struct
     type t = {
       name: Expression.expression;
       parent: parent_class;
@@ -364,13 +364,13 @@ module Class = struct
     implements (methods definition) (methods protocol)
 
 
-  let field_fold ?(transitive = false) definition ~initial ~f ~resolution =
+  let attribute_fold ?(transitive = false) definition ~initial ~f ~resolution =
     let fold_definition initial { Class.body; _ } =
       let fold_body initial { Node.location; value } =
         match value with
         | Assign assign
         | Stub (Stub.Assign assign) ->
-            Field.create
+            Attribute.create
               ~resolution
               { Node.location; value = assign }
             >>| f initial
@@ -388,26 +388,26 @@ module Class = struct
     List.fold ~f:fold_definition ~init:initial definitions
 
 
-  let fields ?(transitive = false) definition ~resolution  =
-    field_fold ~transitive ~initial:[] ~resolution ~f:(fun sofar next -> next :: sofar) definition
+  let attributes ?(transitive = false) definition ~resolution  =
+    attribute_fold ~transitive ~initial:[] ~resolution ~f:(fun sofar next -> next :: sofar) definition
     |> List.rev
 
 
-  let field ?(transitive = false) definition ~resolution ~name =
-    let search sofar field =
+  let attribute ?(transitive = false) definition ~resolution ~name =
+    let search sofar attribute =
       match sofar with
-      | Some field -> Some field
+      | Some attribute -> Some attribute
       | None ->
-          if Expression.equal_expression (Access name) (Field.name field) then
-            Some field
+          if Expression.equal_expression (Access name) (Attribute.name attribute) then
+            Some attribute
           else
             None
     in
-    field_fold ~transitive ~initial:None ~f:search ~resolution definition
+    attribute_fold ~transitive ~initial:None ~f:search ~resolution definition
 end
 
 
-module Field = Class.Field
+module Attribute = Class.Attribute
 module Method = Class.Method
 
 
@@ -835,22 +835,22 @@ module Access = struct
     }
 
 
-    type undefined_field = {
+    type undefined_attribute = {
       name: Access.t;
       parent: Class.t option;
     }
 
 
-    type field =
-      | Defined of Field.t
-      | Undefined of undefined_field
+    type attribute =
+      | Defined of Attribute.t
+      | Undefined of undefined_attribute
 
 
     type t =
       | Array
       | Call of call
       | Expression
-      | Field of field
+      | Attribute of attribute
       | Global
       | Identifier
       | Method of method_call
@@ -1072,18 +1072,18 @@ module Access = struct
             resolved,
             (f accumulator ~annotations ~resolved ~element:(Element.Method element))
 
-        | Some (access, annotation), ([Access.Identifier _] as field_access) -> (
-            (* Field access. *)
-            let access = access @ field_access in
+        | Some (access, annotation), ([Access.Identifier _] as attribute_access) -> (
+            (* Attribute access. *)
+            let access = access @ attribute_access in
             let definition =
               Resolution.class_definition
                 resolution
                 (Annotation.annotation annotation)
             in
             let default =
-              let field =
+              let attribute =
                 {
-                  name = field_access;
+                  name = attribute_access;
                   Element.parent = definition;
                 }
               in
@@ -1096,11 +1096,11 @@ module Access = struct
               (f accumulator
                  ~annotations
                  ~resolved
-                 ~element:(Element.Field (Element.Undefined field)))
+                 ~element:(Element.Attribute (Element.Undefined attribute)))
             in
             definition
-            >>= Class.field ~transitive:true ~resolution ~name:field_access
-            >>| (fun field ->
+            >>= Class.attribute ~transitive:true ~resolution ~name:attribute_access
+            >>| (fun attribute ->
                 match Map.find annotations access with
                 | Some annotation ->
                     resolution,
@@ -1109,15 +1109,15 @@ module Access = struct
                        accumulator
                        ~annotations
                        ~resolved:annotation
-                       ~element:(Element.Field (Element.Defined field)))
+                       ~element:(Element.Attribute (Element.Defined attribute)))
                 | None ->
                     resolution,
-                    Field.annotation field,
+                    Attribute.annotation attribute,
                     (f
                        accumulator
                        ~annotations
-                       ~resolved:(Field.annotation field)
-                       ~element:(Element.Field (Element.Defined field))))
+                       ~resolved:(Attribute.annotation attribute)
+                       ~element:(Element.Attribute (Element.Defined attribute))))
             |> Option.value ~default)
 
         | Some (_, annotation), (Access.Subscript subscript) :: _ ->

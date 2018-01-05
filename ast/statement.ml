@@ -133,7 +133,7 @@ module Assign = struct
   [@@deriving compare, eq, sexp, show]
 
 
-  let is_static_field_initialization { parent; _ } =
+  let is_static_attribute_initialization { parent; _ } =
     Option.is_some parent
 end
 

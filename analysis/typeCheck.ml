@@ -122,16 +122,16 @@ module State = struct
 
     let class_initialization_errors errors =
       let open Annotated in
-      (* Ensure non-nullable typed fields are instantiated in init. *)
+      (* Ensure non-nullable typed attributes are instantiated in init. *)
       if not (Statement.Define.is_constructor define) then
         errors
       else
-        let check_class_fields class_definition =
-          let propagate_initialization_errors errors field =
-            let expected = Annotation.annotation (Field.annotation field) in
-            match Field.name field with
+        let check_class_attributes class_definition =
+          let propagate_initialization_errors errors attribute =
+            let expected = Annotation.annotation (Attribute.annotation attribute) in
+            match Attribute.name attribute with
             | Access name
-              when not (Type.equal expected Type.Top || Option.is_some (Field.value field)) ->
+              when not (Type.equal expected Type.Top || Option.is_some (Attribute.value attribute)) ->
                 let assign_exists { Statement.Define.body; _ } name =
                   let iterate initial { Node.value; _ } =
                     match value with
@@ -155,8 +155,8 @@ module State = struct
                 else
                   let error =
                     {
-                      Error.location = Field.location field;
-                      kind = Error.UninitializedField {
+                      Error.location = Attribute.location attribute;
+                      kind = Error.UninitializedAttribute {
                           Error.name;
                           parent = class_definition;
                           mismatch = {
@@ -170,14 +170,14 @@ module State = struct
                   error :: errors
             | _ -> errors
           in
-          Class.field_fold
+          Class.attribute_fold
             ~initial:errors
             ~resolution
             ~f:propagate_initialization_errors
             class_definition
         in
         Define.parent_definition ~resolution (Define.create define)
-        >>| check_class_fields
+        >>| check_class_attributes
         |> Option.value ~default:errors
     in
 
@@ -260,7 +260,7 @@ module State = struct
           | MissingAnnotation _
           | UndefinedMethod _
           | UndefinedType _
-          | UninitializedField _
+          | UninitializedAttribute _
           | _ ->
               true
         else
@@ -736,11 +736,11 @@ module State = struct
                   ~key:access
                   ~data:(Refinement.refine ~resolution annotation value_annotation)
                   annotations
-            | _, Access.Element.Field (Access.Element.Defined field) ->
+            | _, Access.Element.Attribute (Access.Element.Defined attribute) ->
                 let refined =
                   Refinement.refine
                     ~resolution
-                    (Field.annotation field)
+                    (Attribute.annotation attribute)
                     value_annotation
                 in
                 Map.add ~key:access ~data:refined annotations
@@ -830,9 +830,9 @@ module State = struct
                   match Map.find annotations access, element with
                   | Some { Annotation.annotation = Type.Optional parameter; _ }, _ ->
                       Map.add ~key:access ~data:(Annotation.create parameter) annotations
-                  | _, Access.Element.Field (Access.Element.Defined field) ->
+                  | _, Access.Element.Attribute (Access.Element.Defined attribute) ->
                       begin
-                        match Field.annotation field with
+                        match Attribute.annotation attribute with
                         | {
                           Annotation.annotation = Type.Optional parameter;
                           mutability = Annotation.Mutable
@@ -847,7 +847,7 @@ module State = struct
                             let refined =
                               Refinement.refine
                                 ~resolution
-                                (Field.annotation field)
+                                (Attribute.annotation attribute)
                                 parameter
                             in
                             Map.add ~key:access ~data:refined annotations
@@ -903,11 +903,11 @@ module State = struct
                 let element = Access.last_element ~resolution (Annotated.Access.create access) in
                 begin
                   match element with
-                  | Access.Element.Field (Access.Element.Defined field) ->
+                  | Access.Element.Attribute (Access.Element.Defined attribute) ->
                       let refined =
                         Refinement.refine
                           ~resolution
-                          (Field.annotation field)
+                          (Attribute.annotation attribute)
                           (Type.Optional Type.Bottom)
                       in
                       Map.add ~key:access ~data:refined annotations
@@ -1010,7 +1010,7 @@ module State = struct
               signature
         | None -> []
       in
-      (* Check a full access sequence, including available fields and calls. *)
+      (* Check a full access sequence, including available attributes and calls. *)
       let check_access ~resolution errors access =
         let check_access new_errors ~annotations:_ ~resolved:_ ~element =
           if not (List.is_empty new_errors) then
@@ -1368,21 +1368,21 @@ module State = struct
             let errors =
               let open Annotated in
               match Access.last_element ~resolution (Access.create access) with
-              | Access.Element.Field (Access.Element.Defined field) ->
-                  let expected = Annotation.original (Field.annotation field) in
-                  let name = Expression.Access.access (Node.create (Field.name field)) in
+              | Access.Element.Attribute (Access.Element.Defined attribute) ->
+                  let expected = Annotation.original (Attribute.annotation attribute) in
+                  let name = Expression.Access.access (Node.create (Attribute.name attribute)) in
                   errors
                   |> add_incompatible_type_error
                     ~expected
-                    ~parent:(Some (Field.parent field))
+                    ~parent:(Some (Attribute.parent attribute))
                     ~name
-                    ~declare_location:(Field.location field)
+                    ~declare_location:(Attribute.location attribute)
                   |> add_missing_annotation_error
                     ~expected
-                    ~parent:(Some (Field.parent field))
+                    ~parent:(Some (Attribute.parent attribute))
                     ~name
-                    ~declare_location:(Field.location field)
-              | Access.Element.Field (Access.Element.Undefined { Access.Element.name; parent }) ->
+                    ~declare_location:(Attribute.location attribute)
+              | Access.Element.Attribute (Access.Element.Undefined { Access.Element.name; parent }) ->
                   parent
                   >>= (fun parent ->
                       (match Class.body parent with

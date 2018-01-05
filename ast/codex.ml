@@ -10,7 +10,7 @@ open Expression
 
 
 (** Given a JSON that's an assoc at the top level, change the key's binding to value,
-  * keeping the rest of the fields the same. *)
+  * keeping the rest of the attributes the same. *)
 let modify_json key value json =
   let open Yojson.Safe.Util in
   let keys = keys json in

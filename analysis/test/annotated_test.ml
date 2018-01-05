@@ -15,7 +15,7 @@ open Test
 
 module Class = Annotated.Class
 module Define = Annotated.Define
-module Field = Annotated.Field
+module Attribute = Annotated.Attribute
 module Method = Annotated.Method
 module Access = Annotated.Access
 
@@ -518,7 +518,7 @@ let test_implements _ =
     true
 
 
-let test_class_fields _ =
+let test_class_attributes _ =
   let resolution, parent =
     let source =
       {|
@@ -548,62 +548,62 @@ let test_class_fields _ =
     +{ Assign.target = !name; annotation; value; compound = None; parent }
   in
 
-  (* Test `Class.fields`. *)
-  let assert_fields definition fields =
-    let field_list_equal =
+  (* Test `Class.attributes`. *)
+  let assert_attributes definition attributes =
+    let attribute_list_equal =
       let equal left right =
-        Expression.equal_expression (Field.name left) (Field.name right) &&
-        Annotation.equal (Field.annotation left) (Field.annotation right) &&
-        Class.equal (Field.parent left) (Field.parent right)
+        Expression.equal_expression (Attribute.name left) (Attribute.name right) &&
+        Annotation.equal (Attribute.annotation left) (Attribute.annotation right) &&
+        Class.equal (Attribute.parent left) (Attribute.parent right)
       in
       List.equal ~equal
     in
     assert_equal
-      ~cmp:field_list_equal
-      ~printer:(fun fields ->
+      ~cmp:attribute_list_equal
+      ~printer:(fun attributes ->
           String.concat
             ~sep:"; "
-            (List.map ~f:(Format.asprintf "%a" Annotated.Class.Field.pp) fields))
-      (Class.fields ~resolution definition)
-      (List.map ~f:value fields)
+            (List.map ~f:(Format.asprintf "%a" Annotated.Class.Attribute.pp) attributes))
+      (Class.attributes ~resolution definition)
+      (List.map ~f:value attributes)
   in
 
-  assert_fields
+  assert_attributes
     parent
     [
-      Field.create ~resolution (create_assign "first");
-      Field.create ~resolution (create_assign "second");
-      Field.create
+      Attribute.create ~resolution (create_assign "first");
+      Attribute.create ~resolution (create_assign "second");
+      Attribute.create
         ~resolution
         (create_assign "third" ~value:(Some (+Expression.Integer 1)));
     ];
 
 
-  (* Test `Field`. *)
-  let field =
-    Field.create
+  (* Test `Attribute`. *)
+  let attribute =
+    Attribute.create
       ~resolution
       (create_assign ~annotation:(Some !"int") "first")
     |> value
   in
   assert_equal
-    (Field.name field)
+    (Attribute.name attribute)
     (Expression.Access (Expression.Access.create "first"));
   assert_equal
-    (Field.annotation field)
+    (Attribute.annotation attribute)
     (Annotation.create_immutable ~global:true (Type.Primitive ~~"int"));
 
 
-  (* Test `field_fold`. *)
+  (* Test `attribute_fold`. *)
   let callback
       string_names
-      field =
-    match Field.name field with
+      attribute =
+    match Attribute.name attribute with
     | Expression.Access access -> string_names ^ (Expression.Access.show access)
     | _ -> string_names
   in
   assert_equal
-    (Class.field_fold ~resolution ~initial:"" ~f:callback parent)
+    (Class.attribute_fold ~resolution ~initial:"" ~f:callback parent)
     ("firstsecondthird")
 
 
@@ -838,7 +838,7 @@ let test_fold _ =
       | Access.Element.Array, Access.Element.Array
       | Access.Element.Call _, Access.Element.Call _
       | Access.Element.Expression, Access.Element.Expression
-      | Access.Element.Field _, Access.Element.Field _
+      | Access.Element.Attribute _, Access.Element.Attribute _
       | Access.Element.Global, Access.Element.Global
       | Access.Element.Identifier, Access.Element.Identifier
       | Access.Element.Method _, Access.Element.Method _ -> Annotation.equal (fst left) (fst right)
@@ -851,7 +851,7 @@ let test_fold _ =
         | Access.Element.Call _ -> "(" ^ (Annotation.show (fst element)) ^ ", Call)"
         | Access.Element.Expression ->
             "(" ^ (Annotation.show (fst element)) ^ ", Expression)"
-        | Access.Element.Field _ -> "(" ^ (Annotation.show (fst element)) ^ ", Field)"
+        | Access.Element.Attribute _ -> "(" ^ (Annotation.show (fst element)) ^ ", Attribute)"
         | Access.Element.Global -> "(" ^ (Annotation.show (fst element)) ^ ", Global)"
         | Access.Element.Identifier ->
             "(" ^ (Annotation.show (fst element)) ^ ", Identifier) "
@@ -902,9 +902,9 @@ let test_fold _ =
     }
     |> Class.create
   in
-  let defined_field =
-    Access.Element.Field (Access.Element.Defined {
-      Field.parent = mock_class;
+  let defined_attribute =
+    Access.Element.Attribute (Access.Element.Defined {
+      Attribute.parent = mock_class;
       name = Ast.Expression.Access (Expression.Access.create "");
       annotation = (Annotation.create_immutable ~global:true Type.Top);
       location = Location.any;
@@ -915,13 +915,13 @@ let test_fold _ =
     ~environment
     (Expression.Access.create "foo.bar")
     [
-      Annotation.create_immutable ~global:true Type.integer, defined_field;
+      Annotation.create_immutable ~global:true Type.integer, defined_attribute;
       Annotation.create_immutable ~global:true (Type.Primitive ~~"Foo"), Access.Element.Global;
       Annotation.create Type.Top, Access.Element.Global;
     ];
 
-  let undefined_field =
-    Access.Element.Field
+  let undefined_attribute =
+    Access.Element.Attribute
       (Access.Element.Undefined {
         Access.Element.name = Expression.Access.create "baz";
         parent = Some mock_class;
@@ -931,7 +931,7 @@ let test_fold _ =
     ~environment
     (Expression.Access.create "foo.baz")
     [
-      Annotation.create Type.Top, undefined_field;
+      Annotation.create Type.Top, undefined_attribute;
       Annotation.create_immutable ~global:true (Type.Primitive ~~"Foo"), Access.Element.Global;
       Annotation.create Type.Top, Access.Element.Global;
     ]
@@ -950,7 +950,7 @@ let () =
     "methods">::test_methods;
     "is_protocol">::test_is_protocol;
     "implements">::test_implements;
-    "fields">::test_class_fields;
+    "attributes">::test_class_attributes;
   ]
   |> run_test_tt_main;
   "define">:::[

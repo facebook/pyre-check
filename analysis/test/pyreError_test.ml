@@ -90,7 +90,7 @@ let test_due_to_analysis_limitations _ =
   assert_true
     (Error.due_to_analysis_limitations
        (error
-          (Error.UninitializedField{
+          (Error.UninitializedAttribute{
               Error.name = [Expression.Access.Identifier (~~"")];
               parent = mock_parent;
               mismatch = {
@@ -102,7 +102,7 @@ let test_due_to_analysis_limitations _ =
   assert_false
     (Error.due_to_analysis_limitations
        (error
-          (Error.UninitializedField {
+          (Error.UninitializedAttribute {
               Error.name = [Expression.Access.Identifier (~~"")];
               parent = mock_parent;
               mismatch = {

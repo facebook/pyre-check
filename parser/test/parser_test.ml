@@ -1931,14 +1931,14 @@ let test_class _ =
     ];
 
   assert_parsed_equal
-    "class foo:\n\tfield: int = 1"
+    "class foo:\n\tattribute: int = 1"
     [
       +Class {
         Class.name = Access.create "foo";
         bases = [];
         body = [
           +Assign {
-            Assign.target = !"field";
+            Assign.target = !"attribute";
             annotation = Some !"int";
             value = Some (+Integer 1);
             compound = None;
@@ -1951,14 +1951,14 @@ let test_class _ =
     ];
 
   assert_parsed_equal
-    "class foo:\n\tfield: int"
+    "class foo:\n\tattribute: int"
     [
       +Class {
         Class.name = Access.create "foo";
         bases = [];
         body = [
           +Assign {
-            Assign.target = !"field";
+            Assign.target = !"attribute";
             annotation = Some !"int";
             value = None;
             compound = None;

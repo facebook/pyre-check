@@ -118,7 +118,7 @@ module Assign : sig
   }
   [@@deriving compare, eq, sexp, show]
 
-  val is_static_field_initialization: t -> bool
+  val is_static_attribute_initialization: t -> bool
 end
 
 module Stub : sig

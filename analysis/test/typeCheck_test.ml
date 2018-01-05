@@ -1040,13 +1040,13 @@ let test_show_error_traces _ =
   assert_type_errors ~show_error_traces:true
     {|
     class Foo:
-      test_field: int
+      test_attribute: int
       def __init__(self) -> None:
-        self.test_field = ""
+        self.test_attribute = ""
     |}
     [
-      "Incompatible type [8]: field test_field declared in class Foo has type `int` but " ^
-      "is used as type `str`. Field test_field declared on line 3, incorrectly used on line " ^
+      "Incompatible type [8]: attribute test_attribute declared in class Foo has type `int` but " ^
+      "is used as type `str`. Attribute test_attribute declared on line 3, incorrectly used on line " ^
       "5.";
     ];
 
@@ -1065,29 +1065,29 @@ let test_show_error_traces _ =
   assert_type_errors ~show_error_traces:true
     {|
     class Foo:
-      test_field: int
+      test_attribute: int
       def __init__(self) -> None:
-        test_field = 0
+        test_attribute = 0
     |}
     [
-      "Uninitialized field [13]: field test_field is declared in class Foo to have non-" ^
-      "optional type `int` but is never initialized. Field test_field is declared on line 3, " ^
+      "Uninitialized attribute [13]: attribute test_attribute is declared in class Foo to have non-" ^
+      "optional type `int` but is never initialized. Attribute test_attribute is declared on line 3, " ^
       "never initialized and therefore must be `typing.Optional[int]`."
     ];
 
   assert_type_errors ~show_error_traces:true
     {|
       class Foo:
-        field = x
+        attribute = x
       class Bar:
         def bar(self) -> str:
           foo = Foo()
-          foo.field = 'string'
-          return foo.field
+          foo.attribute = 'string'
+          return foo.attribute
     |}
     [
-      "Missing annotation [4]: Field field of class Foo has type `str` but no type " ^
-      "is specified. Field field declared on line 3, type `str` deduced from test.py:7:4.";
+      "Missing annotation [4]: Attribute attribute of class Foo has type `str` but no type " ^
+      "is specified. Attribute attribute declared on line 3, type `str` deduced from test.py:7:4.";
     ];
 
   assert_type_errors ~show_error_traces:true
@@ -1098,7 +1098,7 @@ let test_show_error_traces _ =
       constant = 1
     |}
     [
-      "Missing annotation [5]: Globally accessible field constant has type `int` but " ^
+      "Missing annotation [5]: Globally accessible attribute constant has type `int` but " ^
       "no type is specified. Global constant declared on line 2, type `int` deduced " ^
       "from test.py:5:2."
     ];
@@ -1112,7 +1112,7 @@ let test_show_error_traces _ =
       constant = 1
     |}
     [
-      "Missing annotation [5]: Globally accessible field constant has type " ^
+      "Missing annotation [5]: Globally accessible attribute constant has type " ^
       "`typing.Union[int, str]` but no type is specified. Global constant " ^
       "declared on line 2, type `typing.Union[int, str]` deduced from test.py:5:2, " ^
       "test.py:6:2."
@@ -1121,13 +1121,13 @@ let test_show_error_traces _ =
   assert_type_errors ~show_error_traces:true
     {|
       class Other():
-        field = x
+        attribute = x
         def foo(self) -> None:
-          self.field = 1
+          self.attribute = 1
     |}
     [
-      "Missing annotation [4]: Field field of class Other has type " ^
-      "`int` but no type is specified. Field field declared on line 3, " ^
+      "Missing annotation [4]: Attribute attribute of class Other has type " ^
+      "`int` but no type is specified. Attribute attribute declared on line 3, " ^
       "type `int` deduced from test.py:5:4."
     ];
 
@@ -1142,11 +1142,11 @@ let test_show_error_traces _ =
         x = "str"
     |}
     [
-      "Missing annotation [5]: Globally accessible field x has type " ^
+      "Missing annotation [5]: Globally accessible attribute x has type " ^
       "`typing.Union[int, str]` but no type is specified. Global x " ^
       "declared on line 4, type `typing.Union[int, str]` deduced from test.py:4:2, " ^
       "test.py:7:2.";
-      "Missing annotation [5]: Globally accessible field x has type " ^
+      "Missing annotation [5]: Globally accessible attribute x has type " ^
       "`typing.Union[int, str]` but no type is specified. Global x " ^
       "declared on line 7, type `typing.Union[int, str]` deduced from test.py:4:2, " ^
       "test.py:7:2."
@@ -1696,7 +1696,7 @@ let test_check_function_parameters _ =
     {|
       class A:
         def foo(self) -> None:
-          int_to_int(self.field)
+          int_to_int(self.attribute)
     |}
     [
       "Incompatible parameter type [6]: 1st parameter `i` to call `int_to_int` expected `int` " ^
@@ -2108,19 +2108,19 @@ let test_check_init _ =
   assert_type_errors
     {|
     class Foo:
-      test_field: int
+      test_attribute: int
       def __init__(self) -> None:
         pass
     |}
     [
-      "Uninitialized field [13]: field test_field is declared in class Foo to have non-" ^
+      "Uninitialized attribute [13]: attribute test_attribute is declared in class Foo to have non-" ^
       "optional type `int` but is never initialized."
     ];
 
   assert_type_errors
     {|
     class Foo:
-      test_field: int = 1
+      test_attribute: int = 1
       def __init__(self) -> None:
         pass
     |}
@@ -2129,36 +2129,36 @@ let test_check_init _ =
   assert_type_errors
     {|
     class Foo:
-      test_field: int
-      test_field_two: str
+      test_attribute: int
+      test_attribute_two: str
       def __init__(self) -> None:
         pass
     |}
     [
-      "Uninitialized field [13]: field test_field is declared in class Foo to have non-" ^
+      "Uninitialized attribute [13]: attribute test_attribute is declared in class Foo to have non-" ^
       "optional type `int` but is never initialized.";
-      "Uninitialized field [13]: field test_field_two is declared in class Foo to have non" ^
+      "Uninitialized attribute [13]: attribute test_attribute_two is declared in class Foo to have non" ^
       "-optional type `str` but is never initialized."
     ];
 
   assert_type_errors
     {|
     class Foo:
-      test_field: int
+      test_attribute: int
       def __init__(self) -> None:
-        self.test_field = 0
+        self.test_attribute = 0
     |}
     [];
 
   assert_type_errors
     {|
     class Foo:
-      test_field: int
+      test_attribute: int
       def __init__(self) -> None:
-        test_field = 0
+        test_attribute = 0
     |}
     [
-      "Uninitialized field [13]: field test_field is declared in class Foo to have non-" ^
+      "Uninitialized attribute [13]: attribute test_attribute is declared in class Foo to have non-" ^
       "optional type `int` but is never initialized."
     ];
 
@@ -2166,17 +2166,17 @@ let test_check_init _ =
     {|
       class Foo:
         def __init__(self) -> None:
-          self.test_field = 0
+          self.test_attribute = 0
     |}
     [
-      "Missing annotation [4]: Field test_field of class Foo has type `int` but " ^
+      "Missing annotation [4]: Attribute test_attribute of class Foo has type `int` but " ^
       "no type is specified."
     ];
 
   assert_type_errors
     {|
       class Foo:
-        test_field: typing.Optional[int]
+        test_attribute: typing.Optional[int]
         def __init__(self) -> None:
           pass
     |}
@@ -2185,12 +2185,12 @@ let test_check_init _ =
   assert_type_errors
     {|
     class Foo:
-      test_field: int
+      test_attribute: int
       def __init__(self) -> None:
-        self.test_field = ""
+        self.test_attribute = ""
     |}
     [
-      "Incompatible type [8]: field test_field declared in class Foo has type `int` but is " ^
+      "Incompatible type [8]: attribute test_attribute declared in class Foo has type `int` but is " ^
       "used as type `str`.";
     ];
 
@@ -2207,7 +2207,7 @@ let test_check_init _ =
     ]
 
 
-let test_check_fields _ =
+let test_check_attributes _ =
   assert_type_errors
     {|
       class Foo:
@@ -2280,7 +2280,7 @@ let test_check_fields _ =
           return self.bar
     |}
     [
-      "Missing annotation [4]: Field bar of class Foo has type `str` but no type " ^
+      "Missing annotation [4]: Attribute bar of class Foo has type `str` but no type " ^
       "is specified.";
       "Incompatible return type [7]: expected `int` but got `str`."
     ];
@@ -2294,7 +2294,7 @@ let test_check_fields _ =
           return self.bar
     |}
     [
-      "Missing annotation [4]: Field bar of class Foo has type `str` but type `Any` " ^
+      "Missing annotation [4]: Attribute bar of class Foo has type `str` but type `Any` " ^
       "is specified.";
       "Incompatible return type [7]: expected `int` but got `str`."
     ];
@@ -2308,7 +2308,7 @@ let test_check_fields _ =
           return self.bar
     |}
     [
-      "Incompatible type [8]: field bar declared in class Foo has type `int` but is used as " ^
+      "Incompatible type [8]: attribute bar declared in class Foo has type `int` but is used as " ^
       "type `str`.";
     ];
 
@@ -2321,7 +2321,7 @@ let test_check_fields _ =
         return param.bar
     |}
     [
-      "Incompatible type [8]: field bar declared in class Foo has type `int` but is used " ^
+      "Incompatible type [8]: attribute bar declared in class Foo has type `int` but is used " ^
       "as type `str`.";
     ];
 
@@ -2342,7 +2342,7 @@ let test_check_fields _ =
           return self.bar
     |}
     [
-      "Missing annotation [4]: Field bar of class Foo has type `str` but no type " ^
+      "Missing annotation [4]: Attribute bar of class Foo has type `str` but no type " ^
       "is specified.";
       "Incompatible return type [7]: expected `int` but got `str`.";
     ];
@@ -2357,7 +2357,7 @@ let test_check_fields _ =
         return foo_obj.bar
     |}
     [
-      "Incompatible type [8]: field bar declared in class Foo has type `int` but is " ^
+      "Incompatible type [8]: attribute bar declared in class Foo has type `int` but is " ^
       "used as type `str`.";
     ];
 
@@ -2371,7 +2371,7 @@ let test_check_fields _ =
           return self.bar
     |}
     [
-      "Incompatible type [8]: field bar declared in class Foo has type `int` but is used as " ^
+      "Incompatible type [8]: attribute bar declared in class Foo has type `int` but is used as " ^
       "type `str`.";
     ];
 
@@ -2417,10 +2417,10 @@ let test_check_fields _ =
                   self.baz = 5
               return self.baz
     |}
-    ["Missing annotation [4]: Field baz of class Foo has type " ^
+    ["Missing annotation [4]: Attribute baz of class Foo has type " ^
      "`typing.Optional[int]` but no type is specified."];
 
-  (* TODO(szhu): support field tests for: class variables, generic annotations *)
+  (* TODO(szhu): support attribute tests for: class variables, generic annotations *)
   assert_type_errors
     {|
       class Foo:
@@ -2431,7 +2431,7 @@ let test_check_fields _ =
     |}
     ["Incompatible return type [7]: expected `int` but got `str`."];
   (* [
-      "Incompatible type [8]: field Foo.bar declared in class Foo " ^
+      "Incompatible type [8]: attribute Foo.bar declared in class Foo " ^
       "has type `int` but is used as type `str`."
      ]; *)
 
@@ -2444,20 +2444,20 @@ let test_check_fields _ =
           return self.bar
     |}
     [
-      "Incompatible type [8]: field bar declared in class Foo has type `typing.Generic[_T]` " ^
+      "Incompatible type [8]: attribute bar declared in class Foo has type `typing.Generic[_T]` " ^
       "but is used as type `int`.";
       "Incompatible return type [7]: expected `int` but got `typing.Generic[_T]`.";
     ];
   (* []; *)
 
-  (* Static fields are properly resolved. *)
+  (* Static attributes are properly resolved. *)
   assert_type_errors
     {|
       class Foo:
-        field: typing.ClassVar[int] = 1
+        attribute: typing.ClassVar[int] = 1
 
       def foo() -> str:
-        return Foo.field
+        return Foo.attribute
     |}
     ["Incompatible return type [7]: expected `str` but got `int`."]
 
@@ -2517,7 +2517,7 @@ let test_check_immutables _ =
       constant = 1
     |}
     [
-      "Missing annotation [5]: Globally accessible field constant has type `int` but " ^
+      "Missing annotation [5]: Globally accessible attribute constant has type `int` but " ^
       "no type is specified."
     ];
 
@@ -2529,7 +2529,7 @@ let test_check_immutables _ =
       constant = 1
     |}
     [
-      "Missing annotation [5]: Globally accessible field constant has type `int` but " ^
+      "Missing annotation [5]: Globally accessible attribute constant has type `int` but " ^
       "type `Any` is specified."
     ];
 
@@ -2542,7 +2542,7 @@ let test_check_immutables _ =
       return constant
     |}
     [
-      "Missing annotation [5]: Globally accessible field constant has type `int` but " ^
+      "Missing annotation [5]: Globally accessible attribute constant has type `int` but " ^
       "no type is specified."
     ];
 
@@ -2622,13 +2622,13 @@ let test_check_immutables _ =
   assert_type_errors
     {|
       class Foo():
-        field
+        attribute
       def bar() -> None:
         foo = Foo()
-        foo.field = 1
+        foo.attribute = 1
     |}
     [
-      "Missing annotation [4]: Field field of class Foo has type `int` but no type" ^
+      "Missing annotation [4]: Attribute attribute of class Foo has type `int` but no type" ^
       " is specified.";
     ];
 
@@ -2640,7 +2640,7 @@ let test_check_immutables _ =
         constant = 1
     |}
     [
-      "Missing annotation [5]: Globally accessible field constant has type `int` but " ^
+      "Missing annotation [5]: Globally accessible attribute constant has type `int` but " ^
       "no type is specified."
     ];
 
@@ -2672,7 +2672,7 @@ let test_check_immutables _ =
         constant = 1
     |}
     [
-      "Missing annotation [5]: Globally accessible field constant has type `int` but " ^
+      "Missing annotation [5]: Globally accessible attribute constant has type `int` but " ^
       "no type is specified."
     ];
 
@@ -2688,9 +2688,9 @@ let test_check_immutables _ =
         constant = "hi"
     |}
     [
-      "Missing annotation [5]: Globally accessible field constant has type `typing." ^
+      "Missing annotation [5]: Globally accessible attribute constant has type `typing." ^
       "Union[int, str]` but no type is specified.";
-      "Missing annotation [5]: Globally accessible field constant has type `typing." ^
+      "Missing annotation [5]: Globally accessible attribute constant has type `typing." ^
       "Union[int, str]` but no type is specified."
     ];
 
@@ -2705,9 +2705,9 @@ let test_check_immutables _ =
         constant = None
     |}
     [
-      "Missing annotation [5]: Globally accessible field constant has type `typing." ^
+      "Missing annotation [5]: Globally accessible attribute constant has type `typing." ^
       "Optional[int]` but no type is specified.";
-      "Missing annotation [5]: Globally accessible field constant has type `typing." ^
+      "Missing annotation [5]: Globally accessible attribute constant has type `typing." ^
       "Optional[int]` but no type is specified."
     ];
 
@@ -2722,9 +2722,9 @@ let test_check_immutables _ =
         constant = 1.0
     |}
     [
-      "Missing annotation [5]: Globally accessible field constant has type `float` but" ^
+      "Missing annotation [5]: Globally accessible attribute constant has type `float` but" ^
       " no type is specified.";
-      "Missing annotation [5]: Globally accessible field constant has type `float` but" ^
+      "Missing annotation [5]: Globally accessible attribute constant has type `float` but" ^
       " no type is specified."
     ];
 
@@ -2739,9 +2739,9 @@ let test_check_immutables _ =
         constant = B()
     |}
     [
-      "Missing annotation [5]: Globally accessible field constant has type `A` but no " ^
+      "Missing annotation [5]: Globally accessible attribute constant has type `A` but no " ^
       "type is specified.";
-      "Missing annotation [5]: Globally accessible field constant has type `A` but no " ^
+      "Missing annotation [5]: Globally accessible attribute constant has type `A` but no " ^
       "type is specified."
     ];
 
@@ -2758,9 +2758,9 @@ let test_check_immutables _ =
         constant = "hi"
     |}
     [
-      "Missing annotation [4]: Field constant of class Foo has type `int` but no " ^
+      "Missing annotation [4]: Attribute constant of class Foo has type `int` but no " ^
       "type is specified.";
-      "Missing annotation [5]: Globally accessible field constant has type `str` but " ^
+      "Missing annotation [5]: Globally accessible attribute constant has type `str` but " ^
       "no type is specified."
     ]
 
@@ -4180,7 +4180,7 @@ let () =
     "check_self">::test_check_self;
     "check_static">::test_check_static;
     "check_init">::test_check_init;
-    "check_fields">::test_check_fields;
+    "check_attributes">::test_check_attributes;
     "check_globals">::test_check_globals;
     "check_immutables">::test_check_immutables;
     "check_named_arguments">::test_check_named_arguments;

@@ -129,7 +129,7 @@ type kind =
   | Top
   | UndefinedMethod of undefined_method
   | UndefinedType of Type.t
-  | UninitializedField of initialization_mismatch
+  | UninitializedAttribute of initialization_mismatch
 [@@deriving compare, eq, show, sexp]
 
 
@@ -176,7 +176,7 @@ let code { kind; _ } =
   | Top -> 1
   | UndefinedMethod _ -> 10
   | UndefinedType _ -> 11
-  | UninitializedField _ -> 13
+  | UninitializedAttribute _ -> 13
 
 
 let name { kind; _ } =
@@ -192,7 +192,7 @@ let name { kind; _ } =
   | Top -> "Undefined error"
   | UndefinedMethod _ -> "Undefined method"
   | UndefinedType _ -> "Undefined type"
-  | UninitializedField _ -> "Uninitialized field"
+  | UninitializedAttribute _ -> "Uninitialized attribute"
 
 
 let description
@@ -293,12 +293,12 @@ let description
           | Some parent, false ->
               [
                 Format.asprintf
-                  "Field %a of class %a has type %a but no type is specified."
+                  "Attribute %a of class %a has type %a but no type is specified."
                   Access.pp name
                   Access.pp (Annotated.Class.name parent)
                   Type.pp annotation;
                 Format.asprintf
-                  "Field %a declared on line %d, type %a deduced from %s."
+                  "Attribute %a declared on line %d, type %a deduced from %s."
                   Access.pp name
                   (Location.line location)
                   Type.pp annotation
@@ -307,12 +307,12 @@ let description
           | Some parent, true ->
               [
                 Format.asprintf
-                  "Field %a of class %a has type %a but type `Any` is specified."
+                  "Attribute %a of class %a has type %a but type `Any` is specified."
                   Access.pp name
                   Access.pp (Annotated.Class.name parent)
                   Type.pp annotation;
                 Format.asprintf
-                  "Field %a declared on line %d, type %a deduced from %s."
+                  "Attribute %a declared on line %d, type %a deduced from %s."
                   Access.pp name
                   (Location.line location)
                   Type.pp annotation
@@ -321,7 +321,7 @@ let description
           | None, false ->
               [
                 Format.asprintf
-                  "Globally accessible field %a has type %a but no type is specified."
+                  "Globally accessible attribute %a has type %a but no type is specified."
                   Access.pp name
                   Type.pp annotation;
                 Format.asprintf
@@ -334,7 +334,7 @@ let description
           | None, true ->
               [
                 Format.asprintf
-                  "Globally accessible field %a has type %a but type `Any` is specified."
+                  "Globally accessible attribute %a has type %a but type `Any` is specified."
                   Access.pp name
                   Type.pp annotation;
                 Format.asprintf
@@ -396,13 +396,13 @@ let description
       } ->
         [
           (Format.asprintf
-             "field %a declared in class %a has type %a but is used as type %a."
+             "attribute %a declared in class %a has type %a but is used as type %a."
              Access.pp name
              Access.pp (Annotated.Class.name parent)
              Type.pp expected
              Type.pp actual);
           (Format.asprintf
-             "Field %a declared on line %d, incorrectly used on line %d."
+             "Attribute %a declared on line %d, incorrectly used on line %d."
              Access.pp name
              declare_location.Location.start.Location.line
              (Location.line location))
@@ -469,20 +469,20 @@ let description
             "Type %a is not defined."
             Type.pp annotation
         ]
-    | UninitializedField {
+    | UninitializedAttribute {
         name;
         parent;
         mismatch = { actual; expected };
       } ->
         [
           (Format.asprintf
-             "field %a is declared in class %a to have non-optional type %a but is never \
+             "attribute %a is declared in class %a to have non-optional type %a but is never \
               initialized."
              Access.pp name
              Access.pp (Annotated.Class.name parent)
              Type.pp expected);
           (Format.asprintf
-             "Field %a is declared on line %d, never initialized and therefore must be %a."
+             "Attribute %a is declared on line %d, never initialized and therefore must be %a."
              Access.pp name
              (Location.line location)
              Type.pp actual)
@@ -515,7 +515,7 @@ let due_to_analysis_limitations { kind; _ } =
   | MissingAnnotation { annotation = actual; _ }
   | MissingParameterAnnotation { annotation = actual; _ }
   | MissingReturnAnnotation { annotation = actual; _ }
-  | UninitializedField { mismatch = {actual; _ }; _ }->
+  | UninitializedAttribute { mismatch = {actual; _ }; _ }->
       Type.is_unknown actual
   | Top -> true
   | UndefinedMethod { annotation; _ }
@@ -538,7 +538,7 @@ let due_to_mismatch_with_any { kind; _ } =
   | IncompatibleParameterType { mismatch = { actual; expected }; _ }
   | IncompatibleReturnType { actual; expected }
   | IncompatibleType { mismatch = { actual; expected }; _ }
-  | UninitializedField { mismatch = { actual; expected }; _ }->
+  | UninitializedAttribute { mismatch = { actual; expected }; _ }->
       Type.mismatch_with_any actual expected
 
 
@@ -578,7 +578,7 @@ let less_or_equal ~resolution left right =
        less_or_equal_mismatch left.mismatch right.mismatch
    | InconsistentOverride left, InconsistentOverride right ->
        less_or_equal_mismatch left.mismatch right.mismatch
-   | UninitializedField left, UninitializedField right when left.name = right.name ->
+   | UninitializedAttribute left, UninitializedAttribute right when left.name = right.name ->
        less_or_equal_mismatch left.mismatch right.mismatch
    | UndefinedMethod left, UndefinedMethod right ->
        TypeOrder.less_or_equal
@@ -647,9 +647,9 @@ let join ~resolution left right =
         IncompatibleType { left with mismatch = join_mismatch left.mismatch right.mismatch }
     | InconsistentOverride left, InconsistentOverride right ->
         InconsistentOverride { left with mismatch = join_mismatch left.mismatch right.mismatch }
-    | UninitializedField left, UninitializedField right
+    | UninitializedAttribute left, UninitializedAttribute right
       when left.name = right.name && class_equal left.parent right.parent ->
-        UninitializedField { left with mismatch = join_mismatch left.mismatch right.mismatch }
+        UninitializedAttribute { left with mismatch = join_mismatch left.mismatch right.mismatch }
     | UndefinedMethod left, UndefinedMethod right ->
         UndefinedMethod {
           annotation =
@@ -774,8 +774,8 @@ let dequalify
           inconsistent_override with
           mismatch = { actual = dequalify actual; expected = dequalify expected };
         }
-    | UninitializedField ({ mismatch = { actual; expected }; _ } as inconsistent_usage) ->
-        UninitializedField {
+    | UninitializedAttribute ({ mismatch = { actual; expected }; _ } as inconsistent_usage) ->
+        UninitializedAttribute {
           inconsistent_usage with
           mismatch = { actual = dequalify actual; expected = dequalify expected };
         }
@@ -876,7 +876,7 @@ let to_json ~detailed ({ kind; define = { Node.value = define; _ }; location; _ 
         [
           "annotation", `String (print_annotation annotation);
           "parent", print_parent (parent >>| Annotated.Class.name);
-          "field_name", `String (Access.show name);
+          "attribute_name", `String (Access.show name);
         ]
     | _ -> []
   in

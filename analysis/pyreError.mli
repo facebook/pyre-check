@@ -90,7 +90,7 @@ type kind =
   | Top
   | UndefinedMethod of undefined_method
   | UndefinedType of Type.t
-  | UninitializedField of initialization_mismatch
+  | UninitializedAttribute of initialization_mismatch
 [@@deriving compare, eq, show]
 
 type t = {
