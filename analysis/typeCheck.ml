@@ -249,16 +249,15 @@ module State = struct
       let suppress_in_strict ({ kind; _ } as error) =
         if due_to_analysis_limitations error then
           match kind with
-          | IncompatibleParameterType { mismatch = _; _ }
+          | IncompatibleParameterType _
           | IncompatibleReturnType _
+          | MissingParameterAnnotation _
           | MissingReturnAnnotation _ ->
               false
-          (* Temporarily suppressing the missing parameter errors, to be investigated later *)
           | IncompatibleAwaitableType _
           | IncompatibleType _
           | InconsistentOverride _
           | MissingAnnotation _
-          | MissingParameterAnnotation _
           | UndefinedMethod _
           | UndefinedType _
           | UninitializedField _
