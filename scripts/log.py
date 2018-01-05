@@ -97,6 +97,9 @@ class TimedStreamHandler(logging.StreamHandler):
         suffix = ''
         color = ''
         active_lines = record.msg.count('\n') + 1
+        if record.levelname in self.LINE_BREAKING_LEVELS:
+            record.msg += '\n'
+
         if record.levelname == 'ERROR':
             color = Color.RED
             self._record = None
@@ -112,10 +115,6 @@ class TimedStreamHandler(logging.StreamHandler):
         elif record.levelname == 'SUCCESS':
             self._record = None
             active_lines = 0
-
-        if record.levelname in self.LINE_BREAKING_LEVELS:
-            record.msg += '\n'
-
         elif age:
             if age > 10:
                 color = Color.YELLOW
