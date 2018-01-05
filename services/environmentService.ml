@@ -161,7 +161,11 @@ let shared_memory_reader
     |> (fun size -> size /. 1.0e6)
     |> Int.of_float
   in
-  Log.info "Initial shared memory size: %dmb" heap_size;
+  Statistics.event
+    ~name:"shared memory size"
+    ~root:(Path.last project_root)
+    ~integers:["size", heap_size]
+    ();
 
   let reader =
     (module struct

@@ -11,6 +11,7 @@ type section = [
   | `Dump
   | `Environment
   | `Error
+  | `Event
   | `Info
   | `Performance
   | `Protocols
