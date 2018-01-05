@@ -25,6 +25,7 @@ type result = {
 
 let check
     {
+      start_time = _;
       verbose;
       version = _;
       sections;

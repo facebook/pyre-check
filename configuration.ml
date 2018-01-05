@@ -9,6 +9,7 @@ open Pyre
 
 
 type t = {
+  start_time: float;
   infer: bool;
   recursive_infer: bool;
   parallel: bool;
@@ -26,6 +27,7 @@ type t = {
 
 
 let create
+    ?(start_time = Unix.time())
     ?(infer = false)
     ?(recursive_infer = false)
     ?(parallel = true)
@@ -40,6 +42,7 @@ let create
     ?(show_error_traces = false)
     () =
   {
+    start_time;
     infer;
     recursive_infer;
     parallel;
