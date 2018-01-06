@@ -196,30 +196,6 @@ module State = struct
       errors
     in
 
-    let ignore_none_confusion errors =
-      (* Special-case ignore errors complaining that -> None function returns explicit None *)
-      let is_none_confusion error =
-        match error with
-        | {
-          Error.kind = Error.IncompatibleParameterType {
-              Error.mismatch = { Error.actual; expected };
-              _;
-            };
-          _;
-        }
-        | { Error.kind = Error.IncompatibleReturnType { Error.actual; expected; }; _ }
-        | {
-          Error.kind = Error.IncompatibleType { Error.mismatch = { Error.actual; expected }; _ };
-          _;
-        } ->
-            not (Type.equal actual (Type.Optional Type.Bottom) &&
-                 Resolution.less_or_equal resolution ~left:Type.void ~right:expected)
-        | _ ->
-            true
-      in
-      List.filter ~f:is_none_confusion errors
-    in
-
     let ignore_unimplemented_returns errors =
       let define_implemented error =
         match error with
@@ -291,7 +267,7 @@ module State = struct
         | MissingParameterAnnotation { annotation = actual; _ }
         | MissingAnnotation { annotation = actual; _ } ->
             due_to_analysis_limitations error ||
-            Type.equal actual Type.Object || Type.is_instantiated actual
+            Type.equal actual Type.Object
         | _ ->
             true
       in
@@ -316,7 +292,6 @@ module State = struct
     Map.data errors
     |> Error.join_at_define ~resolution ~location
     |> class_initialization_errors
-    |> ignore_none_confusion
     |> ignore_unimplemented_returns
     |> ignore_suppressed_errors
     |> apply_if ~f:filter_errors ~condition:(not configuration.debug)
@@ -476,7 +451,7 @@ module State = struct
                    kind = Error.InconsistentOverride {
                        Error.overridden_method;
                        override = Error.StrengthenedPrecondition;
-                       mismatch = { Error.actual; expected = Type.void };
+                       mismatch = { Error.actual; expected = Type.none };
                      };
                    define = define_node;
                  }
@@ -1285,7 +1260,7 @@ module State = struct
           let actual =
             Option.value_map
               return
-              ~default:Type.void
+              ~default:Type.none
               ~f:(Annotated.resolve ~resolution)
           in
           if not (Resolution.less_or_equal resolution ~left:actual ~right:expected) &&
@@ -1456,7 +1431,7 @@ module State = struct
           check_expression ~resolution errors expression
       | { Node.location; value = Statement.Yield { Node.value = Expression.Yield return; _ }; _ } ->
           let actual =
-            Option.value_map return ~default:Type.void ~f:(Annotated.resolve ~resolution)
+            Option.value_map return ~default:Type.none ~f:(Annotated.resolve ~resolution)
             |> Type.generator
           in
           if not (Resolution.less_or_equal resolution ~left:actual ~right:expected) then

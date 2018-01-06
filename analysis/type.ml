@@ -90,10 +90,15 @@ let rec pp format annotation =
       Format.fprintf format "`typing.Any`"
   | Object ->
       Format.fprintf format "`typing.Any`"
+  | Optional Bottom ->
+      Format.fprintf format "`None`"
   | Optional parameter ->
       Format.fprintf format
         "`typing.Optional[%s]`"
         (without_backtick [parameter])
+  | Parametric { name; parameters }
+    when Identifier.show name = "typing.Optional" && parameters = [Bottom] ->
+      Format.fprintf format "`None`"
   | Parametric { name; parameters } ->
       Format.fprintf format
         "`%s[%s]`"
@@ -163,14 +168,14 @@ let float =
   Primitive (Identifier.create "float")
 
 
-let void =
-  Primitive (Identifier.create "None")
+let none =
+  Optional Bottom
 
 
 let generator parameter =
   Parametric {
     name = Identifier.create "typing.Generator";
-    parameters = [parameter; void; void];
+    parameters = [parameter; none; none];
   }
 
 
@@ -323,7 +328,10 @@ let create ~aliases expression =
           }
       | [] ->
           let name = name reversed_lead in
-          Primitive name
+          if Identifier.show name = "None" then
+            none
+          else
+            Primitive name
       | _ ->
           Top
     in
@@ -376,6 +384,9 @@ let create ~aliases expression =
          | "object"
          | "typing.Any" ->
              Object
+
+         | "None" ->
+             none
 
          | "numbers.Number"
          | "numbers.Complex" ->
@@ -499,9 +510,13 @@ let expression annotation =
     match annotation with
     | Bottom -> Access.create "$bottom"
     | Object -> Access.create "object"
+    | Optional Bottom -> split (Identifier.create "None")
     | Optional parameter ->
         (Access.create "typing.Optional") @
         [Access.Subscript [index parameter]]
+    | Parametric { name; parameters }
+      when Identifier.show name = "typing.Optional" && parameters = [Bottom] ->
+        split (Identifier.create "None")
     | Parametric { name; parameters } ->
         let subscript = Access.Subscript (List.map ~f:index parameters) in
         (split (reverse_substitute name)) @ [subscript]
@@ -546,7 +561,7 @@ let is_meta = function
 
 
 let is_none = function
-  | Primitive name -> Identifier.show name = "None"
+  | Optional Bottom -> true
   | _ -> false
 
 

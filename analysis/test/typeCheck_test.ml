@@ -998,7 +998,8 @@ let test_show_error_traces _ =
   assert_type_errors ~show_error_traces:true
     "def foo() -> str: return"
     [
-      "Incompatible return type [7]: Expected `str` but function does not return."
+      "Incompatible return type [7]: Expected `str` but got `None`. " ^
+      "Type `str` expected on line 1, specified on line 1."
     ];
 
   assert_type_errors ~show_error_traces:true
@@ -1022,8 +1023,8 @@ let test_show_error_traces _ =
   assert_type_errors ~show_error_traces:true
     "def foo(): pass"
     [
-      "Missing return annotation [3]: Function does not return; " ^
-      "return type should be specified as `None`.";
+      "Missing return annotation [3]: Returning `None` but no return type is specified. " ^
+      "Type `None` was returned on line 1, return type should be specified on line 1."
     ];
 
   assert_type_errors ~show_error_traces:true
@@ -1032,9 +1033,8 @@ let test_show_error_traces _ =
         return None
     |}
     [
-      "Missing return annotation [3]: Returning `typing.Optional[typing.Any]` but no return type " ^
-      "is specified. Type `typing.Optional[typing.Any]` was returned on line 3, return type " ^
-      "should be specified on line 2.";
+      "Missing return annotation [3]: Returning `None` but no return type is specified. " ^
+      "Type `None` was returned on line 3, return type should be specified on line 2.";
     ];
 
   assert_type_errors ~show_error_traces:true
@@ -1207,7 +1207,7 @@ let test_check _ =
 
   assert_type_errors
     "def foo() -> str: return"
-    ["Incompatible return type [7]: Expected `str` but function does not return."];
+    ["Incompatible return type [7]: Expected `str` but got `None`."];
 
   assert_type_errors
     "def foo() -> typing.List[str]: return 1"
@@ -1342,7 +1342,7 @@ let test_check _ =
         return None
     |}
     [
-      "Incompatible return type [7]: Expected `int` but got `typing.Optional[typing.Any]`."
+      "Incompatible return type [7]: Expected `int` but got `None`."
     ];
 
   assert_type_errors
@@ -1352,7 +1352,7 @@ let test_check _ =
           return 1
     |}
     [
-      "Incompatible return type [7]: Expected `int` but function does not return."
+      "Incompatible return type [7]: Expected `int` but got `None`."
     ];
 
   assert_type_errors
@@ -1470,10 +1470,7 @@ let test_strict _ =
 
   assert_strict_errors
     "def foo(): pass"
-    [
-      "Missing return annotation [3]: Function does not return; " ^
-      "return type should be specified as `None`."
-    ];
+    ["Missing return annotation [3]: Returning `None` but no return type is specified."];
   assert_strict_errors "def foo() -> None: return" [];
   assert_strict_errors "def foo() -> float: return 1.0" [];
   assert_strict_errors "def foo() -> float: return 1" [];
@@ -1486,7 +1483,7 @@ let test_strict _ =
   assert_strict_errors
     "def foo() -> str: return"
     [
-      "Incompatible return type [7]: Expected `str` but function does not return."
+      "Incompatible return type [7]: Expected `str` but got `None`."
     ];
   assert_strict_errors
     "def foo() -> typing.List[str]: return 1"
@@ -1611,7 +1608,7 @@ let test_check_comprehensions _ =
 let test_check_optional _ =
   assert_type_errors
     "def foo() -> str: return None"
-    ["Incompatible return type [7]: Expected `str` but got `typing.Optional[typing.Any]`."];
+    ["Incompatible return type [7]: Expected `str` but got `None`."];
 
   assert_type_errors
     "def foo() -> typing.Optional[str]: return None"
@@ -2895,20 +2892,14 @@ let test_check_missing_return _ =
       def foo():
         return
     |}
-    [
-      "Missing return annotation [3]: Function does not return; " ^
-      "return type should be specified as `None`."
-    ];
+    ["Missing return annotation [3]: Returning `None` but no return type is specified."];
 
   assert_type_errors
     {|
       def foo():
         return None
     |}
-    [
-      "Missing return annotation [3]: Returning `typing.Optional[typing.Any]` but no return type " ^
-      "is specified.";
-    ];
+    ["Missing return annotation [3]: Returning `None` but no return type is specified.";];
 
   assert_type_errors
     {|
@@ -3587,8 +3578,7 @@ let test_check_behavioral_subtyping _ =
     |}
     [
       "Inconsistent override [15]: `foo` overrides method defined in `Foo` inconsistently.";
-      "Missing return annotation [3]: Function does not return; " ^
-      "return type should be specified as `None`."
+      "Missing return annotation [3]: Returning `None` but no return type is specified."
     ];
 
   (* Weakened precondition. *)
@@ -3872,7 +3862,10 @@ let test_infer _ =
       def returns_dict ():
           return {}
     |}
-    [];
+    [
+      "\"Missing return annotation [3]: Returning `typing.Dict[typing.Any, typing.Any]` " ^
+      "but no return type is specified.\""
+    ];
 
   assert_infer ~fields:["inference.parameters"]
     {|
@@ -3919,25 +3912,19 @@ let test_infer _ =
       def return_none ():
           pass
     |}
-    [
-      "\"Missing return annotation [3]: Function does not return; " ^
-      "return type should be specified as `None`.\""
-    ];
+    ["\"Missing return annotation [3]: Returning `None` but no return type is specified.\""];
   assert_infer
     {|
       def return_none ():
           return
     |}
-    [
-      "\"Missing return annotation [3]: Function does not return; " ^
-      "return type should be specified as `None`.\""
-    ];
+    ["\"Missing return annotation [3]: Returning `None` but no return type is specified.\""];
   assert_infer
     {|
       def return_none ():
           return None
     |}
-    [];
+    ["\"Missing return annotation [3]: Returning `None` but no return type is specified.\""];
   assert_infer
     {|
       def return_none () -> None:

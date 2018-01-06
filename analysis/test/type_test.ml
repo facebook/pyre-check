@@ -557,10 +557,10 @@ let test_is_meta _ =
 
 
 let test_is_none _ =
-  assert_true (Type.is_none (Type.Primitive ~~"None"));
+  assert_false (Type.is_none (Type.Primitive ~~"None"));
   assert_false (Type.is_none Type.integer);
   assert_false (Type.is_none (Type.Primitive ~~"foo"));
-  assert_false (Type.is_none (Type.Optional Type.Bottom))
+  assert_true (Type.is_none (Type.Optional Type.Bottom))
 
 
 let test_is_unknown _ =

@@ -235,12 +235,6 @@ let description
             Identifier.pp name
             Type.pp annotation
         ]
-    | MissingReturnAnnotation { annotation; _ }
-      when Type.is_none annotation ->
-        [
-          (Format.asprintf
-             "Function does not return; return type should be specified as `None`.");
-        ]
     | MissingReturnAnnotation { annotation; evidence_locations; due_to_any } ->
         begin
           match due_to_any with
@@ -367,27 +361,17 @@ let description
             Type.pp actual
         ]
     | IncompatibleReturnType { actual; expected } ->
-        begin
-          match Type.is_none actual with
-          | false ->
-              [
-                (Format.asprintf
-                   "Expected %a but got %a."
-                   Type.pp expected
-                   Type.pp actual);
-                (Format.asprintf
-                   "Type %a expected on line %d, specified on line %d."
-                   Type.pp expected
-                   error.location.Location.stop.Location.line
-                   error.define.Node.location.Location.start.Location.line)
-              ]
-          | true ->
-              [
-                (Format.asprintf
-                   "Expected %a but function does not return."
-                   Type.pp expected);
-              ]
-        end
+        [
+          (Format.asprintf
+             "Expected %a but got %a."
+             Type.pp expected
+             Type.pp actual);
+          (Format.asprintf
+             "Type %a expected on line %d, specified on line %d."
+             Type.pp expected
+             error.location.Location.stop.Location.line
+             error.define.Node.location.Location.start.Location.line)
+        ]
     | IncompatibleType {
         name;
         parent = Some parent;
@@ -433,7 +417,7 @@ let description
                 Type.pp actual
                 Type.pp expected
           | StrengthenedPrecondition ->
-              if not (Type.equal actual Type.void) then
+              if not (Type.equal actual Type.none) then
                 Format.asprintf
                   "Parameter of type %a is not a supertype of the overridden parameter %a."
                   Type.pp actual

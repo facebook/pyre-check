@@ -561,8 +561,6 @@ and join ((module Reader: Reader) as order) left right =
   if Type.equal left right then
     left
   else
-    let left = if Type.is_none left then Type.Optional Type.Bottom else left in
-    let right = if Type.is_none right then Type.Optional Type.Bottom else right in
     match left, right with
     | Type.Top, _
     | _, Type.Top ->
@@ -989,11 +987,9 @@ module Builder = struct
     insert reader Type.Bottom;
     insert reader Type.Top;
 
-    (* Object and Void. *)
+    (* Object *)
     insert reader Type.Object;
-    insert reader Type.void;
-    connect reader ~predecessor:Type.Bottom ~successor:Type.void;
-    connect reader ~predecessor:Type.void ~successor:Type.Object;
+    connect reader ~predecessor:Type.Bottom ~successor:Type.Object;
     connect reader ~predecessor:Type.Object ~successor:Type.Top;
 
     (* Numerical hierarchy. *)

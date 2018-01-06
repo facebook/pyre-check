@@ -61,7 +61,7 @@ val set: t -> t
 val string: t
 val tuple: t list -> t
 val union: t list -> t
-val void: t
+val none: t
 val yield: t -> t
 
 val create
