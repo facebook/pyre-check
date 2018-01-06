@@ -561,6 +561,8 @@ and join ((module Reader: Reader) as order) left right =
   if Type.equal left right then
     left
   else
+    let left = if Type.is_none left then Type.Optional Type.Bottom else left in
+    let right = if Type.is_none right then Type.Optional Type.Bottom else right in
     match left, right with
     | Type.Top, _
     | _, Type.Top ->

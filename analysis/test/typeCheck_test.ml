@@ -1347,6 +1347,16 @@ let test_check _ =
 
   assert_type_errors
     {|
+      def x() -> int:
+        if condition:
+          return 1
+    |}
+    [
+      "Incompatible return type [7]: Expected `int` but function does not return."
+    ];
+
+  assert_type_errors
+    {|
       def derp()->typing.Union[str, None]:
           return None
     |}
@@ -1634,6 +1644,17 @@ let test_check_optional _ =
             return -1
     |}
     [];
+
+  assert_type_errors
+    {|
+      def foo() -> typing.Any:
+        if True:
+          return 1
+    |}
+    [
+      "Missing return annotation [3]: Returning `typing.Optional[int]` but " ^
+      "type `Any` is specified."
+    ];
 
   assert_type_errors
     {|
