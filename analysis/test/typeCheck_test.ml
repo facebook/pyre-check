@@ -991,20 +991,20 @@ let test_show_error_traces _ =
   assert_type_errors ~show_error_traces:true
     "def foo() -> int: return 1.0"
     [
-      "Incompatible return type [7]: expected `int` but got `float`. Type `int` expected on line " ^
+      "Incompatible return type [7]: Expected `int` but got `float`. Type `int` expected on line " ^
       "1, specified on line 1."
     ];
 
   assert_type_errors ~show_error_traces:true
     "def foo() -> str: return"
     [
-      "Incompatible return type [7]: expected `str` but function does not return."
+      "Incompatible return type [7]: Expected `str` but function does not return."
     ];
 
   assert_type_errors ~show_error_traces:true
     "def foo() -> typing.List[str]: return 1"
     [
-      "Incompatible return type [7]: expected `typing.List[str]` but got `int`. Type " ^
+      "Incompatible return type [7]: Expected `typing.List[str]` but got `int`. Type " ^
       "`typing.List[str]` expected on line 1, specified on line 1.";
     ];
 
@@ -1014,7 +1014,7 @@ let test_show_error_traces _ =
       def foo() -> typing.Dict[typing.Any, typing.Any]: return f()
     |}
     [
-      "Incompatible return type [7]: expected `typing.Dict[typing.Any, typing.Any]` but got " ^
+      "Incompatible return type [7]: Expected `typing.Dict[typing.Any, typing.Any]` but got " ^
       "`typing.Dict[unknown, unknown]`. Type `typing.Dict[typing.Any, typing.Any]` expected on " ^
       "line 3, specified on line 3.";
     ];
@@ -1023,7 +1023,7 @@ let test_show_error_traces _ =
     "def foo(): pass"
     [
       "Missing return annotation [3]: Function does not return; " ^
-      "return type should be specified as `None`."
+      "return type should be specified as `None`.";
     ];
 
   assert_type_errors ~show_error_traces:true
@@ -1040,13 +1040,13 @@ let test_show_error_traces _ =
   assert_type_errors ~show_error_traces:true
     {|
     class Foo:
-      test_attribute: int
+      attribute: int
       def __init__(self) -> None:
-        self.test_attribute = ""
+        self.attribute = ""
     |}
     [
-      "Incompatible type [8]: attribute test_attribute declared in class Foo has type `int` but " ^
-      "is used as type `str`. Attribute test_attribute declared on line 3, incorrectly used on line " ^
+      "Incompatible type [8]: Attribute `attribute` declared in class `Foo` has type `int` but " ^
+      "is used as type `str`. Attribute `attribute` declared on line 3, incorrectly used on line " ^
       "5.";
     ];
 
@@ -1059,20 +1059,20 @@ let test_show_error_traces _ =
     |}
     [
       "Incompatible type [9]: constant is declared to have type `int` but is used as type `str`. " ^
-      "constant incorrectly used on line 5."
+      "constant incorrectly used on line 5.";
     ];
 
   assert_type_errors ~show_error_traces:true
     {|
     class Foo:
-      test_attribute: int
+      attribute: int
       def __init__(self) -> None:
-        test_attribute = 0
+        attribute = 0
     |}
     [
-      "Uninitialized attribute [13]: attribute test_attribute is declared in class Foo to have non-" ^
-      "optional type `int` but is never initialized. Attribute test_attribute is declared on line 3, " ^
-      "never initialized and therefore must be `typing.Optional[int]`."
+      "Uninitialized attribute [13]: Attribute `attribute` is declared in class `Foo` to have " ^
+      "non-optional type `int` but is never initialized. Attribute `attribute` is declared on " ^
+      "line 3, never initialized and therefore must be `typing.Optional[int]`.";
     ];
 
   assert_type_errors ~show_error_traces:true
@@ -1086,8 +1086,9 @@ let test_show_error_traces _ =
           return foo.attribute
     |}
     [
-      "Missing annotation [4]: Attribute attribute of class Foo has type `str` but no type " ^
-      "is specified. Attribute attribute declared on line 3, type `str` deduced from test.py:7:4.";
+      "Missing annotation [4]: Attribute `attribute` of class `Foo` has type `str` but no type " ^
+      "is specified. Attribute `attribute` declared on line 3, type `str` deduced from " ^
+      "test.py:7:4.";
     ];
 
   assert_type_errors ~show_error_traces:true
@@ -1098,8 +1099,8 @@ let test_show_error_traces _ =
       constant = 1
     |}
     [
-      "Missing annotation [5]: Globally accessible attribute constant has type `int` but " ^
-      "no type is specified. Global constant declared on line 2, type `int` deduced " ^
+      "Missing annotation [5]: Globally accessible variable `constant` has type `int` but " ^
+      "no type is specified. Global variable `constant` declared on line 2, type `int` deduced " ^
       "from test.py:5:2."
     ];
 
@@ -1112,8 +1113,8 @@ let test_show_error_traces _ =
       constant = 1
     |}
     [
-      "Missing annotation [5]: Globally accessible attribute constant has type " ^
-      "`typing.Union[int, str]` but no type is specified. Global constant " ^
+      "Missing annotation [5]: Globally accessible variable `constant` has type " ^
+      "`typing.Union[int, str]` but no type is specified. Global variable `constant` " ^
       "declared on line 2, type `typing.Union[int, str]` deduced from test.py:5:2, " ^
       "test.py:6:2."
     ];
@@ -1126,8 +1127,8 @@ let test_show_error_traces _ =
           self.attribute = 1
     |}
     [
-      "Missing annotation [4]: Attribute attribute of class Other has type " ^
-      "`int` but no type is specified. Attribute attribute declared on line 3, " ^
+      "Missing annotation [4]: Attribute `attribute` of class `Other` has type " ^
+      "`int` but no type is specified. Attribute `attribute` declared on line 3, " ^
       "type `int` deduced from test.py:5:4."
     ];
 
@@ -1142,12 +1143,12 @@ let test_show_error_traces _ =
         x = "str"
     |}
     [
-      "Missing annotation [5]: Globally accessible attribute x has type " ^
-      "`typing.Union[int, str]` but no type is specified. Global x " ^
+      "Missing annotation [5]: Globally accessible variable `x` has type " ^
+      "`typing.Union[int, str]` but no type is specified. Global variable `x` " ^
       "declared on line 4, type `typing.Union[int, str]` deduced from test.py:4:2, " ^
       "test.py:7:2.";
-      "Missing annotation [5]: Globally accessible attribute x has type " ^
-      "`typing.Union[int, str]` but no type is specified. Global x " ^
+      "Missing annotation [5]: Globally accessible variable `x` has type " ^
+      "`typing.Union[int, str]` but no type is specified. Global variable `x` " ^
       "declared on line 7, type `typing.Union[int, str]` deduced from test.py:4:2, " ^
       "test.py:7:2."
     ]
@@ -1198,19 +1199,19 @@ let test_check _ =
 
   assert_type_errors
     "def foo() -> int: return 1.0"
-    ["Incompatible return type [7]: expected `int` but got `float`."];
+    ["Incompatible return type [7]: Expected `int` but got `float`."];
 
   assert_type_errors
     "def foo() -> str: return 1.0"
-    ["Incompatible return type [7]: expected `str` but got `float`."];
+    ["Incompatible return type [7]: Expected `str` but got `float`."];
 
   assert_type_errors
     "def foo() -> str: return"
-    ["Incompatible return type [7]: expected `str` but function does not return."];
+    ["Incompatible return type [7]: Expected `str` but function does not return."];
 
   assert_type_errors
     "def foo() -> typing.List[str]: return 1"
-    ["Incompatible return type [7]: expected `typing.List[str]` but got `int`."];
+    ["Incompatible return type [7]: Expected `typing.List[str]` but got `int`."];
 
   assert_type_errors
     "def foo() -> typing.List[str]: return []"
@@ -1226,7 +1227,7 @@ let test_check _ =
       def foo() -> typing.Dict[typing.Any, typing.Any]: return f()
     |}
     [
-      "Incompatible return type [7]: expected `typing.Dict[typing.Any, typing.Any]` but got " ^
+      "Incompatible return type [7]: Expected `typing.Dict[typing.Any, typing.Any]` but got " ^
       "`typing.Dict[unknown, unknown]`.";
     ];
 
@@ -1240,8 +1241,8 @@ let test_check _ =
   assert_type_errors
     "def foo() -> str: return 1.0\ndef bar() -> int: return ''"
     [
-      "Incompatible return type [7]: expected `str` but got `float`.";
-      "Incompatible return type [7]: expected `int` but got `str`.";
+      "Incompatible return type [7]: Expected `str` but got `float`.";
+      "Incompatible return type [7]: Expected `int` but got `str`.";
     ];
 
   assert_type_errors
@@ -1250,7 +1251,7 @@ let test_check _ =
 
   assert_type_errors
     "class A: pass\ndef foo() -> A: return 1"
-    ["Incompatible return type [7]: expected `A` but got `int`."];
+    ["Incompatible return type [7]: Expected `A` but got `int`."];
 
   assert_type_errors
     "def bar() -> str: return ''\ndef foo() -> str: return bar()"
@@ -1263,7 +1264,7 @@ let test_check _ =
 
   assert_type_errors
     "def foo() -> str: return bar()"
-    ["Incompatible return type [7]: expected `str` but got `unknown`."];
+    ["Incompatible return type [7]: Expected `str` but got `unknown`."];
 
   assert_type_errors
     {|
@@ -1274,7 +1275,7 @@ let test_check _ =
           result = durp()
         return result
     |}
-    ["Incompatible return type [7]: expected `other` but got `unknown`."];
+    ["Incompatible return type [7]: Expected `other` but got `unknown`."];
 
   assert_type_errors
     {|
@@ -1341,7 +1342,7 @@ let test_check _ =
         return None
     |}
     [
-      "Incompatible return type [7]: expected `int` but got `typing.Optional[typing.Any]`."
+      "Incompatible return type [7]: Expected `int` but got `typing.Optional[typing.Any]`."
     ];
 
   assert_type_errors
@@ -1371,7 +1372,7 @@ let test_check _ =
         return (x for x in l if x is not None)
     |}
     [
-      "Incompatible return type [7]: expected `typing.Generator[str, None, None]` " ^
+      "Incompatible return type [7]: Expected `typing.Generator[str, None, None]` " ^
       "but got `typing.Generator[int, None, None]`.";
     ];
 
@@ -1395,7 +1396,7 @@ let test_check _ =
       return {""}
     |}
     [
-      "Incompatible return type [7]: expected `typing.Set[int]` but got `typing.Set[str]`."
+      "Incompatible return type [7]: Expected `typing.Set[int]` but got `typing.Set[str]`."
     ];
 
   assert_type_errors
@@ -1407,8 +1408,8 @@ let test_check _ =
         return 2
     |}
     [
-      "Incompatible return type [7]: expected `str` but got `int`.";
-      "Incompatible return type [7]: expected `str` but got `int`."
+      "Incompatible return type [7]: Expected `str` but got `int`.";
+      "Incompatible return type [7]: Expected `str` but got `int`."
 
     ]
 
@@ -1468,32 +1469,32 @@ let test_strict _ =
   assert_strict_errors "def foo() -> float: return 1" [];
   assert_strict_errors
     "def foo() -> int: return 1.0"
-    ["Incompatible return type [7]: expected `int` but got `float`."];
+    ["Incompatible return type [7]: Expected `int` but got `float`."];
   assert_strict_errors
     "def foo() -> str: return 1.0"
-    ["Incompatible return type [7]: expected `str` but got `float`."];
+    ["Incompatible return type [7]: Expected `str` but got `float`."];
   assert_strict_errors
     "def foo() -> str: return"
     [
-      "Incompatible return type [7]: expected `str` but function does not return."
+      "Incompatible return type [7]: Expected `str` but function does not return."
     ];
   assert_strict_errors
     "def foo() -> typing.List[str]: return 1"
     [
-      "Incompatible return type [7]: expected `typing.List[str]` but got `int`."
+      "Incompatible return type [7]: Expected `typing.List[str]` but got `int`."
     ];
   assert_strict_errors "def foo() -> typing.List[str]: return []" [];
   assert_strict_errors "def foo() -> typing.Dict[str, int]: return {}" [];
   assert_strict_errors
     "def foo() -> str: return 1.0\ndef bar() -> int: return ''"
     [
-      "Incompatible return type [7]: expected `str` but got `float`.";
-      "Incompatible return type [7]: expected `int` but got `str`.";
+      "Incompatible return type [7]: Expected `str` but got `float`.";
+      "Incompatible return type [7]: Expected `int` but got `str`.";
     ];
   assert_strict_errors "class A: pass\ndef foo() -> A: return A()" [];
   assert_strict_errors
     "class A: pass\ndef foo() -> A: return 1"
-    ["Incompatible return type [7]: expected `A` but got `int`."];
+    ["Incompatible return type [7]: Expected `A` but got `int`."];
   assert_strict_errors "def bar() -> str: return ''\ndef foo() -> str: return bar()" [];
   assert_strict_errors
     {|
@@ -1570,14 +1571,14 @@ let test_check_comprehensions _ =
     def foo(a: typing.List[str], b: typing.List[str]) -> int:
       return {x + y for x in a for y in b}
     |}
-    ["Incompatible return type [7]: expected `int` but got `typing.Set[str]`."];
+    ["Incompatible return type [7]: Expected `int` but got `typing.Set[str]`."];
 
   assert_type_errors
     {|
       def foo(a: typing.Dict[str, int]) -> typing.List[int]:
         return [x for x in a]
     |}
-    ["Incompatible return type [7]: expected `typing.List[int]` but got `typing.List[str]`."];
+    ["Incompatible return type [7]: Expected `typing.List[int]` but got `typing.List[str]`."];
 
   assert_type_errors
     {|
@@ -1592,7 +1593,7 @@ let test_check_comprehensions _ =
         return { y:x for x, y in a.items() }
     |}
     [
-      "Incompatible return type [7]: expected `typing.Dict[str, int]` but got " ^
+      "Incompatible return type [7]: Expected `typing.Dict[str, int]` but got " ^
       "`typing.Dict[int, str]`.";
     ]
 
@@ -1600,7 +1601,7 @@ let test_check_comprehensions _ =
 let test_check_optional _ =
   assert_type_errors
     "def foo() -> str: return None"
-    ["Incompatible return type [7]: expected `str` but got `typing.Optional[typing.Any]`."];
+    ["Incompatible return type [7]: Expected `str` but got `typing.Optional[typing.Any]`."];
 
   assert_type_errors
     "def foo() -> typing.Optional[str]: return None"
@@ -1622,7 +1623,7 @@ let test_check_optional _ =
 
   assert_type_errors
     "def foo() -> typing.Optional[int]: return 1.0"
-    ["Incompatible return type [7]: expected `typing.Optional[int]` but got `float`."];
+    ["Incompatible return type [7]: Expected `typing.Optional[int]` but got `float`."];
 
   assert_type_errors
     {|
@@ -1751,7 +1752,7 @@ let test_check_variable_arguments _ =
       def bar(b) -> str:
         return foo ( *b )
     |}
-    ["Incompatible return type [7]: expected `str` but got `int`."];
+    ["Incompatible return type [7]: Expected `str` but got `int`."];
 
   assert_type_errors
     {|
@@ -1844,21 +1845,21 @@ let test_check_method_returns _ =
       def foo(input: str) -> int:
           return input.lower()
     |}
-    ["Incompatible return type [7]: expected `int` but got `str`."];
+    ["Incompatible return type [7]: Expected `int` but got `str`."];
 
   assert_type_errors
     {|
       def foo(input: str) -> int:
           return input.lower().upper()
     |}
-    ["Incompatible return type [7]: expected `int` but got `str`."];
+    ["Incompatible return type [7]: Expected `int` but got `str`."];
 
   assert_type_errors
     {|
       def foo() -> int:
           return ''.upper()
     |}
-    ["Incompatible return type [7]: expected `int` but got `str`."]
+    ["Incompatible return type [7]: Expected `int` but got `str`."]
 
 
 let test_check_method_parameters _ =
@@ -1928,7 +1929,7 @@ let test_check_method_parameters _ =
       def foo(input: typing.Any) -> str:
         return input.__sizeof__()
     |}
-    ["Incompatible return type [7]: expected `str` but got `int`."];
+    ["Incompatible return type [7]: Expected `str` but got `int`."];
 
   assert_type_errors
     {|
@@ -1945,7 +1946,7 @@ let test_check_method_parameters _ =
         def bar(x: int) -> int:
           return x
     |}
-    ["Incompatible return type [7]: expected `int` but got `Foo`."]
+    ["Incompatible return type [7]: Expected `int` but got `Foo`."]
 
 
 let test_check_method_resolution _ =
@@ -1986,7 +1987,7 @@ let test_check_self _ =
         def bar(self) -> str:
           return self.foo()
     |}
-    ["Incompatible return type [7]: expected `str` but got `int`."]
+    ["Incompatible return type [7]: Expected `str` but got `int`."]
 
 
 let test_check_static _ =
@@ -2108,19 +2109,19 @@ let test_check_init _ =
   assert_type_errors
     {|
     class Foo:
-      test_attribute: int
+      attribute: int
       def __init__(self) -> None:
         pass
     |}
     [
-      "Uninitialized attribute [13]: attribute test_attribute is declared in class Foo to have non-" ^
-      "optional type `int` but is never initialized."
+      "Uninitialized attribute [13]: Attribute `attribute` is declared in class `Foo` to have " ^
+      "non-optional type `int` but is never initialized.";
     ];
 
   assert_type_errors
     {|
     class Foo:
-      test_attribute: int = 1
+      attribute: int = 1
       def __init__(self) -> None:
         pass
     |}
@@ -2129,54 +2130,54 @@ let test_check_init _ =
   assert_type_errors
     {|
     class Foo:
-      test_attribute: int
-      test_attribute_two: str
+      attribute: int
+      attribute_two: str
       def __init__(self) -> None:
         pass
     |}
     [
-      "Uninitialized attribute [13]: attribute test_attribute is declared in class Foo to have non-" ^
-      "optional type `int` but is never initialized.";
-      "Uninitialized attribute [13]: attribute test_attribute_two is declared in class Foo to have non" ^
-      "-optional type `str` but is never initialized."
+      "Uninitialized attribute [13]: Attribute `attribute` is declared in class `Foo` to have " ^
+      "non-optional type `int` but is never initialized.";
+      "Uninitialized attribute [13]: Attribute `attribute_two` is declared in class `Foo` to " ^
+      "have non-optional type `str` but is never initialized.";
     ];
 
   assert_type_errors
     {|
     class Foo:
-      test_attribute: int
+      attribute: int
       def __init__(self) -> None:
-        self.test_attribute = 0
+        self.attribute = 0
     |}
     [];
 
   assert_type_errors
     {|
     class Foo:
-      test_attribute: int
+      attribute: int
       def __init__(self) -> None:
-        test_attribute = 0
+        attribute = 0
     |}
     [
-      "Uninitialized attribute [13]: attribute test_attribute is declared in class Foo to have non-" ^
-      "optional type `int` but is never initialized."
+      "Uninitialized attribute [13]: Attribute `attribute` is declared in class `Foo` to have " ^
+      "non-optional type `int` but is never initialized.";
     ];
 
   assert_type_errors
     {|
       class Foo:
         def __init__(self) -> None:
-          self.test_attribute = 0
+          self.attribute = 0
     |}
     [
-      "Missing annotation [4]: Attribute test_attribute of class Foo has type `int` but " ^
-      "no type is specified."
+      "Missing annotation [4]: Attribute `attribute` of class `Foo` has type `int` but " ^
+      "no type is specified.";
     ];
 
   assert_type_errors
     {|
       class Foo:
-        test_attribute: typing.Optional[int]
+        attribute: typing.Optional[int]
         def __init__(self) -> None:
           pass
     |}
@@ -2185,13 +2186,13 @@ let test_check_init _ =
   assert_type_errors
     {|
     class Foo:
-      test_attribute: int
+      attribute: int
       def __init__(self) -> None:
-        self.test_attribute = ""
+        self.attribute = ""
     |}
     [
-      "Incompatible type [8]: attribute test_attribute declared in class Foo has type `int` but is " ^
-      "used as type `str`.";
+      "Incompatible type [8]: Attribute `attribute` declared in class `Foo` has type `int` but " ^
+      "is used as type `str`.";
     ];
 
   assert_type_errors
@@ -2214,7 +2215,7 @@ let test_check_attributes _ =
         def foo(self) -> int:
           return self.bar
     |}
-    ["Incompatible return type [7]: expected `int` but got `unknown`."];
+    ["Incompatible return type [7]: Expected `int` but got `unknown`."];
   assert_type_errors
     {|
       class Foo:
@@ -2280,9 +2281,9 @@ let test_check_attributes _ =
           return self.bar
     |}
     [
-      "Missing annotation [4]: Attribute bar of class Foo has type `str` but no type " ^
+      "Missing annotation [4]: Attribute `bar` of class `Foo` has type `str` but no type " ^
       "is specified.";
-      "Incompatible return type [7]: expected `int` but got `str`."
+      "Incompatible return type [7]: Expected `int` but got `str`."
     ];
 
   assert_type_errors
@@ -2294,9 +2295,9 @@ let test_check_attributes _ =
           return self.bar
     |}
     [
-      "Missing annotation [4]: Attribute bar of class Foo has type `str` but type `Any` " ^
+      "Missing annotation [4]: Attribute `bar` of class `Foo` has type `str` but type `Any` " ^
       "is specified.";
-      "Incompatible return type [7]: expected `int` but got `str`."
+      "Incompatible return type [7]: Expected `int` but got `str`."
     ];
 
   assert_type_errors
@@ -2308,8 +2309,8 @@ let test_check_attributes _ =
           return self.bar
     |}
     [
-      "Incompatible type [8]: attribute bar declared in class Foo has type `int` but is used as " ^
-      "type `str`.";
+      "Incompatible type [8]: Attribute `bar` declared in class `Foo` has type `int` but is used " ^
+      "as type `str`.";
     ];
 
   assert_type_errors
@@ -2321,7 +2322,7 @@ let test_check_attributes _ =
         return param.bar
     |}
     [
-      "Incompatible type [8]: attribute bar declared in class Foo has type `int` but is used " ^
+      "Incompatible type [8]: Attribute `bar` declared in class `Foo` has type `int` but is used " ^
       "as type `str`.";
     ];
 
@@ -2332,7 +2333,7 @@ let test_check_attributes _ =
         bar = 'foo'
         return bar
     |}
-    ["Incompatible return type [7]: expected `int` but got `str`."];
+    ["Incompatible return type [7]: Expected `int` but got `str`."];
 
   assert_type_errors
     {|
@@ -2342,9 +2343,9 @@ let test_check_attributes _ =
           return self.bar
     |}
     [
-      "Missing annotation [4]: Attribute bar of class Foo has type `str` but no type " ^
+      "Missing annotation [4]: Attribute `bar` of class `Foo` has type `str` but no type " ^
       "is specified.";
-      "Incompatible return type [7]: expected `int` but got `str`.";
+      "Incompatible return type [7]: Expected `int` but got `str`.";
     ];
 
   assert_type_errors
@@ -2357,7 +2358,7 @@ let test_check_attributes _ =
         return foo_obj.bar
     |}
     [
-      "Incompatible type [8]: attribute bar declared in class Foo has type `int` but is " ^
+      "Incompatible type [8]: Attribute `bar` declared in class `Foo` has type `int` but is " ^
       "used as type `str`.";
     ];
 
@@ -2371,8 +2372,8 @@ let test_check_attributes _ =
           return self.bar
     |}
     [
-      "Incompatible type [8]: attribute bar declared in class Foo has type `int` but is used as " ^
-      "type `str`.";
+      "Incompatible type [8]: Attribute `bar` declared in class `Foo` has type `int` but is used " ^
+      "as type `str`.";
     ];
 
   assert_type_errors
@@ -2406,7 +2407,7 @@ let test_check_attributes _ =
           return a.bar
         return 0
     |}
-    ["Incompatible return type [7]: expected `int` but got `typing.Optional[int]`."];
+    ["Incompatible return type [7]: Expected `int` but got `typing.Optional[int]`."];
 
   assert_type_errors
     {|
@@ -2417,7 +2418,7 @@ let test_check_attributes _ =
                   self.baz = 5
               return self.baz
     |}
-    ["Missing annotation [4]: Attribute baz of class Foo has type " ^
+    ["Missing annotation [4]: Attribute `baz` of class `Foo` has type " ^
      "`typing.Optional[int]` but no type is specified."];
 
   (* TODO(szhu): support attribute tests for: class variables, generic annotations *)
@@ -2429,9 +2430,9 @@ let test_check_attributes _ =
         Foo.bar = "foo"
         return Foo.bar
     |}
-    ["Incompatible return type [7]: expected `int` but got `str`."];
+    ["Incompatible return type [7]: Expected `int` but got `str`."];
   (* [
-      "Incompatible type [8]: attribute Foo.bar declared in class Foo " ^
+      "Incompatible type [8]: attribute Foo.bar declared in class `Foo` " ^
       "has type `int` but is used as type `str`."
      ]; *)
 
@@ -2444,9 +2445,9 @@ let test_check_attributes _ =
           return self.bar
     |}
     [
-      "Incompatible type [8]: attribute bar declared in class Foo has type `typing.Generic[_T]` " ^
-      "but is used as type `int`.";
-      "Incompatible return type [7]: expected `int` but got `typing.Generic[_T]`.";
+      "Incompatible type [8]: Attribute `bar` declared in class `Foo` has type " ^
+      "`typing.Generic[_T]` but is used as type `int`.";
+      "Incompatible return type [7]: Expected `int` but got `typing.Generic[_T]`.";
     ];
   (* []; *)
 
@@ -2459,7 +2460,7 @@ let test_check_attributes _ =
       def foo() -> str:
         return Foo.attribute
     |}
-    ["Incompatible return type [7]: expected `str` but got `int`."]
+    ["Incompatible return type [7]: Expected `str` but got `int`."]
 
 
 let test_check_globals _ =
@@ -2469,7 +2470,7 @@ let test_check_globals _ =
       def foo() -> str:
         return constant
     |}
-    ["Incompatible return type [7]: expected `str` but got `int`."]
+    ["Incompatible return type [7]: Expected `str` but got `int`."]
 
 
 let test_check_immutables _ =
@@ -2517,7 +2518,7 @@ let test_check_immutables _ =
       constant = 1
     |}
     [
-      "Missing annotation [5]: Globally accessible attribute constant has type `int` but " ^
+      "Missing annotation [5]: Globally accessible variable `constant` has type `int` but " ^
       "no type is specified."
     ];
 
@@ -2529,7 +2530,7 @@ let test_check_immutables _ =
       constant = 1
     |}
     [
-      "Missing annotation [5]: Globally accessible attribute constant has type `int` but " ^
+      "Missing annotation [5]: Globally accessible variable `constant` has type `int` but " ^
       "type `Any` is specified."
     ];
 
@@ -2542,7 +2543,7 @@ let test_check_immutables _ =
       return constant
     |}
     [
-      "Missing annotation [5]: Globally accessible attribute constant has type `int` but " ^
+      "Missing annotation [5]: Globally accessible variable `constant` has type `int` but " ^
       "no type is specified."
     ];
 
@@ -2628,7 +2629,7 @@ let test_check_immutables _ =
         foo.attribute = 1
     |}
     [
-      "Missing annotation [4]: Attribute attribute of class Foo has type `int` but no type" ^
+      "Missing annotation [4]: Attribute `attribute` of class `Foo` has type `int` but no type" ^
       " is specified.";
     ];
 
@@ -2640,7 +2641,7 @@ let test_check_immutables _ =
         constant = 1
     |}
     [
-      "Missing annotation [5]: Globally accessible attribute constant has type `int` but " ^
+      "Missing annotation [5]: Globally accessible variable `constant` has type `int` but " ^
       "no type is specified."
     ];
 
@@ -2672,7 +2673,7 @@ let test_check_immutables _ =
         constant = 1
     |}
     [
-      "Missing annotation [5]: Globally accessible attribute constant has type `int` but " ^
+      "Missing annotation [5]: Globally accessible variable `constant` has type `int` but " ^
       "no type is specified."
     ];
 
@@ -2688,9 +2689,9 @@ let test_check_immutables _ =
         constant = "hi"
     |}
     [
-      "Missing annotation [5]: Globally accessible attribute constant has type `typing." ^
+      "Missing annotation [5]: Globally accessible variable `constant` has type `typing." ^
       "Union[int, str]` but no type is specified.";
-      "Missing annotation [5]: Globally accessible attribute constant has type `typing." ^
+      "Missing annotation [5]: Globally accessible variable `constant` has type `typing." ^
       "Union[int, str]` but no type is specified."
     ];
 
@@ -2705,9 +2706,9 @@ let test_check_immutables _ =
         constant = None
     |}
     [
-      "Missing annotation [5]: Globally accessible attribute constant has type `typing." ^
+      "Missing annotation [5]: Globally accessible variable `constant` has type `typing." ^
       "Optional[int]` but no type is specified.";
-      "Missing annotation [5]: Globally accessible attribute constant has type `typing." ^
+      "Missing annotation [5]: Globally accessible variable `constant` has type `typing." ^
       "Optional[int]` but no type is specified."
     ];
 
@@ -2722,9 +2723,9 @@ let test_check_immutables _ =
         constant = 1.0
     |}
     [
-      "Missing annotation [5]: Globally accessible attribute constant has type `float` but" ^
+      "Missing annotation [5]: Globally accessible variable `constant` has type `float` but" ^
       " no type is specified.";
-      "Missing annotation [5]: Globally accessible attribute constant has type `float` but" ^
+      "Missing annotation [5]: Globally accessible variable `constant` has type `float` but" ^
       " no type is specified."
     ];
 
@@ -2739,9 +2740,9 @@ let test_check_immutables _ =
         constant = B()
     |}
     [
-      "Missing annotation [5]: Globally accessible attribute constant has type `A` but no " ^
+      "Missing annotation [5]: Globally accessible variable `constant` has type `A` but no " ^
       "type is specified.";
-      "Missing annotation [5]: Globally accessible attribute constant has type `A` but no " ^
+      "Missing annotation [5]: Globally accessible variable `constant` has type `A` but no " ^
       "type is specified."
     ];
 
@@ -2758,9 +2759,9 @@ let test_check_immutables _ =
         constant = "hi"
     |}
     [
-      "Missing annotation [4]: Attribute constant of class Foo has type `int` but no " ^
+      "Missing annotation [4]: Attribute `constant` of class `Foo` has type `int` but no " ^
       "type is specified.";
-      "Missing annotation [5]: Globally accessible attribute constant has type `str` but " ^
+      "Missing annotation [5]: Globally accessible variable `constant` has type `str` but " ^
       "no type is specified."
     ]
 
@@ -2795,7 +2796,7 @@ let test_check_named_arguments _ =
       def bar()->int:
         return str_float_to_int(i="")
     |}
-    ["Incompatible return type [7]: expected `int` but got `unknown`."];
+    ["Incompatible return type [7]: Expected `int` but got `unknown`."];
   assert_type_errors
     {|
       def bar()->int:
@@ -2820,7 +2821,7 @@ let test_check_enumerations _ =
       def foo() -> int:
         return Color.RED
     |}
-    ["Incompatible return type [7]: expected `int` but got `Color`."];
+    ["Incompatible return type [7]: Expected `int` but got `Color`."];
 
   assert_type_errors
     {|
@@ -2866,7 +2867,7 @@ let test_check_missing_return _ =
       def foo() -> None:
         return 1
     |}
-    ["Incompatible return type [7]: expected `None` but got `int`."];
+    ["Incompatible return type [7]: Expected `None` but got `int`."];
 
   assert_type_errors
     {|
@@ -2917,7 +2918,7 @@ let test_check_missing_return _ =
           return 1
     |}
     [
-      "Incompatible return type [7]: expected `None` but got `int`."
+      "Incompatible return type [7]: Expected `None` but got `int`."
     ];
 
   (* Don't report in non-debug mode. *)
@@ -2951,7 +2952,7 @@ let test_check_yield _ =
         yield 1.0
     |}
     [
-      "Incompatible return type [7]: expected `typing.Generator[int, None, None]` " ^
+      "Incompatible return type [7]: Expected `typing.Generator[int, None, None]` " ^
       "but got `typing.Generator[float, None, None]`.";
     ];
 
@@ -2968,7 +2969,7 @@ let test_check_yield _ =
         yield from [""]
     |}
     [
-      "Incompatible return type [7]: expected `typing.Generator[int, None, None]` " ^
+      "Incompatible return type [7]: Expected `typing.Generator[int, None, None]` " ^
       "but got `typing.Generator[str, None, None]`."
     ];
 
@@ -3048,7 +3049,7 @@ let test_check_ternary _ =
         x: int
         return y if x else 5
     |}
-    ["Incompatible return type [7]: expected `int` but got `typing.Optional[int]`."];
+    ["Incompatible return type [7]: Expected `int` but got `typing.Optional[int]`."];
   assert_type_errors
     {|
       def foo(x: typing.Optional[int]) -> None:
@@ -3076,7 +3077,7 @@ let test_check_union _ =
       def foo() -> typing.Union[str, int]:
         return 1.0
     |}
-    ["Incompatible return type [7]: expected `typing.Union[int, str]` but got `float`."];
+    ["Incompatible return type [7]: Expected `typing.Union[int, str]` but got `float`."];
 
   assert_type_errors
     {|
@@ -3110,7 +3111,7 @@ let test_check_union _ =
           return a
     |}
     [
-      "Incompatible return type [7]: expected `int` but got `typing.Union[float, str]`."
+      "Incompatible return type [7]: Expected `int` but got `typing.Union[float, str]`."
     ];
 
   assert_type_errors
@@ -3120,7 +3121,7 @@ let test_check_union _ =
         return a
     |}
     [
-      "Incompatible return type [7]: expected `float` but got `typing.Union[int, str]`."
+      "Incompatible return type [7]: Expected `float` but got `typing.Union[int, str]`."
     ];
 
   assert_type_errors
@@ -3235,7 +3236,7 @@ let test_check_value_restrictions _ =
        def f(x:str)->int:
            return value_restricted_identity(x)
     |}
-    ["Incompatible return type [7]: expected `int` but got `str`.";];
+    ["Incompatible return type [7]: Expected `int` but got `str`.";];
 
   assert_type_errors
     {|
@@ -3249,7 +3250,7 @@ let test_check_value_restrictions _ =
        def f(x:float)->str:
            return value_restricted_identity(x)
     |}
-    ["Incompatible return type [7]: expected `str` but got `unknown`."]
+    ["Incompatible return type [7]: Expected `str` but got `unknown`."]
 
 
 let test_check_refinement _ =
@@ -3288,7 +3289,7 @@ let test_check_refinement _ =
           y = x
         return x
     |}
-    ["Incompatible return type [7]: expected `int` but got `typing.Optional[int]`."];
+    ["Incompatible return type [7]: Expected `int` but got `typing.Optional[int]`."];
   assert_type_errors
     {|
       def foo(x: typing.Union[int, str]) -> int:
@@ -3405,7 +3406,7 @@ let test_check_tuple _ =
         return (1, "string", 3)
     |}
     [
-      "Incompatible return type [7]: expected `typing.Tuple[int, string]` but got " ^
+      "Incompatible return type [7]: Expected `typing.Tuple[int, string]` but got " ^
       "`typing.Tuple[int, str, int]`.";
     ];
   assert_type_errors
@@ -3414,7 +3415,7 @@ let test_check_tuple _ =
         return (1, "string", 3)
     |}
     [
-      "Incompatible return type [7]: expected `typing.Tuple[int, ...]` but got " ^
+      "Incompatible return type [7]: Expected `typing.Tuple[int, ...]` but got " ^
       "`typing.Tuple[int, str, int]`.";
     ];
   assert_type_errors
@@ -3463,7 +3464,7 @@ let test_check_meta _ =
       def foo(input) -> typing.List[int]:
         return typing.cast(typing.List[float], a)
     |}
-    ["Incompatible return type [7]: expected `typing.List[int]` but got `typing.List[float]`."]
+    ["Incompatible return type [7]: Expected `typing.List[int]` but got `typing.List[float]`."]
 
 
 let test_check_assert _ =
@@ -3520,7 +3521,7 @@ let test_check_await _ =
       def bar(a: int) -> None:
         await a
     |}
-    ["Incompatible awaitable type [12]: expected an awaitable but got `int`."];
+    ["Incompatible awaitable type [12]: Expected an awaitable but got `int`."];
   assert_type_errors
     ~debug:false
     {|

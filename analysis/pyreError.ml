@@ -216,7 +216,7 @@ let description
     | IncompatibleAwaitableType actual ->
         [
           (Format.asprintf
-             "expected an awaitable but got %a."
+             "Expected an awaitable but got %a."
              Type.pp actual
           );
         ]
@@ -293,12 +293,12 @@ let description
           | Some parent, false ->
               [
                 Format.asprintf
-                  "Attribute %a of class %a has type %a but no type is specified."
+                  "Attribute `%a` of class `%a` has type %a but no type is specified."
                   Access.pp name
                   Access.pp (Annotated.Class.name parent)
                   Type.pp annotation;
                 Format.asprintf
-                  "Attribute %a declared on line %d, type %a deduced from %s."
+                  "Attribute `%a` declared on line %d, type %a deduced from %s."
                   Access.pp name
                   (Location.line location)
                   Type.pp annotation
@@ -307,12 +307,12 @@ let description
           | Some parent, true ->
               [
                 Format.asprintf
-                  "Attribute %a of class %a has type %a but type `Any` is specified."
+                  "Attribute `%a` of class `%a` has type %a but type `Any` is specified."
                   Access.pp name
                   Access.pp (Annotated.Class.name parent)
                   Type.pp annotation;
                 Format.asprintf
-                  "Attribute %a declared on line %d, type %a deduced from %s."
+                  "Attribute `%a` declared on line %d, type %a deduced from %s."
                   Access.pp name
                   (Location.line location)
                   Type.pp annotation
@@ -321,11 +321,11 @@ let description
           | None, false ->
               [
                 Format.asprintf
-                  "Globally accessible attribute %a has type %a but no type is specified."
+                  "Globally accessible variable `%a` has type %a but no type is specified."
                   Access.pp name
                   Type.pp annotation;
                 Format.asprintf
-                  "Global %a declared on line %d, type %a deduced from %s."
+                  "Global variable `%a` declared on line %d, type %a deduced from %s."
                   Access.pp name
                   (Location.line location)
                   Type.pp annotation
@@ -334,11 +334,11 @@ let description
           | None, true ->
               [
                 Format.asprintf
-                  "Globally accessible attribute %a has type %a but type `Any` is specified."
+                  "Globally accessible variable `%a` has type %a but type `Any` is specified."
                   Access.pp name
                   Type.pp annotation;
                 Format.asprintf
-                  "Global %a declared on line %d, type %a deduced from %s."
+                  "Global variable `%a` declared on line %d, type %a deduced from %s."
                   Access.pp name
                   (Location.line location)
                   Type.pp annotation
@@ -372,7 +372,7 @@ let description
           | false ->
               [
                 (Format.asprintf
-                   "expected %a but got %a."
+                   "Expected %a but got %a."
                    Type.pp expected
                    Type.pp actual);
                 (Format.asprintf
@@ -384,7 +384,7 @@ let description
           | true ->
               [
                 (Format.asprintf
-                   "expected %a but function does not return."
+                   "Expected %a but function does not return."
                    Type.pp expected);
               ]
         end
@@ -396,13 +396,13 @@ let description
       } ->
         [
           (Format.asprintf
-             "attribute %a declared in class %a has type %a but is used as type %a."
+             "Attribute `%a` declared in class `%a` has type %a but is used as type %a."
              Access.pp name
              Access.pp (Annotated.Class.name parent)
              Type.pp expected
              Type.pp actual);
           (Format.asprintf
-             "Attribute %a declared on line %d, incorrectly used on line %d."
+             "Attribute `%a` declared on line %d, incorrectly used on line %d."
              Access.pp name
              declare_location.Location.start.Location.line
              (Location.line location))
@@ -476,13 +476,13 @@ let description
       } ->
         [
           (Format.asprintf
-             "attribute %a is declared in class %a to have non-optional type %a but is never \
+             "Attribute `%a` is declared in class `%a` to have non-optional type %a but is never \
               initialized."
              Access.pp name
              Access.pp (Annotated.Class.name parent)
              Type.pp expected);
           (Format.asprintf
-             "Attribute %a is declared on line %d, never initialized and therefore must be %a."
+             "Attribute `%a` is declared on line %d, never initialized and therefore must be %a."
              Access.pp name
              (Location.line location)
              Type.pp actual)
