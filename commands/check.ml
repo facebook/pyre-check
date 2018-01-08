@@ -138,7 +138,7 @@ let run_check
     ~name:"check"
     ~timer
     ~configuration
-    ~normals:["request_kind", "FullCheck"]
+    ~normals:["request kind", "FullCheck"]
     ();
   (* Print results. *)
   Log.print

@@ -376,7 +376,7 @@ let serve (socket, server_configuration) =
     let backtrace = Printexc.get_backtrace () in
     Statistics.event
       ~flush:true
-      ~name:"Uncaught exception"
+      ~name:"uncaught exception"
       ~configuration
       ~integers:[]
       ~normals:["exception backtrace", backtrace]

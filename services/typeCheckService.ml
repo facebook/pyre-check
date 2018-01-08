@@ -50,7 +50,7 @@ let analyze_source
         ~randomly_log_every:100
         ~name:"SingleFileTypeCheck"
         ~timer
-        ~normals:["path", path; "RequestKind", "SingleFileTypeCheck"]
+        ~normals:["path", path; "request kind", "SingleFileTypeCheck"]
         ~configuration
         ();
       errors

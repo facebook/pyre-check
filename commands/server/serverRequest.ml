@@ -273,7 +273,7 @@ let rec process_request
         raise InvalidRequest
   in
   Statistics.performance
-    ~name:"Server request"
+    ~name:"server request"
     ~timer
     ~configuration
     ~normals:["request_kind", Protocol.Request.name request]
