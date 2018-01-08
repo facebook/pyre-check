@@ -21,6 +21,9 @@ val expand_returns: Source.t -> Source.t
 (* Tranforms for loops to handle variable typing inside *)
 val expand_for_loop: Source.t -> Source.t
 
+(* Transform x = a.b().c() into $1 = a.b(); x = $1.c() *)
+val simplify_access_chains: Source.t -> Source.t
+
 (* Transform `except (E1, ... En) as e` into `... e: typing.Union[E1, ..., En]`. *)
 val expand_excepts: Source.t -> Source.t
 

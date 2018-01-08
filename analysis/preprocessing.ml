@@ -10,6 +10,7 @@ open Expression
 open Pyre
 open Statement
 
+exception PreprocessingError
 
 let qualify source =
   let qualifier = source.Source.qualifier in
@@ -683,6 +684,105 @@ let expand_ternary_assign source =
   |> snd
 
 
+let simplify_access_chains source =
+  let module SimplifyAccessChains = Transform.Make(struct
+      type t = unit
+
+      let count = ref 0
+
+      let expression state expression =
+        state, expression
+
+      let statement state statement =
+        (* simplify_access_chain breaks down a chain of calls in an access of the form a().b().c to
+           [$3 = $2.c; $2 = $1.b(); $1 = a()]. This function creates temporary variables in order to
+           build later assignments. The statements are returned in reverse order to make
+           postprocessing the last assignment easy.
+        *)
+        let simplify_access_chain location access =
+          let assign_to_temporary ~previous access =
+            let target =
+              count := !count + 1;
+              Expression.Access.Identifier (Identifier.create (Format.sprintf "$%d" !count))
+            in
+            let access =
+              match previous with
+              | None ->
+                  access
+              | Some target ->
+                  target :: access
+            in
+            target,
+            {
+              Node.location;
+              value = Assign {
+                  Assign.value = Some (Node.create (Expression.Access access));
+                  target = Node.create ~location (Expression.Access [target]);
+                  annotation = None;
+                  compound = None;
+                  parent = None;
+                }
+            }
+          in
+          let fold (previous, statements, current_call) last =
+            match last with
+            | Expression.Access.Call _ ->
+                let next_target, call =
+                  assign_to_temporary ~previous (List.rev (last :: current_call))
+                in
+                Some next_target, call :: statements, []
+            | _ ->
+                previous, statements, (last :: current_call)
+          in
+          match List.fold ~init:(None, [], []) ~f:fold access with
+          | _, statements, [] ->
+              statements
+          | previous, statements, incomplete ->
+              let _, assign = assign_to_temporary ~previous (List.rev incomplete) in
+              (assign :: statements)
+        in
+        match statement with
+        | {
+          Node.location;
+          value = Assign (
+              { Assign.value = Some { Node.value = Access access; _ }; target; _ } as assign);
+        } ->
+            begin
+              match simplify_access_chain location access with
+              | [] | [_] ->
+                  state, [statement]
+              | { Node.location; value = Assign { Assign.value = assign_value; _ } }
+                :: assignments ->
+                  (* Postprocess the last element to assign to the initial target. *)
+                  state, List.rev (
+                    {
+                      Node.location;
+                      value = Assign { assign with Assign.target; value = assign_value };
+                    }
+                    :: assignments)
+              | _ ->
+                  raise PreprocessingError
+            end
+        | {
+          Node.location;
+          value = Expression { Node.value = Expression.Access access; _ };
+        } ->
+            begin match simplify_access_chain location access with
+              | [] | [_] ->
+                  state, [statement]
+              | { Node.location; value = Assign { Assign.value = Some call; _ } }:: assignments ->
+                  state, { Node.location; value = Expression call } :: assignments
+              | _ ->
+                  raise PreprocessingError
+            end
+        | _ ->
+            state, [statement]
+    end)
+  in
+  SimplifyAccessChains.transform () source
+  |> snd
+
+
 let defines ({ Source.statements; _ } as source) =
   let toplevel =
     Node.create
@@ -774,5 +874,6 @@ let preprocess source =
   |> expand_returns
   |> expand_for_loop
   |> expand_yield_from
+  |> simplify_access_chains
   |> expand_ternary_assign
   |> expand_excepts
