@@ -69,7 +69,6 @@ module ProtocolValue = struct
   let description = "Protocols"
 end
 
-
 module DependentKeyValue = struct
   type t = string list
   let prefix = Prefix.make ()
@@ -112,17 +111,35 @@ module ClassDefinitionKeyValue = struct
   let description = "Class definition keys"
 end
 
-module OrderTable = struct
-  type t = (
-    (int * TypeOrder.Target.t list) list
-    * (int * TypeOrder.Target.t list) list
-    * (Type.t * int) list
-    * (int * Type.t) list
-  )
+module OrderIndexValue = struct
+  type t = int
   let prefix = Prefix.make ()
-  let description = "TypeOrder"
+  let description = "Order indices"
 end
 
+module OrderAnnotationValue = struct
+  type t = Type.t
+  let prefix = Prefix.make ()
+  let description = "Order annotations"
+end
+
+module EdgeValue = struct
+  type t = TypeOrder.Target.t list
+  let prefix = Prefix.make ()
+  let description = "Edges"
+end
+
+module BackedgeValue = struct
+  type t = TypeOrder.Target.t list
+  let prefix = Prefix.make ()
+  let description = "Backedges"
+end
+
+module OrderKeyValue = struct
+  type t = int list
+  let prefix = Prefix.make ()
+  let description = "Order keys"
+end
 
 (** Shared memory maps *)
 module FunctionDefinitions = SharedMemory.WithCache (AccessKey) (FunctionValue)
@@ -137,16 +154,26 @@ module Globals = SharedMemory.WithCache (AccessKey) (GlobalValue)
 
 module Dependents = SharedMemory.WithCache (StringKey) (DependentValue)
 
-module Order = SharedMemory.WithCache (StringKey) (OrderTable)
+module Protocols = SharedMemory.WithCache (StringKey) (ProtocolValue)
 
+(** Keys *)
 module FunctionKeys = SharedMemory.WithCache (StringKey) (FunctionKeyValue)
 
 module ClassKeys = SharedMemory.WithCache (StringKey) (ClassKeyValue)
 
-module AliasKeys = SharedMemory.WithCache (StringKey) (AliasKeyValue)
-
-module Protocols = SharedMemory.WithCache (StringKey) (ProtocolValue)
-
 module GlobalKeys = SharedMemory.WithCache (StringKey) (GlobalKeyValue)
 
+module AliasKeys = SharedMemory.WithCache (StringKey) (AliasKeyValue)
+
 module DependentKeys = SharedMemory.WithCache (StringKey) (DependentKeyValue)
+
+(** Type order maps *)
+module OrderIndices = SharedMemory.WithCache (TypeKey) (OrderIndexValue)
+
+module OrderAnnotations = SharedMemory.WithCache (IntKey) (OrderAnnotationValue)
+
+module OrderEdges = SharedMemory.WithCache (IntKey) (EdgeValue)
+
+module OrderBackedges = SharedMemory.WithCache (IntKey) (BackedgeValue)
+
+module OrderKeys = SharedMemory.WithCache (StringKey) (OrderKeyValue)

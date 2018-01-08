@@ -108,20 +108,18 @@ let shared_memory_reader
           dependents;
         };
       } =
-    (* TypeOrder is a special case: it contains tables that need to be serialized in turn *)
-    let add_type_order { TypeOrder.edges; backedges; indices; annotations } =
-      let pack (type t) (module M: Hashable.S with type t = t) table =
-        M.Table.to_alist table in
-
-      Order.add
-        "TypeOrder"
-        (pack (module Int) edges,
-         pack (module Int) backedges,
-         pack (module Type) indices,
-         pack (module Int) annotations)
-    in
 
     let add_table f = Hashtbl.iteri ~f:(fun ~key ~data -> f key data) in
+    (* TypeOrder is a special case: it contains tables that need to be serialized in turn *)
+    let add_type_order { TypeOrder.edges; backedges; indices; annotations } =
+      add_table OrderEdges.add edges;
+      add_table OrderBackedges.add backedges;
+      add_table OrderIndices.add indices;
+      add_table OrderAnnotations.add annotations;
+      OrderKeys.add "Edges" (Hashtbl.keys edges);
+      OrderKeys.add "Backedges" (Hashtbl.keys backedges)
+    in
+
     add_table FunctionDefinitions.add function_definitions;
     add_table ClassDefinitions.add class_definitions;
     add_table Aliases.add aliases;
@@ -225,67 +223,60 @@ let shared_memory_reader
       end: Dependencies.Reader)
 
       module TypeOrderReader = struct
-        open TypeOrder
+        type ('key, 'value) lookup = {
+          get: 'key -> 'value option;
+          set: 'key -> 'value -> unit;
+        }
 
-        type ('key, 'value) lookup = ('key, 'value) Hashtbl.t
+        let edges () = {
+          get = OrderEdges.get;
+          set = (fun key value ->
+              OrderEdges.remove_batch (OrderEdges.KeySet.singleton key);
+              OrderEdges.add key value);
+        }
 
-        let order_cache: TypeOrder.t option ref = ref None
+        let backedges () = {
+          get = OrderBackedges.get;
+          set =
+            (fun key value ->
+               OrderBackedges.remove_batch (OrderBackedges.KeySet.singleton key);
+               OrderBackedges.add key value);
+        }
 
-        let initialize () =
-          let edges, backedges, indices, annotations =
-            Order.find_unsafe "TypeOrder" in
-          let unpack (type t) (module M: Hashable.S with type t = t) values =
-            M.Table.of_alist_exn values in
-          let order =
-            {
-              edges = unpack (module Int) edges;
-              backedges = unpack (module Int) backedges;
-              indices = unpack (module Type) indices;
-              annotations = unpack (module Int) annotations
-            }
-          in
-          order_cache := Some order;
-          order
+        let indices () = {
+          get = OrderIndices.get;
+          set =
+            (fun key value ->
+               OrderIndices.remove_batch (OrderIndices.KeySet.singleton key);
+               OrderIndices.add key value);
+        }
 
-        let get_order () =
-          match !order_cache with
-          | Some order_cache -> order_cache
-          | None -> initialize ()
+        let annotations () = {
+          get = OrderAnnotations.get;
+          set =
+            (fun key value ->
+               OrderAnnotations.remove_batch (OrderAnnotations.KeySet.singleton key);
+               OrderAnnotations.add key value);
+        }
 
-        let edges () =
-          (get_order ()).edges
+        let find { get; _ } key = get key
 
-        let backedges () =
-          (get_order ()).backedges
+        let find_unsafe { get; _ } key = Option.value_exn (get key)
 
-        let indices () =
-          (get_order ()).indices
+        let contains { get; _ } key = Option.is_some (get key)
 
-        let annotations () =
-          (get_order ()).annotations
+        let set { set; _ } ~key ~data =
+          set key data
 
-        let find table key =
-          Hashtbl.find table key
+        let length _ = 0
 
-        let find_unsafe table key =
-          Hashtbl.find_exn table key
+        let show () = ""
 
-        let contains table key =
-          Hashtbl.mem table key
+        let edge_keys () =
+          Option.value ~default:[] (OrderKeys.get "Edges")
 
-        let set table ~key ~data =
-          Hashtbl.set table ~key ~data
-
-        let fold table ~init ~f =
-          Hashtbl.fold table ~init ~f
-
-        let keys table = Hashtbl.keys table
-
-        let length table =
-          Hashtbl.length table
-
-        let show () =
-          TypeOrder.show (get_order ())
+        let backedge_keys () =
+          Option.value ~default:[] (OrderKeys.get "Backedges")
       end
 
       let register_definition

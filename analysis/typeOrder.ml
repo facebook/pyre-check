@@ -86,13 +86,9 @@ module type Reader = sig
   val contains: ('key, 'value) lookup -> 'key -> bool
   val set: ('key, 'value) lookup -> key:'key -> data:'value -> unit
 
-  val fold
-    :  ('key, 'value) lookup
-    -> init:'accumulator
-    -> f:(key:'key -> data:'value -> 'accumulator -> 'accumulator)
-    -> 'accumulator
+  val edge_keys: unit -> int list
+  val backedge_keys: unit -> int list
 
-  val keys: ('key, 'value) lookup -> 'key list
   val length: ('key, 'value) lookup -> int
 
   val show: unit -> string
@@ -159,8 +155,11 @@ let reader order =
     let fold table ~init ~f =
       Hashtbl.fold table ~init ~f
 
-    let keys table =
-      Hashtbl.keys table
+    let edge_keys () =
+      Hashtbl.keys order.edges
+
+    let backedge_keys () =
+      Hashtbl.keys order.backedges
 
     let length table =
       Hashtbl.length table
@@ -929,11 +928,11 @@ let check_integrity (module Reader: Reader) =
             end in
         visit [] start
       end in
-  Reader.keys (Reader.edges ())
+  Reader.edge_keys ()
   |> List.iter ~f:find_cycle;
 
   (* Check that backedges are complete. *)
-  let check_inverse ~edges ~backedges =
+  let check_inverse ~get_keys ~edges ~backedges =
     let check_backedge index =
       let check_backedge { Target.target; _ } =
         let has_backedge =
@@ -954,11 +953,17 @@ let check_integrity (module Reader: Reader) =
       in
       List.iter ~f:check_backedge (Reader.find_unsafe edges index)
     in
-    Reader.keys edges
+    get_keys ()
     |> List.iter ~f:check_backedge
   in
-  check_inverse ~edges:(Reader.edges ()) ~backedges:(Reader.backedges ());
-  check_inverse ~edges:(Reader.backedges ()) ~backedges:(Reader.edges ())
+  check_inverse
+    ~get_keys:Reader.edge_keys
+    ~edges:(Reader.edges ())
+    ~backedges:(Reader.backedges ());
+  check_inverse
+    ~get_keys:Reader.backedge_keys
+    ~edges:(Reader.backedges ())
+    ~backedges:(Reader.edges ())
 
 
 module Builder = struct

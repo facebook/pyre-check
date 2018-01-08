@@ -52,13 +52,9 @@ module type Reader = sig
   val contains: ('key, 'value) lookup -> 'key -> bool
   val set: ('key, 'value) lookup -> key:'key -> data:'value -> unit
 
-  val fold
-    :  ('key, 'value) lookup
-    -> init:'accumulator
-    -> f:(key:'key -> data:'value -> 'accumulator -> 'accumulator)
-    -> 'accumulator
+  val edge_keys: unit -> int list
+  val backedge_keys: unit -> int list
 
-  val keys: ('key, 'value) lookup -> 'key list
   val length: ('key, 'value) lookup -> int
 
   val show: unit -> string
