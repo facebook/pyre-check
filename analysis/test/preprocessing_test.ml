@@ -511,7 +511,7 @@ let test_simplify_access_chains _ =
     |}
     {|
       $1 = a.b.c.d()
-      $2 = $1.e()
+      x = $1.e()
     |};
   assert_expand
     {|
@@ -545,6 +545,15 @@ let test_simplify_access_chains _ =
     {|
       $1 = a.b()
       $1.c()
+    |};
+  assert_expand
+    {|
+      x = super()
+      x.foo('asdf')
+    |}
+    {|
+      x = super()
+      x.foo('asdf')
     |}
 
 

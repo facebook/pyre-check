@@ -770,8 +770,8 @@ let simplify_access_chains source =
             begin match simplify_access_chain location access with
               | [] | [_] ->
                   state, [statement]
-              | { Node.location; value = Assign { Assign.value = Some call; _ } }:: assignments ->
-                  state, { Node.location; value = Expression call } :: assignments
+              | { Node.location; value = Assign { Assign.value = Some call; _ } } :: assignments ->
+                  state, List.rev ({ Node.location; value = Expression call } :: assignments)
               | _ ->
                   raise PreprocessingError
             end
