@@ -234,10 +234,10 @@ module State = struct
           | IncompatibleType _
           | InconsistentOverride _
           | MissingAnnotation _
+          | Top
           | UndefinedMethod _
           | UndefinedType _
-          | UninitializedAttribute _
-          | _ ->
+          | UninitializedAttribute _ ->
               true
         else
           match kind with
