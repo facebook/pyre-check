@@ -1417,6 +1417,7 @@ module State = struct
 
       | { Node.value = Expression expression; _ } ->
           check_expression ~resolution errors expression
+
       | { Node.location; value = Statement.Yield { Node.value = Expression.Yield return; _ }; _ } ->
           let actual =
             Option.value_map return ~default:Type.none ~f:(Annotated.resolve ~resolution)
@@ -1444,7 +1445,6 @@ module State = struct
               }]
           else
             errors
-
       | {
         Node.location;
         value = Statement.YieldFrom { Node.value = Expression.Yield (Some return); _ };
