@@ -386,6 +386,7 @@ class Infer(commands.ErrorHandling):
             configuration,
             source_directories)
         self._recursive = arguments.recursive
+        self._print_errors = arguments.print_only
 
     def run(self) -> None:
         flags = self._flags()
@@ -400,12 +401,15 @@ class Infer(commands.ErrorHandling):
             source_directories=self._source_directories,
             flags=flags)
         errors = self._get_errors(results, exclude_dependencies=True)
-        type_directory = Path(os.getcwd()) / Path('.pyre/types')
-        stubs = generate_stub_files(self._arguments, errors)
-        write_stubs_to_disk(self._arguments, stubs, type_directory)
-        if self._arguments.in_place is not None:
-            LOG.info("Annotating files")
-            annotate_paths(self._arguments, stubs, type_directory)
+        if self._print_errors:
+            self._print(errors)
+        else:
+            type_directory = Path(os.getcwd()) / Path('.pyre/types')
+            stubs = generate_stub_files(self._arguments, errors)
+            write_stubs_to_disk(self._arguments, stubs, type_directory)
+            if self._arguments.in_place is not None:
+                LOG.info("Annotating files")
+                annotate_paths(self._arguments, stubs, type_directory)
 
 
 def main():
@@ -435,6 +439,12 @@ def main():
         action='store_true',
         help='Print the pyre version to be used')
 
+    parser.add_argument(
+        '-p',
+        '--print-only',
+        action='store_true',
+        help='Print raw JSON errors to standard output, ' +
+        'without converting to stubs or annnotating.')
     parser.add_argument(
         '-f',
         '--full-only',
