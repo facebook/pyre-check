@@ -54,7 +54,7 @@ let stop_watchman server_socket configuration =
   exit 0
 
 
-let recheck_threshold = 15
+let recheck_threshold = 200
 
 
 let build_symlink_map ~root =
