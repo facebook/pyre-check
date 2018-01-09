@@ -24,12 +24,14 @@ type mismatch = {
 }
 [@@deriving compare, eq, show, sexp]
 
+
 type missing_parameter = {
   name: Identifier.t;
   annotation: Type.t;
   due_to_any: bool;
 }
 [@@deriving compare, eq, show, sexp]
+
 
 type parameter_mismatch = {
   name: Identifier.t;
@@ -48,11 +50,13 @@ type missing_annotation = {
 }
 [@@deriving compare, eq, sexp, show]
 
+
 type missing_attribute_annotation = {
   parent: Annotated.Class.t;
   missing_annotation: missing_annotation;
 }
 [@@deriving compare, eq, sexp, show]
+
 
 type immutable_mismatch = {
   name: Access.t;
@@ -61,6 +65,7 @@ type immutable_mismatch = {
   declare_location: Location.t;
 }
 [@@deriving compare, eq, show, sexp]
+
 
 type initialization_mismatch = {
   name: Access.t;
@@ -74,6 +79,7 @@ type override =
   | StrengthenedPrecondition
   | WeakenedPostcondition
 [@@deriving compare, eq, show, sexp]
+
 
 type inconsistent_override = {
   overridden_method: Annotated.Method.t;
