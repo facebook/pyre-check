@@ -59,10 +59,10 @@ module Assign = struct
   let fold ~resolution ~initial ~f { Assign.target; value; _ } =
     value
     >>| (fun value ->
-        let rec fold_simple_assign accumulator target value_annotation =
-          match Node.value target with
+        let rec fold_simple_assign accumulator { Node.location; value } value_annotation =
+          match value with
           | Access access ->
-              f ~target ~access ~value_annotation accumulator
+              f ~access:(Node.create ~location access) ~value_annotation accumulator
           | Tuple targets ->
               (* Recursively break down tuples such as x, y = z : Tuple[int, string] *)
               let parameters =

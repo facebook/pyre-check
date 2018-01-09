@@ -657,8 +657,7 @@ module State = struct
       | Assign assign ->
           let open Annotated in
           let forward_annotations
-              ~target:_
-              ~access
+              ~access:{ Node.value = access; _ }
               ~value_annotation
               annotations =
             let annotation = Map.find annotations access in
@@ -1255,7 +1254,7 @@ module State = struct
         Node.value = Assign ({ Assign.target; annotation = None; value = Some value; _ } as assign);
         _;
       } ->
-          let check_assign ~target:{ Node.location; _ } ~access ~value_annotation errors =
+          let check_assign ~access:{ Node.location; value = access } ~value_annotation errors =
             let add_incompatible_type_error ~expected ~parent ~name ~declare_location errors =
               if Resolution.less_or_equal resolution ~left:value_annotation ~right:expected then
                 errors

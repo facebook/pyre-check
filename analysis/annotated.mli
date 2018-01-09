@@ -20,8 +20,7 @@ module Assign : sig
     :  resolution: Resolution.t
     -> initial: 'accumulator
     -> f:
-         (target: Expression.t
-          -> access: Access.t
+          (access: Access.t Node.t
           -> value_annotation: Type.t
           -> 'accumulator
           -> 'accumulator)

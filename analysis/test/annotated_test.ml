@@ -57,7 +57,7 @@ let test_assign_fold _ =
       | { Node.value = Statement.Assign assign; _ } -> assign
       | _ -> failwith "No Assign to parse"
     in
-    let single_assignments ~target:_ ~access ~value_annotation assignments =
+    let single_assignments ~access:{ Node.value = access; _ } ~value_annotation assignments =
       (Expression.Access.show access, value_annotation) :: assignments
     in
     let actual =
