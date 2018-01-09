@@ -178,7 +178,7 @@ class CheckTest(unittest.TestCase):
             call_client.assert_called_once_with(
                 command=commands.CHECK,
                 source_directories=['.'],
-                flags=['-stub-roots', 'stub,root'])
+                flags=['-stub-roots', 'stub,root', '-type-check-root', '.'])
 
 
 class IncrementalTest(unittest.TestCase):
@@ -203,7 +203,7 @@ class IncrementalTest(unittest.TestCase):
             call_client.assert_called_once_with(
                 command=commands.INCREMENTAL,
                 source_directories=['running'],
-                flags=['-stub-roots', 'stub,root'])
+                flags=['-stub-roots', 'stub,root', '-type-check-root', '.'])
 
         state.running = ['running']
         state.dead = ['dead']
@@ -221,7 +221,7 @@ class IncrementalTest(unittest.TestCase):
             call_client.assert_called_once_with(
                 command=commands.INCREMENTAL,
                 source_directories=['running', 'dead'],
-                flags=['-stub-roots', 'stub,root'])
+                flags=['-stub-roots', 'stub,root', '-type-check-root', '.'])
 
 
 class StartTest(unittest.TestCase):

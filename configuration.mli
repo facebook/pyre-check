@@ -14,6 +14,7 @@ type t = {
   project_root: Path.t;
   sections: string list;
   debug: bool;
+  type_check_root: Path.t;
   stub_roots: Path.t list;
   verbose: bool;
   version: string option;
@@ -30,6 +31,7 @@ val create
   -> ?parallel:bool
   -> ?project_root:Path.t
   -> ?sections:string list
+  -> ?type_check_root:Path.t
   -> ?stub_roots: Path.t list
   -> ?verbose:bool
   -> ?version:string

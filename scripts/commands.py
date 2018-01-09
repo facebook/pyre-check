@@ -67,6 +67,7 @@ class Command:
         self._logging_sections = arguments.logging_sections
 
         self._original_directory = arguments.original_directory
+        self._current_directory = arguments.current_directory
 
     def run(self) -> None:
         pass
@@ -333,6 +334,8 @@ class Check(ErrorHandling):
         flags.extend([
             '-stub-roots',
             ','.join(self._configuration.get_stub_roots()),
+            '-type-check-root',
+            self._current_directory,
         ])
 
         results = self._call_client(
@@ -368,6 +371,8 @@ class Incremental(ErrorHandling):
         flags.extend([
             '-stub-roots',
             ','.join(self._configuration.get_stub_roots()),
+            '-type-check-root',
+            self._current_directory,
         ])
 
         if dead:

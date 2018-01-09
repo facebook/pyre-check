@@ -16,6 +16,7 @@ type t = {
   project_root: Path.t;
   sections: string list;
   debug: bool;
+  type_check_root: Path.t;
   stub_roots: Path.t list;
   verbose: bool;
   version: string option;
@@ -33,6 +34,7 @@ let create
     ?(parallel = true)
     ?(project_root = Path.current_working_directory ())
     ?(sections = [])
+    ?(type_check_root = Path.create_absolute "/")
     ?(stub_roots = [])
     ?(verbose = false)
     ?version
@@ -49,6 +51,7 @@ let create
     project_root;
     sections;
     debug;
+    type_check_root;
     stub_roots;
     verbose;
     version;

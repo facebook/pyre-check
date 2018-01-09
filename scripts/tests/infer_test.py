@@ -433,7 +433,7 @@ class InferTest(unittest.TestCase):
             call_client.assert_called_once_with(
                 command=commands.CHECK,
                 source_directories=['.'],
-                flags=['-show-error-traces', '-infer'])
+                flags=['-show-error-traces', '-type-check-root', '.', '-infer'])
 
         with patch.object(commands.Command, '_call_client') as call_client:
             arguments.recursive = True
@@ -443,6 +443,8 @@ class InferTest(unittest.TestCase):
                 source_directories=['.'],
                 flags=[
                     '-show-error-traces',
+                    '-type-check-root',
+                    '.',
                     '-infer',
                     '-recursive-infer',
                 ])

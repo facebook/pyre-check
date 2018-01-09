@@ -36,6 +36,7 @@ let check
       declare;
       show_error_traces;
       parallel;
+      type_check_root;
       stub_roots;
       project_root
     }
@@ -45,6 +46,8 @@ let check
 
   if not (Path.is_directory project_root) then
     raise (Invalid_argument (Format.asprintf "`%a` is not a directory" Path.pp project_root));
+  if not (Path.is_directory type_check_root) then
+    raise (Invalid_argument (Format.asprintf "`%a` is not a directory" Path.pp type_check_root));
   List.iter
     ~f:(fun stub_root ->
         if not (Path.is_directory stub_root) then
@@ -69,6 +72,7 @@ let check
       ~strict
       ~declare
       ~show_error_traces
+      ~type_check_root
       ~stub_roots
       ~infer
       ~recursive_infer ()
@@ -112,6 +116,7 @@ let run_check
     infer
     recursive_infer
     sequential
+    type_check_root
     stub_roots
     project_root
     () =
@@ -126,6 +131,7 @@ let run_check
       ~show_error_traces
       ~infer
       ~recursive_infer
+      ~type_check_root:(Path.create_absolute type_check_root)
       ~parallel:(not sequential)
       ~stub_roots:(List.map ~f:Path.create_absolute stub_roots)
       ~project_root:(Path.create_absolute project_root)
@@ -170,6 +176,10 @@ let spec =
       ~doc:"Recursively run infer until no new annotations are generated."
     +> flag "-sequential" no_arg ~doc:"Turn off parallel processing (parallel on by default)."
     +> flag
+      "-type-check-root"
+      (optional_with_default "/" string)
+      ~doc:"Only check sources under this root directory."
+    +> flag
       "-stub-roots"
       (optional_with_default [] (Arg_type.comma_separated string))
       ~doc:"Directory containing stubs to include"
@@ -195,6 +205,7 @@ let run_incremental
     infer
     recursive_infer
     sequential
+    type_check_root
     stub_roots
     project_root
     () =
@@ -213,6 +224,7 @@ let run_incremental
         ~recursive_infer
         ~parallel:(not sequential)
         ~stub_roots:(List.map ~f:Path.create_absolute stub_roots)
+        ~type_check_root:(Path.create_absolute type_check_root)
         ~project_root:(Path.create_absolute project_root)
         ()
     in
