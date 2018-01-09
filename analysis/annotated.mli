@@ -14,6 +14,8 @@ module Class : sig
   type t
   [@@deriving compare, eq, sexp, show]
 
+  val name_equal: t -> t -> bool
+
   type parent_class = t
   [@@deriving compare, eq, sexp, show]
 

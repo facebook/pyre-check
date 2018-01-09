@@ -49,11 +49,16 @@ type missing_attribute_annotation = {
 }
 [@@deriving compare, eq, sexp]
 
-type immutable_mismatch = {
+type incompatible_type = {
   name: Access.t;
-  parent: Annotated.Class.t option;
   mismatch: mismatch;
   declare_location: Location.t;
+}
+[@@deriving compare, eq, show, sexp]
+
+type incompatible_attribute_type = {
+  parent: Annotated.Class.t;
+  incompatible_type: incompatible_type;
 }
 [@@deriving compare, eq, show, sexp]
 
@@ -87,7 +92,8 @@ type kind =
   | IncompatibleAwaitableType of Type.t
   | IncompatibleParameterType of parameter_mismatch
   | IncompatibleReturnType of mismatch
-  | IncompatibleType of immutable_mismatch
+  | IncompatibleAttributeType of incompatible_attribute_type
+  | IncompatibleVariableType of incompatible_type
   | InconsistentOverride of inconsistent_override
   | MissingAttributeAnnotation of missing_attribute_annotation
   | MissingGlobalAnnotation of missing_annotation

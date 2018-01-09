@@ -231,7 +231,8 @@ module State = struct
           | MissingReturnAnnotation _ ->
               false
           | IncompatibleAwaitableType _
-          | IncompatibleType _
+          | IncompatibleAttributeType _
+          | IncompatibleVariableType _
           | InconsistentOverride _
           | MissingAttributeAnnotation _
           | MissingGlobalAnnotation _
@@ -1307,16 +1308,30 @@ module State = struct
                 errors
               else
                 let error =
-                  {
-                    Error.location;
-                    kind = Error.IncompatibleType {
-                        Error.name;
-                        parent;
-                        mismatch = { Error.expected; actual = value_annotation };
-                        declare_location;
-                      };
-                    define = define_node;
-                  }
+                  match parent with
+                  | Some parent ->
+                      {
+                        Error.location;
+                        kind = Error.IncompatibleAttributeType {
+                            Error.parent;
+                            incompatible_type = {
+                              Error.name;
+                              mismatch = { Error.expected; actual = value_annotation };
+                              declare_location;
+                            };
+                          };
+                        define = define_node;
+                      }
+                  | None ->
+                      {
+                        Error.location;
+                        kind = Error.IncompatibleVariableType {
+                            Error.name;
+                            mismatch = { Error.expected; actual = value_annotation };
+                            declare_location;
+                          };
+                        define = define_node;
+                      }
                 in
                 Map.add ~key:error.Error.location ~data:error errors
             in

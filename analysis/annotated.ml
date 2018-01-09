@@ -52,6 +52,9 @@ module Class = struct
   [@@deriving compare, eq, sexp, show]
 
 
+  let name_equal { Class.name = left; _ } { Class.name = right; _ } =
+    Access.equal left right
+
   type parent_class = t
   [@@deriving compare, eq, sexp, show]
 

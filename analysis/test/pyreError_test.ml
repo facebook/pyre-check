@@ -48,42 +48,48 @@ let error kind =
 
 let test_due_to_analysis_limitations _ =
 
-  (* Immutable Type. *)
+  (* IncompatibleAttributeType. *)
   assert_true
     (Error.due_to_analysis_limitations
        (error
-          (Error.IncompatibleType {
-              Error.name = [Expression.Access.Identifier (~~"")];
-              parent = Some mock_parent;
-              mismatch = {
-                Error.actual = Type.Top;
-                expected = Type.Top;
+          (Error.IncompatibleAttributeType {
+              Error.parent = mock_parent;
+              incompatible_type = {
+                Error.name = [Expression.Access.Identifier (~~"")];
+                mismatch = {
+                  Error.actual = Type.Top;
+                  expected = Type.Top;
+                };
+                declare_location = Location.any;
               };
-              declare_location = Location.any;
             })));
   assert_true
     (Error.due_to_analysis_limitations
        (error
-          (Error.IncompatibleType {
-              Error.name = [Expression.Access.Identifier (~~"")];
-              parent = Some mock_parent;
-              mismatch = {
-                Error.actual = Type.Top;
-                expected = Type.string;
+          (Error.IncompatibleAttributeType {
+              Error.parent = mock_parent;
+              incompatible_type = {
+                Error.name = [Expression.Access.Identifier (~~"")];
+                mismatch = {
+                  Error.actual = Type.Top;
+                  expected = Type.string;
+                };
+                declare_location = Location.any;
               };
-              declare_location = Location.any;
             })));
   assert_false
     (Error.due_to_analysis_limitations
        (error
-          (Error.IncompatibleType {
-              Error.name = [Expression.Access.Identifier (~~"")];
-              parent = Some mock_parent;
-              mismatch = {
-                Error.actual = Type.string;
-                expected = Type.Top;
+          (Error.IncompatibleAttributeType {
+              Error.parent = mock_parent;
+              incompatible_type = {
+                Error.name = [Expression.Access.Identifier (~~"")];
+                mismatch = {
+                  Error.actual = Type.string;
+                  expected = Type.Top;
+                };
+                declare_location = Location.any;
               };
-              declare_location = Location.any;
             })));
 
   (* Initialization *)
@@ -271,15 +277,18 @@ let test_join _ =
     assert_equal ~cmp:Error.equal result expected
   in
   assert_join
-    (error (Error.IncompatibleType {
-         Error.name = [Expression.Access.Identifier (~~"")];
-         parent = Some mock_parent;
-         mismatch = {
-           Error.actual = Type.Top;
-           expected = Type.Top;
-         };
-         declare_location = Location.any;
-       }))
+    (error
+       (Error.IncompatibleAttributeType {
+           Error.parent = mock_parent;
+           incompatible_type = {
+             Error.name = [Expression.Access.Identifier (~~"")];
+             mismatch = {
+               Error.actual = Type.Top;
+               expected = Type.Top;
+             };
+             declare_location = Location.any;
+           };
+         }))
     (error
        (Error.UndefinedMethod {
            Error.annotation = Type.string;
@@ -290,18 +299,20 @@ let test_join _ =
          }))
     (error Error.Top);
   assert_join
-    (error (Error.IncompatibleType {
+    (error
+       (Error.IncompatibleAttributeType {
+           Error.parent = mock_parent;
+           incompatible_type = {
+             Error.name = [Expression.Access.Identifier (~~"")];
+             mismatch = {
+               Error.actual = Type.Top;
+               expected = Type.Top;
+             };
+             declare_location = Location.any;
+           };
+         }))
+    (error (Error.IncompatibleVariableType {
          Error.name = [Expression.Access.Identifier (~~"")];
-         parent = Some mock_parent;
-         mismatch = {
-           Error.actual = Type.Top;
-           expected = Type.Top;
-         };
-         declare_location = Location.any;
-       }))
-    (error (Error.IncompatibleType {
-         Error.name = [Expression.Access.Identifier (~~"")];
-         parent = None;
          mismatch = {
            Error.actual = Type.Top;
            expected = Type.Top;

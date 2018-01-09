@@ -58,11 +58,17 @@ type missing_attribute_annotation = {
 [@@deriving compare, eq, sexp, show]
 
 
-type immutable_mismatch = {
+type incompatible_type = {
   name: Access.t;
-  parent: Annotated.Class.t option;
   mismatch: mismatch;
   declare_location: Location.t;
+}
+[@@deriving compare, eq, show, sexp]
+
+
+type incompatible_attribute_type = {
+  parent: Annotated.Class.t;
+  incompatible_type: incompatible_type;
 }
 [@@deriving compare, eq, show, sexp]
 
@@ -101,7 +107,8 @@ type kind =
   | IncompatibleAwaitableType of Type.t
   | IncompatibleParameterType of parameter_mismatch
   | IncompatibleReturnType of mismatch
-  | IncompatibleType of immutable_mismatch
+  | IncompatibleAttributeType of incompatible_attribute_type
+  | IncompatibleVariableType of incompatible_type
   | InconsistentOverride of inconsistent_override
   | MissingAttributeAnnotation of missing_attribute_annotation
   | MissingGlobalAnnotation of missing_annotation
@@ -140,10 +147,8 @@ let code { kind; _ } =
   | IncompatibleAwaitableType _ -> 12
   | IncompatibleParameterType _ -> 6
   | IncompatibleReturnType _ -> 7
-  | IncompatibleType { parent; _ } ->
-      (match parent with
-       | Some _ -> 8
-       | None -> 9)
+  | IncompatibleAttributeType _ -> 8
+  | IncompatibleVariableType _ -> 9
   | InconsistentOverride { override; _ } ->
       (match override with
        | StrengthenedPrecondition -> 14
@@ -163,7 +168,8 @@ let name { kind; _ } =
   | IncompatibleAwaitableType _ -> "Incompatible awaitable type"
   | IncompatibleParameterType _ -> "Incompatible parameter type"
   | IncompatibleReturnType _ -> "Incompatible return type"
-  | IncompatibleType _ -> "Incompatible type"
+  | IncompatibleAttributeType _ -> "Incompatible attribute type"
+  | IncompatibleVariableType _ -> "Incompatible variable type"
   | InconsistentOverride _ -> "Inconsistent override"
   | MissingAttributeAnnotation _ -> "Missing attribute annotation"
   | MissingGlobalAnnotation _ -> "Missing global annotation"
@@ -367,11 +373,13 @@ let description
              error.location.Location.stop.Location.line
              error.define.Node.location.Location.start.Location.line)
         ]
-    | IncompatibleType {
-        name;
-        parent = Some parent;
-        mismatch = { actual; expected };
-        declare_location;
+    | IncompatibleAttributeType {
+        parent;
+        incompatible_type = {
+          name;
+          mismatch = { actual; expected };
+          declare_location;
+        };
       } ->
         [
           (Format.asprintf
@@ -386,9 +394,8 @@ let description
              declare_location.Location.start.Location.line
              (Location.line location))
         ]
-    | IncompatibleType {
+    | IncompatibleVariableType {
         name;
-        parent = None;
         mismatch = { actual; expected };
         _;
       } ->
@@ -489,7 +496,8 @@ let due_to_analysis_limitations { kind; _ } =
   | IncompatibleAwaitableType actual
   | IncompatibleParameterType { mismatch = { actual; _ }; _ }
   | IncompatibleReturnType { actual; _ }
-  | IncompatibleType { mismatch = { actual; _ }; _ }
+  | IncompatibleAttributeType { incompatible_type = { mismatch = { actual; _ }; _ }; _ }
+  | IncompatibleVariableType { mismatch = { actual; _ }; _ }
   | InconsistentOverride { mismatch = { actual; _ }; _ }
   | MissingAttributeAnnotation { missing_annotation = { annotation = actual; _ }; _ }
   | MissingGlobalAnnotation { annotation = actual; _ }
@@ -518,7 +526,8 @@ let due_to_mismatch_with_any { kind; _ } =
       Type.equal actual Type.Object
   | IncompatibleParameterType { mismatch = { actual; expected }; _ }
   | IncompatibleReturnType { actual; expected }
-  | IncompatibleType { mismatch = { actual; expected }; _ }
+  | IncompatibleAttributeType { incompatible_type = { mismatch = { actual; expected }; _ }; _ }
+  | IncompatibleVariableType { mismatch = { actual; expected }; _ }
   | UninitializedAttribute { mismatch = { actual; expected }; _ }->
       Type.mismatch_with_any actual expected
 
@@ -557,7 +566,11 @@ let less_or_equal ~resolution left right =
        less_or_equal_mismatch left.mismatch right.mismatch
    | IncompatibleReturnType left, IncompatibleReturnType right ->
        less_or_equal_mismatch left right
-   | IncompatibleType left, IncompatibleType right when left.name = right.name ->
+   | IncompatibleAttributeType left, IncompatibleAttributeType right
+     when Annotated.Class.name_equal left.parent right.parent &&
+          left.incompatible_type.name = right.incompatible_type.name ->
+       less_or_equal_mismatch left.incompatible_type.mismatch right.incompatible_type.mismatch
+   | IncompatibleVariableType left, IncompatibleVariableType right when left.name = right.name ->
        less_or_equal_mismatch left.mismatch right.mismatch
    | InconsistentOverride left, InconsistentOverride right ->
        less_or_equal_mismatch left.mismatch right.mismatch
@@ -595,11 +608,6 @@ let join ~resolution left right =
       due_to_any = left.due_to_any && right.due_to_any;
     }
   in
-  let class_equal left right =
-    Access.equal
-      (Annotated.Class.name left)
-      (Annotated.Class.name right)
-  in
   let kind =
     match left.kind, right.kind with
     | IncompatibleAwaitableType left, IncompatibleAwaitableType right ->
@@ -620,7 +628,7 @@ let join ~resolution left right =
         }
     | MissingAttributeAnnotation left, MissingAttributeAnnotation right
       when left.missing_annotation.name = right.missing_annotation.name &&
-           class_equal left.parent right.parent ->
+           Annotated.Class.name_equal left.parent right.parent ->
         MissingAttributeAnnotation {
           parent = left.parent;
           missing_annotation =
@@ -638,13 +646,25 @@ let join ~resolution left right =
         }
     | IncompatibleReturnType left, IncompatibleReturnType right ->
         IncompatibleReturnType (join_mismatch left right)
-    | IncompatibleType left, IncompatibleType right
-      when left.name = right.name && Option.equal class_equal left.parent right.parent ->
-        IncompatibleType { left with mismatch = join_mismatch left.mismatch right.mismatch }
+    | IncompatibleAttributeType left, IncompatibleAttributeType right
+      when Annotated.Class.name_equal left.parent right.parent &&
+           left.incompatible_type.name = right.incompatible_type.name ->
+        IncompatibleAttributeType {
+          parent = left.parent;
+          incompatible_type = {
+            left.incompatible_type with
+            mismatch =
+              join_mismatch
+                left.incompatible_type.mismatch
+                right.incompatible_type.mismatch;
+          };
+        }
+    | IncompatibleVariableType left, IncompatibleVariableType right when left.name = right.name ->
+        IncompatibleVariableType { left with mismatch = join_mismatch left.mismatch right.mismatch }
     | InconsistentOverride left, InconsistentOverride right ->
         InconsistentOverride { left with mismatch = join_mismatch left.mismatch right.mismatch }
     | UninitializedAttribute left, UninitializedAttribute right
-      when left.name = right.name && class_equal left.parent right.parent ->
+      when left.name = right.name && Annotated.Class.name_equal left.parent right.parent ->
         UninitializedAttribute { left with mismatch = join_mismatch left.mismatch right.mismatch }
     | UndefinedMethod left, UndefinedMethod right ->
         UndefinedMethod {
@@ -770,9 +790,20 @@ let dequalify
         }
     | IncompatibleReturnType { actual; expected }  ->
         IncompatibleReturnType { actual = dequalify actual; expected = dequalify expected }
-    | IncompatibleType ({ mismatch = { actual; expected }; _ } as immutable_type) ->
-        IncompatibleType {
-          immutable_type with
+    | IncompatibleAttributeType {
+        parent;
+        incompatible_type = { mismatch = { actual; expected }; _ } as incompatible_type;
+      } ->
+        IncompatibleAttributeType {
+          parent;
+          incompatible_type = {
+            incompatible_type with
+            mismatch = { actual = dequalify actual; expected = dequalify expected };
+          };
+        }
+    | IncompatibleVariableType ({ mismatch = { actual; expected }; _ } as incompatible_type) ->
+        IncompatibleVariableType {
+          incompatible_type with
           mismatch = { actual = dequalify actual; expected = dequalify expected };
         }
     | InconsistentOverride ({ mismatch = { actual; expected }; _ } as inconsistent_override) ->

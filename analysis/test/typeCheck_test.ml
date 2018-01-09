@@ -1045,9 +1045,9 @@ let test_show_error_traces _ =
         self.attribute = ""
     |}
     [
-      "Incompatible type [8]: Attribute `attribute` declared in class `Foo` has type `int` but " ^
-      "is used as type `str`. Attribute `attribute` declared on line 3, incorrectly used on line " ^
-      "5.";
+      "Incompatible attribute type [8]: Attribute `attribute` declared in class `Foo` has type " ^
+      "`int` but is used as type `str`. Attribute `attribute` declared on line 3, incorrectly " ^
+      "used on line 5.";
     ];
 
   assert_type_errors ~show_error_traces:true
@@ -1058,8 +1058,8 @@ let test_show_error_traces _ =
       constant = "hi"
     |}
     [
-      "Incompatible type [9]: constant is declared to have type `int` but is used as type `str`. " ^
-      "constant incorrectly used on line 5.";
+      "Incompatible variable type [9]: constant is declared to have type `int` but is used as " ^
+      "type `str`. constant incorrectly used on line 5.";
     ];
 
   assert_type_errors ~show_error_traces:true
@@ -2211,8 +2211,8 @@ let test_check_init _ =
         self.attribute = ""
     |}
     [
-      "Incompatible type [8]: Attribute `attribute` declared in class `Foo` has type `int` but " ^
-      "is used as type `str`.";
+      "Incompatible attribute type [8]: Attribute `attribute` declared in class `Foo` has type " ^
+      "`int` but is used as type `str`.";
     ];
 
   assert_type_errors
@@ -2329,8 +2329,8 @@ let test_check_attributes _ =
           return self.bar
     |}
     [
-      "Incompatible type [8]: Attribute `bar` declared in class `Foo` has type `int` but is used " ^
-      "as type `str`.";
+      "Incompatible attribute type [8]: Attribute `bar` declared in class `Foo` has type `int` " ^
+      "but is used as type `str`.";
     ];
 
   assert_type_errors
@@ -2342,8 +2342,8 @@ let test_check_attributes _ =
         return param.bar
     |}
     [
-      "Incompatible type [8]: Attribute `bar` declared in class `Foo` has type `int` but is used " ^
-      "as type `str`.";
+      "Incompatible attribute type [8]: Attribute `bar` declared in class `Foo` has type `int` " ^
+      "but is used as type `str`.";
     ];
 
   assert_type_errors
@@ -2378,8 +2378,8 @@ let test_check_attributes _ =
         return foo_obj.bar
     |}
     [
-      "Incompatible type [8]: Attribute `bar` declared in class `Foo` has type `int` but is " ^
-      "used as type `str`.";
+      "Incompatible attribute type [8]: Attribute `bar` declared in class `Foo` has type `int` " ^
+      "but is used as type `str`.";
     ];
 
   assert_type_errors
@@ -2392,8 +2392,8 @@ let test_check_attributes _ =
           return self.bar
     |}
     [
-      "Incompatible type [8]: Attribute `bar` declared in class `Foo` has type `int` but is used " ^
-      "as type `str`.";
+      "Incompatible attribute type [8]: Attribute `bar` declared in class `Foo` has type `int` " ^
+      "but is used as type `str`.";
     ];
 
   assert_type_errors
@@ -2452,7 +2452,7 @@ let test_check_attributes _ =
     |}
     ["Incompatible return type [7]: Expected `int` but got `str`."];
   (* [
-      "Incompatible type [8]: attribute Foo.bar declared in class `Foo` " ^
+      "Incompatible attribute type [8]: attribute Foo.bar declared in class `Foo` " ^
       "has type `int` but is used as type `str`."
      ]; *)
 
@@ -2465,7 +2465,7 @@ let test_check_attributes _ =
           return self.bar
     |}
     [
-      "Incompatible type [8]: Attribute `bar` declared in class `Foo` has type " ^
+      "Incompatible attribute type [8]: Attribute `bar` declared in class `Foo` has type " ^
       "`typing.Generic[_T]` but is used as type `int`.";
       "Incompatible return type [7]: Expected `int` but got `typing.Generic[_T]`.";
     ];
@@ -2501,7 +2501,10 @@ let test_check_immutables _ =
       global constant
       constant = "hi"
     |}
-    ["Incompatible type [9]: constant is declared to have type `int` but is used as type `str`."];
+    [
+      "Incompatible variable type [9]: constant is declared to have type `int` but is used as " ^
+      "type `str`.";
+    ];
 
   assert_type_errors
     {|
@@ -2583,7 +2586,7 @@ let test_check_immutables _ =
     def foo(x: int) -> None:
       x = "hi"
     |}
-    ["Incompatible type [9]: x is declared to have type `int` but is used as type `str`."];
+    ["Incompatible variable type [9]: x is declared to have type `int` but is used as type `str`."];
 
   assert_type_errors
     {|
@@ -2615,7 +2618,7 @@ let test_check_immutables _ =
       y = x
       x = y
     |}
-    ["Incompatible type [9]: y is declared to have type `str` but is used as type `int`."];
+    ["Incompatible variable type [9]: y is declared to have type `str` but is used as type `int`."];
 
   assert_type_errors
     {|
