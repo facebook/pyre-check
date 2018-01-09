@@ -59,12 +59,12 @@ module Assign = struct
   let fold ~resolution ~initial ~f { Assign.target; value; _ } =
     match value with
     | Some value ->
-        let rec propagate_assign accumulator target value_annotation =
+        let rec fold_simple_assign accumulator target value_annotation =
           match Node.value target with
           | Access access ->
               f ~target ~access ~value_annotation accumulator
-          (* Recursively break down tuples such as x, y = z : Tuple[int, string] *)
           | Tuple targets ->
+              (* Recursively break down tuples such as x, y = z : Tuple[int, string] *)
               let parameters =
                 match value_annotation with
                 | Type.Tuple (Type.Bounded parameters) ->
@@ -75,11 +75,7 @@ module Assign = struct
                     []
               in
               if List.length targets = List.length parameters then
-                List.fold2_exn
-                  ~init:accumulator
-                  ~f:propagate_assign
-                  targets
-                  parameters
+                List.fold2_exn ~init:accumulator ~f:fold_simple_assign targets parameters
               else
                 accumulator
           | _ ->
@@ -90,15 +86,10 @@ module Assign = struct
           (* Tuples of individual assignments *)
           | Tuple targets, Tuple values
             when List.length targets = List.length values ->
-              let value_annotations = List.map ~f:(Resolution.resolve resolution) values in
-              List.fold2_exn
-                ~init:initial
-                ~f:propagate_assign
-                targets
-                value_annotations
+              List.map ~f:(Resolution.resolve resolution) values
+              |> List.fold2_exn ~init:initial ~f:fold_simple_assign targets
           | _, _ ->
-              let value_annotation = Resolution.resolve resolution value in
-              propagate_assign initial target value_annotation
+              fold_simple_assign initial target (Resolution.resolve resolution value)
         end
     | None ->
         initial
