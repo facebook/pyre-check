@@ -131,7 +131,8 @@ module State = struct
             let expected = Annotation.annotation (Attribute.annotation attribute) in
             match Attribute.name attribute with
             | Access name
-              when not (Type.equal expected Type.Top || Option.is_some (Attribute.value attribute)) ->
+              when not (Type.equal expected Type.Top ||
+                        Option.is_some (Attribute.value attribute)) ->
                 let assign_exists { Statement.Define.body; _ } name =
                   let iterate initial { Node.value; _ } =
                     match value with
@@ -1342,7 +1343,8 @@ module State = struct
                     ~parent:(Some (Attribute.parent attribute))
                     ~name
                     ~declare_location:(Attribute.location attribute)
-              | Access.Element.Attribute (Access.Element.Undefined { Access.Element.name; parent }) ->
+              | Access.Element.Attribute
+                  (Access.Element.Undefined { Access.Element.name; parent }) ->
                   parent
                   >>= (fun parent ->
                       (match Class.body parent with
@@ -1443,12 +1445,11 @@ module State = struct
           else
             errors
 
-      |
-        {
-          Node.location;
-          value = Statement.YieldFrom { Node.value = Expression.Yield (Some return); _ };
-          _;
-        } ->
+      | {
+        Node.location;
+        value = Statement.YieldFrom { Node.value = Expression.Yield (Some return); _ };
+        _;
+      } ->
           let actual =
             match Annotated.resolve ~resolution return with
             | Type.Parametric { Type.name; parameters = [parameter] }
