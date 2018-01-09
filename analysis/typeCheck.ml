@@ -136,7 +136,7 @@ module State = struct
                   let iterate initial { Node.value; _ } =
                     match value with
                     | Assign {
-                        Assign.target = { Node.value = Access (self::access); _ };
+                        Statement.Assign.target = { Node.value = Access (self::access); _ };
                         value = Some _;
                         compound = None;
                         _;
@@ -638,52 +638,6 @@ module State = struct
         annotation
     in
 
-    let fold_assign ~accumulator ~f ~target ~value =
-      let rec propagate_assign accumulator target value_annotation =
-        match Node.value target with
-        | Access access ->
-            f ~target ~access ~value_annotation accumulator
-        (* Recursively break down tuples such as x, y = z : Tuple[int, string] *)
-        | Tuple targets ->
-            let parameters =
-              match value_annotation with
-              | Type.Tuple (Type.Bounded parameters) ->
-                  parameters
-              | Type.Tuple (Type.Unbounded parameter) ->
-                  List.map ~f:(fun _ -> parameter) targets
-              | _ ->
-                  []
-            in
-            if List.length targets = List.length parameters then
-              List.fold2_exn
-                ~init:accumulator
-                ~f:propagate_assign
-                targets
-                parameters
-            else
-              accumulator
-        | _ ->
-            accumulator
-      in
-      match (Node.value target), (Node.value value) with
-      (* Tuples of individual assignments *)
-      | Tuple targets, Tuple values
-        when List.length targets = List.length values ->
-          let value_annotations =
-            List.map
-              ~f:(Annotated.resolve ~resolution)
-              values
-          in
-          List.fold2_exn
-            ~init:accumulator
-            ~f:propagate_assign
-            targets
-            value_annotations
-      | _, _ ->
-          let value_annotation = Annotated.resolve ~resolution value in
-          propagate_assign accumulator target value_annotation
-    in
-
     let rec forward_annotations state statement =
       let resolution = update_resolution state in
       match Node.value statement with
@@ -700,7 +654,7 @@ module State = struct
             |> Annotation.create_immutable ~global:false
           in
           Map.add ~key:access ~data:annotation annotations
-      | Assign { Assign.target; value = Some value; _ } ->
+      | Assign assign ->
           let open Annotated in
           let forward_annotations
               ~target:_
@@ -726,9 +680,11 @@ module State = struct
             | _, _ ->
                 Map.add ~key:access ~data:(Annotation.create value_annotation) annotations
           in
-          fold_assign ~target ~value ~f:forward_annotations ~accumulator:annotations
-      | Assign _ ->
-          annotations
+          Annotated.Assign.create assign
+          |> Annotated.Assign.fold
+            ~resolution
+            ~f:forward_annotations
+            ~initial:annotations
 
       | Assert { Assert.test; _ } ->
           let rec asserted annotations expression =
@@ -1299,7 +1255,7 @@ module State = struct
             errors
 
       | {
-        Node.value = Assign { Assign.target; annotation = None; value = Some value; _ };
+        Node.value = Assign ({ Assign.target; annotation = None; value = Some value; _ } as assign);
         _;
       } ->
           let check_assign ~target:{ Node.location; _ } ~access ~value_annotation errors =
@@ -1450,7 +1406,8 @@ module State = struct
             let errors = check_expression ~resolution errors value in
             check_expression ~resolution errors target
           in
-          fold_assign ~target ~value ~f:check_assign ~accumulator:errors
+          Annotated.Assign.create assign
+          |> Annotated.Assign.fold ~resolution ~f:check_assign ~initial:errors
 
       | { Node.value = Assert { Assert.test; _ }; _ } ->
           check_expression ~resolution errors test

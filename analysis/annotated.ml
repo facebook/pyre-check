@@ -47,13 +47,75 @@ let parameter_annotations_positional { Define.parameters; _ } ~resolution =
   |> Int.Map.of_alist_exn
 
 
+module Assign = struct
+  type t = Assign.t
+  [@@deriving compare, eq, sexp, show]
+
+
+  let create assign =
+    assign
+
+
+  let fold ~resolution ~initial ~f { Assign.target; value; _ } =
+    match value with
+    | Some value ->
+        let rec propagate_assign accumulator target value_annotation =
+          match Node.value target with
+          | Access access ->
+              f ~target ~access ~value_annotation accumulator
+          (* Recursively break down tuples such as x, y = z : Tuple[int, string] *)
+          | Tuple targets ->
+              let parameters =
+                match value_annotation with
+                | Type.Tuple (Type.Bounded parameters) ->
+                    parameters
+                | Type.Tuple (Type.Unbounded parameter) ->
+                    List.map ~f:(fun _ -> parameter) targets
+                | _ ->
+                    []
+              in
+              if List.length targets = List.length parameters then
+                List.fold2_exn
+                  ~init:accumulator
+                  ~f:propagate_assign
+                  targets
+                  parameters
+              else
+                accumulator
+          | _ ->
+              accumulator
+        in
+        begin
+          match (Node.value target), (Node.value value) with
+          (* Tuples of individual assignments *)
+          | Tuple targets, Tuple values
+            when List.length targets = List.length values ->
+              let value_annotations = List.map ~f:(Resolution.resolve resolution) values in
+              List.fold2_exn
+                ~init:initial
+                ~f:propagate_assign
+                targets
+                value_annotations
+          | _, _ ->
+              let value_annotation = Resolution.resolve resolution value in
+              propagate_assign initial target value_annotation
+        end
+    | None ->
+        initial
+end
+
+
 module Class = struct
   type t = Statement.t Class.t
   [@@deriving compare, eq, sexp, show]
 
 
+  module Assign = Statement.Assign
+
+
   let name_equal { Class.name = left; _ } { Class.name = right; _ } =
     Access.equal left right
+
 
   type parent_class = t
   [@@deriving compare, eq, sexp, show]

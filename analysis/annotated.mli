@@ -10,6 +10,25 @@ open Expression
 open Statement
 
 
+module Assign : sig
+  type t
+  [@@deriving compare, eq, sexp, show]
+
+  val create: Assign.t -> t
+
+  val fold
+    :  resolution: Resolution.t
+    -> initial: 'accumulator
+    -> f:
+         (target: Expression.t
+          -> access: Access.t
+          -> value_annotation: Type.t
+          -> 'accumulator
+          -> 'accumulator)
+    -> t
+    -> 'accumulator
+end
+
 module Class : sig
   type t
   [@@deriving compare, eq, sexp, show]
@@ -37,7 +56,7 @@ module Class : sig
     }
     [@@deriving eq, show]
 
-    val create: resolution: Resolution.t -> Assign.t Node.t -> t option
+    val create: resolution: Resolution.t -> Statement.Assign.t Node.t -> t option
 
     val name: t -> Expression.expression
     val annotation: t -> Annotation.t
