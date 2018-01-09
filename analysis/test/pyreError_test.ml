@@ -147,26 +147,30 @@ let test_due_to_analysis_limitations _ =
               due_to_any = false;
             })));
 
-  (* MissingAnnotation *)
+  (* MissingAttributeAnnotation *)
   assert_true
     (Error.due_to_analysis_limitations
        (error
-          (Error.MissingAnnotation {
-              Error.name = [Expression.Access.Identifier (~~"")];
-              annotation = Type.Top;
-              parent = Some mock_parent;
-              due_to_any = false;
-              evidence_locations = [];
+          (Error.MissingAttributeAnnotation {
+              Error.parent = mock_parent;
+              Error.missing_annotation = {
+                Error.name = [Expression.Access.Identifier (~~"")];
+                annotation = Type.Top;
+                due_to_any = false;
+                evidence_locations = [];
+              };
             })));
   assert_false
     (Error.due_to_analysis_limitations
        (error
-          (Error.MissingAnnotation {
-              Error.name = [Expression.Access.Identifier (~~"")];
-              annotation = Type.string;
-              parent = Some mock_parent;
-              due_to_any = false;
-              evidence_locations = [];
+          (Error.MissingAttributeAnnotation {
+              Error.parent = mock_parent;
+              Error.missing_annotation = {
+                Error.name = [Expression.Access.Identifier (~~"")];
+                annotation = Type.string;
+                due_to_any = false;
+                evidence_locations = [];
+              };
             })));
 
   (* Parameter. *)
@@ -338,26 +342,23 @@ let test_join _ =
          }));
   assert_join
     (error
-       (Error.MissingAnnotation {
+       (Error.MissingGlobalAnnotation {
            Error.name = [Expression.Access.Identifier (~~"")];
            annotation = Type.integer;
-           parent = None;
            evidence_locations = [create_mock_location "derp.py"];
            due_to_any = false;
          }))
     (error
-       (Error.MissingAnnotation {
+       (Error.MissingGlobalAnnotation {
            Error.name = [Expression.Access.Identifier (~~"")];
            annotation = Type.float;
-           parent = None;
            evidence_locations = [create_mock_location "durp.py"];
            due_to_any = false;
          }))
     (error
-       (Error.MissingAnnotation {
+       (Error.MissingGlobalAnnotation {
            Error.name = [Expression.Access.Identifier (~~"")];
            annotation = Type.float;
-           parent = None;
            evidence_locations = [create_mock_location "derp.py"; create_mock_location "durp.py"];
            due_to_any = false;
          }))

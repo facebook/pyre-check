@@ -233,7 +233,8 @@ module State = struct
           | IncompatibleAwaitableType _
           | IncompatibleType _
           | InconsistentOverride _
-          | MissingAnnotation _
+          | MissingAttributeAnnotation _
+          | MissingGlobalAnnotation _
           | Top
           | UndefinedMethod _
           | UndefinedType _
@@ -251,7 +252,8 @@ module State = struct
         match kind with
         | MissingReturnAnnotation _
         | MissingParameterAnnotation _
-        | MissingAnnotation _
+        | MissingAttributeAnnotation _
+        | MissingGlobalAnnotation _
         | UndefinedMethod _
         | UndefinedType _ ->
             true
@@ -265,7 +267,8 @@ module State = struct
         match kind with
         | MissingReturnAnnotation { annotation = actual; _ }
         | MissingParameterAnnotation { annotation = actual; _ }
-        | MissingAnnotation { annotation = actual; _ } ->
+        | MissingAttributeAnnotation { missing_annotation = { annotation = actual; _ }; _ }
+        | MissingGlobalAnnotation { annotation = actual; _ } ->
             due_to_analysis_limitations error ||
             Type.equal actual Type.Object
         | _ ->
@@ -1321,17 +1324,32 @@ module State = struct
               if ((Type.is_unknown expected) || (Type.equal expected Type.Object)) &&
                  not (Type.is_unknown value_annotation) then
                 let error =
-                  {
-                    Error.location = declare_location;
-                    kind = Error.MissingAnnotation {
-                        Error.name;
-                        annotation = value_annotation;
-                        parent;
-                        evidence_locations = [location];
-                        due_to_any = Type.equal expected Type.Object;
-                      };
-                    define = define_node;
-                  }
+                  match parent with
+                  | Some parent ->
+                      {
+                        Error.location = declare_location;
+                        kind = Error.MissingAttributeAnnotation {
+                            Error.parent;
+                            missing_annotation = {
+                              Error.name;
+                              annotation = value_annotation;
+                              evidence_locations = [location];
+                              due_to_any = Type.equal expected Type.Object;
+                            };
+                          };
+                        define = define_node;
+                      }
+                  | None ->
+                      {
+                        Error.location = declare_location;
+                        kind = Error.MissingGlobalAnnotation {
+                            Error.name;
+                            annotation = value_annotation;
+                            evidence_locations = [location];
+                            due_to_any = Type.equal expected Type.Object;
+                          };
+                        define = define_node;
+                      }
                 in
                 Map.find errors declare_location
                 >>| Error.join ~resolution error
@@ -1915,6 +1933,21 @@ let check configuration environment ({ Source.path; _ } as source) =
     let add_errors_to_environment errors =
       let add_error (changed, globals_added_sofar) error =
         let module Reader = (val environment : Environment.Reader) in
+        let add_missing_annotation_error ~key ~name ~location ~annotation =
+          match Reader.globals name with
+          | Some { Resolution.annotation; _ }
+            when not (Type.is_unknown (Annotation.annotation annotation)) ->
+              changed, globals_added_sofar
+          | _ ->
+              let data = {
+                Resolution.annotation =
+                  Annotation.create_immutable ~global:true ~original:(Some Type.Top) annotation;
+                location;
+              }
+              in
+              Reader.register_global ~path ~key ~data;
+              true, error :: globals_added_sofar
+        in
         match error with
         | {
           Error.kind = Error.MissingReturnAnnotation { Error.annotation; _ };
@@ -1993,29 +2026,24 @@ let check configuration environment ({ Source.path; _ } as source) =
                   true, globals_added_sofar
             end
         | {
-          Error.kind = Error.MissingAnnotation { Error.name; annotation; parent; _ };
+          Error.kind = Error.MissingAttributeAnnotation {
+              Error.parent;
+              missing_annotation = { Error.name; annotation; _ };
+            };
           location;
-          _ } ->
-            begin
-              match Reader.globals name with
-              | Some { Resolution.annotation; _ }
-                when not (Type.is_unknown (Annotation.annotation annotation)) ->
-                  changed, globals_added_sofar
-              | _ ->
-                  let key =
-                    match parent with
-                    | Some parent -> (Annotated.Class.name parent) @ name
-                    | _ -> name
-                  in
-                  let data = {
-                    Resolution.annotation =
-                      Annotation.create_immutable ~global:true ~original:(Some Type.Top) annotation;
-                    location;
-                  }
-                  in
-                  Reader.register_global ~path ~key ~data;
-                  true, error :: globals_added_sofar
-            end
+          _;
+        } ->
+            add_missing_annotation_error
+              ~key:((Annotated.Class.name parent) @ name)
+              ~name
+              ~location
+              ~annotation
+        | {
+          Error.kind = Error.MissingGlobalAnnotation { Error.name; annotation; _ };
+          location;
+          _;
+        } ->
+            add_missing_annotation_error ~key:name ~name ~location ~annotation
         | _ ->
             changed, globals_added_sofar
       in

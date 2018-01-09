@@ -1086,9 +1086,9 @@ let test_show_error_traces _ =
           return foo.attribute
     |}
     [
-      "Missing annotation [4]: Attribute `attribute` of class `Foo` has type `str` but no type " ^
-      "is specified. Attribute `attribute` declared on line 3, type `str` deduced from " ^
-      "test.py:7:4.";
+      "Missing attribute annotation [4]: Attribute `attribute` of class `Foo` has type `str` " ^
+      "but no type is specified. Attribute `attribute` declared on line 3, type `str` deduced " ^
+      "from test.py:7:4.";
     ];
 
   assert_type_errors ~show_error_traces:true
@@ -1099,7 +1099,7 @@ let test_show_error_traces _ =
       constant = 1
     |}
     [
-      "Missing annotation [5]: Globally accessible variable `constant` has type `int` but " ^
+      "Missing global annotation [5]: Globally accessible variable `constant` has type `int` but " ^
       "no type is specified. Global variable `constant` declared on line 2, type `int` deduced " ^
       "from test.py:5:2."
     ];
@@ -1113,7 +1113,7 @@ let test_show_error_traces _ =
       constant = 1
     |}
     [
-      "Missing annotation [5]: Globally accessible variable `constant` has type " ^
+      "Missing global annotation [5]: Globally accessible variable `constant` has type " ^
       "`typing.Union[int, str]` but no type is specified. Global variable `constant` " ^
       "declared on line 2, type `typing.Union[int, str]` deduced from test.py:5:2, " ^
       "test.py:6:2."
@@ -1127,7 +1127,7 @@ let test_show_error_traces _ =
           self.attribute = 1
     |}
     [
-      "Missing annotation [4]: Attribute `attribute` of class `Other` has type " ^
+      "Missing attribute annotation [4]: Attribute `attribute` of class `Other` has type " ^
       "`int` but no type is specified. Attribute `attribute` declared on line 3, " ^
       "type `int` deduced from test.py:5:4."
     ];
@@ -1143,11 +1143,11 @@ let test_show_error_traces _ =
         x = "str"
     |}
     [
-      "Missing annotation [5]: Globally accessible variable `x` has type " ^
+      "Missing global annotation [5]: Globally accessible variable `x` has type " ^
       "`typing.Union[int, str]` but no type is specified. Global variable `x` " ^
       "declared on line 4, type `typing.Union[int, str]` deduced from test.py:4:2, " ^
       "test.py:7:2.";
-      "Missing annotation [5]: Globally accessible variable `x` has type " ^
+      "Missing global annotation [5]: Globally accessible variable `x` has type " ^
       "`typing.Union[int, str]` but no type is specified. Global variable `x` " ^
       "declared on line 7, type `typing.Union[int, str]` deduced from test.py:4:2, " ^
       "test.py:7:2."
@@ -2190,7 +2190,7 @@ let test_check_init _ =
           self.attribute = 0
     |}
     [
-      "Missing annotation [4]: Attribute `attribute` of class `Foo` has type `int` but " ^
+      "Missing attribute annotation [4]: Attribute `attribute` of class `Foo` has type `int` but " ^
       "no type is specified.";
     ];
 
@@ -2301,8 +2301,8 @@ let test_check_attributes _ =
           return self.bar
     |}
     [
-      "Missing annotation [4]: Attribute `bar` of class `Foo` has type `str` but no type " ^
-      "is specified.";
+      "Missing attribute annotation [4]: Attribute `bar` of class `Foo` has type `str` but no " ^
+      "type is specified.";
       "Incompatible return type [7]: Expected `int` but got `str`."
     ];
 
@@ -2315,8 +2315,8 @@ let test_check_attributes _ =
           return self.bar
     |}
     [
-      "Missing annotation [4]: Attribute `bar` of class `Foo` has type `str` but type `Any` " ^
-      "is specified.";
+      "Missing attribute annotation [4]: Attribute `bar` of class `Foo` has type `str` but type " ^
+      "`Any` " ^ "is specified.";
       "Incompatible return type [7]: Expected `int` but got `str`."
     ];
 
@@ -2363,8 +2363,8 @@ let test_check_attributes _ =
           return self.bar
     |}
     [
-      "Missing annotation [4]: Attribute `bar` of class `Foo` has type `str` but no type " ^
-      "is specified.";
+      "Missing attribute annotation [4]: Attribute `bar` of class `Foo` has type `str` but no " ^
+      "type is specified.";
       "Incompatible return type [7]: Expected `int` but got `str`.";
     ];
 
@@ -2438,7 +2438,7 @@ let test_check_attributes _ =
                   self.baz = 5
               return self.baz
     |}
-    ["Missing annotation [4]: Attribute `baz` of class `Foo` has type " ^
+    ["Missing attribute annotation [4]: Attribute `baz` of class `Foo` has type " ^
      "`typing.Optional[int]` but no type is specified."];
 
   (* TODO(szhu): support attribute tests for: class variables, generic annotations *)
@@ -2538,7 +2538,7 @@ let test_check_immutables _ =
       constant = 1
     |}
     [
-      "Missing annotation [5]: Globally accessible variable `constant` has type `int` but " ^
+      "Missing global annotation [5]: Globally accessible variable `constant` has type `int` but " ^
       "no type is specified."
     ];
 
@@ -2550,7 +2550,7 @@ let test_check_immutables _ =
       constant = 1
     |}
     [
-      "Missing annotation [5]: Globally accessible variable `constant` has type `int` but " ^
+      "Missing global annotation [5]: Globally accessible variable `constant` has type `int` but " ^
       "type `Any` is specified."
     ];
 
@@ -2563,7 +2563,7 @@ let test_check_immutables _ =
       return constant
     |}
     [
-      "Missing annotation [5]: Globally accessible variable `constant` has type `int` but " ^
+      "Missing global annotation [5]: Globally accessible variable `constant` has type `int` but " ^
       "no type is specified."
     ];
 
@@ -2649,8 +2649,8 @@ let test_check_immutables _ =
         foo.attribute = 1
     |}
     [
-      "Missing annotation [4]: Attribute `attribute` of class `Foo` has type `int` but no type" ^
-      " is specified.";
+      "Missing attribute annotation [4]: Attribute `attribute` of class `Foo` has type `int` but " ^
+      "no type is specified.";
     ];
 
   assert_type_errors
@@ -2661,7 +2661,7 @@ let test_check_immutables _ =
         constant = 1
     |}
     [
-      "Missing annotation [5]: Globally accessible variable `constant` has type `int` but " ^
+      "Missing global annotation [5]: Globally accessible variable `constant` has type `int` but " ^
       "no type is specified."
     ];
 
@@ -2693,7 +2693,7 @@ let test_check_immutables _ =
         constant = 1
     |}
     [
-      "Missing annotation [5]: Globally accessible variable `constant` has type `int` but " ^
+      "Missing global annotation [5]: Globally accessible variable `constant` has type `int` but " ^
       "no type is specified."
     ];
 
@@ -2709,9 +2709,9 @@ let test_check_immutables _ =
         constant = "hi"
     |}
     [
-      "Missing annotation [5]: Globally accessible variable `constant` has type `typing." ^
+      "Missing global annotation [5]: Globally accessible variable `constant` has type `typing." ^
       "Union[int, str]` but no type is specified.";
-      "Missing annotation [5]: Globally accessible variable `constant` has type `typing." ^
+      "Missing global annotation [5]: Globally accessible variable `constant` has type `typing." ^
       "Union[int, str]` but no type is specified."
     ];
 
@@ -2726,9 +2726,9 @@ let test_check_immutables _ =
         constant = None
     |}
     [
-      "Missing annotation [5]: Globally accessible variable `constant` has type `typing." ^
+      "Missing global annotation [5]: Globally accessible variable `constant` has type `typing." ^
       "Optional[int]` but no type is specified.";
-      "Missing annotation [5]: Globally accessible variable `constant` has type `typing." ^
+      "Missing global annotation [5]: Globally accessible variable `constant` has type `typing." ^
       "Optional[int]` but no type is specified."
     ];
 
@@ -2743,10 +2743,10 @@ let test_check_immutables _ =
         constant = 1.0
     |}
     [
-      "Missing annotation [5]: Globally accessible variable `constant` has type `float` but" ^
-      " no type is specified.";
-      "Missing annotation [5]: Globally accessible variable `constant` has type `float` but" ^
-      " no type is specified."
+      "Missing global annotation [5]: Globally accessible variable `constant` has type `float` " ^
+      "but no type is specified.";
+      "Missing global annotation [5]: Globally accessible variable `constant` has type `float` " ^
+      "but no type is specified."
     ];
 
   assert_type_errors
@@ -2760,10 +2760,10 @@ let test_check_immutables _ =
         constant = B()
     |}
     [
-      "Missing annotation [5]: Globally accessible variable `constant` has type `A` but no " ^
-      "type is specified.";
-      "Missing annotation [5]: Globally accessible variable `constant` has type `A` but no " ^
-      "type is specified."
+      "Missing global annotation [5]: Globally accessible variable `constant` has type `A` but " ^
+      "no type is specified.";
+      "Missing global annotation [5]: Globally accessible variable `constant` has type `A` but " ^
+      "no type is specified."
     ];
 
   assert_type_errors
@@ -2779,9 +2779,9 @@ let test_check_immutables _ =
         constant = "hi"
     |}
     [
-      "Missing annotation [4]: Attribute `constant` of class `Foo` has type `int` but no " ^
-      "type is specified.";
-      "Missing annotation [5]: Globally accessible variable `constant` has type `str` but " ^
+      "Missing attribute annotation [4]: Attribute `constant` of class `Foo` has type `int` but " ^
+      "no type is specified.";
+      "Missing global annotation [5]: Globally accessible variable `constant` has type `str` but " ^
       "no type is specified."
     ]
 

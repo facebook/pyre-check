@@ -35,12 +35,17 @@ type parameter_mismatch = {
 }
 [@@deriving compare, eq, show]
 
-type missing_immutable = {
+type missing_annotation = {
   name: Access.t;
   annotation: Type.t;
-  parent: Annotated.Class.t option;
   evidence_locations: Location.t list;
   due_to_any: bool;
+}
+[@@deriving compare, eq, sexp]
+
+type missing_attribute_annotation = {
+  parent: Annotated.Class.t;
+  missing_annotation: missing_annotation;
 }
 [@@deriving compare, eq, sexp]
 
@@ -84,7 +89,8 @@ type kind =
   | IncompatibleReturnType of mismatch
   | IncompatibleType of immutable_mismatch
   | InconsistentOverride of inconsistent_override
-  | MissingAnnotation of missing_immutable
+  | MissingAttributeAnnotation of missing_attribute_annotation
+  | MissingGlobalAnnotation of missing_annotation
   | MissingParameterAnnotation of missing_parameter
   | MissingReturnAnnotation of missing_return
   | Top
