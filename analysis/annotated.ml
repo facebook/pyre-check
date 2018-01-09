@@ -57,8 +57,8 @@ module Assign = struct
 
 
   let fold ~resolution ~initial ~f { Assign.target; value; _ } =
-    match value with
-    | Some value ->
+    value
+    >>| (fun value ->
         let rec fold_simple_assign accumulator target value_annotation =
           match Node.value target with
           | Access access ->
@@ -90,9 +90,8 @@ module Assign = struct
               |> List.fold2_exn ~init:initial ~f:fold_simple_assign targets
           | _, _ ->
               fold_simple_assign initial target (Resolution.resolve resolution value)
-        end
-    | None ->
-        initial
+        end)
+    |> Option.value ~default:initial
 end
 
 
