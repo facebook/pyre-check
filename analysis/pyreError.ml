@@ -94,20 +94,7 @@ type missing_return = {
   evidence_locations: int list;
   due_to_any: bool;
 }
-[@@deriving compare, eq, sexp]
-
-
-let pp_missing_return format ({ annotation; evidence_locations; due_to_any; } : missing_return) =
-  Format.fprintf
-    format
-    "Annotation: %s, Evidence locations: %a, Due to any: %b"
-    (Type.show annotation)
-    Sexp.pp (sexp_of_list sexp_of_int evidence_locations)
-    due_to_any
-
-
-let show_missing_return missing_return =
-  Format.asprintf "%a" pp missing_return
+[@@deriving compare, eq, sexp, show]
 
 
 type kind =
