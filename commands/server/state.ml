@@ -29,7 +29,10 @@ type t = {
   lookups: Analysis.Lookup.t String.Table.t;
   service: Service.t;
   lock: Mutex.t;
+  last_request_time: float;
   connections: connections ref;
 }
 
 let failure_threshold = 5
+
+let stop_after_idle_for = 24.0 *. 60.0 *. 60.0 (* 1 day *)

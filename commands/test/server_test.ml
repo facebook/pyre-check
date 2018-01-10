@@ -191,6 +191,7 @@ let mock_server_state
     initial_errors;
     errors;
     handles = File.Handle.Set.empty;
+    last_request_time = Unix.time ();
     lookups = String.Table.create ();
     lock = Mutex.create ();
     connections = ref {

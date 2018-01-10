@@ -47,6 +47,7 @@ let initialize ?old_state lock connections { configuration; _ } =
     handles;
     service;
     lock;
+    last_request_time = Unix.time ();
     connections;
     lookups = String.Table.create ();
   }

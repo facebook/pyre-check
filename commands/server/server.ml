@@ -210,7 +210,11 @@ let computation_thread request_queue configuration state =
       match Squeue.length request_queue, List.is_empty state.deferred_requests with
       | 0, false ->
           let state =
-            { state with deferred_requests = Protocol.Request.flatten state.deferred_requests }
+            {
+              state with
+              deferred_requests = Protocol.Request.flatten state.deferred_requests;
+              last_request_time = Unix.time ();
+            }
           in
           (match state.deferred_requests with
            | [] ->
@@ -218,7 +222,26 @@ let computation_thread request_queue configuration state =
            | request :: requests ->
                let state = { state with deferred_requests = requests } in
                handle_request state ~request:(Protocol.Request.Background, request))
+      | 0, true ->
+          let current_time = Unix.time () in
+          if current_time -. state.last_request_time > State.stop_after_idle_for then
+            begin
+              Statistics.event
+                ~name:"stop idle"
+                ~configuration:configuration.configuration
+                ();
+              Mutex.critical_section
+                state.lock
+                ~f:(fun () ->
+                    ServerOperations.stop_server
+                      configuration
+                      !(state.connections).socket)
+            end;
+          (* This sleep is necessary because OCaml threads aren't pre-emptively scheduled. *)
+          Unix.nanosleep 0.1 |> ignore;
+          state
       | _ ->
+          let state = { state with last_request_time = Unix.time () } in
           handle_request state ~request:(Squeue.pop request_queue)
     in
     loop configuration state
