@@ -125,10 +125,9 @@ def run_unused_ignores(arguments) -> None:
                 unused_ignores[path].add(line)
 
     LOG.info("Restoring repository state")
+    subprocess.check_call(['/usr/bin/hg', 'revert', '--all'])
     if dirty:
         subprocess.check_call(['/usr/bin/hg', 'unshelve'])
-    else:
-        subprocess.check_call(['/usr/bin/hg', 'revert', '--all'])
 
     for path, lines in unused_ignores.items():
         LOG.info(
