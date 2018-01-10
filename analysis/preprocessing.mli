@@ -38,7 +38,7 @@ val defines
 (* List of class definitions in a source. *)
 val classes
   :  Source.t
-  -> (Statement.t Statement.Class.t) Node.t list
+  -> Statement.Class.t Node.t list
 
 (* Creates a map used for dequalification from imports in the source *)
 val dequalify_map: Source.t -> Access.t Access.Map.t

@@ -96,7 +96,7 @@ end
 
 
 module Class = struct
-  type t = Statement.t Class.t
+  type t = Class.t
   [@@deriving compare, eq, sexp, show]
 
 

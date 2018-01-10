@@ -787,7 +787,7 @@ let test_defines _ =
 let test_classes _ =
   let assert_classes statements class_defines =
     assert_equal
-      ~cmp:(List.equal ~equal:(Class.equal Statement.equal))
+      ~cmp:(List.equal ~equal:Class.equal)
       (Preprocessing.classes (Source.create statements)
        |> List.map ~f:Node.value)
       class_defines in

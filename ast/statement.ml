@@ -21,18 +21,17 @@ module Record = struct
     }
     [@@deriving compare, eq, sexp, show]
   end
-end
 
-
-module Class = struct
-  type 'statement t = {
-    name: Expression.Access.t;
-    bases: (Expression.t Argument.t) list;
-    body: 'statement list;
-    decorators: Expression.t list;
-    docstring: string option;
-  }
-  [@@deriving compare, eq, sexp, show]
+  module Class = struct
+    type 'statement record = {
+      name: Expression.Access.t;
+      bases: (Expression.t Argument.t) list;
+      body: 'statement list;
+      decorators: Expression.t list;
+      docstring: string option;
+    }
+    [@@deriving compare, eq, sexp, show]
+  end
 end
 
 
@@ -140,7 +139,7 @@ end
 module Stub = struct
   type 'statement t =
     | Assign of Assign.t
-    | Class of 'statement Class.t
+    | Class of 'statement Record.Class.record
     | Define of 'statement Record.Define.record
   [@@deriving compare, eq, sexp, show]
 end
@@ -150,7 +149,7 @@ type statement =
   | Assign of Assign.t
   | Assert of Assert.t
   | Break
-  | Class of t Class.t
+  | Class of t Record.Class.record
   | Continue
   | Define of t Record.Define.record
   | Delete of Expression.t
@@ -258,7 +257,7 @@ module Define = struct
     Option.is_none return_annotation
 
 
-  let create_generated_constructor { Class.name; docstring; _ } =
+  let create_generated_constructor { Record.Class.name; docstring; _ } =
     {
       name;
       parameters = [Parameter.create ~name:(Identifier.create "self") ()];
@@ -304,6 +303,10 @@ module Define = struct
 
   let dump_cfg define =
     contains_call define "pyre_dump_cfg"
+
+
+  let strip define =
+    { define with body = [] }
 end
 
 
@@ -417,7 +420,7 @@ module PrettyPrinter = struct
       pp_expression_option (" # ", annotation)
 
 
-  and pp_class formatter { Class.name; bases; body; decorators; _ } =
+  and pp_class formatter { Record.Class.name; bases; body; decorators; _ } =
     Format.fprintf
       formatter
       "%a@[<v 2>class %a(%a):@;@[<v>%a@]@;@]"
@@ -645,6 +648,24 @@ module PrettyPrinter = struct
 end
 
 
+module Class = struct
+  include Record.Class
+
+
+  type t = statement_node Record.Class.record
+  [@@deriving compare, eq, sexp, show]
+
+
+  let strip ({ Record.Class.body; _ } as class_define ) =
+    let strip_define { Node.location; value } =
+      match value with
+      | Define define -> { Node.location; value = Define (Define.strip define) }
+      | _ -> { Node.location; value }
+    in
+    { class_define with Record.Class.body = List.map ~f:strip_define body }
+end
+
+
 let pp formatter statement =
   Format.fprintf
     formatter
@@ -652,6 +673,8 @@ let pp formatter statement =
     PrettyPrinter.pp statement
 
 let show statement = Format.asprintf "%a" pp statement
+
+
 
 let extract_docstring statements =
   (* See PEP 257 for Docstring formatting. The main idea is that we want to get the shortest

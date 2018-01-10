@@ -38,7 +38,7 @@ module Class : sig
   type parent_class = t
   [@@deriving compare, eq, sexp, show]
 
-  val create: Statement.t Class.t -> t
+  val create: Class.t -> t
 
   val name: t -> Access.t
   val bases: t -> (Expression.t Argument.t) list

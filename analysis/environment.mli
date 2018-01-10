@@ -10,7 +10,7 @@ open Statement
 
 type t = {
   function_definitions: ((Define.t Node.t) list) Access.Table.t;
-  class_definitions: (Statement.t Class.t) Type.Table.t;
+  class_definitions: Class.t Type.Table.t;
   protocols: Type.Hash_set.t;
   order: TypeOrder.t;
   aliases: Type.t Type.Table.t;
@@ -34,13 +34,13 @@ module type Reader = sig
     :  path: string
     -> Type.t
     -> Access.t
-    -> (Statement.t Class.t option)
+    -> Class.t option
     -> (Type.t * Type.t list)
   val register_alias: path: string -> key: Type.t -> data: Type.t -> unit
   val purge: File.Handle.t -> unit
 
   val function_definitions: Access.t -> (Define.t Node.t) list option
-  val class_definition: Type.t -> (Statement.t Class.t) option
+  val class_definition: Type.t -> Class.t option
   val protocols: Type.Hash_set.t
   val in_class_definition_keys: Type.t -> bool
   val aliases: Type.t -> Type.t option
@@ -67,11 +67,11 @@ val dependencies: (module Reader) -> string -> string list option
 val register_type
   :  order: (module TypeOrder.Reader)
   -> aliases: (Type.t -> Type.t option)
-  -> add_class_definition: (key: Type.t -> data: Statement.t Class.t -> unit)
+  -> add_class_definition: (key: Type.t -> data: Class.t -> unit)
   -> add_class_key: (path: string -> Type.t -> unit)
   -> add_protocol: (Type.t -> unit)
   -> register_global: (path: string -> key: Access.t -> data: Resolution.global -> unit)
-  -> (path: string -> Type.t -> Access.t -> (Statement.t Class.t option) -> (Type.t * Type.t list))
+  -> (path: string -> Type.t -> Access.t -> Class.t option -> (Type.t * Type.t list))
 
 val populate
   :  (module Reader)

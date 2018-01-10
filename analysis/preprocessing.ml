@@ -801,7 +801,7 @@ let defines ({ Source.statements; _ } as source) =
 
 let classes source =
   let module Collector = Visit.StatementCollector(struct
-      type t = (Statement.t Statement.Class.t) Node.t
+      type t = Statement.Class.t Node.t
       let predicate = function
         | { Node.location; value = Class class_define } ->
             Some ({ Node.location; Node.value = class_define })

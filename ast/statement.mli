@@ -18,18 +18,19 @@ module Record : sig
     }
     [@@deriving compare, eq, sexp, show]
   end
+
+  module Class : sig
+    type 'statement record = {
+      name: Expression.Access.t;
+      bases: (Expression.t Argument.t) list;
+      body: 'statement list;
+      decorators: Expression.t list;
+      docstring: string option;
+    }
+    [@@deriving compare, eq, sexp, show]
+  end
 end
 
-module Class : sig
-  type 'statement t = {
-    name: Expression.Access.t;
-    bases: (Expression.t Argument.t) list;
-    body: 'statement list;
-    decorators: Expression.t list;
-    docstring: string option;
-  }
-  [@@deriving compare, eq, sexp, show]
-end
 
 module For : sig
   type 'statement t = {
@@ -124,7 +125,7 @@ end
 module Stub : sig
   type 'statement t =
     | Assign of Assign.t
-    | Class of 'statement Class.t
+    | Class of 'statement Record.Class.record
     | Define of 'statement Record.Define.record
   [@@deriving compare, eq, sexp, show]
 end
@@ -133,7 +134,7 @@ type statement =
   | Assign of Assign.t
   | Assert of Assert.t
   | Break
-  | Class of t Class.t
+  | Class of t Record.Class.record
   | Continue
   | Define of t Record.Define.record
   | Delete of Expression.t
@@ -175,10 +176,21 @@ module Define : sig
   val is_generated_constructor: t -> bool
   val is_untyped: t -> bool
 
-  val create_generated_constructor: statement_node Class.t -> t
+  val create_generated_constructor: statement_node Record.Class.record -> t
   val create_toplevel: statement_node list -> t
   val dump: t -> bool
   val dump_cfg: t -> bool
+
+  val strip: t -> t
+end
+
+module Class : sig
+  include module type of struct include Record.Class end
+
+  type t = statement_node Record.Class.record
+  [@@deriving compare, eq, sexp, show]
+
+  val strip: t -> t
 end
 
 val assume: Expression.t -> t

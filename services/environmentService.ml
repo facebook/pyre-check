@@ -110,7 +110,6 @@ let shared_memory_reader
       } =
 
     let add_table f = Hashtbl.iteri ~f:(fun ~key ~data -> f key data) in
-    (* TypeOrder is a special case: it contains tables that need to be serialized in turn *)
     let add_type_order { TypeOrder.edges; backedges; indices; annotations } =
       add_table OrderEdges.add edges;
       add_table OrderBackedges.add backedges;
@@ -119,9 +118,19 @@ let shared_memory_reader
       OrderKeys.add "Edges" (Hashtbl.keys edges);
       OrderKeys.add "Backedges" (Hashtbl.keys backedges)
     in
+    add_type_order order;
 
-    add_table FunctionDefinitions.add function_definitions;
-    add_table ClassDefinitions.add class_definitions;
+    let add_function_without_body key functions =
+      let strip { Ast.Node.location; value } =
+        { Ast.Node.location; value = Ast.Statement.Define.strip value }
+      in
+      FunctionDefinitions.add key (List.map ~f:strip functions)
+    in
+    add_table add_function_without_body function_definitions;
+    let add_class_without_function_bodies key value =
+      ClassDefinitions.add key (Ast.Statement.Class.strip value)
+    in
+    add_table add_class_without_function_bodies class_definitions;
     add_table Aliases.add aliases;
     add_table Globals.add globals;
     add_table Dependents.add dependents;
@@ -133,8 +142,6 @@ let shared_memory_reader
     ClassDefinitionsKeys.add "ClassDefinitionsKeys" (Type.Table.keys class_definitions);
 
     Protocols.add "Protocols" (Hash_set.to_list protocols);
-
-    add_type_order order
   in
 
   Service.single_job
