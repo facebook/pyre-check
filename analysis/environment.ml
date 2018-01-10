@@ -568,10 +568,9 @@ let resolution
     ~annotations
     ~order
     ~resolve:
-      (fun ~resolution ~define expression ->
+      (fun ~resolution expression ->
          Annotated.resolve
            ~resolution
-           ~define
            expression)
     ~parse_annotation
     ~global:Reader.globals
@@ -654,11 +653,7 @@ let populate
             location;
           } ->
               (try
-                 let annotation =
-                   Resolution.resolve resolution
-                     ~define:(Statement.Define.create_toplevel [])
-                     value
-                 in
+                 let annotation = Resolution.resolve resolution value in
                  Reader.register_global
                    ~path
                    ~key:(parent @ access)
@@ -856,11 +851,7 @@ let populate
         location;
       } ->
           (try
-             match target.Node.value,
-                   (Resolution.resolve
-                      resolution
-                      ~define:(Statement.Define.create_toplevel [])
-                      value)
+             match target.Node.value, (Resolution.resolve resolution value)
              with
              | Access access, annotation ->
                  Reader.register_global

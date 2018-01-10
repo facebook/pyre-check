@@ -18,7 +18,6 @@ module Assign : sig
 
   val fold
     :  resolution: Resolution.t
-    -> define: Statement.Define.t
     -> initial: 'accumulator
     -> f:
          (access: Access.t Node.t
@@ -58,7 +57,6 @@ module Class : sig
 
     val create:
       resolution:  Resolution.t
-      -> define: Statement.Define.t
       -> Statement.Assign.t Node.t
       -> t option
 
@@ -203,12 +201,10 @@ module Call : sig
   val argument_annotations
     :  t
     -> resolution: Resolution.t
-    -> define: Statement.Define.t
     -> Signature.argument list
 
   val check_parameters
     :  resolution: Resolution.t
-    -> define: Statement.Define.t
     -> check_parameter: (
         argument: Expression.t Argument.t
         -> position: int
@@ -283,7 +279,6 @@ module Access: sig
 
   val fold
     :  resolution: Resolution.t
-    -> define: Statement.Define.t
     -> initial: 'accumulator
     -> f:
          ('accumulator
@@ -294,11 +289,10 @@ module Access: sig
     -> t
     -> 'accumulator
 
-  val last_element: resolution: Resolution.t -> define: Statement.Define.t -> t -> Element.t
+  val last_element: resolution: Resolution.t -> t -> Element.t
 end
 
 val resolve
   :  resolution: Resolution.t
-  -> define: Statement.Define.t
   -> Expression.t
   -> Type.t

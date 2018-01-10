@@ -47,11 +47,14 @@ module State = struct
   }
 
 
-  let resolution { environment; annotations; _ } =
-    Environment.resolution
-      environment
-      ~annotations
-      ()
+  let resolution { environment; annotations; define = { Node.value = define; _ }; _ } =
+    let resolution =
+      Environment.resolution
+        environment
+        ~annotations
+        ()
+    in
+    Resolution.with_define resolution define
 
 
   let pp
@@ -356,7 +359,7 @@ module State = struct
             Map.add ~key:access ~data:(Annotation.create annotation) annotations, errors
         | _ ->
             let add_missing_parameter_error value ~due_to_any =
-              let annotation = Annotated.resolve ~resolution ~define value in
+              let annotation = Annotated.resolve ~resolution value in
               let error =
                 {
                   Error.location;
@@ -663,7 +666,7 @@ module State = struct
               annotations =
             let annotation = Map.find annotations access in
             let element =
-              Access.last_element ~resolution ~define (Annotated.Access.create access)
+              Access.last_element ~resolution (Annotated.Access.create access)
             in
             match annotation, element with
             | Some annotation, _ when Annotation.is_immutable annotation ->
@@ -683,7 +686,7 @@ module State = struct
                 Map.add ~key:access ~data:(Annotation.create value_annotation) annotations
           in
           Annotated.Assign.create assign
-          |> Annotated.Assign.fold ~resolution ~define ~f:forward_annotations ~initial:annotations
+          |> Annotated.Assign.fold ~resolution ~f:forward_annotations ~initial:annotations
 
       | Assert { Assert.test; _ } ->
           let rec asserted annotations expression =
@@ -760,7 +763,7 @@ module State = struct
             | Access access ->
                 let open Annotated in
                 let element =
-                  Access.last_element ~resolution ~define (Annotated.Access.create access)
+                  Access.last_element ~resolution (Annotated.Access.create access)
                 in
                 begin
                   match Map.find annotations access, element with
@@ -837,7 +840,7 @@ module State = struct
               } when Identifier.show identifier = "None" ->
                 let open Annotated in
                 let element =
-                  Access.last_element ~resolution ~define (Annotated.Access.create access)
+                  Access.last_element ~resolution (Annotated.Access.create access)
                 in
                 begin
                   match element with
@@ -867,7 +870,7 @@ module State = struct
       | Global identifiers ->
           let access = Access.create_from_identifiers identifiers in
           let annotation =
-            Resolution.resolve resolution ~define (Node.create (Access access))
+            Resolution.resolve resolution (Node.create (Access access))
             |> Annotation.create_immutable ~global:true
           in
           Map.add ~key:access ~data:annotation annotations
@@ -882,7 +885,6 @@ module State = struct
               in
               Annotated.Access.fold
                 ~resolution:(Resolution.with_annotations resolution annotations)
-                ~define
                 ~initial:annotations
                 ~f:propagate
                 (Annotated.Access.create access)
@@ -941,7 +943,6 @@ module State = struct
             in
             Annotated.Call.check_parameters
               ~resolution
-              ~define
               ~check_parameter
               ~add_error:(fun errors error -> error :: errors)
               ~init:[]
@@ -1026,7 +1027,6 @@ module State = struct
         in
         Annotated.Access.fold
           ~resolution
-          ~define
           ~initial:[]
           ~f:check_access
           (Annotated.Access.create access)
@@ -1113,7 +1113,7 @@ module State = struct
 
         | Await expression ->
             let errors = check_expression ~resolution errors expression in
-            let actual = (Annotated.resolve ~resolution ~define expression) in
+            let actual = (Annotated.resolve ~resolution expression) in
             let is_awaitable =
               TypeOrder.less_or_equal
                 (Resolution.order resolution)
@@ -1225,7 +1225,7 @@ module State = struct
             Option.value_map
               return
               ~default:Type.none
-              ~f:(Annotated.resolve ~resolution ~define)
+              ~f:(Annotated.resolve ~resolution)
           in
           if not (Resolution.less_or_equal resolution ~left:actual ~right:expected) &&
              not (Define.is_abstract_method define) &&
@@ -1335,7 +1335,7 @@ module State = struct
             in
             let errors =
               let open Annotated in
-              match Access.last_element ~resolution ~define (Access.create access) with
+              match Access.last_element ~resolution (Access.create access) with
               | Access.Element.Attribute (Access.Element.Defined attribute) ->
                   let expected = Annotation.original (Attribute.annotation attribute) in
                   let name = Expression.Access.access (Node.create (Attribute.name attribute)) in
@@ -1412,7 +1412,7 @@ module State = struct
             check_expression ~resolution errors target
           in
           Annotated.Assign.create assign
-          |> Annotated.Assign.fold ~resolution ~define ~f:check_assign ~initial:errors
+          |> Annotated.Assign.fold ~resolution ~f:check_assign ~initial:errors
 
       | { Node.value = Assert { Assert.test; _ }; _ } ->
           check_expression ~resolution errors test
@@ -1427,7 +1427,7 @@ module State = struct
 
       | { Node.location; value = Statement.Yield { Node.value = Expression.Yield return; _ }; _ } ->
           let actual =
-            Option.value_map return ~default:Type.none ~f:(Annotated.resolve ~resolution ~define)
+            Option.value_map return ~default:Type.none ~f:(Annotated.resolve ~resolution)
             |> Type.generator
           in
           if not (Resolution.less_or_equal resolution ~left:actual ~right:expected) then
@@ -1458,7 +1458,7 @@ module State = struct
         _;
       } ->
           let actual =
-            match Annotated.resolve ~resolution ~define return with
+            match Annotated.resolve ~resolution return with
             | Type.Parametric { Type.name; parameters = [parameter] }
               when Identifier.show name = "typing.Iterator" ->
                 Type.generator parameter
@@ -1496,7 +1496,7 @@ module State = struct
 
   let backward
       statement
-      ({ errors; annotations; lookup; define = { Node.value = define; _ }; _ } as state) =
+      ({ errors; annotations; lookup; _ } as state) =
     let resolution = resolution state in
     let resolve_assign annotation target_annotation =
       match annotation, target_annotation with
@@ -1517,7 +1517,7 @@ module State = struct
               ({ Node.value = Access value; _ } as argument_value) ->
                 resolve_assign
                   (Resolution.parse_annotation resolution parameter_annotation)
-                  (Annotated.resolve ~resolution ~define argument_value)
+                  (Annotated.resolve ~resolution argument_value)
                 >>| (fun refined ->
                     Map.add ~key:value ~data:(Annotation.create refined) annotations)
                 |> Option.value ~default:annotations
@@ -1593,7 +1593,6 @@ module State = struct
         Annotated.Access.fold
           ~resolution
           ~initial:annotations
-          ~define
           ~f:propagate_access
           (Annotated.Access.create access)
       in
@@ -1609,8 +1608,8 @@ module State = struct
           Assign.compound = Some _;
           _ } ->
           resolve_assign
-            (Annotated.resolve ~resolution ~define target)
-            (Annotated.resolve ~resolution ~define value)
+            (Annotated.resolve ~resolution target)
+            (Annotated.resolve ~resolution value)
           >>| (fun refined ->
               Map.add ~key:value_access ~data:(Annotation.create refined) annotations)
           |> Option.value ~default:annotations
@@ -1622,7 +1621,7 @@ module State = struct
                 let annotations =
                   match value_access with
                   | [Access.Identifier _] ->
-                      resolve_assign target_annotation (Annotated.resolve ~resolution ~define value)
+                      resolve_assign target_annotation (Annotated.resolve ~resolution value)
                       >>| (fun refined ->
                           Map.add ~key:value_access ~data:(Annotation.create refined) annotations)
                       |> Option.value ~default:annotations
@@ -1658,7 +1657,7 @@ module State = struct
             when List.length targets = List.length values ->
               let target_annotations =
                 List.map
-                  ~f:(Annotated.resolve ~resolution ~define)
+                  ~f:(Annotated.resolve ~resolution)
                   targets
               in
               List.fold2_exn
@@ -1667,7 +1666,7 @@ module State = struct
                 target_annotations
                 values
           | _, _ ->
-              let target_annotation = Annotated.resolve ~resolution ~define target in
+              let target_annotation = Annotated.resolve ~resolution target in
               propagate_assign annotations target_annotation value)
       | _ -> annotate_call_accesses statement annotations
     in

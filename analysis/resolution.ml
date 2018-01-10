@@ -16,9 +16,10 @@ type global = {
 
 type t = {
   annotations: Annotation.t Access.Map.t;
+  define: Statement.Define.t option;
   order: (module TypeOrder.Reader);
 
-  resolve: resolution: t -> define: Statement.Define.t -> Expression.t -> Type.t;
+  resolve: resolution: t -> Expression.t -> Type.t;
   parse_annotation: Expression.t -> Type.t;
 
   global: Access.t -> global option;
@@ -49,6 +50,7 @@ let create
     ~method_signature =
   {
     annotations;
+    define = None;
     order;
     resolve;
     parse_annotation;
@@ -63,16 +65,24 @@ let with_annotations resolution annotations =
   { resolution with annotations }
 
 
+let with_define resolution define =
+  { resolution with define = Some define }
+
+
 let annotations { annotations; _ } =
   annotations
+
+
+let define { define; _ } =
+  define
 
 
 let order { order; _ } =
   order
 
 
-let resolve ({ resolve; _  } as resolution) ~define =
-  resolve ~resolution ~define
+let resolve ({ resolve; _  } as resolution) =
+  resolve ~resolution
 
 
 let parse_annotation { parse_annotation; _ } =
