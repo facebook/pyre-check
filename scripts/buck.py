@@ -61,8 +61,8 @@ def _normalize(target):
         return targets_to_destinations
     except subprocess.CalledProcessError:
         raise BuckException(
-            'Could not normalize target `{}`.\n   '.format(target),
-            'Check the target path or run `buck clean`.')
+            'Could not normalize target `{}`.\n   '
+            'Check the target path or run `buck clean`.'.format(target))
 
 
 def _build_targets(full_target_map) -> None:
