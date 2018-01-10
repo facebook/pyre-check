@@ -62,7 +62,11 @@ let test_assign_fold _ =
     in
     let actual =
       Assign.create assign
-      |> Assign.fold ~resolution ~f:single_assignments ~initial:[]
+      |> Assign.fold
+        ~resolution
+        ~define:(Statement.Define.create_toplevel [])
+        ~f:single_assignments
+        ~initial:[]
       |> List.rev
     in
     assert_equal actual expected
@@ -600,14 +604,15 @@ let test_class_attributes _ =
       (Class.attributes ~resolution definition)
       (List.map ~f:value attributes)
   in
-
+  let fake_define = Statement.Define.create_toplevel [] in
   assert_attributes
     parent
     [
-      Attribute.create ~resolution (create_assign "first");
-      Attribute.create ~resolution (create_assign "second");
+      Attribute.create ~resolution ~define:fake_define (create_assign "first");
+      Attribute.create ~resolution ~define:fake_define (create_assign "second");
       Attribute.create
         ~resolution
+        ~define:fake_define
         (create_assign "third" ~value:(Some (+Expression.Integer 1)));
     ];
 
@@ -616,6 +621,7 @@ let test_class_attributes _ =
   let attribute =
     Attribute.create
       ~resolution
+      ~define:fake_define
       (create_assign ~annotation:(Some !"int") "first")
     |> value
   in
@@ -900,6 +906,7 @@ let test_fold _ =
       Access.fold
         ~resolution:(resolution environment)
         ~initial:[]
+        ~define:(Statement.Define.create_toplevel [])
         ~f:accumulate_returns
         (Access.create access)
     in

@@ -176,6 +176,7 @@ module Define : sig
   val is_untyped: t -> bool
 
   val create_generated_constructor: statement_node Class.t -> t
+  val create_toplevel: statement_node list -> t
   val dump: t -> bool
   val dump_cfg: t -> bool
 end

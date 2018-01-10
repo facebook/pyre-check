@@ -785,18 +785,7 @@ let simplify_access_chains source =
 
 let defines ({ Source.statements; _ } as source) =
   let toplevel =
-    Node.create
-      {
-        Define.name = Access.create "$toplevel";
-        parameters = [];
-        body = statements;
-        decorators = [];
-        docstring = None;
-        return_annotation = Some (Type.expression Type.none);
-        async = false;
-        generated = false;
-        parent = None;
-      }
+    Node.create(Statement.Define.create_toplevel statements)
   in
   let module Collector = Visit.StatementCollector(struct
       type t = Define.t Node.t

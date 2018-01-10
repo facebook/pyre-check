@@ -56,7 +56,7 @@ module Assign = struct
     assign
 
 
-  let fold ~resolution ~initial ~f { Assign.target; value; _ } =
+  let fold ~resolution ~define ~initial ~f { Assign.target; value; _ } =
     value
     >>| (fun value ->
         let rec fold_simple_assign accumulator { Node.location; value } value_annotation =
@@ -86,10 +86,10 @@ module Assign = struct
           (* Tuples of individual assignments *)
           | Tuple targets, Tuple values
             when List.length targets = List.length values ->
-              List.map ~f:(Resolution.resolve resolution) values
+              List.map ~f:(Resolution.resolve resolution ~define) values
               |> List.fold2_exn ~init:initial ~f:fold_simple_assign targets
           | _, _ ->
-              fold_simple_assign initial target (Resolution.resolve resolution value)
+              fold_simple_assign initial target (Resolution.resolve resolution ~define value)
         end)
     |> Option.value ~default:initial
 end
@@ -146,7 +146,7 @@ module Class = struct
     [@@deriving eq, show]
 
 
-    let create ~resolution
+    let create ~resolution ~define
         {
           Node.location;
           value = {
@@ -168,7 +168,7 @@ module Class = struct
                 Annotation.create_immutable
                   ~global:true
                   ~original:(Some (Resolution.parse_annotation resolution annotation))
-                  (Resolution.resolve resolution value)
+                  (Resolution.resolve resolution ~define value)
             | Some annotation, None ->
                 Annotation.create_immutable
                   ~global:true
@@ -427,6 +427,7 @@ module Class = struct
         | Stub (Stub.Assign assign) ->
             Attribute.create
               ~resolution
+              ~define:(Define.create_generated_constructor definition)
               { Node.location; value = assign }
             >>| f initial
             |> Option.value ~default:initial
@@ -473,6 +474,23 @@ module Define = struct
 
   let create definition =
     definition
+
+
+  let create_toplevel statements =
+    {
+      Define.name = Expression.Access.create "$toplevel";
+      parameters = [];
+      body = statements;
+      decorators = [];
+      docstring = None;
+      return_annotation = Some (Type.expression Type.none);
+      async = false;
+      generated = false;
+      parent = None;
+    }
+
+
+  let define annotated = annotated
 
 
   let parameter_annotations define ~resolution =
@@ -716,19 +734,19 @@ module Call = struct
     | _ -> None
 
 
-  let argument_annotations { call = { Call.arguments; _ }; kind = _ } ~resolution =
+  let argument_annotations { call = { Call.arguments; _ }; kind = _ } ~resolution ~define =
     let extract_argument { Argument.value; _ } =
       match value with
       | { Node.location; Node.value = Starred (Starred.Once expression) } ->
           {
             Node.location;
-            value = Signature.Starred (Resolution.resolve resolution expression);
+            value = Signature.Starred (Resolution.resolve resolution ~define expression);
           }
       | { Node.location; _ } ->
           {
             Node.location;
             value = Signature.Normal {
-                Signature.annotation = Resolution.resolve resolution value;
+                Signature.annotation = Resolution.resolve resolution ~define value;
                 value;
               }
           }
@@ -738,6 +756,7 @@ module Call = struct
 
   let check_parameters
       ~resolution
+      ~define
       ~check_parameter
       ~add_error
       ~init
@@ -786,7 +805,7 @@ module Call = struct
            | Some _ -> offset - 1, errors
            | _ -> offset, errors)
     in
-    argument_annotations ~resolution call
+    argument_annotations ~resolution ~define call
     |> List.foldi ~init:(0, init) ~f:accumulate_errors
     |> snd
 end
@@ -923,7 +942,7 @@ module Access = struct
   (* Fold over an access path. Callbacks will be passed the current `accumulator`, the current
       `annotations`, the `resolved` type of the expression so far, as well as the kind of `element`
       we're currently folding over. *)
-  let fold ~resolution ?define ~initial ~f access =
+  let fold ~resolution ~(define: Define.t) ~initial ~f access =
     let return_annotation resolution = function
       | Some { Signature.instantiated = callee; _ } ->
           Define.create callee
@@ -967,10 +986,8 @@ module Access = struct
       match access with
       | (Access.Call { Node.value = { Expression.Call.name; _ }; _ }) :: tail
         when Expression.show name = "super" ->
-          (define
-           >>= (fun define ->
-               Define.create define
-               |> Define.parent_definition ~resolution)
+          (Define.create define
+           |> Define.parent_definition ~resolution
            >>| Class.superclasses ~resolution
            >>| function
            | superclass :: _ ->
@@ -1029,6 +1046,7 @@ module Access = struct
               let add_error errors _ = errors + 1 in
               Call.check_parameters
                 ~resolution
+                ~define
                 ~check_parameter
                 ~add_error
                 ~init:0
@@ -1080,7 +1098,7 @@ module Access = struct
                 resolution
                 (Annotation.original annotation)
                 (Call.call call)
-                (Call.argument_annotations ~resolution call)
+                (Call.argument_annotations ~resolution ~define call)
               |> pick_signature call
             in
             let backup =
@@ -1091,12 +1109,12 @@ module Access = struct
                  Call.call = { Expression.Call.arguments = [{ Argument.value; _ }]; _ };
                  _;
                } ->
-                   let annotation = Resolution.resolve resolution value in
+                   let annotation = Resolution.resolve resolution ~define value in
                    Resolution.method_signature
                      resolution
                      annotation
                      (Call.call call)
-                     (Call.argument_annotations ~resolution call)
+                     (Call.argument_annotations ~resolution ~define call)
                    |> pick_signature call
                | _ -> None)
               >>= fun signature -> Some (call, signature)
@@ -1211,6 +1229,7 @@ module Access = struct
                   let annotation =
                     Resolution.resolve
                       resolution
+                      ~define
                       (Node.create (Access access))
                   in
                   step (Some (access, (Annotation.create annotation))) call
@@ -1220,7 +1239,7 @@ module Access = struct
                       resolution
                       (List.rev qualifier)
                       (Call.call call)
-                      (Call.argument_annotations ~resolution call)
+                      (Call.argument_annotations ~resolution ~define call)
                     |> pick_signature call
                   in
                   let resolved = Annotation.create (return_annotation resolution callee) in
@@ -1237,7 +1256,7 @@ module Access = struct
             end
 
         | None, Access.Expression expression :: _ ->
-            let resolved = Annotation.create (Resolution.resolve resolution expression) in
+            let resolved = Annotation.create (Resolution.resolve resolution ~define expression) in
             resolution,
             resolved,
             (f accumulator ~annotations ~resolved ~element:Element.Expression)
@@ -1286,16 +1305,17 @@ module Access = struct
     fold ~resolution ~accumulator:initial ~reversed_lead:[] ~tail:access ~annotation:None
 
 
-  let last_element ~resolution access =
+  let last_element ~resolution ~define access =
     fold
       ~resolution
       ~initial:Element.Global
+      ~define
       ~f:(fun _ ~annotations:_ ~resolved:_ ~element -> element)
       access
 end
 
 
-let rec resolve ~resolution expression =
+let rec resolve ~resolution ~define expression =
   let with_generators resolution generators =
     let add_generator resolution {
         Comprehension.target = { Node.value = target_value; _ } as target;
@@ -1307,7 +1327,7 @@ let rec resolve ~resolution expression =
         match
           TypeOrder.join
             (Resolution.order resolution)
-            (resolve ~resolution iterator)
+            (resolve ~resolution ~define iterator)
             (Type.iterable Type.Bottom)
         with
         | Type.Parametric { Type.parameters = [parameter]; _ } ->
@@ -1375,11 +1395,12 @@ let rec resolve ~resolution expression =
         ~resolution
         ~initial:(Annotation.create Type.Top)
         ~f:annotation
+        ~define
         (Access.create access)
       |> Annotation.annotation
 
   | Await expression ->
-      resolve ~resolution expression
+      resolve ~resolution ~define expression
       |> Type.awaitable_value
 
   | BinaryOperator _ ->
@@ -1389,14 +1410,14 @@ let rec resolve ~resolution expression =
       let left_type =
         match operator with
         | BooleanOperator.Or ->
-            Type.optional_value (resolve ~resolution left)
+            Type.optional_value (resolve ~resolution ~define left)
         | _ ->
-            resolve ~resolution left
+            resolve ~resolution ~define left
       in
       TypeOrder.join
         (Resolution.order resolution)
         left_type
-        (resolve ~resolution right)
+        (resolve ~resolution ~define right)
 
   | Bytes _ ->
       Type.bytes
@@ -1407,7 +1428,7 @@ let rec resolve ~resolution expression =
             TypeOrder.meet
               (Resolution.order resolution)
               sofar
-              (resolve ~resolution call)
+              (resolve ~resolution ~define call)
         | None ->
             TypeOrder.meet
               (Resolution.order resolution)
@@ -1423,8 +1444,8 @@ let rec resolve ~resolution expression =
   | Dictionary { Dictionary.entries; _ } ->
       let key, values =
         let pair_wise_join (key_sofar, values) { Dictionary.key; value } =
-          TypeOrder.join (Resolution.order resolution) key_sofar (resolve ~resolution key),
-          (resolve ~resolution value) :: values
+          TypeOrder.join (Resolution.order resolution) key_sofar (resolve ~resolution ~define key),
+          (resolve ~resolution ~define value) :: values
         in
         List.fold entries ~init:(Type.Bottom, []) ~f:pair_wise_join
       in
@@ -1436,12 +1457,12 @@ let rec resolve ~resolution expression =
   | DictionaryComprehension { Comprehension.element = { Dictionary.key; value }; generators } ->
       let resolution = with_generators resolution generators in
       Type.dictionary
-        ~key:(Type.assume_any (resolve ~resolution key))
-        ~value:(Type.assume_any (resolve ~resolution value))
+        ~key:(Type.assume_any (resolve ~resolution ~define key))
+        ~value:(Type.assume_any (resolve ~resolution ~define value))
 
   | Generator { Comprehension.element; generators } ->
       let resolution = with_generators resolution generators in
-      Type.generator (resolve ~resolution element |> Type.assume_any)
+      Type.generator (resolve ~resolution ~define element |> Type.assume_any)
 
   | False ->
       Type.bool
@@ -1456,10 +1477,10 @@ let rec resolve ~resolution expression =
       Type.integer
 
   | Lambda { Lambda.body; _ } ->
-      Type.lambda (resolve ~resolution body)
+      Type.lambda (resolve ~resolution ~define body)
 
   | List elements ->
-      List.map ~f:(resolve ~resolution) elements
+      List.map ~f:(resolve ~resolution ~define) elements
       |> List.fold
         ~init:Type.Bottom
         ~f:(TypeOrder.join (Resolution.order resolution))
@@ -1467,10 +1488,10 @@ let rec resolve ~resolution expression =
 
   | ListComprehension { Comprehension.element; generators } ->
       let resolution = with_generators resolution generators in
-      Type.list (resolve ~resolution element)
+      Type.list (resolve ~resolution ~define element)
 
   | Set elements ->
-      List.map ~f:(resolve ~resolution) elements
+      List.map ~f:(resolve ~resolution ~define) elements
       |> List.fold
         ~init:Type.Bottom
         ~f:(TypeOrder.join (Resolution.order resolution))
@@ -1478,7 +1499,7 @@ let rec resolve ~resolution expression =
 
   | SetComprehension { Comprehension.element; generators } ->
       let resolution = with_generators resolution generators in
-      Type.set (resolve ~resolution element)
+      Type.set (resolve ~resolution ~define element)
 
   | Starred _ ->
       Type.Object
@@ -1497,29 +1518,29 @@ let rec resolve ~resolution expression =
             ];
           } when Identifier.show identifier = "None" ->
             if Expression.equal access target then
-              Type.optional_value (resolve ~resolution target)
+              Type.optional_value (resolve ~resolution ~define target)
             else
-              resolve ~resolution target
+              resolve ~resolution ~define target
         | _ ->
             if Expression.equal test target then
-              Type.optional_value (resolve ~resolution target)
+              Type.optional_value (resolve ~resolution ~define target)
             else
-              resolve ~resolution target
+              resolve ~resolution ~define target
       in
       TypeOrder.join
         (Resolution.order resolution)
         target_annotation
-        (resolve ~resolution alternative)
+        (resolve ~resolution ~define alternative)
 
   | True ->
       Type.bool
 
   | Tuple elements ->
-      Type.tuple (List.map elements ~f:(resolve ~resolution))
+      Type.tuple (List.map elements ~f:(resolve ~resolution ~define))
 
   | UnaryOperator operator ->
       UnaryOperator.override operator
-      >>| resolve ~resolution
+      >>| resolve ~resolution ~define
       |> Option.value ~default:Type.bool
 
   | Expression.Yield _ ->

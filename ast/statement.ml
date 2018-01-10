@@ -187,6 +187,20 @@ module Define = struct
   [@@deriving compare, eq, sexp, show]
 
 
+  let create_toplevel statements =
+    {
+      name = Expression.Access.create "$toplevel";
+      parameters = [];
+      body = statements;
+      decorators = [];
+      docstring = None;
+      return_annotation = None;
+      async = false;
+      generated = false;
+      parent = None;
+    }
+
+
   let is_method { name; parent; _ } =
     Option.is_some parent && List.length name = 1
 
