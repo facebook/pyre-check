@@ -11,7 +11,7 @@ from . import log
 LOG = logging.getLogger(__name__)
 
 
-BuckOut = namedtuple('BuckOut', 'link_trees targets_not_found')
+BuckOut = namedtuple('BuckOut', 'source_directories targets_not_found')
 
 
 class BuckException(Exception):
@@ -25,31 +25,31 @@ def presumed_target_root(target):
     return target
 
 
-def _find_link_trees(targets_map):
+def _find_source_directories(targets_map):
     targets = list(targets_map.keys())
     targets_not_found = []
-    link_trees = []
+    source_directories = []
     for target in targets:
         target_path = target
         if target_path.startswith('//'):
             target_path = target_path[2:]
         target_path = target_path.replace(':', '/')
 
-        discovered_link_trees = glob.glob(
+        discovered_source_directories = glob.glob(
             os.path.join('buck-out/gen/', target_path + '#*link-tree'))
         target_destination = targets_map[target]
         built = (target_destination is not None and (
             target_destination == '' or
             len(glob.glob(target_destination)) > 0))
-        if not built and len(discovered_link_trees) == 0:
+        if not built and len(discovered_source_directories) == 0:
             targets_not_found.append(target)
-        link_trees.extend(
-            [tree for tree in discovered_link_trees
+        source_directories.extend(
+            [tree for tree in discovered_source_directories
                 if not tree.endswith((
                     '-vs_debugger#link-tree',
                     '-interp#link-tree',
                     '-ipython#link-tree'))])
-    return BuckOut(link_trees, targets_not_found)
+    return BuckOut(source_directories, targets_not_found)
 
 
 def _normalize(target):
@@ -86,10 +86,10 @@ def _get_yes_no_input(prompt):
     return choice in ['', 'y', 'ye', 'yes']
 
 
-def generate_link_trees(original_targets, build, warn: bool = True):
-    buck_out = _find_link_trees(
+def generate_source_directories(original_targets, build, warn: bool = True):
+    buck_out = _find_source_directories(
         {target: None for target in original_targets})
-    link_trees = buck_out.link_trees
+    source_directories = buck_out.source_directories
 
     if warn and len(buck_out.targets_not_found) > 0:
         LOG.warning(
@@ -113,11 +113,11 @@ def generate_link_trees(original_targets, build, warn: bool = True):
 
     unbuilt_targets = []
     for target_name, normalized_targets_map in full_targets_map.items():
-        buck_out = _find_link_trees(normalized_targets_map)
+        buck_out = _find_source_directories(normalized_targets_map)
         # Add anything that is unbuilt or only partially built
         if len(buck_out.targets_not_found) > 0:
             unbuilt_targets.append(target_name)
-        link_trees.extend(buck_out.link_trees)
+        source_directories.extend(buck_out.source_directories)
 
     if len(unbuilt_targets) > 0:
         if build:
@@ -132,7 +132,7 @@ def generate_link_trees(original_targets, build, warn: bool = True):
                 'These targets might be unbuilt or only partially built.',
                 '    \n'.join(unbuilt_targets))
             if _get_yes_no_input("Build target?"):
-                return generate_link_trees(
+                return generate_source_directories(
                     original_targets,
                     build=True,
                     warn=False)
@@ -141,4 +141,4 @@ def generate_link_trees(original_targets, build, warn: bool = True):
                 'See `{} --help` for more information.'.format(
                     '    \n'.join(unbuilt_targets),
                     sys.argv[0]))
-    return link_trees
+    return source_directories

@@ -45,7 +45,7 @@ class InitTest(unittest.TestCase):
         # Arguments override configuration.
         with patch.object(
                 buck,
-                'generate_link_trees',
+                'generate_source_directories',
                 return_value=[]) as buck_source_directories:
             arguments.source_directory = ['arguments_source_directory']
             configuration.source_directories = [
@@ -60,7 +60,7 @@ class InitTest(unittest.TestCase):
 
         with patch.object(
                 buck,
-                'generate_link_trees',
+                'generate_source_directories',
                 return_value=['arguments_target']) as buck_source_directories:
             arguments.source_directory = []
             arguments.target = ['arguments_target']
@@ -81,7 +81,7 @@ class InitTest(unittest.TestCase):
         # Configuration is picked up when no arguments provided.
         with patch.object(
                 buck,
-                'generate_link_trees',
+                'generate_source_directories',
                 return_value=[]) as buck_source_directories:
             arguments.source_directory = []
             arguments.target = []

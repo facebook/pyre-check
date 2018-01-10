@@ -72,7 +72,7 @@ def resolve_source_directories(arguments, configuration):
         targets = set(configuration.targets)
 
     source_directories.update(
-        buck.generate_link_trees(targets, build=arguments.build))
+        buck.generate_source_directories(targets, build=arguments.build))
 
     if len(source_directories) == 0:
         raise EnvironmentException(

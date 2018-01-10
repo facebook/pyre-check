@@ -11,7 +11,7 @@ from unittest.mock import (
     patch,
 )
 
-BuckOut = namedtuple('BuckOut', 'link_trees targets_not_found')
+BuckOut = namedtuple('BuckOut', 'source_directories targets_not_found')
 
 
 class BuckTest(unittest.TestCase):
@@ -23,7 +23,7 @@ class BuckTest(unittest.TestCase):
             buck.presumed_target_root('/path/directory:target'),
             'path/directory')
 
-    def test_find_link_trees(self) -> None:
+    def test_find_source_directories(self) -> None:
         trees = [
             'blah-vs_debugger#link-tree',
             'blah-blah#link-tree',
@@ -31,10 +31,10 @@ class BuckTest(unittest.TestCase):
             'blah-ipython#link-tree']
         with patch.object(glob, 'glob', return_value=trees) as glob_glob:
             self.assertEqual(
-                buck._find_link_trees({'target': None}),
+                buck._find_source_directories({'target': None}),
                 BuckOut(['blah-blah#link-tree'], []))
         with patch.object(glob, 'glob') as glob_glob:
-            buck._find_link_trees({
+            buck._find_source_directories({
                 '//path/targets:name': None,
                 '//path/targets:namelibrary': None,
                 '//path/...': None})
@@ -45,7 +45,7 @@ class BuckTest(unittest.TestCase):
             ], any_order=True)
 
         with patch.object(glob, 'glob', return_value=['new_tree']) as glob_glob:
-            found_trees = buck._find_link_trees({
+            found_trees = buck._find_source_directories({
                 '//path/targets:name': None,
                 '//path/targets:namelibrary': None,
                 '//path/targets:another': 'buck-out/path/another',
@@ -55,7 +55,7 @@ class BuckTest(unittest.TestCase):
                 BuckOut(['new_tree', 'new_tree', 'new_tree', 'new_tree'], []))
 
         with patch.object(glob, 'glob', return_value=[]) as glob_glob:
-            found_trees = buck._find_link_trees({
+            found_trees = buck._find_source_directories({
                 '//path/targets:name': None,
                 '//path/targets:namelibrary': None,
                 '//path/targets:another': 'buck-out/path/another',
@@ -69,7 +69,7 @@ class BuckTest(unittest.TestCase):
                     '//path/...']))
 
         with patch.object(glob, 'glob', return_value=[]) as glob_glob:
-            found_trees = buck._find_link_trees({
+            found_trees = buck._find_source_directories({
                 '//path/targets:name': None,
                 '//path/targets:namelibrary': '',
                 '//path/targets:another': '',
@@ -99,20 +99,21 @@ class BuckTest(unittest.TestCase):
 
     @patch.object(buck, '_get_yes_no_input', return_value=False)
     @patch.object(buck, '_normalize')
-    @patch.object(buck, '_find_link_trees')
-    def test_generate_link_trees(
+    @patch.object(buck, '_find_source_directories')
+    def test_generate_source_directories(
         self,
-        mock_find_link_trees,
+        mock_find_source_directories,
         mock_normalize,
         mock_input
     ) -> None:
-        mock_find_link_trees.return_value = BuckOut(  # noqa
+        mock_find_source_directories.return_value = BuckOut(  # noqa
             ['new_tree'],
             ['empty_target'])
 
         with patch.object(buck, '_normalize') as mock_normalize:
             with self.assertRaises(buck.BuckException):
-                buck.generate_link_trees(['target'], build=False)
-                buck.generate_link_trees(['target1', 'target2'], build=False)
+                buck.generate_source_directories(['target'], build=False)
+                buck.generate_source_directories(
+                    ['target1', 'target2'], build=False)
                 mock_normalize.assert_has_calls(
                     [call('target'), call('target1'), call('target2')])
