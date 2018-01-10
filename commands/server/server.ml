@@ -260,7 +260,9 @@ let request_handler_thread (
         Log.error
           "Unexpected request origin %s for connection request"
           (Protocol.Request.origin_name origin)
-
+    | Protocol.Request.ReinitializeStateRequest, _ ->
+        Squeue.clear request_queue;
+        Squeue.push_or_drop request_queue (origin, request) |> ignore
     | _ ->
         Squeue.push_or_drop request_queue (origin, request) |> ignore;
   in
