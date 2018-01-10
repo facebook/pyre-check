@@ -65,17 +65,19 @@ def _normalize(target):
             'Check the target path or run `buck clean`.')
 
 
-def _build_targets(original_target_name, targets) -> None:
-    LOG.info('Building `%s`', original_target_name)
-    command = ['buck', 'build']
-    command.extend(targets)
-    try:
-        subprocess.check_output(
-            command,
-            stderr=subprocess.DEVNULL)
-    except subprocess.CalledProcessError:
-        raise BuckException(
-            'Could not build target `{}`.'.format(original_target_name))
+def _build_targets(full_target_map) -> None:
+    for original_target_name, targets_map in full_target_map.items():
+        normalized_targets = targets_map.keys()
+        LOG.info('Building `%s`', original_target_name)
+        command = ['buck', 'build']
+        command.extend(normalized_targets)
+        try:
+            subprocess.check_output(
+                command,
+                stderr=subprocess.DEVNULL)
+        except subprocess.CalledProcessError:
+            raise BuckException(
+                'Could not build target `{}`.'.format(original_target_name))
 
 
 def _get_yes_no_input(prompt):
@@ -94,55 +96,49 @@ def generate_link_trees(original_targets, build, warn: bool = True):
             'Passing in normalized buck targets will reduce runtime.\n   '
             'You can set up a .pyre_configuration file to reduce overhead.')
 
-    for target in buck_out.targets_not_found:
-        targets_to_destinations = _normalize(target)
-        targets_map = {}
-
-        for target in targets_to_destinations:
-            pair = target.split(' ')
+    full_targets_map = {}
+    for original_target in buck_out.targets_not_found:
+        targets_to_destinations = _normalize(original_target)
+        normalized_targets_map = {}
+        for target_destination_pair in targets_to_destinations:
+            pair = target_destination_pair.split(' ')
             if len(pair) > 1:
-                targets_map[pair[0]] = pair[1]
+                normalized_targets_map[pair[0]] = pair[1]
             else:
-                targets_map[pair[0]] = ''
+                normalized_targets_map[pair[0]] = ''
+        full_targets_map[original_target] = normalized_targets_map
 
+    if build:
+        _build_targets(full_targets_map)
+
+    unbuilt_targets = []
+    for target_name, normalized_targets_map in full_targets_map.items():
+        buck_out = _find_link_trees(normalized_targets_map)
+        # Add anything that is unbuilt or only partially built
+        if len(buck_out.targets_not_found) > 0:
+            unbuilt_targets.append(target_name)
+        link_trees.extend(buck_out.link_trees)
+
+    if len(unbuilt_targets) > 0:
         if build:
-            _build_targets(target, list(targets_map.keys()))
-
-        buck_out = _find_link_trees(targets_map)
-        if len(buck_out.link_trees) == 0 and build:
             raise BuckException(
-                'Could not find link trees for `{}`.\n   '
-                'See `{} --help` for more '
-                'information.'.format(target, sys.argv[0]))
-        elif len(buck_out.link_trees) == 0:
+                'Could not find link trees for:\n    `{}`.\n   '
+                'See `{} --help` for more information.'.format(
+                    '    \n'.join(unbuilt_targets),
+                    sys.argv[0]))
+        else:
             LOG.error(
-                'Could not find link trees for `%s`.\n   '
-                'The target might not be built.',
-                target)
+                'Could not find link trees for:\n    `%s`.\n   '
+                'These targets might be unbuilt or only partially built.',
+                '    \n'.join(unbuilt_targets))
             if _get_yes_no_input("Build target?"):
                 return generate_link_trees(
                     original_targets,
                     build=True,
                     warn=False)
             raise BuckException(
-                'Could not find link trees for `{}`.\n   '
-                'See `{} --help` for more '
-                'information.'.format(target, sys.argv[0]))
-        elif len(buck_out.targets_not_found) > 0 and not build:
-            LOG.error(
-                'Could not find link trees for all targets in `%s`.\n   '
-                'The target may only be partially built.',
-                target)
-            LOG.error(
-                'Potentially unbuilt subtargets:\n   %s',
-                '\n   '.join(buck_out.targets_not_found))
-            if _get_yes_no_input("Re-build target?"):
-                return generate_link_trees(
-                    original_targets,
-                    build=True,
-                    warn=False)
-            else:
-                link_trees.extend(buck_out.link_trees)
-        else:
-            link_trees.extend(buck_out.link_trees)
+                'Could not find link trees for:\n    `{}`.\n   '
+                'See `{} --help` for more information.'.format(
+                    '    \n'.join(unbuilt_targets),
+                    sys.argv[0]))
     return link_trees

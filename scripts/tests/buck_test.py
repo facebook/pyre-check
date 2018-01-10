@@ -11,7 +11,7 @@ from unittest.mock import (
     patch,
 )
 
-BuckOut = namedtuple('BuckOut', 'source_directories targets_not_found')
+BuckOut = namedtuple('BuckOut', 'link_trees targets_not_found')
 
 
 class BuckTest(unittest.TestCase):
@@ -89,20 +89,30 @@ class BuckTest(unittest.TestCase):
 
     def test_build_targets(self) -> None:
         with patch.object(subprocess, 'check_output') as buck_build:
-            buck._build_targets('target_path', ['subtarget1', 'subtarget2'])
+            buck._build_targets({'//t/...': {
+                '//t:subtarget': 'subtarget destination',
+                '//t:subtarget2': 'subtarget2 destination'}
+            })
             buck_build.assert_called_once_with(
-                ['buck', 'build', 'subtarget1', 'subtarget2'],
+                ['buck', 'build', '//t:subtarget', '//t:subtarget2'],
                 stderr=subprocess.DEVNULL)
 
     @patch.object(buck, '_get_yes_no_input', return_value=False)
-    def test_generate_link_trees(self, mock_input) -> None:
-        mock_find_link_trees = patch.object(
-            buck,
-            '_find_link_trees')
+    @patch.object(buck, '_normalize')
+    @patch.object(buck, '_find_link_trees')
+    def test_generate_link_trees(
+        self,
+        mock_find_link_trees,
+        mock_normalize,
+        mock_input
+    ) -> None:
         mock_find_link_trees.return_value = BuckOut(  # noqa
             ['new_tree'],
             ['empty_target'])
 
-        with patch.object(buck, '_normalize'):
+        with patch.object(buck, '_normalize') as mock_normalize:
             with self.assertRaises(buck.BuckException):
                 buck.generate_link_trees(['target'], build=False)
+                buck.generate_link_trees(['target1', 'target2'], build=False)
+                mock_normalize.assert_has_calls(
+                    [call('target'), call('target1'), call('target2')])
