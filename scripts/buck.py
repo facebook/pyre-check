@@ -86,15 +86,10 @@ def _get_yes_no_input(prompt):
     return choice in ['', 'y', 'ye', 'yes']
 
 
-def generate_source_directories(original_targets, build, warn: bool = True):
+def generate_source_directories(original_targets, build):
     buck_out = _find_source_directories(
         {target: None for target in original_targets})
     source_directories = buck_out.source_directories
-
-    if warn and len(buck_out.targets_not_found) > 0:
-        LOG.warning(
-            'Passing in normalized buck targets will reduce runtime.\n   '
-            'You can set up a .pyre_configuration file to reduce overhead.')
 
     full_targets_map = {}
     for original_target in buck_out.targets_not_found:
@@ -134,8 +129,7 @@ def generate_source_directories(original_targets, build, warn: bool = True):
             if _get_yes_no_input("Build target?"):
                 return generate_source_directories(
                     original_targets,
-                    build=True,
-                    warn=False)
+                    build=True)
             raise BuckException(
                 'Could not find link trees for:\n    `{}`.\n   '
                 'See `{} --help` for more information.'.format(

@@ -70,6 +70,9 @@ def resolve_source_directories(arguments, configuration):
     if not source_directories and not targets:
         source_directories = set(configuration.source_directories)
         targets = set(configuration.targets)
+    else:
+        LOG.warning(
+            'Setting up a .pyre_configuration file may reduce overhead.')
 
     source_directories.update(
         buck.generate_source_directories(targets, build=arguments.build))
