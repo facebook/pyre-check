@@ -719,7 +719,7 @@ let test_backward _ =
     []
     "nested_tuple_to_int(((x, y), z))"
     ["x", Type.string; "y", Type.float; "z", Type.float];
-  (* TODO(szhu): Extend implementation to pass starred and unstarred tests *)
+  (* TODO(T25072735): Extend implementation to pass starred and unstarred tests *)
   assert_backward [] "str_float_to_int(*(x, y))" []; (* "x", Type.string; "y", Type.float *)
   assert_backward
     []
@@ -2456,7 +2456,7 @@ let test_check_attributes _ =
       "Undefined attribute [16]: Class `Foo` has no attribute `baz`.";
     ];
 
-  (* TODO(szhu): support attribute tests for: class variables, generic annotations *)
+  (* TODO(T25072735): support attribute tests for: class variables, generic annotations *)
   assert_type_errors
     {|
       class Foo:
@@ -2716,7 +2716,7 @@ let test_check_immutables _ =
       "no type is specified."
     ];
 
-  (* TODO: error on typing.Any (incompatible usage) rather than suggest it *)
+  (* TODO(T25072735): error on typing.Any (incompatible usage) rather than suggest it *)
   assert_type_errors
     {|
       constant
