@@ -28,13 +28,16 @@ let mock_define =
 
 
 let mock_parent =
-  Annotated.Class.create {
+  {
     Statement.Class.name = Access.create "foo";
     bases = [];
     body = [];
     decorators = [];
     docstring = None;
   }
+  |> Node.create
+  |> Annotated.Class.create
+
 
 let create_mock_location path =
   let start = { Location.line = 1; column = 1 } in

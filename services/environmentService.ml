@@ -127,8 +127,8 @@ let shared_memory_reader
       FunctionDefinitions.add key (List.map ~f:strip functions)
     in
     add_table add_function_without_body function_definitions;
-    let add_class_without_function_bodies key value =
-      ClassDefinitions.add key (Ast.Statement.Class.strip value)
+    let add_class_without_function_bodies key { Ast.Node.location; value } =
+      ClassDefinitions.add key { Ast.Node.location; value = Ast.Statement.Class.strip value }
     in
     add_table add_class_without_function_bodies class_definitions;
     add_table Aliases.add aliases;

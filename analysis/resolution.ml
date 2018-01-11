@@ -23,7 +23,7 @@ type t = {
   parse_annotation: Expression.t -> Type.t;
 
   global: Access.t -> global option;
-  class_definition: Type.t -> Class.t option;
+  class_definition: Type.t -> (Class.t Node.t) option;
 
   function_signature:
     Access.t

@@ -96,14 +96,16 @@ end
 
 
 module Class = struct
-  type t = Class.t
+  type t = Class.t Node.t
   [@@deriving compare, eq, sexp, show]
 
 
   module Assign = Statement.Assign
 
 
-  let name_equal { Class.name = left; _ } { Class.name = right; _ } =
+  let name_equal
+      { Node.value = { Class.name = left; _ }; _ }
+      { Node.value = { Class.name = right; _ }; _ } =
     Access.equal left right
 
 
@@ -119,19 +121,19 @@ module Class = struct
     create
 
 
-  let name { Class.name; _ } =
+  let name { Node.value = { Class.name; _ }; _ } =
     name
 
 
-  let bases { Class.bases; _ } =
+  let bases { Node.value = { Class.bases; _ }; _ } =
     bases
 
 
-  let body { Class.body; _ } =
+  let body { Node.value = { Class.body; _ }; _ } =
     body
 
 
-  let annotation { Class.name; _ } ~resolution =
+  let annotation { Node.value = { Class.name; _ }; _ } ~resolution =
     Resolution.parse_annotation resolution (Node.create (Access name))
 
 
@@ -243,7 +245,7 @@ module Class = struct
         | Some _ -> sofar
         | None ->
             Resolution.class_definition resolution annotation
-            >>= (fun ({ Class.body; _ } as parent) ->
+            >>= (fun ({ Node.value = { Class.body; _ }; _ } as parent) ->
                 let find_override { Node.value = statement; _ } =
                   match statement with
                   | Statement.Stub (Stub.Define ({ Define.name = other; _ } as define))
@@ -280,7 +282,7 @@ module Class = struct
   end
 
 
-  let generics { Class.bases; _ } ~resolution =
+  let generics { Node.value = { Class.bases; _ }; _ } ~resolution =
     let generic { Argument.value; _ } =
       let annotation = Resolution.parse_annotation resolution value in
       match annotation with
@@ -293,7 +295,7 @@ module Class = struct
     |> Option.value ~default:[]
 
 
-  let free_variables { Class.bases; _ } ~resolution ~parameters =
+  let free_variables { Node.value = { Class.bases; _ }; _ } ~resolution ~parameters =
     let rec iterate ~free_variables ~bases ~parameters =
       match bases, parameters with
       | { Argument.value; _ } :: bases, Type.Bottom :: parameters ->
@@ -325,7 +327,7 @@ module Class = struct
     |> List.map ~f:create
 
 
-  let constructors ({ Class.name; body; _ } as definition) ~resolution =
+  let constructors ({ Node.value = { Class.name; body; _ }; _ } as definition) ~resolution =
     let constructors =
       let declared =
         let extract_constructor = function
@@ -338,7 +340,7 @@ module Class = struct
         List.filter_map ~f:extract_constructor body
       in
       if List.is_empty declared then
-        [Define.create_generated_constructor definition]
+        [Define.create_generated_constructor (Node.value definition)]
       else
         declared
     in
@@ -374,7 +376,7 @@ module Class = struct
     List.map ~f:adjust constructors
 
 
-  let methods ({ Class.body; _ } as definition) =
+  let methods ({ Node.value = { Class.body; _ }; _ } as definition) =
     let extract_define = function
       | { Node.value = Statement.Stub (Stub.Define define); _ }
       | { Node.value = Define define; _ } ->
@@ -385,7 +387,7 @@ module Class = struct
     List.filter_map ~f:extract_define body
 
 
-  let is_protocol { Class.bases; _ } =
+  let is_protocol { Node.value = { Class.bases; _ }; _ } =
     let is_protocol { Argument.name; value } =
       match name, Expression.show value with
       | None , "typing.Protocol" ->
@@ -416,7 +418,7 @@ module Class = struct
 
 
   let attribute_fold ?(transitive = false) definition ~initial ~f ~resolution =
-    let fold_definition initial ({ Class.body; _ } as parent) =
+    let fold_definition initial ({ Node.value = { Class.body; _ }; _ } as parent) =
       let fold_body initial { Node.location; value } =
         match value with
         | Assign assign

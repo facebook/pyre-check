@@ -133,13 +133,15 @@ let test_method_implements _ =
         generated = false;
         parent = Some (Expression.Access.create "Parent");
       }
-      ~parent:(Class.create {
-          Statement.Class.name = Expression.Access.create "Parent";
-          bases = [];
-          body = [+Pass];
-          decorators = [];
-          docstring = None;
-        })
+      ~parent:(Class.create
+        (Node.create
+          {
+            Statement.Class.name = Expression.Access.create "Parent";
+            bases = [];
+            body = [+Pass];
+            decorators = [];
+            docstring = None;
+          }))
   in
 
   assert_true
@@ -231,7 +233,7 @@ let test_generics _ =
         let resolution = populate source |> resolution in
         assert_equal
           ~cmp:(List.equal ~equal:Type.equal)
-          (Class.create definition |> Class.generics ~resolution)
+          (Class.create (Node.create definition) |> Class.generics ~resolution)
           generics
     | _ ->
         assert_unreached ()
@@ -277,6 +279,7 @@ let test_superclasses _ =
       decorators = [];
       docstring = None;
     }
+    |> Node.create
     |> Class.create
   in
 
@@ -327,7 +330,8 @@ let test_constructors _ =
           List.map ~f:define constructors
         in
         let actuals =
-          Class.create definition
+          Node.create definition
+          |> Class.create
           |> Class.constructors ~resolution
         in
         assert_equal
@@ -438,7 +442,8 @@ let test_methods _ =
           let method_name { Statement.Define.name; _ } =
             Expression.Access.show name
           in
-          Class.create definition
+          Node.create definition
+          |> Class.create
           |> Class.methods
           |> List.map ~f:(fun definition -> Method.define definition |> method_name)
         in
@@ -470,6 +475,7 @@ let test_is_protocol _ =
         decorators = [];
         docstring = None;
       }
+      |> Node.create
       |> Class.create
       |> Class.is_protocol
     in
@@ -497,8 +503,8 @@ let test_implements _ =
               assert_equal
                 (Class.implements
                    ~resolution
-                   ~protocol:(Class.create protocol)
-                   (Class.create definition))
+                   ~protocol:(Class.create (Node.create protocol))
+                   (Class.create (Node.create definition)))
                 conforms
           | _ ->
               assert_unreached ()
@@ -573,7 +579,7 @@ let test_class_attributes _ =
           failwith "Could not parse class"
     in
     populate source |> resolution,
-    Class.create parent
+    Class.create (Node.create parent)
   in
 
   let create_assign
@@ -936,6 +942,7 @@ let test_fold _ =
       decorators = [];
       docstring = None;
     }
+    |> Node.create
     |> Class.create
   in
   let defined_attribute =

@@ -12,7 +12,7 @@ open Statement
 
 type t = {
   function_definitions: ((Define.t Node.t) list) Access.Table.t;
-  class_definitions: Class.t Type.Table.t;
+  class_definitions: (Class.t Node.t) Type.Table.t;
   protocols: Type.Hash_set.t;
   order: TypeOrder.t;
   aliases: Type.t Type.Table.t;
@@ -32,13 +32,13 @@ module type Reader = sig
     :  path: string
     -> Type.t
     -> Access.t
-    -> Class.t option
+    -> (Class.t Node.t) option
     -> (Type.t * Type.t list)
   val register_alias: path: string -> key: Type.t -> data: Type.t -> unit
   val purge: File.Handle.t -> unit
 
   val function_definitions: Access.t -> (Define.t Node.t) list option
-  val class_definition: Type.t -> Class.t option
+  val class_definition: Type.t -> (Class.t Node.t) option
   val protocols: Type.Hash_set.t
   val in_class_definition_keys: Type.t -> bool
   val aliases: Type.t -> Type.t option
@@ -93,16 +93,16 @@ let register_type
     (* Handle definition. *)
     begin
       match definition with
-      | Some definition ->
+      | Some ({ Node.value = definition; _ } as definition_node) ->
           add_class_key ~path primitive;
-          let annotated = Annotated.Class.create definition in
+          let annotated = Annotated.Class.create definition_node in
 
           (* Register protocols. *)
           if Annotated.Class.is_protocol annotated then
             add_protocol primitive;
 
           (* Register normal annotations. *)
-          add_class_definition ~key:primitive ~data:definition;
+          add_class_definition ~key:primitive ~data:definition_node;
           if List.length definition.Class.bases > 0 then
             begin
               let register_supertype name =
@@ -703,7 +703,7 @@ let populate
           | { Node.location; value = Stub (Stub.Class definition) } ->
               (* Register constructors. *)
               let constructors =
-                Annotated.Class.create definition
+                Annotated.Class.create (Node.create ~location definition)
                 |> Annotated.Class.constructors ~resolution
               in
               List.iter
@@ -718,7 +718,7 @@ let populate
                   ~path
                   Type.Bottom
                   definition.Class.name
-                  (Some definition)
+                  (Some (Node.create ~location definition))
               in
 
               (* Handle enumeration constants. *)

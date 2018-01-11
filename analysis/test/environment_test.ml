@@ -1457,7 +1457,9 @@ let test_class_definition _ =
 
   let any =
     class_definition environment Type.Object
-    |> value in
+    |> value
+    |> Node.value
+  in
   assert_equal any.Class.name (access ["object"])
 
 

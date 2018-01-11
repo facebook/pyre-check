@@ -76,7 +76,7 @@ module DependentKeyValue = struct
 end
 
 module ClassValue = struct
-  type t = Class.t
+  type t = Class.t Node.t
   let prefix = Prefix.make ()
   let description = "Class"
 end
