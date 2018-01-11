@@ -23,6 +23,7 @@ type t = {
   strict: bool;
   declare: bool;
   show_error_traces: bool;
+  report_undefined_attributes: bool;
 }
 [@@deriving show]
 
@@ -42,6 +43,7 @@ let create
     ?(declare = false)
     ?(debug = false)
     ?(show_error_traces = false)
+    ?(report_undefined_attributes = false)
     () =
   {
     start_time;
@@ -57,8 +59,10 @@ let create
     version;
     strict;
     declare;
-    show_error_traces
+    show_error_traces;
+    report_undefined_attributes;
   }
+
 
 let localize ({ debug; _ } as configuration) ~local_debug ~strict ~declare =
   {

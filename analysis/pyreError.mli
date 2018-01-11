@@ -14,6 +14,12 @@ type undefined_method = {
 }
 [@@deriving compare, eq, show]
 
+type undefined_attribute = {
+  annotation: Type.t;
+  attribute: Access.t;
+}
+[@@deriving compare, eq, show]
+
 type mismatch = {
   actual: Type.t;
   expected: Type.t;
@@ -100,6 +106,7 @@ type kind =
   | MissingParameterAnnotation of missing_parameter
   | MissingReturnAnnotation of missing_return
   | Top
+  | UndefinedAttribute of undefined_attribute
   | UndefinedMethod of undefined_method
   | UndefinedType of Type.t
   | UninitializedAttribute of initialization_mismatch

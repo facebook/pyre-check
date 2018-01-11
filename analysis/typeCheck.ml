@@ -232,7 +232,8 @@ module State = struct
           | IncompatibleParameterType _
           | IncompatibleReturnType _
           | MissingParameterAnnotation _
-          | MissingReturnAnnotation _ ->
+          | MissingReturnAnnotation _
+          | UndefinedAttribute _ ->
               false
           | IncompatibleAwaitableType _
           | IncompatibleAttributeType _
@@ -282,15 +283,19 @@ module State = struct
 
       (* Angelic assumption: `Top` indicates we've hit a limitation of the
          analysis and decide not to report on it. *)
-      let suppress error =
-        if configuration.infer then
-          suppress_in_infer error
-        else if configuration.strict then
-          suppress_in_strict error
-        else if configuration.declare then
-          true
-        else
-          suppress_in_default error
+      let suppress ({ Error.kind; _ } as error) =
+        match kind with
+        | UndefinedAttribute _ ->
+            not configuration.report_undefined_attributes
+        | _ ->
+            if configuration.infer then
+              suppress_in_infer error
+            else if configuration.strict then
+              suppress_in_strict error
+            else if configuration.declare then
+              true
+            else
+              suppress_in_default error
       in
       List.filter ~f:(fun error -> not (suppress error)) errors
     in
@@ -951,7 +956,7 @@ module State = struct
         | None -> []
       in
       (* Check a full access sequence, including available attributes and calls. *)
-      let check_access ~resolution errors access =
+      let check_access ~resolution errors { Node.location; value = access } =
         let check_access new_errors ~annotations:_ ~resolved:_ ~element =
           if not (List.is_empty new_errors) then
             new_errors
@@ -1023,7 +1028,24 @@ module State = struct
                     errors
                 in
                 unresolved_method_errors @ parameter_errors
-            | _ -> new_errors
+            | Attribute (Undefined { name; parent }) ->
+                let annotation =
+                  parent
+                  >>| Annotated.Class.annotation ~resolution
+                  |> Option.value ~default:Type.Top
+                in
+                [
+                  {
+                    Error.location;
+                    kind = Error.UndefinedAttribute {
+                        Error.annotation;
+                        attribute = name;
+                      };
+                    define = define_node;
+                  }
+                ] @ new_errors
+            | _ ->
+                new_errors
         in
         Annotated.Access.fold
           ~resolution
@@ -1075,10 +1097,10 @@ module State = struct
         forward state assign
         |> fun state -> List.fold ~init:state ~f:forward_expression conditions
 
-      and check_expression ~resolution errors expression =
-        match expression.Node.value with
+      and check_expression ~resolution errors { Node.location; value } =
+        match value with
         | Access access ->
-            let errors = check_access ~resolution errors access in
+            let errors = check_access ~resolution errors (Node.create ~location access) in
             let check_single_access errors access =
               match access with
               | Access.Identifier _ ->
@@ -1487,8 +1509,9 @@ module State = struct
           else
             errors
 
-      | statement ->
+      | { Node.location;  _ } as statement ->
           Visit.collect_accesses statement
+          |> List.map ~f:(Node.create ~location)
           |> List.fold ~init:errors ~f:(check_access ~resolution)
     in
     { state with environment; errors; annotations; lookup }

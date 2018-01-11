@@ -940,6 +940,7 @@ let assert_type_errors
             ~strict
             ~declare
             ~infer
+            ~report_undefined_attributes:true
             ())
          environment
          source)
@@ -1717,10 +1718,7 @@ let test_check_function_parameters _ =
         def foo(self) -> None:
           int_to_int(self.attribute)
     |}
-    [
-      "Incompatible parameter type [6]: 1st parameter `i` to call `int_to_int` expected `int` " ^
-      "but got `unknown`.";
-    ];
+    ["Undefined attribute [16]: Class `A` has no attribute `attribute`."];
 
   assert_type_errors
     {|
@@ -2192,6 +2190,7 @@ let test_check_init _ =
     [
       "Missing attribute annotation [4]: Attribute `attribute` of class `Foo` has type `int` but " ^
       "no type is specified.";
+      "Undefined attribute [16]: Class `Foo` has no attribute `attribute`.";
     ];
 
   assert_type_errors
@@ -2235,7 +2234,10 @@ let test_check_attributes _ =
         def foo(self) -> int:
           return self.bar
     |}
-    ["Incompatible return type [7]: Expected `int` but got `unknown`."];
+    [
+      "Incompatible return type [7]: Expected `int` but got `unknown`.";
+      "Undefined attribute [16]: Class `Foo` has no attribute `bar`.";
+    ];
   assert_type_errors
     {|
       class Foo:
@@ -2303,7 +2305,9 @@ let test_check_attributes _ =
     [
       "Missing attribute annotation [4]: Attribute `bar` of class `Foo` has type `str` but no " ^
       "type is specified.";
-      "Incompatible return type [7]: Expected `int` but got `str`."
+      "Undefined attribute [16]: Class `Foo` has no attribute `bar`.";
+      "Incompatible return type [7]: Expected `int` but got `str`.";
+      "Undefined attribute [16]: Class `Foo` has no attribute `bar`.";
     ];
 
   assert_type_errors
@@ -2365,7 +2369,9 @@ let test_check_attributes _ =
     [
       "Missing attribute annotation [4]: Attribute `bar` of class `Foo` has type `str` but no " ^
       "type is specified.";
+      "Undefined attribute [16]: Class `Foo` has no attribute `bar`.";
       "Incompatible return type [7]: Expected `int` but got `str`.";
+      "Undefined attribute [16]: Class `Foo` has no attribute `bar`.";
     ];
 
   assert_type_errors
@@ -2427,7 +2433,10 @@ let test_check_attributes _ =
           return a.bar
         return 0
     |}
-    ["Incompatible return type [7]: Expected `int` but got `typing.Optional[int]`."];
+    [
+      "Undefined attribute [16]: Class `unknown` has no attribute `bar`.";
+      "Incompatible return type [7]: Expected `int` but got `typing.Optional[int]`.";
+    ];
 
   assert_type_errors
     {|
@@ -2438,8 +2447,15 @@ let test_check_attributes _ =
                   self.baz = 5
               return self.baz
     |}
-    ["Missing attribute annotation [4]: Attribute `baz` of class `Foo` has type " ^
-     "`typing.Optional[int]` but no type is specified."];
+    [
+      "Missing attribute annotation [4]: Attribute `baz` of class `Foo` has type " ^
+      "`typing.Optional[int]` but no type is specified.";
+      (* TODO(T24330702): we should only report this once. *)
+      "Undefined attribute [16]: Class `Foo` has no attribute `baz`.";
+      "Undefined attribute [16]: Class `Foo` has no attribute `baz`.";
+      "Undefined attribute [16]: Class `Foo` has no attribute `baz`.";
+      "Undefined attribute [16]: Class `Foo` has no attribute `baz`.";
+    ];
 
   (* TODO(szhu): support attribute tests for: class variables, generic annotations *)
   assert_type_errors
@@ -2654,6 +2670,7 @@ let test_check_immutables _ =
     [
       "Missing attribute annotation [4]: Attribute `attribute` of class `Foo` has type `int` but " ^
       "no type is specified.";
+      "Undefined attribute [16]: Class `Foo` has no attribute `attribute`.";
     ];
 
   assert_type_errors
@@ -2784,8 +2801,9 @@ let test_check_immutables _ =
     [
       "Missing attribute annotation [4]: Attribute `constant` of class `Foo` has type `int` but " ^
       "no type is specified.";
+      "Undefined attribute [16]: Class `Foo` has no attribute `constant`.";
       "Missing global annotation [5]: Globally accessible variable `constant` has type `str` but " ^
-      "no type is specified."
+      "no type is specified.";
     ]
 
 

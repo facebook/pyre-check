@@ -18,6 +18,13 @@ type undefined_method = {
 [@@deriving compare, eq, show, sexp]
 
 
+type undefined_attribute = {
+  annotation: Type.t;
+  attribute: Access.t;
+}
+[@@deriving compare, eq, show, sexp]
+
+
 type mismatch = {
   actual: Type.t;
   expected: Type.t;
@@ -115,6 +122,7 @@ type kind =
   | MissingParameterAnnotation of missing_parameter
   | MissingReturnAnnotation of missing_return
   | Top
+  | UndefinedAttribute of undefined_attribute
   | UndefinedMethod of undefined_method
   | UndefinedType of Type.t
   | UninitializedAttribute of initialization_mismatch
@@ -158,6 +166,7 @@ let code { kind; _ } =
   | MissingAttributeAnnotation _ -> 4
   | MissingGlobalAnnotation _ -> 5
   | Top -> 1
+  | UndefinedAttribute _ -> 16
   | UndefinedMethod _ -> 10
   | UndefinedType _ -> 11
   | UninitializedAttribute _ -> 13
@@ -176,6 +185,7 @@ let name { kind; _ } =
   | MissingParameterAnnotation _ -> "Missing parameter annotation"
   | MissingReturnAnnotation _ -> "Missing return annotation"
   | Top -> "Undefined error"
+  | UndefinedAttribute _ -> "Undefined attribute"
   | UndefinedMethod _ -> "Undefined method"
   | UndefinedType _ -> "Undefined type"
   | UninitializedAttribute _ -> "Uninitialized attribute"
@@ -435,6 +445,8 @@ let description
             (Annotated.Method.parent overridden_method |> Annotated.Class.name);
           detail;
         ]
+    | UndefinedAttribute { annotation; attribute } ->
+        [Format.asprintf "Class %a has no attribute `%a`." Type.pp annotation Access.pp attribute]
     | UndefinedMethod { annotation; call } ->
         let name =
           match Annotated.Call.name call with
@@ -506,6 +518,7 @@ let due_to_analysis_limitations { kind; _ } =
   | UninitializedAttribute { mismatch = {actual; _ }; _ }->
       Type.is_unknown actual
   | Top -> true
+  | UndefinedAttribute { annotation; _ }
   | UndefinedMethod { annotation; _ }
   | UndefinedType annotation ->
       Type.is_unknown annotation
@@ -519,6 +532,7 @@ let due_to_mismatch_with_any { kind; _ } =
   | MissingParameterAnnotation _
   | MissingReturnAnnotation _
   | Top
+  | UndefinedAttribute _
   | UndefinedMethod _
   | UndefinedType _ ->
       false
@@ -576,6 +590,12 @@ let less_or_equal ~resolution left right =
        less_or_equal_mismatch left.mismatch right.mismatch
    | UninitializedAttribute left, UninitializedAttribute right when left.name = right.name ->
        less_or_equal_mismatch left.mismatch right.mismatch
+   | UndefinedAttribute left, UndefinedAttribute right
+      when Access.equal left.attribute right.attribute ->
+       TypeOrder.less_or_equal
+         order
+         ~left:left.annotation
+         ~right:right.annotation
    | UndefinedMethod left, UndefinedMethod right ->
        TypeOrder.less_or_equal
          order
@@ -666,6 +686,12 @@ let join ~resolution left right =
     | UninitializedAttribute left, UninitializedAttribute right
       when left.name = right.name && Annotated.Class.name_equal left.parent right.parent ->
         UninitializedAttribute { left with mismatch = join_mismatch left.mismatch right.mismatch }
+    | UndefinedAttribute left, UndefinedAttribute right
+        when Access.equal left.attribute right.attribute ->
+        UndefinedAttribute {
+          left with
+          annotation = TypeOrder.join order left.annotation right.annotation;
+        }
     | UndefinedMethod left, UndefinedMethod right ->
         UndefinedMethod {
           annotation =
@@ -816,6 +842,8 @@ let dequalify
           inconsistent_usage with
           mismatch = { actual = dequalify actual; expected = dequalify expected };
         }
+    | UndefinedAttribute { annotation; attribute } ->
+        UndefinedAttribute { annotation = dequalify annotation; attribute }
     | UndefinedMethod { annotation; call } ->
         UndefinedMethod { annotation = dequalify annotation; call }
     | UndefinedType annotation -> UndefinedType (dequalify annotation)
