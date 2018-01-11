@@ -2518,6 +2518,19 @@ let test_check_attributes _ =
         def foo(self) -> int:
           return self.attribute
     |}
+    [];
+
+  (* Attributes of other classes are properly resolved. *)
+  assert_type_errors
+    {|
+      class Bar:
+        bar: int = 1
+      class Foo:
+        def foo(self, bar: Bar) -> int:
+          return bar.bar
+      def foo(bar: Bar) -> int:
+        return bar.bar
+    |}
     []
 
 
