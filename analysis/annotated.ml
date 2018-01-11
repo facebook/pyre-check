@@ -146,42 +146,38 @@ module Class = struct
     [@@deriving eq, show]
 
 
-    let create ~resolution
+    let create
+        ~resolution
+        ~parent
         {
           Node.location;
           value = {
             Assign.target = { Node.value = target; _ };
             annotation;
             value;
-            parent;
             _;
           };
         } =
-      parent
-      >>| (fun parent ->
-          Resolution.parse_annotation resolution { Node.location; value = Access parent })
-      >>= Resolution.class_definition resolution
-      >>| (fun parent ->
-          let annotation =
-            match annotation, value with
-            | Some annotation, Some value ->
-                Annotation.create_immutable
-                  ~global:true
-                  ~original:(Some (Resolution.parse_annotation resolution annotation))
-                  (Resolution.resolve resolution value)
-            | Some annotation, None ->
-                Annotation.create_immutable
-                  ~global:true
-                  (Resolution.parse_annotation resolution annotation)
-            | None, Some value ->
-                Annotation.create_immutable
-                  ~global:true
-                  ~original:(Some Type.Top)
-                  (Resolution.parse_annotation resolution value)
-            | _ ->
-                Annotation.create_immutable ~global:true Type.Top
-          in
-          { name = target; parent; annotation; value; location })
+      let annotation =
+        match annotation, value with
+        | Some annotation, Some value ->
+            Annotation.create_immutable
+              ~global:true
+              ~original:(Some (Resolution.parse_annotation resolution annotation))
+              (Resolution.resolve resolution value)
+        | Some annotation, None ->
+            Annotation.create_immutable
+              ~global:true
+              (Resolution.parse_annotation resolution annotation)
+        | None, Some value ->
+            Annotation.create_immutable
+              ~global:true
+              ~original:(Some Type.Top)
+              (Resolution.parse_annotation resolution value)
+        | _ ->
+            Annotation.create_immutable ~global:true Type.Top
+      in
+      { name = target; parent; annotation; value; location }
 
 
     let name { name; _ } =
@@ -420,16 +416,13 @@ module Class = struct
 
 
   let attribute_fold ?(transitive = false) definition ~initial ~f ~resolution =
-    let fold_definition initial { Class.body; _ } =
+    let fold_definition initial ({ Class.body; _ } as parent) =
       let fold_body initial { Node.location; value } =
         match value with
         | Assign assign
         | Stub (Stub.Assign assign) ->
-            Attribute.create
-              ~resolution
-              { Node.location; value = assign }
-            >>| f initial
-            |> Option.value ~default:initial
+            Attribute.create ~resolution ~parent { Node.location; value = assign }
+            |> f initial
         | _ -> initial
       in
       List.fold ~f:fold_body ~init:initial body
@@ -444,7 +437,12 @@ module Class = struct
 
 
   let attributes ?(transitive = false) definition ~resolution  =
-    attribute_fold ~transitive ~initial:[] ~resolution ~f:(fun sofar next -> next :: sofar) definition
+    attribute_fold
+      ~transitive
+      ~initial:[]
+      ~resolution
+      ~f:(fun sofar next -> next :: sofar)
+      definition
     |> List.rev
 
 

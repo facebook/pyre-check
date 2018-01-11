@@ -55,10 +55,11 @@ module Class : sig
     }
     [@@deriving eq, show]
 
-    val create:
-      resolution:  Resolution.t
+    val create
+      :  resolution: Resolution.t
+      -> parent: parent_class
       -> Statement.Assign.t Node.t
-      -> t option
+      -> t
 
     val name: t -> Expression.expression
     val annotation: t -> Annotation.t

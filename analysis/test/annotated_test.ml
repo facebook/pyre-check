@@ -601,15 +601,16 @@ let test_class_attributes _ =
             ~sep:"; "
             (List.map ~f:(Format.asprintf "%a" Annotated.Class.Attribute.pp) attributes))
       (Class.attributes ~resolution definition)
-      (List.map ~f:value attributes)
+      attributes
   in
   assert_attributes
     parent
     [
-      Attribute.create ~resolution (create_assign "first");
-      Attribute.create ~resolution (create_assign "second");
+      Attribute.create ~resolution ~parent (create_assign "first");
+      Attribute.create ~resolution ~parent (create_assign "second");
       Attribute.create
         ~resolution
+        ~parent
         (create_assign "third" ~value:(Some (+Expression.Integer 1)));
     ];
 
@@ -618,8 +619,8 @@ let test_class_attributes _ =
   let attribute =
     Attribute.create
       ~resolution
+      ~parent
       (create_assign ~annotation:(Some !"int") "first")
-    |> value
   in
   assert_equal
     (Attribute.name attribute)
