@@ -64,10 +64,13 @@ module Class : sig
       -> t
 
     val name: t -> Expression.expression
+    val access: t -> Access.t
+
     val annotation: t -> Annotation.t
     val parent: t -> parent_class
     val value: t -> Expression.t option
     val location: t -> Location.t
+    val defined: t -> bool
   end
 
   module Method : sig
@@ -256,20 +259,11 @@ module Access: sig
       backup: (Call.t * Signature.t) option;
     }
 
-    type undefined_attribute = {
-      name: Access.t;
-      parent: Class.t;
-    }
-
-    type attribute =
-      | Defined of Attribute.t
-      | Undefined of undefined_attribute
-
     type t =
       | Array
       | Call of call
       | Expression
-      | Attribute of attribute
+      | Attribute of Attribute.t
       | Global
       | Identifier
       | Method of method_call

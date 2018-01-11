@@ -679,7 +679,7 @@ module State = struct
                   ~key:access
                   ~data:(Refinement.refine ~resolution annotation value_annotation)
                   annotations
-            | _, Access.Element.Attribute (Access.Element.Defined attribute) ->
+            | _, Access.Element.Attribute attribute when Attribute.defined attribute ->
                 let refined =
                   Refinement.refine
                     ~resolution
@@ -774,7 +774,7 @@ module State = struct
                   match Map.find annotations access, element with
                   | Some { Annotation.annotation = Type.Optional parameter; _ }, _ ->
                       Map.add ~key:access ~data:(Annotation.create parameter) annotations
-                  | _, Access.Element.Attribute (Access.Element.Defined attribute) ->
+                  | _, Access.Element.Attribute attribute when Attribute.defined attribute ->
                       begin
                         match Attribute.annotation attribute with
                         | {
@@ -849,7 +849,7 @@ module State = struct
                 in
                 begin
                   match element with
-                  | Access.Element.Attribute (Access.Element.Defined attribute) ->
+                  | Access.Element.Attribute attribute when Attribute.defined attribute ->
                       let refined =
                         Refinement.refine
                           ~resolution
@@ -1028,13 +1028,14 @@ module State = struct
                     errors
                 in
                 unresolved_method_errors @ parameter_errors
-            | Attribute (Undefined { name; parent }) ->
+            | Attribute attribute when not (Annotated.Attribute.defined attribute) ->
+                let open Annotated in
                 [
                   {
                     Error.location;
                     kind = Error.UndefinedAttribute {
-                        Error.annotation = Annotated.Class.annotation ~resolution parent;
-                        attribute = name;
+                        Error.annotation = Class.annotation ~resolution (Attribute.parent attribute);
+                        attribute = Attribute.access attribute;
                       };
                     define = define_node;
                   }
@@ -1353,7 +1354,7 @@ module State = struct
             let errors =
               let open Annotated in
               match Access.last_element ~resolution (Access.create access) with
-              | Access.Element.Attribute (Access.Element.Defined attribute) ->
+              | Access.Element.Attribute attribute when Attribute.defined attribute ->
                   let expected = Annotation.original (Attribute.annotation attribute) in
                   let name = Expression.Access.access (Node.create (Attribute.name attribute)) in
                   errors
@@ -1367,14 +1368,14 @@ module State = struct
                     ~parent:(Some (Attribute.parent attribute))
                     ~name
                     ~declare_location:(Attribute.location attribute)
-              | Access.Element.Attribute
-                  (Access.Element.Undefined { Access.Element.name; parent }) ->
+              | Access.Element.Attribute attribute when not (Attribute.defined attribute) ->
+                  let parent = Attribute.parent attribute in
                   (match Class.body parent with
                    | { Node.location; _ } :: _ ->
                        add_missing_annotation_error
                          ~expected:Type.Top
                          ~parent:(Some parent)
-                         ~name
+                         ~name:(Attribute.access attribute)
                          ~declare_location:location
                          errors
                    | _ ->

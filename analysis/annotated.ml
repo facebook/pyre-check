@@ -188,6 +188,12 @@ module Class = struct
       name
 
 
+    let access { name; _ } =
+      match name with
+      | Expression.Access access -> access
+      | _ -> []
+
+
     let annotation { annotation; _ } =
       annotation
 
@@ -202,6 +208,10 @@ module Class = struct
 
     let location { location; _ } =
       location
+
+
+    let defined { defined; _ } =
+      defined
   end
 
 
@@ -924,22 +934,11 @@ module Access = struct
     }
 
 
-    type undefined_attribute = {
-      name: Access.t;
-      parent: Class.t;
-    }
-
-
-    type attribute =
-      | Defined of Attribute.t
-      | Undefined of undefined_attribute
-
-
     type t =
       | Array
       | Call of call
       | Expression
-      | Attribute of attribute
+      | Attribute of Attribute.t
       | Global
       | Identifier
       | Method of method_call
@@ -1174,45 +1173,33 @@ module Access = struct
             in
             (definition
              >>| fun definition ->
-             let ({ Attribute.defined; _ } as attribute) =
-               Class.attribute ~transitive:true ~resolution ~name:attribute_access definition
+             let attribute =
+               Class.attribute
+                 ~transitive:true
+                 ~resolution
+                 ~name:attribute_access
+                 definition
              in
              let access = access @ attribute_access in
-             if not defined then
-               let attribute =
-                 {
-                   name = attribute_access;
-                   Element.parent = definition;
-                 }
-               in
+             if not (Attribute.defined attribute) then
                let resolved =
                  Map.find annotations access
                  |> Option.value ~default:(Annotation.create Type.Top)
                in
                resolution,
                resolved,
-               (f accumulator
-                  ~annotations
-                  ~resolved
-                  ~element:(Element.Attribute (Element.Undefined attribute)))
+               (f accumulator ~annotations ~resolved ~element:(Element.Attribute attribute))
              else
                match Map.find annotations access with
-               | Some annotation ->
+               | Some resolved ->
                    resolution,
                    annotation,
-                   (f
-                      accumulator
-                      ~annotations
-                      ~resolved:annotation
-                      ~element:(Element.Attribute (Element.Defined attribute)))
+                   (f accumulator ~annotations ~resolved ~element:(Element.Attribute attribute))
                | None ->
+                   let resolved = Attribute.annotation attribute in
                    resolution,
-                   Attribute.annotation attribute,
-                   (f
-                      accumulator
-                      ~annotations
-                      ~resolved:(Attribute.annotation attribute)
-                      ~element:(Element.Attribute (Element.Defined attribute))))
+                   resolved,
+                   (f accumulator ~annotations ~resolved ~element:(Element.Attribute attribute)))
             |> Option.value ~default:(resolution, Annotation.create Type.Top, accumulator))
 
         | Some (_, annotation), (Access.Subscript subscript) :: _ ->
