@@ -232,9 +232,10 @@ module State = struct
           | IncompatibleParameterType _
           | IncompatibleReturnType _
           | MissingParameterAnnotation _
-          | MissingReturnAnnotation _
-          | UndefinedAttribute _ ->
+          | MissingReturnAnnotation _ ->
               false
+          | UndefinedAttribute _ ->
+              not configuration.report_undefined_attributes
           | IncompatibleAwaitableType _
           | IncompatibleAttributeType _
           | IncompatibleVariableType _
@@ -250,6 +251,8 @@ module State = struct
           match kind with
           | MissingParameterAnnotation { due_to_any; _ } ->
               due_to_any
+          | UndefinedAttribute _ ->
+              not configuration.report_undefined_attributes
           | _ ->
               false
       in
@@ -263,6 +266,11 @@ module State = struct
         | UndefinedMethod _
         | UndefinedType _ ->
             true
+        | UndefinedAttribute _ ->
+            not configuration.report_undefined_attributes ||
+            due_to_analysis_limitations error ||
+            due_to_mismatch_with_any error ||
+            Define.is_untyped define
         | _ ->
             due_to_analysis_limitations error ||
             due_to_mismatch_with_any error ||
@@ -283,19 +291,15 @@ module State = struct
 
       (* Angelic assumption: `Top` indicates we've hit a limitation of the
          analysis and decide not to report on it. *)
-      let suppress ({ Error.kind; _ } as error) =
-        match kind with
-        | UndefinedAttribute _ ->
-            not configuration.report_undefined_attributes
-        | _ ->
-            if configuration.infer then
-              suppress_in_infer error
-            else if configuration.strict then
-              suppress_in_strict error
-            else if configuration.declare then
-              true
-            else
-              suppress_in_default error
+      let suppress error =
+        if configuration.infer then
+          suppress_in_infer error
+        else if configuration.strict then
+          suppress_in_strict error
+        else if configuration.declare then
+          true
+        else
+          suppress_in_default error
       in
       List.filter ~f:(fun error -> not (suppress error)) errors
     in

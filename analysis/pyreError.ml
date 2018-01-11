@@ -532,10 +532,10 @@ let due_to_mismatch_with_any { kind; _ } =
   | MissingParameterAnnotation _
   | MissingReturnAnnotation _
   | Top
-  | UndefinedAttribute _
   | UndefinedMethod _
   | UndefinedType _ ->
       false
+  | UndefinedAttribute { annotation = actual; _ }
   | IncompatibleAwaitableType actual ->
       Type.equal actual Type.Object
   | IncompatibleParameterType { mismatch = { actual; expected }; _ }

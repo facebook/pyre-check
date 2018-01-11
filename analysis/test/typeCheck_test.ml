@@ -2531,6 +2531,15 @@ let test_check_attributes _ =
       def foo(bar: Bar) -> int:
         return bar.bar
     |}
+    [];
+
+  (* Any has all attributes. *)
+  assert_type_errors
+    ~debug:false
+    {|
+      def foo(any: typing.Any) -> int:
+        return any.attribute
+    |}
     []
 
 
