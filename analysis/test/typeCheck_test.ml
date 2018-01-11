@@ -2190,7 +2190,6 @@ let test_check_init _ =
     [
       "Missing attribute annotation [4]: Attribute `attribute` of class `Foo` has type `int` but " ^
       "no type is specified.";
-      "Undefined attribute [16]: Class `Foo` has no attribute `attribute`.";
     ];
 
   assert_type_errors
@@ -2495,7 +2494,31 @@ let test_check_attributes _ =
       def foo() -> str:
         return Foo.attribute
     |}
-    ["Incompatible return type [7]: Expected `str` but got `int`."]
+    ["Incompatible return type [7]: Expected `str` but got `int`."];
+
+  (* Attributes defined in constructor. *)
+  assert_type_errors
+    {|
+      class Foo:
+        def __init__(self) -> None:
+          self.attribute = 1
+        def foo(self) -> int:
+          return self.attribute
+    |}
+    [
+      "Missing attribute annotation [4]: Attribute `attribute` of class `Foo` has type `int` but " ^
+      "no type is specified.";
+      "Incompatible return type [7]: Expected `int` but got `unknown`.";
+    ];
+  assert_type_errors
+    {|
+      class Foo:
+        def __init__(self) -> None:
+          self.attribute: int = 1
+        def foo(self) -> int:
+          return self.attribute
+    |}
+    []
 
 
 let test_check_globals _ =

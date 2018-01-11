@@ -109,6 +109,128 @@ let test_dump _ =
     true
 
 
+let test_constructor _ =
+  let assert_constructor source ~exists =
+    let definition =
+      match parse_single_statement source with
+      | { Node.value = Class definition; _ } -> definition
+      | _ -> failwith "Could not parse class"
+    in
+    let constructor = Class.constructor definition in
+    if exists then
+      assert_is_some constructor
+    else
+      assert_is_none constructor
+  in
+
+  assert_constructor
+    {|
+      class Foo:
+        def __init__(self):
+          pass
+    |}
+    ~exists:true;
+  assert_constructor
+    {|
+      class Foo:
+        pass
+    |}
+    ~exists:false
+
+
+let test_attribute_assigns _ =
+  let create_assign ~target ~annotation ~value =
+    {
+      Assign.target = Node.create (Expression.Access (Access.create target));
+      annotation;
+      value = Some (Node.create (Expression.Access (Access.create value)));
+      compound = None;
+      parent = None;
+    }
+    |> Node.create
+  in
+  let assign_equal { Node.value = left; _ } { Node.value = right; _ } =
+    let open Assign in
+    Expression.equal left.target right.target &&
+    Option.equal Expression.equal left.annotation right.annotation &&
+    Option.equal Expression.equal left.value right.value
+  in
+
+  (* Test define field assigns. *)
+  let assert_attribute_assigns source expected =
+    let expected =
+      List.map
+        ~f:(fun (target, annotation, value) -> create_assign ~target ~annotation ~value)
+        expected
+    in
+    assert_equal
+      ~cmp:(List.equal ~equal:assign_equal)
+      expected
+      (parse_single_define source |> Define.attribute_assigns |> Map.data)
+  in
+  assert_attribute_assigns "def foo(): pass" [];
+  assert_attribute_assigns
+    {|
+      def foo():
+        a = 1
+        self.attribute = value
+        self.attribute = other  # Take the first one
+        if True:
+          # Ignore branching for now
+          self.attribute = other
+          self.other = value
+    |}
+    ["attribute", None, "value"];
+  assert_attribute_assigns
+    {|
+      def foo():
+        self.attribute: int = value
+    |}
+    ["attribute", Some (Node.create (Expression.Access (Access.create "int"))), "value"];
+
+  (* Test class field assigns. *)
+  let assert_attribute_assigns source expected =
+    let expected =
+      List.map
+        ~f:(fun (target, annotation, value) -> create_assign ~target ~annotation ~value)
+        expected
+    in
+    assert_equal
+      ~cmp:(List.equal ~equal:assign_equal)
+      expected
+      (parse_single_class source |> Class.attribute_assigns |> Map.data)
+  in
+  assert_attribute_assigns
+    {|
+      class Foo:
+        attribute: int = value
+    |}
+    ["attribute", Some (Node.create (Expression.Access (Access.create "int"))), "value"];
+  assert_attribute_assigns
+    {|
+      class Foo:
+        def __init__(self):
+          self.implicit = implicit
+          if True:
+            self.ignored = ignored
+        attribute: int = value
+    |}
+    [
+      "attribute", Some (Node.create (Expression.Access (Access.create "int"))), "value";
+      "implicit", None, "implicit";
+    ];
+  assert_attribute_assigns
+    {|
+      class Foo:
+        def __init__(self):
+          self.attribute = value  # Prioritize explicit declaration
+        attribute: int = value
+    |}
+    [
+      "attribute", Some (Node.create (Expression.Access (Access.create "int"))), "value";
+    ]
+
+
 let test_assume _ =
   assert_equal
     (assume (+True))
@@ -385,6 +507,11 @@ let () =
     "decorator">::test_decorator;
     "is_constructor">::test_is_constructor;
     "dump">::test_dump;
+  ]
+  |> run_test_tt_main;
+  "class">:::[
+    "constructor">::test_constructor;
+    "attribute_assigns">::test_attribute_assigns;
   ]
   |> run_test_tt_main;
   "statement">:::[

@@ -5,6 +5,8 @@
 
 open Core
 
+open Pyre
+
 
 module Record = struct
   module Define = struct
@@ -303,6 +305,38 @@ module Define = struct
 
   let dump_cfg define =
     contains_call define "pyre_dump_cfg"
+
+
+  let attribute_assigns { body; _ } =
+    let attribute_assign map { Node.location; value } =
+      match value with
+      | Assign ({
+          Assign.target = ({
+              Node.value = Expression.Access ((Expression.Access.Identifier self) :: access);
+              _;
+            } as target);
+          _;
+        } as assign) when Identifier.show self = "self" ->
+          let assign =
+            Node.create
+              ~location
+              {
+                assign with
+                Assign.target = {
+                  target with
+                  Node.value = Expression.Access access;
+                };
+              }
+          in
+          let update = function
+            | Some data -> Some data
+            | None -> Some assign
+          in
+          Map.change ~f:update map access
+      | _ ->
+          map
+    in
+    List.fold ~init:Expression.Access.Map.empty ~f:attribute_assign body
 
 
   let strip define =
@@ -654,6 +688,46 @@ module Class = struct
 
   type t = statement_node Record.Class.record
   [@@deriving compare, eq, sexp, show]
+
+
+  let constructor { Record.Class.body; _ } =
+    let constructor = function
+      | { Node.value = Define define; _ } when Define.is_constructor define ->
+          Some define
+      | _ ->
+          None
+    in
+    List.find_map ~f:constructor body
+
+
+  let attribute_assigns ({ Record.Class.body; _ } as definition) =
+    let implicit_attribute_assigns =
+      constructor definition
+      >>| Define.attribute_assigns
+      |> Option.value ~default:Expression.Access.Map.empty
+    in
+    let explicit_attribute_assigns =
+      let attribute_assigns map { Node.location; value } =
+        match value with
+        | Assign ({ Assign.target = { Node.value = Expression.Access access; _ }; _ } as assign)
+        | Stub
+            (Stub.Assign
+               ({ Assign.target = { Node.value = Expression.Access access; _ }; _ } as assign)) ->
+            Map.add ~key:access ~data:(Node.create ~location assign) map
+        | _ ->
+            map
+      in
+      List.fold ~init:Expression.Access.Map.empty ~f:attribute_assigns body
+    in
+    (* Explicit declarations override implicit ones. *)
+    let merge ~key:_ = function
+      | `Both (_, right) ->
+          Some right
+      | `Left value
+      | `Right value ->
+          Some value
+    in
+    Map.merge ~f:merge implicit_attribute_assigns explicit_attribute_assigns
 
 
   let strip ({ Record.Class.body; _ } as class_define ) =

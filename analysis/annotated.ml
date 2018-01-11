@@ -420,16 +420,14 @@ module Class = struct
 
 
   let attribute_fold ?(transitive = false) definition ~initial ~f ~resolution =
-    let fold_definition initial ({ Node.value = { Class.body; _ }; _ } as parent) =
-      let fold_body initial { Node.location; value } =
-        match value with
-        | Assign assign
-        | Stub (Stub.Assign assign) ->
-            Attribute.create ~resolution ~parent { Node.location; value = assign }
-            |> f initial
-        | _ -> initial
+    let fold_definition initial ({ Node.value = definition; _ } as parent) =
+      let fold_attribute_assign accumulator assign =
+        Attribute.create ~resolution ~parent assign
+        |> f accumulator
       in
-      List.fold ~f:fold_body ~init:initial body
+      Statement.Class.attribute_assigns definition
+      |> Map.data
+      |> List.fold ~init:initial ~f:fold_attribute_assign
     in
     let definitions =
       if transitive then

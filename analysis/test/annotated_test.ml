@@ -566,6 +566,8 @@ let test_class_attributes _ =
       {|
         foo: foo
         class foo():
+          def __init__(self):
+            self.implicit: int = 1
           first: int
           second: int
           third: int = 1
@@ -600,12 +602,16 @@ let test_class_attributes _ =
       in
       List.equal ~equal
     in
+    let print_attributes attributes =
+      let print_attribute { Annotated.Attribute.name; _ } =
+        Format.asprintf "%a" Expression.pp_expression name
+      in
+      List.map ~f:print_attribute attributes
+      |> String.concat ~sep:", "
+    in
     assert_equal
       ~cmp:attribute_list_equal
-      ~printer:(fun attributes ->
-          String.concat
-            ~sep:"; "
-            (List.map ~f:(Format.asprintf "%a" Annotated.Class.Attribute.pp) attributes))
+      ~printer:print_attributes
       (Class.attributes ~resolution definition)
       attributes
   in
@@ -613,6 +619,7 @@ let test_class_attributes _ =
     parent
     [
       Attribute.create ~resolution ~parent (create_assign "first");
+      Attribute.create ~resolution ~parent (create_assign "implicit");
       Attribute.create ~resolution ~parent (create_assign "second");
       Attribute.create
         ~resolution
@@ -645,8 +652,9 @@ let test_class_attributes _ =
     | _ -> string_names
   in
   assert_equal
+    ~printer:Fn.id
     (Class.attribute_fold ~resolution ~initial:"" ~f:callback parent)
-    ("firstsecondthird")
+    ("firstimplicitsecondthird")
 
 
 

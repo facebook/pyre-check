@@ -181,6 +181,8 @@ module Define : sig
   val dump: t -> bool
   val dump_cfg: t -> bool
 
+  val attribute_assigns: t -> (Assign.t Node.t) Expression.Access.Map.t
+
   val strip: t -> t
 end
 
@@ -189,6 +191,9 @@ module Class : sig
 
   type t = statement_node Record.Class.record
   [@@deriving compare, eq, sexp, show]
+
+  val constructor: t -> Define.t option
+  val attribute_assigns: t -> (Assign.t Node.t) Expression.Access.Map.t
 
   val strip: t -> t
 end
