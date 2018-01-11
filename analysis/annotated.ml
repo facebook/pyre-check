@@ -144,6 +144,7 @@ module Class = struct
       annotation: Annotation.t;
       value: Expression.t option;
       location: Location.t;
+      defined: bool;
     }
     [@@deriving eq, show]
 
@@ -151,6 +152,7 @@ module Class = struct
     let create
         ~resolution
         ~parent
+        ?(defined = true)
         {
           Node.location;
           value = {
@@ -179,7 +181,7 @@ module Class = struct
         | _ ->
             Annotation.create_immutable ~global:true Type.Top
       in
-      { name = target; parent; annotation; value; location }
+      { name = target; parent; annotation; value; location; defined }
 
 
     let name { name; _ } =
@@ -448,7 +450,23 @@ module Class = struct
     |> List.rev
 
 
-  let attribute ?(transitive = false) definition ~resolution ~name =
+  let attribute ?(transitive = false) ({ Node.location; _ } as definition) ~resolution ~name =
+    let undefined =
+      Attribute.create
+        ~resolution
+        ~parent:definition
+        ~defined:false
+        {
+          Node.location;
+          value = {
+            Statement.Assign.target = Node.create (Expression.Access name);
+            annotation = None;
+            value = None;
+            compound = None;
+            parent = None;
+          }
+        }
+    in
     let search sofar attribute =
       match sofar with
       | Some attribute -> Some attribute
@@ -459,6 +477,7 @@ module Class = struct
             None
     in
     attribute_fold ~transitive ~initial:None ~f:search ~resolution definition
+    |> Option.value ~default:undefined
 end
 
 
@@ -909,7 +928,7 @@ module Access = struct
 
     type undefined_attribute = {
       name: Access.t;
-      parent: Class.t option;
+      parent: Class.t;
     }
 
 
@@ -1150,51 +1169,53 @@ module Access = struct
 
         | Some (access, annotation), ([Access.Identifier _] as attribute_access) -> (
             (* Attribute access. *)
-            let access = access @ attribute_access in
             let definition =
               Resolution.class_definition
                 resolution
                 (Annotation.annotation annotation)
             in
-            let default =
-              let attribute =
-                {
-                  name = attribute_access;
-                  Element.parent = definition;
-                }
-              in
-              let resolved =
-                Map.find annotations access
-                |> Option.value ~default:(Annotation.create Type.Top)
-              in
-              resolution,
-              resolved,
-              (f accumulator
-                 ~annotations
-                 ~resolved
-                 ~element:(Element.Attribute (Element.Undefined attribute)))
-            in
-            definition
-            >>= Class.attribute ~transitive:true ~resolution ~name:attribute_access
-            >>| (fun attribute ->
-                match Map.find annotations access with
-                | Some annotation ->
-                    resolution,
-                    annotation,
-                    (f
-                       accumulator
-                       ~annotations
-                       ~resolved:annotation
-                       ~element:(Element.Attribute (Element.Defined attribute)))
-                | None ->
-                    resolution,
-                    Attribute.annotation attribute,
-                    (f
-                       accumulator
-                       ~annotations
-                       ~resolved:(Attribute.annotation attribute)
-                       ~element:(Element.Attribute (Element.Defined attribute))))
-            |> Option.value ~default)
+            (definition
+             >>| fun definition ->
+             let ({ Attribute.defined; _ } as attribute) =
+               Class.attribute ~transitive:true ~resolution ~name:attribute_access definition
+             in
+             let access = access @ attribute_access in
+             if not defined then
+               let attribute =
+                 {
+                   name = attribute_access;
+                   Element.parent = definition;
+                 }
+               in
+               let resolved =
+                 Map.find annotations access
+                 |> Option.value ~default:(Annotation.create Type.Top)
+               in
+               resolution,
+               resolved,
+               (f accumulator
+                  ~annotations
+                  ~resolved
+                  ~element:(Element.Attribute (Element.Undefined attribute)))
+             else
+               match Map.find annotations access with
+               | Some annotation ->
+                   resolution,
+                   annotation,
+                   (f
+                      accumulator
+                      ~annotations
+                      ~resolved:annotation
+                      ~element:(Element.Attribute (Element.Defined attribute)))
+               | None ->
+                   resolution,
+                   Attribute.annotation attribute,
+                   (f
+                      accumulator
+                      ~annotations
+                      ~resolved:(Attribute.annotation attribute)
+                      ~element:(Element.Attribute (Element.Defined attribute))))
+            |> Option.value ~default:(resolution, Annotation.create Type.Top, accumulator))
 
         | Some (_, annotation), (Access.Subscript subscript) :: _ ->
             (* Array access. *)

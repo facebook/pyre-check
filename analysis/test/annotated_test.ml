@@ -947,11 +947,12 @@ let test_fold _ =
   in
   let defined_attribute =
     Access.Element.Attribute (Access.Element.Defined {
-      Attribute.parent = mock_class;
-      name = Ast.Expression.Access (Expression.Access.create "");
+      Attribute.name = Ast.Expression.Access (Expression.Access.create "");
+      parent = mock_class;
       annotation = (Annotation.create_immutable ~global:true Type.Top);
       location = Location.any;
       value = None;
+      defined = true;
     })
   in
   assert_fold
@@ -967,7 +968,7 @@ let test_fold _ =
     Access.Element.Attribute
       (Access.Element.Undefined {
         Access.Element.name = Expression.Access.create "baz";
-        parent = Some mock_class;
+        parent = mock_class;
       })
   in
   assert_fold

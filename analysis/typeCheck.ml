@@ -1029,16 +1029,11 @@ module State = struct
                 in
                 unresolved_method_errors @ parameter_errors
             | Attribute (Undefined { name; parent }) ->
-                let annotation =
-                  parent
-                  >>| Annotated.Class.annotation ~resolution
-                  |> Option.value ~default:Type.Top
-                in
                 [
                   {
                     Error.location;
                     kind = Error.UndefinedAttribute {
-                        Error.annotation;
+                        Error.annotation = Annotated.Class.annotation ~resolution parent;
                         attribute = name;
                       };
                     define = define_node;
@@ -1374,19 +1369,16 @@ module State = struct
                     ~declare_location:(Attribute.location attribute)
               | Access.Element.Attribute
                   (Access.Element.Undefined { Access.Element.name; parent }) ->
-                  parent
-                  >>= (fun parent ->
-                      (match Class.body parent with
-                       | { Node.location; _ } :: _ ->
-                           Some (
-                             add_missing_annotation_error
-                               ~expected:Type.Top
-                               ~parent:(Some parent)
-                               ~name
-                               ~declare_location:location
-                               errors)
-                       | _ -> None))
-                  |> Option.value ~default:errors
+                  (match Class.body parent with
+                   | { Node.location; _ } :: _ ->
+                       add_missing_annotation_error
+                         ~expected:Type.Top
+                         ~parent:(Some parent)
+                         ~name
+                         ~declare_location:location
+                         errors
+                   | _ ->
+                      errors)
               | _ ->
                   let name = access in
                   let module Reader = (val environment : Environment.Reader) in

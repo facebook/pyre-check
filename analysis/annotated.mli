@@ -52,12 +52,14 @@ module Class : sig
       annotation: Annotation.t;
       value: Expression.t option;
       location: Location.t;
+      defined: bool;
     }
     [@@deriving eq, show]
 
     val create
       :  resolution: Resolution.t
       -> parent: parent_class
+      -> ?defined: bool
       -> Statement.Assign.t Node.t
       -> t
 
@@ -256,7 +258,7 @@ module Access: sig
 
     type undefined_attribute = {
       name: Access.t;
-      parent: Class.t option;
+      parent: Class.t;
     }
 
     type attribute =

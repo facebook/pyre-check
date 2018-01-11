@@ -2434,7 +2434,6 @@ let test_check_attributes _ =
         return 0
     |}
     [
-      "Undefined attribute [16]: Class `unknown` has no attribute `bar`.";
       "Incompatible return type [7]: Expected `int` but got `typing.Optional[int]`.";
     ];
 
