@@ -122,9 +122,15 @@ let follow_symlinks path =
   Absolute (follow_symlinks (absolute path))
 
 
-let directory_contains ~directory ~path =
+let directory_contains ?(follow_symlinks = false) ~directory path =
+  let path =
+    if follow_symlinks then
+      absolute path
+      |> Filename.realpath
+    else
+      absolute path
+  in
   let directory = absolute directory in
-  let path = absolute path in
   String.is_prefix ~prefix:directory path
 
 

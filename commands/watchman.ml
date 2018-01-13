@@ -67,7 +67,7 @@ let build_symlink_map ~root =
 
 let set_symlink ~root ~symlinks ~path =
   if not (Path.Map.mem symlinks path) &&
-     Path.directory_contains ~directory:root ~path then
+     Path.directory_contains ~directory:root path then
     Map.add symlinks ~key:(Path.follow_symlinks path) ~data:path
   else
     symlinks

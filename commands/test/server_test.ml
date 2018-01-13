@@ -208,13 +208,14 @@ let assert_request_gets_response
     ?(initial_errors = Error.Hash_set.create ())
     ?(project_root = Path.current_working_directory ())
     ?state
+    ?(path = "test.py")
     source
     request
     expected_response =
   let errors =
     let errors = File.Handle.Table.create () in
     List.iter
-      (make_errors source)
+      (make_errors ~path source)
       ~f:(fun error ->
           let { Ast.Location.path; _ } = Error.location error in
           Hashtbl.add_multi errors ~key:(File.Handle.create path) ~data:error);
@@ -338,6 +339,16 @@ let test_connect _ =
 
 
 let test_incremental_typecheck _ =
+  let path, _ =
+    Filename.open_temp_file
+      ~in_dir:(Path.current_working_directory () |> Path.absolute)
+      "test" ".py"
+  in
+  let relative_path =
+    Path.create_relative ~root:(Path.current_working_directory ()) ~relative:path
+    |> Path.relative
+    |> Option.value ~default:path
+  in
   let source =
     {|
         def foo()-> None:
@@ -347,29 +358,31 @@ let test_incremental_typecheck _ =
   in
   let errors =
     associate_errors_and_filenames
-      (make_errors ~qualifier:(Source.qualifier ~path:"test.py") source)
+      (make_errors ~path:relative_path ~qualifier:(Source.qualifier ~path:relative_path) source)
   in
   assert_request_gets_response
     source
     (Protocol.Request.TypeCheckRequest
-       { Protocol.files = [file "test.py"]; check_dependents = true })
-    (Some (Protocol.TypeCheckResponse [(File.Handle.create "test.py"), []]));
+       { Protocol.files = [file path]; check_dependents = true })
+    (Some (Protocol.TypeCheckResponse [(File.Handle.create relative_path), []]));
   let request_with_content =
     (Protocol.Request.TypeCheckRequest
-       { Protocol.files = [file ~content:(Some source) "test.py"]; check_dependents = true })
+       { Protocol.files = [file ~content:(Some source) path]; check_dependents = true })
   in
   assert_request_gets_response
+    ~path
     source
     request_with_content
     (Some (Protocol.TypeCheckResponse errors));
-
   let state = mock_server_state (File.Handle.Table.create ()) in
   assert_request_gets_response
+    ~path
     source
     ~state
     (Protocol.Request.TypeCheckRequest { Protocol.files = []; check_dependents = false })
     (Some (Protocol.TypeCheckResponse []));
   assert_request_gets_response
+    ~path
     source
     ~state:{ state with State.deferred_requests = [request_with_content] }
     (Protocol.Request.TypeCheckRequest { Protocol.files = []; check_dependents = false })
@@ -419,6 +432,7 @@ let test_did_save_with_content context =
     (Protocol.Request.LanguageServerProtocolRequest request)
     None
 
+
 let test_protocol_persistent _ =
   let server_state = mock_server_state (File.Handle.Table.create ()) in
   assert_raises
@@ -431,7 +445,6 @@ let test_protocol_persistent _ =
          (Protocol.Request.ClientConnectionRequest Protocol.Persistent));
   Service.destroy server_state.State.service;
   Command_test.clean_environment ()
-
 
 
 let test_incremental_dependencies _ =
@@ -483,11 +496,21 @@ let test_incremental_dependencies _ =
 
 
 let test_incremental_lookups _ =
+  let path, _ =
+    Filename.open_temp_file
+      ~in_dir:(Path.current_working_directory () |> Path.absolute)
+      "test" ".py"
+  in
+  let relative_path =
+    Path.create_relative ~root:(Path.current_working_directory ()) ~relative:path
+    |> Path.relative
+    |> Option.value ~default:path
+  in
   let parse content =
     Ast.Source.create
-      ~path:"test.py"
-      ~qualifier:(Source.qualifier ~path:"test.py")
-      (PythonParse.parse ~path:"test.py" (String.split_lines (content ^ "\n")))
+      ~path
+      ~qualifier:(Source.qualifier ~path)
+      (PythonParse.parse ~path (String.split_lines (content ^ "\n")))
     |> Analysis.Preprocessing.preprocess
   in
   let source =
@@ -505,7 +528,7 @@ let test_incremental_lookups _ =
   Environment.populate (Environment.reader environment) [parse source];
   let request =
     Protocol.Request.TypeCheckRequest
-      { Protocol.files = [file ~content:(Some source) "test.py"]; check_dependents = true }
+      { Protocol.files = [file ~content:(Some source) path]; check_dependents = true }
   in
   let errors = File.Handle.Table.create () in
   let initial_state =
@@ -527,7 +550,7 @@ let test_incremental_lookups _ =
       (Command_test.mock_server_configuration ())
       (Protocol.Request.GetDefinitionRequest {
           Protocol.DefinitionRequest.id = 1;
-          path = "test.py";
+          path = relative_path;
           position = { Ast.Location.line = 5; column = 4 };
         })
   in
@@ -535,15 +558,15 @@ let test_incremental_lookups _ =
   Command_test.clean_environment ();
   assert_is_some response;
   let response = Option.value_exn response in
-  assert_true (Hashtbl.mem state.State.lookups "test.py");
-  let definition_map = Hashtbl.find_exn state.State.lookups "test.py" in
+  assert_true (Hashtbl.mem state.State.lookups relative_path);
+  let definition_map = Hashtbl.find_exn state.State.lookups relative_path in
   assert_equal (Hashtbl.length definition_map) 1;
   assert_equal
     response
     (Protocol.GetDefinitionResponse (Some {
          Ast.Location.start = { Ast.Location.line = 2; column = 0 };
          stop = { Ast.Location.line = 3; column = 12 };
-         path = "test.py";
+         path = relative_path;
        }))
 
 

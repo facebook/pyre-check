@@ -59,7 +59,7 @@ let analyze_source
 
 let analyze_sources_parallel
     service
-    configuration
+    ({Configuration.project_root; type_check_root = directory; _ } as configuration)
     environment
     handles =
   let merge_lookups ~key:_ = function
@@ -68,7 +68,15 @@ let analyze_sources_parallel
     | `Right lookup -> Some lookup
   in
   let init = { errors = []; lookups = String.Map.empty; number_files = 0 } in
-  Service.map_reduce
+  handles
+  |> List.filter ~f:(fun handle ->
+      match AstSharedMemory.get_source handle with
+      | Some { Source.path; _ } ->
+          Path.create_relative ~root:project_root ~relative:path
+          |> Path.directory_contains ~follow_symlinks:true ~directory
+      | _ ->
+          false)
+  |> Service.map_reduce
     service
     ~init:{ errors = []; lookups = String.Map.empty; number_files = 0 }
     ~map:(fun _ handles ->
@@ -95,7 +103,6 @@ let analyze_sources_parallel
         in
         Statistics.flush ();
         result)
-
     ~reduce:(fun left right ->
         let number_files = left.number_files + right.number_files in
         Log.info "Processed %d of %d sources" number_files (List.length handles);
@@ -104,14 +111,13 @@ let analyze_sources_parallel
           lookups = Map.merge ~f:merge_lookups left.lookups right.lookups;
           number_files;
         })
-    handles
   |> (fun { errors; lookups; _ } -> errors, lookups)
 
 
 let analyze_sources
     service
     ?(repopulate_handles = [])
-    ({Configuration.project_root; _ } as configuration)
+    ({Configuration.project_root; type_check_root = directory; _ } as configuration)
     environment
     handles =
   Log.info "Checking...";
@@ -127,8 +133,13 @@ let analyze_sources
           ~init:[]
           ~f:(fun sources path ->
               match AstSharedMemory.get_source path with
-              | Some source -> source::sources
-              | None -> sources)
+              | Some ({ Source.path; _ } as source) ->
+                  if Path.create_relative ~root:project_root ~relative:path
+                     |> Path.directory_contains ~follow_symlinks:true ~directory then
+                    source::sources
+                  else
+                    sources
+              | _ -> sources)
       in
       let sources = get_sources handles in
       let analyze_and_postprocess configuration environment (current_errors, lookups) source =

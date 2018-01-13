@@ -40,7 +40,7 @@ val follow_symlinks: t -> t
 
 val is_directory: t -> bool
 val file_exists: t -> bool
-val directory_contains: directory:t -> path:t -> bool
+val directory_contains: ?follow_symlinks:bool -> directory:t -> t -> bool
 
 val remove: t -> unit
 
