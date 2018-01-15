@@ -312,7 +312,8 @@ module Define = struct
       match value with
       | Assign ({
           Assign.target = ({
-              Node.value = Expression.Access ((Expression.Access.Identifier self) :: access);
+              Node.value = Expression.Access
+                  ((Expression.Access.Identifier self) :: ([_] as access));
               _;
             } as target);
           _;
@@ -326,6 +327,7 @@ module Define = struct
                   target with
                   Node.value = Expression.Access access;
                 };
+                value = None;
               }
           in
           let update = function
@@ -709,10 +711,16 @@ module Class = struct
     let explicit_attribute_assigns =
       let attribute_assigns map { Node.location; value } =
         match value with
-        | Assign ({ Assign.target = { Node.value = Expression.Access access; _ }; _ } as assign)
+        | Assign ({
+            Assign.target = { Node.value = Expression.Access ([_] as access); _ };
+            _;
+          } as assign)
         | Stub
             (Stub.Assign
-               ({ Assign.target = { Node.value = Expression.Access access; _ }; _ } as assign)) ->
+               ({
+                 Assign.target = { Node.value = Expression.Access ([_] as access); _ };
+                 _;
+               } as assign)) ->
             Map.add ~key:access ~data:(Node.create ~location assign) map
         | _ ->
             map

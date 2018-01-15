@@ -8,6 +8,7 @@ open OUnit2
 
 open Ast
 open Expression
+open Pyre
 open Statement
 
 open Test
@@ -143,7 +144,7 @@ let test_attribute_assigns _ =
     {
       Assign.target = Node.create (Expression.Access (Access.create target));
       annotation;
-      value = Some (Node.create (Expression.Access (Access.create value)));
+      value = value >>| (fun value -> (Node.create (Expression.Access (Access.create value))));
       compound = None;
       parent = None;
     }
@@ -180,13 +181,13 @@ let test_attribute_assigns _ =
           self.attribute = other
           self.other = value
     |}
-    ["attribute", None, "value"];
+    ["attribute", None, None];
   assert_attribute_assigns
     {|
       def foo():
         self.attribute: int = value
     |}
-    ["attribute", Some (Node.create (Expression.Access (Access.create "int"))), "value"];
+    ["attribute", Some (Node.create (Expression.Access (Access.create "int"))), None];
 
   (* Test class field assigns. *)
   let assert_attribute_assigns source expected =
@@ -205,19 +206,21 @@ let test_attribute_assigns _ =
       class Foo:
         attribute: int = value
     |}
-    ["attribute", Some (Node.create (Expression.Access (Access.create "int"))), "value"];
+    ["attribute", Some (Node.create (Expression.Access (Access.create "int"))), Some "value"];
   assert_attribute_assigns
     {|
       class Foo:
         def __init__(self):
           self.implicit = implicit
+          self.whatever()['asdf'] = 5
           if True:
             self.ignored = ignored
         attribute: int = value
+        whatever()['asdf'] = 5
     |}
     [
-      "attribute", Some (Node.create (Expression.Access (Access.create "int"))), "value";
-      "implicit", None, "implicit";
+      "attribute", Some (Node.create (Expression.Access (Access.create "int"))), Some "value";
+      "implicit", None, None;
     ];
   assert_attribute_assigns
     {|
@@ -227,7 +230,7 @@ let test_attribute_assigns _ =
         attribute: int = value
     |}
     [
-      "attribute", Some (Node.create (Expression.Access (Access.create "int"))), "value";
+      "attribute", Some (Node.create (Expression.Access (Access.create "int"))), Some "value";
     ]
 
 
