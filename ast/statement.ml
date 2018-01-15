@@ -731,10 +731,12 @@ module Class = struct
 
 
   let strip ({ Record.Class.body; _ } as class_define ) =
-    let strip_define { Node.location; value } =
-      match value with
-      | Define define -> { Node.location; value = Define (Define.strip define) }
-      | _ -> { Node.location; value }
+    let strip_define statement =
+      match Node.value statement with
+      | Define define when not (Define.is_constructor define) ->
+          { statement with Node.value = Define (Define.strip define) }
+      | _ ->
+          statement
     in
     { class_define with Record.Class.body = List.map ~f:strip_define body }
 end

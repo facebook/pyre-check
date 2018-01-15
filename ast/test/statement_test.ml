@@ -231,6 +231,55 @@ let test_attribute_assigns _ =
     ]
 
 
+let test_strip _ =
+  let assert_stripped source definition =
+    assert_equal
+      ~printer:Class.show
+      ~cmp:Class.equal
+      (parse_single_class source |> Class.strip)
+      definition
+  in
+
+  assert_stripped
+    {|
+      class Foo:
+        def __init__():
+          pass
+        def method():
+          pass
+    |}
+    {
+      Class.name = Access.create "Foo";
+      bases = [];
+      body = [
+        +Define {
+          Define.name = Access.create "__init__";
+          parameters = [];
+          body = [+Pass];  (* Not stripped! *)
+          decorators = [];
+          docstring = None;
+          return_annotation = None;
+          async = false;
+          generated = false;
+          parent = Some (Access.create "Foo")
+        };
+        +Define {
+          Define.name = Access.create "method";
+          parameters = [];
+          body = [];
+          decorators = [];
+          docstring = None;
+          return_annotation = None;
+          async = false;
+          generated = false;
+          parent = Some (Access.create "Foo")
+        };
+      ];
+      decorators = [];
+      docstring = None;
+    }
+
+
 let test_assume _ =
   assert_equal
     (assume (+True))
@@ -512,6 +561,7 @@ let () =
   "class">:::[
     "constructor">::test_constructor;
     "attribute_assigns">::test_attribute_assigns;
+    "strip">::test_strip;
   ]
   |> run_test_tt_main;
   "statement">:::[
