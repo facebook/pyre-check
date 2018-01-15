@@ -158,7 +158,7 @@ let test_attribute_assigns _ =
   in
 
   (* Test define field assigns. *)
-  let assert_attribute_assigns source expected =
+  let assert_implicit_attribute_assigns source expected =
     let expected =
       List.map
         ~f:(fun (target, annotation, value) -> create_assign ~target ~annotation ~value)
@@ -167,10 +167,10 @@ let test_attribute_assigns _ =
     assert_equal
       ~cmp:(List.equal ~equal:assign_equal)
       expected
-      (parse_single_define source |> Define.attribute_assigns |> Map.data)
+      (parse_single_define source |> Define.implicit_attribute_assigns |> Map.data)
   in
-  assert_attribute_assigns "def foo(): pass" [];
-  assert_attribute_assigns
+  assert_implicit_attribute_assigns "def foo(): pass" [];
+  assert_implicit_attribute_assigns
     {|
       def foo():
         a = 1
@@ -182,7 +182,7 @@ let test_attribute_assigns _ =
           self.other = value
     |}
     ["attribute", None, None];
-  assert_attribute_assigns
+  assert_implicit_attribute_assigns
     {|
       def foo():
         self.attribute: int = value

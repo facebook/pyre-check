@@ -307,7 +307,7 @@ module Define = struct
     contains_call define "pyre_dump_cfg"
 
 
-  let attribute_assigns { body; _ } =
+  let implicit_attribute_assigns { body; _ } =
     let attribute_assign map { Node.location; value } =
       match value with
       | Assign ({
@@ -705,7 +705,7 @@ module Class = struct
   let attribute_assigns ({ Record.Class.body; _ } as definition) =
     let implicit_attribute_assigns =
       constructor definition
-      >>| Define.attribute_assigns
+      >>| Define.implicit_attribute_assigns
       |> Option.value ~default:Expression.Access.Map.empty
     in
     let explicit_attribute_assigns =
