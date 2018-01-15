@@ -1762,6 +1762,7 @@ let check configuration environment ({ Source.path; _ } as source) =
   let lookup = Lookup.create () in
 
   let check ({ Node.location; value = { Define.name; parent; _ } as define } as define_node) =
+    Log.log ~section:`Check "Checking %a" Access.pp name;
     let dump = Define.dump define in
 
     if dump then
