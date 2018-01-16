@@ -318,6 +318,57 @@ let qualify source =
   |> snd
 
 
+let remove_python2_stub_code source =
+  let module Transform = Transform.Make(struct
+      type t = unit
+
+      let expression _ expression =
+        (), expression
+
+      let statement _ ({ Node.location; value } as statement) =
+        match value with
+        | If { If.test; orelse; _ } ->
+            (* Normalizes a comparison of a < b or b > a to Some (a, b). *)
+            let extract_single_comparison { Node.value; _ } =
+              match value with
+              | Expression.ComparisonOperator {
+                  Expression.ComparisonOperator.left;
+                  right = [
+                    operator,
+                    right
+                  ];
+                } ->
+                  begin
+                    match operator with
+                    | Expression.ComparisonOperator.LessThan -> Some (left, right)
+                    | Expression.ComparisonOperator.GreaterThan -> Some (right, left)
+                    | _ -> None
+                  end
+              | _ -> None
+            in
+            begin
+              match extract_single_comparison test with
+              | Some (left, { Node.value = Expression.Tuple ({ Node.value = major; _ } :: _); _ })
+                when Expression.show left = "sys.version_info" && major = Expression.Integer 3 ->
+                  (),
+                  [{
+                    Node.location;
+                    value = If {
+                        If.test;
+                        body = [{ Node.location; value = Statement.Pass }];
+                        orelse;
+                      };
+                  }]
+              | _ ->
+                  (), [statement]
+            end
+        | _ ->
+            (), [statement]
+    end)
+  in
+  Transform.transform () source |> snd
+
+
 (* TODO(T22862979) Our parser currently parses {""} as Dictionary(kwarg = "").
    The real solution is to fix parsing of singleton dictionaries. *)
 let fix_singleton_sets source =
@@ -871,6 +922,7 @@ let dequalify_map source =
 
 let preprocess source =
   qualify source
+  |> remove_python2_stub_code
   |> fix_singleton_sets
   |> expand_optional_assigns
   |> expand_operators

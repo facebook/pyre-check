@@ -309,6 +309,97 @@ let test_qualify _ =
     |}
 
 
+let test_remove_python2_stub_code _ =
+  let assert_removed source expected =
+    assert_source_equal
+      (Preprocessing.remove_python2_stub_code (parse source))
+      (parse expected)
+  in
+  assert_removed
+    {|
+      if sys.version_info < (3, 0):
+        class C():
+         def incompatible()->int:
+           ...
+      else:
+        class C():
+          def compatible()->str:
+            ...
+    |}
+    {|
+      if sys.version_info < (3, 0):
+        pass
+      else:
+        class C():
+          def compatible()->str:
+            ...
+    |};
+
+  assert_removed
+    {|
+      if (3,) > sys.version_info:
+        class C():
+          def incompatible()->int:
+            ...
+      else:
+        class C():
+          def compatible()->str:
+            ...
+    |}
+    {|
+      if (3,) > sys.version_info:
+        pass
+      else:
+        class C():
+          def compatible()->str:
+            ...
+    |};
+
+  assert_removed
+    {|
+      if sys.version_info <= (3, 0):
+        class C():
+          def incompatible()->int:
+            ...
+      else:
+        class C():
+          def compatible()->str:
+            ...
+    |}
+    {|
+      if sys.version_info <= (3, 0):
+        class C():
+          def incompatible()->int:
+            ...
+      else:
+        class C():
+          def compatible()->str:
+            ...
+    |};
+
+  assert_removed
+    {|
+      if sys.version_info < 3:
+        class C():
+          def incompatible()->int:
+            ...
+      else:
+        class C():
+          def compatible()->str:
+            ...
+    |}
+    {|
+      if sys.version_info < 3:
+        class C():
+          def incompatible()->int:
+            ...
+      else:
+        class C():
+          def compatible()->str:
+            ...
+    |}
+
+
 let test_expand_optional_assigns _ =
   let assert_expand source expected =
     assert_source_equal
@@ -859,6 +950,7 @@ let test_classes _ =
 let () =
   "preprocessing">:::[
     "qualify">::test_qualify;
+    "remove_python2_stub_code">::test_remove_python2_stub_code;
     "expand_optional_assigns">::test_expand_optional_assigns;
     "expand_operators">::test_expand_operators;
     "expand_returns">::test_expand_returns;
