@@ -38,6 +38,20 @@ let build ~configuration:({ Configuration.project_root; _ } as configuration) ~s
 
   Log.log ~section:`Environment "%a" Environment.Builder.pp environment;
   Log.info "%s" (Environment.Builder.statistics environment);
+  if Log.is_enabled `Dotty then
+    begin
+      let type_order_file =
+        Path.create_relative
+          ~root:(Configuration.pyre_root configuration)
+          ~relative:"type_order.dot"
+      in
+      let (module Reader: Environment.Reader) = (reader environment) in
+      Log.info "Emitting type order dotty file to %s" (Path.absolute type_order_file);
+      File.create
+        ~content:(Some (TypeOrder.to_dot (module Reader.TypeOrderReader)))
+        type_order_file
+      |> File.write
+    end;
 
   environment
 

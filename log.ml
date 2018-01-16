@@ -10,6 +10,7 @@ type section = [
     `Check
   | `Debug
   | `Dependencies
+  | `Dotty
   | `Dump
   | `Environment
   | `Error
@@ -26,6 +27,7 @@ let section_to_string = function
   | `Check -> "Check"
   | `Debug -> "Debug"
   | `Dependencies -> "Dependencies"
+  | `Dotty -> "Dotty"
   | `Dump -> "Dump"
   | `Environment -> "Environment"
   | `Error -> "Error"
@@ -45,6 +47,11 @@ let enabled =
     "Performance";
     "Warning";
   ]
+
+
+let is_enabled section =
+  Hash_set.mem enabled (section_to_string section)
+
 
 let initialize ~verbose ~sections =
   if verbose then

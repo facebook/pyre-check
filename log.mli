@@ -8,6 +8,7 @@ type section = [
     `Check
   | `Debug
   | `Dependencies
+  | `Dotty
   | `Dump
   | `Environment
   | `Error
@@ -19,6 +20,7 @@ type section = [
   | `Warning
 ]
 
+val is_enabled: section -> bool
 
 (* Setup the logging environment where `sections` is a list of sections that are
    enabled. *)
