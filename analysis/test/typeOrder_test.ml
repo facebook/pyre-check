@@ -813,6 +813,38 @@ let test_check_integrity _ =
   assert_raises TypeOrder.Incomplete (fun _ -> check_integrity order)
 
 
+let test_to_dot _ =
+  let order =
+    let order = Builder.create () |> TypeOrder.reader in
+    insert order !"0";
+    insert order !"1";
+    insert order !"2";
+    insert order !"3";
+    insert order Type.Bottom;
+    insert order Type.Top;
+    connect order ~predecessor:!"0" ~successor:!"2";
+    connect order ~predecessor:!"0" ~successor:!"1" ~parameters:[Type.string];
+    complete order ~bottom:!"0" ~top:!"3";
+    order in
+  let (module Reader) = order in
+  assert_equal
+    ~printer:ident
+    ({|
+       digraph {
+         4[label="`typing.Any`"]
+         2[label="`2`"]
+         1[label="`1`"]
+         0[label="`0`"]
+         2 -> 3
+         1 -> 3
+         0 -> 1[label="(`str`)"]
+         0 -> 2
+       }
+     |}
+     |> Test.trim_extra_indentation)
+    ("\n" ^ TypeOrder.to_dot order)
+
+
 let () =
   "builder">:::[
     "default">::test_default;
@@ -831,5 +863,6 @@ let () =
     "instantiate_parameters">::test_instantiate_parameters;
     "complete">::test_complete;
     "check_integrity">::test_check_integrity;
+    "to_dot">::test_to_dot;
   ]
   |> run_test_tt_main

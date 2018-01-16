@@ -883,7 +883,7 @@ let complete ((module Reader: Reader) as order) ~bottom ~top =
         | _ ->
             connect order ~predecessor:annotation ~successor:top
       end in
-  visit (index_of  bottom)
+  visit (index_of bottom)
 
 
 let check_integrity (module Reader: Reader) =
@@ -964,6 +964,36 @@ let check_integrity (module Reader: Reader) =
     ~get_keys:Reader.backedge_keys
     ~edges:(Reader.backedges ())
     ~backedges:(Reader.edges ())
+
+
+let to_dot (module Reader: Reader) =
+  let indices = Reader.edge_keys () in
+  let nodes =
+    List.map ~f:(fun index -> (index, Reader.find_unsafe (Reader.annotations ()) index)) indices
+  in
+  let buffer = Buffer.create 10000 in
+  Buffer.add_bytes buffer "digraph {\n";
+  List.iter
+    ~f:(fun (index, annotation) ->
+        Format.asprintf "  %d[label=\"%s\"]\n" index (Type.show annotation)
+        |> Buffer.add_bytes buffer)
+    nodes;
+  let add_edges index =
+    Reader.find (Reader.edges ()) index
+    >>| List.iter ~f:(
+      fun { Target.target = successor; parameters } ->
+        Format.asprintf "  %d -> %d" index successor
+        |> Buffer.add_bytes buffer;
+        if List.length parameters > 0 then
+          Format.asprintf "[label=\"%s\"]" (List.to_string ~f:Type.show parameters)
+          |> Buffer.add_bytes buffer;
+        Buffer.add_bytes buffer "\n"
+    )
+    |> ignore
+  in
+  List.iter ~f:add_edges indices;
+  Buffer.add_bytes buffer "}";
+  Buffer.contents buffer
 
 
 module Builder = struct

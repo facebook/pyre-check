@@ -106,6 +106,8 @@ val instantiate_parameters
 val complete: (module Reader) -> bottom: Type.t -> top: Type.t -> unit
 val check_integrity: (module Reader) -> unit
 
+val to_dot: (module Reader) -> string
+
 module Builder: sig
   val create: unit -> t
   val copy: t -> t
