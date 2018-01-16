@@ -21,7 +21,7 @@ let qualify source =
       let expression map expression =
         map, expression
 
-      let statement map ({ Node.location; value } as statement) =
+      let statement map { Node.location; value } =
         let rec qualify_class qualifier ({ Class.name; body; _ } as definition) =
           let qualified_name = qualifier @ name in
           let parent = Some qualified_name in
@@ -129,30 +129,44 @@ let qualify source =
           }
         in
 
-        let qualify_toplevel_statement = function
+        let rec qualify_toplevel_statement map ({ Node.location; value } as statement) =
+          let qualify_statements map statements =
+            let add_statement (map, statements) statement =
+              let map, qualified = qualify_toplevel_statement map statement in
+              map, qualified :: statements
+            in
+            let map, reversed = List.fold ~init:(map, []) ~f:add_statement statements in
+            map, List.rev reversed
+          in
+          match value with
           (* Add `name -> qualifier.name` for classes. *)
           | Class definition ->
               let qualified = qualify_class qualifier definition in
               Map.add map ~key:definition.Class.name ~data:qualified.Class.name,
-              [{ Node.location; value = Class qualified }]
+              { Node.location; value = Class qualified }
           | Stub (Stub.Class definition) ->
               let qualified = qualify_class qualifier definition in
               Map.add map ~key:definition.Class.name ~data:qualified.Class.name,
-              [{ Node.location; value = Stub (Stub.Class qualified) }]
+              { Node.location; value = Stub (Stub.Class qualified) }
 
           (* Add `name -> qualifier.name` for functions, not methods. *)
           | Define definition when not (Define.is_method definition) ->
               let qualified = qualify_define qualifier definition in
               Map.add map ~key:definition.Define.name ~data:qualified.Define.name,
-              [{ Node.location; value = Define qualified }]
+              { Node.location; value = Define qualified }
           | Stub (Stub.Define definition) when not (Define.is_method definition) ->
               let qualified = qualify_define qualifier definition in
               Map.add map ~key:definition.Define.name ~data:qualified.Define.name,
-              [{ Node.location; value = Stub (Stub.Define qualified) }]
+              { Node.location; value = Stub (Stub.Define qualified) }
+          | If { If.test; body; orelse } ->
+              let map, body = qualify_statements map body in
+              let map, orelse = qualify_statements map orelse in
+              map, { Node.location; value = If { If.test; body; orelse }  }
           | _ ->
-              map, [statement]
+              map, statement
         in
-        qualify_toplevel_statement value
+        let map, statement = qualify_toplevel_statement map { Node.location; value } in
+        map, [statement]
 
     end)
   in
