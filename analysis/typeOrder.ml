@@ -173,10 +173,14 @@ let index_of (module Reader: Reader) annotation =
 
 
 let insert (module Reader: Reader) annotation =
-  let indices = Reader.indices () in
-  let index = Reader.length indices in
-  Reader.set indices ~key:annotation ~data:index;
-  Reader.set (Reader.annotations ()) ~key:index ~data:annotation
+  match Reader.find (Reader.indices ()) annotation with
+  | Some _ ->
+      ()
+  | None ->
+      let indices = Reader.indices () in
+      let index = Reader.length indices in
+      Reader.set indices ~key:annotation ~data:index;
+      Reader.set (Reader.annotations ()) ~key:index ~data:annotation
 
 
 let connect
@@ -184,56 +188,65 @@ let connect
     ((module Reader: Reader) as order)
     ~predecessor
     ~successor =
-  let predecessor = index_of order predecessor in
-  let successor = index_of order successor in
+  if Option.is_none (Reader.find (Reader.indices ()) predecessor) ||
+     Option.is_none (Reader.find (Reader.indices ()) successor) then
+    Log.debug
+      "Attempted to connect %s to %s; but one was not in the type order."
+      (Type.show predecessor)
+      (Type.show successor)
+  else
+    begin
+      let predecessor = index_of order predecessor in
+      let successor = index_of order successor in
 
-  let edges = Reader.edges () in
-  let backedges = Reader.backedges () in
+      let edges = Reader.edges () in
+      let backedges = Reader.backedges () in
 
-  (* Add edges. *)
-  let connect ~edges ~predecessor ~successor =
-    let successors =
-      Reader.find edges predecessor
-      >>| List.filter ~f:(fun { Target.target; _ } -> target <> successor)
-      |> Option.value ~default:[]
-    in
-    let target = { Target.target = successor; parameters} in
-    if not (List.mem ~equal:Target.equal successors target) then
-      Reader.set
-        edges
-        ~key:predecessor
-        ~data:(target :: successors);
-  in
-  connect ~edges ~predecessor ~successor;
-  connect ~edges:backedges ~predecessor:successor ~successor:predecessor;
+      (* Add edges. *)
+      let connect ~edges ~predecessor ~successor =
+        let successors =
+          Reader.find edges predecessor
+          >>| List.filter ~f:(fun { Target.target; _ } -> target <> successor)
+          |> Option.value ~default:[]
+        in
+        let target = { Target.target = successor; parameters} in
+        if not (List.mem ~equal:Target.equal successors target) then
+          Reader.set
+            edges
+            ~key:predecessor
+            ~data:(target :: successors);
+      in
+      connect ~edges ~predecessor ~successor;
+      connect ~edges:backedges ~predecessor:successor ~successor:predecessor;
 
-  let disconnect ~predecessor ~successor =
-    (* Remove back-edges from successor. *)
-    let predecessors =
-      Reader.find backedges successor
-      >>| List.filter ~f:(fun { Target.target; _ } -> target <> predecessor)
-      |> Option.value ~default:[]
-    in
-    Reader.set backedges ~key:successor ~data:predecessors;
+      let disconnect ~predecessor ~successor =
+        (* Remove back-edges from successor. *)
+        let predecessors =
+          Reader.find backedges successor
+          >>| List.filter ~f:(fun { Target.target; _ } -> target <> predecessor)
+          |> Option.value ~default:[]
+        in
+        Reader.set backedges ~key:successor ~data:predecessors;
 
-    (* Remove extra in-edges from predecessor. *)
-    let successors =
-      Reader.find edges predecessor
-      >>| List.filter ~f:(fun { Target.target; _ } -> target <> successor)
-      |> Option.value ~default:[]
-    in
-    Reader.set edges ~key:predecessor ~data:successors;
-  in
-  (* Disconnect successor from Bottom. *)
-  let bottom = index_of order Type.Bottom in
-  if predecessor <> bottom then
-    disconnect ~predecessor:bottom ~successor;
-  (* Disconnect predecessor from Object. *)
-  match Reader.find (Reader.indices ()) Type.Object with
-  | Some any ->
-      if successor <> any then
-        disconnect ~predecessor ~successor:any
-  | _ -> ()
+        (* Remove extra in-edges from predecessor. *)
+        let successors =
+          Reader.find edges predecessor
+          >>| List.filter ~f:(fun { Target.target; _ } -> target <> successor)
+          |> Option.value ~default:[]
+        in
+        Reader.set edges ~key:predecessor ~data:successors;
+      in
+      (* Disconnect successor from Bottom. *)
+      let bottom = index_of order Type.Bottom in
+      if predecessor <> bottom then
+        disconnect ~predecessor:bottom ~successor;
+      (* Disconnect predecessor from Object. *)
+      match Reader.find (Reader.indices ()) Type.Object with
+      | Some any ->
+          if successor <> any then
+            disconnect ~predecessor ~successor:any
+      | _ -> ()
+    end
 
 
 let find (module Reader: Reader) annotation =
@@ -1018,14 +1031,30 @@ module Builder = struct
   let default () =
     let order = create () in
     let reader = reader order in
+    let insert_solitary annotation =
+      insert reader annotation;
+      connect reader ~predecessor:Type.Bottom ~successor:annotation;
+      connect reader ~predecessor:annotation ~successor:Type.Object
+    in
 
     insert reader Type.Bottom;
     insert reader Type.Top;
-
     (* Object *)
     insert reader Type.Object;
     connect reader ~predecessor:Type.Bottom ~successor:Type.Object;
     connect reader ~predecessor:Type.Object ~successor:Type.Top;
+
+    (* Generic *)
+    insert_solitary Type.generic;
+    let base_dict =  (Type.Primitive (Identifier.create "dict")) in
+    let typing_dict = (Type.Primitive (Identifier.create "typing.Dict")) in
+    insert reader base_dict;
+    insert reader typing_dict;
+    connect reader ~predecessor:Type.Bottom ~successor:base_dict;
+    connect reader ~predecessor:base_dict ~successor:typing_dict;
+    connect reader ~predecessor:typing_dict ~successor:Type.Object;
+
+    insert_solitary (Type.Primitive (Identifier.create "None"));
 
     (* Numerical hierarchy. *)
     insert reader Type.integer;

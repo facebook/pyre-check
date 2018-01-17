@@ -98,7 +98,6 @@ let diamond_order =
 
 let default =
   let order = Builder.default () |> TypeOrder.reader in
-
   let variable = Type.Variable { Type.variable = ~~"_T"; constraints = [] } in
   insert order variable;
   connect order ~predecessor:Type.Bottom ~successor:variable;
@@ -107,11 +106,6 @@ let default =
   insert order other_variable;
   connect order ~predecessor:Type.Bottom ~successor:other_variable;
   connect order ~predecessor:other_variable ~successor:Type.Top;
-
-
-  insert order !"typing.Generic";
-  connect order ~predecessor:Type.Bottom ~successor:!"typing.Generic";
-  connect order ~predecessor:!"typing.Generic" ~successor:Type.Top;
 
   insert order !"list";
   insert order !"typing.Sized";
@@ -625,7 +619,6 @@ let test_join _ =
        order
        (Type.Parametric { Type.name = ~~"A"; parameters = [Type.integer; Type.string] })
        (Type.Parametric { Type.name = ~~"C"; parameters = [Type.Bottom] }))
-
 
 let test_meet _ =
   (* Primitive types. *)

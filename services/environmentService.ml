@@ -158,13 +158,9 @@ let shared_memory_reader
     Protocols.add "Protocols" (Hash_set.to_list protocols);
   in
 
-  Service.single_job
-    service
-    ~f:(fun sources ->
-        Log.initialize ~verbose ~sections;
-        let environment = build ~configuration ~stubs ~sources in
-        add_to_shared_memory environment)
-    sources;
+  Log.initialize ~verbose ~sections;
+  let environment = build ~configuration ~stubs ~sources in
+  add_to_shared_memory environment;
 
   let heap_size =
     EnvironmentSharedMemory.SharedMemory.heap_size ()

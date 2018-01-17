@@ -355,10 +355,15 @@ let create ~aliases expression =
                     Tuple (Bounded (List.map ~f:(resolve visited) elements))
                 | Tuple (Unbounded annotation) ->
                     Tuple (Unbounded (resolve visited annotation))
-                | Parametric ({ parameters; _ } as parametric) ->
+                | Parametric { parameters; name } ->
+                    let name =
+                      match aliases (Primitive name) with
+                      | Some (Primitive name) -> name
+                      | _ -> name
+                    in
                     Parametric {
-                      parametric with
                       parameters = List.map ~f:(resolve visited) parameters;
+                      name;
                     }
                 | Variable ({ constraints; _ } as variable) ->
                     Variable {

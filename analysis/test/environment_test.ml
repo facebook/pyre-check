@@ -192,6 +192,7 @@ let test_populate _ =
   (* Check type aliases. *)
   let environment =
     populate {|
+      class str: ...
       _T = typing.TypeVar('_T')
       S = str
     |} in
@@ -338,21 +339,21 @@ let test_populate _ =
   with TypeOrder.Cyclic ->
     assert_unreached ();
 
-  (* Check meta variables are registered. *)
-  let environment =
-    populate {|
+    (* Check meta variables are registered. *)
+    let environment =
+      populate {|
     class A:
       pass
   |} in
-  assert_equal
-    (global environment (access ["A"]))
-    (Some {
-        Resolution.annotation =
-          primitive "A"
-          |> Type.meta
-          |> Annotation.create_immutable ~global:true;
-        location = Location.any;
-      })
+    assert_equal
+      (global environment (access ["A"]))
+      (Some {
+          Resolution.annotation =
+            primitive "A"
+            |> Type.meta
+            |> Annotation.create_immutable ~global:true;
+          location = Location.any;
+        })
 
 
 let test_infer_protocols _ =
@@ -1198,6 +1199,7 @@ let test_supertypes _ =
   let module Reader = (val environment) in
   let order = (module Reader.TypeOrderReader : TypeOrder.Reader) in
   assert_equal
+    ~printer:(List.to_string ~f:Type.show)
     (TypeOrder.successors
        order
        (Type.Parametric {
@@ -1212,7 +1214,6 @@ let test_supertypes _ =
       Type.Object;
       Type.Top;
     ]
-
 
 let test_method_signature _ =
   let environment =

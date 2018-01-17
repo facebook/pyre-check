@@ -64,7 +64,11 @@ let register_type
         (Node.create (Access name))
     in
     let primitive, parameters = Type.split annotation in
-
+    let (module Reader: TypeOrder.Reader) = order in
+    if Reader.contains (Reader.indices ()) subtype &&
+       Reader.contains (Reader.indices ()) primitive &&
+       not (Type.equal subtype primitive) then
+      TypeOrder.connect order ~predecessor:subtype ~successor:primitive ~parameters;
     (* Register meta annotation. *)
     register_global
       ~path
@@ -78,17 +82,6 @@ let register_type
         location = Location.any;
       };
 
-    (* Insert type into hierarchy. *)
-    if not (TypeOrder.contains order primitive) &&
-       not (Type.equal subtype Type.Top) then
-      begin
-        TypeOrder.insert order primitive;
-        TypeOrder.connect
-          order
-          ~predecessor:subtype
-          ~successor:primitive
-          ~parameters
-      end;
 
     (* Handle definition. *)
     begin
@@ -631,7 +624,94 @@ let populate
   in
   brute_force_type_aliases ();
 
-  let visit source =
+  let register_class_definitions source =
+    let order = (module Reader.TypeOrderReader : TypeOrder.Reader) in
+    let module Visit = Visit.Make(struct
+        type t = unit
+
+        let expression _ _ =
+          ()
+
+        let statement _ = function
+          | { Node.value = Class { Class.name; bases; _ }; _ }
+          | { Node.value = Stub (Stub.Class { Class.name; bases; _ }); _ } ->
+              let insert_annotation name =
+                let primitive, _ =
+                  Type.create ~aliases:Reader.aliases (Node.create name)
+                  |> Type.split
+                in
+                if not (TypeOrder.contains order primitive) then
+                  TypeOrder.insert order primitive
+              in
+              insert_annotation (Access name);
+              List.iter
+                bases
+                ~f:(fun { Argument.value = { Node.value; _ }; _ } -> insert_annotation value);
+          | _ ->
+              ()
+      end)
+    in
+    Visit.visit () source
+  in
+
+  let register_aliases { Source.path; statements; _ } =
+    let order = (module Reader.TypeOrderReader : TypeOrder.Reader) in
+    let rec visit_statement { Node.value; _ } =
+      match value with
+      | Assign {
+          Assign.target;
+          annotation = None;
+          compound = None;
+          value = Some value;
+          _;
+        } ->
+          let rec annotation_in_order annotation =
+            match annotation with
+            | Type.Primitive _
+            | Type.Parametric _ ->
+                let primitive, _ = Type.split annotation in
+                Option.is_some (TypeOrder.find order primitive)
+
+            | Type.Tuple (Type.Bounded annotations)
+            | Type.Union annotations ->
+                List.for_all ~f:annotation_in_order annotations
+
+            | Type.Tuple (Type.Unbounded annotation) ->
+                annotation_in_order annotation
+
+            | Type.Optional annotation ->
+                annotation_in_order annotation
+
+            | Type.Object
+            | Type.Variable _ ->
+                true
+
+            | Type.Bottom
+            | Type.Top ->
+                false
+          in
+          let value = Type.create ~aliases:Reader.aliases value in
+          let target = Type.create ~aliases:Reader.aliases target in
+          let primitive, _ = Type.split target in
+          if not (Type.equal target Type.Top ||
+                  Type.equal value Type.Top ||
+                  Type.equal value target) &&
+             Option.is_none (TypeOrder.find order primitive) &&
+             (annotation_in_order value) then
+            Reader.register_alias ~path ~key:target ~data:value
+      | If { If.body; orelse; _ } ->
+          List.iter ~f:visit_statement body;
+          List.iter ~f:visit_statement orelse
+      | Import _ ->
+          (* TODO(T25119940): Handle aliases here. *)
+          ()
+      | _ ->
+          ()
+    in
+    List.iter ~f:visit_statement statements
+  in
+
+  let connect_type_order source =
     let path = source.Source.path in
     (* Visit everything. *)
     let module Visit = Visit.Make(struct
@@ -868,12 +948,7 @@ let populate
              | _ -> ()
            with _ ->
              (* TODO(T19628746): joins are not sound when building the environment. *)
-             ());
-          let value = Type.create ~aliases:Reader.aliases value in
-          let target = Type.create ~aliases:Reader.aliases target in
-          if not (Type.equal target Type.Top || Type.equal value Type.Top) then
-            Reader.register_alias ~path ~key:target ~data:value
-
+             ())
       | {
         Node.value = Assign {
             Assign.target = { Node.value = Access access; _ };
@@ -905,7 +980,9 @@ let populate
     in
     List.iter ~f:visit source.Source.statements
   in
-  List.iter ~f:visit sources;
+  List.iter ~f:register_class_definitions sources;
+  List.iter ~f:register_aliases sources;
+  List.iter ~f:connect_type_order sources;
 
   TypeOrder.complete (module Reader.TypeOrderReader) ~bottom:Type.Bottom ~top:Type.Object;
   TypeOrder.check_integrity (module Reader.TypeOrderReader)

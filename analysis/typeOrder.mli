@@ -71,6 +71,7 @@ val connect
   -> predecessor: Type.t
   -> successor: Type.t
   -> unit
+
 val find: (module Reader) -> Type.t -> Type.t option
 val contains: (module Reader) -> Type.t -> bool
 
