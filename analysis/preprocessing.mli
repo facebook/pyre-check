@@ -10,8 +10,8 @@ open Expression
 (* Resolve imports and fully qualify names. *)
 val qualify: Source.t -> Source.t
 
-(* Remove python2-specific code to avoid annotation inconsistencies with python 3. *)
-val remove_python2_stub_code: Source.t -> Source.t
+(* Resolves sys.version_info related checks at parse time. *)
+val replace_version_specific_stubs: Source.t -> Source.t
 
 val expand_optional_assigns: Source.t -> Source.t
 

@@ -309,13 +309,13 @@ let test_qualify _ =
     |}
 
 
-let test_remove_python2_stub_code _ =
-  let assert_removed source expected =
+let test_replace_version_specific_stubs _ =
+  let assert_preprocessed source expected =
     assert_source_equal
-      (Preprocessing.remove_python2_stub_code (parse source))
-      (parse expected)
+      (Preprocessing.replace_version_specific_stubs (parse ~path:"stub.pyi" source))
+      (parse ~path:"stub.pyi" expected)
   in
-  assert_removed
+  assert_preprocessed
     {|
       if sys.version_info < (3, 0):
         class C():
@@ -327,15 +327,12 @@ let test_remove_python2_stub_code _ =
             ...
     |}
     {|
-      if sys.version_info < (3, 0):
-        pass
-      else:
-        class C():
-          def compatible()->str:
-            ...
+      class C():
+        def compatible()->str:
+          ...
     |};
 
-  assert_removed
+  assert_preprocessed
     {|
       if (3,) > sys.version_info:
         class C():
@@ -347,15 +344,12 @@ let test_remove_python2_stub_code _ =
             ...
     |}
     {|
-      if (3,) > sys.version_info:
-        pass
-      else:
-        class C():
-          def compatible()->str:
-            ...
+      class C():
+        def compatible()->str:
+          ...
     |};
 
-  assert_removed
+  assert_preprocessed
     {|
       if sys.version_info <= (3, 0):
         class C():
@@ -367,17 +361,12 @@ let test_remove_python2_stub_code _ =
             ...
     |}
     {|
-      if sys.version_info <= (3, 0):
-        class C():
-          def incompatible()->int:
-            ...
-      else:
-        class C():
-          def compatible()->str:
-            ...
+      class C():
+        def compatible()->str:
+          ...
     |};
 
-  assert_removed
+  assert_preprocessed
     {|
       if sys.version_info < 3:
         class C():
@@ -397,7 +386,43 @@ let test_remove_python2_stub_code _ =
         class C():
           def compatible()->str:
             ...
+    |};
+  assert_preprocessed
+    {|
+       class C():
+         if sys.version_info >= (3, ):
+          def compatible()->str:
+            ...
     |}
+    {|
+       class C():
+         def compatible()->str:
+           ...
+    |};
+  assert_preprocessed
+    {|
+       class C():
+         if sys.version_info <= (3, ):
+          def incompatible()->int:
+            ...
+    |}
+    {|
+       class C():
+         pass
+    |};
+  assert_preprocessed
+    {|
+       class C():
+         if sys.version_info >= (3, ):
+          def compatible()->str:
+            ...
+    |}
+    {|
+       class C():
+         def compatible()->str:
+           ...
+    |}
+
 
 
 let test_expand_optional_assigns _ =
@@ -950,7 +975,7 @@ let test_classes _ =
 let () =
   "preprocessing">:::[
     "qualify">::test_qualify;
-    "remove_python2_stub_code">::test_remove_python2_stub_code;
+    "replace_version_specific_stubs">::test_replace_version_specific_stubs;
     "expand_optional_assigns">::test_expand_optional_assigns;
     "expand_operators">::test_expand_operators;
     "expand_returns">::test_expand_returns;

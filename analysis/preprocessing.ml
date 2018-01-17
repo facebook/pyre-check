@@ -318,7 +318,7 @@ let qualify source =
   |> snd
 
 
-let remove_python2_stub_code source =
+let replace_version_specific_stubs ( { Source.path; _ } as source) =
   let module Transform = Transform.Make(struct
       type t = unit
 
@@ -327,8 +327,8 @@ let remove_python2_stub_code source =
 
       let statement _ ({ Node.location; value } as statement) =
         match value with
-        | If { If.test; orelse; _ } ->
-            (* Normalizes a comparison of a < b or b > a to Some (a, b). *)
+        | If { If.test; body; orelse } ->
+            (* Normalizes a comparison of a < b, a <= b, b >= a or b > a to Some (a, b). *)
             let extract_single_comparison { Node.value; _ } =
               match value with
               | Expression.ComparisonOperator {
@@ -340,9 +340,16 @@ let remove_python2_stub_code source =
                 } ->
                   begin
                     match operator with
-                    | Expression.ComparisonOperator.LessThan -> Some (left, right)
-                    | Expression.ComparisonOperator.GreaterThan -> Some (right, left)
-                    | _ -> None
+                    | Expression.ComparisonOperator.LessThan
+                    | Expression.ComparisonOperator.LessThanOrEquals ->
+                        Some (left, right)
+
+                    | Expression.ComparisonOperator.GreaterThan
+                    | Expression.ComparisonOperator.GreaterThanOrEquals ->
+                        Some (right, left)
+
+                    | _ ->
+                        None
                   end
               | _ -> None
             in
@@ -351,14 +358,17 @@ let remove_python2_stub_code source =
               | Some (left, { Node.value = Expression.Tuple ({ Node.value = major; _ } :: _); _ })
                 when Expression.show left = "sys.version_info" && major = Expression.Integer 3 ->
                   (),
-                  [{
-                    Node.location;
-                    value = If {
-                        If.test;
-                        body = [{ Node.location; value = Statement.Pass }];
-                        orelse;
-                      };
-                  }]
+                  if List.is_empty orelse then
+                    [Node.create ~location Statement.Pass]
+                  else
+                    orelse
+              | Some ({ Node.value = Expression.Tuple ({ Node.value = major; _ } :: _); _ }, right)
+                when Expression.show right = "sys.version_info" && major = Expression.Integer 3 ->
+                  (),
+                  if List.is_empty body then
+                    [Node.create ~location Statement.Pass]
+                  else
+                    body
               | _ ->
                   (), [statement]
             end
@@ -366,7 +376,10 @@ let remove_python2_stub_code source =
             (), [statement]
     end)
   in
-  Transform.transform () source |> snd
+  if String.is_suffix ~suffix:".pyi" path then
+    Transform.transform () source |> snd
+  else
+    source
 
 
 (* TODO(T22862979) Our parser currently parses {""} as Dictionary(kwarg = "").
@@ -922,7 +935,7 @@ let dequalify_map source =
 
 let preprocess source =
   qualify source
-  |> remove_python2_stub_code
+  |> replace_version_specific_stubs
   |> fix_singleton_sets
   |> expand_optional_assigns
   |> expand_operators
