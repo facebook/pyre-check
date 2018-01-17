@@ -94,7 +94,7 @@ class BuckTest(unittest.TestCase):
                 '//t:subtarget2': 'subtarget2 destination'}
             })
             buck_build.assert_called_once_with(
-                ['buck', 'build', '//t:subtarget', '//t:subtarget2'],
+                ['buck', 'build', '//t/...'],
                 stderr=subprocess.DEVNULL)
 
     @patch.object(buck, '_get_yes_no_input', return_value=False)

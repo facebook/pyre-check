@@ -65,19 +65,18 @@ def _normalize(target):
             'Check the target path or run `buck clean`.'.format(target))
 
 
-def _build_targets(full_target_map) -> None:
-    for original_target_name, targets_map in full_target_map.items():
-        normalized_targets = targets_map.keys()
-        LOG.info('Building `%s`', original_target_name)
+def _build_targets(targets) -> None:
+    for target in targets:
+        LOG.info('Building `%s`', target)
         command = ['buck', 'build']
-        command.extend(normalized_targets)
+        command.append(target)
         try:
             subprocess.check_output(
                 command,
                 stderr=subprocess.DEVNULL)
         except subprocess.CalledProcessError:
             raise BuckException(
-                'Could not build target `{}`.'.format(original_target_name))
+                'Could not build target `{}`.'.format(target))
 
 
 def _get_yes_no_input(prompt):
@@ -104,7 +103,7 @@ def generate_source_directories(original_targets, build):
         full_targets_map[original_target] = normalized_targets_map
 
     if build:
-        _build_targets(full_targets_map)
+        _build_targets(full_targets_map.keys())
 
     unbuilt_targets = []
     for target_name, normalized_targets_map in full_targets_map.items():
