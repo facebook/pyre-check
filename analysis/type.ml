@@ -697,7 +697,6 @@ let rec mismatch_with_any left right =
   | Object, Variable _
   | Variable _, Object ->
       true
-
   | Optional left, Optional right
   | Optional left, right
   | left, Optional right ->

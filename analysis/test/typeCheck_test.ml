@@ -1422,7 +1422,20 @@ let test_check _ =
       "Incompatible return type [7]: Expected `str` but got `int`.";
       "Incompatible return type [7]: Expected `str` but got `int`."
 
-    ]
+    ];
+
+  assert_type_errors
+    {|
+      class unittest.mock.Mock:
+        ...
+      class unittest.mock.MagicMock:
+        ...
+      def foo() -> str:
+        return unittest.mock.Mock()
+      def boo() -> int:
+        return unittest.mock.MagicMock()
+    |}
+    []
 
 
 let test_check_non_debug _ =

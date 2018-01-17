@@ -200,6 +200,24 @@ module State = struct
       errors
     in
 
+    let ignore_mock_errors errors =
+      let open Error in
+      let ignore_mock_error { Error.kind; _ } =
+        match kind with
+        | IncompatibleAttributeType { incompatible_type = { mismatch = { actual; _ }; _ }; _ }
+        | IncompatibleAwaitableType actual
+        | IncompatibleParameterType { mismatch = { actual; _ }; _ }
+        | IncompatibleReturnType { actual; _ }
+        | IncompatibleVariableType { mismatch = { actual; _ }; _ } ->
+            Type.equal actual (Type.Primitive (Identifier.create "unittest.mock.Mock")) ||
+            Type.equal actual (Type.Primitive (Identifier.create "unittest.mock.MagicMock"))
+        | _ ->
+            false
+      in
+      let _, errors = List.partition_tf ~f:ignore_mock_error errors in
+      errors
+    in
+
     let ignore_unimplemented_returns errors =
       let define_implemented error =
         match error with
@@ -311,6 +329,7 @@ module State = struct
     |> class_initialization_errors
     |> ignore_unimplemented_returns
     |> ignore_suppressed_errors
+    |> ignore_mock_errors
     |> apply_if ~f:filter_errors ~condition:(not configuration.debug)
 
 
