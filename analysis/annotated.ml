@@ -1514,28 +1514,35 @@ let rec resolve ~resolution expression =
       Type.string
 
   | Ternary { Ternary.target; alternative; test; } ->
-      let target_annotation =
+      let deoptionalize key access resolution =
+        let updated_annotation =
+          match resolve ~resolution access with
+          | Type.Optional parameter -> Annotation.create parameter
+          | parameter -> Annotation.create parameter
+        in
+        Map.add ~key ~data:updated_annotation (Resolution.annotations resolution)
+        |> Resolution.with_annotations resolution
+      in
+      let updated_resolution =
         match Node.value test with
+        | Expression.Access access ->
+            deoptionalize access test resolution
         | Expression.ComparisonOperator {
-            Expression.ComparisonOperator.left = access;
+            Expression.ComparisonOperator.left = {
+              Node.value = Expression.Access access;
+              _;
+            } as access_node;
             right = [
               Expression.ComparisonOperator.IsNot,
               { Node.value = Access [Expression.Access.Identifier identifier]; _ }
             ];
           } when Identifier.show identifier = "None" ->
-            if Expression.equal access target then
-              Type.optional_value (resolve ~resolution target)
-            else
-              resolve ~resolution target
-        | _ ->
-            if Expression.equal test target then
-              Type.optional_value (resolve ~resolution target)
-            else
-              resolve ~resolution target
+            deoptionalize access access_node resolution
+        | _ -> resolution
       in
       TypeOrder.join
-        (Resolution.order resolution)
-        target_annotation
+        (Resolution.order updated_resolution)
+        (resolve ~resolution:updated_resolution target)
         (resolve ~resolution alternative)
 
   | True ->

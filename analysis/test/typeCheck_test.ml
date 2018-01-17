@@ -113,6 +113,8 @@ let plain_environment =
         class IsAwaitable(typing.Awaitable[int]): pass
 
         def sum(iterable: typing.Iterable[_T]) -> typing.Union[_T, int]: ...
+        class Attributes:
+          int_attribute: int
       |};
     ];
   environment
@@ -1763,6 +1765,26 @@ let test_check_function_parameters _ =
         return a
       x: typing.Optional[int]
       foo(x if x else 1)
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      def bar(x: typing.Optional[Attributes]) -> None:
+          baz(x.int_attribute if x is not None else None)
+
+      def baz(x: typing.Optional[int]) -> None:
+          pass
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      def bar(x: typing.Optional[Attributes]) -> None:
+          baz(x.int_attribute if x else None)
+
+      def baz(x: typing.Optional[int]) -> None:
+          pass
     |}
     []
 
