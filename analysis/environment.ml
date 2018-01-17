@@ -102,6 +102,12 @@ let register_type
                 let qualified_name =
                   match name.Argument.value.Node.value with
                   | Access access ->
+                      let primitive, _ =
+                        Type.create ~aliases name.Argument.value
+                        |> Type.split in
+                      if not (TypeOrder.contains order primitive) &&
+                         not (Type.equal primitive Type.Top) then
+                        TypeOrder.insert order primitive;
                       Some access
                   | _ ->
                       None in
@@ -633,20 +639,14 @@ let populate
           ()
 
         let statement _ = function
-          | { Node.value = Class { Class.name; bases; _ }; _ }
-          | { Node.value = Stub (Stub.Class { Class.name; bases; _ }); _ } ->
-              let insert_annotation name =
-                let primitive, _ =
-                  Type.create ~aliases:Reader.aliases (Node.create name)
-                  |> Type.split
-                in
-                if not (TypeOrder.contains order primitive) then
-                  TypeOrder.insert order primitive
+          | { Node.value = Class { Class.name; _ }; _ }
+          | { Node.value = Stub (Stub.Class { Class.name; _ }); _ } ->
+              let primitive, _ =
+                Type.create ~aliases:Reader.aliases (Node.create (Access name))
+                |> Type.split
               in
-              insert_annotation (Access name);
-              List.iter
-                bases
-                ~f:(fun { Argument.value = { Node.value; _ }; _ } -> insert_annotation value);
+              if not (TypeOrder.contains order primitive) then
+                TypeOrder.insert order primitive
           | _ ->
               ()
       end)
