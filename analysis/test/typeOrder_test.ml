@@ -154,6 +154,17 @@ let test_default _ =
   assert_true (less_or_equal order ~left:Type.Top ~right:Type.Top);
   assert_false (less_or_equal order ~left:Type.Top ~right:Type.Bottom);
 
+  (* Test special forms. *)
+  let assert_has_special_form primitive_name =
+    assert_is_some (TypeOrder.find order (Type.Primitive (Identifier.create primitive_name)))
+  in
+  assert_has_special_form "typing.Tuple";
+  assert_has_special_form "typing.Generic";
+  assert_has_special_form "typing.Protocol";
+  assert_has_special_form "typing.Callable";
+  assert_has_special_form "typing.Type";
+  assert_has_special_form "typing.ClassVar";
+
   (* Numerical types. *)
   assert_true (less_or_equal order ~left:Type.integer ~right:Type.integer);
   assert_false (less_or_equal order ~left:Type.float ~right:Type.integer);

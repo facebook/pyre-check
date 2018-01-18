@@ -1031,11 +1031,6 @@ module Builder = struct
   let default () =
     let order = create () in
     let reader = reader order in
-    let insert_solitary annotation =
-      insert reader annotation;
-      connect reader ~predecessor:Type.Bottom ~successor:annotation;
-      connect reader ~predecessor:annotation ~successor:Type.Object
-    in
 
     insert reader Type.Bottom;
     insert reader Type.Top;
@@ -1044,8 +1039,28 @@ module Builder = struct
     connect reader ~predecessor:Type.Bottom ~successor:Type.Object;
     connect reader ~predecessor:Type.Object ~successor:Type.Top;
 
-    (* Generic *)
-    insert_solitary Type.generic;
+    let insert_unconnected annotation =
+      insert reader annotation;
+      connect reader ~predecessor:Type.Bottom ~successor:annotation;
+      connect reader ~predecessor:annotation ~successor:Type.Object
+    in
+
+    (* Special forms *)
+    insert_unconnected (Type.Primitive (Identifier.create "typing.Tuple"));
+    insert_unconnected Type.generic;
+    insert_unconnected (Type.Primitive (Identifier.create "typing.Protocol"));
+    insert_unconnected (Type.Primitive (Identifier.create "typing.Callable"));
+
+    let type_special_form = Type.Primitive (Identifier.create "typing.Type") in
+    let type_builtin = Type.Primitive (Identifier.create "type") in
+    insert reader type_special_form;
+    insert reader type_builtin;
+    connect reader ~predecessor:Type.Bottom ~successor:type_special_form;
+    connect reader ~predecessor:type_special_form ~successor:type_builtin;
+    connect reader ~predecessor:type_builtin ~successor:Type.Object;
+
+    insert_unconnected (Type.Primitive (Identifier.create "typing.ClassVar"));
+
     let base_dict =  (Type.Primitive (Identifier.create "dict")) in
     let typing_dict = (Type.Primitive (Identifier.create "typing.Dict")) in
     insert reader base_dict;
@@ -1054,7 +1069,7 @@ module Builder = struct
     connect reader ~predecessor:base_dict ~successor:typing_dict;
     connect reader ~predecessor:typing_dict ~successor:Type.Object;
 
-    insert_solitary (Type.Primitive (Identifier.create "None"));
+    insert_unconnected (Type.Primitive (Identifier.create "None"));
 
     (* Numerical hierarchy. *)
     insert reader Type.integer;
