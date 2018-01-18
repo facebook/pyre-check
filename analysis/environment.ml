@@ -107,7 +107,14 @@ let register_type
                         |> Type.split in
                       if not (TypeOrder.contains order primitive) &&
                          not (Type.equal primitive Type.Top) then
-                        TypeOrder.insert order primitive;
+                        begin
+                          Log.log
+                            ~section:`Environment
+                            "Inserting missing annotation %a"
+                            Type.pp
+                            primitive;
+                          TypeOrder.insert order primitive
+                        end;
                       Some access
                   | _ ->
                       None in
