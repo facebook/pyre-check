@@ -73,6 +73,23 @@ val register_type
   -> register_global: (path: string -> key: Access.t -> data: Resolution.global -> unit)
   -> (path: string -> Type.t -> Access.t -> (Class.t Node.t) option -> (Type.t * Type.t list))
 
+val register_class_definitions
+  :  (module Reader)
+  -> Source.t
+  -> unit
+
+val register_aliases
+  :  (module Reader)
+  -> Source.t list
+  -> unit
+
+val connect_type_order
+  :  (module Reader)
+  -> ?project_root: Path.t
+  -> ?check_dependency_exists: bool
+  -> Source.t
+  -> unit
+
 val populate
   :  (module Reader)
   -> ?project_root: Path.t

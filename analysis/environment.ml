@@ -582,11 +582,127 @@ let dependencies (module Reader: Reader) =
   Reader.dependencies
 
 
-let populate
+let register_class_definitions (module Reader: Reader) source =
+  let order = (module Reader.TypeOrderReader : TypeOrder.Reader) in
+  let module Visit = Visit.Make(struct
+      type t = unit
+
+      let expression _ _ =
+        ()
+
+      let statement _ = function
+        | { Node.value = Class { Class.name; _ }; _ }
+        | { Node.value = Stub (Stub.Class { Class.name; _ }); _ } ->
+            let primitive, _ =
+              Type.create ~aliases:Reader.aliases (Node.create (Access name))
+              |> Type.split
+            in
+            if not (TypeOrder.contains order primitive) then
+              TypeOrder.insert order primitive;
+        | _ ->
+            ()
+    end)
+  in
+  Visit.visit () source
+
+
+let register_aliases (module Reader: Reader) sources =
+  let order = (module Reader.TypeOrderReader : TypeOrder.Reader) in
+  let collect_aliases { Source.path; statements; _ } =
+    let rec visit_statement aliases { Node.value; _ } =
+      match value with
+      | Assign {
+          Assign.target;
+          annotation = None;
+          compound = None;
+          value = Some value;
+          _;
+        } ->
+          let value_annotation = Type.create ~aliases:Reader.aliases value in
+          let target_annotation = Type.create ~aliases:Reader.aliases target in
+          if not (Type.equal target_annotation Type.Top ||
+                  Type.equal value_annotation Type.Top ||
+                  Type.equal value_annotation target_annotation) then
+            (path, target, value) :: aliases
+          else
+            aliases
+      | If { If.body; orelse; _ } ->
+          let aliases = List.fold ~init:aliases ~f:visit_statement body in
+          let aliases = List.fold ~init:aliases ~f:visit_statement orelse in
+          aliases
+      | Import _ ->
+          (* TODO(T25119940): Handle aliases here. *)
+          aliases
+      | _ ->
+          aliases
+    in
+    List.fold ~init:[] ~f:visit_statement statements
+  in
+  let rec resolve_aliases unresolved =
+    if List.is_empty unresolved then
+      ()
+    else
+      let register_alias (any_changed, unresolved) (path, target, value) =
+        let target_annotation = Type.create ~aliases:Reader.aliases target in
+        let value_annotation = Type.create ~aliases:Reader.aliases value in
+        let rec annotation_in_order annotation =
+          match annotation with
+          | Type.Primitive _
+          | Type.Parametric _ ->
+              let primitive, _ = Type.split annotation in
+              Option.is_some (TypeOrder.find order primitive)
+
+          | Type.Tuple (Type.Bounded annotations)
+          | Type.Union annotations ->
+              List.for_all ~f:annotation_in_order annotations
+
+          | Type.Tuple (Type.Unbounded annotation) ->
+              annotation_in_order annotation
+
+          | Type.Optional annotation ->
+              annotation_in_order annotation
+
+          | Type.Object
+          | Type.Variable _ ->
+              true
+
+          | Type.Bottom
+          | Type.Top ->
+              false
+        in
+        let primitive, _ = Type.split target_annotation in
+        if Option.is_none (TypeOrder.find order primitive) &&
+           annotation_in_order value_annotation then
+          begin
+            Reader.register_alias ~path ~key:target_annotation ~data:value_annotation;
+            (true, unresolved)
+          end
+        else
+          (any_changed, (path, target, value) :: unresolved)
+      in
+      let (any_changed, unresolved) = List.fold ~init:(false, []) ~f:register_alias unresolved in
+      if any_changed then
+        resolve_aliases unresolved
+      else
+        let show_unresolved (path, target, value) =
+          Log.debug
+            "Unresolved alias %s:%s <- %s"
+            path
+            (Expression.show target)
+            (Expression.show value)
+        in
+        List.iter ~f:show_unresolved unresolved
+
+  in
+  List.concat_map ~f:collect_aliases sources
+  |> resolve_aliases
+
+let connect_type_order
     (module Reader: Reader)
     ?(project_root = Path.current_working_directory ())
     ?(check_dependency_exists = true)
-    sources =
+    source =
+  let path = source.Source.path in
   let parse_annotation = Type.create ~aliases:(Reader.aliases) in
   let resolution =
     resolution
@@ -594,6 +710,278 @@ let populate
       ~annotations:Access.Map.empty ()
   in
 
+  (* Visit everything. *)
+  let module Visit = Visit.Make(struct
+      type t = unit
+
+      let expression _ _ =
+        ()
+
+      let statement _ = function
+        | {
+          Node.value = Assign {
+              Assign.target = { Node.value = Access access; _ } ;
+              compound = None;
+              parent = Some parent;
+              Assign.value = Some value;
+              annotation = None;
+              _;
+            };
+          location;
+        } ->
+            (try
+               let annotation = Resolution.resolve resolution value in
+               Reader.register_global
+                 ~path
+                 ~key:(parent @ access)
+                 ~data:{
+                   Resolution.annotation =
+                     (Annotation.create_immutable
+                        ~global:true
+                        ~original:(Some Type.Top)
+                        annotation);
+                   location;
+                 }
+             with _ ->
+               (* TODO(T19628746): joins are not sound when building the environment. *)
+               ())
+        | {
+          Node.value = Assign {
+              Assign.target = { Node.value = Access access; _ } ;
+              annotation = Some annotation;
+              compound = None;
+              parent = Some parent;
+              _;
+            };
+          location;
+        }
+        | {
+          Node.value = Stub (Stub.Assign {
+              Assign.target = { Node.value = Access access; _ } ;
+              annotation = Some annotation;
+              compound = None;
+              parent = Some parent;
+              _;
+            });
+          location;
+        } ->
+            Type.class_variable (parse_annotation annotation)
+            >>| (fun annotation ->
+                Reader.register_global
+                  ~path
+                  ~key:(parent @ access)
+                  ~data:{
+                    Resolution.annotation = (Annotation.create_immutable ~global:true annotation);
+                    location;
+                  })
+            |> ignore
+
+        | { Node.location; value = Class definition }
+        | { Node.location; value = Stub (Stub.Class definition) } ->
+            (* Register constructors. *)
+            let constructors =
+              Annotated.Class.create (Node.create ~location definition)
+              |> Annotated.Class.constructors ~resolution
+            in
+            List.iter
+              ~f:(fun constructor ->
+                  Reader.register_definition
+                    ~path
+                    { Node.value = constructor; location })
+              constructors;
+
+            let primitive, _ =
+              Reader.register_type
+                ~path
+                Type.Bottom
+                definition.Class.name
+                (Some (Node.create ~location definition))
+            in
+
+            (* Handle enumeration constants. *)
+            let enumeration { Argument.value; _ } =
+              let enumerations =
+                (* Custom enumeration classes. *)
+                [
+                  "enum.Enum";
+                  "enum.IntEnum";
+                  "util.enum.Enum";
+                  "util.enum.IntEnum";
+                  "util.enum.StringEnum";
+                ]
+              in
+              match parse_annotation value with
+              | Type.Primitive identifier
+                when List.mem ~equal:String.equal enumerations (Identifier.show identifier) ->
+                  Some (Access.create (Identifier.show identifier))
+              | _ ->
+                  None
+            in
+            List.find_map ~f:enumeration definition.Class.bases
+            >>| (fun enumeration ->
+                (* Register generated constructor. *)
+                Reader.register_definition
+                  ~path
+                  {
+                    Node.location;
+                    value = {
+                      Define.name = enumeration @ (Access.create "__init__");
+                      parameters = [Parameter.create ~name:(Identifier.create "a") ()];
+                      body = [];
+                      decorators = [];
+                      docstring = None;
+                      return_annotation = Some {
+                          Node.location;
+                          value = Access enumeration;
+                        };
+                      async = false;
+                      generated = true;
+                      parent = Some enumeration;
+                    };
+                  };
+
+                (* Register globals. *)
+                let visit = function
+                  | {
+                    Node.value = Assign {
+                        Assign.target = { Node.value = Access access; _ } ;
+                        compound = None;
+                        parent = Some _;
+                        _;
+                      };
+                    location;
+                  } ->
+                      Reader.register_global
+                        ~path
+                        ~key:(definition.Class.name @ access)
+                        ~data:{
+                          Resolution.annotation =
+                            (Annotation.create_immutable ~global:true primitive);
+                          location;
+                        }
+                  | _ ->
+                      () in
+                List.iter ~f:visit definition.Class.body)
+            |> ignore
+
+        | { Node.value = Define definition; location }
+        | { Node.value = Stub (Stub.Define definition); location } ->
+            if Define.is_method definition then
+              let parent = Option.value_exn definition.Define.parent in
+              Reader.register_definition
+                ~path
+                ~name_override:(parent @ definition.Define.name)
+                { Node.value = definition; location }
+            else
+              Reader.register_definition ~path { Node.value = definition; location }
+        | { Node.value = Import { Import.from; imports }; _ } ->
+            let imports =
+              let path_of_import access =
+                let show_identifier = function
+                  | Expression.Access.Identifier identifier ->
+                      Identifier.show identifier
+                  | access -> Expression.Access.show_access Expression.pp access
+                in
+                let relative =
+                  Format.sprintf "%s.py"
+                    (access
+                     |> List.map ~f:show_identifier
+                     |> List.fold ~init:(Path.absolute project_root) ~f:(^/))
+                in
+                if (not check_dependency_exists) || Sys.is_file relative = `Yes then
+                  Path.create_relative ~root:project_root ~relative
+                  |> Path.relative
+                else
+                  begin
+                    Log.log ~section:`Dependencies "Import path %s not found" path;
+                    None
+                  end
+              in
+              let import_accesses =
+                match from with
+                (* If analyzing from x import y, only add x to the dependencies.
+                 * Otherwise, add all dependencies. *)
+                | None -> imports |> List.map ~f:(fun { Import.name; _ } -> name)
+                | Some base_module -> [base_module]
+              in
+              List.filter_map ~f:path_of_import import_accesses
+            in
+            List.iter
+              ~f:(fun dependency -> Reader.register_dependency ~path ~dependency)
+              imports
+        | _ ->
+            ()
+    end)
+  in
+  Visit.visit () source;
+
+  (* Visit toplevel statements. *)
+  let visit = function
+    | {
+      Node.value = Assign {
+          Assign.target;
+          annotation = None;
+          compound = None;
+          value = Some value;
+          _;
+        };
+      location;
+    } ->
+        (try
+           match target.Node.value, (Resolution.resolve resolution value)
+           with
+           | Access access, annotation ->
+               Reader.register_global
+                 ~path
+                 ~key:access
+                 ~data:{
+                   Resolution.annotation =
+                     (Annotation.create_immutable
+                        ~global:true
+                        ~original:(Some Type.Top)
+                        annotation);
+                   location;
+                 }
+           | _ -> ()
+         with _ ->
+           (* TODO(T19628746): joins are not sound when building the environment. *)
+           ())
+    | {
+      Node.value = Assign {
+          Assign.target = { Node.value = Access access; _ };
+          annotation = Some annotation;
+          compound = None;
+          _;
+        };
+      location;
+    }
+    | {
+      Node.value = Stub (Stub.Assign {
+          Assign.target = { Node.value = Access access; _ };
+          annotation = Some annotation;
+          compound = None;
+          _;
+        });
+      location;
+    } ->
+        Reader.register_global
+          ~path
+          ~key:access
+          ~data:{
+            Resolution.annotation =
+              (Annotation.create_immutable ~global:true (parse_annotation annotation));
+            location;
+          }
+    | _ ->
+        ()
+  in
+  List.iter ~f:visit source.Source.statements
+
+let populate
+    (module Reader: Reader)
+    ?(project_root = Path.current_working_directory ())
+    ?(check_dependency_exists = true)
+    sources =
   (* TODO(T19628746) Handle type aliases when building the environment instead of relying on this
      hack. *)
   let brute_force_type_aliases () =
@@ -630,359 +1018,9 @@ let populate
   in
   brute_force_type_aliases ();
 
-  let register_class_definitions source =
-    let order = (module Reader.TypeOrderReader : TypeOrder.Reader) in
-    let module Visit = Visit.Make(struct
-        type t = unit
-
-        let expression _ _ =
-          ()
-
-        let statement _ = function
-          | { Node.value = Class { Class.name; _ }; _ }
-          | { Node.value = Stub (Stub.Class { Class.name; _ }); _ } ->
-              let primitive, _ =
-                Type.create ~aliases:Reader.aliases (Node.create (Access name))
-                |> Type.split
-              in
-              if not (TypeOrder.contains order primitive) then
-                TypeOrder.insert order primitive
-          | _ ->
-              ()
-      end)
-    in
-    Visit.visit () source
-  in
-
-  let register_aliases { Source.path; statements; _ } =
-    let order = (module Reader.TypeOrderReader : TypeOrder.Reader) in
-    let rec visit_statement { Node.value; _ } =
-      match value with
-      | Assign {
-          Assign.target;
-          annotation = None;
-          compound = None;
-          value = Some value;
-          _;
-        } ->
-          let rec annotation_in_order annotation =
-            match annotation with
-            | Type.Primitive _
-            | Type.Parametric _ ->
-                let primitive, _ = Type.split annotation in
-                Option.is_some (TypeOrder.find order primitive)
-
-            | Type.Tuple (Type.Bounded annotations)
-            | Type.Union annotations ->
-                List.for_all ~f:annotation_in_order annotations
-
-            | Type.Tuple (Type.Unbounded annotation) ->
-                annotation_in_order annotation
-
-            | Type.Optional annotation ->
-                annotation_in_order annotation
-
-            | Type.Object
-            | Type.Variable _ ->
-                true
-
-            | Type.Bottom
-            | Type.Top ->
-                false
-          in
-          let value = Type.create ~aliases:Reader.aliases value in
-          let target = Type.create ~aliases:Reader.aliases target in
-          let primitive, _ = Type.split target in
-          if not (Type.equal target Type.Top ||
-                  Type.equal value Type.Top ||
-                  Type.equal value target) &&
-             Option.is_none (TypeOrder.find order primitive) &&
-             (annotation_in_order value) then
-            Reader.register_alias ~path ~key:target ~data:value
-      | If { If.body; orelse; _ } ->
-          List.iter ~f:visit_statement body;
-          List.iter ~f:visit_statement orelse
-      | Import _ ->
-          (* TODO(T25119940): Handle aliases here. *)
-          ()
-      | _ ->
-          ()
-    in
-    List.iter ~f:visit_statement statements
-  in
-
-  let connect_type_order source =
-    let path = source.Source.path in
-    (* Visit everything. *)
-    let module Visit = Visit.Make(struct
-        type t = unit
-
-        let expression _ _ =
-          ()
-
-        let statement _ = function
-          | {
-            Node.value = Assign {
-                Assign.target = { Node.value = Access access; _ } ;
-                compound = None;
-                parent = Some parent;
-                Assign.value = Some value;
-                annotation = None;
-                _;
-              };
-            location;
-          } ->
-              (try
-                 let annotation = Resolution.resolve resolution value in
-                 Reader.register_global
-                   ~path
-                   ~key:(parent @ access)
-                   ~data:{
-                     Resolution.annotation =
-                       (Annotation.create_immutable
-                          ~global:true
-                          ~original:(Some Type.Top)
-                          annotation);
-                     location;
-                   }
-               with _ ->
-                 (* TODO(T19628746): joins are not sound when building the environment. *)
-                 ())
-          | {
-            Node.value = Assign {
-                Assign.target = { Node.value = Access access; _ } ;
-                annotation = Some annotation;
-                compound = None;
-                parent = Some parent;
-                _;
-              };
-            location;
-          }
-          | {
-            Node.value = Stub (Stub.Assign {
-                Assign.target = { Node.value = Access access; _ } ;
-                annotation = Some annotation;
-                compound = None;
-                parent = Some parent;
-                _;
-              });
-            location;
-          } ->
-              Type.class_variable (parse_annotation annotation)
-              >>| (fun annotation ->
-                  Reader.register_global
-                    ~path
-                    ~key:(parent @ access)
-                    ~data:{
-                      Resolution.annotation = (Annotation.create_immutable ~global:true annotation);
-                      location;
-                    })
-              |> ignore
-
-          | { Node.location; value = Class definition }
-          | { Node.location; value = Stub (Stub.Class definition) } ->
-              (* Register constructors. *)
-              let constructors =
-                Annotated.Class.create (Node.create ~location definition)
-                |> Annotated.Class.constructors ~resolution
-              in
-              List.iter
-                ~f:(fun constructor ->
-                    Reader.register_definition
-                      ~path
-                      { Node.value = constructor; location })
-                constructors;
-
-              let primitive, _ =
-                Reader.register_type
-                  ~path
-                  Type.Bottom
-                  definition.Class.name
-                  (Some (Node.create ~location definition))
-              in
-
-              (* Handle enumeration constants. *)
-              let enumeration { Argument.value; _ } =
-                let enumerations =
-                  (* Custom enumeration classes. *)
-                  [
-                    "enum.Enum";
-                    "enum.IntEnum";
-                    "util.enum.Enum";
-                    "util.enum.IntEnum";
-                    "util.enum.StringEnum";
-                  ]
-                in
-                match parse_annotation value with
-                | Type.Primitive identifier
-                  when List.mem ~equal:String.equal enumerations (Identifier.show identifier) ->
-                    Some (Access.create (Identifier.show identifier))
-                | _ ->
-                    None
-              in
-              List.find_map ~f:enumeration definition.Class.bases
-              >>| (fun enumeration ->
-                  (* Register generated constructor. *)
-                  Reader.register_definition
-                    ~path
-                    {
-                      Node.location;
-                      value = {
-                        Define.name = enumeration @ (Access.create "__init__");
-                        parameters = [Parameter.create ~name:(Identifier.create "a") ()];
-                        body = [];
-                        decorators = [];
-                        docstring = None;
-                        return_annotation = Some {
-                            Node.location;
-                            value = Access enumeration;
-                          };
-                        async = false;
-                        generated = true;
-                        parent = Some enumeration;
-                      };
-                    };
-
-                  (* Register globals. *)
-                  let visit = function
-                    | {
-                      Node.value = Assign {
-                          Assign.target = { Node.value = Access access; _ } ;
-                          compound = None;
-                          parent = Some _;
-                          _;
-                        };
-                      location;
-                    } ->
-                        Reader.register_global
-                          ~path
-                          ~key:(definition.Class.name @ access)
-                          ~data:{
-                            Resolution.annotation =
-                              (Annotation.create_immutable ~global:true primitive);
-                            location;
-                          }
-                    | _ ->
-                        () in
-                  List.iter ~f:visit definition.Class.body)
-              |> ignore
-
-          | { Node.value = Define definition; location }
-          | { Node.value = Stub (Stub.Define definition); location } ->
-              if Define.is_method definition then
-                let parent = Option.value_exn definition.Define.parent in
-                Reader.register_definition
-                  ~path
-                  ~name_override:(parent @ definition.Define.name)
-                  { Node.value = definition; location }
-              else
-                Reader.register_definition ~path { Node.value = definition; location }
-          | { Node.value = Import { Import.from; imports }; _ } ->
-              let imports =
-                let path_of_import access =
-                  let show_identifier = function
-                    | Expression.Access.Identifier identifier ->
-                        Identifier.show identifier
-                    | access -> Expression.Access.show_access Expression.pp access
-                  in
-                  let relative =
-                    Format.sprintf "%s.py"
-                      (access
-                       |> List.map ~f:show_identifier
-                       |> List.fold ~init:(Path.absolute project_root) ~f:(^/))
-                  in
-                  if (not check_dependency_exists) || Sys.is_file relative = `Yes then
-                    Path.create_relative ~root:project_root ~relative
-                    |> Path.relative
-                  else
-                    begin
-                      Log.log ~section:`Dependencies "Import path %s not found" path;
-                      None
-                    end
-                in
-                let import_accesses =
-                  match from with
-                  (* If analyzing from x import y, only add x to the dependencies.
-                    * Otherwise, add all dependencies. *)
-                  | None -> imports |> List.map ~f:(fun { Import.name; _ } -> name)
-                  | Some base_module -> [base_module]
-                in
-                List.filter_map ~f:path_of_import import_accesses
-              in
-              List.iter
-                ~f:(fun dependency -> Reader.register_dependency ~path ~dependency)
-                imports
-          | _ ->
-              ()
-      end)
-    in
-    Visit.visit () source;
-
-    (* Visit toplevel statements. *)
-    let visit = function
-      | {
-        Node.value = Assign {
-            Assign.target;
-            annotation = None;
-            compound = None;
-            value = Some value;
-            _;
-          };
-        location;
-      } ->
-          (try
-             match target.Node.value, (Resolution.resolve resolution value)
-             with
-             | Access access, annotation ->
-                 Reader.register_global
-                   ~path
-                   ~key:access
-                   ~data:{
-                     Resolution.annotation =
-                       (Annotation.create_immutable
-                          ~global:true
-                          ~original:(Some Type.Top)
-                          annotation);
-                     location;
-                   }
-             | _ -> ()
-           with _ ->
-             (* TODO(T19628746): joins are not sound when building the environment. *)
-             ())
-      | {
-        Node.value = Assign {
-            Assign.target = { Node.value = Access access; _ };
-            annotation = Some annotation;
-            compound = None;
-            _;
-          };
-        location;
-      }
-      | {
-        Node.value = Stub (Stub.Assign {
-            Assign.target = { Node.value = Access access; _ };
-            annotation = Some annotation;
-            compound = None;
-            _;
-          });
-        location;
-      } ->
-          Reader.register_global
-            ~path
-            ~key:access
-            ~data:{
-              Resolution.annotation =
-                (Annotation.create_immutable ~global:true (parse_annotation annotation));
-              location;
-            }
-      | _ ->
-          ()
-    in
-    List.iter ~f:visit source.Source.statements
-  in
-  List.iter ~f:register_class_definitions sources;
-  List.iter ~f:register_aliases sources;
-  List.iter ~f:connect_type_order sources;
+  List.iter ~f:(register_class_definitions (module Reader)) sources;
+  register_aliases (module Reader) sources;
+  List.iter ~f:(connect_type_order ~project_root ~check_dependency_exists (module Reader)) sources;
 
   TypeOrder.complete (module Reader.TypeOrderReader) ~bottom:Type.Bottom ~top:Type.Object;
   TypeOrder.check_integrity (module Reader.TypeOrderReader)

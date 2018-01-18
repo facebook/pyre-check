@@ -161,6 +161,84 @@ let test_copy _ =
        [])
 
 
+let test_register_class_definitions _ =
+  let environment = Environment.Builder.create () in
+  let (module Reader: Environment.Reader) = Environment.reader environment in
+  Environment.register_class_definitions
+    (module Reader)
+    (parse {|
+       class C:
+         ...
+       class D(C):
+         pass
+       B = D
+       A = B
+       def foo()->A:
+         return C()
+    |});
+  assert_equal (parse_annotation (module Reader) (!"C")) (primitive "C");
+  assert_equal (parse_annotation (module Reader) (!"D")) (primitive "D");
+  assert_equal (parse_annotation (module Reader) (!"B")) (primitive "B");
+  assert_equal (parse_annotation (module Reader) (!"A")) (primitive "A");
+  assert_equal (Reader.function_definitions (access ["foo"])) None;
+  let order = (module Reader.TypeOrderReader: TypeOrder.Reader) in
+  assert_equal (TypeOrder.successors order (primitive "C")) [];
+  assert_equal (TypeOrder.predecessors order (primitive "C")) []
+
+
+let test_register_aliases _ =
+  let environment = Environment.Builder.create () in
+  let (module Reader: Environment.Reader) = Environment.reader environment in
+  let source =
+    parse {|
+       class C:
+         ...
+       class D(C):
+         pass
+       B = D
+       A = B
+       def foo()->A:
+         return D()
+    |}
+  in
+  Environment.register_class_definitions (module Reader) source;
+  Environment.register_aliases (module Reader) [source];
+
+  assert_equal (parse_annotation (module Reader) (!"C")) (primitive "C");
+  assert_equal (parse_annotation (module Reader) (!"D")) (primitive "D");
+  assert_equal (parse_annotation (module Reader) (!"B")) (primitive "D");
+  assert_equal (parse_annotation (module Reader) (!"A")) (primitive "D");
+  assert_equal (Reader.function_definitions (access ["foo"])) None
+
+
+let test_connect_type_order _ =
+  let environment = Environment.Builder.create () in
+  let (module Reader: Environment.Reader) = Environment.reader environment in
+  let source =
+    parse {|
+       class C:
+         ...
+       class D(C):
+         pass
+       B = D
+       A = B
+       def foo()->A:
+         return D()
+    |}
+  in
+  let order = (module Reader.TypeOrderReader: TypeOrder.Reader) in
+  Environment.register_class_definitions (module Reader) source;
+  Environment.register_aliases (module Reader) [source];
+  Environment.connect_type_order (module Reader) source;
+  assert_equal (parse_annotation (module Reader) (!"C")) (primitive "C");
+  assert_equal (parse_annotation (module Reader) (!"D")) (primitive "D");
+  assert_equal (parse_annotation (module Reader) (!"B")) (primitive "D");
+  assert_equal (parse_annotation (module Reader) (!"A")) (primitive "D");
+  assert_is_some (Reader.function_definitions (access ["foo"]));
+  assert_equal (TypeOrder.successors order (primitive "C")) [Type.Object; Type.Top];
+  assert_equal (TypeOrder.successors order (primitive "D")) [primitive "C"; Type.Object; Type.Top]
+
+
 let test_populate _ =
   (* Test type resolution. *)
   let environment =
@@ -195,12 +273,16 @@ let test_populate _ =
       class str: ...
       _T = typing.TypeVar('_T')
       S = str
+      S2 = S
     |} in
   assert_equal
     (parse_annotation environment (+Access (access ["_T"])))
     (variable ~~"_T");
   assert_equal
     (parse_annotation environment (+Access (access ["S"])))
+    Type.string;
+  assert_equal
+    (parse_annotation environment (+Access (access ["S2"])))
     Type.string;
 
   (* Check enumerations. *)
@@ -332,9 +414,9 @@ let test_populate _ =
   (* Loops. *)
   try
     populate {|
-      def foo(cls):
-        class cls(cls): pass
-    |}
+        def foo(cls):
+          class cls(cls): pass
+      |}
     |> ignore
   with TypeOrder.Cyclic ->
     assert_unreached ();
@@ -342,9 +424,9 @@ let test_populate _ =
     (* Check meta variables are registered. *)
     let environment =
       populate {|
-    class A:
-      pass
-  |} in
+      class A:
+        pass
+      |} in
     assert_equal
       (global environment (access ["A"]))
       (Some {
@@ -1546,6 +1628,9 @@ let () =
   "environment">:::[
     "create">::test_create;
     "copy">::test_copy;
+    "register_class_definitions">::test_register_class_definitions;
+    "register_aliases">::test_register_aliases;
+    "connect_type_order">::test_connect_type_order;
     "populate">::test_populate;
     "infer_protocols">::test_infer_protocols;
     "less_or_equal">::test_less_or_equal;
