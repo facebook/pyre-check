@@ -1432,10 +1432,14 @@ let test_check _ =
         ...
       class unittest.mock.MagicMock:
         ...
+      class typing.Callable:
+        ...
       def foo() -> str:
         return unittest.mock.Mock()
       def boo() -> int:
         return unittest.mock.MagicMock()
+      def a() -> str:
+        return typing.Callable()
     |}
     []
 

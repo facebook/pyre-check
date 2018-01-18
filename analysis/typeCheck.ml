@@ -218,6 +218,24 @@ module State = struct
       errors
     in
 
+    let ignore_callable_errors errors =
+      let open Error in
+      let ignore_callable_error { Error.kind;_ } =
+        match kind with
+        | IncompatibleAttributeType { incompatible_type = { mismatch = { actual; _ }; _ }; _ }
+        | IncompatibleAwaitableType actual
+        | IncompatibleParameterType { mismatch = { actual; _ }; _ }
+        | IncompatibleReturnType { actual; _ }
+        | IncompatibleVariableType { mismatch = { actual; _ }; _ } ->
+            let primitive, _ = Type.split actual in
+            Type.equal primitive (Type.Primitive (Identifier.create "typing.Callable"))
+        | _ ->
+            false
+      in
+      let _, errors = List.partition_tf ~f:ignore_callable_error errors in
+      errors
+    in
+
     let ignore_unimplemented_returns errors =
       let define_implemented error =
         match error with
@@ -330,6 +348,7 @@ module State = struct
     |> ignore_unimplemented_returns
     |> ignore_suppressed_errors
     |> ignore_mock_errors
+    |> ignore_callable_errors
     |> apply_if ~f:filter_errors ~condition:(not configuration.debug)
 
 
