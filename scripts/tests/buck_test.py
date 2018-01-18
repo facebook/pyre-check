@@ -5,7 +5,10 @@ import glob
 import subprocess
 import unittest
 
-from tools.pyre.scripts import buck
+from tools.pyre.scripts import (
+    buck,
+    log,
+)
 from unittest.mock import (
     call,
     patch,
@@ -97,7 +100,7 @@ class BuckTest(unittest.TestCase):
                 ['buck', 'build', '//t/...'],
                 stderr=subprocess.DEVNULL)
 
-    @patch.object(buck, '_get_yes_no_input', return_value=False)
+    @patch.object(log, 'get_yes_no_input', return_value=False)
     @patch.object(buck, '_normalize')
     @patch.object(buck, '_find_source_directories')
     def test_generate_source_directories(

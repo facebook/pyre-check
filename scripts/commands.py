@@ -385,8 +385,21 @@ class Incremental(ErrorHandling):
             source_directories=self._source_directories,
             flags=flags)
 
-        errors = self._get_errors(results)
-        self._print(errors)
+        try:
+            self._check_results(results)
+            errors = self._get_errors(results)
+            self._print(errors)
+        except ClientException as exception:
+            LOG.error("%s", str(exception))
+            if log.get_yes_no_input("Restart the server?"):
+                arguments = self._arguments
+                Stop(
+                    arguments,
+                    self._configuration,
+                    self._source_directories).run()
+                self.run()
+            else:
+                exit(-1)
 
 
 class Rage(Command):

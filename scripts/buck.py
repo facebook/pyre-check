@@ -79,12 +79,6 @@ def _build_targets(targets) -> None:
                 'Could not build target `{}`.'.format(target))
 
 
-def _get_yes_no_input(prompt):
-    LOG.log(log.PROMPT, prompt + ' [Y/n] ')
-    choice = input().strip().lower()
-    return choice in ['', 'y', 'ye', 'yes']
-
-
 def generate_source_directories(original_targets, build):
     buck_out = _find_source_directories(
         {target: None for target in original_targets})
@@ -125,7 +119,7 @@ def generate_source_directories(original_targets, build):
                 'Could not find link trees for:\n    `%s`.\n   '
                 'These targets might be unbuilt or only partially built.',
                 '    \n'.join(unbuilt_targets))
-            if _get_yes_no_input("Build target?"):
+            if log.get_yes_no_input("Build target?"):
                 return generate_source_directories(
                     original_targets,
                     build=True)

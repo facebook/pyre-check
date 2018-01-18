@@ -236,3 +236,9 @@ class Buffer:
         with self._lock:
             if not self._flushed:
                 self.flush()
+
+
+def get_yes_no_input(prompt):
+    LOG.log(PROMPT, prompt + ' [Y/n] ')
+    choice = input().strip().lower()
+    return choice in ['', 'y', 'ye', 'yes']
