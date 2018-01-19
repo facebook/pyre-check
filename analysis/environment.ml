@@ -1070,7 +1070,8 @@ let infer_implementations (module Reader: Reader) ~protocol =
           (* Get edges to protocol. *)
           let edges =
             let add_edge sofar source =
-              if Type.equal source protocol then
+              (* Even if `object` technically implements a protocol, do not add cyclic edge. *)
+              if Type.equal source protocol || Type.equal source Type.Object then
                 sofar
               else
                 Set.add sofar { Edge.source; target = protocol }

@@ -460,13 +460,19 @@ let test_infer_protocols _ =
         class AlmostSet():
           def empty(a) -> bool: pass
           def len() -> int: pass
+        class object:
+          def __hash__(self) -> int: ...
+        class SuperObject(typing.Protocol):
+            @abstractmethod
+            def __hash__(self) -> int: ...
       |}
     in
 
     assert_equal
       (Environment.infer_implementations environment ~protocol:(primitive "Empty") |> Set.length)
       0;
-    Environment.infer_implementations environment ~protocol:(primitive "Sized");
+    Environment.infer_implementations environment ~protocol:(primitive "Sized")
+    |> Set.union (Environment.infer_implementations environment ~protocol:(primitive "SuperObject"))
   in
   let assert_edge_inferred source target =
     assert_true (Set.mem edges { TypeOrder.Edge.source; target })
@@ -479,7 +485,8 @@ let test_infer_protocols _ =
 
   assert_edge_not_inferred (primitive "List") (primitive "Sized");
   assert_edge_inferred (primitive "Set") (primitive "Sized");
-  assert_edge_not_inferred (primitive "AlmostSet") (primitive "Sized")
+  assert_edge_not_inferred (primitive "AlmostSet") (primitive "Sized");
+  assert_edge_not_inferred (Type.Object) (primitive "SuperObject")
 
 
 let test_less_or_equal _ =
