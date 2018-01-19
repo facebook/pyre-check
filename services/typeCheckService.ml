@@ -68,14 +68,17 @@ let analyze_sources_parallel
     | `Right lookup -> Some lookup
   in
   let init = { errors = []; lookups = String.Map.empty; number_files = 0 } in
+  let handles =
+    handles
+    |> List.filter ~f:(fun handle ->
+        match AstSharedMemory.get_source handle with
+        | Some { Source.path; _ } ->
+            Path.create_relative ~root:project_root ~relative:path
+            |> Path.directory_contains ~follow_symlinks:true ~directory
+        | _ ->
+            false)
+  in
   handles
-  |> List.filter ~f:(fun handle ->
-      match AstSharedMemory.get_source handle with
-      | Some { Source.path; _ } ->
-          Path.create_relative ~root:project_root ~relative:path
-          |> Path.directory_contains ~follow_symlinks:true ~directory
-      | _ ->
-          false)
   |> Service.map_reduce
     service
     ~init:{ errors = []; lookups = String.Map.empty; number_files = 0 }
