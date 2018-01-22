@@ -37,11 +37,11 @@ let type_check_sources_list_test context =
         |}
       ];
 
-    let assert_errors_with_root type_check_root expected_error_count =
+    let assert_errors_with_root project_root expected_error_count =
       let configuration =
         Configuration.create
           ~source_root:root
-          ~type_check_root:(Path.create_absolute type_check_root)
+          ~project_root:(Path.create_absolute project_root)
           ()
       in
       let sources, _ =

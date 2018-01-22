@@ -59,7 +59,7 @@ let analyze_source
 
 let analyze_sources_parallel
     service
-    ({Configuration.source_root; type_check_root = directory; _ } as configuration)
+    ({Configuration.source_root; project_root = directory; _ } as configuration)
     environment
     handles =
   let merge_lookups ~key:_ = function
@@ -120,7 +120,7 @@ let analyze_sources_parallel
 let analyze_sources
     service
     ?(repopulate_handles = [])
-    ({Configuration.source_root; type_check_root = directory; _ } as configuration)
+    ({Configuration.source_root; project_root = directory; _ } as configuration)
     environment
     handles =
   Log.info "Checking...";

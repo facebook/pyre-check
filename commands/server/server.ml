@@ -502,7 +502,7 @@ let run_start_command
     infer
     recursive_infer
     sequential
-    type_check_root
+    project_root
     stub_roots
     source_root
     () =
@@ -518,7 +518,7 @@ let run_start_command
       ~declare
       ~show_error_traces
       ~parallel:(not sequential)
-      ~type_check_root:(Path.create_absolute type_check_root)
+      ~project_root:(Path.create_absolute project_root)
       ~stub_roots:(List.map ~f:Path.create_absolute stub_roots)
       ~source_root:(Path.create_absolute source_root)
       ()

@@ -36,7 +36,7 @@ let check
       declare;
       show_error_traces;
       parallel;
-      type_check_root;
+      project_root;
       stub_roots;
       source_root;
       report_undefined_attributes;
@@ -47,8 +47,8 @@ let check
 
   if not (Path.is_directory source_root) then
     raise (Invalid_argument (Format.asprintf "`%a` is not a directory" Path.pp source_root));
-  if not (Path.is_directory type_check_root) then
-    raise (Invalid_argument (Format.asprintf "`%a` is not a directory" Path.pp type_check_root));
+  if not (Path.is_directory project_root) then
+    raise (Invalid_argument (Format.asprintf "`%a` is not a directory" Path.pp project_root));
   List.iter
     ~f:(fun stub_root ->
         if not (Path.is_directory stub_root) then
@@ -73,7 +73,7 @@ let check
       ~strict
       ~declare
       ~show_error_traces
-      ~type_check_root
+      ~project_root
       ~stub_roots
       ~infer
       ~recursive_infer
@@ -119,7 +119,7 @@ let run_check
     infer
     recursive_infer
     sequential
-    type_check_root
+    project_root
     stub_roots
     source_root
     () =
@@ -139,7 +139,7 @@ let run_check
       ~show_error_traces
       ~infer
       ~recursive_infer
-      ~type_check_root:(Path.create_absolute type_check_root)
+      ~project_root:(Path.create_absolute project_root)
       ~parallel:(not sequential)
       ~stub_roots:(List.map ~f:Path.create_absolute stub_roots)
       ~source_root:(Path.create_absolute source_root)
@@ -185,9 +185,10 @@ let spec =
       ~doc:"Recursively run infer until no new annotations are generated."
     +> flag "-sequential" no_arg ~doc:"Turn off parallel processing (parallel on by default)."
     +> flag
-      "-type-check-root"
+      "-project-root"
       (optional_with_default "/" string)
       ~doc:"Only check sources under this root directory."
+      ~aliases:["-type-check-root"]
     +> flag
       "-stub-roots"
       (optional_with_default [] (Arg_type.comma_separated string))
@@ -214,7 +215,7 @@ let run_incremental
     infer
     recursive_infer
     sequential
-    type_check_root
+    project_root
     stub_roots
     source_root
     () =
@@ -233,7 +234,7 @@ let run_incremental
         ~recursive_infer
         ~parallel:(not sequential)
         ~stub_roots:(List.map ~f:Path.create_absolute stub_roots)
-        ~type_check_root:(Path.create_absolute type_check_root)
+        ~project_root:(Path.create_absolute project_root)
         ~source_root:(Path.create_absolute source_root)
         ()
     in
