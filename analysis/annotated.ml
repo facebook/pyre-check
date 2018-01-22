@@ -1117,6 +1117,7 @@ module Access = struct
 
         | Some (access, annotation),
           [Access.Call { Node.location; value = call }] ->
+            (* Method call. *)
             let call = Call.create ~kind:Call.Method call in
             let callee =
               Resolution.method_signature
@@ -1270,6 +1271,7 @@ module Access = struct
             end
 
         | None, Access.Expression expression :: _ ->
+            (* Arbitrary expression. *)
             let resolved = Annotation.create (Resolution.resolve resolution expression) in
             resolution,
             resolved,
@@ -1277,6 +1279,7 @@ module Access = struct
 
         | None, [Access.Identifier identifier]
           when Identifier.show identifier = "None" ->
+            (* `None`. *)
             let resolved = Annotation.create (Type.Optional Type.Bottom) in
             resolution,
             resolved,
