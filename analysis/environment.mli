@@ -67,7 +67,7 @@ val dependencies: (module Reader) -> string -> string list option
 val register_type
   :  order: (module TypeOrder.Reader)
   -> aliases: (Type.t -> Type.t option)
-  -> add_class_definition: (key: Type.t -> data: Class.t Node.t -> unit)
+  -> add_class_definition: (primitive: Type.t -> definition: Class.t Node.t -> unit)
   -> add_class_key: (path: string -> Type.t -> unit)
   -> add_protocol: (Type.t -> unit)
   -> register_global: (path: string -> key: Access.t -> data: Resolution.global -> unit)

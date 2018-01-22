@@ -736,12 +736,12 @@ module Class = struct
       let property_assigns map = function
         | { Node.location; value = Define define } ->
             (Define.property_attribute_assign ~location define
-            >>= fun ({ Node.value = { Assign.target; _ }; _ } as assign) ->
-              match target with
-              | { Node.value = Expression.Access ([_] as access); _ } ->
-                  Some (Map.add ~key:access ~data:assign map)
-              | _ ->
-                  None)
+             >>= fun ({ Node.value = { Assign.target; _ }; _ } as assign) ->
+             match target with
+             | { Node.value = Expression.Access ([_] as access); _ } ->
+                 Some (Map.add ~key:access ~data:assign map)
+             | _ ->
+                 None)
             |> Option.value ~default:map
         | _ ->
             map
@@ -788,6 +788,83 @@ module Class = struct
           statement
     in
     { class_define with Record.Class.body = List.map ~f:strip_define body }
+
+
+  let update
+      { Record.Class.body = stub; _ }
+      ~definition:({ Record.Class.body; _ } as definition) =
+    let updated, undefined =
+      let update (updated, undefined) statement =
+        match statement with
+        | { Node.location; value = Assign ({ Assign.target; _ } as assign)} ->
+            begin
+              let is_stub = function
+                | { Node.value = Stub (Stub.Assign { Assign.target = stub_target; _ }); _ }
+                | { Node.value = Assign { Assign.target = stub_target; _; }; _; }
+                  when Expression.equal target stub_target ->
+                    true
+                | _ ->
+                    false
+              in
+              match List.find ~f:is_stub stub with
+              | Some { Node.value = Stub (Stub.Assign { Assign.annotation; _ }); _ } ->
+                  let updated_assign =
+                    {
+                      Node.location;
+                      value = Assign { assign with Assign.annotation }
+                    }
+                  in
+                  updated_assign :: updated,
+                  (List.filter ~f:(fun statement -> not (is_stub statement)) undefined)
+              | _ ->
+                  statement :: updated, undefined
+            end
+        | { Node.location; value = Define ({ Record.Define.name; parameters; _ } as define)} ->
+            begin
+              let is_stub = function
+                | {
+                  Node.value = Stub (Stub.Define {
+                      Record.Define.name = stub_name;
+                      parameters = stub_parameters;
+                      _;
+                    });
+                  _;
+                }
+                | {
+                  Node.value = Define {
+                      Record.Define.name = stub_name;
+                      parameters = stub_parameters;
+                      _;
+                    };
+                  _;
+                } when Expression.Access.equal name stub_name &&
+                       List.length parameters = List.length stub_parameters ->
+                    true
+                | _ ->
+                    false
+              in
+              match List.find ~f:is_stub stub with
+              | Some {
+                  Node.value = Stub (Stub.Define { Define.parameters; return_annotation; _ });
+                  _;
+                } ->
+                  let updated_define =
+                    {
+                      Node.location;
+                      value = Define { define with Define.parameters; return_annotation }
+                    }
+                  in
+                  updated_define :: updated,
+                  (List.filter ~f:(fun statement -> not (is_stub statement)) undefined)
+              | _ ->
+                  statement :: updated, undefined
+            end
+        | _ ->
+            statement :: updated, undefined
+      in
+      List.fold ~init:([], stub) ~f:update body
+    in
+    { definition with Record.Class.body = undefined @ updated }
 end
 
 

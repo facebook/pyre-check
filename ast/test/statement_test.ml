@@ -203,10 +203,10 @@ let test_attribute_assigns _ =
   assert_property_attribute_assign "def foo(): pass" None;
   assert_property_attribute_assign "@property\ndef foo(): pass" (Some ("foo", None, None));
   assert_property_attribute_assign
-    "@abstractproperty\ndef foo() -> int: pass"
+    "@abc.abstractproperty\ndef foo() -> int: pass"
     (Some ("foo", Some (Node.create (Expression.Access (Access.create "int"))), None));
   assert_property_attribute_assign
-    "@lazy_property\ndef foo() -> int: pass"
+    "@util.etc.lazy_property\ndef foo() -> int: pass"
     (Some ("foo", Some (Node.create (Expression.Access (Access.create "int"))), None));
 
   (* Test class field assigns. *)
@@ -313,6 +313,63 @@ let test_strip _ =
       decorators = [];
       docstring = None;
     }
+
+
+let test_update _ =
+  let assert_updated ~stub ~definition expected =
+    assert_equal
+      ~printer:Class.show
+      ~cmp:Class.equal
+      (parse_single_class expected)
+      (Class.update (parse_single_class stub) ~definition:(parse_single_class definition))
+  in
+
+  assert_updated
+    ~stub:{|
+      class Foo:
+        i: int = ...
+    |}
+    ~definition:{|
+      class Foo:
+        def foo():
+          pass
+    |}
+    {|
+      class Foo:
+        i: int = ...
+        def foo():
+          pass
+    |};
+  assert_updated
+    ~stub:{|
+      class Foo:
+        i: int = ...
+    |}
+    ~definition:{|
+      class Foo:
+        i: int = 5
+    |}
+    {|
+      class Foo:
+        i: int = 5
+    |};
+  assert_updated
+    ~stub:{|
+      class Foo:
+        i: int = ...
+        def foo(i: int) -> str: ...
+    |}
+    ~definition:{|
+      class Foo:
+        def foo(i):
+          pass
+    |}
+    {|
+      class Foo:
+        i: int = ...
+        def foo(i: int) -> str:
+          pass
+    |}
 
 
 let test_assume _ =
@@ -597,6 +654,7 @@ let () =
     "constructor">::test_constructor;
     "attribute_assigns">::test_attribute_assigns;
     "strip">::test_strip;
+    "update">::test_update;
   ]
   |> run_test_tt_main;
   "statement">:::[

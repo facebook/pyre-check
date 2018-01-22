@@ -95,7 +95,7 @@ let register_type
             add_protocol primitive;
 
           (* Register normal annotations. *)
-          add_class_definition ~key:primitive ~data:definition_node;
+          add_class_definition ~primitive ~definition:definition_node;
           if List.length definition.Class.bases > 0 then
             begin
               let register_supertype name =
@@ -196,10 +196,23 @@ let reader
 
 
     let register_type =
+      let add_class_definition ~primitive ~definition =
+        let definition =
+          match Hashtbl.find class_definitions primitive with
+          | Some { Node.location; value = preexisting } ->
+              {
+                Node.location;
+                value = Class.update preexisting ~definition:(Node.value definition);
+              }
+          | _ ->
+              definition
+        in
+        Hashtbl.set class_definitions ~key:primitive ~data:definition
+      in
       register_type
         ~order:(TypeOrder.reader order)
         ~aliases:(Hashtbl.find aliases)
-        ~add_class_definition:(Hashtbl.set class_definitions)
+        ~add_class_definition
         ~add_class_key:DependencyReader.add_class_key
         ~add_protocol:(Hash_set.add protocols)
         ~register_global

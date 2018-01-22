@@ -197,6 +197,7 @@ module Class : sig
   val attribute_assigns: t -> (Assign.t Node.t) Expression.Access.Map.t
 
   val strip: t -> t
+  val update: t -> definition: t -> t
 end
 
 val assume: Expression.t -> t

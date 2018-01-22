@@ -330,10 +330,24 @@ let shared_memory_reader
           Protocols.get "Protocols"
           |> Option.value ~default:[]
         in
+        let add_class_definition ~primitive ~definition =
+          let definition =
+            let open Ast in
+            match ClassDefinitions.get primitive with
+            | Some { Node.location; value = preexisting } ->
+                {
+                  Node.location;
+                  value = Statement.Class.update preexisting ~definition:(Node.value definition);
+                }
+            | _ ->
+                definition
+          in
+          ClassDefinitions.add primitive definition
+        in
         Environment.register_type
           ~order:(module TypeOrderReader: TypeOrder.Reader)
           ~aliases:Aliases.get
-          ~add_class_definition:(fun ~key ~data -> ClassDefinitions.add key data)
+          ~add_class_definition
           ~add_class_key:(DependencyReader.add_class_key)
           ~add_protocol:(fun protocol -> Protocols.add "Protocols" (protocol :: protocols))
           ~register_global
