@@ -285,31 +285,6 @@ let test_populate _ =
     (parse_annotation environment (+Access (access ["S2"])))
     Type.string;
 
-  (* Check enumerations. *)
-  let environment =
-    populate {|
-      import enum
-      class Color(enum.Enum):
-        RED = 0
-        BLUE = 1
-        GREEN = 2
-      class Other:
-        FIELD = 0
-        TUPLE = (1, "A", True)
-    |} in
-  assert_equal
-    (global environment (access ["Color"; "RED"]))
-    (Some {
-        Resolution.annotation =
-          (Annotation.create_immutable ~global:true (Type.Primitive ~~"Color"));
-        location = create_location "test.py" 4 2 4 5;
-      });
-
-  let module Reader = (val environment) in
-  let order = (module Reader.TypeOrderReader : TypeOrder.Reader) in
-  assert_true
-    (TypeOrder.less_or_equal order ~left:(primitive "Color") ~right:(primitive "enum.Enum"));
-
   let environment =
     populate {|
       class int(): pass
@@ -1572,21 +1547,17 @@ let test_purge _ =
     Environment.reader environment
   in
   let source = {|
-      import enum
       import a
       class baz.baz(): pass
       _T = typing.TypeVar("_T")
       x = 5
       def foo(): pass
-      class Color(enum.Enum):
-        RED = 0
     |}
   in
   Environment.populate ~check_dependency_exists:false reader [parse ~path:"test.py" source];
   assert_is_some (Reader.class_definition (primitive "baz.baz"));
   assert_is_some (Reader.function_definitions (Access.create "foo"));
   assert_is_some (Reader.aliases (primitive "_T"));
-  assert_is_some (Reader.globals (access ["Color"; "RED"]));
   assert_equal (Reader.dependencies "a.py") (Some ["test.py"]);
 
   Reader.purge (File.Handle.create "test.py");
@@ -1594,7 +1565,6 @@ let test_purge _ =
   assert_is_none (Reader.class_definition (primitive "baz.baz"));
   assert_is_none (Reader.function_definitions (Access.create "foo"));
   assert_is_none (Reader.aliases (primitive "_T"));
-  assert_is_none (Reader.globals (access ["Color"; "RED"]));
   assert_equal (Reader.dependencies "a.py") (Some [])
 
 

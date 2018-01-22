@@ -25,12 +25,9 @@ let primitive name = Type.Primitive ~~name
 let test_index _ =
   let environment = Environment.Builder.create () in
   let source = {|
-      import enum
       class baz.baz(): pass
       _T = typing.TypeVar("_T")
       def foo(): pass
-      class Color(enum.Enum):
-        RED = 0
     |}
   in
   Environment.populate (Environment.reader environment) [parse ~path:"test.py" source];
@@ -38,7 +35,6 @@ let test_index _ =
     Dependencies.class_keys;
     function_keys;
     alias_keys;
-    global_keys;
     _;
   } = environment.Environment.dependencies.Dependencies.index in
   let assert_table_contains_key table key =
@@ -46,10 +42,8 @@ let test_index _ =
     assert_true (Hash_set.mem keyset key)
   in
   assert_table_contains_key class_keys (primitive "baz.baz");
-  assert_table_contains_key class_keys (primitive "Color");
   assert_table_contains_key function_keys (access ["foo"]);
-  assert_table_contains_key alias_keys (primitive "_T");
-  assert_table_contains_key global_keys (access ["Color"; "RED"])
+  assert_table_contains_key alias_keys (primitive "_T")
 
 
 let test_dependent_of_list _ =

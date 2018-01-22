@@ -752,13 +752,12 @@ let connect_type_order
                     { Node.value = constructor; location })
               constructors;
 
-            let primitive, _ =
-              Reader.register_type
-                ~path
-                Type.Bottom
-                definition.Class.name
-                (Some (Node.create ~location definition))
-            in
+            Reader.register_type
+              ~path
+              Type.Bottom
+              definition.Class.name
+              (Some (Node.create ~location definition))
+            |> ignore;
 
             (* Handle enumeration constants. *)
             let enumeration { Argument.value; _ } =
@@ -800,30 +799,7 @@ let connect_type_order
                       generated = true;
                       parent = Some enumeration;
                     };
-                  };
-
-                (* Register globals. *)
-                let visit = function
-                  | {
-                    Node.value = Assign {
-                        Assign.target = { Node.value = Access access; _ } ;
-                        compound = None;
-                        parent = Some _;
-                        _;
-                      };
-                    location;
-                  } ->
-                      Reader.register_global
-                        ~path
-                        ~key:(definition.Class.name @ access)
-                        ~data:{
-                          Resolution.annotation =
-                            (Annotation.create_immutable ~global:true primitive);
-                          location;
-                        }
-                  | _ ->
-                      () in
-                List.iter ~f:visit definition.Class.body)
+                  })
             |> ignore
 
         | { Node.value = Define definition; location }
