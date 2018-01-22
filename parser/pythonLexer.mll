@@ -197,7 +197,7 @@ and read_without_indent state = parse
     }
 
   | "..." whitespace* '#' whitespace* "type" whitespace* ':' { STUB }
-  | "..." { ELLIPSES }
+  | "..." { ELLIPSES (lexbuf.lex_start_p, lexbuf.lex_curr_p) }
   | '.' { DOT lexbuf.lex_start_p }
   | '!' { EXCLAMATIONMARK }
   | "%=" { PERCENTEQUALS }

@@ -87,7 +87,6 @@
 %token BAREQUALS
 %token COMMA
 %token DOUBLEEQUALS
-%token ELLIPSES
 %token EOF
 %token EQUALS
 %token EXCLAMATIONMARK
@@ -128,6 +127,7 @@
 %token <(Lexing.position * Lexing.position) * string> FORMAT
 %token <(Lexing.position * Lexing.position) * string> IDENTIFIER
 %token <(Lexing.position * Lexing.position) * string> STRING
+%token <(Lexing.position * Lexing.position)> ELLIPSES
 %token <(Lexing.position * Lexing.position)> FALSE
 %token <(Lexing.position * Lexing.position)> TRUE
 
@@ -760,6 +760,10 @@ identifier:
       Location.create ~start:(fst position) ~stop:(snd position),
       Identifier.create "async"
     }
+  | position = ELLIPSES {
+      Location.create ~start:(fst position) ~stop:(snd position),
+      Identifier.create "..."
+    }
   ;
 
 simple_access:
@@ -797,16 +801,6 @@ simple_access:
       {
         Node.location = fst name;
         value = { Parameter.name = snd name; value = Some value; annotation };
-      }
-    }
-  | name = name; annotation = annotation?; EQUALS; ELLIPSES {
-      {
-        Node.location = fst name;
-        value = {
-            Parameter.name = snd name;
-            value = Some (Node.create (Access (Access.create "...")));
-            annotation;
-        };
       }
     }
   ;
@@ -1388,9 +1382,6 @@ argument:
 
 subscript:
   | index = test { Access.Index index }
-  | ELLIPSES {
-      Access.Index (Node.create (Access (Access.create "...")))
-    }
   | lower = test?; COLON; upper = test? {
       Access.Slice { Access.lower; upper; step = None }
     }

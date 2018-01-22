@@ -3352,6 +3352,42 @@ let test_nonlocal _ =
     [+Nonlocal [~~"a"; ~~"b"]]
 
 
+let test_ellipsis _ =
+  assert_parsed_equal
+    "def __init__(debug = ...):\n\tpass"
+    [
+      +Define {
+        Define.name = Access.create "__init__";
+        parameters = [
+          +{
+            Parameter.name = ~~"debug";
+            value = Some !"...";
+            annotation = None;
+          };
+        ];
+        body = [+Pass];
+        decorators = [];
+        docstring = None;
+        return_annotation = None;
+        async = false;
+        generated = false;
+        parent = None;
+      }
+    ];
+  assert_parsed_equal
+    "if x is ...:\n\tpass"
+    [
+      +If {
+        If.test = +ComparisonOperator {
+          ComparisonOperator.left = !"x";
+          right = [ComparisonOperator.Is, !"..."];
+        };
+        body = [+Pass];
+        orelse = [];
+      };
+    ]
+
+
 let () =
   "parsing">:::[
     "lexer">::test_lexer;
@@ -3391,5 +3427,6 @@ let () =
     "tuple">::test_tuple;
     "stubs">::test_stubs;
     "nonlocal">::test_nonlocal;
+    "ellipsis">::test_ellipsis;
   ]
   |> run_test_tt_main
