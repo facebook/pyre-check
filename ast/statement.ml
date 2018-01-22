@@ -341,6 +341,30 @@ module Define = struct
     List.fold ~init:Expression.Access.Map.empty ~f:attribute_assign body
 
 
+  let property_attribute_assign ~location ({ name; return_annotation; _ } as define) =
+    let property_annotations =
+      [
+        "abc.abstractproperty";
+        "libfb.py.decorators.lazy_property";
+        "property";
+        "util.etc.lazy_property";
+      ]
+    in
+    if List.exists ~f:(has_decorator define) property_annotations then
+      Some
+        (Node.create
+           ~location
+           {
+             Assign.target = Node.create ~location (Expression.Access name);
+             annotation = return_annotation;
+             value = None;
+             compound = None;
+             parent = None;
+           })
+    else
+      None
+
+
   let strip define =
     { define with body = [] }
 end
@@ -708,6 +732,22 @@ module Class = struct
       >>| Define.implicit_attribute_assigns
       |> Option.value ~default:Expression.Access.Map.empty
     in
+    let property_assigns =
+      let property_assigns map = function
+        | { Node.location; value = Define define } ->
+            (Define.property_attribute_assign ~location define
+            >>= fun ({ Node.value = { Assign.target; _ }; _ } as assign) ->
+              match target with
+              | { Node.value = Expression.Access ([_] as access); _ } ->
+                  Some (Map.add ~key:access ~data:assign map)
+              | _ ->
+                  None)
+            |> Option.value ~default:map
+        | _ ->
+            map
+      in
+      List.fold ~init:Expression.Access.Map.empty ~f:property_assigns body
+    in
     let explicit_attribute_assigns =
       let attribute_assigns map { Node.location; value } =
         match value with
@@ -736,6 +776,7 @@ module Class = struct
           Some value
     in
     Map.merge ~f:merge implicit_attribute_assigns explicit_attribute_assigns
+    |> Map.merge ~f:merge property_assigns
 
 
   let strip ({ Record.Class.body; _ } as class_define ) =

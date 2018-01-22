@@ -189,6 +189,26 @@ let test_attribute_assigns _ =
     |}
     ["attribute", Some (Node.create (Expression.Access (Access.create "int"))), None];
 
+  (* Test define field assigns. *)
+  let assert_property_attribute_assign source expected =
+    let expected =
+      expected
+      >>| fun (target, annotation, value) -> create_assign ~target ~annotation ~value
+    in
+    assert_equal
+      ~cmp:(Option.equal assign_equal)
+      expected
+      (parse_single_define source |> Define.property_attribute_assign ~location:Location.any)
+  in
+  assert_property_attribute_assign "def foo(): pass" None;
+  assert_property_attribute_assign "@property\ndef foo(): pass" (Some ("foo", None, None));
+  assert_property_attribute_assign
+    "@abstractproperty\ndef foo() -> int: pass"
+    (Some ("foo", Some (Node.create (Expression.Access (Access.create "int"))), None));
+  assert_property_attribute_assign
+    "@lazy_property\ndef foo() -> int: pass"
+    (Some ("foo", Some (Node.create (Expression.Access (Access.create "int"))), None));
+
   (* Test class field assigns. *)
   let assert_attribute_assigns source expected =
     let expected =
@@ -231,6 +251,18 @@ let test_attribute_assigns _ =
     |}
     [
       "attribute", Some (Node.create (Expression.Access (Access.create "int"))), Some "value";
+    ];
+  assert_attribute_assigns
+    {|
+      class Foo:
+        attribute: int = value
+        @property
+        def property(self) -> int:
+          pass
+    |}
+    [
+      "attribute", Some (Node.create (Expression.Access (Access.create "int"))), Some "value";
+      "property", Some (Node.create (Expression.Access (Access.create "int"))), None;
     ]
 
 
