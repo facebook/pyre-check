@@ -175,6 +175,7 @@ module State = struct
             | _ -> errors
           in
           Class.attribute_fold
+            ~include_properties:false
             ~initial:errors
             ~resolution
             ~f:propagate_initialization_errors

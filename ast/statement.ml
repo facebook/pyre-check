@@ -726,7 +726,7 @@ module Class = struct
     List.find_map ~f:constructor body
 
 
-  let attribute_assigns ({ Record.Class.body; _ } as definition) =
+  let attribute_assigns ?(include_properties = true) ({ Record.Class.body; _ } as definition) =
     let implicit_attribute_assigns =
       constructor definition
       >>| Define.implicit_attribute_assigns
@@ -746,7 +746,10 @@ module Class = struct
         | _ ->
             map
       in
-      List.fold ~init:Expression.Access.Map.empty ~f:property_assigns body
+      if include_properties then
+        List.fold ~init:Expression.Access.Map.empty ~f:property_assigns body
+      else
+        Expression.Access.Map.empty
     in
     let explicit_attribute_assigns =
       let attribute_assigns map { Node.location; value } =

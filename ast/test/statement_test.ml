@@ -210,7 +210,7 @@ let test_attribute_assigns _ =
     (Some ("foo", Some (Node.create (Expression.Access (Access.create "int"))), None));
 
   (* Test class field assigns. *)
-  let assert_attribute_assigns source expected =
+  let assert_attribute_assigns ?(include_properties = true) source expected =
     let expected =
       List.map
         ~f:(fun (target, annotation, value) -> create_assign ~target ~annotation ~value)
@@ -219,7 +219,7 @@ let test_attribute_assigns _ =
     assert_equal
       ~cmp:(List.equal ~equal:assign_equal)
       expected
-      (parse_single_class source |> Class.attribute_assigns |> Map.data)
+      (parse_single_class source |> Class.attribute_assigns ~include_properties |> Map.data)
   in
   assert_attribute_assigns
     {|
@@ -262,6 +262,16 @@ let test_attribute_assigns _ =
     |}
     [
       "attribute", Some (Node.create (Expression.Access (Access.create "int"))), Some "value";
+      "property", Some (Node.create (Expression.Access (Access.create "int"))), None;
+    ];
+  assert_attribute_assigns
+    {|
+      class Foo:
+        @property
+        def property(self) -> int:
+          pass
+    |}
+    [
       "property", Some (Node.create (Expression.Access (Access.create "int"))), None;
     ]
 

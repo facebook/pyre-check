@@ -429,13 +429,19 @@ module Class = struct
     implements (methods definition) (methods protocol)
 
 
-  let attribute_fold ?(transitive = false) definition ~initial ~f ~resolution =
+  let attribute_fold
+      ?(transitive = false)
+      ?(include_properties = true)
+      definition
+      ~initial
+      ~f
+      ~resolution =
     let fold_definition initial ({ Node.value = definition; _ } as parent) =
       let fold_attribute_assign accumulator assign =
         Attribute.create ~resolution ~parent assign
         |> f accumulator
       in
-      Statement.Class.attribute_assigns definition
+      Statement.Class.attribute_assigns ~include_properties definition
       |> Map.data
       |> List.fold ~init:initial ~f:fold_attribute_assign
     in

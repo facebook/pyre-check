@@ -2208,6 +2208,18 @@ let test_check_init _ =
     |}
     [];
 
+  (* No need to initialize properties. *)
+  assert_type_errors
+    {|
+    class Foo:
+      def __init__(sefl) -> None:
+        pass
+      @property
+      def foo() -> str:
+        return "asdf"
+    |}
+    [];
+
   assert_type_errors
     {|
     class Foo:

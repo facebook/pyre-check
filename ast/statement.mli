@@ -194,7 +194,7 @@ module Class : sig
   [@@deriving compare, eq, sexp, show]
 
   val constructor: t -> Define.t option
-  val attribute_assigns: t -> (Assign.t Node.t) Expression.Access.Map.t
+  val attribute_assigns: ?include_properties: bool -> t -> (Assign.t Node.t) Expression.Access.Map.t
 
   val strip: t -> t
   val update: t -> definition: t -> t
