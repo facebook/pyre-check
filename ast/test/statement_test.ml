@@ -187,7 +187,7 @@ let test_attribute_assigns _ =
       def foo():
         self.attribute: int = value
     |}
-    ["attribute", Some (Node.create (Expression.Access (Access.create "int"))), None];
+    ["attribute", Some (Type.expression Type.integer), None];
 
   (* Test define field assigns. *)
   let assert_property_attribute_assign source expected =
@@ -204,10 +204,10 @@ let test_attribute_assigns _ =
   assert_property_attribute_assign "@property\ndef foo(): pass" (Some ("foo", None, None));
   assert_property_attribute_assign
     "@abc.abstractproperty\ndef foo() -> int: pass"
-    (Some ("foo", Some (Node.create (Expression.Access (Access.create "int"))), None));
+    (Some ("foo", Some (Type.expression Type.integer), None));
   assert_property_attribute_assign
     "@util.etc.lazy_property\ndef foo() -> int: pass"
-    (Some ("foo", Some (Node.create (Expression.Access (Access.create "int"))), None));
+    (Some ("foo", Some (Type.expression Type.integer), None));
 
   (* Test class field assigns. *)
   let assert_attribute_assigns ?(include_properties = true) source expected =
@@ -226,7 +226,7 @@ let test_attribute_assigns _ =
       class Foo:
         attribute: int = value
     |}
-    ["attribute", Some (Node.create (Expression.Access (Access.create "int"))), Some "value"];
+    ["attribute", Some (Type.expression Type.integer), Some "value"];
   assert_attribute_assigns
     {|
       class Foo:
@@ -239,7 +239,7 @@ let test_attribute_assigns _ =
         whatever()['asdf'] = 5
     |}
     [
-      "attribute", Some (Node.create (Expression.Access (Access.create "int"))), Some "value";
+      "attribute", Some (Type.expression Type.integer), Some "value";
       "implicit", None, None;
     ];
   assert_attribute_assigns
@@ -249,9 +249,7 @@ let test_attribute_assigns _ =
           self.attribute = value  # Prioritize explicit declaration
         attribute: int = value
     |}
-    [
-      "attribute", Some (Node.create (Expression.Access (Access.create "int"))), Some "value";
-    ];
+    ["attribute", Some (Type.expression Type.integer), Some "value"];
   assert_attribute_assigns
     {|
       class Foo:
@@ -261,8 +259,8 @@ let test_attribute_assigns _ =
           pass
     |}
     [
-      "attribute", Some (Node.create (Expression.Access (Access.create "int"))), Some "value";
-      "property", Some (Node.create (Expression.Access (Access.create "int"))), None;
+      "attribute", Some (Type.expression Type.integer), Some "value";
+      "property", Some (Type.expression Type.integer), None;
     ];
   assert_attribute_assigns
     {|
@@ -271,9 +269,7 @@ let test_attribute_assigns _ =
         def property(self) -> int:
           pass
     |}
-    [
-      "property", Some (Node.create (Expression.Access (Access.create "int"))), None;
-    ]
+    ["property", Some (Type.expression Type.integer), None]
 
 
 let test_strip _ =
