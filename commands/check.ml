@@ -38,15 +38,15 @@ let check
       parallel;
       type_check_root;
       stub_roots;
-      project_root;
+      source_root;
       report_undefined_attributes;
     }
     original_service
     () =
   Log.initialize ~verbose ~sections;
 
-  if not (Path.is_directory project_root) then
-    raise (Invalid_argument (Format.asprintf "`%a` is not a directory" Path.pp project_root));
+  if not (Path.is_directory source_root) then
+    raise (Invalid_argument (Format.asprintf "`%a` is not a directory" Path.pp source_root));
   if not (Path.is_directory type_check_root) then
     raise (Invalid_argument (Format.asprintf "`%a` is not a directory" Path.pp type_check_root));
   List.iter
@@ -68,7 +68,7 @@ let check
     Configuration.create
       ~verbose
       ~sections
-      ~project_root
+      ~source_root
       ~debug
       ~strict
       ~declare
@@ -121,7 +121,7 @@ let run_check
     sequential
     type_check_root
     stub_roots
-    project_root
+    source_root
     () =
   let report_undefined_attributes =
     (* TODO(T24330702): remove this once the feature is complete enough. *)
@@ -142,7 +142,7 @@ let run_check
       ~type_check_root:(Path.create_absolute type_check_root)
       ~parallel:(not sequential)
       ~stub_roots:(List.map ~f:Path.create_absolute stub_roots)
-      ~project_root:(Path.create_absolute project_root)
+      ~source_root:(Path.create_absolute source_root)
       ~report_undefined_attributes
       ()
   in
@@ -192,7 +192,7 @@ let spec =
       "-stub-roots"
       (optional_with_default [] (Arg_type.comma_separated string))
       ~doc:"Directory containing stubs to include"
-    +> anon (maybe_with_default "." ("project-root" %: string)))
+    +> anon (maybe_with_default "." ("source-root" %: string)))
 
 
 let check_command =
@@ -216,7 +216,7 @@ let run_incremental
     sequential
     type_check_root
     stub_roots
-    project_root
+    source_root
     () =
   try
     Log.initialize ~verbose ~sections;
@@ -234,7 +234,7 @@ let run_incremental
         ~parallel:(not sequential)
         ~stub_roots:(List.map ~f:Path.create_absolute stub_roots)
         ~type_check_root:(Path.create_absolute type_check_root)
-        ~project_root:(Path.create_absolute project_root)
+        ~source_root:(Path.create_absolute source_root)
         ()
     in
 

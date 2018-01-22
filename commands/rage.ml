@@ -38,8 +38,8 @@ let display_log { LanguageServerProtocolTypes.RageResponse.RageResult.title; dat
   Out_channel.printf "\nDisplaying logs for %s:\n%s" name data
 
 
-let run_rage project_root () =
-  let configuration = Configuration.create ~project_root:(Path.create_absolute project_root) () in
+let run_rage source_root () =
+  let configuration = Configuration.create ~source_root:(Path.create_absolute source_root) () in
   let logs = get_logs configuration in
   List.iter ~f:display_log logs
 
@@ -49,5 +49,5 @@ let command =
   Command.basic
     ~summary:"Reports debugging diagnostics for Pyre to the standard output."
     (empty
-     +> anon (maybe_with_default "." ("project-root" %: string)))
+     +> anon (maybe_with_default "." ("source-root" %: string)))
     run_rage

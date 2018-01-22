@@ -11,7 +11,7 @@ type t = {
   infer: bool;
   recursive_infer: bool;
   parallel: bool;
-  project_root: Path.t;
+  source_root: Path.t;
   sections: string list;
   debug: bool;
   type_check_root: Path.t;
@@ -30,7 +30,7 @@ val create
   -> ?infer:bool
   -> ?recursive_infer:bool
   -> ?parallel:bool
-  -> ?project_root:Path.t
+  -> ?source_root:Path.t
   -> ?sections:string list
   -> ?type_check_root:Path.t
   -> ?stub_roots: Path.t list

@@ -10,9 +10,9 @@ open Ast
 
 open Test
 
-let populate ?project_root source =
+let populate ?source_root source =
   let environment = Environment.Builder.create () in
-  Environment.populate ?project_root (Environment.reader environment) [parse source];
+  Environment.populate ?source_root (Environment.reader environment) [parse source];
   environment |> Environment.reader
 
 

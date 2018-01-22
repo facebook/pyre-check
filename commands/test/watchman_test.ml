@@ -27,7 +27,7 @@ let test_watchman_exists context =
            ~relative:".watchmanconfig"))
   then
     Out_channel.write_all ".watchmanconfig" ~data:"{}";
-  let configuration = Configuration.create ~project_root:(Path.current_working_directory ()) () in
+  let configuration = Configuration.create ~source_root:(Path.current_working_directory ()) () in
   let watchman_root = (Configuration.pyre_root configuration) ^| "watchman" in
   let pid_path = watchman_root ^| "watchman.pid" in
   let lock_path = watchman_root ^| "watchman.lock" in

@@ -87,7 +87,7 @@ let connect ~retries ~configuration:({ version; _ } as configuration) =
 
 
 let computation_thread request_queue configuration state =
-  let rec loop ({ configuration = { project_root; _ }; _ } as configuration) state =
+  let rec loop ({ configuration = { source_root; _ }; _ } as configuration) state =
     let errors_to_lsp_responses error_map =
       let diagnostic_to_response = function
         | Ok diagnostic_error -> [
@@ -101,7 +101,7 @@ let computation_thread request_queue configuration state =
       error_map
       |> List.map
         ~f:(fun (handle, errors) ->
-            LanguageServerProtocol.PublishDiagnostics.of_errors ~root:project_root handle errors)
+            LanguageServerProtocol.PublishDiagnostics.of_errors ~root:source_root handle errors)
       |> List.concat_map ~f:diagnostic_to_response
     in
     (* Decides what to broadcast to persistent clients after a request is processed. *)
@@ -504,7 +504,7 @@ let run_start_command
     sequential
     type_check_root
     stub_roots
-    project_root
+    source_root
     () =
   let configuration =
     Configuration.create
@@ -520,7 +520,7 @@ let run_start_command
       ~parallel:(not sequential)
       ~type_check_root:(Path.create_absolute type_check_root)
       ~stub_roots:(List.map ~f:Path.create_absolute stub_roots)
-      ~project_root:(Path.create_absolute project_root)
+      ~source_root:(Path.create_absolute source_root)
       ()
   in
   let log_path = log_path >>| Path.create_absolute in
@@ -545,8 +545,8 @@ let start_command =
     run_start_command
 
 
-let stop project_root () =
-  let configuration = Configuration.create ~project_root:(Path.create_absolute project_root) () in
+let stop source_root () =
+  let configuration = Configuration.create ~source_root:(Path.create_absolute source_root) () in
   try
     let in_channel, _ =
       match Socket.open_connection (ServerConfiguration.socket_path configuration) with
@@ -587,5 +587,5 @@ let stop_command =
     ~summary:"Stop the server"
     Command.Spec.(
       empty
-      +> anon (maybe_with_default "." ("project-root" %: string)))
+      +> anon (maybe_with_default "." ("source-root" %: string)))
     stop

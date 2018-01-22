@@ -40,7 +40,7 @@ let type_check_sources_list_test context =
     let assert_errors_with_root type_check_root expected_error_count =
       let configuration =
         Configuration.create
-          ~project_root:root
+          ~source_root:root
           ~type_check_root:(Path.create_absolute type_check_root)
           ()
       in

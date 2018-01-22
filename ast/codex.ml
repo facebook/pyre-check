@@ -199,7 +199,7 @@ let arguments_codex_representation parameters =
 
 
 let rec source_statement_codex_representation
-    project_root
+    source_root
     {
       Node.location = {
         Location.start = { Location.line = start_line; column };
@@ -217,7 +217,7 @@ let rec source_statement_codex_representation
         comments = None;
         location = [start_line; column];
         members =
-          List.concat_map ~f:(source_statement_codex_representation project_root) body;
+          List.concat_map ~f:(source_statement_codex_representation source_root) body;
         supers = [];
         mro = [];
         ty = "class";
@@ -233,7 +233,7 @@ let rec source_statement_codex_representation
     } -> [
       let source =
         try
-          project_root ^/ path
+          source_root ^/ path
           |> In_channel.read_lines
           |> (fun lines -> List.drop lines (start_line - 1))
           |> (fun lines -> List.take lines (stop_line - start_line + 1))
@@ -277,20 +277,20 @@ let rec source_statement_codex_representation
   | _ -> []
 
 
-let source_to_codex_representation project_root { Source.path; statements; docstring; _ } =
+let source_to_codex_representation source_root { Source.path; statements; docstring; _ } =
   {
     PythonModule.name = Filename.chop_suffix (Filename.basename path) ".py";
     docstring;
     rank = 0;
     filename =
       (try
-         Filename.realpath (project_root ^/ path)
+         Filename.realpath (source_root ^/ path)
        with
-         Unix.Unix_error _ -> project_root ^/ path);
-    members = List.concat_map ~f:(source_statement_codex_representation project_root) statements;
+         Unix.Unix_error _ -> source_root ^/ path);
+    members = List.concat_map ~f:(source_statement_codex_representation source_root) statements;
   }
 
 
-let source_to_json project_root source =
-  let representation = source_to_codex_representation project_root source in
+let source_to_json source_root source =
+  let representation = source_to_codex_representation source_root source in
   (get_access_basename representation.PythonModule.name, PythonModule.to_yojson representation)

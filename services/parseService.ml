@@ -95,7 +95,7 @@ let parse_stubs_list service files =
 
 let parse_stubs
     service
-    ~configuration:({ Configuration.project_root; stub_roots; _ } as configuration) =
+    ~configuration:({ Configuration.source_root; stub_roots; _ } as configuration) =
   let timer = Timer.start () in
   let paths sofar root =
     Log.info "Parsing type stubs in `%a`..." Path.pp root;
@@ -106,7 +106,7 @@ let parse_stubs
       String.suffix path 4 = ".pyi" && not (is_python_2 path) in
     sofar @ File.list ~filter:is_stub ~root
   in
-  let paths = List.fold ~init:[] ~f:paths (project_root :: stub_roots) in
+  let paths = List.fold ~init:[] ~f:paths (source_root :: stub_roots) in
   let handles = parse_stubs_list service (List.map ~f:File.create paths) in
   Statistics.performance ~name:"stubs parsed" ~timer ~configuration ();
   let not_parsed = (List.length paths) - (List.length handles) in
@@ -134,8 +134,8 @@ let parse_source_job files =
 let parse_sources_list
     service
     files
-    ~configuration:({ Configuration.project_root; _ } as configuration) =
-  AstSharedMemory.remove_paths (List.filter_map ~f:(File.handle ~root:project_root) files);
+    ~configuration:({ Configuration.source_root; _ } as configuration) =
+  AstSharedMemory.remove_paths (List.filter_map ~f:(File.handle ~root:source_root) files);
   let sources =
     if Service.is_parallel service then
       parse_parallel parse_source_job files service
@@ -145,7 +145,7 @@ let parse_sources_list
   let paths =
     let is_python path =
       String.suffix path 3 = ".py" in
-    File.list ~filter:is_python ~root:project_root in
+    File.list ~filter:is_python ~root:source_root in
   let strict_coverage, declare_coverage =
     List.fold
       ~init:(0, 0)
@@ -176,13 +176,13 @@ let parse_sources_list
   (sources, (strict_coverage, declare_coverage))
 
 
-let parse_sources service ~configuration:({ Configuration.project_root; _ } as configuration) =
+let parse_sources service ~configuration:({ Configuration.source_root; _ } as configuration) =
   let timer = Timer.start () in
   let paths =
     let is_python path =
       String.suffix path 3 = ".py" in
-    File.list ~filter:is_python ~root:project_root in
-  Log.info "Parsing %d sources in `%a`..." (List.length paths) Path.pp project_root;
+    File.list ~filter:is_python ~root:source_root in
+  Log.info "Parsing %d sources in `%a`..." (List.length paths) Path.pp source_root;
   let (handles, _) =
     parse_sources_list service ~configuration (List.map ~f:File.create paths)
   in

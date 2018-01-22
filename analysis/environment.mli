@@ -85,14 +85,14 @@ val register_aliases
 
 val connect_type_order
   :  (module Reader)
-  -> ?project_root: Path.t
+  -> ?source_root: Path.t
   -> ?check_dependency_exists: bool
   -> Source.t
   -> unit
 
 val populate
   :  (module Reader)
-  -> ?project_root: Path.t
+  -> ?source_root: Path.t
   -> ?check_dependency_exists: bool
   -> Source.t list
   -> unit

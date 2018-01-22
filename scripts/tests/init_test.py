@@ -10,7 +10,7 @@ from unittest.mock import patch, MagicMock
 from .. import (
     buck,
     EnvironmentException,
-    find_project_root,
+    find_source_root,
     resolve_source_directories,
 )
 
@@ -20,15 +20,15 @@ class InitTest(unittest.TestCase):
     def test_find_configuration(self, os_mock_isfile) -> None:
         os_mock_isfile.side_effect = [False, False, False, True]
         self.assertEqual(
-            find_project_root("/a/b/c/d"),
+            find_source_root("/a/b/c/d"),
             "/a")
         os_mock_isfile.side_effect = [True]
         self.assertEqual(
-            find_project_root("/a"),
+            find_source_root("/a"),
             "/a")
         os_mock_isfile.side_effect = [False, False]
         self.assertEqual(
-            find_project_root("/a/b"),
+            find_source_root("/a/b"),
             "/a/b")
 
     def test_resolve_source_directories(self) -> None:

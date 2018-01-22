@@ -11,7 +11,7 @@ open EnvironmentSharedMemory
 open Pyre
 
 
-let build ~configuration:({ Configuration.project_root; _ } as configuration) ~stubs ~sources =
+let build ~configuration:({ Configuration.source_root; _ } as configuration) ~stubs ~sources =
   Log.info "Building type environment...";
   let environment = Environment.Builder.create () in
   (* This grabs all sources from shared memory. It is unavoidable: Environment
@@ -28,12 +28,12 @@ let build ~configuration:({ Configuration.project_root; _ } as configuration) ~s
 
   let timer = Timer.start () in
   let stubs = get_sources stubs in
-  Environment.populate ~project_root (reader environment) stubs;
+  Environment.populate ~source_root (reader environment) stubs;
   Statistics.performance ~name:"stub environment built" ~timer ~configuration ();
 
   let timer = Timer.start () in
   let sources = get_sources sources in
-  Environment.populate ~project_root (reader environment) sources;
+  Environment.populate ~source_root (reader environment) sources;
   Statistics.performance ~name:"full environment built" ~timer ~configuration ();
 
   Log.log ~section:`Environment "%a" Environment.Builder.pp environment;
@@ -388,4 +388,4 @@ let repopulate (module Reader: Environment.Reader) ~root ~handles =
     | None -> []
   in
   List.concat_map ~f:repopulate_path handles
-  |> Environment.populate ~project_root:root (module Reader: Environment.Reader)
+  |> Environment.populate ~source_root:root (module Reader: Environment.Reader)

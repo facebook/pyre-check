@@ -10,7 +10,7 @@ open Pyre
 module Socket = PyreSocket
 
 
-let run_query query_kind left right project_root () =
+let run_query query_kind left right source_root () =
   Log.initialize ~verbose:false ~sections:[];
   let parse_type serialized =
     match PythonParse.parse [serialized] with
@@ -33,7 +33,7 @@ let run_query query_kind left right project_root () =
            "Query must be one of less_or_equal, join and meet.");
         exit 1
   in
-  let configuration = Configuration.create ~project_root:(Path.create_absolute project_root) () in
+  let configuration = Configuration.create ~source_root:(Path.create_absolute source_root) () in
   let socket = Server.connect ~retries:3 ~configuration in
   Socket.write socket (Protocol.Request.TypeQueryRequest query);
   match Socket.read socket with
@@ -51,5 +51,5 @@ let command =
      +> anon ("command" %: string)
      +> anon ("left" %: string)
      +> anon ("right" %: string)
-     +> anon (maybe_with_default "." ("project-root" %: string)))
+     +> anon (maybe_with_default "." ("source-root" %: string)))
     run_query

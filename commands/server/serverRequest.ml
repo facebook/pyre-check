@@ -20,7 +20,7 @@ exception InvalidRequest
 let rec process_request
     new_socket
     state
-    ({ configuration = { project_root; _ } as configuration; _ } as server_configuration)
+    ({ configuration = { source_root; _ } as configuration; _ } as server_configuration)
     request =
   let timer = Timer.start () in
   let build_file_to_error_map ?(checked_files = None) error_list =
@@ -46,7 +46,7 @@ let rec process_request
           Hashtbl.data state.errors
           |> List.concat
       | _ ->
-          List.filter_map ~f:(File.handle ~root:project_root) files
+          List.filter_map ~f:(File.handle ~root:source_root) files
           |> List.filter_map ~f:(Hashtbl.find state.errors)
           |> List.concat
     in
@@ -78,7 +78,7 @@ let rec process_request
                 let paths =
                   List.filter_map
                     ~f:(fun file ->
-                        Path.get_relative_to_root ~root:project_root ~path:(File.path file))
+                        Path.get_relative_to_root ~root:source_root ~path:(File.path file))
                     files
                 in
                 Log.log
@@ -96,7 +96,7 @@ let rec process_request
                 (sexp_of_list sexp_of_string dependents);
               List.map
                 ~f:(fun path ->
-                    Path.create_relative ~root:configuration.project_root ~relative:path
+                    Path.create_relative ~root:configuration.source_root ~relative:path
                     |> File.create)
                 dependents
             in
@@ -111,14 +111,14 @@ let rec process_request
         let service = Service.with_parallel state.service ~is_parallel:(List.length files > 5) in
         let repopulate_handles, new_source_handles =
           if check_dependents then
-            List.filter_map ~f:(File.handle ~root:project_root) files,
+            List.filter_map ~f:(File.handle ~root:source_root) files,
             ParseService.parse_sources_list
               service
               files
               ~configuration
             |> fst
           else
-            [], List.filter_map ~f:(File.handle ~root:project_root) files
+            [], List.filter_map ~f:(File.handle ~root:source_root) files
         in
         let new_errors, lookups =
           let errors, lookups =
@@ -205,7 +205,7 @@ let rec process_request
     | LanguageServerProtocolRequest request ->
         Log.log ~section:`Server "Server received LSP request %s" request;
         LanguageServerProtocolRequestParser.parse
-          ~root:configuration.project_root
+          ~root:configuration.source_root
           ~check_on_save:false
           (Yojson.Safe.from_string request)
         >>= (function
@@ -224,7 +224,7 @@ let rec process_request
                    Some
                      (Protocol.LanguageServerProtocolResponse
                         (LanguageServerProtocol.TextDocumentDefinitionResponse.create
-                           ~root:project_root
+                           ~root:source_root
                            ~id
                            ~location:definition
                          |> LanguageServerProtocol.TextDocumentDefinitionResponse.to_yojson

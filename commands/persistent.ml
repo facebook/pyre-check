@@ -11,9 +11,9 @@ open Pyre
 module Time = Core_kernel.Time_ns.Span
 module Socket = PyreSocket
 
-let run_command version project_root () =
-  let project_root = Path.create_absolute project_root in
-  let configuration = Configuration.create ~project_root ?version () in
+let run_command version source_root () =
+  let source_root = Path.create_absolute source_root in
+  let configuration = Configuration.create ~source_root ?version () in
   let connect_to_server () =
     let server_socket =
       try
@@ -131,7 +131,7 @@ let run_command version project_root () =
         | End_of_file ->
             display_nuclide_message "Pyre: Lost connection to server, exiting...";
             Log.info "Stopping server due to an end-of-file while reading";
-            Server.stop (Path.absolute project_root) ();
+            Server.stop (Path.absolute source_root) ();
             exit 0
     in
     try
@@ -150,5 +150,5 @@ let command =
     Command.Spec.(
       empty
       +> flag "-version" (optional string) ~doc:"Pyre version"
-      +> anon (maybe_with_default "." ("project-root" %: string)))
+      +> anon (maybe_with_default "." ("source-root" %: string)))
     run_command

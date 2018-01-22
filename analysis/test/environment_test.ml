@@ -33,18 +33,18 @@ let variable name =
   Type.Variable { Type.variable = name; constraints = [] }
 
 
-let plain_populate ?project_root ?(check_dependency_exists = false) source =
+let plain_populate ?source_root ?(check_dependency_exists = false) source =
   let environment = Environment.Builder.create () in
   Environment.populate
-    ?project_root
+    ?source_root
     ~check_dependency_exists
     (Environment.reader environment)
     [parse source];
   environment
 
 
-let populate ?project_root ?(check_dependency_exists = false) source =
-  plain_populate ?project_root ~check_dependency_exists source
+let populate ?source_root ?(check_dependency_exists = false) source =
+  plain_populate ?source_root ~check_dependency_exists source
   |> Environment.reader
 
 
@@ -1585,7 +1585,7 @@ let test_import_dependencies context =
     in
     let environment =
       populate
-        ~project_root:(Path.current_working_directory ())
+        ~source_root:(Path.current_working_directory ())
         ~check_dependency_exists:true
         source
     in

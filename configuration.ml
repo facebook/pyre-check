@@ -13,7 +13,7 @@ type t = {
   infer: bool;
   recursive_infer: bool;
   parallel: bool;
-  project_root: Path.t;
+  source_root: Path.t;
   sections: string list;
   debug: bool;
   type_check_root: Path.t;
@@ -33,7 +33,7 @@ let create
     ?(infer = false)
     ?(recursive_infer = false)
     ?(parallel = true)
-    ?(project_root = Path.current_working_directory ())
+    ?(source_root = Path.current_working_directory ())
     ?(sections = [])
     ?(type_check_root = Path.create_absolute "/")
     ?(stub_roots = [])
@@ -50,7 +50,7 @@ let create
     infer;
     recursive_infer;
     parallel;
-    project_root;
+    source_root;
     sections;
     debug;
     type_check_root;
@@ -73,5 +73,5 @@ let localize ({ debug; _ } as configuration) ~local_debug ~strict ~declare =
   }
 
 
-let pyre_root { project_root; _ } =
-  Path.append project_root ~element:".pyre"
+let pyre_root { source_root; _ } =
+  Path.append source_root ~element:".pyre"

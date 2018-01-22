@@ -114,8 +114,8 @@ let process_response ~root ~watchman_directory ~symlinks response =
 let listen_for_changed_files
     server_socket
     watchman_directory
-    ({ Configuration.project_root; _ } as configuration) =
-  let symlinks = build_symlink_map ~root:project_root in
+    ({ Configuration.source_root; _ } as configuration) =
+  let symlinks = build_symlink_map ~root:source_root in
   let socket_path =
     let open Yojson.Safe in
     Unix.open_process_in "watchman get-sockname --no-pretty"
@@ -137,7 +137,7 @@ let listen_for_changed_files
      let rec loop symlinks =
        try
          In_channel.input_line in_channel
-         >>= process_response ~root:project_root ~watchman_directory ~symlinks
+         >>= process_response ~root:source_root ~watchman_directory ~symlinks
          >>| (fun (symlinks, response) ->
              Log.info "Writing response %s" (Protocol.Request.show response);
              Socket.write server_socket response;
@@ -153,7 +153,7 @@ let listen_for_changed_files
 
 
 (* Walk up from the project root to try and find a .watchmanconfig. *)
-let find_watchman_directory { Configuration.project_root; _ } =
+let find_watchman_directory { Configuration.source_root; _ } =
   let rec directory_has_watchman_config directory =
     if Sys.is_file (directory ^/ ".watchmanconfig") = `Yes then
       Some (Path.create_absolute directory)
@@ -162,7 +162,7 @@ let find_watchman_directory { Configuration.project_root; _ } =
     else
       directory_has_watchman_config (Filename.dirname directory)
   in
-  directory_has_watchman_config (Path.absolute project_root)
+  directory_has_watchman_config (Path.absolute source_root)
 
 let initialize watchman_directory configuration =
   Log.info
@@ -209,9 +209,9 @@ let run_watchman_daemon_entry : run_watchman_daemon_entry =
            listen_for_changed_files server_socket watchman_directory configuration)
 
 
-let run_command daemonize verbose sections project_root () =
-  let project_root = Path.create_absolute project_root in
-  let configuration = Configuration.create ~project_root:project_root () in
+let run_command daemonize verbose sections source_root () =
+  let source_root = Path.create_absolute source_root in
+  let configuration = Configuration.create ~source_root:source_root () in
   Log.initialize ~verbose ~sections;
   Unix.handle_unix_error (fun () -> Unix.mkdir_p (watchman_root configuration |> Path.absolute));
   if Lock_file.is_locked (Path.absolute (lock_path configuration)) then
@@ -259,5 +259,5 @@ let command =
         "-logging-sections"
         (optional_with_default [] (Arg_type.comma_separated string))
         ~doc:"Comma-separated list of logging sections."
-      +> anon (maybe_with_default "." ("project-root" %: string)))
+      +> anon (maybe_with_default "." ("source-root" %: string)))
     run_command

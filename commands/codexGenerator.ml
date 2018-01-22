@@ -20,15 +20,15 @@ let to_json ~root handles =
   let sources = get_sources handles in
   `Assoc (List.map sources ~f:(Codex.source_to_json root))
 
-let run is_parallel project_root () =
-  if Sys.is_directory project_root <> `Yes then
-    raise (Invalid_argument (Format.asprintf "`%s` is not a directory" project_root));
+let run is_parallel source_root () =
+  if Sys.is_directory source_root <> `Yes then
+    raise (Invalid_argument (Format.asprintf "`%s` is not a directory" source_root));
 
   let service = Service.create ~is_parallel () in
-  let root = Path.create_absolute project_root in
+  let root = Path.create_absolute source_root in
 
   Log.info "Parsing...";
-  let configuration = Configuration.create ~project_root:(Path.create_absolute project_root) () in
+  let configuration = Configuration.create ~source_root:(Path.create_absolute source_root) () in
   let source_handles = ParseService.parse_sources service ~configuration in
 
   Log.info "Generating JSON for Codex...";
@@ -43,5 +43,5 @@ let command =
     Command.Spec.(
       empty
       +> flag "-parallel" no_arg ~doc:"Runs Pyre processing in parallel."
-      +> anon (maybe_with_default "." ("project-root" %: string)))
+      +> anon (maybe_with_default "." ("source-root" %: string)))
     run

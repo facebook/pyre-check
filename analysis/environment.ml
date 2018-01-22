@@ -706,7 +706,7 @@ let register_aliases (module Reader: Reader) sources =
 
 let connect_type_order
     (module Reader: Reader)
-    ?(project_root = Path.current_working_directory ())
+    ?(source_root = Path.current_working_directory ())
     ?(check_dependency_exists = true)
     source =
   let path = source.Source.path in
@@ -893,10 +893,10 @@ let connect_type_order
                   Format.sprintf "%s.py"
                     (access
                      |> List.map ~f:show_identifier
-                     |> List.fold ~init:(Path.absolute project_root) ~f:(^/))
+                     |> List.fold ~init:(Path.absolute source_root) ~f:(^/))
                 in
                 if (not check_dependency_exists) || Sys.is_file relative = `Yes then
-                  Path.create_relative ~root:project_root ~relative
+                  Path.create_relative ~root:source_root ~relative
                   |> Path.relative
                 else
                   begin
@@ -986,7 +986,7 @@ let connect_type_order
 
 let populate
     (module Reader: Reader)
-    ?(project_root = Path.current_working_directory ())
+    ?(source_root = Path.current_working_directory ())
     ?(check_dependency_exists = true)
     sources =
   (* TODO(T19628746) Handle type aliases when building the environment instead of relying on this
@@ -1027,7 +1027,7 @@ let populate
 
   List.iter ~f:(register_class_definitions (module Reader)) sources;
   register_aliases (module Reader) sources;
-  List.iter ~f:(connect_type_order ~project_root ~check_dependency_exists (module Reader)) sources;
+  List.iter ~f:(connect_type_order ~source_root ~check_dependency_exists (module Reader)) sources;
 
   TypeOrder.complete (module Reader.TypeOrderReader) ~bottom:Type.Bottom ~top:Type.Object;
   TypeOrder.check_integrity (module Reader.TypeOrderReader)

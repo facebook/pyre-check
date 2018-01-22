@@ -59,7 +59,7 @@ let analyze_source
 
 let analyze_sources_parallel
     service
-    ({Configuration.project_root; type_check_root = directory; _ } as configuration)
+    ({Configuration.source_root; type_check_root = directory; _ } as configuration)
     environment
     handles =
   let merge_lookups ~key:_ = function
@@ -73,7 +73,7 @@ let analyze_sources_parallel
     |> List.filter ~f:(fun handle ->
         match AstSharedMemory.get_source handle with
         | Some { Source.path; _ } ->
-            Path.create_relative ~root:project_root ~relative:path
+            Path.create_relative ~root:source_root ~relative:path
             |> Path.directory_contains ~follow_symlinks:true ~directory
         | _ ->
             false)
@@ -120,13 +120,13 @@ let analyze_sources_parallel
 let analyze_sources
     service
     ?(repopulate_handles = [])
-    ({Configuration.project_root; type_check_root = directory; _ } as configuration)
+    ({Configuration.source_root; type_check_root = directory; _ } as configuration)
     environment
     handles =
   Log.info "Checking...";
   EnvironmentService.repopulate
     environment
-    ~root:project_root
+    ~root:source_root
     ~handles:repopulate_handles;
   match Service.is_parallel service with
   | true -> analyze_sources_parallel service configuration environment handles
@@ -137,7 +137,7 @@ let analyze_sources
           ~f:(fun sources path ->
               match AstSharedMemory.get_source path with
               | Some ({ Source.path; _ } as source) ->
-                  if Path.create_relative ~root:project_root ~relative:path
+                  if Path.create_relative ~root:source_root ~relative:path
                      |> Path.directory_contains ~follow_symlinks:true ~directory then
                     source::sources
                   else

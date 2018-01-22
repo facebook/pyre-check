@@ -206,7 +206,7 @@ let mock_client_socket = Unix.openfile ~mode:[Unix.O_RDONLY] "/dev/null"
 
 let assert_request_gets_response
     ?(initial_errors = Error.Hash_set.create ())
-    ?(project_root = Path.current_working_directory ())
+    ?(source_root = Path.current_working_directory ())
     ?state
     ?(path = "test.py")
     source
@@ -230,7 +230,7 @@ let assert_request_gets_response
     ServerRequest.process_request
       mock_client_socket
       mock_server_state
-      (Command_test.mock_server_configuration ~project_root ())
+      (Command_test.mock_server_configuration ~source_root ())
       request
   in
   Service.destroy mock_server_state.State.service;
@@ -405,9 +405,9 @@ let test_protocol_language_server_protocol _ =
 
 let test_did_save_with_content context =
   let filename, _ = bracket_tmpfile ~suffix:".py" context in
-  let project_root = "/tmp" in
+  let source_root = "/tmp" in
   let filename =
-    String.chop_prefix ~prefix:(project_root ^ "/") filename
+    String.chop_prefix ~prefix:(source_root ^ "/") filename
     |> Option.value ~default:filename
   in
   let source =
@@ -419,15 +419,15 @@ let test_did_save_with_content context =
   in
   let request =
     LanguageServerProtocol.DidSaveTextDocument.create
-      ~root:(Path.create_absolute project_root)
-      (project_root ^/ filename)
+      ~root:(Path.create_absolute source_root)
+      (source_root ^/ filename)
       (Some source)
     |> Or_error.ok_exn
     |> LanguageServerProtocol.DidSaveTextDocument.to_yojson
     |> Yojson.Safe.to_string
   in
   assert_request_gets_response
-    ~project_root:(Path.create_absolute project_root)
+    ~source_root:(Path.create_absolute source_root)
     source
     (Protocol.Request.LanguageServerProtocolRequest request)
     None
