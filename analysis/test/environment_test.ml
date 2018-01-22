@@ -304,17 +304,6 @@ let test_populate _ =
           (Annotation.create_immutable ~global:true (Type.Primitive ~~"Color"));
         location = create_location "test.py" 4 2 4 5;
       });
-  assert_is_some (global environment (access ["Other"; "FIELD"]));
-  assert_equal
-    (global environment (access ["Other"; "TUPLE"]))
-    (Some {
-        Resolution.annotation =
-          (Annotation.create_immutable
-             ~global:true
-             ~original:(Some Type.Top)
-             (Type.tuple [Type.integer; Type.string; Type.bool]));
-        location = create_location "test.py" 9 2 9 7;
-      });
 
   let module Reader = (val environment) in
   let order = (module Reader.TypeOrderReader : TypeOrder.Reader) in
@@ -348,28 +337,6 @@ let test_populate _ =
         Resolution.annotation =
           (Annotation.create_immutable ~global:true Type.integer);
         location = create_location "test.py" 5 0 5 1;
-      });
-
-  let environment =
-    populate {|
-      class int(): pass
-      class Other():
-        FIELD: typing.ClassVar[int] = 0
-        STUB = ... # type: typing.ClassVar[int]
-    |} in
-  assert_equal
-    (global environment (access ["Other"; "FIELD"]))
-    (Some {
-        Resolution.annotation =
-          (Annotation.create_immutable ~global:true Type.integer);
-        location = create_location "test.py" 4 2 4 7;
-      });
-  assert_equal
-    (global environment (access ["Other"; "STUB"]))
-    (Some {
-        Resolution.annotation =
-          (Annotation.create_immutable ~global:true Type.integer);
-        location = create_location "test.py" 5 2 5 6;
       });
 
   (* Globals *)

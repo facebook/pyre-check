@@ -738,64 +738,6 @@ let connect_type_order
         ()
 
       let statement _ = function
-        | {
-          Node.value = Assign {
-              Assign.target = { Node.value = Access access; _ } ;
-              compound = None;
-              parent = Some parent;
-              Assign.value = Some value;
-              annotation = None;
-              _;
-            };
-          location;
-        } ->
-            (try
-               let annotation = Resolution.resolve resolution value in
-               Reader.register_global
-                 ~path
-                 ~key:(parent @ access)
-                 ~data:{
-                   Resolution.annotation =
-                     (Annotation.create_immutable
-                        ~global:true
-                        ~original:(Some Type.Top)
-                        annotation);
-                   location;
-                 }
-             with _ ->
-               (* TODO(T19628746): joins are not sound when building the environment. *)
-               ())
-        | {
-          Node.value = Assign {
-              Assign.target = { Node.value = Access access; _ } ;
-              annotation = Some annotation;
-              compound = None;
-              parent = Some parent;
-              _;
-            };
-          location;
-        }
-        | {
-          Node.value = Stub (Stub.Assign {
-              Assign.target = { Node.value = Access access; _ } ;
-              annotation = Some annotation;
-              compound = None;
-              parent = Some parent;
-              _;
-            });
-          location;
-        } ->
-            Type.class_variable (parse_annotation annotation)
-            >>| (fun annotation ->
-                Reader.register_global
-                  ~path
-                  ~key:(parent @ access)
-                  ~data:{
-                    Resolution.annotation = (Annotation.create_immutable ~global:true annotation);
-                    location;
-                  })
-            |> ignore
-
         | { Node.location; value = Class definition }
         | { Node.location; value = Stub (Stub.Class definition) } ->
             (* Register constructors. *)
