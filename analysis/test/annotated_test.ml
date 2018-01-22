@@ -641,7 +641,17 @@ let test_class_attributes _ =
   assert_equal
     (Attribute.annotation attribute)
     (Annotation.create_immutable ~global:true (Type.Primitive ~~"int"));
+  assert_false (Attribute.class_attribute attribute);
 
+  let attribute =
+    Attribute.create
+      ~resolution
+      ~parent
+      (create_assign
+        ~annotation:(Some (Type.expression (Type.parametric "typing.ClassVar" [Type.integer])))
+        "first")
+  in
+  assert_true (Attribute.class_attribute attribute);
 
   (* Test `attribute_fold`. *)
   let callback
@@ -961,6 +971,7 @@ let test_fold _ =
       location = Location.any;
       value = None;
       defined = true;
+      class_attribute = false;
     }
   in
   assert_fold
@@ -980,6 +991,7 @@ let test_fold _ =
       location = Location.any;
       value = None;
       defined = false;
+      class_attribute = false;
     }
   in
   assert_fold

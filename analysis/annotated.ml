@@ -137,84 +137,6 @@ module Class = struct
     Resolution.parse_annotation resolution (Node.create (Access name))
 
 
-  module Attribute = struct
-    type t = {
-      name: Expression.expression;
-      parent: parent_class;
-      annotation: Annotation.t;
-      value: Expression.t option;
-      location: Location.t;
-      defined: bool;
-    }
-    [@@deriving eq, show]
-
-
-    let create
-        ~resolution
-        ~parent
-        ?(defined = true)
-        {
-          Node.location;
-          value = {
-            Assign.target = { Node.value = target; _ };
-            annotation;
-            value;
-            _;
-          };
-        } =
-      let annotation =
-        match annotation, value with
-        | Some annotation, Some value ->
-            Annotation.create_immutable
-              ~global:true
-              ~original:(Some (Resolution.parse_annotation resolution annotation))
-              (Resolution.resolve resolution value)
-        | Some annotation, None ->
-            Annotation.create_immutable
-              ~global:true
-              (Resolution.parse_annotation resolution annotation)
-        | None, Some value ->
-            Annotation.create_immutable
-              ~global:true
-              ~original:(Some Type.Top)
-              (Resolution.parse_annotation resolution value)
-        | _ ->
-            Annotation.create_immutable ~global:true Type.Top
-      in
-      { name = target; parent; annotation; value; location; defined }
-
-
-    let name { name; _ } =
-      name
-
-
-    let access { name; _ } =
-      match name with
-      | Expression.Access access -> access
-      | _ -> []
-
-
-    let annotation { annotation; _ } =
-      annotation
-
-
-    let parent { parent; _ } =
-      parent
-
-
-    let value { value; _ } =
-      value
-
-
-    let location { location; _ } =
-      location
-
-
-    let defined { defined; _ } =
-      defined
-  end
-
-
   module Method = struct
     type t = {
       define: Define.t;
@@ -429,8 +351,126 @@ module Class = struct
     implements (methods definition) (methods protocol)
 
 
+  module Attribute = struct
+    type t = {
+      name: Expression.expression;
+      parent: parent_class;
+      annotation: Annotation.t;
+      value: Expression.t option;
+      location: Location.t;
+      defined: bool;
+      class_attribute: bool;
+    }
+    [@@deriving eq, show]
+
+
+    let create
+        ~resolution
+        ~parent
+        ?(defined = true)
+        {
+          Node.location;
+          value = {
+            Assign.target = { Node.value = target; _ };
+            annotation = assign_annotation;
+            value;
+            _;
+          };
+        } =
+      let class_annotation = annotation in
+
+      (* Account for class attributes. *)
+      let annotation, class_attribute =
+        (assign_annotation
+         >>| Resolution.parse_annotation resolution
+         >>| (fun annotation ->
+             match Type.class_variable annotation with
+             | Some annotation -> Some annotation, true
+             | _ -> Some annotation, false))
+        |> Option.value ~default:(None, true)
+      in
+
+      (* Handle enumeration attributes. *)
+      let annotation, value =
+        let enumerations =
+          String.Set.of_list
+            [
+              "enum.Enum";
+              "enum.IntEnum";
+              "util.enum.Enum";
+              "util.enum.IntEnum";
+              "util.enum.StringEnum";
+            ]
+        in
+        let superclasses =
+          superclasses ~resolution parent
+          |> List.map ~f:(fun definition -> name definition |> Access.show)
+          |> String.Set.of_list
+        in
+        if Set.length (Set.inter enumerations superclasses) > 0 then
+          Some (class_annotation ~resolution parent), None  (* Enums override values. *)
+        else
+          annotation, value
+      in
+
+      let annotation =
+        match annotation, value with
+        | Some annotation, Some value ->
+            Annotation.create_immutable
+              ~global:true
+              ~original:(Some annotation)
+              (Resolution.resolve resolution value)
+        | Some annotation, None ->
+            Annotation.create_immutable ~global:true annotation
+        | None, Some value ->
+            Annotation.create_immutable
+              ~global:true
+              ~original:(Some Type.Top)
+              (Resolution.parse_annotation resolution value)
+        | _ ->
+            Annotation.create_immutable ~global:true Type.Top
+      in
+      { name = target; parent; annotation; value; location; defined; class_attribute }
+
+
+    let name { name; _ } =
+      name
+
+
+    let access { name; _ } =
+      match name with
+      | Expression.Access access -> access
+      | _ -> []
+
+
+    let annotation { annotation; _ } =
+      annotation
+
+
+    let parent { parent; _ } =
+      parent
+
+
+    let value { value; _ } =
+      value
+
+
+    let location { location; _ } =
+      location
+
+
+    let defined { defined; _ } =
+      defined
+
+
+    let class_attribute { class_attribute; _ } =
+      class_attribute
+  end
+
+
   let attribute_fold
       ?(transitive = false)
+      ?(class_attributes_only = false)
       ?(include_properties = true)
       definition
       ~initial
@@ -438,8 +478,11 @@ module Class = struct
       ~resolution =
     let fold_definition initial ({ Node.value = definition; _ } as parent) =
       let fold_attribute_assign accumulator assign =
-        Attribute.create ~resolution ~parent assign
-        |> f accumulator
+        let attribute = Attribute.create ~resolution ~parent assign in
+        if class_attributes_only && not (Attribute.class_attribute attribute) then
+          accumulator
+        else
+          f accumulator attribute
       in
       Statement.Class.attribute_assigns ~include_properties definition
       |> Map.data
@@ -464,7 +507,12 @@ module Class = struct
     |> List.rev
 
 
-  let attribute ?(transitive = false) ({ Node.location; _ } as definition) ~resolution ~name =
+  let attribute
+      ?(transitive = false)
+      ?(class_attributes_only = false)
+      ({ Node.location; _ } as definition)
+      ~resolution
+      ~name =
     let undefined =
       Attribute.create
         ~resolution
@@ -490,7 +538,7 @@ module Class = struct
           else
             None
     in
-    attribute_fold ~transitive ~initial:None ~f:search ~resolution definition
+    attribute_fold ~transitive ~class_attributes_only ~initial:None ~f:search ~resolution definition
     |> Option.value ~default:undefined
 end
 
@@ -1167,32 +1215,21 @@ module Access = struct
             resolved,
             (f accumulator ~annotations ~resolved ~element:(Element.Method element))
 
-        | Some (_, annotation), ([Access.Identifier _] as attribute_access)
-          when Type.is_meta (Annotation.annotation annotation) ->
-            (* Static attributes. *)
-            let resolved =
-              let access =
-                let annotation =
-                  match Annotation.annotation annotation |> Type.parameters with
-                  | [parameter] -> parameter
-                  | _ -> failwith "Not a meta annotation"
-                in
-                (Type.access annotation) @ attribute_access
-              in
-              (match Map.find annotations access with
-               | Some resolved ->
-                   Some resolved
-               | None ->
-                   Resolution.global resolution access
-                   >>| fun { Resolution.annotation; _ } -> annotation)
-              |> Option.value ~default:(Annotation.create Type.Top)
-            in
-            resolution,
-            resolved,
-            (f accumulator ~annotations ~resolved ~element:Element.Global)
-
         | Some (access, annotation), ([Access.Identifier _] as attribute_access) -> (
             (* Attribute access. *)
+            let annotation, class_attributes_only =
+              if Type.is_meta (Annotation.annotation annotation) then
+                let annotation =
+                  match Annotation.annotation annotation |> Type.parameters with
+                  | [parameter] -> Annotation.create parameter
+                  | _ -> failwith "Not a meta annotation"
+                in
+                annotation,
+                true
+              else
+                annotation,
+                false
+            in
             let definition =
               Resolution.class_definition
                 resolution
@@ -1203,6 +1240,7 @@ module Access = struct
              let attribute =
                Class.attribute
                  ~transitive:true
+                 ~class_attributes_only
                  ~resolution
                  ~name:attribute_access
                  definition

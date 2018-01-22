@@ -2515,11 +2515,10 @@ let test_check_attributes _ =
         Foo.bar = "foo"
         return Foo.bar
     |}
-    ["Incompatible return type [7]: Expected `int` but got `str`."];
-  (* [
-      "Incompatible attribute type [8]: attribute Foo.bar declared in class `Foo` " ^
-      "has type `int` but is used as type `str`."
-     ]; *)
+    [
+      "Incompatible attribute type [8]: Attribute `bar` declared in class `Foo` has type `int` " ^
+      "but is used as type `str`."
+    ];
 
   assert_type_errors
     {|
@@ -2591,7 +2590,16 @@ let test_check_attributes _ =
       def foo(any: typing.Any) -> int:
         return any.attribute
     |}
-    []
+    [];
+
+  (* Make sure we don't resolve attributes as class attributes. *)
+  assert_type_errors
+    {|
+      class Foo:
+        attribute: int = 1
+      Foo.attribute
+    |}
+    ["Undefined attribute [16]: Class `Foo` has no attribute `attribute`."]
 
 
 let test_check_globals _ =
@@ -2951,7 +2959,7 @@ let test_check_named_arguments _ =
 let test_check_enumerations _ =
   assert_type_errors
     {|
-      import enum
+      class enum.Enum: ...
       class Color(enum.Enum):
         RED = 0
       def foo() -> int:
@@ -2961,7 +2969,7 @@ let test_check_enumerations _ =
 
   assert_type_errors
     {|
-      import enum
+      class enum.Enum: ...
       class Color(enum.Enum):
         RED = 0
       def foo(whatever) -> Color:
@@ -2973,8 +2981,7 @@ let test_check_enumerations _ =
 
   assert_type_errors
     {|
-      class util.enum.IntEnum(enum.Enum, int):
-        pass
+      class util.enum.IntEnum(enum.Enum, int): ...
       class Color(util.enum.IntEnum):
         RED = 0
       def foo() -> int:

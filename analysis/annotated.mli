@@ -45,34 +45,6 @@ module Class : sig
 
   val annotation: t -> resolution: Resolution.t -> Type.t
 
-  module Attribute : sig
-    type t = {
-      name: Expression.expression;
-      parent: parent_class;
-      annotation: Annotation.t;
-      value: Expression.t option;
-      location: Location.t;
-      defined: bool;
-    }
-    [@@deriving eq, show]
-
-    val create
-      :  resolution: Resolution.t
-      -> parent: parent_class
-      -> ?defined: bool
-      -> Statement.Assign.t Node.t
-      -> t
-
-    val name: t -> Expression.expression
-    val access: t -> Access.t
-
-    val annotation: t -> Annotation.t
-    val parent: t -> parent_class
-    val value: t -> Expression.t option
-    val location: t -> Location.t
-    val defined: t -> bool
-  end
-
   module Method : sig
     type t
     [@@deriving compare, eq, sexp, show]
@@ -119,8 +91,39 @@ module Class : sig
   val is_protocol: t -> bool
   val implements: t -> resolution: Resolution.t -> protocol: t -> bool
 
+  module Attribute : sig
+    type t = {
+      name: Expression.expression;
+      parent: parent_class;
+      annotation: Annotation.t;
+      value: Expression.t option;
+      location: Location.t;
+      defined: bool;
+      class_attribute: bool;
+    }
+    [@@deriving eq, show]
+
+    val create
+      :  resolution: Resolution.t
+      -> parent: parent_class
+      -> ?defined: bool
+      -> Statement.Assign.t Node.t
+      -> t
+
+    val name: t -> Expression.expression
+    val access: t -> Access.t
+
+    val annotation: t -> Annotation.t
+    val parent: t -> parent_class
+    val value: t -> Expression.t option
+    val location: t -> Location.t
+    val defined: t -> bool
+    val class_attribute: t -> bool
+  end
+
   val attribute_fold
     :  ?transitive: bool
+    -> ?class_attributes_only: bool
     -> ?include_properties: bool
     -> t
     -> initial: 'accumulator
