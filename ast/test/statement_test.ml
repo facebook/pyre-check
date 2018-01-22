@@ -216,8 +216,13 @@ let test_attribute_assigns _ =
         ~f:(fun (target, annotation, value) -> create_assign ~target ~annotation ~value)
         expected
     in
+    let printer assigns =
+      List.map ~f:(fun { Node.value; _ } -> Assign.show value) assigns
+      |> String.concat ~sep:", "
+    in
     assert_equal
       ~cmp:(List.equal ~equal:assign_equal)
+      ~printer
       expected
       (parse_single_class source |> Class.attribute_assigns ~include_properties |> Map.data)
   in
@@ -269,7 +274,17 @@ let test_attribute_assigns _ =
         def property(self) -> int:
           pass
     |}
-    ["property", Some (Type.expression Type.integer), None]
+    ["property", Some (Type.expression Type.integer), None];
+
+  (* Class properties. *)
+  assert_attribute_assigns
+    {|
+      class Foo:
+        @util.etc.class_property
+        def property(self) -> int:
+          pass
+    |}
+    ["property", Some (Type.expression (Type.parametric "typing.ClassVar" [Type.integer])), None]
 
 
 let test_strip _ =

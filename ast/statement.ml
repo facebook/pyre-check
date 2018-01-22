@@ -347,22 +347,43 @@ module Define = struct
         "abc.abstractproperty";
         "libfb.py.decorators.lazy_property";
         "property";
+        "util.etc.class_property";
         "util.etc.lazy_property";
       ]
     in
-    if List.exists ~f:(has_decorator define) property_annotations then
-      Some
-        (Node.create
-           ~location
-           {
-             Assign.target = Node.create ~location (Expression.Access name);
-             annotation = return_annotation;
-             value = None;
-             compound = None;
-             parent = None;
-           })
-    else
-      None
+    let assign return_annotation =
+      Node.create
+        ~location
+        {
+          Assign.target = Node.create ~location (Expression.Access name);
+          annotation = return_annotation;
+          value = None;
+          compound = None;
+          parent = None;
+        }
+    in
+    match List.find ~f:(has_decorator define) property_annotations with
+    | Some "util.etc.class_property" ->
+        let return_annotation =
+          let open Expression in
+          match return_annotation with
+          | Some ({ Node.location; value = Access _ } as access) ->
+              Some {
+                Node.location;
+                value = Access [
+                    Access.Identifier (Identifier.create "typing");
+                    Access.Identifier (Identifier.create "ClassVar");
+                    Access.Subscript [Access.Index access];
+                  ];
+              }
+          | _ ->
+              None
+        in
+        Some (assign return_annotation)
+    | Some _ ->
+        Some (assign return_annotation)
+    | None ->
+        None
 
 
   let strip define =

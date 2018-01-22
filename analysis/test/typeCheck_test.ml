@@ -2599,7 +2599,19 @@ let test_check_attributes _ =
         attribute: int = 1
       Foo.attribute
     |}
-    ["Undefined attribute [16]: Class `Foo` has no attribute `attribute`."]
+    ["Undefined attribute [16]: Class `Foo` has no attribute `attribute`."];
+
+  (* Check class properties. *)
+  assert_type_errors
+    {|
+      class Foo:
+        @util.etc.class_property
+        def attribute() -> int:
+          return 1
+      def bar() -> str:
+        return Foo.attribute
+    |}
+    ["Incompatible return type [7]: Expected `str` but got `int`."]
 
 
 let test_check_globals _ =
