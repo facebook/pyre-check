@@ -70,6 +70,7 @@ val create
   -> t
 
 val expression: t -> Expression.t
+val access: t -> Access.t
 
 val is_awaitable: t -> bool
 val is_generic: t -> bool

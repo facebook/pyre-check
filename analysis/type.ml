@@ -546,6 +546,12 @@ let expression annotation =
   Node.create (Access (access annotation))
 
 
+let access annotation =
+  match expression annotation with
+  | { Node.value = Access access; _ } -> access
+  | _ -> failwith "Annotation expression is not an access"
+
+
 let is_awaitable = function
   | Parametric { name; parameters = [_] } when Identifier.show name = "typing.Awaitable" ->
       true

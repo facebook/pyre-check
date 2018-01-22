@@ -1097,28 +1097,24 @@ module Access = struct
 
       let rec step annotation reversed_lead =
         match annotation, reversed_lead with
-        | Some (_, annotation), _ when Type.is_meta (Annotation.annotation annotation) ->
-            (* Pretend that we're calling a method on the class object. This is not entierly
-               acurate: `Type[A]` has a slightly broader interface than `A`. *)
-            let annotation_name =
-              let extract_access { Node.value; _ } =
-                match value with
-                | Access access -> access
-                | _ -> failwith "Annotation expression is not an access"
-              in
-              Annotation.annotation annotation
-              |> Type.parameters
-              |> List.hd_exn
-              |> Type.expression
-              |> extract_access
-              |> List.rev
-            in
-            step None (reversed_lead @ annotation_name)
-
         | Some (access, annotation),
           [Access.Call { Node.location; value = call }] ->
             (* Method call. *)
-            let call = Call.create ~kind:Call.Method call in
+            let annotation, call =
+              if Type.is_meta (Annotation.annotation annotation) then
+                begin
+                  let annotation =
+                    match Annotation.annotation annotation |> Type.parameters with
+                    | [parameter] -> Annotation.create parameter
+                    | _ -> failwith "Not a meta annotation"
+                  in
+                  annotation,
+                  Call.create ~kind:Call.Function call
+                end
+              else
+                annotation,
+                Call.create ~kind:Call.Method call in
+
             let callee =
               Resolution.method_signature
                 resolution
@@ -1170,6 +1166,30 @@ module Access = struct
             (Resolution.with_annotations resolution annotations),
             resolved,
             (f accumulator ~annotations ~resolved ~element:(Element.Method element))
+
+        | Some (_, annotation), ([Access.Identifier _] as attribute_access)
+          when Type.is_meta (Annotation.annotation annotation) ->
+            (* Static attributes. *)
+            let resolved =
+              let access =
+                let annotation =
+                  match Annotation.annotation annotation |> Type.parameters with
+                  | [parameter] -> parameter
+                  | _ -> failwith "Not a meta annotation"
+                in
+                (Type.access annotation) @ attribute_access
+              in
+              (match Map.find annotations access with
+               | Some resolved ->
+                   Some resolved
+               | None ->
+                   Resolution.global resolution access
+                   >>| fun { Resolution.annotation; _ } -> annotation)
+              |> Option.value ~default:(Annotation.create Type.Top)
+            in
+            resolution,
+            resolved,
+            (f accumulator ~annotations ~resolved ~element:Element.Global)
 
         | Some (access, annotation), ([Access.Identifier _] as attribute_access) -> (
             (* Attribute access. *)
@@ -1285,19 +1305,48 @@ module Access = struct
             resolved,
             (f accumulator ~annotations ~resolved ~element:Element.Identifier)
 
-        | _ ->
-            let resolved =
-              let lead = List.rev reversed_lead in
-              match Map.find annotations lead with
-              | Some resolved -> resolved
+        | _, access ->
+            (* Known accesses. *)
+            begin
+              let resolved =
+                let lead = List.rev reversed_lead in
+                match Map.find annotations lead with
+                | Some resolved ->
+                    Some resolved
+                | None ->
+                    Resolution.global resolution lead
+                    >>| fun { Resolution.annotation; _ } -> annotation
+              in
+              match resolved with
+              | Some resolved ->
+                  (* Known global. *)
+                  resolution,
+                  resolved,
+                  (f accumulator ~annotations ~resolved ~element:Element.Global)
               | None ->
-                  match (Resolution.global resolution) lead with
-                  | Some { Resolution.annotation; _ } -> annotation
-                  | _ -> Annotation.create Type.Top
-            in
-            resolution,
-            resolved,
-            (f accumulator ~annotations ~resolved ~element:Element.Global)
+                  begin
+                    let access = List.rev access in
+                    let definition =
+                      Resolution.parse_annotation
+                        resolution
+                        (Node.create (Expression.Access access))
+                      |> Resolution.class_definition resolution
+                    in
+                    match definition with
+                    | Some definition ->
+                        (* Resolve class to the corresponding meta annotation (Type[C]). *)
+                        let annotation =
+                          Class.annotation ~resolution definition
+                          |> Type.meta
+                        in
+                        step (Some (access, (Annotation.create annotation))) []
+                    | _ ->
+                        let resolved = Annotation.create Type.Top in
+                        resolution,
+                        resolved,
+                        (f accumulator ~annotations ~resolved ~element:Element.Global)
+                  end
+            end
       in
       let resolution, resolved, accumulator = step annotation reversed_lead in
 
