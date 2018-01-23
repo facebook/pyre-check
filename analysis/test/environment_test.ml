@@ -1038,6 +1038,8 @@ let test_function_signature_variable_instantiation _ =
   (* Indirect constraints. *)
   assert_instantiated
     {|
+      class typing.Sequence:
+        pass
       class range(typing.Sequence[int]):
         pass
       _T = typing.TypeVar('_T')

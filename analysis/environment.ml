@@ -110,12 +110,13 @@ let register_type
                         begin
                           Log.log
                             ~section:`Environment
-                            "Inserting missing annotation %a"
+                            "Superclass annotation %a is missing"
                             Type.pp
                             primitive;
-                          TypeOrder.insert order primitive
-                        end;
-                      Some access
+                          None
+                        end
+                      else
+                        Some access
                   | _ ->
                       None in
                 let super_annotation, parameters =
