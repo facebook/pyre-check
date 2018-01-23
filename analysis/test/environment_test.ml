@@ -189,6 +189,22 @@ let test_register_class_definitions _ =
 let test_register_aliases _ =
   let environment = Environment.Builder.create () in
   let (module Reader: Environment.Reader) = Environment.reader environment in
+  let typing =
+    parse ~qualifier:(Access.create "typing") {|
+      class Iterator:
+        ...
+      class Iterable:
+        ...
+    |}
+    |> Preprocessing.qualify
+  in
+  let other =
+    parse ~qualifier:(Access.create "collections") {|
+      from typing import Iterator as Iterator
+      from typing import Iterable
+    |}
+    |> Preprocessing.qualify
+  in
   let source =
     parse {|
        class C:
@@ -201,14 +217,25 @@ let test_register_aliases _ =
          return D()
     |}
   in
+  Environment.register_class_definitions (module Reader) typing;
   Environment.register_class_definitions (module Reader) source;
-  Environment.register_aliases (module Reader) [source];
+  Environment.register_class_definitions (module Reader) other;
+  Environment.register_aliases (module Reader) [typing; other; source];
 
   assert_equal (parse_annotation (module Reader) (!"C")) (primitive "C");
   assert_equal (parse_annotation (module Reader) (!"D")) (primitive "D");
   assert_equal (parse_annotation (module Reader) (!"B")) (primitive "D");
   assert_equal (parse_annotation (module Reader) (!"A")) (primitive "D");
-  assert_equal (Reader.function_definitions (access ["foo"])) None
+  assert_equal (Reader.function_definitions (access ["foo"])) None;
+
+  let order = (module Reader.TypeOrderReader: TypeOrder.Reader) in
+  assert_is_some (TypeOrder.find order (primitive "typing.Iterator"));
+  assert_is_some (TypeOrder.find order (primitive "typing.Iterable"));
+  assert_equal
+    (parse_annotation (module Reader) (!"collections.Iterator"))
+    (primitive "typing.Iterator");
+  assert_equal
+    (parse_annotation (module Reader) (!"collections.Iterable")) (primitive "collections.Iterable")
 
 
 let test_connect_type_order _ =

@@ -628,7 +628,7 @@ let register_class_definitions (module Reader: Reader) source =
 
 let register_aliases (module Reader: Reader) sources =
   let order = (module Reader.TypeOrderReader : TypeOrder.Reader) in
-  let collect_aliases { Source.path; statements; _ } =
+  let collect_aliases { Source.path; statements; qualifier; _ } =
     let rec visit_statement aliases { Node.value; _ } =
       match value with
       | Assign {
@@ -650,9 +650,18 @@ let register_aliases (module Reader: Reader) sources =
           let aliases = List.fold ~init:aliases ~f:visit_statement body in
           let aliases = List.fold ~init:aliases ~f:visit_statement orelse in
           aliases
-      | Import _ ->
-          (* TODO(T25119940): Handle aliases here. *)
-          aliases
+      | Import { Import.from = Some from; imports } ->
+          let import_to_alias { Import.name; alias } =
+            match alias with
+            | None -> []
+            | Some alias ->
+                [
+                  path,
+                  Node.create (Access (qualifier @ alias)),
+                  Node.create (Access (from @ name));
+                ]
+          in
+          List.rev_append (List.concat_map ~f:import_to_alias imports) aliases
       | _ ->
           aliases
     in
