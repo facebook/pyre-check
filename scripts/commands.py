@@ -52,7 +52,8 @@ class Result:
     def check(self) -> None:
         if self.code != SUCCESS:
             raise ClientException(
-                'Client exited with error code {}'.format(self.code))
+                'Client exited with error code {}:'
+                '\n{}'.format(self.code, self.output))
 
 
 class Command:
@@ -153,6 +154,8 @@ class Command:
                     output = "\n".join(self._buffer)
                 if '[' in output:
                     output = output[output.index('['):]
+                if process.returncode != 0:
+                    output = "".join(self._buffer)
 
                 results.append(
                     Result(
