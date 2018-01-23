@@ -940,6 +940,17 @@ let populate
     ?(check_dependency_exists = true)
     sources =
 
+  let add_aliases aliases =
+    List.iter
+      ~f:(fun (path, target, value) -> Reader.register_alias ~path ~key:target ~data:value)
+      aliases
+  in
+  add_aliases [
+    "typing.py",
+    Type.Primitive (Identifier.create "typing.DefaultDict"),
+    Type.Primitive (Identifier.create "collections.defaultdict");
+  ];
+
   List.iter ~f:(register_class_definitions (module Reader)) sources;
   register_aliases (module Reader) sources;
   List.iter ~f:(connect_type_order ~source_root ~check_dependency_exists (module Reader)) sources;

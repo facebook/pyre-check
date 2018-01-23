@@ -301,6 +301,13 @@ let test_populate _ =
        (+Access (access ["bar"])))
     (primitive "bar");
 
+  (* Check custom aliases. *)
+  assert_equal
+    (parse_annotation
+       environment
+       (+Access (access ["typing.DefaultDict"])))
+    (primitive "collections.defaultdict");
+
   (* Check type aliases. *)
   let environment =
     populate {|
