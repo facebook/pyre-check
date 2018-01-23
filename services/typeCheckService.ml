@@ -126,7 +126,7 @@ let analyze_sources
   Log.info "Checking...";
   EnvironmentService.repopulate
     environment
-    ~root:source_root
+    ~configuration
     ~handles:repopulate_handles;
   match Service.is_parallel service with
   | true -> analyze_sources_parallel service configuration environment handles

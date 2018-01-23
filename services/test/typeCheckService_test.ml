@@ -27,8 +27,12 @@ let type_check_sources_list_test context =
         File.create ~content:(Some content) (Path.create_relative ~root ~relative:path);
       ]
     in
-    let environment = Environment.reader (Environment.Builder.create ()) in
+    let configuration = Configuration.create () in
+    let environment =
+      Environment.reader ~configuration (Environment.Builder.create ~configuration ())
+    in
     Environment.populate
+      ~configuration
       environment
       [
         parse {|

@@ -13,7 +13,7 @@ open Pyre
 
 let build ~configuration:({ Configuration.source_root; _ } as configuration) ~stubs ~sources =
   Log.info "Building type environment...";
-  let environment = Environment.Builder.create () in
+  let environment = Environment.Builder.create ~configuration () in
   (* This grabs all sources from shared memory. It is unavoidable: Environment
      must be built sequentially until we find a way to build the environment in
      parallel. *)
@@ -28,12 +28,12 @@ let build ~configuration:({ Configuration.source_root; _ } as configuration) ~st
 
   let timer = Timer.start () in
   let stubs = get_sources stubs in
-  Environment.populate ~source_root (reader environment) stubs;
+  Environment.populate ~configuration ~source_root (reader ~configuration environment) stubs;
   Statistics.performance ~name:"stub environment built" ~timer ~configuration ();
 
   let timer = Timer.start () in
   let sources = get_sources sources in
-  Environment.populate ~source_root (reader environment) sources;
+  Environment.populate ~configuration ~source_root (reader ~configuration environment) sources;
   Statistics.performance ~name:"full environment built" ~timer ~configuration ();
 
   Log.log ~section:`Environment "%a" Environment.Builder.pp environment;
@@ -45,7 +45,7 @@ let build ~configuration:({ Configuration.source_root; _ } as configuration) ~st
           ~root:(Configuration.pyre_root configuration)
           ~relative:"type_order.dot"
       in
-      let (module Reader: Environment.Reader) = (reader environment) in
+      let (module Reader: Environment.Reader) = (reader ~configuration environment) in
       Log.info "Emitting type order dotty file to %s" (Path.absolute type_order_file);
       File.create
         ~content:(Some (TypeOrder.to_dot (module Reader.TypeOrderReader)))
@@ -82,6 +82,7 @@ let infer_protocols
   |> Set.iter ~f:(fun { Edge.source; target } ->
       TypeOrder.connect
         (module Reader.TypeOrderReader)
+        ~configuration
         ~add_backedge:true
         ~predecessor:source
         ~successor:target);
@@ -94,7 +95,7 @@ let infer_protocols
 let in_process_reader service ~configuration ~stubs ~sources =
   let reader =
     build ~configuration ~stubs ~sources
-    |> Environment.reader
+    |> Environment.reader ~configuration
   in
   infer_protocols ~service ~reader ~configuration;
   reader
@@ -350,6 +351,7 @@ let shared_memory_reader
         in
         Environment.register_type
           ~order:(module TypeOrderReader: TypeOrder.Reader)
+          ~configuration
           ~aliases:Aliases.get
           ~add_class_definition
           ~add_class_key:(DependencyReader.add_class_key)
@@ -394,7 +396,10 @@ let shared_memory_reader
   reader
 
 
-let repopulate (module Reader: Environment.Reader) ~root ~handles =
+let repopulate
+    (module Reader: Environment.Reader)
+    ~configuration:({ Configuration.source_root; _ } as configuration)
+    ~handles =
   Log.log
     ~section:`Debug
     "Repopulating the environment with %s"
@@ -406,4 +411,4 @@ let repopulate (module Reader: Environment.Reader) ~root ~handles =
     | None -> []
   in
   List.concat_map ~f:repopulate_path handles
-  |> Environment.populate ~source_root:root (module Reader: Environment.Reader)
+  |> Environment.populate ~configuration ~source_root (module Reader: Environment.Reader)

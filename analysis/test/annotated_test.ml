@@ -21,13 +21,19 @@ module Method = Annotated.Method
 module Access = Annotated.Access
 
 
+let configuration = Configuration.create ()
+
+
 let populate source =
   let environment =
-    let environment = Environment.Builder.create () in
-    Environment.populate (Environment.reader environment) [parse source];
+    let environment = Environment.Builder.create ~configuration () in
+    Environment.populate
+      ~configuration
+      (Environment.reader ~configuration environment)
+      [parse source];
     environment
   in
-  Environment.reader environment
+  Environment.reader ~configuration environment
 
 
 let resolution environment =

@@ -13,8 +13,9 @@ open Test
 
 
 let resolution =
-  Environment.Builder.create ()
-  |> Environment.reader
+  let configuration = Configuration.create () in
+  Environment.Builder.create ~configuration ()
+  |> Environment.reader ~configuration
   |> fun reader -> Environment.resolution reader ()
 
 

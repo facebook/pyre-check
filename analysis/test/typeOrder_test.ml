@@ -15,8 +15,11 @@ let (!) name =
   Type.Primitive ~~name
 
 
+let configuration = Configuration.create ()
+
+
 let connect ?(parameters = []) order ~predecessor ~successor =
-  connect ~parameters ~add_backedge:true order ~predecessor ~successor
+  connect ~configuration ~parameters ~add_backedge:true order ~predecessor ~successor
 
 
 (* Butterfly:
@@ -110,7 +113,7 @@ let disconnected_order =
 
 
 let default =
-  let order = Builder.default () |> TypeOrder.reader in
+  let order = Builder.default ~configuration () |> TypeOrder.reader in
   let variable = Type.Variable { Type.variable = ~~"_T"; constraints = [] } in
   insert order variable;
   connect order ~predecessor:Type.Bottom ~successor:variable;
@@ -160,7 +163,7 @@ let default =
 
 
 let test_default _ =
-  let order = Builder.default () |> TypeOrder.reader in
+  let order = Builder.default ~configuration () |> TypeOrder.reader in
   assert_true (less_or_equal order ~left:Type.Bottom ~right:Type.Bottom);
   assert_true (less_or_equal order ~left:Type.Bottom ~right:Type.Top);
   assert_true (less_or_equal order ~left:Type.Top ~right:Type.Top);
@@ -813,7 +816,7 @@ let test_connect_annotations_to_top _ =
     insert order !"3";
     connect order ~predecessor:!"0" ~successor:!"2";
     connect order ~predecessor:!"0" ~successor:!"1";
-    connect_annotations_to_top order ~bottom:!"0" ~top:!"3";
+    connect_annotations_to_top order ~configuration ~bottom:!"0" ~top:!"3";
     order in
 
   assert_equal
@@ -835,7 +838,7 @@ let test_add_backedges _ =
   *)
   let (module Reader: TypeOrder.Reader) =
     (* Don't add backedges when connecting *)
-    let connect = TypeOrder.connect in
+    let connect = TypeOrder.connect ~configuration in
     let order = Builder.create () |> TypeOrder.reader in
     insert order Type.Bottom;
     insert order Type.Top;
@@ -932,7 +935,7 @@ let test_to_dot _ =
     insert order Type.Top;
     connect order ~predecessor:!"0" ~successor:!"2";
     connect order ~predecessor:!"0" ~successor:!"1" ~parameters:[Type.string];
-    connect_annotations_to_top order ~bottom:!"0" ~top:!"3";
+    connect_annotations_to_top order ~configuration ~bottom:!"0" ~top:!"3";
     order in
   let (module Reader) = order in
   assert_equal

@@ -187,14 +187,20 @@ let connect
     ?(parameters = [])
     ?(add_backedge = false)
     ((module Reader: Reader) as order)
+    ~configuration
     ~predecessor
     ~successor =
   if Option.is_none (Reader.find (Reader.indices ()) predecessor) ||
      Option.is_none (Reader.find (Reader.indices ()) successor) then
-    Log.debug
-      "Attempted to connect %s to %s; but one was not in the type order."
-      (Type.show predecessor)
-      (Type.show successor)
+    Statistics.event
+      ~name:"Invalid type order connection"
+      ~configuration
+      ~integers:[]
+      ~normals:[
+        "Predecessor", Type.show predecessor;
+        "Successor", Type.show successor;
+      ]
+      ()
   else
     begin
       let predecessor = index_of order predecessor in
@@ -893,7 +899,7 @@ let remove_extra_edges (module Reader: Reader) ~bottom ~top =
               Reader.set edges ~key ~data:disconnected;
               [key]
             end))
-       |> Option.value ~default:[]
+      |> Option.value ~default:[]
     in
     let removed_indices = List.concat_map ~f:remove_extra_references keys |> Int.Set.of_list in
     Reader.find backedges special_index
@@ -915,7 +921,7 @@ let remove_extra_edges (module Reader: Reader) ~bottom ~top =
     (Reader.find_unsafe (Reader.indices ()) bottom)
 
 
-let connect_annotations_to_top ((module Reader: Reader) as order) ~bottom ~top =
+let connect_annotations_to_top ((module Reader: Reader) as order) ~configuration ~bottom ~top =
   let index_of annotation = Reader.find_unsafe (Reader.indices ()) annotation in
   let top_index = index_of top in
   let visited = ref (Int.Set.of_list [top_index]) in
@@ -932,7 +938,7 @@ let connect_annotations_to_top ((module Reader: Reader) as order) ~bottom ~top =
             |> List.map ~f:Target.target
             |> List.iter ~f:visit
         | _ ->
-            connect order ~predecessor:annotation ~successor:top
+            connect order ~configuration ~predecessor:annotation ~successor:top
       end in
   visit (index_of bottom)
 
@@ -1066,7 +1072,7 @@ module Builder = struct
     }
 
 
-  let default () =
+  let default ~configuration () =
     let order = create () in
     let reader = reader order in
 
@@ -1074,13 +1080,28 @@ module Builder = struct
     insert reader Type.Top;
     (* Object *)
     insert reader Type.Object;
-    connect ~add_backedge:true reader ~predecessor:Type.Bottom ~successor:Type.Object;
-    connect ~add_backedge:true reader ~predecessor:Type.Object ~successor:Type.Top;
+    connect
+      ~add_backedge:true
+      reader
+      ~configuration
+      ~predecessor:Type.Bottom
+      ~successor:Type.Object;
+    connect ~add_backedge:true reader ~configuration ~predecessor:Type.Object ~successor:Type.Top;
 
     let insert_unconnected annotation =
       insert reader annotation;
-      connect ~add_backedge:true reader ~predecessor:Type.Bottom ~successor:annotation;
-      connect ~add_backedge:true reader ~predecessor:annotation ~successor:Type.Object
+      connect
+        ~add_backedge:true
+        reader
+        ~configuration
+        ~predecessor:Type.Bottom
+        ~successor:annotation;
+      connect
+        ~add_backedge:true
+        reader
+        ~configuration
+        ~predecessor:annotation
+        ~successor:Type.Object
     in
 
     (* Special forms *)
@@ -1093,9 +1114,24 @@ module Builder = struct
     let type_builtin = Type.Primitive (Identifier.create "type") in
     insert reader type_special_form;
     insert reader type_builtin;
-    connect ~add_backedge:true reader ~predecessor:Type.Bottom ~successor:type_special_form;
-    connect ~add_backedge:true reader ~predecessor:type_special_form ~successor:type_builtin;
-    connect ~add_backedge:true reader ~predecessor:type_builtin ~successor:Type.Object;
+    connect
+      ~add_backedge:true
+      reader
+      ~configuration
+      ~predecessor:Type.Bottom
+      ~successor:type_special_form;
+    connect
+      ~add_backedge:true
+      reader
+      ~configuration
+      ~predecessor:type_special_form
+      ~successor:type_builtin;
+    connect
+      ~add_backedge:true
+      reader
+      ~configuration
+      ~predecessor:type_builtin
+      ~successor:Type.Object;
 
     insert_unconnected (Type.Primitive (Identifier.create "typing.ClassVar"));
 
@@ -1103,9 +1139,14 @@ module Builder = struct
     let typing_dict = (Type.Primitive (Identifier.create "typing.Dict")) in
     insert reader base_dict;
     insert reader typing_dict;
-    connect ~add_backedge:true reader ~predecessor:Type.Bottom ~successor:base_dict;
-    connect ~add_backedge:true reader ~predecessor:base_dict ~successor:typing_dict;
-    connect ~add_backedge:true reader ~predecessor:typing_dict ~successor:Type.Object;
+    connect ~add_backedge:true reader ~configuration ~predecessor:Type.Bottom ~successor:base_dict;
+    connect ~add_backedge:true reader ~configuration ~predecessor:base_dict ~successor:typing_dict;
+    connect
+      ~add_backedge:true
+      reader
+      ~configuration
+      ~predecessor:typing_dict
+      ~successor:Type.Object;
 
     insert_unconnected (Type.Primitive (Identifier.create "None"));
 
@@ -1113,10 +1154,30 @@ module Builder = struct
     insert reader Type.integer;
     insert reader Type.float;
     insert reader Type.complex;
-    connect ~add_backedge:true reader ~predecessor:Type.Bottom ~successor:Type.integer;
-    connect ~add_backedge:true reader ~predecessor:Type.integer ~successor:Type.float;
-    connect ~add_backedge:true reader ~predecessor:Type.float ~successor:Type.complex;
-    connect ~add_backedge:true reader ~predecessor:Type.complex ~successor:Type.Object;
+    connect
+      ~add_backedge:true
+      reader
+      ~configuration
+      ~predecessor:Type.Bottom
+      ~successor:Type.integer;
+    connect
+      ~add_backedge:true
+      reader
+      ~configuration
+      ~predecessor:Type.integer
+      ~successor:Type.float;
+    connect
+      ~add_backedge:true
+      reader
+      ~configuration
+      ~predecessor:Type.float
+      ~successor:Type.complex;
+    connect
+      ~add_backedge:true
+      reader
+      ~configuration
+      ~predecessor:Type.complex
+      ~successor:Type.Object;
 
     order
 end

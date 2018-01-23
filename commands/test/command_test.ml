@@ -46,9 +46,11 @@ let start_server ?version () =
 
 
 let environment () =
-  let environment = Environment.Builder.create () in
+  let configuration = Configuration.create () in
+  let environment = Environment.Builder.create ~configuration () in
   Environment.populate
-    (Environment.reader environment)
+    ~configuration
+    (Environment.reader ~configuration environment)
     [
       parse {|
         class int(float): pass
@@ -58,9 +60,10 @@ let environment () =
 
 
 let make_errors source =
+  let configuration = Configuration.create () in
   let source = Preprocessing.preprocess (parse source) in
-  let environment_reader = Environment.reader (environment ()) in
-  Environment.populate environment_reader [source];
+  let environment_reader = Environment.reader ~configuration (environment ()) in
+  Environment.populate ~configuration environment_reader [source];
   let configuration = mock_analysis_configuration () in
   (Analysis.TypeCheck.check configuration environment_reader source).Analysis.TypeCheck.errors
 

@@ -33,19 +33,23 @@ let variable name =
   Type.Variable { Type.variable = name; constraints = [] }
 
 
+let configuration = Configuration.create ()
+
+
 let plain_populate ?source_root ?(check_dependency_exists = false) source =
-  let environment = Environment.Builder.create () in
+  let environment = Environment.Builder.create ~configuration () in
   Environment.populate
+    ~configuration
     ?source_root
     ~check_dependency_exists
-    (Environment.reader environment)
+    (Environment.reader ~configuration environment)
     [parse source];
   environment
 
 
 let populate ?source_root ?(check_dependency_exists = false) source =
   plain_populate ?source_root ~check_dependency_exists source
-  |> Environment.reader
+  |> Environment.reader ~configuration
 
 
 let resolution environment =
@@ -86,10 +90,10 @@ let create_location path start_line start_column end_line end_column =
 
 let test_create _ =
   let environment =
-    Environment.Builder.create () in
+    Environment.Builder.create ~configuration () in
   assert_is_none
     (function_signature
-       (Environment.reader environment)
+       (Environment.reader ~configuration environment)
        (access ["foo"])
        { Call.name = !"foo"; arguments = [] }
        [])
@@ -129,8 +133,11 @@ let test_copy _ =
 
   let localized =
     let localized = Environment.Builder.copy plain_environment in
-    Environment.populate (Environment.reader localized) [parse "def foo.bar(): ..."];
-    Environment.reader localized in
+    Environment.populate
+      ~configuration
+      (Environment.reader ~configuration localized)
+      [parse "def foo.bar(): ..."];
+    Environment.reader ~configuration localized in
 
   (* Old environment is unmodified. *)
   assert_is_some
@@ -162,8 +169,8 @@ let test_copy _ =
 
 
 let test_register_class_definitions _ =
-  let environment = Environment.Builder.create () in
-  let (module Reader: Environment.Reader) = Environment.reader environment in
+  let environment = Environment.Builder.create ~configuration () in
+  let (module Reader: Environment.Reader) = Environment.reader ~configuration environment in
   Environment.register_class_definitions
     (module Reader)
     (parse {|
@@ -187,8 +194,8 @@ let test_register_class_definitions _ =
 
 
 let test_register_aliases _ =
-  let environment = Environment.Builder.create () in
-  let (module Reader: Environment.Reader) = Environment.reader environment in
+  let environment = Environment.Builder.create ~configuration () in
+  let (module Reader: Environment.Reader) = Environment.reader ~configuration environment in
   let typing =
     parse ~qualifier:(Access.create "typing") {|
       class Iterator:
@@ -239,8 +246,8 @@ let test_register_aliases _ =
 
 
 let test_connect_type_order _ =
-  let environment = Environment.Builder.create () in
-  let (module Reader: Environment.Reader) = Environment.reader environment in
+  let environment = Environment.Builder.create ~configuration () in
+  let (module Reader: Environment.Reader) = Environment.reader ~configuration environment in
   let source =
     parse {|
        class C:
@@ -771,7 +778,11 @@ let assert_instantiated
   in
 
   let environment = populate environment in
-  Environment.populate ~check_dependency_exists:false environment [parse base_environment];
+  Environment.populate
+    ~configuration
+    ~check_dependency_exists:false
+    environment
+    [parse base_environment];
 
   Resolution.function_signature
     (resolution environment)
@@ -788,7 +799,11 @@ let assert_not_instantiated
     name
     arguments =
   let environment = populate environment in
-  Environment.populate ~check_dependency_exists:false environment [parse base_environment];
+  Environment.populate
+    ~configuration
+    ~check_dependency_exists:false
+    environment
+    [parse base_environment];
   assert_is_none
     (function_signature
        environment
@@ -1569,9 +1584,9 @@ let test_import_dependencies context =
 
 
 let test_purge _ =
-  let environment = Environment.Builder.create () in
+  let environment = Environment.Builder.create ~configuration () in
   let ((module Reader: Environment.Reader) as reader) =
-    Environment.reader environment
+    Environment.reader ~configuration environment
   in
   let source = {|
       import a
@@ -1581,7 +1596,11 @@ let test_purge _ =
       def foo(): pass
     |}
   in
-  Environment.populate ~check_dependency_exists:false reader [parse ~path:"test.py" source];
+  Environment.populate
+    ~configuration
+    ~check_dependency_exists:false
+    reader
+    [parse ~path:"test.py" source];
   assert_is_some (Reader.class_definition (primitive "baz.baz"));
   assert_is_some (Reader.function_definitions (Access.create "foo"));
   assert_is_some (Reader.aliases (primitive "_T"));

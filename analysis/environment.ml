@@ -52,6 +52,7 @@ end
 
 let register_type
     ~order
+    ~configuration
     ~aliases
     ~add_class_definition
     ~add_class_key
@@ -68,7 +69,7 @@ let register_type
     if Reader.contains (Reader.indices ()) subtype &&
        Reader.contains (Reader.indices ()) primitive &&
        not (Type.equal subtype primitive) then
-      TypeOrder.connect order ~predecessor:subtype ~successor:primitive ~parameters;
+      TypeOrder.connect order ~configuration ~predecessor:subtype ~successor:primitive ~parameters;
     (* Register meta annotation. *)
     register_global
       ~path
@@ -128,6 +129,7 @@ let register_type
                   (* Meta-programming can introduce cycles. *)
                   TypeOrder.connect
                     order
+                    ~configuration
                     ~predecessor:primitive
                     ~successor:super_annotation
                     ~parameters
@@ -142,6 +144,7 @@ let register_type
                   not (Type.equal primitive Type.Top) then
             TypeOrder.connect
               order
+              ~configuration
               ~predecessor:primitive
               ~successor:Type.Object;
       | _ ->
@@ -160,7 +163,8 @@ let reader
       aliases;
       globals;
       dependencies;
-    } =
+    }
+    ~configuration =
   let (module DependencyReader: Dependencies.Reader) =
     Dependencies.reader dependencies
   in
@@ -210,6 +214,7 @@ let reader
       in
       register_type
         ~order:(TypeOrder.reader order)
+        ~configuration
         ~aliases:(Hashtbl.find aliases)
         ~add_class_definition
         ~add_class_key:DependencyReader.add_class_key
@@ -929,6 +934,7 @@ let connect_type_order
 
 let populate
     (module Reader: Reader)
+    ~configuration
     ?(source_root = Path.current_working_directory ())
     ?(check_dependency_exists = true)
     sources =
@@ -939,6 +945,7 @@ let populate
 
   TypeOrder.connect_annotations_to_top
     (module Reader.TypeOrderReader)
+    ~configuration
     ~bottom:Type.Bottom
     ~top:Type.Object;
   TypeOrder.add_backedges (module Reader.TypeOrderReader : TypeOrder.Reader);
@@ -1002,11 +1009,11 @@ let infer_implementations (module Reader: Reader) ~protocol =
 
 
 module Builder = struct
-  let create () =
+  let create ~configuration () =
     let function_definitions = Access.Table.create () in
     let class_definitions = Type.Table.create () in
     let protocols = Type.Hash_set.create () in
-    let order = TypeOrder.Builder.default () in
+    let order = TypeOrder.Builder.default ~configuration () in
     let aliases = Type.Table.create () in
     let globals = Access.Table.create () in
     let dependencies = Dependencies.create () in

@@ -9,9 +9,14 @@ open OUnit2
 open Ast
 open Test
 
+let configuration = Configuration.create ()
+
+
 let environment source =
-  let environment = Environment.Builder.create () in
-  Environment.populate (Environment.reader environment) [parse source];
+  let environment = Environment.Builder.create ~configuration () in
+  Environment.populate
+    ~configuration
+    (Environment.reader ~configuration environment) [parse source];
   environment
 
 
@@ -27,7 +32,7 @@ let test_lookup _ =
   let environment = environment source in
   let parsed = parse source in
   let configuration = (Configuration.create ~debug:true ~infer:false ()) in
-  let environment = (Environment.reader environment) in
+  let environment = (Environment.reader ~configuration environment) in
   let { TypeCheck.lookup; _ } = TypeCheck.check configuration environment parsed in
   assert_is_some lookup;
   assert_equal
@@ -55,14 +60,16 @@ let test_lookup_across_files _ =
           return 1
     |}
   in
-  let environment = Environment.Builder.create () in
-  Environment.populate (Environment.reader environment) [
+  let environment = Environment.Builder.create ~configuration () in
+  Environment.populate
+    ~configuration
+    (Environment.reader ~configuration environment) [
     parse ~qualifier:(Source.qualifier ~path:"use.py") ~path:"use.py" use_source;
     parse ~qualifier:(Source.qualifier ~path:"define.py") ~path:"define.py" define_source;
   ];
   let parsed = parse use_source in
   let configuration = (Configuration.create ~debug:true ~infer:false ()) in
-  let environment = (Environment.reader environment) in
+  let environment = (Environment.reader ~configuration environment) in
   let { TypeCheck.lookup; _ } = TypeCheck.check configuration environment parsed in
   assert_is_some lookup;
   assert_equal
@@ -89,7 +96,7 @@ let test_lookup_method _ =
     |}
   in
   let configuration = (Configuration.create ~debug:true ~infer:false ()) in
-  let environment = environment source |> Environment.reader in
+  let environment = environment source |> Environment.reader ~configuration in
   let parsed = parse source in
   let { TypeCheck.lookup; _ } = TypeCheck.check configuration environment parsed in
   assert_is_some lookup;

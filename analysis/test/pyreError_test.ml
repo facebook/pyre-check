@@ -49,6 +49,9 @@ let error kind =
   { Error.location = Location.any; kind; define = mock_define }
 
 
+let configuration = Configuration.create ()
+
+
 let test_due_to_analysis_limitations _ =
 
   (* IncompatibleAttributeType. *)
@@ -274,7 +277,9 @@ let test_due_to_analysis_limitations _ =
 
 let test_join _ =
   let assert_join left right expected =
-    let environment = Environment.reader (Environment.Builder.create ()) in
+    let environment =
+      Environment.reader ~configuration (Environment.Builder.create ~configuration ())
+    in
     let resolution = Environment.resolution environment () in
     let result = Error.join ~resolution left right in
     assert_equal ~cmp:Error.equal result expected

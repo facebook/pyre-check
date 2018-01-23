@@ -10,10 +10,19 @@ open Ast
 
 open Test
 
+
+let configuration = Configuration.create ()
+
+
 let populate ?source_root source =
-  let environment = Environment.Builder.create () in
-  Environment.populate ?source_root (Environment.reader environment) [parse source];
-  environment |> Environment.reader
+  let environment = Environment.Builder.create ~configuration () in
+  Environment.populate
+    ~configuration
+    ?source_root
+    (Environment.reader ~configuration environment)
+    [parse source];
+  environment
+  |> Environment.reader ~configuration
 
 
 let access names = List.map ~f:Expression.Access.create names |> List.concat
@@ -23,14 +32,17 @@ let primitive name = Type.Primitive ~~name
 
 
 let test_index _ =
-  let environment = Environment.Builder.create () in
+  let environment = Environment.Builder.create ~configuration () in
   let source = {|
       class baz.baz(): pass
       _T = typing.TypeVar("_T")
       def foo(): pass
     |}
   in
-  Environment.populate (Environment.reader environment) [parse ~path:"test.py" source];
+  Environment.populate
+    ~configuration
+    (Environment.reader ~configuration environment)
+    [parse ~path:"test.py" source];
   let {
     Dependencies.class_keys;
     function_keys;
@@ -53,13 +65,13 @@ let test_dependent_of_list _ =
     | None -> Hashtbl.set table ~key:source ~data:[dependent]
     | Some dependents -> Hashtbl.set table ~key:source ~data:(dependent :: dependents)
   in
-  let environment = Environment.Builder.create () in
+  let environment = Environment.Builder.create ~configuration () in
   let dependencies =
     { environment.Environment.dependencies with Dependencies.dependents = table }
   in
   let environment = { environment with Environment.dependencies } in
   let (module Reader: Environment.Reader) =
-    Environment.reader environment
+    Environment.reader ~configuration environment
   in
   add_dependent "b.py" "a.py";
   add_dependent "c.py" "a.py";
@@ -90,13 +102,13 @@ let test_transitive_dependent_of_list _ =
     | None -> Hashtbl.set table ~key:source ~data:[dependent]
     | Some dependents -> Hashtbl.set table ~key:source ~data:(dependent :: dependents)
   in
-  let environment = Environment.Builder.create () in
+  let environment = Environment.Builder.create ~configuration () in
   let dependencies =
     { environment.Environment.dependencies with Dependencies.dependents = table }
   in
   let environment = { environment with Environment.dependencies } in
   let (module Reader: Environment.Reader) =
-    Environment.reader environment
+    Environment.reader ~configuration environment
   in
   add_dependent "b.py" "a.py";
   add_dependent "c.py" "a.py";
@@ -118,13 +130,13 @@ let test_transitive_dependent_of_list _ =
 
 let test_transitive_dependents _ =
   let table = String.Table.create () in
-  let environment = Environment.Builder.create () in
+  let environment = Environment.Builder.create ~configuration () in
   let dependencies =
     { environment.Environment.dependencies with Dependencies.dependents = table }
   in
   let environment = { environment with Environment.dependencies } in
   let (module Reader: Environment.Reader) =
-    Environment.reader environment
+    Environment.reader ~configuration environment
   in
   let add_dependency source dependency =
     match Hashtbl.find table source with

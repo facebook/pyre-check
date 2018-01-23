@@ -54,7 +54,7 @@ end
 (** Provides a default in-process environment reader constructed from an
     [Environment.t]. Use [Environment_service.reader] if interfacing from outside
     [Analysis]. *)
-val reader: t -> (module Reader)
+val reader: t -> configuration: Configuration.t -> (module Reader)
 
 val resolution
   :  (module Reader)
@@ -66,6 +66,7 @@ val dependencies: (module Reader) -> string -> string list option
 
 val register_type
   :  order: (module TypeOrder.Reader)
+  -> configuration: Configuration.t
   -> aliases: (Type.t -> Type.t option)
   -> add_class_definition: (primitive: Type.t -> definition: Class.t Node.t -> unit)
   -> add_class_key: (path: string -> Type.t -> unit)
@@ -92,6 +93,7 @@ val connect_type_order
 
 val populate
   :  (module Reader)
+  -> configuration: Configuration.t
   -> ?source_root: Path.t
   -> ?check_dependency_exists: bool
   -> Source.t list
@@ -100,7 +102,7 @@ val populate
 val infer_implementations: (module Reader) -> protocol: Type.t -> TypeOrder.Edge.Set.t
 
 module Builder : sig
-  val create: unit -> t
+  val create: configuration: Configuration.t -> unit -> t
   val copy: t -> t
 
   val statistics: t -> string

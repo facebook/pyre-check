@@ -4,7 +4,6 @@
     LICENSE file in the root directory of this source tree. *)
 
 open Analysis
-open Pyre
 
 val in_process_reader
   :  Service.t
@@ -22,6 +21,6 @@ val shared_memory_reader
 
 val repopulate
   :  (module Environment.Reader)
-  -> root: Path.t
+  -> configuration: Configuration.t
   -> handles: File.Handle.t list
   -> unit

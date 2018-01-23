@@ -69,6 +69,7 @@ val connect
   :  ?parameters: Type.t list
   -> ?add_backedge: bool
   -> (module Reader)
+  -> configuration: Configuration.t
   -> predecessor: Type.t
   -> successor: Type.t
   -> unit
@@ -107,7 +108,13 @@ val instantiate_parameters
 
 val add_backedges: (module Reader) -> unit
 val remove_extra_edges: (module Reader) -> bottom: Type.t -> top: Type.t -> unit
-val connect_annotations_to_top: (module Reader) -> bottom: Type.t -> top: Type.t -> unit
+val connect_annotations_to_top
+  :  (module Reader)
+  -> configuration: Configuration.t
+  -> bottom: Type.t
+  -> top: Type.t
+  -> unit
+
 val check_integrity: (module Reader) -> unit
 
 val to_dot: (module Reader) -> string
@@ -116,5 +123,5 @@ module Builder: sig
   val create: unit -> t
   val copy: t -> t
 
-  val default: unit -> t
+  val default: configuration: Configuration.t -> unit -> t
 end

@@ -146,10 +146,14 @@ let test_stop_handles_unix_errors context =
   Command.run ~argv:["_"; long_path] Server.stop_command
 
 
+let configuration = Configuration.create ()
+
+
 let environment () =
-  let environment = Environment.Builder.create () in
+  let environment = Environment.Builder.create ~configuration () in
   Environment.populate
-    (Environment.reader environment)
+    ~configuration
+    (Environment.reader ~configuration environment)
     [
       parse {|
         class int(float): pass
@@ -175,19 +179,20 @@ let associate_errors_and_filenames error_list =
 
 
 let make_errors ?(path = "test.py") ?(qualifier = []) source =
-  let source = Preprocessing.preprocess (parse ~path ~qualifier source) in
-  let environment_reader = Environment.reader (environment ()) in
-  Environment.populate (environment_reader) [source];
   let configuration = Command_test.mock_analysis_configuration () in
+  let source = Preprocessing.preprocess (parse ~path ~qualifier source) in
+  let environment_reader = Environment.reader ~configuration (environment ()) in
+  Environment.populate ~configuration (environment_reader) [source];
   (Analysis.TypeCheck.check configuration environment_reader source).TypeCheck.errors
 
 let mock_server_state
     ?(initial_errors = Error.Hash_set.create ())
     ?(initial_environment = environment ())
     errors =
+  let configuration = Configuration.create () in
   {
     State.deferred_requests = [];
-    environment = Environment.reader initial_environment;
+    environment = Environment.reader ~configuration initial_environment;
     initial_errors;
     errors;
     handles = File.Handle.Set.empty;
@@ -463,8 +468,10 @@ let test_incremental_dependencies _ =
 
   Out_channel.write_all "a.py" ~data:a_source;
   Out_channel.write_all "b.py" ~data:b_source;
-  let environment = Environment.Builder.create () in
-  Environment.populate (Environment.reader environment) [
+  let environment = Environment.Builder.create ~configuration () in
+  Environment.populate
+    ~configuration
+    (Environment.reader ~configuration environment) [
     parse ~path:"a.py" a_source;
     parse ~path:"b.py" b_source;
   ];
@@ -523,9 +530,12 @@ let test_incremental_lookups _ =
     |}
     |> trim_extra_indentation
   in
-  let environment = Environment.Builder.create () in
-  let (module Reader: Environment.Reader) = Environment.reader environment in
-  Environment.populate (Environment.reader environment) [parse source];
+  let environment = Environment.Builder.create ~configuration () in
+  let (module Reader: Environment.Reader) = Environment.reader ~configuration environment in
+  Environment.populate
+    ~configuration
+    (Environment.reader ~configuration environment)
+    [parse source];
   let request =
     Protocol.Request.TypeCheckRequest
       { Protocol.files = [file ~content:(Some source) path]; check_dependents = true }
@@ -585,10 +595,13 @@ let test_incremental_repopulate _ =
     |}
     |> trim_extra_indentation
   in
-  let environment = Environment.Builder.create () in
-  let (module Reader: Environment.Reader) = Environment.reader environment in
+  let environment = Environment.Builder.create ~configuration () in
+  let (module Reader: Environment.Reader) = Environment.reader ~configuration environment in
   Out_channel.write_all ~data:source "test.py";
-  Environment.populate (Environment.reader environment) [parse source];
+  Environment.populate
+    ~configuration
+    (Environment.reader ~configuration environment)
+    [parse source];
   let errors = File.Handle.Table.create () in
   let initial_state =
     mock_server_state
