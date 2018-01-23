@@ -185,6 +185,7 @@ let insert (module Reader: Reader) annotation =
 
 let connect
     ?(parameters = [])
+    ?(add_backedge = false)
     ((module Reader: Reader) as order)
     ~predecessor
     ~successor =
@@ -202,8 +203,8 @@ let connect
       let edges = Reader.edges () in
       let backedges = Reader.backedges () in
 
-      (* Add edges. *)
       let connect ~edges ~predecessor ~successor =
+        (* Add edges. *)
         let successors =
           Reader.find edges predecessor
           >>| List.filter ~f:(fun { Target.target; _ } -> target <> successor)
@@ -214,38 +215,11 @@ let connect
           Reader.set
             edges
             ~key:predecessor
-            ~data:(target :: successors);
+            ~data:(target :: successors)
       in
       connect ~edges ~predecessor ~successor;
-      connect ~edges:backedges ~predecessor:successor ~successor:predecessor;
-
-      let disconnect ~predecessor ~successor =
-        (* Remove back-edges from successor. *)
-        let predecessors =
-          Reader.find backedges successor
-          >>| List.filter ~f:(fun { Target.target; _ } -> target <> predecessor)
-          |> Option.value ~default:[]
-        in
-        Reader.set backedges ~key:successor ~data:predecessors;
-
-        (* Remove extra in-edges from predecessor. *)
-        let successors =
-          Reader.find edges predecessor
-          >>| List.filter ~f:(fun { Target.target; _ } -> target <> successor)
-          |> Option.value ~default:[]
-        in
-        Reader.set edges ~key:predecessor ~data:successors;
-      in
-      (* Disconnect successor from Bottom. *)
-      let bottom = index_of order Type.Bottom in
-      if predecessor <> bottom then
-        disconnect ~predecessor:bottom ~successor;
-      (* Disconnect predecessor from Object. *)
-      match Reader.find (Reader.indices ()) Type.Object with
-      | Some any ->
-          if successor <> any then
-            disconnect ~predecessor ~successor:any
-      | _ -> ()
+      if add_backedge then
+        connect ~edges:backedges ~predecessor:successor ~successor:predecessor
     end
 
 
@@ -877,7 +851,67 @@ let widen order ~widening_threshold ~previous ~next ~iteration =
     join order previous next
 
 
-let complete ((module Reader: Reader) as order) ~bottom ~top =
+let add_backedges (module Reader: Reader) =
+  let backedges = Reader.backedges () in
+  let edge_keys = Reader.edge_keys () in
+  let add_backedges predecessor =
+    let successors = Reader.find (Reader.edges ()) predecessor in
+    let add_backedge { Target.target = successor; parameters } =
+      let node = { Target.target = predecessor; parameters } in
+      match (Reader.find (Reader.backedges ()) successor) with
+      | None ->
+          Reader.set backedges ~key:successor ~data:[node]
+      | Some nodes ->
+          Reader.set backedges ~key:successor ~data:(node :: nodes)
+    in
+    match successors with
+    | Some successors ->
+        List.iter ~f:add_backedge successors
+    | None ->
+        ()
+  in
+  List.iter ~f:add_backedges edge_keys
+
+
+let remove_extra_edges (module Reader: Reader) ~bottom ~top =
+  let disconnect keys ~edges ~backedges special_index =
+    let remove_extra_references key =
+      (Reader.find edges key
+       >>|
+       (fun connected ->
+          let disconnected =
+            List.filter ~f:(fun { Target.target; _ } -> target <> special_index) connected
+          in
+          if List.is_empty disconnected then
+            []
+          else
+            begin
+              Reader.set edges ~key ~data:disconnected;
+              [key]
+            end))
+       |> Option.value ~default:[]
+    in
+    let removed_indices = List.concat_map ~f:remove_extra_references keys |> Int.Set.of_list in
+    Reader.find backedges special_index
+    >>|
+    (fun edges ->
+       let edges =
+         List.filter ~f:(fun { Target.target; _ } -> not (Set.mem removed_indices target)) edges
+       in
+       Reader.set backedges ~key:special_index ~data:edges)
+    |> Option.value ~default:()
+  in
+  let edges = Reader.edges () in
+  let backedges = Reader.backedges () in
+  disconnect (Reader.edge_keys ()) ~edges ~backedges (Reader.find_unsafe (Reader.indices ()) top);
+  disconnect
+    (Reader.backedge_keys ())
+    ~edges:backedges
+    ~backedges:edges
+    (Reader.find_unsafe (Reader.indices ()) bottom)
+
+
+let connect_annotations_to_top ((module Reader: Reader) as order) ~bottom ~top =
   let index_of annotation = Reader.find_unsafe (Reader.indices ()) annotation in
   let top_index = index_of top in
   let visited = ref (Int.Set.of_list [top_index]) in
@@ -1036,13 +1070,13 @@ module Builder = struct
     insert reader Type.Top;
     (* Object *)
     insert reader Type.Object;
-    connect reader ~predecessor:Type.Bottom ~successor:Type.Object;
-    connect reader ~predecessor:Type.Object ~successor:Type.Top;
+    connect ~add_backedge:true reader ~predecessor:Type.Bottom ~successor:Type.Object;
+    connect ~add_backedge:true reader ~predecessor:Type.Object ~successor:Type.Top;
 
     let insert_unconnected annotation =
       insert reader annotation;
-      connect reader ~predecessor:Type.Bottom ~successor:annotation;
-      connect reader ~predecessor:annotation ~successor:Type.Object
+      connect ~add_backedge:true reader ~predecessor:Type.Bottom ~successor:annotation;
+      connect ~add_backedge:true reader ~predecessor:annotation ~successor:Type.Object
     in
 
     (* Special forms *)
@@ -1055,9 +1089,9 @@ module Builder = struct
     let type_builtin = Type.Primitive (Identifier.create "type") in
     insert reader type_special_form;
     insert reader type_builtin;
-    connect reader ~predecessor:Type.Bottom ~successor:type_special_form;
-    connect reader ~predecessor:type_special_form ~successor:type_builtin;
-    connect reader ~predecessor:type_builtin ~successor:Type.Object;
+    connect ~add_backedge:true reader ~predecessor:Type.Bottom ~successor:type_special_form;
+    connect ~add_backedge:true reader ~predecessor:type_special_form ~successor:type_builtin;
+    connect ~add_backedge:true reader ~predecessor:type_builtin ~successor:Type.Object;
 
     insert_unconnected (Type.Primitive (Identifier.create "typing.ClassVar"));
 
@@ -1065,9 +1099,9 @@ module Builder = struct
     let typing_dict = (Type.Primitive (Identifier.create "typing.Dict")) in
     insert reader base_dict;
     insert reader typing_dict;
-    connect reader ~predecessor:Type.Bottom ~successor:base_dict;
-    connect reader ~predecessor:base_dict ~successor:typing_dict;
-    connect reader ~predecessor:typing_dict ~successor:Type.Object;
+    connect ~add_backedge:true reader ~predecessor:Type.Bottom ~successor:base_dict;
+    connect ~add_backedge:true reader ~predecessor:base_dict ~successor:typing_dict;
+    connect ~add_backedge:true reader ~predecessor:typing_dict ~successor:Type.Object;
 
     insert_unconnected (Type.Primitive (Identifier.create "None"));
 
@@ -1075,10 +1109,10 @@ module Builder = struct
     insert reader Type.integer;
     insert reader Type.float;
     insert reader Type.complex;
-    connect reader ~predecessor:Type.Bottom ~successor:Type.integer;
-    connect reader ~predecessor:Type.integer ~successor:Type.float;
-    connect reader ~predecessor:Type.float ~successor:Type.complex;
-    connect reader ~predecessor:Type.complex ~successor:Type.Object;
+    connect ~add_backedge:true reader ~predecessor:Type.Bottom ~successor:Type.integer;
+    connect ~add_backedge:true reader ~predecessor:Type.integer ~successor:Type.float;
+    connect ~add_backedge:true reader ~predecessor:Type.float ~successor:Type.complex;
+    connect ~add_backedge:true reader ~predecessor:Type.complex ~successor:Type.Object;
 
     order
 end

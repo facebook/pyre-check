@@ -15,6 +15,10 @@ let (!) name =
   Type.Primitive ~~name
 
 
+let connect ?(parameters = []) order ~predecessor ~successor =
+  connect ~parameters ~add_backedge:true order ~predecessor ~successor
+
+
 (* Butterfly:
     0 - 2
       X
@@ -744,7 +748,39 @@ let test_instantiate_parameters _ =
     (Some [Type.integer])
 
 
-let test_complete _ =
+let test_remove_extra_edges _ =
+  (* 0 -> 1 -> 2 -> 3
+     |----^         ^
+     |--------------^
+  *)
+  let (module Reader: TypeOrder.Reader) =
+    let order = Builder.create () |> TypeOrder.reader in
+    insert order Type.Bottom;
+    insert order Type.Top;
+    insert order !"0";
+    insert order !"1";
+    insert order !"2";
+    insert order !"3";
+    connect order ~predecessor:!"0" ~successor:!"1";
+    connect order ~predecessor:!"0" ~successor:!"3";
+    connect order ~predecessor:!"1" ~successor:!"2";
+    connect order ~predecessor:!"2" ~successor:!"3";
+    remove_extra_edges order ~bottom:!"0" ~top:!"3";
+    order
+  in
+  let zero_index = Reader.find_unsafe (Reader.indices ()) !"0" in
+  let one_index = Reader.find_unsafe (Reader.indices ()) !"1" in
+  let two_index = Reader.find_unsafe (Reader.indices ()) !"2" in
+  let three_index = Reader.find_unsafe (Reader.indices ()) !"3" in
+  assert_equal
+    (Reader.find_unsafe (Reader.edges ()) zero_index)
+    [{ Target.target = one_index; parameters = []}];
+  assert_equal
+    (Reader.find_unsafe (Reader.backedges ()) three_index)
+    [{ Target.target = two_index; parameters = []}]
+
+
+let test_connect_annotations_to_top _ =
   (* Partial partial order:
       0 - 2
       |
@@ -759,12 +795,62 @@ let test_complete _ =
     insert order !"3";
     connect order ~predecessor:!"0" ~successor:!"2";
     connect order ~predecessor:!"0" ~successor:!"1";
-    complete order ~bottom:!"0" ~top:!"3";
+    connect_annotations_to_top order ~bottom:!"0" ~top:!"3";
     order in
 
   assert_equal
     (least_upper_bound order !"1" !"2")
     [!"3"]
+
+
+let test_add_backedges _ =
+  (*
+     TOP
+      |
+      A
+     / \
+    B   C
+     \ /
+      D
+      |
+   BOTTOM
+  *)
+  let (module Reader: TypeOrder.Reader) =
+    (* Don't add backedges when connecting *)
+    let connect = TypeOrder.connect in
+    let order = Builder.create () |> TypeOrder.reader in
+    insert order Type.Bottom;
+    insert order Type.Top;
+    insert order !"A";
+    insert order !"B";
+    insert order !"C";
+    insert order !"D";
+    connect order ~predecessor:Type.Bottom ~successor:!"D";
+    connect order ~predecessor:!"D" ~successor:!"B";
+    connect order ~predecessor:!"D" ~successor:!"C";
+    connect order ~predecessor:!"B" ~successor:!"A";
+    connect order ~predecessor:!"C" ~successor:!"A";
+    connect order ~predecessor:!"A" ~successor:Type.Top;
+    order
+  in
+  let assert_backedges annotation number_of_backedges =
+    let index = Reader.find_unsafe (Reader.indices ()) annotation in
+    match Reader.find (Reader.backedges ()) index with
+    | None ->
+        assert_equal number_of_backedges 0
+    | Some backedges ->
+        assert_equal number_of_backedges (List.length backedges)
+  in
+  assert_backedges !"A" 0;
+  assert_backedges !"B" 0;
+  assert_backedges !"C" 0;
+  assert_backedges !"D" 0;
+
+  TypeOrder.add_backedges (module Reader);
+  assert_backedges !"A" 2;
+  assert_backedges !"B" 1;
+  assert_backedges !"C" 1;
+  assert_backedges !"D" 1
 
 
 let test_check_integrity _ =
@@ -828,14 +914,13 @@ let test_to_dot _ =
     insert order Type.Top;
     connect order ~predecessor:!"0" ~successor:!"2";
     connect order ~predecessor:!"0" ~successor:!"1" ~parameters:[Type.string];
-    complete order ~bottom:!"0" ~top:!"3";
+    connect_annotations_to_top order ~bottom:!"0" ~top:!"3";
     order in
   let (module Reader) = order in
   assert_equal
     ~printer:ident
     ({|
        digraph {
-         4[label="`typing.Any`"]
          2[label="`2`"]
          1[label="`1`"]
          0[label="`0`"]
@@ -865,7 +950,9 @@ let () =
     "least_upper_bound">::test_least_upper_bound;
     "greatest_lower_bound">::test_greatest_lower_bound;
     "instantiate_parameters">::test_instantiate_parameters;
-    "complete">::test_complete;
+    "add_backedges">::test_add_backedges;
+    "remove_extra_edges">::test_remove_extra_edges;
+    "connect_annotations_to_top">::test_connect_annotations_to_top;
     "check_integrity">::test_check_integrity;
     "to_dot">::test_to_dot;
   ]

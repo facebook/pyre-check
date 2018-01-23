@@ -67,6 +67,7 @@ val reader: t -> (module Reader)
 val insert: (module Reader) -> Type.t -> unit
 val connect
   :  ?parameters: Type.t list
+  -> ?add_backedge: bool
   -> (module Reader)
   -> predecessor: Type.t
   -> successor: Type.t
@@ -104,7 +105,9 @@ val instantiate_parameters
   -> target:Type.t
   -> Type.t List.t Option.t
 
-val complete: (module Reader) -> bottom: Type.t -> top: Type.t -> unit
+val add_backedges: (module Reader) -> unit
+val remove_extra_edges: (module Reader) -> bottom: Type.t -> top: Type.t -> unit
+val connect_annotations_to_top: (module Reader) -> bottom: Type.t -> top: Type.t -> unit
 val check_integrity: (module Reader) -> unit
 
 val to_dot: (module Reader) -> string

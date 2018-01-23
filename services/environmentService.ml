@@ -80,7 +80,11 @@ let infer_protocols
     ~reduce:Set.union
     (Hash_set.to_list Reader.protocols)
   |> Set.iter ~f:(fun { Edge.source; target } ->
-      TypeOrder.connect (module Reader.TypeOrderReader) ~predecessor:source ~successor:target);
+      TypeOrder.connect
+        (module Reader.TypeOrderReader)
+        ~add_backedge:true
+        ~predecessor:source
+        ~successor:target);
 
   TypeOrder.check_integrity (module Reader.TypeOrderReader);
 

@@ -82,7 +82,6 @@ let register_type
         location = Location.any;
       };
 
-
     (* Handle definition. *)
     begin
       match definition with
@@ -934,7 +933,12 @@ let populate
   register_aliases (module Reader) sources;
   List.iter ~f:(connect_type_order ~source_root ~check_dependency_exists (module Reader)) sources;
 
-  TypeOrder.complete (module Reader.TypeOrderReader) ~bottom:Type.Bottom ~top:Type.Object;
+  TypeOrder.connect_annotations_to_top
+    (module Reader.TypeOrderReader)
+    ~bottom:Type.Bottom
+    ~top:Type.Object;
+  TypeOrder.add_backedges (module Reader.TypeOrderReader : TypeOrder.Reader);
+  TypeOrder.remove_extra_edges (module Reader.TypeOrderReader) ~bottom:Type.Bottom ~top:Type.Object;
   TypeOrder.check_integrity (module Reader.TypeOrderReader)
 
 
