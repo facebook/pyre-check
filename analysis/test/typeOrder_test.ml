@@ -100,6 +100,15 @@ let diamond_order =
   order
 
 
+let disconnected_order =
+  let order = Builder.create () |> TypeOrder.reader in
+  insert order Type.Bottom;
+  insert order Type.Top;
+  insert order !"A";
+  insert order !"B";
+  order
+
+
 let default =
   let order = Builder.default () |> TypeOrder.reader in
   let variable = Type.Variable { Type.variable = ~~"_T"; constraints = [] } in
@@ -633,7 +642,12 @@ let test_join _ =
     (join
        order
        (Type.Parametric { Type.name = ~~"A"; parameters = [Type.integer; Type.string] })
-       (Type.Parametric { Type.name = ~~"C"; parameters = [Type.Bottom] }))
+       (Type.Parametric { Type.name = ~~"C"; parameters = [Type.Bottom] }));
+
+  assert_equal
+    (join disconnected_order !"A" !"B")
+    Type.Object
+
 
 let test_meet _ =
   (* Primitive types. *)
@@ -690,6 +704,10 @@ let test_meet _ =
   assert_equal
     ~printer:Type.show
     (meet default (Type.list Type.float) (Type.parametric "float" [Type.integer]))
+    Type.Bottom;
+
+  assert_equal
+    (meet disconnected_order !"A" !"B")
     Type.Bottom;
 
   assert_equal

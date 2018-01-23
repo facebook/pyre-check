@@ -652,14 +652,15 @@ and join ((module Reader: Reader) as order) left right =
         else
           Type.Object
     | _ ->
-        let joined =
-          least_upper_bound order left right
-          |> List.hd_exn
-        in
-        if Type.equal joined left || Type.equal joined right then
-          joined
-        else
-          Type.union [left; right]
+        match List.hd (least_upper_bound order left right) with
+        | Some joined ->
+            if Type.equal joined left || Type.equal joined right then
+              joined
+            else
+              Type.union [left; right]
+        | None ->
+            Log.debug "Couldn't find a upper bound for %a and %a" Type.pp left Type.pp right;
+            Type.Object
 
 
 and meet order left right =
@@ -746,8 +747,11 @@ and meet order left right =
           Type.Bottom
 
     | _ ->
-        greatest_lower_bound order left right
-        |> List.hd_exn
+        match List.hd (greatest_lower_bound order left right) with
+        | Some bound -> bound
+        | None ->
+            Log.debug "No lower bound found for %a and %a" Type.pp left Type.pp right;
+            Type.Bottom
 
 
 and instantiate_parameters
