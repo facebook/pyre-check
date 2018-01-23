@@ -929,41 +929,6 @@ let populate
     ?(source_root = Path.current_working_directory ())
     ?(check_dependency_exists = true)
     sources =
-  (* TODO(T19628746) Handle type aliases when building the environment instead of relying on this
-     hack. *)
-  let brute_force_type_aliases () =
-    let aliased_classes =
-      [
-        "collections.Callable", "typing.Callable";
-        "collections.Container", "typing.Container";
-        "collections.Hashable", "typing.Hashable";
-        "collections.Iterable", "typing.Iterable";
-        "collections.Iterator", "typing.Iterator";
-        "collections.Sized", "typing.Sized";
-        "collections.Generator", "typing.Generator";
-        "collections.ByteString", "typing.ByteString";
-        "collections.Reversible", "typing.Reversible";
-        "collections.Mapping", "typing.Mapping";
-        "collections.MappingView", "typing.MappingView";
-        "collections.ItemsView", "typing.ItemsView";
-        "collections.KeysView", "typing.KeysView";
-        "collections.ValuesView", "typing.ValuesView";
-        "collections.MutableMapping", "typing.MutableMapping";
-        "collections.Sequence", "typing.Sequence";
-        "collections.MutableSequence", "typing.MutableSequence";
-        "collections.MutableSet", "typing.MutableSet";
-        "collections.AbstractSet", "typing.Set";
-        "util.enum.IntEnum", "enum.IntEnum";
-      ]
-      |> List.map ~f:(fun (alias, actual) ->
-          Type.Primitive (Identifier.create alias),
-          Type.Primitive (Identifier.create actual))
-    in
-    List.iter
-      ~f:(fun (alias, actual) -> Reader.register_alias ~path:"" ~key:alias ~data:actual)
-      aliased_classes
-  in
-  brute_force_type_aliases ();
 
   List.iter ~f:(register_class_definitions (module Reader)) sources;
   register_aliases (module Reader) sources;
