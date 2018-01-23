@@ -651,14 +651,18 @@ let register_aliases (module Reader: Reader) sources =
           aliases
       | Import { Import.from = Some from; imports } ->
           let import_to_alias { Import.name; alias } =
-            match alias with
-            | None -> []
-            | Some alias ->
-                [
-                  path,
-                  Node.create (Access (qualifier @ alias)),
-                  Node.create (Access (from @ name));
-                ]
+            let qualified_name =
+              match alias with
+              | None ->
+                  Node.create (Access (qualifier @ name))
+              | Some alias ->
+                  Node.create (Access (qualifier @ alias))
+            in
+            [
+              path,
+              qualified_name,
+              Node.create (Access (from @ name));
+            ]
           in
           List.rev_append (List.concat_map ~f:import_to_alias imports) aliases
       | _ ->

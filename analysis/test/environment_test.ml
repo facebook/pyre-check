@@ -235,7 +235,7 @@ let test_register_aliases _ =
     (parse_annotation (module Reader) (!"collections.Iterator"))
     (primitive "typing.Iterator");
   assert_equal
-    (parse_annotation (module Reader) (!"collections.Iterable")) (primitive "collections.Iterable")
+    (parse_annotation (module Reader) (!"collections.Iterable")) (primitive "typing.Iterable")
 
 
 let test_connect_type_order _ =
