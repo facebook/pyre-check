@@ -44,10 +44,10 @@ let analyze_source
       let timer = Timer.start () in
       Log.log ~section:`Check "Checking `%s`..." path;
       let errors = TypeCheck.check configuration environment source in
-      Log.log ~section:`Check "Checked `%s` in %fs" path (Timer.stop timer);
       Statistics.performance
         ~flush:false
         ~randomly_log_every:100
+        ~section:`Check
         ~name:"SingleFileTypeCheck"
         ~timer
         ~normals:["path", path; "request kind", "SingleFileTypeCheck"]

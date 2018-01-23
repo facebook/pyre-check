@@ -27,6 +27,7 @@ let flush () = ()
 let performance
     ?(flush = false)
     ?(randomly_log_every = 1)
+    ?(section = `Performance)
     ~name:_
     ~timer:_
     ~configuration:_
@@ -34,7 +35,8 @@ let performance
     () =
   ignore flush;
   ignore randomly_log_every;
-  ignore normals
+  ignore normals;
+  ignore section
 
 
 let coverage ?(flush = false) ~coverage:_ ~configuration:_ ?(normals = []) () =

@@ -20,6 +20,7 @@ val flush: unit -> unit
 val performance
   :  ?flush: bool
   -> ?randomly_log_every: int
+  -> ?section: Log.section
   -> name: string
   -> timer: Timer.t
   -> configuration: Configuration.t
