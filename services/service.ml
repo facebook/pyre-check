@@ -69,10 +69,10 @@ let initialize_heap_handle () =
       let shared_mem_config =
         let open SharedMemory in
         {
-          global_size = 1024 * 1024 * 1024; (* 1024 MB *)
-          heap_size = 1024 * 1024 * 1024; (* 1024 MB *)
-          dep_table_pow = 17;
-          hash_table_pow = 19;
+          global_size = 4096 * 1024 * 1024; (* 4096 MB *)
+          heap_size = 4096 * 1024 * 1024; (* 4096 MB *)
+          dep_table_pow = 19;
+          hash_table_pow = 21;
           shm_dirs = default_shm_dirs;
           shm_min_avail = 1024 * 1024 * 512; (* 512 MB *)
           log_level = 0;
