@@ -7,6 +7,7 @@ import json
 import logging
 import os
 import re
+import shutil
 import signal
 import subprocess
 import sys
@@ -89,6 +90,35 @@ class Command:
         self._buffer = []
         for line in stdout:
             self._buffer.append(line.decode())
+
+    def _merge_directories(self, target_root):
+        if not os.path.exists(target_root):
+            os.makedirs(target_root)
+
+        def merge_directory(source_directory):
+            def add_file(path):
+                merged_path = os.path.join(target_root, path)
+                if os.path.exists(merged_path):
+                    return
+                directory = os.path.dirname(merged_path)
+                if not os.path.exists(directory):
+                    os.makedirs(directory)
+                if not path.endswith(".py") and not path.endswith(".pyi"):
+                    return
+                os.symlink(
+                    os.path.join(os.path.realpath(source_directory), path),
+                    merged_path)
+            for directory, _, files in os.walk(source_directory):
+                files = [
+                    os.path.relpath(
+                        os.path.join(directory, file), source_directory)
+                    for file in files
+                ]
+                for file in files:
+                    add_file(file)
+        for directory in self._source_directories:
+            merge_directory(directory)
+
 
     def _call_client(
             self,
@@ -340,10 +370,19 @@ class Check(ErrorHandling):
             '-type-check-root',
             self._current_directory,
         ])
+        source_directories = self._source_directories
+        if len(source_directories) > 1:
+            check_root = os.path.join(
+                os.getcwd(),
+                ".pyre/shared_source_directory")
+            if os.path.exists(check_root):
+                shutil.rmtree(check_root)
+            self._merge_directories(check_root)
+            source_directories = [check_root]
 
         results = self._call_client(
             command=CHECK,
-            source_directories=self._source_directories,
+            source_directories=source_directories,
             flags=flags)
         errors = self._get_errors(results)
         self._print(errors)

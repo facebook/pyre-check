@@ -46,8 +46,7 @@ class CommandTest(unittest.TestCase):
         self.assertEqual(
             commands.Command(
                 arguments,
-                configuration,
-                [])._relative_path('/original/directory/path'),
+                configuration, [])._relative_path('/original/directory/path'),
             'path')
         self.assertEqual(
             commands.Command(
@@ -73,6 +72,39 @@ class CommandTest(unittest.TestCase):
                 ['link/tree/one', 'link/tree/two'])._state()
             self.assertEqual(state.running, ['link/tree/one'])
             self.assertEqual(state.dead, ['link/tree/two'])
+
+    @patch('os.symlink')
+    @patch('os.walk')
+    @patch('os.makedirs')
+    @patch('os.path.exists')
+    def test_merge_directories(
+            self,
+            os_path_exists,
+            os_makedirs,
+            os_walk,
+            os_symlink) -> None:
+        os_path_exists.return_value = False
+        os_walk.side_effect = [
+            [
+                ("first", [], ["x.py", "y.py", "z.cpp"]),
+                ("first/b", [], ["z.py"]),
+            ],
+            [("second", [], ["a.py"])]
+        ]
+        command = commands.Command(
+            mock_arguments(),
+            mock_configuration(),
+            ["first", "second"])
+        command._merge_directories(".pyre/shared_root")
+        os_makedirs.assert_has_calls(
+            [call(".pyre/shared_root"), call(".pyre/shared_root/b")])
+        os_symlink.assert_has_calls(
+            [
+                call(os.getcwd() + "/first/x.py", ".pyre/shared_root/x.py"),
+                call(os.getcwd() + "/first/y.py", ".pyre/shared_root/y.py"),
+                call(os.getcwd() + "/first/b/z.py", ".pyre/shared_root/b/z.py"),
+                call(os.getcwd() + "/second/a.py", ".pyre/shared_root/a.py"),
+            ])
 
 
 class PersistentTest(unittest.TestCase):
