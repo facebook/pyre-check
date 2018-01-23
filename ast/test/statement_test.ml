@@ -193,24 +193,18 @@ let test_attribute_assigns _ =
     |}
     ["attribute", Some (Type.expression (Type.Union [Type.string; Type.integer])), None];
 
+  (* Implicit arguments in branches. *)
   assert_implicit_attribute_assigns
     {|
       def foo():
         a = 1
         self.attribute = value
-        self.attribute = other  # Take the first one
         if True:
-          # Ignore branching for now
-          self.attribute = other
           self.other = value
+          if False:
+            self.nested = value
     |}
-    ["attribute", None, None];
-  assert_implicit_attribute_assigns
-    {|
-      def foo():
-        self.attribute: int = value
-    |}
-    ["attribute", Some (Type.expression Type.integer), None];
+    ["attribute", None, None; "nested", None, None; "other", None, None];
 
   (* Test define field assigns. *)
   let assert_property_attribute_assign source expected =
@@ -268,6 +262,7 @@ let test_attribute_assigns _ =
     |}
     [
       "attribute", Some (Type.expression Type.integer), Some "value";
+      "ignored", None, None;
       "implicit", None, None;
     ];
   assert_attribute_assigns

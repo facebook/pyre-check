@@ -331,7 +331,7 @@ module Define = struct
               }
           in
           let update = function
-            | Some data -> Some (assign :: data)
+            | Some assigns -> Some (assign :: assigns)
             | None -> Some [assign]
           in
           Map.change ~f:update map access
@@ -367,7 +367,25 @@ module Define = struct
           { Node.location; value = { assign with Assign.annotation }}
       | [] -> failwith "Unpossible!"
     in
-    List.fold ~init:Expression.Access.Map.empty ~f:attribute_assign body
+    let rec expand_statements body =
+      (* Can't use `Visit` module due to circularity :( *)
+      let expand_statement ({ Node.value; _ } as statement) =
+        match value with
+        | If { If.body; orelse; _ }
+        | For { For.body; orelse; _ }
+        | While { While.body; orelse; _ } ->
+            (expand_statements body) @ (expand_statements orelse)
+        | Try { Try.body; orelse; finally; _ } ->
+            (expand_statements body) @ (expand_statements orelse) @ (expand_statements finally)
+        | With { With.body; _ } ->
+            expand_statements body
+        | _ ->
+            [statement]
+      in
+      List.concat_map ~f:expand_statement body
+    in
+    expand_statements body
+    |> List.fold ~init:Expression.Access.Map.empty ~f:attribute_assign
     |> Map.map ~f:merge_assigns
 
 
