@@ -942,6 +942,9 @@ let test_to_dot _ =
     ~printer:ident
     ({|
        digraph {
+         5[label="`unknown`"]
+         4[label="`typing.Any`"]
+         3[label="`3`"]
          2[label="`2`"]
          1[label="`1`"]
          0[label="`0`"]

@@ -180,7 +180,9 @@ let insert (module Reader: Reader) annotation =
       let indices = Reader.indices () in
       let index = Reader.length indices in
       Reader.set indices ~key:annotation ~data:index;
-      Reader.set (Reader.annotations ()) ~key:index ~data:annotation
+      Reader.set (Reader.annotations ()) ~key:index ~data:annotation;
+      Reader.set (Reader.edges ()) ~key:index ~data:[];
+      Reader.set (Reader.backedges ()) ~key:index ~data:[]
 
 
 let connect
