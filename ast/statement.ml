@@ -308,12 +308,12 @@ module Define = struct
 
 
   let implicit_attribute_assigns { body; _ } =
+    let open Expression in
     let attribute_assign map { Node.location; value } =
       match value with
       | Assign ({
           Assign.target = ({
-              Node.value = Expression.Access
-                  ((Expression.Access.Identifier self) :: ([_] as access));
+              Node.value = Access ((Access.Identifier self) :: ([_] as access));
               _;
             } as target);
           _;
@@ -325,20 +325,50 @@ module Define = struct
                 assign with
                 Assign.target = {
                   target with
-                  Node.value = Expression.Access access;
+                  Node.value = Access access;
                 };
                 value = None;
               }
           in
           let update = function
-            | Some data -> Some data
-            | None -> Some assign
+            | Some data -> Some (assign :: data)
+            | None -> Some [assign]
           in
           Map.change ~f:update map access
       | _ ->
           map
     in
+    let merge_assigns = function
+      | [assign] -> assign
+      | ({ Node.location; value = assign } :: _) as assigns ->
+          let annotation =
+            let annotation = function
+              | { Node.value = { Assign.annotation = Some annotation; _ }; _ } -> Some annotation
+              | _ -> None
+            in
+            match List.filter_map ~f:annotation assigns with
+            | [] -> None
+            | ({ Node.location; _ } as annotation) :: annotations ->
+                if List.for_all ~f:(Expression.equal annotation) annotations then
+                  Some annotation
+                else
+                  Some {
+                    Node.location;
+                    value = Access [
+                        Access.Identifier (Identifier.create "typing");
+                        Access.Identifier (Identifier.create "Union");
+                        Access.Subscript
+                          (List.map
+                             ~f:(fun index -> Access.Index index)
+                             (annotation :: annotations));
+                      ];
+                  }
+          in
+          { Node.location; value = { assign with Assign.annotation }}
+      | [] -> failwith "Unpossible!"
+    in
     List.fold ~init:Expression.Access.Map.empty ~f:attribute_assign body
+    |> Map.map ~f:merge_assigns
 
 
   let property_attribute_assign ~location ({ name; return_annotation; _ } as define) =

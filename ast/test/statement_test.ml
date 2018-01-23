@@ -170,6 +170,29 @@ let test_attribute_assigns _ =
       (parse_single_define source |> Define.implicit_attribute_assigns |> Map.data)
   in
   assert_implicit_attribute_assigns "def foo(): pass" [];
+
+  assert_implicit_attribute_assigns
+    {|
+      def foo():
+        self.attribute = value
+        self.attribute: int = value
+    |}
+    ["attribute", Some (Type.expression Type.integer), None];
+  assert_implicit_attribute_assigns
+    {|
+      def foo():
+        self.attribute: int = value
+        self.attribute = value
+    |}
+    ["attribute", Some (Type.expression Type.integer), None];
+  assert_implicit_attribute_assigns
+    {|
+      def foo():
+        self.attribute: int = value
+        self.attribute: str = value
+    |}
+    ["attribute", Some (Type.expression (Type.Union [Type.string; Type.integer])), None];
+
   assert_implicit_attribute_assigns
     {|
       def foo():
