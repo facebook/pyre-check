@@ -8,15 +8,27 @@ open Expression
 
 module Error = PyreError
 
-module State : sig
-  type t
-  [@@deriving eq, show]
-
-  type coverage = {
+module Coverage : sig
+  type t = {
     full: int;
     partial: int;
     untyped: int;
+    ignore: int;
   }
+
+  val create_empty: t
+
+  val full: t -> int
+  val partial: t -> int
+  val untyped: t -> int
+  val ignore: t -> int
+
+  val sum: t -> t -> t
+end
+
+module State : sig
+  type t
+  [@@deriving eq, show]
 
   val create
     :  environment: (module Environment.Reader)
@@ -32,7 +44,7 @@ module State : sig
     -> t
     -> Error.t list
 
-  val coverage: t -> coverage
+  val coverage: t -> Coverage.t
 
   val initial_forward
     : ?lookup: Lookup.t
@@ -54,6 +66,7 @@ module Fixpoint : Fixpoint.Fixpoint with type state := State.t
 type result = {
   errors: Error.t list;
   lookup: Lookup.t option;
+  type_coverage: Coverage.t;
 }
 
 val check

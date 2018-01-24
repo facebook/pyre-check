@@ -15,6 +15,39 @@ open Statement
 module Error = PyreError
 
 
+module Coverage = struct
+  type t = {
+    full: int;
+    partial: int;
+    untyped: int;
+    ignore: int;
+  }
+
+  let create_empty =
+    { full = 0; partial = 0; untyped = 0; ignore = 0 }
+
+  let full { full; _ } =
+    full
+
+  let partial { partial; _ } =
+    partial
+
+  let untyped { untyped; _ } =
+    untyped
+
+  let ignore { ignore; _ } =
+    ignore
+
+  let sum left right =
+    {
+      full = full left + full right;
+      partial = partial left + partial right;
+      untyped = untyped left + untyped right;
+      ignore = ignore left + ignore right;
+    }
+end
+
+
 module State = struct
   (* `environment` provides access to the global type environment.
 
@@ -37,13 +70,6 @@ module State = struct
     annotations: Annotation.t Access.Map.t;
     define: Define.t Node.t;
     lookup: Lookup.t option;
-  }
-
-
-  type coverage = {
-    full: int;
-    partial: int;
-    untyped: int;
   }
 
 
@@ -357,15 +383,15 @@ module State = struct
     let aggregate
         ~key:_
         ~data:{ Annotation.annotation; _ }
-        ({ full; partial; untyped } as coverage) =
+        ({ Coverage.full; partial; untyped; _ } as coverage) =
       if Type.is_untyped annotation then
-        { coverage with untyped = untyped + 1 }
+        { coverage with Coverage.untyped = untyped + 1 }
       else if Type.is_partially_typed annotation then
-        { coverage with partial = partial + 1 }
+        { coverage with Coverage.partial = partial + 1 }
       else
-        { coverage with full = full + 1 }
+        { coverage with Coverage.full = full + 1 }
     in
-    Map.fold ~init:{ full = 0; partial = 0; untyped = 0 } ~f:aggregate annotations
+    Map.fold ~init:(Coverage.create_empty) ~f:aggregate annotations
 
 
   let initial_forward
@@ -1422,7 +1448,7 @@ module State = struct
                          ~declare_location:location
                          errors
                    | _ ->
-                      errors)
+                       errors)
               | _ ->
                   let name = access in
                   let module Reader = (val environment : Environment.Reader) in
@@ -1783,12 +1809,13 @@ module Fixpoint = Fixpoint.Make(State)
 type result = {
   errors: Error.t list;
   lookup: Lookup.t option;
+  type_coverage: Coverage.t;
 }
 
 
 type check_result = {
   error_list: Error.t list;
-  type_coverage: State.coverage;
+  type_coverage: Coverage.t;
 }
 
 
@@ -1891,7 +1918,7 @@ let check configuration environment ({ Source.path; _ } as source) =
       let type_coverage =
         exit
         >>| State.coverage
-        |> Option.value ~default:{ State.full = 0; partial = 0; untyped = 0 }
+        |> Option.value ~default:(Coverage.create_empty)
       in
       { error_list; type_coverage }
     with
@@ -1916,28 +1943,34 @@ let check configuration environment ({ Source.path; _ } as source) =
               }]
             else
               [];
-          type_coverage = { State.full = 0; partial = 0; untyped = 0; };
+          type_coverage = Coverage.create_empty;
         }
   in
 
-  let source_coverage check_output =
-    let { State.full; partial; untyped } =
+  let aggregate_errors_and_coverage check_output =
+    let { Coverage.full; partial; untyped; ignore; } =
       List.fold
-        ~init:{ State.full = 0; partial = 0; untyped = 0; }
+        ~init:{
+          Coverage.full = 0;
+          partial = 0;
+          untyped = 0;
+          ignore = List.length (Source.ignore_lines source); }
         ~f:(fun
-             { State.full; partial; untyped; }
+             { Coverage.full; partial; untyped; ignore; }
              {
                type_coverage = {
-                 State.full = previous_full;
+                 Coverage.full = previous_full;
                  partial = previous_partial;
                  untyped = previous_untyped;
+                 _;
                };
-               _;
+               error_list = _;
              } ->
              {
-               State.full = full + previous_full;
+               Coverage.full = full + previous_full;
                partial = partial + previous_partial;
                untyped = untyped + previous_untyped;
+               ignore;
              }
            )
         check_output
@@ -1956,13 +1989,15 @@ let check configuration environment ({ Source.path; _ } as source) =
         "full_type_coverage", full;
         "partial_type_coverage", partial;
         "no_type_coverage", untyped;
-        "ignore_coverage", List.length (Source.ignore_lines source);
+        "ignore_coverage", ignore;
         "total_errors", List.length error_list;
       ]
       ~configuration
-      ~normals:[]
+      ~normals:[
+        "file_name", path;
+      ]
       ();
-    error_list
+    (error_list, { Coverage.full; partial; untyped; ignore; })
   in
 
   let rec recursive_infer_source added_global_errors iterations =
@@ -2099,7 +2134,11 @@ let check configuration environment ({ Source.path; _ } as source) =
       errors @ added_global_errors
       |> List.map ~f:(Error.dequalify dequalify_map environment)
       |> List.sort ~cmp:Error.compare
-      |> fun errors -> { errors; lookup = Some lookup }
+      |> fun errors -> { errors; lookup = Some lookup; type_coverage = Coverage.create_empty }
+  in
+
+  let apply_to_errors (error_list, coverage) ~f =
+    (f error_list, coverage)
   in
 
   if configuration.infer && configuration.recursive_infer then
@@ -2107,8 +2146,8 @@ let check configuration environment ({ Source.path; _ } as source) =
   else
     Preprocessing.defines source
     |> List.map ~f:check
-    |> source_coverage
-    |> Error.join_at_source ~resolution
-    |> List.map ~f:(Error.dequalify dequalify_map environment)
-    |> List.sort ~cmp:Error.compare
-    |> fun errors -> { errors; lookup = Some lookup }
+    |> aggregate_errors_and_coverage
+    |> apply_to_errors ~f:(Error.join_at_source ~resolution)
+    |> apply_to_errors ~f:(List.map ~f:(Error.dequalify dequalify_map environment))
+    |> apply_to_errors ~f:(List.sort ~cmp:Error.compare)
+    |> fun (errors, type_coverage) -> { errors; lookup = Some lookup; type_coverage }
