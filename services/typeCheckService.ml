@@ -134,25 +134,7 @@ let analyze_sources_parallel
           number_files;
           type_coverage = TypeCheck.Coverage.sum left.type_coverage right.type_coverage;
         })
-  |> (fun { errors; lookups; type_coverage; _ } ->
-      let file_path =
-        Path.get_relative_to_root ~root:directory ~path:source_root
-        |> Option.value ~default:(Path.absolute source_root)
-      in
-      Statistics.coverage
-        ~coverage:[
-          "full_type_coverage", TypeCheck.Coverage.full type_coverage;
-          "partial_type_coverage", TypeCheck.Coverage.partial type_coverage;
-          "no_type_coverage", TypeCheck.Coverage.untyped type_coverage;
-          "ignore_coverage", TypeCheck.Coverage.ignore type_coverage;
-          "total_errors", List.length errors;
-        ]
-        ~configuration
-        ~normals:[
-          "file_name", file_path;
-        ]
-        ();
-      errors, lookups)
+  |> (fun { errors; lookups; type_coverage; _ } -> (errors, lookups, type_coverage))
 
 
 let analyze_sources
@@ -201,23 +183,4 @@ let analyze_sources
         ~init:([], String.Map.empty, TypeCheck.Coverage.create_empty)
         ~f:(analyze_and_postprocess configuration environment)
         sources
-      |> (fun (error_list, lookups, { TypeCheck.Coverage.full; partial; untyped; ignore; }) ->
-          let file_path =
-            Path.get_relative_to_root ~root:directory ~path:source_root
-            |> Option.value ~default:(Path.absolute source_root)
-          in
-          Statistics.coverage
-            ~coverage:[
-              "full_type_coverage", full;
-              "partial_type_coverage", partial;
-              "no_type_coverage", untyped;
-              "ignore_coverage", ignore;
-              "total_errors", List.length error_list;
-            ]
-            ~configuration
-            ~normals:[
-              "file_name", file_path;
-            ]
-            ();
-          error_list, lookups)
-      |> fun (error_list, lookups) -> List.concat error_list, lookups
+      |> (fun (error_list, lookups, type_coverage) -> List.concat error_list, lookups, type_coverage)

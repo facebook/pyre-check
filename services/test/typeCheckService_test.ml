@@ -54,7 +54,7 @@ let type_check_sources_list_test context =
           files
           ~configuration
       in
-      let errors, _ =
+      let errors, _, _ =
         TypeCheckService.analyze_sources
           (Service.mock ())
           configuration

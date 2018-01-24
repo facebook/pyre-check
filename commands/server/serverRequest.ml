@@ -121,7 +121,7 @@ let rec process_request
             [], List.filter_map ~f:(File.handle ~root:source_root) files
         in
         let new_errors, lookups =
-          let errors, lookups =
+          let errors, lookups, _ =
             TypeCheckService.analyze_sources
               ~repopulate_handles
               service

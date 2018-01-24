@@ -97,9 +97,27 @@ let check
   in
 
   (* Run type checker. *)
-  let errors, _ =
+  let errors, _, { TypeCheck.Coverage.full; partial; untyped; ignore } =
     TypeCheckService.analyze_sources service configuration environment sources
   in
+  (* Log coverage results *)
+  let path_to_files =
+    Path.get_relative_to_root ~root:project_root ~path:source_root
+    |> Option.value ~default:(Path.absolute source_root)
+  in
+  Statistics.coverage
+    ~coverage:[
+      "full_type_coverage", full;
+      "partial_type_coverage", partial;
+      "no_type_coverage", untyped;
+      "ignore_coverage", ignore;
+      "total_errors", List.length errors;
+    ]
+    ~configuration
+    ~normals:[
+      "file_name", path_to_files;
+    ]
+    ();
   (* Only destroy the service if the check command created it. *)
   (match original_service with
    | None -> Service.destroy service

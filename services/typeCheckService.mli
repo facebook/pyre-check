@@ -16,4 +16,4 @@ val analyze_sources
   -> Configuration.t
   -> (module Environment.Reader)
   -> File.Handle.t list
-  -> Error.t list * (Lookup.t String.Map.t)
+  -> Error.t list * (Lookup.t String.Map.t) * TypeCheck.Coverage.t
