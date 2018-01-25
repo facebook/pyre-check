@@ -66,7 +66,7 @@ let test_decorator _ =
 
 
 let test_is_constructor _ =
-  let assert_is_constructor ~name ?(parent = None) expected =
+  let assert_is_constructor ?(in_test = false) ~name ?(parent = None) expected =
     let parent =
       if Option.is_some parent then
         Some (Access.create (Option.value_exn parent))
@@ -85,9 +85,10 @@ let test_is_constructor _ =
         parent;
       }
     in
-    assert_equal (Define.is_constructor define) expected
+    assert_equal (Define.is_constructor ~in_test define) expected
   in
   assert_is_constructor ~name:"__init__" ~parent:(Some "foo") true;
+  assert_is_constructor ~in_test:true ~name:"setUp" ~parent:(Some "foo") true;
   assert_is_constructor ~name:"__init__" false;
   assert_is_constructor ~name:"bar" ~parent:(Some "foo") false
 

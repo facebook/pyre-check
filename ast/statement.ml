@@ -243,13 +243,14 @@ module Define = struct
     has_decorator define "classmethod"
 
 
-  let is_constructor { name; parent; _ } =
+  let is_constructor ?(in_test = false) { name; parent; _ } =
     let string_name = Expression.Access.show name in
     match parent with
-    | None -> false
+    | None ->
+        false
     | Some parent ->
         Expression.Access.show parent = string_name ||
-        string_name = "__init__"
+        (string_name = "__init__" || (in_test && string_name = "setUp"))
 
 
   let is_generated_constructor { generated; _ } = generated
@@ -785,9 +786,9 @@ module Class = struct
   [@@deriving compare, eq, sexp, show]
 
 
-  let constructor { Record.Class.body; _ } =
+  let constructor ?(in_test = false) { Record.Class.body; _ } =
     let constructor = function
-      | { Node.value = Define define; _ } when Define.is_constructor define ->
+      | { Node.value = Define define; _ } when Define.is_constructor ~in_test define ->
           Some define
       | _ ->
           None
@@ -795,9 +796,12 @@ module Class = struct
     List.find_map ~f:constructor body
 
 
-  let attribute_assigns ?(include_properties = true) ({ Record.Class.body; _ } as definition) =
+  let attribute_assigns
+      ?(include_properties = true)
+      ?(in_test = false)
+      ({ Record.Class.body; _ } as definition) =
     let implicit_attribute_assigns =
-      constructor definition
+      constructor ~in_test definition
       >>| Define.implicit_attribute_assigns
       |> Option.value ~default:Expression.Access.Map.empty
     in

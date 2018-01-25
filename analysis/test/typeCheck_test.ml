@@ -2566,6 +2566,16 @@ let test_check_attributes _ =
     ];
   assert_type_errors
     {|
+      class unittest.TestCase: ...
+      class Foo(unittest.TestCase):
+        def setUp(self) -> None:
+          self.attribute: int = 1
+        def foo(self) -> str:
+          return self.attribute
+    |}
+    ["Incompatible return type [7]: Expected `str` but got `int`."];
+  assert_type_errors
+    {|
       class Foo:
         def __init__(self) -> None:
           self.attribute: int = 1

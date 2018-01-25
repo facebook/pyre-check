@@ -567,18 +567,7 @@ let test_implements _ =
 
 
 let test_class_attributes _ =
-  let resolution, parent =
-    let source =
-      {|
-        foo: foo
-        class foo():
-          def __init__(self):
-            self.implicit: int = 1
-          first: int
-          second: int
-          third: int = 1
-      |}
-    in
+  let setup source =
     let parent =
       match parse_last_statement source with
       | { Node.value = Class definition; _ } ->
@@ -588,6 +577,19 @@ let test_class_attributes _ =
     in
     populate source |> resolution,
     Class.create (Node.create parent)
+  in
+
+  let resolution, parent =
+    setup
+      {|
+        foo: foo
+        class foo():
+          def __init__(self):
+            self.implicit: int = 1
+          first: int
+          second: int
+          third: int = 1
+      |}
   in
 
   let create_assign

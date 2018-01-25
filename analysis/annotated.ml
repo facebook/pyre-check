@@ -476,7 +476,7 @@ module Class = struct
       ~initial
       ~f
       ~resolution =
-    let fold_definition initial ({ Node.value = definition; _ } as parent) =
+    let fold_definition ~in_test initial ({ Node.value = definition; _ } as parent) =
       let fold_attribute_assign accumulator assign =
         let attribute = Attribute.create ~resolution ~parent assign in
         if class_attributes_only && not (Attribute.class_attribute attribute) then
@@ -484,17 +484,25 @@ module Class = struct
         else
           f accumulator attribute
       in
-      Statement.Class.attribute_assigns ~include_properties definition
+      Statement.Class.attribute_assigns ~include_properties ~in_test definition
       |> Map.data
       |> List.fold ~init:initial ~f:fold_attribute_assign
     in
+    let superclasses = superclasses ~resolution definition in
+    let in_test =
+      let is_unit_test { Node.value = { Record.Class.name; _ }; _ } =
+        Access.show name
+        |> String.equal "unittest.TestCase"
+      in
+      List.exists ~f:is_unit_test (definition :: superclasses)
+    in
     let definitions =
       if transitive then
-        definition :: superclasses ~resolution definition
+        definition :: superclasses
       else
         [definition]
     in
-    List.fold ~f:fold_definition ~init:initial definitions
+    List.fold ~f:(fold_definition ~in_test) ~init:initial definitions
 
 
   let attributes ?(transitive = false) definition ~resolution  =

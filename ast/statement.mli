@@ -172,7 +172,7 @@ module Define : sig
   val is_overloaded_method: t -> bool
   val is_static_method: t -> bool
   val is_class_method: t -> bool
-  val is_constructor: t -> bool
+  val is_constructor: ?in_test: bool -> t -> bool
   val is_generated_constructor: t -> bool
   val is_untyped: t -> bool
 
@@ -193,8 +193,12 @@ module Class : sig
   type t = statement_node Record.Class.record
   [@@deriving compare, eq, sexp, show]
 
-  val constructor: t -> Define.t option
-  val attribute_assigns: ?include_properties: bool -> t -> (Assign.t Node.t) Expression.Access.Map.t
+  val constructor: ?in_test: bool -> t -> Define.t option
+  val attribute_assigns
+    :  ?include_properties: bool
+    -> ?in_test: bool
+    -> t
+    -> (Assign.t Node.t) Expression.Access.Map.t
 
   val strip: t -> t
   val update: t -> definition: t -> t
