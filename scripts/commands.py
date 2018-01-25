@@ -86,11 +86,6 @@ class Command:
             flags.extend(['-logging-sections', self._logging_sections])
         return flags
 
-    def _read_stdout(self, stdout) -> None:
-        self._buffer = []
-        for line in stdout:
-            self._buffer.append(line.decode())
-
     def _merge_directories(self, target_root):
         if not os.path.exists(target_root):
             os.makedirs(target_root)
@@ -119,6 +114,33 @@ class Command:
         for directory in self._source_directories:
             merge_directory(directory)
 
+    def _read_stdout(self, stdout) -> None:
+        self._buffer = []
+        for line in stdout:
+            self._buffer.append(line.decode())
+
+    def _read_stderr(self, stream, _source_directory) -> None:
+        buffer = None
+        log_pattern = re.compile(
+            r'\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} (\w+) (.*)')
+        try:
+            for line in stream:
+                if self._call_client_terminated:
+                    return
+                line = line.decode().rstrip()
+                match = log_pattern.match(line)
+                if match:
+                    if buffer:
+                        buffer.flush()
+                    buffer = log.Buffer(
+                        section=match.groups()[0],
+                        data=[match.groups()[1]])
+                elif buffer:
+                    buffer.append(line)
+            if buffer:
+                buffer.flush()
+        except Exception:
+            pass
 
     def _call_client(
             self,
@@ -150,34 +172,25 @@ class Command:
 
                 # Read stdout output
                 if capture_output:
-                    reader = threading.Thread(
+                    stdout_reader = threading.Thread(
                         target=self._read_stdout,
                         args=(process.stdout,))
-                    reader.daemon = True
-                    reader.start()
+                    stdout_reader.daemon = True
+                    stdout_reader.start()
 
                 # Read the error output and print it.
-                buffer = None
-                log_pattern = re.compile(
-                    r'\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} (\w+) (.*)')
-                for line in process.stderr:
-                    line = line.decode().rstrip()
-                    match = log_pattern.match(line)
-                    if match:
-                        if buffer:
-                            buffer.flush()
-                        buffer = log.Buffer(
-                            section=match.groups()[0],
-                            data=[match.groups()[1]])
-                    elif buffer:
-                        buffer.append(line)
-                if buffer:
-                    buffer.flush()
+                self._call_client_terminated = False
+                stderr_reader = threading.Thread(
+                    target=self._read_stderr,
+                    args=(process.stderr, source_directory))
+                stderr_reader.daemon = True
+                stderr_reader.start()
 
                 # Wait for the process to finish and clean up.
                 process.wait()
+                self._call_client_terminated = True
                 if capture_output:
-                    reader.join()
+                    stdout_reader.join()
 
                 output = ''
                 if capture_output:
@@ -397,6 +410,18 @@ class Incremental(ErrorHandling):
             configuration,
             source_directories)
 
+    def _read_stderr(self, _stream, source_directory):
+        stderr_file = os.path.join(
+            source_directory,
+            '.pyre/server/server.stdout')
+        with subprocess.Popen(
+                ['tail', '-f', stderr_file],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL) as stderr_tail:
+            super(Incremental, self)._read_stderr(
+                stderr_tail.stdout,
+                source_directory)
+
     def run(self) -> None:
         dead = self._state().dead
         if dead:
@@ -418,9 +443,9 @@ class Incremental(ErrorHandling):
         ])
 
         if dead:
-            LOG.info("Server initializing...")
+            LOG.warning("Server initializing...")
         else:
-            LOG.info("Waiting for server...")
+            LOG.warning("Waiting for server...")
 
         results = self._call_client(
             command=INCREMENTAL,
