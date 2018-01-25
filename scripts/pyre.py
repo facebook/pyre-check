@@ -151,7 +151,7 @@ def main() -> int:
         start = time.time()
         exit_code = SUCCESS
 
-        if arguments.debug:
+        if arguments.debug or not os.isatty(sys.stderr.fileno()):
             arguments.noninteractive = True
 
         log.initialize(arguments)
