@@ -320,6 +320,8 @@ let test_strip _ =
       class Foo:
         def __init__():
           pass
+        def setUp():
+          pass
         def method():
           pass
     |}
@@ -329,6 +331,17 @@ let test_strip _ =
       body = [
         +Define {
           Define.name = Access.create "__init__";
+          parameters = [];
+          body = [+Pass];  (* Not stripped! *)
+          decorators = [];
+          docstring = None;
+          return_annotation = None;
+          async = false;
+          generated = false;
+          parent = Some (Access.create "Foo")
+        };
+        +Define {
+          Define.name = Access.create "setUp";
           parameters = [];
           body = [+Pass];  (* Not stripped! *)
           decorators = [];
