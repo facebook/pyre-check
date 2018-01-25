@@ -235,7 +235,8 @@ module State = struct
         | IncompatibleAwaitableType actual
         | IncompatibleParameterType { mismatch = { actual; _ }; _ }
         | IncompatibleReturnType { actual; _ }
-        | IncompatibleVariableType { mismatch = { actual; _ }; _ } ->
+        | IncompatibleVariableType { mismatch = { actual; _ }; _ }
+        | UndefinedAttribute { annotation = actual; _ } ->
             Type.equal actual (Type.Primitive (Identifier.create "unittest.mock.Mock")) ||
             Type.equal actual (Type.Primitive (Identifier.create "unittest.mock.MagicMock"))
         | _ ->

@@ -1442,6 +1442,8 @@ let test_check _ =
         return unittest.mock.Mock()
       def boo() -> int:
         return unittest.mock.MagicMock()
+      def baz(a: unittest.mock.Mock) -> None:
+        a.b
       def a() -> str:
         return typing.Callable()
     |}
