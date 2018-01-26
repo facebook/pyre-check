@@ -2627,7 +2627,22 @@ let test_check_attributes _ =
       def bar() -> str:
         return Foo.attribute
     |}
-    ["Incompatible return type [7]: Expected `str` but got `int`."]
+    ["Incompatible return type [7]: Expected `str` but got `int`."];
+
+  (* Check attribute type propagation. *)
+  assert_type_errors
+    {|
+      class Foo:
+        attribute: int = 1
+        def foo(self) -> None:
+          self.attribute = unknown()
+          a = self.attribute.something
+    |}
+    [
+      "Incompatible attribute type [8]: Attribute `attribute` declared in class `Foo` has type " ^
+      "`int` but is used as type `unknown`.";
+      "Undefined attribute [16]: Class `int` has no attribute `something`.";
+    ]
 
 
 let test_check_globals _ =

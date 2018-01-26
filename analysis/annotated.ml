@@ -1266,7 +1266,7 @@ module Access = struct
                match Map.find annotations access with
                | Some resolved ->
                    resolution,
-                   annotation,
+                   resolved,
                    (f accumulator ~annotations ~resolved ~element:(Element.Attribute attribute))
                | None ->
                    let resolved = Attribute.annotation attribute in
