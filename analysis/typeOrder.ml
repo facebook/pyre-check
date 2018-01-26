@@ -86,6 +86,7 @@ module type Reader = sig
   val contains: ('key, 'value) lookup -> 'key -> bool
   val set: ('key, 'value) lookup -> key:'key -> data:'value -> unit
 
+  val add_key: int -> unit
   val keys: unit -> int list
 
   val length: ('key, 'value) lookup -> int
@@ -154,6 +155,8 @@ let reader order =
     let fold table ~init ~f =
       Hashtbl.fold table ~init ~f
 
+    let add_key _ = ()
+
     let keys () =
       Hashtbl.keys order.annotations
 
@@ -175,6 +178,7 @@ let insert (module Reader: Reader) annotation =
   | None ->
       let indices = Reader.indices () in
       let index = Reader.length indices in
+      Reader.add_key index;
       Reader.set indices ~key:annotation ~data:index;
       Reader.set (Reader.annotations ()) ~key:index ~data:annotation;
       Reader.set (Reader.edges ()) ~key:index ~data:[];

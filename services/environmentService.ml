@@ -296,6 +296,11 @@ let shared_memory_reader
 
         let show () = ""
 
+        let add_key key =
+          match OrderKeys.get "Order" with
+          | None -> OrderKeys.add "Order" [key]
+          | Some keys -> OrderKeys.add "Order" (key :: keys)
+
         let keys () =
           Option.value ~default:[] (OrderKeys.get "Order")
       end

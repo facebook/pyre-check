@@ -52,6 +52,7 @@ module type Reader = sig
   val contains: ('key, 'value) lookup -> 'key -> bool
   val set: ('key, 'value) lookup -> key:'key -> data:'value -> unit
 
+  val add_key: int -> unit
   val keys: unit -> int list
 
   val length: ('key, 'value) lookup -> int
