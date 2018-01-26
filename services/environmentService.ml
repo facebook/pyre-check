@@ -134,8 +134,7 @@ let shared_memory_reader
       add_table OrderBackedges.add backedges;
       add_table OrderIndices.add indices;
       add_table OrderAnnotations.add annotations;
-      OrderKeys.add "Edges" (Hashtbl.keys edges);
-      OrderKeys.add "Backedges" (Hashtbl.keys backedges)
+      OrderKeys.add "Order" (Hashtbl.keys annotations);
     in
     add_type_order order;
 
@@ -290,15 +289,18 @@ let shared_memory_reader
         let set { set; _ } ~key ~data =
           set key data
 
-        let length _ = 0
+        let length _ =
+          (OrderKeys.get "Order"
+           >>| List.length)
+          |> Option.value ~default:0
 
         let show () = ""
 
         let edge_keys () =
-          Option.value ~default:[] (OrderKeys.get "Edges")
+          Option.value ~default:[] (OrderKeys.get "Order")
 
         let backedge_keys () =
-          Option.value ~default:[] (OrderKeys.get "Backedges")
+          Option.value ~default:[] (OrderKeys.get "Order")
       end
 
       let register_definition
