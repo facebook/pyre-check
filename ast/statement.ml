@@ -807,6 +807,7 @@ module Class = struct
     in
     let property_assigns =
       let property_assigns map = function
+        | { Node.location; value = Stub (Stub.Define define) }
         | { Node.location; value = Define define } ->
             (Define.property_attribute_assign ~location define
              >>= fun ({ Node.value = { Assign.target; _ }; _ } as assign) ->

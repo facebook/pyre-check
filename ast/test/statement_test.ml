@@ -294,6 +294,13 @@ let test_attribute_assigns _ =
           pass
     |}
     ["property", Some (Type.expression Type.integer), None];
+  assert_attribute_assigns
+    {|
+      class Foo:
+        @property
+        def property(self) -> int: ...
+    |}
+    ["property", Some (Type.expression Type.integer), None];
 
   (* Class properties. *)
   assert_attribute_assigns
