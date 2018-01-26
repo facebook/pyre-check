@@ -31,7 +31,8 @@ module State : sig
   [@@deriving eq, show]
 
   val create
-    :  environment: (module Environment.Reader)
+    :  ?configuration: Configuration.t
+    -> environment: (module Environment.Reader)
     -> annotations: (Access.t * Annotation.t) list
     -> define: Statement.Define.t Node.t
     -> ?lookup: Lookup.t
@@ -40,20 +41,21 @@ module State : sig
 
   val errors
     :  (int * int list) list
-    -> Configuration.t
     -> t
     -> Error.t list
 
   val coverage: t -> Coverage.t
 
   val initial_forward
-    : ?lookup: Lookup.t
+    :  ?configuration: Configuration.t
+    -> ?lookup: Lookup.t
     -> (module Environment.Reader)
     -> Statement.Define.t Node.t
     -> t
 
   val initial_backward
-    :  environment: (module Environment.Reader)
+    :  ?configuration: Configuration.t
+    -> environment: (module Environment.Reader)
     -> Statement.Define.t Node.t
     -> forward:t
     -> t

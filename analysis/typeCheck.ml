@@ -65,6 +65,7 @@ module State = struct
      The join takes the union of keys and does an element-wise join on the
      values. *)
   type t = {
+    configuration: Configuration.t;
     environment: (module Environment.Reader);
     errors: Error.t Location.Map.t;
     annotations: Annotation.t Access.Map.t;
@@ -129,8 +130,15 @@ module State = struct
     Format.asprintf "%a" pp state
 
 
-  let create ~environment ~annotations ~define ?lookup () =
+  let create
+      ?(configuration = Configuration.create ())
+      ~environment
+      ~annotations
+      ~define
+      ?lookup
+      () =
     {
+      configuration;
       environment;
       errors = Location.Map.empty;
       annotations = Access.Map.of_alist_exn annotations;
@@ -141,8 +149,8 @@ module State = struct
 
   let errors
       ignore_lines
-      configuration
       ({
+        configuration;
         errors;
         define = ({ Node.location; value = define; _ } as define_node);
         _;
@@ -396,6 +404,7 @@ module State = struct
 
 
   let initial_forward
+      ?(configuration = Configuration.create ())
       ?lookup
       environment
       ({
@@ -403,7 +412,7 @@ module State = struct
         value = ({ Define.parent; parameters; _ } as define);
       } as define_node) =
     let { annotations; errors; _ } as initial =
-      create ~environment ~annotations:[]  ~define:define_node ?lookup ()
+      create ~configuration ~environment ~annotations:[]  ~define:define_node ?lookup ()
     in
     let resolution = resolution initial in
 
@@ -626,7 +635,11 @@ module State = struct
     }
 
 
-  and initial_backward ~environment define ~forward:{ annotations; errors; _ } =
+  and initial_backward
+      ?(configuration = Configuration.create ())
+      ~environment
+      define
+      ~forward:{ annotations; errors; _ } =
     let resolution = Environment.resolution environment () in
     let expected_return =
       Annotated.Define.create (Node.value define)
@@ -634,7 +647,12 @@ module State = struct
       |> Annotation.create
     in
     let backward_initial_state =
-      create ~environment ~annotations:[Preprocessing.return_access, expected_return] ~define ()
+      create
+        ~configuration
+        ~environment
+        ~annotations:[Preprocessing.return_access, expected_return]
+        ~define
+        ()
     in
     let combine_annotations left right =
       let add_annotation ~key ~data map =
@@ -697,11 +715,14 @@ module State = struct
 
 
   and forward
-      ({ environment;
-         errors;
-         annotations;
-         define = ({ Node.value = { Define.async; _ } as define; _ } as define_node);
-         lookup } as state)
+      ({
+        configuration;
+        environment;
+        errors;
+        annotations;
+        define = ({ Node.value = { Define.async; _ } as define; _ } as define_node);
+        lookup;
+      } as state)
       statement =
     let update_resolution = resolution in
     let resolution = resolution state in
@@ -870,6 +891,7 @@ module State = struct
                   | _ ->
                       annotations
                 end
+
             | BooleanOperator { BooleanOperator.left; operator; right } ->
                 let { annotations; _ } =
                   let update state expression =
@@ -1100,16 +1122,29 @@ module State = struct
                 unresolved_method_errors @ parameter_errors
             | Attribute attribute when not (Annotated.Attribute.defined attribute) ->
                 let open Annotated in
-                [
-                  {
-                    Error.location;
-                    kind = Error.UndefinedAttribute {
-                        Error.annotation = Class.annotation ~resolution (Attribute.parent attribute);
-                        attribute = Attribute.access attribute;
-                      };
-                    define = define_node;
-                  }
-                ] @ new_errors
+                if Location.equal location Location.any then
+                  begin
+                    Statistics.event
+                      ~name:"undefined attribute without location"
+                      ~configuration
+                      ~normals:["attribute", (Expression.Access.show (Attribute.access attribute))]
+                      ();
+                    []
+                  end
+                else
+                  [
+                    {
+                      Error.location;
+                      kind = Error.UndefinedAttribute {
+                          Error.annotation =
+                            Class.annotation
+                              ~resolution
+                              (Attribute.parent attribute);
+                          attribute = Attribute.access attribute;
+                        };
+                      define = define_node;
+                    }
+                  ] @ new_errors
             | _ ->
                 new_errors
         in
@@ -1892,6 +1927,7 @@ let check configuration environment ({ Source.path; _ } as source) =
       let cfg = Cfg.create define in
       let initial_forward =
         State.initial_forward
+          ~configuration
           ~lookup
           environment
           { Node.location; value = define }
@@ -1906,14 +1942,14 @@ let check configuration environment ({ Source.path; _ } as source) =
           Fixpoint.backward
             cfg
             ~initial_forward
-            ~initialize_backward:(State.initial_backward ~environment define_node)
+            ~initialize_backward:(State.initial_backward ~configuration ~environment define_node)
           |> Fixpoint.entry
           >>| print_state "Entry"
           >>| State.check_entry resolution
       in
       let error_list =
         exit
-        >>| State.errors (Source.ignore_lines source) configuration
+        >>| State.errors (Source.ignore_lines source)
         |> Option.value ~default:[]
       in
       let type_coverage =
