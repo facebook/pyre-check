@@ -119,8 +119,11 @@ let test_server_exists _ =
   Command_test.start_server () |> ignore;
   (* Clean up: Kill server *)
   Command.run ~argv:["_"] Server.stop_command;
-  let { ServerConfiguration.lock_path; _ } = ServerConfiguration.create (Configuration.create ()) in
+  let { ServerConfiguration.lock_path; socket_path; _ } =
+    ServerConfiguration.create (Configuration.create ())
+  in
   with_timeout ~seconds:3 poll_for_deletion lock_path;
+  with_timeout ~seconds:3 poll_for_deletion socket_path;
   Command_test.clean_environment ()
 
 
