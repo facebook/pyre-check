@@ -11,9 +11,12 @@ open EnvironmentSharedMemory
 open Pyre
 
 
-let build ~configuration:({ Configuration.source_root; _ } as configuration) ~stubs ~sources =
+let build
+    reader
+    ~configuration:({ Configuration.source_root; _ } as configuration)
+    ~stubs
+    ~sources =
   Log.info "Building type environment...";
-  let environment = Environment.Builder.create ~configuration () in
   (* This grabs all sources from shared memory. It is unavoidable: Environment
      must be built sequentially until we find a way to build the environment in
      parallel. *)
@@ -28,16 +31,14 @@ let build ~configuration:({ Configuration.source_root; _ } as configuration) ~st
   let timer = Timer.start () in
   let stubs = get_sources stubs in
 
-  Environment.populate ~configuration ~source_root (reader ~configuration environment) stubs;
+  Environment.populate ~configuration ~source_root reader stubs;
   Statistics.performance ~name:"stub environment built" ~timer ~configuration ();
 
   let timer = Timer.start () in
   let sources = get_sources sources in
-  Environment.populate ~configuration ~source_root (reader ~configuration environment) sources;
+  Environment.populate ~configuration ~source_root reader sources;
   Statistics.performance ~name:"full environment built" ~timer ~configuration ();
 
-  Log.log ~section:`Environment "%a" Environment.Builder.pp environment;
-  Log.info "%s" (Environment.Builder.statistics environment);
   if Log.is_enabled `Dotty then
     begin
       let type_order_file =
@@ -45,15 +46,13 @@ let build ~configuration:({ Configuration.source_root; _ } as configuration) ~st
           ~root:(Configuration.pyre_root configuration)
           ~relative:"type_order.dot"
       in
-      let (module Reader: Environment.Reader) = (reader ~configuration environment) in
+      let (module Reader: Environment.Reader) = reader in
       Log.info "Emitting type order dotty file to %s" (Path.absolute type_order_file);
       File.create
         ~content:(Some (TypeOrder.to_dot (module Reader.TypeOrderReader)))
         type_order_file
       |> File.write
-    end;
-
-  environment
+    end
 
 
 let infer_protocols
@@ -93,10 +92,10 @@ let infer_protocols
 
 
 let in_process_reader service ~configuration ~stubs ~sources =
-  let reader =
-    build ~configuration ~stubs ~sources
-    |> Environment.reader ~configuration
-  in
+  let environment = Environment.Builder.create ~configuration () in
+  let reader = Environment.reader ~configuration environment in
+  build reader ~configuration ~stubs ~sources;
+  Log.log ~section:`Environment "%a" Environment.Builder.pp environment;
   infer_protocols ~service ~reader ~configuration;
   reader
 
@@ -167,7 +166,9 @@ let shared_memory_reader
   in
 
   Log.initialize ~verbose ~sections;
-  let environment = build ~configuration ~stubs ~sources in
+  let environment = Environment.Builder.create ~configuration () in
+  let reader = Environment.reader ~configuration environment in
+  build reader ~configuration ~stubs ~sources;
   add_to_shared_memory environment;
   let heap_size =
     EnvironmentSharedMemory.SharedMemory.heap_size ()
