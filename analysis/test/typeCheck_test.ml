@@ -3657,7 +3657,24 @@ let test_check_meta _ =
       def foo(input) -> typing.List[int]:
         return typing.cast(typing.List[float], a)
     |}
-    ["Incompatible return type [7]: Expected `typing.List[int]` but got `typing.List[float]`."]
+    ["Incompatible return type [7]: Expected `typing.List[int]` but got `typing.List[float]`."];
+  assert_type_errors
+    {|
+      class Foo:
+        def foo(self) -> typing.Type[Foo]:
+          return type(self)
+        def bar(self) -> typing.Type[int]:
+          return type(1)
+    |}
+    [];
+  assert_type_errors
+    {|
+      class Foo:
+        ATTRIBUTE: typing.ClassVar[int] = 1
+        def foo(self) -> int:
+          return type(self).ATTRIBUTE
+    |}
+    []
 
 
 let test_check_assert _ =

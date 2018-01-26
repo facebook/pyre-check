@@ -1128,6 +1128,38 @@ module Access = struct
           access, resolution
     in
 
+    (* Resolve `type()` calls. *)
+    let access, resolution =
+      match access with
+      | (Access.Call {
+          Node.value = {
+            Expression.Call.name;
+            arguments = [{ Argument.value; _ }];
+            _;
+          };
+          _;
+        }) :: tail
+        when Expression.show name = "type" ->
+          let access = Access.Identifier (Identifier.create "$type") in
+          let resolution =
+            let annotation =
+              Resolution.resolve resolution value
+              |> Type.meta
+              |> Annotation.create
+            in
+            let annotations =
+              Map.add
+                ~key:[access]
+                ~data:annotation
+                (Resolution.annotations resolution)
+            in
+            Resolution.with_annotations resolution annotations
+          in
+          access :: tail, resolution
+      | _ ->
+          access, resolution
+    in
+
     let rec fold ~accumulator ~reversed_lead ~tail ~annotation ~resolution =
       let annotations = Resolution.annotations resolution in
       let pick_signature call signatures =
