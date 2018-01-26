@@ -135,6 +135,9 @@ module Class : sig
     -> t
     -> resolution:Resolution.t
     -> Attribute.t list
+
+  (* Attribute defined by `__getattr__`. *)
+  val fallback_attribute: resolution: Resolution.t -> access: Access.t -> t -> Attribute.t option
 end
 
 module Attribute = Class.Attribute

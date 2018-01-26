@@ -675,6 +675,61 @@ let test_class_attributes _ =
     ("firstimplicitsecondthird")
 
 
+let test_fallback_attribute _ =
+  let assert_fallback_attribute source annotation =
+    let resolution =
+      populate source
+      |> resolution
+    in
+    let attribute =
+      parse_last_statement source
+      |> (function
+          | { Node.location; value = Statement.Class definition; _ } ->
+              Class.create (Node.create ~location definition)
+          | _ ->
+             failwith "Last statement was not a class")
+      |> Class.fallback_attribute ~resolution ~access:[]
+    in
+    match annotation with
+    | None ->
+        assert_is_none attribute
+    | Some annotation ->
+        assert_is_some attribute;
+        let attribute = Option.value_exn attribute in
+        assert_equal
+          ~cmp:Type.equal
+          annotation
+          (Attribute.annotation attribute |> Annotation.annotation)
+  in
+
+  assert_fallback_attribute
+    {|
+      class Foo:
+        pass
+    |}
+    None;
+  assert_fallback_attribute
+    {|
+      class Foo:
+        def __getattr__(self, attribute: str) -> int:
+          return 1
+    |}
+    (Some Type.integer);
+  assert_fallback_attribute
+    {|
+      class Foo:
+        def __getattr__(self, attribute: str) -> int: ...
+    |}
+    (Some Type.integer);
+  assert_fallback_attribute
+    {|
+      class Foo:
+        def __getattr__(self, attribute: str) -> int: ...
+      class Bar(Foo):
+        pass
+    |}
+    (Some Type.integer)
+
 
 let test_return_annotation _ =
   let assert_return_annotation return_annotation async expected =
@@ -1030,6 +1085,7 @@ let () =
     "is_protocol">::test_is_protocol;
     "implements">::test_implements;
     "attributes">::test_class_attributes;
+    "fallback_attribute">::test_fallback_attribute;
   ]
   |> run_test_tt_main;
   "define">:::[

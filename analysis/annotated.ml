@@ -548,6 +548,39 @@ module Class = struct
     in
     attribute_fold ~transitive ~class_attributes_only ~initial:None ~f:search ~resolution definition
     |> Option.value ~default:undefined
+
+
+  let fallback_attribute ~resolution ~access definition =
+    let fallback_attribute definition =
+      let fallback_attribute { Node.location; value } =
+        match value with
+        | Stub (Stub.Define { Define.name; return_annotation; _ })
+        | Define { Define.name; return_annotation; _ }
+          when Access.show name = "__getattr__" ->
+            Some
+              (Attribute.create
+                 ~resolution
+                 ~parent:definition
+                 {
+                   Node.location;
+                   value = {
+                     Assign.target = Node.create ~location (Expression.Access access);
+                     annotation = return_annotation;
+                     value = None;
+                     compound = None;
+                     parent = None;
+                   };
+                 })
+        | _ ->
+            None
+      in
+      List.find_map
+        ~f:fallback_attribute
+        (body definition)
+    in
+    List.find_map
+      ~f:fallback_attribute
+      (definition :: (superclasses ~resolution definition))
 end
 
 
@@ -1255,9 +1288,15 @@ module Access = struct
              in
              let access = access @ attribute_access in
              if not (Attribute.defined attribute) then
-               let resolved =
-                 Map.find annotations access
-                 |> Option.value ~default:(Annotation.create Type.Top)
+               let attribute, resolved =
+                 match Class.fallback_attribute ~resolution ~access:attribute_access definition with
+                 | Some attribute ->
+                     attribute,
+                     Attribute.annotation attribute
+                 | None ->
+                     attribute,
+                     Map.find annotations access
+                     |> Option.value ~default:(Annotation.create Type.Top)
                in
                resolution,
                resolved,

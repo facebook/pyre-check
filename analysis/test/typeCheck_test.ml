@@ -2586,6 +2586,19 @@ let test_check_attributes _ =
     |}
     [];
 
+  (* Class implements `__getattr__`. *)
+  assert_type_errors
+    {|
+      class Foo:
+        attribute: int = 1
+        def __getattr__(self, attribute) -> str: ...
+        def foo(self) -> int:
+          return self.undefined
+        def bar(self) -> int:
+          return self.attribute
+    |}
+    ["Incompatible return type [7]: Expected `int` but got `str`."];
+
   (* Attributes of other classes are properly resolved. *)
   assert_type_errors
     {|
