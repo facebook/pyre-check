@@ -74,3 +74,11 @@ let run_command_tests test_category tests =
   let (!) f context = with_bracket_chdir context (bracket_tmpdir context) f in
   test_category>:::(List.map ~f:(fun (name, test_function) -> name>::(!test_function)) tests)
   |> run_test_tt_main
+
+
+let protect ~f ~cleanup =
+  try
+    f ()
+  with caught_exception ->
+    cleanup ();
+    raise caught_exception

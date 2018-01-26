@@ -130,18 +130,16 @@ let test_server_exists _ =
 let test_server_stops _ =
   let pid = Pid.of_int (Command_test.start_server ()) in
   Command.run ~argv:["_"] Server.stop_command;
-  (try
-     with_timeout
-       ~seconds:2
-       (fun pid ->
-          (match Unix.waitpid pid with
-           | Ok _ -> assert true
-           | Error _ -> assert false))
-       pid
-   with
-   | Timeout -> failwith "Timed out while waiting for server to be killed"
-   | _ -> failwith "Timeout error");
-  Command_test.clean_environment ()
+  Exn.protect
+    ~f:(fun () ->
+        with_timeout
+          ~seconds:2
+          (fun pid ->
+             (match Unix.waitpid pid with
+              | Ok _ -> assert true
+              | Error _ -> assert false))
+          pid)
+    ~finally:Command_test.clean_environment
 
 
 let test_stop_handles_unix_errors context =
@@ -338,12 +336,17 @@ let test_connect _ =
    * routine is called, and due to the nature of the Lazy library this is non-reentrant. *)
   Unix.nanosleep 0.5
   |> ignore;
-  assert_raises
-    (Server.VersionMismatch { Server.server_version = "A"; client_version = "B" })
-    (fun () -> Server.connect ~retries:1 ~configuration);
-  Server.stop "." ();
-  with_timeout ~seconds:3 poll_for_deletion lock_path;
-  Command_test.clean_environment ()
+  let cleanup () =
+    Server.stop "." ();
+    with_timeout ~seconds:3 poll_for_deletion lock_path;
+    Command_test.clean_environment ()
+  in
+  Exn.protect
+    ~f:(fun () ->
+        assert_raises
+          (Server.VersionMismatch { Server.server_version = "A"; client_version = "B" })
+          (fun () -> Server.connect ~retries:1 ~configuration))
+    ~finally:cleanup
 
 
 let test_incremental_typecheck _ =
@@ -406,9 +409,11 @@ let test_protocol_language_server_protocol _ =
       (Command_test.mock_server_configuration ())
       (Protocol.Request.LanguageServerProtocolRequest "{\"method\":\"\"}")
   in
-  assert_is_none response;
-  Service.destroy server_state.State.service;
-  Command_test.clean_environment ()
+  let cleanup () =
+    Service.destroy server_state.State.service;
+    Command_test.clean_environment ()
+  in
+  Exn.protect ~f:(fun () -> assert_is_none response) ~finally:cleanup
 
 
 let test_did_save_with_content context =

@@ -90,14 +90,7 @@ let test_watchman_client context =
     Server.stop "." ();
     Command_test.clean_environment ()
   in
-  let protect ~f =
-    try
-      f ()
-    with _ ->
-      cleanup ();
-      raise (Failure "Watchman test failed")
-  in
-  protect
+  Command_test.protect
     ~f:(fun () ->
         match
           Watchman.process_response
@@ -111,8 +104,9 @@ let test_watchman_client context =
             Protocol.Request.TypeCheckRequest { Protocol.files = [file]; check_dependents = true }) ->
             assert_equal (File.path file |> Path.relative) (Some "other/c.py")
         | _ ->
-            assert_failure "Malformed watchman response");
-  protect
+            assert_failure "Malformed watchman response")
+    ~cleanup;
+  Command_test.protect
     ~f:(fun () ->
         match
           Watchman.process_response
@@ -129,7 +123,8 @@ let test_watchman_client context =
              }) ->
             assert_equal (File.path file |> Path.relative) (Some "test.py")
         | _ ->
-            assert_failure "Malformed watchman response");
+            assert_failure "Malformed watchman response")
+    ~cleanup;
   cleanup ()
 
 
@@ -186,14 +181,14 @@ let test_different_root context =
     Server.stop "." ();
     Command_test.clean_environment ()
   in
-  try
-    assert_watchman_response_ok "files/a.py" "files/other/c.py";
-    assert_watchman_response_ok "files/tmp/test.py" "files/tmp/test.py";
-    cleanup ();
-  with
-  | Failure failure ->
-      cleanup ();
-      raise (Failure failure)
+  Command_test.protect
+    ~f:(fun () -> assert_watchman_response_ok "files/a.py" "files/other/c.py")
+    ~cleanup;
+  Command_test.protect
+    ~f:(fun () ->
+        assert_watchman_response_ok "files/tmp/test.py" "files/tmp/test.py")
+    ~cleanup;
+  cleanup ()
 
 
 let () =
