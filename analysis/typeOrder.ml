@@ -86,8 +86,7 @@ module type Reader = sig
   val contains: ('key, 'value) lookup -> 'key -> bool
   val set: ('key, 'value) lookup -> key:'key -> data:'value -> unit
 
-  val edge_keys: unit -> int list
-  val backedge_keys: unit -> int list
+  val keys: unit -> int list
 
   val length: ('key, 'value) lookup -> int
 
@@ -155,11 +154,8 @@ let reader order =
     let fold table ~init ~f =
       Hashtbl.fold table ~init ~f
 
-    let edge_keys () =
-      Hashtbl.keys order.edges
-
-    let backedge_keys () =
-      Hashtbl.keys order.backedges
+    let keys () =
+      Hashtbl.keys order.annotations
 
     let length table =
       Hashtbl.length table
@@ -865,7 +861,7 @@ let widen order ~widening_threshold ~previous ~next ~iteration =
 
 let add_backedges (module Reader: Reader) =
   let backedges = Reader.backedges () in
-  let edge_keys = Reader.edge_keys () in
+  let edge_keys = Reader.keys () in
   let add_backedges predecessor =
     let successors = Reader.find (Reader.edges ()) predecessor in
     let add_backedge { Target.target = successor; parameters } =
@@ -915,9 +911,9 @@ let remove_extra_edges (module Reader: Reader) ~bottom ~top =
   in
   let edges = Reader.edges () in
   let backedges = Reader.backedges () in
-  disconnect (Reader.edge_keys ()) ~edges ~backedges (Reader.find_unsafe (Reader.indices ()) top);
+  disconnect (Reader.keys ()) ~edges ~backedges (Reader.find_unsafe (Reader.indices ()) top);
   disconnect
-    (Reader.backedge_keys ())
+    (Reader.keys ())
     ~edges:backedges
     ~backedges:edges
     (Reader.find_unsafe (Reader.indices ()) bottom)
@@ -954,6 +950,22 @@ let check_integrity (module Reader: Reader) =
       raise Incomplete
     end;
 
+  (* Ensure keys are consistent. *)
+  let key_consistent key =
+    let raise_if_none value =
+      if Option.is_none value then
+        begin
+          Log.error "Inconsistency in type order: No value for key %d" key;
+          raise Incomplete
+        end
+    in
+    raise_if_none (Reader.find (Reader.edges ()) key);
+    raise_if_none (Reader.find (Reader.backedges ()) key);
+    raise_if_none (Reader.find (Reader.annotations ()) key);
+    let annotation = Option.value_exn (Reader.find (Reader.annotations ()) key) in
+    raise_if_none (Reader.find (Reader.indices ()) annotation)
+  in
+  List.iter ~f:key_consistent (Reader.keys ());
   (* Check for cycles. *)
   let started_from = ref Int.Set.empty in
   let find_cycle start =
@@ -987,7 +999,7 @@ let check_integrity (module Reader: Reader) =
             end in
         visit [] start
       end in
-  Reader.edge_keys ()
+  Reader.keys ()
   |> List.iter ~f:find_cycle;
 
   (* Check that backedges are complete. *)
@@ -1016,17 +1028,17 @@ let check_integrity (module Reader: Reader) =
     |> List.iter ~f:check_backedge
   in
   check_inverse
-    ~get_keys:Reader.edge_keys
+    ~get_keys:Reader.keys
     ~edges:(Reader.edges ())
     ~backedges:(Reader.backedges ());
   check_inverse
-    ~get_keys:Reader.backedge_keys
+    ~get_keys:Reader.keys
     ~edges:(Reader.backedges ())
     ~backedges:(Reader.edges ())
 
 
 let to_dot (module Reader: Reader) =
-  let indices = Reader.edge_keys () in
+  let indices = Reader.keys () in
   let nodes =
     List.map ~f:(fun index -> (index, Reader.find_unsafe (Reader.annotations ()) index)) indices
   in

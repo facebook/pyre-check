@@ -296,10 +296,7 @@ let shared_memory_reader
 
         let show () = ""
 
-        let edge_keys () =
-          Option.value ~default:[] (OrderKeys.get "Order")
-
-        let backedge_keys () =
+        let keys () =
           Option.value ~default:[] (OrderKeys.get "Order")
       end
 
