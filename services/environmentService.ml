@@ -25,9 +25,9 @@ let build ~configuration:({ Configuration.source_root; _ } as configuration) ~st
           | Some handle -> handle :: handles
           | None -> handles)
   in
-
   let timer = Timer.start () in
   let stubs = get_sources stubs in
+
   Environment.populate ~configuration ~source_root (reader ~configuration environment) stubs;
   Statistics.performance ~name:"stub environment built" ~timer ~configuration ();
 
@@ -131,7 +131,11 @@ let shared_memory_reader
     let add_table f = Hashtbl.iteri ~f:(fun ~key ~data -> f key data) in
     let add_type_order { TypeOrder.edges; backedges; indices; annotations } =
       add_table OrderEdges.add edges;
-      add_table OrderBackedges.add backedges;
+      let add_backedge key targets =
+        let targets = TypeOrder.Target.Set.of_list targets in
+        OrderBackedges.add key (Set.to_list targets)
+      in
+      add_table add_backedge backedges;
       add_table OrderIndices.add indices;
       add_table OrderAnnotations.add annotations;
       OrderKeys.add "Order" (Hashtbl.keys annotations);
@@ -165,7 +169,6 @@ let shared_memory_reader
   Log.initialize ~verbose ~sections;
   let environment = build ~configuration ~stubs ~sources in
   add_to_shared_memory environment;
-
   let heap_size =
     EnvironmentSharedMemory.SharedMemory.heap_size ()
     |> Float.of_int
