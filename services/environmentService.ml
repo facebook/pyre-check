@@ -294,8 +294,6 @@ let shared_memory_reader
            >>| List.length)
           |> Option.value ~default:0
 
-        let show () = ""
-
         let add_key key =
           match OrderKeys.get "Order" with
           | None -> OrderKeys.add "Order" [key]
@@ -303,6 +301,37 @@ let shared_memory_reader
 
         let keys () =
           Option.value ~default:[] (OrderKeys.get "Order")
+
+        let show () =
+          let keys =
+            keys ()
+            |> List.sort ~cmp:Int.compare
+          in
+          let serialized_keys = List.to_string ~f:Int.to_string keys in
+          let serialized_annotations =
+            List.filter_map
+              ~f:(fun key -> find (annotations ()) key >>| (fun value -> key, value))
+              keys
+            |> List.map
+              ~f:(fun (key, annotation) -> Format.asprintf "%d->%a\n" key Type.pp annotation)
+            |> String.concat
+          in
+          let serialized_edges edges =
+            let edges_of_key key =
+              Option.value ~default:[] (find edges key)
+              |> List.map
+                ~f:(fun { TypeOrder.Target.target = successor; _ } ->
+                    Option.value_exn (find (annotations ()) successor))
+              |> List.to_string ~f:Type.show
+            in
+            List.map ~f:(fun key -> Format.asprintf "%d -> %s\n" key (edges_of_key key)) keys
+            |> String.concat
+          in
+          Format.asprintf "Keys:\n%s\nAnnotations:\n%s\nEdges:\n%s\nBackedges:\n%s\n"
+            serialized_keys
+            serialized_annotations
+            (serialized_edges (edges ()))
+            (serialized_edges (backedges ()))
       end
 
       let register_definition
