@@ -401,6 +401,7 @@ class Check(ErrorHandling):
             configuration,
             source_directories,
             should_merge_directories=True)
+        self._log_identifier = arguments.log_identifier
 
     def _run(self, retries: int = 1) -> None:
         flags = self._flags()
@@ -410,6 +411,9 @@ class Check(ErrorHandling):
             '-type-check-root',
             self._current_directory,
         ])
+        if self._log_identifier:
+            LOG.warning("Coverage logging is not yet supported.")
+            flags.extend(['-log-identifier', self._log_identifier])
         source_directories = self._source_directories
         if len(source_directories) > 1:
             check_root = os.path.join(

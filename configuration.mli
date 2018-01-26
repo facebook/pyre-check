@@ -21,6 +21,7 @@ type t = {
   strict: bool;
   declare: bool;
   show_error_traces: bool;
+  log_identifier: string;
   report_undefined_attributes: bool;
 }
 [@@deriving show]
@@ -40,6 +41,7 @@ val create
   -> ?declare:bool
   -> ?debug:bool
   -> ?show_error_traces:bool
+  -> ?log_identifier:string
   -> ?report_undefined_attributes: bool
   -> unit
   -> t

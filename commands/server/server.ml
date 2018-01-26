@@ -502,6 +502,7 @@ let run_start_command
     infer
     recursive_infer
     sequential
+    log_identifier
     project_root
     stub_roots
     source_root
@@ -517,6 +518,7 @@ let run_start_command
       ~strict
       ~declare
       ~show_error_traces
+      ~log_identifier
       ~parallel:(not sequential)
       ~project_root:(Path.create_absolute project_root)
       ~stub_roots:(List.map ~f:Path.create_absolute stub_roots)

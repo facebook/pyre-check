@@ -23,6 +23,7 @@ type t = {
   strict: bool;
   declare: bool;
   show_error_traces: bool;
+  log_identifier: string;
   report_undefined_attributes: bool;
 }
 [@@deriving show]
@@ -43,6 +44,7 @@ let create
     ?(declare = false)
     ?(debug = false)
     ?(show_error_traces = false)
+    ?(log_identifier = "")
     ?(report_undefined_attributes = false)
     () =
   {
@@ -60,6 +62,7 @@ let create
     strict;
     declare;
     show_error_traces;
+    log_identifier;
     report_undefined_attributes;
   }
 

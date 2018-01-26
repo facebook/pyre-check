@@ -35,6 +35,7 @@ let check
       strict;
       declare;
       show_error_traces;
+      log_identifier;
       parallel;
       project_root;
       stub_roots;
@@ -73,6 +74,7 @@ let check
       ~strict
       ~declare
       ~show_error_traces
+      ~log_identifier
       ~project_root
       ~stub_roots
       ~infer
@@ -137,6 +139,7 @@ let run_check
     infer
     recursive_infer
     sequential
+    log_identifier
     project_root
     stub_roots
     source_root
@@ -155,6 +158,7 @@ let run_check
       ~strict
       ~declare
       ~show_error_traces
+      ~log_identifier
       ~infer
       ~recursive_infer
       ~project_root:(Path.create_absolute project_root)
@@ -203,6 +207,10 @@ let spec =
       ~doc:"Recursively run infer until no new annotations are generated."
     +> flag "-sequential" no_arg ~doc:"Turn off parallel processing (parallel on by default)."
     +> flag
+      "-log-identifier"
+      (optional_with_default "" string)
+      ~doc:"Add given identifier to logged samples."
+    +> flag
       "-project-root"
       (optional_with_default "/" string)
       ~doc:"Only check sources under this root directory."
@@ -233,6 +241,7 @@ let run_incremental
     infer
     recursive_infer
     sequential
+    log_identifier
     project_root
     stub_roots
     source_root
@@ -248,6 +257,7 @@ let run_incremental
         ~strict
         ~declare
         ~show_error_traces
+        ~log_identifier
         ~infer
         ~recursive_infer
         ~parallel:(not sequential)
