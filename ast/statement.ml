@@ -396,6 +396,7 @@ module Define = struct
         "abc.abstractproperty";
         "libfb.py.decorators.lazy_property";
         "property";
+        "util.classproperty";
         "util.etc.class_property";
         "util.etc.lazy_property";
       ]
@@ -412,6 +413,7 @@ module Define = struct
         }
     in
     match List.find ~f:(has_decorator define) property_annotations with
+    | Some "util.classproperty"
     | Some "util.etc.class_property" ->
         let return_annotation =
           let open Expression in

@@ -310,6 +310,14 @@ let test_attribute_assigns _ =
         def property(self) -> int:
           pass
     |}
+    ["property", Some (Type.expression (Type.parametric "typing.ClassVar" [Type.integer])), None];
+  assert_attribute_assigns
+    {|
+      class Foo:
+        @util.classproperty
+        def property(self) -> int:
+          pass
+    |}
     ["property", Some (Type.expression (Type.parametric "typing.ClassVar" [Type.integer])), None]
 
 
