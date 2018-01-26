@@ -123,15 +123,20 @@ let follow_symlinks path =
 
 
 let directory_contains ?(follow_symlinks = false) ~directory path =
-  let path =
-    if follow_symlinks then
-      absolute path
-      |> Filename.realpath
-    else
-      absolute path
-  in
-  let directory = absolute directory in
-  String.is_prefix ~prefix:directory path
+  try
+    let path =
+      if follow_symlinks then
+        absolute path
+        |> Filename.realpath
+      else
+        absolute path
+    in
+    let directory = absolute directory in
+    String.is_prefix ~prefix:directory path
+  with
+  | Unix.Unix_error (error, name, parameter) ->
+      Log.error "Unix error %s: Function %s(%s)" (Unix.Error.message error) name parameter;
+      false
 
 
 let remove path =

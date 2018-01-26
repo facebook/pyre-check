@@ -127,6 +127,16 @@ let test_last context =
     "path"
 
 
+let test_directory_contains context =
+  let _, root = root context in
+  assert_equal
+    (Path.directory_contains
+       ~follow_symlinks:true
+       ~directory:root
+       (Path.create_relative ~root ~relative:"nonexistent.py"))
+    false
+
+
 let test_link context =
   let path, root = root context in
   let link = path ^ "-link" in
@@ -158,6 +168,7 @@ let () =
     "create">::test_create;
     "relative">::test_relative;
     "absolute">::test_absolute;
+    "directory_contains">::test_directory_contains;
     "uri">::test_uri;
     "get_relative_to_root">::test_get_relative_to_root;
     "append">::test_append;
