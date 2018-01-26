@@ -86,34 +86,114 @@ let test_watchman_client context =
         test, test
       ]
   in
-  (match
-     Watchman.process_response
-       ~root
-       ~watchman_directory:root
-       ~symlinks
-       (create_mock_watchman_response "tmp/a.py")
-   with
-   | Some (
-       _,
-       Protocol.Request.TypeCheckRequest { Protocol.files = [file]; check_dependents = true }) ->
-       assert_equal (File.path file |> Path.relative) (Some "other/c.py")
-   | _ ->
-       assert_failure "Expected watchman response \"a.py\"");
-  (match
-     Watchman.process_response
-       ~root
-       ~watchman_directory:root
-       ~symlinks
-       (create_mock_watchman_response "test.py")
-   with
-   | Some
-       (_, Protocol.Request.TypeCheckRequest { Protocol.files = [file]; check_dependents = true })
-     when File.path file |> Path.relative = Some "test.py" ->
-       Command.run ~argv:["_"] Server.stop_command
-   | _ -> assert_failure "Expected watchman response './test.py'");
+  let cleanup () =
+    Server.stop "." ();
+    Command_test.clean_environment ()
+  in
+  let protect ~f =
+    try
+      f ()
+    with _ ->
+      cleanup ();
+      raise (Failure "Watchman test failed")
+  in
+  protect
+    ~f:(fun () ->
+        match
+          Watchman.process_response
+            ~root
+            ~watchman_directory:root
+            ~symlinks
+            (create_mock_watchman_response "tmp/a.py")
+        with
+        | Some (
+            _,
+            Protocol.Request.TypeCheckRequest { Protocol.files = [file]; check_dependents = true }) ->
+            assert_equal (File.path file |> Path.relative) (Some "other/c.py")
+        | _ ->
+            assert_failure "Malformed watchman response");
+  protect
+    ~f:(fun () ->
+        match
+          Watchman.process_response
+            ~root
+            ~watchman_directory:root
+            ~symlinks
+            (create_mock_watchman_response "test.py")
+        with
+        | Some
+            (_,
+             Protocol.Request.TypeCheckRequest {
+               Protocol.files = [file];
+               check_dependents = true
+             }) ->
+            assert_equal (File.path file |> Path.relative) (Some "test.py")
+        | _ ->
+            assert_failure "Malformed watchman response");
+  cleanup ()
 
-  Server.stop "." ();
-  Command_test.clean_environment ()
+
+let test_different_root context =
+  let root = bracket_tmpdir context in
+  let watchman_directory = Path.create_absolute root in
+  Unix.mkdir (root ^ "/files");
+  let root = Path.create_absolute (root ^ "/files") in
+  let a = Path.create_relative ~root:watchman_directory ~relative:"files/a.py" in
+  let test = Path.create_relative ~root:watchman_directory ~relative:"files/tmp/test.py" in
+  let symlinks = Path.Map.of_alist_exn
+      [
+        a, (Path.create_relative ~root:watchman_directory ~relative:"files/other/c.py");
+        test, test
+      ]
+  in
+  let assert_watchman_response_ok file expected_file =
+    let mock_watchman_response =
+      Format.asprintf
+        {|
+        {
+          "unilateral":true,
+          "subscription":"pyre_file_change_subscription",
+          "root":"%s",
+          "files":["%s"],
+          "is_fresh_instance":false,
+          "version":"2017-06-20T11:25:02Z",
+          "since":"c:1499791693:6173:1:1765",
+          "clock":"c:1499791693:6173:1:1768"
+        }
+      |}
+        (Path.absolute watchman_directory)
+        file
+    in
+    match
+      Watchman.process_response
+        ~root
+        ~watchman_directory
+        ~symlinks
+        mock_watchman_response
+    with
+    | Some (
+        _,
+        Protocol.Request.TypeCheckRequest { Protocol.files = [file]; check_dependents = true }) ->
+        assert_equal (File.path file |> Path.relative) (Some expected_file)
+    | _ ->
+        assert_failure "Unexpected watchman response"
+  in
+  Format.set_formatter_out_channel (Out_channel.create "/dev/null");
+  Command_test.start_server () |> ignore;
+
+  let cleanup () =
+    Command.run ~argv:["_"] Server.stop_command;
+    Server.stop "." ();
+    Command_test.clean_environment ()
+  in
+  try
+    assert_watchman_response_ok "files/a.py" "files/other/c.py";
+    assert_watchman_response_ok "files/tmp/test.py" "files/tmp/test.py";
+    cleanup ();
+  with
+  | Failure failure ->
+      cleanup ();
+      raise (Failure failure)
 
 
 let () =
@@ -122,4 +202,5 @@ let () =
     [
       "watchman_exists", test_watchman_exists;
       "watchman_client", test_watchman_client;
+      "different_root", test_different_root;
     ]

@@ -92,8 +92,14 @@ let process_response ~root ~watchman_directory ~symlinks response =
         Some (build_symlink_map ~root, Protocol.Request.ReinitializeStateRequest)
       end
     else
+      let relativize_to_root path =
+        match Path.get_relative_to_root ~root ~path with
+        | None -> path
+        | Some relative -> Path.create_relative ~root ~relative
+      in
       let paths =
         List.map ~f:(fun relative -> Path.create_relative ~root:watchman_directory ~relative) files
+        |> List.map ~f:relativize_to_root
       in
       let symlinks =
         List.fold ~init:symlinks ~f:(fun symlinks path -> set_symlink ~symlinks ~root ~path) paths
