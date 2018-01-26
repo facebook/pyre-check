@@ -391,8 +391,6 @@ class Infer(commands.ErrorHandling):
     def run(self) -> None:
         flags = self._flags()
         flags.extend([
-            '-type-check-root',
-            self._current_directory,
             '-infer',
         ])
         if self._recursive:

@@ -220,7 +220,7 @@ class CheckTest(unittest.TestCase):
             call_client.assert_called_once_with(
                 command=commands.CHECK,
                 source_directories=['.'],
-                flags=['-stub-roots', 'stub,root', '-type-check-root', '.'])
+                flags=['-type-check-root', '.', '-stub-roots', 'stub,root'])
 
 
 class IncrementalTest(unittest.TestCase):
@@ -245,7 +245,7 @@ class IncrementalTest(unittest.TestCase):
             call_client.assert_called_once_with(
                 command=commands.INCREMENTAL,
                 source_directories=['running'],
-                flags=['-stub-roots', 'stub,root', '-type-check-root', '.'])
+                flags=['-type-check-root', '.', '-stub-roots', 'stub,root'])
 
         state.running = ['running']
         state.dead = ['dead']
@@ -263,7 +263,7 @@ class IncrementalTest(unittest.TestCase):
             call_client.assert_called_once_with(
                 command=commands.INCREMENTAL,
                 source_directories=['.pyre/shared_source_directory'],
-                flags=['-stub-roots', 'stub,root', '-type-check-root', '.'])
+                flags=['-type-check-root', '.', '-stub-roots', 'stub,root'])
 
 
 class StartTest(unittest.TestCase):
@@ -285,7 +285,7 @@ class StartTest(unittest.TestCase):
             call_client.assert_called_once_with(
                 command=commands.START,
                 source_directories=['.'],
-                flags=['-stub-roots', 'root'])
+                flags=['-type-check-root', '.', '-stub-roots', 'root'])
 
         # Check start with watchman.
         with patch.object(commands.Command, '_call_client') as call_client:
@@ -298,11 +298,11 @@ class StartTest(unittest.TestCase):
                 call(
                     command=commands.WATCHMAN,
                     source_directories=['.'],
-                    flags=['-daemonize']),
+                    flags=['-type-check-root', '.', '-daemonize']),
                 call(
                     command=commands.START,
                     source_directories=['.'],
-                    flags=['-stub-roots', 'root']),
+                    flags=['-type-check-root', '.', '-stub-roots', 'root']),
             ])
 
         # Check start with multiple source directories
@@ -316,11 +316,11 @@ class StartTest(unittest.TestCase):
                 call(
                     command=commands.WATCHMAN,
                     source_directories=['.pyre/shared_source_directory'],
-                    flags=['-daemonize']),
+                    flags=['-type-check-root', '.', '-daemonize']),
                 call(
                     command=commands.START,
                     source_directories=['.pyre/shared_source_directory'],
-                    flags=['-stub-roots', 'root']),
+                    flags=['-type-check-root', '.', '-stub-roots', 'root']),
             ])
             merge_directories.assert_called_once()
 
@@ -335,7 +335,12 @@ class StartTest(unittest.TestCase):
             call_client.assert_called_once_with(
                 command=commands.START,
                 source_directories=['.'],
-                flags=['-terminal', '-stub-roots', 'root'])
+                flags=[
+                    '-type-check-root',
+                    '.',
+                    '-terminal',
+                    '-stub-roots',
+                    'root'])
 
 
 class StopTest(unittest.TestCase):
@@ -396,7 +401,7 @@ class RestartTest(unittest.TestCase):
                     call(
                         command=commands.START,
                         source_directories=['.'],
-                        flags=['-stub-roots', 'root']),
+                        flags=['-type-check-root', '.', '-stub-roots', 'root']),
                 ],
                 any_order=True)
 

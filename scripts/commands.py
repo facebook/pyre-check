@@ -100,6 +100,8 @@ class Command:
             flags.append('-verbose')
         if self._logging_sections:
             flags.extend(['-logging-sections', self._logging_sections])
+        if self._current_directory:
+            flags.extend(['-type-check-root', self._current_directory])
         return flags
 
     def _merge_directories(self, target_root):
@@ -407,9 +409,7 @@ class Check(ErrorHandling):
         flags = self._flags()
         flags.extend([
             '-stub-roots',
-            ','.join(self._configuration.get_stub_roots()),
-            '-type-check-root',
-            self._current_directory,
+            ','.join(self._configuration.get_stub_roots())
         ])
         if self._log_identifier:
             LOG.warning("Coverage logging is not yet supported.")
@@ -472,9 +472,7 @@ class Incremental(ErrorHandling):
         flags = self._flags()
         flags.extend([
             '-stub-roots',
-            ','.join(self._configuration.get_stub_roots()),
-            '-type-check-root',
-            self._current_directory,
+            ','.join(self._configuration.get_stub_roots())
         ])
 
         if dead:
