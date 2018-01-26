@@ -108,8 +108,9 @@ class CommandTest(unittest.TestCase):
 
 
 class PersistentTest(unittest.TestCase):
+    @patch.object(commands.Command, '_merge_directories')
     @patch.object(commands.Persistent, '_run_null_server', return_value=None)
-    def test_persistent(self, run_null_server) -> None:
+    def test_persistent(self, run_null_server, merge_directories) -> None:
         arguments = mock_arguments()
         configuration = mock_configuration()
 
@@ -123,6 +124,14 @@ class PersistentTest(unittest.TestCase):
             call_client.assert_called_once_with(
                 command=commands.PERSISTENT,
                 source_directories=['.'],
+                capture_output=False)
+            commands.Persistent(
+                arguments,
+                configuration,
+                source_directories=["first", "second"]).run()
+            call_client.assert_called_with(
+                command=commands.PERSISTENT,
+                source_directories=['.pyre/shared_source_directory'],
                 capture_output=False)
 
         # Check start of null server.
@@ -249,15 +258,16 @@ class IncrementalTest(unittest.TestCase):
             commands_Start.assert_called_with(
                 arguments,
                 configuration,
-                ['dead'])
+                ['running', 'dead'])
             call_client.assert_called_once_with(
                 command=commands.INCREMENTAL,
-                source_directories=['running', 'dead'],
+                source_directories=['.pyre/shared_source_directory'],
                 flags=['-stub-roots', 'stub,root', '-type-check-root', '.'])
 
 
 class StartTest(unittest.TestCase):
-    def test_start(self) -> None:
+    @patch.object(commands.Command, '_merge_directories')
+    def test_start(self, merge_directories) -> None:
         arguments = mock_arguments()
         arguments.terminal = False
 
@@ -293,6 +303,25 @@ class StartTest(unittest.TestCase):
                     source_directories=['.'],
                     flags=['-stub-roots', 'root']),
             ])
+
+        # Check start with multiple source directories
+        with patch.object(commands.Command, '_call_client') as call_client:
+            arguments.no_watchman = False
+            commands.Start(
+                arguments,
+                configuration,
+                source_directories=['x', 'y']).run()
+            call_client.assert_has_calls([
+                call(
+                    command=commands.WATCHMAN,
+                    source_directories=['.pyre/shared_source_directory'],
+                    flags=['-daemonize']),
+                call(
+                    command=commands.START,
+                    source_directories=['.pyre/shared_source_directory'],
+                    flags=['-stub-roots', 'root']),
+            ])
+            merge_directories.assert_called_once()
 
         # Check start with terminal.
         with patch.object(commands.Command, '_call_client') as call_client:

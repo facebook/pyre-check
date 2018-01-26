@@ -58,7 +58,14 @@ class Result:
 
 
 class Command:
-    def __init__(self, arguments, configuration, source_directories) -> None:
+    SHARED_SOURCE_DIRECTORY = ".pyre/shared_source_directory"
+
+    def __init__(
+            self,
+            arguments,
+            configuration,
+            source_directories,
+            should_merge_directories=False) -> None:
         self._arguments = arguments
         self._configuration = configuration
 
@@ -70,9 +77,18 @@ class Command:
 
         self._original_directory = arguments.original_directory
         self._current_directory = arguments.current_directory
+        self._should_merge_directories = should_merge_directories
+
+    def _run(self) -> None:
+        pass
 
     def run(self) -> None:
-        pass
+        self._original_source_directories = self._source_directories
+        if len(self._source_directories) > 1:
+            if self._should_merge_directories:
+                self._merge_directories(self.SHARED_SOURCE_DIRECTORY)
+            self._source_directories = [self.SHARED_SOURCE_DIRECTORY]
+        self._run()
 
     def _flags(self):
         flags = []
@@ -197,7 +213,7 @@ class Command:
                     output = "\n".join(self._buffer)
                 if '[' in output:
                     output = output[output.index('['):]
-                if process.returncode != 0:
+                if process.returncode != 0 and capture_output:
                     output = "".join(self._buffer)
 
                 results.append(
@@ -254,7 +270,7 @@ class Persistent(Command):
             configuration,
             source_directories)
 
-    def run(self) -> None:
+    def _run(self) -> None:
         arguments = self._arguments
         try:
             results = self._call_client(
@@ -267,11 +283,15 @@ class Persistent(Command):
             Restart(
                 arguments,
                 self._configuration,
-                self._source_directories).run()
+                self._original_source_directories).run()
 
+            if len(self._source_directories) > 1:
+                source_directories = [self.SHARED_SOURCE_DIRECTORY]
+            else:
+                source_directories = self._source_directories
             results = self._call_client(
                 command=PERSISTENT,
-                source_directories=self._source_directories,
+                source_directories=source_directories,
                 capture_output=False)
             self._check_results(results)
 
@@ -306,11 +326,17 @@ class Persistent(Command):
 
 
 class ErrorHandling(Command):
-    def __init__(self, arguments, configuration, source_directories) -> None:
+    def __init__(
+            self,
+            arguments,
+            configuration,
+            source_directories,
+            should_merge_directories=False) -> None:
         super(ErrorHandling, self).__init__(
             arguments,
             configuration,
-            source_directories)
+            source_directories,
+            should_merge_directories)
         self._verbose = arguments.verbose
         self._output = arguments.output
         self._local_paths = {
@@ -373,9 +399,10 @@ class Check(ErrorHandling):
         super(Check, self).__init__(
             arguments,
             configuration,
-            source_directories)
+            source_directories,
+            should_merge_directories=True)
 
-    def run(self, retries: int = 1) -> None:
+    def _run(self, retries: int = 1) -> None:
         flags = self._flags()
         flags.extend([
             '-stub-roots',
@@ -387,7 +414,7 @@ class Check(ErrorHandling):
         if len(source_directories) > 1:
             check_root = os.path.join(
                 os.getcwd(),
-                ".pyre/shared_source_directory")
+                self.SHARED_SOURCE_DIRECTORY)
             if os.path.exists(check_root):
                 shutil.rmtree(check_root)
             self._merge_directories(check_root)
@@ -422,17 +449,21 @@ class Incremental(ErrorHandling):
                 stderr_tail.stdout,
                 source_directory)
 
-    def run(self) -> None:
+    def _run(self) -> None:
         dead = self._state().dead
         if dead:
             LOG.warning(
                 '%s not running at %s. Starting...',
                 self._server_string(dead).capitalize(),
-                self._source_directory_string(dead))
+                self._source_directory_string(
+                    self._original_source_directories))
             arguments = self._arguments
             arguments.terminal = False
             arguments.no_watchman = False
-            Start(arguments, self._configuration, dead).run()
+            Start(
+                arguments,
+                self._configuration,
+                self._original_source_directories).run()
 
         flags = self._flags()
         flags.extend([
@@ -474,7 +505,7 @@ class Rage(Command):
         super(Rage, self).__init__(arguments, configuration, source_directories)
         self._arguments.command = RAGE
 
-    def run(self) -> None:
+    def _run(self) -> None:
         results = self._call_client(
             command=RAGE,
             source_directories=self._source_directories,
@@ -487,11 +518,12 @@ class Start(Command):
         super(Start, self).__init__(
             arguments,
             configuration,
-            source_directories)
+            source_directories,
+            should_merge_directories=True)
         self._terminal = arguments.terminal
         self._no_watchman = arguments.no_watchman
 
-    def run(self) -> None:
+    def _run(self) -> None:
         flags = self._flags()
         flags.append('-daemonize')
         if not self._no_watchman:
@@ -522,7 +554,7 @@ class Stop(Command):
     def __init__(self, arguments, configuration, source_directories) -> None:
         super(Stop, self).__init__(arguments, configuration, source_directories)
 
-    def run(self) -> None:
+    def _run(self) -> None:
         running = self._state().running
         if running:
             results = self._call_client(
@@ -544,7 +576,7 @@ class Restart(Command):
             configuration,
             source_directories)
 
-    def run(self) -> None:
+    def _run(self) -> None:
         Stop(
             self._arguments,
             self._configuration,
@@ -559,7 +591,7 @@ class Kill(Command):
     def __init__(self, arguments, configuration, source_directories) -> None:
         super(Kill, self).__init__(arguments, configuration, source_directories)
 
-    def run(self) -> None:
+    def _run(self) -> None:
         running = self._state().running
 
         for source_directory in running:
