@@ -234,6 +234,10 @@ let meta annotation =
   }
 
 
+let primitive name =
+  Primitive (Identifier.create name)
+
+
 let parametric name parameters =
   Parametric { name = Identifier.create name; parameters }
 

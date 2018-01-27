@@ -56,6 +56,7 @@ val lambda: t -> t
 val list: t -> t
 val optional: t -> t
 val meta: t -> t
+val primitive: string -> t
 val parametric: string -> t list -> t
 val set: t -> t
 val string: t

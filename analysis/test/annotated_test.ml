@@ -582,6 +582,8 @@ let test_class_attributes _ =
   let resolution, parent =
     setup
       {|
+        class type:
+          __name__: str = 'asdf'
         foo: foo
         class foo():
           def __init__(self):
@@ -589,6 +591,7 @@ let test_class_attributes _ =
           first: int
           second: int
           third: int = 1
+          class_attribute: typing.ClassVar[int]
       |}
   in
 
@@ -626,6 +629,7 @@ let test_class_attributes _ =
   assert_attributes
     parent
     [
+      Attribute.create ~resolution ~parent (create_assign "class_attribute");
       Attribute.create ~resolution ~parent (create_assign "first");
       Attribute.create ~resolution ~parent (create_assign "implicit");
       Attribute.create ~resolution ~parent (create_assign "second");
@@ -672,7 +676,11 @@ let test_class_attributes _ =
   assert_equal
     ~printer:Fn.id
     (Class.attribute_fold ~resolution ~initial:"" ~f:callback parent)
-    ("firstimplicitsecondthird")
+    ("class_attributefirstimplicitsecondthird");
+  assert_equal
+    ~printer:Fn.id
+    (Class.attribute_fold ~class_attributes:true ~resolution ~initial:"" ~f:callback parent)
+    ("class_attribute__name__")
 
 
 let test_fallback_attribute _ =

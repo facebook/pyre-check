@@ -470,16 +470,20 @@ module Class = struct
 
   let attribute_fold
       ?(transitive = false)
-      ?(class_attributes_only = false)
+      ?(class_attributes = false)
       ?(include_properties = true)
       definition
       ~initial
       ~f
       ~resolution =
-    let fold_definition ~in_test initial ({ Node.value = definition; _ } as parent) =
+    let fold_definition
+        ~in_test
+        ~class_attributes
+        initial
+        ({ Node.value = definition; _ } as parent) =
       let fold_attribute_assign accumulator assign =
         let attribute = Attribute.create ~resolution ~parent assign in
-        if class_attributes_only && not (Attribute.class_attribute attribute) then
+        if class_attributes && not (Attribute.class_attribute attribute) then
           accumulator
         else
           f accumulator attribute
@@ -502,7 +506,27 @@ module Class = struct
       else
         [definition]
     in
-    List.fold ~f:(fold_definition ~in_test) ~init:initial definitions
+    (* Pass over normal class hierarchy. *)
+    let accumulator =
+      List.fold
+        ~f:(fold_definition ~in_test ~class_attributes)
+        ~init:initial
+        definitions
+    in
+    (* Class over meta hierarchy if necessary. *)
+    let meta_definitions =
+      if class_attributes then
+        (Resolution.class_definition resolution (Type.primitive "type")
+         >>| fun definition -> [definition])
+        |> Option.value ~default:[]
+      else
+        []
+    in
+    List.fold
+      ~f:(fold_definition ~in_test ~class_attributes:false)
+      ~init:accumulator
+      meta_definitions
+
 
 
   let attributes ?(transitive = false) definition ~resolution  =
@@ -517,7 +541,7 @@ module Class = struct
 
   let attribute
       ?(transitive = false)
-      ?(class_attributes_only = false)
+      ?(class_attributes = false)
       ({ Node.location; _ } as definition)
       ~resolution
       ~name =
@@ -546,7 +570,7 @@ module Class = struct
           else
             None
     in
-    attribute_fold ~transitive ~class_attributes_only ~initial:None ~f:search ~resolution definition
+    attribute_fold ~transitive ~class_attributes ~initial:None ~f:search ~resolution definition
     |> Option.value ~default:undefined
 
 
@@ -1290,7 +1314,7 @@ module Access = struct
 
         | Some (access, annotation), ([Access.Identifier _] as attribute_access) -> (
             (* Attribute access. *)
-            let annotation, class_attributes_only =
+            let annotation, class_attributes =
               if Type.is_meta (Annotation.annotation annotation) then
                 let annotation =
                   match Annotation.annotation annotation |> Type.parameters with
@@ -1313,7 +1337,7 @@ module Access = struct
              let attribute =
                Class.attribute
                  ~transitive:true
-                 ~class_attributes_only
+                 ~class_attributes
                  ~resolution
                  ~name:attribute_access
                  definition

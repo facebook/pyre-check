@@ -123,7 +123,7 @@ module Class : sig
 
   val attribute_fold
     :  ?transitive: bool
-    -> ?class_attributes_only: bool
+    -> ?class_attributes: bool
     -> ?include_properties: bool
     -> t
     -> initial: 'accumulator
