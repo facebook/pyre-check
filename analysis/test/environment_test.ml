@@ -21,10 +21,6 @@ let access names =
   |> List.concat
 
 
-let primitive name =
-  Type.Primitive ~~name
-
-
 let value option =
   Option.value_exn option
 
@@ -183,14 +179,14 @@ let test_register_class_definitions _ =
        def foo()->A:
          return C()
     |});
-  assert_equal (parse_annotation (module Reader) (!"C")) (primitive "C");
-  assert_equal (parse_annotation (module Reader) (!"D")) (primitive "D");
-  assert_equal (parse_annotation (module Reader) (!"B")) (primitive "B");
-  assert_equal (parse_annotation (module Reader) (!"A")) (primitive "A");
+  assert_equal (parse_annotation (module Reader) (!"C")) (Type.primitive "C");
+  assert_equal (parse_annotation (module Reader) (!"D")) (Type.primitive "D");
+  assert_equal (parse_annotation (module Reader) (!"B")) (Type.primitive "B");
+  assert_equal (parse_annotation (module Reader) (!"A")) (Type.primitive "A");
   assert_equal (Reader.function_definitions (access ["foo"])) None;
   let order = (module Reader.TypeOrderReader: TypeOrder.Reader) in
-  assert_equal (TypeOrder.successors order (primitive "C")) [];
-  assert_equal (TypeOrder.predecessors order (primitive "C")) []
+  assert_equal (TypeOrder.successors order (Type.primitive "C")) [];
+  assert_equal (TypeOrder.predecessors order (Type.primitive "C")) []
 
 
 let test_register_aliases _ =
@@ -229,20 +225,20 @@ let test_register_aliases _ =
   Environment.register_class_definitions (module Reader) other;
   Environment.register_aliases (module Reader) [typing; other; source];
 
-  assert_equal (parse_annotation (module Reader) (!"C")) (primitive "C");
-  assert_equal (parse_annotation (module Reader) (!"D")) (primitive "D");
-  assert_equal (parse_annotation (module Reader) (!"B")) (primitive "D");
-  assert_equal (parse_annotation (module Reader) (!"A")) (primitive "D");
+  assert_equal (parse_annotation (module Reader) (!"C")) (Type.primitive "C");
+  assert_equal (parse_annotation (module Reader) (!"D")) (Type.primitive "D");
+  assert_equal (parse_annotation (module Reader) (!"B")) (Type.primitive "D");
+  assert_equal (parse_annotation (module Reader) (!"A")) (Type.primitive "D");
   assert_equal (Reader.function_definitions (access ["foo"])) None;
 
   let order = (module Reader.TypeOrderReader: TypeOrder.Reader) in
-  assert_is_some (TypeOrder.find order (primitive "typing.Iterator"));
-  assert_is_some (TypeOrder.find order (primitive "typing.Iterable"));
+  assert_is_some (TypeOrder.find order (Type.primitive "typing.Iterator"));
+  assert_is_some (TypeOrder.find order (Type.primitive "typing.Iterable"));
   assert_equal
     (parse_annotation (module Reader) (!"collections.Iterator"))
-    (primitive "typing.Iterator");
+    (Type.primitive "typing.Iterator");
   assert_equal
-    (parse_annotation (module Reader) (!"collections.Iterable")) (primitive "typing.Iterable")
+    (parse_annotation (module Reader) (!"collections.Iterable")) (Type.primitive "typing.Iterable")
 
 
 let test_connect_type_order _ =
@@ -264,13 +260,15 @@ let test_connect_type_order _ =
   Environment.register_class_definitions (module Reader) source;
   Environment.register_aliases (module Reader) [source];
   Environment.connect_type_order (module Reader) source;
-  assert_equal (parse_annotation (module Reader) (!"C")) (primitive "C");
-  assert_equal (parse_annotation (module Reader) (!"D")) (primitive "D");
-  assert_equal (parse_annotation (module Reader) (!"B")) (primitive "D");
-  assert_equal (parse_annotation (module Reader) (!"A")) (primitive "D");
+  assert_equal (parse_annotation (module Reader) (!"C")) (Type.primitive "C");
+  assert_equal (parse_annotation (module Reader) (!"D")) (Type.primitive "D");
+  assert_equal (parse_annotation (module Reader) (!"B")) (Type.primitive "D");
+  assert_equal (parse_annotation (module Reader) (!"A")) (Type.primitive "D");
   assert_is_some (Reader.function_definitions (access ["foo"]));
-  assert_equal (TypeOrder.successors order (primitive "C")) [Type.Object; Type.Top];
-  assert_equal (TypeOrder.successors order (primitive "D")) [primitive "C"; Type.Object; Type.Top]
+  assert_equal (TypeOrder.successors order (Type.primitive "C")) [Type.Object; Type.Top];
+  assert_equal
+    (TypeOrder.successors order (Type.primitive "D"))
+    [Type.primitive "C"; Type.Object; Type.Top]
 
 
 let test_populate _ =
@@ -284,7 +282,7 @@ let test_populate _ =
     (parse_annotation
        environment
        (+Access (access ["foo.foo"])))
-    (primitive "foo.foo");
+    (Type.primitive "foo.foo");
   assert_equal
     (parse_annotation
        environment
@@ -293,20 +291,20 @@ let test_populate _ =
           [Access.Subscript [Access.Index (+Access (access ["foo.foo"]))]])))
     (Type.Parametric {
         Type.name = ~~"Optional";
-        parameters = [primitive "foo.foo"];
+        parameters = [Type.primitive "foo.foo"];
       });
   assert_equal
     (parse_annotation
        environment
        (+Access (access ["bar"])))
-    (primitive "bar");
+    (Type.primitive "bar");
 
   (* Check custom aliases. *)
   assert_equal
     (parse_annotation
        environment
        (+Access (access ["typing.DefaultDict"])))
-    (primitive "collections.defaultdict");
+    (Type.primitive "collections.defaultdict");
 
   (* Check type aliases. *)
   let environment =
@@ -414,7 +412,7 @@ let test_populate _ =
       (global environment (access ["A"]))
       (Some {
           Resolution.annotation =
-            primitive "A"
+            Type.primitive "A"
             |> Type.meta
             |> Annotation.create_immutable ~global:true;
           location = Location.any;
@@ -452,10 +450,14 @@ let test_infer_protocols _ =
     in
 
     assert_equal
-      (Environment.infer_implementations environment ~protocol:(primitive "Empty") |> Set.length)
+      (Environment.infer_implementations
+         environment
+         ~protocol:(Type.primitive "Empty")
+       |> Set.length)
       0;
-    Environment.infer_implementations environment ~protocol:(primitive "Sized")
-    |> Set.union (Environment.infer_implementations environment ~protocol:(primitive "SuperObject"))
+    Environment.infer_implementations environment ~protocol:(Type.primitive "Sized")
+    |> Set.union
+      (Environment.infer_implementations environment ~protocol:(Type.primitive "SuperObject"))
   in
   let assert_edge_inferred source target =
     assert_true (Set.mem edges { TypeOrder.Edge.source; target })
@@ -466,10 +468,10 @@ let test_infer_protocols _ =
 
   assert_equal (Set.length edges) 1;
 
-  assert_edge_not_inferred (primitive "List") (primitive "Sized");
-  assert_edge_inferred (primitive "Set") (primitive "Sized");
-  assert_edge_not_inferred (primitive "AlmostSet") (primitive "Sized");
-  assert_edge_not_inferred (Type.Object) (primitive "SuperObject")
+  assert_edge_not_inferred (Type.primitive "List") (Type.primitive "Sized");
+  assert_edge_inferred (Type.primitive "Set") (Type.primitive "Sized");
+  assert_edge_not_inferred (Type.primitive "AlmostSet") (Type.primitive "Sized");
+  assert_edge_not_inferred (Type.Object) (Type.primitive "SuperObject")
 
 
 let test_less_or_equal _ =
@@ -486,7 +488,7 @@ let test_less_or_equal _ =
     parse_annotation
       environment
       (+Access (access ["module.super"])) in
-  assert_equal super (primitive "module.super");
+  assert_equal super (Type.primitive "module.super");
 
   let sub =
     parse_annotation
@@ -494,7 +496,7 @@ let test_less_or_equal _ =
       (+Access (access ["module.sub"])) in
   assert_equal
     sub
-    (primitive "module.sub");
+    (Type.primitive "module.sub");
 
   assert_true (TypeOrder.less_or_equal order ~left:sub ~right:Type.Top);
   assert_true (TypeOrder.less_or_equal order ~left:super ~right:Type.Top);
@@ -515,7 +517,7 @@ let test_less_or_equal _ =
     parse_annotation
       environment
       (+Access (access ["module.super"])) in
-  assert_equal super (primitive "module.super");
+  assert_equal super (Type.primitive "module.super");
 
   let sub =
     parse_annotation
@@ -544,30 +546,30 @@ let test_less_or_equal _ =
   assert_true
     (TypeOrder.less_or_equal
        order
-       ~left:(Type.Optional (primitive "A"))
-       ~right:(Type.Optional (primitive "A")));
+       ~left:(Type.Optional (Type.primitive "A"))
+       ~right:(Type.Optional (Type.primitive "A")));
   assert_true
     (TypeOrder.less_or_equal
        order
-       ~left:(primitive "A")
-       ~right:(Type.Optional (primitive "A")));
+       ~left:(Type.primitive "A")
+       ~right:(Type.Optional (Type.primitive "A")));
   assert_false
     (TypeOrder.less_or_equal
        order
-       ~left:(Type.Optional (primitive "A"))
-       ~right:(primitive "A"));
+       ~left:(Type.Optional (Type.primitive "A"))
+       ~right:(Type.primitive "A"));
 
   (* We're currently not sound with inheritance and optionals. *)
   assert_false
     (TypeOrder.less_or_equal
        order
-       ~left:(Type.Optional (primitive "A"))
-       ~right:(primitive "C"));
+       ~left:(Type.Optional (Type.primitive "A"))
+       ~right:(Type.primitive "C"));
   assert_false
     (TypeOrder.less_or_equal
        order
-       ~left:(primitive "A")
-       ~right:(primitive "C"));
+       ~left:(Type.primitive "A")
+       ~right:(Type.primitive "C"));
 
   (* Unions. *)
   let environment =
@@ -582,53 +584,53 @@ let test_less_or_equal _ =
   assert_true
     (TypeOrder.less_or_equal
        order
-       ~left:(Type.Union [primitive "A"])
-       ~right:(Type.Union [primitive "A"]));
+       ~left:(Type.Union [Type.primitive "A"])
+       ~right:(Type.Union [Type.primitive "A"]));
   assert_true
     (TypeOrder.less_or_equal
        order
-       ~left:(Type.Union [primitive "B"])
-       ~right:(Type.Union [primitive "A"]));
+       ~left:(Type.Union [Type.primitive "B"])
+       ~right:(Type.Union [Type.primitive "A"]));
   assert_false
     (TypeOrder.less_or_equal
        order
-       ~left:(Type.Union [primitive "A"])
-       ~right:(Type.Union [primitive "B"]));
+       ~left:(Type.Union [Type.primitive "A"])
+       ~right:(Type.Union [Type.primitive "B"]));
   assert_true
     (TypeOrder.less_or_equal
        order
-       ~left:(primitive "A")
-       ~right:(Type.Union [primitive "A"]));
+       ~left:(Type.primitive "A")
+       ~right:(Type.Union [Type.primitive "A"]));
   assert_true
     (TypeOrder.less_or_equal
        order
-       ~left:(primitive "B")
-       ~right:(Type.Union [primitive "A"]));
+       ~left:(Type.primitive "B")
+       ~right:(Type.Union [Type.primitive "A"]));
   assert_true
     (TypeOrder.less_or_equal
        order
-       ~left:(primitive "A")
-       ~right:(Type.Union [primitive "A"; primitive "B"]));
+       ~left:(Type.primitive "A")
+       ~right:(Type.Union [Type.primitive "A"; Type.primitive "B"]));
   assert_true
     (TypeOrder.less_or_equal
        order
-       ~left:(Type.Union [primitive "A"; primitive "B"; Type.integer])
+       ~left:(Type.Union [Type.primitive "A"; Type.primitive "B"; Type.integer])
        ~right:Type.Object);
   assert_true
     (TypeOrder.less_or_equal
        order
-       ~left:(Type.Union [primitive "A"; primitive "B"; Type.integer])
+       ~left:(Type.Union [Type.primitive "A"; Type.primitive "B"; Type.integer])
        ~right:(Type.Union [Type.Top; Type.Object; Type.Optional Type.float]));
   assert_false
     (TypeOrder.less_or_equal
        order
-       ~left:(Type.Union [primitive "A"; primitive "B"; Type.integer])
+       ~left:(Type.Union [Type.primitive "A"; Type.primitive "B"; Type.integer])
        ~right:Type.float);
   assert_false
     (TypeOrder.less_or_equal
        order
-       ~left:(Type.Union [primitive "A"; primitive "B"; Type.integer])
-       ~right:(Type.Union [Type.float; primitive "B"; Type.integer]));
+       ~left:(Type.Union [Type.primitive "A"; Type.primitive "B"; Type.integer])
+       ~right:(Type.Union [Type.float; Type.primitive "B"; Type.integer]));
 
   (* Special cases. *)
   assert_true (TypeOrder.less_or_equal order ~left:Type.integer ~right:Type.float)
@@ -642,8 +644,8 @@ let test_join _ =
     |} in
   let module Reader = (val environment) in
   let order = (module Reader.TypeOrderReader : TypeOrder.Reader) in
-  let foo = primitive "foo" in
-  let bar = primitive "bar" in
+  let foo = Type.primitive "foo" in
+  let bar = Type.primitive "bar" in
 
   assert_equal
     (TypeOrder.join order Type.Bottom bar)
@@ -666,8 +668,8 @@ let test_join _ =
     (Type.Union [Type.integer; Type.string]);
 
   assert_raises
-    (TypeOrder.Undefined (primitive "durp"))
-    (fun _ -> TypeOrder.join order bar (primitive "durp"));
+    (TypeOrder.Undefined (Type.primitive "durp"))
+    (fun _ -> TypeOrder.join order bar (Type.primitive "durp"));
 
   (* Special cases. *)
   assert_equal
@@ -695,12 +697,12 @@ let test_meet _ =
       (TypeOrder.meet order left right)
       expected
   in
-  let foo = primitive "foo" in
-  let bar = primitive "bar" in
-  let a = primitive "A" in
-  let b = primitive "B" in
-  let c = primitive "C" in
-  let d = primitive "D" in
+  let foo = Type.primitive "foo" in
+  let bar = Type.primitive "bar" in
+  let a = Type.primitive "A" in
+  let b = Type.primitive "B" in
+  let c = Type.primitive "C" in
+  let d = Type.primitive "D" in
 
   assert_meet Type.Bottom bar Type.Bottom;
   assert_meet Type.Top bar bar;
@@ -1054,7 +1056,7 @@ let test_function_signature_variable_instantiation _ =
         pass
     |}
     "reversed"
-    (normal [primitive "range"])
+    (normal [Type.primitive "range"])
     ["i", Some (Type.parametric "typing.Sequence" [Type.integer])]
     (Some (Type.expression (Type.iterable Type.integer)))
 
@@ -1124,7 +1126,7 @@ let test_function_signature_constructor _ =
     "A"
     []
     ["self", None]
-    (Some (Type.expression (primitive "A")));
+    (Some (Type.expression (Type.primitive "A")));
 
   assert_instantiated
     {|
@@ -1134,7 +1136,7 @@ let test_function_signature_constructor _ =
     "A"
     (normal [Type.integer])
     ["self", None; "i", Some Type.integer]
-    (Some (Type.expression (primitive "A")));
+    (Some (Type.expression (Type.primitive "A")));
 
   assert_instantiated
     {|
@@ -1144,7 +1146,7 @@ let test_function_signature_constructor _ =
     "A"
     (normal [Type.integer])
     ["self", None; "i", Some Type.integer]
-    (Some (Type.expression (primitive "A")));
+    (Some (Type.expression (Type.primitive "A")));
   assert_instantiated
     {|
       class A:
@@ -1153,7 +1155,7 @@ let test_function_signature_constructor _ =
     "A"
     []
     ["self", None; "i", Some Type.integer]
-    (Some (Type.expression (primitive "A")));
+    (Some (Type.expression (Type.primitive "A")));
 
   assert_instantiated
     {|
@@ -1266,11 +1268,11 @@ let test_supertypes _ =
   let module Reader = (val environment) in
   let order = (module Reader.TypeOrderReader : TypeOrder.Reader) in
   assert_equal
-    (TypeOrder.successors order (primitive "foo"))
+    (TypeOrder.successors order (Type.primitive "foo"))
     [Type.Object; Type.Top];
   assert_equal
-    (TypeOrder.successors order (primitive "bar"))
-    [primitive "foo"; Type.Object; Type.Top];
+    (TypeOrder.successors order (Type.primitive "bar"))
+    [Type.primitive "foo"; Type.Object; Type.Top];
 
   let environment =
     populate {|
@@ -1347,25 +1349,25 @@ let test_method_signature _ =
   assert_is_some
     (method_signature
        environment
-       (primitive "foo")
+       (Type.primitive "foo")
        { Call.name = !"foo"; arguments = [] }
        []);
   assert_is_some
     (method_signature
        environment
-       (primitive "bar")
+       (Type.primitive "bar")
        { Call.name = !"bar"; arguments = [] }
        []);
   assert_is_some
     (method_signature
        environment
-       (primitive "foo")
+       (Type.primitive "foo")
        { Call.name = !"bar"; arguments = [] }
        []);
   assert_is_none
     (method_signature
        environment
-       (primitive "bar")
+       (Type.primitive "bar")
        { Call.name = !"foo"; arguments = [] }
        []);
 
@@ -1373,7 +1375,7 @@ let test_method_signature _ =
   assert_is_none
     (method_signature
        environment
-       (primitive "foo")
+       (Type.primitive "foo")
        { Call.name = !"both"; arguments = [] }
        []);
 
@@ -1388,9 +1390,9 @@ let test_method_signature _ =
   in
   let callee = method_signature
       environment
-      (primitive "bar")
+      (Type.primitive "bar")
       { Call.name = !"f"; arguments = [] }
-      (List.map ~f:(~+) (normal [primitive "bar"]))
+      (List.map ~f:(~+) (normal [Type.primitive "bar"]))
   in
   (match callee with
    | Some {
@@ -1516,7 +1518,7 @@ let test_class_definition _ =
       class object():
         pass
     |} in
-  assert_true (is_defined environment (primitive "baz.baz"));
+  assert_true (is_defined environment (Type.primitive "baz.baz"));
   assert_true
     (is_defined
        environment
@@ -1525,9 +1527,9 @@ let test_class_definition _ =
            parameters = [Type.integer];
          }));
   assert_is_some
-    (class_definition environment (primitive "baz.baz"));
+    (class_definition environment (Type.primitive "baz.baz"));
 
-  assert_false (is_defined environment (primitive "bar.bar"));
+  assert_false (is_defined environment (Type.primitive "bar.bar"));
   assert_false
     (is_defined
        environment
@@ -1536,7 +1538,7 @@ let test_class_definition _ =
            parameters = [Type.integer];
          }));
   assert_is_none
-    (class_definition environment (primitive "bar.bar"));
+    (class_definition environment (Type.primitive "bar.bar"));
 
   let any =
     class_definition environment Type.Object
@@ -1610,16 +1612,16 @@ let test_purge _ =
     ~check_dependency_exists:false
     reader
     [parse ~path:"test.py" source];
-  assert_is_some (Reader.class_definition (primitive "baz.baz"));
+  assert_is_some (Reader.class_definition (Type.primitive "baz.baz"));
   assert_is_some (Reader.function_definitions (Access.create "foo"));
-  assert_is_some (Reader.aliases (primitive "_T"));
+  assert_is_some (Reader.aliases (Type.primitive "_T"));
   assert_equal (Reader.dependencies "a.py") (Some ["test.py"]);
 
   Reader.purge (File.Handle.create "test.py");
 
-  assert_is_none (Reader.class_definition (primitive "baz.baz"));
+  assert_is_none (Reader.class_definition (Type.primitive "baz.baz"));
   assert_is_none (Reader.function_definitions (Access.create "foo"));
-  assert_is_none (Reader.aliases (primitive "_T"));
+  assert_is_none (Reader.aliases (Type.primitive "_T"));
   assert_equal (Reader.dependencies "a.py") (Some [])
 
 
