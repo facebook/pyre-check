@@ -181,7 +181,10 @@ module Define : sig
   val dump: t -> bool
   val dump_cfg: t -> bool
 
-  val implicit_attribute_assigns: t -> (Assign.t Node.t) Expression.Access.Map.t
+  val implicit_attribute_assigns
+    :  t
+    -> definition: statement_node Record.Class.record
+    -> (Assign.t Node.t) Expression.Access.Map.t
   val property_attribute_assign: location: Location.t -> t -> (Assign.t Node.t) option
 
   val strip: t -> t

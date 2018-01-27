@@ -165,10 +165,19 @@ let test_attribute_assigns _ =
         ~f:(fun (target, annotation, value) -> create_assign ~target ~annotation ~value)
         expected
     in
+    let definition =
+      {
+        Record.Class.name = [];
+        bases = [];
+        body = [];
+        decorators = [];
+        docstring = None;
+      }
+    in
     assert_equal
       ~cmp:(List.equal ~equal:assign_equal)
       expected
-      (parse_single_define source |> Define.implicit_attribute_assigns |> Map.data)
+      (parse_single_define source |> Define.implicit_attribute_assigns ~definition |> Map.data)
   in
   assert_implicit_attribute_assigns "def foo(): pass" [];
 
@@ -277,6 +286,17 @@ let test_attribute_assigns _ =
   assert_attribute_assigns
     {|
       class Foo:
+        def __init__(self):
+          self._init()
+        def _init(self):
+          self.attribute: int = value
+        def not_inlined(self):
+          self.other: int = 1
+    |}
+    ["attribute", Some (Type.expression Type.integer), None];
+  assert_attribute_assigns
+    {|
+      class Foo:
         attribute: int = value
         @property
         def property(self) -> int:
@@ -337,6 +357,8 @@ let test_strip _ =
           pass
         def setUp():
           pass
+        def _private():
+          pass
         def method():
           pass
     |}
@@ -357,6 +379,17 @@ let test_strip _ =
         };
         +Define {
           Define.name = Access.create "setUp";
+          parameters = [];
+          body = [+Pass];  (* Not stripped! *)
+          decorators = [];
+          docstring = None;
+          return_annotation = None;
+          async = false;
+          generated = false;
+          parent = Some (Access.create "Foo")
+        };
+        +Define {
+          Define.name = Access.create "_private";
           parameters = [];
           body = [+Pass];  (* Not stripped! *)
           decorators = [];

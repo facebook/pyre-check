@@ -308,7 +308,9 @@ module Define = struct
     contains_call define "pyre_dump_cfg"
 
 
-  let implicit_attribute_assigns { body; _ } =
+  let implicit_attribute_assigns
+      { body; _ }
+      ~definition:{ Record.Class.body = definition_body; _ } =
     let open Expression in
     let attribute_assign map { Node.location; value } =
       match value with
@@ -380,6 +382,34 @@ module Define = struct
             (expand_statements body) @ (expand_statements orelse) @ (expand_statements finally)
         | With { With.body; _ } ->
             expand_statements body
+        | Expression {
+            Node.value =
+              Expression.Access [
+                Expression.Access.Identifier self;
+                Expression.Access.Call {
+                  Node.value = {
+                    Call.name = {
+                      Node.value = Expression.Access [Access.Identifier name];
+                      _;
+                    };
+                    _;
+                  };
+                  _;
+                }
+              ];
+            _;
+          } when Identifier.show self = "self" &&
+                 String.is_prefix ~prefix:"_" (Identifier.show name) ->
+            (* Look for method in class definition. *)
+            let inline = function
+              | { Node.value = Define { name = callee; body; _ }; _ }
+                when Expression.Access.show callee = Identifier.show name ->
+                  Some body
+              | _ ->
+                  None
+            in
+            List.find_map ~f:inline definition_body
+            |> Option.value ~default:[statement]
         | _ ->
             [statement]
       in
@@ -804,7 +834,7 @@ module Class = struct
       ({ Record.Class.body; _ } as definition) =
     let implicit_attribute_assigns =
       constructor ~in_test definition
-      >>| Define.implicit_attribute_assigns
+      >>| Define.implicit_attribute_assigns ~definition
       |> Option.value ~default:Expression.Access.Map.empty
     in
     let property_assigns =
@@ -861,7 +891,11 @@ module Class = struct
   let strip ({ Record.Class.body; _ } as class_define ) =
     let strip_define statement =
       match Node.value statement with
-      | Define define when not (Define.is_constructor ~in_test:true define) ->
+      | Define ({ Define.name; _ } as define)
+        when Define.is_constructor ~in_test:true define ||
+             String.is_prefix ~prefix:"_" (Expression.Access.show name) ->
+          statement
+      | Define define ->
           { statement with Node.value = Define (Define.strip define) }
       | _ ->
           statement
