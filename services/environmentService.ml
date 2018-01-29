@@ -313,23 +313,23 @@ let shared_memory_reader
           in
           let serialized_keys = List.to_string ~f:Int.to_string keys in
           let serialized_annotations =
-            List.filter_map
-              ~f:(fun key -> find (annotations ()) key >>| (fun value -> key, value))
-              keys
-            |> List.map
-              ~f:(fun (key, annotation) -> Format.asprintf "%d->%a\n" key Type.pp annotation)
+            let serialize_annotation key =
+              find (annotations ()) key
+              >>| (fun annotation -> Format.asprintf "%d->%a\n" key Type.pp annotation)
+            in
+            List.filter_map ~f:serialize_annotation keys
             |> String.concat
           in
           let serialized_edges edges =
             let edges_of_key key =
+              let show_successor { TypeOrder.Target.target = successor; _ } =
+                Option.value_exn (find (annotations ()) successor)
+                |> Type.show
+              in
               Option.value ~default:[] (find edges key)
-              |> List.map
-                ~f:(fun { TypeOrder.Target.target = successor; _ } ->
-                    Option.value_exn (find (annotations ()) successor))
-              |> List.to_string ~f:Type.show
+              |> List.to_string ~f:show_successor
             in
-            List.map ~f:(fun key -> Format.asprintf "%d -> %s\n" key (edges_of_key key)) keys
-            |> String.concat
+            List.to_string ~f:(fun key -> Format.asprintf "%d -> %s\n" key (edges_of_key key)) keys
           in
           Format.asprintf "Keys:\n%s\nAnnotations:\n%s\nEdges:\n%s\nBackedges:\n%s\n"
             serialized_keys
