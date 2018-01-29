@@ -155,6 +155,53 @@ class PersistentTest(unittest.TestCase):
                 capture_output=False)
             run_null_server.assert_called_once()
 
+        # Check null server initialize output
+        command = commands.Persistent(
+            arguments,
+            configuration,
+            source_directories=['.'])
+        self.assertEqual(
+            command._initialize_response(5),
+            "Content-Length: 59\r\n\r\n"
+            '{"jsonrpc": "2.0", "id": 5, "result": {"capabilities": {}}}\r\n'
+        )
+
+    @patch('select.select')
+    @patch('sys.stdout', new_callable=io.StringIO)
+    @patch.object(commands.Command, '_call_client')
+    def test_null_server(self, call_client, stdout, select) -> None:
+        input = """
+        {
+            "jsonrpc": "2.0",
+            "id": 0,
+            "method": "initialize",
+            "params": {
+              "processId": 2588352,
+              "rootPath": "/data/users/a/instagram/instagram-server",
+              "rootUri": "file:///data/users/a/instagram/instagram-server",
+              "capabilities": {
+                "workspace": {
+                  "applyEdit": true
+                }
+              }
+            }
+        }
+        """
+        stdin = io.StringIO(
+            "Content-Length: {}\r\n\r\n{}\r\n".format(len(input), input))
+
+        select.return_value = ([stdin], [], [])
+        # Check null server output when a valid input is given.
+        commands.Persistent(
+            mock_arguments(),
+            mock_configuration(),
+            source_directories=['.'],
+        )._run_null_server(should_sleep=False)
+        json = '{"jsonrpc": "2.0", "id": 0, "result": {"capabilities": {}}}'
+        self.assertEqual(
+            stdout.getvalue(),
+            "Content-Length: 59\r\n\r\n{}\r\n".format(json))
+
 
 class ErrorHandlingTest(unittest.TestCase):
     @patch.object(Error, '__init__', return_value=None)

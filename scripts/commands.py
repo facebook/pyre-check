@@ -7,6 +7,7 @@ import json
 import logging
 import os
 import re
+import select
 import shutil
 import signal
 import subprocess
@@ -300,30 +301,39 @@ class Persistent(Command):
     def on_client_exception(self) -> None:
         self._run_null_server()
 
-    def _run_null_server(self) -> None:
-        # Read content of the form Content-Length:n\r\n\r\n{jsonmessage}
-        line = sys.stdin.readline()
-        try:
-            length = int(re.match(r"Content-Length: (?P<bytes>[0-9]+)", line)
-                         .group('bytes'))
-        except AttributeError:
-            length = 0
-        # skip empty line
-        sys.stdin.readline()
-        serialized_json = sys.stdin.read(length)
-        try:
-            parsed = json.loads(serialized_json)
-            request_id = parsed["id"]
-        except Exception:
-            request_id = 1
-        response = {
+    def _initialize_response(self, request_id: int) -> str:
+        response = json.dumps({
             "jsonrpc": "2.0",
             "id": request_id,
             "result": {"capabilities": {}},
-        }
-        sys.stdout.write(str(response))
+        })
+        return "Content-Length: {}\r\n\r\n{}\r\n".format(
+            len(response),
+            response)
+
+    def _run_null_server(self, should_sleep=True) -> None:
+        to_read, _, _ = select.select([sys.stdin], [], [], 3.0)
+        request_id = 0
+        if to_read:
+            standard_input = to_read[0]
+            # Read content of the form Content-Length:n\r\n\r\n{jsonmessage}
+            line = standard_input.readline()
+            match = re.match(r"Content-Length: (?P<bytes>[0-9]+)", line)
+            if match:
+                length = int(match.group('bytes'))
+                standard_input.readline()
+                serialized_json = standard_input.read(length)
+                try:
+                    parsed = json.loads(serialized_json)
+                    request_id = parsed["id"]
+                # This is a catch-all to ensure that the null server always
+                # gets spawned.
+                except Exception:
+                    pass
+
+        sys.stdout.write(self._initialize_response(request_id))
         sys.stdout.flush()
-        while True:
+        while should_sleep:
             time.sleep(10)
 
 
