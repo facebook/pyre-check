@@ -917,6 +917,7 @@ let assert_type_errors
     ?(ignore_lines = [])
     source
     errors =
+  Annotated.Class.AttributesCache.clear ();
   let source =
     let metadata =
       Source.Metadata.create

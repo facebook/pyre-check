@@ -468,95 +468,140 @@ module Class = struct
   end
 
 
+  module AttributesCache = struct
+    type t = {
+      transitive: bool;
+      class_attributes: bool;
+      include_generated_attributes: bool;
+      name: Expression.Access.t;
+    }
+    [@@deriving compare, sexp, hash]
+
+
+    include Hashable.Make(struct
+        type nonrec t = t
+        let compare = compare
+        let hash = Hashtbl.hash
+        let hash_fold_t = hash_fold_t
+        let sexp_of_t = sexp_of_t
+        let t_of_sexp = t_of_sexp
+      end)
+
+
+    let cache =
+      Table.create ~size:1023 ()
+
+
+    let clear () =
+      Table.clear cache
+  end
+
+
   let attributes
       ?(transitive = false)
       ?(class_attributes = false)
       ?(include_generated_attributes = true)
-      definition
+      ({ Node.value = { Class.name; _ }; _ } as definition)
       ~resolution =
-    let definition_attributes
-        ~in_test
-        ~class_attributes
-        attributes
-        ({ Node.value = definition; _ } as parent) =
-      let assign_attributes attributes assign =
-        let attribute = Attribute.create ~resolution ~parent assign in
-        if class_attributes && not (Attribute.class_attribute attribute) then
-          attributes
-        else
-          attribute :: attributes
-      in
-      Statement.Class.attribute_assigns ~include_generated_attributes ~in_test definition
-      |> Map.data
-      |> List.fold ~init:attributes ~f:assign_attributes
+    let key =
+      {
+        AttributesCache.transitive;
+        class_attributes;
+        include_generated_attributes;
+        name;
+      }
     in
-    let superclass_definitions = superclasses ~resolution definition in
-    let in_test =
-      let is_unit_test { Node.value = { Record.Class.name; _ }; _ } =
-        Access.show name
-        |> String.equal "unittest.TestCase"
-      in
-      List.exists ~f:is_unit_test (definition :: superclass_definitions)
-    in
-    let definitions =
-      if transitive then
-        definition :: superclass_definitions
-      else
-        [definition]
-    in
-    (* Pass over normal class hierarchy. *)
-    let accumulator =
-      List.fold
-        ~f:(definition_attributes ~in_test ~class_attributes)
-        ~init:[]
-        definitions
-    in
-    (* Class over meta hierarchy if necessary. *)
-    let meta_definitions =
-      if class_attributes then
-        let default =
-          (Resolution.class_definition resolution (Type.primitive "type")
-           >>| fun definition -> [definition])
-          |> Option.value ~default:[]
+    match Hashtbl.find AttributesCache.cache key with
+    | Some result ->
+        result
+    | None ->
+        let definition_attributes
+            ~in_test
+            ~class_attributes
+            attributes
+            ({ Node.value = definition; _ } as parent) =
+          let assign_attributes attributes assign =
+            let attribute = Attribute.create ~resolution ~parent assign in
+            if class_attributes && not (Attribute.class_attribute attribute) then
+              attributes
+            else
+              attribute :: attributes
+          in
+          Statement.Class.attribute_assigns ~include_generated_attributes ~in_test definition
+          |> Map.data
+          |> List.fold ~init:attributes ~f:assign_attributes
         in
-        let find_meta_definition sofar superclass_annotation =
-          match sofar with
-          | Some definition ->
-              Some definition
-          | None ->
-              Resolution.class_definition resolution superclass_annotation
-              >>= (fun { Node.value = { Statement.Class.bases; _ }; _ } ->
-                  let find_meta_definition { Argument.name; value } =
-                    match name with
-                    | Some name when Identifier.show name = "metaclass" ->
-                        Resolution.parse_annotation resolution value
-                        |> Resolution.class_definition resolution
-                    | _ ->
-                        None
-                  in
-                  List.find_map ~f:find_meta_definition bases)
+        let superclass_definitions = superclasses ~resolution definition in
+        let in_test =
+          let is_unit_test { Node.value = { Record.Class.name; _ }; _ } =
+            Access.show name
+            |> String.equal "unittest.TestCase"
+          in
+          List.exists ~f:is_unit_test (definition :: superclass_definitions)
         in
-        match find_meta_definition None (annotation ~resolution definition) with
-        | Some definition ->
-            (* Unrolling the first fold because `TypeOrder.successors_fold` is not folding over the
-               passed in annotation. *)
-            definition :: (superclasses ~resolution definition)
-        | _ ->
-            (TypeOrder.successors_fold
-               (Resolution.order resolution)
-               ~initial:None
-               ~f:find_meta_definition
-               (annotation ~resolution definition)
-             >>| fun definition -> definition :: (superclasses ~resolution definition))
-            |> Option.value ~default
-      else
-        []
-    in
-    List.fold
-      ~f:(definition_attributes ~in_test ~class_attributes:false)
-      ~init:accumulator
-      meta_definitions
-    |> List.rev
+        let definitions =
+          if transitive then
+            definition :: superclass_definitions
+          else
+            [definition]
+        in
+        (* Pass over normal class hierarchy. *)
+        let accumulator =
+          List.fold
+            ~f:(definition_attributes ~in_test ~class_attributes)
+            ~init:[]
+            definitions
+        in
+        (* Class over meta hierarchy if necessary. *)
+        let meta_definitions =
+          if class_attributes then
+            let default =
+              (Resolution.class_definition resolution (Type.primitive "type")
+               >>| fun definition -> [definition])
+              |> Option.value ~default:[]
+            in
+            let find_meta_definition sofar superclass_annotation =
+              match sofar with
+              | Some definition ->
+                  Some definition
+              | None ->
+                  Resolution.class_definition resolution superclass_annotation
+                  >>= (fun { Node.value = { Statement.Class.bases; _ }; _ } ->
+                      let find_meta_definition { Argument.name; value } =
+                        match name with
+                        | Some name when Identifier.show name = "metaclass" ->
+                            Resolution.parse_annotation resolution value
+                            |> Resolution.class_definition resolution
+                        | _ ->
+                            None
+                      in
+                      List.find_map ~f:find_meta_definition bases)
+            in
+            match find_meta_definition None (annotation ~resolution definition) with
+            | Some definition ->
+                (* Unrolling the first fold because `TypeOrder.successors_fold` is not folding over
+                   the passed in annotation. *)
+                definition :: (superclasses ~resolution definition)
+            | _ ->
+                (TypeOrder.successors_fold
+                   (Resolution.order resolution)
+                   ~initial:None
+                   ~f:find_meta_definition
+                   (annotation ~resolution definition)
+                 >>| fun definition -> definition :: (superclasses ~resolution definition))
+                |> Option.value ~default
+          else
+            []
+        in
+        let result =
+          List.fold
+            ~f:(definition_attributes ~in_test ~class_attributes:false)
+            ~init:accumulator
+            meta_definitions
+          |> List.rev
+        in
+        Hashtbl.set ~key ~data:result AttributesCache.cache;
+        result
 
 
   let attribute_fold

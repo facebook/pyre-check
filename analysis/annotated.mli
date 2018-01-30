@@ -121,6 +121,10 @@ module Class : sig
     val class_attribute: t -> bool
   end
 
+  module AttributesCache : sig
+    val clear: unit -> unit
+  end
+
   val attributes
     :  ?transitive: bool
     -> ?class_attributes: bool

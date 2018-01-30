@@ -605,6 +605,7 @@ let test_class_attributes _ =
 
   (* Test `Class.attributes`. *)
   let assert_attributes definition attributes =
+    Annotated.Class.AttributesCache.clear ();
     let attribute_list_equal =
       let equal left right =
         Expression.equal_expression (Attribute.name left) (Attribute.name right) &&
@@ -666,38 +667,63 @@ let test_class_attributes _ =
   assert_true (Attribute.class_attribute attribute);
 
   (* Test `attribute_fold`. *)
-  let callback
-      string_names
-      attribute =
-    match Attribute.name attribute with
-    | Expression.Access access -> string_names ^ (Expression.Access.show access)
-    | _ -> string_names
+  let assert_fold ?(class_attributes = false) source fold =
+    Annotated.Class.AttributesCache.clear ();
+    let callback
+        string_names
+        attribute =
+      match Attribute.name attribute with
+      | Expression.Access access -> string_names ^ (Expression.Access.show access)
+      | _ -> string_names
+    in
+    let resolution, parent = setup source in
+    assert_equal
+      ~printer:Fn.id
+      (Class.attribute_fold ~class_attributes ~resolution ~initial:"" ~f:callback parent)
+      fold
   in
-  assert_equal
-    ~printer:Fn.id
-    (Class.attribute_fold ~resolution ~initial:"" ~f:callback parent)
-    ("__init__class_attributefirstimplicitsecondthird");
-  assert_equal
-    ~printer:Fn.id
-    (Class.attribute_fold ~class_attributes:true ~resolution ~initial:"" ~f:callback parent)
-    ("__init__class_attribute__name__");
 
-  let resolution, parent =
-    setup
-      {|
-        class type:
-          __type__: str
-        class Meta(type):
-          __meta__: str
-        class Foo(metaclass=Meta):
-          __static__: typing.ClassVar[int]
-          __instance__: int
-      |}
-  in
-  assert_equal
-    ~printer:Fn.id
-    (Class.attribute_fold ~class_attributes:true ~resolution ~initial:"" ~f:callback parent)
-    ("__static____meta____type__")
+  assert_fold
+    {|
+      class type:
+        __name__: str = 'asdf'
+      foo: foo
+      class foo():
+        def __init__(self):
+          self.implicit: int = 1
+        first: int
+        second: int
+        third: int = 1
+        class_attribute: typing.ClassVar[int]
+    |}
+    "__init__class_attributefirstimplicitsecondthird";
+  assert_fold
+    ~class_attributes:true
+    {|
+      class type:
+        __name__: str = 'asdf'
+      foo: foo
+      class foo():
+        def __init__(self):
+          self.implicit: int = 1
+        first: int
+        second: int
+        third: int = 1
+        class_attribute: typing.ClassVar[int]
+    |}
+    ("__init__class_attribute__name__");
+  assert_fold
+    ~class_attributes:true
+    {|
+      class type:
+        __type__: str
+      class Meta(type):
+        __meta__: str
+      class Foo(metaclass=Meta):
+        __static__: typing.ClassVar[int]
+        __instance__: int
+    |}
+    "__static____meta____type__"
 
 
 
