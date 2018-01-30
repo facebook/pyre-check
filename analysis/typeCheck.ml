@@ -148,9 +148,9 @@ module State = struct
 
 
   let errors
-      ignore_lines
       ({
         configuration;
+        environment;
         errors;
         define = ({ Node.location; value = define; _ } as define_node);
         _;
@@ -221,12 +221,17 @@ module State = struct
     in
 
     let ignore_suppressed_errors errors =
+      let module Reader = (val environment : Environment.Reader) in
       let _, errors =
-        let ignore_map = Int.Map.of_alist_exn ignore_lines in
         let ignore error =
-          Map.find ignore_map (Error.location error |> Location.line)
-          >>| (fun ignored ->
-              List.is_empty ignored || List.mem ~equal:(=) ignored (Error.code error)
+          let stripped_location =
+            let line = { Location.line = (Error.location error |> Location.line); column = -1 } in
+            { Location.path = (Error.location error |> Location.path); start = line; stop = line; }
+          in
+          Reader.ignore_lines stripped_location
+          >>| (fun ignored_error_codes ->
+              List.is_empty ignored_error_codes ||
+              List.mem ~equal:(=) ignored_error_codes (Error.code error)
             )
           |> Option.value ~default:false
         in
@@ -1949,7 +1954,7 @@ let check configuration environment ({ Source.path; _ } as source) =
       in
       let error_list =
         exit
-        >>| State.errors (Source.ignore_lines source)
+        >>| State.errors
         |> Option.value ~default:[]
       in
       let type_coverage =

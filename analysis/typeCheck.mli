@@ -39,10 +39,7 @@ module State : sig
     -> unit
     -> t
 
-  val errors
-    :  (int * int list) list
-    -> t
-    -> Error.t list
+  val errors: t -> Error.t list
 
   val coverage: t -> Coverage.t
 
