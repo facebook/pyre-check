@@ -814,6 +814,48 @@ let test_expand_ternary _ =
     |}
 
 
+let test_expand_named_tuples _ =
+  let assert_expand source expected =
+    assert_source_equal
+      (Preprocessing.expand_named_tuples (parse source))
+      (parse expected)
+  in
+  assert_expand
+    {|
+      T = typing.NamedTuple('T')
+    |}
+    {|
+      class T(typing.NamedTuple('T')):
+        pass
+    |};
+  assert_expand
+    {|
+      T = typing.NamedTuple('T', ['one', 'two'])
+    |}
+    {|
+      class T(typing.NamedTuple('T', ['one', 'two'])):
+        pass
+    |};
+  assert_expand
+    {|
+      T = typing.NamedTuple('T', [('one', int), ('two', str)])
+    |}
+    {|
+      class T(typing.NamedTuple('T', [('one', int), ('two', str)])):
+        pass
+    |};
+  (* Don't transform non-toplevel statements. *)
+  assert_expand
+    {|
+      def foo():
+        T = typing.NamedTuple('T')
+    |}
+    {|
+      def foo():
+        T = typing.NamedTuple('T')
+    |}
+
+
 let test_defines _ =
   let assert_defines statements defines =
     assert_equal
@@ -983,6 +1025,7 @@ let () =
     "expand_multiple_calls">::test_simplify_access_chains;
     "expand_excepts">::test_expand_excepts;
     "expand_ternary_assigns">::test_expand_ternary;
+    "expand_named_tuples">::test_expand_named_tuples;
     "defines">::test_defines;
     "classes">::test_classes;
   ]

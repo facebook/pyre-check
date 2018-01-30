@@ -762,6 +762,51 @@ let expand_ternary_assign source =
   |> snd
 
 
+let expand_named_tuples ({ Source.statements; _ } as source) =
+  let expand_named_tuples = function
+    | {
+      Node.location;
+      value = Assign {
+          Assign.target = {
+            Node.value = Access name;
+            _;
+          };
+          value = Some ({
+              Node.value =
+                Access [
+                  Access.Identifier typing;
+                  Access.Call {
+                    Node.value = {
+                      Call.name = {
+                        Node.value = Access [Access.Identifier named_tuple];
+                        _;
+                      };
+                      _;
+                    };
+                    _;
+                  }
+                ];
+              _;
+            } as tuple);
+          _;
+        };
+    } when Identifier.show typing = "typing" && Identifier.show named_tuple = "NamedTuple" ->
+        let definition =
+          {
+            Class.name;
+            bases = [{ Argument.name = None; value = tuple }];
+            body = [Node.create Pass];
+            decorators = [];
+            docstring = None;
+          }
+        in
+        { Node.location; value = Class definition }
+    | statement ->
+        statement
+  in
+  { source with Source.statements = List.map ~f:expand_named_tuples statements }
+
+
 let simplify_access_chains source =
   let module SimplifyAccessChains = Transform.Make(struct
       type t = unit
@@ -944,4 +989,5 @@ let preprocess source =
   |> expand_yield_from
   |> simplify_access_chains
   |> expand_ternary_assign
+  |> expand_named_tuples
   |> expand_excepts
