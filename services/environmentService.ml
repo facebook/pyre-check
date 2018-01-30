@@ -122,9 +122,11 @@ let shared_memory_reader
             alias_keys;
             global_keys;
             dependent_keys;
+            ignore_keys;
           };
           dependents;
         };
+        ignore_lines;
       } =
 
     let add_table f = Hashtbl.iteri ~f:(fun ~key ~data -> f key data) in
@@ -155,11 +157,13 @@ let shared_memory_reader
     add_table Aliases.add aliases;
     add_table Globals.add globals;
     add_table Dependents.add dependents;
+    add_table IgnoreLines.add ignore_lines;
     add_table FunctionKeys.add (Hashtbl.map ~f:Hash_set.to_list function_keys);
     add_table ClassKeys.add (Hashtbl.map ~f:Hash_set.to_list class_keys);
     add_table AliasKeys.add (Hashtbl.map ~f:Hash_set.to_list alias_keys);
     add_table GlobalKeys.add (Hashtbl.map ~f:Hash_set.to_list global_keys);
     add_table DependentKeys.add (Hashtbl.map ~f:Hash_set.to_list dependent_keys);
+    add_table IgnoreKeys.add (Hashtbl.map ~f:Hash_set.to_list ignore_keys);
     ClassDefinitionsKeys.add "ClassDefinitionsKeys" (Type.Table.keys class_definitions);
 
     Protocols.add "Protocols" (Hash_set.to_list protocols);
@@ -204,6 +208,9 @@ let shared_memory_reader
       let dependencies =
         Dependents.get
 
+      let ignore_lines =
+        IgnoreLines.get
+
       module DependencyReader = (struct
         let add_new_key ~get ~add ~path ~key =
           match get path with
@@ -225,6 +232,9 @@ let shared_memory_reader
         let add_dependent_key ~path dependent =
           add_new_key ~path ~key:dependent ~get:DependentKeys.get ~add:DependentKeys.add
 
+        let add_ignore_key ~path ignore_line =
+          add_new_key ~path ~key:ignore_line ~get:IgnoreKeys.get ~add:IgnoreKeys.add
+
         let add_dependent ~path dependent =
           add_dependent_key ~path dependent;
           match Dependents.get dependent with
@@ -236,13 +246,15 @@ let shared_memory_reader
         let get_alias_keys ~path = AliasKeys.get path |> Option.value ~default:[]
         let get_global_keys ~path = GlobalKeys.get path |> Option.value ~default:[]
         let get_dependent_keys ~path = DependentKeys.get path |> Option.value ~default:[]
+        let get_ignore_keys ~path = IgnoreKeys.get path |> Option.value ~default:[]
 
         let clear_all_keys ~path =
           FunctionKeys.remove_batch (FunctionKeys.KeySet.singleton path);
           ClassKeys.remove_batch (ClassKeys.KeySet.singleton path);
           AliasKeys.remove_batch (AliasKeys.KeySet.singleton path);
           GlobalKeys.remove_batch (GlobalKeys.KeySet.singleton path);
-          DependentKeys.remove_batch (DependentKeys.KeySet.singleton path)
+          DependentKeys.remove_batch (DependentKeys.KeySet.singleton path);
+          IgnoreKeys.remove_batch (IgnoreKeys.KeySet.singleton path)
 
         let dependents = Dependents.get
       end: Dependencies.Reader)
@@ -360,6 +372,10 @@ let shared_memory_reader
           dependency
           path;
         DependencyReader.add_dependent ~path dependency
+
+
+      let register_ignore_line ~location ~codes =
+        IgnoreLines.add location codes
 
 
       let register_global ~path ~key ~data =

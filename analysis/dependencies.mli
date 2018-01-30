@@ -15,6 +15,7 @@ type index = {
   alias_keys: (Type.t Hash_set.t) String.Table.t;
   global_keys: (Access.t Hash_set.t) String.Table.t;
   dependent_keys: (string Hash_set.t) String.Table.t;
+  ignore_keys: (Location.t Hash_set.t) String.Table.t;
 }
 
 type t = {
@@ -28,6 +29,7 @@ module type Reader = sig
   val add_alias_key: path: string -> Type.t -> unit
   val add_global_key: path: string -> Access.t -> unit
   val add_dependent_key: path: string -> string -> unit
+  val add_ignore_key: path: string -> Location.t -> unit
 
   val add_dependent: path: string -> string -> unit
 
@@ -38,6 +40,7 @@ module type Reader = sig
   val get_alias_keys: path: string -> Type.t list
   val get_global_keys: path: string -> Access.t list
   val get_dependent_keys: path: string -> string list
+  val get_ignore_keys: path: string -> Location.t list
 
   val clear_all_keys: path: string -> unit
 

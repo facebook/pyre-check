@@ -37,6 +37,12 @@ module StringKey = struct
   let compare = String.compare
 end
 
+module LocationKey = struct
+  type t = Location.t
+  let to_string = Location.to_string
+  let compare = Location.compare
+end
+
 
 (** Values *)
 module FunctionKeyValue = struct
@@ -75,6 +81,12 @@ module DependentKeyValue = struct
   let description = "Dependent keys"
 end
 
+module IgnoreKeyValue = struct
+  type t = Location.t list
+  let prefix = Prefix.make ()
+  let description = "Ignore lines keys"
+end
+
 module ClassValue = struct
   type t = Class.t Node.t
   let prefix = Prefix.make ()
@@ -103,6 +115,12 @@ module DependentValue = struct
   type t = string list
   let prefix = Prefix.make ()
   let description = "Dependent"
+end
+
+module IgnoreValue = struct
+  type t = int list
+  let prefix = Prefix.make ()
+  let description = "Ignore line"
 end
 
 module ClassDefinitionKeyValue = struct
@@ -154,6 +172,8 @@ module Globals = SharedMemory.WithCache (AccessKey) (GlobalValue)
 
 module Dependents = SharedMemory.WithCache (StringKey) (DependentValue)
 
+module IgnoreLines = SharedMemory.WithCache (LocationKey) (IgnoreValue)
+
 module Protocols = SharedMemory.WithCache (StringKey) (ProtocolValue)
 
 (** Keys *)
@@ -166,6 +186,8 @@ module GlobalKeys = SharedMemory.WithCache (StringKey) (GlobalKeyValue)
 module AliasKeys = SharedMemory.WithCache (StringKey) (AliasKeyValue)
 
 module DependentKeys = SharedMemory.WithCache (StringKey) (DependentKeyValue)
+
+module IgnoreKeys = SharedMemory.WithCache (StringKey) (IgnoreKeyValue)
 
 (** Type order maps *)
 module OrderIndices = SharedMemory.WithCache (TypeKey) (OrderIndexValue)

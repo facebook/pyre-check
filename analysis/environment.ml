@@ -18,6 +18,7 @@ type t = {
   aliases: Type.t Type.Table.t;
   globals: Resolution.global Access.Table.t;
   dependencies: Dependencies.t;
+  ignore_lines: (int list) Location.Table.t;
 }
 
 module type Reader = sig
@@ -27,6 +28,7 @@ module type Reader = sig
     -> (Define.t Node.t)
     -> unit
   val register_dependency: path: string -> dependency: string -> unit
+  val register_ignore_line: location:Location.t -> codes: int list -> unit
   val register_global: path: string -> key: Access.t -> data:Resolution.global -> unit
   val register_type
     :  path: string
@@ -44,6 +46,7 @@ module type Reader = sig
   val aliases: Type.t -> Type.t option
   val globals: Access.t -> Resolution.global option
   val dependencies: string -> string list option
+  val ignore_lines: Location.t -> int list option
 
   module DependencyReader: Dependencies.Reader
 
@@ -164,6 +167,7 @@ let reader
       aliases;
       globals;
       dependencies;
+      ignore_lines;
     }
     ~configuration =
   let (module DependencyReader: Dependencies.Reader) =
@@ -192,6 +196,10 @@ let reader
         dependency
         path;
       DependencyReader.add_dependent ~path dependency
+
+
+    let register_ignore_line ~location ~codes =
+      Hashtbl.set ~key:location ~data:codes ignore_lines
 
 
     let register_global ~path ~key ~data =
@@ -279,6 +287,9 @@ let reader
 
     let dependencies =
       DependencyReader.dependents
+
+    let ignore_lines =
+      Hashtbl.find ignore_lines
 
     module TypeOrderReader =
       (val TypeOrder.reader order: TypeOrder.Reader)
@@ -605,6 +616,21 @@ let resolution
 
 let dependencies (module Reader: Reader) =
   Reader.dependencies
+
+
+let register_ignore_lines (module Reader: Reader) ({ Source.path; _ } as source) =
+  let add_ignore (line_number, codes) =
+    let location =
+      let position =
+        { Location.line = line_number; column = -1 }
+      in
+      { Location.path; start = position; stop = position }
+    in
+    Reader.register_ignore_line ~location ~codes
+  in
+  Source.ignore_lines source
+  |> List.map ~f:add_ignore
+  |> ignore
 
 
 let register_class_definitions (module Reader: Reader) source =
@@ -951,6 +977,7 @@ let populate
     Type.Primitive (Identifier.create "collections.defaultdict");
   ];
 
+  List.iter ~f:(register_ignore_lines (module Reader)) sources;
   List.iter ~f:(register_class_definitions (module Reader)) sources;
   register_aliases (module Reader) sources;
   List.iter ~f:(connect_type_order ~source_root ~check_dependency_exists (module Reader)) sources;
@@ -1029,7 +1056,17 @@ module Builder = struct
     let aliases = Type.Table.create () in
     let globals = Access.Table.create () in
     let dependencies = Dependencies.create () in
-    { function_definitions; class_definitions; protocols; order; aliases; globals; dependencies }
+    let ignore_lines = Location.Table.create () in
+    {
+      function_definitions;
+      class_definitions;
+      protocols;
+      order;
+      aliases;
+      globals;
+      dependencies;
+      ignore_lines
+    }
 
 
   let copy
@@ -1041,6 +1078,7 @@ module Builder = struct
         aliases;
         globals;
         dependencies;
+        ignore_lines;
       } =
     {
       function_definitions = Hashtbl.copy function_definitions;
@@ -1050,6 +1088,7 @@ module Builder = struct
       aliases = Hashtbl.copy aliases;
       globals = Hashtbl.copy globals;
       dependencies = Dependencies.copy dependencies;
+      ignore_lines = Hashtbl.copy ignore_lines;
     }
 
 

@@ -16,6 +16,7 @@ type t = {
   aliases: Type.t Type.Table.t;
   globals: Resolution.global Access.Table.t;
   dependencies: Dependencies.t;
+  ignore_lines: (int list) Location.Table.t;
 }
 
 (** The reader module is an interface for performing lookups on the type
@@ -29,6 +30,7 @@ module type Reader = sig
     -> (Define.t Node.t)
     -> unit
   val register_dependency: path: string -> dependency: string -> unit
+  val register_ignore_line: location:Location.t -> codes: int list -> unit
   val register_global: path: string -> key: Access.t -> data:Resolution.global -> unit
   val register_type
     :  path: string
@@ -46,6 +48,7 @@ module type Reader = sig
   val aliases: Type.t -> Type.t option
   val globals: Access.t -> Resolution.global option
   val dependencies: string -> string list option
+  val ignore_lines: Location.t -> int list option
 
   module DependencyReader: Dependencies.Reader
   module TypeOrderReader: TypeOrder.Reader

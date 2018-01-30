@@ -19,6 +19,8 @@ type t = {
 }
 [@@deriving compare, eq, sexp, show]
 
+val to_string: t -> string
+
 val pp_start: Format.formatter -> t -> unit
 
 module Map : Map.S with type Key.t = t
