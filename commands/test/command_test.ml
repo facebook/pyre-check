@@ -50,7 +50,7 @@ let environment () =
   let environment = Environment.Builder.create ~configuration () in
   Environment.populate
     ~configuration
-    (Environment.reader ~configuration environment)
+    (Environment.handler ~configuration environment)
     [
       parse {|
         class int(float): pass
@@ -62,10 +62,10 @@ let environment () =
 let make_errors source =
   let configuration = Configuration.create () in
   let source = Preprocessing.preprocess (parse source) in
-  let environment_reader = Environment.reader ~configuration (environment ()) in
-  Environment.populate ~configuration environment_reader [source];
+  let environment_handler = Environment.handler ~configuration (environment ()) in
+  Environment.populate ~configuration environment_handler [source];
   let configuration = mock_analysis_configuration () in
-  (Analysis.TypeCheck.check configuration environment_reader source).Analysis.TypeCheck.errors
+  (Analysis.TypeCheck.check configuration environment_handler source).Analysis.TypeCheck.errors
 
 
 let run_command_tests test_category tests =

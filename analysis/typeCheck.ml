@@ -66,7 +66,7 @@ module State = struct
      values. *)
   type t = {
     configuration: Configuration.t;
-    environment: (module Environment.Reader);
+    environment: (module Environment.Handler);
     errors: Error.t Location.Map.t;
     annotations: Annotation.t Access.Map.t;
     define: Define.t Node.t;
@@ -221,7 +221,7 @@ module State = struct
     in
 
     let ignore_suppressed_errors errors =
-      let module Reader = (val environment : Environment.Reader) in
+      let module Reader = (val environment : Environment.Handler) in
       let _, errors =
         let ignore error =
           let stripped_location =
@@ -1492,9 +1492,9 @@ module State = struct
                        errors)
               | _ ->
                   let name = access in
-                  let module Reader = (val environment : Environment.Reader) in
+                  let module Handler = (val environment : Environment.Handler) in
                   let location =
-                    match Reader.globals access with
+                    match Handler.globals access with
                     | Some { Resolution.location; _ } -> location
                     | _ -> location
                   in
@@ -2045,9 +2045,9 @@ let check configuration environment ({ Source.path; _ } as source) =
   let rec recursive_infer_source added_global_errors iterations =
     let add_errors_to_environment errors =
       let add_error (changed, globals_added_sofar) error =
-        let module Reader = (val environment : Environment.Reader) in
+        let module Handler = (val environment : Environment.Handler) in
         let add_missing_annotation_error ~key ~name ~location ~annotation =
-          match Reader.globals name with
+          match Handler.globals name with
           | Some { Resolution.annotation; _ }
             when not (Type.is_unknown (Annotation.annotation annotation)) ->
               changed, globals_added_sofar
@@ -2058,7 +2058,7 @@ let check configuration environment ({ Source.path; _ } as source) =
                 location;
               }
               in
-              Reader.register_global ~path ~key ~data;
+              Handler.register_global ~path ~key ~data;
               true, error :: globals_added_sofar
         in
         match error with
@@ -2073,7 +2073,7 @@ let check configuration environment ({ Source.path; _ } as source) =
               return_annotation = Some (Type.expression annotation)
             in
             begin
-              match Reader.function_definitions define.Define.name with
+              match Handler.function_definitions define.Define.name with
               | Some define_node_list when List.exists ~f:is_redundant define_node_list ->
                   changed, globals_added_sofar
               | _ ->
@@ -2083,7 +2083,7 @@ let check configuration environment ({ Source.path; _ } as source) =
                       Define.return_annotation = Some (Type.expression annotation)
                     }
                   in
-                  Reader.register_definition
+                  Handler.register_definition
                     ~path
                     { define_node with Node.value = define };
                   true, globals_added_sofar
@@ -2103,7 +2103,7 @@ let check configuration environment ({ Source.path; _ } as source) =
               List.exists ~f:find_parameter parameters
             in
             begin
-              match Reader.function_definitions define.Define.name with
+              match Handler.function_definitions define.Define.name with
               | Some define_node_list when List.exists ~f:is_redundant define_node_list ->
                   changed, globals_added_sofar
               | _ ->
@@ -2133,7 +2133,7 @@ let check configuration environment ({ Source.path; _ } as source) =
                         update_parameter define.Define.parameters name annotation
                     }
                   in
-                  Reader.register_definition
+                  Handler.register_definition
                     ~path
                     { define_node with Node.value = define };
                   true, globals_added_sofar

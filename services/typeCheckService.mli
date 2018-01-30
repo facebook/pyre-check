@@ -14,6 +14,6 @@ val analyze_sources
   : Service.t
   -> ?repopulate_handles: (File.Handle.t list)
   -> Configuration.t
-  -> (module Environment.Reader)
+  -> (module Environment.Handler)
   -> File.Handle.t list
   -> Error.t list * (Lookup.t String.Map.t) * TypeCheck.Coverage.t

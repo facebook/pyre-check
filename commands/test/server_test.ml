@@ -154,7 +154,7 @@ let environment () =
   let environment = Environment.Builder.create ~configuration () in
   Environment.populate
     ~configuration
-    (Environment.reader ~configuration environment)
+    (Environment.handler ~configuration environment)
     [
       parse {|
         class int(float): pass
@@ -182,9 +182,9 @@ let associate_errors_and_filenames error_list =
 let make_errors ?(path = "test.py") ?(qualifier = []) source =
   let configuration = Command_test.mock_analysis_configuration () in
   let source = Preprocessing.preprocess (parse ~path ~qualifier source) in
-  let environment_reader = Environment.reader ~configuration (environment ()) in
-  Environment.populate ~configuration (environment_reader) [source];
-  (Analysis.TypeCheck.check configuration environment_reader source).TypeCheck.errors
+  let environment_handler = Environment.handler ~configuration (environment ()) in
+  Environment.populate ~configuration (environment_handler) [source];
+  (Analysis.TypeCheck.check configuration environment_handler source).TypeCheck.errors
 
 let mock_server_state
     ?(initial_errors = Error.Hash_set.create ())
@@ -193,7 +193,7 @@ let mock_server_state
   let configuration = Configuration.create () in
   {
     State.deferred_requests = [];
-    environment = Environment.reader ~configuration initial_environment;
+    environment = Environment.handler ~configuration initial_environment;
     initial_errors;
     errors;
     handles = File.Handle.Set.empty;
@@ -479,7 +479,7 @@ let test_incremental_dependencies _ =
   let environment = Environment.Builder.create ~configuration () in
   Environment.populate
     ~configuration
-    (Environment.reader ~configuration environment) [
+    (Environment.handler ~configuration environment) [
     parse ~path:"a.py" a_source;
     parse ~path:"b.py" b_source;
   ];
@@ -539,10 +539,10 @@ let test_incremental_lookups _ =
     |> trim_extra_indentation
   in
   let environment = Environment.Builder.create ~configuration () in
-  let (module Reader: Environment.Reader) = Environment.reader ~configuration environment in
+  let (module Handler: Environment.Handler) = Environment.handler ~configuration environment in
   Environment.populate
     ~configuration
-    (Environment.reader ~configuration environment)
+    (Environment.handler ~configuration environment)
     [parse source];
   let request =
     Protocol.Request.TypeCheckRequest
@@ -604,11 +604,11 @@ let test_incremental_repopulate _ =
     |> trim_extra_indentation
   in
   let environment = Environment.Builder.create ~configuration () in
-  let (module Reader: Environment.Reader) = Environment.reader ~configuration environment in
+  let (module Handler: Environment.Handler) = Environment.handler ~configuration environment in
   Out_channel.write_all ~data:source "test.py";
   Environment.populate
     ~configuration
-    (Environment.reader ~configuration environment)
+    (Environment.handler ~configuration environment)
     [parse source];
   let errors = File.Handle.Table.create () in
   let initial_state =
@@ -617,7 +617,7 @@ let test_incremental_repopulate _ =
       errors
   in
   let get_annotation access_name =
-    match Reader.function_definitions (Ast.Expression.Access.create access_name) with
+    match Handler.function_definitions (Ast.Expression.Access.create access_name) with
     | Some [ { Ast.Node.value = { Ast.Statement.Define.return_annotation; _ }; _ } ] ->
         return_annotation
     | _ -> None

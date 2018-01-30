@@ -17,7 +17,7 @@ type global = {
 type t = {
   annotations: Annotation.t Access.Map.t;
   define: Statement.Define.t option;
-  order: (module TypeOrder.Reader);
+  order: (module TypeOrder.Handler);
 
   resolve: resolution: t -> Expression.t -> Type.t;
   parse_annotation: Expression.t -> Type.t;

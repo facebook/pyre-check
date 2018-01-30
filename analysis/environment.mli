@@ -19,11 +19,11 @@ type t = {
   ignore_lines: (int list) Location.Table.t;
 }
 
-(** The reader module is an interface for performing lookups on the type
+(** The handler module is an interface for performing lookups on the type
     environment. It abstracts the underlying data structure, so that we can use
     e.g., in-process hash tables, shared memory, or network streams to provide
     lookups. *)
-module type Reader = sig
+module type Handler = sig
   val register_definition
     :  path: string
     -> ?name_override: Access.t
@@ -50,25 +50,25 @@ module type Reader = sig
   val dependencies: string -> string list option
   val ignore_lines: Location.t -> int list option
 
-  module DependencyReader: Dependencies.Reader
-  module TypeOrderReader: TypeOrder.Reader
+  module DependencyHandler: Dependencies.Handler
+  module TypeOrderHandler: TypeOrder.Handler
 end
 
-(** Provides a default in-process environment reader constructed from an
-    [Environment.t]. Use [Environment_service.reader] if interfacing from outside
+(** Provides a default in-process environment handler constructed from an
+    [Environment.t]. Use [Environment_service.handler] if interfacing from outside
     [Analysis]. *)
-val reader: t -> configuration: Configuration.t -> (module Reader)
+val handler: t -> configuration: Configuration.t -> (module Handler)
 
 val resolution
-  :  (module Reader)
+  :  (module Handler)
   -> ?annotations: Annotation.t Access.Map.t
   -> unit
   -> Resolution.t
 
-val dependencies: (module Reader) -> string -> string list option
+val dependencies: (module Handler) -> string -> string list option
 
 val register_type
-  :  order: (module TypeOrder.Reader)
+  :  order: (module TypeOrder.Handler)
   -> configuration: Configuration.t
   -> aliases: (Type.t -> Type.t option)
   -> add_class_definition: (primitive: Type.t -> definition: Class.t Node.t -> unit)
@@ -78,31 +78,31 @@ val register_type
   -> (path: string -> Type.t -> Access.t -> (Class.t Node.t) option -> (Type.t * Type.t list))
 
 val register_class_definitions
-  :  (module Reader)
+  :  (module Handler)
   -> Source.t
   -> unit
 
 val register_aliases
-  :  (module Reader)
+  :  (module Handler)
   -> Source.t list
   -> unit
 
 val connect_type_order
-  :  (module Reader)
+  :  (module Handler)
   -> ?source_root: Path.t
   -> ?check_dependency_exists: bool
   -> Source.t
   -> unit
 
 val populate
-  :  (module Reader)
+  :  (module Handler)
   -> configuration: Configuration.t
   -> ?source_root: Path.t
   -> ?check_dependency_exists: bool
   -> Source.t list
   -> unit
 
-val infer_implementations: (module Reader) -> protocol: Type.t -> TypeOrder.Edge.Set.t
+val infer_implementations: (module Handler) -> protocol: Type.t -> TypeOrder.Edge.Set.t
 
 module Builder : sig
   val create: configuration: Configuration.t -> unit -> t

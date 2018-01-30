@@ -18,7 +18,7 @@ type t
 
 val create
   :  annotations: Annotation.t Access.Map.t
-  -> order: (module TypeOrder.Reader)
+  -> order: (module TypeOrder.Handler)
   -> resolve: (resolution: t -> Expression.t -> Type.t)
   -> parse_annotation: (Expression.t -> Type.t)
   -> global: (Access.t -> global option)
@@ -40,7 +40,7 @@ val with_define: t -> Statement.Define.t -> t
 
 val annotations: t -> Annotation.t Access.Map.t
 val define: t -> Statement.Define.t option
-val order: t -> (module TypeOrder.Reader)
+val order: t -> (module TypeOrder.Handler)
 
 val resolve: t -> Expression.t -> Type.t
 val parse_annotation: t -> Expression.t -> Type.t

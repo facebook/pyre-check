@@ -16,7 +16,7 @@ let environment source =
   let environment = Environment.Builder.create ~configuration () in
   Environment.populate
     ~configuration
-    (Environment.reader ~configuration environment) [parse source];
+    (Environment.handler ~configuration environment) [parse source];
   environment
 
 
@@ -32,7 +32,7 @@ let test_lookup _ =
   let environment = environment source in
   let parsed = parse source in
   let configuration = (Configuration.create ~debug:true ~infer:false ()) in
-  let environment = (Environment.reader ~configuration environment) in
+  let environment = (Environment.handler ~configuration environment) in
   let { TypeCheck.lookup; _ } = TypeCheck.check configuration environment parsed in
   assert_is_some lookup;
   assert_equal
@@ -63,13 +63,13 @@ let test_lookup_across_files _ =
   let environment = Environment.Builder.create ~configuration () in
   Environment.populate
     ~configuration
-    (Environment.reader ~configuration environment) [
+    (Environment.handler ~configuration environment) [
     parse ~qualifier:(Source.qualifier ~path:"use.py") ~path:"use.py" use_source;
     parse ~qualifier:(Source.qualifier ~path:"define.py") ~path:"define.py" define_source;
   ];
   let parsed = parse use_source in
   let configuration = (Configuration.create ~debug:true ~infer:false ()) in
-  let environment = (Environment.reader ~configuration environment) in
+  let environment = (Environment.handler ~configuration environment) in
   let { TypeCheck.lookup; _ } = TypeCheck.check configuration environment parsed in
   assert_is_some lookup;
   assert_equal
@@ -96,7 +96,7 @@ let test_lookup_method _ =
     |}
   in
   let configuration = (Configuration.create ~debug:true ~infer:false ()) in
-  let environment = environment source |> Environment.reader ~configuration in
+  let environment = environment source |> Environment.handler ~configuration in
   let parsed = parse source in
   let { TypeCheck.lookup; _ } = TypeCheck.check configuration environment parsed in
   assert_is_some lookup;

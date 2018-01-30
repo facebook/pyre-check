@@ -23,7 +23,7 @@ type t = {
   dependents: (string list) String.Table.t;
 }
 
-module type Reader = sig
+module type Handler = sig
   val add_function_key: path: string -> Access.t -> unit
   val add_class_key: path: string -> Type.t -> unit
   val add_alias_key: path: string -> Type.t -> unit
@@ -50,7 +50,7 @@ val create: unit -> t
 
 val copy: t -> t
 
-val reader: t -> (module Reader)
+val handler: t -> (module Handler)
 
 val transitive
   :  get_dependencies: (string -> (string list) option)

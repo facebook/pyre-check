@@ -19,10 +19,10 @@ let populate ?source_root source =
   Environment.populate
     ~configuration
     ?source_root
-    (Environment.reader ~configuration environment)
+    (Environment.handler ~configuration environment)
     [parse source];
   environment
-  |> Environment.reader ~configuration
+  |> Environment.handler ~configuration
 
 
 let access names = List.map ~f:Expression.Access.create names |> List.concat
@@ -41,7 +41,7 @@ let test_index _ =
   in
   Environment.populate
     ~configuration
-    (Environment.reader ~configuration environment)
+    (Environment.handler ~configuration environment)
     [parse ~path:"test.py" source];
   let {
     Dependencies.class_keys;
@@ -70,8 +70,8 @@ let test_dependent_of_list _ =
     { environment.Environment.dependencies with Dependencies.dependents = table }
   in
   let environment = { environment with Environment.dependencies } in
-  let (module Reader: Environment.Reader) =
-    Environment.reader ~configuration environment
+  let (module Handler: Environment.Handler) =
+    Environment.handler ~configuration environment
   in
   add_dependent "b.py" "a.py";
   add_dependent "c.py" "a.py";
@@ -80,19 +80,19 @@ let test_dependent_of_list _ =
   assert_equal
     ~cmp:String.Set.equal
     (String.Set.of_list ["a.py"])
-    (Dependencies.of_list ~paths:["b.py"; "c.py"] ~get_dependencies:Reader.dependencies);
+    (Dependencies.of_list ~paths:["b.py"; "c.py"] ~get_dependencies:Handler.dependencies);
   assert_equal
     ~cmp:String.Set.equal
     (String.Set.of_list ["test.py"])
-    (Dependencies.of_list ~paths:["a.py"] ~get_dependencies:Reader.dependencies);
+    (Dependencies.of_list ~paths:["a.py"] ~get_dependencies:Handler.dependencies);
   assert_equal
     ~cmp:String.Set.equal
     (String.Set.of_list ["a.py"; "b.py"])
-    (Dependencies.of_list ~paths:["c.py"] ~get_dependencies:Reader.dependencies);
+    (Dependencies.of_list ~paths:["c.py"] ~get_dependencies:Handler.dependencies);
   assert_equal
     ~cmp:String.Set.equal
     (String.Set.of_list [])
-    (Dependencies.of_list ~paths:["test.py"] ~get_dependencies:Reader.dependencies)
+    (Dependencies.of_list ~paths:["test.py"] ~get_dependencies:Handler.dependencies)
 
 
 let test_transitive_dependent_of_list _ =
@@ -107,8 +107,8 @@ let test_transitive_dependent_of_list _ =
     { environment.Environment.dependencies with Dependencies.dependents = table }
   in
   let environment = { environment with Environment.dependencies } in
-  let (module Reader: Environment.Reader) =
-    Environment.reader ~configuration environment
+  let (module Handler: Environment.Handler) =
+    Environment.handler ~configuration environment
   in
   add_dependent "b.py" "a.py";
   add_dependent "c.py" "a.py";
@@ -117,15 +117,17 @@ let test_transitive_dependent_of_list _ =
   assert_equal
     ~cmp:String.Set.equal
     (String.Set.of_list ["a.py"; "test.py"])
-    (Dependencies.transitive_of_list ~paths:["b.py"; "c.py"] ~get_dependencies:Reader.dependencies);
+    (Dependencies.transitive_of_list
+       ~paths:["b.py"; "c.py"]
+       ~get_dependencies:Handler.dependencies);
   assert_equal
     ~cmp:String.Set.equal
     (String.Set.of_list ["a.py"; "b.py"; "test.py"])
-    (Dependencies.transitive_of_list ~paths:["c.py"] ~get_dependencies:Reader.dependencies);
+    (Dependencies.transitive_of_list ~paths:["c.py"] ~get_dependencies:Handler.dependencies);
   assert_equal
     ~cmp:String.Set.equal
     (String.Set.of_list [])
-    (Dependencies.transitive_of_list ~paths:["test.py"] ~get_dependencies:Reader.dependencies)
+    (Dependencies.transitive_of_list ~paths:["test.py"] ~get_dependencies:Handler.dependencies)
 
 
 let test_transitive_dependents _ =
@@ -135,8 +137,8 @@ let test_transitive_dependents _ =
     { environment.Environment.dependencies with Dependencies.dependents = table }
   in
   let environment = { environment with Environment.dependencies } in
-  let (module Reader: Environment.Reader) =
-    Environment.reader ~configuration environment
+  let (module Handler: Environment.Handler) =
+    Environment.handler ~configuration environment
   in
   let add_dependency source dependency =
     match Hashtbl.find table source with
@@ -151,7 +153,7 @@ let test_transitive_dependents _ =
     ~cmp:String.Set.equal
     ~printer:(fun set -> Set.to_list set |> String.concat ~sep:",")
     (String.Set.of_list ["a.py"; "b.py"; "test.py"])
-    (Dependencies.transitive ~get_dependencies:Reader.dependencies ~path:"c.py")
+    (Dependencies.transitive ~get_dependencies:Handler.dependencies ~path:"c.py")
 
 
 let () =

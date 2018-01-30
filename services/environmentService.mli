@@ -5,22 +5,22 @@
 
 open Analysis
 
-val in_process_reader
+val in_process_handler
   :  Service.t
   -> configuration: Configuration.t
   -> stubs: File.Handle.t list
   -> sources: File.Handle.t list
-  -> (module Environment.Reader)
+  -> (module Environment.Handler)
 
-val shared_memory_reader
+val shared_memory_handler
   :  Service.t
   -> configuration: Configuration.t
   -> stubs: File.Handle.t list
   -> sources: File.Handle.t list
-  -> (module Environment.Reader)
+  -> (module Environment.Handler)
 
 val repopulate
-  :  (module Environment.Reader)
+  :  (module Environment.Handler)
   -> configuration: Configuration.t
   -> handles: File.Handle.t list
   -> unit

@@ -32,7 +32,7 @@ module State : sig
 
   val create
     :  ?configuration: Configuration.t
-    -> environment: (module Environment.Reader)
+    -> environment: (module Environment.Handler)
     -> annotations: (Access.t * Annotation.t) list
     -> define: Statement.Define.t Node.t
     -> ?lookup: Lookup.t
@@ -46,13 +46,13 @@ module State : sig
   val initial_forward
     :  ?configuration: Configuration.t
     -> ?lookup: Lookup.t
-    -> (module Environment.Reader)
+    -> (module Environment.Handler)
     -> Statement.Define.t Node.t
     -> t
 
   val initial_backward
     :  ?configuration: Configuration.t
-    -> environment: (module Environment.Reader)
+    -> environment: (module Environment.Handler)
     -> Statement.Define.t Node.t
     -> forward:t
     -> t
@@ -70,6 +70,6 @@ type result = {
 
 val check
   :  Configuration.t
-  -> (module Environment.Reader)
+  -> (module Environment.Handler)
   -> Source.t
   -> result

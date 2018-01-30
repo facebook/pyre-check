@@ -278,7 +278,7 @@ let test_due_to_analysis_limitations _ =
 let test_join _ =
   let assert_join left right expected =
     let environment =
-      Environment.reader ~configuration (Environment.Builder.create ~configuration ())
+      Environment.handler ~configuration (Environment.Builder.create ~configuration ())
     in
     let resolution = Environment.resolution environment () in
     let result = Error.join ~resolution left right in

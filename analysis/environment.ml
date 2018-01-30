@@ -21,7 +21,7 @@ type t = {
   ignore_lines: (int list) Location.Table.t;
 }
 
-module type Reader = sig
+module type Handler = sig
   val register_definition
     :  path: string
     -> ?name_override: Access.t
@@ -48,9 +48,9 @@ module type Reader = sig
   val dependencies: string -> string list option
   val ignore_lines: Location.t -> int list option
 
-  module DependencyReader: Dependencies.Reader
+  module DependencyHandler: Dependencies.Handler
 
-  module TypeOrderReader: TypeOrder.Reader
+  module TypeOrderHandler: TypeOrder.Handler
 end
 
 let register_type
@@ -68,9 +68,9 @@ let register_type
         (Node.create (Access name))
     in
     let primitive, parameters = Type.split annotation in
-    let (module Reader: TypeOrder.Reader) = order in
-    if Reader.contains (Reader.indices ()) subtype &&
-       Reader.contains (Reader.indices ()) primitive &&
+    let (module Handler: TypeOrder.Handler) = order in
+    if Handler.contains (Handler.indices ()) subtype &&
+       Handler.contains (Handler.indices ()) primitive &&
        not (Type.equal subtype primitive) then
       TypeOrder.connect order ~configuration ~predecessor:subtype ~successor:primitive ~parameters;
     (* Register meta annotation. *)
@@ -158,7 +158,7 @@ let register_type
   in register_type
 
 
-let reader
+let handler
     {
       function_definitions;
       class_definitions;
@@ -170,8 +170,8 @@ let reader
       ignore_lines;
     }
     ~configuration =
-  let (module DependencyReader: Dependencies.Reader) =
-    Dependencies.reader dependencies
+  let (module DependencyHandler: Dependencies.Handler) =
+    Dependencies.handler dependencies
   in
   (module struct
     let register_definition
@@ -179,7 +179,7 @@ let reader
         ?name_override
         ({ Node.value = { Define.name; _ }; _ } as definition) =
       let name = Option.value ~default:name name_override in
-      DependencyReader.add_function_key ~path name;
+      DependencyHandler.add_function_key ~path name;
       let definitions =
         match Hashtbl.find function_definitions name with
         | Some definitions ->
@@ -195,7 +195,7 @@ let reader
         "Adding dependency from %s to %s"
         dependency
         path;
-      DependencyReader.add_dependent ~path dependency
+      DependencyHandler.add_dependent ~path dependency
 
 
     let register_ignore_line ~location ~codes =
@@ -203,7 +203,7 @@ let reader
 
 
     let register_global ~path ~key ~data =
-      DependencyReader.add_global_key ~path key;
+      DependencyHandler.add_global_key ~path key;
       Hashtbl.set ~key ~data globals
 
 
@@ -222,17 +222,17 @@ let reader
         Hashtbl.set class_definitions ~key:primitive ~data:definition
       in
       register_type
-        ~order:(TypeOrder.reader order)
+        ~order:(TypeOrder.handler order)
         ~configuration
         ~aliases:(Hashtbl.find aliases)
         ~add_class_definition
-        ~add_class_key:DependencyReader.add_class_key
+        ~add_class_key:DependencyHandler.add_class_key
         ~add_protocol:(Hash_set.add protocols)
         ~register_global
 
 
     let register_alias ~path ~key ~data =
-      DependencyReader.add_alias_key ~path key;
+      DependencyHandler.add_alias_key ~path key;
       Hashtbl.set ~key ~data aliases
 
 
@@ -259,12 +259,12 @@ let reader
               |> ignore)
           keys
       in
-      DependencyReader.get_function_keys ~path |> purge_table_given_keys function_definitions;
-      DependencyReader.get_class_keys ~path |> purge_table_given_keys class_definitions;
-      DependencyReader.get_alias_keys ~path |> purge_table_given_keys aliases;
-      DependencyReader.get_global_keys ~path |> purge_table_given_keys globals;
-      DependencyReader.get_dependent_keys ~path |> purge_dependents;
-      DependencyReader.clear_all_keys ~path
+      DependencyHandler.get_function_keys ~path |> purge_table_given_keys function_definitions;
+      DependencyHandler.get_class_keys ~path |> purge_table_given_keys class_definitions;
+      DependencyHandler.get_alias_keys ~path |> purge_table_given_keys aliases;
+      DependencyHandler.get_global_keys ~path |> purge_table_given_keys globals;
+      DependencyHandler.get_dependent_keys ~path |> purge_dependents;
+      DependencyHandler.clear_all_keys ~path
 
 
     let function_definitions =
@@ -286,23 +286,23 @@ let reader
       Hashtbl.find globals
 
     let dependencies =
-      DependencyReader.dependents
+      DependencyHandler.dependents
 
     let ignore_lines =
       Hashtbl.find ignore_lines
 
-    module TypeOrderReader =
-      (val TypeOrder.reader order: TypeOrder.Reader)
+    module TypeOrderHandler =
+      (val TypeOrder.handler order: TypeOrder.Handler)
 
-    module DependencyReader = DependencyReader
-  end: Reader)
+    module DependencyHandler = DependencyHandler
+  end: Handler)
 
 
 let resolution
-    (module Reader: Reader)
+    (module Handler: Handler)
     ?(annotations = Access.Map.empty)
     () =
-  let parse_annotation = Type.create ~aliases:Reader.aliases in
+  let parse_annotation = Type.create ~aliases:Handler.aliases in
 
   let instantiate
       ({ Node.location; value = { Define.parameters; return_annotation; _ } as define })
@@ -372,7 +372,7 @@ let resolution
                   let arguments =
                     let primitive, _ = Type.split parameter in
                     TypeOrder.instantiate_parameters
-                      (module Reader.TypeOrderReader)
+                      (module Handler.TypeOrderHandler)
                       ~source:argument ~target:primitive
                     |> Option.value ~default:[]
                   in
@@ -537,14 +537,14 @@ let resolution
        | _ ->
            [])
     in
-    Reader.function_definitions name
+    Handler.function_definitions name
     >>| instantiate_signature call arguments
     |> Option.value ~default:[]
   in
 
   let class_definition annotation =
     let primitive, _ = Type.split annotation in
-    Reader.class_definition primitive
+    Handler.class_definition primitive
   in
 
   let method_signature ~resolution annotation call arguments =
@@ -581,14 +581,14 @@ let resolution
             | None ->
                 Type.Map.empty)
         |> Option.value ~default:Type.Map.empty in
-      Reader.function_definitions name
+      Handler.function_definitions name
       >>| List.map ~f:(instantiate ~constraints)
     in
 
     let successors =
       let primitive, _ = Type.split annotation in
-      if Reader.in_class_definition_keys primitive then
-        TypeOrder.successors (module Reader.TypeOrderReader) annotation
+      if Handler.in_class_definition_keys primitive then
+        TypeOrder.successors (module Handler.TypeOrderHandler) annotation
       else
         []
     in
@@ -598,7 +598,7 @@ let resolution
     |> Option.value ~default:[]
   in
 
-  let order = (module Reader.TypeOrderReader : TypeOrder.Reader) in
+  let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
   Resolution.create
     ~annotations
     ~order
@@ -608,17 +608,17 @@ let resolution
            ~resolution
            expression)
     ~parse_annotation
-    ~global:Reader.globals
+    ~global:Handler.globals
     ~class_definition
     ~function_signature
     ~method_signature
 
 
-let dependencies (module Reader: Reader) =
-  Reader.dependencies
+let dependencies (module Handler: Handler) =
+  Handler.dependencies
 
 
-let register_ignore_lines (module Reader: Reader) ({ Source.path; _ } as source) =
+let register_ignore_lines (module Handler: Handler) ({ Source.path; _ } as source) =
   let add_ignore (line_number, codes) =
     let location =
       let position =
@@ -626,15 +626,15 @@ let register_ignore_lines (module Reader: Reader) ({ Source.path; _ } as source)
       in
       { Location.path; start = position; stop = position }
     in
-    Reader.register_ignore_line ~location ~codes
+    Handler.register_ignore_line ~location ~codes
   in
   Source.ignore_lines source
   |> List.map ~f:add_ignore
   |> ignore
 
 
-let register_class_definitions (module Reader: Reader) source =
-  let order = (module Reader.TypeOrderReader : TypeOrder.Reader) in
+let register_class_definitions (module Handler: Handler) source =
+  let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
   let module Visit = Visit.Make(struct
       type t = unit
 
@@ -645,7 +645,7 @@ let register_class_definitions (module Reader: Reader) source =
         | { Node.value = Class { Class.name; _ }; _ }
         | { Node.value = Stub (Stub.Class { Class.name; _ }); _ } ->
             let primitive, _ =
-              Type.create ~aliases:Reader.aliases (Node.create (Access name))
+              Type.create ~aliases:Handler.aliases (Node.create (Access name))
               |> Type.split
             in
             if not (TypeOrder.contains order primitive) then
@@ -657,8 +657,8 @@ let register_class_definitions (module Reader: Reader) source =
   Visit.visit () source
 
 
-let register_aliases (module Reader: Reader) sources =
-  let order = (module Reader.TypeOrderReader : TypeOrder.Reader) in
+let register_aliases (module Handler: Handler) sources =
+  let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
   let collect_aliases { Source.path; statements; qualifier; _ } =
     let rec visit_statement aliases { Node.value; _ } =
       match value with
@@ -669,8 +669,8 @@ let register_aliases (module Reader: Reader) sources =
           value = Some value;
           _;
         } ->
-          let value_annotation = Type.create ~aliases:Reader.aliases value in
-          let target_annotation = Type.create ~aliases:Reader.aliases target in
+          let value_annotation = Type.create ~aliases:Handler.aliases value in
+          let target_annotation = Type.create ~aliases:Handler.aliases target in
           if not (Type.equal target_annotation Type.Top ||
                   Type.equal value_annotation Type.Top ||
                   Type.equal value_annotation target_annotation) then
@@ -707,8 +707,8 @@ let register_aliases (module Reader: Reader) sources =
       ()
     else
       let register_alias (any_changed, unresolved) (path, target, value) =
-        let target_annotation = Type.create ~aliases:Reader.aliases target in
-        let value_annotation = Type.create ~aliases:Reader.aliases value in
+        let target_annotation = Type.create ~aliases:Handler.aliases target in
+        let value_annotation = Type.create ~aliases:Handler.aliases value in
         let rec annotation_in_order annotation =
           match annotation with
           | Type.Primitive _
@@ -738,7 +738,7 @@ let register_aliases (module Reader: Reader) sources =
         if Option.is_none (TypeOrder.find order primitive) &&
            annotation_in_order value_annotation then
           begin
-            Reader.register_alias ~path ~key:target_annotation ~data:value_annotation;
+            Handler.register_alias ~path ~key:target_annotation ~data:value_annotation;
             (true, unresolved)
           end
         else
@@ -761,15 +761,15 @@ let register_aliases (module Reader: Reader) sources =
   |> resolve_aliases
 
 let connect_type_order
-    (module Reader: Reader)
+    (module Handler: Handler)
     ?(source_root = Path.current_working_directory ())
     ?(check_dependency_exists = true)
     source =
   let path = source.Source.path in
-  let parse_annotation = Type.create ~aliases:(Reader.aliases) in
+  let parse_annotation = Type.create ~aliases:(Handler.aliases) in
   let resolution =
     resolution
-      (module Reader: Reader)
+      (module Handler: Handler)
       ~annotations:Access.Map.empty ()
   in
 
@@ -790,12 +790,12 @@ let connect_type_order
             in
             List.iter
               ~f:(fun constructor ->
-                  Reader.register_definition
+                  Handler.register_definition
                     ~path
                     { Node.value = constructor; location })
               constructors;
 
-            Reader.register_type
+            Handler.register_type
               ~path
               Type.Bottom
               definition.Class.name
@@ -824,7 +824,7 @@ let connect_type_order
             List.find_map ~f:enumeration definition.Class.bases
             >>| (fun enumeration ->
                 (* Register generated constructor. *)
-                Reader.register_definition
+                Handler.register_definition
                   ~path
                   {
                     Node.location;
@@ -849,12 +849,12 @@ let connect_type_order
         | { Node.value = Stub (Stub.Define definition); location } ->
             if Define.is_method definition then
               let parent = Option.value_exn definition.Define.parent in
-              Reader.register_definition
+              Handler.register_definition
                 ~path
                 ~name_override:(parent @ definition.Define.name)
                 { Node.value = definition; location }
             else
-              Reader.register_definition ~path { Node.value = definition; location }
+              Handler.register_definition ~path { Node.value = definition; location }
         | { Node.value = Import { Import.from; imports }; _ } ->
             let imports =
               let path_of_import access =
@@ -888,7 +888,7 @@ let connect_type_order
               List.filter_map ~f:path_of_import import_accesses
             in
             List.iter
-              ~f:(fun dependency -> Reader.register_dependency ~path ~dependency)
+              ~f:(fun dependency -> Handler.register_dependency ~path ~dependency)
               imports
         | _ ->
             ()
@@ -912,7 +912,7 @@ let connect_type_order
            match target.Node.value, (Resolution.resolve resolution value)
            with
            | Access access, annotation ->
-               Reader.register_global
+               Handler.register_global
                  ~path
                  ~key:access
                  ~data:{
@@ -945,7 +945,7 @@ let connect_type_order
         });
       location;
     } ->
-        Reader.register_global
+        Handler.register_global
           ~path
           ~key:access
           ~data:{
@@ -959,7 +959,7 @@ let connect_type_order
   List.iter ~f:visit source.Source.statements
 
 let populate
-    (module Reader: Reader)
+    (module Handler: Handler)
     ~configuration
     ?(source_root = Path.current_working_directory ())
     ?(check_dependency_exists = true)
@@ -967,7 +967,7 @@ let populate
 
   let add_aliases aliases =
     List.iter
-      ~f:(fun (path, target, value) -> Reader.register_alias ~path ~key:target ~data:value)
+      ~f:(fun (path, target, value) -> Handler.register_alias ~path ~key:target ~data:value)
       aliases
   in
   add_aliases [
@@ -976,23 +976,26 @@ let populate
     Type.Primitive (Identifier.create "collections.defaultdict");
   ];
 
-  List.iter ~f:(register_ignore_lines (module Reader)) sources;
-  List.iter ~f:(register_class_definitions (module Reader)) sources;
-  register_aliases (module Reader) sources;
-  List.iter ~f:(connect_type_order ~source_root ~check_dependency_exists (module Reader)) sources;
+  List.iter ~f:(register_ignore_lines (module Handler)) sources;
+  List.iter ~f:(register_class_definitions (module Handler)) sources;
+  register_aliases (module Handler) sources;
+  List.iter ~f:(connect_type_order ~source_root ~check_dependency_exists (module Handler)) sources;
   TypeOrder.connect_annotations_to_top
-    (module Reader.TypeOrderReader)
+    (module Handler.TypeOrderHandler)
     ~configuration
     ~bottom:Type.Bottom
     ~top:Type.Object;
-  TypeOrder.add_backedges (module Reader.TypeOrderReader : TypeOrder.Reader);
-  TypeOrder.remove_extra_edges (module Reader.TypeOrderReader) ~bottom:Type.Bottom ~top:Type.Object;
-  TypeOrder.check_integrity (module Reader.TypeOrderReader)
+  TypeOrder.add_backedges (module Handler.TypeOrderHandler : TypeOrder.Handler);
+  TypeOrder.remove_extra_edges
+    (module Handler.TypeOrderHandler)
+    ~bottom:Type.Bottom
+    ~top:Type.Object;
+  TypeOrder.check_integrity (module Handler.TypeOrderHandler)
 
 
-let infer_implementations (module Reader: Reader) ~protocol =
+let infer_implementations (module Handler: Handler) ~protocol =
   let module Edge = TypeOrder.Edge in
-  let resolution = resolution (module Reader) () in
+  let resolution = resolution (module Handler) () in
 
   Resolution.class_definition resolution protocol
   >>| (fun protocol_definition ->
@@ -1021,7 +1024,7 @@ let infer_implementations (module Reader: Reader) ~protocol =
                   Class.implements ~resolution ~protocol:protocol_definition definition)
               |> Option.value ~default:false
             in
-            TypeOrder.greatest (module Reader.TypeOrderReader) ~matches:implements
+            TypeOrder.greatest (module Handler.TypeOrderHandler) ~matches:implements
           in
 
           (* Get edges to protocol. *)

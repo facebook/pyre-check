@@ -73,7 +73,7 @@ type t = {
   annotations: Type.t Int.Table.t;
 }
 
-module type Reader = sig
+module type Handler = sig
   type ('key, 'table) lookup
 
   val edges: unit -> (int, Target.t list) lookup
@@ -124,7 +124,7 @@ let show order =
   Format.asprintf "%a" pp order
 
 
-let reader order =
+let handler order =
   (module struct
     type ('key, 'value) lookup = ('key, 'value) Hashtbl.t
 
@@ -164,36 +164,36 @@ let reader order =
       Hashtbl.length table
 
     let show () = show order
-  end : Reader)
+  end : Handler)
 
 
-let index_of (module Reader: Reader) annotation =
-  Reader.find_unsafe (Reader.indices ()) annotation
+let index_of (module Handler: Handler) annotation =
+  Handler.find_unsafe (Handler.indices ()) annotation
 
 
-let insert (module Reader: Reader) annotation =
-  match Reader.find (Reader.indices ()) annotation with
+let insert (module Handler: Handler) annotation =
+  match Handler.find (Handler.indices ()) annotation with
   | Some _ ->
       ()
   | None ->
-      let indices = Reader.indices () in
-      let index = Reader.length indices in
-      Reader.add_key index;
-      Reader.set indices ~key:annotation ~data:index;
-      Reader.set (Reader.annotations ()) ~key:index ~data:annotation;
-      Reader.set (Reader.edges ()) ~key:index ~data:[];
-      Reader.set (Reader.backedges ()) ~key:index ~data:[]
+      let indices = Handler.indices () in
+      let index = Handler.length indices in
+      Handler.add_key index;
+      Handler.set indices ~key:annotation ~data:index;
+      Handler.set (Handler.annotations ()) ~key:index ~data:annotation;
+      Handler.set (Handler.edges ()) ~key:index ~data:[];
+      Handler.set (Handler.backedges ()) ~key:index ~data:[]
 
 
 let connect
     ?(parameters = [])
     ?(add_backedge = false)
-    ((module Reader: Reader) as order)
+    ((module Handler: Handler) as order)
     ~configuration
     ~predecessor
     ~successor =
-  if Option.is_none (Reader.find (Reader.indices ()) predecessor) ||
-     Option.is_none (Reader.find (Reader.indices ()) successor) then
+  if Option.is_none (Handler.find (Handler.indices ()) predecessor) ||
+     Option.is_none (Handler.find (Handler.indices ()) successor) then
     Statistics.event
       ~name:"Invalid type order connection"
       ~configuration
@@ -207,19 +207,20 @@ let connect
     begin
       let predecessor = index_of order predecessor in
       let successor = index_of order successor in
-      let edges = Reader.edges () in
-      let backedges = Reader.backedges () in
+
+      let edges = Handler.edges () in
+      let backedges = Handler.backedges () in
 
       let connect ~edges ~predecessor ~successor =
         (* Add edges. *)
         let successors =
-          Reader.find edges predecessor
+          Handler.find edges predecessor
           >>| List.filter ~f:(fun { Target.target; _ } -> target <> successor)
           |> Option.value ~default:[]
         in
         let target = { Target.target = successor; parameters} in
         if not (List.mem ~equal:Target.equal successors target) then
-          Reader.set
+          Handler.set
             edges
             ~key:predecessor
             ~data:(target :: successors)
@@ -230,13 +231,13 @@ let connect
     end
 
 
-let find (module Reader: Reader) annotation =
-  Reader.find (Reader.indices ()) annotation
-  >>| Reader.find_unsafe (Reader.annotations ())
+let find (module Handler: Handler) annotation =
+  Handler.find (Handler.indices ()) annotation
+  >>| Handler.find_unsafe (Handler.annotations ())
 
 
-let contains (module Reader: Reader) annotation =
-  Reader.contains (Reader.indices ()) annotation
+let contains (module Handler: Handler) annotation =
+  Handler.contains (Handler.indices ()) annotation
 
 
 let raise_if_untracked order annotation =
@@ -245,7 +246,7 @@ let raise_if_untracked order annotation =
 
 
 let breadth_first_fold
-    ((module Reader: Reader) as order)
+    ((module Handler: Handler) as order)
     ~initial
     ~f
     ~successor_indices
@@ -256,7 +257,7 @@ let breadth_first_fold
         let accumulator, visited =
           if not (Set.mem visited target) then
             let successor =
-              let annotation = Reader.find_unsafe (Reader.annotations ()) index in
+              let annotation = Handler.find_unsafe (Handler.annotations ()) index in
               match annotation, parameters with
               | _, [] ->
                   annotation
@@ -288,16 +289,16 @@ let breadth_first_fold
   iterate ~worklist ~visited ~accumulator:initial
 
 
-let successors_fold ((module Reader: Reader) as order) ~initial ~f annotation =
+let successors_fold ((module Handler: Handler) as order) ~initial ~f annotation =
   breadth_first_fold
     order
     ~initial
     ~f:(fun sofar annotation visited -> f sofar annotation, visited)
-    ~successor_indices:(Reader.find (Reader.edges ()))
+    ~successor_indices:(Handler.find (Handler.edges ()))
     annotation
 
 
-let successors ((module Reader: Reader) as order) annotation =
+let successors ((module Handler: Handler) as order) annotation =
   successors_fold
     order
     ~initial:[]
@@ -306,17 +307,17 @@ let successors ((module Reader: Reader) as order) annotation =
   |> List.rev
 
 
-let predecessors ((module Reader: Reader) as order) annotation =
+let predecessors ((module Handler: Handler) as order) annotation =
   breadth_first_fold
     order
     ~initial:[]
     ~f:(fun successors successor visited -> (successor :: successors), visited)
-    ~successor_indices:(Reader.find (Reader.backedges ()))
+    ~successor_indices:(Handler.find (Handler.backedges ()))
     annotation
   |> List.rev
 
 
-let greatest ((module Reader: Reader) as order) ~matches =
+let greatest ((module Handler: Handler) as order) ~matches =
   let collect_matching annotations annotation visited =
     if matches annotation then
       let visited =
@@ -325,7 +326,7 @@ let greatest ((module Reader: Reader) as order) ~matches =
           order
           ~initial:Target.Set.empty
           ~f:(fun sofar _ visited -> (Set.union sofar visited), visited)
-          ~successor_indices:(Reader.find (Reader.backedges ()))
+          ~successor_indices:(Handler.find (Handler.backedges ()))
           annotation
         |> Set.union visited
       in
@@ -337,11 +338,11 @@ let greatest ((module Reader: Reader) as order) ~matches =
     order
     ~initial:[]
     ~f:collect_matching
-    ~successor_indices:(Reader.find (Reader.backedges ()))
+    ~successor_indices:(Handler.find (Handler.backedges ()))
     Type.Top
 
 
-let rec less_or_equal ((module Reader: Reader) as order) ~left ~right =
+let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
   Type.equal left right ||
   match left, right with
   | _, Type.Top ->
@@ -460,7 +461,7 @@ let rec less_or_equal ((module Reader: Reader) as order) ~left ~right =
             else
               begin
                 Option.iter
-                  (Reader.find (Reader.edges ()) target)
+                  (Handler.find (Handler.edges ()) target)
                   ~f:(Target.enqueue worklist []);
                 iterate worklist
               end
@@ -470,7 +471,7 @@ let rec less_or_equal ((module Reader: Reader) as order) ~left ~right =
       iterate worklist
 
 
-and least_common_successor ((module Reader: Reader) as order) ~successors left right =
+and least_common_successor ((module Handler: Handler) as order) ~successors left right =
   raise_if_untracked order left;
   raise_if_untracked order right;
 
@@ -522,13 +523,13 @@ and least_common_successor ((module Reader: Reader) as order) ~successors left r
       iterate
         [Int.Set.of_list [index_of order left]]
         [Int.Set.of_list [index_of order right]];
-      |> List.map ~f:(Reader.find_unsafe (Reader.annotations ()))
+      |> List.map ~f:(Handler.find_unsafe (Handler.annotations ()))
     end
 
 
-and least_upper_bound ((module Reader: Reader) as order) =
+and least_upper_bound ((module Handler: Handler) as order) =
   let successors index =
-    match Reader.find (Reader.edges ()) index with
+    match Handler.find (Handler.edges ()) index with
     | Some targets ->
         targets
         |> List.map ~f:Target.target
@@ -538,9 +539,9 @@ and least_upper_bound ((module Reader: Reader) as order) =
   least_common_successor order ~successors
 
 
-and greatest_lower_bound ((module Reader: Reader) as order) =
+and greatest_lower_bound ((module Handler: Handler) as order) =
   let predecessors index =
-    match Reader.find (Reader.backedges ()) index with
+    match Handler.find (Handler.backedges ()) index with
     | Some targets ->
         targets
         |> List.map ~f:Target.target
@@ -550,7 +551,7 @@ and greatest_lower_bound ((module Reader: Reader) as order) =
   least_common_successor order ~successors:predecessors
 
 
-and join ((module Reader: Reader) as order) left right =
+and join ((module Handler: Handler) as order) left right =
   if Type.equal left right then
     left
   else
@@ -596,7 +597,7 @@ and join ((module Reader: Reader) as order) left right =
           with Undefined _ ->
             Type.Object
         in
-        if Reader.contains (Reader.indices ()) target then
+        if Handler.contains (Handler.indices ()) target then
           let left_parameters = instantiate_parameters order ~source:left ~target in
           let right_parameters = instantiate_parameters order ~source:right ~target in
           let parameters =
@@ -762,7 +763,7 @@ and meet order left right =
 
 
 and instantiate_parameters
-    ((module Reader: Reader) as order)
+    ((module Handler: Handler) as order)
     ~source
     ~target =
   let primitive, parameters = Type.split source in
@@ -770,7 +771,7 @@ and instantiate_parameters
   raise_if_untracked order primitive;
   raise_if_untracked order target;
 
-  let generic_index = Reader.find (Reader.indices ()) Type.generic in
+  let generic_index = Handler.find (Handler.indices ()) Type.generic in
 
   (* If a node on the graph has Generic[_T1, _T2, ...] as a supertype and has
      concrete parameters, all occurences of _T1, _T2, etc. in other supertypes
@@ -843,7 +844,7 @@ and instantiate_parameters
           Some parameters
         else
           begin
-            Reader.find (Reader.edges ()) target_index
+            Handler.find (Handler.edges ()) target_index
             >>| get_instantiated_successors { Target.target = target_index; parameters }
             >>| List.iter ~f:(Queue.enqueue worklist)
             |> ignore;
@@ -862,18 +863,18 @@ let widen order ~widening_threshold ~previous ~next ~iteration =
     join order previous next
 
 
-let add_backedges (module Reader: Reader) =
-  let backedges = Reader.backedges () in
-  let edge_keys = Reader.keys () in
+let add_backedges (module Handler: Handler) =
+  let backedges = Handler.backedges () in
+  let edge_keys = Handler.keys () in
   let add_backedges predecessor =
-    let successors = Reader.find (Reader.edges ()) predecessor in
+    let successors = Handler.find (Handler.edges ()) predecessor in
     let add_backedge { Target.target = successor; parameters } =
       let node = { Target.target = predecessor; parameters } in
-      match (Reader.find (Reader.backedges ()) successor) with
+      match (Handler.find (Handler.backedges ()) successor) with
       | None ->
-          Reader.set backedges ~key:successor ~data:[node]
+          Handler.set backedges ~key:successor ~data:[node]
       | Some nodes ->
-          Reader.set backedges ~key:successor ~data:(node :: nodes)
+          Handler.set backedges ~key:successor ~data:(node :: nodes)
     in
     match successors with
     | Some successors ->
@@ -884,10 +885,10 @@ let add_backedges (module Reader: Reader) =
   List.iter ~f:add_backedges edge_keys
 
 
-let remove_extra_edges (module Reader: Reader) ~bottom ~top =
+let remove_extra_edges (module Handler: Handler) ~bottom ~top =
   let disconnect keys ~edges ~backedges special_index =
     let remove_extra_references key =
-      (Reader.find edges key
+      (Handler.find edges key
        >>|
        (fun connected ->
           let disconnected =
@@ -897,43 +898,43 @@ let remove_extra_edges (module Reader: Reader) ~bottom ~top =
             []
           else
             begin
-              Reader.set edges ~key ~data:disconnected;
+              Handler.set edges ~key ~data:disconnected;
               [key]
             end))
       |> Option.value ~default:[]
     in
     let removed_indices = List.concat_map ~f:remove_extra_references keys |> Int.Set.of_list in
-    Reader.find backedges special_index
+    Handler.find backedges special_index
     >>|
     (fun edges ->
        let edges =
          List.filter ~f:(fun { Target.target; _ } -> not (Set.mem removed_indices target)) edges
        in
-       Reader.set backedges ~key:special_index ~data:edges)
+       Handler.set backedges ~key:special_index ~data:edges)
     |> Option.value ~default:()
   in
-  let edges = Reader.edges () in
-  let backedges = Reader.backedges () in
-  disconnect (Reader.keys ()) ~edges ~backedges (Reader.find_unsafe (Reader.indices ()) top);
+  let edges = Handler.edges () in
+  let backedges = Handler.backedges () in
+  disconnect (Handler.keys ()) ~edges ~backedges (Handler.find_unsafe (Handler.indices ()) top);
   disconnect
-    (Reader.keys ())
+    (Handler.keys ())
     ~edges:backedges
     ~backedges:edges
-    (Reader.find_unsafe (Reader.indices ()) bottom)
+    (Handler.find_unsafe (Handler.indices ()) bottom)
 
 
-let connect_annotations_to_top ((module Reader: Reader) as order) ~configuration ~bottom ~top =
-  let index_of annotation = Reader.find_unsafe (Reader.indices ()) annotation in
+let connect_annotations_to_top ((module Handler: Handler) as order) ~configuration ~bottom ~top =
+  let index_of annotation = Handler.find_unsafe (Handler.indices ()) annotation in
   let top_index = index_of top in
   let visited = ref (Int.Set.of_list [top_index]) in
 
   let rec visit index =
-    let annotation = Reader.find_unsafe (Reader.annotations ()) index in
+    let annotation = Handler.find_unsafe (Handler.annotations ()) index in
     if not (Set.mem !visited index) &&
        not (less_or_equal order ~left:top ~right:annotation) then
       begin
         visited := Set.add !visited index;
-        match Reader.find (Reader.edges ()) index with
+        match Handler.find (Handler.edges ()) index with
         | Some targets when List.length targets > 0 ->
             targets
             |> List.map ~f:Target.target
@@ -944,12 +945,12 @@ let connect_annotations_to_top ((module Reader: Reader) as order) ~configuration
   visit (index_of bottom)
 
 
-let check_integrity (module Reader: Reader) =
+let check_integrity (module Handler: Handler) =
   (* Check `Top` and `Bottom`. *)
-  let contains annotation = Reader.contains (Reader.indices ()) annotation in
+  let contains annotation = Handler.contains (Handler.indices ()) annotation in
   if not (contains Type.Bottom && contains Type.Top) then
     begin
-      Log.error "Order is missing either Bottom or Top:\n%s" (Reader.show ());
+      Log.error "Order is missing either Bottom or Top:\n%s" (Handler.show ());
       raise Incomplete
     end;
 
@@ -962,13 +963,13 @@ let check_integrity (module Reader: Reader) =
           raise Incomplete
         end
     in
-    raise_if_none (Reader.find (Reader.edges ()) key);
-    raise_if_none (Reader.find (Reader.backedges ()) key);
-    raise_if_none (Reader.find (Reader.annotations ()) key);
-    let annotation = Option.value_exn (Reader.find (Reader.annotations ()) key) in
-    raise_if_none (Reader.find (Reader.indices ()) annotation)
+    raise_if_none (Handler.find (Handler.edges ()) key);
+    raise_if_none (Handler.find (Handler.backedges ()) key);
+    raise_if_none (Handler.find (Handler.annotations ()) key);
+    let annotation = Option.value_exn (Handler.find (Handler.annotations ()) key) in
+    raise_if_none (Handler.find (Handler.indices ()) annotation)
   in
-  List.iter ~f:key_consistent (Reader.keys ());
+  List.iter ~f:key_consistent (Handler.keys ());
   (* Check for cycles. *)
   let started_from = ref Int.Set.empty in
   let find_cycle start =
@@ -979,20 +980,20 @@ let check_integrity (module Reader: Reader) =
             begin
               let trace =
                 List.rev_map
-                  ~f:(Reader.find_unsafe (Reader.annotations ()))
+                  ~f:(Handler.find_unsafe (Handler.annotations ()))
                   (index :: reverse_visited)
                 |> List.map ~f:(Format.asprintf "%a" Type.pp)
                 |> String.concat ~sep:" -> " in
               Log.error
                 "Order is cyclic:\n%s\nTrace: %s"
-                (Reader.show ())
+                (Handler.show ())
                 trace;
               raise Cyclic
             end
           else if not (Set.mem !started_from index) then
             begin
               started_from := Set.add !started_from index;
-              match Reader.find (Reader.edges ()) index with
+              match Handler.find (Handler.edges ()) index with
               | Some successors ->
                   successors
                   |> List.map ~f:Target.target
@@ -1002,7 +1003,7 @@ let check_integrity (module Reader: Reader) =
             end in
         visit [] start
       end in
-  Reader.keys ()
+  Handler.keys ()
   |> List.iter ~f:find_cycle;
 
   (* Check that backedges are complete. *)
@@ -1010,7 +1011,7 @@ let check_integrity (module Reader: Reader) =
     let check_backedge index =
       let check_backedge { Target.target; _ } =
         let has_backedge =
-          match Reader.find backedges target with
+          match Handler.find backedges target with
           | Some targets ->
               List.exists ~f:(fun { Target.target; _ } -> target = index) targets
           | None ->
@@ -1020,30 +1021,30 @@ let check_integrity (module Reader: Reader) =
           begin
             Log.error
               "No back-edge found for %a -> %a"
-              Type.pp (Reader.find_unsafe (Reader.annotations ()) index)
-              Type.pp (Reader.find_unsafe (Reader.annotations ()) target);
+              Type.pp (Handler.find_unsafe (Handler.annotations ()) index)
+              Type.pp (Handler.find_unsafe (Handler.annotations ()) target);
             raise Incomplete
           end
       in
-      List.iter ~f:check_backedge (Reader.find_unsafe edges index)
+      List.iter ~f:check_backedge (Handler.find_unsafe edges index)
     in
     get_keys ()
     |> List.iter ~f:check_backedge
   in
   check_inverse
-    ~get_keys:Reader.keys
-    ~edges:(Reader.edges ())
-    ~backedges:(Reader.backedges ());
+    ~get_keys:Handler.keys
+    ~edges:(Handler.edges ())
+    ~backedges:(Handler.backedges ());
   check_inverse
-    ~get_keys:Reader.keys
-    ~edges:(Reader.backedges ())
-    ~backedges:(Reader.edges ())
+    ~get_keys:Handler.keys
+    ~edges:(Handler.backedges ())
+    ~backedges:(Handler.edges ())
 
 
-let to_dot (module Reader: Reader) =
-  let indices = List.sort ~cmp:compare (Reader.keys ()) in
+let to_dot (module Handler: Handler) =
+  let indices = List.sort ~cmp:compare (Handler.keys ()) in
   let nodes =
-    List.map ~f:(fun index -> (index, Reader.find_unsafe (Reader.annotations ()) index)) indices
+    List.map ~f:(fun index -> (index, Handler.find_unsafe (Handler.annotations ()) index)) indices
   in
   let buffer = Buffer.create 10000 in
   Buffer.add_string buffer "digraph {\n";
@@ -1053,7 +1054,7 @@ let to_dot (module Reader: Reader) =
         |> Buffer.add_string buffer)
     nodes;
   let add_edges index =
-    Reader.find (Reader.edges ()) index
+    Handler.find (Handler.edges ()) index
     >>| List.sort ~cmp:compare
     >>| List.iter ~f:(
       fun { Target.target = successor; parameters } ->
@@ -1092,31 +1093,31 @@ module Builder = struct
 
   let default ~configuration () =
     let order = create () in
-    let reader = reader order in
+    let handler = handler order in
 
-    insert reader Type.Bottom;
-    insert reader Type.Top;
+    insert handler Type.Bottom;
+    insert handler Type.Top;
     (* Object *)
-    insert reader Type.Object;
+    insert handler Type.Object;
     connect
       ~add_backedge:true
-      reader
+      handler
       ~configuration
       ~predecessor:Type.Bottom
       ~successor:Type.Object;
-    connect ~add_backedge:true reader ~configuration ~predecessor:Type.Object ~successor:Type.Top;
+    connect ~add_backedge:true handler ~configuration ~predecessor:Type.Object ~successor:Type.Top;
 
     let insert_unconnected annotation =
-      insert reader annotation;
+      insert handler annotation;
       connect
         ~add_backedge:true
-        reader
+        handler
         ~configuration
         ~predecessor:Type.Bottom
         ~successor:annotation;
       connect
         ~add_backedge:true
-        reader
+        handler
         ~configuration
         ~predecessor:annotation
         ~successor:Type.Object
@@ -1130,23 +1131,23 @@ module Builder = struct
 
     let type_special_form = Type.Primitive (Identifier.create "typing.Type") in
     let type_builtin = Type.Primitive (Identifier.create "type") in
-    insert reader type_special_form;
-    insert reader type_builtin;
+    insert handler type_special_form;
+    insert handler type_builtin;
     connect
       ~add_backedge:true
-      reader
+      handler
       ~configuration
       ~predecessor:Type.Bottom
       ~successor:type_special_form;
     connect
       ~add_backedge:true
-      reader
+      handler
       ~configuration
       ~predecessor:type_special_form
       ~successor:type_builtin;
     connect
       ~add_backedge:true
-      reader
+      handler
       ~configuration
       ~predecessor:type_builtin
       ~successor:Type.Object;
@@ -1155,13 +1156,13 @@ module Builder = struct
 
     let base_dict =  (Type.Primitive (Identifier.create "dict")) in
     let typing_dict = (Type.Primitive (Identifier.create "typing.Dict")) in
-    insert reader base_dict;
-    insert reader typing_dict;
-    connect ~add_backedge:true reader ~configuration ~predecessor:Type.Bottom ~successor:base_dict;
-    connect ~add_backedge:true reader ~configuration ~predecessor:base_dict ~successor:typing_dict;
+    insert handler base_dict;
+    insert handler typing_dict;
+    connect ~add_backedge:true handler ~configuration ~predecessor:Type.Bottom ~successor:base_dict;
+    connect ~add_backedge:true handler ~configuration ~predecessor:base_dict ~successor:typing_dict;
     connect
       ~add_backedge:true
-      reader
+      handler
       ~configuration
       ~predecessor:typing_dict
       ~successor:Type.Object;
@@ -1169,30 +1170,30 @@ module Builder = struct
     insert_unconnected (Type.Primitive (Identifier.create "None"));
 
     (* Numerical hierarchy. *)
-    insert reader Type.integer;
-    insert reader Type.float;
-    insert reader Type.complex;
+    insert handler Type.integer;
+    insert handler Type.float;
+    insert handler Type.complex;
     connect
       ~add_backedge:true
-      reader
+      handler
       ~configuration
       ~predecessor:Type.Bottom
       ~successor:Type.integer;
     connect
       ~add_backedge:true
-      reader
+      handler
       ~configuration
       ~predecessor:Type.integer
       ~successor:Type.float;
     connect
       ~add_backedge:true
-      reader
+      handler
       ~configuration
       ~predecessor:Type.float
       ~successor:Type.complex;
     connect
       ~add_backedge:true
-      reader
+      handler
       ~configuration
       ~predecessor:Type.complex
       ~successor:Type.Object;

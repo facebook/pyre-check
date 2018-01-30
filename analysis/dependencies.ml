@@ -26,7 +26,7 @@ type t = {
 }
 
 
-module type Reader = sig
+module type Handler = sig
   val add_function_key: path: string -> Access.t -> unit
   val add_class_key: path: string -> Type.t -> unit
   val add_alias_key: path: string -> Type.t -> unit
@@ -48,8 +48,8 @@ module type Reader = sig
 end
 
 
-let reader {
-    index = { function_keys; class_keys; alias_keys; global_keys; dependent_keys; ignore_keys; };
+let handler {
+    index = { function_keys; class_keys; alias_keys; global_keys; dependent_keys; ignore_keys };
     dependents;
   } =
   (module struct
@@ -170,7 +170,7 @@ let reader {
       Hashtbl.remove global_keys path;
       Hashtbl.remove dependent_keys path;
       Hashtbl.remove ignore_keys path
-  end: Reader)
+  end: Handler)
 
 
 let create () =

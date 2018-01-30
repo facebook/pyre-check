@@ -85,8 +85,8 @@ let rec process_request
                   ~section:`Server
                   "Handling type check request for files %a"
                   Sexp.pp (sexp_of_list sexp_of_string paths);
-                let (module Reader: Environment.Reader) = state.environment in
-                Dependencies.of_list ~get_dependencies:(Reader.dependencies) ~paths
+                let (module Handler: Environment.Handler) = state.environment in
+                Dependencies.of_list ~get_dependencies:(Handler.dependencies) ~paths
                 |> Set.to_list
               in
               Log.log
@@ -156,8 +156,8 @@ let rec process_request
         Some (TypeCheckResponse (build_file_to_error_map ~checked_files new_errors))
   in
   let handle_type_query state request =
-    let (module Reader: Environment.Reader) = state.environment in
-    let order = (module Reader.TypeOrderReader : TypeOrder.Reader) in
+    let (module Handler: Environment.Handler) = state.environment in
+    let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
     match request with
     | LessOrEqual (left, right) ->
         let response =

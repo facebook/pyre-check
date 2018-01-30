@@ -25,7 +25,7 @@ let configuration = Configuration.create ()
 let plain_environment =
   let environment = Environment.Builder.create ~configuration () in
   Environment.populate
-    (Environment.reader ~configuration environment)
+    (Environment.handler ~configuration environment)
     ~configuration
     [
       parse {|
@@ -125,7 +125,7 @@ let plain_environment =
 
 
 let environment =
-  Environment.reader ~configuration plain_environment
+  Environment.handler ~configuration plain_environment
 
 
 let empty_define = {
@@ -934,8 +934,8 @@ let assert_type_errors
   in
   let environment =
     let environment = Environment.Builder.copy plain_environment in
-    Environment.populate ~configuration (Environment.reader ~configuration environment) [source];
-    Environment.reader ~configuration environment
+    Environment.populate ~configuration (Environment.handler ~configuration environment) [source];
+    Environment.handler ~configuration environment
   in
   let descriptions =
     List.map
@@ -4009,8 +4009,8 @@ let assert_infer
     |> Preprocessing.preprocess in
   let environment =
     Environment.Builder.copy plain_environment in
-  Environment.populate ~configuration (Environment.reader ~configuration environment) [source];
-  let environment_reader = Environment.reader ~configuration environment in
+  Environment.populate ~configuration (Environment.handler ~configuration environment) [source];
+  let environment_handler = Environment.handler ~configuration environment in
   let to_string json =
     Yojson.Safe.sort json
     |> Yojson.Safe.to_string
@@ -4026,7 +4026,7 @@ let assert_infer
     (List.map
        ~f:fields_of_error
        (check_errors
-          (Configuration.create ~debug ~infer ~recursive_infer ()) environment_reader source)
+          (Configuration.create ~debug ~infer ~recursive_infer ()) environment_handler source)
      |> List.concat
      |> List.map ~f:to_string)
 

@@ -37,9 +37,9 @@ type t = {
 }
 [@@deriving show]
 
-(** The reader module for interfacing with TypeOrder lookups. See
-    [Environment_reader] for more. *)
-module type Reader = sig
+(** The handler module for interfacing with TypeOrder lookups. See
+    [Environment_handler] for more. *)
+module type Handler = sig
   type ('key, 'table) lookup
 
   val edges: unit -> (int, Target.t list) lookup
@@ -60,40 +60,40 @@ module type Reader = sig
   val show: unit -> string
 end
 
-(** Provides a default in-process environment reader constructed from a
+(** Provides a default in-process environment handler constructed from a
     [TypeOrder.t]. *)
-val reader: t -> (module Reader)
+val handler: t -> (module Handler)
 
-val insert: (module Reader) -> Type.t -> unit
+val insert: (module Handler) -> Type.t -> unit
 val connect
   :  ?parameters: Type.t list
   -> ?add_backedge: bool
-  -> (module Reader)
+  -> (module Handler)
   -> configuration: Configuration.t
   -> predecessor: Type.t
   -> successor: Type.t
   -> unit
 
-val find: (module Reader) -> Type.t -> Type.t option
-val contains: (module Reader) -> Type.t -> bool
+val find: (module Handler) -> Type.t -> Type.t option
+val contains: (module Handler) -> Type.t -> bool
 
 val successors_fold
-  :  (module Reader)
+  :  (module Handler)
   -> initial: 'accumulator
   -> f: ('accumulator -> Type.t -> 'accumulator)
   -> Type.t
   -> 'accumulator
-val successors: (module Reader) -> Type.t -> Type.t list
-val predecessors: (module Reader) -> Type.t -> Type.t list
-val greatest: (module Reader) -> matches:(Type.t -> bool) -> Type.t list
+val successors: (module Handler) -> Type.t -> Type.t list
+val predecessors: (module Handler) -> Type.t -> Type.t list
+val greatest: (module Handler) -> matches:(Type.t -> bool) -> Type.t list
 
-val less_or_equal: (module Reader) -> left:Type.t -> right:Type.t -> bool
-val least_upper_bound: (module Reader) -> Type.t -> Type.t -> Type.t list
-val greatest_lower_bound: (module Reader) -> Type.t -> Type.t -> Type.t list
-val join: (module Reader) -> Type.t -> Type.t -> Type.t
-val meet: (module Reader) -> Type.t -> Type.t -> Type.t
+val less_or_equal: (module Handler) -> left:Type.t -> right:Type.t -> bool
+val least_upper_bound: (module Handler) -> Type.t -> Type.t -> Type.t list
+val greatest_lower_bound: (module Handler) -> Type.t -> Type.t -> Type.t list
+val join: (module Handler) -> Type.t -> Type.t -> Type.t
+val meet: (module Handler) -> Type.t -> Type.t -> Type.t
 val widen
-  :  (module Reader)
+  :  (module Handler)
   -> widening_threshold: int
   -> previous: Type.t
   -> next: Type.t
@@ -101,23 +101,23 @@ val widen
   -> Type.t
 
 val instantiate_parameters
-  :  (module Reader)
+  :  (module Handler)
   -> source:Type.t
   -> target:Type.t
   -> Type.t List.t Option.t
 
-val add_backedges: (module Reader) -> unit
-val remove_extra_edges: (module Reader) -> bottom: Type.t -> top: Type.t -> unit
+val add_backedges: (module Handler) -> unit
+val remove_extra_edges: (module Handler) -> bottom: Type.t -> top: Type.t -> unit
 val connect_annotations_to_top
-  :  (module Reader)
+  :  (module Handler)
   -> configuration: Configuration.t
   -> bottom: Type.t
   -> top: Type.t
   -> unit
 
-val check_integrity: (module Reader) -> unit
+val check_integrity: (module Handler) -> unit
 
-val to_dot: (module Reader) -> string
+val to_dot: (module Handler) -> string
 
 module Builder: sig
   val create: unit -> t

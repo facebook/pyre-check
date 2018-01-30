@@ -29,11 +29,11 @@ let populate source =
     let environment = Environment.Builder.create ~configuration () in
     Environment.populate
       ~configuration
-      (Environment.reader ~configuration environment)
+      (Environment.handler ~configuration environment)
       [parse source];
     environment
   in
-  Environment.reader ~configuration environment
+  Environment.handler ~configuration environment
 
 
 let resolution environment =

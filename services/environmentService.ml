@@ -12,7 +12,7 @@ open Pyre
 
 
 let build
-    reader
+    handler
     ~configuration:({ Configuration.source_root; _ } as configuration)
     ~stubs
     ~sources =
@@ -31,12 +31,12 @@ let build
   let timer = Timer.start () in
   let stubs = get_sources stubs in
 
-  Environment.populate ~configuration ~source_root reader stubs;
+  Environment.populate ~configuration ~source_root handler stubs;
   Statistics.performance ~name:"stub environment built" ~timer ~configuration ();
 
   let timer = Timer.start () in
   let sources = get_sources sources in
-  Environment.populate ~configuration ~source_root reader sources;
+  Environment.populate ~configuration ~source_root handler sources;
   Statistics.performance ~name:"full environment built" ~timer ~configuration ();
 
   if Log.is_enabled `Dotty then
@@ -46,10 +46,10 @@ let build
           ~root:(Configuration.pyre_root configuration)
           ~relative:"type_order.dot"
       in
-      let (module Reader: Environment.Reader) = reader in
+      let (module Handler: Environment.Handler) = handler in
       Log.info "Emitting type order dotty file to %s" (Path.absolute type_order_file);
       File.create
-        ~content:(Some (TypeOrder.to_dot (module Reader.TypeOrderReader)))
+        ~content:(Some (TypeOrder.to_dot (module Handler.TypeOrderHandler)))
         type_order_file
       |> File.write
     end
@@ -57,7 +57,7 @@ let build
 
 let infer_protocols
     ~service
-    ~reader:((module Reader: Environment.Reader) as reader)
+    ~handler:((module Handler: Environment.Handler) as handler)
     ~configuration:({ Configuration.sections; verbose; _ } as configuration) =
   let module Edge = TypeOrder.Edge in
   Log.info "Inferring protocol implementations...";
@@ -68,7 +68,7 @@ let infer_protocols
       ~init:Edge.Set.empty
       ~f:(fun edges protocol ->
           Log.initialize ~verbose ~sections;
-          Environment.infer_implementations reader ~protocol
+          Environment.infer_implementations handler ~protocol
           |> Set.union edges)
       protocols
   in
@@ -77,32 +77,32 @@ let infer_protocols
     ~init:Edge.Set.empty
     ~map
     ~reduce:Set.union
-    (Reader.protocols ())
+    (Handler.protocols ())
   |> Set.iter ~f:(fun { Edge.source; target } ->
       TypeOrder.connect
-        (module Reader.TypeOrderReader)
+        (module Handler.TypeOrderHandler)
         ~configuration
         ~add_backedge:true
         ~predecessor:source
         ~successor:target);
 
-  TypeOrder.check_integrity (module Reader.TypeOrderReader);
+  TypeOrder.check_integrity (module Handler.TypeOrderHandler);
 
   Statistics.performance ~name:"inferred protocol implementations" ~timer ~configuration ()
 
 
-let in_process_reader service ~configuration ~stubs ~sources =
+let in_process_handler service ~configuration ~stubs ~sources =
   let environment = Environment.Builder.create ~configuration () in
-  let reader = Environment.reader ~configuration environment in
-  build reader ~configuration ~stubs ~sources;
+  let handler = Environment.handler ~configuration environment in
+  build handler ~configuration ~stubs ~sources;
   Log.log ~section:`Environment "%a" Environment.Builder.pp environment;
-  infer_protocols ~service ~reader ~configuration;
-  reader
+  infer_protocols ~service ~handler ~configuration;
+  handler
 
 
 (** First dumps environment to shared memory, then exposes through
-    Environment_reader *)
-let shared_memory_reader
+    Environment_handler *)
+let shared_memory_handler
     service
     ~configuration:({ Configuration.sections; verbose; _ } as configuration)
     ~stubs
@@ -172,7 +172,7 @@ let shared_memory_reader
 
   Log.initialize ~verbose ~sections;
   let environment = Environment.Builder.create ~configuration () in
-  let shared_reader =
+  let shared_handler =
     (module struct
       let function_definitions =
         FunctionDefinitions.get
@@ -200,7 +200,7 @@ let shared_memory_reader
       let ignore_lines =
         IgnoreLines.get
 
-      module DependencyReader = (struct
+      module DependencyHandler = (struct
         let add_new_key ~get ~add ~path ~key =
           match get path with
           | None -> add path [key]
@@ -246,9 +246,9 @@ let shared_memory_reader
           IgnoreKeys.remove_batch (IgnoreKeys.KeySet.singleton path)
 
         let dependents = Dependents.get
-      end: Dependencies.Reader)
+      end: Dependencies.Handler)
 
-      module TypeOrderReader = struct
+      module TypeOrderHandler = struct
         type ('key, 'value) lookup = {
           get: 'key -> 'value option;
           set: 'key -> 'value -> unit;
@@ -346,7 +346,7 @@ let shared_memory_reader
           ?name_override
           ({ Ast.Node.value = { Ast.Statement.Define.name; _ }; _ } as definition) =
         let name = Option.value ~default:name name_override in
-        DependencyReader.add_function_key ~path name;
+        DependencyHandler.add_function_key ~path name;
         let definitions =
           match FunctionDefinitions.get name with
           | Some definitions ->
@@ -363,7 +363,7 @@ let shared_memory_reader
           "Adding dependency from %s to %s"
           dependency
           path;
-        DependencyReader.add_dependent ~path dependency
+        DependencyHandler.add_dependent ~path dependency
 
 
       let register_ignore_line ~location ~codes =
@@ -371,7 +371,7 @@ let shared_memory_reader
 
 
       let register_global ~path ~key ~data =
-        DependencyReader.add_global_key ~path key;
+        DependencyHandler.add_global_key ~path key;
         Globals.remove_batch (Globals.KeySet.singleton key);
         Globals.add key data
 
@@ -393,11 +393,11 @@ let shared_memory_reader
           ClassDefinitions.add primitive definition
         in
         Environment.register_type
-          ~order:(module TypeOrderReader: TypeOrder.Reader)
+          ~order:(module TypeOrderHandler: TypeOrder.Handler)
           ~configuration
           ~aliases:Aliases.get
           ~add_class_definition
-          ~add_class_key:(DependencyReader.add_class_key)
+          ~add_class_key:(DependencyHandler.add_class_key)
           ~add_protocol:(fun protocol ->
               let protocols = Protocols.get "Protocols" |> Option.value ~default:[] in
               Protocols.remove_batch (Protocols.KeySet.singleton "Protocols");
@@ -405,7 +405,7 @@ let shared_memory_reader
           ~register_global
 
       let register_alias ~path ~key ~data =
-        DependencyReader.add_alias_key ~path key;
+        DependencyHandler.add_alias_key ~path key;
         Aliases.add key data
 
       let purge handle =
@@ -419,31 +419,31 @@ let shared_memory_reader
             keys;
           DependentKeys.remove_batch (DependentKeys.KeySet.singleton path)
         in
-        DependencyReader.get_function_keys ~path
+        DependencyHandler.get_function_keys ~path
         |> fun keys -> FunctionDefinitions.remove_batch (FunctionDefinitions.KeySet.of_list keys);
 
-        DependencyReader.get_class_keys ~path
+        DependencyHandler.get_class_keys ~path
         |> fun keys -> ClassDefinitions.remove_batch (ClassDefinitions.KeySet.of_list keys);
 
-        DependencyReader.get_alias_keys ~path
+        DependencyHandler.get_alias_keys ~path
         |> fun keys -> Aliases.remove_batch (Aliases.KeySet.of_list keys);
 
-        DependencyReader.get_global_keys ~path
+        DependencyHandler.get_global_keys ~path
         |> fun keys -> Globals.remove_batch (Globals.KeySet.of_list keys);
 
-        DependencyReader.get_dependent_keys ~path |> purge_dependents;
+        DependencyHandler.get_dependent_keys ~path |> purge_dependents;
 
-        DependencyReader.clear_all_keys ~path;
-    end: Environment.Reader)
+        DependencyHandler.clear_all_keys ~path;
+    end: Environment.Handler)
   in
   begin
     match Sys.getenv "PYRE_USE_SHARED_MEMORY" with
     | Some "1" ->
         add_to_shared_memory environment;
-        build shared_reader ~configuration ~stubs ~sources
+        build shared_handler ~configuration ~stubs ~sources
     | _ ->
-        let reader = Environment.reader ~configuration environment in
-        build reader ~configuration ~stubs ~sources;
+        let handler = Environment.handler ~configuration environment in
+        build handler ~configuration ~stubs ~sources;
         add_to_shared_memory environment
   end;
   let heap_size =
@@ -454,13 +454,13 @@ let shared_memory_reader
   in
   Statistics.event ~name:"shared memory size" ~integers:["size", heap_size] ~configuration ();
 
-  infer_protocols ~service ~reader:shared_reader ~configuration;
+  infer_protocols ~service ~handler:shared_handler ~configuration;
 
-  shared_reader
+  shared_handler
 
 
 let repopulate
-    (module Reader: Environment.Reader)
+    (module Handler: Environment.Handler)
     ~configuration:({ Configuration.source_root; _ } as configuration)
     ~handles =
   Log.log
@@ -468,10 +468,10 @@ let repopulate
     "Repopulating the environment with %s"
     (List.to_string ~f:File.Handle.show handles);
   let repopulate_path handle =
-    Reader.purge handle;
+    Handler.purge handle;
     match AstSharedMemory.get_source handle with
     | Some source -> [source]
     | None -> []
   in
   List.concat_map ~f:repopulate_path handles
-  |> Environment.populate ~configuration ~source_root (module Reader: Environment.Reader)
+  |> Environment.populate ~configuration ~source_root (module Handler: Environment.Handler)

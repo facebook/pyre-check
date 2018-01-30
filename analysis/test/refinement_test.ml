@@ -15,8 +15,8 @@ open Test
 let resolution =
   let configuration = Configuration.create () in
   Environment.Builder.create ~configuration ()
-  |> Environment.reader ~configuration
-  |> fun reader -> Environment.resolution reader ()
+  |> Environment.handler ~configuration
+  |> fun handler -> Environment.resolution handler ()
 
 
 let test_less_or_equal _ =

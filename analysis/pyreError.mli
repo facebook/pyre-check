@@ -141,6 +141,6 @@ val widen
 val join_at_define: resolution: Resolution.t -> location: Location.t -> t list -> t list
 val join_at_source: resolution:Resolution.t -> t list -> t list
 
-val dequalify: Access.t Access.Map.t -> (module Environment.Reader) -> t -> t
+val dequalify: Access.t Access.Map.t -> (module Environment.Handler) -> t -> t
 
 val to_json: detailed:bool -> t -> Yojson.Safe.json

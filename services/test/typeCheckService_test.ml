@@ -29,7 +29,7 @@ let type_check_sources_list_test context =
     in
     let configuration = Configuration.create () in
     let environment =
-      Environment.reader ~configuration (Environment.Builder.create ~configuration ())
+      Environment.handler ~configuration (Environment.Builder.create ~configuration ())
     in
     Environment.populate
       ~configuration

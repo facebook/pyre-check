@@ -11,7 +11,7 @@ module Error = PyreError
 
 type result = {
   handles: File.Handle.t list;
-  environment: (module Environment.Reader);
+  environment: (module Environment.Handler);
   errors: Error.t list
 }
 

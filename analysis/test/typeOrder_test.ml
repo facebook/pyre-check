@@ -27,7 +27,7 @@ let connect ?(parameters = []) order ~predecessor ~successor =
       X
     1 - 3 *)
 let butterfly =
-  let order = Builder.create () |> TypeOrder.reader in
+  let order = Builder.create () |> TypeOrder.handler in
   insert order Type.Bottom;
   insert order Type.Top;
   insert order !"0";
@@ -52,7 +52,7 @@ let butterfly =
             4 -- 2 ---           *)
 let order =
   let bottom = !"bottom" in
-  let order = Builder.create () |> TypeOrder.reader in
+  let order = Builder.create () |> TypeOrder.handler in
   insert order Type.Bottom;
   insert order bottom;
   insert order Type.Top;
@@ -87,7 +87,7 @@ let order =
  BOTTOM
 *)
 let diamond_order =
-  let order = Builder.create () |> TypeOrder.reader in
+  let order = Builder.create () |> TypeOrder.handler in
   insert order Type.Bottom;
   insert order Type.Top;
   insert order !"A";
@@ -104,7 +104,7 @@ let diamond_order =
 
 
 let disconnected_order =
-  let order = Builder.create () |> TypeOrder.reader in
+  let order = Builder.create () |> TypeOrder.handler in
   insert order Type.Bottom;
   insert order Type.Top;
   insert order !"A";
@@ -113,7 +113,7 @@ let disconnected_order =
 
 
 let default =
-  let order = Builder.default ~configuration () |> TypeOrder.reader in
+  let order = Builder.default ~configuration () |> TypeOrder.handler in
   let variable = Type.Variable { Type.variable = ~~"_T"; constraints = [] } in
   insert order variable;
   connect order ~predecessor:Type.Bottom ~successor:variable;
@@ -163,7 +163,7 @@ let default =
 
 
 let test_default _ =
-  let order = Builder.default ~configuration () |> TypeOrder.reader in
+  let order = Builder.default ~configuration () |> TypeOrder.handler in
   assert_true (less_or_equal order ~left:Type.Bottom ~right:Type.Bottom);
   assert_true (less_or_equal order ~left:Type.Bottom ~right:Type.Top);
   assert_true (less_or_equal order ~left:Type.Top ~right:Type.Top);
@@ -242,7 +242,7 @@ let test_successors _ =
                       --------------------------                    *)
   let order =
     let variable name = Type.Variable { Type.variable = name; constraints = [] } in
-    let order = Builder.create () |> TypeOrder.reader in
+    let order = Builder.create () |> TypeOrder.handler in
     insert order Type.Bottom;
     insert order Type.Object;
     insert order Type.Top;
@@ -421,7 +421,7 @@ let test_less_or_equal _ =
 
   let order =
     let variable name = Type.Variable { Type.variable = name; constraints = [] } in
-    let order = Builder.create () |> TypeOrder.reader in
+    let order = Builder.create () |> TypeOrder.handler in
     let add_simple annotation =
       insert order annotation;
       connect order ~predecessor:Type.Bottom ~successor:annotation;
@@ -590,7 +590,7 @@ let test_join _ =
     (Type.Optional (Type.union [Type.float; Type.integer]));
   let variable name = Type.Variable { Type.variable = name; constraints = [] } in
   let order =
-    let order = Builder.create () |> TypeOrder.reader in
+    let order = Builder.create () |> TypeOrder.handler in
     let add_simple annotation =
       insert order annotation;
       connect order ~predecessor:Type.Bottom ~successor:annotation;
@@ -774,8 +774,8 @@ let test_remove_extra_edges _ =
      |----^         ^
      |--------------^
   *)
-  let (module Reader: TypeOrder.Reader) =
-    let order = Builder.create () |> TypeOrder.reader in
+  let (module Handler: TypeOrder.Handler) =
+    let order = Builder.create () |> TypeOrder.handler in
     insert order Type.Bottom;
     insert order Type.Top;
     insert order !"0";
@@ -789,15 +789,15 @@ let test_remove_extra_edges _ =
     remove_extra_edges order ~bottom:!"0" ~top:!"3";
     order
   in
-  let zero_index = Reader.find_unsafe (Reader.indices ()) !"0" in
-  let one_index = Reader.find_unsafe (Reader.indices ()) !"1" in
-  let two_index = Reader.find_unsafe (Reader.indices ()) !"2" in
-  let three_index = Reader.find_unsafe (Reader.indices ()) !"3" in
+  let zero_index = Handler.find_unsafe (Handler.indices ()) !"0" in
+  let one_index = Handler.find_unsafe (Handler.indices ()) !"1" in
+  let two_index = Handler.find_unsafe (Handler.indices ()) !"2" in
+  let three_index = Handler.find_unsafe (Handler.indices ()) !"3" in
   assert_equal
-    (Reader.find_unsafe (Reader.edges ()) zero_index)
+    (Handler.find_unsafe (Handler.edges ()) zero_index)
     [{ Target.target = one_index; parameters = []}];
   assert_equal
-    (Reader.find_unsafe (Reader.backedges ()) three_index)
+    (Handler.find_unsafe (Handler.backedges ()) three_index)
     [{ Target.target = two_index; parameters = []}]
 
 
@@ -807,7 +807,7 @@ let test_connect_annotations_to_top _ =
       |
       1   3 *)
   let order =
-    let order = Builder.create () |> TypeOrder.reader in
+    let order = Builder.create () |> TypeOrder.handler in
     insert order Type.Bottom;
     insert order Type.Top;
     insert order !"0";
@@ -836,10 +836,10 @@ let test_add_backedges _ =
       |
    BOTTOM
   *)
-  let (module Reader: TypeOrder.Reader) =
+  let (module Handler: TypeOrder.Handler) =
     (* Don't add backedges when connecting *)
     let connect = TypeOrder.connect ~configuration in
-    let order = Builder.create () |> TypeOrder.reader in
+    let order = Builder.create () |> TypeOrder.handler in
     insert order Type.Bottom;
     insert order Type.Top;
     insert order !"A";
@@ -855,8 +855,8 @@ let test_add_backedges _ =
     order
   in
   let assert_backedges annotation number_of_backedges =
-    let index = Reader.find_unsafe (Reader.indices ()) annotation in
-    match Reader.find (Reader.backedges ()) index with
+    let index = Handler.find_unsafe (Handler.indices ()) annotation in
+    match Handler.find (Handler.backedges ()) index with
     | None ->
         assert_equal number_of_backedges 0
     | Some backedges ->
@@ -867,7 +867,7 @@ let test_add_backedges _ =
   assert_backedges !"C" 0;
   assert_backedges !"D" 0;
 
-  TypeOrder.add_backedges (module Reader);
+  TypeOrder.add_backedges (module Handler);
   assert_backedges !"A" 2;
   assert_backedges !"B" 1;
   assert_backedges !"C" 1;
@@ -880,7 +880,7 @@ let test_check_integrity _ =
 
   (* 0 <-> 1 *)
   let order =
-    let order = Builder.create () |> TypeOrder.reader in
+    let order = Builder.create () |> TypeOrder.handler in
     insert order Type.Bottom;
     insert order Type.Top;
     insert order !"0";
@@ -895,7 +895,7 @@ let test_check_integrity _ =
       \   v
         - 2 -> 3 *)
   let order =
-    let order = Builder.create () |> TypeOrder.reader in
+    let order = Builder.create () |> TypeOrder.handler in
     insert order Type.Bottom;
     insert order Type.Top;
     insert order !"0";
@@ -910,14 +910,14 @@ let test_check_integrity _ =
   assert_raises TypeOrder.Cyclic (fun _ -> check_integrity order);
 
   let order =
-    let order = Builder.create () |> TypeOrder.reader in
+    let order = Builder.create () |> TypeOrder.handler in
     insert order Type.Bottom;
     insert order !"0";
     order in
   assert_raises TypeOrder.Incomplete (fun _ -> check_integrity order);
 
   let order =
-    let order = Builder.create () |> TypeOrder.reader in
+    let order = Builder.create () |> TypeOrder.handler in
     insert order Type.Top;
     insert order !"0";
     order in
@@ -926,7 +926,7 @@ let test_check_integrity _ =
 
 let test_to_dot _ =
   let order =
-    let order = Builder.create () |> TypeOrder.reader in
+    let order = Builder.create () |> TypeOrder.handler in
     insert order !"0";
     insert order !"1";
     insert order !"2";
@@ -937,7 +937,7 @@ let test_to_dot _ =
     connect order ~predecessor:!"0" ~successor:!"1" ~parameters:[Type.string];
     connect_annotations_to_top order ~configuration ~bottom:!"0" ~top:!"3";
     order in
-  let (module Reader) = order in
+  let (module Handler) = order in
   assert_equal
     ~printer:ident
     ({|

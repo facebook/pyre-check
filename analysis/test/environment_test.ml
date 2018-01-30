@@ -38,14 +38,14 @@ let plain_populate ?source_root ?(check_dependency_exists = false) source =
     ~configuration
     ?source_root
     ~check_dependency_exists
-    (Environment.reader ~configuration environment)
+    (Environment.handler ~configuration environment)
     [parse source];
   environment
 
 
 let populate ?source_root ?(check_dependency_exists = false) source =
   plain_populate ?source_root ~check_dependency_exists source
-  |> Environment.reader ~configuration
+  |> Environment.handler ~configuration
 
 
 let resolution environment =
@@ -89,7 +89,7 @@ let test_create _ =
     Environment.Builder.create ~configuration () in
   assert_is_none
     (function_signature
-       (Environment.reader ~configuration environment)
+       (Environment.handler ~configuration environment)
        (access ["foo"])
        { Call.name = !"foo"; arguments = [] }
        [])
@@ -131,9 +131,9 @@ let test_copy _ =
     let localized = Environment.Builder.copy plain_environment in
     Environment.populate
       ~configuration
-      (Environment.reader ~configuration localized)
+      (Environment.handler ~configuration localized)
       [parse "def foo.bar(): ..."];
-    Environment.reader ~configuration localized in
+    Environment.handler ~configuration localized in
 
   (* Old environment is unmodified. *)
   assert_is_some
@@ -166,9 +166,9 @@ let test_copy _ =
 
 let test_register_class_definitions _ =
   let environment = Environment.Builder.create ~configuration () in
-  let (module Reader: Environment.Reader) = Environment.reader ~configuration environment in
+  let (module Handler: Environment.Handler) = Environment.handler ~configuration environment in
   Environment.register_class_definitions
-    (module Reader)
+    (module Handler)
     (parse {|
        class C:
          ...
@@ -179,19 +179,19 @@ let test_register_class_definitions _ =
        def foo()->A:
          return C()
     |});
-  assert_equal (parse_annotation (module Reader) (!"C")) (Type.primitive "C");
-  assert_equal (parse_annotation (module Reader) (!"D")) (Type.primitive "D");
-  assert_equal (parse_annotation (module Reader) (!"B")) (Type.primitive "B");
-  assert_equal (parse_annotation (module Reader) (!"A")) (Type.primitive "A");
-  assert_equal (Reader.function_definitions (access ["foo"])) None;
-  let order = (module Reader.TypeOrderReader: TypeOrder.Reader) in
+  assert_equal (parse_annotation (module Handler) (!"C")) (Type.primitive "C");
+  assert_equal (parse_annotation (module Handler) (!"D")) (Type.primitive "D");
+  assert_equal (parse_annotation (module Handler) (!"B")) (Type.primitive "B");
+  assert_equal (parse_annotation (module Handler) (!"A")) (Type.primitive "A");
+  assert_equal (Handler.function_definitions (access ["foo"])) None;
+  let order = (module Handler.TypeOrderHandler: TypeOrder.Handler) in
   assert_equal (TypeOrder.successors order (Type.primitive "C")) [];
   assert_equal (TypeOrder.predecessors order (Type.primitive "C")) []
 
 
 let test_register_aliases _ =
   let environment = Environment.Builder.create ~configuration () in
-  let (module Reader: Environment.Reader) = Environment.reader ~configuration environment in
+  let (module Handler: Environment.Handler) = Environment.handler ~configuration environment in
   let typing =
     parse ~qualifier:(Access.create "typing") {|
       class Iterator:
@@ -220,30 +220,30 @@ let test_register_aliases _ =
          return D()
     |}
   in
-  Environment.register_class_definitions (module Reader) typing;
-  Environment.register_class_definitions (module Reader) source;
-  Environment.register_class_definitions (module Reader) other;
-  Environment.register_aliases (module Reader) [typing; other; source];
+  Environment.register_class_definitions (module Handler) typing;
+  Environment.register_class_definitions (module Handler) source;
+  Environment.register_class_definitions (module Handler) other;
+  Environment.register_aliases (module Handler) [typing; other; source];
 
-  assert_equal (parse_annotation (module Reader) (!"C")) (Type.primitive "C");
-  assert_equal (parse_annotation (module Reader) (!"D")) (Type.primitive "D");
-  assert_equal (parse_annotation (module Reader) (!"B")) (Type.primitive "D");
-  assert_equal (parse_annotation (module Reader) (!"A")) (Type.primitive "D");
-  assert_equal (Reader.function_definitions (access ["foo"])) None;
+  assert_equal (parse_annotation (module Handler) (!"C")) (Type.primitive "C");
+  assert_equal (parse_annotation (module Handler) (!"D")) (Type.primitive "D");
+  assert_equal (parse_annotation (module Handler) (!"B")) (Type.primitive "D");
+  assert_equal (parse_annotation (module Handler) (!"A")) (Type.primitive "D");
+  assert_equal (Handler.function_definitions (access ["foo"])) None;
 
-  let order = (module Reader.TypeOrderReader: TypeOrder.Reader) in
+  let order = (module Handler.TypeOrderHandler: TypeOrder.Handler) in
   assert_is_some (TypeOrder.find order (Type.primitive "typing.Iterator"));
   assert_is_some (TypeOrder.find order (Type.primitive "typing.Iterable"));
   assert_equal
-    (parse_annotation (module Reader) (!"collections.Iterator"))
+    (parse_annotation (module Handler) (!"collections.Iterator"))
     (Type.primitive "typing.Iterator");
   assert_equal
-    (parse_annotation (module Reader) (!"collections.Iterable")) (Type.primitive "typing.Iterable")
+    (parse_annotation (module Handler) (!"collections.Iterable")) (Type.primitive "typing.Iterable")
 
 
 let test_connect_type_order _ =
   let environment = Environment.Builder.create ~configuration () in
-  let (module Reader: Environment.Reader) = Environment.reader ~configuration environment in
+  let (module Handler: Environment.Handler) = Environment.handler ~configuration environment in
   let source =
     parse {|
        class C:
@@ -256,15 +256,15 @@ let test_connect_type_order _ =
          return D()
     |}
   in
-  let order = (module Reader.TypeOrderReader: TypeOrder.Reader) in
-  Environment.register_class_definitions (module Reader) source;
-  Environment.register_aliases (module Reader) [source];
-  Environment.connect_type_order (module Reader) source;
-  assert_equal (parse_annotation (module Reader) (!"C")) (Type.primitive "C");
-  assert_equal (parse_annotation (module Reader) (!"D")) (Type.primitive "D");
-  assert_equal (parse_annotation (module Reader) (!"B")) (Type.primitive "D");
-  assert_equal (parse_annotation (module Reader) (!"A")) (Type.primitive "D");
-  assert_is_some (Reader.function_definitions (access ["foo"]));
+  let order = (module Handler.TypeOrderHandler: TypeOrder.Handler) in
+  Environment.register_class_definitions (module Handler) source;
+  Environment.register_aliases (module Handler) [source];
+  Environment.connect_type_order (module Handler) source;
+  assert_equal (parse_annotation (module Handler) (!"C")) (Type.primitive "C");
+  assert_equal (parse_annotation (module Handler) (!"D")) (Type.primitive "D");
+  assert_equal (parse_annotation (module Handler) (!"B")) (Type.primitive "D");
+  assert_equal (parse_annotation (module Handler) (!"A")) (Type.primitive "D");
+  assert_is_some (Handler.function_definitions (access ["foo"]));
   assert_equal (TypeOrder.successors order (Type.primitive "C")) [Type.Object; Type.Top];
   assert_equal
     (TypeOrder.successors order (Type.primitive "D"))
@@ -481,8 +481,8 @@ let test_less_or_equal _ =
       class module.sub(module.super): ...
     |} in
 
-  let module Reader = (val environment) in
-  let order = (module Reader.TypeOrderReader : TypeOrder.Reader) in
+  let module Handler = (val environment) in
+  let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
 
   let super =
     parse_annotation
@@ -510,8 +510,8 @@ let test_less_or_equal _ =
         class module.top(): pass
     |} in
 
-  let module Reader = (val environment) in
-  let order = (module Reader.TypeOrderReader : TypeOrder.Reader) in
+  let module Handler = (val environment) in
+  let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
 
   let super =
     parse_annotation
@@ -541,8 +541,8 @@ let test_less_or_equal _ =
       class B(A): ...
       class C(typing.Optional[A]): ...
     |} in
-  let module Reader = (val environment) in
-  let order = (module Reader.TypeOrderReader : TypeOrder.Reader) in
+  let module Handler = (val environment) in
+  let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
   assert_true
     (TypeOrder.less_or_equal
        order
@@ -579,8 +579,8 @@ let test_less_or_equal _ =
       class int(): ...
       class float(): ...
     |} in
-  let module Reader = (val environment) in
-  let order = (module Reader.TypeOrderReader : TypeOrder.Reader) in
+  let module Handler = (val environment) in
+  let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
   assert_true
     (TypeOrder.less_or_equal
        order
@@ -642,8 +642,8 @@ let test_join _ =
       class foo(): ...
       class bar(L[T]): ...
     |} in
-  let module Reader = (val environment) in
-  let order = (module Reader.TypeOrderReader : TypeOrder.Reader) in
+  let module Handler = (val environment) in
+  let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
   let foo = Type.primitive "foo" in
   let bar = Type.primitive "bar" in
 
@@ -687,8 +687,8 @@ let test_meet _ =
       class C(A): ...
       class D(B,C): ...
     |} in
-  let module Reader = (val environment) in
-  let order = (module Reader.TypeOrderReader : TypeOrder.Reader) in
+  let module Handler = (val environment) in
+  let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
   let assert_meet left right expected =
     assert_equal
       ~cmp:Type.equal
@@ -1265,8 +1265,8 @@ let test_supertypes _ =
       class foo(): pass
       class bar(foo): pass
     |}) in
-  let module Reader = (val environment) in
-  let order = (module Reader.TypeOrderReader : TypeOrder.Reader) in
+  let module Handler = (val environment) in
+  let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
   assert_equal
     (TypeOrder.successors order (Type.primitive "foo"))
     [Type.Object; Type.Top];
@@ -1280,8 +1280,8 @@ let test_supertypes _ =
       class typing.Iterable(typing.Generic[_T]): pass
       class typing.Iterator(typing.Generic[_T], typing.Iterable[_T]): pass
     |} in
-  let module Reader = (val environment) in
-  let order = (module Reader.TypeOrderReader : TypeOrder.Reader) in
+  let module Handler = (val environment) in
+  let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
   assert_equal
     ~printer:(List.to_string ~f:Type.show)
     (TypeOrder.successors
@@ -1556,11 +1556,11 @@ let test_protocols _ =
       class C(): pass
       class D(metaclass=abc.ABCMeta): ...
     |} in
-  let module Reader = (val environment) in
+  let module Handler = (val environment) in
 
   assert_equal
     ~cmp:(List.equal ~equal:Type.equal)
-    (Reader.protocols ())
+    (Handler.protocols ())
     ([Type.Primitive ~~"B"; Type.Primitive ~~"D"])
 
 
@@ -1596,8 +1596,8 @@ let test_import_dependencies context =
 
 let test_purge _ =
   let environment = Environment.Builder.create ~configuration () in
-  let ((module Reader: Environment.Reader) as reader) =
-    Environment.reader ~configuration environment
+  let ((module Handler: Environment.Handler) as handler) =
+    Environment.handler ~configuration environment
   in
   let source = {|
       import a
@@ -1610,19 +1610,19 @@ let test_purge _ =
   Environment.populate
     ~configuration
     ~check_dependency_exists:false
-    reader
+    handler
     [parse ~path:"test.py" source];
-  assert_is_some (Reader.class_definition (Type.primitive "baz.baz"));
-  assert_is_some (Reader.function_definitions (Access.create "foo"));
-  assert_is_some (Reader.aliases (Type.primitive "_T"));
-  assert_equal (Reader.dependencies "a.py") (Some ["test.py"]);
+  assert_is_some (Handler.class_definition (Type.primitive "baz.baz"));
+  assert_is_some (Handler.function_definitions (Access.create "foo"));
+  assert_is_some (Handler.aliases (Type.primitive "_T"));
+  assert_equal (Handler.dependencies "a.py") (Some ["test.py"]);
 
-  Reader.purge (File.Handle.create "test.py");
+  Handler.purge (File.Handle.create "test.py");
 
-  assert_is_none (Reader.class_definition (Type.primitive "baz.baz"));
-  assert_is_none (Reader.function_definitions (Access.create "foo"));
-  assert_is_none (Reader.aliases (Type.primitive "_T"));
-  assert_equal (Reader.dependencies "a.py") (Some [])
+  assert_is_none (Handler.class_definition (Type.primitive "baz.baz"));
+  assert_is_none (Handler.function_definitions (Access.create "foo"));
+  assert_is_none (Handler.aliases (Type.primitive "_T"));
+  assert_equal (Handler.dependencies "a.py") (Some [])
 
 
 let () =

@@ -18,7 +18,7 @@ let server_not_running = 2
 
 type result = {
   handles: File.Handle.t list;
-  environment: (module Environment.Reader);
+  environment: (module Environment.Handler);
   errors: Error.t list
 }
 
@@ -89,13 +89,13 @@ let check
 
   (* Build environment. *)
   let environment =
-    let reader =
+    let handler =
       if Service.is_parallel service then
-        EnvironmentService.shared_memory_reader
+        EnvironmentService.shared_memory_handler
       else
-        EnvironmentService.in_process_reader
+        EnvironmentService.in_process_handler
     in
-    reader service ~configuration ~stubs ~sources
+    handler service ~configuration ~stubs ~sources
   in
 
   (* Run type checker. *)
