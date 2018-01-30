@@ -423,19 +423,9 @@ class Check(ErrorHandling):
         ])
         if self._log_identifier:
             flags.extend(['-log-identifier', self._log_identifier])
-        source_directories = self._source_directories
-        if len(source_directories) > 1:
-            check_root = os.path.join(
-                os.getcwd(),
-                self.SHARED_SOURCE_DIRECTORY)
-            if os.path.exists(check_root):
-                shutil.rmtree(check_root)
-            self._merge_directories(check_root)
-            source_directories = [check_root]
-
         results = self._call_client(
             command=CHECK,
-            source_directories=source_directories,
+            source_directories=self._source_directories,
             flags=flags)
         errors = self._get_errors(results)
         self._print(errors)
