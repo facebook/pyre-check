@@ -20,6 +20,7 @@ val run_command
   :  bool
   -> bool
   -> string list
+  -> string option
   -> string
   -> unit
   -> unit

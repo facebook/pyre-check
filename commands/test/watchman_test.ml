@@ -15,7 +15,7 @@ module Socket = PyreSocket
 
 
 let start_watchman pid_path () =
-  Watchman.run_command true false [] "." ();
+  Watchman.run_command true false [] None "." ();
   In_channel.read_all (Path.absolute pid_path) |> Int.of_string
 
 
@@ -52,7 +52,7 @@ let test_watchman_exists context =
 
   assert_raises
     (Failure "Watchman client exists (lock is held). Exiting.")
-    (Watchman.run_command false false [] ".");
+    (Watchman.run_command false false [] None ".");
   Command_test.clean_environment ()
 
 
