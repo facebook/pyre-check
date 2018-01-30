@@ -1544,7 +1544,7 @@ module Access = struct
 
     (* Greedy function lookup to avoid derp. *)
     let reversed_lead, tail =
-      let rec first_call ?(reversed_lead = []) access =
+      let rec first_call_or_definition ?(reversed_lead = []) access =
         match access with
         | (Access.Call ({ Node.value = { Expression.Call.arguments; _ }; _ } as call)) :: tail ->
             ignore arguments;
@@ -1567,10 +1567,19 @@ module Access = struct
             else
               None
         | element :: tail ->
-            first_call ~reversed_lead:(element :: reversed_lead) tail
+            let definition =
+              Resolution.parse_annotation
+                resolution
+                (Node.create (Access (List.rev (element :: reversed_lead))))
+              |> Resolution.class_definition resolution
+            in
+            if Option.is_some definition then
+              Some (element :: reversed_lead, tail)
+            else
+              first_call_or_definition ~reversed_lead:(element :: reversed_lead) tail
         | [] -> None
       in
-      first_call access
+      first_call_or_definition access
       |> Option.value ~default:([], access)
     in
     fold ~resolution ~accumulator:initial ~reversed_lead ~tail ~annotation:None

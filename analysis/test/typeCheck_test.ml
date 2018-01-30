@@ -1713,9 +1713,11 @@ let test_check_function_precedence _ =
   assert_type_errors
     {|
       class string.attribute.Constructor:
+        ATTRIBUTE = 1
         def __init__(self, a: int): ...
       def foo(string: str) -> None:
         string.attribute.Constructor(1)
+        string.attribute.Constructor.ATTRIBUTE
     |}
     []
 
