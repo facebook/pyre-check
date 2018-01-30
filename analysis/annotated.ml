@@ -468,29 +468,27 @@ module Class = struct
   end
 
 
-  let attribute_fold
+  let attributes
       ?(transitive = false)
       ?(class_attributes = false)
       ?(include_generated_attributes = true)
       definition
-      ~initial
-      ~f
       ~resolution =
-    let fold_definition
+    let definition_attributes
         ~in_test
         ~class_attributes
-        initial
+        attributes
         ({ Node.value = definition; _ } as parent) =
-      let fold_attribute_assign accumulator assign =
+      let assign_attributes attributes assign =
         let attribute = Attribute.create ~resolution ~parent assign in
         if class_attributes && not (Attribute.class_attribute attribute) then
-          accumulator
+          attributes
         else
-          f accumulator attribute
+          attribute :: attributes
       in
       Statement.Class.attribute_assigns ~include_generated_attributes ~in_test definition
       |> Map.data
-      |> List.fold ~init:initial ~f:fold_attribute_assign
+      |> List.fold ~init:attributes ~f:assign_attributes
     in
     let superclass_definitions = superclasses ~resolution definition in
     let in_test =
@@ -509,8 +507,8 @@ module Class = struct
     (* Pass over normal class hierarchy. *)
     let accumulator =
       List.fold
-        ~f:(fold_definition ~in_test ~class_attributes)
-        ~init:initial
+        ~f:(definition_attributes ~in_test ~class_attributes)
+        ~init:[]
         definitions
     in
     (* Class over meta hierarchy if necessary. *)
@@ -555,20 +553,22 @@ module Class = struct
         []
     in
     List.fold
-      ~f:(fold_definition ~in_test ~class_attributes:false)
+      ~f:(definition_attributes ~in_test ~class_attributes:false)
       ~init:accumulator
       meta_definitions
-
-
-
-  let attributes ?(transitive = false) definition ~resolution  =
-    attribute_fold
-      ~transitive
-      ~initial:[]
-      ~resolution
-      ~f:(fun sofar next -> next :: sofar)
-      definition
     |> List.rev
+
+
+  let attribute_fold
+      ?(transitive = false)
+      ?(class_attributes = false)
+      ?(include_generated_attributes = true)
+      definition
+      ~initial
+      ~f
+      ~resolution =
+    attributes ~transitive ~class_attributes ~include_generated_attributes ~resolution definition
+    |> List.fold ~init:initial ~f
 
 
   let attribute

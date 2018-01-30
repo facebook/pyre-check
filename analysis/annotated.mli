@@ -121,6 +121,13 @@ module Class : sig
     val class_attribute: t -> bool
   end
 
+  val attributes
+    :  ?transitive: bool
+    -> ?class_attributes: bool
+    -> ?include_generated_attributes: bool
+    -> t
+    -> resolution:Resolution.t
+    -> Attribute.t list
   val attribute_fold
     :  ?transitive: bool
     -> ?class_attributes: bool
@@ -130,11 +137,6 @@ module Class : sig
     -> f: ('accumulator -> Attribute.t -> 'accumulator)
     -> resolution: Resolution.t
     -> 'accumulator
-  val attributes
-    :  ?transitive: bool
-    -> t
-    -> resolution:Resolution.t
-    -> Attribute.t list
 
   (* Attribute defined by `__getattr__`. *)
   val fallback_attribute: resolution: Resolution.t -> access: Access.t -> t -> Attribute.t option
