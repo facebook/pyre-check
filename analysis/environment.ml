@@ -41,7 +41,7 @@ module type Reader = sig
 
   val function_definitions: Access.t -> (Define.t Node.t) list option
   val class_definition: Type.t -> (Class.t Node.t) option
-  val protocols: Type.Hash_set.t
+  val protocols: unit -> Type.t list
   val in_class_definition_keys: Type.t -> bool
   val aliases: Type.t -> Type.t option
   val globals: Access.t -> Resolution.global option
@@ -273,8 +273,8 @@ let reader
     let class_definition =
       Hashtbl.find class_definitions
 
-    let protocols =
-      protocols
+    let protocols () =
+      Hash_set.to_list protocols
 
     let in_class_definition_keys =
       Hashtbl.mem class_definitions
@@ -756,7 +756,6 @@ let register_aliases (module Reader: Reader) sources =
             (Expression.show value)
         in
         List.iter ~f:show_unresolved unresolved
-
   in
   List.concat_map ~f:collect_aliases sources
   |> resolve_aliases
@@ -981,7 +980,6 @@ let populate
   List.iter ~f:(register_class_definitions (module Reader)) sources;
   register_aliases (module Reader) sources;
   List.iter ~f:(connect_type_order ~source_root ~check_dependency_exists (module Reader)) sources;
-
   TypeOrder.connect_annotations_to_top
     (module Reader.TypeOrderReader)
     ~configuration

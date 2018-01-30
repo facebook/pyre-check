@@ -77,7 +77,7 @@ let infer_protocols
     ~init:Edge.Set.empty
     ~map
     ~reduce:Set.union
-    (Hash_set.to_list Reader.protocols)
+    (Reader.protocols ())
   |> Set.iter ~f:(fun { Edge.source; target } ->
       TypeOrder.connect
         (module Reader.TypeOrderReader)
@@ -137,6 +137,7 @@ let shared_memory_reader
         OrderBackedges.add key (Set.to_list targets)
       in
       add_table add_backedge backedges;
+
       add_table OrderIndices.add indices;
       add_table OrderAnnotations.add annotations;
       OrderKeys.add "Order" (Hashtbl.keys annotations);
@@ -171,18 +172,7 @@ let shared_memory_reader
 
   Log.initialize ~verbose ~sections;
   let environment = Environment.Builder.create ~configuration () in
-  let reader = Environment.reader ~configuration environment in
-  build reader ~configuration ~stubs ~sources;
-  add_to_shared_memory environment;
-  let heap_size =
-    EnvironmentSharedMemory.SharedMemory.heap_size ()
-    |> Float.of_int
-    |> (fun size -> size /. 1.0e6)
-    |> Int.of_float
-  in
-  Statistics.event ~name:"shared memory size" ~integers:["size", heap_size] ~configuration ();
-
-  let reader =
+  let shared_reader =
     (module struct
       let function_definitions =
         FunctionDefinitions.get
@@ -190,10 +180,9 @@ let shared_memory_reader
       let class_definition =
         ClassDefinitions.get
 
-      let protocols =
+      let protocols () =
         Protocols.get "Protocols"
-        >>| Type.Hash_set.of_list
-        |> Option.value ~default:(Type.Hash_set.create ())
+        |> Option.value ~default:[]
 
       let in_class_definition_keys annotation =
         let keys = ClassDefinitionsKeys.find_unsafe "ClassDefinitionsKeys" in
@@ -313,7 +302,9 @@ let shared_memory_reader
         let add_key key =
           match OrderKeys.get "Order" with
           | None -> OrderKeys.add "Order" [key]
-          | Some keys -> OrderKeys.add "Order" (key :: keys)
+          | Some keys ->
+              OrderKeys.remove_batch (OrderKeys.KeySet.singleton "Order");
+              OrderKeys.add "Order" (key :: keys)
 
         let keys () =
           Option.value ~default:[] (OrderKeys.get "Order")
@@ -362,6 +353,7 @@ let shared_memory_reader
               definition :: definitions
           | None ->
               [definition] in
+        FunctionDefinitions.remove_batch (FunctionDefinitions.KeySet.singleton name);
         FunctionDefinitions.add name definitions
 
 
@@ -380,14 +372,11 @@ let shared_memory_reader
 
       let register_global ~path ~key ~data =
         DependencyReader.add_global_key ~path key;
+        Globals.remove_batch (Globals.KeySet.singleton key);
         Globals.add key data
 
 
       let register_type =
-        let protocols =
-          Protocols.get "Protocols"
-          |> Option.value ~default:[]
-        in
         let add_class_definition ~primitive ~definition =
           let definition =
             let open Ast in
@@ -400,6 +389,7 @@ let shared_memory_reader
             | _ ->
                 definition
           in
+          ClassDefinitions.remove_batch (ClassDefinitions.KeySet.singleton primitive);
           ClassDefinitions.add primitive definition
         in
         Environment.register_type
@@ -408,7 +398,10 @@ let shared_memory_reader
           ~aliases:Aliases.get
           ~add_class_definition
           ~add_class_key:(DependencyReader.add_class_key)
-          ~add_protocol:(fun protocol -> Protocols.add "Protocols" (protocol :: protocols))
+          ~add_protocol:(fun protocol ->
+              let protocols = Protocols.get "Protocols" |> Option.value ~default:[] in
+              Protocols.remove_batch (Protocols.KeySet.singleton "Protocols");
+              Protocols.add "Protocols" (protocol :: protocols))
           ~register_global
 
       let register_alias ~path ~key ~data =
@@ -443,10 +436,27 @@ let shared_memory_reader
         DependencyReader.clear_all_keys ~path;
     end: Environment.Reader)
   in
+  begin
+    match Sys.getenv "PYRE_USE_SHARED_MEMORY" with
+    | Some "1" ->
+        add_to_shared_memory environment;
+        build shared_reader ~configuration ~stubs ~sources
+    | _ ->
+        let reader = Environment.reader ~configuration environment in
+        build reader ~configuration ~stubs ~sources;
+        add_to_shared_memory environment
+  end;
+  let heap_size =
+    EnvironmentSharedMemory.SharedMemory.heap_size ()
+    |> Float.of_int
+    |> (fun size -> size /. 1.0e6)
+    |> Int.of_float
+  in
+  Statistics.event ~name:"shared memory size" ~integers:["size", heap_size] ~configuration ();
 
-  infer_protocols ~service ~reader ~configuration;
+  infer_protocols ~service ~reader:shared_reader ~configuration;
 
-  reader
+  shared_reader
 
 
 let repopulate

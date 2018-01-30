@@ -1559,9 +1559,9 @@ let test_protocols _ =
   let module Reader = (val environment) in
 
   assert_equal
-    ~cmp:Hash_set.equal
-    Reader.protocols
-    (Type.Hash_set.of_list [Type.Primitive ~~"B"; Type.Primitive ~~"D"])
+    ~cmp:(List.equal ~equal:Type.equal)
+    (Reader.protocols ())
+    ([Type.Primitive ~~"B"; Type.Primitive ~~"D"])
 
 
 let test_import_dependencies context =

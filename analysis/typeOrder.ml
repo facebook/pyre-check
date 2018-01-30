@@ -207,7 +207,6 @@ let connect
     begin
       let predecessor = index_of order predecessor in
       let successor = index_of order successor in
-
       let edges = Reader.edges () in
       let backedges = Reader.backedges () in
 

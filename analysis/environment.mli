@@ -43,7 +43,7 @@ module type Reader = sig
 
   val function_definitions: Access.t -> (Define.t Node.t) list option
   val class_definition: Type.t -> (Class.t Node.t) option
-  val protocols: Type.Hash_set.t
+  val protocols: unit -> Type.t list
   val in_class_definition_keys: Type.t -> bool
   val aliases: Type.t -> Type.t option
   val globals: Access.t -> Resolution.global option
