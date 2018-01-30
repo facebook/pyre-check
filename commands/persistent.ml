@@ -145,7 +145,7 @@ let run_command version source_root () =
 
 
 let command =
-  Command.basic
+  Command.basic_spec
     ~summary:"Opens a persistent connection to the server (IDE integration)"
     Command.Spec.(
       empty

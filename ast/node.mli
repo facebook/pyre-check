@@ -7,7 +7,7 @@ type 'node_type t = {
   location: Location.t;
   value: 'node_type;
 }
-[@@deriving compare, eq, sexp, show]
+[@@deriving compare, eq, sexp, show, hash]
 
 val create: ?location: Location.t -> 'node_value -> 'node_value t
 

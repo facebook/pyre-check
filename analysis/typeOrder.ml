@@ -1042,32 +1042,33 @@ let check_integrity (module Reader: Reader) =
 
 
 let to_dot (module Reader: Reader) =
-  let indices = Reader.keys () in
+  let indices = List.sort ~cmp:compare (Reader.keys ()) in
   let nodes =
     List.map ~f:(fun index -> (index, Reader.find_unsafe (Reader.annotations ()) index)) indices
   in
   let buffer = Buffer.create 10000 in
-  Buffer.add_bytes buffer "digraph {\n";
+  Buffer.add_string buffer "digraph {\n";
   List.iter
     ~f:(fun (index, annotation) ->
         Format.asprintf "  %d[label=\"%s\"]\n" index (Type.show annotation)
-        |> Buffer.add_bytes buffer)
+        |> Buffer.add_string buffer)
     nodes;
   let add_edges index =
     Reader.find (Reader.edges ()) index
+    >>| List.sort ~cmp:compare
     >>| List.iter ~f:(
       fun { Target.target = successor; parameters } ->
         Format.asprintf "  %d -> %d" index successor
-        |> Buffer.add_bytes buffer;
+        |> Buffer.add_string buffer;
         if List.length parameters > 0 then
           Format.asprintf "[label=\"%s\"]" (List.to_string ~f:Type.show parameters)
-          |> Buffer.add_bytes buffer;
-        Buffer.add_bytes buffer "\n"
+          |> Buffer.add_string buffer;
+        Buffer.add_string buffer "\n"
     )
     |> ignore
   in
   List.iter ~f:add_edges indices;
-  Buffer.add_bytes buffer "}";
+  Buffer.add_string buffer "}";
   Buffer.contents buffer
 
 

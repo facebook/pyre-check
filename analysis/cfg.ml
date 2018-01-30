@@ -131,17 +131,27 @@ let pp format graph =
     Format.fprintf format "%a\n" Node.pp data in
   Hashtbl.iteri graph ~f:print_node
 
-let to_dot ?(precondition=fun _ -> "") graph =
+module M = Map.Make(Int)
+
+let sorted_iteri ht ~f =
+  let map = Hashtbl.fold ht
+      ~init:M.empty
+      ~f:(fun ~key ~data m -> M.set m ~key ~data)
+  in
+  M.iteri map ~f
+
+let to_dot ?(precondition=fun _ -> "") ?(sort_labels=false) graph =
   let buffer = Buffer.create 10000 in
-  Buffer.add_bytes buffer "digraph {\n";
-  Hashtbl.iteri
+  Buffer.add_string buffer "digraph {\n";
+  let iteri = if sort_labels then sorted_iteri else Hashtbl.iteri in
+  iteri
     ~f:(fun ~key ~data ->
         let label = Node.description data |> String.escaped in
         let label = Printf.sprintf "  %d[label=\"%s\"]\n" key label in
-        Buffer.add_bytes buffer label;
+        Buffer.add_string buffer label;
       )
     graph;
-  Hashtbl.iteri
+  iteri
     ~f:(fun ~key ~data ->
         Set.iter
           ~f:(fun successor_id ->
@@ -152,12 +162,12 @@ let to_dot ?(precondition=fun _ -> "") graph =
                   successor_id
                   (precondition successor_id)
               in
-              Buffer.add_bytes buffer edge;
+              Buffer.add_string buffer edge;
             )
           (Node.successors data)
       )
     graph;
-  Buffer.add_bytes buffer "}";
+  Buffer.add_string buffer "}";
   Buffer.contents buffer
 
 let show graph =

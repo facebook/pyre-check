@@ -59,7 +59,7 @@ let add_watch env path =
   if WMap.mem watch env.wpaths && WMap.find watch env.wpaths = path
   then None
   else begin
-    env.wpaths <- WMap.add watch path env.wpaths;
+    env.wpaths <- WMap.set watch path env.wpaths;
     Some watch
   end
 
@@ -102,7 +102,7 @@ module FDMap = Map.Make(
   struct type t = Unix.file_descr let compare = compare end
   )
 type fd_select = Unix.file_descr * (unit -> unit)
-let make_callback fdmap (fd, callback) = FDMap.add fd callback fdmap
+let make_callback fdmap (fd, callback) = FDMap.set fd callback fdmap
 let invoke_callback fdmap fd  = (FDMap.find fd fdmap) ()
 let select env ?(read_fdl=[]) ?(write_fdl=[]) ~timeout callback =
   let callback () = callback (Unix.handle_unix_error read env) in

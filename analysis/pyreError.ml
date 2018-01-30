@@ -15,21 +15,21 @@ type undefined_method = {
   annotation: Type.t;
   call: Annotated.Call.t;
 }
-[@@deriving compare, eq, show, sexp]
+[@@deriving compare, eq, show, sexp, hash]
 
 
 type undefined_attribute = {
   annotation: Type.t;
   attribute: Access.t;
 }
-[@@deriving compare, eq, show, sexp]
+[@@deriving compare, eq, show, sexp, hash]
 
 
 type mismatch = {
   actual: Type.t;
   expected: Type.t;
 }
-[@@deriving compare, eq, show, sexp]
+[@@deriving compare, eq, show, sexp, hash]
 
 
 type missing_parameter = {
@@ -37,7 +37,7 @@ type missing_parameter = {
   annotation: Type.t;
   due_to_any: bool;
 }
-[@@deriving compare, eq, show, sexp]
+[@@deriving compare, eq, show, sexp, hash]
 
 
 type parameter_mismatch = {
@@ -46,7 +46,7 @@ type parameter_mismatch = {
   callee: Define.t;
   mismatch: mismatch;
 }
-[@@deriving compare, eq, show, sexp]
+[@@deriving compare, eq, show, sexp, hash]
 
 
 type missing_annotation = {
@@ -55,14 +55,14 @@ type missing_annotation = {
   evidence_locations: Location.t list;
   due_to_any: bool;
 }
-[@@deriving compare, eq, sexp, show]
+[@@deriving compare, eq, sexp, show, hash]
 
 
 type missing_attribute_annotation = {
   parent: Annotated.Class.t;
   missing_annotation: missing_annotation;
 }
-[@@deriving compare, eq, sexp, show]
+[@@deriving compare, eq, sexp, show, hash]
 
 
 type incompatible_type = {
@@ -70,14 +70,14 @@ type incompatible_type = {
   mismatch: mismatch;
   declare_location: Location.t;
 }
-[@@deriving compare, eq, show, sexp]
+[@@deriving compare, eq, show, sexp, hash]
 
 
 type incompatible_attribute_type = {
   parent: Annotated.Class.t;
   incompatible_type: incompatible_type;
 }
-[@@deriving compare, eq, show, sexp]
+[@@deriving compare, eq, show, sexp, hash]
 
 
 type initialization_mismatch = {
@@ -85,13 +85,13 @@ type initialization_mismatch = {
   parent: Annotated.Class.t;
   mismatch: mismatch;
 }
-[@@deriving compare, eq, show, sexp]
+[@@deriving compare, eq, show, sexp, hash]
 
 
 type override =
   | StrengthenedPrecondition
   | WeakenedPostcondition
-[@@deriving compare, eq, show, sexp]
+[@@deriving compare, eq, show, sexp, hash]
 
 
 type inconsistent_override = {
@@ -99,7 +99,7 @@ type inconsistent_override = {
   override: override;
   mismatch: mismatch;
 }
-[@@deriving compare, eq, show, sexp]
+[@@deriving compare, eq, show, sexp, hash]
 
 
 type missing_return = {
@@ -107,7 +107,7 @@ type missing_return = {
   evidence_locations: int list;
   due_to_any: bool;
 }
-[@@deriving compare, eq, sexp, show]
+[@@deriving compare, eq, sexp, show, hash]
 
 
 type kind =
@@ -126,7 +126,7 @@ type kind =
   | UndefinedMethod of undefined_method
   | UndefinedType of Type.t
   | UninitializedAttribute of initialization_mismatch
-[@@deriving compare, eq, show, sexp]
+[@@deriving compare, eq, show, sexp, hash]
 
 
 type t = {
@@ -134,13 +134,14 @@ type t = {
   kind: kind;
   define: Define.t Node.t;
 }
-[@@deriving compare, eq, show, sexp]
+[@@deriving compare, eq, show, sexp, hash]
 
 
 include Hashable.Make(struct
     type nonrec t = t
     let compare = compare
-    let hash = Hashtbl.hash
+    let hash = hash
+    let hash_fold_t = hash_fold_t
     let sexp_of_t = sexp_of_t
     let t_of_sexp = t_of_sexp
   end)
@@ -744,9 +745,9 @@ let join_at_source ~resolution errors =
               if joined_error.kind <> Top then
                 Map.change ~f:(fun _ -> Some joined_error) errors key
               else
-                Map.add ~key ~data:error errors
+                Map.set ~key ~data:error errors
           | _ ->
-              Map.add ~key ~data:error errors
+              Map.set ~key ~data:error errors
         with TypeOrder.Undefined _ ->
           errors
       in
@@ -765,8 +766,8 @@ let join_at_source ~resolution errors =
       match Map.find joined_missing_annotations key with
       | Some { kind; _ } ->
           let new_error = { error with kind } in
-          Map.add ~key:(show new_error) ~data:new_error errors
-      | _ -> Map.add ~key:(show error) ~data:error errors
+          Map.set ~key:(show new_error) ~data:new_error errors
+      | _ -> Map.set ~key:(show error) ~data:error errors
     in
     match error with
     | { kind = MissingAttributeAnnotation { parent; missing_annotation = { name; _ } }; _ }
@@ -776,7 +777,7 @@ let join_at_source ~resolution errors =
       when not (due_to_analysis_limitations error) ->
         joined ~key:(Access.show name)
     | _ ->
-        Map.add ~key:(show error) ~data:error errors
+        Map.set ~key:(show error) ~data:error errors
   in
   List.fold ~init:String.Map.empty ~f:add_joins errors
   |> Map.data

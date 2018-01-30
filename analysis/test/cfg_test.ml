@@ -49,14 +49,14 @@ let assert_dot ?(precondition=fun _ -> "") body expected =
     ~printer:(fun id -> id)
     ~pp_diff:(diff ~print:(fun format -> Format.fprintf format "%s\n"))
     expected
-    (to_dot ~precondition (create define))
+    (to_dot ~precondition ~sort_labels:true (create define))
 
 let make_dot dot_list =
   let buffer = Buffer.create 1024 in
-  Buffer.add_bytes buffer "digraph {\n";
-  List.iter ~f:(fun string -> Buffer.add_bytes buffer ("  " ^ string ^ "\n")) dot_list;
-  Buffer.add_bytes buffer "}";
-  Buffer.to_bytes buffer
+  Buffer.add_string buffer "digraph {\n";
+  List.iter ~f:(fun string -> Buffer.add_string buffer ("  " ^ string ^ "\n")) dot_list;
+  Buffer.add_string buffer "}";
+  Buffer.contents buffer
 
 let node id kind predecessors successors =
   id,

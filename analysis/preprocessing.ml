@@ -142,21 +142,21 @@ let qualify source =
           (* Add `name -> qualifier.name` for classes. *)
           | Class definition ->
               let qualified = qualify_class qualifier definition in
-              Map.add map ~key:definition.Class.name ~data:qualified.Class.name,
+              Map.set map ~key:definition.Class.name ~data:qualified.Class.name,
               { Node.location; value = Class qualified }
           | Stub (Stub.Class definition) ->
               let qualified = qualify_class qualifier definition in
-              Map.add map ~key:definition.Class.name ~data:qualified.Class.name,
+              Map.set map ~key:definition.Class.name ~data:qualified.Class.name,
               { Node.location; value = Stub (Stub.Class qualified) }
 
           (* Add `name -> qualifier.name` for functions, not methods. *)
           | Define definition when not (Define.is_method definition) ->
               let qualified = qualify_define qualifier definition in
-              Map.add map ~key:definition.Define.name ~data:qualified.Define.name,
+              Map.set map ~key:definition.Define.name ~data:qualified.Define.name,
               { Node.location; value = Define qualified }
           | Stub (Stub.Define definition) when not (Define.is_method definition) ->
               let qualified = qualify_define qualifier definition in
-              Map.add map ~key:definition.Define.name ~data:qualified.Define.name,
+              Map.set map ~key:definition.Define.name ~data:qualified.Define.name,
               { Node.location; value = Stub (Stub.Define qualified) }
           | If { If.test; body; orelse } ->
               let map, body = qualify_statements map body in
@@ -244,7 +244,7 @@ let qualify source =
               match alias with
               | Some alias ->
                   (* Add `alias -> name`. *)
-                  Map.add map ~key:alias ~data:name
+                  Map.set map ~key:alias ~data:name
               | None ->
                   map
             in
@@ -281,10 +281,10 @@ let qualify source =
               match alias with
               | Some alias ->
                   (* Add `alias -> from.name`. *)
-                  Map.add map ~key:alias ~data:(from @ name)
+                  Map.set map ~key:alias ~data:(from @ name)
               | None ->
                   (* Add `name -> from.name`. *)
-                  Map.add map ~key:name ~data:(from @ name)
+                  Map.set map ~key:name ~data:(from @ name)
             in
             (qualifier, List.fold_left imports ~f:add_import ~init:map),
             [{ Node.location; value = Import { import with Import.from = Some from }}]
@@ -300,7 +300,7 @@ let qualify source =
           begin
             match target with
             | { Node.value = Access access; _ } ->
-                Map.add ~key:access ~data:(qualifier @ access) sofar
+                Map.set ~key:access ~data:(qualifier @ access) sofar
             | _ ->
                 sofar
           end
@@ -949,7 +949,7 @@ let dequalify_map source =
               match alias with
               | Some alias ->
                   (* Add `name -> alias`. *)
-                  Map.add map ~key:(List.rev name) ~data:alias
+                  Map.set map ~key:(List.rev name) ~data:alias
               | None ->
                   map
             in
@@ -960,10 +960,10 @@ let dequalify_map source =
               match alias with
               | Some alias ->
                   (* Add `alias -> from.name`. *)
-                  Map.add map ~key:(List.rev (from @ name)) ~data:alias
+                  Map.set map ~key:(List.rev (from @ name)) ~data:alias
               | None ->
                   (* Add `name -> from.name`. *)
-                  Map.add map ~key:(List.rev (from @ name)) ~data:name
+                  Map.set map ~key:(List.rev (from @ name)) ~data:name
             in
             List.fold_left imports ~f:add_import ~init:map,
             [statement]
@@ -973,7 +973,7 @@ let dequalify_map source =
   in
   (* Note that map keys are reversed accesses because it makes life much easier in dequalify *)
   let map =
-    Map.add ~key:(List.rev source.Source.qualifier) ~data:[] Access.Map.empty
+    Map.set ~key:(List.rev source.Source.qualifier) ~data:[] Access.Map.empty
   in
   ImportDequalifier.transform map source |> fst
 

@@ -366,7 +366,7 @@ let resolution
                   (* From `typing.Type[_T]` and the actual argument extract constraint
                      `_T` -> `type(argument)`. *)
                   let annotation = parse_annotation value in
-                  Some (Map.add constraints ~key:variable ~data:annotation)
+                  Some (Map.set constraints ~key:variable ~data:annotation)
               | Type.Parametric { Type.parameters = parameters; name },
                 _ ->
                   let arguments =
@@ -402,7 +402,7 @@ let resolution
                         in
                         Type.Parametric { Type.parameters; name }
                       in
-                      Map.add
+                      Map.set
                         ~key:parameter
                         ~data:arguments
                         constraints
@@ -412,7 +412,7 @@ let resolution
                       match parameter with
                       | Type.Parametric { Type.parameters = [variable]; _ }
                         when Type.is_meta parameter ->
-                          Some (Map.add constraints ~key:variable ~data:(parse_annotation value))
+                          Some (Map.set constraints ~key:variable ~data:(parse_annotation value))
                       | _ ->
                           Some constraints
                     end
@@ -430,7 +430,7 @@ let resolution
                      | _ ->
                          Some argument)
                     >>| fun argument ->
-                    Map.add constraints ~key:parameter ~data:argument
+                    Map.set constraints ~key:parameter ~data:argument
                   else
                     Some constraints
               | Type.Union union, _ ->
@@ -455,7 +455,7 @@ let resolution
         let update_to_bottom constraints variable =
           match Map.find constraints variable with
           | Some _ -> constraints
-          | None -> Map.add ~key:variable ~data:Type.Bottom constraints
+          | None -> Map.set ~key:variable ~data:Type.Bottom constraints
         in
         return_annotation
         >>| parse_annotation

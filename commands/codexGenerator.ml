@@ -38,7 +38,7 @@ let run is_parallel source_root () =
 
 
 let command =
-  Command.basic
+  Command.basic_spec
     ~summary:"Generates JSON for Codex without a server"
     Command.Spec.(
       empty

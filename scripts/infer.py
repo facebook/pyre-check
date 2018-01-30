@@ -333,7 +333,7 @@ def filter_paths(arguments, stubs, type_directory):
                 [not str(stub.path(Path(""))).startswith(str(path))
                     for stub in stubs])]
     for path in unused_annotates:
-        LOG.log(log.SUCESS, "No annotations for {}".format(path))
+        LOG.log(log.SUCCESS, "No annotations for {}".format(path))
 
     return [stub for stub in stubs
             if any([str(stub.path(Path(""))).startswith(str(path))

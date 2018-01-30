@@ -531,7 +531,7 @@ let run_start_command
 
 
 let start_command =
-  Command.basic
+  Command.basic_spec
     ~summary:"Starts a server in the foreground by default. See help for daemon options."
     Command.Spec.(
       (empty
@@ -585,7 +585,7 @@ let stop source_root () =
 
 
 let stop_command =
-  Command.basic
+  Command.basic_spec
     ~summary:"Stop the server"
     Command.Spec.(
       empty

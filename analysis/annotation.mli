@@ -19,7 +19,7 @@ and t = {
   annotation: Type.t;
   mutability: mutability;
 }
-[@@deriving eq, show]
+[@@deriving eq, show, hash]
 
 val create: ?mutability: mutability -> Type.t -> t
 val create_immutable: global: bool -> ?original: Type.t option -> Type.t -> t

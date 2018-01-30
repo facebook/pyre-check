@@ -12,7 +12,7 @@ open Statement
 
 module Assign : sig
   type t
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 
   val create: Assign.t -> t
 
@@ -30,12 +30,12 @@ end
 
 module Class : sig
   type t
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 
   val name_equal: t -> t -> bool
 
   type parent_class = t
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 
   val create: Class.t Node.t -> t
 
@@ -47,7 +47,7 @@ module Class : sig
 
   module Method : sig
     type t
-    [@@deriving compare, eq, sexp, show]
+    [@@deriving compare, eq, sexp, show, hash]
 
     val create: define: Define.t -> parent: parent_class -> t
 
@@ -145,7 +145,7 @@ module Method = Class.Method
 
 module Define : sig
   type t
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 
   val create: Define.t -> t
 
@@ -173,7 +173,7 @@ end
 
 module BinaryOperator : sig
   type t
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 
   val create: Expression.t BinaryOperator.t -> t
 
@@ -184,10 +184,10 @@ module Call : sig
   type kind =
     | Function
     | Method
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 
   type t
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 
   val create: kind: kind -> Call.t -> t
 
@@ -236,14 +236,14 @@ end
 
 module ComparisonOperator : sig
   type t
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 
   val override: t -> (Expression.t option) list
 end
 
 module UnaryOperator : sig
   type t
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 
   val override: t -> Expression.t option
 end
@@ -277,7 +277,7 @@ module Access: sig
   end
 
   type t
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 
   val create: Access.t -> t
 

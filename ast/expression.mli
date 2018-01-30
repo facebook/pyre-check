@@ -10,14 +10,14 @@ module BooleanOperator : sig
   type operator =
     | And
     | Or
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 
   type 'expression t = {
     left: 'expression;
     operator: operator;
     right: 'expression;
   }
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 end
 
 module BinaryOperator : sig
@@ -35,14 +35,14 @@ module BinaryOperator : sig
     | Power
     | RightShift
     | Subtract
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 
   type 'expression t = {
     left: 'expression;
     operator: operator;
     right: 'expression;
   }
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 
   val pp_binary_operator : Format.formatter -> operator -> unit
 end
@@ -53,13 +53,13 @@ module UnaryOperator : sig
     | Negative
     | Not
     | Positive
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 
   type 'expression t = {
     operator: operator;
     operand: 'expression;
   }
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 end
 
 module ComparisonOperator : sig
@@ -74,13 +74,13 @@ module ComparisonOperator : sig
     | LessThanOrEquals
     | NotEquals
     | NotIn
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 
   type 'expression t = {
     left: 'expression;
     right: (operator * 'expression) list;
   }
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 end
 
 module Record : sig
@@ -89,7 +89,7 @@ module Record : sig
       name: 'expression;
       arguments: ('expression Argument.t) list;
     }
-    [@@deriving compare, eq, sexp, show]
+    [@@deriving compare, eq, sexp, show, hash]
   end
 
   module Access : sig
@@ -98,22 +98,22 @@ module Record : sig
       upper: 'expression option;
       step: 'expression option;
     }
-    [@@deriving compare, eq, sexp, show]
+    [@@deriving compare, eq, sexp, show, hash]
 
     type 'expression subscript =
       | Index of 'expression
       | Slice of 'expression slice
-    [@@deriving compare, eq, sexp, show]
+    [@@deriving compare, eq, sexp, show, hash]
 
     type 'expression access =
       | Call of ('expression Call.record) Node.t
       | Expression of 'expression
       | Identifier of Identifier.t
       | Subscript of ('expression subscript) list
-    [@@deriving compare, eq, sexp, show]
+    [@@deriving compare, eq, sexp, show, hash]
 
     type 'expression record = ('expression access) list
-    [@@deriving compare, eq, sexp, show]
+    [@@deriving compare, eq, sexp, show, hash]
   end
 end
 
@@ -122,7 +122,7 @@ module Lambda : sig
     parameters: ('expression Parameter.t) list;
     body: 'expression;
   }
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 end
 
 module Ternary : sig
@@ -131,7 +131,7 @@ module Ternary : sig
     test: 'expression;
     alternative: 'expression;
   }
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 end
 
 module Dictionary : sig
@@ -139,13 +139,13 @@ module Dictionary : sig
     key: 'expression;
     value: 'expression;
   }
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 
   type 'expression t = {
     entries: ('expression entry) list;
     keywords: 'expression option;
   }
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 end
 
 module Comprehension : sig
@@ -155,20 +155,20 @@ module Comprehension : sig
     conditions: 'expression list;
     async: bool;
   }
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 
   type ('element, 'expression) t = {
     element: 'element;
     generators: ('expression generator) list;
   }
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 end
 
 module Starred : sig
   type 'expression t =
     | Once of 'expression
     | Twice of 'expression
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 end
 
 type expression =
@@ -200,16 +200,16 @@ type expression =
   | Yield of t option
 
 and t = expression Node.t
-[@@deriving compare, eq, sexp, show]
+[@@deriving compare, eq, sexp, show, hash]
 
 and expression_node = t
-[@@deriving compare, eq, sexp, show]
+[@@deriving compare, eq, sexp, show, hash]
 
 module Access : sig
   include module type of struct include Record.Access end
 
   type t = expression_node Record.Access.record
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 
   module Set: Set.S with type Elt.t = t
   module Map: Map.S with type Key.t = t
@@ -225,7 +225,7 @@ module Call : sig
   include module type of struct include Record.Call end
 
   type t = expression_node Record.Call.record
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 
   val is_explicit_constructor_call: t -> bool
 end

@@ -16,7 +16,7 @@ module Record : sig
       generated: bool;
       parent: Expression.Access.t option;
     }
-    [@@deriving compare, eq, sexp, show]
+    [@@deriving compare, eq, sexp, show, hash]
   end
 
   module Class : sig
@@ -27,7 +27,7 @@ module Record : sig
       decorators: Expression.t list;
       docstring: string option;
     }
-    [@@deriving compare, eq, sexp, show]
+    [@@deriving compare, eq, sexp, show, hash]
   end
 end
 
@@ -40,7 +40,7 @@ module For : sig
     orelse: 'statement list;
     async: bool;
   }
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 end
 
 module While : sig
@@ -49,7 +49,7 @@ module While : sig
     body: 'statement list;
     orelse: 'statement list;
   }
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 end
 
 module If : sig
@@ -58,7 +58,7 @@ module If : sig
     body: 'statement list;
     orelse: 'statement list;
   }
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 end
 
 module With : sig
@@ -67,7 +67,7 @@ module With : sig
     body: 'statement list;
     async: bool;
   }
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 end
 
 module Try : sig
@@ -76,7 +76,7 @@ module Try : sig
     name: Identifier.t option;
     handler_body: 'statement list;
   }
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 
   type 'statement t = {
     body: 'statement list;
@@ -84,7 +84,7 @@ module Try : sig
     orelse: 'statement list;
     finally: 'statement list;
   }
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 end
 
 module Assert : sig
@@ -92,7 +92,7 @@ module Assert : sig
     test: Expression.t;
     message: Expression.t option;
   }
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 end
 
 module Import : sig
@@ -100,13 +100,13 @@ module Import : sig
     name: Expression.Access.t;
     alias: Expression.Access.t option;
   }
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 
   type t = {
     from: Expression.Access.t option;
     imports: import list;
   }
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 end
 
 module Assign : sig
@@ -117,7 +117,7 @@ module Assign : sig
     compound: Expression.BinaryOperator.operator option;
     parent: Expression.Access.t option;
   }
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 
   val is_static_attribute_initialization: t -> bool
 end
@@ -127,7 +127,7 @@ module Stub : sig
     | Assign of Assign.t
     | Class of 'statement Record.Class.record
     | Define of 'statement Record.Define.record
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 end
 
 type statement =
@@ -155,17 +155,17 @@ type statement =
   | YieldFrom of Expression.t
 
 and t = statement Node.t
-[@@deriving compare, eq, sexp, show]
+[@@deriving compare, eq, sexp, show, hash]
 
 (* Oh ffs ohcaml... *)
 type statement_node = t
-[@@deriving compare, eq, sexp, show]
+[@@deriving compare, eq, sexp, show, hash]
 
 module Define : sig
   include module type of struct include Record.Define end
 
   type t = statement_node Record.Define.record
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 
   val is_method: t -> bool
   val is_abstract_method: t -> bool
@@ -194,7 +194,7 @@ module Class : sig
   include module type of struct include Record.Class end
 
   type t = statement_node Record.Class.record
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 
   val constructor: ?in_test: bool -> t -> Define.t option
   val attribute_assigns

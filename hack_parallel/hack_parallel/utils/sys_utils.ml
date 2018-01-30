@@ -194,10 +194,10 @@ let read_all ?(buf_size=4096) ic =
   let buf = Buffer.create buf_size in
   (try
      while true do
-       let data = String.create buf_size in
+       let data = Bytes.create buf_size in
        let bytes_read = input ic data 0 buf_size in
        if bytes_read = 0 then raise Exit;
-       Buffer.add_substring buf data 0 bytes_read;
+       Buffer.add_subbytes buf data 0 bytes_read;
      done
    with Exit -> ());
   Buffer.contents buf

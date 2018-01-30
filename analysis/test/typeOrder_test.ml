@@ -942,16 +942,16 @@ let test_to_dot _ =
     ~printer:ident
     ({|
        digraph {
-         5[label="`unknown`"]
-         4[label="`typing.Any`"]
-         3[label="`3`"]
-         2[label="`2`"]
-         1[label="`1`"]
          0[label="`0`"]
-         2 -> 3
-         1 -> 3
+         1[label="`1`"]
+         2[label="`2`"]
+         3[label="`3`"]
+         4[label="`typing.Any`"]
+         5[label="`unknown`"]
          0 -> 1[label="(`str`)"]
          0 -> 2
+         1 -> 3
+         2 -> 3
        }
      |}
      |> Test.trim_extra_indentation)

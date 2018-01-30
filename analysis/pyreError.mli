@@ -12,26 +12,26 @@ type undefined_method = {
   annotation: Type.t;
   call: Annotated.Call.t;
 }
-[@@deriving compare, eq, show]
+[@@deriving compare, eq, show, hash]
 
 type undefined_attribute = {
   annotation: Type.t;
   attribute: Access.t;
 }
-[@@deriving compare, eq, show]
+[@@deriving compare, eq, show, hash]
 
 type mismatch = {
   actual: Type.t;
   expected: Type.t;
 }
-[@@deriving compare, eq, show]
+[@@deriving compare, eq, show, hash]
 
 type missing_parameter = {
   name: Identifier.t;
   annotation: Type.t;
   due_to_any: bool;
 }
-[@@deriving compare, eq, show]
+[@@deriving compare, eq, show, hash]
 
 type parameter_mismatch = {
   name: Identifier.t;
@@ -39,7 +39,7 @@ type parameter_mismatch = {
   callee: Statement.Define.t;
   mismatch: mismatch;
 }
-[@@deriving compare, eq, show]
+[@@deriving compare, eq, show, hash]
 
 type missing_annotation = {
   name: Access.t;
@@ -47,52 +47,52 @@ type missing_annotation = {
   evidence_locations: Location.t list;
   due_to_any: bool;
 }
-[@@deriving compare, eq, sexp]
+[@@deriving compare, eq, sexp, hash]
 
 type missing_attribute_annotation = {
   parent: Annotated.Class.t;
   missing_annotation: missing_annotation;
 }
-[@@deriving compare, eq, sexp]
+[@@deriving compare, eq, sexp, hash]
 
 type incompatible_type = {
   name: Access.t;
   mismatch: mismatch;
   declare_location: Location.t;
 }
-[@@deriving compare, eq, show, sexp]
+[@@deriving compare, eq, show, sexp, hash]
 
 type incompatible_attribute_type = {
   parent: Annotated.Class.t;
   incompatible_type: incompatible_type;
 }
-[@@deriving compare, eq, show, sexp]
+[@@deriving compare, eq, show, sexp, hash]
 
 type override =
   | StrengthenedPrecondition
   | WeakenedPostcondition
-[@@deriving compare, eq, show, sexp]
+[@@deriving compare, eq, show, sexp, hash]
 
 type inconsistent_override = {
   overridden_method: Annotated.Method.t;
   override: override;
   mismatch: mismatch;
 }
-[@@deriving compare, eq, show, sexp]
+[@@deriving compare, eq, show, sexp, hash]
 
 type missing_return = {
   annotation: Type.t;
   evidence_locations: int list;
   due_to_any: bool;
 }
-[@@deriving compare, eq, sexp]
+[@@deriving compare, eq, sexp, hash]
 
 type initialization_mismatch = {
   name: Access.t;
   parent: Annotated.Class.t;
   mismatch: mismatch;
 }
-[@@deriving compare, eq, show, sexp]
+[@@deriving compare, eq, show, sexp, hash]
 
 type kind =
   | IncompatibleAwaitableType of Type.t
@@ -110,14 +110,14 @@ type kind =
   | UndefinedMethod of undefined_method
   | UndefinedType of Type.t
   | UninitializedAttribute of initialization_mismatch
-[@@deriving compare, eq, show]
+[@@deriving compare, eq, show, hash]
 
 type t = {
   location: Location.t;
   kind: kind;
   define: Statement.Define.t Node.t;
 }
-[@@deriving compare, eq, show]
+[@@deriving compare, eq, show, hash]
 
 include Hashable with type t := t
 

@@ -227,7 +227,7 @@ let read_message channel =
     let content_buffer = Buffer.create 10 in
     In_channel.input_line channel (* eat the new line *)
     >>= fun _ -> In_channel.input_buffer channel content_buffer ~len:length
-    >>| fun _ -> Buffer.to_bytes content_buffer
+    >>| fun _ -> Buffer.contents content_buffer
   in
 
   In_channel.input_line channel

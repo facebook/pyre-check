@@ -21,7 +21,7 @@ module Record = struct
       generated: bool;
       parent: Expression.Access.t option; (* The class owning the method. *)
     }
-    [@@deriving compare, eq, sexp, show]
+    [@@deriving compare, eq, sexp, show, hash]
   end
 
   module Class = struct
@@ -32,7 +32,7 @@ module Record = struct
       decorators: Expression.t list;
       docstring: string option;
     }
-    [@@deriving compare, eq, sexp, show]
+    [@@deriving compare, eq, sexp, show, hash]
   end
 end
 
@@ -45,7 +45,7 @@ module For = struct
     orelse: 'statement list;
     async: bool;
   }
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 end
 
 
@@ -55,7 +55,7 @@ module While = struct
     body: 'statement list;
     orelse: 'statement list;
   }
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 end
 
 
@@ -65,7 +65,7 @@ module If = struct
     body: 'statement list;
     orelse: 'statement list;
   }
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 end
 
 
@@ -75,7 +75,7 @@ module With = struct
     body: 'statement list;
     async: bool;
   }
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 end
 
 
@@ -85,7 +85,7 @@ module Try = struct
     name: Identifier.t option;
     handler_body: 'statement list;
   }
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 
 
   type 'statement t = {
@@ -94,7 +94,7 @@ module Try = struct
     orelse: 'statement list;
     finally: 'statement list;
   }
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 end
 
 
@@ -103,7 +103,7 @@ module Assert = struct
     test: Expression.t;
     message: Expression.t option;
   }
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 end
 
 
@@ -112,14 +112,14 @@ module Import = struct
     name: Expression.Access.t;
     alias: Expression.Access.t option;
   }
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 
 
   type t = {
     from: Expression.Access.t option;
     imports: import list;
   }
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 end
 
 
@@ -131,7 +131,7 @@ module Assign = struct
     compound: Expression.BinaryOperator.operator option;
     parent: Expression.Access.t option;
   }
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 
 
   let is_static_attribute_initialization { parent; _ } =
@@ -143,7 +143,7 @@ module Stub = struct
     | Assign of Assign.t
     | Class of 'statement Record.Class.record
     | Define of 'statement Record.Define.record
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 end
 
 
@@ -173,11 +173,11 @@ type statement =
 
 
 and t = statement Node.t
-[@@deriving compare, eq, sexp, show]
+[@@deriving compare, eq, sexp, show, hash]
 
 
 type statement_node = t
-[@@deriving compare, eq, sexp, show]
+[@@deriving compare, eq, sexp, show, hash]
 
 
 module Define = struct
@@ -185,7 +185,7 @@ module Define = struct
 
 
   type t = statement_node Record.Define.record
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 
 
   let create_toplevel statements =
@@ -815,7 +815,7 @@ module Class = struct
 
 
   type t = statement_node Record.Class.record
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 
 
   let constructor ?(in_test = false) { Record.Class.body; _ } =
@@ -900,7 +900,7 @@ module Class = struct
              >>= fun ({ Node.value = { Assign.target; _ }; _ } as assign) ->
              match target with
              | { Node.value = Expression.Access ([_] as access); _ } ->
-                 Some (Map.add ~key:access ~data:assign map)
+                 Some (Map.set ~key:access ~data:assign map)
              | _ ->
                  None)
             |> Option.value ~default:map
@@ -925,7 +925,7 @@ module Class = struct
                  Assign.target = { Node.value = Expression.Access ([_] as access); _ };
                  _;
                } as assign)) ->
-            Map.add ~key:access ~data:(Node.create ~location assign) map
+            Map.set ~key:access ~data:(Node.create ~location assign) map
         | _ ->
             map
       in

@@ -61,29 +61,29 @@ let get_preamble_core (size : int) =
   let rec loop i (remainder: int) acc =
     if i < 0 then acc
     else loop (i - 1) (remainder / 256)
-        (String.set acc i (Char.chr (remainder mod 256)); acc) in
-  loop (preamble_core_size - 1) size (String.create preamble_core_size)
+        (Bytes.set acc i (Char.chr (remainder mod 256)); acc) in
+  loop (preamble_core_size - 1) size (Bytes.create preamble_core_size)
 
 let make_preamble (size : int) =
   let preamble_core = get_preamble_core size in
-  let preamble = String.create (preamble_core_size + 1) in
-  String.set preamble 0 preamble_start_sentinel;
-  String.blit preamble_core 0 preamble 1 4;
+  let preamble = Bytes.create (preamble_core_size + 1) in
+  Bytes.set preamble 0 preamble_start_sentinel;
+  Bytes.blit preamble_core 0 preamble 1 4;
   preamble
 
 let parse_preamble preamble =
-  if (String.length preamble) <> expected_preamble_size
-  || (String.get preamble 0) <> preamble_start_sentinel then
+  if (Bytes.length preamble) <> expected_preamble_size
+  || (Bytes.get preamble 0) <> preamble_start_sentinel then
     raise Malformed_Preamble_Exception;
   let rec loop i acc =
     if i >= 5 then acc
-    else loop (i + 1) ((acc * 256) + (int_of_char (String.get preamble i))) in
+    else loop (i + 1) ((acc * 256) + (int_of_char (Bytes.get preamble i))) in
   loop 1 0
 
 let to_fd_with_preamble fd obj =
   let flag_list = [] in
-  let payload = Marshal.to_string obj flag_list in
-  let size = String.length payload in
+  let payload = Marshal.to_bytes obj flag_list in
+  let size = Bytes.length payload in
   let preamble = make_preamble size in
   let preamble_bytes_written =
     Unix.write fd preamble 0 expected_preamble_size in
@@ -103,7 +103,7 @@ let rec read_payload fd buffer offset to_read =
   end
 
 let from_fd_with_preamble fd =
-  let preamble = String.create expected_preamble_size in
+  let preamble = Bytes.create expected_preamble_size in
   let bytes_read = Unix.read fd preamble 0 expected_preamble_size in
   if (bytes_read = 0)
   (** Unix manpage for read says 0 bytes read indicates end of file. *)
@@ -112,8 +112,8 @@ let from_fd_with_preamble fd =
     (Printf.eprintf "Error, only read %d bytes for preamble.\n" bytes_read;
      raise Reading_Preamble_Exception);
   let payload_size = parse_preamble preamble in
-  let payload = String.create payload_size in
+  let payload = Bytes.create payload_size in
   let payload_size_read = read_payload fd payload 0 payload_size in
   if (payload_size_read <> payload_size) then
     raise Reading_Payload_Exception;
-  Marshal.from_string payload 0
+  Marshal.from_bytes payload 0

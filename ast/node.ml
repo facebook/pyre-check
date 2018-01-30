@@ -7,7 +7,7 @@ type 'node_type t = {
   location: Location.t;
   value: 'node_type;
 }
-[@@deriving sexp, show]
+[@@deriving sexp, show, hash]
 
 
 let create ?(location = Location.any) value =

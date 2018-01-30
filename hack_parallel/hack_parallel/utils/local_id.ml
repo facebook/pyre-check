@@ -39,7 +39,7 @@ let get_name x =
 
 let make x =
   let res = next () in
-  if !track_names then trace := IMap.add res x !trace;
+  if !track_names then trace := IMap.set res x !trace;
   res
 
 (* `make` always returns a positive value. By multiplying the hash by -1 we
@@ -47,13 +47,13 @@ let make x =
  * by `make` *)
 let get x =
   let res = -(Hashtbl.hash x) in
-  if !track_names then trace := IMap.add res x !trace;
+  if !track_names then trace := IMap.set res x !trace;
   res
 
 let tmp () =
   let res = next () in
   if !track_names then begin
-    trace := IMap.add res ("__tmp"^string_of_int res) !trace ;
+    trace := IMap.set res ("__tmp"^string_of_int res) !trace ;
   end;
   res
 

@@ -6,7 +6,7 @@
 open Core
 
 type t
-[@@deriving compare, eq, sexp, show]
+[@@deriving compare, eq, sexp, show, hash]
 
 module Map : Map.S with type Key.t = t
 

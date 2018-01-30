@@ -8,10 +8,10 @@ type 'expression parameter = {
   value: 'expression option;
   annotation: 'expression option;
 }
-[@@deriving compare, eq, sexp, show]
+[@@deriving compare, eq, sexp, show, hash]
 
 type 'expression t = 'expression parameter Node.t
-[@@deriving compare, eq, sexp, show]
+[@@deriving compare, eq, sexp, show, hash]
 
 val create
   :  ?location: Location.t

@@ -46,7 +46,7 @@ let run_rage source_root () =
 
 let command =
   let open Command.Spec in
-  Command.basic
+  Command.basic_spec
     ~summary:"Reports debugging diagnostics for Pyre to the standard output."
     (empty
      +> anon (maybe_with_default "." ("source-root" %: string)))

@@ -11,7 +11,7 @@ type 'expression t = {
   name: Identifier.t option;
   value: 'expression;
 }
-[@@deriving compare, eq, sexp, show]
+[@@deriving compare, eq, sexp, show, hash]
 
 
 let is_positional { name; _ } =

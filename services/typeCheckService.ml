@@ -109,7 +109,7 @@ let analyze_sources_parallel
                     lookups =
                       (match lookup with
                        | Some table ->
-                           Map.add ~key:(File.Handle.show handle) ~data:table lookups
+                           Map.set ~key:(File.Handle.show handle) ~data:table lookups
                        | None ->
                            lookups);
                     number_files = number_files + 1;
@@ -176,7 +176,7 @@ let analyze_sources
         (errors :: current_errors,
          (match lookup with
           | None -> lookups
-          | Some lookup -> String.Map.add ~key:source.Source.path ~data:lookup lookups),
+          | Some lookup -> String.Map.set ~key:source.Source.path ~data:lookup lookups),
          (TypeCheck.Coverage.sum total_type_coverage type_coverage))
       in
       List.fold

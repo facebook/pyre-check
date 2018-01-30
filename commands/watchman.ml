@@ -61,14 +61,14 @@ let build_symlink_map ~root =
   let files = File.list ~filter:(fun file -> Filename.check_suffix file ".py") ~root in
   List.fold
     ~init:Path.Map.empty
-    ~f:(fun map path -> Map.add map ~key:(Path.follow_symlinks path) ~data:path)
+    ~f:(fun map path -> Map.set map ~key:(Path.follow_symlinks path) ~data:path)
     files
 
 
 let set_symlink ~root ~symlinks ~path =
   if not (Path.Map.mem symlinks path) &&
      Path.directory_contains ~directory:root path then
-    Map.add symlinks ~key:(Path.follow_symlinks path) ~data:path
+    Map.set symlinks ~key:(Path.follow_symlinks path) ~data:path
   else
     symlinks
 
@@ -254,7 +254,7 @@ let run_command daemonize verbose sections source_root () =
 
 
 let command =
-  Command.basic
+  Command.basic_spec
     ~summary:"Starts a watchman listener in the current directory. \
               Starts a server in the current directory if it does not exist."
     Command.Spec.(

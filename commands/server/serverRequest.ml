@@ -30,7 +30,7 @@ let rec process_request
     in
     List.fold
       ~init:File.Handle.Map.empty
-      ~f:(fun map key -> Map.add map ~key ~data:[])
+      ~f:(fun map key -> Map.set map ~key ~data:[])
       initial_files
     |> (fun map ->
         List.fold

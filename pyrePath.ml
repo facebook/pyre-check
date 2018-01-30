@@ -7,24 +7,24 @@ open Core
 
 
 type path = string
-[@@deriving eq, show, sexp]
+[@@deriving eq, show, sexp, hash]
 
 
 type absolute = path
-[@@deriving eq, show, sexp]
+[@@deriving eq, show, sexp, hash]
 
 
 type relative = {
   root: path;
   relative: path;
 }
-[@@deriving eq, show, sexp]
+[@@deriving eq, show, sexp, hash]
 
 
 type t =
   | Absolute of absolute
   | Relative of relative
-[@@deriving sexp]
+[@@deriving sexp, hash]
 
 
 let absolute = function

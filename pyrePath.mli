@@ -6,18 +6,18 @@
 open Core
 
 type path = string
-[@@deriving eq, show, sexp]
+[@@deriving eq, show, sexp, hash]
 
 type absolute
-[@@deriving eq, show, sexp]
+[@@deriving eq, show, sexp, hash]
 
 type relative
-[@@deriving eq, show, sexp]
+[@@deriving eq, show, sexp, hash]
 
 type t =
   | Absolute of absolute
   | Relative of relative
-[@@deriving eq, show, sexp]
+[@@deriving eq, show, sexp, hash]
 
 val absolute: t -> path
 val relative: t -> path option

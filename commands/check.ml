@@ -223,7 +223,7 @@ let spec =
 
 
 let check_command =
-  Command.basic
+  Command.basic_spec
     ~summary:"Runs a full check without a server (default)"
     spec
     run_check
@@ -312,7 +312,7 @@ let run_incremental
 
 
 let incremental_command =
-  Command.basic
+  Command.basic_spec
     ~summary:"Shows current errors by asking the server. \
               Starts a daemon server in the current directory if it does not exist."
     Command.Spec.(

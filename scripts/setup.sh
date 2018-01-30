@@ -52,7 +52,7 @@ if [ -n "${CONFIGURE+x}" ]; then exit 0; fi
 # Set default values.
 if [ -z "${OPAM_ROOT+x}" ]; then OPAM_ROOT="$(mktemp -d)"; fi
 if [ -z "${OPAM_REPOSITORY+x}" ]; then OPAM_REPOSITORY="https://opam.ocaml.org"; fi
-COMPILER="4.04.1"
+COMPILER="4.06.0"
 
 # Extract packaged repository.
 if [ ${OPAM_REPOSITORY: -7} == ".tar.gz" ]; then
@@ -70,7 +70,7 @@ if [ ${OPAM_REPOSITORY: -7} == ".tar.gz" ]; then
 fi
 
 # Seting up OCaml environment.
-opam init --yes --compiler 4.04.1 --root "$OPAM_ROOT" default "$OPAM_REPOSITORY" \
+opam init --yes --compiler "$COMPILER" --root "$OPAM_ROOT" default "$OPAM_REPOSITORY" \
   && eval "$(opam config --root "$OPAM_ROOT" env)" \
   && opam update \
   && ocaml_succeeded=1
@@ -80,9 +80,10 @@ test $ocaml_succeeded = 1 \
 opam install --yes \
   core \
   yojson \
-  ppx_deriving.4.1 \
+  ppx_deriving \
   ppx_deriving_yojson \
   ppx_compare \
+  ppx_hash \
   ounit \
   menhir \
   sedlex \
@@ -94,6 +95,7 @@ test $opam_install_dependencies_succeeded = 1 \
 # Build and install hack parallel.
 (cd hack_parallel \
   && OCAMLPARAM=_,annot=1,bin-annot=1,g=1 make \
+  && make remove \
   && make install) \
   && install_hack_parallel=1
 test $install_hack_parallel = 1 \

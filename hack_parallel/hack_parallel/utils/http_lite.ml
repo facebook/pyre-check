@@ -41,7 +41,7 @@ let parse_headers_to_lowercase_map (headers: string list) : string SMap.t =
     | line :: rest ->
         begin match Str.bounded_split (Str.regexp ":") line 2 with
           | [k; v] -> let k', v' =  String.lowercase_ascii k, String.trim v in
-              parse_internal (SMap.add k' v' acc) rest
+              parse_internal (SMap.set k' v' acc) rest
           | _ -> parse_internal acc rest
         end
   in

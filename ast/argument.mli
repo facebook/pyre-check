@@ -7,6 +7,6 @@ type 'expression t = {
   name: Identifier.t option;
   value: 'expression;
 }
-[@@deriving compare, eq, sexp, show]
+[@@deriving compare, eq, sexp, show, hash]
 
 val is_positional: 'expression t -> bool

@@ -11,7 +11,7 @@ module BooleanOperator = struct
   type operator =
     | And
     | Or
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 
 
   type 'expression t = {
@@ -19,7 +19,7 @@ module BooleanOperator = struct
     operator: operator;
     right: 'expression;
   }
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 
 
   let pp_boolean_operator formatter operator =
@@ -51,7 +51,7 @@ module BinaryOperator = struct
     | Power
     | RightShift
     | Subtract
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 
 
   type 'expression t = {
@@ -59,7 +59,7 @@ module BinaryOperator = struct
     operator: operator;
     right: 'expression;
   }
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 
 
   let pp_binary_operator formatter operator =
@@ -89,14 +89,14 @@ module UnaryOperator = struct
     | Negative
     | Not
     | Positive
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 
 
   type 'expression t = {
     operator: operator;
     operand: 'expression;
   }
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 
 
   let pp_unary_operator formatter operator =
@@ -122,14 +122,14 @@ module ComparisonOperator = struct
     | LessThanOrEquals
     | NotEquals
     | NotIn
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 
 
   type 'expression t = {
     left: 'expression;
     right: (operator * 'expression) list;
   }
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 
 
   let inverse = function
@@ -169,7 +169,7 @@ module Record = struct
       name: 'expression;
       arguments: ('expression Argument.t) list;
     }
-    [@@deriving compare, eq, sexp, show]
+    [@@deriving compare, eq, sexp, show, hash]
   end
 
 
@@ -179,13 +179,13 @@ module Record = struct
       upper: 'expression option;
       step: 'expression option;
     }
-    [@@deriving compare, eq, sexp, show]
+    [@@deriving compare, eq, sexp, show, hash]
 
 
     type 'expression subscript =
       | Index of 'expression
       | Slice of 'expression slice
-    [@@deriving compare, eq, sexp, show]
+    [@@deriving compare, eq, sexp, show, hash]
 
 
     type 'expression access =
@@ -193,11 +193,11 @@ module Record = struct
       | Expression of 'expression
       | Identifier of Identifier.t
       | Subscript of ('expression subscript) list
-    [@@deriving compare, eq, sexp, show]
+    [@@deriving compare, eq, sexp, show, hash]
 
 
     type 'expression record = ('expression access) list
-    [@@deriving compare, eq, sexp, show]
+    [@@deriving compare, eq, sexp, show, hash]
   end
 end
 
@@ -207,7 +207,7 @@ module Lambda = struct
     parameters: ('expression Parameter.t) list;
     body: 'expression;
   }
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 end
 
 
@@ -217,7 +217,7 @@ module Ternary = struct
     test: 'expression;
     alternative: 'expression;
   }
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 end
 
 
@@ -226,14 +226,14 @@ module Dictionary = struct
     key: 'expression;
     value: 'expression;
   }
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 
 
   type 'expression t = {
     entries: ('expression entry) list;
     keywords: 'expression option;
   }
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 end
 
 
@@ -244,14 +244,14 @@ module Comprehension = struct
     conditions: 'expression list;
     async: bool;
   }
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 
 
   type ('element, 'expression) t = {
     element: 'element;
     generators: ('expression generator) list;
   }
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 end
 
 
@@ -259,7 +259,7 @@ module Starred = struct
   type 'expression t =
     | Once of 'expression
     | Twice of 'expression
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 end
 
 
@@ -293,19 +293,19 @@ type expression =
 
 
 and t = expression Node.t
-[@@deriving compare, eq, sexp, show]
+[@@deriving compare, eq, sexp, show, hash]
 
 let pp_expression_node = pp
 
 type expression_node = t
-[@@deriving compare, eq, sexp, show]
+[@@deriving compare, eq, sexp, show, hash]
 
 
 module Access = struct
   include Record.Access
 
   type t = expression_node Record.Access.record
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 
 
   let rec show access =
@@ -345,6 +345,7 @@ module Access = struct
       type nonrec t = t
       let compare = compare
       let hash = Hashtbl.hash
+      let hash_fold_t = hash_fold_t
       let sexp_of_t = sexp_of_t
       let t_of_sexp = t_of_sexp
     end)
@@ -374,7 +375,7 @@ module Call = struct
 
 
   type t = expression_node Record.Call.record
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 
 
   let is_explicit_constructor_call { name; _ } =

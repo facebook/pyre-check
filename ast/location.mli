@@ -9,7 +9,7 @@ type position = {
   line: int;
   column: int;
 }
-[@@deriving compare, eq, sexp, show]
+[@@deriving compare, eq, sexp, show, hash]
 
 (* Yes, I hate abbreviations that much *)
 type t = {
@@ -17,7 +17,7 @@ type t = {
   start: position;
   stop: position;
 }
-[@@deriving compare, eq, sexp, show]
+[@@deriving compare, eq, sexp, show, hash]
 
 val to_string: t -> string
 

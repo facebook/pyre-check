@@ -12,7 +12,7 @@ type t = {
   path: Path.t;
   content: string option;
 }
-[@@deriving eq, show, sexp]
+[@@deriving eq, show, sexp, hash]
 
 
 let create ?(content = None) path =
@@ -87,7 +87,7 @@ let list ?(filter = fun _ -> true) ~root =
 
 module Handle = struct
   type t = string
-  [@@deriving compare, eq, show, sexp]
+  [@@deriving compare, eq, show, sexp, hash]
 
 
   let show path =
@@ -102,6 +102,7 @@ module Handle = struct
       type nonrec t = t
       let compare = compare
       let hash = Hashtbl.hash
+      let hash_fold_t = hash_fold_t
       let sexp_of_t = sexp_of_t
       let t_of_sexp = t_of_sexp
     end)

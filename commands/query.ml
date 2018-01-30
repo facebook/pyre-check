@@ -45,7 +45,7 @@ let run_query query_kind left right source_root () =
 
 let command =
   let open Command.Spec in
-  Command.basic
+  Command.basic_spec
     ~summary:"Queries the server for type order information."
     (empty
      +> anon ("command" %: string)

@@ -7,7 +7,7 @@ open Core
 open Sexplib.Conv
 
 type t = string
-[@@deriving compare, eq, sexp]
+[@@deriving compare, eq, sexp, hash]
 
 
 module Map = Map.Make(struct

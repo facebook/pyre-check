@@ -49,7 +49,7 @@ let parameter_annotations_positional { Define.parameters; _ } ~resolution =
 
 module Assign = struct
   type t = Assign.t
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 
 
   let create assign =
@@ -97,7 +97,7 @@ end
 
 module Class = struct
   type t = Class.t Node.t
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 
 
   module Assign = Statement.Assign
@@ -110,7 +110,7 @@ module Class = struct
 
 
   type parent_class = t
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 
 
   let create definition =
@@ -142,7 +142,7 @@ module Class = struct
       define: Define.t;
       parent: parent_class
     }
-    [@@deriving compare, eq, sexp, show]
+    [@@deriving compare, eq, sexp, show, hash]
 
 
     let create ~define ~parent =
@@ -646,7 +646,7 @@ module Method = Class.Method
 
 module Define = struct
   type t = Define.t
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 
 
   let create definition =
@@ -727,7 +727,7 @@ end
 
 module BinaryOperator = struct
   type t = Expression.t BinaryOperator.t
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 
 
   let create operator =
@@ -779,14 +779,14 @@ module Call = struct
   type kind =
     | Function
     | Method
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 
 
   type t = {
     call: Call.t;
     kind: kind;
   }
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 
 
   let create ~kind call =
@@ -989,7 +989,7 @@ end
 
 module ComparisonOperator = struct
   type t = Expression.t ComparisonOperator.t
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 
 
   let override { ComparisonOperator.left; right } =
@@ -1036,7 +1036,7 @@ end
 
 module UnaryOperator = struct
   type t = Expression.t UnaryOperator.t
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 
 
   let override { UnaryOperator.operator; operand = ({ Node.location; _ } as operand) } =
@@ -1097,7 +1097,7 @@ module Access = struct
 
 
   type t = Access.t
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, eq, sexp, show, hash]
 
 
   let create access =
@@ -1169,7 +1169,7 @@ module Access = struct
                    |> Annotation.create
                  in
                  let annotations =
-                   Map.add
+                   Map.set
                      ~key:[super]
                      ~data:annotation
                      (Resolution.annotations resolution)
@@ -1204,7 +1204,7 @@ module Access = struct
               |> Annotation.create
             in
             let annotations =
-              Map.add
+              Map.set
                 ~key:[access]
                 ~data:annotation
                 (Resolution.annotations resolution)
@@ -1333,12 +1333,12 @@ module Access = struct
             let annotations =
               Map.find annotations access
               >>| (fun existing ->
-                  Map.add
+                  Map.set
                     ~key:access
                     ~data:{ existing with Annotation.annotation = determined }
                     annotations)
               |> Option.value
-                ~default:(Map.add ~key:access ~data:(Annotation.create determined) annotations)
+                ~default:(Map.set ~key:access ~data:(Annotation.create determined) annotations)
             in
             (Resolution.with_annotations resolution annotations),
             resolved,
@@ -1610,7 +1610,7 @@ let rec resolve ~resolution expression =
         let rec add annotations_sofar target annotation =
           match Node.value target, annotation with
           | Access access, _ ->
-              Map.add annotations_sofar ~key:access ~data:(Annotation.create annotation)
+              Map.set annotations_sofar ~key:access ~data:(Annotation.create annotation)
           | Tuple accesses, Type.Tuple (Type.Bounded parameters)
             when List.length accesses = List.length parameters ->
               List.fold2_exn ~init:annotations_sofar ~f:add accesses parameters
@@ -1751,7 +1751,7 @@ let rec resolve ~resolution expression =
           | Type.Optional parameter -> Annotation.create parameter
           | parameter -> Annotation.create parameter
         in
-        Map.add ~key ~data:updated_annotation (Resolution.annotations resolution)
+        Map.set ~key ~data:updated_annotation (Resolution.annotations resolution)
         |> Resolution.with_annotations resolution
       in
       let updated_resolution =

@@ -445,7 +445,7 @@ module State = struct
                 (* First parameter of a method is the callee object. *)
                 annotation
             in
-            Map.add ~key:access ~data:(Annotation.create annotation) annotations, errors
+            Map.set ~key:access ~data:(Annotation.create annotation) annotations, errors
         | _ ->
             let add_missing_parameter_error value ~due_to_any =
               let annotation = Annotated.resolve ~resolution value in
@@ -456,8 +456,8 @@ module State = struct
                   define = define_node;
                 }
               in
-              Map.add ~key:access ~data:(Annotation.create annotation) annotations,
-              Map.add ~key:location ~data:error errors
+              Map.set ~key:access ~data:(Annotation.create annotation) annotations,
+              Map.set ~key:location ~data:error errors
             in
             begin
               match value, annotation with
@@ -474,13 +474,13 @@ module State = struct
                         Type.union constraints
                     | annotation -> annotation
                   in
-                  Map.add
+                  Map.set
                     ~key:access
                     ~data:(Annotation.create_immutable ~global:false annotation)
                     annotations,
                   errors
               | _ ->
-                  Map.add ~key:access ~data:(Annotation.create Type.Bottom) annotations,
+                  Map.set ~key:access ~data:(Annotation.create Type.Bottom) annotations,
                   errors
             end
       in
@@ -515,7 +515,7 @@ module State = struct
                  define = define_node;
                }
              in
-             Map.add ~key:location ~data:error errors
+             Map.set ~key:location ~data:error errors
            else
              errors
          in
@@ -538,7 +538,7 @@ module State = struct
                      define = define_node;
                    }
                  in
-                 Map.add ~key:location ~data:error errors
+                 Map.set ~key:location ~data:error errors
                else
                  errors
            | None ->
@@ -553,7 +553,7 @@ module State = struct
                    define = define_node;
                  }
                in
-               Map.add ~key:location ~data:error errors
+               Map.set ~key:location ~data:error errors
          in
          Map.fold
            ~init:errors
@@ -666,7 +666,7 @@ module State = struct
            Access.equal key Preprocessing.return_access then
           map
         else
-          Map.add ~key ~data map
+          Map.set ~key ~data map
       in
       Map.fold ~init:left ~f:add_annotation right
     in
@@ -680,7 +680,7 @@ module State = struct
   and update_only_existing_annotations initial_state new_state =
     let update ~key ~data map =
       if Option.is_some (Map.find map key) then
-        Map.add ~key ~data map
+        Map.set ~key ~data map
       else
         map
     in
@@ -758,7 +758,7 @@ module State = struct
             Resolution.parse_annotation resolution annotation
             |> Annotation.create_immutable ~global:false
           in
-          Map.add ~key:access ~data:annotation annotations
+          Map.set ~key:access ~data:annotation annotations
       | Assign assign ->
           let open Annotated in
           let forward_annotations
@@ -771,7 +771,7 @@ module State = struct
             in
             match annotation, element with
             | Some annotation, _ when Annotation.is_immutable annotation ->
-                Map.add
+                Map.set
                   ~key:access
                   ~data:(Refinement.refine ~resolution annotation value_annotation)
                   annotations
@@ -782,9 +782,9 @@ module State = struct
                     (Attribute.annotation attribute)
                     value_annotation
                 in
-                Map.add ~key:access ~data:refined annotations
+                Map.set ~key:access ~data:refined annotations
             | _, _ ->
-                Map.add ~key:access ~data:(Annotation.create value_annotation) annotations
+                Map.set ~key:access ~data:(Annotation.create value_annotation) annotations
           in
           Annotated.Assign.create assign
           |> Annotated.Assign.fold ~resolution ~f:forward_annotations ~initial:annotations
@@ -814,7 +814,7 @@ module State = struct
                   | _ ->
                       Resolution.parse_annotation resolution annotation
                 in
-                Map.add ~key:access ~data:(Annotation.create annotation) annotations
+                Map.set ~key:access ~data:(Annotation.create annotation) annotations
             | UnaryOperator {
                 UnaryOperator.operator = UnaryOperator.Not;
                 operand = {
@@ -856,7 +856,7 @@ module State = struct
                         |> Set.to_list
                         |> Type.union
                       in
-                      Map.add ~key:access ~data:(Annotation.create constrained) annotations
+                      Map.set ~key:access ~data:(Annotation.create constrained) annotations
                   | _ ->
                       annotations
                 end
@@ -869,7 +869,7 @@ module State = struct
                 begin
                   match Map.find annotations access, element with
                   | Some { Annotation.annotation = Type.Optional parameter; _ }, _ ->
-                      Map.add ~key:access ~data:(Annotation.create parameter) annotations
+                      Map.set ~key:access ~data:(Annotation.create parameter) annotations
                   | _, Access.Element.Attribute attribute when Attribute.defined attribute ->
                       begin
                         match Attribute.annotation attribute with
@@ -890,7 +890,7 @@ module State = struct
                                 (Attribute.annotation attribute)
                                 parameter
                             in
-                            Map.add ~key:access ~data:refined annotations
+                            Map.set ~key:access ~data:refined annotations
                         | _ -> annotations
                       end
                   | _ ->
@@ -953,9 +953,9 @@ module State = struct
                           (Attribute.annotation attribute)
                           (Type.Optional Type.Bottom)
                       in
-                      Map.add ~key:access ~data:refined annotations
+                      Map.set ~key:access ~data:refined annotations
                   | _ ->
-                      Map.add
+                      Map.set
                         ~key:access
                         ~data:(Annotation.create (Type.Optional Type.Bottom))
                         annotations
@@ -975,7 +975,7 @@ module State = struct
             Resolution.resolve resolution (Node.create (Access access))
             |> Annotation.create_immutable ~global:true
           in
-          Map.add ~key:access ~data:annotation annotations
+          Map.set ~key:access ~data:annotation annotations
 
       | _ ->
           (* Walk through accesses and infer annotations as we go. *)
@@ -1010,7 +1010,7 @@ module State = struct
     let errors =
       let add_errors errors =
         let add_error sofar error =
-          Map.add ~key:error.Error.location ~data:error sofar
+          Map.set ~key:error.Error.location ~data:error sofar
         in
         List.fold ~init:errors ~f:add_error
       in
@@ -1421,7 +1421,7 @@ module State = struct
                         define = define_node;
                       }
                 in
-                Map.add ~key:error.Error.location ~data:error errors
+                Map.set ~key:error.Error.location ~data:error errors
             in
             let add_missing_annotation_error ~expected ~parent ~name ~declare_location errors =
               if ((Type.is_unknown expected) || (Type.equal expected Type.Object)) &&
@@ -1457,7 +1457,7 @@ module State = struct
                 Map.find errors declare_location
                 >>| Error.join ~resolution error
                 |> Option.value ~default:error
-                |> fun data -> Map.add ~key:declare_location ~data errors
+                |> fun data -> Map.set ~key:declare_location ~data errors
               else
                 errors
             in
@@ -1645,7 +1645,7 @@ module State = struct
                   (Resolution.parse_annotation resolution parameter_annotation)
                   (Annotated.resolve ~resolution argument_value)
                 >>| (fun refined ->
-                    Map.add ~key:value ~data:(Annotation.create refined) annotations)
+                    Map.set ~key:value ~data:(Annotation.create refined) annotations)
                 |> Option.value ~default:annotations
             | Some parameter_annotation,
               { Node.value = Tuple arguments; _ } ->
@@ -1737,7 +1737,7 @@ module State = struct
             (Annotated.resolve ~resolution target)
             (Annotated.resolve ~resolution value)
           >>| (fun refined ->
-              Map.add ~key:value_access ~data:(Annotation.create refined) annotations)
+              Map.set ~key:value_access ~data:(Annotation.create refined) annotations)
           |> Option.value ~default:annotations
       | Assign { Assign.target; value = Some value; Assign.compound = None; _ } -> (
           (* Get the annotations of the targets and set the 'value' to be the meet *)
@@ -1749,7 +1749,7 @@ module State = struct
                   | [Access.Identifier _] ->
                       resolve_assign target_annotation (Annotated.resolve ~resolution value)
                       >>| (fun refined ->
-                          Map.add ~key:value_access ~data:(Annotation.create refined) annotations)
+                          Map.set ~key:value_access ~data:(Annotation.create refined) annotations)
                       |> Option.value ~default:annotations
                   | _ ->
                       annotations
@@ -1821,7 +1821,7 @@ module State = struct
               define = define_node;
             }
             in
-            Map.add ~key:error.Error.location ~data:error errors)
+            Map.set ~key:error.Error.location ~data:error errors)
         |> Option.value ~default:errors
       in
       match annotation with

@@ -9,7 +9,7 @@ open Pyre
 
 
 type t
-[@@deriving eq, show]
+[@@deriving eq, show, hash]
 
 val create: ?content: string option -> Path.t -> t
 
@@ -27,7 +27,7 @@ val list
 
 module Handle : sig
   type t
-  [@@deriving compare, eq, show]
+  [@@deriving compare, eq, show, hash]
 
   val create: string -> t
 
