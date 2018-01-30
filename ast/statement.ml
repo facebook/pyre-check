@@ -425,6 +425,7 @@ module Define = struct
       [
         "abc.abstractproperty";
         "libfb.py.decorators.lazy_property";
+        "nodeapi.privacy.viewer_context_properties.privacy_lazy_property";
         "property";
         "util.classproperty";
         "util.etc.class_property";
