@@ -338,7 +338,29 @@ let test_attribute_assigns _ =
         def property(self) -> int:
           pass
     |}
-    ["property", Some (Type.expression (Type.parametric "typing.ClassVar" [Type.integer])), None]
+    ["property", Some (Type.expression (Type.parametric "typing.ClassVar" [Type.integer])), None];
+
+  (* Named tuple attributes. *)
+  assert_attribute_assigns
+    {|
+      class Foo(typing.NamedTuple('Foo', ['one', 'two'])):
+        attribute: int
+    |}
+    [
+      "attribute", Some (Type.expression Type.integer), None;
+      "one", None, None;
+      "two", None, None;
+    ];
+  assert_attribute_assigns
+    {|
+      class Foo(typing.NamedTuple('Foo', [('one', int), 'two'])):
+        attribute: int
+    |}
+    [
+      "attribute", Some (Type.expression Type.integer), None;
+      "one", Some (Type.expression Type.integer), None;
+      "two", None, None;
+    ]
 
 
 let test_strip _ =
