@@ -102,7 +102,7 @@ class Command:
         if self._logging_sections:
             flags.extend(['-logging-sections', self._logging_sections])
         if self._current_directory:
-            flags.extend(['-type-check-root', self._current_directory])
+            flags.extend(['-project-root', self._current_directory])
         return flags
 
     def _merge_directories(self, target_root):
@@ -422,7 +422,6 @@ class Check(ErrorHandling):
             ','.join(self._configuration.get_stub_roots())
         ])
         if self._log_identifier:
-            LOG.warning("Coverage logging is not yet supported.")
             flags.extend(['-log-identifier', self._log_identifier])
         source_directories = self._source_directories
         if len(source_directories) > 1:

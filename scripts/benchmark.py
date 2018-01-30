@@ -49,7 +49,7 @@ def _compare_parallel_check(arguments, configuration):
     flags = [
         '-stub-roots',
         ','.join(configuration.get_stub_roots()),
-        '-type-check-root',
+        '-project-root',
         arguments.current_directory,
     ]
     client_command = [
