@@ -1587,7 +1587,7 @@ module Access = struct
           accumulator
     in
 
-    (* Greedy function lookup to avoid derp. *)
+    (* Greedy function lookup to avoid variable shadowing. *)
     let reversed_lead, tail =
       let rec first_call_or_definition ?(reversed_lead = []) access =
         match access with
