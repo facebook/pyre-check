@@ -1541,7 +1541,39 @@ module Access = struct
       | _ ->
           accumulator
     in
-    fold ~resolution ~accumulator:initial ~reversed_lead:[] ~tail:access ~annotation:None
+
+    (* Greedy function lookup to avoid derp. *)
+    let reversed_lead, tail =
+      let rec first_call ?(reversed_lead = []) access =
+        match access with
+        | (Access.Call ({ Node.value = { Expression.Call.arguments; _ }; _ } as call)) :: tail ->
+            ignore arguments;
+            let signatures =
+              let argument _ =
+                Node.create
+                  (Signature.Normal {
+                      Signature.annotation = Type.Top;
+                      value = Node.create (Expression.Access []);
+                    })
+              in
+              Resolution.function_signature
+                resolution
+                (List.rev reversed_lead)
+                (Node.value call)
+                (List.map ~f:argument arguments)
+            in
+            if not (List.is_empty signatures) then
+              Some ((Access.Call call) :: reversed_lead, tail)
+            else
+              None
+        | element :: tail ->
+            first_call ~reversed_lead:(element :: reversed_lead) tail
+        | [] -> None
+      in
+      first_call access
+      |> Option.value ~default:([], access)
+    in
+    fold ~resolution ~accumulator:initial ~reversed_lead ~tail ~annotation:None
 
 
   let last_element ~resolution access =

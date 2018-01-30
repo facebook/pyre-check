@@ -306,6 +306,19 @@ let test_qualify _ =
         if True:
           def some.qualifier.hello.foo():
             pass
+    |};
+
+  (* Do not rewrite declarations. *)
+  assert_qualify
+    {|
+      import a as b
+      def foo(a: A):
+        a.attribute = 1
+    |}
+    {|
+      import a as b
+      def some.qualifier.foo(a: A):
+        a.attribute = 1
     |}
 
 

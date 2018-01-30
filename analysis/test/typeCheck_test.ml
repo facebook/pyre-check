@@ -1702,6 +1702,24 @@ let test_check_optional _ =
     ]
 
 
+let test_check_function_precedence _ =
+  assert_type_errors
+    {|
+      def string.attribute.call() -> None: ...
+      def foo(string: str) -> None:
+        string.attribute.call()
+    |}
+    [];
+  assert_type_errors
+    {|
+      class string.attribute.Constructor:
+        def __init__(self, a: int): ...
+      def foo(string: str) -> None:
+        string.attribute.Constructor(1)
+    |}
+    []
+
+
 let test_check_function_parameters _ =
   assert_type_errors
     {|
@@ -4378,6 +4396,7 @@ let () =
     "check_non_debug">::test_check_non_debug;
     "check_comprehensions">::test_check_comprehensions;
     "check_optional">::test_check_optional;
+    "check_function_precedence">::test_check_function_precedence;
     "check_function_parameters">::test_check_function_parameters;
     "check_function_parameters_with_backups">::test_check_function_parameters_with_backups;
     "check_variable_arguments">::test_check_variable_arguments;
