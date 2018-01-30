@@ -680,7 +680,25 @@ let test_class_attributes _ =
   assert_equal
     ~printer:Fn.id
     (Class.attribute_fold ~class_attributes:true ~resolution ~initial:"" ~f:callback parent)
-    ("class_attribute__name__")
+    ("class_attribute__name__");
+
+  let resolution, parent =
+    setup
+      {|
+        class type:
+          __type__: str
+        class Meta(type):
+          __meta__: str
+        class Foo(metaclass=Meta):
+          __static__: typing.ClassVar[int]
+          __instance__: int
+      |}
+  in
+  assert_equal
+    ~printer:Fn.id
+    (Class.attribute_fold ~class_attributes:true ~resolution ~initial:"" ~f:callback parent)
+    ("__static____meta____type__")
+
 
 
 let test_fallback_attribute _ =

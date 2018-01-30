@@ -492,17 +492,17 @@ module Class = struct
       |> Map.data
       |> List.fold ~init:initial ~f:fold_attribute_assign
     in
-    let superclasses = superclasses ~resolution definition in
+    let superclass_definitions = superclasses ~resolution definition in
     let in_test =
       let is_unit_test { Node.value = { Record.Class.name; _ }; _ } =
         Access.show name
         |> String.equal "unittest.TestCase"
       in
-      List.exists ~f:is_unit_test (definition :: superclasses)
+      List.exists ~f:is_unit_test (definition :: superclass_definitions)
     in
     let definitions =
       if transitive then
-        definition :: superclasses
+        definition :: superclass_definitions
       else
         [definition]
     in
@@ -516,9 +516,41 @@ module Class = struct
     (* Class over meta hierarchy if necessary. *)
     let meta_definitions =
       if class_attributes then
-        (Resolution.class_definition resolution (Type.primitive "type")
-         >>| fun definition -> [definition])
-        |> Option.value ~default:[]
+        let default =
+          (Resolution.class_definition resolution (Type.primitive "type")
+           >>| fun definition -> [definition])
+          |> Option.value ~default:[]
+        in
+        let find_meta_definition sofar superclass_annotation =
+          match sofar with
+          | Some definition ->
+              Some definition
+          | None ->
+              Resolution.class_definition resolution superclass_annotation
+              >>= (fun { Node.value = { Statement.Class.bases; _ }; _ } ->
+                  let find_meta_definition { Argument.name; value } =
+                    match name with
+                    | Some name when Identifier.show name = "metaclass" ->
+                        Resolution.parse_annotation resolution value
+                        |> Resolution.class_definition resolution
+                    | _ ->
+                        None
+                  in
+                  List.find_map ~f:find_meta_definition bases)
+        in
+        match find_meta_definition None (annotation ~resolution definition) with
+        | Some definition ->
+            (* Unrolling the first fold because `TypeOrder.successors_fold` is not folding over the
+               passed in annotation. *)
+            definition :: (superclasses ~resolution definition)
+        | _ ->
+            (TypeOrder.successors_fold
+               (Resolution.order resolution)
+               ~initial:None
+               ~f:find_meta_definition
+               (annotation ~resolution definition)
+             >>| fun definition -> definition :: (superclasses ~resolution definition))
+            |> Option.value ~default
       else
         []
     in
