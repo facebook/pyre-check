@@ -2200,6 +2200,13 @@ let test_check_init _ =
       "Uninitialized attribute [13]: Attribute `attribute` is declared in class `Foo` to have " ^
       "non-optional type `int` but is never initialized.";
     ];
+  assert_type_errors
+    {|
+    class Foo:
+      def __init__(self) -> None:
+        self.attribute: bool = False
+    |}
+    [];
 
   assert_type_errors
     {|

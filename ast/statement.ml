@@ -830,110 +830,9 @@ module Class = struct
 
 
   let attribute_assigns
-      ?(include_properties = true)
+      ?(include_generated_attributes = true)
       ?(in_test = false)
       ({ Record.Class.body; bases; _ } as definition) =
-    let implicit_attribute_assigns =
-      constructor ~in_test definition
-      >>| Define.implicit_attribute_assigns ~definition
-      |> Option.value ~default:Expression.Access.Map.empty
-    in
-    let named_tuple_assigns =
-      let open Expression in
-      let named_tuple_assigns sofar { Argument.value; _ } =
-        match Node.value value with
-        | Access [
-            Access.Identifier typing;
-            Access.Call {
-              Node.value = {
-                Call.name = {
-                  Node.value = Access [Access.Identifier named_tuple];
-                  _;
-                };
-                arguments = [
-                  _;
-                  { Argument.value = { Node.value = List attributes; _; }; _ };
-                ];
-              };
-              _;
-            }
-          ] when Identifier.show typing = "typing" && Identifier.show named_tuple = "NamedTuple" ->
-            let named_tuple_assigns sofar { Node.location; value } =
-              match value with
-              | String name ->
-                  let access = Access.create name in
-                  let assign =
-                    {
-                      Assign.target = { Node.location; value = Access access};
-                      annotation = None;
-                      value = None;
-                      compound = None;
-                      parent = None;
-                    }
-                  in
-                  Map.set ~key:access ~data:(Node.create ~location assign) sofar
-              | Tuple [{ Node.location; value = String name}; annotation] ->
-                  let access = Access.create name in
-                  let assign =
-                    {
-                      Assign.target = { Node.location; value = Access access};
-                      annotation = Some annotation;
-                      value = None;
-                      compound = None;
-                      parent = None;
-                    }
-                  in
-                  Map.set ~key:access ~data:(Node.create ~location assign) sofar
-              | _ ->
-                  sofar
-            in
-            List.fold ~f:named_tuple_assigns ~init:sofar attributes
-        | _ ->
-            sofar
-      in
-      List.fold ~f:named_tuple_assigns ~init:Expression.Access.Map.empty bases
-    in
-    let property_assigns =
-      let property_assigns map = function
-        | { Node.location; value = Stub (Stub.Define define) }
-        | { Node.location; value = Define define } ->
-            (Define.property_attribute_assign ~location define
-             >>= fun ({ Node.value = { Assign.target; _ }; _ } as assign) ->
-             match target with
-             | { Node.value = Expression.Access ([_] as access); _ } ->
-                 Some (Map.set ~key:access ~data:assign map)
-             | _ ->
-                 None)
-            |> Option.value ~default:map
-        | _ ->
-            map
-      in
-      if include_properties then
-        List.fold ~init:Expression.Access.Map.empty ~f:property_assigns body
-      else
-        Expression.Access.Map.empty
-    in
-    let callable_assigns =
-      let callable_assigns map { Node.location; value } =
-        match value with
-        | Define { Define.name; _ } ->
-            let assign =
-              Node.create
-                ~location
-                {
-                  Assign.target = Node.create ~location (Expression.Access name);
-                  annotation = None;  (* This should be a `Callable`. Ignoring for now... *)
-                  value = None;
-                  compound = None;
-                  parent = None;
-                }
-            in
-            Map.set ~key:name ~data:assign map
-        | _ ->
-            map
-      in
-      List.fold ~init:Expression.Access.Map.empty ~f:callable_assigns body
-    in
     let explicit_attribute_assigns =
       let attribute_assigns map { Node.location; value } =
         match value with
@@ -953,19 +852,122 @@ module Class = struct
       in
       List.fold ~init:Expression.Access.Map.empty ~f:attribute_assigns body
     in
-    let merge ~key:_ = function
-      | `Both (_, right) ->
-          Some right
-      | `Left value
-      | `Right value ->
-          Some value
-    in
-    (* Merge with decreasing priority. Explicit attributes override all. *)
-    explicit_attribute_assigns
-    |> Map.merge ~f:merge property_assigns
-    |> Map.merge ~f:merge named_tuple_assigns
-    |> Map.merge ~f:merge callable_assigns
-    |> Map.merge ~f:merge implicit_attribute_assigns
+
+    if not include_generated_attributes then
+      explicit_attribute_assigns
+    else
+      let implicit_attribute_assigns =
+        constructor ~in_test definition
+        >>| Define.implicit_attribute_assigns ~definition
+        |> Option.value ~default:Expression.Access.Map.empty
+      in
+      let named_tuple_assigns =
+        let open Expression in
+        let named_tuple_assigns sofar { Argument.value; _ } =
+          match Node.value value with
+          | Access [
+              Access.Identifier typing;
+              Access.Call {
+                Node.value = {
+                  Call.name = {
+                    Node.value = Access [Access.Identifier named_tuple];
+                    _;
+                  };
+                  arguments = [
+                    _;
+                    { Argument.value = { Node.value = List attributes; _; }; _ };
+                  ];
+                };
+                _;
+              }
+            ] when Identifier.show typing = "typing" &&
+                   Identifier.show named_tuple = "NamedTuple" ->
+              let named_tuple_assigns sofar { Node.location; value } =
+                match value with
+                | String name ->
+                    let access = Access.create name in
+                    let assign =
+                      {
+                        Assign.target = { Node.location; value = Access access};
+                        annotation = None;
+                        value = None;
+                        compound = None;
+                        parent = None;
+                      }
+                    in
+                    Map.set ~key:access ~data:(Node.create ~location assign) sofar
+                | Tuple [{ Node.location; value = String name}; annotation] ->
+                    let access = Access.create name in
+                    let assign =
+                      {
+                        Assign.target = { Node.location; value = Access access};
+                        annotation = Some annotation;
+                        value = None;
+                        compound = None;
+                        parent = None;
+                      }
+                    in
+                    Map.set ~key:access ~data:(Node.create ~location assign) sofar
+                | _ ->
+                    sofar
+              in
+              List.fold ~f:named_tuple_assigns ~init:sofar attributes
+          | _ ->
+              sofar
+        in
+        List.fold ~f:named_tuple_assigns ~init:Expression.Access.Map.empty bases
+      in
+      let property_assigns =
+        let property_assigns map = function
+          | { Node.location; value = Stub (Stub.Define define) }
+          | { Node.location; value = Define define } ->
+              (Define.property_attribute_assign ~location define
+               >>= fun ({ Node.value = { Assign.target; _ }; _ } as assign) ->
+               match target with
+               | { Node.value = Expression.Access ([_] as access); _ } ->
+                   Some (Map.set ~key:access ~data:assign map)
+               | _ ->
+                   None)
+              |> Option.value ~default:map
+          | _ ->
+              map
+        in
+        List.fold ~init:Expression.Access.Map.empty ~f:property_assigns body
+      in
+      let callable_assigns =
+        let callable_assigns map { Node.location; value } =
+          match value with
+          | Define { Define.name; _ } ->
+              let assign =
+                Node.create
+                  ~location
+                  {
+                    Assign.target = Node.create ~location (Expression.Access name);
+                    annotation = None;  (* This should be a `Callable`. Ignoring for now... *)
+                    value = None;
+                    compound = None;
+                    parent = None;
+                  }
+              in
+              Map.set ~key:name ~data:assign map
+          | _ ->
+              map
+        in
+        List.fold ~init:Expression.Access.Map.empty ~f:callable_assigns body
+      in
+      let merge ~key:_ = function
+        | `Both (_, right) ->
+            Some right
+        | `Left value
+        | `Right value ->
+            Some value
+      in
+      (* Merge with decreasing priority. Explicit attributes override all. *)
+      explicit_attribute_assigns
+      |> Map.merge ~f:merge property_assigns
+      |> Map.merge ~f:merge named_tuple_assigns
+      |> Map.merge ~f:merge callable_assigns
+      |> Map.merge ~f:merge implicit_attribute_assigns
 
 
   let strip ({ Record.Class.body; _ } as class_define ) =

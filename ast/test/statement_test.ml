@@ -237,7 +237,7 @@ let test_attribute_assigns _ =
     (Some ("foo", Some (Type.expression Type.integer), None));
 
   (* Test class field assigns. *)
-  let assert_attribute_assigns ?(include_properties = true) source expected =
+  let assert_attribute_assigns ?(include_generated_attributes = true) source expected =
     let expected =
       List.map
         ~f:(fun (target, annotation, value) -> create_assign ~target ~annotation ~value)
@@ -251,7 +251,9 @@ let test_attribute_assigns _ =
       ~cmp:(List.equal ~equal:assign_equal)
       ~printer
       expected
-      (parse_single_class source |> Class.attribute_assigns ~include_properties |> Map.data)
+      (parse_single_class source
+       |> Class.attribute_assigns ~include_generated_attributes
+       |> Map.data)
   in
   assert_attribute_assigns
     {|

@@ -471,7 +471,7 @@ module Class = struct
   let attribute_fold
       ?(transitive = false)
       ?(class_attributes = false)
-      ?(include_properties = true)
+      ?(include_generated_attributes = true)
       definition
       ~initial
       ~f
@@ -488,7 +488,7 @@ module Class = struct
         else
           f accumulator attribute
       in
-      Statement.Class.attribute_assigns ~include_properties ~in_test definition
+      Statement.Class.attribute_assigns ~include_generated_attributes ~in_test definition
       |> Map.data
       |> List.fold ~init:initial ~f:fold_attribute_assign
     in

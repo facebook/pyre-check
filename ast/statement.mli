@@ -198,7 +198,7 @@ module Class : sig
 
   val constructor: ?in_test: bool -> t -> Define.t option
   val attribute_assigns
-    :  ?include_properties: bool
+    :  ?include_generated_attributes: bool
     -> ?in_test: bool
     -> t
     -> (Assign.t Node.t) Expression.Access.Map.t

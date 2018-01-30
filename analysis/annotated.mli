@@ -124,7 +124,7 @@ module Class : sig
   val attribute_fold
     :  ?transitive: bool
     -> ?class_attributes: bool
-    -> ?include_properties: bool
+    -> ?include_generated_attributes: bool
     -> t
     -> initial: 'accumulator
     -> f: ('accumulator -> Attribute.t -> 'accumulator)
