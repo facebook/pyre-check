@@ -413,6 +413,8 @@ class Check(ErrorHandling):
             configuration,
             source_directories,
             should_merge_directories=True)
+        self.SHARED_SOURCE_DIRECTORY =\
+            "{}_{}".format(self.SHARED_SOURCE_DIRECTORY,str(os.getpid()))
         self._log_identifier = arguments.log_identifier
 
     def _run(self, retries: int = 1) -> None:
@@ -428,6 +430,8 @@ class Check(ErrorHandling):
             source_directories=self._source_directories,
             flags=flags)
         errors = self._get_errors(results)
+        if os.path.exists(self.SHARED_SOURCE_DIRECTORY):
+            shutil.rmtree(self.SHARED_SOURCE_DIRECTORY)
         self._print(errors)
 
 

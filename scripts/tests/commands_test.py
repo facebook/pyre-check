@@ -269,6 +269,18 @@ class CheckTest(unittest.TestCase):
                 source_directories=['.'],
                 flags=['-project-root', '.', '-stub-roots', 'stub,root'])
 
+        with patch.object(commands.Command, '_call_client') as call_client:
+            commands.Check(
+                arguments,
+                configuration,
+                source_directories=['roofus', 'dufus']).run()
+            call_client.assert_called_once_with(
+                command=commands.CHECK,
+                source_directories=[
+                    '.pyre/shared_source_directory_{}'.format(os.getpid()),
+                ],
+                flags=['-project-root', '.', '-stub-roots', 'stub,root'])
+
 
 class IncrementalTest(unittest.TestCase):
     @patch.object(commands.Command, '_state')
