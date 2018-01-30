@@ -608,7 +608,6 @@ let test_class_attributes _ =
     let attribute_list_equal =
       let equal left right =
         Expression.equal_expression (Attribute.name left) (Attribute.name right) &&
-        Annotation.equal (Attribute.annotation left) (Attribute.annotation right) &&
         Class.equal (Attribute.parent left) (Attribute.parent right)
       in
       List.equal ~equal
@@ -629,6 +628,7 @@ let test_class_attributes _ =
   assert_attributes
     parent
     [
+      Attribute.create ~resolution ~parent (create_assign "__init__");
       Attribute.create ~resolution ~parent (create_assign "class_attribute");
       Attribute.create ~resolution ~parent (create_assign "first");
       Attribute.create ~resolution ~parent (create_assign "implicit");
@@ -676,11 +676,11 @@ let test_class_attributes _ =
   assert_equal
     ~printer:Fn.id
     (Class.attribute_fold ~resolution ~initial:"" ~f:callback parent)
-    ("class_attributefirstimplicitsecondthird");
+    ("__init__class_attributefirstimplicitsecondthird");
   assert_equal
     ~printer:Fn.id
     (Class.attribute_fold ~class_attributes:true ~resolution ~initial:"" ~f:callback parent)
-    ("class_attribute__name__");
+    ("__init__class_attribute__name__");
 
   let resolution, parent =
     setup

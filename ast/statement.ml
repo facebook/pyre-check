@@ -913,6 +913,27 @@ module Class = struct
       else
         Expression.Access.Map.empty
     in
+    let callable_assigns =
+      let callable_assigns map { Node.location; value } =
+        match value with
+        | Define { Define.name; _ } ->
+            let assign =
+              Node.create
+                ~location
+                {
+                  Assign.target = Node.create ~location (Expression.Access name);
+                  annotation = None;  (* This should be a `Callable`. Ignoring for now... *)
+                  value = None;
+                  compound = None;
+                  parent = None;
+                }
+            in
+            Map.set ~key:name ~data:assign map
+        | _ ->
+            map
+      in
+      List.fold ~init:Expression.Access.Map.empty ~f:callable_assigns body
+    in
     let explicit_attribute_assigns =
       let attribute_assigns map { Node.location; value } =
         match value with
@@ -932,7 +953,6 @@ module Class = struct
       in
       List.fold ~init:Expression.Access.Map.empty ~f:attribute_assigns body
     in
-    (* Explicit declarations override implicit ones. *)
     let merge ~key:_ = function
       | `Both (_, right) ->
           Some right
@@ -940,9 +960,12 @@ module Class = struct
       | `Right value ->
           Some value
     in
-    Map.merge ~f:merge implicit_attribute_assigns explicit_attribute_assigns
+    (* Merge with decreasing priority. Explicit attributes override all. *)
+    explicit_attribute_assigns
     |> Map.merge ~f:merge property_assigns
     |> Map.merge ~f:merge named_tuple_assigns
+    |> Map.merge ~f:merge callable_assigns
+    |> Map.merge ~f:merge implicit_attribute_assigns
 
 
   let strip ({ Record.Class.body; _ } as class_define ) =

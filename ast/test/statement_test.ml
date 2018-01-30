@@ -271,6 +271,7 @@ let test_attribute_assigns _ =
         whatever()['asdf'] = 5
     |}
     [
+      "__init__", None, None;
       "attribute", Some (Type.expression Type.integer), Some "value";
       "ignored", None, None;
       "implicit", None, None;
@@ -282,7 +283,10 @@ let test_attribute_assigns _ =
           self.attribute = value  # Prioritize explicit declaration
         attribute: int = value
     |}
-    ["attribute", Some (Type.expression Type.integer), Some "value"];
+    [
+      "__init__", None, None;
+      "attribute", Some (Type.expression Type.integer), Some "value";
+    ];
   assert_attribute_assigns
     {|
       class Foo:
@@ -293,7 +297,12 @@ let test_attribute_assigns _ =
         def not_inlined(self):
           self.other: int = 1
     |}
-    ["attribute", Some (Type.expression Type.integer), None];
+    [
+      "__init__", None, None;
+      "_init", None, None;
+      "attribute", Some (Type.expression Type.integer), None;
+      "not_inlined", None, None;
+    ];
   assert_attribute_assigns
     {|
       class Foo:
