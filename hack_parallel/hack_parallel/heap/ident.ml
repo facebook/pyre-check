@@ -20,7 +20,7 @@ let trace = ref IMap.empty
 let tmp () =
   let res = hh_counter_next () in
   if !track_names then begin
-    trace := IMap.set res ("__tmp"^string_of_int res) !trace ;
+    trace := IMap.add res ("__tmp"^string_of_int res) !trace ;
   end;
   res
 
@@ -38,7 +38,7 @@ let get_name x =
   IMap.find_unsafe x !trace
 
 let set_name x y =
-  trace := IMap.set x y !trace
+  trace := IMap.add x y !trace
 
 let make x =
   let res = hh_counter_next () in

@@ -90,7 +90,7 @@ let rec mem (trie : 'a t) (w : string) : bool =
 
 let add_one (node : 'a t) (c : string) (inner :'a t): unit =
   let elts = get_node node in
-  elts := SMap.set c inner !elts
+  elts := SMap.add c inner !elts
 
 (* split key in position c, put left part as new key to a new node n
  * and put right part as child of n, then return n *)

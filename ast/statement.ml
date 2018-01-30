@@ -870,7 +870,7 @@ module Class = struct
                       parent = None;
                     }
                   in
-                  Map.add ~key:access ~data:(Node.create ~location assign) sofar
+                  Map.set ~key:access ~data:(Node.create ~location assign) sofar
               | Tuple [{ Node.location; value = String name}; annotation] ->
                   let access = Access.create name in
                   let assign =
@@ -882,7 +882,7 @@ module Class = struct
                       parent = None;
                     }
                   in
-                  Map.add ~key:access ~data:(Node.create ~location assign) sofar
+                  Map.set ~key:access ~data:(Node.create ~location assign) sofar
               | _ ->
                   sofar
             in
