@@ -3,6 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import errno
 import json
 import logging
 import os
@@ -112,6 +113,9 @@ class Command:
         def merge_directory(source_directory):
             def add_file(path):
                 merged_path = os.path.join(target_root, path)
+                original_path = os.path.join(
+                    os.path.realpath(source_directory),
+                    path)
                 if os.path.exists(merged_path):
                     return
                 directory = os.path.dirname(merged_path)
@@ -119,9 +123,14 @@ class Command:
                     os.makedirs(directory)
                 if not path.endswith(".py") and not path.endswith(".pyi"):
                     return
-                os.symlink(
-                    os.path.join(os.path.realpath(source_directory), path),
-                    merged_path)
+                try:
+                    os.symlink(original_path, merged_path)
+                except OSError as error:
+                    if error.errno == errno.EEXIST:
+                        os.unlink(merged_path)
+                        os.symlink(original_path, merged_path)
+                    else:
+                        LOG.error(str(error))
             for directory, _, files in os.walk(source_directory):
                 files = [
                     os.path.relpath(
