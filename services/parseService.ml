@@ -134,7 +134,7 @@ let parse_source_job files =
 let parse_sources_list
     service
     files
-    ~configuration:({ Configuration.source_root; _ } as configuration) =
+    ~configuration:({ Configuration.source_root; project_root; _ } as configuration) =
   AstSharedMemory.remove_paths (List.filter_map ~f:(File.handle ~root:source_root) files);
   let sources =
     if Service.is_parallel service then
@@ -160,12 +160,19 @@ let parse_sources_list
         )
       sources
   in
+  let path_to_files =
+    Path.get_relative_to_root ~root:project_root ~path:source_root
+    |> Option.value ~default:(Path.absolute source_root)
+  in
   Statistics.coverage
     ~coverage:[
       "strict_coverage", strict_coverage;
       "declare_coverage", declare_coverage;
       "default_coverage", List.length paths - strict_coverage - declare_coverage;
       "source_files", List.length paths;
+    ]
+    ~normals:[
+      "file_name", path_to_files;
     ]
     ~configuration
     ();
