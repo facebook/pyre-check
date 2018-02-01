@@ -413,8 +413,7 @@ module Define = struct
                 }
               ];
             _;
-          } when Identifier.show self = "self" &&
-                 String.is_prefix ~prefix:"_" (Identifier.show name) ->
+          } when Identifier.show self = "self" ->
             (* Look for method in class definition. *)
             let inline = function
               | { Node.value = Define { name = callee; body; _ }; _ }
@@ -481,10 +480,6 @@ module Define = struct
         Some (assign return_annotation)
     | None ->
         None
-
-
-  let strip define =
-    { define with body = [] }
 end
 
 
@@ -983,21 +978,6 @@ module Class = struct
       |> Map.merge ~f:merge named_tuple_assigns
       |> Map.merge ~f:merge callable_assigns
       |> Map.merge ~f:merge implicit_attribute_assigns
-
-
-  let strip ({ Record.Class.body; _ } as class_define ) =
-    let strip_define statement =
-      match Node.value statement with
-      | Define ({ Define.name; _ } as define)
-        when Define.is_constructor ~in_test:true define ||
-             String.is_prefix ~prefix:"_" (Expression.Access.show name) ->
-          statement
-      | Define define ->
-          { statement with Node.value = Define (Define.strip define) }
-      | _ ->
-          statement
-    in
-    { class_define with Record.Class.body = List.map ~f:strip_define body }
 
 
   let update

@@ -304,16 +304,16 @@ let test_attribute_assigns _ =
     {|
       class Foo:
         def __init__(self):
-          self._init()
-        def _init(self):
+          self.init()
+        def init(self):
           self.attribute: int = value
         def not_inlined(self):
           self.other: int = 1
     |}
     [
       "__init__", None, None;
-      "_init", None, None;
       "attribute", Some (Type.expression Type.integer), None;
+      "init", None, None;
       "not_inlined", None, None;
     ];
   assert_attribute_assigns
@@ -411,81 +411,6 @@ let test_attribute_assigns _ =
       "one", Some (Type.expression Type.integer), None;
       "two", None, None;
     ]
-
-
-let test_strip _ =
-  let assert_stripped source definition =
-    assert_equal
-      ~printer:Class.show
-      ~cmp:Class.equal
-      (parse_single_class source |> Class.strip)
-      definition
-  in
-
-  assert_stripped
-    {|
-      class Foo:
-        def __init__():
-          pass
-        def setUp():
-          pass
-        def _private():
-          pass
-        def method():
-          pass
-    |}
-    {
-      Class.name = Access.create "Foo";
-      bases = [];
-      body = [
-        +Define {
-          Define.name = Access.create "__init__";
-          parameters = [];
-          body = [+Pass];  (* Not stripped! *)
-          decorators = [];
-          docstring = None;
-          return_annotation = None;
-          async = false;
-          generated = false;
-          parent = Some (Access.create "Foo")
-        };
-        +Define {
-          Define.name = Access.create "setUp";
-          parameters = [];
-          body = [+Pass];  (* Not stripped! *)
-          decorators = [];
-          docstring = None;
-          return_annotation = None;
-          async = false;
-          generated = false;
-          parent = Some (Access.create "Foo")
-        };
-        +Define {
-          Define.name = Access.create "_private";
-          parameters = [];
-          body = [+Pass];  (* Not stripped! *)
-          decorators = [];
-          docstring = None;
-          return_annotation = None;
-          async = false;
-          generated = false;
-          parent = Some (Access.create "Foo")
-        };
-        +Define {
-          Define.name = Access.create "method";
-          parameters = [];
-          body = [];
-          decorators = [];
-          docstring = None;
-          return_annotation = None;
-          async = false;
-          generated = false;
-          parent = Some (Access.create "Foo")
-        };
-      ];
-      decorators = [];
-      docstring = None;
-    }
 
 
 let test_update _ =
@@ -826,7 +751,6 @@ let () =
   "class">:::[
     "constructor">::test_constructor;
     "attribute_assigns">::test_attribute_assigns;
-    "strip">::test_strip;
     "update">::test_update;
   ]
   |> run_test_tt_main;
