@@ -1612,16 +1612,19 @@ module Access = struct
             else
               None
         | element :: tail ->
+            let access = List.rev (element :: reversed_lead) in
             let definition =
-              Resolution.parse_annotation
-                resolution
-                (Node.create (Access (List.rev (element :: reversed_lead))))
+              Resolution.parse_annotation resolution (Node.create (Access access))
               |> Resolution.class_definition resolution
             in
             if Option.is_some definition then
               Some (element :: reversed_lead, tail)
             else
-              first_call_or_definition ~reversed_lead:(element :: reversed_lead) tail
+              let global = Resolution.global resolution access in
+              if Option.is_some global then
+                Some (element :: reversed_lead, tail)
+              else
+                first_call_or_definition ~reversed_lead:(element :: reversed_lead) tail
         | [] -> None
       in
       first_call_or_definition access

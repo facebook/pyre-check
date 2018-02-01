@@ -1095,7 +1095,6 @@ let test_fold _ =
     [
       Annotation.create_immutable ~global:true Type.integer, defined_attribute;
       Annotation.create_immutable ~global:true (Type.Primitive ~~"Foo"), Access.Element.Global;
-      Annotation.create Type.Top, Access.Element.Global;
     ];
 
   let undefined_attribute =
@@ -1115,7 +1114,6 @@ let test_fold _ =
     [
       Annotation.create Type.Top, undefined_attribute;
       Annotation.create_immutable ~global:true (Type.Primitive ~~"Foo"), Access.Element.Global;
-      Annotation.create Type.Top, Access.Element.Global;
     ]
 
 

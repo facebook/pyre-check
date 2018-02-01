@@ -1703,7 +1703,7 @@ let test_check_optional _ =
     ]
 
 
-let test_check_function_precedence _ =
+let test_check_environment_precedence _ =
   assert_type_errors
     {|
       def string.attribute.call() -> None: ...
@@ -1719,6 +1719,16 @@ let test_check_function_precedence _ =
       def foo(string: str) -> None:
         string.attribute.Constructor(1)
         string.attribute.Constructor.ATTRIBUTE
+    |}
+    [];
+  assert_type_errors
+    {|
+      class Foo:
+        def send(self) -> None:
+          pass
+      string.attribute: Foo = Foo()
+      def foo(string: str) -> None:
+        string.attribute.send()
     |}
     []
 
@@ -4406,7 +4416,7 @@ let () =
     "check_non_debug">::test_check_non_debug;
     "check_comprehensions">::test_check_comprehensions;
     "check_optional">::test_check_optional;
-    "check_function_precedence">::test_check_function_precedence;
+    "check_environment_precedence">::test_check_environment_precedence;
     "check_function_parameters">::test_check_function_parameters;
     "check_function_parameters_with_backups">::test_check_function_parameters_with_backups;
     "check_variable_arguments">::test_check_variable_arguments;
