@@ -67,6 +67,9 @@ include Hashable.Make(struct
   end)
 
 
+let serialize = show
+
+
 let reverse_substitute name =
   match Identifier.show name with
   | "collections.defaultdict" ->

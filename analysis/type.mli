@@ -41,6 +41,9 @@ module Map : Map.S with type Key.t = t
 module Set: Set.S with type Elt.t = t
 include Hashable with type t := t
 
+
+val serialize: t -> string
+
 val awaitable: t -> t
 val bool: t
 val bytes: t

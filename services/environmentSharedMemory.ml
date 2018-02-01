@@ -21,7 +21,7 @@ end
 
 module TypeKey = struct
   type t = Type.t
-  let to_string = Format.asprintf "%a" Type.pp
+  let to_string = Type.serialize
   let compare = Type.compare
 end
 
