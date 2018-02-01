@@ -250,7 +250,9 @@ module Define = struct
         false
     | Some parent ->
         Expression.Access.show parent = string_name ||
-        (string_name = "__init__" || (in_test && string_name = "setUp"))
+        (string_name = "__init__" ||
+         (in_test && string_name = "setUp") ||
+         (in_test && string_name = "with_context"))
 
 
   let is_generated_constructor { generated; _ } = generated
@@ -832,14 +834,14 @@ module Class = struct
   [@@deriving compare, eq, sexp, show, hash]
 
 
-  let constructor ?(in_test = false) { Record.Class.body; _ } =
+  let constructors ?(in_test = false) { Record.Class.body; _ } =
     let constructor = function
       | { Node.value = Define define; _ } when Define.is_constructor ~in_test define ->
           Some define
       | _ ->
           None
     in
-    List.find_map ~f:constructor body
+    List.filter_map ~f:constructor body
 
 
   let attribute_assigns
@@ -869,10 +871,17 @@ module Class = struct
     if not include_generated_attributes then
       explicit_attribute_assigns
     else
+      let merge ~key:_ = function
+        | `Both (_, right) ->
+            Some right
+        | `Left value
+        | `Right value ->
+            Some value
+      in
       let implicit_attribute_assigns =
-        constructor ~in_test definition
-        >>| Define.implicit_attribute_assigns ~definition
-        |> Option.value ~default:Expression.Access.Map.empty
+        constructors ~in_test definition
+        |> List.map ~f:(Define.implicit_attribute_assigns ~definition)
+        |> List.fold ~init:Expression.Access.Map.empty ~f:(Map.merge ~f:merge)
       in
       let named_tuple_assigns =
         let open Expression in
@@ -967,13 +976,6 @@ module Class = struct
               map
         in
         List.fold ~init:Expression.Access.Map.empty ~f:callable_assigns body
-      in
-      let merge ~key:_ = function
-        | `Both (_, right) ->
-            Some right
-        | `Left value
-        | `Right value ->
-            Some value
       in
       (* Merge with decreasing priority. Explicit attributes override all. *)
       explicit_attribute_assigns

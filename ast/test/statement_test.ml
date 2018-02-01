@@ -89,6 +89,7 @@ let test_is_constructor _ =
   in
   assert_is_constructor ~name:"__init__" ~parent:(Some "foo") true;
   assert_is_constructor ~in_test:true ~name:"setUp" ~parent:(Some "foo") true;
+  assert_is_constructor ~in_test:true ~name:"with_context" ~parent:(Some "foo") true;
   assert_is_constructor ~name:"__init__" false;
   assert_is_constructor ~name:"bar" ~parent:(Some "foo") false
 
@@ -118,11 +119,11 @@ let test_constructor _ =
       | { Node.value = Class definition; _ } -> definition
       | _ -> failwith "Could not parse class"
     in
-    let constructor = Class.constructor definition in
+    let constructors = Class.constructors definition in
     if exists then
-      assert_is_some constructor
+      assert_false (List.is_empty constructors)
     else
-      assert_is_none constructor
+      assert_true (List.is_empty constructors)
   in
 
   assert_constructor
@@ -243,7 +244,11 @@ let test_attribute_assigns _ =
     (Some ("foo", Some (Type.expression Type.integer), None));
 
   (* Test class field assigns. *)
-  let assert_attribute_assigns ?(include_generated_attributes = true) source expected =
+  let assert_attribute_assigns
+      ?(in_test = false)
+      ?(include_generated_attributes = true)
+      source
+      expected =
     let expected =
       List.map
         ~f:(fun (target, annotation, value) -> create_assign ~target ~annotation ~value)
@@ -258,7 +263,7 @@ let test_attribute_assigns _ =
       ~printer
       expected
       (parse_single_class source
-       |> Class.attribute_assigns ~include_generated_attributes
+       |> Class.attribute_assigns ~in_test ~include_generated_attributes
        |> Map.data)
   in
   assert_attribute_assigns
@@ -338,6 +343,34 @@ let test_attribute_assigns _ =
         def property(self) -> int: ...
     |}
     ["property", Some (Type.expression Type.integer), None];
+
+  (* Implicit attributes in tests. *)
+  assert_attribute_assigns
+    ~in_test:true
+    {|
+      class Test:
+        def setUp(self):
+          self.attribute = 1
+    |}
+    [
+      "attribute", None, None;
+      "setUp", None, None;
+    ];
+  assert_attribute_assigns
+    ~in_test:true
+    {|
+      class Test:
+        def setUp(self):
+          self.attribute = 1
+        def with_context(self):
+          self.context = 2
+    |}
+    [
+      "attribute", None, None;
+      "context", None, None;
+      "setUp", None, None;
+      "with_context", None, None;
+    ];
 
   (* Class properties. *)
   assert_attribute_assigns

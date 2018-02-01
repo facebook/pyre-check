@@ -196,7 +196,7 @@ module Class : sig
   type t = statement_node Record.Class.record
   [@@deriving compare, eq, sexp, show, hash]
 
-  val constructor: ?in_test: bool -> t -> Define.t option
+  val constructors: ?in_test: bool -> t -> Define.t list
   val attribute_assigns
     :  ?include_generated_attributes: bool
     -> ?in_test: bool
