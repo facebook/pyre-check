@@ -202,6 +202,12 @@ let test_attribute_assigns _ =
         self.attribute: str = value
     |}
     ["attribute", Some (Type.expression (Type.Union [Type.string; Type.integer])), None];
+  assert_implicit_attribute_assigns
+    {|
+      def foo():
+        self.attribute, self.other = derp()
+    |}
+    ["attribute", None, None; "other", None, None];
 
   (* Implicit arguments in branches. *)
   assert_implicit_attribute_assigns

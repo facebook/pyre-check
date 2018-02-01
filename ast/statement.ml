@@ -314,30 +314,43 @@ module Define = struct
     let open Expression in
     let attribute_assign map { Node.location; value } =
       match value with
-      | Assign ({
-          Assign.target = ({
-              Node.value = Access ((Access.Identifier self) :: ([_] as access));
-              _;
-            } as target);
-          _;
-        } as assign) when Identifier.show self = "self" ->
-          let assign =
-            Node.create
-              ~location
-              {
-                assign with
-                Assign.target = {
-                  target with
-                  Node.value = Access access;
-                };
-                value = None;
-              }
+      | Assign ({ Assign.target; _; } as assign) ->
+          let attribute_assign map target =
+            match target with
+            | ({
+                Node.value = Access ((Access.Identifier self) :: ([_] as access));
+                _;
+              } as target) when Identifier.show self = "self" ->
+                let assign =
+                  Node.create
+                    ~location
+                    {
+                      assign with
+                      Assign.target = {
+                        target with
+                        Node.value = Access access;
+                      };
+                      value = None;
+                    }
+                in
+                let update = function
+                  | Some assigns -> Some (assign :: assigns)
+                  | None -> Some [assign]
+                in
+                Map.change ~f:update map access
+            | _ ->
+                map
           in
-          let update = function
-            | Some assigns -> Some (assign :: assigns)
-            | None -> Some [assign]
+          let targets =
+            match target with
+            | { Node.value = Access _; _ } as target ->
+                [target]
+            | { Node.value = Tuple targets; _ } ->
+                targets
+            | _ ->
+                []
           in
-          Map.change ~f:update map access
+          List.fold ~init:map ~f:attribute_assign targets
       | _ ->
           map
     in
