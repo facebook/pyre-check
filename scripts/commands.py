@@ -4,6 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import errno
+import fcntl
 import json
 import logging
 import os
@@ -61,6 +62,7 @@ class Result:
 
 class Command:
     SHARED_SOURCE_DIRECTORY = ".pyre/shared_source_directory"
+    SOURCE_DIRECTORY_LIST = ".pyre/source_directories.txt"
 
     def __init__(
             self,
@@ -88,6 +90,10 @@ class Command:
         self._original_source_directories = self._source_directories
         if len(self._source_directories) > 1:
             if self._should_merge_directories:
+                try:
+                    shutil.rmtree(self.SHARED_SOURCE_DIRECTORY)
+                except OSError:
+                    pass
                 self._merge_directories(self.SHARED_SOURCE_DIRECTORY)
             self._source_directories = [self.SHARED_SOURCE_DIRECTORY]
         self._run()
@@ -439,8 +445,10 @@ class Check(ErrorHandling):
             source_directories=self._source_directories,
             flags=flags)
         errors = self._get_errors(results)
-        if os.path.exists(self.SHARED_SOURCE_DIRECTORY):
+        try:
             shutil.rmtree(self.SHARED_SOURCE_DIRECTORY)
+        except OSError:
+            pass
         self._print(errors)
 
 
@@ -529,6 +537,12 @@ class Rage(Command):
 
 class Start(Command):
     def __init__(self, arguments, configuration, source_directories) -> None:
+        with open(self.SOURCE_DIRECTORY_LIST, 'w+') as directory_list:
+            fcntl.lockf(directory_list, fcntl.LOCK_EX)
+            for directory in source_directories:
+                directory_list.write("{}\n".format(directory))
+            fcntl.lockf(directory_list, fcntl.LOCK_UN)
+
         super(Start, self).__init__(
             arguments,
             configuration,
@@ -553,7 +567,6 @@ class Start(Command):
             '-stub-roots',
             ','.join(self._configuration.get_stub_roots()),
         ])
-
         results = self._call_client(
             command=START,
             source_directories=self._source_directories,
@@ -579,6 +592,10 @@ class Stop(Command):
                 'Stopped %s at %s',
                 self._server_string(running),
                 self._source_directory_string(running))
+            try:
+                os.remove(self.SOURCE_DIRECTORY_LIST)
+            except OSError:
+                pass
         else:
             LOG.info('No %s running', self._server_string())
 
@@ -598,7 +615,7 @@ class Restart(Command):
         Start(
             self._arguments,
             self._configuration,
-            self._source_directories).run()
+            self._original_source_directories).run()
 
 
 class Kill(Command):

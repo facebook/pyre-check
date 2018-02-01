@@ -326,8 +326,9 @@ class IncrementalTest(unittest.TestCase):
 
 
 class StartTest(unittest.TestCase):
+    @patch('fcntl.lockf')
     @patch.object(commands.Command, '_merge_directories')
-    def test_start(self, merge_directories) -> None:
+    def test_start(self, merge_directories, lock_file) -> None:
         arguments = mock_arguments()
         arguments.terminal = False
 
@@ -365,23 +366,26 @@ class StartTest(unittest.TestCase):
             ])
 
         # Check start with multiple source directories
-        with patch.object(commands.Command, '_call_client') as call_client:
-            arguments.no_watchman = False
-            commands.Start(
-                arguments,
-                configuration,
-                source_directories=['x', 'y']).run()
-            call_client.assert_has_calls([
-                call(
-                    command=commands.WATCHMAN,
-                    source_directories=['.pyre/shared_source_directory'],
-                    flags=['-project-root', '.', '-daemonize']),
-                call(
-                    command=commands.START,
-                    source_directories=['.pyre/shared_source_directory'],
-                    flags=['-project-root', '.', '-stub-roots', 'root']),
-            ])
-            merge_directories.assert_called_once()
+        with patch('builtins.open', mock_open()) as open:
+            with patch.object(commands.Command, '_call_client') as call_client:
+                arguments.no_watchman = False
+                commands.Start(
+                    arguments,
+                    configuration,
+                    source_directories=['x', 'y']).run()
+                call_client.assert_has_calls([
+                    call(
+                        command=commands.WATCHMAN,
+                        source_directories=['.pyre/shared_source_directory'],
+                        flags=['-project-root', '.', '-daemonize']),
+                    call(
+                        command=commands.START,
+                        source_directories=['.pyre/shared_source_directory'],
+                        flags=['-project-root', '.', '-stub-roots', 'root']),
+                ])
+                merge_directories.assert_called_once()
+                open().write.assert_has_calls([call('x\n'), call('y\n')])
+
 
         # Check start with terminal.
         with patch.object(commands.Command, '_call_client') as call_client:
