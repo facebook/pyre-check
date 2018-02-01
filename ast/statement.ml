@@ -972,11 +972,33 @@ module Class = struct
         in
         List.fold ~init:Expression.Access.Map.empty ~f:callable_assigns body
       in
+      let class_assigns =
+        let callable_assigns map { Node.location; value } =
+          match value with
+          | Class { Record.Class.name; _ } when not (List.is_empty name) ->
+              let assign =
+                Node.create
+                  ~location
+                  {
+                    Assign.target = Node.create ~location (Expression.Access [List.last_exn name]);
+                    annotation = None;  (* This should be a `typing.Type[]`. Ignoring for now... *)
+                    value = None;
+                    compound = None;
+                    parent = None;
+                  }
+              in
+              Map.set ~key:name ~data:assign map
+          | _ ->
+              map
+        in
+        List.fold ~init:Expression.Access.Map.empty ~f:callable_assigns body
+      in
       (* Merge with decreasing priority. Explicit attributes override all. *)
       explicit_attribute_assigns
       |> Map.merge ~f:merge property_assigns
       |> Map.merge ~f:merge named_tuple_assigns
       |> Map.merge ~f:merge callable_assigns
+      |> Map.merge ~f:merge class_assigns
       |> Map.merge ~f:merge implicit_attribute_assigns
 
 

@@ -343,6 +343,13 @@ let test_attribute_assigns _ =
         def property(self) -> int: ...
     |}
     ["property", Some (Type.expression Type.integer), None];
+  assert_attribute_assigns
+    {|
+      class Foo:
+        class Foo.Bar:  # no preprocessing in tests
+          pass
+    |}
+    ["Bar", None, None];
 
   (* Implicit attributes in tests. *)
   assert_attribute_assigns
