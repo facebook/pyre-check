@@ -474,6 +474,29 @@ class Incremental(ErrorHandling):
                 source_directory)
 
     def _run(self) -> None:
+        if len(self._original_source_directories) > 1:
+            missing_directories = []
+            try:
+                existing_directories = set()
+                with open(self.SOURCE_DIRECTORY_LIST) as directories:
+                    fcntl.lockf(directories.fileno(), fcntl.LOCK_SH)
+                    for line in directories:
+                        existing_directories.add(line.strip())
+                    fcntl.lockf(directories.fileno(), fcntl.LOCK_UN)
+                    for source_directory in self._original_source_directories:
+                        if source_directory not in existing_directories:
+                            missing_directories.append(source_directory)
+            except OSError:
+                pass
+            if missing_directories:
+                LOG.info(
+                    "Stopping pyre server which doesn't analyze the"
+                    " following source directories:\n{}".format(
+                        "\n".join(missing_directories)))
+                Stop(
+                    self._arguments,
+                    self._configuration,
+                    self._source_directories).run()
         dead = self._state().dead
         if dead:
             LOG.warning(
