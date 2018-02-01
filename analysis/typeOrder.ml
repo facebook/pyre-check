@@ -231,11 +231,6 @@ let connect
     end
 
 
-let find (module Handler: Handler) annotation =
-  Handler.find (Handler.indices ()) annotation
-  >>| Handler.find_unsafe (Handler.annotations ())
-
-
 let contains (module Handler: Handler) annotation =
   Handler.contains (Handler.indices ()) annotation
 

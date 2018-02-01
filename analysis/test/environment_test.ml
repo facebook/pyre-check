@@ -232,8 +232,8 @@ let test_register_aliases _ =
   assert_equal (Handler.function_definitions (access ["foo"])) None;
 
   let order = (module Handler.TypeOrderHandler: TypeOrder.Handler) in
-  assert_is_some (TypeOrder.find order (Type.primitive "typing.Iterator"));
-  assert_is_some (TypeOrder.find order (Type.primitive "typing.Iterable"));
+  assert_true (TypeOrder.contains order (Type.primitive "typing.Iterator"));
+  assert_true (TypeOrder.contains order (Type.primitive "typing.Iterable"));
   assert_equal
     (parse_annotation (module Handler) (!"collections.Iterator"))
     (Type.primitive "typing.Iterator");

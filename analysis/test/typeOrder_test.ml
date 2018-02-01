@@ -172,7 +172,7 @@ let test_default _ =
 
   (* Test special forms. *)
   let assert_has_special_form primitive_name =
-    assert_is_some (TypeOrder.find order (Type.Primitive (Identifier.create primitive_name)))
+    assert_true (TypeOrder.contains order (Type.Primitive (Identifier.create primitive_name)))
   in
   assert_has_special_form "typing.Tuple";
   assert_has_special_form "typing.Generic";

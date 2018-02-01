@@ -714,7 +714,7 @@ let register_aliases (module Handler: Handler) sources =
           | Type.Primitive _
           | Type.Parametric _ ->
               let primitive, _ = Type.split annotation in
-              Option.is_some (TypeOrder.find order primitive)
+              TypeOrder.contains order primitive
 
           | Type.Tuple (Type.Bounded annotations)
           | Type.Union annotations ->
@@ -735,7 +735,7 @@ let register_aliases (module Handler: Handler) sources =
               false
         in
         let primitive, _ = Type.split target_annotation in
-        if Option.is_none (TypeOrder.find order primitive) &&
+        if not (TypeOrder.contains order primitive) &&
            annotation_in_order value_annotation then
           begin
             Handler.register_alias ~path ~key:target_annotation ~data:value_annotation;

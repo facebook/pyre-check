@@ -74,7 +74,6 @@ val connect
   -> successor: Type.t
   -> unit
 
-val find: (module Handler) -> Type.t -> Type.t option
 val contains: (module Handler) -> Type.t -> bool
 
 val successors_fold
