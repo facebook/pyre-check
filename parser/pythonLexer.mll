@@ -50,15 +50,22 @@
     else
       STRING (position, value)
 
+  let strip_underscores string =
+    if String.contains string '_'  then
+      String.split_on_chars ~on:['_'] string
+      |> String.concat ~sep:""
+    else
+      string
+
   let parse_float value =
     try
-      Float.of_string value
+      Float.of_string (strip_underscores value)
     with Failure _ ->
       Float.max_value
 
   let parse_integer value =
     try
-      Int.of_string value
+      Int.of_string (strip_underscores value)
     with Failure _ ->
       Int.max_value
 }
@@ -72,15 +79,22 @@ let signature = '#' whitespace* "type: (...) ->" whitespace* [^ '\n' '\r']+
 
 let identifier = ['$' 'a'-'z' 'A'-'Z' '_'] ['a'-'z' 'A'-'Z' '0'-'9' '_']*
 
+
 let digit = ['0'-'9']
-let exponent = ['e''E'] ['-''+']? digit+
-let float = ((digit+ '.' | digit* '.' digit+) exponent?) | digit+ exponent
+let hexdigit = digit | ['a'-'f' 'A'-'F']
+let digipart = digit (('_'? digit)* )
+
 let integer =
-  ('0' ['b' 'B'] ['0'-'1']+) | (* Binary. *)
-  ('0' ['o' 'O'] ['0'-'7']+) | (* Octal. *)
-  ('0' ['x' 'X'] (digit | ['a'-'f' 'A'-'F'])+) | (* Hexadecimal. *)
-  digit+ (* Decimal. *)
-let complex = (float | digit+) ('j' | 'J')
+  ('0' ['b' 'B'] ('_'? ['0'-'1'])+) | (* Binary. *)
+  ('0' ['o' 'O'] ('_'? ['0'-'7'])+) | (* Octal. *)
+  ('0' ['x' 'X'] ('_'? hexdigit)+) | (* Hexadecimal. *)
+  (['1' - '9'] ('_'? digit)* | '0' ('_'? '0')* ) |  (* Decimal. *)
+  ('0' digit+) (* Valid before python 3.6 *)
+
+let exponent = ['e''E'] ['-''+']? digipart
+let pointfloat = (digipart '.') | (digipart? '.' digipart)
+let float = (pointfloat exponent?) | (digipart exponent)
+let complex = (float | digipart) ('j' | 'J')
 
 let kind = 'b' | 'B' | 'f' | 'F'
 let encoding = 'u' | 'U' | 'r' | 'R'

@@ -135,11 +135,17 @@ let test_lexer _ =
 
 let test_number _ =
   assert_parsed_equal "1" [+Expression (+Integer 1)];
+  assert_parsed_equal "0" [+Expression (+Integer 0)];
+  assert_parsed_equal "00" [+Expression (+Integer 0)];
+  assert_parsed_equal "00_0" [+Expression (+Integer 0)];
+  assert_parsed_equal "01" [+Expression (+Integer 1)];
+  assert_parsed_equal "1_01" [+Expression (+Integer 101)];
   assert_parsed_equal "(1)" [+Expression (+Integer 1)];
   assert_parsed_equal "((1))" [+Expression (+Integer 1)];
   assert_parsed_equal "1;" [+Expression (+Integer 1)];
 
   assert_parsed_equal "1.0" [+Expression (+Float 1.0)];
+  assert_parsed_equal "1_0.1_01" [+Expression (+Float 10.101)];
   assert_parsed_equal ".1" [+Expression (+Float 0.1)];
   assert_parsed_equal "1." [+Expression (+Float 1.0)];
   assert_parsed_equal "1e10" [+Expression (+Float 1e10)];
@@ -148,15 +154,21 @@ let test_number _ =
   assert_parsed_equal "0XaBc" [+Expression (+Integer 0xABC)];
   assert_parsed_equal "0o13" [+Expression (+Integer 0o13)];
   assert_parsed_equal "0b01" [+Expression (+Integer 0b01)];
+  assert_parsed_equal "0b0_1" [+Expression (+Integer 0b01)];
+  assert_parsed_equal "0b_0_1" [+Expression (+Integer 0b01)];
 
   assert_parsed_equal "0.1j" [+Expression (+Complex 0.1)];
   assert_parsed_equal "1e10j" [+Expression (+Complex 1e10)];
+  assert_parsed_equal "1e1_0j" [+Expression (+Complex 1e10)];
   assert_parsed_equal "2j" [+Expression (+Complex 2.0)];
   assert_parsed_equal "2J" [+Expression (+Complex 2.0)];
 
   assert_raises
     (Failure "Could not parse test")
     (fun () -> parse_untrimmed ~silent:true "0xZ");
+  assert_raises
+    (Failure "Could not parse test")
+    (fun () -> parse_untrimmed ~silent:true "0_1");
   assert_raises
     (Failure "Could not parse test")
     (fun () -> parse_untrimmed ~silent:true "0o9");
