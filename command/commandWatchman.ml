@@ -8,9 +8,9 @@ open Hack_parallel.Std
 
 open Pyre
 
-open WatchmanConstants
+open CommandWatchmanConstants
 
-module Socket = PyreSocket
+module Socket = CommandSocket
 
 
 let subscription watchman_directory =

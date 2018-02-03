@@ -15,8 +15,11 @@ open ServerConfiguration
 open Protocol
 
 module Time = Core_kernel.Time_ns.Span
-module Socket = PyreSocket
+module Check = CommandCheck
+module Handshake = CommandHandshake
+module Socket = CommandSocket
 module Request = ServerRequest
+module State = ServerState
 
 type version_mismatch = {
   server_version: string;

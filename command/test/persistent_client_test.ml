@@ -9,7 +9,7 @@ open OUnit2
 open ServerConfiguration
 
 module Parallel = Hack_parallel.Std
-module Socket = PyreSocket
+module Socket = CommandSocket
 
 
 let test_persistent_client_connect context =

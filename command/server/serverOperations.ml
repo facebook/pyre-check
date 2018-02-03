@@ -7,11 +7,11 @@ open Core
 
 open Configuration
 open ServerConfiguration
-
-open State
-
+open ServerState
 open Pyre
 
+module Check = CommandCheck
+module WatchmanConstants = CommandWatchmanConstants
 
 let initialize ?old_state lock connections { configuration; _ } =
   Log.log ~section:`Server  "Initializing server...";

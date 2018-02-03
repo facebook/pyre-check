@@ -10,7 +10,8 @@ open Configuration
 open Pyre
 
 module Error = Error
-module Socket = PyreSocket
+module Socket = CommandSocket
+module Handshake = CommandHandshake
 
 
 let server_not_running = 2

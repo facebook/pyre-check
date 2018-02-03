@@ -7,7 +7,7 @@ open Core
 
 open Pyre
 
-module Socket = PyreSocket
+module Socket = CommandSocket
 
 val process_response
   :  root: Path.t

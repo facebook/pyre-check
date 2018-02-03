@@ -6,6 +6,13 @@
 open Core
 
 module Parallel = Hack_parallel.Std
+module Check = CommandCheck
+module CodexGenerator = CommandCodexGenerator
+module Query = CommandQuery
+module Persistent = CommandPersistent
+module Watchman = CommandWatchman
+module Rage = CommandRage
+
 
 let commands = [
   "check", Check.check_command;

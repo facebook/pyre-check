@@ -5,7 +5,7 @@
 
 open Core
 
-module Socket = PyreSocket
+module Socket = CommandSocket
 
 type version_mismatch = {
   server_version: string;

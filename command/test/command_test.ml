@@ -12,7 +12,7 @@ open Test
 
 module Error = Error
 module Parallel = Hack_parallel.Std
-module Socket = PyreSocket
+module Socket = CommandSocket
 
 
 let clean_environment () =

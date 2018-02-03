@@ -7,6 +7,9 @@ open Core
 
 open Pyre
 
+module WatchmanConstants = CommandWatchmanConstants
+module PersistentConstants = CommandPersistentConstants
+
 
 let get_logs configuration =
   let get_log (name, path) =

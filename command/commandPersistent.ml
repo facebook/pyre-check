@@ -9,7 +9,7 @@ open LanguageServerProtocol
 open Pyre
 
 module Time = Core_kernel.Time_ns.Span
-module Socket = PyreSocket
+module Socket = CommandSocket
 
 let run_command version source_root () =
   let source_root = Path.create_absolute source_root in

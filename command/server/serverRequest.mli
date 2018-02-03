@@ -5,10 +5,11 @@
 
 open Core
 
+
 exception InvalidRequest
 val process_request
   :  Unix.File_descr.t
-  -> State.t
+  -> ServerState.t
   -> ServerConfiguration.t
   -> Protocol.Request.t
-  -> State.t * (Protocol.response option)
+  -> ServerState.t * (Protocol.response option)

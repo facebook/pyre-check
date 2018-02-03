@@ -4,7 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 FLAGS = -use-ocamlfind -no-links -no-hygiene -cflags="-warn-error +a"
-INCLUDES = . parser analysis ast test services language_service commands commands/server %VERSION%
+INCLUDES = . parser analysis ast test services language_service command command/server %VERSION%
 BUILD = ocamlbuild $(FLAGS) $(addprefix -I , $(INCLUDES))
 
 TEST_FLAGS = -runner sequential

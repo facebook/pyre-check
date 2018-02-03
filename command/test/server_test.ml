@@ -13,6 +13,7 @@ open Test
 
 module Parallel = Hack_parallel.Std
 module Error = Error
+module State = ServerState
 
 
 exception Timeout

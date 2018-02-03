@@ -11,7 +11,8 @@ open Path.AppendOperator
 
 
 module Parallel = Hack_parallel.Std
-module Socket = PyreSocket
+module Socket = CommandSocket
+module Watchman = CommandWatchman
 
 
 let start_watchman pid_path () =

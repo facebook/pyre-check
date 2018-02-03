@@ -8,7 +8,7 @@ open Core
 open Analysis
 
 module Error = Error
-module Socket = PyreSocket
+module Socket = CommandSocket
 
 type client = {
   failures: int;

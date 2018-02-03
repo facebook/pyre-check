@@ -7,7 +7,7 @@ open Core
 
 open Pyre
 
-module Socket = PyreSocket
+module Socket = CommandSocket
 
 
 let run_query query_kind left right source_root () =

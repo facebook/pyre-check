@@ -5,12 +5,13 @@
 
 open Core
 
+
 val initialize
-  :  ?old_state: State.t
+  :  ?old_state: ServerState.t
   -> Mutex.t
-  -> State.connections ref
+  -> ServerState.connections ref
   -> ServerConfiguration.t
-  -> State.t
+  -> ServerState.t
 
 val stop_server: ServerConfiguration.t -> Unix.File_descr.t -> unit
 

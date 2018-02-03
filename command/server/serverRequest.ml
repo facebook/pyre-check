@@ -7,13 +7,16 @@ open Core
 
 open Analysis
 
-open State
+open ServerState
 open Configuration
 open ServerConfiguration
 open Protocol
 open Protocol.Request
 
 open Pyre
+
+module Rage = CommandRage
+
 
 exception InvalidRequest
 
@@ -132,7 +135,7 @@ let rec process_request
           errors, lookups
         in
         Map.iteri
-          ~f:(fun ~key:name ~data:map -> Hashtbl.set ~key:name ~data:map state.State.lookups)
+          ~f:(fun ~key:name ~data:map -> Hashtbl.set ~key:name ~data:map state.ServerState.lookups)
           lookups;
         (* Kill all previous errors for new files we just checked *)
         List.iter ~f:(Hashtbl.remove state.errors) new_source_handles;
