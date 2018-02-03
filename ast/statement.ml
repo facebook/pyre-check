@@ -251,8 +251,11 @@ module Define = struct
     | Some parent ->
         Expression.Access.show parent = string_name ||
         (string_name = "__init__" ||
-         (in_test && string_name = "setUp") ||
-         (in_test && string_name = "with_context"))
+         (in_test &&
+          List.mem
+            ~equal:String.equal
+            ["setUp"; "_setup"; "_async_setup"; "with_context"]
+            string_name))
 
 
   let is_generated_constructor { generated; _ } = generated
