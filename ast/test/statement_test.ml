@@ -410,6 +410,12 @@ let test_attribute_assigns _ =
     ];
   assert_attribute_assigns
     {|
+      class Foo(collections.namedtuple('Foo', ['one', 'two'])):
+        pass
+    |}
+    ["one", None, None; "two", None, None];
+  assert_attribute_assigns
+    {|
       class Foo(typing.NamedTuple('Foo', [('one', int), 'two'])):
         attribute: int
     |}

@@ -897,8 +897,10 @@ module Class = struct
                 };
                 _;
               }
-            ] when Identifier.show typing = "typing" &&
-                   Identifier.show named_tuple = "NamedTuple" ->
+            ] when (Identifier.show typing = "typing" &&
+                    Identifier.show named_tuple = "NamedTuple") ||
+                   (Identifier.show typing = "collections" &&
+                    Identifier.show named_tuple = "namedtuple")->
               let named_tuple_assigns sofar { Node.location; value } =
                 match value with
                 | String name ->
