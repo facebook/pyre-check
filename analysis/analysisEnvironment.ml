@@ -10,6 +10,14 @@ open Expression
 open Pyre
 open Statement
 
+module Annotated = AnalysisAnnotated
+module Annotation = AnalysisAnnotation
+module Dependencies = AnalysisDependencies
+module Resolution = AnalysisResolution
+module Signature = AnalysisSignature
+module Type = AnalysisType
+module TypeOrder = AnalysisTypeOrder
+
 type t = {
   function_definitions: ((Define.t Node.t) list) Access.Table.t;
   class_definitions: (Class.t Node.t) Type.Table.t;

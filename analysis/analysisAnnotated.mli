@@ -9,6 +9,10 @@ open Ast
 open Expression
 open Statement
 
+module Annotation = AnalysisAnnotation
+module Resolution = AnalysisResolution
+module Signature = AnalysisSignature
+module Type = AnalysisType
 
 module Assign : sig
   type t

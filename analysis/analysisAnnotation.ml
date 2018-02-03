@@ -5,6 +5,7 @@
 
 open Core
 
+module Type = AnalysisType
 
 type scope = | Local | Global
 

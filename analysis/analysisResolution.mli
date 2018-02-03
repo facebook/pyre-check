@@ -7,6 +7,10 @@ open Ast
 open Expression
 open Statement
 
+module Annotation = AnalysisAnnotation
+module Signature = AnalysisSignature
+module Type = AnalysisType
+module TypeOrder = AnalysisTypeOrder
 
 type global = {
   annotation: Annotation.t;

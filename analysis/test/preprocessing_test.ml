@@ -7,10 +7,12 @@ open Core
 open OUnit2
 
 open Ast
+open Analysis
 open Expression
 open Statement
 
 open Test
+
 
 let test_qualify _ =
   let assert_qualify ?(qualifier = "some/qualifier") source expected =

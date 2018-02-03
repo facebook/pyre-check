@@ -6,7 +6,10 @@
 open Ast
 open Expression
 
-module Error = PyreError
+module Annotation = AnalysisAnnotation
+module Environment = AnalysisEnvironment
+module Error = AnalysisError
+module Lookup = AnalysisLookup
 
 module Coverage : sig
   type t = {
@@ -57,10 +60,10 @@ module State : sig
     -> forward:t
     -> t
 
-  include Fixpoint.State with type t := t
+  include AnalysisFixpoint.State with type t := t
 end
 
-module Fixpoint : Fixpoint.Fixpoint with type state := State.t
+module Fixpoint : AnalysisFixpoint.Fixpoint with type state := State.t
 
 type result = {
   errors: Error.t list;

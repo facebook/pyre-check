@@ -11,8 +11,18 @@ open Expression
 open Pyre
 open Statement
 
-
-module Error = PyreError
+module Annotated = AnalysisAnnotated
+module Annotation = AnalysisAnnotation
+module Cfg = AnalysisCfg
+module Environment = AnalysisEnvironment
+module Error = AnalysisError
+module Lookup = AnalysisLookup
+module Preprocessing = AnalysisPreprocessing
+module Refinement = AnalysisRefinement
+module Resolution = AnalysisResolution
+module Signature = AnalysisSignature
+module Type = AnalysisType
+module TypeOrder = AnalysisTypeOrder
 
 
 module Coverage = struct
@@ -94,7 +104,7 @@ module State = struct
       } as state) =
     let resolution = resolution state in
     let expected =
-      let open Annotated in
+      let open AnalysisAnnotated in
       Define.create define
       |> Define.return_annotation ~resolution
     in
@@ -1836,7 +1846,7 @@ module State = struct
 end
 
 
-module Fixpoint = Fixpoint.Make(State)
+module Fixpoint = AnalysisFixpoint.Make(State)
 
 
 type result = {

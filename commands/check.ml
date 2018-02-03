@@ -9,7 +9,7 @@ open Analysis
 open Configuration
 open Pyre
 
-module Error = PyreError
+module Error = Error
 module Socket = PyreSocket
 
 

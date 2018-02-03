@@ -5,6 +5,7 @@
 
 open Core
 
+module Cfg = AnalysisCfg
 
 module type State = sig
   type t

@@ -3,7 +3,9 @@
     This source code is licensed under the MIT license found in the
     LICENSE file in the root directory of this source tree. *)
 
-open Annotation
+open AnalysisAnnotation
+
+module Resolution = AnalysisResolution
 
 
 let refine ~resolution { annotation; mutability } refined =

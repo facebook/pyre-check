@@ -5,9 +5,12 @@
 
 open Core
 
+module Type = AnalysisType
+
 exception Cyclic
 exception Incomplete
 exception Undefined of Type.t
+
 
 module Target: sig
   type t = {

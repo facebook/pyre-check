@@ -7,7 +7,7 @@ open Core
 
 open Analysis
 
-module Error = PyreError
+module Error = Error
 
 
 val analyze_sources

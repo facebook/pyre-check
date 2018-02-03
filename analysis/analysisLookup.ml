@@ -8,6 +8,9 @@ open Core
 open Pyre
 open Ast
 
+module Annotated = AnalysisAnnotated
+module Signature = AnalysisSignature
+
 type t = Location.t Location.Table.t
 
 

@@ -5,6 +5,7 @@
 
 open Ast
 
+module Type = AnalysisType
 
 type t = {
   constraints: Type.t Type.Map.t;

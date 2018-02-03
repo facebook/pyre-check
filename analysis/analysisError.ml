@@ -10,6 +10,12 @@ open Expression
 open Pyre
 open Statement
 
+module Annotated = AnalysisAnnotated
+module Environment = AnalysisEnvironment
+module Resolution = AnalysisResolution
+module Type = AnalysisType
+module TypeOrder = AnalysisTypeOrder
+
 
 type undefined_method = {
   annotation: Type.t;

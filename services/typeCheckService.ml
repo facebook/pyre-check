@@ -9,7 +9,7 @@ open Ast
 open Analysis
 open Pyre
 
-module Error = PyreError
+module Error = Error
 
 
 type analysis_results = {

@@ -12,7 +12,7 @@ open Pyre
 open Test
 
 module Parallel = Hack_parallel.Std
-module Error = PyreError
+module Error = Error
 
 
 exception Timeout

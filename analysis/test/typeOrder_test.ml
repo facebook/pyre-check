@@ -7,6 +7,7 @@ open Core
 open OUnit2
 
 open Ast
+open Analysis
 open Test
 open TypeOrder
 

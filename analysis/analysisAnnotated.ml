@@ -10,6 +10,12 @@ open Expression
 open Pyre
 open Statement
 
+module Annotation = AnalysisAnnotation
+module Resolution = AnalysisResolution
+module Signature = AnalysisSignature
+module Type = AnalysisType
+module TypeOrder = AnalysisTypeOrder
+
 
 let return_annotation { Define.return_annotation; async; _ } ~resolution =
   let annotation =

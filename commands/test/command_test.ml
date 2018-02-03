@@ -10,7 +10,7 @@ open Analysis
 open Pyre
 open Test
 
-module Error = PyreError
+module Error = Error
 module Parallel = Hack_parallel.Std
 module Socket = PyreSocket
 

@@ -7,10 +7,12 @@ open Core
 open OUnit2
 
 open Ast
+open Analysis
 open Statement
 open Pyre
 
 open Test
+
 
 
 module Assign = Annotated.Assign

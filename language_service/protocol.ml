@@ -116,7 +116,7 @@ type response =
   | LanguageServerProtocolResponse of string
   | ClientConnectionResponse of client
   | ClientExitResponse of client
-  | TypeCheckResponse of (File.Handle.t * (PyreError.t list)) list
+  | TypeCheckResponse of (File.Handle.t * (Error.t list)) list
   | TypeQueryResponse of string
   | StopResponse
   | GetDefinitionResponse of Ast.Location.t option

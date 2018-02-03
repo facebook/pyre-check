@@ -8,7 +8,7 @@ open OUnit2
 
 open Ast.Expression
 open Ast.Statement
-open Cfg
+open Analysis.Cfg
 
 open Test
 

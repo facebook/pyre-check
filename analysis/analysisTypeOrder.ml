@@ -8,6 +8,8 @@ open Core
 open Ast
 open Pyre
 
+module Type = AnalysisType
+
 exception Cyclic
 exception Incomplete
 exception Undefined of Type.t

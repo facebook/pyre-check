@@ -6,6 +6,7 @@
 open Core
 open Pyre
 
+module Cfg = AnalysisCfg
 
 module type State = sig
   type t

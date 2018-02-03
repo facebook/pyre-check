@@ -6,11 +6,12 @@
 open OUnit2
 
 open Ast
+open Analysis
 open Expression
 open Test
 
 
-module Error = PyreError
+module Error = Error
 
 
 let mock_define =
