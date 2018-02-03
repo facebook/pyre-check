@@ -40,7 +40,6 @@ let check
       project_root;
       stub_roots;
       source_root;
-      report_undefined_attributes;
     }
     original_service
     () =
@@ -79,7 +78,6 @@ let check
       ~stub_roots
       ~infer
       ~recursive_infer
-      ~report_undefined_attributes
       ()
   in
 
@@ -144,11 +142,6 @@ let run_check
     stub_roots
     source_root
     () =
-  let report_undefined_attributes =
-    (* TODO(T24330702): remove this once the feature is complete enough. *)
-    Sys.getenv "PYRE_REPORT_UNDEFINED_ATTRIBUTES"
-    |> Option.is_some
-  in
   let configuration =
     Configuration.create
       ~verbose
@@ -165,7 +158,6 @@ let run_check
       ~parallel:(not sequential)
       ~stub_roots:(List.map ~f:Path.create_absolute stub_roots)
       ~source_root:(Path.create_absolute source_root)
-      ~report_undefined_attributes
       ()
   in
 

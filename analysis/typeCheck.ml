@@ -309,10 +309,9 @@ module State = struct
           | IncompatibleParameterType _
           | IncompatibleReturnType _
           | MissingParameterAnnotation _
-          | MissingReturnAnnotation _ ->
-              false
+          | MissingReturnAnnotation _
           | UndefinedAttribute _ ->
-              not configuration.report_undefined_attributes
+              false
           | IncompatibleAwaitableType _
           | IncompatibleAttributeType _
           | IncompatibleVariableType _
@@ -328,8 +327,6 @@ module State = struct
           match kind with
           | MissingParameterAnnotation { due_to_any; _ } ->
               due_to_any
-          | UndefinedAttribute _ ->
-              not configuration.report_undefined_attributes
           | _ ->
               false
       in
@@ -343,11 +340,6 @@ module State = struct
         | UndefinedMethod _
         | UndefinedType _ ->
             true
-        | UndefinedAttribute _ ->
-            not configuration.report_undefined_attributes ||
-            due_to_analysis_limitations error ||
-            due_to_mismatch_with_any error ||
-            Define.is_untyped define
         | _ ->
             due_to_analysis_limitations error ||
             due_to_mismatch_with_any error ||

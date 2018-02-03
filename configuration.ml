@@ -24,7 +24,6 @@ type t = {
   declare: bool;
   show_error_traces: bool;
   log_identifier: string;
-  report_undefined_attributes: bool;
 }
 [@@deriving show]
 
@@ -45,7 +44,6 @@ let create
     ?(debug = false)
     ?(show_error_traces = false)
     ?(log_identifier = "")
-    ?(report_undefined_attributes = false)
     () =
   {
     start_time;
@@ -63,7 +61,6 @@ let create
     declare;
     show_error_traces;
     log_identifier;
-    report_undefined_attributes;
   }
 
 

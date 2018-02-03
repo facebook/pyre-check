@@ -947,7 +947,6 @@ let assert_type_errors
             ~strict
             ~declare
             ~infer
-            ~report_undefined_attributes:true
             ())
          environment
          source)
