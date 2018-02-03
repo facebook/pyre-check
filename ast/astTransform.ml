@@ -5,9 +5,13 @@
 
 open Core
 
-open Expression
+open AstExpression
 open Pyre
-open Statement
+open AstStatement
+
+module Expression = AstExpression
+module Statement = AstStatement
+module Source = AstSource
 
 
 module type Transformer = sig

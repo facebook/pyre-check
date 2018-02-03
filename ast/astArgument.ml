@@ -6,6 +6,7 @@
 open Core
 open Sexplib.Std
 
+module Identifier = AstIdentifier
 
 type 'expression t = {
   name: Identifier.t option;

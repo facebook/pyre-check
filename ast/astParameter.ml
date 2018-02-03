@@ -6,6 +6,9 @@
 open Core
 open Sexplib.Std
 
+module Node = AstNode
+module Identifier = AstIdentifier
+module Location = AstLocation
 
 type 'expression parameter = {
   name: Identifier.t;

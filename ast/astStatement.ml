@@ -7,6 +7,13 @@ open Core
 
 open Pyre
 
+module Expression = AstExpression
+module Parameter = AstParameter
+module Argument = AstArgument
+module Identifier = AstIdentifier
+module Location = AstLocation
+module Node = AstNode
+
 
 module Record = struct
   module Define = struct

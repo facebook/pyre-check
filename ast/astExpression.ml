@@ -6,6 +6,11 @@
 open Core
 open Sexplib.Std
 
+module Argument = AstArgument
+module Identifier = AstIdentifier
+module Parameter = AstParameter
+module Node = AstNode
+
 
 module BooleanOperator = struct
   type operator =

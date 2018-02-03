@@ -5,6 +5,12 @@
 
 open Core
 
+module Expression = AstExpression
+module Statement = AstStatement
+module Transform = AstTransform
+module Source = AstSource
+module Location = AstLocation
+module Node = AstNode
 
 module type Visitor = sig
   type t

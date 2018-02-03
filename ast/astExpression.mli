@@ -5,6 +5,10 @@
 
 open Core
 
+module Argument = AstArgument
+module Identifier = AstIdentifier
+module Parameter = AstParameter
+module Node = AstNode
 
 module BooleanOperator : sig
   type operator =

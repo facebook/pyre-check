@@ -5,8 +5,9 @@
 
 open Core
 
-open Expression
+open AstExpression
 
+module Statement = AstStatement
 
 module Metadata = struct
   type t = {
