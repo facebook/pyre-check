@@ -191,6 +191,7 @@ let test_register_class_definitions _ =
 
 
 let test_register_aliases _ =
+  Type.TypeCache.disable ();
   let environment = Environment.Builder.create ~configuration () in
   let (module Handler: Environment.Handler) = Environment.handler ~configuration environment in
   let typing =
@@ -1637,6 +1638,7 @@ let test_purge _ =
 
 
 let () =
+  Analysis.Type.TypeCache.disable ();
   "environment">:::[
     "create">::test_create;
     "copy">::test_copy;

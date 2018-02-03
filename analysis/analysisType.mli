@@ -41,6 +41,11 @@ module Map : Map.S with type Key.t = t
 module Set: Set.S with type Elt.t = t
 include Hashable with type t := t
 
+module TypeCache: sig
+  val enable: unit -> unit
+
+  val disable: unit -> unit
+end
 
 val serialize: t -> string
 

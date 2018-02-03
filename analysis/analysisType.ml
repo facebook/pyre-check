@@ -70,6 +70,42 @@ include Hashable.Make(struct
 let serialize = show
 
 
+module TypeCache = struct
+  include Hashable.Make(struct
+      type nonrec t = Expression.expression
+      let compare = Expression.compare_expression
+      let hash = Expression.hash_expression
+      let hash_fold_t = Expression.hash_fold_expression
+      let sexp_of_t = Expression.sexp_of_expression
+      let t_of_sexp = Expression.expression_of_sexp
+    end)
+
+  let cache =
+    Table.create ~size:1023 ()
+
+  let enabled = ref true
+
+  let find element =
+    if !enabled then
+      Hashtbl.find cache element
+    else
+      None
+
+  let set ~key ~data =
+    if !enabled then
+      Hashtbl.set ~key ~data cache
+    else
+      ()
+
+  let disable () =
+    enabled := false;
+    Hashtbl.clear cache
+
+  let enable () =
+    enabled := true
+end
+
+
 let reverse_substitute name =
   match Identifier.show name with
   | "collections.defaultdict" ->
@@ -301,212 +337,219 @@ let yield parameter =
   }
 
 
-let create ~aliases expression =
-  let rec create reversed_lead tail =
-    let name reversed_access =
-      let show = function
-        | Access.Identifier element ->
-            Identifier.show element
-        | _ ->
-            "?" in
-      List.rev reversed_access
-      |> List.map ~f:show
-      |> String.concat ~sep:"."
-      |> Identifier.create in
+let create ~aliases { Node.value = expression; _ } =
+  match TypeCache.find expression with
+  | Some result ->
+      result
+  | _ ->
+      let rec create reversed_lead tail =
+        let name reversed_access =
+          let show = function
+            | Access.Identifier element ->
+                Identifier.show element
+            | _ ->
+                "?" in
+          List.rev reversed_access
+          |> List.map ~f:show
+          |> String.concat ~sep:"."
+          |> Identifier.create in
 
-    let annotation =
-      match tail with
-      | (Access.Identifier _ as access) :: tail ->
-          create (access :: reversed_lead) tail
-      | (Access.Subscript subscript) :: [] ->
-          let parameters =
-            let parameter = function
-              | Access.Index { Node.value = Access access; _ } ->
-                  create [] access
-              | Access.Index { Node.value = String string; _ } ->
-                  create [] (Access.create string)
-              | _ ->
-                  Top
-            in
-            List.map ~f:parameter subscript
-          in
-          Parametric {
-            name = name reversed_lead;
-            parameters;
-          }
-      | [] ->
-          let name = name reversed_lead in
-          if Identifier.show name = "None" then
-            none
-          else
-            Primitive name
-      | _ ->
-          Top
-    in
-
-    (* Resolve aliases. *)
-    let resolved =
-      let rec resolve visited annotation =
-        if Set.mem visited annotation then
-          annotation
-        else
-          let visited = Set.add visited annotation in
-          match aliases annotation with
-          | Some alias ->
-              resolve visited alias
+        let annotation =
+          match tail with
+          | (Access.Identifier _ as access) :: tail ->
+              create (access :: reversed_lead) tail
+          | (Access.Subscript subscript) :: [] ->
+              let parameters =
+                let parameter = function
+                  | Access.Index { Node.value = Access access; _ } ->
+                      create [] access
+                  | Access.Index { Node.value = String string; _ } ->
+                      create [] (Access.create string)
+                  | _ ->
+                      Top
+                in
+                List.map ~f:parameter subscript
+              in
+              Parametric {
+                name = name reversed_lead;
+                parameters;
+              }
+          | [] ->
+              let name = name reversed_lead in
+              if Identifier.show name = "None" then
+                none
+              else
+                Primitive name
           | _ ->
-              begin
-                match annotation with
-                | Optional annotation ->
-                    Optional (resolve visited annotation)
-                | Tuple (Bounded elements) ->
-                    Tuple (Bounded (List.map ~f:(resolve visited) elements))
-                | Tuple (Unbounded annotation) ->
-                    Tuple (Unbounded (resolve visited annotation))
-                | Parametric { parameters; name } ->
-                    let name =
-                      match aliases (Primitive name) with
-                      | Some (Primitive name) -> name
-                      | _ -> name
-                    in
-                    Parametric {
-                      parameters = List.map ~f:(resolve visited) parameters;
-                      name;
-                    }
-                | Variable ({ constraints; _ } as variable) ->
-                    Variable {
-                      variable with
-                      constraints = List.map ~f:(resolve visited) constraints;
-                    }
-                | Union elements ->
-                    Union (List.map ~f:(resolve visited) elements)
-                | Bottom
-                | Object
-                | Primitive _
-                | Top ->
-                    annotation
-              end
+              Top
+        in
+
+        (* Resolve aliases. *)
+        let resolved =
+          let rec resolve visited annotation =
+            if Set.mem visited annotation then
+              annotation
+            else
+              let visited = Set.add visited annotation in
+              match aliases annotation with
+              | Some alias ->
+                  resolve visited alias
+              | _ ->
+                  begin
+                    match annotation with
+                    | Optional annotation ->
+                        Optional (resolve visited annotation)
+                    | Tuple (Bounded elements) ->
+                        Tuple (Bounded (List.map ~f:(resolve visited) elements))
+                    | Tuple (Unbounded annotation) ->
+                        Tuple (Unbounded (resolve visited annotation))
+                    | Parametric { parameters; name } ->
+                        let name =
+                          match aliases (Primitive name) with
+                          | Some (Primitive name) -> name
+                          | _ -> name
+                        in
+                        Parametric {
+                          parameters = List.map ~f:(resolve visited) parameters;
+                          name;
+                        }
+                    | Variable ({ constraints; _ } as variable) ->
+                        Variable {
+                          variable with
+                          constraints = List.map ~f:(resolve visited) constraints;
+                        }
+                    | Union elements ->
+                        Union (List.map ~f:(resolve visited) elements)
+                    | Bottom
+                    | Object
+                    | Primitive _
+                    | Top ->
+                        annotation
+                  end
+          in
+          resolve Set.empty annotation
+        in
+
+        (* Substitutions. *)
+        match resolved with
+        | Primitive name ->
+            (match Identifier.show name with
+             | "object"
+             | "typing.Any" ->
+                 Object
+
+             | "None" ->
+                 none
+
+             | "numbers.Number"
+             | "numbers.Complex" ->
+                 Primitive (Identifier.create "complex")
+             | "numbers.Real" ->
+                 Primitive (Identifier.create "float")
+             | "numbers.Integral" ->
+                 Primitive (Identifier.create "int")
+
+             | "dict"
+             | "typing.Dict" ->
+                 Parametric { name = Identifier.create "dict"; parameters = [Top; Top] }
+
+             | "typing.Tuple" ->
+                 Tuple (Unbounded Object)
+
+             | "typing.List" ->
+                 list Object
+
+             | "$bottom" ->
+                 Bottom
+             | "$unknown" ->
+                 Top
+
+             | _ ->
+                 resolved)
+        | Parametric { name; parameters } ->
+            (match Identifier.show name with
+             | "typing.DefaultDict" ->
+                 Parametric { name = Identifier.create "collections.defaultdict"; parameters }
+             | "typing.Dict" ->
+                 Parametric { name = Identifier.create "dict"; parameters }
+             | "typing.List" ->
+                 Parametric { name = Identifier.create "list"; parameters }
+
+             | "typing.Optional" when List.length parameters = 1 ->
+                 optional (List.hd_exn parameters)
+
+             | "tuple"
+             | "typing.Tuple" ->
+                 let tuple: tuple =
+                   match parameters with
+                   | [parameter; Primitive ellipses] when Identifier.show ellipses = "..." ->
+                       Unbounded parameter
+                   | _ -> Bounded parameters
+                 in
+                 Tuple tuple
+
+             | "typing.Set" ->
+                 Parametric { name = Identifier.create "set"; parameters }
+             | "typing.Union" ->
+                 union parameters
+             | _ ->
+                 resolved)
+        | Union elements ->
+            union elements
+        | _ ->
+            resolved
       in
-      resolve Set.empty annotation
-    in
 
-    (* Substitutions. *)
-    match resolved with
-    | Primitive name ->
-        (match Identifier.show name with
-         | "object"
-         | "typing.Any" ->
-             Object
-
-         | "None" ->
-             none
-
-         | "numbers.Number"
-         | "numbers.Complex" ->
-             Primitive (Identifier.create "complex")
-         | "numbers.Real" ->
-             Primitive (Identifier.create "float")
-         | "numbers.Integral" ->
-             Primitive (Identifier.create "int")
-
-         | "dict"
-         | "typing.Dict" ->
-             Parametric { name = Identifier.create "dict"; parameters = [Top; Top] }
-
-         | "typing.Tuple" ->
-             Tuple (Unbounded Object)
-
-         | "typing.List" ->
-             list Object
-
-         | "$bottom" ->
-             Bottom
-         | "$unknown" ->
-             Top
-
-         | _ ->
-             resolved)
-    | Parametric { name; parameters } ->
-        (match Identifier.show name with
-         | "typing.DefaultDict" ->
-             Parametric { name = Identifier.create "collections.defaultdict"; parameters }
-         | "typing.Dict" ->
-             Parametric { name = Identifier.create "dict"; parameters }
-         | "typing.List" ->
-             Parametric { name = Identifier.create "list"; parameters }
-
-         | "typing.Optional" when List.length parameters = 1 ->
-             optional (List.hd_exn parameters)
-
-         | "tuple"
-         | "typing.Tuple" ->
-             let tuple: tuple =
-               match parameters with
-               | [parameter; Primitive ellipses] when Identifier.show ellipses = "..." ->
-                   Unbounded parameter
-               | _ -> Bounded parameters
-             in
-             Tuple tuple
-
-         | "typing.Set" ->
-             Parametric { name = Identifier.create "set"; parameters }
-         | "typing.Union" ->
-             union parameters
-         | _ ->
-             resolved)
-    | Union elements ->
-        union elements
-    | _ ->
-        resolved
-  in
-  match expression with
-  | {
-    Node.value = Access [
-        Access.Identifier typing;
-        Access.Call {
-          Node.value = {
-            Call.name = {
-              Node.value = Access [Access.Identifier typevar];
+      let result =
+        match expression with
+        | Access [
+            Access.Identifier typing;
+            Access.Call {
+              Node.value = {
+                Call.name = {
+                  Node.value = Access [Access.Identifier typevar];
+                  _;
+                };
+                arguments = { Argument.value = { Node.value = String name; _ }; _ } :: arguments;
+                _;
+              };
               _;
             };
-            arguments = { Argument.value = { Node.value = String name; _ }; _ } :: arguments;
-            _;
-          };
-          _;
-        };
-      ];
-    _;
-  }
-    when Identifier.show typing = "typing" &&
-         Identifier.show typevar = "TypeVar" ->
-      let constraints =
-        let get_constraint = function
-          | { Argument.value = { Node.value = Access access; _ }; Argument.name = None } ->
-              Some (create [] access)
-          | _ ->
-              None
-        in
-        List.filter_map ~f:get_constraint arguments
-      in
-      Variable {
-        variable = Identifier.create name;
-        constraints;
-      }
+          ]
+          when Identifier.show typing = "typing" &&
+               Identifier.show typevar = "TypeVar" ->
+            let constraints =
+              let get_constraint = function
+                | { Argument.value = { Node.value = Access access; _ }; Argument.name = None } ->
+                    Some (create [] access)
+                | _ ->
+                    None
+              in
+              List.filter_map ~f:get_constraint arguments
+            in
+            Variable {
+              variable = Identifier.create name;
+              constraints;
+            }
 
-  | { Node.value = Access access; _ } -> create [] access
-  | { Node.value = String string; _ } ->
-      let access =
-        try
-          match PythonParse.parse [string] with
-          | [{ Node.value = Statement.Expression { Node.value = Access access; _ }; _ }] ->
-              access
-          | _ ->
-              Access.create string
-        with _ ->
-          Access.create string
+        | Access access ->
+            create [] access
+        | String string ->
+            let access =
+              try
+                match PythonParse.parse [string] with
+                | [{ Node.value = Statement.Expression { Node.value = Access access; _ }; _ }] ->
+                    access
+                | _ ->
+                    Access.create string
+              with _ ->
+                Access.create string
+            in
+            create [] access
+        | _ -> Top
       in
-      create [] access
-  | _ -> Top
+      TypeCache.set ~key:expression ~data:result;
+      result
 
 
 let expression annotation =

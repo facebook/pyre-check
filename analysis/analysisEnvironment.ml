@@ -995,7 +995,9 @@ let populate
 
   List.iter ~f:(register_ignore_lines (module Handler)) sources;
   List.iter ~f:(register_class_definitions (module Handler)) sources;
+  Type.TypeCache.disable ();
   register_aliases (module Handler) sources;
+  Type.TypeCache.enable ();
   List.iter ~f:(connect_type_order ~source_root ~check_dependency_exists (module Handler)) sources;
   TypeOrder.connect_annotations_to_top
     (module Handler.TypeOrderHandler)

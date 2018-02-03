@@ -782,6 +782,7 @@ let test_dequalify _ =
 
 
 let () =
+  Analysis.Type.TypeCache.disable ();
   "type">:::[
     "create">::test_create;
     "expression">::test_expression;
