@@ -67,9 +67,6 @@ include Hashable.Make(struct
   end)
 
 
-let serialize = show
-
-
 module TypeCache = struct
   include Hashable.Make(struct
       type nonrec t = Expression.expression
@@ -176,6 +173,13 @@ let rec pp format annotation =
 
 and show annotation =
   Format.asprintf "%a" pp annotation
+
+
+let rec serialize = function
+  | Bottom ->
+      "$bottom"
+  | annotation ->
+      Format.asprintf "%a" pp annotation
 
 
 let awaitable parameter =
