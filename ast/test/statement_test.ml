@@ -347,7 +347,7 @@ let test_attribute_assigns _ =
     {|
       class Foo:
         class Foo.Bar:  # no preprocessing in tests
-          pass
+          ...
     |}
     ["Bar", None, None];
 

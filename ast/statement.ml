@@ -954,6 +954,7 @@ module Class = struct
       let callable_assigns =
         let callable_assigns map { Node.location; value } =
           match value with
+          | Stub (Stub.Define { Define.name; _ })
           | Define { Define.name; _ } ->
               let assign =
                 Node.create
@@ -975,6 +976,7 @@ module Class = struct
       let class_assigns =
         let callable_assigns map { Node.location; value } =
           match value with
+          | Stub (Stub.Class { Record.Class.name; _ })
           | Class { Record.Class.name; _ } when not (List.is_empty name) ->
               let assign =
                 Node.create
