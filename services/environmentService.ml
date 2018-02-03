@@ -335,15 +335,24 @@ let shared_memory_handler
       let register_definition
           ~path
           ?name_override
-          ({ Ast.Node.value = { Ast.Statement.Define.name; _ }; _ } as definition) =
+          ({ Ast.Node.location; value = { Ast.Statement.Define.name; _ }; _ } as definition) =
         let name = Option.value ~default:name name_override in
         DependencyHandler.add_function_key ~path name;
+        let annotation =
+          {
+            Resolution.annotation =
+              (Annotation.create_immutable ~global:true Type.Top);
+            location;
+          }
+        in
+        Globals.add name annotation;
         let definitions =
           match FunctionDefinitions.get name with
           | Some definitions ->
               definition :: definitions
           | None ->
-              [definition] in
+              [definition]
+        in
         FunctionDefinitions.remove_batch (FunctionDefinitions.KeySet.singleton name);
         FunctionDefinitions.add name definitions
 

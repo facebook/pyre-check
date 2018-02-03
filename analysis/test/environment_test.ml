@@ -362,6 +362,8 @@ let test_populate _ =
       global_unknown = x
       class Foo():
         pass
+      def function():
+        pass
     |} in
   assert_equal
     (global environment (access ["global_value_set"]))
@@ -390,6 +392,14 @@ let test_populate _ =
         Resolution.annotation =
           (Annotation.create_immutable ~global:true Type.Top);
         location = create_location "test.py" 5 0 5 14;
+      });
+  assert_equal
+    ~printer:(function | Some global -> Resolution.show_global global | None -> "None")
+    (global environment (access ["function"]))
+    (Some {
+        Resolution.annotation =
+          (Annotation.create_immutable ~global:true Type.Top);
+        location = create_location "test.py" 8 0 9 6;
       });
 
   (* Loops. *)

@@ -12,6 +12,7 @@ type global = {
   annotation: Annotation.t;
   location: Location.t;
 }
+[@@deriving show]
 
 
 type t

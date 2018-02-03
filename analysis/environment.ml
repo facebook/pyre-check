@@ -177,16 +177,25 @@ let handler
     let register_definition
         ~path
         ?name_override
-        ({ Node.value = { Define.name; _ }; _ } as definition) =
+        ({ Node.location; value = { Define.name; _ }; _ } as definition) =
       let name = Option.value ~default:name name_override in
       DependencyHandler.add_function_key ~path name;
+      let annotation =
+        {
+          Resolution.annotation =
+            (Annotation.create_immutable ~global:true Type.Top);
+          location;
+        }
+      in
+      Hashtbl.set ~key:name ~data:annotation globals;
       let definitions =
         match Hashtbl.find function_definitions name with
         | Some definitions ->
             definition::definitions
         | None ->
-            [definition] in
-      Hashtbl.set function_definitions ~key:name ~data:definitions
+            [definition]
+      in
+      Hashtbl.set ~key:name ~data:definitions function_definitions
 
 
     let register_dependency ~path ~dependency =
