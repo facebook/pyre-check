@@ -13,7 +13,7 @@ module Socket = CommandSocket
 let run_query query_kind left right source_root () =
   Log.initialize ~verbose:false ~sections:[];
   let parse_type serialized =
-    match PythonParse.parse [serialized] with
+    match ParserParser.parse [serialized] with
     | [{ Ast.Node.value = Ast.Statement.Expression expression; _ }] ->
         Analysis.Type.create ~aliases:(fun _ -> None) expression
     | _ ->

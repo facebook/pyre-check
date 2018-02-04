@@ -541,7 +541,7 @@ let create ~aliases { Node.value = expression; _ } =
         | String string ->
             let access =
               try
-                match PythonParse.parse [string] with
+                match ParserParser.parse [string] with
                 | [{ Node.value = Statement.Expression { Node.value = Access access; _ }; _ }] ->
                     access
                 | _ ->

@@ -562,7 +562,7 @@ let test_pp _ =
 
     let pretty_print_of_source =
       to_lines source
-      |> PythonParse.parse
+      |> ParserParser.parse
       |> List.map ~f:Statement.show
       |> String.concat ~sep:"\n"
       |> String.rstrip ~drop:((=) '\n')

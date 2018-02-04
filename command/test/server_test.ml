@@ -526,7 +526,7 @@ let test_incremental_lookups _ =
     Ast.Source.create
       ~path
       ~qualifier:(Source.qualifier ~path)
-      (PythonParse.parse ~path (String.split_lines (content ^ "\n")))
+      (ParserParser.parse ~path (String.split_lines (content ^ "\n")))
     |> Analysis.Preprocessing.preprocess
   in
   let source =
@@ -594,7 +594,7 @@ let test_incremental_repopulate _ =
     Ast.Source.create
       ~path:"test.py"
       ~qualifier:(Source.qualifier ~path:"test.py")
-      (PythonParse.parse ~path:"test.py" (String.split_lines (content ^ "\n")))
+      (ParserParser.parse ~path:"test.py" (String.split_lines (content ^ "\n")))
     |> Analysis.Preprocessing.preprocess
   in
   let source =

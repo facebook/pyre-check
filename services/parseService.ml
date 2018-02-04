@@ -7,6 +7,7 @@ open Core
 
 open Ast
 open Pyre
+open PyreParser
 
 
 let parse_path_to_source file =
@@ -16,7 +17,7 @@ let parse_path_to_source file =
   >>= fun lines ->
   let metadata = Source.Metadata.parse lines in
   try
-    let statements = PythonParse.parse ~path lines in
+    let statements = Parser.parse ~path lines in
     Some (
       Source.create
         ~docstring:(Statement.extract_docstring statements)
@@ -25,7 +26,7 @@ let parse_path_to_source file =
         ~qualifier:(Source.qualifier ~path)
         statements)
   with
-  | PythonParse.Error error
+  | Parser.Error error
   | Failure error ->
       Log.error "%s" error;
       None

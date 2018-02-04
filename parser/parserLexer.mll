@@ -10,7 +10,7 @@
 {
   open Core
   open Lexing
-  open PythonParser
+  open ParserParserGenerator
 
   module State = struct
     type t = {
