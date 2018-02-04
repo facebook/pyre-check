@@ -12,8 +12,8 @@ open Pyre
 open Test
 
 module Parallel = Hack_parallel.Std
-module Error = Error
 module State = ServerState
+module Scheduler = Service.Scheduler
 
 
 exception Timeout
@@ -206,7 +206,7 @@ let mock_server_state
         persistent_clients = Unix.File_descr.Table.create ();
         file_notifiers = [];
       };
-    service = Service.create ~is_parallel:false ();
+    scheduler = Scheduler.create ~is_parallel:false ();
   }
 
 let mock_client_socket = Unix.openfile ~mode:[Unix.O_RDONLY] "/dev/null"
@@ -240,7 +240,7 @@ let assert_request_gets_response
       (Command_test.mock_server_configuration ~source_root ())
       request
   in
-  Service.destroy mock_server_state.State.service;
+  Scheduler.destroy mock_server_state.State.scheduler;
   Command_test.clean_environment ();
   assert_equal response expected_response
 
@@ -256,7 +256,7 @@ let test_shutdown _ =
               |> Yojson.Safe.to_string)))
 
 
-let test_language_service_shutdown _ =
+let test_language_scheduler_shutdown _ =
   let source = "x = 1" in
   assert_request_gets_response
     source
@@ -411,7 +411,7 @@ let test_protocol_language_server_protocol _ =
       (Protocol.Request.LanguageServerProtocolRequest "{\"method\":\"\"}")
   in
   let cleanup () =
-    Service.destroy server_state.State.service;
+    Scheduler.destroy server_state.State.scheduler;
     Command_test.clean_environment ()
   in
   Exn.protect ~f:(fun () -> assert_is_none response) ~finally:cleanup
@@ -457,7 +457,7 @@ let test_protocol_persistent _ =
          server_state
          (Command_test.mock_server_configuration ())
          (Protocol.Request.ClientConnectionRequest Protocol.Persistent));
-  Service.destroy server_state.State.service;
+  Scheduler.destroy server_state.State.scheduler;
   Command_test.clean_environment ()
 
 
@@ -499,7 +499,7 @@ let test_incremental_dependencies _ =
   in
   Sys.remove "a.py";
   Sys.remove "b.py";
-  Service.destroy initial_state.State.service;
+  Scheduler.destroy initial_state.State.scheduler;
   Command_test.clean_environment ();
   assert_is_some response;
   assert_equal
@@ -573,7 +573,7 @@ let test_incremental_lookups _ =
           position = { Ast.Location.line = 5; column = 4 };
         })
   in
-  Service.destroy initial_state.State.service;
+  Scheduler.destroy initial_state.State.scheduler;
   Command_test.clean_environment ();
   assert_is_some response;
   let response = Option.value_exn response in
@@ -648,11 +648,11 @@ let test_incremental_repopulate _ =
     | Some expression -> assert_equal (Ast.Expression.show expression) "str"
     | None -> assert_unreached ()
   end;
-  Service.destroy initial_state.State.service;
+  Scheduler.destroy initial_state.State.scheduler;
   Command_test.clean_environment ()
 
 
-let test_language_service_definition context =
+let test_language_scheduler_definition context =
   let filename, _ = bracket_tmpfile ~suffix:".py" context in
   let request =
     Format.sprintf {|
@@ -700,12 +700,12 @@ let () =
       "protocol_persistent", test_protocol_persistent;
       "query", test_query;
       "shutdown", test_shutdown;
-      "language_service_shutdown", test_language_service_shutdown;
+      "language_scheduler_shutdown", test_language_scheduler_shutdown;
       "did_save_with_content", test_did_save_with_content;
       "incremental_dependencies", test_incremental_dependencies;
       "incremental_typecheck", test_incremental_typecheck;
       "incremental_repopulate", test_incremental_repopulate;
       "incremental_lookups", test_incremental_lookups;
-      "language_service_definition", test_language_service_definition;
+      "language_scheduler_definition", test_language_scheduler_definition;
       "language_server_protocol_json_format", test_language_server_protocol_json_format;
     ]

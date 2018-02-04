@@ -6,6 +6,7 @@
 open Core
 
 open Analysis
+open Service
 
 module Error = Error
 module Socket = CommandSocket
@@ -27,7 +28,7 @@ type t = {
   errors: (Error.t list) File.Handle.Table.t;
   handles: File.Handle.Set.t;
   lookups: Analysis.Lookup.t String.Table.t;
-  service: Service.t;
+  scheduler: Scheduler.t;
   lock: Mutex.t;
   last_request_time: float;
   connections: connections ref;

@@ -6,24 +6,25 @@
 open Core
 
 open Configuration
+open Pyre
+open Service
 open ServerConfiguration
 open ServerState
-open Pyre
 
 module Check = CommandCheck
 module WatchmanConstants = CommandWatchmanConstants
 
 let initialize ?old_state lock connections { configuration; _ } =
   Log.log ~section:`Server  "Initializing server...";
-  let service =
+  let scheduler =
     match old_state with
-    | Some { service; _ } -> service
-    | None -> Service.create ~is_parallel:configuration.parallel ()
+    | Some { scheduler; _ } -> scheduler
+    | None -> Scheduler.create ~is_parallel:configuration.parallel ()
   in
   SharedMem.collect `aggressive;
   let timer = Timer.start () in
   let { Check.handles; environment; errors = initial_errors } =
-    Check.check configuration (Some service) () in
+    Check.check configuration (Some scheduler) () in
   Statistics.performance ~name:"initialization" ~timer ~configuration ~normals:[] ();
   Log.log ~section:`Server "Server initialized";
   let handles = File.Handle.Set.of_list handles in
@@ -45,7 +46,7 @@ let initialize ?old_state lock connections { configuration; _ } =
     initial_errors = Error.Hash_set.of_list initial_errors;
     errors;
     handles;
-    service;
+    scheduler;
     lock;
     last_request_time = Unix.time ();
     connections;

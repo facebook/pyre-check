@@ -9,6 +9,9 @@ open Ast
 open Pyre
 open PyreParser
 
+module Scheduler = ServiceScheduler
+module AstSharedMemory = ServiceAstSharedMemory
+
 
 let parse_path_to_source file =
   File.path file |> Path.relative
@@ -31,9 +34,9 @@ let parse_path_to_source file =
       Log.error "%s" error;
       None
 
-let parse_parallel parse_job paths service =
-  Service.map_reduce
-    service
+let parse_parallel parse_job paths scheduler =
+  Scheduler.map_reduce
+    scheduler
     ~init:[]
     ~map:(fun _ paths -> parse_job paths)
     ~reduce:(fun new_sources parsed_sources -> parsed_sources @ new_sources)
@@ -85,17 +88,17 @@ let parse_stub_job files =
 
 
 
-let parse_stubs_list service files =
+let parse_stubs_list scheduler files =
   let handles =
-    if Service.is_parallel service then
-      parse_parallel parse_stub_job files service
+    if Scheduler.is_parallel scheduler then
+      parse_parallel parse_stub_job files scheduler
     else
       parse_stub_job files
   in
   handles
 
 let parse_stubs
-    service
+    scheduler
     ~configuration:({ Configuration.source_root; stub_roots; _ } as configuration) =
   let timer = Timer.start () in
   let paths sofar root =
@@ -108,7 +111,7 @@ let parse_stubs
     sofar @ File.list ~filter:is_stub ~root
   in
   let paths = List.fold ~init:[] ~f:paths (source_root :: stub_roots) in
-  let handles = parse_stubs_list service (List.map ~f:File.create paths) in
+  let handles = parse_stubs_list scheduler (List.map ~f:File.create paths) in
   Statistics.performance ~name:"stubs parsed" ~timer ~configuration ();
   let not_parsed = (List.length paths) - (List.length handles) in
   if not_parsed > 0 then
@@ -133,13 +136,13 @@ let parse_source_job files =
 
 
 let parse_sources_list
-    service
+    scheduler
     files
     ~configuration:({ Configuration.source_root; project_root; _ } as configuration) =
   AstSharedMemory.remove_paths (List.filter_map ~f:(File.handle ~root:source_root) files);
   let sources =
-    if Service.is_parallel service then
-      parse_parallel parse_source_job files service
+    if Scheduler.is_parallel scheduler then
+      parse_parallel parse_source_job files scheduler
     else
       parse_source_job files
   in
@@ -184,7 +187,7 @@ let parse_sources_list
   (sources, (strict_coverage, declare_coverage))
 
 
-let parse_sources service ~configuration:({ Configuration.source_root; _ } as configuration) =
+let parse_sources scheduler ~configuration:({ Configuration.source_root; _ } as configuration) =
   let timer = Timer.start () in
   let paths =
     let is_python path =
@@ -192,7 +195,7 @@ let parse_sources service ~configuration:({ Configuration.source_root; _ } as co
     File.list ~filter:is_python ~root:source_root in
   Log.info "Parsing %d sources in `%a`..." (List.length paths) Path.pp source_root;
   let (handles, _) =
-    parse_sources_list service ~configuration (List.map ~f:File.create paths)
+    parse_sources_list scheduler ~configuration (List.map ~f:File.create paths)
   in
   Statistics.performance ~name:"sources parsed" ~timer ~configuration ();
   handles

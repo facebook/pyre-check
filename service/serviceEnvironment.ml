@@ -7,8 +7,13 @@ open Core
 
 open Analysis
 open Environment
-open EnvironmentSharedMemory
 open Pyre
+
+module Scheduler = ServiceScheduler
+module AstSharedMemory = ServiceAstSharedMemory
+module EnvironmentSharedMemory = ServiceEnvironmentSharedMemory
+
+open EnvironmentSharedMemory
 
 
 let build
@@ -56,7 +61,7 @@ let build
 
 
 let infer_protocols
-    ~service
+    ~scheduler
     ~handler:((module Handler: Environment.Handler) as handler)
     ~configuration:({ Configuration.sections; verbose; _ } as configuration) =
   let module Edge = TypeOrder.Edge in
@@ -72,8 +77,8 @@ let infer_protocols
           |> Set.union edges)
       protocols
   in
-  Service.map_reduce
-    service
+  Scheduler.map_reduce
+    scheduler
     ~init:Edge.Set.empty
     ~map
     ~reduce:Set.union
@@ -91,19 +96,19 @@ let infer_protocols
   Statistics.performance ~name:"inferred protocol implementations" ~timer ~configuration ()
 
 
-let in_process_handler service ~configuration ~stubs ~sources =
+let in_process_handler scheduler ~configuration ~stubs ~sources =
   let environment = Environment.Builder.create ~configuration () in
   let handler = Environment.handler ~configuration environment in
   build handler ~configuration ~stubs ~sources;
   Log.log ~section:`Environment "%a" Environment.Builder.pp environment;
-  infer_protocols ~service ~handler ~configuration;
+  infer_protocols ~scheduler ~handler ~configuration;
   handler
 
 
 (** First dumps environment to shared memory, then exposes through
     Environment_handler *)
 let shared_memory_handler
-    service
+    scheduler
     ~configuration:({ Configuration.sections; verbose; _ } as configuration)
     ~stubs
     ~sources =
@@ -454,7 +459,7 @@ let shared_memory_handler
   in
   Statistics.event ~name:"shared memory size" ~integers:["size", heap_size] ~configuration ();
 
-  infer_protocols ~service ~handler:shared_handler ~configuration;
+  infer_protocols ~scheduler ~handler:shared_handler ~configuration;
 
   shared_handler
 

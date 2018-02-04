@@ -7,11 +7,9 @@ open Core
 
 open Analysis
 
-module Error = Error
-
 
 val analyze_sources
-  : Service.t
+  : ServiceScheduler.t
   -> ?repopulate_handles: (File.Handle.t list)
   -> Configuration.t
   -> (module Environment.Handler)

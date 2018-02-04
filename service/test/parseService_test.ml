@@ -5,6 +5,7 @@
 
 open Core
 open OUnit2
+open Service
 open Test
 
 open Ast
@@ -27,8 +28,8 @@ let test_parse_stubs_list _ =
     ]
   in
   let handles =
-    ParseService.parse_stubs_list
-      (Service.mock ())
+    Service.Parser.parse_stubs_list
+      (Scheduler.mock ())
       files
   in
   assert_equal (List.length files) (List.length handles);
@@ -61,8 +62,8 @@ let test_parse_sources_list _ =
       (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:"a.py")
   in
   let (handles, _) =
-    ParseService.parse_sources_list
-      (Service.mock ())
+    Service.Parser.parse_sources_list
+      (Scheduler.mock ())
       [file]
       ~configuration:(Configuration.create ~source_root:(Path.current_working_directory ()) ())
   in
@@ -82,8 +83,8 @@ let test_parse_sources_list _ =
 
 let test_parse_sources_coverage _ =
   let (_, (strict_coverage, declare_coverage)) =
-    ParseService.parse_sources_list
-      (Service.mock ())
+    Service.Parser.parse_sources_list
+      (Scheduler.mock ())
       [
         File.create
           ~content:(Some "#pyre-strict\ndef foo()->int:\n    return 1\n")

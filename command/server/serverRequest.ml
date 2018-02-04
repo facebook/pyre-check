@@ -16,6 +16,7 @@ open Protocol.Request
 open Pyre
 
 module Rage = CommandRage
+module Scheduler = Service.Scheduler
 
 
 exception InvalidRequest
@@ -111,12 +112,16 @@ let rec process_request
           else
             state.deferred_requests
         in
-        let service = Service.with_parallel state.service ~is_parallel:(List.length files > 5) in
+        let scheduler =
+          Scheduler.with_parallel
+            state.scheduler
+            ~is_parallel:(List.length files > 5)
+        in
         let repopulate_handles, new_source_handles =
           if check_dependents then
             List.filter_map ~f:(File.handle ~root:source_root) files,
-            ParseService.parse_sources_list
-              service
+            Service.Parser.parse_sources_list
+              scheduler
               files
               ~configuration
             |> fst
@@ -125,9 +130,9 @@ let rec process_request
         in
         let new_errors, lookups =
           let errors, lookups, _ =
-            TypeCheckService.analyze_sources
+            Service.TypeCheck.analyze_sources
               ~repopulate_handles
-              service
+              scheduler
               configuration
               state.environment
               new_source_handles

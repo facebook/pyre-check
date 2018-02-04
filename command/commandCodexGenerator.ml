@@ -7,6 +7,7 @@ open Core
 
 open Ast
 open Pyre
+open Service
 
 let to_json ~root handles =
   let get_sources =
@@ -24,12 +25,12 @@ let run is_parallel source_root () =
   if Sys.is_directory source_root <> `Yes then
     raise (Invalid_argument (Format.asprintf "`%s` is not a directory" source_root));
 
-  let service = Service.create ~is_parallel () in
+  let scheduler = Scheduler.create ~is_parallel () in
   let root = Path.create_absolute source_root in
 
   Log.info "Parsing...";
   let configuration = Configuration.create ~source_root:(Path.create_absolute source_root) () in
-  let source_handles = ParseService.parse_sources service ~configuration in
+  let source_handles = Service.Parser.parse_sources scheduler ~configuration in
 
   Log.info "Generating JSON for Codex...";
   to_json ~root:(Path.absolute root) source_handles

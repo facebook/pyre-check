@@ -9,7 +9,8 @@ open Ast
 open Analysis
 open Pyre
 
-module Error = Error
+module Scheduler = ServiceScheduler
+module AstSharedMemory = ServiceAstSharedMemory
 
 
 type analysis_results = {
@@ -59,7 +60,7 @@ let analyze_source
 
 
 let analyze_sources_parallel
-    service
+    scheduler
     ({Configuration.source_root; project_root = directory; _ } as configuration)
     environment
     handles =
@@ -86,8 +87,8 @@ let analyze_sources_parallel
             false)
   in
   handles
-  |> Service.map_reduce
-    service
+  |> Scheduler.map_reduce
+    scheduler
     ~init:
       {
         errors = [];
@@ -138,18 +139,18 @@ let analyze_sources_parallel
 
 
 let analyze_sources
-    service
+    scheduler
     ?(repopulate_handles = [])
     ({Configuration.source_root; project_root = directory; _ } as configuration)
     environment
     handles =
   Log.info "Checking...";
-  EnvironmentService.repopulate
+  ServiceEnvironment.repopulate
     environment
     ~configuration
     ~handles:repopulate_handles;
-  match Service.is_parallel service with
-  | true -> analyze_sources_parallel service configuration environment handles
+  match Scheduler.is_parallel scheduler with
+  | true -> analyze_sources_parallel scheduler configuration environment handles
   | false ->
       let get_sources =
         List.fold

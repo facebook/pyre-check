@@ -10,6 +10,8 @@ open Analysis
 open Pyre
 open Test
 
+module Scheduler = Service.Scheduler
+
 
 let type_check_sources_list_test context =
   let check context =
@@ -49,14 +51,14 @@ let type_check_sources_list_test context =
           ()
       in
       let sources, _ =
-        ParseService.parse_sources_list
-          (Service.mock ())
+        Service.Parser.parse_sources_list
+          (Scheduler.mock ())
           files
           ~configuration
       in
       let errors, _, _ =
-        TypeCheckService.analyze_sources
-          (Service.mock ())
+        Service.TypeCheck.analyze_sources
+          (Scheduler.mock ())
           configuration
           environment
           sources

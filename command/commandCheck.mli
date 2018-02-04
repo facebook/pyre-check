@@ -7,7 +7,8 @@ open Core
 
 open Analysis
 
-module Error = Error
+module Scheduler = Service.Scheduler
+
 
 type result = {
   handles: File.Handle.t list;
@@ -15,7 +16,7 @@ type result = {
   errors: Error.t list
 }
 
-val check: Configuration.t -> Service.t option -> unit -> result
+val check: Configuration.t -> Scheduler.t option -> unit -> result
 
 val spec
   : (bool

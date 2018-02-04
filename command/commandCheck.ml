@@ -9,8 +9,8 @@ open Analysis
 open Configuration
 open Pyre
 
-module Error = Error
 module Socket = CommandSocket
+module Scheduler = Service.Scheduler
 module Handshake = CommandHandshake
 
 
@@ -42,7 +42,7 @@ let check
       stub_roots;
       source_root;
     }
-    original_service
+    original_scheduler
     () =
   Log.initialize ~verbose ~sections;
 
@@ -60,10 +60,10 @@ let check
     try Int.of_string (Sys.getenv "BUCKET_MULTIPLIER" |> (fun value -> Option.value_exn value))
     with _ -> 10
   in
-  let service =
-    match original_service with
-    | None -> Service.create ~is_parallel:parallel ~bucket_multiplier ()
-    | Some service -> service
+  let scheduler =
+    match original_scheduler with
+    | None -> Scheduler.create ~is_parallel:parallel ~bucket_multiplier ()
+    | Some scheduler -> scheduler
   in
   let configuration =
     Configuration.create
@@ -83,23 +83,23 @@ let check
   in
 
   (* Parsing. *)
-  let stubs = ParseService.parse_stubs service ~configuration in
-  let sources = ParseService.parse_sources service ~configuration in
+  let stubs = Service.Parser.parse_stubs scheduler ~configuration in
+  let sources = Service.Parser.parse_sources scheduler ~configuration in
 
   (* Build environment. *)
   let environment =
     let handler =
-      if Service.is_parallel service then
-        EnvironmentService.shared_memory_handler
+      if Scheduler.is_parallel scheduler then
+        Service.Environment.shared_memory_handler
       else
-        EnvironmentService.in_process_handler
+        Service.Environment.in_process_handler
     in
-    handler service ~configuration ~stubs ~sources
+    handler scheduler ~configuration ~stubs ~sources
   in
 
   (* Run type checker. *)
   let errors, _, { TypeCheck.Coverage.full; partial; untyped; ignore } =
-    TypeCheckService.analyze_sources service configuration environment sources
+    Service.TypeCheck.analyze_sources scheduler configuration environment sources
   in
   (* Log coverage results *)
   let path_to_files =
@@ -119,9 +119,9 @@ let check
       "file_name", path_to_files;
     ]
     ();
-  (* Only destroy the service if the check command created it. *)
-  (match original_service with
-   | None -> Service.destroy service
+  (* Only destroy the scheduler if the check command created it. *)
+  (match original_scheduler with
+   | None -> Scheduler.destroy scheduler
    | Some _ -> ());
   { handles = stubs @ sources; environment; errors }
 
