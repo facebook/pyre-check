@@ -11,9 +11,6 @@ open Expression
 open Test
 
 
-module Error = Error
-
-
 let mock_define =
   +{
     Statement.Define.name = Access.create "foo";
