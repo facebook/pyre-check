@@ -10,7 +10,7 @@
 {
   open Core
   open Lexing
-  open ParserParserGenerator
+  open ParserGenerator
 
   module State = struct
     type t = {

@@ -6,7 +6,7 @@
 open Core
 open Ast
 
-module ParserGenerator = ParserParserGenerator
+module ParserGenerator = ParserGenerator
 module Lexer = ParserLexer
 
 

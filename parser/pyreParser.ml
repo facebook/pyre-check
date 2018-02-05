@@ -4,6 +4,6 @@
     LICENSE file in the root directory of this source tree. *)
 
 
-module ParserGenerator = ParserParserGenerator
+module ParserGenerator = ParserGenerator
 module Lexer = ParserLexer
 module Parser = ParserParser
