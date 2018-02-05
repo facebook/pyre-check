@@ -2807,6 +2807,18 @@ let test_assert _ =
         Assert.test = !"a";
         message = Some !"b";
       };
+    ];
+  assert_parsed_equal
+    "assert a, b or c"
+    [
+      +Assert {
+        Assert.test = !"a";
+        message = Some (+BooleanOperator {
+            BooleanOperator.left = !"b";
+            operator = BooleanOperator.Or;
+            right = !"c";
+          });
+      };
     ]
 
 

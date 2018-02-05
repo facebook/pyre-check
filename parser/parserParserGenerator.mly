@@ -328,7 +328,7 @@ small_statement:
       }]
     }
   | start = ASSERT; test = expression;
-    COMMA; message = expression {
+    COMMA; message = test {
       [{
         Node.location = location_create_with_stop ~start ~stop:(Node.stop test);
         value = Assert { Assert.test; message = Some message }
