@@ -49,6 +49,9 @@ end
 
 val serialize: t -> string
 
+val primitive: string -> t
+val parametric: string -> t list -> t
+
 val awaitable: t -> t
 val bool: t
 val bytes: t
@@ -64,8 +67,6 @@ val lambda: t -> t
 val list: t -> t
 val optional: t -> t
 val meta: t -> t
-val primitive: string -> t
-val parametric: string -> t list -> t
 val set: t -> t
 val string: t
 val tuple: t list -> t

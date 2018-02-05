@@ -182,6 +182,14 @@ let rec serialize = function
       Format.asprintf "%a" pp annotation
 
 
+let primitive name =
+  Primitive (Identifier.create name)
+
+
+let parametric name parameters =
+  Parametric { name = Identifier.create name; parameters }
+
+
 let awaitable parameter =
   Parametric {
     name = Identifier.create "typing.Awaitable";
@@ -271,19 +279,14 @@ let rec optional parameter =
       Optional parameter
 
 
-let meta annotation =
-  Parametric {
-    name = Identifier.create "typing.Type";
-    parameters = [annotation];
-  }
-
-
-let primitive name =
-  Primitive (Identifier.create name)
-
-
-let parametric name parameters =
-  Parametric { name = Identifier.create name; parameters }
+let meta = function
+  | Variable _ ->
+      primitive "type"
+  | annotation ->
+      Parametric {
+        name = Identifier.create "typing.Type";
+        parameters = [annotation];
+      }
 
 
 let set parameter =

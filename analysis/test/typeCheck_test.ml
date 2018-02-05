@@ -80,6 +80,9 @@ let plain_environment =
 
         class typing.Generic(): pass
 
+        class type:
+          __name__: str = ...
+
         class typing.Iterable(typing.Generic[_T]):
           def __iter__(self)->typing.Iterator[_T]: pass
         class typing.Iterator(typing.Iterable[_T], typing.Generic[_T]):
@@ -3710,6 +3713,13 @@ let test_check_meta _ =
         ATTRIBUTE: typing.ClassVar[int] = 1
         def foo(self) -> int:
           return type(self).ATTRIBUTE
+    |}
+    [];
+  assert_type_errors
+    {|
+      T = typing.TypeVar('T')
+      def foo(t: T) -> str:
+        return type(t).__name__
     |}
     []
 
