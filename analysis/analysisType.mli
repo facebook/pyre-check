@@ -58,7 +58,7 @@ val bytes: t
 val complex: t
 val dictionary: key:t -> value:t -> t
 val float: t
-val generator: t -> t
+val generator: ?async:bool -> t -> t
 val generic: t
 val integer: t
 val iterable: t -> t
@@ -82,6 +82,7 @@ val create
 val expression: t -> Expression.t
 val access: t -> Access.t
 
+val is_async_generator: t -> bool
 val is_awaitable: t -> bool
 val is_generic: t -> bool
 val is_meta: t -> bool
@@ -104,6 +105,7 @@ val is_untyped: t -> bool
 val mismatch_with_any: t -> t -> bool
 
 val optional_value: t -> t
+val async_generator_value: t -> t
 val awaitable_value: t -> t
 
 val parameters: t -> t list

@@ -117,6 +117,7 @@ let plain_environment =
         def typing.cast(tp: typing.Type[_T], o) -> _T: ...
 
         class typing.Awaitable: pass
+        class typing.AsyncGenerator: pass
         class IsAwaitable(typing.Awaitable[int]): pass
 
         def sum(iterable: typing.Iterable[_T]) -> typing.Union[_T, int]: ...
@@ -3752,7 +3753,7 @@ let test_check_excepts _ =
     []
 
 
-let test_check_await _ =
+let test_check_async _ =
   assert_type_errors
     {|
       async def foo() -> int: return 1
@@ -3793,6 +3794,12 @@ let test_check_await _ =
       async def foo() -> int:
         awaited = await get()
         return awaited
+    |}
+    [];
+  assert_type_errors
+    {|
+      async def foo() -> typing.AsyncGenerator[int, None]:
+        yield 1
     |}
     []
 
@@ -4474,7 +4481,7 @@ let () =
     "check_meta">::test_check_meta;
     "check_assert">::test_check_assert;
     "check_excepts">::test_check_excepts;
-    "check_await">::test_check_await;
+    "check_async">::test_check_async;
     "check_behavioral_subtyping">::test_check_behavioral_subtyping;
     "check_collections">::test_check_collections;
     "check_constructors">::test_check_constructors;

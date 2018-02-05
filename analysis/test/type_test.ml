@@ -540,6 +540,12 @@ let test_union _ =
     (Type.union [Type.float; Type.string; Type.bytes])
 
 
+let test_is_async_generator _ =
+  assert_false (Type.is_async_generator (Type.generator Type.string));
+  assert_false (Type.is_async_generator Type.string);
+  assert_true (Type.is_async_generator (Type.generator ~async:true Type.string))
+
+
 let test_is_instantiated _ =
   assert_true (Type.is_instantiated Type.Bottom);
   assert_true (Type.is_instantiated (Type.dictionary ~key:Type.Bottom ~value:Type.Bottom));
@@ -737,6 +743,20 @@ let test_optional_value _ =
       })
 
 
+let test_async_generator_value _ =
+  assert_equal
+    ~printer:(Format.asprintf "%a" Type.pp)
+    (Type.async_generator_value (
+        Type.Parametric {
+          Type.name = Identifier.create "typing.AsyncGenerator";
+          parameters = [Type.integer; Type.Optional Type.Bottom];
+        }))
+    (Type.Parametric {
+        Type.name = Identifier.create "typing.Generator";
+        parameters = [Type.integer; Type.Optional Type.Bottom; Type.Optional Type.Bottom];
+      })
+
+
 let test_dequalify _ =
   let map =
     {|
@@ -787,6 +807,7 @@ let () =
     "create">::test_create;
     "expression">::test_expression;
     "union">::test_union;
+    "is_async_generator">::test_is_async_generator;
     "is_instantiated">::test_is_instantiated;
     "is_meta">::test_is_meta;
     "is_none">::test_is_none;
@@ -794,6 +815,7 @@ let () =
     "is_resolved">::test_is_resolved;
     "mismatch_with_any">::test_mismatch_with_any;
     "optional_value">::test_optional_value;
+    "async_generator_value">::test_async_generator_value;
     "dequalify">::test_dequalify;
   ]
   |> run_test_tt_main

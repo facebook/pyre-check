@@ -1555,7 +1555,7 @@ module State = struct
       | { Node.location; value = Statement.Yield { Node.value = Expression.Yield return; _ }; _ } ->
           let actual =
             Option.value_map return ~default:Type.none ~f:(Annotated.resolve ~resolution)
-            |> Type.generator
+            |> Type.generator ~async
           in
           if not (Resolution.less_or_equal resolution ~left:actual ~right:expected) then
             add_errors

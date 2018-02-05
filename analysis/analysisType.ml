@@ -224,11 +224,17 @@ let none =
   Optional Bottom
 
 
-let generator parameter =
-  Parametric {
-    name = Identifier.create "typing.Generator";
-    parameters = [parameter; none; none];
-  }
+let generator ?(async=false) parameter =
+  if async then
+    Parametric {
+      name = Identifier.create "typing.AsyncGenerator";
+      parameters = [parameter; none];
+    }
+  else
+    Parametric {
+      name = Identifier.create "typing.Generator";
+      parameters = [parameter; none; none];
+    }
 
 
 let generic =
@@ -610,6 +616,14 @@ let access annotation =
   | _ -> failwith "Annotation expression is not an access"
 
 
+let is_async_generator derp =
+  match derp with
+  | Parametric { name; _ } when Identifier.show name = "typing.AsyncGenerator" ->
+      true
+  | _ ->
+      false
+
+
 let is_awaitable = function
   | Parametric { name; parameters = [_] } when Identifier.show name = "typing.Awaitable" ->
       true
@@ -809,6 +823,14 @@ let rec mismatch_with_any left right =
 let optional_value = function
   | Optional annotation -> annotation
   | annotation -> annotation
+
+
+let async_generator_value = function
+  | Parametric { name; parameters = [parameter; _] }
+    when Identifier.show name = "typing.AsyncGenerator" ->
+      generator parameter
+  | _ ->
+      Top
 
 
 let awaitable_value = function
