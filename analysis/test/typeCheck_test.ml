@@ -3785,6 +3785,15 @@ let test_check_await _ =
       def bar(a: typing.Any) -> None:
         await a
     |}
+    [];
+  assert_type_errors
+    {|
+      @asyncio.coroutines.coroutine
+      def get() -> typing.Generator[typing.Any, None, int]: ...
+      async def foo() -> int:
+        awaited = await get()
+        return awaited
+    |}
     []
 
 

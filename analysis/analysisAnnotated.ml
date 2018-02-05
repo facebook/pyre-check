@@ -17,14 +17,27 @@ module Type = AnalysisType
 module TypeOrder = AnalysisTypeOrder
 
 
-let return_annotation { Define.return_annotation; async; _ } ~resolution =
+let return_annotation ({ Define.return_annotation; async; _ } as define) ~resolution =
   let annotation =
     Option.value_map
       return_annotation
       ~f:(Resolution.parse_annotation resolution)
       ~default:Type.Top
   in
-  if async then Type.awaitable annotation else annotation
+  if async then
+    Type.awaitable annotation
+  else
+    if Define.is_coroutine define then
+      begin
+        match annotation with
+        | Type.Parametric { Type.name; parameters = [_; _; return_annotation] }
+          when Identifier.show name = "typing.Generator" ->
+            Type.awaitable return_annotation
+        | _ ->
+            Type.Top
+      end
+    else
+      annotation
 
 
 let parameter_annotations { Define.parameters; _ } ~resolution =

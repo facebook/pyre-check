@@ -175,6 +175,7 @@ module Define : sig
   [@@deriving compare, eq, sexp, show, hash]
 
   val is_method: t -> bool
+  val is_coroutine: t -> bool
   val is_abstract_method: t -> bool
   val is_overloaded_method: t -> bool
   val is_static_method: t -> bool

@@ -230,6 +230,10 @@ module Define = struct
     List.exists ~f:(is_decorator (String.split ~on:'.' decorator)) decorators
 
 
+  let is_coroutine define =
+    has_decorator define "asyncio.coroutines.coroutine"
+
+
   let is_abstract_method define =
     has_decorator define "abstractmethod" ||
     has_decorator define "abc.abstractmethod" ||
