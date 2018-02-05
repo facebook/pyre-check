@@ -533,7 +533,6 @@ let due_to_analysis_limitations { kind; _ } =
 
 let due_to_mismatch_with_any { kind; _ } =
   match kind with
-  | InconsistentOverride _
   | MissingAttributeAnnotation _
   | MissingGlobalAnnotation _
   | MissingParameterAnnotation _
@@ -545,6 +544,7 @@ let due_to_mismatch_with_any { kind; _ } =
   | UndefinedAttribute { annotation = actual; _ }
   | IncompatibleAwaitableType actual ->
       Type.equal actual Type.Object
+  | InconsistentOverride { mismatch = { actual; expected }; _ }
   | IncompatibleParameterType { mismatch = { actual; expected }; _ }
   | IncompatibleReturnType { actual; expected }
   | IncompatibleAttributeType { incompatible_type = { mismatch = { actual; expected }; _ }; _ }

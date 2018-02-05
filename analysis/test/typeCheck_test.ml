@@ -3897,6 +3897,17 @@ let test_check_behavioral_subtyping _ =
       class Bar(Foo):
         def __eq__(self, other) -> bool: pass
     |}
+    [];
+
+  (* Ignore anything involving `Any`. *)
+  assert_type_errors
+    ~debug:false
+    {|
+      class Foo():
+        def __eq__(self, o: typing.Any) -> typing.Any: ...
+      class Bar(Foo):
+        def __eq__(self, o: int) -> int: pass
+    |}
     []
 
 
