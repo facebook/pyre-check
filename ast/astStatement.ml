@@ -452,6 +452,8 @@ module Define = struct
         "nodeapi.privacy.viewer_context_properties.privacy_lazy_property";
         "property";
         "util.classproperty";
+        "util.etc.cached_classproperty";
+        "util.etc.cached_property";
         "util.etc.class_property";
         "util.etc.lazy_property";
       ]
