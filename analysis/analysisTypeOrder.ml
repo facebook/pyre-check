@@ -860,9 +860,10 @@ let widen order ~widening_threshold ~previous ~next ~iteration =
     join order previous next
 
 
-let add_backedges (module Handler: Handler) =
+let add_backedges (module Handler: Handler) ~bottom =
   let backedges = Handler.backedges () in
   let edge_keys = Handler.keys () in
+  let bottom = Handler.find_unsafe (Handler.indices ()) bottom in
   let add_backedges predecessor =
     let successors = Handler.find (Handler.edges ()) predecessor in
     let add_backedge { Target.target = successor; parameters } =
@@ -879,7 +880,20 @@ let add_backedges (module Handler: Handler) =
     | None ->
         ()
   in
-  List.iter ~f:add_backedges edge_keys
+  let clear_backedge key =
+    Handler.set backedges ~key ~data:[]
+  in
+  let add_bottom key =
+    match key <> bottom, Handler.find backedges key with
+    | true, None
+    | true, Some [] ->
+        Handler.set backedges ~key ~data:[{ Target.target = bottom; parameters = [] }]
+    | _ ->
+        ()
+  in
+  List.iter ~f:clear_backedge edge_keys;
+  List.iter ~f:add_backedges edge_keys;
+  List.iter ~f:add_bottom edge_keys
 
 
 let remove_extra_edges (module Handler: Handler) ~bottom ~top =

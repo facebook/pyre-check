@@ -1004,7 +1004,7 @@ let populate
     ~configuration
     ~bottom:Type.Bottom
     ~top:Type.Object;
-  TypeOrder.add_backedges (module Handler.TypeOrderHandler : TypeOrder.Handler);
+  TypeOrder.add_backedges (module Handler.TypeOrderHandler : TypeOrder.Handler) ~bottom:Type.Bottom;
   TypeOrder.remove_extra_edges
     (module Handler.TypeOrderHandler)
     ~bottom:Type.Bottom

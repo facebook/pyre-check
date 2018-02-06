@@ -868,11 +868,16 @@ let test_add_backedges _ =
   assert_backedges !"C" 0;
   assert_backedges !"D" 0;
 
-  TypeOrder.add_backedges (module Handler);
+  TypeOrder.add_backedges (module Handler) ~bottom:Type.Bottom;
   assert_backedges !"A" 2;
   assert_backedges !"B" 1;
   assert_backedges !"C" 1;
-  assert_backedges !"D" 1
+  assert_backedges !"D" 1;
+
+  (* Ensure that backedges only get added once by re-adding. *)
+  TypeOrder.add_backedges (module Handler) ~bottom:Type.Bottom;
+  assert_backedges !"A" 2;
+  assert_backedges !"B" 1
 
 
 let test_check_integrity _ =
