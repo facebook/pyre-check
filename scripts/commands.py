@@ -296,7 +296,9 @@ class Persistent(Command):
                 source_directories=self._source_directories,
                 capture_output=False)
             self._check_results(results)
-        except (ClientException, subprocess.CalledProcessError):
+        except (ClientException,
+                EnvironmentException,
+                subprocess.CalledProcessError):
             arguments.terminal = False
             Restart(
                 arguments,
@@ -560,12 +562,17 @@ class Rage(Command):
 
 class Start(Command):
     def __init__(self, arguments, configuration, source_directories) -> None:
+        # we need to create the .pyre/ directory if necessary, since the open
+        # below will fail if it doesn't exist.
+        try:
+            os.mkdir('.pyre')
+        except OSError:
+            pass
         with open(self.SOURCE_DIRECTORY_LIST, 'w+') as directory_list:
             fcntl.lockf(directory_list, fcntl.LOCK_EX)
             for directory in source_directories:
                 directory_list.write("{}\n".format(directory))
-            fcntl.lockf(directory_list, fcntl.LOCK_UN)
-
+                fcntl.lockf(directory_list, fcntl.LOCK_UN)
         super(Start, self).__init__(
             arguments,
             configuration,

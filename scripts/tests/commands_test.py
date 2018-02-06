@@ -149,10 +149,16 @@ class PersistentTest(unittest.TestCase):
                     arguments,
                     configuration,
                     source_directories=['.']).on_client_exception()
-            call_client.assert_called_once_with(
-                command=commands.PERSISTENT,
-                source_directories=['.'],
-                capture_output=False)
+            print("ASD {}".format(call_client.mock_calls))
+            call_client.assert_has_calls(
+                [
+                    call(command=commands.PERSISTENT,
+                         source_directories=['.'],
+                         capture_output=False),
+                    call(command=commands.START,
+                         flags=['-project-root', '.', '-stub-roots', ''],
+                         source_directories=['.']),
+                ])
             run_null_server.assert_called_once()
 
         # Check null server initialize output
