@@ -319,10 +319,18 @@ class IncrementalTest(unittest.TestCase):
                 arguments,
                 configuration,
                 ['running', 'dead'])
-            call_client.assert_called_once_with(
-                command=commands.INCREMENTAL,
-                source_directories=['.pyre/shared_source_directory'],
-                flags=['-project-root', '.', '-stub-roots', 'stub,root'])
+            call_client.assert_has_calls(
+                [
+                    call(command=commands.STOP, source_directories=['running']),
+                    call(command=commands.INCREMENTAL,
+                         source_directories=['.pyre/shared_source_directory'],
+                         flags=[
+                             '-project-root',
+                             '.',
+                             '-stub-roots',
+                             'stub,root']),
+                ],
+                any_order=True)
 
 
 class StartTest(unittest.TestCase):
