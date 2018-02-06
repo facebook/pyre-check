@@ -5,7 +5,7 @@
 
 open Core
 
-open LanguageServerProtocol
+open LanguageServer.Protocol
 open Pyre
 
 module Time = Core_kernel.Time_ns.Span
@@ -41,7 +41,7 @@ let run_command version source_root () =
     server_socket
   in
   let display_nuclide_message message =
-    ShowMessage.create LanguageServerProtocolTypes.ShowMessageParams.InfoMessage message
+    ShowMessage.create LanguageServer.Types.ShowMessageParams.InfoMessage message
     |> ShowMessage.to_yojson
     |> write_message Out_channel.stdout
   in
@@ -67,7 +67,7 @@ let run_command version source_root () =
   let server_socket = connect_to_server () in
 
   (* Read the initialize request *)
-  LanguageServerProtocol.read_message In_channel.stdin
+  LanguageServer.Protocol.read_message In_channel.stdin
   >>| InitializeRequest.of_yojson
   >>| begin function
     | Ok request ->
@@ -84,7 +84,7 @@ let run_command version source_root () =
   (* Write the initialize response *)
   >>| InitializeResponse.default
   >>| InitializeResponse.to_yojson
-  >>| LanguageServerProtocol.write_message Out_channel.stdout |> ignore;
+  >>| LanguageServer.Protocol.write_message Out_channel.stdout |> ignore;
 
   (* Get all initial errors *)
   Socket.write
@@ -105,7 +105,7 @@ let run_command version source_root () =
       let process_server_socket () =
         (match Socket.read socket with
          | Protocol.LanguageServerProtocolResponse response ->
-             LanguageServerProtocol.write_message
+             LanguageServer.Protocol.write_message
                Out_channel.stdout
                (Yojson.Safe.from_string response)
          | Protocol.ClientExitResponse Protocol.Persistent ->
@@ -115,7 +115,7 @@ let run_command version source_root () =
          | _ -> ())
       in
       let process_stdin_socket () =
-        (LanguageServerProtocol.read_message In_channel.stdin
+        (LanguageServer.Protocol.read_message In_channel.stdin
          >>| (fun message ->
              Protocol.Request.LanguageServerProtocolRequest (Yojson.Safe.to_string message))
          >>| Socket.write server_socket)

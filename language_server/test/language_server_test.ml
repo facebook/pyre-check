@@ -6,7 +6,9 @@
 open Core
 open OUnit2
 
-open LanguageServerProtocol
+open LanguageServer.Types
+open LanguageServer.Protocol
+open LanguageServer.RequestParser
 open Pyre
 
 module Parallel = Hack_parallel.Std
@@ -16,7 +18,7 @@ module Parallel = Hack_parallel.Std
 
 let test_language_server_protocol_message_format _ =
   let module GenericNotification =
-    LanguageServerProtocolTypes.NotificationMessage.Make(struct
+    NotificationMessage.Make(struct
       type t
       let to_yojson _ = `Null
       let of_yojson _ = Error ""
@@ -29,7 +31,7 @@ let test_language_server_protocol_message_format _ =
     }
     |> GenericNotification.to_yojson
     |> Yojson.Safe.sort
-    |> LanguageServerProtocol.to_message
+    |> to_message
   in
   let message_expect =
     "Content-Length: 32\r\n\
@@ -91,7 +93,7 @@ let test_language_server_protocol_read_message context =
   Out_channel.flush out_channel;
 
   let actual =
-    LanguageServerProtocol.read_message in_channel
+    read_message in_channel
     >>| Yojson.Safe.to_string
   in
 
@@ -112,7 +114,6 @@ let test_language_server_protocol_read_message context =
 
 
 let test_language_server_protocol_deserialize_request _ =
-  let open LanguageServerProtocolTypes in
   let module Request = RequestMessage.Make(struct
       type t = unit
       let of_yojson _ = Ok ()
@@ -149,7 +150,7 @@ let test_language_server_protocol_deserialize_request _ =
 
 let test_show_message_notification _ =
   let message =
-    ShowMessage.create LanguageServerProtocolTypes.ShowMessageParams.ErrorMessage "error"
+    ShowMessage.create ShowMessageParams.ErrorMessage "error"
     |> ShowMessage.to_yojson
     |> Yojson.Safe.sort
     |> Yojson.Safe.pretty_to_string
@@ -231,7 +232,6 @@ let test_request_parser context =
     |> Yojson.Safe.sort
   in
   let change_message =
-    let open LanguageServerProtocolTypes in
     {
       DidChangeTextDocument.jsonrpc = "2.0";
       method_ = "textDocument/didChange";
@@ -248,7 +248,7 @@ let test_request_parser context =
 
   assert_equal
     ~cmp:(Option.equal Protocol.Request.equal)
-    (LanguageServerProtocolRequestParser.parse
+    (parse
        ~root:(PyrePath.create_absolute "/tmp")
        ~check_on_save:true
        save_message)
@@ -260,7 +260,7 @@ let test_request_parser context =
           }));
   assert_equal
     ~cmp:(Option.equal Protocol.Request.equal)
-    (LanguageServerProtocolRequestParser.parse
+    (parse
        ~root:(PyrePath.create_absolute "/tmp")
        ~check_on_save:true
        change_message)

@@ -49,12 +49,12 @@ let test_language_server_protocol_json_format context =
       with location = { type_error.location with Location.path = filename }
     } in
   let json_error =
-    LanguageServerProtocol.PublishDiagnostics.of_errors
+    LanguageServer.Protocol.PublishDiagnostics.of_errors
       ~root:(Path.create_absolute "/tmp")
       (File.Handle.create filename)
       [type_error]
     |> Or_error.ok_exn
-    |> LanguageServerProtocol.PublishDiagnostics.to_yojson
+    |> LanguageServer.Protocol.PublishDiagnostics.to_yojson
     |> Yojson.Safe.sort
     |> Yojson.Safe.to_string
     |> Yojson.Safe.prettify
@@ -251,8 +251,8 @@ let test_shutdown _ =
     source
     (Protocol.Request.ClientShutdownRequest 1)
     (Some (Protocol.LanguageServerProtocolResponse
-             (LanguageServerProtocol.ShutdownResponse.default 1
-              |> LanguageServerProtocol.ShutdownResponse.to_yojson
+             (LanguageServer.Protocol.ShutdownResponse.default 1
+              |> LanguageServer.Protocol.ShutdownResponse.to_yojson
               |> Yojson.Safe.to_string)))
 
 
@@ -270,8 +270,8 @@ let test_language_scheduler_shutdown _ =
         }
        |})
     (Some (Protocol.LanguageServerProtocolResponse
-             (LanguageServerProtocol.ShutdownResponse.default 2
-              |> LanguageServerProtocol.ShutdownResponse.to_yojson
+             (LanguageServer.Protocol.ShutdownResponse.default 2
+              |> LanguageServer.Protocol.ShutdownResponse.to_yojson
               |> Yojson.Safe.to_string)))
 
 
@@ -432,12 +432,12 @@ let test_did_save_with_content context =
     |> trim_extra_indentation
   in
   let request =
-    LanguageServerProtocol.DidSaveTextDocument.create
+    LanguageServer.Protocol.DidSaveTextDocument.create
       ~root:(Path.create_absolute source_root)
       (source_root ^/ filename)
       (Some source)
     |> Or_error.ok_exn
-    |> LanguageServerProtocol.DidSaveTextDocument.to_yojson
+    |> LanguageServer.Protocol.DidSaveTextDocument.to_yojson
     |> Yojson.Safe.to_string
   in
   assert_request_gets_response
@@ -674,11 +674,11 @@ let test_language_scheduler_definition context =
       filename
   in
   let expected_response =
-    LanguageServerProtocol.TextDocumentDefinitionResponse.create
+    LanguageServer.Protocol.TextDocumentDefinitionResponse.create
       ~root:(Path.current_working_directory ())
       ~id:3
       ~location:None
-    |> LanguageServerProtocol.TextDocumentDefinitionResponse.to_yojson
+    |> LanguageServer.Protocol.TextDocumentDefinitionResponse.to_yojson
     |> Yojson.Safe.to_string
   in
   assert_request_gets_response

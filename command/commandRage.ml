@@ -7,6 +7,8 @@ open Core
 
 open Pyre
 
+open LanguageServer.Types
+
 module WatchmanConstants = CommandWatchmanConstants
 module PersistentConstants = CommandPersistentConstants
 
@@ -21,7 +23,7 @@ let get_logs configuration =
     in
     read_path path
     >>| fun content ->
-    { LanguageServerProtocolTypes.RageResponse.RageResult.title = Some name; data = content }
+    { RageResponse.RageResult.title = Some name; data = content }
   in
   List.filter_map
     ~f:get_log
@@ -36,7 +38,7 @@ let get_logs configuration =
     ]
 
 
-let display_log { LanguageServerProtocolTypes.RageResponse.RageResult.title; data } =
+let display_log { RageResponse.RageResult.title; data } =
   let name = Option.value_exn title in
   Out_channel.printf "\nDisplaying logs for %s:\n%s" name data
 

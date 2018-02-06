@@ -95,7 +95,7 @@ let computation_thread request_queue configuration state =
       let diagnostic_to_response = function
         | Ok diagnostic_error -> [
             diagnostic_error
-            |> LanguageServerProtocol.PublishDiagnostics.to_yojson
+            |> LanguageServer.Protocol.PublishDiagnostics.to_yojson
             |> Yojson.Safe.to_string
             |> fun serialized_diagnostic -> LanguageServerProtocolResponse serialized_diagnostic
           ]
@@ -104,7 +104,7 @@ let computation_thread request_queue configuration state =
       error_map
       |> List.map
         ~f:(fun (handle, errors) ->
-            LanguageServerProtocol.PublishDiagnostics.of_errors ~root:source_root handle errors)
+            LanguageServer.Protocol.PublishDiagnostics.of_errors ~root:source_root handle errors)
       |> List.concat_map ~f:diagnostic_to_response
     in
     (* Decides what to broadcast to persistent clients after a request is processed. *)

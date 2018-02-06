@@ -190,10 +190,10 @@ let rec process_request
         (Some (TypeQueryResponse response))
   in
   let handle_client_shutdown_request id =
-    let response = LanguageServerProtocol.ShutdownResponse.default id in
+    let response = LanguageServer.Protocol.ShutdownResponse.default id in
     state,
     Some (LanguageServerProtocolResponse (
-        Yojson.Safe.to_string (LanguageServerProtocol.ShutdownResponse.to_yojson response)))
+        Yojson.Safe.to_string (LanguageServer.Protocol.ShutdownResponse.to_yojson response)))
   in
   let result =
     match request with
@@ -212,7 +212,7 @@ let rec process_request
         state, None
     | LanguageServerProtocolRequest request ->
         Log.log ~section:`Server "Server received LSP request %s" request;
-        LanguageServerProtocolRequestParser.parse
+        LanguageServer.RequestParser.parse
           ~root:configuration.source_root
           ~check_on_save:false
           (Yojson.Safe.from_string request)
@@ -231,19 +231,19 @@ let rec process_request
                   (state,
                    Some
                      (Protocol.LanguageServerProtocolResponse
-                        (LanguageServerProtocol.TextDocumentDefinitionResponse.create
+                        (LanguageServer.Protocol.TextDocumentDefinitionResponse.create
                            ~root:source_root
                            ~id
                            ~location:definition
-                         |> LanguageServerProtocol.TextDocumentDefinitionResponse.to_yojson
+                         |> LanguageServer.Protocol.TextDocumentDefinitionResponse.to_yojson
                          |> Yojson.Safe.to_string)))
             | RageRequest id ->
                 let items = Rage.get_logs configuration in
                 Some
                   (state,
                    Some (Protocol.LanguageServerProtocolResponse
-                           (LanguageServerProtocol.RageResponse.create ~items ~id
-                            |> LanguageServerProtocol.RageResponse.to_yojson
+                           (LanguageServer.Protocol.RageResponse.create ~items ~id
+                            |> LanguageServer.Protocol.RageResponse.to_yojson
                             |> Yojson.Safe.to_string)))
             | _ -> None)
         |> Option.value ~default:(state, None)
@@ -259,8 +259,8 @@ let rec process_request
         state,
         Some
           (Protocol.LanguageServerProtocolResponse
-             (LanguageServerProtocol.RageResponse.create ~items ~id
-              |> LanguageServerProtocol.RageResponse.to_yojson
+             (LanguageServer.Protocol.RageResponse.create ~items ~id
+              |> LanguageServer.Protocol.RageResponse.to_yojson
               |> Yojson.Safe.to_string))
     | ReinitializeStateRequest ->
         let state =
