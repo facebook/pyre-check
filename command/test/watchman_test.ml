@@ -11,6 +11,7 @@ open Path.AppendOperator
 
 
 module Parallel = Hack_parallel.Std
+module Protocol = ServerProtocol
 module Socket = CommandSocket
 module Watchman = CommandWatchman
 

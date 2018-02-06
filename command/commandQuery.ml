@@ -24,9 +24,9 @@ let run_query query_kind left right source_root () =
   let right = parse_type right in
   let query =
     match query_kind with
-    | "less_or_equal" -> Protocol.LessOrEqual (left, right)
-    | "join" -> Protocol.Join (left, right)
-    | "meet" -> Protocol.Meet (left, right)
+    | "less_or_equal" -> ServerProtocol.LessOrEqual (left, right)
+    | "join" -> ServerProtocol.Join (left, right)
+    | "meet" -> ServerProtocol.Meet (left, right)
     | _ ->
         Log.error "%s"
           ("Could not parse query %s; exiting.\n" ^
@@ -35,12 +35,12 @@ let run_query query_kind left right source_root () =
   in
   let configuration = Configuration.create ~source_root:(Path.create_absolute source_root) () in
   let socket = Server.connect ~retries:3 ~configuration in
-  Socket.write socket (Protocol.Request.TypeQueryRequest query);
+  Socket.write socket (ServerProtocol.Request.TypeQueryRequest query);
   match Socket.read socket with
-  | Protocol.TypeQueryResponse serialized ->
+  | ServerProtocol.TypeQueryResponse serialized ->
       Log.print "%s" serialized
   | response ->
-      Log.error "Unexpected response %s from server" (Protocol.show_response response)
+      Log.error "Unexpected response %s from server" (ServerProtocol.show_response response)
 
 
 let command =

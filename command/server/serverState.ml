@@ -23,7 +23,7 @@ type connections = {
 }
 
 type t = {
-  deferred_requests: Protocol.Request.t list;
+  deferred_requests: ServerProtocol.Request.t list;
   environment: (module Analysis.Environment.Handler);
   initial_errors: Error.Hash_set.t;
   errors: (Error.t list) File.Handle.Table.t;

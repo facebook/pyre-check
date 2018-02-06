@@ -14,7 +14,7 @@ val process_response
   -> watchman_directory:Path.t
   -> symlinks: Path.t Path.Map.t
   -> string
-  -> (Path.t Path.Map.t * Protocol.Request.t) Option.t
+  -> (Path.t Path.Map.t * ServerProtocol.Request.t) Option.t
 
 val run_command
   :  bool

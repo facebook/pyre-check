@@ -11,5 +11,5 @@ val process_request
   :  Unix.File_descr.t
   -> ServerState.t
   -> ServerConfiguration.t
-  -> Protocol.Request.t
-  -> ServerState.t * (Protocol.response option)
+  -> ServerProtocol.Request.t
+  -> ServerState.t * (ServerProtocol.response option)

@@ -279,15 +279,16 @@ let run_incremental
     in
 
     if recheck_all then
-      Socket.write socket Protocol.Request.ReinitializeStateRequest
+      Socket.write socket ServerProtocol.Request.ReinitializeStateRequest
     else
       Socket.write
         socket
-        (Protocol.Request.TypeCheckRequest { Protocol.files = []; check_dependents = false });
+        (ServerProtocol.Request.TypeCheckRequest
+           { ServerProtocol.files = []; check_dependents = false });
 
     let response_json =
       match Socket.read socket with
-      | Protocol.TypeCheckResponse errors ->
+      | ServerProtocol.TypeCheckResponse errors ->
           errors
           |> List.map ~f:snd
           |> List.concat

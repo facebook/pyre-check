@@ -10,8 +10,8 @@ open Analysis
 open ServerState
 open Configuration
 open ServerConfiguration
-open Protocol
-open Protocol.Request
+open ServerProtocol
+open Request
 
 open Pyre
 
@@ -57,7 +57,7 @@ let rec process_request
     state, Some (TypeCheckResponse (build_file_to_error_map errors))
   in
   let handle_type_check state = function
-    | { Protocol.files = []; _ } ->
+    | { files = []; _ } ->
         Log.log ~section:`Server "Handling type check request";
         let state =
           let deferred_requests = state.deferred_requests in
@@ -74,7 +74,7 @@ let rec process_request
         in
         state, Some (TypeCheckResponse (build_file_to_error_map errors))
 
-    | { Protocol.files; check_dependents } ->
+    | { files; check_dependents } ->
         let deferred_requests =
           if check_dependents then
             let files =
@@ -107,7 +107,7 @@ let rec process_request
             if List.is_empty files then
               state.deferred_requests
             else
-              (TypeCheckRequest { Protocol.files; check_dependents = false })
+              (TypeCheckRequest { files; check_dependents = false })
               :: state.deferred_requests
           else
             state.deferred_requests
@@ -202,7 +202,7 @@ let rec process_request
     | DisplayTypeErrors request -> display_cached_type_errors state request
     | StopRequest ->
         Log.log ~section:`Server "Stopping the server";
-        Socket.write new_socket Protocol.StopResponse;
+        Socket.write new_socket StopResponse;
         Mutex.critical_section
           state.lock
           ~f:(fun () ->
@@ -230,7 +230,7 @@ let rec process_request
                 Some
                   (state,
                    Some
-                     (Protocol.LanguageServerProtocolResponse
+                     (LanguageServerProtocolResponse
                         (LanguageServer.Protocol.TextDocumentDefinitionResponse.create
                            ~root:source_root
                            ~id
@@ -241,7 +241,7 @@ let rec process_request
                 let items = Rage.get_logs configuration in
                 Some
                   (state,
-                   Some (Protocol.LanguageServerProtocolResponse
+                   Some (LanguageServerProtocolResponse
                            (LanguageServer.Protocol.RageResponse.create ~items ~id
                             |> LanguageServer.Protocol.RageResponse.to_yojson
                             |> Yojson.Safe.to_string)))
@@ -251,14 +251,14 @@ let rec process_request
     | ClientShutdownRequest id -> handle_client_shutdown_request id
 
     | ClientExitRequest client ->
-        Log.log ~section:`Server "Stopping %s client" (Protocol.show_client client);
+        Log.log ~section:`Server "Stopping %s client" (show_client client);
         state, Some (ClientExitResponse client)
 
     | RageRequest id ->
         let items = Rage.get_logs configuration in
         state,
         Some
-          (Protocol.LanguageServerProtocolResponse
+          (LanguageServerProtocolResponse
              (LanguageServer.Protocol.RageResponse.create ~items ~id
               |> LanguageServer.Protocol.RageResponse.to_yojson
               |> Yojson.Safe.to_string))
@@ -270,10 +270,10 @@ let rec process_request
             state.connections
             server_configuration
         in
-        handle_type_check state { Protocol.files = []; check_dependents = false }
+        handle_type_check state { files = []; check_dependents = false }
 
     | GetDefinitionRequest { DefinitionRequest.path; position; _ } ->
-        state, Some (Protocol.GetDefinitionResponse (
+        state, Some (GetDefinitionResponse (
             Hashtbl.find state.lookups path
             >>= fun lookup -> Lookup.get_definition lookup position))
 
@@ -284,6 +284,6 @@ let rec process_request
     ~name:"server request"
     ~timer
     ~configuration
-    ~normals:["request_kind", Protocol.Request.name request]
+    ~normals:["request_kind", Request.name request]
     ();
   result

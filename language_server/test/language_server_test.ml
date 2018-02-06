@@ -12,6 +12,7 @@ open LanguageServer.RequestParser
 open Pyre
 
 module Parallel = Hack_parallel.Std
+module Protocol = ServerProtocol
 
 
 

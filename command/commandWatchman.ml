@@ -10,6 +10,7 @@ open Pyre
 
 open CommandWatchmanConstants
 
+module Protocol = ServerProtocol
 module Socket = CommandSocket
 
 

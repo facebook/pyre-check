@@ -9,6 +9,7 @@ open OUnit2
 open ServerConfiguration
 
 module Parallel = Hack_parallel.Std
+module Protocol = ServerProtocol
 module Socket = CommandSocket
 
 

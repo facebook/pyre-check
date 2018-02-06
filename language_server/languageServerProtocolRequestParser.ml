@@ -6,7 +6,7 @@
 open Core
 
 
-open Protocol
+open ServerProtocol
 open Request
 open Pyre
 
@@ -134,7 +134,7 @@ let parse ~root ~check_on_save request =
                       Path.create_relative ~root ~relative)
                   |> File.create ~content:text
                 in
-                Some (TypeCheckRequest { Protocol.files = [file]; check_dependents = true })
+                Some (TypeCheckRequest { files = [file]; check_dependents = true })
             | Ok _ -> log_method_error request_method; None
             | Error yojson_error -> Log.log ~section:`Server "Error: %s" yojson_error; None
           end
@@ -155,7 +155,7 @@ let parse ~root ~check_on_save request =
     | "telemetry/rage" ->
         begin
           match RageRequest.of_yojson request with
-          | Ok { RageRequest.id; _ } -> Some (Protocol.Request.RageRequest id)
+          | Ok { RageRequest.id; _ } -> Some (Request.RageRequest id)
           | Error yojson_error -> Log.log ~section:`Server "Error: %s" yojson_error; None
         end
     | unmatched_method ->

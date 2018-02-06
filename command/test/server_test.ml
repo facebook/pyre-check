@@ -12,6 +12,7 @@ open Pyre
 open Test
 
 module Parallel = Hack_parallel.Std
+module Protocol = ServerProtocol
 module State = ServerState
 module Scheduler = Service.Scheduler
 

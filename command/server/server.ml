@@ -12,7 +12,7 @@ open Pyre
 
 open Configuration
 open ServerConfiguration
-open Protocol
+open ServerProtocol
 
 module Time = Core_kernel.Time_ns.Span
 module Check = CommandCheck
@@ -147,7 +147,7 @@ let computation_thread request_queue configuration state =
             state, None
       in
       match origin with
-      | Protocol.Request.PersistentSocket socket ->
+      | ServerProtocol.Request.PersistentSocket socket ->
           let write_or_forget socket responses =
             try
               List.iter ~f:(Socket.write socket) responses
@@ -185,8 +185,8 @@ let computation_thread request_queue configuration state =
            | Some _ -> Log.error "Unexpected response for persistent client request"
            | None -> ());
           state
-      | Protocol.Request.FileNotifier
-      | Protocol.Request.Background ->
+      | ServerProtocol.Request.FileNotifier
+      | ServerProtocol.Request.Background ->
           let { socket; persistent_clients; _ } =
             Mutex.critical_section state.lock ~f:(fun () -> !(state.connections))
           in
@@ -197,7 +197,7 @@ let computation_thread request_queue configuration state =
            | None ->
                ());
           state
-      | Protocol.Request.NewConnectionSocket socket ->
+      | ServerProtocol.Request.NewConnectionSocket socket ->
           let { persistent_clients; _ } =
             Mutex.critical_section state.lock ~f:(fun () -> !(state.connections))
           in
@@ -215,7 +215,7 @@ let computation_thread request_queue configuration state =
           let state =
             {
               state with
-              deferred_requests = Protocol.Request.flatten state.deferred_requests;
+              deferred_requests = ServerProtocol.Request.flatten state.deferred_requests;
               last_request_time = Unix.time ();
             }
           in
@@ -224,7 +224,7 @@ let computation_thread request_queue configuration state =
                state
            | request :: requests ->
                let state = { state with deferred_requests = requests } in
-               handle_request state ~request:(Protocol.Request.Background, request))
+               handle_request state ~request:(ServerProtocol.Request.Background, request))
       | 0, true ->
           let current_time = Unix.time () in
           if current_time -. state.last_request_time > State.stop_after_idle_for then
@@ -262,19 +262,19 @@ let request_handler_thread (
   in
   let queue_request ~origin request =
     match request, origin with
-    | Protocol.Request.StopRequest, Protocol.Request.NewConnectionSocket socket ->
-        Socket.write socket Protocol.StopResponse;
+    | ServerProtocol.Request.StopRequest, ServerProtocol.Request.NewConnectionSocket socket ->
+        Socket.write socket StopResponse;
         ServerOperations.stop_server server_configuration !(connections).socket
-    | Protocol.Request.StopRequest, _ ->
+    | ServerProtocol.Request.StopRequest, _ ->
         ServerOperations.stop_server server_configuration !(connections).socket
-    | Protocol.Request.ClientConnectionRequest client,
-      Protocol.Request.NewConnectionSocket socket ->
-        Log.log ~section:`Server "Adding %s client" (Protocol.show_client client);
+    | ServerProtocol.Request.ClientConnectionRequest client,
+      ServerProtocol.Request.NewConnectionSocket socket ->
+        Log.log ~section:`Server "Adding %s client" (show_client client);
         Mutex.critical_section
           lock
           ~f:(fun () ->
               let { persistent_clients; file_notifiers; _ } = !connections in
-              Socket.write socket (Protocol.ClientConnectionResponse client);
+              Socket.write socket (ClientConnectionResponse client);
               connections :=
                 (match client with
                  | Persistent ->
@@ -282,11 +282,11 @@ let request_handler_thread (
                      !connections
                  | FileNotifier ->
                      { !connections with file_notifiers = socket::file_notifiers }))
-    | Protocol.Request.ClientConnectionRequest _, _ ->
+    | ServerProtocol.Request.ClientConnectionRequest _, _ ->
         Log.error
           "Unexpected request origin %s for connection request"
-          (Protocol.Request.origin_name origin)
-    | Protocol.Request.ReinitializeStateRequest, _ ->
+          (ServerProtocol.Request.origin_name origin)
+    | ServerProtocol.Request.ReinitializeStateRequest, _ ->
         Squeue.clear request_queue;
         Squeue.push_or_drop request_queue (origin, request) |> ignore
     | _ ->
@@ -296,7 +296,7 @@ let request_handler_thread (
     try
       Log.log ~section:`Server "A persistent client socket is readable.";
       let request = Socket.read socket in
-      queue_request ~origin:(Protocol.Request.PersistentSocket socket) request
+      queue_request ~origin:(ServerProtocol.Request.PersistentSocket socket) request
     with
     | End_of_file ->
         Log.log ~section:`Server "Persistent client disconnected";
@@ -309,7 +309,7 @@ let request_handler_thread (
     try
       Log.log ~section:`Server "A file notifier is readable.";
       let request = Socket.read socket in
-      queue_request ~origin:Protocol.Request.FileNotifier request
+      queue_request ~origin:ServerProtocol.Request.FileNotifier request
     with
     | End_of_file ->
         Log.log ~section:`Server "File notifier disconnected";
@@ -353,7 +353,7 @@ let request_handler_thread (
             Socket.read new_socket
             |> fun Handshake.ClientConnected ->
             let request = Socket.read new_socket in
-            queue_request ~origin:(Protocol.Request.NewConnectionSocket new_socket) request
+            queue_request ~origin:(ServerProtocol.Request.NewConnectionSocket new_socket) request
           with
           | End_of_file ->
               Log.warning "New client socket unreadable"
@@ -576,9 +576,9 @@ let stop source_root () =
     Socket.read socket
     |> fun (Handshake.ServerConnected _) ->
     Socket.write socket Handshake.ClientConnected;
-    Socket.write socket Protocol.Request.StopRequest;
+    Socket.write socket ServerProtocol.Request.StopRequest;
     match Socket.read socket with
-    | Protocol.StopResponse -> Log.info "Server stopped"
+    | StopResponse -> Log.info "Server stopped"
     | _ -> Log.error "Invalid response from server to stop request";
   with
   | NotRunning
