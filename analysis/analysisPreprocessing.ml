@@ -522,7 +522,14 @@ let expand_returns source =
                 | _ ->
                     false
               in
-              if has_yield || has_return_in_finally then
+              let loops_forever =
+                match List.last define.Define.body with
+                | Some { Node.value = While { While.test = { Node.value = True; _ }; _ }; _ } ->
+                    true
+                | _ ->
+                    false
+              in
+              if has_yield || has_return_in_finally || loops_forever then
                 define
               else
                 match List.last define.Define.body with

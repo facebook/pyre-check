@@ -618,6 +618,31 @@ let test_expand_returns _ =
         finally:
           $return = 1
           return $return
+    |};
+
+  (* Lol termination analysis. *)
+  assert_expand
+    {|
+      def foo():
+        while derp:
+          pass
+    |}
+    {|
+      def foo():
+        while derp:
+          pass
+        return
+    |};
+  assert_expand
+    {|
+      def foo():
+        while True:
+          pass
+    |}
+    {|
+      def foo():
+        while True:
+          pass
     |}
 
 
