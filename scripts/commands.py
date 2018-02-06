@@ -277,7 +277,7 @@ class Command:
     def _source_directory_string(self, source_directories=None):
         if not source_directories:
             source_directories = self._source_directories
-        return ', '.join(
+        return ',\n   '.join(
             '`{}`'.format(self._relative_path(source_directory))
             for source_directory
             in source_directories)
@@ -508,7 +508,7 @@ class Incremental(ErrorHandling):
         dead = self._state().dead
         if dead:
             LOG.warning(
-                '%s not running at %s. Starting...',
+                '%s not running at\n   %s.\nStarting...',
                 self._server_string(dead).capitalize(),
                 self._source_directory_string(
                     self._original_source_directories))
