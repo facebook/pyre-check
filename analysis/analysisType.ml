@@ -859,7 +859,11 @@ let split = function
       annotation, []
 
 
-let class_variable = function
+let class_variable annotation =
+  parametric "typing.ClassVar" [annotation]
+
+
+let class_variable_value = function
   | Parametric { name; parameters = [parameter] }
     when Identifier.show name = "typing.ClassVar" ->
       Some parameter

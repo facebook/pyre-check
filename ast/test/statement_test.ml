@@ -350,7 +350,11 @@ let test_attribute_assigns _ =
         class Foo.Bar:  # no preprocessing in tests
           ...
     |}
-    ["Bar", None, None];
+    [
+      "Bar",
+      Some (Type.expression (Type.class_variable (Type.meta (Type.primitive "Foo.Bar")))),
+      None;
+    ];
 
   (* Implicit attributes in tests. *)
   assert_attribute_assigns

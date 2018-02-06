@@ -2592,6 +2592,26 @@ let test_check_attributes _ =
         return Foo.attribute
     |}
     ["Incompatible return type [7]: Expected `str` but got `int`."];
+  assert_type_errors
+    {|
+      class Foo:
+        class Bar:
+          attribute: int = 1
+
+      def foo() -> str:
+        return Foo.Bar().attribute
+    |}
+    ["Incompatible return type [7]: Expected `str` but got `int`."];
+  assert_type_errors
+    {|
+      class Foo:
+        class Bar:
+          attribute: int = 1
+
+      def foo() -> str:
+        return Foo().Bar().attribute
+    |}
+    ["Incompatible return type [7]: Expected `str` but got `int`."];
 
   (* Attributes defined in constructor. *)
   assert_type_errors

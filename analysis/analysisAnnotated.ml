@@ -403,7 +403,7 @@ module Class = struct
         (assign_annotation
          >>| Resolution.parse_annotation resolution
          >>| (fun annotation ->
-             match Type.class_variable annotation with
+             match Type.class_variable_value annotation with
              | Some annotation -> Some annotation, true
              | _ -> Some annotation, false))
         |> Option.value ~default:(None, true)

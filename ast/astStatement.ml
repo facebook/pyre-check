@@ -996,12 +996,31 @@ module Class = struct
           match value with
           | Stub (Stub.Class { Record.Class.name; _ })
           | Class { Record.Class.name; _ } when not (List.is_empty name) ->
+              let open Expression in
+              let annotation =
+                let meta_annotation =
+                  Node.create
+                    ~location
+                    (Access [
+                        Access.Identifier (Identifier.create "typing");
+                        Access.Identifier (Identifier.create "Type");
+                        Access.Subscript [Access.Index (Node.create ~location (Access name))];
+                      ])
+                in
+                Node.create
+                  ~location
+                  (Access [
+                      Access.Identifier (Identifier.create "typing");
+                      Access.Identifier (Identifier.create "ClassVar");
+                      Access.Subscript [Access.Index meta_annotation];
+                    ])
+              in
               let assign =
                 Node.create
                   ~location
                   {
                     Assign.target = Node.create ~location (Expression.Access [List.last_exn name]);
-                    annotation = None;  (* This should be a `typing.Type[]`. Ignoring for now... *)
+                    annotation = Some annotation;
                     value = None;
                     compound = None;
                     parent = None;

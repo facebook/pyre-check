@@ -110,7 +110,9 @@ val awaitable_value: t -> t
 
 val parameters: t -> t list
 val split: t -> t * (t list)
-val class_variable: t -> t option
+
+val class_variable: t -> t
+val class_variable_value: t -> t option
 
 val assume_any: t -> t
 val instantiate: ?widen: bool -> t -> constraints:(t -> t option) -> t
