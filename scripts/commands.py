@@ -478,6 +478,7 @@ class Incremental(ErrorHandling):
     def _run(self) -> None:
         if len(self._original_source_directories) > 1:
             missing_directories = []
+            unable_to_read = False
             try:
                 existing_directories = set()
                 with open(self.SOURCE_DIRECTORY_LIST) as directories:
@@ -488,9 +489,9 @@ class Incremental(ErrorHandling):
                     for source_directory in self._original_source_directories:
                         if source_directory not in existing_directories:
                             missing_directories.append(source_directory)
-            except OSError:
-                pass
-            if missing_directories:
+            except (OSError, FileNotFoundError):
+                unable_to_read = True
+            if missing_directories or unable_to_read:
                 LOG.info(
                     "Stopping pyre server which doesn't analyze the"
                     " following source directories:\n{}".format(
