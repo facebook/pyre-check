@@ -36,6 +36,7 @@ let gc_control =
 
 
 let map_reduce { workers; bucket_multiplier; _ } ~init ~map ~reduce work =
+  let bucket_multiplier = Core.Int.min bucket_multiplier (1 + (List.length work / 400)) in
   MultiWorker.call (Some workers)
     ~job:map
     ~merge:reduce
