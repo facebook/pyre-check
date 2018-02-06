@@ -3861,6 +3861,20 @@ let test_check_behavioral_subtyping _ =
       "Inconsistent override [15]: `foo` overrides method defined in `Foo` inconsistently.";
       "Missing return annotation [3]: Returning `None` but no return type is specified."
     ];
+  assert_type_errors ~show_error_traces:true
+    {|
+      class Foo():
+        def bar(x: int) -> int:
+          return 1
+      class Bar(Foo):
+        def bar(x: int) -> typing.Union[str, int]:
+          return 1
+    |}
+    [
+      "Inconsistent override [15]: `bar` overrides method defined in `Foo` " ^
+      "inconsistently. Returned type `typing.Union[int, str]` is not a subtype " ^
+      "of the overridden return `int`."
+    ];
 
   (* Weakened precondition. *)
   assert_type_errors
@@ -3895,6 +3909,20 @@ let test_check_behavioral_subtyping _ =
         def foo(a) -> None: pass
     |}
     [];
+  assert_type_errors ~show_error_traces:true
+    {|
+      class Foo():
+        def bar(x: typing.Union[str, int]) -> None:
+          pass
+      class Bar(Foo):
+        def bar(x: int) -> None:
+          pass
+    |}
+    [
+      "Inconsistent override [14]: `bar` overrides method defined in `Foo` " ^
+      "inconsistently. Parameter of type `int` is not a " ^
+      "supertype of the overridden parameter `typing.Union[int, str]`."
+    ];
 
   (* Don't warn on constructors or class methods. *)
   assert_type_errors

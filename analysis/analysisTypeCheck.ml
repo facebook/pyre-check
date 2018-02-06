@@ -525,10 +525,10 @@ module State = struct
          (* Check weakening of precondition. *)
          let parameters = Method.parameter_annotations_positional definition ~resolution in
          let parameter ~key ~data errors =
-           let actual = data in
+           let expected = data in
            match Map.find parameters key with
-           | Some expected ->
-               if not (Resolution.less_or_equal resolution ~left:actual ~right:expected) then
+           | Some actual ->
+               if not (Resolution.less_or_equal resolution ~left:expected ~right:actual) then
                  let error =
                    {
                      Error.location;
@@ -550,7 +550,7 @@ module State = struct
                    kind = Error.InconsistentOverride {
                        Error.overridden_method;
                        override = Error.StrengthenedPrecondition;
-                       mismatch = { Error.actual; expected = Type.none };
+                       mismatch = { Error.actual = Type.none; expected };
                      };
                    define = define_node;
                  }
