@@ -27,17 +27,17 @@ let return_annotation ({ Define.return_annotation; async; _ } as define) ~resolu
   if async then
     Type.awaitable annotation
   else
-    if Define.is_coroutine define then
-      begin
-        match annotation with
-        | Type.Parametric { Type.name; parameters = [_; _; return_annotation] }
-          when Identifier.show name = "typing.Generator" ->
-            Type.awaitable return_annotation
-        | _ ->
-            Type.Top
-      end
-    else
-      annotation
+  if Define.is_coroutine define then
+    begin
+      match annotation with
+      | Type.Parametric { Type.name; parameters = [_; _; return_annotation] }
+        when Identifier.show name = "typing.Generator" ->
+          Type.awaitable return_annotation
+      | _ ->
+          Type.Top
+    end
+  else
+    annotation
 
 
 let parameter_annotations { Define.parameters; _ } ~resolution =
@@ -430,6 +430,17 @@ module Class = struct
           Some (class_annotation ~resolution parent), None  (* Enums override values. *)
         else
           annotation, value
+      in
+
+      (* "Resolve" type variables. *)
+      let annotation =
+        annotation
+        >>| fun annotation ->
+        if not (List.is_empty (Type.variables annotation)) then
+          (* TODO(T25809413): we should actually resolve these. *)
+          Type.Object
+        else
+          annotation
       in
 
       let annotation =
