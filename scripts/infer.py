@@ -61,7 +61,7 @@ def _relativize_access(access, path):
 class FunctionStub:
     def __init__(self, stub) -> None:
         self.name = stub.get('function_name')
-        self.actual = stub.get('annotation', None)
+        self.actual = stub.get('annotation')
         self.parameters = stub.get('parameters')
         self.decorators = stub.get('decorators')
         self.is_async = stub.get('async')
@@ -131,6 +131,7 @@ class FunctionStub:
         return split_imports(types_list)
 
     def join_with(self, other) -> None:
+        # pyre-fixme[16]: `FunctionStub` has no attribute `parent`
         if self.name != other.name and self.parent != other.parent:
             raise Exception('Tried to join incompatible stubs')
         if (not self.actual) and other.actual:

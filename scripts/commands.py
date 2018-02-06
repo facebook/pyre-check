@@ -19,6 +19,7 @@ import time
 import traceback
 
 from collections import namedtuple
+from typing import List
 
 from . import (
     buck,
@@ -64,6 +65,9 @@ class Command:
     SHARED_SOURCE_DIRECTORY = ".pyre/shared_source_directory"
     SOURCE_DIRECTORY_LIST = ".pyre/source_directories.txt"
 
+    _buffer: List[str] = []
+    _call_client_terminated: bool = False
+
     def __init__(
             self,
             arguments,
@@ -83,11 +87,12 @@ class Command:
         self._current_directory = arguments.current_directory
         self._should_merge_directories = should_merge_directories
 
+        self._original_source_directories = self._source_directories
+
     def _run(self) -> None:
         pass
 
     def run(self) -> None:
-        self._original_source_directories = self._source_directories
         if len(self._source_directories) > 1:
             if self._should_merge_directories:
                 try:

@@ -60,7 +60,8 @@ class TimedStreamHandler(logging.StreamHandler):
     THRESHOLD = 0.5
     LINE_BREAKING_LEVELS = ['ERROR', 'WARNING', 'SUCCESS']
 
-    _terminate: bool
+    _terminate: bool = False
+    _last_update: float = 0.0
 
     def __init__(self) -> None:
         super(TimedStreamHandler, self).__init__()
@@ -80,7 +81,6 @@ class TimedStreamHandler(logging.StreamHandler):
             Format.CURSOR_UP_LINE +
             Format.HIDE_CURSOR)
 
-        self._terminate = False
         thread = threading.Thread(target=self._thread)
         thread.daemon = True
         thread.start()
