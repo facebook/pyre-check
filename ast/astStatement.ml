@@ -475,6 +475,7 @@ module Define = struct
     in
     match List.find ~f:(has_decorator define) property_annotations with
     | Some "util.classproperty"
+    | Some "util.etc.cached_classproperty"
     | Some "util.etc.class_property" ->
         let return_annotation =
           let open Expression in

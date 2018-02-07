@@ -244,6 +244,10 @@ let test_attribute_assigns _ =
     "@util.etc.lazy_property\ndef foo() -> int: pass"
     (Some ("foo", Some (Type.expression Type.integer), None));
 
+  assert_property_attribute_assign
+    "@util.etc.cached_classproperty\ndef foo() -> int: pass"
+    (Some ("foo", Some (Type.expression (Type.class_variable Type.integer)), None));
+
   (* Test class field assigns. *)
   let assert_attribute_assigns
       ?(in_test = false)
