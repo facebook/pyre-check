@@ -274,48 +274,60 @@ module Class = struct
     iterate ~free_variables:[] ~bases ~parameters |> List.rev
 
 
-  let rec constraints
-      ?(transitive = false)
-      ({ Node.value = { Class.bases; _ }; _ } as definition)
-      ~instantiated
-      ~resolution =
-    let _, parameters = Type.split instantiated in
-    let generics = generics ~resolution definition in
-    let constraint_map =
-      match List.zip generics parameters with
-      | Some zipped ->
-          (* Don't instantiate Bottom. *)
-          List.filter
-            ~f:(fun (_, parameter) -> not (Type.equal parameter Type.Bottom))
-            zipped
-          |> Type.Map.of_alist_exn
-      | None ->
-          Type.Map.empty
+  module ConstraintsKey = struct
+    type t = {
+      definition: parent_class;
+      instantiated: Type.t;
+    }
+    [@@deriving compare, sexp]
+
+    module Set = Set.Make(struct
+        type nonrec t = t
+        let compare = compare
+        let sexp_of_t = sexp_of_t
+        let t_of_sexp = t_of_sexp
+      end)
+  end
+
+
+  let constraints ?target definition ~instantiated ~resolution =
+    let rec constraints
+        ~visited
+        ({ Node.value = { Class.bases; _ }; _ } as definition)
+        ~instantiated =
+      let key = { ConstraintsKey.definition; instantiated } in
+      if ConstraintsKey.Set.mem visited key then
+        None
+      else
+        let target = Option.value ~default:definition target in
+        let _, parameters = Type.split instantiated in
+        let generics = generics ~resolution definition in
+        let map =
+          match List.zip generics parameters with
+          | Some zipped ->
+              (* Don't instantiate Bottom. *)
+              List.filter
+                ~f:(fun (_, parameter) -> not (Type.equal parameter Type.Bottom))
+                zipped
+              |> Type.Map.of_alist_exn
+          | None ->
+              Type.Map.empty
+        in
+        if equal target definition then
+          Some map
+        else
+          let base_constraints { Argument.value = base; _ } =
+            let instantiated = Resolution.parse_annotation resolution base in
+            Resolution.class_definition resolution instantiated
+            >>= constraints
+              ~visited:(Set.add visited key)
+              ~instantiated:(Type.instantiate ~constraints:(Map.find map)
+              instantiated)
+          in
+          List.find_map ~f:base_constraints bases
     in
-    if not transitive then
-      constraint_map
-    else
-      let merge ~key:_ = function
-        | `Both (_, right) ->
-            Some right
-        | `Left value
-        | `Right value ->
-            Some value
-      in
-      let base_constraints { Argument.value = base; _ } =
-        let instantiated = Resolution.parse_annotation resolution base in
-        (Resolution.class_definition resolution instantiated
-         >>| fun definition ->
-            let instantiated =
-              Type.instantiate
-                ~constraints:(Map.find constraint_map)
-                instantiated
-            in
-            constraints ~transitive ~instantiated ~resolution definition)
-        |> Option.value ~default:Type.Map.empty
-      in
-      List.map ~f:base_constraints bases
-      |> List.fold ~f:(Map.merge ~f:merge) ~init:constraint_map
+    constraints ~visited:ConstraintsKey.Set.empty definition ~instantiated
+    |> Option.value ~default:Type.Map.empty
 
 
   let superclasses definition ~resolution =
@@ -717,8 +729,15 @@ module Class = struct
     in
     attribute_fold ~transitive ~class_attributes ~initial:None ~f:search ~resolution definition
     |> Option.value ~default:undefined
-    |> Attribute.instantiate
-        ~constraints:(constraints ~transitive:true ~instantiated ~resolution definition)
+    |> (fun attribute ->
+        let constraints =
+          constraints
+            ~target:(Attribute.parent attribute)
+            ~instantiated
+            ~resolution
+            definition
+        in
+        Attribute.instantiate ~constraints attribute)
 
 
   let fallback_attribute ~resolution ~access definition =

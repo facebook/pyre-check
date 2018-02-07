@@ -86,7 +86,7 @@ module Class : sig
     -> (Type.t option) list
 
   val constraints
-    :  ?transitive: bool
+    :  ?target: t
     -> t
     -> instantiated: Type.t
     -> resolution: Resolution.t

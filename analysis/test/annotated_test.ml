@@ -142,14 +142,14 @@ let test_method_implements _ =
         parent = Some (Expression.Access.create "Parent");
       }
       ~parent:(Class.create
-        (Node.create
-          {
-            Statement.Class.name = Expression.Access.create "Parent";
-            bases = [];
-            body = [+Pass];
-            decorators = [];
-            docstring = None;
-          }))
+                 (Node.create
+                    {
+                      Statement.Class.name = Expression.Access.create "Parent";
+                      bases = [];
+                      body = [+Pass];
+                      decorators = [];
+                      docstring = None;
+                    }))
   in
 
   assert_true
@@ -663,8 +663,8 @@ let test_class_attributes _ =
       ~resolution
       ~parent
       (create_assign
-        ~annotation:(Some (Type.expression (Type.parametric "typing.ClassVar" [Type.integer])))
-        "first")
+         ~annotation:(Some (Type.expression (Type.parametric "typing.ClassVar" [Type.integer])))
+         "first")
   in
   assert_true (Attribute.class_attribute attribute);
 
@@ -741,7 +741,7 @@ let test_fallback_attribute _ =
           | { Node.location; value = Statement.Class definition; _ } ->
               Class.create (Node.create ~location definition)
           | _ ->
-             failwith "Last statement was not a class")
+              failwith "Last statement was not a class")
       |> Class.fallback_attribute ~resolution ~access:[]
     in
     match annotation with
@@ -786,10 +786,22 @@ let test_fallback_attribute _ =
 
 
 let test_constraints _ =
-  let assert_constraints ?(transitive = false) source instantiated expected =
+  let assert_constraints ~target ~instantiated source expected =
     let resolution =
       populate source
       |> resolution
+    in
+    let target =
+      let { Source.statements; _ } = parse source in
+      let target = function
+        | { Node.location; value = Statement.Class ({ Statement.Class.name; _ } as definition) }
+          when Expression.Access.show name = target ->
+            Some (Class.create { Node.location; value = definition })
+        | _ ->
+            None
+      in
+      List.find_map ~f:target statements
+      |> value
     in
     let constraints =
       parse_last_statement source
@@ -797,8 +809,8 @@ let test_constraints _ =
           | { Node.location; value = Statement.Class definition; _ } ->
               Class.create (Node.create ~location definition)
           | _ ->
-             failwith "Last statement was not a class")
-      |> Class.constraints ~transitive ~resolution ~instantiated
+              failwith "Last statement was not a class")
+      |> Class.constraints ~target ~resolution ~instantiated
     in
     assert_equal
       ~cmp:(Type.Map.equal Type.equal)
@@ -807,46 +819,46 @@ let test_constraints _ =
   in
 
   assert_constraints
+    ~target:"Foo"
+    ~instantiated:(Type.primitive "Foo")
     {|
       class Foo:
         pass
     |}
-    (Type.primitive "Foo")
     [];
   assert_constraints
+    ~target:"Foo"
+    ~instantiated:(Type.parametric "Foo" [Type.Bottom])
     {|
       _T = typing.TypeVar('_T')
       class Foo(typing.Generic[_T]):
         pass
     |}
-    (Type.parametric "Foo" [Type.Bottom])
     [];
   assert_constraints
+    ~target:"Foo"
+    ~instantiated:(Type.parametric "Foo" [Type.integer; Type.float])
     {|
       _K = typing.TypeVar('_K')
       _V = typing.TypeVar('_V')
       class Foo(typing.Generic[_K, _V]):
         pass
     |}
-    (Type.parametric "Foo" [Type.integer; Type.float])
-    [
-      variable "_K", Type.integer;
-      variable "_V", Type.float;
-    ];
+    [variable "_K", Type.integer; variable "_V", Type.float];
   assert_constraints
+    ~target:"Foo"
+    ~instantiated:(Type.parametric "Foo" [Type.integer; Type.float])
     {|
       _K = typing.TypeVar('_K')
       _V = typing.TypeVar('_V')
       class Foo(typing.Generic[_K, _V]):
         pass
     |}
-    (Type.parametric "Foo" [Type.integer; Type.float])
-    [
-      variable "_K", Type.integer;
-      variable "_V", Type.float;
-    ];
+    [variable "_K", Type.integer; variable "_V", Type.float];
+
   assert_constraints
-    ~transitive:true
+    ~target:"Foo"
+    ~instantiated:(Type.primitive "Foo")
     {|
       _T = typing.TypeVar('_T')
       class Bar(typing.Generic[_T]):
@@ -854,12 +866,22 @@ let test_constraints _ =
       class Foo(Bar[int]):
         pass
     |}
-    (Type.primitive "Foo")
-    [
-      variable "_T", Type.integer;
-    ];
+    [];
   assert_constraints
-    ~transitive:true
+    ~target:"Bar"
+    ~instantiated:(Type.primitive "Foo")
+    {|
+      _T = typing.TypeVar('_T')
+      class Bar(typing.Generic[_T]):
+        pass
+      class Foo(Bar[int]):
+        pass
+    |}
+    [variable "_T", Type.integer];
+
+  assert_constraints
+    ~target:"Bar"
+    ~instantiated:(Type.parametric "Foo" [Type.integer])
     {|
       _K = typing.TypeVar('_K')
       _V = typing.TypeVar('_V')
@@ -868,16 +890,11 @@ let test_constraints _ =
       class Foo(typing.Generic[_K], Bar[_K]):
         pass
     |}
-    (Type.parametric "Foo" [Type.integer])
-    [
-      variable "_K", Type.integer;
-      variable "_V", Type.integer;
-    ];
+    [variable "_V", Type.integer];
 
-  (* This illustrates the limitation of current implementation. We need to keep a map from
-     definitions to constraints around to make this sound. *)
   assert_constraints
-    ~transitive:true
+    ~target:"Bar"
+    ~instantiated:(Type.parametric "Foo" [Type.integer; Type.float])
     {|
       _T = typing.TypeVar('_T')
       _K = typing.TypeVar('_K')
@@ -889,12 +906,22 @@ let test_constraints _ =
       class Foo(typing.Generic[_K, _V], Bar[_K], Baz[_V]):
         pass
     |}
-    (Type.parametric "Foo" [Type.integer; Type.float])
-    [
-      variable "_K", Type.integer;
-      variable "_V", Type.float;
-      variable "_T", Type.float;
-    ]
+    [variable "_T", Type.integer];
+  assert_constraints
+    ~target:"Baz"
+    ~instantiated:(Type.parametric "Foo" [Type.integer; Type.float])
+    {|
+      _T = typing.TypeVar('_T')
+      _K = typing.TypeVar('_K')
+      _V = typing.TypeVar('_V')
+      class Bar(typing.Generic[_T]):
+        pass
+      class Baz(typing.Generic[_T]):
+        pass
+      class Foo(typing.Generic[_K, _V], Bar[_K], Baz[_V]):
+        pass
+    |}
+    [variable "_T", Type.float]
 
 
 let test_return_annotation _ =
