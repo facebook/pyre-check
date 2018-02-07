@@ -126,6 +126,8 @@ module Class : sig
     val location: t -> Location.t
     val defined: t -> bool
     val class_attribute: t -> bool
+
+    val instantiate: t -> constraints:Type.t Type.Map.t -> t
   end
 
   module AttributesCache : sig

@@ -69,3 +69,13 @@ let original { annotation; mutability; _ } =
 
 let is_immutable { mutability; _ } =
   mutability <> Mutable
+
+
+let instantiate { annotation; mutability } ~constraints =
+  let instantiate = Type.instantiate ~constraints:(Map.find constraints) in
+  let mutability =
+    match mutability with
+    | Mutable -> Mutable
+    | Immutable { scope; original } -> Immutable { scope; original = instantiate original }
+  in
+  { annotation = instantiate annotation; mutability }

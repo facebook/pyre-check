@@ -30,3 +30,5 @@ val original: t -> Type.t
 val mutability: t -> mutability
 
 val is_immutable: t -> bool
+
+val instantiate: t -> constraints: Type.t Type.Map.t -> t

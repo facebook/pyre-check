@@ -2584,8 +2584,9 @@ let test_check_attributes _ =
           return self.bar
     |}
     [
-      "Missing attribute annotation [4]: Attribute `bar` of class `Foo` has type `int` but type " ^
-      "`Any` is specified.";
+      "Incompatible attribute type [8]: Attribute `bar` declared in class `Foo` has type " ^
+      "`typing.Generic[_T]` but is used as type `int`.";
+      "Incompatible return type [7]: Expected `int` but got `typing.Generic[_T]`.";
     ];
 
   (* Static attributes are properly resolved. *)
@@ -2734,7 +2735,7 @@ let test_check_attributes _ =
       def bar(wrapper: Wrapper[int]) -> int:
         return wrapper.value
     |}
-    ["Incompatible return type [7]: Expected `int` but got `typing.Any`."]
+    []
 
 
 let test_check_globals _ =

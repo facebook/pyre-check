@@ -446,17 +446,6 @@ module Class = struct
           annotation, value
       in
 
-      (* "Resolve" type variables. *)
-      let annotation =
-        annotation
-        >>| fun annotation ->
-        if not (List.is_empty (Type.variables annotation)) then
-          (* TODO(T25809413): we should actually resolve these. *)
-          Type.Object
-        else
-          annotation
-      in
-
       let annotation =
         match annotation, value with
         | Some annotation, Some value ->
@@ -509,6 +498,10 @@ module Class = struct
 
     let class_attribute { class_attribute; _ } =
       class_attribute
+
+
+    let instantiate ({ annotation; _ } as attribute) ~constraints =
+      { attribute with annotation = Annotation.instantiate annotation ~constraints }
   end
 
 
@@ -665,7 +658,8 @@ module Class = struct
       ?(class_attributes = false)
       ({ Node.location; _ } as definition)
       ~resolution
-      ~name =
+      ~name
+      ~instantiated =
     let undefined =
       Attribute.create
         ~resolution
@@ -693,6 +687,7 @@ module Class = struct
     in
     attribute_fold ~transitive ~class_attributes ~initial:None ~f:search ~resolution definition
     |> Option.value ~default:undefined
+    |> Attribute.instantiate ~constraints:(constraints ~instantiated ~resolution definition)
 
 
   let fallback_attribute ~resolution ~access definition =
@@ -1461,6 +1456,7 @@ module Access = struct
                  ~class_attributes
                  ~resolution
                  ~name:attribute_access
+                 ~instantiated:(Annotation.annotation annotation)
                  definition
              in
              let access = access @ attribute_access in
