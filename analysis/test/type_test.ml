@@ -546,6 +546,19 @@ let test_is_async_generator _ =
   assert_true (Type.is_async_generator (Type.generator ~async:true Type.string))
 
 
+let test_is_callable _ =
+  assert_true
+    (Type.is_callable
+       (Type.Primitive (Identifier.create "typing.Callable")));
+  assert_true
+    (Type.is_callable
+       (Type.Optional (Type.Primitive (Identifier.create "typing.Callable"))));
+  assert_true
+    (Type.is_callable
+       (Type.union[Type.string; (Type.Primitive (Identifier.create "typing.Callable"))]));
+  assert_false (Type.is_callable (Type.Primitive (Identifier.create "foo")))
+
+
 let test_is_instantiated _ =
   assert_true (Type.is_instantiated Type.Bottom);
   assert_true (Type.is_instantiated (Type.dictionary ~key:Type.Bottom ~value:Type.Bottom));
@@ -808,6 +821,7 @@ let () =
     "expression">::test_expression;
     "union">::test_union;
     "is_async_generator">::test_is_async_generator;
+    "is_callable">::test_is_callable;
     "is_instantiated">::test_is_instantiated;
     "is_meta">::test_is_meta;
     "is_none">::test_is_none;

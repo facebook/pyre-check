@@ -631,6 +631,21 @@ let is_awaitable = function
       false
 
 
+let rec is_callable = function
+  | Optional annotation ->
+      is_callable annotation
+  | Parametric { name; _ } ->
+      is_callable (Primitive name)
+  | Union parameters ->
+      List.exists ~f:is_callable parameters
+  | Tuple (Bounded tuple) ->
+      List.exists ~f:is_callable tuple
+  | Tuple (Unbounded annotation) ->
+      is_callable annotation
+  | other ->
+      equal other (Primitive (Identifier.create "typing.Callable"))
+
+
 let is_generic = function
   | Parametric { name; _ } ->
       Identifier.show name = "typing.Generic"

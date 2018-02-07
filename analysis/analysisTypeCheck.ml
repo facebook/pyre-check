@@ -273,13 +273,14 @@ module State = struct
       let open Error in
       let ignore_callable_error { Error.kind;_ } =
         match kind with
-        | IncompatibleAttributeType { incompatible_type = { mismatch = { actual; _ }; _ }; _ }
-        | IncompatibleAwaitableType actual
-        | IncompatibleParameterType { mismatch = { actual; _ }; _ }
-        | IncompatibleReturnType { actual; _ }
-        | IncompatibleVariableType { mismatch = { actual; _ }; _ } ->
-            let primitive, _ = Type.split actual in
-            Type.equal primitive (Type.Primitive (Identifier.create "typing.Callable"))
+        | IncompatibleAttributeType {
+            incompatible_type = { mismatch = { actual; expected }; _ }; _ }
+        | IncompatibleParameterType { mismatch = { actual; expected }; _ }
+        | IncompatibleReturnType { actual; expected }
+        | IncompatibleVariableType { mismatch = { actual; expected }; _ } ->
+            Type.is_callable actual || Type.is_callable expected
+        | IncompatibleAwaitableType actual ->
+            Type.is_callable actual
         | _ ->
             false
       in

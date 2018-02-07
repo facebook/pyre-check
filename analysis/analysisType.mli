@@ -84,6 +84,7 @@ val access: t -> Access.t
 
 val is_async_generator: t -> bool
 val is_awaitable: t -> bool
+val is_callable: t -> bool
 val is_generic: t -> bool
 val is_meta: t -> bool
 val is_none: t -> bool

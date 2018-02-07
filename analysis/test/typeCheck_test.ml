@@ -1451,6 +1451,14 @@ let test_check _ =
       def a() -> str:
         return typing.Callable()
     |}
+    [];
+
+  assert_type_errors
+    {|
+      def foo(x: typing.Union[int, typing.Callable[typing.Any]]) -> None:
+        pass
+      foo(str)
+    |}
     []
 
 
