@@ -274,6 +274,20 @@ module Class = struct
     iterate ~free_variables:[] ~bases ~parameters |> List.rev
 
 
+  let constraints definition ~instantiated ~resolution =
+    let _, parameters = Type.split instantiated in
+    let generics = generics ~resolution definition in
+    match List.zip generics parameters with
+    | Some zipped ->
+        (* Don't instantiate Bottom. *)
+        List.filter
+          ~f:(fun (_, parameter) -> not (Type.equal parameter Type.Bottom))
+          zipped
+        |> Type.Map.of_alist_exn
+    | None ->
+        Type.Map.empty
+
+
   let superclasses definition ~resolution =
     TypeOrder.successors (Resolution.order resolution) (annotation definition ~resolution)
     |> List.filter_map ~f:(Resolution.class_definition resolution)

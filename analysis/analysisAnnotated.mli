@@ -84,6 +84,9 @@ module Class : sig
     -> resolution: Resolution.t
     -> parameters: Type.t list
     -> (Type.t option) list
+
+  val constraints: t -> instantiated:Type.t -> resolution: Resolution.t -> Type.t Type.Map.t
+
   val superclasses
     :  t
     -> resolution: Resolution.t

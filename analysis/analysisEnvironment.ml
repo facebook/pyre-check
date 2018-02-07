@@ -566,7 +566,7 @@ let resolution
 
   let method_signature ~resolution annotation call arguments =
     let definitions annotation =
-      let primitive, parameters = Type.split annotation in
+      let primitive, _ = Type.split annotation in
       let name =
         match Type.expression primitive, call.Expression.Call.name with
         | { Node.value = Access qualifier; _ },
@@ -583,21 +583,12 @@ let resolution
          we know that if we have an instantiated type `List[int]` the variable `_T` in `append` will
          be instantiated to `int` too. *)
       let constraints =
-        class_definition primitive
+        (class_definition primitive
         >>| (fun definition ->
             Annotated.Class.create definition
-            |> Annotated.Class.generics ~resolution)
-        >>| (fun generics ->
-            match List.zip generics parameters with
-            | Some zipped ->
-                (* Don't instantiate Bottom. *)
-                List.filter
-                  ~f:(fun (_, parameter) -> not (Type.equal parameter Type.Bottom))
-                  zipped
-                |> Type.Map.of_alist_exn
-            | None ->
-                Type.Map.empty)
-        |> Option.value ~default:Type.Map.empty in
+            |> Annotated.Class.constraints ~instantiated:annotation ~resolution))
+        |> Option.value ~default:Type.Map.empty
+      in
       Handler.function_definitions name
       >>| List.map ~f:(instantiate ~constraints)
     in

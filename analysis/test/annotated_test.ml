@@ -47,7 +47,7 @@ let value option =
 
 
 let variable name =
-  Type.Variable { Type.variable = name; constraints = [] }
+  Type.Variable { Type.variable = Identifier.create name; constraints = [] }
 
 
 let test_assign_fold _ =
@@ -252,14 +252,14 @@ let test_generics _ =
       _T = typing.TypeVar('_T')
       class Foo(typing.Generic[_T]): pass
     |}
-    [variable ~~"_T"];
+    [variable "_T"];
   assert_generics
     {|
       _T = typing.TypeVar('_T')
       _S = typing.TypeVar('_S')
       class Foo(typing.Generic[_T, _S]): pass
     |}
-    [variable ~~"_T"; variable ~~"_S"]
+    [variable "_T"; variable "_S"]
 
 
 let test_superclasses _ =
@@ -435,7 +435,7 @@ let test_constructors _ =
           Some
             (Type.Parametric {
                 Type.name = ~~"Foo";
-                parameters = [variable ~~"_K"; variable ~~"_V"];
+                parameters = [variable "_K"; variable "_V"];
               });
       };
     ]
@@ -783,6 +783,56 @@ let test_fallback_attribute _ =
         pass
     |}
     (Some Type.integer)
+
+
+let test_constraints _ =
+  let assert_constraints source instantiated expected =
+    let resolution =
+      populate source
+      |> resolution
+    in
+    let constraints =
+      parse_last_statement source
+      |> (function
+          | { Node.location; value = Statement.Class definition; _ } ->
+              Class.create (Node.create ~location definition)
+          | _ ->
+             failwith "Last statement was not a class")
+      |> Class.constraints ~resolution ~instantiated
+    in
+    assert_equal
+      ~cmp:(Type.Map.equal Type.equal)
+      (Type.Map.of_alist_exn expected)
+      constraints
+  in
+
+  assert_constraints
+    {|
+      class Foo:
+        pass
+    |}
+    (Type.primitive "Foo")
+    [];
+  assert_constraints
+    {|
+      _T = typing.TypeVar('_T')
+      class Foo(typing.Generic[_T]):
+        pass
+    |}
+    (Type.parametric "Foo" [Type.Bottom])
+    [];
+  assert_constraints
+    {|
+      _K = typing.TypeVar('_K')
+      _V = typing.TypeVar('_V')
+      class Foo(typing.Generic[_K, _V]):
+        pass
+    |}
+    (Type.parametric "Foo" [Type.integer; Type.float])
+    [
+      variable "_K", Type.integer;
+      variable "_V", Type.float;
+    ]
 
 
 let test_return_annotation _ =
@@ -1138,6 +1188,7 @@ let () =
     "implements">::test_implements;
     "attributes">::test_class_attributes;
     "fallback_attribute">::test_fallback_attribute;
+    "constraints">::test_constraints;
   ]
   |> run_test_tt_main;
   "define">:::[
