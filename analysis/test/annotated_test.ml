@@ -786,7 +786,7 @@ let test_fallback_attribute _ =
 
 
 let test_constraints _ =
-  let assert_constraints source instantiated expected =
+  let assert_constraints ?(transitive = false) source instantiated expected =
     let resolution =
       populate source
       |> resolution
@@ -798,7 +798,7 @@ let test_constraints _ =
               Class.create (Node.create ~location definition)
           | _ ->
              failwith "Last statement was not a class")
-      |> Class.constraints ~resolution ~instantiated
+      |> Class.constraints ~transitive ~resolution ~instantiated
     in
     assert_equal
       ~cmp:(Type.Map.equal Type.equal)
@@ -832,6 +832,68 @@ let test_constraints _ =
     [
       variable "_K", Type.integer;
       variable "_V", Type.float;
+    ];
+  assert_constraints
+    {|
+      _K = typing.TypeVar('_K')
+      _V = typing.TypeVar('_V')
+      class Foo(typing.Generic[_K, _V]):
+        pass
+    |}
+    (Type.parametric "Foo" [Type.integer; Type.float])
+    [
+      variable "_K", Type.integer;
+      variable "_V", Type.float;
+    ];
+  assert_constraints
+    ~transitive:true
+    {|
+      _T = typing.TypeVar('_T')
+      class Bar(typing.Generic[_T]):
+        pass
+      class Foo(Bar[int]):
+        pass
+    |}
+    (Type.primitive "Foo")
+    [
+      variable "_T", Type.integer;
+    ];
+  assert_constraints
+    ~transitive:true
+    {|
+      _K = typing.TypeVar('_K')
+      _V = typing.TypeVar('_V')
+      class Bar(typing.Generic[_V]):
+        pass
+      class Foo(typing.Generic[_K], Bar[_K]):
+        pass
+    |}
+    (Type.parametric "Foo" [Type.integer])
+    [
+      variable "_K", Type.integer;
+      variable "_V", Type.integer;
+    ];
+
+  (* This illustrates the limitation of current implementation. We need to keep a map from
+     definitions to constraints around to make this sound. *)
+  assert_constraints
+    ~transitive:true
+    {|
+      _T = typing.TypeVar('_T')
+      _K = typing.TypeVar('_K')
+      _V = typing.TypeVar('_V')
+      class Bar(typing.Generic[_T]):
+        pass
+      class Baz(typing.Generic[_T]):
+        pass
+      class Foo(typing.Generic[_K, _V], Bar[_K], Baz[_V]):
+        pass
+    |}
+    (Type.parametric "Foo" [Type.integer; Type.float])
+    [
+      variable "_K", Type.integer;
+      variable "_V", Type.float;
+      variable "_T", Type.float;
     ]
 
 

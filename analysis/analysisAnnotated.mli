@@ -85,7 +85,12 @@ module Class : sig
     -> parameters: Type.t list
     -> (Type.t option) list
 
-  val constraints: t -> instantiated:Type.t -> resolution: Resolution.t -> Type.t Type.Map.t
+  val constraints
+    :  ?transitive: bool
+    -> t
+    -> instantiated: Type.t
+    -> resolution: Resolution.t
+    -> Type.t Type.Map.t
 
   val superclasses
     :  t

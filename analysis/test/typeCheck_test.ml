@@ -2735,6 +2735,19 @@ let test_check_attributes _ =
       def bar(wrapper: Wrapper[int]) -> int:
         return wrapper.value
     |}
+    [];
+  assert_type_errors
+    {|
+      _VALUE = typing.TypeVar('_VALUE')
+      class Wrapper(typing.Generic[_VALUE]):
+        value: _VALUE
+
+      class WrapperSubclass(Wrapper[int]):
+        pass
+
+      def bar(wrapper: WrapperSubclass) -> int:
+        return wrapper.value
+    |}
     []
 
 

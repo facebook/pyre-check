@@ -274,18 +274,48 @@ module Class = struct
     iterate ~free_variables:[] ~bases ~parameters |> List.rev
 
 
-  let constraints definition ~instantiated ~resolution =
+  let rec constraints
+      ?(transitive = false)
+      ({ Node.value = { Class.bases; _ }; _ } as definition)
+      ~instantiated
+      ~resolution =
     let _, parameters = Type.split instantiated in
     let generics = generics ~resolution definition in
-    match List.zip generics parameters with
-    | Some zipped ->
-        (* Don't instantiate Bottom. *)
-        List.filter
-          ~f:(fun (_, parameter) -> not (Type.equal parameter Type.Bottom))
-          zipped
-        |> Type.Map.of_alist_exn
-    | None ->
-        Type.Map.empty
+    let constraint_map =
+      match List.zip generics parameters with
+      | Some zipped ->
+          (* Don't instantiate Bottom. *)
+          List.filter
+            ~f:(fun (_, parameter) -> not (Type.equal parameter Type.Bottom))
+            zipped
+          |> Type.Map.of_alist_exn
+      | None ->
+          Type.Map.empty
+    in
+    if not transitive then
+      constraint_map
+    else
+      let merge ~key:_ = function
+        | `Both (_, right) ->
+            Some right
+        | `Left value
+        | `Right value ->
+            Some value
+      in
+      let base_constraints { Argument.value = base; _ } =
+        let instantiated = Resolution.parse_annotation resolution base in
+        (Resolution.class_definition resolution instantiated
+         >>| fun definition ->
+            let instantiated =
+              Type.instantiate
+                ~constraints:(Map.find constraint_map)
+                instantiated
+            in
+            constraints ~transitive ~instantiated ~resolution definition)
+        |> Option.value ~default:Type.Map.empty
+      in
+      List.map ~f:base_constraints bases
+      |> List.fold ~f:(Map.merge ~f:merge) ~init:constraint_map
 
 
   let superclasses definition ~resolution =
@@ -687,7 +717,8 @@ module Class = struct
     in
     attribute_fold ~transitive ~class_attributes ~initial:None ~f:search ~resolution definition
     |> Option.value ~default:undefined
-    |> Attribute.instantiate ~constraints:(constraints ~instantiated ~resolution definition)
+    |> Attribute.instantiate
+        ~constraints:(constraints ~transitive:true ~instantiated ~resolution definition)
 
 
   let fallback_attribute ~resolution ~access definition =
