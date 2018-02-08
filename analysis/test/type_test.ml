@@ -540,10 +540,10 @@ let test_union _ =
     (Type.union [Type.float; Type.string; Type.bytes])
 
 
-let test_is_async_generator _ =
-  assert_false (Type.is_async_generator (Type.generator Type.string));
-  assert_false (Type.is_async_generator Type.string);
-  assert_true (Type.is_async_generator (Type.generator ~async:true Type.string))
+let test_is_generator _ =
+  assert_true (Type.is_generator (Type.generator Type.string));
+  assert_false (Type.is_generator Type.string);
+  assert_true (Type.is_generator (Type.generator ~async:true Type.string))
 
 
 let test_is_callable _ =
@@ -820,7 +820,7 @@ let () =
     "create">::test_create;
     "expression">::test_expression;
     "union">::test_union;
-    "is_async_generator">::test_is_async_generator;
+    "is_async_generator">::test_is_generator;
     "is_callable">::test_is_callable;
     "is_instantiated">::test_is_instantiated;
     "is_meta">::test_is_meta;

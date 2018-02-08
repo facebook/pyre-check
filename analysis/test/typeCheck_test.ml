@@ -3297,6 +3297,23 @@ let test_check_yield _ =
       def foo() -> typing.Generator[None, None, None]:
         yield
     |}
+    [];
+
+  assert_type_errors
+    {|
+      def foo(flag: bool) -> typing.Generator[int, None, None]:
+        if flag:
+          return
+        yield 1
+    |}
+    [];
+  assert_type_errors
+    {|
+      async def foo(flag: bool) -> typing.AsyncGenerator[int, None]:
+        if flag:
+          return
+        yield 1
+    |}
     []
 
 

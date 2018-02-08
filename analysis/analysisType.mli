@@ -82,7 +82,7 @@ val create
 val expression: t -> Expression.t
 val access: t -> Access.t
 
-val is_async_generator: t -> bool
+val is_generator: t -> bool
 val is_awaitable: t -> bool
 val is_callable: t -> bool
 val is_generic: t -> bool

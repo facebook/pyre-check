@@ -619,10 +619,12 @@ let access annotation =
   | _ -> failwith "Annotation expression is not an access"
 
 
-let is_async_generator derp =
-  match derp with
-  | Parametric { name; _ } when Identifier.show name = "typing.AsyncGenerator" ->
-      true
+let is_generator = function
+  | Parametric { name; _ } ->
+      List.mem
+        ~equal:String.equal
+        ["typing.Generator"; "typing.AsyncGenerator"]
+        (Identifier.show name)
   | _ ->
       false
 
