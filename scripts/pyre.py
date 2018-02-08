@@ -38,6 +38,12 @@ def main() -> int:
         allow_abbrev=False)
 
     parser.add_argument(
+        '-l',
+        '--local-configuration',
+        type=str,
+        help='Use a local configuration')
+
+    parser.add_argument(
         '--debug',
         action='store_true',
         help='Run in debug mode')
@@ -163,7 +169,8 @@ def main() -> int:
         switch_root(arguments)
 
         configuration = Configuration(
-            original_directory=arguments.original_directory)
+            original_directory=arguments.original_directory,
+            local_configuration=arguments.local_configuration)
         source_directories = []
         if configuration.disabled():
             LOG.log(

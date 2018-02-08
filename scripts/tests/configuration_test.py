@@ -6,8 +6,12 @@
 import os
 import unittest
 
-from unittest.mock import patch
+from unittest.mock import (
+    call,
+    patch,
+)
 
+from .. import CONFIGURATION_FILE
 from ..configuration import Configuration  # noqa
 
 
@@ -74,3 +78,47 @@ class ConfigurationTest(unittest.TestCase):
             json_load.side_effect = [{}, {}]
             configuration = Configuration()
             self.assertEqual(configuration.get_version_hash(), 'VERSION_HASH')
+
+    @patch('os.path.isfile')
+    def test_configurations(self, os_path_isfile) -> None:
+        os_path_isfile.return_value = False
+
+        with patch.object(Configuration, '_read') as Configuration_read:
+            Configuration()
+            Configuration_read.assert_has_calls([
+                call(CONFIGURATION_FILE + '.local'),
+                call(CONFIGURATION_FILE),
+            ])
+
+        with patch.object(Configuration, '_read') as Configuration_read:
+            Configuration(original_directory='original')
+            Configuration_read.assert_has_calls([
+                call('original/' + CONFIGURATION_FILE + '.local'),
+                call(CONFIGURATION_FILE + '.local'),
+                call(CONFIGURATION_FILE),
+            ])
+        with patch.object(Configuration, '_read') as Configuration_read:
+            Configuration(local_configuration='local')
+            Configuration_read.assert_has_calls([
+                call('local/' + CONFIGURATION_FILE + '.local'),
+                call(CONFIGURATION_FILE + '.local'),
+                call(CONFIGURATION_FILE),
+            ])
+        with patch.object(Configuration, '_read') as Configuration_read:
+            Configuration(
+                original_directory='original',
+                local_configuration='local')
+            Configuration_read.assert_has_calls([
+                call('local/' + CONFIGURATION_FILE + '.local'),
+                call(CONFIGURATION_FILE + '.local'),
+                call(CONFIGURATION_FILE),
+            ])
+
+        os_path_isfile.return_value = True
+        with patch.object(Configuration, '_read') as Configuration_read:
+            Configuration(local_configuration='local/.some_configuration')
+            Configuration_read.assert_has_calls([
+                call('local/.some_configuration'),
+                call(CONFIGURATION_FILE + '.local'),
+                call(CONFIGURATION_FILE),
+            ])
