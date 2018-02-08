@@ -485,9 +485,12 @@ let create ~aliases { Node.value = expression; _ } =
                  Parametric { name = Identifier.create "collections.defaultdict"; parameters }
              | "typing.Dict" ->
                  Parametric { name = Identifier.create "dict"; parameters }
+
+             | "typing.FrozenSet" ->
+                 Parametric { name = Identifier.create "frozenset"; parameters }
+
              | "typing.List" ->
                  Parametric { name = Identifier.create "list"; parameters }
-
              | "typing.Optional" when List.length parameters = 1 ->
                  optional (List.hd_exn parameters)
 
