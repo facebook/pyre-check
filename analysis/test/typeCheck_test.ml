@@ -2539,6 +2539,7 @@ let test_check_attributes _ =
         return 0
     |}
     [
+      "Undefined attribute [16]: Class `typing.Optional` has no attribute `bar`.";
       "Incompatible return type [7]: Expected `int` but got `typing.Optional[int]`.";
     ];
 
@@ -2748,7 +2749,20 @@ let test_check_attributes _ =
       def bar(wrapper: WrapperSubclass) -> int:
         return wrapper.value
     |}
-    []
+    [];
+
+  (* Do not resolve optional attributes to the optional type. *)
+  assert_type_errors
+    {|
+      class Foo:
+        debug: int = 1
+      def foo(f: typing.Optional[Foo]) -> int:
+        return f.debug
+    |}
+    [
+      "Incompatible return type [7]: Expected `int` but got `unknown`.";
+      "Undefined attribute [16]: Class `typing.Optional` has no attribute `debug`.";
+    ]
 
 
 let test_check_globals _ =

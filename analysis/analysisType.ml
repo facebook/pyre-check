@@ -866,6 +866,8 @@ let parameters = function
 
 
 let split = function
+  | Optional parameter ->
+      primitive "typing.Optional", [parameter]
   | Parametric { name; parameters } ->
       Primitive name, parameters
   | Tuple tuple ->

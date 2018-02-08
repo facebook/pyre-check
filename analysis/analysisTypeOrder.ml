@@ -1135,10 +1135,11 @@ module Builder = struct
     in
 
     (* Special forms *)
-    insert_unconnected (Type.Primitive (Identifier.create "typing.Tuple"));
+    insert_unconnected (Type.primitive "typing.Tuple");
     insert_unconnected Type.generic;
-    insert_unconnected (Type.Primitive (Identifier.create "typing.Protocol"));
-    insert_unconnected (Type.Primitive (Identifier.create "typing.Callable"));
+    insert_unconnected (Type.primitive "typing.Protocol");
+    insert_unconnected (Type.primitive "typing.Callable");
+    insert_unconnected (Type.primitive "typing.Optional");
 
     let type_special_form = Type.Primitive (Identifier.create "typing.Type") in
     let type_builtin = Type.Primitive (Identifier.create "type") in

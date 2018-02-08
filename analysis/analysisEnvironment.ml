@@ -1068,6 +1068,22 @@ module Builder = struct
     let globals = Access.Table.create () in
     let dependencies = Dependencies.create () in
     let ignore_lines = Location.Table.create () in
+
+    (* Add class for `typing.Optional` that is currently not encoded in the stubs. *)
+    let optional =
+      {
+        Class.name = Access.create "typing.Optional";
+        bases = [];
+        body = [];
+        decorators = [];
+        docstring = None;
+      }
+    in
+    Hashtbl.set
+      ~key:(Type.primitive "typing.Optional")
+      ~data:(Node.create optional)
+      class_definitions;
+
     {
       function_definitions;
       class_definitions;
