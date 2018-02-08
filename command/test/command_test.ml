@@ -70,6 +70,7 @@ let make_errors source =
 let run_command_tests test_category tests =
   (* We need this to fork off processes *)
   Parallel.Daemon.check_entry_point ();
+  Hh_logger.Level.set_min_level Hh_logger.Level.Fatal;
   let (!) f context = with_bracket_chdir context (bracket_tmpdir context) f in
   test_category>:::(List.map ~f:(fun (name, test_function) -> name>::(!test_function)) tests)
   |> run_test_tt_main

@@ -75,6 +75,7 @@ let rec process_request
         state, Some (TypeCheckResponse (build_file_to_error_map errors))
 
     | { files; check_dependents } ->
+        SharedMem.collect `aggressive;
         let deferred_requests =
           if check_dependents then
             let files =
