@@ -203,7 +203,7 @@ class Command:
             client_command.extend(flags)
             client_command.append(source_directory)
 
-            LOG.info('Running `%s`', ' '.join(client_command))
+            LOG.debug('Running `%s`', ' '.join(client_command))
             with subprocess.Popen(
                     client_command,
                     stdout=subprocess.PIPE if capture_output else None,
