@@ -38,7 +38,7 @@ let test_language_server_protocol_json_format context =
   let open TypeCheck.Error in
   let filename, _ = bracket_tmpfile ~suffix:".py" context in
   let type_error : TypeCheck.Error.t =
-    Command_test.make_errors
+    CommandTest.make_errors
       {|
         def foo() -> None:
           return 1
@@ -118,7 +118,7 @@ let test_server_exists _ =
   (* Ideally we could just call `Command.run PyreServer.command` and catch the
      failure. But Janestreet library decides to catch all exceptions on
      Command.run so scratch that. *)
-  Command_test.start_server () |> ignore;
+  CommandTest.start_server () |> ignore;
   (* Clean up: Kill server *)
   Command.run ~argv:["_"] Server.stop_command;
   let { ServerConfiguration.lock_path; socket_path; _ } =
@@ -126,11 +126,11 @@ let test_server_exists _ =
   in
   with_timeout ~seconds:3 poll_for_deletion lock_path;
   with_timeout ~seconds:3 poll_for_deletion socket_path;
-  Command_test.clean_environment ()
+  CommandTest.clean_environment ()
 
 
 let test_server_stops _ =
-  let pid = Pid.of_int (Command_test.start_server ()) in
+  let pid = Pid.of_int (CommandTest.start_server ()) in
   Command.run ~argv:["_"] Server.stop_command;
   Exn.protect
     ~f:(fun () ->
@@ -141,7 +141,7 @@ let test_server_stops _ =
               | Ok _ -> assert true
               | Error _ -> assert false))
           pid)
-    ~finally:Command_test.clean_environment
+    ~finally:CommandTest.clean_environment
 
 
 let test_stop_handles_unix_errors context =
@@ -182,7 +182,7 @@ let associate_errors_and_filenames error_list =
 
 
 let make_errors ?(path = "test.py") ?(qualifier = []) source =
-  let configuration = Command_test.mock_analysis_configuration () in
+  let configuration = CommandTest.mock_analysis_configuration () in
   let source = Preprocessing.preprocess (parse ~path ~qualifier source) in
   let environment_handler = Environment.handler ~configuration (environment ()) in
   Environment.populate ~configuration (environment_handler) [source];
@@ -238,11 +238,11 @@ let assert_request_gets_response
     ServerRequest.process_request
       mock_client_socket
       mock_server_state
-      (Command_test.mock_server_configuration ~source_root ())
+      (CommandTest.mock_server_configuration ~source_root ())
       request
   in
   Scheduler.destroy mock_server_state.State.scheduler;
-  Command_test.clean_environment ();
+  CommandTest.clean_environment ();
   assert_equal response expected_response
 
 
@@ -329,9 +329,9 @@ let test_query _ =
 
 
 let test_connect _ =
-  Command_test.start_server ~version:"A" () |> ignore;
+  CommandTest.start_server ~version:"A" () |> ignore;
   let { ServerConfiguration.configuration; lock_path; _ } =
-    Command_test.mock_server_configuration ~version:"B" ()
+    CommandTest.mock_server_configuration ~version:"B" ()
   in
   (* This sleep ensures that the server doesn't receive an EPIPE while the Hack_parallel library is
    * iniitializing the daemon in the hack_parallel/utils/handle.ml. In that codepath, an external
@@ -341,7 +341,7 @@ let test_connect _ =
   let cleanup () =
     Server.stop "." ();
     with_timeout ~seconds:3 poll_for_deletion lock_path;
-    Command_test.clean_environment ()
+    CommandTest.clean_environment ()
   in
   Exn.protect
     ~f:(fun () ->
@@ -408,12 +408,12 @@ let test_protocol_language_server_protocol _ =
     ServerRequest.process_request
       mock_client_socket
       server_state
-      (Command_test.mock_server_configuration ())
+      (CommandTest.mock_server_configuration ())
       (Protocol.Request.LanguageServerProtocolRequest "{\"method\":\"\"}")
   in
   let cleanup () =
     Scheduler.destroy server_state.State.scheduler;
-    Command_test.clean_environment ()
+    CommandTest.clean_environment ()
   in
   Exn.protect ~f:(fun () -> assert_is_none response) ~finally:cleanup
 
@@ -456,10 +456,10 @@ let test_protocol_persistent _ =
        ServerRequest.process_request
          mock_client_socket
          server_state
-         (Command_test.mock_server_configuration ())
+         (CommandTest.mock_server_configuration ())
          (Protocol.Request.ClientConnectionRequest Protocol.Persistent));
   Scheduler.destroy server_state.State.scheduler;
-  Command_test.clean_environment ()
+  CommandTest.clean_environment ()
 
 
 let test_incremental_dependencies _ =
@@ -494,14 +494,14 @@ let test_incremental_dependencies _ =
   let state, response = ServerRequest.process_request
       mock_client_socket
       initial_state
-      (Command_test.mock_server_configuration ())
+      (CommandTest.mock_server_configuration ())
       (Protocol.Request.TypeCheckRequest
          { Protocol.files = [file "b.py"]; check_dependents = true })
   in
   Sys.remove "a.py";
   Sys.remove "b.py";
   Scheduler.destroy initial_state.State.scheduler;
-  Command_test.clean_environment ();
+  CommandTest.clean_environment ();
   assert_is_some response;
   assert_equal
     ~printer:Protocol.show_response
@@ -560,14 +560,14 @@ let test_incremental_lookups _ =
     ServerRequest.process_request
       mock_client_socket
       initial_state
-      (Command_test.mock_server_configuration ())
+      (CommandTest.mock_server_configuration ())
       request
   in
   let _, response =
     ServerRequest.process_request
       mock_client_socket
       state
-      (Command_test.mock_server_configuration ())
+      (CommandTest.mock_server_configuration ())
       (Protocol.Request.GetDefinitionRequest {
           Protocol.DefinitionRequest.id = 1;
           path = relative_path;
@@ -575,7 +575,7 @@ let test_incremental_lookups _ =
         })
   in
   Scheduler.destroy initial_state.State.scheduler;
-  Command_test.clean_environment ();
+  CommandTest.clean_environment ();
   assert_is_some response;
   let response = Option.value_exn response in
   assert_true (Hashtbl.mem state.State.lookups relative_path);
@@ -640,7 +640,7 @@ let test_incremental_repopulate _ =
     ServerRequest.process_request
       mock_client_socket
       initial_state
-      (Command_test.mock_server_configuration ())
+      (CommandTest.mock_server_configuration ())
       (Protocol.Request.TypeCheckRequest
          { Protocol.files = [file "test.py"]; check_dependents = true })
   in
@@ -650,7 +650,7 @@ let test_incremental_repopulate _ =
     | None -> assert_unreached ()
   end;
   Scheduler.destroy initial_state.State.scheduler;
-  Command_test.clean_environment ()
+  CommandTest.clean_environment ()
 
 
 let test_language_scheduler_definition context =
@@ -689,7 +689,7 @@ let test_language_scheduler_definition context =
 
 
 let () =
-  Command_test.run_command_tests
+  CommandTest.run_command_tests
     "server"
     [
       "server_exists", test_server_exists;

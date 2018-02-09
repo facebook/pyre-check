@@ -111,7 +111,7 @@ let test_codex_format _ =
   assert_equal (Yojson.Safe.to_string expected_json) (Yojson.Safe.to_string json)
 
 let () =
-  Command_test.run_command_tests
+  CommandTest.run_command_tests
     "codex_generator"
     [
       "codex_format", test_codex_format;

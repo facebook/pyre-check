@@ -37,7 +37,7 @@ let test_watchman_exists context =
   let set_up _ =
     Format.pp_set_formatter_out_channel
       Format.err_formatter (Out_channel.create "/dev/null");
-    Command_test.start_server () |> ignore;
+    CommandTest.start_server () |> ignore;
     let pid = start_watchman pid_path () in
     pid_path, lock_path, pid
   in
@@ -55,7 +55,7 @@ let test_watchman_exists context =
   assert_raises
     (Failure "Watchman client exists (lock is held). Exiting.")
     (Watchman.run_command false false [] None ".");
-  Command_test.clean_environment ()
+  CommandTest.clean_environment ()
 
 
 let test_watchman_client context =
@@ -78,7 +78,7 @@ let test_watchman_client context =
       file
   in
   Format.set_formatter_out_channel (Out_channel.create "/dev/null");
-  Command_test.start_server () |> ignore;
+  CommandTest.start_server () |> ignore;
   let root = Path.create_absolute root in
   let a = Path.create_relative ~root ~relative:"tmp/a.py" in
   let test = Path.create_relative ~root ~relative:"test.py" in
@@ -90,9 +90,9 @@ let test_watchman_client context =
   in
   let cleanup () =
     Server.stop "." ();
-    Command_test.clean_environment ()
+    CommandTest.clean_environment ()
   in
-  Command_test.protect
+  CommandTest.protect
     ~f:(fun () ->
         match
           Watchman.process_response
@@ -108,7 +108,7 @@ let test_watchman_client context =
         | _ ->
             assert_failure "Malformed watchman response")
     ~cleanup;
-  Command_test.protect
+  CommandTest.protect
     ~f:(fun () ->
         match
           Watchman.process_response
@@ -176,17 +176,17 @@ let test_different_root context =
         assert_failure "Unexpected watchman response"
   in
   Format.set_formatter_out_channel (Out_channel.create "/dev/null");
-  Command_test.start_server () |> ignore;
+  CommandTest.start_server () |> ignore;
 
   let cleanup () =
     Command.run ~argv:["_"] Server.stop_command;
     Server.stop "." ();
-    Command_test.clean_environment ()
+    CommandTest.clean_environment ()
   in
-  Command_test.protect
+  CommandTest.protect
     ~f:(fun () -> assert_watchman_response_ok "files/a.py" "files/other/c.py")
     ~cleanup;
-  Command_test.protect
+  CommandTest.protect
     ~f:(fun () ->
         assert_watchman_response_ok "files/tmp/test.py" "files/tmp/test.py")
     ~cleanup;
@@ -194,7 +194,7 @@ let test_different_root context =
 
 
 let () =
-  Command_test.run_command_tests
+  CommandTest.run_command_tests
     "watchman"
     [
       "watchman_exists", test_watchman_exists;
