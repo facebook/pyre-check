@@ -184,9 +184,12 @@ def main() -> int:
 
         configuration.validate()
 
-        source_directories = resolve_source_directories(
-            arguments,
-            configuration)
+        if getattr(arguments, 'with_fire', False):
+            source_directories = []
+        else:
+            source_directories = resolve_source_directories(
+                arguments,
+                configuration)
         arguments.command(arguments, configuration, source_directories).run()
     except (
         buck.BuckException,

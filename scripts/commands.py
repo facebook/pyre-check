@@ -668,8 +668,12 @@ class Restart(Command):
 class Kill(Command):
     def __init__(self, arguments, configuration, source_directories) -> None:
         super(Kill, self).__init__(arguments, configuration, source_directories)
+        self.with_fire = arguments.with_fire
 
     def _run(self) -> None:
+        if self.with_fire:
+            self._kill_all_processes()
+            return
         running = self._state().running
 
         for source_directory in running:
@@ -707,6 +711,16 @@ class Kill(Command):
         except (IOError, OSError) as error:
             LOG.error("Encountered error during kill: %s", str(error))
             LOG.debug(traceback.format_exc())
+
+    def _kill_all_processes(self) -> None:
+        """
+            Kills all processes that have the same binary as the one specified
+            in the # configuration.
+        """
+        subprocess.run(["pkill", "-f", "^{}".format(
+            os.path.realpath(self._configuration.get_binary())
+        )])
+
 
     def _remove_if_exists(self, path) -> None:
         try:

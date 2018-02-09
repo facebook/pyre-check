@@ -510,6 +510,7 @@ class KillTest(unittest.TestCase):
         os_path_exists.result = True
 
         arguments = mock_arguments()
+        arguments.with_fire = False
         configuration = mock_configuration()
 
         with patch(
@@ -524,3 +525,17 @@ class KillTest(unittest.TestCase):
                 'r')
             os_kill.assert_has_calls(
                 [call(11, signal.SIGINT), call(11, signal.SIGINT)])
+
+    @patch('os.path.realpath')
+    @patch('subprocess.run')
+    def test_kill_all(self, run, realpath) -> None:
+        realpath.side_effect = ["/test-binary"]
+        arguments = mock_arguments()
+        arguments.with_fire = True
+        configuration = mock_configuration()
+        commands.Kill(
+            arguments,
+            configuration,
+            source_directories=[]).run()
+        run.assert_called_with(
+            ['pkill', '-f', '^/test-binary'])
