@@ -453,7 +453,7 @@ let description
           detail;
         ]
     | UndefinedAttribute { annotation; attribute } ->
-        [Format.asprintf "Class %a has no attribute `%a`." Type.pp annotation Access.pp attribute]
+        [Format.asprintf "%a has no attribute `%a`." Type.pp annotation Access.pp attribute]
     | UndefinedMethod { annotation; call } ->
         let name =
           match Annotated.Call.name call with

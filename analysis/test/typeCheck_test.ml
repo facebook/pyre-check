@@ -1785,7 +1785,7 @@ let test_check_function_parameters _ =
         def foo(self) -> None:
           int_to_int(self.attribute)
     |}
-    ["Undefined attribute [16]: Class `A` has no attribute `attribute`."];
+    ["Undefined attribute [16]: `A` has no attribute `attribute`."];
 
   assert_type_errors
     {|
@@ -2341,7 +2341,7 @@ let test_check_attributes _ =
     |}
     [
       "Incompatible return type [7]: Expected `int` but got `unknown`.";
-      "Undefined attribute [16]: Class `Foo` has no attribute `bar`.";
+      "Undefined attribute [16]: `Foo` has no attribute `bar`.";
     ];
   assert_type_errors
     {|
@@ -2410,9 +2410,9 @@ let test_check_attributes _ =
     [
       "Missing attribute annotation [4]: Attribute `bar` of class `Foo` has type `str` but no " ^
       "type is specified.";
-      "Undefined attribute [16]: Class `Foo` has no attribute `bar`.";
+      "Undefined attribute [16]: `Foo` has no attribute `bar`.";
       "Incompatible return type [7]: Expected `int` but got `str`.";
-      "Undefined attribute [16]: Class `Foo` has no attribute `bar`.";
+      "Undefined attribute [16]: `Foo` has no attribute `bar`.";
     ];
 
   assert_type_errors
@@ -2474,9 +2474,9 @@ let test_check_attributes _ =
     [
       "Missing attribute annotation [4]: Attribute `bar` of class `Foo` has type `str` but no " ^
       "type is specified.";
-      "Undefined attribute [16]: Class `Foo` has no attribute `bar`.";
+      "Undefined attribute [16]: `Foo` has no attribute `bar`.";
       "Incompatible return type [7]: Expected `int` but got `str`.";
-      "Undefined attribute [16]: Class `Foo` has no attribute `bar`.";
+      "Undefined attribute [16]: `Foo` has no attribute `bar`.";
     ];
 
   assert_type_errors
@@ -2539,7 +2539,7 @@ let test_check_attributes _ =
         return 0
     |}
     [
-      "Undefined attribute [16]: Class `typing.Optional` has no attribute `bar`.";
+      "Undefined attribute [16]: `typing.Optional` has no attribute `bar`.";
       "Incompatible return type [7]: Expected `int` but got `typing.Optional[int]`.";
     ];
 
@@ -2556,10 +2556,10 @@ let test_check_attributes _ =
       "Missing attribute annotation [4]: Attribute `baz` of class `Foo` has type " ^
       "`typing.Optional[int]` but no type is specified.";
       (* TODO(T24330702): we should only report this once. *)
-      "Undefined attribute [16]: Class `Foo` has no attribute `baz`.";
-      "Undefined attribute [16]: Class `Foo` has no attribute `baz`.";
-      "Undefined attribute [16]: Class `Foo` has no attribute `baz`.";
-      "Undefined attribute [16]: Class `Foo` has no attribute `baz`.";
+      "Undefined attribute [16]: `Foo` has no attribute `baz`.";
+      "Undefined attribute [16]: `Foo` has no attribute `baz`.";
+      "Undefined attribute [16]: `Foo` has no attribute `baz`.";
+      "Undefined attribute [16]: `Foo` has no attribute `baz`.";
     ];
 
   (* TODO(T25072735): support attribute tests for: class variables, generic annotations *)
@@ -2697,7 +2697,7 @@ let test_check_attributes _ =
         attribute: int = 1
       Foo.attribute
     |}
-    ["Undefined attribute [16]: Class `Foo` has no attribute `attribute`."];
+    ["Undefined attribute [16]: `Foo` has no attribute `attribute`."];
 
   (* Check class properties. *)
   assert_type_errors
@@ -2723,7 +2723,7 @@ let test_check_attributes _ =
     [
       "Incompatible attribute type [8]: Attribute `attribute` declared in class `Foo` has type " ^
       "`int` but is used as type `unknown`.";
-      "Undefined attribute [16]: Class `int` has no attribute `something`.";
+      "Undefined attribute [16]: `int` has no attribute `something`.";
     ];
 
   (* Check attribute type resolution. *)
@@ -2761,7 +2761,7 @@ let test_check_attributes _ =
     |}
     [
       "Incompatible return type [7]: Expected `int` but got `unknown`.";
-      "Undefined attribute [16]: Class `typing.Optional` has no attribute `debug`.";
+      "Undefined attribute [16]: `typing.Optional` has no attribute `debug`.";
     ]
 
 
@@ -2936,7 +2936,7 @@ let test_check_immutables _ =
     [
       "Missing attribute annotation [4]: Attribute `attribute` of class `Foo` has type `int` but " ^
       "no type is specified.";
-      "Undefined attribute [16]: Class `Foo` has no attribute `attribute`.";
+      "Undefined attribute [16]: `Foo` has no attribute `attribute`.";
     ];
 
   assert_type_errors
@@ -3067,7 +3067,7 @@ let test_check_immutables _ =
     [
       "Missing attribute annotation [4]: Attribute `constant` of class `Foo` has type `int` but " ^
       "no type is specified.";
-      "Undefined attribute [16]: Class `Foo` has no attribute `constant`.";
+      "Undefined attribute [16]: `Foo` has no attribute `constant`.";
       "Missing global annotation [5]: Globally accessible variable `constant` has type `str` but " ^
       "no type is specified.";
     ]
