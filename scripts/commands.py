@@ -4,7 +4,6 @@
 # LICENSE file in the root directory of this source tree.
 
 import errno
-import fcntl
 import json
 import logging
 import os
@@ -23,6 +22,7 @@ from typing import List
 
 from . import (
     buck,
+    shared_source_directory,
     EnvironmentException,
     log,
     SUCCESS,
@@ -63,7 +63,6 @@ class Result:
 
 class Command:
     SHARED_SOURCE_DIRECTORY = ".pyre/shared_source_directory"
-    SOURCE_DIRECTORY_LIST = ".pyre/source_directories.txt"
 
     _buffer: List[str] = []
     _call_client_terminated: bool = False
@@ -481,25 +480,13 @@ class Incremental(ErrorHandling):
 
     def _run(self) -> None:
         if len(self._original_source_directories) > 1:
-            missing_directories = []
-            unable_to_read = False
-            try:
-                existing_directories = set()
-                with open(self.SOURCE_DIRECTORY_LIST) as directories:
-                    fcntl.lockf(directories.fileno(), fcntl.LOCK_SH)
-                    for line in directories:
-                        existing_directories.add(line.strip())
-                    fcntl.lockf(directories.fileno(), fcntl.LOCK_UN)
-                    for source_directory in self._original_source_directories:
-                        if source_directory not in existing_directories:
-                            missing_directories.append(source_directory)
-            except (OSError, FileNotFoundError):
-                unable_to_read = True
-            if missing_directories or unable_to_read:
+            missing = shared_source_directory.missing(
+                self._original_source_directories)
+            if missing:
                 LOG.info(
-                    "Stopping pyre server which doesn't analyze the"
+                    "The existing pyre server which doesn't analyze the"
                     " following source directories:\n{}".format(
-                        "\n".join(missing_directories)))
+                        "\n".join(missing)))
                 Stop(
                     self._arguments,
                     self._configuration,
@@ -567,17 +554,7 @@ class Rage(Command):
 
 class Start(Command):
     def __init__(self, arguments, configuration, source_directories) -> None:
-        # we need to create the .pyre/ directory if necessary, since the open
-        # below will fail if it doesn't exist.
-        try:
-            os.mkdir('.pyre')
-        except OSError:
-            pass
-        with open(self.SOURCE_DIRECTORY_LIST, 'w+') as directory_list:
-            fcntl.lockf(directory_list, fcntl.LOCK_EX)
-            for directory in source_directories:
-                directory_list.write("{}\n".format(directory))
-                fcntl.lockf(directory_list, fcntl.LOCK_UN)
+        shared_source_directory.write_existing(source_directories)
         super(Start, self).__init__(
             arguments,
             configuration,
@@ -627,10 +604,7 @@ class Stop(Command):
                 'Stopped %s at %s',
                 self._server_string(running),
                 self._source_directory_string(running))
-            try:
-                os.remove(self.SOURCE_DIRECTORY_LIST)
-            except OSError:
-                pass
+            shared_source_directory.remove_list()
         else:
             LOG.info('No %s running', self._server_string())
 
