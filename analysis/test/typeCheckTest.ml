@@ -3972,6 +3972,14 @@ let test_check_behavioral_subtyping _ =
         def foo(a) -> None: pass
     |}
     [];
+  assert_type_errors
+    {|
+    class Foo():
+      def foo(a) -> None: ...
+    class Bar(Foo):
+      def foo(a: int) -> None: pass
+    |}
+    [];
   assert_type_errors ~show_error_traces:true
     {|
       class Foo():

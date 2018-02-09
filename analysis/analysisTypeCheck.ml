@@ -529,7 +529,8 @@ module State = struct
            let expected = data in
            match Map.find parameters key with
            | Some actual ->
-               if not (Resolution.less_or_equal resolution ~left:expected ~right:actual) then
+               if not (Type.equal Type.Top expected) &&
+                  not (Resolution.less_or_equal resolution ~left:expected ~right:actual) then
                  let error =
                    {
                      Error.location;
