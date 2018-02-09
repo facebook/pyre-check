@@ -253,7 +253,7 @@ let computation_thread request_queue configuration state =
 
 
 let request_handler_thread (
-    { configuration = { version; _ }; _ } as server_configuration,
+    { configuration = { version; source_root; _ }; _ } as server_configuration,
     lock,
     connections,
     request_queue) =
@@ -332,6 +332,11 @@ let request_handler_thread (
   in
   let rec loop () =
     let { socket = server_socket; persistent_clients; file_notifiers } = get_readable_sockets () in
+    if not (PyrePath.is_directory source_root) then
+      begin
+        Log.error "Stopping server due to missing project root.";
+        ServerOperations.stop_server server_configuration !(connections).socket
+      end;
     let readable =
       Unix.select
         ~read:(server_socket :: (Hashtbl.keys persistent_clients) @ file_notifiers )

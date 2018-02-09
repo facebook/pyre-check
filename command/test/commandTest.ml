@@ -40,8 +40,8 @@ let mock_server_configuration
     (mock_analysis_configuration ~source_root ?version ())
 
 
-let start_server ?version () =
-  Server.start (mock_server_configuration ?version ())
+let start_server ?(source_root = Path.current_working_directory ()) ?version () =
+  Server.start (mock_server_configuration ~source_root ?version ())
 
 
 let environment () =

@@ -144,6 +144,26 @@ let test_server_stops _ =
     ~finally:CommandTest.clean_environment
 
 
+let test_server_exits_on_directory_removal context =
+  let directory = bracket_tmpdir context in
+  let pid =
+    Pid.of_int (Command_test.start_server ~source_root:(Path.create_absolute directory) ())
+  in
+  Sys_utils.rm_dir_tree directory;
+  Exn.protect
+    ~f:(fun () ->
+        with_timeout ~seconds:6 (fun () ->
+            (match Unix.waitpid pid with
+             | Ok _
+             (* I was only able to get non-zero exits in the OUnit test environment,
+                doing the equivalent calls in the command line always resulted in an exit of 0. *)
+             | Error (`Exit_non_zero 2) -> assert true
+             | _ -> assert false
+            )))
+    ~finally:Command_test.clean_environment
+    ()
+
+
 let test_stop_handles_unix_errors context =
   let long_path = bracket_tmpdir ~suffix:(String.init ~f:(fun _ -> 'a') 140) context in
   Command.run ~argv:["_"; long_path] Server.stop_command
@@ -694,6 +714,7 @@ let () =
     [
       "server_exists", test_server_exists;
       "server_stops", test_server_stops;
+      "server_exits_on_directory_removal", test_server_exits_on_directory_removal;
       "connect", test_connect;
       "stop_handles_unix_errors", test_stop_handles_unix_errors;
       "protocol_type_check", test_protocol_type_check;
