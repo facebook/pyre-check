@@ -2539,7 +2539,7 @@ let test_check_attributes _ =
         return 0
     |}
     [
-      "Undefined attribute [16]: `typing.Optional` has no attribute `bar`.";
+      "Undefined attribute [16]: Optional type has no attribute `bar`.";
       "Incompatible return type [7]: Expected `int` but got `typing.Optional[int]`.";
     ];
 
@@ -2761,7 +2761,7 @@ let test_check_attributes _ =
     |}
     [
       "Incompatible return type [7]: Expected `int` but got `unknown`.";
-      "Undefined attribute [16]: `typing.Optional` has no attribute `debug`.";
+      "Undefined attribute [16]: Optional type has no attribute `debug`.";
     ]
 
 

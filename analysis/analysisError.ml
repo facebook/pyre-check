@@ -453,7 +453,14 @@ let description
           detail;
         ]
     | UndefinedAttribute { annotation; attribute } ->
-        [Format.asprintf "%a has no attribute `%a`." Type.pp annotation Access.pp attribute]
+        let name =
+          match annotation with
+          | Type.Primitive optional when Identifier.show optional = "typing.Optional" ->
+              "Optional type"
+          | _ ->
+              Type.show annotation
+        in
+        [Format.asprintf "%s has no attribute `%a`." name Access.pp attribute]
     | UndefinedMethod { annotation; call } ->
         let name =
           match Annotated.Call.name call with
