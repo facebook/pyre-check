@@ -149,7 +149,6 @@ class PersistentTest(unittest.TestCase):
                     arguments,
                     configuration,
                     source_directories=['.']).on_client_exception()
-            print("ASD {}".format(call_client.mock_calls))
             call_client.assert_has_calls(
                 [
                     call(command=commands.PERSISTENT,

@@ -461,8 +461,6 @@ class Check(ErrorHandling):
 
 
 class Incremental(ErrorHandling):
-    NOT_RUNNING = 2
-
     def __init__(self, arguments, configuration, source_directories) -> None:
         super(Incremental, self).__init__(
             arguments,
