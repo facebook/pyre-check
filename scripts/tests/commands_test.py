@@ -454,11 +454,11 @@ class StopTest(unittest.TestCase):
 
 
 class RestartTest(unittest.TestCase):
-    @patch.object(commands.Command, '_state')
-    def test_restart(self, commands_Command_state) -> None:
+    @patch.object(commands, 'Stop')
+    @patch.object(commands, 'Start')
+    def test_restart(self, commands_Start, commands_Stop) -> None:
         state = MagicMock()
         state.running = ['.']
-        commands_Command_state.return_value = state
 
         arguments = mock_arguments()
         arguments.terminal = False
@@ -466,21 +466,42 @@ class RestartTest(unittest.TestCase):
         configuration = mock_configuration()
         configuration.get_stub_roots.return_value = ['root']
 
-        with patch.object(commands.Command, '_call_client') as call_client:
-            arguments.no_watchman = True
+        source_directories = ['.']
+
+        with patch.object(commands, 'Stop') as commands_Stop, \
+                patch.object(commands, 'Start') as commands_Start, \
+                patch.object(commands, 'Incremental') as commands_Incremental:
             commands.Restart(
                 arguments,
                 configuration,
-                source_directories=['.']).run()
-            call_client.assert_has_calls(
-                [
-                    call(command=commands.STOP, source_directories=['.']),
-                    call(
-                        command=commands.START,
-                        source_directories=['.'],
-                        flags=['-project-root', '.', '-stub-roots', 'root']),
-                ],
-                any_order=True)
+                source_directories,
+                blocking=False)._run()
+            commands_Stop.assert_called_with(
+                arguments,
+                configuration,
+                source_directories)
+            commands_Start.assert_called_with(
+                arguments,
+                configuration,
+                source_directories)
+            commands_Incremental.assert_not_called()
+
+        with patch.object(commands, 'Stop') as commands_Stop, \
+                patch.object(commands, 'Start') as commands_Start, \
+                patch.object(commands, 'Incremental') as commands_Incremental:
+            commands.Restart(
+                arguments,
+                configuration,
+                source_directories)._run()
+            commands_Stop.assert_called_with(
+                arguments,
+                configuration,
+                source_directories)
+            commands_Incremental.assert_called_with(
+                arguments,
+                configuration,
+                source_directories)
+            commands_Start.assert_not_called()
 
 
 class KillTest(unittest.TestCase):

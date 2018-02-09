@@ -308,7 +308,8 @@ class Persistent(Command):
             Restart(
                 arguments,
                 self._configuration,
-                self._original_source_directories).run()
+                self._original_source_directories,
+                blocking=False).run()
 
             if len(self._source_directories) > 1:
                 source_directories = [self.SHARED_SOURCE_DIRECTORY]
@@ -637,21 +638,33 @@ class Stop(Command):
 
 
 class Restart(Command):
-    def __init__(self, arguments, configuration, source_directories) -> None:
+    def __init__(
+            self,
+            arguments,
+            configuration,
+            source_directories,
+            blocking=True) -> None:
         super(Restart, self).__init__(
             arguments,
             configuration,
             source_directories)
+        self._blocking = blocking
 
     def _run(self) -> None:
         Stop(
             self._arguments,
             self._configuration,
             self._source_directories).run()
-        Start(
-            self._arguments,
-            self._configuration,
-            self._original_source_directories).run()
+        if self._blocking:
+            Incremental(
+                self._arguments,
+                self._configuration,
+                self._original_source_directories).run()
+        else:
+            Start(
+                self._arguments,
+                self._configuration,
+                self._original_source_directories).run()
 
 
 class Kill(Command):
