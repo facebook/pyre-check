@@ -673,6 +673,11 @@ let is_optional = function
   | _ -> false
 
 
+let is_optional_primitive = function
+  | Primitive optional when Identifier.show optional = "typing.Optional" -> true
+  | _ -> false
+
+
 let is_primitive = function
   | Primitive _ -> true
   | _ -> false

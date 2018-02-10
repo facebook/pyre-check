@@ -454,11 +454,10 @@ let description
         ]
     | UndefinedAttribute { annotation; attribute } ->
         let name =
-          match annotation with
-          | Type.Primitive optional when Identifier.show optional = "typing.Optional" ->
-              "Optional type"
-          | _ ->
-              Type.show annotation
+          if Type.is_optional_primitive annotation then
+            "Optional type"
+          else
+            Type.show annotation
         in
         [Format.asprintf "%s has no attribute `%a`." name Access.pp attribute]
     | UndefinedMethod { annotation; call } ->
@@ -857,7 +856,15 @@ let dequalify
           mismatch = { actual = dequalify actual; expected = dequalify expected };
         }
     | UndefinedAttribute { annotation; attribute } ->
-        UndefinedAttribute { annotation = dequalify annotation; attribute }
+        let annotation =
+          (* Don't dequalify optionals because we special case their display. *)
+          if Type.is_optional_primitive annotation then
+            annotation
+          else
+            dequalify annotation
+        in
+        UndefinedAttribute { annotation; attribute }
+
     | UndefinedMethod { annotation; call } ->
         UndefinedMethod { annotation = dequalify annotation; call }
     | UndefinedType annotation -> UndefinedType (dequalify annotation)
