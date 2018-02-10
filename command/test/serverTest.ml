@@ -147,7 +147,7 @@ let test_server_stops _ =
 let test_server_exits_on_directory_removal context =
   let directory = bracket_tmpdir context in
   let pid =
-    Pid.of_int (Command_test.start_server ~source_root:(Path.create_absolute directory) ())
+    Pid.of_int (CommandTest.start_server ~source_root:(Path.create_absolute directory) ())
   in
   Sys_utils.rm_dir_tree directory;
   Exn.protect
@@ -160,7 +160,7 @@ let test_server_exits_on_directory_removal context =
              | Error (`Exit_non_zero 2) -> assert true
              | _ -> assert false
             )))
-    ~finally:Command_test.clean_environment
+    ~finally:CommandTest.clean_environment
     ()
 
 
