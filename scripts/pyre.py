@@ -213,21 +213,14 @@ def main() -> int:
     finally:
         log.cleanup(arguments)
         if configuration and configuration.logger:
-            sample = {
-                'int': {
+            log_statistics(
+                'perfpipe_pyre_usage',
+                arguments,
+                configuration,
+                ints={
                     'exit_code': exit_code,
-                    'runtime': int((time.time() - start) * 1000),  # ms
-                },
-                'normal': {
-                    'arguments': str(arguments),
-                    'host': os.getenv('HOSTNAME'),
-                    'source_directory': str(arguments.source_directory or []),
-                    'target': str(arguments.target or []),
-                    'user': os.getenv('USER'),
-
-                },
-            }
-            log_statistics('pyre_usage', configuration.logger, sample)
+                    'runtime': int((time.time() - start) * 1000),
+                })
 
     return exit_code
 

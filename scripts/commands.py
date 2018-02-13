@@ -25,6 +25,7 @@ from . import (
     shared_source_directory,
     EnvironmentException,
     log,
+    log_statistics,
     SUCCESS,
     TEXT,
 )
@@ -334,6 +335,11 @@ class Persistent(Command):
             response)
 
     def _run_null_server(self, should_sleep=True) -> None:
+        log_statistics(
+            'perfpipe_pyre_events',
+            self._arguments,
+            self._configuration,
+            normals={'name': 'null_server_launch'})
         to_read, _, _ = select.select([sys.stdin], [], [], 3.0)
         request_id = 0
         if to_read:

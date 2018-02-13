@@ -3,12 +3,19 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+from argparse import Namespace
 import json
 import logging
 import os
 import shlex
 import subprocess
+import sys
 import traceback
+from typing import (
+    Any,
+    Dict,
+    Optional,
+)
 from tools.pyre.scripts import (
     buck,
 )
@@ -103,15 +110,36 @@ def resolve_source_directories(arguments, configuration):
     return {_translate(path) for path in source_directories}
 
 
-def log_statistics(category, logger, statistics) -> None:
+def log_statistics(
+        category: str,
+        arguments: Namespace,
+        # this is typed as a Any because configuration imports __init__
+        configuration: Any,
+        ints: Optional[Dict[str, int]] = None,
+        normals: Optional[Dict[str, str]] = None) -> None:
     try:
+        ints = ints or {}
+        normals = normals or {}
+        statistics = {
+            'int': ints,
+            'normal': {
+                **normals,
+                'arguments': str(arguments),
+                'command_line': " ".join(sys.argv),
+                'host': os.getenv('HOSTNAME') or '',
+                'source_directory': str(arguments.source_directory or []),
+                'target': str(arguments.target or []),
+                'user': os.getenv('USER') or '',
+                'version': str(configuration.get_version_hash()),
+            },
+        }
         subprocess.run(
             "{} {} {}".format(
-                shlex.quote(logger),
+                shlex.quote(configuration.logger),
                 shlex.quote(category),
                 shlex.quote(json.dumps(statistics)),
             ),
             shell=True)
     except Exception:
-        LOG.warning('Unable to log using `%s`', logger)
+        LOG.warning('Unable to log using `%s`', configuration.logger)
         LOG.info(traceback.format_exc())
