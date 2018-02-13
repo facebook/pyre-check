@@ -114,28 +114,18 @@ let with_timeout ~seconds f x =
   | None -> raise Timeout
 
 
-let test_server_exists _ =
-  (* Ideally we could just call `Command.run PyreServer.command` and catch the
-     failure. But Janestreet library decides to catch all exceptions on
-     Command.run so scratch that. *)
-  CommandTest.start_server () |> ignore;
-  (* Clean up: Kill server *)
+let test_server_stops _ =
+  let pid = Pid.of_int (CommandTest.start_server ()) in
   Command.run ~argv:["_"] Server.stop_command;
   let { ServerConfiguration.lock_path; socket_path; _ } =
     ServerConfiguration.create (Configuration.create ())
   in
   with_timeout ~seconds:3 poll_for_deletion lock_path;
   with_timeout ~seconds:3 poll_for_deletion socket_path;
-  CommandTest.clean_environment ()
-
-
-let test_server_stops _ =
-  let pid = Pid.of_int (CommandTest.start_server ()) in
-  Command.run ~argv:["_"] Server.stop_command;
   Exn.protect
     ~f:(fun () ->
         with_timeout
-          ~seconds:2
+          ~seconds:1
           (fun pid ->
              (match Unix.waitpid pid with
               | Ok _ -> assert true
@@ -712,7 +702,6 @@ let () =
   CommandTest.run_command_tests
     "server"
     [
-      "server_exists", test_server_exists;
       "server_stops", test_server_stops;
       "server_exits_on_directory_removal", test_server_exits_on_directory_removal;
       "connect", test_connect;
