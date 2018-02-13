@@ -69,7 +69,7 @@ def switch_root(arguments) -> None:
     arguments.current_directory = root
 
 
-def resolve_source_directories(arguments, configuration):
+def resolve_source_directories(arguments, configuration, prompt=True):
     source_directories = set(arguments.source_directory or [])
     targets = set(arguments.target or [])
 
@@ -82,7 +82,10 @@ def resolve_source_directories(arguments, configuration):
             'Setting up a .pyre_configuration file may reduce overhead.')
 
     source_directories.update(
-        buck.generate_source_directories(targets, build=arguments.build))
+        buck.generate_source_directories(
+            targets,
+            build=arguments.build,
+            prompt=prompt))
 
     if len(source_directories) == 0:
         raise EnvironmentException(

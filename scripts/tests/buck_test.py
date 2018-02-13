@@ -115,8 +115,9 @@ class BuckTest(unittest.TestCase):
 
         with patch.object(buck, '_normalize') as mock_normalize:
             with self.assertRaises(buck.BuckException):
-                buck.generate_source_directories(['target'], build=False)
                 buck.generate_source_directories(
-                    ['target1', 'target2'], build=False)
+                    ['target'], build=False, prompt=True)
+                buck.generate_source_directories(
+                    ['target1', 'target2'], build=False, prompt=True)
                 mock_normalize.assert_has_calls(
                     [call('target'), call('target1'), call('target2')])

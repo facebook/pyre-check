@@ -187,9 +187,11 @@ def main() -> int:
         if getattr(arguments, 'with_fire', False):
             source_directories = []
         else:
+            prompt = arguments.command not in [commands.Incremental, commands.Check]
             source_directories = resolve_source_directories(
                 arguments,
-                configuration)
+                configuration,
+                prompt=prompt)
         arguments.command(arguments, configuration, source_directories).run()
     except (
         buck.BuckException,

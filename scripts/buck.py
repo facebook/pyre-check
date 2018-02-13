@@ -74,12 +74,13 @@ def _build_targets(targets) -> None:
             subprocess.check_output(
                 command,
                 stderr=subprocess.DEVNULL)
+            LOG.warning("Finished building targets.")
         except subprocess.CalledProcessError:
             raise BuckException(
                 'Could not build target `{}`.'.format(target))
 
 
-def generate_source_directories(original_targets, build):
+def generate_source_directories(original_targets, build, prompt=True):
     buck_out = _find_source_directories(
         {target: None for target in original_targets})
     source_directories = buck_out.source_directories
@@ -119,10 +120,11 @@ def generate_source_directories(original_targets, build):
                 'Could not find link trees for:\n    `%s`.\n   '
                 'These targets might be unbuilt or only partially built.',
                 '    \n'.join(unbuilt_targets))
-            if log.get_yes_no_input("Build target?"):
+            if not prompt or log.get_yes_no_input("Build target?"):
                 return generate_source_directories(
                     original_targets,
-                    build=True)
+                    build=True,
+                    prompt=False,)
             raise BuckException(
                 'Could not find link trees for:\n    `{}`.\n   '
                 'See `{} --help` for more information.'.format(

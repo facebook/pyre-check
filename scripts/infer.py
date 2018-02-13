@@ -509,7 +509,8 @@ def main():
 
         source_directories = resolve_source_directories(
             arguments,
-            configuration)
+            configuration,
+            prompt=False)
         Infer(arguments, configuration, source_directories).run()
     except (
         buck.BuckException,

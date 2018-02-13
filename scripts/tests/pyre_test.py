@@ -11,6 +11,7 @@ from unittest.mock import (
 )
 
 from .. import (
+    buck,
     commands,
     configuration,
     pyre,
@@ -37,3 +38,34 @@ class PyreTest(unittest.TestCase):
         with patch.object(sys, 'argv', ['pyre', 'persistent']):
             self.assertEqual(pyre.main(), 1)
             run_null_server.assert_called_once()
+
+    @patch.object(configuration.Configuration, '_read')
+    @patch.object(configuration.Configuration, 'validate')
+    @patch.object(buck, 'generate_source_directories', return_value=['.'])
+    def test_buck_build_prompting(
+        self,
+        generate_source_directories,
+        validate,
+        read,
+    ) -> None:
+        with patch.object(commands.Check, 'run'):
+            with patch.object(sys, 'argv', ['pyre', 'check']):
+                self.assertEqual(pyre.main(), 0)
+                generate_source_directories.assert_called_with(
+                    set(),
+                    build=False,
+                    prompt=False)
+        with patch.object(commands.Incremental, 'run'):
+            with patch.object(sys, 'argv', ['pyre']):
+                self.assertEqual(pyre.main(), 0)
+                generate_source_directories.assert_called_with(
+                    set(),
+                    build=False,
+                    prompt=False)
+        with patch.object(commands.Persistent, 'run'):
+            with patch.object(sys, 'argv', ['pyre', 'persistent']):
+                self.assertEqual(pyre.main(), 0)
+                generate_source_directories.assert_called_with(
+                    set(),
+                    build=False,
+                    prompt=True)

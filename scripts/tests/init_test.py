@@ -55,7 +55,10 @@ class InitTest(unittest.TestCase):
             source_directories = resolve_source_directories(
                 arguments,
                 configuration)
-            buck_source_directories.assert_called_with(set(), build=False)
+            buck_source_directories.assert_called_with(
+                set(),
+                build=False,
+                prompt=True)
             self.assertEqual(source_directories, {'arguments_source_directory'})
 
         with patch.object(
@@ -73,7 +76,8 @@ class InitTest(unittest.TestCase):
                 configuration)
             buck_source_directories.assert_called_with(
                 {'arguments_target'},
-                build=False)
+                build=False,
+                prompt=True)
             self.assertEqual(source_directories, {'arguments_target'})
 
         return
@@ -96,7 +100,8 @@ class InitTest(unittest.TestCase):
                 configuration)
             buck_source_directories.assert_called_with(
                 {'configuration_target'},
-                build=True)
+                build=True,
+                prompt=True)
             self.assertEqual(
                 source_directories,
                 {'configuration_target', 'configuration_source_directory'})
