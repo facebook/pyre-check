@@ -35,6 +35,15 @@ exception VersionMismatch of version_mismatch
 open State
 
 
+let register_signal_handlers server_configuration socket =
+  Signal.Expert.handle
+    Signal.int
+    (fun _ -> ServerOperations.stop_server server_configuration socket);
+  Signal.Expert.handle
+    Signal.pipe
+    (fun _ -> ())
+
+
 let connect ~retries ~configuration:({ version; _ } as configuration) =
   let rec connect attempt =
     if attempt >= retries then begin
@@ -257,6 +266,7 @@ let request_handler_thread (
     lock,
     connections,
     request_queue) =
+
   let get_readable_sockets () =
     Mutex.critical_section lock ~f:(fun () -> !connections)
   in
@@ -389,6 +399,7 @@ let serve (socket, server_configuration) =
       file_notifiers = [];
     }
   in
+  register_signal_handlers server_configuration socket;
   Thread.create
     request_handler_thread
     (server_configuration, lock, connections, request_queue)
@@ -397,12 +408,6 @@ let serve (socket, server_configuration) =
   let state =
     ServerOperations.initialize lock connections server_configuration
   in
-  Signal.Expert.handle
-    Signal.int
-    (fun _ -> ServerOperations.stop_server server_configuration socket);
-  Signal.Expert.handle
-    Signal.pipe
-    (fun _ -> ());
   try
     computation_thread request_queue server_configuration state
   with _ ->
@@ -485,9 +490,6 @@ let start ({
     else begin
       setup server_configuration;
       Log.log ~section:`Server "Server running in terminal as pid %d" (Pid.to_int (Unix.getpid ()));
-      Signal.Expert.handle
-        Signal.int
-        (fun _ -> ServerOperations.stop_server server_configuration socket);
       serve (socket, server_configuration);
       0
     end
