@@ -61,7 +61,13 @@ let remove_server_files { lock_path; socket_path; pid_path; socket_link; _ } =
   Path.remove pid_path
 
 
-let stop_server server_configuration socket =
+let stop_server ~reason server_configuration socket =
+  Statistics.event
+    ~flush:true
+    ~name:"stop server"
+    ~configuration:server_configuration.configuration
+    ~normals:["reason", reason]
+    ();
   (let watchman_path =
      WatchmanConstants.pid_path server_configuration.configuration
      |> Path.absolute

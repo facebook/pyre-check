@@ -13,6 +13,6 @@ val initialize
   -> ServerConfiguration.t
   -> ServerState.t
 
-val stop_server: ServerConfiguration.t -> Unix.File_descr.t -> unit
+val stop_server: reason: string -> ServerConfiguration.t -> Unix.File_descr.t -> unit
 
 val remove_server_files: ServerConfiguration.t -> unit

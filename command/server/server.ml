@@ -38,7 +38,7 @@ open State
 let register_signal_handlers server_configuration socket =
   Signal.Expert.handle
     Signal.int
-    (fun _ -> ServerOperations.stop_server server_configuration socket);
+    (fun _ -> ServerOperations.stop_server ~reason:"interrupt" server_configuration socket);
   Signal.Expert.handle
     Signal.pipe
     (fun _ -> ())
@@ -151,6 +151,7 @@ let computation_thread request_queue configuration state =
               state.lock
               ~f:(fun () ->
                   ServerOperations.stop_server
+                    ~reason:"malformed request"
                     configuration
                     !(state.connections).socket);
             state, None
@@ -238,14 +239,11 @@ let computation_thread request_queue configuration state =
           let current_time = Unix.time () in
           if current_time -. state.last_request_time > State.stop_after_idle_for then
             begin
-              Statistics.event
-                ~name:"stop idle"
-                ~configuration:configuration.configuration
-                ();
               Mutex.critical_section
                 state.lock
                 ~f:(fun () ->
                     ServerOperations.stop_server
+                      ~reason:"idle"
                       configuration
                       !(state.connections).socket)
             end;
@@ -274,9 +272,15 @@ let request_handler_thread (
     match request, origin with
     | ServerProtocol.Request.StopRequest, ServerProtocol.Request.NewConnectionSocket socket ->
         Socket.write socket StopResponse;
-        ServerOperations.stop_server server_configuration !(connections).socket
+        ServerOperations.stop_server
+          ~reason:"explicit request"
+          server_configuration
+          !(connections).socket
     | ServerProtocol.Request.StopRequest, _ ->
-        ServerOperations.stop_server server_configuration !(connections).socket
+        ServerOperations.stop_server
+          ~reason:"explicit request"
+          server_configuration
+          !(connections).socket
     | ServerProtocol.Request.ClientConnectionRequest client,
       ServerProtocol.Request.NewConnectionSocket socket ->
         Log.log ~section:`Server "Adding %s client" (show_client client);
@@ -345,7 +349,10 @@ let request_handler_thread (
     if not (PyrePath.is_directory source_root) then
       begin
         Log.error "Stopping server due to missing project root.";
-        ServerOperations.stop_server server_configuration !(connections).socket
+        ServerOperations.stop_server
+          ~reason:"missing project root"
+          server_configuration
+          !(connections).socket
       end;
     let readable =
       Unix.select
@@ -419,7 +426,7 @@ let serve (socket, server_configuration) =
       ~integers:[]
       ~normals:["exception backtrace", backtrace]
       ();
-    ServerOperations.stop_server server_configuration socket
+    ServerOperations.stop_server ~reason:"exception" server_configuration socket
 
 
 (* Create lock file and pid file. Used for both daemon mode and in-terminal *)

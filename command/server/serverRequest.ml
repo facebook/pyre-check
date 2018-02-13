@@ -208,6 +208,7 @@ let rec process_request
           state.lock
           ~f:(fun () ->
               ServerOperations.stop_server
+                ~reason:"explicit request"
                 server_configuration
                 !(state.connections).socket);
         state, None
