@@ -18,7 +18,7 @@ import time
 import traceback
 
 from collections import namedtuple
-from typing import List
+from typing import List, Optional
 
 from . import (
     buck,
@@ -322,7 +322,7 @@ class Persistent(Command):
             self._check_results(results)
 
     def on_client_exception(self) -> None:
-        self._run_null_server()
+        self._run_null_server(timeout=300)
 
     def _initialize_response(self, request_id: int) -> str:
         response = json.dumps({
@@ -334,7 +334,7 @@ class Persistent(Command):
             len(response),
             response)
 
-    def _run_null_server(self, should_sleep=True) -> None:
+    def _run_null_server(self, timeout: Optional[int] = None) -> None:
         log_statistics(
             'perfpipe_pyre_events',
             self._arguments,
@@ -361,7 +361,11 @@ class Persistent(Command):
 
         sys.stdout.write(self._initialize_response(request_id))
         sys.stdout.flush()
-        while should_sleep:
+        start_time = int(time.time())
+        while True:
+            if timeout is not None and\
+               timeout <= (int(time.time()) - start_time):
+                break
             time.sleep(10)
 
 

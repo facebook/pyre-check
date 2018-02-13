@@ -201,7 +201,7 @@ class PersistentTest(unittest.TestCase):
             mock_arguments(),
             mock_configuration(),
             source_directories=['.'],
-        )._run_null_server(should_sleep=False)
+        )._run_null_server(timeout=0)
         json = '{"jsonrpc": "2.0", "id": 0, "result": {"capabilities": {}}}'
         self.assertEqual(
             stdout.getvalue(),
