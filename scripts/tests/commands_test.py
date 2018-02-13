@@ -13,6 +13,7 @@ from unittest.mock import call, patch, mock_open, MagicMock
 
 from .. import (
     commands,
+    shared_source_directory,
     EnvironmentException,
 )
 from ..error import Error
@@ -74,42 +75,8 @@ class CommandTest(unittest.TestCase):
             self.assertEqual(state.running, ['link/tree/one'])
             self.assertEqual(state.dead, ['link/tree/two'])
 
-    @patch('os.symlink')
-    @patch('os.walk')
-    @patch('os.makedirs')
-    @patch('os.path.exists')
-    def test_merge_directories(
-            self,
-            os_path_exists,
-            os_makedirs,
-            os_walk,
-            os_symlink) -> None:
-        os_path_exists.return_value = False
-        os_walk.side_effect = [
-            [
-                ("first", [], ["x.py", "y.py", "z.cpp"]),
-                ("first/b", [], ["z.py"]),
-            ],
-            [("second", [], ["a.py"])]
-        ]
-        command = commands.Command(
-            mock_arguments(),
-            mock_configuration(),
-            ["first", "second"])
-        command._merge_directories(".pyre/shared_root")
-        os_makedirs.assert_has_calls(
-            [call(".pyre/shared_root"), call(".pyre/shared_root/b")])
-        os_symlink.assert_has_calls(
-            [
-                call(os.getcwd() + "/first/x.py", ".pyre/shared_root/x.py"),
-                call(os.getcwd() + "/first/y.py", ".pyre/shared_root/y.py"),
-                call(os.getcwd() + "/first/b/z.py", ".pyre/shared_root/b/z.py"),
-                call(os.getcwd() + "/second/a.py", ".pyre/shared_root/a.py"),
-            ])
-
-
 class PersistentTest(unittest.TestCase):
-    @patch.object(commands.Command, '_merge_directories')
+    @patch('tools.pyre.scripts.shared_source_directory.merge')
     @patch.object(commands.Persistent, '_run_null_server', return_value=None)
     def test_persistent(self, run_null_server, merge_directories) -> None:
         arguments = mock_arguments()
@@ -288,9 +255,14 @@ class CheckTest(unittest.TestCase):
 
 
 class IncrementalTest(unittest.TestCase):
+    @patch('tools.pyre.scripts.shared_source_directory.merge')
     @patch.object(commands.Command, '_state')
     @patch.object(commands, 'Start')
-    def test_incremental(self, commands_Start, commands_Command_state) -> None:
+    def test_incremental(
+            self,
+            commands_Start,
+            commands_Command_state,
+            merge) -> None:
         state = MagicMock()
         state.running = ['running']
         state.dead = []
@@ -340,7 +312,7 @@ class IncrementalTest(unittest.TestCase):
 
 class StartTest(unittest.TestCase):
     @patch('fcntl.lockf')
-    @patch.object(commands.Command, '_merge_directories')
+    @patch('tools.pyre.scripts.shared_source_directory.merge')
     def test_start(self, merge_directories, lock_file) -> None:
         arguments = mock_arguments()
         arguments.terminal = False

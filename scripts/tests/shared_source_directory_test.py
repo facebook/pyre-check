@@ -4,11 +4,12 @@
 # LICENSE file in the root directory of this source tree.
 
 import io
+import os
 import unittest
 
-from unittest.mock import patch, mock_open
+from unittest.mock import call, patch, mock_open
 
-from tools.pyre.scripts.shared_source_directory import missing
+from tools.pyre.scripts.shared_source_directory import merge, missing
 
 
 class SharedSourceDirectoryTest(unittest.TestCase):
@@ -34,3 +35,32 @@ class SharedSourceDirectoryTest(unittest.TestCase):
             open.side_effect = OSError('Injected failure')
             missing_directories = missing(['c', 'b'])
             self.assertEqual(missing_directories, None)
+
+    @patch('os.symlink')
+    @patch('os.walk')
+    @patch('os.makedirs')
+    @patch('os.path.exists')
+    def test_merge(
+            self,
+            os_path_exists,
+            os_makedirs,
+            os_walk,
+            os_symlink) -> None:
+        os_path_exists.return_value = False
+        os_walk.side_effect = [
+            [
+                ("first", [], ["x.py", "y.py", "z.cpp"]),
+                ("first/b", [], ["z.py"]),
+            ],
+            [("second", [], ["a.py"])]
+        ]
+        merge(".pyre/shared_root", ["first", "second"])
+        os_makedirs.assert_has_calls(
+            [call(".pyre/shared_root"), call(".pyre/shared_root/b")])
+        os_symlink.assert_has_calls(
+            [
+                call(os.getcwd() + "/first/x.py", ".pyre/shared_root/x.py"),
+                call(os.getcwd() + "/first/y.py", ".pyre/shared_root/y.py"),
+                call(os.getcwd() + "/first/b/z.py", ".pyre/shared_root/b/z.py"),
+                call(os.getcwd() + "/second/a.py", ".pyre/shared_root/a.py"),
+            ])

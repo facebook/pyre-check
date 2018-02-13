@@ -63,8 +63,6 @@ class Result:
 
 
 class Command:
-    SHARED_SOURCE_DIRECTORY = ".pyre/shared_source_directory"
-
     _buffer: List[str] = []
     _call_client_terminated: bool = False
 
@@ -88,6 +86,8 @@ class Command:
         self._should_merge_directories = should_merge_directories
 
         self._original_source_directories = self._source_directories
+        self._shared_directory_name = shared_source_directory\
+            .get_directory_name()
 
     def _run(self) -> None:
         pass
@@ -95,12 +95,10 @@ class Command:
     def run(self) -> None:
         if len(self._source_directories) > 1:
             if self._should_merge_directories:
-                try:
-                    shutil.rmtree(self.SHARED_SOURCE_DIRECTORY)
-                except OSError:
-                    pass
-                self._merge_directories(self.SHARED_SOURCE_DIRECTORY)
-            self._source_directories = [self.SHARED_SOURCE_DIRECTORY]
+                shared_source_directory.merge(
+                    self._shared_directory_name,
+                    self._source_directories)
+            self._source_directories = [self._shared_directory_name]
         self._run()
 
     def _flags(self):
@@ -116,42 +114,6 @@ class Command:
         if self._current_directory:
             flags.extend(['-project-root', self._current_directory])
         return flags
-
-    def _merge_directories(self, target_root):
-        if not os.path.exists(target_root):
-            os.makedirs(target_root)
-
-        def merge_directory(source_directory):
-            def add_file(path):
-                merged_path = os.path.join(target_root, path)
-                original_path = os.path.join(
-                    os.path.realpath(source_directory),
-                    path)
-                if os.path.exists(merged_path):
-                    return
-                directory = os.path.dirname(merged_path)
-                if not os.path.exists(directory):
-                    os.makedirs(directory)
-                if not path.endswith(".py") and not path.endswith(".pyi"):
-                    return
-                try:
-                    os.symlink(original_path, merged_path)
-                except OSError as error:
-                    if error.errno == errno.EEXIST:
-                        os.unlink(merged_path)
-                        os.symlink(original_path, merged_path)
-                    else:
-                        LOG.error(str(error))
-            for directory, _, files in os.walk(source_directory):
-                files = [
-                    os.path.relpath(
-                        os.path.join(directory, file), source_directory)
-                    for file in files
-                ]
-                for file in files:
-                    add_file(file)
-        for directory in self._source_directories:
-            merge_directory(directory)
 
     def _read_stdout(self, stdout) -> None:
         self._buffer = []
@@ -312,7 +274,9 @@ class Persistent(Command):
                 blocking=False).run()
 
             if len(self._source_directories) > 1:
-                source_directories = [self.SHARED_SOURCE_DIRECTORY]
+                source_directories = [
+                    shared_source_directory.get_directory_name(),
+                ]
             else:
                 source_directories = self._source_directories
             results = self._call_client(
@@ -445,15 +409,15 @@ class Check(ErrorHandling):
             configuration,
             source_directories,
             should_merge_directories=True)
-        self.SHARED_SOURCE_DIRECTORY =\
-            "{}_{}".format(self.SHARED_SOURCE_DIRECTORY,str(os.getpid()))
         self._log_identifier = arguments.log_identifier
+        self._shared_directory_name = (
+            shared_source_directory.get_directory_name(suffix=os.getpid()))
 
     def _run(self, retries: int = 1) -> None:
         flags = self._flags()
         flags.extend([
             '-stub-roots',
-            ','.join(self._configuration.get_stub_roots())
+            ','.join(self._configuration.get_stub_roots()),
         ])
         if self._log_identifier:
             flags.extend(['-log-identifier', self._log_identifier])
@@ -463,7 +427,7 @@ class Check(ErrorHandling):
             flags=flags)
         errors = self._get_errors(results)
         try:
-            shutil.rmtree(self.SHARED_SOURCE_DIRECTORY)
+            shutil.rmtree(self._shared_directory_name)
         except OSError:
             pass
         self._print(errors)
