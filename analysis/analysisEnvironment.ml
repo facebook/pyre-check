@@ -36,7 +36,7 @@ module type Handler = sig
     -> (Define.t Node.t)
     -> unit
   val register_dependency: path: string -> dependency: string -> unit
-  val register_ignore_line: location:Location.t -> codes: int list -> unit
+  val register_ignore_line: path: string -> location:Location.t -> codes: int list -> unit
   val register_global: path: string -> key: Access.t -> data:Resolution.global -> unit
   val register_type
     :  path: string
@@ -215,7 +215,8 @@ let handler
       DependencyHandler.add_dependent ~path dependency
 
 
-    let register_ignore_line ~location ~codes =
+    let register_ignore_line ~path ~location ~codes =
+      DependencyHandler.add_ignore_key ~path location;
       Hashtbl.set ~key:location ~data:codes ignore_lines
 
 
@@ -281,6 +282,7 @@ let handler
       DependencyHandler.get_alias_keys ~path |> purge_table_given_keys aliases;
       DependencyHandler.get_global_keys ~path |> purge_table_given_keys globals;
       DependencyHandler.get_dependent_keys ~path |> purge_dependents;
+      DependencyHandler.get_ignore_keys ~path |> purge_table_given_keys ignore_lines;
       DependencyHandler.clear_all_keys ~path
 
 
@@ -584,9 +586,9 @@ let resolution
          be instantiated to `int` too. *)
       let constraints =
         (class_definition primitive
-        >>| (fun definition ->
-            Annotated.Class.create definition
-            |> Annotated.Class.constraints ~instantiated:annotation ~resolution))
+         >>| (fun definition ->
+             Annotated.Class.create definition
+             |> Annotated.Class.constraints ~instantiated:annotation ~resolution))
         |> Option.value ~default:Type.Map.empty
       in
       Handler.function_definitions name
@@ -634,7 +636,7 @@ let register_ignore_lines (module Handler: Handler) ({ Source.path; _ } as sourc
       in
       { Location.path; start = position; stop = position }
     in
-    Handler.register_ignore_line ~location ~codes
+    Handler.register_ignore_line ~path ~location ~codes
   in
   Source.ignore_lines source
   |> List.map ~f:add_ignore

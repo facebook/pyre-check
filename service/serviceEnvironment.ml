@@ -371,7 +371,9 @@ let shared_memory_handler
         DependencyHandler.add_dependent ~path dependency
 
 
-      let register_ignore_line ~location ~codes =
+      let register_ignore_line ~path ~location ~codes =
+        DependencyHandler.add_ignore_key ~path location;
+        IgnoreLines.remove_batch (IgnoreLines.KeySet.singleton location);
         IgnoreLines.add location codes
 
 
@@ -437,6 +439,9 @@ let shared_memory_handler
         |> fun keys -> Globals.remove_batch (Globals.KeySet.of_list keys);
 
         DependencyHandler.get_dependent_keys ~path |> purge_dependents;
+
+        DependencyHandler.get_ignore_keys ~path
+        |> fun keys -> IgnoreLines.remove_batch (IgnoreLines.KeySet.of_list keys);
 
         DependencyHandler.clear_all_keys ~path;
     end: Environment.Handler)

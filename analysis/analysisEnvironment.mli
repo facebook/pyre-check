@@ -36,7 +36,7 @@ module type Handler = sig
     -> (Define.t Node.t)
     -> unit
   val register_dependency: path: string -> dependency: string -> unit
-  val register_ignore_line: location:Location.t -> codes: int list -> unit
+  val register_ignore_line: path: string -> location:Location.t -> codes: int list -> unit
   val register_global: path: string -> key: Access.t -> data:Resolution.global -> unit
   val register_type
     :  path: string
