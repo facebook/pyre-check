@@ -350,6 +350,42 @@ let yield parameter =
   }
 
 
+let primitive_substitution_map =
+  let complex = Primitive (Identifier.create "complex") in
+  let object_dict = Parametric { name = Identifier.create "dict"; parameters = [Top; Top] } in
+  [
+    "object", Object;
+    "typing.Any", Object;
+    "None", none;
+    "numbers.Number", complex;
+    "numbers.Complex", complex;
+    "numbers.Real", Primitive (Identifier.create "float");
+    "numbers.Integral", Primitive (Identifier.create "int");
+    "dict", object_dict;
+    "typing.Dict", object_dict;
+    "typing.Tuple", Tuple (Unbounded Object);
+    "typing.List", list Object;
+    "$bottom", Bottom;
+    "$unknown", Top;
+  ]
+  |> List.map
+    ~f:(fun (original, substitute) -> Identifier.create original, substitute)
+  |> Identifier.Map.of_alist_exn
+
+
+let parametric_substitution_map =
+  [
+    "typing.DefaultDict", "collections.defaultdict";
+    "typing.Dict", "dict";
+    "typing.FrozenSet", "frozenset";
+    "typing.List", "list";
+    "typing.Set", "set";
+  ]
+  |> List.map
+    ~f:(fun (original, substitute) -> Identifier.create original, Identifier.create substitute)
+  |> Identifier.Map.of_alist_exn
+
+
 let create ~aliases { Node.value = expression; _ } =
   match TypeCache.find expression with
   | Some result ->
@@ -446,70 +482,33 @@ let create ~aliases { Node.value = expression; _ } =
         (* Substitutions. *)
         match resolved with
         | Primitive name ->
-            (match Identifier.show name with
-             | "object"
-             | "typing.Any" ->
-                 Object
-
-             | "None" ->
-                 none
-
-             | "numbers.Number"
-             | "numbers.Complex" ->
-                 Primitive (Identifier.create "complex")
-             | "numbers.Real" ->
-                 Primitive (Identifier.create "float")
-             | "numbers.Integral" ->
-                 Primitive (Identifier.create "int")
-
-             | "dict"
-             | "typing.Dict" ->
-                 Parametric { name = Identifier.create "dict"; parameters = [Top; Top] }
-
-             | "typing.Tuple" ->
-                 Tuple (Unbounded Object)
-
-             | "typing.List" ->
-                 list Object
-
-             | "$bottom" ->
-                 Bottom
-             | "$unknown" ->
-                 Top
-
-             | _ ->
-                 resolved)
+            (match Identifier.Map.find primitive_substitution_map name with
+             | Some substitute -> substitute
+             | None -> resolved)
         | Parametric { name; parameters } ->
-            (match Identifier.show name with
-             | "typing.DefaultDict" ->
-                 Parametric { name = Identifier.create "collections.defaultdict"; parameters }
-             | "typing.Dict" ->
-                 Parametric { name = Identifier.create "dict"; parameters }
+            (match Identifier.Map.find parametric_substitution_map name with
+             | Some name ->
+                 Parametric { name; parameters }
+             | None ->
+                 (match Identifier.show name with
+                  | "typing.Optional" when List.length parameters = 1 ->
+                      optional (List.hd_exn parameters)
 
-             | "typing.FrozenSet" ->
-                 Parametric { name = Identifier.create "frozenset"; parameters }
+                  | "tuple"
+                  | "typing.Tuple" ->
+                      let tuple: tuple =
+                        match parameters with
+                        | [parameter; Primitive ellipses] when Identifier.show ellipses = "..." ->
+                            Unbounded parameter
+                        | _ -> Bounded parameters
+                      in
+                      Tuple tuple
 
-             | "typing.List" ->
-                 Parametric { name = Identifier.create "list"; parameters }
-             | "typing.Optional" when List.length parameters = 1 ->
-                 optional (List.hd_exn parameters)
+                  | "typing.Union" ->
+                      union parameters
 
-             | "tuple"
-             | "typing.Tuple" ->
-                 let tuple: tuple =
-                   match parameters with
-                   | [parameter; Primitive ellipses] when Identifier.show ellipses = "..." ->
-                       Unbounded parameter
-                   | _ -> Bounded parameters
-                 in
-                 Tuple tuple
-
-             | "typing.Set" ->
-                 Parametric { name = Identifier.create "set"; parameters }
-             | "typing.Union" ->
-                 union parameters
-             | _ ->
-                 resolved)
+                  | _ ->
+                      resolved))
         | Union elements ->
             union elements
         | _ ->
