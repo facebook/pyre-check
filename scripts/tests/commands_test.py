@@ -239,7 +239,10 @@ class ErrorHandlingTest(unittest.TestCase):
 
 
 class CheckTest(unittest.TestCase):
-    def test_check(self) -> None:
+    @patch('subprocess.check_output')
+    @patch('os.path.realpath')
+    def test_check(self, realpath, check_output) -> None:
+        realpath.side_effect = lambda x: x
         arguments = mock_arguments()
 
         configuration = mock_configuration()
@@ -256,6 +259,7 @@ class CheckTest(unittest.TestCase):
                 flags=['-project-root', '.', '-stub-roots', 'stub,root'])
 
         with patch.object(commands.Command, '_call_client') as call_client:
+            check_output.return_value = b""
             commands.Check(
                 arguments,
                 configuration,

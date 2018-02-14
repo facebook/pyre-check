@@ -37,23 +37,33 @@ class SharedSourceDirectoryTest(unittest.TestCase):
             self.assertEqual(missing_directories, None)
 
     @patch('os.symlink')
-    @patch('os.walk')
+    @patch('subprocess.check_output')
     @patch('os.makedirs')
     @patch('os.path.exists')
+    @patch('os.path.realpath')
     def test_merge(
             self,
+            os_path_realpath,
             os_path_exists,
             os_makedirs,
-            os_walk,
+            check_output,
             os_symlink) -> None:
         os_path_exists.return_value = False
-        os_walk.side_effect = [
-            [
-                ("first", [], ["x.py", "y.py", "z.cpp"]),
-                ("first/b", [], ["z.py"]),
-            ],
-            [("second", [], ["a.py"])]
-        ]
+
+        def side_effect(path):
+            if path[1].endswith("first"):
+                serialized = "\n".join(
+                    [os.path.join(os.getcwd(), path) for path in [
+                        "first/x.py",
+                        "first/y.py",
+                        "first/b/z.py",
+                    ]])
+            else:
+                serialized = os.path.join(os.getcwd(), "second/a.py")
+            return bytes(serialized, "utf-8")
+
+        check_output.side_effect = side_effect
+        os_path_realpath.side_effect = lambda x: x
         merge(".pyre/shared_root", ["first", "second"])
         os_makedirs.assert_has_calls(
             [call(".pyre/shared_root"), call(".pyre/shared_root/b")])

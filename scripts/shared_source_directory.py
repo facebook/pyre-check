@@ -8,6 +8,7 @@ import fcntl
 import logging
 import os
 import shutil
+import subprocess
 
 from typing import (
     List,
@@ -75,36 +76,38 @@ def merge(target_root: str, source_directories: List[str]) -> None:
     except OSError:
         pass
 
+    all_paths = {}
     def merge_directory(source_directory):
-        def add_file(path):
-            merged_path = os.path.join(target_root, path)
-            original_path = os.path.join(
-                os.path.realpath(source_directory),
-                path)
-            if os.path.exists(merged_path):
-                return
-            directory = os.path.dirname(merged_path)
-            if not os.path.exists(directory):
-                os.makedirs(directory)
-            if not path.endswith(".py") and not path.endswith(".pyi"):
-                return
-            try:
-                os.symlink(original_path, merged_path)
-            except OSError as error:
-                if error.errno == errno.EEXIST:
-                    os.unlink(merged_path)
-                    os.symlink(original_path, merged_path)
-                else:
-                    LOG.error(str(error))
-
-        for directory, _, files in os.walk(source_directory):
-            files = [
-                os.path.relpath(
-                    os.path.join(directory, file), source_directory)
-                for file in files
-            ]
-            for file in files:
-                add_file(file)
+        output = subprocess.check_output([
+            "find",
+            source_directory,
+            "-regextype",
+            "posix-egrep",
+            "-regex",
+            ".*(py|pyi)",
+        ])\
+            .decode('utf-8')\
+            .strip()
+        for path in output.split('\n'):
+            if path:
+                relative_path = os.path.relpath(path, source_directory)
+                all_paths[relative_path] = path
 
     for directory in source_directories:
-        merge_directory(directory)
+        merge_directory(os.path.realpath(directory))
+
+    for relative_path, original_path in all_paths.items():
+        merged_path = os.path.join(target_root, relative_path)
+        directory = os.path.dirname(merged_path)
+        try:
+            os.makedirs(directory)
+        except OSError:
+            pass
+        try:
+            os.symlink(original_path, merged_path)
+        except OSError as error:
+            if error.errno == errno.EEXIST:
+                os.unlink(merged_path)
+                os.symlink(original_path, merged_path)
+            else:
+                LOG.error(str(error))
