@@ -14,8 +14,9 @@ let refine ~resolution { annotation; mutability } refined =
       { annotation = refined; mutability }
   | Immutable { original; _ } ->
       let refine =
-        not (Type.equal refined Type.Bottom) &&
-        Resolution.less_or_equal resolution ~left:refined ~right:original
+        Type.equal refined Type.Top ||
+        (not (Type.equal refined Type.Bottom) &&
+         Resolution.less_or_equal resolution ~left:refined ~right:original)
       in
       if refine then
         { annotation = refined; mutability }

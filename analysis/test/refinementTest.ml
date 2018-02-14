@@ -19,6 +19,22 @@ let resolution =
   |> fun handler -> Environment.resolution handler ()
 
 
+let test_refine _ =
+  assert_equal
+    (refine ~resolution (create_immutable ~global:false Type.float) Type.integer)
+    (create_immutable ~global:false ~original:(Some Type.float) Type.integer);
+  assert_equal
+    (refine ~resolution (create_immutable ~global:false Type.integer) Type.float)
+    (create_immutable ~global:false Type.integer);
+
+  assert_equal
+    (refine ~resolution (create_immutable ~global:false Type.integer) Type.Bottom)
+    (create_immutable ~global:false Type.integer);
+  assert_equal
+    (refine ~resolution (create_immutable ~global:false Type.integer) Type.Top)
+    (create_immutable ~global:false ~original:(Some Type.integer) Type.Top)
+
+
 let test_less_or_equal _ =
   (* Type order is preserved. *)
   assert_true (less_or_equal ~resolution (create Type.integer) (create Type.integer));
@@ -133,6 +149,7 @@ let test_meet _ =
 
 let () =
   "annotation">:::[
+    "refine">::test_refine;
     "less_or_equal">::test_less_or_equal;
     "join">::test_join;
     "meet">::test_meet;

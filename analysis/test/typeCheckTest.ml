@@ -2734,7 +2734,6 @@ let test_check_attributes _ =
     [
       "Incompatible attribute type [8]: Attribute `attribute` declared in class `Foo` has type " ^
       "`int` but is used as type `unknown`.";
-      "Undefined attribute [16]: `int` has no attribute `something`.";
     ];
 
   (* Check attribute type resolution. *)
@@ -3700,7 +3699,20 @@ let test_check_refinement _ =
             input = set()
           return input
     |}
-    []
+    [];
+
+  assert_type_errors
+    {|
+      def bar(input: typing.Optional[int]) -> int:
+          if not input:
+            input = unknown()
+          return input
+    |}
+    [
+      "Incompatible variable type [9]: input is declared to have type `typing.Optional[int]` " ^
+      "but is used as type `unknown`.";
+      "Incompatible return type [7]: Expected `int` but got `unknown`.";
+    ]
 
 
 let test_check_toplevel _ =
