@@ -392,7 +392,7 @@ class ErrorHandling(Command):
                 internal_paths = [self._current_directory]
                 if exclude_dependencies and len(self._local_paths) > 0:
                     internal_paths = map(
-                        lambda path: self._current_directory + '/' + path,
+                        lambda path: self._original_directory + '/' + path,
                         self._local_paths)
 
                 for internal_path in internal_paths:

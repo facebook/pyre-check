@@ -180,14 +180,13 @@ class ErrorHandlingTest(unittest.TestCase):
     @patch.object(Error, '__hash__', return_value=0)
     def test_get_errors(self, error_hash, create_error) -> None:
         arguments = mock_arguments()
-        directory = os.getcwd()
-        arguments.original_directory = directory
-        arguments.current_directory = directory[directory.find('/'):]
+        arguments.original_directory = '/test'
+        arguments.current_directory = '/'
         configuration = mock_configuration()
         handler = commands.ErrorHandling(
             arguments,
             configuration,
-            source_directories=['d/e', 'f', 'f/g'])
+            source_directories=[])
         result = MagicMock()
         error = MagicMock()
         error_dictionary = {'path': 'target'}
@@ -211,6 +210,7 @@ class ErrorHandlingTest(unittest.TestCase):
             arguments,
             configuration,
             source_directories=[])
+
         result.source_directory = 'f/g'
         with patch.object(json, 'loads', return_value=[error]):
             handler._get_errors([result])
@@ -222,6 +222,20 @@ class ErrorHandlingTest(unittest.TestCase):
             handler._get_errors([result])
             handler._get_errors([result], True)
             create_error.assert_has_calls([call(False), call(True)])
+
+        arguments.original_directory = '/f/g/target'
+        arguments.target = ['//f/g:target']
+        configuration.targets = []
+        handler = commands.ErrorHandling(
+            arguments,
+            configuration,
+            source_directories=[])
+
+        result.source_directory = 'h/i'
+        with patch.object(json, 'loads', return_value=[error]):
+            handler._get_errors([result])
+            handler._get_errors([result], True)
+            create_error.assert_has_calls([call(False), call(False)])
 
 
 class CheckTest(unittest.TestCase):
