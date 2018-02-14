@@ -19,4 +19,4 @@ let pid_path configuration =
 
 
 let log_path configuration =
-  (watchman_root configuration) ^| "watchman.stderr"
+  (watchman_root configuration) ^| "watchman.stdout"
