@@ -10,10 +10,13 @@ import os
 import shutil
 import subprocess
 
+from time import time
 from typing import (
     List,
     Optional,
 )
+
+from . import log
 
 
 LOG = logging.getLogger(__name__)
@@ -67,6 +70,8 @@ def remove_list() -> None:
 
 
 def merge(target_root: str, source_directories: List[str]) -> None:
+    start = time()
+    LOG.info("Merging %d source directories", len(source_directories))
     try:
         shutil.rmtree(target_root)
     except OSError:
@@ -111,3 +116,9 @@ def merge(target_root: str, source_directories: List[str]) -> None:
                 os.symlink(original_path, merged_path)
             else:
                 LOG.error(str(error))
+
+    stop = time()
+    LOG.log(
+        log.PERFORMANCE,
+        "Merged source directories in %fs",
+        stop - start)

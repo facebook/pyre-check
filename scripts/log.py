@@ -16,6 +16,7 @@ from typing import List
 
 
 LOG = logging.getLogger(__name__)
+PERFORMANCE = 15
 PROMPT = 50
 SUCCESS = 60
 
@@ -183,6 +184,7 @@ def initialize(arguments) -> None:
         file_handler.setFormatter(SectionFormatter())
         file_handler.setLevel(logging.DEBUG)
         handlers.append(file_handler)
+    logging.addLevelName(PERFORMANCE, 'PERFORMANCE')
     logging.addLevelName(PROMPT, 'PROMPT')
     logging.addLevelName(SUCCESS, 'SUCCESS')
     logging.basicConfig(level=logging.DEBUG, handlers=handlers)
