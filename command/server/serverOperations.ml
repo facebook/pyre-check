@@ -61,28 +61,20 @@ let remove_server_files { lock_path; socket_path; pid_path; socket_link; _ } =
   Path.remove pid_path
 
 
-let stop_server ~reason server_configuration socket =
-  Statistics.event
-    ~flush:true
-    ~name:"stop server"
-    ~configuration:server_configuration.configuration
-    ~normals:["reason", reason]
-    ();
-  (let watchman_path =
-     WatchmanConstants.pid_path server_configuration.configuration
-     |> Path.absolute
-   in
-   let watchman_pid =
-     try
-       Some (Sys_utils.cat watchman_path)
-     with
-     | Sys_error _ ->
-         None
-   in
-   watchman_pid
-   >>| Int.of_string
-   >>| (fun pid -> Signal.send_i Signal.int (`Pid (Pid.of_int pid)))
-   |> ignore);
+let stop_server ~reason ({ configuration; _ } as server_configuration) socket =
+  Statistics.event ~flush:true ~name:"stop server" ~configuration ~normals:["reason", reason] ();
+  let watchman_pid =
+    try
+      WatchmanConstants.pid_path configuration
+      |> Path.absolute
+      |> Sys_utils.cat
+      |> Int.of_string
+      |> Pid.of_int
+      |> fun pid -> Some (`Pid pid)
+    with Sys_error _ ->
+      None
+  in
+  watchman_pid >>| Signal.send_i Signal.int  |> ignore;
   remove_server_files server_configuration;
   Unix.close socket;
   Worker.killall ();
