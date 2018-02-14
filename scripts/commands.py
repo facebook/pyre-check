@@ -446,7 +446,7 @@ class Incremental(ErrorHandling):
     def _read_stderr(self, _stream, source_directory):
         stderr_file = os.path.join(
             source_directory,
-            '.pyre/server/server.stdout')
+            '.pyre/server/server.stderr')
         with subprocess.Popen(
                 ['tail', '-f', stderr_file],
                 stdout=subprocess.PIPE,
