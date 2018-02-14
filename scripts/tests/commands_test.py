@@ -269,14 +269,19 @@ class CheckTest(unittest.TestCase):
 
 
 class IncrementalTest(unittest.TestCase):
+    @patch('tools.pyre.scripts.shared_source_directory.missing')
     @patch('tools.pyre.scripts.shared_source_directory.merge')
     @patch.object(commands.Command, '_state')
     @patch.object(commands, 'Start')
+    @patch.object(commands, 'Stop')
     def test_incremental(
             self,
+            commands_Stop,
             commands_Start,
             commands_Command_state,
-            merge) -> None:
+            merge,
+            missing) -> None:
+        missing.return_value = []
         state = MagicMock()
         state.running = ['running']
         state.dead = []
@@ -299,6 +304,7 @@ class IncrementalTest(unittest.TestCase):
 
         state.running = ['running']
         state.dead = ['dead']
+        missing.return_value = ['dead']
         commands_Command_state.return_value = state
 
         with patch.object(commands.Command, '_call_client') as call_client:
@@ -306,13 +312,17 @@ class IncrementalTest(unittest.TestCase):
                 arguments,
                 configuration,
                 source_directories=['running', 'dead']).run()
+            commands_Stop.assert_called_with(
+                arguments,
+                configuration,
+                ['.pyre/shared_source_directory'])
+
             commands_Start.assert_called_with(
                 arguments,
                 configuration,
                 ['running', 'dead'])
             call_client.assert_has_calls(
                 [
-                    call(command=commands.STOP, source_directories=['running']),
                     call(command=commands.INCREMENTAL,
                          source_directories=['.pyre/shared_source_directory'],
                          flags=[
