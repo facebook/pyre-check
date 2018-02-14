@@ -7,6 +7,8 @@ open Ast
 open Expression
 
 
+val rename_shadowed_variables: Source.t -> Source.t
+
 (* Resolve imports and fully qualify names. *)
 val qualify: Source.t -> Source.t
 

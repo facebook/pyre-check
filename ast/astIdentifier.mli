@@ -9,6 +9,7 @@ type t
 [@@deriving compare, eq, sexp, show, hash]
 
 module Map : Map.S with type Key.t = t
+module Set: Set.S with type Elt.t = t
 
 val create: string -> t
 

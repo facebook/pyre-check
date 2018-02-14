@@ -14,6 +14,59 @@ module Annotated = AnalysisAnnotated
 
 exception PreprocessingError
 
+
+let rename_shadowed_variables source =
+  let module Transform = Transform.Make(struct
+      type t = Identifier.Set.t
+
+      let expression shadowing_imports { Node.location; value } =
+        let value =
+          match value with
+          | Access ((Access.Identifier identifier) :: tail)
+            when Set.mem shadowing_imports identifier ->
+              let renamed =
+                let renamed =
+                  "$renamed_" ^ (Identifier.show identifier)
+                  |> Identifier.create
+                in
+                Access.Identifier renamed
+              in
+              Access (renamed :: tail)
+          | _ ->
+              value
+        in
+        shadowing_imports, { Node.location; value }
+
+      let statement shadowing_imports ({ Node.value; _ } as statement) =
+        let shadowing_imports, value =
+          match value with
+          | Import { Import.from = Some ((Access.Identifier identifier) :: _); _ }
+            when Identifier.show identifier <> "." ->
+              Set.add shadowing_imports identifier, value
+          | Define ({ Define.parameters; _ } as define) ->
+              let rename_parameter
+                  ({ Node.value = ({ Parameter.name; _ } as parameter); _ } as node) =
+                let renamed =
+                  if Set.mem shadowing_imports name then
+                    "$renamed_" ^ (Identifier.show name)
+                    |> Identifier.create
+                  else
+                    name
+                in
+                { node with Node.value = { parameter with Parameter.name = renamed } }
+              in
+              shadowing_imports,
+              (Define { define with Define.parameters = List.map ~f:rename_parameter parameters })
+          | _ ->
+              shadowing_imports, value
+        in
+        shadowing_imports, [{ statement with Node.value }]
+    end)
+  in
+  Transform.transform Identifier.Set.empty source
+  |> snd
+
+
 let qualify source =
   let qualifier = source.Source.qualifier in
 
@@ -988,7 +1041,8 @@ let dequalify_map source =
 
 
 let preprocess source =
-  qualify source
+  rename_shadowed_variables source
+  |> qualify
   |> replace_version_specific_stubs
   |> fix_singleton_sets
   |> expand_optional_assigns

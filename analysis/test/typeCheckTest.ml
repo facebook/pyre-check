@@ -1761,6 +1761,17 @@ let test_check_function_parameters _ =
       "Incompatible parameter type [6]: 1st parameter `i` to call `int_to_int` expected `int` " ^
       "but got `float`.";
     ];
+  assert_type_errors
+    {|
+      def preprocessed($renamed_i: str) -> None:
+        pass
+      def foo() -> None:
+        preprocessed(1.0)
+    |}
+    [
+      "Incompatible parameter type [6]: 1st parameter `i` to call `preprocessed` expected `str` " ^
+      "but got `float`.";
+    ];
 
   assert_type_errors
     {|
@@ -4447,7 +4458,7 @@ let test_infer _ =
       def test_bad_import(x: A.C):
           return 5
     |}
-    [{|[{"name":"x","type":"C","value":null}]|}] (* Should be A.C *)
+    [{|[{"name":"x","type":"$renamed_A.C","value":null}]|}] (* Should be A.C *)
 
 
 let test_infer_backward _ =

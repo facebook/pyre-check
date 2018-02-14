@@ -14,6 +14,36 @@ open Statement
 open Test
 
 
+let test_rename_shadowed_variables _ =
+  let assert_rename ?(qualifier = "some/qualifier") source expected =
+    let parse =
+      parse ~qualifier:(Source.qualifier ~path:qualifier) in
+    assert_source_equal
+      (Preprocessing.rename_shadowed_variables (parse source))
+      (parse expected)
+  in
+
+  assert_rename
+    {|
+      from a import b
+      from a import c
+      def foo(a: A):
+        a.attribute = 1
+        1 + a
+        bar(a)
+        a = b
+    |}
+    {|
+      from a import b
+      from a import c
+      def foo($renamed_a: A):
+        $renamed_a.attribute = 1
+        1 + $renamed_a
+        bar($renamed_a)
+        $renamed_a = b
+    |}
+
+
 let test_qualify _ =
   let assert_qualify ?(qualifier = "some/qualifier") source expected =
     let parse =
@@ -1056,6 +1086,7 @@ let test_classes _ =
 
 let () =
   "preprocessing">:::[
+    "rename_shadowed_variables">::test_rename_shadowed_variables;
     "qualify">::test_qualify;
     "replace_version_specific_stubs">::test_replace_version_specific_stubs;
     "expand_optional_assigns">::test_expand_optional_assigns;

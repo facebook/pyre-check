@@ -368,11 +368,15 @@ let description
           | Some parent -> Format.asprintf "%a." Access.pp parent
           | _ -> ""
         in
+        let name =
+          let replaced = Str.global_replace (Str.regexp "^\\$.*_") "" (Identifier.show name) in
+          "`" ^ replaced ^ "`"
+        in
         [
           Format.asprintf
-            "%s parameter %a to call `%s%a` expected %a but got %a."
+            "%s parameter %s to call `%s%a` expected %a but got %a."
             (ordinal position)
-            Identifier.pp name
+            name
             parent
             Access.pp callee_name
             Type.pp expected
