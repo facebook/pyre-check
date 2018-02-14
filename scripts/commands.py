@@ -239,10 +239,13 @@ class Command:
     def _source_directory_string(self, source_directories=None):
         if not source_directories:
             source_directories = self._source_directories
-        return ', '.join(
+        return ',\n   '.join(
             '`{}`'.format(self._relative_path(source_directory))
             for source_directory
             in source_directories)
+
+    def _variable_spacing_string(self, newline=False):
+        return '\n   ' if newline else ' '
 
     def on_client_exception(self) -> None:
         pass
@@ -468,10 +471,13 @@ class Incremental(ErrorHandling):
         dead = self._state().dead
         if dead:
             LOG.warning(
-                '%s not running at %s. Starting...',
+                '%s not running at%s%s.%sStarting...',
                 self._server_string(dead).capitalize(),
-                self._source_directory_string(
-                    self._original_source_directories))
+                self._variable_spacing_string(
+                    len(self._original_source_directories) > 1),
+                self._source_directory_string(self._original_source_directories),
+                self._variable_spacing_string(
+                    len(self._original_source_directories) > 1))
             arguments = self._arguments
             arguments.terminal = False
             arguments.no_watchman = False
@@ -575,8 +581,9 @@ class Stop(Command):
                 source_directories=running)
             self._check_results(results)
             LOG.info(
-                'Stopped %s at %s',
+                'Stopped %s at%s%s',
                 self._server_string(running),
+                self._variable_spacing_string(len(running) > 1),
                 self._source_directory_string(running))
             shared_source_directory.remove_list()
         else:
@@ -640,8 +647,9 @@ class Kill(Command):
             LOG.warning("No %s running", self._server_string(running))
         else:
             LOG.info(
-                "Terminated %s at %s",
+                "Terminated %s at%s%s",
                 self._server_string(running),
+                self._variable_spacing_string(len(running) > 1),
                 self._source_directory_string(running))
 
     def _kill(self, path) -> None:
