@@ -555,7 +555,7 @@ let start_command =
        +> flag
          "-log-file"
          (optional file)
-         ~doc:(Format.sprintf "filename Log file (Default is ./pyre/server/server.stdout)")
+         ~doc:(Format.sprintf "filename Log file (Default is ./pyre/server/server.stderr)")
        +> flag
          "-terminal"
          no_arg

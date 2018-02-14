@@ -62,7 +62,7 @@ let create
   let log_path =
     Option.value
       log_path
-      ~default:(Path.create_relative ~root:server_root ~relative:"server.stdout")
+      ~default:(Path.create_relative ~root:server_root ~relative:"server.stderr")
   in
   {
     socket_path = socket_path ~create:true configuration;
