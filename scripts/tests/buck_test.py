@@ -92,10 +92,10 @@ class BuckTest(unittest.TestCase):
 
     def test_build_targets(self) -> None:
         with patch.object(subprocess, 'check_output') as buck_build:
-            buck._build_targets({'//t/...': {
+            buck._build_targets(list({'//t/...': {
                 '//t:subtarget': 'subtarget destination',
                 '//t:subtarget2': 'subtarget2 destination'}
-            })
+            }.keys()))
             buck_build.assert_called_once_with(
                 ['buck', 'build', '//t/...'],
                 stderr=subprocess.DEVNULL)
@@ -121,3 +121,12 @@ class BuckTest(unittest.TestCase):
                     ['target1', 'target2'], build=False, prompt=True)
                 mock_normalize.assert_has_calls(
                     [call('target'), call('target1'), call('target2')])
+
+        mock_find_source_directories.return_value = BuckOut(  # noqa
+            ['new_tree'],
+            [])
+        with patch.object(buck, '_normalize') as mock_normalize:
+            with patch.object(buck, '_build_targets') as mock_build:
+                buck.generate_source_directories(
+                    ['target'], build=True, prompt=True)
+                mock_build.assert_not_called()

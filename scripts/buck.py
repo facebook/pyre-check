@@ -71,19 +71,20 @@ def _normalize(targets: List[str]) -> List[str]:
             'Could not normalize targets. Check the paths or run `buck clean`.')
 
 
-def _build_targets(targets) -> None:
-    for target in targets:
-        LOG.info('Building `%s`', target)
-        command = ['buck', 'build']
-        command.append(target)
-        try:
-            subprocess.check_output(
-                command,
-                stderr=subprocess.DEVNULL)
-            LOG.warning("Finished building targets.")
-        except subprocess.CalledProcessError:
-            raise BuckException(
-                'Could not build targets `{}`.'.format(target))
+def _build_targets(targets: List[str]) -> None:
+    LOG.info(
+        'Building target%s `%s`',
+        's:' if len(targets) > 1 else '',
+        '`, `'.join(targets))
+    command = ['buck', 'build'] + targets
+    try:
+        subprocess.check_output(
+            command,
+            stderr=subprocess.DEVNULL)
+        LOG.warning("Finished building targets.")
+    except subprocess.CalledProcessError:
+        raise BuckException(
+            'Could not build targets. Check the paths or run `buck clean`.')
 
 
 def generate_source_directories(original_targets, build, prompt=True):
@@ -108,8 +109,8 @@ def generate_source_directories(original_targets, build, prompt=True):
                         normalized_targets_map[pair[0]] = ''
             full_targets_map[original_target] = normalized_targets_map
 
-    if build:
-        _build_targets(full_targets_map.keys())
+    if build and full_targets_map:
+        _build_targets(list(full_targets_map.keys()))
 
     unbuilt_targets = []
     for target_name, normalized_targets_map in full_targets_map.items():
