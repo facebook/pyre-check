@@ -5,6 +5,7 @@
 
 import io
 import os
+import tempfile
 import unittest
 
 from unittest.mock import call, patch, mock_open
@@ -12,6 +13,7 @@ from unittest.mock import call, patch, mock_open
 from ..shared_source_directory import (  # noqa
     merge,
     missing,
+    _find_python_paths_at_root,
     __name__ as shared_source_directory_name,
 )
 
@@ -39,6 +41,31 @@ class SharedSourceDirectoryTest(unittest.TestCase):
             open.side_effect = OSError('Injected failure')
             missing_directories = missing(['c', 'b'])
             self.assertEqual(missing_directories, None)
+
+    def test_find_python_paths_at_root(self):
+        root = tempfile.mkdtemp()
+
+        def create_file(name: str) -> None:
+            file = open(os.path.join(root, name), "w+")
+            file.close()
+
+        create_file("a.py")
+        create_file("b.pyi")
+        create_file("c.cpp")
+        os.mkdir(os.path.join(root, "mypy"))
+        os.mkdir(os.path.join(root, "scipyi"))
+        os.mkdir(os.path.join(root, "spy.py"))
+        create_file("mypy/my.py")
+        create_file("scipyi/sci.pyi")
+        actual_paths = sorted(
+            os.path.relpath(path, root)
+            for path in _find_python_paths_at_root(root)
+        )
+        self.assertEqual(
+            actual_paths,
+            ['a.py', 'b.pyi', 'mypy/my.py', 'scipyi/sci.pyi']
+        )
+
 
     @patch('{}._is_empty'.format(shared_source_directory_name))
     @patch('os.symlink')

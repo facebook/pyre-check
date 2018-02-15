@@ -76,6 +76,23 @@ def _is_empty(path: str) -> bool:
         return False
 
 
+# Exposed for testing.
+def _find_python_paths_at_root(root: str) -> List[str]:
+    output = subprocess.check_output([
+        "find",
+        root,
+        "-regextype",
+        "posix-egrep",
+        "-regex",
+        r".*\.(py|pyi)",
+        "-type",
+        "f",
+    ])\
+        .decode('utf-8')\
+        .strip()
+    return output.split('\n')
+
+
 def merge(target_root: str, source_directories: List[str]) -> None:
     start = time()
     LOG.info("Merging %d source directories", len(source_directories))
@@ -90,17 +107,8 @@ def merge(target_root: str, source_directories: List[str]) -> None:
 
     all_paths = {}
     def merge_directory(source_directory):
-        output = subprocess.check_output([
-            "find",
-            source_directory,
-            "-regextype",
-            "posix-egrep",
-            "-regex",
-            ".*(py|pyi)",
-        ])\
-            .decode('utf-8')\
-            .strip()
-        for path in output.split('\n'):
+        paths = _find_python_paths_at_root(source_directory)
+        for path in paths:
             if path:
                 # don't symlink empty __init__ files which might
                 # override legitimate ones
