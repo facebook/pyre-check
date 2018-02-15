@@ -114,8 +114,7 @@ def main() -> int:
     persistent.add_argument(
         '--no-watchman',
         action='store_true',
-        help='Do not spawn a watchman client in the background.'
-        ' control changes')
+        help='Do not spawn a watchman client in the background.')
     persistent.set_defaults(command=commands.Persistent, noninteractive=True)
 
     start = parsed_commands.add_parser(commands.START)
@@ -126,8 +125,7 @@ def main() -> int:
     start.add_argument(
         '--no-watchman',
         action='store_true',
-        help='Do not spawn a watchman client in the background.'
-        ' control changes')
+        help='Do not spawn a watchman client in the background.')
     start.set_defaults(command=commands.Start)
 
     stop = parsed_commands.add_parser(commands.STOP)
@@ -141,8 +139,7 @@ def main() -> int:
     restart.add_argument(
         '--no-watchman',
         action='store_true',
-        help='Do not spawn a watchman client in the background.'
-        ' control changes')
+        help='Do not spawn a watchman client in the background.')
     restart.set_defaults(command=commands.Restart)
 
     kill = parsed_commands.add_parser(commands.KILL)
