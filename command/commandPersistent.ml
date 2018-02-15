@@ -12,9 +12,9 @@ module Time = Core_kernel.Time_ns.Span
 module Protocol = ServerProtocol
 module Socket = CommandSocket
 
-let run_command version source_root () =
+let run_command version log_identifier source_root () =
   let source_root = Path.create_absolute source_root in
-  let configuration = Configuration.create ~source_root ?version () in
+  let configuration = Configuration.create ~source_root ~log_identifier ?version () in
   let connect_to_server () =
     let server_socket =
       try
@@ -152,5 +152,9 @@ let command =
     Command.Spec.(
       empty
       +> flag "-version" (optional string) ~doc:"Pyre version"
+      +> flag
+        "-log-identifier"
+        (optional_with_default "" string)
+        ~doc:"Add given identifier to logged samples."
       +> anon (maybe_with_default "." ("source-root" %: string)))
     run_command
