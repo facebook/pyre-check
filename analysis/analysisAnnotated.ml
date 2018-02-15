@@ -322,7 +322,7 @@ module Class = struct
             >>= constraints
               ~visited:(Set.add visited key)
               ~instantiated:(Type.instantiate ~constraints:(Map.find map)
-              instantiated)
+                               instantiated)
           in
           List.find_map ~f:base_constraints bases
     in
@@ -467,22 +467,12 @@ module Class = struct
 
       (* Handle enumeration attributes. *)
       let annotation, value =
-        let enumerations =
-          String.Set.of_list
-            [
-              "enum.Enum";
-              "enum.IntEnum";
-              "util.enum.Enum";
-              "util.enum.IntEnum";
-              "util.enum.StringEnum";
-            ]
-        in
         let superclasses =
           superclasses ~resolution parent
           |> List.map ~f:(fun definition -> name definition |> Access.show)
           |> String.Set.of_list
         in
-        if Set.length (Set.inter enumerations superclasses) > 0 then
+        if not (Set.is_empty (Set.inter Recognized.enumeration_classes superclasses)) then
           Some (class_annotation ~resolution parent), None  (* Enums override values. *)
         else
           annotation, value

@@ -449,19 +449,6 @@ module Define = struct
 
 
   let property_attribute_assign ~location ({ name; return_annotation; _ } as define) =
-    let property_annotations =
-      [
-        "abc.abstractproperty";
-        "libfb.py.decorators.lazy_property";
-        "nodeapi.privacy.viewer_context_properties.privacy_lazy_property";
-        "property";
-        "util.classproperty";
-        "util.etc.cached_classproperty";
-        "util.etc.cached_property";
-        "util.etc.class_property";
-        "util.etc.lazy_property";
-      ]
-    in
     let assign return_annotation =
       Node.create
         ~location
@@ -473,7 +460,7 @@ module Define = struct
           parent = None;
         }
     in
-    match List.find ~f:(has_decorator define) property_annotations with
+    match String.Set.find ~f:(has_decorator define) Recognized.property_decorators with
     | Some "util.classproperty"
     | Some "util.etc.cached_classproperty"
     | Some "util.etc.class_property" ->

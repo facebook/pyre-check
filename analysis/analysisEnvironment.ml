@@ -814,19 +814,11 @@ let connect_type_order
 
             (* Handle enumeration constants. *)
             let enumeration { Argument.value; _ } =
-              let enumerations =
-                (* Custom enumeration classes. *)
-                [
-                  "enum.Enum";
-                  "enum.IntEnum";
-                  "util.enum.Enum";
-                  "util.enum.IntEnum";
-                  "util.enum.StringEnum";
-                ]
-              in
               match parse_annotation value with
               | Type.Primitive identifier
-                when List.mem ~equal:String.equal enumerations (Identifier.show identifier) ->
+                when String.Set.mem
+                    Recognized.enumeration_classes
+                    (Identifier.show identifier) ->
                   Some (Access.create (Identifier.show identifier))
               | _ ->
                   None
