@@ -87,6 +87,7 @@ let run_command version source_root () =
   >>| InitializeResponse.to_yojson
   >>| LanguageServer.Protocol.write_message Out_channel.stdout |> ignore;
 
+  Statistics.event ~flush:true ~name:"persistent_client_launch" ~configuration ();
   (* Get all initial errors *)
   Socket.write
     server_socket
