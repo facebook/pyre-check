@@ -108,6 +108,7 @@ def merge(target_root: str, source_directories: List[str]) -> None:
                     relative_path = os.path.relpath(path, source_directory)
                     all_paths[relative_path] = path
 
+    LOG.info("Constructing shared directory...")
     for directory in source_directories:
         merge_directory(os.path.realpath(directory))
 

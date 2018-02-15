@@ -85,7 +85,7 @@ class BuckTest(unittest.TestCase):
 
     def test_normalize(self) -> None:
         with patch.object(subprocess, 'check_output') as buck_targets:
-            buck._normalize('target_path')
+            buck._normalize(['target_path'])
             buck_targets.assert_called_once_with(
                 ['buck', 'targets', 'target_path', '--show-output'],
                 stderr=subprocess.DEVNULL)

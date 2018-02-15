@@ -5,7 +5,9 @@ import logging
 import os
 import subprocess
 import sys
+
 from collections import namedtuple
+from typing import List
 from . import log
 
 LOG = logging.getLogger(__name__)
@@ -52,17 +54,21 @@ def _find_source_directories(targets_map):
     return BuckOut(source_directories, targets_not_found)
 
 
-def _normalize(target):
-    LOG.info('Normalizing target `%s`', target)
+def _normalize(targets: List[str]) -> List[str]:
+    LOG.info(
+        'Normalizing target%s `%s`',
+        's:' if len(targets) > 1 else '',
+        '`, `'.join(targets))
     try:
+        command = ['buck', 'targets'] + targets
+        command.append('--show-output')
         targets_to_destinations = subprocess.check_output(
-            ['buck', 'targets', target, '--show-output'],
+            command,
             stderr=subprocess.DEVNULL).decode().strip().split('\n')
         return targets_to_destinations
     except subprocess.CalledProcessError:
         raise BuckException(
-            'Could not normalize target `{}`.\n   '
-            'Check the target path or run `buck clean`.'.format(target))
+            'Could not normalize targets. Check the paths or run `buck clean`.')
 
 
 def _build_targets(targets) -> None:
@@ -77,7 +83,7 @@ def _build_targets(targets) -> None:
             LOG.warning("Finished building targets.")
         except subprocess.CalledProcessError:
             raise BuckException(
-                'Could not build target `{}`.'.format(target))
+                'Could not build targets `{}`.'.format(target))
 
 
 def generate_source_directories(original_targets, build, prompt=True):
@@ -86,16 +92,21 @@ def generate_source_directories(original_targets, build, prompt=True):
     source_directories = buck_out.source_directories
 
     full_targets_map = {}
-    for original_target in buck_out.targets_not_found:
-        targets_to_destinations = _normalize(original_target)
-        normalized_targets_map = {}
-        for target_destination_pair in targets_to_destinations:
-            pair = target_destination_pair.split(' ')
-            if len(pair) > 1:
-                normalized_targets_map[pair[0]] = pair[1]
-            else:
-                normalized_targets_map[pair[0]] = ''
-        full_targets_map[original_target] = normalized_targets_map
+    if buck_out.targets_not_found:
+        targets_to_destinations = _normalize(buck_out.targets_not_found)
+
+        for original_target in buck_out.targets_not_found:
+            normalized_targets_map = {}
+            for target_destination_pair in targets_to_destinations:
+                pair = target_destination_pair.split(' ')
+                if presumed_target_root(pair[0]).startswith(
+                    presumed_target_root(original_target)
+                ):
+                    if len(pair) > 1:
+                        normalized_targets_map[pair[0]] = pair[1]
+                    else:
+                        normalized_targets_map[pair[0]] = ''
+            full_targets_map[original_target] = normalized_targets_map
 
     if build:
         _build_targets(full_targets_map.keys())
