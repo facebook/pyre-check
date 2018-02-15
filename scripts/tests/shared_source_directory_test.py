@@ -9,7 +9,11 @@ import unittest
 
 from unittest.mock import call, patch, mock_open
 
-from tools.pyre.scripts.shared_source_directory import merge, missing
+from ..shared_source_directory import (  # noqa
+    merge,
+    missing,
+    __name__ as shared_source_directory_name,
+)
 
 
 class SharedSourceDirectoryTest(unittest.TestCase):
@@ -36,6 +40,7 @@ class SharedSourceDirectoryTest(unittest.TestCase):
             missing_directories = missing(['c', 'b'])
             self.assertEqual(missing_directories, None)
 
+    @patch('{}._is_empty'.format(shared_source_directory_name))
     @patch('os.symlink')
     @patch('subprocess.check_output')
     @patch('os.makedirs')
@@ -47,7 +52,9 @@ class SharedSourceDirectoryTest(unittest.TestCase):
             os_path_exists,
             os_makedirs,
             check_output,
-            os_symlink) -> None:
+            os_symlink,
+            is_empty) -> None:
+        is_empty.return_value = False
         os_path_exists.return_value = False
 
         def side_effect(path):

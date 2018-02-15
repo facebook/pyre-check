@@ -69,6 +69,13 @@ def remove_list() -> None:
         pass
 
 
+def _is_empty(path: str) -> bool:
+    try:
+        return os.stat(path).st_size == 0
+    except FileNotFoundError:
+        return False
+
+
 def merge(target_root: str, source_directories: List[str]) -> None:
     start = time()
     LOG.info("Merging %d source directories", len(source_directories))
@@ -95,8 +102,11 @@ def merge(target_root: str, source_directories: List[str]) -> None:
             .strip()
         for path in output.split('\n'):
             if path:
-                relative_path = os.path.relpath(path, source_directory)
-                all_paths[relative_path] = path
+                # don't symlink empty __init__ files which might
+                # override legitimate ones
+                if not _is_empty(path):
+                    relative_path = os.path.relpath(path, source_directory)
+                    all_paths[relative_path] = path
 
     for directory in source_directories:
         merge_directory(os.path.realpath(directory))
