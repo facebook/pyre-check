@@ -1019,8 +1019,7 @@ module State = struct
         List.fold ~init:errors ~f:add_error
       in
 
-      let check_parameters ~resolution call =
-        function
+      let check_parameters ~resolution call = function
         | Some ({ Signature.instantiated = callee; _ } as signature) ->
             let check_parameter ~argument:_ ~position ~offset ~location ~name ~actual ~expected =
               if not (Resolution.less_or_equal resolution ~left:actual ~right:expected) then
