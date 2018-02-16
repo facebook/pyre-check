@@ -48,22 +48,19 @@ let run_command version log_identifier source_root () =
   in
 
   (* Log stderr to file *)
-  let log_path, link_path =
+  let log_path =
     let persistent_client_directory =
       Configuration.pyre_root configuration
       |> Path.append ~element:"persistent"
       |> Path.absolute
     in
-    persistent_client_directory ^/ "client_" ^ (Uuid.create () |> Uuid.to_string),
     persistent_client_directory ^/ "client.log"
   in
   Unix.handle_unix_error (fun () -> Unix.mkdir_p (Filename.dirname log_path));
+  let log_path = Log.rotate log_path in
   Format.pp_set_formatter_out_channel
     Format.err_formatter
     (Out_channel.create log_path);
-  (* Create a link for the most recent persistent client *)
-  (try Unix.unlink link_path with | Unix.Unix_error _ -> ());
-  Unix.symlink ~src:log_path ~dst:link_path;
 
   let server_socket = connect_to_server () in
 
