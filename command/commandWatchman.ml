@@ -227,7 +227,8 @@ let run_command daemonize verbose sections _ source_root () =
   if daemonize then
     begin
       let stdin = Daemon.null_fd () in
-      let stdout = Daemon.fd_of_path (Path.absolute (log_path configuration)) in
+      let log_path = Log.rotate (Path.absolute (log_path configuration)) in
+      let stdout = Daemon.fd_of_path log_path in
       Log.info "Spawning the watchman daemon now.";
       let { Daemon.pid; _ } as handle =
         Daemon.spawn

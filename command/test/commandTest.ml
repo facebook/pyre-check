@@ -35,8 +35,9 @@ let mock_server_configuration
     ?(source_root = Path.current_working_directory ())
     ?version
     () =
+  let temporary = Filename.temp_file "" "" in
   ServerConfiguration.create
-    ~log_path:(Path.create_absolute "/dev/null")
+    ~log_path:(Path.create_absolute temporary)
     (mock_analysis_configuration ~source_root ?version ())
 
 

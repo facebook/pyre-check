@@ -33,7 +33,6 @@ let test_watchman_exists context =
   let watchman_root = (Configuration.pyre_root configuration) ^| "watchman" in
   let pid_path = watchman_root ^| "watchman.pid" in
   let lock_path = watchman_root ^| "watchman.lock" in
-
   let set_up _ =
     Format.pp_set_formatter_out_channel
       Format.err_formatter (Out_channel.create "/dev/null");

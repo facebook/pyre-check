@@ -483,7 +483,8 @@ let start ({
 
     if daemonize then
       let stdin = Daemon.null_fd () in
-      let stdout = Daemon.fd_of_path (Path.absolute log_path) in
+      let log_path = Log.rotate (Path.absolute log_path) in
+      let stdout = Daemon.fd_of_path log_path in
       Log.log ~section:`Server "Spawning the daemon now.";
       let { Daemon.pid; _ } as handle =
         Daemon.spawn
