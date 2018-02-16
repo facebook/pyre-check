@@ -1468,7 +1468,7 @@ module Access = struct
             resolved,
             (f accumulator ~annotations ~resolved ~element:(Element.Method element))
 
-        | Some (access, annotation), ([Access.Identifier _] as attribute_access) -> (
+        | Some (access, annotation), ([Access.Identifier _] as attribute_access) ->
             (* Attribute access. *)
             let annotation, class_attributes =
               if Type.is_meta (Annotation.annotation annotation) then
@@ -1525,7 +1525,7 @@ module Access = struct
                    resolution,
                    resolved,
                    (f accumulator ~annotations ~resolved ~element:(Element.Attribute attribute)))
-            |> Option.value ~default:(resolution, Annotation.create Type.Top, accumulator))
+            |> Option.value ~default:(resolution, Annotation.create Type.Top, accumulator)
 
         | Some (_, annotation), (Access.Subscript subscript) :: _ ->
             (* Array access. *)
