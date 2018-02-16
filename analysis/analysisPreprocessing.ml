@@ -348,46 +348,6 @@ let qualify source =
     end)
   in
 
-  let module Cleanup = Transform.Make(struct
-      type t = unit
-
-      let expression _ expression =
-        (), expression
-
-      let statement _ ({ Node.location; value } as statement) =
-        let statement =
-          match value with
-          | Class ({ Class.body; _ } as definition) ->
-              let dequalify_attribute ({ Node.value; _ } as statement) =
-                let value =
-                  match value with
-                  | Assign ({
-                      Assign.target = ({ Node.value = Access access; _ } as target);
-                      _;
-                    } as assign)
-                    when List.length access > 1 ->
-                      let access =
-                        List.rev access
-                        |> List.hd_exn
-                      in
-                      Assign {
-                        assign with Assign.target = { target with Node.value = Access [access]};
-                      }
-                  | _ ->
-                      value
-                in
-                { statement with Node.value }
-              in
-              {
-                Node.location;
-                value = Class { definition with Class.body = List.map ~f:dequalify_attribute body };
-              }
-          | _ ->
-              statement
-        in
-        (), [statement]
-    end)
-  in
 
   let map =
     let collect_globals sofar = function
@@ -411,7 +371,61 @@ let qualify source =
 
   let map, source = OrderIndependent.transform ~shallow:true map source in
   OrderDependent.transform (qualifier, map) source |> snd
-  |> Cleanup.transform () |> snd
+
+
+let cleanup source =
+  let module Cleanup = Transform.Make(struct
+      type t = unit
+
+      let expression _ expression =
+        (), expression
+
+      let statement _ ({ Node.location; value } as statement) =
+        let statement =
+          match value with
+          | Class ({ Class.body; _ } as definition) ->
+              let dequalify_attribute ({ Node.value; _ } as statement) =
+                let value =
+                  match value with
+                  | Assign ({
+                      Assign.target = ({ Node.value = Access access; _ } as target);
+                      _;
+                    } as assign)
+                    when List.length access > 0 ->
+                      let access =
+                        let last =
+                          List.rev access
+                          |> List.hd_exn
+                        in
+                        match last with
+                        | Access.Identifier name ->
+                            let renamed =
+                              Str.global_replace (Str.regexp "\\$.*_") "" (Identifier.show name)
+                              |> Identifier.create
+                            in
+                            Access.Identifier renamed
+                        | last ->
+                            last
+                      in
+                      Assign {
+                        assign with Assign.target = { target with Node.value = Access [access]};
+                      }
+                  | _ ->
+                      value
+                in
+                { statement with Node.value }
+              in
+              {
+                Node.location;
+                value = Class { definition with Class.body = List.map ~f:dequalify_attribute body };
+              }
+          | _ ->
+              statement
+        in
+        (), [statement]
+    end)
+  in
+  Cleanup.transform () source |> snd
 
 
 let replace_version_specific_stubs ( { Source.path; _ } as source) =
@@ -1084,6 +1098,7 @@ let dequalify_map source =
 let preprocess source =
   rename_shadowed_variables source
   |> qualify
+  |> cleanup
   |> replace_version_specific_stubs
   |> fix_singleton_sets
   |> expand_optional_assigns

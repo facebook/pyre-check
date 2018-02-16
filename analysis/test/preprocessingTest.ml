@@ -41,6 +41,17 @@ let test_rename_shadowed_variables _ =
         1 + $renamed_a
         bar($renamed_a)
         $renamed_a = b
+    |};
+  assert_rename
+    {|
+      from a import b
+      class Foo:
+        a: int = 1
+    |}
+    {|
+      from a import b
+      class Foo:
+        $renamed_a: int = 1
     |}
 
 
@@ -351,26 +362,43 @@ let test_qualify _ =
       import a as b
       def some.qualifier.foo(a: A):
         a.attribute = 1
-    |};
+    |}
 
-  assert_qualify
+
+let test_cleanup _ =
+  let assert_cleanup ?(qualifier = "some/qualifier") source expected =
+    let parse =
+      parse ~qualifier:(Source.qualifier ~path:qualifier) in
+    assert_source_equal
+      (Preprocessing.cleanup (parse source))
+      (parse expected)
+  in
+
+  assert_cleanup
     {|
       class Foo:
         attribute: int = 1
     |}
     {|
-      class some.qualifier.Foo:
+      class Foo:
         attribute: int = 1
     |};
-  assert_qualify
+  assert_cleanup
     {|
-      def attribute() -> None: pass
       class Foo:
-        attribute: int = 1
+        Foo.attribute: int = 1
     |}
     {|
-      def some.qualifier.attribute() -> None: pass
-      class some.qualifier.Foo:
+      class Foo:
+        attribute: int = 1
+    |};
+  assert_cleanup
+    {|
+      class Foo:
+        $renamed_attribute: int = 1
+    |}
+    {|
+      class Foo:
         attribute: int = 1
     |}
 
@@ -1109,6 +1137,7 @@ let () =
   "preprocessing">:::[
     "rename_shadowed_variables">::test_rename_shadowed_variables;
     "qualify">::test_qualify;
+    "cleanup">::test_cleanup;
     "replace_version_specific_stubs">::test_replace_version_specific_stubs;
     "expand_optional_assigns">::test_expand_optional_assigns;
     "expand_operators">::test_expand_operators;
