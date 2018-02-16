@@ -107,3 +107,42 @@ module Color = struct
   let yellow string =
     Format.asprintf "\027[33m%s\027[0m" string
 end
+
+
+let rotate ?(number_to_keep = 10) basename =
+  let timestamp =
+    Time.to_filename_string ~zone:(force Time.Zone.local) (Time.now ())
+  in
+  let suppress_system_error f =
+    try
+      f ()
+    with
+    | Sys_error _
+    | Unix.Unix_error _ ->
+        ()
+  in
+  let rotate_old_logs () =
+    Filename.dirname basename
+    |> Sys.ls_dir
+    (* The "." is to prevent us from counting a symlinked log as a log to keep. *)
+    |> List.filter ~f:(String.is_prefix ~prefix:((Filename.basename basename) ^ "."))
+    |> List.sort ~cmp:String.compare (* Sorts by earliest date, i.e. least recent *)
+    |> List.rev
+    |> (fun list -> List.drop list number_to_keep)
+    |> List.iter
+      ~f:(fun path ->
+          suppress_system_error (fun () -> Unix.remove (Filename.dirname basename ^/ path)))
+  in
+  suppress_system_error rotate_old_logs;
+  let is_file_or_link path =
+    try
+      let { Unix.st_kind; _ } = Unix.lstat path in
+      st_kind = Unix.S_LNK || st_kind = Unix.S_REG
+    with Unix.Unix_error _ ->
+      false
+  in
+  if is_file_or_link basename then
+    suppress_system_error (fun () -> Unix.unlink basename);
+  let actual_path = Format.sprintf "%s.%s" basename timestamp in
+  suppress_system_error (fun () -> Unix.symlink ~src:actual_path ~dst:basename);
+  actual_path

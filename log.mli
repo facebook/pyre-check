@@ -41,3 +41,5 @@ val print: ('a, Format.formatter, unit, unit, unit, unit) Core.format6 -> 'a
 module Color : sig
   val yellow: string -> string
 end
+
+val rotate: ?number_to_keep: int -> string -> string
