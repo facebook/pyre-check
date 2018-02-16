@@ -351,6 +351,27 @@ let test_qualify _ =
       import a as b
       def some.qualifier.foo(a: A):
         a.attribute = 1
+    |};
+
+  assert_qualify
+    {|
+      class Foo:
+        attribute: int = 1
+    |}
+    {|
+      class some.qualifier.Foo:
+        attribute: int = 1
+    |};
+  assert_qualify
+    {|
+      def attribute() -> None: pass
+      class Foo:
+        attribute: int = 1
+    |}
+    {|
+      def some.qualifier.attribute() -> None: pass
+      class some.qualifier.Foo:
+        attribute: int = 1
     |}
 
 
