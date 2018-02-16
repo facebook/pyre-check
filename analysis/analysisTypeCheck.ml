@@ -1055,7 +1055,7 @@ module State = struct
               signature
         | None -> []
       in
-      (* Check a full access sequence, including available attributes and calls. *)
+
       let check_access ~resolution errors { Node.location; value = access } =
         let check_access new_errors ~annotations:_ ~resolved:_ ~element =
           if not (List.is_empty new_errors) then
