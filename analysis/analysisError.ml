@@ -117,6 +117,12 @@ type missing_return = {
 [@@deriving compare, eq, sexp, show, hash]
 
 
+type unused_ignore = {
+  unused_error_codes: int list;
+}
+[@@deriving compare, eq, sexp, show, hash]
+
+
 type kind =
   | IncompatibleAwaitableType of Type.t
   | IncompatibleParameterType of parameter_mismatch
@@ -133,6 +139,7 @@ type kind =
   | UndefinedMethod of undefined_method
   | UndefinedType of Type.t
   | UninitializedAttribute of initialization_mismatch
+  | UnusedIgnore of unused_ignore
 [@@deriving compare, eq, show, sexp, hash]
 
 
@@ -178,6 +185,7 @@ let code { kind; _ } =
   | UndefinedMethod _ -> 10
   | UndefinedType _ -> 11
   | UninitializedAttribute _ -> 13
+  | UnusedIgnore _ -> 0
 
 
 let name { kind; _ } =
@@ -197,6 +205,7 @@ let name { kind; _ } =
   | UndefinedMethod _ -> "Undefined method"
   | UndefinedType _ -> "Undefined type"
   | UninitializedAttribute _ -> "Uninitialized attribute"
+  | UnusedIgnore _ -> "Unused ignore"
 
 
 let description
@@ -515,6 +524,26 @@ let description
              (Location.line location)
              Type.pp actual)
         ]
+    | UnusedIgnore { unused_error_codes; } ->
+        let rec string_from_codes codes =
+          match codes with
+          | [] -> ""
+          | code :: [] -> Format.sprintf "[%d]" code
+          | code :: other -> Format.sprintf "[%d], %s" code (string_from_codes other)
+        in
+        let plural =
+          match unused_error_codes with
+          | []
+          | [_] -> false
+          | _ -> true
+        in
+        [
+          Format.asprintf
+            "Pyre ignore%s %s %s extraneous; there is no type error here."
+            (if plural then "s" else "")
+            (string_from_codes unused_error_codes)
+            (if plural then "are" else "is")
+        ]
   in
   let messages = message kind in
   Format.asprintf
@@ -552,6 +581,7 @@ let due_to_analysis_limitations { kind; _ } =
   | UndefinedMethod { annotation; _ }
   | UndefinedType annotation ->
       Type.is_unknown annotation
+  | UnusedIgnore _ -> false
 
 
 let due_to_mismatch_with_any { kind; _ } =
@@ -562,7 +592,8 @@ let due_to_mismatch_with_any { kind; _ } =
   | MissingReturnAnnotation _
   | Top
   | UndefinedMethod _
-  | UndefinedType _ ->
+  | UndefinedType _
+  | UnusedIgnore _ ->
       false
   | UndefinedAttribute { annotation = actual; _ }
   | IncompatibleAwaitableType actual ->
@@ -633,6 +664,8 @@ let less_or_equal ~resolution left right =
          ~right:right.annotation
    | UndefinedType left, UndefinedType right ->
        TypeOrder.less_or_equal order ~left ~right
+   | UnusedIgnore { unused_error_codes = left }, UnusedIgnore { unused_error_codes = right } ->
+       Set.is_subset (Int.Set.of_list left) ~of_:(Int.Set.of_list right)
    | _, Top -> true
    | _ ->
        false)
@@ -730,6 +763,10 @@ let join ~resolution left right =
         }
     | UndefinedType left, UndefinedType right ->
         UndefinedType (TypeOrder.join order left right)
+    | UnusedIgnore { unused_error_codes = left }, UnusedIgnore { unused_error_codes = right } ->
+        UnusedIgnore {
+          unused_error_codes =
+            (Set.to_list (Set.union (Int.Set.of_list left) (Int.Set.of_list right))) }
     | _ ->
         Format.asprintf
           "Incompatible type in error join at %a."
@@ -885,6 +922,7 @@ let dequalify
     | UndefinedMethod { annotation; call } ->
         UndefinedMethod { annotation = dequalify annotation; call }
     | UndefinedType annotation -> UndefinedType (dequalify annotation)
+    | UnusedIgnore codes -> UnusedIgnore codes
   in
   let define =
     let dequalify_parameter ({ Node.value; _ } as parameter) =

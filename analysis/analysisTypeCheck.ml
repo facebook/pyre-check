@@ -332,7 +332,8 @@ module State = struct
           | Top
           | UndefinedMethod _
           | UndefinedType _
-          | UninitializedAttribute _ ->
+          | UninitializedAttribute _
+          | UnusedIgnore _ ->
               true
         else
           match kind with
