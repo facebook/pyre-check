@@ -629,14 +629,14 @@ let dependencies (module Handler: Handler) =
 
 
 let register_ignore_lines (module Handler: Handler) ({ Source.path; _ } as source) =
-  let add_ignore (line_number, codes) =
+  let add_ignore ignore =
     let location =
       let position =
-        { Location.line = line_number; column = -1 }
+        { Location.line = Source.Ignore.ignored_line ignore; column = -1 }
       in
       { Location.path; start = position; stop = position }
     in
-    Handler.register_ignore_line ~path ~location ~codes
+    Handler.register_ignore_line ~path ~location ~codes:(Source.Ignore.codes ignore)
   in
   Source.ignore_lines source
   |> List.map ~f:add_ignore

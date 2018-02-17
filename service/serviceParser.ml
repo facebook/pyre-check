@@ -18,7 +18,7 @@ let parse_path_to_source file =
   >>= fun path ->
   File.lines file
   >>= fun lines ->
-  let metadata = Source.Metadata.parse lines in
+  let metadata = Source.Metadata.parse path lines in
   try
     let statements = Parser.parse ~path lines in
     Some (
