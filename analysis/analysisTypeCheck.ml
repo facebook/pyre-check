@@ -239,9 +239,9 @@ module State = struct
             { Location.path = (Error.location error |> Location.path); start = line; stop = line; }
           in
           Reader.ignore_lines stripped_location
-          >>| (fun ignored_error_codes ->
-              List.is_empty ignored_error_codes ||
-              List.mem ~equal:(=) ignored_error_codes (Error.code error)
+          >>| (fun ignore_instance ->
+              List.is_empty (Source.Ignore.codes ignore_instance) ||
+              List.mem ~equal:(=) (Source.Ignore.codes ignore_instance) (Error.code error)
             )
           |> Option.value ~default:false
         in

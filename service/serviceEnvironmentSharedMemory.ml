@@ -118,9 +118,9 @@ module DependentValue = struct
 end
 
 module IgnoreValue = struct
-  type t = int list
+  type t = Ast.Source.Ignore.t
   let prefix = Prefix.make ()
-  let description = "Ignore line"
+  let description = "Ignore"
 end
 
 module ClassDefinitionKeyValue = struct

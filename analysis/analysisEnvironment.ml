@@ -26,7 +26,7 @@ type t = {
   aliases: Type.t Type.Table.t;
   globals: Resolution.global Access.Table.t;
   dependencies: Dependencies.t;
-  ignore_lines: (int list) Location.Table.t;
+  ignore_lines: Source.Ignore.t Location.Table.t;
 }
 
 module type Handler = sig
@@ -36,7 +36,7 @@ module type Handler = sig
     -> (Define.t Node.t)
     -> unit
   val register_dependency: path: string -> dependency: string -> unit
-  val register_ignore_line: path: string -> location:Location.t -> codes: int list -> unit
+  val register_ignore_line: path: string -> ignore: Source.Ignore.t -> unit
   val register_global: path: string -> key: Access.t -> data:Resolution.global -> unit
   val register_type
     :  path: string
@@ -54,7 +54,7 @@ module type Handler = sig
   val aliases: Type.t -> Type.t option
   val globals: Access.t -> Resolution.global option
   val dependencies: string -> string list option
-  val ignore_lines: Location.t -> int list option
+  val ignore_lines: Location.t -> Source.Ignore.t option
 
   module DependencyHandler: Dependencies.Handler
 
@@ -215,9 +215,15 @@ let handler
       DependencyHandler.add_dependent ~path dependency
 
 
-    let register_ignore_line ~path ~location ~codes =
+    let register_ignore_line ~path ~ignore =
+      let location =
+        let position =
+          { Location.line = Source.Ignore.ignored_line ignore; column = -1 }
+        in
+        { Location.path; start = position; stop = position }
+      in
       DependencyHandler.add_ignore_key ~path location;
-      Hashtbl.set ~key:location ~data:codes ignore_lines
+      Hashtbl.set ~key:location ~data:ignore ignore_lines
 
 
     let register_global ~path ~key ~data =
@@ -629,17 +635,8 @@ let dependencies (module Handler: Handler) =
 
 
 let register_ignore_lines (module Handler: Handler) ({ Source.path; _ } as source) =
-  let add_ignore ignore =
-    let location =
-      let position =
-        { Location.line = Source.Ignore.ignored_line ignore; column = -1 }
-      in
-      { Location.path; start = position; stop = position }
-    in
-    Handler.register_ignore_line ~path ~location ~codes:(Source.Ignore.codes ignore)
-  in
   Source.ignore_lines source
-  |> List.map ~f:add_ignore
+  |> List.map ~f:(fun ignore -> Handler.register_ignore_line ~path ~ignore)
   |> ignore
 
 

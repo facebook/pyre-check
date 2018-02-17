@@ -371,10 +371,11 @@ let shared_memory_handler
         DependencyHandler.add_dependent ~path dependency
 
 
-      let register_ignore_line ~path ~location ~codes =
+      let register_ignore_line ~path ~ignore =
+        let location = Ast.Source.Ignore.location ignore in
         DependencyHandler.add_ignore_key ~path location;
         IgnoreLines.remove_batch (IgnoreLines.KeySet.singleton location);
-        IgnoreLines.add location codes
+        IgnoreLines.add location ignore
 
 
       let register_global ~path ~key ~data =
