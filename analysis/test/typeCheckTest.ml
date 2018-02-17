@@ -2402,6 +2402,21 @@ let test_check_attributes _ =
     [];
 
   assert_type_errors
+    ~show_error_traces:true
+    {|
+      class Bar:
+        bar: int = 1
+      def foo(self) -> int:
+        return Bar.bar
+    |}
+    [
+      "Incompatible return type [7]: Expected `int` but got `unknown`. Type `int` expected on " ^
+      "line 5, specified on line 4.";
+      "Undefined attribute [16]: `Bar` has no attribute `bar`. This attribute is accessed as a " ^
+      "class variable; did you mean to declare it with `typing.ClassVar`?"
+    ];
+
+  assert_type_errors
     {|
       class Bar:
         bar: int

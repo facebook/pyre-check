@@ -1149,6 +1149,7 @@ module State = struct
                               ~resolution
                               (Attribute.parent attribute);
                           attribute = Attribute.access attribute;
+                          class_attribute = Attribute.class_attribute attribute;
                         };
                       define = define_node;
                     }

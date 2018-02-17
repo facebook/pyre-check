@@ -27,6 +27,7 @@ type undefined_method = {
 type undefined_attribute = {
   annotation: Type.t;
   attribute: Access.t;
+  class_attribute: bool;
 }
 [@@deriving compare, eq, show, sexp, hash]
 
@@ -456,14 +457,26 @@ let description
             (Annotated.Method.parent overridden_method |> Annotated.Class.name);
           detail;
         ]
-    | UndefinedAttribute { annotation; attribute } ->
+    | UndefinedAttribute { annotation; attribute; class_attribute } ->
         let name =
           if Type.is_optional_primitive annotation then
             "Optional type"
           else
             Type.show annotation
         in
-        [Format.asprintf "%s has no attribute `%a`." name Access.pp attribute]
+        let class_attribute_detail =
+          [
+            "This attribute is accessed as a class variable; did you mean to declare it with \
+             `typing.ClassVar`?"
+          ]
+        in
+        let message =
+          [Format.asprintf "%s has no attribute `%a`." name Access.pp attribute]
+        in
+        if class_attribute then
+          List.append message class_attribute_detail
+        else
+          message
     | UndefinedMethod { annotation; call } ->
         let name =
           match Annotated.Call.name call with
@@ -608,7 +621,7 @@ let less_or_equal ~resolution left right =
    | UninitializedAttribute left, UninitializedAttribute right when left.name = right.name ->
        less_or_equal_mismatch left.mismatch right.mismatch
    | UndefinedAttribute left, UndefinedAttribute right
-      when Access.equal left.attribute right.attribute ->
+     when Access.equal left.attribute right.attribute ->
        TypeOrder.less_or_equal
          order
          ~left:left.annotation
@@ -704,7 +717,7 @@ let join ~resolution left right =
       when left.name = right.name && Annotated.Class.name_equal left.parent right.parent ->
         UninitializedAttribute { left with mismatch = join_mismatch left.mismatch right.mismatch }
     | UndefinedAttribute left, UndefinedAttribute right
-        when Access.equal left.attribute right.attribute ->
+      when Access.equal left.attribute right.attribute ->
         UndefinedAttribute {
           left with
           annotation = TypeOrder.join order left.annotation right.annotation;
@@ -859,7 +872,7 @@ let dequalify
           inconsistent_usage with
           mismatch = { actual = dequalify actual; expected = dequalify expected };
         }
-    | UndefinedAttribute { annotation; attribute } ->
+    | UndefinedAttribute { annotation; attribute; class_attribute } ->
         let annotation =
           (* Don't dequalify optionals because we special case their display. *)
           if Type.is_optional_primitive annotation then
@@ -867,7 +880,7 @@ let dequalify
           else
             dequalify annotation
         in
-        UndefinedAttribute { annotation; attribute }
+        UndefinedAttribute { annotation; attribute; class_attribute }
 
     | UndefinedMethod { annotation; call } ->
         UndefinedMethod { annotation = dequalify annotation; call }

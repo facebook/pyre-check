@@ -22,6 +22,7 @@ type undefined_method = {
 type undefined_attribute = {
   annotation: Type.t;
   attribute: Access.t;
+  class_attribute: bool;
 }
 [@@deriving compare, eq, show, hash]
 
