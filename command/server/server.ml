@@ -592,9 +592,25 @@ let stop source_root () =
     |> fun (Handshake.ServerConnected _) ->
     Socket.write socket Handshake.ClientConnected;
     Socket.write socket ServerProtocol.Request.StopRequest;
-    match Socket.read socket with
-    | StopResponse -> Log.info "Server stopped"
-    | _ -> Log.error "Invalid response from server to stop request";
+    begin
+      match Socket.read socket with
+      | StopResponse -> Log.info "Server stopped, polling for deletion of socket."
+      | _ -> Log.error "Invalid response from server to stop request"
+    end;
+    let poll_for_deletion path =
+      let start_time = Unix.time () in
+      let timeout = 3.0 in
+      let rec poll () =
+        if Unix.time () -. start_time >=. timeout then
+          Log.warning "Timed out while polling for server to stop."
+        else if Path.file_exists path then
+          (Unix.nanosleep 0.1 |> ignore; poll ())
+        else
+          Log.info "Server successfully stopped."
+      in
+      poll ()
+    in
+    poll_for_deletion (ServerConfiguration.socket_path configuration)
   with
   | NotRunning
   | Unix.Unix_error _
