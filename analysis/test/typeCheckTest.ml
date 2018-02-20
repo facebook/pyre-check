@@ -1576,14 +1576,13 @@ let test_check_coverage _ =
   assert_covered "ERROR";
 
   (* Yield. *)
-  (* TODO(T26146217): add coverage. *)
-  assert_not_covered
+  assert_covered
     ~additional_errors:[
       "Incompatible return type [7]: Expected `None` but got " ^
       "`typing.Generator[unknown, None, None]`.";
     ]
     "yield ERROR";
-  assert_not_covered
+  assert_covered
     ~additional_errors:[
       "Incompatible return type [7]: Expected `None` but got " ^
       "`typing.Generator[unknown, None, None]`.";

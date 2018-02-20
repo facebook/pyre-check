@@ -1604,6 +1604,11 @@ module State = struct
           errors
 
       | Statement.Yield { Node.value = Expression.Yield return; _ } ->
+          let errors =
+            return
+            >>| check_expression ~resolution errors
+            |> Option.value ~default:errors
+          in
           let actual =
             Option.value_map return ~default:Type.none ~f:(Annotated.resolve ~resolution)
             |> Type.generator ~async
@@ -1631,10 +1636,10 @@ module State = struct
           else
             errors
       | Statement.Yield _ ->
-          (* TODO(T26146217): add coverage. *)
           errors
 
       | YieldFrom { Node.value = Expression.Yield (Some return); _ } ->
+          let errors = check_expression ~resolution errors return in
           let actual =
             match Annotated.resolve ~resolution return with
             | Type.Parametric { Type.name; parameters = [parameter] }
@@ -1665,7 +1670,6 @@ module State = struct
           else
             errors
       | YieldFrom _ ->
-          (* TODO(T26146217): add coverage. *)
           errors
 
       | Break | Continue | Global _ | Import _ | Nonlocal _ | Pass | Stub _ ->
