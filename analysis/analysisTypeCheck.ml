@@ -733,7 +733,7 @@ module State = struct
         define = ({ Node.value = { Define.async; _ } as define; _ } as define_node);
         lookup;
       } as state)
-      statement =
+      ({ Node.location; _ } as statement) =
     let update_resolution = resolution in
     let resolution = resolution state in
     let expected =
@@ -1368,50 +1368,8 @@ module State = struct
             errors
       in
 
-      match statement with
-      | { Node.location; value = Return return } ->
-          let actual =
-            Option.value_map
-              return
-              ~default:Type.none
-              ~f:(Annotated.resolve ~resolution)
-          in
-          if not (Resolution.less_or_equal resolution ~left:actual ~right:expected) &&
-             not (Define.is_abstract_method define) &&
-             not (Define.is_overloaded_method define) &&
-             not (Type.is_none actual && Type.is_generator expected)
-          then
-            let error =
-              {
-                Error.location;
-                kind = Error.IncompatibleReturnType {
-                    Error.expected;
-                    actual
-                  };
-                define = define_node;
-              }
-            in
-            add_errors errors [error]
-          else if Type.equal expected Type.Top || Type.equal expected Type.Object then
-            let error =
-              {
-                Error.location;
-                kind = Error.MissingReturnAnnotation {
-                    Error.annotation = actual;
-                    evidence_locations = [location.Location.start.Location.line];
-                    due_to_any = Type.equal expected Type.Object;
-                  };
-                define = define_node;
-              }
-            in
-            add_errors errors [error]
-          else
-            errors
-
-      | {
-        Node.value = Assign ({ Assign.target; annotation = None; value = Some value; _ } as assign);
-        _;
-      } ->
+      match Node.value statement with
+      | Assign ({ Assign.target; annotation = None; value = Some value; _ } as assign) ->
           let check_assign ~access:{ Node.location; value = access } ~value_annotation errors =
             let add_incompatible_type_error ~expected ~parent ~name ~declare_location errors =
               if Resolution.less_or_equal resolution ~left:value_annotation ~right:expected then
@@ -1562,19 +1520,89 @@ module State = struct
           in
           Annotated.Assign.create assign
           |> Annotated.Assign.fold ~resolution ~f:check_assign ~initial:errors
+      | Assign _ ->
+          (* TODO(T26146217): add coverage. *)
+          errors
 
-      | { Node.value = Assert { Assert.test; _ }; _ } ->
+      | Assert { Assert.test; _ } ->
           check_expression ~resolution errors test
 
-      | { Node.value = Class _; _ }
-      | { Node.value = Define _; _ } ->
+      | Class _
+      | Define _ ->
           (* Don't check accesses in nested classes and functions, they're analyzed separately. *)
           errors
 
-      | { Node.value = Expression expression; _ } ->
+      | Delete _ ->
+          (* TODO(T26146217): add coverage. *)
+          errors
+
+      | Expression expression ->
           check_expression ~resolution errors expression
 
-      | { Node.location; value = Statement.Yield { Node.value = Expression.Yield return; _ }; _ } ->
+      | For _ ->
+          (* TODO(T26146217): add coverage. *)
+          errors
+
+      | If _ ->
+          (* TODO(T26146217): add coverage. *)
+          errors
+
+      | Raise _ ->
+          (* TODO(T26146217): add coverage. *)
+          errors
+
+      | Return return ->
+          let actual =
+            Option.value_map
+              return
+              ~default:Type.none
+              ~f:(Annotated.resolve ~resolution)
+          in
+          if not (Resolution.less_or_equal resolution ~left:actual ~right:expected) &&
+             not (Define.is_abstract_method define) &&
+             not (Define.is_overloaded_method define) &&
+             not (Type.is_none actual && Type.is_generator expected)
+          then
+            let error =
+              {
+                Error.location;
+                kind = Error.IncompatibleReturnType {
+                    Error.expected;
+                    actual
+                  };
+                define = define_node;
+              }
+            in
+            add_errors errors [error]
+          else if Type.equal expected Type.Top || Type.equal expected Type.Object then
+            let error =
+              {
+                Error.location;
+                kind = Error.MissingReturnAnnotation {
+                    Error.annotation = actual;
+                    evidence_locations = [location.Location.start.Location.line];
+                    due_to_any = Type.equal expected Type.Object;
+                  };
+                define = define_node;
+              }
+            in
+            add_errors errors [error]
+          else
+            errors
+
+      | Try _ ->
+          (* TODO(T26146217): add coverage. *)
+          errors
+
+      | With _ ->
+          (* TODO(T26146217): add coverage. *)
+          errors
+
+      | While _ ->
+          (* TODO(T26146217): add coverage. *)
+          errors
+
+      | Statement.Yield { Node.value = Expression.Yield return; _ } ->
           let actual =
             Option.value_map return ~default:Type.none ~f:(Annotated.resolve ~resolution)
             |> Type.generator ~async
@@ -1601,11 +1629,11 @@ module State = struct
               }]
           else
             errors
-      | {
-        Node.location;
-        value = Statement.YieldFrom { Node.value = Expression.Yield (Some return); _ };
-        _;
-      } ->
+      | Statement.Yield _ ->
+          (* TODO(T26146217): add coverage. *)
+          errors
+
+      | YieldFrom { Node.value = Expression.Yield (Some return); _ } ->
           let actual =
             match Annotated.resolve ~resolution return with
             | Type.Parametric { Type.name; parameters = [parameter] }
@@ -1635,8 +1663,11 @@ module State = struct
               }]
           else
             errors
+      | YieldFrom _ ->
+          (* TODO(T26146217): add coverage. *)
+          errors
 
-      | _ ->
+      | Break | Continue | Global _ | Import _ | Nonlocal _ | Pass | Stub _ ->
           errors
     in
     { state with environment; errors; annotations; lookup }
