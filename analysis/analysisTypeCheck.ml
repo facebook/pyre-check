@@ -1544,7 +1544,7 @@ module State = struct
           errors
 
       | If _ ->
-          (* TODO(T26146217): add coverage. *)
+          (* Check happens implicitly in the generated assertions. *)
           errors
 
       | Raise (Some expression) ->
