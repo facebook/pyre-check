@@ -1022,44 +1022,54 @@ module State = struct
         List.fold ~init:errors ~f:add_error
       in
 
-      let check_parameters ~resolution call = function
+      let rec check_parameters ~resolution call = function
         | Some ({ Signature.instantiated = callee; _ } as signature) ->
-            let check_parameter ~argument:_ ~position ~offset ~location ~name ~actual ~expected =
-              if not (Resolution.less_or_equal resolution ~left:actual ~right:expected) then
-                begin
-                  let start_position =
-                    (* Account for the `self` parameter in instance methods. *)
-                    if Define.is_method callee &&
-                       not (Define.is_static_method callee) then
-                      0
-                    else
-                      1
-                  in
-                  Some {
-                    Error.location;
-                    kind = Error.IncompatibleParameterType {
-                        Error.name;
-                        position = position + offset + start_position;
-                        callee;
-                        mismatch = { Error.expected; actual };
-                      };
-                    define = define_node;
-                  }
-                end
-              else
-                None
+            let incompatible_parameter_errors =
+              let check_parameter ~argument:_ ~position ~offset ~location ~name ~actual ~expected =
+                if not (Resolution.less_or_equal resolution ~left:actual ~right:expected) then
+                  begin
+                    let start_position =
+                      (* Account for the `self` parameter in instance methods. *)
+                      if Define.is_method callee &&
+                         not (Define.is_static_method callee) then
+                        0
+                      else
+                        1
+                    in
+                    Some {
+                      Error.location;
+                      kind = Error.IncompatibleParameterType {
+                          Error.name;
+                          position = position + offset + start_position;
+                          callee;
+                          mismatch = { Error.expected; actual };
+                        };
+                      define = define_node;
+                    }
+                  end
+                else
+                  None
+              in
+              Annotated.Call.check_parameters
+                ~resolution
+                ~check_parameter
+                ~add_error:(fun errors error -> error :: errors)
+                ~init:[]
+                call
+                signature
             in
-            Annotated.Call.check_parameters
-              ~resolution
-              ~check_parameter
-              ~add_error:(fun errors error -> error :: errors)
-              ~init:[]
-              call
-              signature
-        | None -> []
-      in
+            let argument_expression_errors =
+              let argument_expression_errors { Argument.value; _ } =
+                check_expression ~resolution Location.Map.empty value
+                |> Map.data
+              in
+              List.concat_map ~f:argument_expression_errors (Annotated.Call.arguments call)
+            in
+            incompatible_parameter_errors @ argument_expression_errors
+        | None ->
+            []
 
-      let check_access ~resolution errors { Node.location; value = access } =
+      and check_access ~resolution errors { Node.location; value = access } =
         let check_access new_errors ~annotations:_ ~resolved:_ ~element =
           if not (List.is_empty new_errors) then
             new_errors
@@ -1166,13 +1176,11 @@ module State = struct
           ~f:check_access
           (Annotated.Access.create access)
         |> add_errors errors
-      in
 
-      let forward_expression state expression =
+      and forward_expression state expression =
         forward state (Node.create (Expression expression))
-      in
 
-      let rec check_entry ~resolution errors { Dictionary.key; value } =
+      and check_entry ~resolution errors { Dictionary.key; value } =
         let errors = check_expression ~resolution errors key in
         check_expression ~resolution errors value
 
@@ -1628,10 +1636,8 @@ module State = struct
           else
             errors
 
-      | { Node.location;  _ } as statement ->
-          Visit.collect_accesses statement
-          |> List.map ~f:(Node.create ~location)
-          |> List.fold ~init:errors ~f:(check_access ~resolution)
+      | _ ->
+          errors
     in
     { state with environment; errors; annotations; lookup }
 
