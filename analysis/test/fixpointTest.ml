@@ -87,14 +87,16 @@ let test_forward _ =
     (Int.Table.of_alist_exn [
         0, 0; (* Entry *)
         1, 1; (* Exit *)
-        4, 0; (* Pass *)
+        3, 1; (* Final *)
+        5, 0; (* Pass *)
       ]);
   assert_fixpoint
     [+Pass; !!"ignored"]
     (Int.Table.of_alist_exn [
         0, 0;
         1, 1;
-        4, 0;
+        3, 1;
+        5, 0;
       ]);
 
   assert_fixpoint
@@ -102,7 +104,8 @@ let test_forward _ =
     (Int.Table.of_alist_exn [
         0, 0;
         1, 2;
-        4, 0;
+        3, 2;
+        5, 0;
       ]);
 
   assert_fixpoint
@@ -110,7 +113,8 @@ let test_forward _ =
     (Int.Table.of_alist_exn [
         0, 0;
         1, 3;
-        4, 0;
+        3, 3;
+        5, 0;
       ])
 
 let test_join _ =
@@ -123,10 +127,11 @@ let test_join _ =
     (Int.Table.of_alist_exn [
         0, 0; (* Entry *)
         1, 1; (* Exit *)
-        4, 0; (* If *)
-        5, 1; (* Join *)
-        6, 0; (* Body *)
-        7, 0; (* Orelse *)
+        3, 1; (* Final *)
+        5, 0; (* If *)
+        6, 1; (* Join *)
+        7, 0; (* Body *)
+        8, 0; (* Orelse *)
       ]);
 
   assert_fixpoint
@@ -138,9 +143,10 @@ let test_join _ =
     (Int.Table.of_alist_exn [
         0, 0;
         1, 1;
-        4, 0;
-        5, 1;
-        6, 0;
+        3, 1;
+        5, 0;
+        6, 1;
+        7, 0;
       ]);
 
   assert_fixpoint
@@ -152,10 +158,11 @@ let test_join _ =
     (Int.Table.of_alist_exn [
         0, 0;
         1, 2;
-        4, 0;
-        5, 2;
-        6, 0;
+        3, 2;
+        5, 0;
+        6, 2;
         7, 0;
+        8, 0;
       ])
 
 let test_widening _ =
@@ -168,9 +175,10 @@ let test_widening _ =
     (Int.Table.of_alist_exn [
         0, 0; (* Entry *)
         1, Int.max_value; (* Exit *)
-        4, Int.max_value; (* Split *)
-        5, Int.max_value; (* Join *)
-        6, Int.max_value; (* Pass *)
+        3, Int.max_value; (* Final *)
+        5, Int.max_value; (* Split *)
+        6, Int.max_value; (* Join *)
+        7, Int.max_value; (* Pass *)
       ])
 
 let () =

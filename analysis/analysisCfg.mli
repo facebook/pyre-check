@@ -16,6 +16,7 @@ module Node : sig
     | Entry
     | Error
     | Exit
+    | Final
     | For of Statement.t For.t
     | If of Statement.t If.t
     | Join

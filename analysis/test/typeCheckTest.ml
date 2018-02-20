@@ -762,7 +762,8 @@ let test_fixpoint_forward _ =
     (Int.Table.of_alist_exn [
         0, create []; (* Entry *)
         1, create []; (* Exit *)
-        4, create []; (* Pass *)
+        3, create []; (* Final *)
+        5, create []; (* Pass *)
       ]);
   assert_fixpoint_forward
     {|
@@ -772,7 +773,8 @@ let test_fixpoint_forward _ =
     (Int.Table.of_alist_exn [
         0, create [];
         1, create ["x", Type.Top];
-        4, create [];
+        3, create ["x", Type.Top];
+        5, create [];
       ]);
   assert_fixpoint_forward
     {|
@@ -785,7 +787,11 @@ let test_fixpoint_forward _ =
           "x", Type.integer;
           "y", Type.integer;
         ];
-        4, create ~immutables:["y", false] ["y", Type.integer];
+        3, create ~immutables:["y", false] [
+          "x", Type.integer;
+          "y", Type.integer;
+        ];
+        5, create ~immutables:["y", false] ["y", Type.integer];
       ]);
   assert_fixpoint_forward
     {|
@@ -801,14 +807,18 @@ let test_fixpoint_forward _ =
           "x", Type.Top;
           "y", Type.integer;
         ]; (* Exit *)
-        4, create ~immutables:["y", false] ["y", Type.integer]; (* If *)
-        5, create ~immutables:["y", false] [
+        3, create ~immutables:["y", false] [
+          "x", Type.Top;
+          "y", Type.integer;
+        ]; (* Final *)
+        5, create ~immutables:["y", false] ["y", Type.integer]; (* If *)
+        6, create ~immutables:["y", false] [
           "x", Type.Top;
           "y", Type.integer;
         ]; (* Join *)
-        6, create ~immutables:["y", false] ["y", Type.integer]; (* Body *)
-        7, create ~immutables:["y", false] ["y", Type.integer]; (* Orelse *)
-        8, create ~immutables:["y", false] [
+        7, create ~immutables:["y", false] ["y", Type.integer]; (* Body *)
+        8, create ~immutables:["y", false] ["y", Type.integer]; (* Orelse *)
+        9, create ~immutables:["y", false] [
           "x", Type.Top;
           "y", Type.integer;
         ]; (* Return *)
@@ -833,14 +843,14 @@ let test_fixpoint_backward _ =
     (Int.Table.of_alist_exn [
         0, create ["$return", Type.Top]; (* Entry *)
         1, create ["$return", Type.Top]; (* Exit *)
-        4, create ["$return", Type.Top]; (* Pass *)
+        5, create ["$return", Type.Top]; (* Pass *)
       ]);
   assert_fixpoint_backward
     {| def foo() -> int: pass |}
     (Int.Table.of_alist_exn [
         0, create ~expected_return:Type.integer ["$return", Type.integer];
         1, create ~expected_return:Type.integer ["$return", Type.integer];
-        4, create ~expected_return:Type.integer ["$return", Type.integer];
+        5, create ~expected_return:Type.integer ["$return", Type.integer];
       ]);
   assert_fixpoint_backward
     {|
@@ -855,7 +865,7 @@ let test_fixpoint_backward _ =
         1, create
           ~expected_return:Type.integer
           ["$return", Type.integer];
-        4, create
+        5, create
           ~expected_return:Type.integer
           ["$return", Type.integer];
       ]);
@@ -873,7 +883,7 @@ let test_fixpoint_backward _ =
         1, create
           ~expected_return:Type.integer
           ["$return", Type.integer];
-        4, create
+        5, create
           ~expected_return:Type.integer
           ["$return", Type.integer];
       ]);
@@ -891,7 +901,7 @@ let test_fixpoint_backward _ =
         1, create
           ~expected_return:Type.integer
           ["$return", Type.integer];
-        4, create
+        5, create
           ~expected_return:Type.integer
           ["$return", Type.integer];
       ]);
@@ -908,7 +918,7 @@ let test_fixpoint_backward _ =
     (Int.Table.of_alist_exn [
         0, create ~expected_return:tuple ["$return", tuple; "x", b; "y", b; "z", c];
         1, create ~expected_return:tuple ["$return", tuple];
-        4, create ~expected_return:tuple ["$return", tuple];
+        5, create ~expected_return:tuple ["$return", tuple];
       ])
 
 

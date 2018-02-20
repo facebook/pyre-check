@@ -17,6 +17,7 @@ module Node = struct
     | Entry
     | Error
     | Exit
+    | Final
     | For of Statement.t For.t
     | If of Statement.t If.t
     | Join
@@ -94,7 +95,9 @@ module Node = struct
 
 
   let connect_option predecessor successor =
-    Option.iter predecessor ~f:(fun node -> connect node successor)
+    predecessor
+    >>| (fun predecessor -> connect predecessor successor)
+    |> ignore
 
 
   let description { kind; _ } =
@@ -122,6 +125,8 @@ module Node = struct
         "Error"
     | Exit ->
         "Exit"
+    | Final ->
+        "Final"
     | For statement ->
         Statement.For statement
         |> process_statement
@@ -216,15 +221,31 @@ let exit_index =
   1
 
 
+let error_index =
+  2
+
+
+let final_index =
+  3
+
+
 let create define =
   Node.reset_count ();
 
   let graph = Int.Table.create () in
+
   let entry = Node.empty graph Node.Entry in
+  assert (entry.Node.id = entry_index);
   let exit = Node.empty graph Node.Exit in
   assert (exit.Node.id = exit_index);
   let error = Node.empty graph Node.Error in
+  assert (error.Node.id = error_index);
+  let final = Node.empty graph Node.Final in
+  assert (final.Node.id = final_index);
   let yield = Node.empty graph Node.Yield in
+
+  Node.connect exit final;
+  Node.connect error final;
 
   (* Forward creation of the control flow for a list of statements. Returns
      the last node or `None` if the flow has ended in a jump. *)
