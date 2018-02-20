@@ -127,11 +127,13 @@ let computation_thread request_queue configuration state =
               { failures }
             with
             | (Unix.Unix_error (kind, name, description)) ->
-                (match kind with
-                 | Unix.EPIPE ->
-                     Log.warning "Got an EPIPE while broadcasting to a persistent client";
-                     { failures = failures + 1 }
-                 | _ -> raise (Unix.Unix_error (kind, name, description)))
+                begin
+                  match kind with
+                  | Unix.EPIPE ->
+                      Log.warning "Got an EPIPE while broadcasting to a persistent client";
+                      { failures = failures + 1 }
+                  | _ -> raise (Unix.Unix_error (kind, name, description))
+                end
           in
           Mutex.critical_section lock ~f:(fun () ->
               Hashtbl.mapi_inplace ~f:(write_or_mark_failure responses) persistent_clients;
@@ -163,37 +165,41 @@ let computation_thread request_queue configuration state =
               List.iter ~f:(Socket.write socket) responses
             with
             | Unix.Unix_error (kind, _, _) ->
-                (match kind with
-                 | Unix.EPIPE ->
-                     Log.warning "EPIPE while writing to a persistent client, removing.";
-                     Mutex.critical_section state.lock ~f:(fun () ->
-                         let { persistent_clients; _ } = !(state.connections) in
-                         match Hashtbl.find persistent_clients socket with
-                         | Some { failures } ->
-                             if failures < State.failure_threshold then
-                               Hashtbl.set
-                                 persistent_clients
-                                 ~key:socket
-                                 ~data:{ failures = failures + 1 }
-                             else
-                               Hashtbl.remove persistent_clients socket
-                         | None ->
-                             ())
-                 | _ ->
-                     ())
+                begin
+                  match kind with
+                  | Unix.EPIPE ->
+                      Log.warning "EPIPE while writing to a persistent client, removing.";
+                      Mutex.critical_section state.lock ~f:(fun () ->
+                          let { persistent_clients; _ } = !(state.connections) in
+                          match Hashtbl.find persistent_clients socket with
+                          | Some { failures } ->
+                              if failures < State.failure_threshold then
+                                Hashtbl.set
+                                  persistent_clients
+                                  ~key:socket
+                                  ~data:{ failures = failures + 1 }
+                              else
+                                Hashtbl.remove persistent_clients socket
+                          | None ->
+                              ())
+                  | _ ->
+                      ()
+                end
           in
           let state, response = process_request socket state configuration request in
-          (match response with
-           | Some (LanguageServerProtocolResponse _)
-           | Some (ClientExitResponse Persistent) ->
-               response
-               >>| (fun response -> write_or_forget socket [response])
-               |> ignore
-           | Some (TypeCheckResponse error_map) ->
-               let responses = errors_to_lsp_responses error_map in
-               write_or_forget socket responses
-           | Some _ -> Log.error "Unexpected response for persistent client request"
-           | None -> ());
+          begin
+            match response with
+            | Some (LanguageServerProtocolResponse _)
+            | Some (ClientExitResponse Persistent) ->
+                response
+                >>| (fun response -> write_or_forget socket [response])
+                |> ignore
+            | Some (TypeCheckResponse error_map) ->
+                let responses = errors_to_lsp_responses error_map in
+                write_or_forget socket responses
+            | Some _ -> Log.error "Unexpected response for persistent client request"
+            | None -> ()
+          end;
           state
       | ServerProtocol.Request.FileNotifier
       | ServerProtocol.Request.Background ->
@@ -201,22 +207,26 @@ let computation_thread request_queue configuration state =
             Mutex.critical_section state.lock ~f:(fun () -> !(state.connections))
           in
           let state, response = process_request socket state configuration request in
-          (match response with
-           | Some response ->
-               broadcast_response state.lock persistent_clients response
-           | None ->
-               ());
+          begin
+            match response with
+            | Some response ->
+                broadcast_response state.lock persistent_clients response
+            | None ->
+                ()
+          end;
           state
       | ServerProtocol.Request.NewConnectionSocket socket ->
           let { persistent_clients; _ } =
             Mutex.critical_section state.lock ~f:(fun () -> !(state.connections))
           in
           let state, response = process_request socket state configuration request in
-          (match response with
-           | Some response ->
-               Socket.write_ignoring_epipe socket response;
-               broadcast_response state.lock persistent_clients response
-           | None -> ());
+          begin
+            match response with
+            | Some response ->
+                Socket.write_ignoring_epipe socket response;
+                broadcast_response state.lock persistent_clients response
+            | None -> ()
+          end;
           state
     in
     let state =
@@ -229,12 +239,14 @@ let computation_thread request_queue configuration state =
               last_request_time = Unix.time ();
             }
           in
-          (match state.deferred_requests with
-           | [] ->
-               state
-           | request :: requests ->
-               let state = { state with deferred_requests = requests } in
-               handle_request state ~request:(ServerProtocol.Request.Background, request))
+          begin
+            match state.deferred_requests with
+            | [] ->
+                state
+            | request :: requests ->
+                let state = { state with deferred_requests = requests } in
+                handle_request state ~request:(ServerProtocol.Request.Background, request)
+          end
       | 0, true ->
           let current_time = Unix.time () in
           if current_time -. state.last_request_time > State.stop_after_idle_for then
@@ -290,12 +302,14 @@ let request_handler_thread (
               let { persistent_clients; file_notifiers; _ } = !connections in
               Socket.write socket (ClientConnectionResponse client);
               connections :=
-                (match client with
-                 | Persistent ->
-                     Hashtbl.set persistent_clients ~key:socket ~data:{ failures = 0 };
-                     !connections
-                 | FileNotifier ->
-                     { !connections with file_notifiers = socket::file_notifiers }))
+                begin
+                  match client with
+                  | Persistent ->
+                      Hashtbl.set persistent_clients ~key:socket ~data:{ failures = 0 };
+                      !connections
+                  | FileNotifier ->
+                      { !connections with file_notifiers = socket::file_notifiers }
+                end)
     | ServerProtocol.Request.ClientConnectionRequest _, _ ->
         Log.error
           "Unexpected request origin %s for connection request"

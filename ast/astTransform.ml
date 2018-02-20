@@ -191,11 +191,11 @@ module Make (Transformer : Transformer) = struct
               }
           | Starred starred ->
               let starred =
-                (match starred with
-                 | Starred.Once expression ->
-                     Starred.Once (transform_expression expression)
-                 | Starred.Twice expression ->
-                     Starred.Twice (transform_expression expression))
+                match starred with
+                | Starred.Once expression ->
+                    Starred.Once (transform_expression expression)
+                | Starred.Twice expression ->
+                    Starred.Twice (transform_expression expression)
               in
               Starred starred
           | String _ ->

@@ -33,12 +33,14 @@ let run_command version log_identifier source_root () =
           exit 1
     in
     Socket.write server_socket (Protocol.Request.ClientConnectionRequest Protocol.Persistent);
-    (match Socket.read server_socket with
-     | (Protocol.ClientConnectionResponse Protocol.Persistent) -> ()
-     | _ ->
-         let message = "Unexpected json response when attempting persistent connection" in
-         Log.info "%s" message;
-         failwith message);
+    begin
+      match Socket.read server_socket with
+      | (Protocol.ClientConnectionResponse Protocol.Persistent) -> ()
+      | _ ->
+          let message = "Unexpected json response when attempting persistent connection" in
+          Log.info "%s" message;
+          failwith message
+    end;
     server_socket
   in
   let display_nuclide_message message =
@@ -102,16 +104,16 @@ let run_command version log_identifier source_root () =
     in
     let process_socket socket =
       let process_server_socket () =
-        (match Socket.read socket with
-         | Protocol.LanguageServerProtocolResponse response ->
-             LanguageServer.Protocol.write_message
-               Out_channel.stdout
-               (Yojson.Safe.from_string response)
-         | Protocol.ClientExitResponse Protocol.Persistent ->
-             Log.info "Received stop request, exiting.";
-             Unix.close server_socket;
-             exit 0
-         | _ -> ())
+        match Socket.read socket with
+        | Protocol.LanguageServerProtocolResponse response ->
+            LanguageServer.Protocol.write_message
+              Out_channel.stdout
+              (Yojson.Safe.from_string response)
+        | Protocol.ClientExitResponse Protocol.Persistent ->
+            Log.info "Received stop request, exiting.";
+            Unix.close server_socket;
+            exit 0
+        | _ -> ()
       in
       let process_stdin_socket () =
         (LanguageServer.Protocol.read_message In_channel.stdin

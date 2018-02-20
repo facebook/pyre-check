@@ -120,9 +120,11 @@ let check
     ]
     ();
   (* Only destroy the scheduler if the check command created it. *)
-  (match original_scheduler with
-   | None -> Scheduler.destroy scheduler
-   | Some _ -> ());
+  begin
+    match original_scheduler with
+    | None -> Scheduler.destroy scheduler
+    | Some _ -> ()
+  end;
   { handles = stubs @ sources; environment; errors }
 
 

@@ -127,9 +127,9 @@ let test_server_stops _ =
         with_timeout
           ~seconds:1
           (fun pid ->
-             (match Unix.waitpid pid with
-              | Ok _ -> assert true
-              | Error _ -> assert false))
+             match Unix.waitpid pid with
+             | Ok _ -> assert true
+             | Error _ -> assert false)
           pid)
     ~finally:CommandTest.clean_environment
 
@@ -143,13 +143,13 @@ let test_server_exits_on_directory_removal context =
   Exn.protect
     ~f:(fun () ->
         with_timeout ~seconds:6 (fun () ->
-            (match Unix.waitpid pid with
-             | Ok _
-             (* I was only able to get non-zero exits in the OUnit test environment,
+            match Unix.waitpid pid with
+            | Ok _
+            (* I was only able to get non-zero exits in the OUnit test environment,
                 doing the equivalent calls in the command line always resulted in an exit of 0. *)
-             | Error (`Exit_non_zero 2) -> assert true
-             | _ -> assert false
-            )))
+            | Error (`Exit_non_zero 2) -> assert true
+            | _ -> assert false
+          ))
     ~finally:CommandTest.clean_environment
     ()
 
@@ -634,7 +634,8 @@ let test_incremental_repopulate _ =
         return_annotation
     | _ -> None
   in
-  begin match (get_annotation "test.foo") with
+  begin
+    match (get_annotation "test.foo") with
     | Some expression -> assert_equal (Ast.Expression.show expression) "int"
     | None -> assert_unreached ()
   end;

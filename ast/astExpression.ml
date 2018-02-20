@@ -30,9 +30,11 @@ module BooleanOperator = struct
   let pp_boolean_operator formatter operator =
     Format.fprintf formatter
       "%s"
-      (match operator with
-       | And -> "and"
-       | Or -> "or")
+      begin
+        match operator with
+        | And -> "and"
+        | Or -> "or"
+      end
 
 
   let inverse = function
@@ -71,20 +73,22 @@ module BinaryOperator = struct
     Format.fprintf
       formatter
       "%s"
-      (match operator with
-       | Add -> "+"
-       | At -> "@"
-       | BitAnd -> "&"
-       | BitOr -> "|"
-       | BitXor -> "^"
-       | Divide -> "/"
-       | FloorDivide -> "//"
-       | LeftShift -> "<<"
-       | Modulo -> "%"
-       | Multiply -> "*"
-       | Power -> "**"
-       | RightShift -> ">>"
-       | Subtract -> "-")
+      begin
+        match operator with
+        | Add -> "+"
+        | At -> "@"
+        | BitAnd -> "&"
+        | BitOr -> "|"
+        | BitXor -> "^"
+        | Divide -> "/"
+        | FloorDivide -> "//"
+        | LeftShift -> "<<"
+        | Modulo -> "%"
+        | Multiply -> "*"
+        | Power -> "**"
+        | RightShift -> ">>"
+        | Subtract -> "-"
+      end
 end
 
 
@@ -107,11 +111,13 @@ module UnaryOperator = struct
   let pp_unary_operator formatter operator =
     Format.fprintf
       formatter "%s"
-      (match operator with
-       | Invert -> "~"
-       | Negative -> "-"
-       | Not -> "not"
-       | Positive -> "+")
+      begin
+        match operator with
+        | Invert -> "~"
+        | Negative -> "-"
+        | Not -> "not"
+        | Positive -> "+"
+      end
 end
 
 
@@ -154,17 +160,19 @@ module ComparisonOperator = struct
     Format.fprintf
       formatter
       "%s"
-      (match operator with
-       | Equals -> "="
-       | GreaterThan -> ">"
-       | GreaterThanOrEquals -> ">="
-       | In -> "in"
-       | Is -> "is"
-       | IsNot -> "is not"
-       | LessThan -> "<"
-       | LessThanOrEquals -> "<="
-       | NotEquals -> "!="
-       | NotIn -> "not in")
+      begin
+        match operator with
+        | Equals -> "="
+        | GreaterThan -> ">"
+        | GreaterThanOrEquals -> ">="
+        | In -> "in"
+        | Is -> "is"
+        | IsNot -> "is not"
+        | LessThan -> "<"
+        | LessThanOrEquals -> "<="
+        | NotEquals -> "!="
+        | NotIn -> "not in"
+      end
 end
 
 

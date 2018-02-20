@@ -614,11 +614,13 @@ compound_statement:
     finally = named_optional_block(FINALLY) {
 
       let stop =
-        (match handlers, snd orelse, snd finally with
-        | _, _, (_::_) -> fst finally
-        | _, (_::_), [] -> fst orelse
-        | (_::_), [], [] -> (fst (List.last_exn handlers))
-        | _ -> (fst body)).Location.stop in
+        begin
+          match handlers, snd orelse, snd finally with
+          | _, _, (_::_) -> fst finally
+          | _, (_::_), [] -> fst orelse
+          | (_::_), [], [] -> (fst (List.last_exn handlers))
+          | _ -> (fst body)
+        end.Location.stop in
       {
         Node.location = location_create_with_stop ~start ~stop;
         value = Try {

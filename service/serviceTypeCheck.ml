@@ -108,11 +108,13 @@ let analyze_sources_parallel
                   {
                     errors = List.append new_errors errors;
                     lookups =
-                      (match lookup with
-                       | Some table ->
-                           Map.set ~key:(File.Handle.show handle) ~data:table lookups
-                       | None ->
-                           lookups);
+                      begin
+                        match lookup with
+                        | Some table ->
+                            Map.set ~key:(File.Handle.show handle) ~data:table lookups
+                        | None ->
+                            lookups
+                      end;
                     number_files = number_files + 1;
                     type_coverage = TypeCheck.Coverage.sum total_type_coverage type_coverage;
                   }
@@ -175,13 +177,16 @@ let analyze_sources
           analyze_source configuration environment source
         in
         (errors :: current_errors,
-         (match lookup with
-          | None -> lookups
-          | Some lookup -> String.Map.set ~key:source.Source.path ~data:lookup lookups),
+         begin
+           match lookup with
+           | None -> lookups
+           | Some lookup -> String.Map.set ~key:source.Source.path ~data:lookup lookups
+         end,
          (TypeCheck.Coverage.sum total_type_coverage type_coverage))
       in
       List.fold
         ~init:([], String.Map.empty, TypeCheck.Coverage.create_empty)
         ~f:(analyze_and_postprocess configuration environment)
         sources
-      |> (fun (error_list, lookups, type_coverage) -> List.concat error_list, lookups, type_coverage)
+      |> (fun (error_list, lookups, type_coverage) ->
+          List.concat error_list, lookups, type_coverage)
