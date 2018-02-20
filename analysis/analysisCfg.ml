@@ -360,10 +360,32 @@ let create define =
 
         create statements jumps normal
 
-    | { Ast.Node.value = With ({ With.body; _ } as block); _ } :: statements ->
+    | { Ast.Node.value = With ({ With.items; body; _ } as block); _ } :: statements ->
         (* -> [split] -> [body] -> *)
         let split = Node.empty graph (Node.With block) in
         Node.connect predecessor split;
+        let body =
+          let preamble =
+            let preamble ({ Ast.Node.location; _ } as expression, target) =
+              (target
+               >>| fun target ->
+               let assign =
+                 {
+                   Assign.target;
+                   annotation = None;
+                   value = Some expression;
+                   compound = None;
+                   parent = None;
+                 }
+               in
+               Ast.Node.create ~location (Ast.Statement.Assign assign))
+              |> Option.value
+                ~default:(Ast.Node.create ~location (Ast.Statement.Expression expression))
+            in
+            List.map ~f:preamble items
+          in
+          preamble @ body
+        in
         create body jumps split
         >>= create statements jumps
 

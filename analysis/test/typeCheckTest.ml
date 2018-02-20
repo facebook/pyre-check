@@ -1607,6 +1607,17 @@ let test_check_coverage _ =
         pass
       except ERROR:
         pass
+    |};
+
+  assert_covered
+    {|
+      with ERROR:
+        pass
+    |};
+  assert_covered
+    {|
+      with ERROR as derp:
+        pass
     |}
 
 
