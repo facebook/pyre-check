@@ -66,6 +66,7 @@ let plain_environment =
         def to_int(x: typing.Any) -> int: ...
         def int_to_str(i: int) -> str: ...
         def str_to_int(i: str) -> int: ...
+        def optional_str_to_int(i: typing.Optional[str]) -> int: ...
         def int_to_bool(i: int) -> bool: ...
         def int_to_int(i: int) -> int: pass
         def str_float_to_int(i: str, f: float) -> int: ...
@@ -1886,6 +1887,45 @@ let test_check_function_parameters_with_backups _ =
   assert_type_errors "(1).__add__(1)" [];
   assert_type_errors "(1).__add__(1j)" [];
   assert_type_errors "(1).__add__(1.0)" []
+
+
+let test_check_function_parameter_errors _ =
+  assert_type_errors
+    {|
+      class Foo:
+        attribute: str
+      def foo(input: Foo) -> None:
+        str_float_to_int(input.attribute, input.undefined)
+    |}
+    ["Undefined attribute [16]: `Foo` has no attribute `undefined`."];
+  assert_type_errors
+    {|
+      class Foo:
+        attribute: str
+      def foo(input: Foo) -> None:
+        str_float_to_int(input.undefined, input.undefined)
+    |}
+    [
+      "Undefined attribute [16]: `Foo` has no attribute `undefined`.";
+      "Undefined attribute [16]: `Foo` has no attribute `undefined`.";
+    ];
+
+  assert_type_errors
+    {|
+      class Foo:
+        attribute: int
+      def foo(input: typing.Optional[Foo]) -> None:
+        optional_str_to_int(input and input.attribute)
+    |}
+    [];
+  assert_type_errors
+    {|
+      class Foo:
+        attribute: int
+      def foo(input: typing.Optional[Foo]) -> None:
+        optional_str_to_int(input and input.undefined)
+    |}
+    []
 
 
 let test_check_variable_arguments _ =
@@ -4642,6 +4682,7 @@ let () =
     "check_environment_precedence">::test_check_environment_precedence;
     "check_function_parameters">::test_check_function_parameters;
     "check_function_parameters_with_backups">::test_check_function_parameters_with_backups;
+    "check_function_parameter_errors">::test_check_function_parameter_errors;
     "check_variable_arguments">::test_check_variable_arguments;
     "check_method_returns">::test_check_method_returns;
     "check_method_parameters">::test_check_method_parameters;
