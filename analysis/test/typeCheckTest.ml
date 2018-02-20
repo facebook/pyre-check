@@ -842,7 +842,9 @@ let test_fixpoint_backward _ =
     {| def foo(): pass |}
     (Int.Table.of_alist_exn [
         0, create ["$return", Type.Top]; (* Entry *)
-        1, create ["$return", Type.Top]; (* Exit *)
+        1, create ["$return", Type.Top]; (* Normal *)
+        2, create ["$return", Type.Top]; (* Error *)
+        3, create ["$return", Type.Top]; (* Exit *)
         5, create ["$return", Type.Top]; (* Pass *)
       ]);
   assert_fixpoint_backward
@@ -850,6 +852,8 @@ let test_fixpoint_backward _ =
     (Int.Table.of_alist_exn [
         0, create ~expected_return:Type.integer ["$return", Type.integer];
         1, create ~expected_return:Type.integer ["$return", Type.integer];
+        2, create ~expected_return:Type.integer ["$return", Type.integer];
+        3, create ~expected_return:Type.integer ["$return", Type.integer];
         5, create ~expected_return:Type.integer ["$return", Type.integer];
       ]);
   assert_fixpoint_backward
@@ -859,13 +863,24 @@ let test_fixpoint_backward _ =
        return x
     |}
     (Int.Table.of_alist_exn [
-        0, create
+        0,
+        create
           ~expected_return:Type.integer
           ["$return", Type.integer; "x", Type.integer; "y", Type.integer];
-        1, create
+        1,
+        create
           ~expected_return:Type.integer
           ["$return", Type.integer];
-        5, create
+        2,
+        create
+          ~expected_return:Type.integer
+          ["$return", Type.integer];
+        3,
+        create
+          ~expected_return:Type.integer
+          ["$return", Type.integer];
+        5,
+        create
           ~expected_return:Type.integer
           ["$return", Type.integer];
       ]);
@@ -877,13 +892,24 @@ let test_fixpoint_backward _ =
        return y
     |}
     (Int.Table.of_alist_exn [
-        0, create
+        0,
+        create
           ~expected_return:Type.integer
           ["$return", Type.integer; "y", Type.integer];
-        1, create
+        1,
+        create
           ~expected_return:Type.integer
           ["$return", Type.integer];
-        5, create
+        2,
+        create
+          ~expected_return:Type.integer
+          ["$return", Type.integer];
+        3,
+        create
+          ~expected_return:Type.integer
+          ["$return", Type.integer];
+        5,
+        create
           ~expected_return:Type.integer
           ["$return", Type.integer];
       ]);
@@ -895,13 +921,24 @@ let test_fixpoint_backward _ =
          return x
       |}
     (Int.Table.of_alist_exn [
-        0, create
+        0,
+        create
           ~expected_return:Type.integer
           ["$return", Type.integer; "x", Type.integer; "y", Type.integer; "z", Type.integer];
-        1, create
+        1,
+        create
           ~expected_return:Type.integer
           ["$return", Type.integer];
-        5, create
+        2,
+        create
+          ~expected_return:Type.integer
+          ["$return", Type.integer];
+        3,
+        create
+          ~expected_return:Type.integer
+          ["$return", Type.integer];
+        5,
+        create
           ~expected_return:Type.integer
           ["$return", Type.integer];
       ]);
@@ -918,6 +955,8 @@ let test_fixpoint_backward _ =
     (Int.Table.of_alist_exn [
         0, create ~expected_return:tuple ["$return", tuple; "x", b; "y", b; "z", c];
         1, create ~expected_return:tuple ["$return", tuple];
+        2, create ~expected_return:tuple ["$return", tuple];
+        3, create ~expected_return:tuple ["$return", tuple];
         5, create ~expected_return:tuple ["$return", tuple];
       ])
 
@@ -1599,8 +1638,7 @@ let test_check_coverage _ =
     |};
 
   (* Raise. *)
-  (* TODO(T26146217): add coverage. *)
-  assert_not_covered
+  assert_covered
     {|
       def foo(a: A) -> None:
         raise a.undefined

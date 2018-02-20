@@ -15,7 +15,7 @@ module Node : sig
     | Dispatch
     | Entry
     | Error
-    | Exit
+    | Normal
     | Final
     | For of Statement.t For.t
     | If of Statement.t If.t
@@ -41,6 +41,7 @@ type t = Node.t Int.Table.t
 [@@deriving eq, show]
 
 val entry_index: int
+val normal_index: int
 val exit_index: int
 
 val to_dot:

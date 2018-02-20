@@ -46,7 +46,7 @@ let test_to_dot _ =
     [+Pass]
     [
       {|0[label="Entry"]|};
-      {|1[label="Exit"]|};
+      {|1[label="Normal"]|};
       {|2[label="Error"]|};
       {|3[label="Final"]|};
       {|4[label="Yield"]|};
@@ -61,7 +61,7 @@ let test_to_dot _ =
     [+Expression !"b"]
     [
       {|0[label="Entry"]|};
-      {|1[label="Exit"]|};
+      {|1[label="Normal"]|};
       {|2[label="Error"]|};
       {|3[label="Final"]|};
       {|4[label="Yield"]|};
@@ -81,7 +81,7 @@ let test_to_dot _ =
     [+If conditional]
     [
       {|0[label="Entry"]|};
-      {|1[label="Exit"]|};
+      {|1[label="Normal"]|};
       {|2[label="Error"]|};
       {|3[label="Final"]|};
       {|4[label="Yield"]|};
@@ -134,7 +134,7 @@ let test_block _ =
     [+Pass]
     [
       node 0 Node.Entry [] [5];
-      node 1 Node.Exit [5] [3];
+      node 1 Node.Normal [5] [3];
       node 2 Node.Error [] [3];
       node 3 Node.Final [1; 2] [];
       node 4 Node.Yield [] [];
@@ -144,7 +144,7 @@ let test_block _ =
     [!!"first"; !!"second"]
     [
       node 0 Node.Entry [] [5];
-      node 1 Node.Exit [5] [3];
+      node 1 Node.Normal [5] [3];
       node 2 Node.Error [] [3];
       node 3 Node.Final [1; 2] [];
       node 4 Node.Yield [] [];
@@ -164,7 +164,7 @@ let test_for _ =
     [+For loop]
     [
       node 0 Node.Entry [] [5];
-      node 1 Node.Exit [6] [3];
+      node 1 Node.Normal [6] [3];
       node 2 Node.Error [] [3];
       node 3 Node.Final [1; 2] [];
       node 4 Node.Yield [] [];
@@ -185,7 +185,7 @@ let test_if _ =
     [+If conditional]
     [
       node 0 Node.Entry [] [5];
-      node 1 Node.Exit [6] [3];
+      node 1 Node.Normal [6] [3];
       node 2 Node.Error [] [3];
       node 3 Node.Final [1; 2] [];
       node 4 Node.Yield [] [];
@@ -200,7 +200,7 @@ let test_if _ =
     [+If conditional]
     [
       node 0 Node.Entry [] [5];
-      node 1 Node.Exit [6] [3];
+      node 1 Node.Normal [6] [3];
       node 2 Node.Error [] [3];
       node 3 Node.Final [1; 2] [];
       node 4 Node.Yield [] [];
@@ -218,7 +218,7 @@ let test_if _ =
     [+If conditional]
     [
       node 0 Node.Entry [] [5];
-      node 1 Node.Exit [6] [3];
+      node 1 Node.Normal [6] [3];
       node 2 Node.Error [] [3];
       node 3 Node.Final [1; 2] [];
       node 4 Node.Yield [] [];
@@ -237,7 +237,7 @@ let test_if _ =
     [!!"before"; +If conditional; !!"after"]
     [
       node 0 Node.Entry [] [5];
-      node 1 Node.Exit [10] [3];
+      node 1 Node.Normal [10] [3];
       node 2 Node.Error [] [3];
       node 3 Node.Final [1; 2] [];
       node 4 Node.Yield [] [];
@@ -256,7 +256,7 @@ let test_raise _ =
     [error]
     [
       node 0 Node.Entry [] [5];
-      node 1 Node.Exit [] [3];
+      node 1 Node.Normal [] [3];
       node 2 Node.Error [5] [3];
       node 3 Node.Final [1; 2] [];
       node 4 Node.Yield [] [];
@@ -266,7 +266,7 @@ let test_raise _ =
     [!!"reached"; error; !!"unreached"]
     [
       node 0 Node.Entry [] [5];
-      node 1 Node.Exit [] [3];
+      node 1 Node.Normal [] [3];
       node 2 Node.Error [5] [3];
       node 3 Node.Final [1; 2] [];
       node 4 Node.Yield [] [];
@@ -280,7 +280,7 @@ let test_return _ =
     [return]
     [
       node 0 Node.Entry [] [5];
-      node 1 Node.Exit [5] [3];
+      node 1 Node.Normal [5] [3];
       node 2 Node.Error [] [3];
       node 3 Node.Final [1; 2] [];
       node 4 Node.Yield [] [];
@@ -291,7 +291,7 @@ let test_return _ =
     [!!"reached"; return; !!"unreached"]
     [
       node 0 Node.Entry [] [5];
-      node 1 Node.Exit [5] [3];
+      node 1 Node.Normal [5] [3];
       node 2 Node.Error [] [3];
       node 3 Node.Final [1; 2] [];
       node 4 Node.Yield [] [];
@@ -316,7 +316,7 @@ let test_try _ =
     [+Try block]
     [
       node 0 Node.Entry [] [5];
-      node 1 Node.Exit [7; 9] [3];
+      node 1 Node.Normal [7; 9] [3];
       node 2 Node.Error [8] [3];
       node 3 Node.Final [1; 2] [];
       node 4 Node.Yield [] [];
@@ -339,7 +339,7 @@ let test_try _ =
     [+Try block]
     [
       node 0 Node.Entry [] [5];
-      node 1 Node.Exit [7; 9] [3];
+      node 1 Node.Normal [7; 9] [3];
       node 2 Node.Error [8] [3];
       node 3 Node.Final [1; 2] [];
       node 4 Node.Yield [] [];
@@ -362,7 +362,7 @@ let test_try _ =
     [+Try block]
     [
       node 0 Node.Entry [] [5];
-      node 1 Node.Exit [7; 9] [3];
+      node 1 Node.Normal [7; 9] [3];
       node 2 Node.Error [8] [3];
       node 3 Node.Final [1; 2] [];
       node 4 Node.Yield [] [];
@@ -385,7 +385,7 @@ let test_try _ =
     [+Try block]
     [
       node 0 Node.Entry [] [5];
-      node 1 Node.Exit [7; 9] [3];
+      node 1 Node.Normal [7; 9] [3];
       node 2 Node.Error [8] [3];
       node 3 Node.Final [1; 2] [];
       node 4 Node.Yield [] [];
@@ -410,7 +410,7 @@ let test_try _ =
     [+Try block]
     [
       node 0 Node.Entry [] [5];
-      node 1 Node.Exit [7; 9] [3];
+      node 1 Node.Normal [7; 9] [3];
       node 2 Node.Error [8] [3];
       node 3 Node.Final [1; 2] [];
       node 4 Node.Yield [] [];
@@ -434,7 +434,7 @@ let test_try _ =
     [+Try block]
     [
       node 0 Node.Entry [] [5];
-      node 1 Node.Exit [7; 9] [3];
+      node 1 Node.Normal [7; 9] [3];
       node 2 Node.Error [8] [3];
       node 3 Node.Final [1; 2] [];
       node 4 Node.Yield [] [];
@@ -457,7 +457,7 @@ let test_try _ =
     [+Try block]
     [
       node 0 Node.Entry [] [5];
-      node 1 Node.Exit [7; 9] [3];
+      node 1 Node.Normal [7; 9] [3];
       node 2 Node.Error [8] [3];
       node 3 Node.Final [1; 2] [];
       node 4 Node.Yield [] [];
@@ -479,7 +479,7 @@ let test_try _ =
     [+Try block]
     [
       node 0 Node.Entry [] [5];
-      node 1 Node.Exit [7; 8; 9] [3];
+      node 1 Node.Normal [7; 8; 9] [3];
       node 2 Node.Error [8] [3];
       node 3 Node.Final [1; 2] [];
       node 4 Node.Yield [] [];
@@ -502,7 +502,7 @@ let test_with _ =
     [+With block; !!"after"]
     [
       node 0 Node.Entry [] [5];
-      node 1 Node.Exit [6] [3];
+      node 1 Node.Normal [6] [3];
       node 2 Node.Error [] [3];
       node 3 Node.Final [1; 2] [];
       node 4 Node.Yield [] [];
@@ -521,7 +521,7 @@ let test_while _ =
     [+While loop]
     [
       node 0 Node.Entry [] [5];
-      node 1 Node.Exit [6] [3];
+      node 1 Node.Normal [6] [3];
       node 2 Node.Error [] [3];
       node 3 Node.Final [1; 2] [];
       node 4 Node.Yield [] [];
@@ -545,7 +545,7 @@ let test_while _ =
     [+While loop]
     [
       node 0 Node.Entry [] [5];
-      node 1 Node.Exit [6] [3];
+      node 1 Node.Normal [6] [3];
       node 2 Node.Error [] [3];
       node 3 Node.Final [1; 2] [];
       node 4 Node.Yield [] [];
@@ -572,7 +572,7 @@ let test_while _ =
     [+While loop]
     [
       node 0 Node.Entry [] [5];
-      node 1 Node.Exit [6] [3];
+      node 1 Node.Normal [6] [3];
       node 2 Node.Error [] [3];
       node 3 Node.Final [1; 2] [];
       node 4 Node.Yield [] [];
@@ -600,7 +600,7 @@ let test_while _ =
     [+While outer]
     [
       node 0 Node.Entry [] [5];
-      node 1 Node.Exit [6] [3];
+      node 1 Node.Normal [6] [3];
       node 2 Node.Error [] [3];
       node 3 Node.Final [1; 2] [];
       node 4 Node.Yield [] [];
@@ -619,7 +619,7 @@ let test_yield _ =
     [yield]
     [
       node 0 Node.Entry [] [5];
-      node 1 Node.Exit [5] [3];
+      node 1 Node.Normal [5] [3];
       node 2 Node.Error [] [3];
       node 3 Node.Final [1; 2] [];
       node 4 Node.Yield [5] [];

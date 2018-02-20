@@ -16,7 +16,7 @@ module Node = struct
     | Dispatch
     | Entry
     | Error
-    | Exit
+    | Normal
     | Final
     | For of Statement.t For.t
     | If of Statement.t If.t
@@ -123,8 +123,8 @@ module Node = struct
         "Entry"
     | Error ->
         "Error"
-    | Exit ->
-        "Exit"
+    | Normal ->
+        "Normal"
     | Final ->
         "Final"
     | For statement ->
@@ -155,7 +155,7 @@ type jumps = {
   break: Node.t;
   continue: Node.t;
   error: Node.t;
-  exit: Node.t;
+  normal: Node.t;
   yield: Node.t;
 }
 
@@ -217,7 +217,7 @@ let entry_index =
   0
 
 
-let exit_index =
+let normal_index =
   1
 
 
@@ -225,7 +225,7 @@ let error_index =
   2
 
 
-let final_index =
+let exit_index =
   3
 
 
@@ -236,16 +236,16 @@ let create define =
 
   let entry = Node.empty graph Node.Entry in
   assert (entry.Node.id = entry_index);
-  let exit = Node.empty graph Node.Exit in
-  assert (exit.Node.id = exit_index);
+  let normal = Node.empty graph Node.Normal in
+  assert (normal.Node.id = normal_index);
   let error = Node.empty graph Node.Error in
   assert (error.Node.id = error_index);
-  let final = Node.empty graph Node.Final in
-  assert (final.Node.id = final_index);
+  let exit = Node.empty graph Node.Final in
+  assert (exit.Node.id = exit_index);
   let yield = Node.empty graph Node.Yield in
 
-  Node.connect exit final;
-  Node.connect error final;
+  Node.connect normal exit;
+  Node.connect error exit;
 
   (* Forward creation of the control flow for a list of statements. Returns
      the last node or `None` if the flow has ended in a jump. *)
@@ -307,7 +307,7 @@ let create define =
         create post_statements jumps join
 
     | { Ast.Node.value = Try block; _ }::statements ->
-        (* -> [split] -> [body] -> [orelse] -> [normal finally] ->
+        (* -> [split] -> [body] -> [orelse] -> [normal exit] ->
                  |                                    ^
              [dispatch] -----> [handler] -------------|
                  |               ...
@@ -315,7 +315,7 @@ let create define =
                  |
               [error]
 
-           [return finally] -> [exit] *)
+           [return exit] -> [normal] *)
         let finally () =
           let finally =
             Node.empty graph (Node.Block []) in
@@ -332,9 +332,9 @@ let create define =
         Node.connect dispatch uncaught;
         Node.connect uncaught jumps.error;
         let return = finally () in
-        Node.connect return jumps.exit;
+        Node.connect return jumps.normal;
 
-        let try_jumps = { jumps with error = dispatch; exit = return } in
+        let try_jumps = { jumps with error = dispatch; normal = return } in
 
         (* Normal execution. *)
         let body_orelse =
@@ -382,7 +382,7 @@ let create define =
                  |    [yield] -- |
                  |
                  ?
-           [break | continue | error | exit ] *)
+           [break | continue | error | normal ] *)
         let node =
           match predecessor.Node.kind with
           | Node.Block statements ->
@@ -404,7 +404,7 @@ let create define =
               Node.connect node jumps.error;
               None
           | { Ast.Node.value = Return _; _ } ->
-              Node.connect node jumps.exit;
+              Node.connect node jumps.normal;
               None
           | { Ast.Node.value = Yield _; _ } ->
               Node.connect node jumps.yield;
@@ -416,9 +416,9 @@ let create define =
     | [] ->
         Some predecessor in
 
-  let jumps = { break = exit; continue = exit; error; exit = exit; yield} in
+  let jumps = { break = normal; continue = normal; error; normal = normal; yield} in
   let node = create define.Define.body jumps entry in
-  Node.connect_option node exit;
+  Node.connect_option node normal;
   graph
 
 
