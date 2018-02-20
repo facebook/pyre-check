@@ -254,7 +254,7 @@ let create define =
      the last node or `None` if the flow has ended in a jump. *)
   let rec create statements jumps predecessor =
     match statements with
-    | { Ast.Node.value = For loop; _ }::statements ->
+    | { Ast.Node.value = For ({ For.body; orelse; _ } as loop); _ } :: statements ->
         (*       ____________
                  v          |
                  -> [split] -> [body]
@@ -265,14 +265,14 @@ let create define =
         let join = Node.empty graph Node.Join in
         let loop_jumps = { jumps with break = join; continue = split } in
         Node.connect predecessor split;
-        let body = create loop.For.body loop_jumps split in
+        let body = create body loop_jumps split in
         Node.connect_option body split;
-        let orelse = create loop.For.orelse jumps split in
+        let orelse = create orelse jumps split in
         Node.connect_option orelse join;
         Node.connect split join;
         create statements jumps join
 
-    | { Ast.Node.value = If conditional; _ }::statements ->
+    | { Ast.Node.value = If ({ If.test; body; orelse; _ } as conditional); _ } :: statements ->
         (* -> [split] -> [body]
                  |          |
                  v          v
@@ -280,38 +280,42 @@ let create define =
         let split = Node.empty graph (Node.If conditional) in
         let join = Node.empty graph Node.Join in
         Node.connect predecessor split;
-        let body =
+        let body_node =
           let body_statements =
-            let test = Expression.normalize conditional.If.test in
-            (assume test) :: conditional.If.body
+            let test = Expression.normalize test in
+            (assume test) :: body
           in
           create body_statements jumps split
         in
-        Node.connect_option body join;
+        Node.connect_option body_node join;
 
         let orelse_statements =
-          if List.length conditional.If.orelse > 0 then
+          if List.length orelse > 0 then
             let test =
-              Expression.negate conditional.If.test
+              Expression.negate test
               |> Expression.normalize in
-            (assume test) :: conditional.If.orelse;
+            (assume test) :: orelse;
           else
-            [] in
+            []
+        in
         let orelse = create orelse_statements jumps split in
         Node.connect_option orelse join;
 
         let post_statements =
           let test =
-            Expression.negate conditional.If.test
+            Expression.negate test
             |> Expression.normalize in
-          if Statement.terminates conditional.If.body then
+          if Statement.terminates body then
             (assume test) :: statements
           else
             statements
         in
         create post_statements jumps join
 
-    | { Ast.Node.value = Try block; _ }::statements ->
+    | {
+      Ast.Node.value = Try ({ Try.body; orelse; finally; handlers } as block);
+      _;
+    } :: statements ->
         (* -> [split] -> [body] -> [orelse] -> [normal exit] ->
                  |                                    ^
              [dispatch] -----> [handler] -------------|
@@ -322,10 +326,11 @@ let create define =
 
            [return exit] -> [normal] *)
         let finally () =
-          let finally =
+          let node =
             Node.empty graph (Node.Block []) in
-          create block.Try.finally jumps finally |> ignore;
-          finally in
+          create finally jumps node |> ignore;
+          node
+        in
 
         (* Scaffolding. *)
         let split = Node.empty graph (Node.Try block) in
@@ -343,26 +348,26 @@ let create define =
 
         (* Normal execution. *)
         let body_orelse =
-          create block.Try.body try_jumps split
-          >>= create block.Try.orelse jumps in
+          create body try_jumps split
+          >>= create orelse jumps in
         Node.connect_option body_orelse normal;
 
         (* Exception handling. *)
         let handler handler =
           create handler.Try.handler_body jumps dispatch
           |> (Fn.flip Node.connect_option) normal in
-        List.iter block.Try.handlers ~f:handler;
+        List.iter handlers ~f:handler;
 
         create statements jumps normal
 
-    | { Ast.Node.value = With block; _ }::statements ->
+    | { Ast.Node.value = With ({ With.body; _ } as block); _ } :: statements ->
         (* -> [split] -> [body] -> *)
         let split = Node.empty graph (Node.With block) in
         Node.connect predecessor split;
-        create block.With.body jumps split
+        create body jumps split
         >>= create statements jumps
 
-    | { Ast.Node.value = While loop; _ }::statements ->
+    | { Ast.Node.value = While ({ While.test; body; orelse } as loop); _ } :: statements ->
         (*       ____________
                  v          |
                  -> [split] -> [body]
@@ -375,18 +380,18 @@ let create define =
         Node.connect predecessor split;
         let body =
           let body_statements =
-            let test = Expression.normalize loop.While.test in
-            (assume test) :: loop.While.body
+            let test = Expression.normalize test in
+            (assume test) :: body
           in
           create body_statements loop_jumps split
         in
         Node.connect_option body split;
-        let orelse = create loop.While.orelse jumps split in
+        let orelse = create orelse jumps split in
         Node.connect_option orelse join;
         Node.connect split join;
         create statements jumps join
 
-    | statement::statements ->
+    | statement :: statements ->
         (* -> [statement] ->
                  |      \        ^
                  |       ?       |
@@ -402,7 +407,8 @@ let create define =
           | _ ->
               let node = Node.empty graph (Node.Block [statement]) in
               Node.connect predecessor node;
-              node in
+              node
+        in
         begin
           match statement with
           | { Ast.Node.value = Break; _ } ->
@@ -425,7 +431,8 @@ let create define =
         end
 
     | [] ->
-        Some predecessor in
+        Some predecessor
+  in
 
   let jumps = { break = normal; continue = normal; error; normal = normal; yield} in
   let node = create define.Define.body jumps entry in
