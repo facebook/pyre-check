@@ -1406,13 +1406,14 @@ let test_method_signature _ =
       { Call.name = !"f"; arguments = [] }
       (List.map ~f:(~+) (normal [Type.primitive "bar"]))
   in
-  (match callee with
-   | Some {
-       Signature.instantiated = { Define.return_annotation = Some annotation; _ };
-       _;
-     } -> assert_equal (parse_annotation environment annotation) Type.integer
-   | _ -> assert_unreached ()
-  );
+  begin
+    match callee with
+    | Some {
+        Signature.instantiated = { Define.return_annotation = Some annotation; _ };
+        _;
+      } -> assert_equal (parse_annotation environment annotation) Type.integer
+    | _ -> assert_unreached ()
+  end;
 
   let environment =
     populate {|
@@ -1436,35 +1437,39 @@ let test_method_signature _ =
       (Type.list Type.integer)
       { Call.name = !"head"; arguments = [] }
       (List.map ~f:(~+) (normal [Type.list Type.integer])) in
-  (match callee with
-   | Some {
-       Signature.instantiated = { Define.name; return_annotation = Some annotation; _ };
-       _;
-     }->
-       assert_equal name (Access.create "head");
-       assert_equal
-         (parse_annotation environment annotation)
-         Type.integer
-   | _ ->
-       assert_unreached ());
+  begin
+    match callee with
+    | Some {
+        Signature.instantiated = { Define.name; return_annotation = Some annotation; _ };
+        _;
+      }->
+        assert_equal name (Access.create "head");
+        assert_equal
+          (parse_annotation environment annotation)
+          Type.integer
+    | _ ->
+        assert_unreached ()
+  end;
   let callee =
     method_signature
       environment
       (Type.list Type.integer)
       { Call.name = !"append"; arguments = [] }
       (List.map ~f:(~+) (normal [Type.list Type.integer; Type.integer])) in
-  (match callee with
-   | Some {
-       Signature.instantiated = { Define.name; return_annotation = Some annotation; _ };
-       _;
-     }->
-       assert_equal name (Access.create "append");
-       assert_equal
-         ~printer:(Format.asprintf "%a" Type.pp)
-         (parse_annotation environment annotation)
-         (Type.list Type.integer)
-   | _ ->
-       assert_unreached ());
+  begin
+    match callee with
+    | Some {
+        Signature.instantiated = { Define.name; return_annotation = Some annotation; _ };
+        _;
+      }->
+        assert_equal name (Access.create "append");
+        assert_equal
+          ~printer:(Format.asprintf "%a" Type.pp)
+          (parse_annotation environment annotation)
+          (Type.list Type.integer)
+    | _ ->
+        assert_unreached ()
+  end;
 
   (* Two type parameters. *)
   let callee =
@@ -1473,18 +1478,20 @@ let test_method_signature _ =
       (Type.dictionary ~key:Type.string ~value:Type.integer)
       { Call.name = !"get"; arguments = [] }
       (List.map ~f:(~+) (normal [Type.dictionary ~key:Type.string ~value:Type.integer])) in
-  (match callee with
-   | Some {
-       Signature.instantiated = { Define.name; return_annotation = Some annotation; _ };
-       _;
-     }->
-       assert_equal name (Access.create "get");
-       assert_equal
-         ~printer:(Format.asprintf "%a" Type.pp)
-         (parse_annotation environment annotation)
-         (Type.Optional Type.integer)
-   | _ ->
-       assert_unreached ());
+  begin
+    match callee with
+    | Some {
+        Signature.instantiated = { Define.name; return_annotation = Some annotation; _ };
+        _;
+      }->
+        assert_equal name (Access.create "get");
+        assert_equal
+          ~printer:(Format.asprintf "%a" Type.pp)
+          (parse_annotation environment annotation)
+          (Type.Optional Type.integer)
+    | _ ->
+        assert_unreached ()
+  end;
 
   (* Keyword arguments. *)
   let callee =
@@ -1498,11 +1505,13 @@ let test_method_signature _ =
              Type.dictionary ~key:Type.string ~value:Type.integer;
              Type.dictionary ~key:Type.string ~value:Type.integer;
            ])) in
-  (match callee with
-   | Some { Signature.instantiated = { Define.name; _ }; _ } ->
-       assert_equal name (Access.create "update");
-   | _ ->
-       assert_unreached ());
+  begin
+    match callee with
+    | Some { Signature.instantiated = { Define.name; _ }; _ } ->
+        assert_equal name (Access.create "update");
+    | _ ->
+        assert_unreached ()
+  end;
 
   (* Variable arguments. *)
   let callee =
@@ -1511,11 +1520,13 @@ let test_method_signature _ =
       (Type.dictionary ~key:Type.string ~value:Type.integer)
       { Call.name = !"add"; arguments = [] }
       (List.map ~f:(~+) (normal [Type.dictionary ~key:Type.string ~value:Type.integer])) in
-  (match callee with
-   | Some { Signature.instantiated = { Define.name; _ }; _ } ->
-       assert_equal name (Access.create "add");
-   | _ ->
-       assert_unreached ())
+  begin
+    match callee with
+    | Some { Signature.instantiated = { Define.name; _ }; _ } ->
+        assert_equal name (Access.create "add");
+    | _ ->
+        assert_unreached ()
+  end
 
 
 let test_class_definition _ =

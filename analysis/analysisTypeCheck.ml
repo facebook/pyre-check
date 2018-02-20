@@ -847,13 +847,15 @@ module State = struct
                   | Some { Annotation.annotation = Type.Union parameters; _ } ->
                       let parameters = Type.Set.of_list parameters in
                       let constraints =
-                        (match annotation with
-                         | { Node.value = Tuple elements; _ } ->
-                             List.map
-                               ~f:(Resolution.parse_annotation resolution)
-                               elements
-                         | _ ->
-                             [Resolution.parse_annotation resolution annotation])
+                        begin
+                          match annotation with
+                          | { Node.value = Tuple elements; _ } ->
+                              List.map
+                                ~f:(Resolution.parse_annotation resolution)
+                                elements
+                          | _ ->
+                              [Resolution.parse_annotation resolution annotation]
+                        end
                         |> Type.Set.of_list
                       in
                       let constrained =
@@ -1298,9 +1300,11 @@ module State = struct
                 ~init:errors
                 entries
             in
-            (match keywords with
-             | None -> errors
-             | Some keyword -> check_expression ~resolution errors keyword)
+            begin
+              match keywords with
+              | None -> errors
+              | Some keyword -> check_expression ~resolution errors keyword
+            end
 
         | DictionaryComprehension { Comprehension.element; generators } ->
             let ({ errors; _ } as state) = List.fold ~f:check_generator ~init:state generators in
@@ -1325,10 +1329,12 @@ module State = struct
             check_expression ~resolution:(update_resolution state) errors element
 
         | Starred starred ->
-            (match starred with
-             | Starred.Once expression
-             | Starred.Twice expression ->
-                 check_expression ~resolution errors expression)
+            begin
+              match starred with
+              | Starred.Once expression
+              | Starred.Twice expression ->
+                  check_expression ~resolution errors expression
+            end
 
         | Ternary { Ternary.target; test; alternative } ->
             let errors = check_expression ~resolution errors test in
@@ -1343,9 +1349,11 @@ module State = struct
             check_expression ~resolution errors operand
 
         | Expression.Yield yield ->
-            (match yield with
-             | None -> errors
-             | Some expression -> check_expression ~resolution errors expression)
+            begin
+              match yield with
+              | None -> errors
+              | Some expression -> check_expression ~resolution errors expression
+            end
 
         (* Trivial base cases *)
         | String _ | Complex _ | Bytes _ | Float _ | Format _ | Integer _ | False | True ->
@@ -1486,16 +1494,18 @@ module State = struct
                     ~declare_location:(Attribute.location attribute)
               | Access.Element.Attribute attribute when not (Attribute.defined attribute) ->
                   let parent = Attribute.parent attribute in
-                  (match Class.body parent with
-                   | { Node.location; _ } :: _ ->
-                       add_missing_annotation_error
-                         ~expected:Type.Top
-                         ~parent:(Some parent)
-                         ~name:(Attribute.access attribute)
-                         ~declare_location:location
-                         errors
-                   | _ ->
-                       errors)
+                  begin
+                    match Class.body parent with
+                    | { Node.location; _ } :: _ ->
+                        add_missing_annotation_error
+                          ~expected:Type.Top
+                          ~parent:(Some parent)
+                          ~name:(Attribute.access attribute)
+                          ~declare_location:location
+                          errors
+                    | _ ->
+                        errors
+                  end
               | _ ->
                   let name = access in
                   let module Handler = (val environment : Environment.Handler) in

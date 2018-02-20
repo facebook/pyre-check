@@ -978,11 +978,13 @@ module Call = struct
         Argument.value = { Node.value = Access access; _ };
         _;
       } as argument] ->
-        (match Identifier.show name with
-         | "abs" -> Some "__abs__"
-         | "repr" -> Some "__repr__"
-         | "str" -> Some "__str__"
-         | _ -> None)
+        begin
+          match Identifier.show name with
+          | "abs" -> Some "__abs__"
+          | "repr" -> Some "__repr__"
+          | "str" -> Some "__str__"
+          | _ -> None
+        end
         >>| (fun name ->
             let call =
               [Access.Call {
@@ -1005,22 +1007,24 @@ module Call = struct
     match name with
     | { Node.location; value = Access [Access.Identifier name]; _ } ->
         (* cf. https://docs.python.org/3/reference/datamodel.html#object.__radd__ *)
-        (match Identifier.show name with
-         | "__add__" -> Some "__radd__"
-         | "__sub__" -> Some "__rsub__"
-         | "__mul__" -> Some "__rmul__"
-         | "__matmul__" -> Some "__rmatmul__"
-         | "__truediv__" -> Some "__rtruediv__"
-         | "__floordiv__" -> Some "__rfloordiv__"
-         | "__mod__" -> Some "__rmod__"
-         | "__divmod__" -> Some "__rdivmod__"
-         | "__pow__" -> Some "__rpow__"
-         | "__lshift__" -> Some "__rlshift__"
-         | "__rshift__" -> Some "__rrshift__"
-         | "__and__" -> Some "__rand__"
-         | "__xor__" -> Some "__rxor__"
-         | "__or__" -> Some "__ror__"
-         | _ -> None)
+        begin
+          match Identifier.show name with
+          | "__add__" -> Some "__radd__"
+          | "__sub__" -> Some "__rsub__"
+          | "__mul__" -> Some "__rmul__"
+          | "__matmul__" -> Some "__rmatmul__"
+          | "__truediv__" -> Some "__rtruediv__"
+          | "__floordiv__" -> Some "__rfloordiv__"
+          | "__mod__" -> Some "__rmod__"
+          | "__divmod__" -> Some "__rdivmod__"
+          | "__pow__" -> Some "__rpow__"
+          | "__lshift__" -> Some "__rlshift__"
+          | "__rshift__" -> Some "__rrshift__"
+          | "__and__" -> Some "__rand__"
+          | "__xor__" -> Some "__rxor__"
+          | "__or__" -> Some "__ror__"
+          | _ -> None
+        end
         >>| (fun name ->
             {
               call = {
@@ -1076,34 +1080,42 @@ module Call = struct
       >>= fun name ->
       (* Get the type of the argument. *)
       let parameter_map = Define.parameter_annotations (Define.create callee) ~resolution in
-      (match Map.find parameter_map name with
-       | Some annotation when not (Type.is_meta annotation) -> Some annotation
-       | _ -> None)
+      begin
+        match Map.find parameter_map name with
+        | Some annotation when not (Type.is_meta annotation) -> Some annotation
+        | _ -> None
+      end
       >>= fun expected ->
 
       (* Compare to the actual type. *)
-      (match value with
-       | Signature.Normal { Signature.annotation = actual; _ }
-       | Signature.Starred (Type.Parametric { Type.parameters = [actual]; _ }) ->
-           Some actual
-       | _ ->
-           None)
+      begin
+        match value with
+        | Signature.Normal { Signature.annotation = actual; _ }
+        | Signature.Starred (Type.Parametric { Type.parameters = [actual]; _ }) ->
+            Some actual
+        | _ ->
+            None
+      end
       >>= fun actual ->
       check_parameter ~argument ~position ~offset ~location ~name ~actual ~expected
     in
     let accumulate_errors position (offset, errors) = function
       | { Node.value = Signature.Normal _; _ } as argument ->
-          (match parameter_ok ~position ~offset argument with
-           | Some error -> offset, add_error errors error
-           | _ -> offset, errors)
+          begin
+            match parameter_ok ~position ~offset argument with
+            | Some error -> offset, add_error errors error
+            | _ -> offset, errors
+          end
       | { Node.value = Signature.Starred _; _ } as argument ->
           (* Angelic assumption: if we get a type error with a starred argument we move on
            * to the next argument, otherwise we keep consuming parameters. The offset tries
            * to match the next argument to one left of where it would be normally matched.
           *)
-          (match parameter_ok ~position ~offset argument with
-           | Some _ -> offset - 1, errors
-           | _ -> offset, errors)
+          begin
+            match parameter_ok ~position ~offset argument with
+            | Some _ -> offset - 1, errors
+            | _ -> offset, errors
+          end
     in
     argument_annotations ~resolution call
     |> List.foldi ~init:(0, init) ~f:accumulate_errors
@@ -1119,17 +1131,19 @@ module ComparisonOperator = struct
   let override { ComparisonOperator.left; right } =
     let simple_override ({ Node.location; _ } as left) (operator, right) =
       let open ComparisonOperator in
-      (match operator with
-       | Equals -> Some "__eq__"
-       | GreaterThan -> Some "__gt__"
-       | GreaterThanOrEquals -> Some "__ge__"
-       | In -> Some "__contains__"
-       | Is
-       | IsNot -> None
-       | LessThan -> Some "__lt__"
-       | LessThanOrEquals -> Some "__le__"
-       | NotEquals -> Some "__ne__"
-       | NotIn -> None)
+      begin
+        match operator with
+        | Equals -> Some "__eq__"
+        | GreaterThan -> Some "__gt__"
+        | GreaterThanOrEquals -> Some "__ge__"
+        | In -> Some "__contains__"
+        | Is
+        | IsNot -> None
+        | LessThan -> Some "__lt__"
+        | LessThanOrEquals -> Some "__le__"
+        | NotEquals -> Some "__ne__"
+        | NotIn -> None
+      end
       >>| (fun name ->
           {
             Node.location;
@@ -1165,11 +1179,13 @@ module UnaryOperator = struct
 
   let override { UnaryOperator.operator; operand = ({ Node.location; _ } as operand) } =
     let open UnaryOperator in
-    (match operator with
-     | Invert -> Some "__invert__"
-     | Negative -> Some "__neg__"
-     | Not -> None
-     | Positive -> Some "__pos__")
+    begin
+      match operator with
+      | Invert -> Some "__invert__"
+      | Negative -> Some "__neg__"
+      | Not -> None
+      | Positive -> Some "__pos__"
+    end
     >>| (fun name ->
         {
           Node.location;
@@ -1427,19 +1443,21 @@ module Access = struct
             let backup =
               Call.backup call
               >>= fun call ->
-              (match call with
-               | {
-                 Call.call = { Expression.Call.arguments = [{ Argument.value; _ }]; _ };
-                 _;
-               } ->
-                   let annotation = Resolution.resolve resolution value in
-                   Resolution.method_signature
-                     resolution
-                     annotation
-                     (Call.call call)
-                     (Call.argument_annotations ~resolution call)
-                   |> pick_signature call
-               | _ -> None)
+              begin
+                match call with
+                | {
+                  Call.call = { Expression.Call.arguments = [{ Argument.value; _ }]; _ };
+                  _;
+                } ->
+                    let annotation = Resolution.resolve resolution value in
+                    Resolution.method_signature
+                      resolution
+                      annotation
+                      (Call.call call)
+                      (Call.argument_annotations ~resolution call)
+                    |> pick_signature call
+                | _ -> None
+              end
               >>= fun signature -> Some (call, signature)
             in
             let element =
@@ -1537,10 +1555,12 @@ module Access = struct
                     _;
                   }) ->
                   (* TODO(T22845396): improve temporary fix *)
-                  (match parameters with
-                   | _ :: parameter :: _ -> parameter
-                   | parameter :: _ -> parameter
-                   | [] -> Type.Top)
+                  begin
+                    match parameters with
+                    | _ :: parameter :: _ -> parameter
+                    | parameter :: _ -> parameter
+                    | [] -> Type.Top
+                  end
               | [Access.Slice _], _ ->
                   (Annotation.annotation annotation)
               | _ ->

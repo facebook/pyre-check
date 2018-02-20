@@ -447,13 +447,15 @@ let resolution
               | Type.Variable { Type.constraints = type_constraints; _ }, _ ->
                   if type_constraints = [] ||
                      List.mem type_constraints argument ~equal:Type.equal then
-                    (match Map.find constraints parameter with
-                     | Some existing
-                       when not (Type.equal argument existing) ->
-                         (* Don't do joins. *)
-                         None
-                     | _ ->
-                         Some argument)
+                    begin
+                      match Map.find constraints parameter with
+                      | Some existing
+                        when not (Type.equal argument existing) ->
+                          (* Don't do joins. *)
+                          None
+                      | _ ->
+                          Some argument
+                    end
                     >>| fun argument ->
                     Map.set constraints ~key:parameter ~data:argument
                   else
@@ -556,11 +558,13 @@ let resolution
 
   let function_signature qualifier call arguments =
     let name =
-      (match call.Expression.Call.name with
-       | { Node.value = Access access; _ } ->
-           qualifier @ access
-       | _ ->
-           [])
+      begin
+        match call.Expression.Call.name with
+        | { Node.value = Access access; _ } ->
+            qualifier @ access
+        | _ ->
+            []
+      end
     in
     Handler.function_definitions name
     >>| instantiate_signature call arguments

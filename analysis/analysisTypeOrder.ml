@@ -573,12 +573,14 @@ and join ((module Handler: Handler) as order) left right =
         if less_or_equal order ~left:other ~right:union then
           union
         else
-          (match other with
-           | Type.Optional element ->
-               Type.Optional (Type.union (element :: elements))
-           | _ ->
-               List.map ~f:(join order other) elements
-               |> List.fold ~f:(join order) ~init:Type.Bottom)
+          begin
+            match other with
+            | Type.Optional element ->
+                Type.Optional (Type.union (element :: elements))
+            | _ ->
+                List.map ~f:(join order other) elements
+                |> List.fold ~f:(join order) ~init:Type.Bottom
+          end
 
     | Type.Parametric _, Type.Parametric _ ->
         let left_primitive, _ = Type.split left in
@@ -604,11 +606,13 @@ and join ((module Handler: Handler) as order) left right =
             | _ ->
                 None
           in
-          (match target, parameters with
-           | Type.Primitive name, Some parameters ->
-               Type.Parametric { Type.name; parameters }
-           | _ ->
-               Type.Object)
+          begin
+            match target, parameters with
+            | Type.Primitive name, Some parameters ->
+                Type.Parametric { Type.name; parameters }
+            | _ ->
+                Type.Object
+          end
 
         else
           Type.Object
@@ -706,11 +710,13 @@ and meet order left right =
           else
             None
         in
-        (match primitive, parameters with
-         | Type.Primitive name, Some parameters ->
-             Type.Parametric { Type.name; parameters }
-         | _ ->
-             Type.Bottom)
+        begin
+          match primitive, parameters with
+          | Type.Primitive name, Some parameters ->
+              Type.Parametric { Type.name; parameters }
+          | _ ->
+              Type.Bottom
+        end
 
     (* A <= B -> glb(A, Optional[B]) = A. *)
     | other, Type.Optional parameter
@@ -800,9 +806,11 @@ and instantiate_parameters
                   annotation
 
               | Type.Variable _ | Type.Primitive _ ->
-                  (match Map.find type_variables annotation with
-                   | Some instantiated -> instantiated
-                   | None -> annotation)
+                  begin
+                    match Map.find type_variables annotation with
+                    | Some instantiated -> instantiated
+                    | None -> annotation
+                  end
 
               | Type.Parametric { Type.name; parameters } ->
                   Type.Parametric {

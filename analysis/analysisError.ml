@@ -173,9 +173,11 @@ let code { kind; _ } =
   | IncompatibleAttributeType _ -> 8
   | IncompatibleVariableType _ -> 9
   | InconsistentOverride { override; _ } ->
-      (match override with
-       | StrengthenedPrecondition -> 14
-       | WeakenedPostcondition -> 15)
+      begin
+        match override with
+        | StrengthenedPrecondition -> 14
+        | WeakenedPostcondition -> 15
+      end
   | MissingParameterAnnotation _ -> 2
   | MissingReturnAnnotation _ -> 3
   | MissingAttributeAnnotation _ -> 4
@@ -615,60 +617,62 @@ let less_or_equal ~resolution left right =
     TypeOrder.less_or_equal order ~left:left.expected ~right:right.expected
   in
   Location.equal left.location right.location &&
-  (match left.kind, right.kind with
-   | IncompatibleAwaitableType left, IncompatibleAwaitableType right ->
-       TypeOrder.less_or_equal order ~left ~right
-   | MissingParameterAnnotation left, MissingParameterAnnotation right
-     when left.name = right.name ->
-       TypeOrder.less_or_equal
-         order
-         ~left:left.annotation
-         ~right:right.annotation
-   | MissingReturnAnnotation left, MissingReturnAnnotation right ->
-       TypeOrder.less_or_equal
-         order
-         ~left: left.annotation
-         ~right: right.annotation
-   | MissingAttributeAnnotation { missing_annotation = left; _ },
-     MissingAttributeAnnotation { missing_annotation = right; _ }
-   | MissingGlobalAnnotation left, MissingGlobalAnnotation right
-     when left.name = right.name && left.due_to_any = right.due_to_any ->
-       TypeOrder.less_or_equal
-         order
-         ~left:left.annotation
-         ~right:right.annotation
-   | IncompatibleParameterType left, IncompatibleParameterType right when left.name = right.name ->
-       less_or_equal_mismatch left.mismatch right.mismatch
-   | IncompatibleReturnType left, IncompatibleReturnType right ->
-       less_or_equal_mismatch left right
-   | IncompatibleAttributeType left, IncompatibleAttributeType right
-     when Annotated.Class.name_equal left.parent right.parent &&
-          left.incompatible_type.name = right.incompatible_type.name ->
-       less_or_equal_mismatch left.incompatible_type.mismatch right.incompatible_type.mismatch
-   | IncompatibleVariableType left, IncompatibleVariableType right when left.name = right.name ->
-       less_or_equal_mismatch left.mismatch right.mismatch
-   | InconsistentOverride left, InconsistentOverride right ->
-       less_or_equal_mismatch left.mismatch right.mismatch
-   | UninitializedAttribute left, UninitializedAttribute right when left.name = right.name ->
-       less_or_equal_mismatch left.mismatch right.mismatch
-   | UndefinedAttribute left, UndefinedAttribute right
-     when Access.equal left.attribute right.attribute ->
-       TypeOrder.less_or_equal
-         order
-         ~left:left.annotation
-         ~right:right.annotation
-   | UndefinedMethod left, UndefinedMethod right ->
-       TypeOrder.less_or_equal
-         order
-         ~left:left.annotation
-         ~right:right.annotation
-   | UndefinedType left, UndefinedType right ->
-       TypeOrder.less_or_equal order ~left ~right
-   | UnusedIgnore { unused_error_codes = left }, UnusedIgnore { unused_error_codes = right } ->
-       Set.is_subset (Int.Set.of_list left) ~of_:(Int.Set.of_list right)
-   | _, Top -> true
-   | _ ->
-       false)
+  begin
+    match left.kind, right.kind with
+    | IncompatibleAwaitableType left, IncompatibleAwaitableType right ->
+        TypeOrder.less_or_equal order ~left ~right
+    | MissingParameterAnnotation left, MissingParameterAnnotation right
+      when left.name = right.name ->
+        TypeOrder.less_or_equal
+          order
+          ~left:left.annotation
+          ~right:right.annotation
+    | MissingReturnAnnotation left, MissingReturnAnnotation right ->
+        TypeOrder.less_or_equal
+          order
+          ~left: left.annotation
+          ~right: right.annotation
+    | MissingAttributeAnnotation { missing_annotation = left; _ },
+      MissingAttributeAnnotation { missing_annotation = right; _ }
+    | MissingGlobalAnnotation left, MissingGlobalAnnotation right
+      when left.name = right.name && left.due_to_any = right.due_to_any ->
+        TypeOrder.less_or_equal
+          order
+          ~left:left.annotation
+          ~right:right.annotation
+    | IncompatibleParameterType left, IncompatibleParameterType right when left.name = right.name ->
+        less_or_equal_mismatch left.mismatch right.mismatch
+    | IncompatibleReturnType left, IncompatibleReturnType right ->
+        less_or_equal_mismatch left right
+    | IncompatibleAttributeType left, IncompatibleAttributeType right
+      when Annotated.Class.name_equal left.parent right.parent &&
+           left.incompatible_type.name = right.incompatible_type.name ->
+        less_or_equal_mismatch left.incompatible_type.mismatch right.incompatible_type.mismatch
+    | IncompatibleVariableType left, IncompatibleVariableType right when left.name = right.name ->
+        less_or_equal_mismatch left.mismatch right.mismatch
+    | InconsistentOverride left, InconsistentOverride right ->
+        less_or_equal_mismatch left.mismatch right.mismatch
+    | UninitializedAttribute left, UninitializedAttribute right when left.name = right.name ->
+        less_or_equal_mismatch left.mismatch right.mismatch
+    | UndefinedAttribute left, UndefinedAttribute right
+      when Access.equal left.attribute right.attribute ->
+        TypeOrder.less_or_equal
+          order
+          ~left:left.annotation
+          ~right:right.annotation
+    | UndefinedMethod left, UndefinedMethod right ->
+        TypeOrder.less_or_equal
+          order
+          ~left:left.annotation
+          ~right:right.annotation
+    | UndefinedType left, UndefinedType right ->
+        TypeOrder.less_or_equal order ~left ~right
+    | UnusedIgnore { unused_error_codes = left }, UnusedIgnore { unused_error_codes = right } ->
+        Set.is_subset (Int.Set.of_list left) ~of_:(Int.Set.of_list right)
+    | _, Top -> true
+    | _ ->
+        false
+  end
 
 
 let join ~resolution left right =

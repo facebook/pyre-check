@@ -482,33 +482,39 @@ let create ~aliases { Node.value = expression; _ } =
         (* Substitutions. *)
         match resolved with
         | Primitive name ->
-            (match Identifier.Map.find primitive_substitution_map name with
-             | Some substitute -> substitute
-             | None -> resolved)
+            begin
+              match Identifier.Map.find primitive_substitution_map name with
+              | Some substitute -> substitute
+              | None -> resolved
+            end
         | Parametric { name; parameters } ->
-            (match Identifier.Map.find parametric_substitution_map name with
-             | Some name ->
-                 Parametric { name; parameters }
-             | None ->
-                 (match Identifier.show name with
-                  | "typing.Optional" when List.length parameters = 1 ->
-                      optional (List.hd_exn parameters)
+            begin
+              match Identifier.Map.find parametric_substitution_map name with
+              | Some name ->
+                  Parametric { name; parameters }
+              | None ->
+                  begin
+                    match Identifier.show name with
+                    | "typing.Optional" when List.length parameters = 1 ->
+                        optional (List.hd_exn parameters)
 
-                  | "tuple"
-                  | "typing.Tuple" ->
-                      let tuple: tuple =
-                        match parameters with
-                        | [parameter; Primitive ellipses] when Identifier.show ellipses = "..." ->
-                            Unbounded parameter
-                        | _ -> Bounded parameters
-                      in
-                      Tuple tuple
+                    | "tuple"
+                    | "typing.Tuple" ->
+                        let tuple: tuple =
+                          match parameters with
+                          | [parameter; Primitive ellipses] when Identifier.show ellipses = "..." ->
+                              Unbounded parameter
+                          | _ -> Bounded parameters
+                        in
+                        Tuple tuple
 
-                  | "typing.Union" ->
-                      union parameters
+                    | "typing.Union" ->
+                        union parameters
 
-                  | _ ->
-                      resolved))
+                    | _ ->
+                        resolved
+                  end
+            end
         | Union elements ->
             union elements
         | _ ->

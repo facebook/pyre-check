@@ -505,14 +505,16 @@ let fix_singleton_sets source =
             keywords = Some { Node.location = keyword_location; value = keyword }
           }
           ->
-            (match keyword with
-             | Starred _ ->
-                 (), expression
-             | _ ->
-                 (), {
-                   Node.location;
-                   value = Set [{ Node.location = keyword_location; value = keyword}];
-                 })
+            begin
+              match keyword with
+              | Starred _ ->
+                  (), expression
+              | _ ->
+                  (), {
+                    Node.location;
+                    value = Set [{ Node.location = keyword_location; value = keyword}];
+                  }
+            end
 
         | _ ->
             (), expression
@@ -739,11 +741,13 @@ let expand_for_loop source =
                     else
                       [call "__iter__"; call "__next__"]
                   in
-                  (match value with
-                   | Access access ->
-                       access @ next
-                   | expression ->
-                       [Access.Expression (Node.create expression)] @ next)
+                  begin
+                    match value with
+                    | Access access ->
+                        access @ next
+                    | expression ->
+                        [Access.Expression (Node.create expression)] @ next
+                  end
                 in
                 {
                   Node.location;
