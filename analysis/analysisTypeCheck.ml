@@ -1547,8 +1547,9 @@ module State = struct
           (* TODO(T26146217): add coverage. *)
           errors
 
+      | Raise (Some expression) ->
+          check_expression ~resolution errors expression
       | Raise _ ->
-          (* TODO(T26146217): add coverage. *)
           errors
 
       | Return return ->
