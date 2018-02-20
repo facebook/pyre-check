@@ -41,7 +41,20 @@ module Record = struct
     }
     [@@deriving compare, eq, sexp, show, hash]
   end
+
+  module With = struct
+    type 'statement record = {
+      items: (Expression.t * Expression.t option) list;
+      body: 'statement list;
+      async: bool;
+    }
+    [@@deriving compare, eq, sexp, show, hash]
+  end
 end
+
+
+(* Not sure why the OCaml compiler hates me... *)
+module RecordWith = Record.With
 
 
 module For = struct
@@ -71,16 +84,6 @@ module If = struct
     test: Expression.t;
     body: 'statement list;
     orelse: 'statement list;
-  }
-  [@@deriving compare, eq, sexp, show, hash]
-end
-
-
-module With = struct
-  type 'statement t = {
-    items: (Expression.t * Expression.t option) list;
-    body: 'statement list;
-    async: bool;
   }
   [@@deriving compare, eq, sexp, show, hash]
 end
@@ -173,7 +176,7 @@ type statement =
   | Return of Expression.t option
   | Stub of t Stub.t
   | Try of t Try.t
-  | With of t With.t
+  | With of t Record.With.record
   | While of t While.t
   | Yield of Expression.t
   | YieldFrom of Expression.t
@@ -409,7 +412,7 @@ module Define = struct
             (expand_statements body) @ (expand_statements orelse)
         | Try { Try.body; orelse; finally; _ } ->
             (expand_statements body) @ (expand_statements orelse) @ (expand_statements finally)
-        | With { With.body; _ } ->
+        | With { RecordWith.body; _ } ->
             expand_statements body
         | Expression {
             Node.value =
@@ -787,7 +790,7 @@ module PrettyPrinter = struct
           pp_else_block orelse
           pp_finally_block finally
 
-    | With { With.items; body; async } ->
+    | With { Record.With.items; body; async } ->
         let pp_item formatter (expression, expression_option) =
           Format.fprintf
             formatter
@@ -1104,6 +1107,35 @@ module Class = struct
       List.fold ~init:([], stub) ~f:update body
     in
     { definition with Record.Class.body = undefined @ updated }
+end
+
+
+module With = struct
+  include Record.With
+
+
+  type t = statement_node Record.With.record
+  [@@deriving compare, eq, sexp, show, hash]
+
+
+  let preamble { items; _ } =
+    let preamble ({ Node.location; _ } as expression, target) =
+      (target
+       >>| fun target ->
+       let assign =
+         {
+           Assign.target;
+           annotation = None;
+           value = Some expression;
+           compound = None;
+           parent = None;
+         }
+       in
+       Node.create ~location (Assign assign))
+      |> Option.value
+        ~default:(Node.create ~location (Expression expression))
+    in
+    List.map ~f:preamble items
 end
 
 

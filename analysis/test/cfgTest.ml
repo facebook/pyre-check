@@ -508,51 +508,6 @@ let test_with _ =
       node 4 Node.Yield [] [];
       node 5 (Node.With block) [0] [6];
       node 6 (Node.Block [!!"item"; !!"body"; !!"after"]) [5] [1];
-    ];
-  let block =
-    {
-      With.items = [!"item", None; !"other", None];
-      body = [!!"body"];
-      async = false;
-    }
-  in
-  assert_cfg
-    [+With block; !!"after"]
-    [
-      node 0 Node.Entry [] [5];
-      node 1 Node.Normal [6] [3];
-      node 2 Node.Error [] [3];
-      node 3 Node.Final [1; 2] [];
-      node 4 Node.Yield [] [];
-      node 5 (Node.With block) [0] [6];
-      node 6 (Node.Block [!!"item"; !!"other"; !!"body"; !!"after"]) [5] [1];
-    ];
-  let block =
-    {
-      With.items = [!"item", Some !"name"];
-      body = [!!"body"];
-      async = false;
-    }
-  in
-  let assign =
-    {
-      Assign.target = !"name";
-      annotation = None;
-      value = Some !"item";
-      compound = None;
-      parent = None;
-    }
-  in
-  assert_cfg
-    [+With block; !!"after"]
-    [
-      node 0 Node.Entry [] [5];
-      node 1 Node.Normal [6] [3];
-      node 2 Node.Error [] [3];
-      node 3 Node.Final [1; 2] [];
-      node 4 Node.Yield [] [];
-      node 5 (Node.With block) [0] [6];
-      node 6 (Node.Block [+Assign assign; !!"body"; !!"after"]) [5] [1];
     ]
 
 

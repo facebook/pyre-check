@@ -492,6 +492,37 @@ let test_update _ =
     |}
 
 
+let test_preamble _ =
+  let assert_preamble items preamble =
+    let block =
+      {
+        With.items;
+        body = [];
+        async = false;  (* Not yet handled. *)
+      }
+    in
+    assert_equal
+      preamble
+      (With.preamble block)
+  in
+
+  assert_preamble [!"item", None] [!!"item"];
+  assert_preamble [!"item", None; !"other", None] [!!"item"; !!"other"];
+  assert_preamble
+    [!"item", Some !"name"]
+    [
+      Node.create
+        (Assign {
+            Assign.target = !"name";
+            annotation = None;
+            value = Some !"item";
+            compound = None;
+            parent = None;
+          })
+    ]
+
+
+
 let test_assume _ =
   assert_equal
     (assume (+True))
@@ -774,6 +805,10 @@ let () =
     "constructor">::test_constructor;
     "attribute_assigns">::test_attribute_assigns;
     "update">::test_update;
+  ]
+  |> run_test_tt_main;
+  "with">:::[
+    "preamble">::test_preamble;
   ]
   |> run_test_tt_main;
   "statement">:::[

@@ -21,7 +21,7 @@ module Node : sig
     | If of Statement.t If.t
     | Join
     | Try of Statement.t Try.t
-    | With of Statement.t With.t
+    | With of With.t
     | While of Statement.t While.t
     | Yield
   [@@deriving compare, eq, show]

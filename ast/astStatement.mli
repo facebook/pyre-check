@@ -36,6 +36,15 @@ module Record : sig
     }
     [@@deriving compare, eq, sexp, show, hash]
   end
+
+  module With : sig
+    type 'statement record = {
+      items: (Expression.t * Expression.t option) list;
+      body: 'statement list;
+      async: bool;
+    }
+    [@@deriving compare, eq, sexp, show, hash]
+  end
 end
 
 
@@ -64,15 +73,6 @@ module If : sig
     test: Expression.t;
     body: 'statement list;
     orelse: 'statement list;
-  }
-  [@@deriving compare, eq, sexp, show, hash]
-end
-
-module With : sig
-  type 'statement t = {
-    items: (Expression.t * Expression.t option) list;
-    body: 'statement list;
-    async: bool;
   }
   [@@deriving compare, eq, sexp, show, hash]
 end
@@ -156,7 +156,7 @@ type statement =
   | Return of Expression.t option
   | Stub of t Stub.t
   | Try of t Try.t
-  | With of t With.t
+  | With of t Record.With.record
   | While of t While.t
   | Yield of Expression.t
   | YieldFrom of Expression.t
@@ -210,6 +210,15 @@ module Class : sig
     -> (Assign.t Node.t) Expression.Access.Map.t
 
   val update: t -> definition: t -> t
+end
+
+module With : sig
+  include module type of struct include Record.With end
+
+  type t = statement_node Record.With.record
+  [@@deriving compare, eq, sexp, show, hash]
+
+  val preamble: t -> statement_node list
 end
 
 val assume: Expression.t -> t
