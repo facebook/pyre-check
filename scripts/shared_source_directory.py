@@ -9,6 +9,7 @@ import logging
 import os
 import shutil
 import subprocess
+import uuid
 
 from time import time
 from typing import (
@@ -97,8 +98,21 @@ def merge(target_root: str, source_directories: List[str]) -> None:
     start = time()
     LOG.info("Merging %d source directories", len(source_directories))
     try:
-        shutil.rmtree(target_root)
-    except OSError:
+        for path in os.listdir(target_root):
+            if path == ".pyre":
+                continue
+            randomized_path = "{}.{}".format(
+                os.path.join(target_root, path),
+                str(uuid.uuid1()))
+            try:
+                os.rename(os.path.join(target_root, path), randomized_path)
+                try:
+                    shutil.rmtree(randomized_path)
+                except (OSError, FileNotFoundError):
+                    os.remove(randomized_path)
+            except (OSError, FileNotFoundError):
+                pass
+    except FileNotFoundError:
         pass
     try:
         os.makedirs(target_root)
