@@ -116,7 +116,7 @@ let assert_cfg body expected =
     ~cmp:equal
     ~printer:(fun cfg -> Format.asprintf "%a" pp cfg)
     ~pp_diff:(diff ~print:pp)
-    expected
+    (Int.Table.of_alist_exn expected)
     (create define)
 
 
@@ -132,24 +132,24 @@ let node id kind predecessors successors =
 let test_block _ =
   assert_cfg
     [+Pass]
-    (Int.Table.of_alist_exn [
-        node 0 Node.Entry [] [5];
-        node 1 Node.Exit [5] [3];
-        node 2 Node.Error [] [3];
-        node 3 Node.Final [1; 2] [];
-        node 4 Node.Yield [] [];
-        node 5 (Node.Block [+Pass]) [0] [1];
-      ]);
+    [
+      node 0 Node.Entry [] [5];
+      node 1 Node.Exit [5] [3];
+      node 2 Node.Error [] [3];
+      node 3 Node.Final [1; 2] [];
+      node 4 Node.Yield [] [];
+      node 5 (Node.Block [+Pass]) [0] [1];
+    ];
   assert_cfg
     [!!"first"; !!"second"]
-    (Int.Table.of_alist_exn [
-        node 0 Node.Entry [] [5];
-        node 1 Node.Exit [5] [3];
-        node 2 Node.Error [] [3];
-        node 3 Node.Final [1; 2] [];
-        node 4 Node.Yield [] [];
-        node 5 (Node.Block [!!"first"; !!"second"]) [0] [1];
-      ])
+    [
+      node 0 Node.Entry [] [5];
+      node 1 Node.Exit [5] [3];
+      node 2 Node.Error [] [3];
+      node 3 Node.Final [1; 2] [];
+      node 4 Node.Yield [] [];
+      node 5 (Node.Block [!!"first"; !!"second"]) [0] [1];
+    ]
 
 
 let test_for _ =
@@ -162,17 +162,17 @@ let test_for _ =
   } in
   assert_cfg
     [+For loop]
-    (Int.Table.of_alist_exn [
-        node 0 Node.Entry [] [5];
-        node 1 Node.Exit [6] [3];
-        node 2 Node.Error [] [3];
-        node 3 Node.Final [1; 2] [];
-        node 4 Node.Yield [] [];
-        node 5 (Node.For loop) [0; 7] [6; 7; 8];
-        node 6 Node.Join [5; 8] [1];
-        node 7 (Node.Block [!!"body"]) [5] [5];
-        node 8 (Node.Block [!!"orelse"]) [5] [6];
-      ])
+    [
+      node 0 Node.Entry [] [5];
+      node 1 Node.Exit [6] [3];
+      node 2 Node.Error [] [3];
+      node 3 Node.Final [1; 2] [];
+      node 4 Node.Yield [] [];
+      node 5 (Node.For loop) [0; 7] [6; 7; 8];
+      node 6 Node.Join [5; 8] [1];
+      node 7 (Node.Block [!!"body"]) [5] [5];
+      node 8 (Node.Block [!!"orelse"]) [5] [6];
+    ]
 
 
 let test_if _ =
@@ -183,31 +183,31 @@ let test_if _ =
   } in
   assert_cfg
     [+If conditional]
-    (Int.Table.of_alist_exn [
-        node 0 Node.Entry [] [5];
-        node 1 Node.Exit [6] [3];
-        node 2 Node.Error [] [3];
-        node 3 Node.Final [1; 2] [];
-        node 4 Node.Yield [] [];
-        node 5 (Node.If conditional) [0] [7; 8];
-        node 6 Node.Join [7; 8] [1];
-        node 7 (Node.Block [assume (+True); !!"body"]) [5] [6];
-        node 8 (Node.Block [assume (+False); !!"orelse"]) [5] [6];
-      ]);
+    [
+      node 0 Node.Entry [] [5];
+      node 1 Node.Exit [6] [3];
+      node 2 Node.Error [] [3];
+      node 3 Node.Final [1; 2] [];
+      node 4 Node.Yield [] [];
+      node 5 (Node.If conditional) [0] [7; 8];
+      node 6 Node.Join [7; 8] [1];
+      node 7 (Node.Block [assume (+True); !!"body"]) [5] [6];
+      node 8 (Node.Block [assume (+False); !!"orelse"]) [5] [6];
+    ];
 
   let conditional = { If.test = +True; body = [!!"body"]; orelse = [] } in
   assert_cfg
     [+If conditional]
-    (Int.Table.of_alist_exn [
-        node 0 Node.Entry [] [5];
-        node 1 Node.Exit [6] [3];
-        node 2 Node.Error [] [3];
-        node 3 Node.Final [1; 2] [];
-        node 4 Node.Yield [] [];
-        node 5 (Node.If conditional) [0] [6; 7];
-        node 6 Node.Join [5; 7] [1];
-        node 7 (Node.Block [assume (+True); !!"body"]) [5] [6];
-      ]);
+    [
+      node 0 Node.Entry [] [5];
+      node 1 Node.Exit [6] [3];
+      node 2 Node.Error [] [3];
+      node 3 Node.Final [1; 2] [];
+      node 4 Node.Yield [] [];
+      node 5 (Node.If conditional) [0] [6; 7];
+      node 6 Node.Join [5; 7] [1];
+      node 7 (Node.Block [assume (+True); !!"body"]) [5] [6];
+    ];
 
   let conditional = {
     If.test = +True;
@@ -216,17 +216,17 @@ let test_if _ =
   } in
   assert_cfg
     [+If conditional]
-    (Int.Table.of_alist_exn [
-        node 0 Node.Entry [] [5];
-        node 1 Node.Exit [6] [3];
-        node 2 Node.Error [] [3];
-        node 3 Node.Final [1; 2] [];
-        node 4 Node.Yield [] [];
-        node 5 (Node.If conditional) [0] [7; 8];
-        node 6 Node.Join [7; 8] [1];
-        node 7 (Node.Block [assume (+True); !!"first"; !!"second"]) [5] [6];
-        node 8 (Node.Block [assume (+False); +Pass]) [5] [6];
-      ]);
+    [
+      node 0 Node.Entry [] [5];
+      node 1 Node.Exit [6] [3];
+      node 2 Node.Error [] [3];
+      node 3 Node.Final [1; 2] [];
+      node 4 Node.Yield [] [];
+      node 5 (Node.If conditional) [0] [7; 8];
+      node 6 Node.Join [7; 8] [1];
+      node 7 (Node.Block [assume (+True); !!"first"; !!"second"]) [5] [6];
+      node 8 (Node.Block [assume (+False); +Pass]) [5] [6];
+    ];
 
   let conditional = {
     If.test = +True;
@@ -235,68 +235,68 @@ let test_if _ =
   } in
   assert_cfg
     [!!"before"; +If conditional; !!"after"]
-    (Int.Table.of_alist_exn [
-        node 0 Node.Entry [] [5];
-        node 1 Node.Exit [10] [3];
-        node 2 Node.Error [] [3];
-        node 3 Node.Final [1; 2] [];
-        node 4 Node.Yield [] [];
-        node 5 (Node.Block [!!"before"]) [0] [6];
-        node 6 (Node.If conditional) [5] [8; 9];
-        node 7 Node.Join [8; 9] [10];
-        node 8 (Node.Block [assume (+True); !!"first"; !!"second"]) [6] [7];
-        node 9 (Node.Block [assume (+False); !!"orelse"]) [6] [7];
-        node 10 (Node.Block [!!"after"]) [7] [1];
-      ])
+    [
+      node 0 Node.Entry [] [5];
+      node 1 Node.Exit [10] [3];
+      node 2 Node.Error [] [3];
+      node 3 Node.Final [1; 2] [];
+      node 4 Node.Yield [] [];
+      node 5 (Node.Block [!!"before"]) [0] [6];
+      node 6 (Node.If conditional) [5] [8; 9];
+      node 7 Node.Join [8; 9] [10];
+      node 8 (Node.Block [assume (+True); !!"first"; !!"second"]) [6] [7];
+      node 9 (Node.Block [assume (+False); !!"orelse"]) [6] [7];
+      node 10 (Node.Block [!!"after"]) [7] [1];
+    ]
 
 
 let test_raise _ =
   let error = +Raise None in
   assert_cfg
     [error]
-    (Int.Table.of_alist_exn [
-        node 0 Node.Entry [] [5];
-        node 1 Node.Exit [] [3];
-        node 2 Node.Error [5] [3];
-        node 3 Node.Final [1; 2] [];
-        node 4 Node.Yield [] [];
-        node 5 (Node.Block [error]) [0] [2];
-      ]);
+    [
+      node 0 Node.Entry [] [5];
+      node 1 Node.Exit [] [3];
+      node 2 Node.Error [5] [3];
+      node 3 Node.Final [1; 2] [];
+      node 4 Node.Yield [] [];
+      node 5 (Node.Block [error]) [0] [2];
+    ];
   assert_cfg
     [!!"reached"; error; !!"unreached"]
-    (Int.Table.of_alist_exn [
-        node 0 Node.Entry [] [5];
-        node 1 Node.Exit [] [3];
-        node 2 Node.Error [5] [3];
-        node 3 Node.Final [1; 2] [];
-        node 4 Node.Yield [] [];
-        node 5 (Node.Block [!!"reached"; error]) [0] [2];
-      ])
+    [
+      node 0 Node.Entry [] [5];
+      node 1 Node.Exit [] [3];
+      node 2 Node.Error [5] [3];
+      node 3 Node.Final [1; 2] [];
+      node 4 Node.Yield [] [];
+      node 5 (Node.Block [!!"reached"; error]) [0] [2];
+    ]
 
 
 let test_return _ =
   let return = +Return None in
   assert_cfg
     [return]
-    (Int.Table.of_alist_exn [
-        node 0 Node.Entry [] [5];
-        node 1 Node.Exit [5] [3];
-        node 2 Node.Error [] [3];
-        node 3 Node.Final [1; 2] [];
-        node 4 Node.Yield [] [];
-        node 5 (Node.Block [return]) [0] [1];
-      ]);
+    [
+      node 0 Node.Entry [] [5];
+      node 1 Node.Exit [5] [3];
+      node 2 Node.Error [] [3];
+      node 3 Node.Final [1; 2] [];
+      node 4 Node.Yield [] [];
+      node 5 (Node.Block [return]) [0] [1];
+    ];
 
   assert_cfg
     [!!"reached"; return; !!"unreached"]
-    (Int.Table.of_alist_exn [
-        node 0 Node.Entry [] [5];
-        node 1 Node.Exit [5] [3];
-        node 2 Node.Error [] [3];
-        node 3 Node.Final [1; 2] [];
-        node 4 Node.Yield [] [];
-        node 5 (Node.Block [!!"reached"; return]) [0] [1];
-      ])
+    [
+      node 0 Node.Entry [] [5];
+      node 1 Node.Exit [5] [3];
+      node 2 Node.Error [] [3];
+      node 3 Node.Final [1; 2] [];
+      node 4 Node.Yield [] [];
+      node 5 (Node.Block [!!"reached"; return]) [0] [1];
+    ]
 
 
 let test_try _ =
@@ -314,20 +314,20 @@ let test_try _ =
   } in
   assert_cfg
     [+Try block]
-    (Int.Table.of_alist_exn [
-        node 0 Node.Entry [] [5];
-        node 1 Node.Exit [7; 9] [3];
-        node 2 Node.Error [8] [3];
-        node 3 Node.Final [1; 2] [];
-        node 4 Node.Yield [] [];
-        node 5 (Node.Try block)  [0] [6; 10];
-        node 6 Node.Dispatch [5] [8; 11];
-        node 7 (Node.Block [!!"finally"]) [10; 11] [1]; (* finally *)
-        node 8 (Node.Block [!!"finally"]) [6] [2]; (* uncaught *)
-        node 9 (Node.Block [!!"finally"]) [] [1]; (* return *)
-        node 10 (Node.Block [!!"body"; !!"orelse"]) [5] [7];
-        node 11 (Node.Block [!!"handler"]) [6] [7];
-      ]);
+    [
+      node 0 Node.Entry [] [5];
+      node 1 Node.Exit [7; 9] [3];
+      node 2 Node.Error [8] [3];
+      node 3 Node.Final [1; 2] [];
+      node 4 Node.Yield [] [];
+      node 5 (Node.Try block)  [0] [6; 10];
+      node 6 Node.Dispatch [5] [8; 11];
+      node 7 (Node.Block [!!"finally"]) [10; 11] [1]; (* finally *)
+      node 8 (Node.Block [!!"finally"]) [6] [2]; (* uncaught *)
+      node 9 (Node.Block [!!"finally"]) [] [1]; (* return *)
+      node 10 (Node.Block [!!"body"; !!"orelse"]) [5] [7];
+      node 11 (Node.Block [!!"handler"]) [6] [7];
+    ];
 
   let block = {
     Try.body = [!!"body"];
@@ -337,20 +337,20 @@ let test_try _ =
   } in
   assert_cfg
     [+Try block]
-    (Int.Table.of_alist_exn [
-        node 0 Node.Entry [] [5];
-        node 1 Node.Exit [7; 9] [3];
-        node 2 Node.Error [8] [3];
-        node 3 Node.Final [1; 2] [];
-        node 4 Node.Yield [] [];
-        node 5 (Node.Try block)  [0] [6; 10];
-        node 6 Node.Dispatch [5] [8; 11];
-        node 7 (Node.Block [!!"finally"]) [10; 11] [1]; (* finally *)
-        node 8 (Node.Block [!!"finally"]) [6] [2]; (* uncaught *)
-        node 9 (Node.Block [!!"finally"]) [] [1]; (* return *)
-        node 10 (Node.Block [!!"body"]) [5] [7];
-        node 11 (Node.Block [!!"handler"]) [6] [7];
-      ]);
+    [
+      node 0 Node.Entry [] [5];
+      node 1 Node.Exit [7; 9] [3];
+      node 2 Node.Error [8] [3];
+      node 3 Node.Final [1; 2] [];
+      node 4 Node.Yield [] [];
+      node 5 (Node.Try block)  [0] [6; 10];
+      node 6 Node.Dispatch [5] [8; 11];
+      node 7 (Node.Block [!!"finally"]) [10; 11] [1]; (* finally *)
+      node 8 (Node.Block [!!"finally"]) [6] [2]; (* uncaught *)
+      node 9 (Node.Block [!!"finally"]) [] [1]; (* return *)
+      node 10 (Node.Block [!!"body"]) [5] [7];
+      node 11 (Node.Block [!!"handler"]) [6] [7];
+    ];
 
   let block = {
     Try.body = [!!"body"];
@@ -360,20 +360,20 @@ let test_try _ =
   } in
   assert_cfg
     [+Try block]
-    (Int.Table.of_alist_exn [
-        node 0 Node.Entry [] [5];
-        node 1 Node.Exit [7; 9] [3];
-        node 2 Node.Error [8] [3];
-        node 3 Node.Final [1; 2] [];
-        node 4 Node.Yield [] [];
-        node 5 (Node.Try block)  [0] [6; 10];
-        node 6 Node.Dispatch [5] [8; 11];
-        node 7 (Node.Block []) [10; 11] [1]; (* finally *)
-        node 8 (Node.Block []) [6] [2]; (* uncaught *)
-        node 9 (Node.Block []) [] [1]; (* return *)
-        node 10 (Node.Block [!!"body"]) [5] [7];
-        node 11 (Node.Block [!!"handler"]) [6] [7];
-      ]);
+    [
+      node 0 Node.Entry [] [5];
+      node 1 Node.Exit [7; 9] [3];
+      node 2 Node.Error [8] [3];
+      node 3 Node.Final [1; 2] [];
+      node 4 Node.Yield [] [];
+      node 5 (Node.Try block)  [0] [6; 10];
+      node 6 Node.Dispatch [5] [8; 11];
+      node 7 (Node.Block []) [10; 11] [1]; (* finally *)
+      node 8 (Node.Block []) [6] [2]; (* uncaught *)
+      node 9 (Node.Block []) [] [1]; (* return *)
+      node 10 (Node.Block [!!"body"]) [5] [7];
+      node 11 (Node.Block [!!"handler"]) [6] [7];
+    ];
 
   let block = {
     Try.body = [!!"body"];
@@ -383,21 +383,21 @@ let test_try _ =
   } in
   assert_cfg
     [+Try block]
-    (Int.Table.of_alist_exn [
-        node 0 Node.Entry [] [5];
-        node 1 Node.Exit [7; 9] [3];
-        node 2 Node.Error [8] [3];
-        node 3 Node.Final [1; 2] [];
-        node 4 Node.Yield [] [];
-        node 5 (Node.Try block)  [0] [6; 10];
-        node 6 Node.Dispatch [5] [8; 11; 12];
-        node 7 (Node.Block []) [10; 11; 12] [1]; (* finally *)
-        node 8 (Node.Block []) [6] [2]; (* uncaught *)
-        node 9 (Node.Block []) [] [1]; (* return *)
-        node 10 (Node.Block [!!"body"]) [5] [7];
-        node 11 (Node.Block [!!"handler 1"]) [6] [7];
-        node 12 (Node.Block [!!"handler 2"]) [6] [7];
-      ]);
+    [
+      node 0 Node.Entry [] [5];
+      node 1 Node.Exit [7; 9] [3];
+      node 2 Node.Error [8] [3];
+      node 3 Node.Final [1; 2] [];
+      node 4 Node.Yield [] [];
+      node 5 (Node.Try block)  [0] [6; 10];
+      node 6 Node.Dispatch [5] [8; 11; 12];
+      node 7 (Node.Block []) [10; 11; 12] [1]; (* finally *)
+      node 8 (Node.Block []) [6] [2]; (* uncaught *)
+      node 9 (Node.Block []) [] [1]; (* return *)
+      node 10 (Node.Block [!!"body"]) [5] [7];
+      node 11 (Node.Block [!!"handler 1"]) [6] [7];
+      node 12 (Node.Block [!!"handler 2"]) [6] [7];
+    ];
 
   let return = +Return None in
   let block = {
@@ -408,20 +408,20 @@ let test_try _ =
   } in
   assert_cfg
     [+Try block]
-    (Int.Table.of_alist_exn [
-        node 0 Node.Entry [] [5];
-        node 1 Node.Exit [7; 9] [3];
-        node 2 Node.Error [8] [3];
-        node 3 Node.Final [1; 2] [];
-        node 4 Node.Yield [] [];
-        node 5 (Node.Try block)  [0] [6; 10];
-        node 6 Node.Dispatch [5] [8; 11];
-        node 7 (Node.Block []) [11] [1]; (* finally *)
-        node 8 (Node.Block []) [6] [2]; (* uncaught *)
-        node 9 (Node.Block []) [10] [1]; (* return *)
-        node 10 (Node.Block [!!"body"; return]) [5] [9];
-        node 11 (Node.Block [!!"handler"]) [6] [7];
-      ]);
+    [
+      node 0 Node.Entry [] [5];
+      node 1 Node.Exit [7; 9] [3];
+      node 2 Node.Error [8] [3];
+      node 3 Node.Final [1; 2] [];
+      node 4 Node.Yield [] [];
+      node 5 (Node.Try block)  [0] [6; 10];
+      node 6 Node.Dispatch [5] [8; 11];
+      node 7 (Node.Block []) [11] [1]; (* finally *)
+      node 8 (Node.Block []) [6] [2]; (* uncaught *)
+      node 9 (Node.Block []) [10] [1]; (* return *)
+      node 10 (Node.Block [!!"body"; return]) [5] [9];
+      node 11 (Node.Block [!!"handler"]) [6] [7];
+    ];
 
   let error = +Raise None in
   let block = {
@@ -432,20 +432,20 @@ let test_try _ =
   } in
   assert_cfg
     [+Try block]
-    (Int.Table.of_alist_exn [
-        node 0 Node.Entry [] [5];
-        node 1 Node.Exit [7; 9] [3];
-        node 2 Node.Error [8] [3];
-        node 3 Node.Final [1; 2] [];
-        node 4 Node.Yield [] [];
-        node 5 (Node.Try block)  [0] [6; 10];
-        node 6 Node.Dispatch [5; 10] [8; 11];
-        node 7 (Node.Block []) [11] [1]; (* finally *)
-        node 8 (Node.Block []) [6] [2]; (* uncaught *)
-        node 9 (Node.Block []) [] [1]; (* return *)
-        node 10 (Node.Block [!!"body"; error]) [5] [6];
-        node 11 (Node.Block [!!"handler"]) [6] [7];
-      ]);
+    [
+      node 0 Node.Entry [] [5];
+      node 1 Node.Exit [7; 9] [3];
+      node 2 Node.Error [8] [3];
+      node 3 Node.Final [1; 2] [];
+      node 4 Node.Yield [] [];
+      node 5 (Node.Try block)  [0] [6; 10];
+      node 6 Node.Dispatch [5; 10] [8; 11];
+      node 7 (Node.Block []) [11] [1]; (* finally *)
+      node 8 (Node.Block []) [6] [2]; (* uncaught *)
+      node 9 (Node.Block []) [] [1]; (* return *)
+      node 10 (Node.Block [!!"body"; error]) [5] [6];
+      node 11 (Node.Block [!!"handler"]) [6] [7];
+    ];
 
   let block = {
     Try.body = [!!"body"];
@@ -455,19 +455,19 @@ let test_try _ =
   } in
   assert_cfg
     [+Try block]
-    (Int.Table.of_alist_exn [
-        node 0 Node.Entry [] [5];
-        node 1 Node.Exit [7; 9] [3];
-        node 2 Node.Error [8] [3];
-        node 3 Node.Final [1; 2] [];
-        node 4 Node.Yield [] [];
-        node 5 (Node.Try block) [0] [6; 10];
-        node 6 Node.Dispatch [5] [8];
-        node 7 (Node.Block [!!"finally"]) [10] [1]; (* finally *)
-        node 8 (Node.Block [!!"finally"]) [6] [2]; (* uncaught *)
-        node 9 (Node.Block [!!"finally"]) [] [1]; (* return *)
-        node 10 (Node.Block [!!"body"]) [5] [7];
-      ]);
+    [
+      node 0 Node.Entry [] [5];
+      node 1 Node.Exit [7; 9] [3];
+      node 2 Node.Error [8] [3];
+      node 3 Node.Final [1; 2] [];
+      node 4 Node.Yield [] [];
+      node 5 (Node.Try block) [0] [6; 10];
+      node 6 Node.Dispatch [5] [8];
+      node 7 (Node.Block [!!"finally"]) [10] [1]; (* finally *)
+      node 8 (Node.Block [!!"finally"]) [6] [2]; (* uncaught *)
+      node 9 (Node.Block [!!"finally"]) [] [1]; (* return *)
+      node 10 (Node.Block [!!"body"]) [5] [7];
+    ];
 
   let block = {
     Try.body = [!!"body"];
@@ -477,19 +477,19 @@ let test_try _ =
   } in
   assert_cfg
     [+Try block]
-    (Int.Table.of_alist_exn [
-        node 0 Node.Entry [] [5];
-        node 1 Node.Exit [7; 8; 9] [3];
-        node 2 Node.Error [8] [3];
-        node 3 Node.Final [1; 2] [];
-        node 4 Node.Yield [] [];
-        node 5 (Node.Try block) [0] [6; 10];
-        node 6 Node.Dispatch [5] [8];
-        node 7 (Node.Block [+Return None]) [10] [1]; (* finally *)
-        node 8 (Node.Block [+Return None]) [6] [1; 2]; (* uncaught *)
-        node 9 (Node.Block [+Return None]) [] [1]; (* return *)
-        node 10 (Node.Block [!!"body"]) [5] [7];
-      ])
+    [
+      node 0 Node.Entry [] [5];
+      node 1 Node.Exit [7; 8; 9] [3];
+      node 2 Node.Error [8] [3];
+      node 3 Node.Final [1; 2] [];
+      node 4 Node.Yield [] [];
+      node 5 (Node.Try block) [0] [6; 10];
+      node 6 Node.Dispatch [5] [8];
+      node 7 (Node.Block [+Return None]) [10] [1]; (* finally *)
+      node 8 (Node.Block [+Return None]) [6] [1; 2]; (* uncaught *)
+      node 9 (Node.Block [+Return None]) [] [1]; (* return *)
+      node 10 (Node.Block [!!"body"]) [5] [7];
+    ]
 
 
 let test_with _ =
@@ -500,15 +500,15 @@ let test_with _ =
   } in
   assert_cfg
     [+With block; !!"after"]
-    (Int.Table.of_alist_exn [
-        node 0 Node.Entry [] [5];
-        node 1 Node.Exit [6] [3];
-        node 2 Node.Error [] [3];
-        node 3 Node.Final [1; 2] [];
-        node 4 Node.Yield [] [];
-        node 5 (Node.With block) [0] [6];
-        node 6 (Node.Block [!!"body"; !!"after"]) [5] [1];
-      ])
+    [
+      node 0 Node.Entry [] [5];
+      node 1 Node.Exit [6] [3];
+      node 2 Node.Error [] [3];
+      node 3 Node.Final [1; 2] [];
+      node 4 Node.Yield [] [];
+      node 5 (Node.With block) [0] [6];
+      node 6 (Node.Block [!!"body"; !!"after"]) [5] [1];
+    ]
 
 
 let test_while _ =
@@ -519,17 +519,17 @@ let test_while _ =
   } in
   assert_cfg
     [+While loop]
-    (Int.Table.of_alist_exn [
-        node 0 Node.Entry [] [5];
-        node 1 Node.Exit [6] [3];
-        node 2 Node.Error [] [3];
-        node 3 Node.Final [1; 2] [];
-        node 4 Node.Yield [] [];
-        node 5 (Node.While loop) [0; 7] [6; 7; 8];
-        node 6 Node.Join [5; 8] [1];
-        node 7 (Node.Block [!!"body"]) [5] [5];
-        node 8 (Node.Block [!!"orelse"]) [5] [6];
-      ]);
+    [
+      node 0 Node.Entry [] [5];
+      node 1 Node.Exit [6] [3];
+      node 2 Node.Error [] [3];
+      node 3 Node.Final [1; 2] [];
+      node 4 Node.Yield [] [];
+      node 5 (Node.While loop) [0; 7] [6; 7; 8];
+      node 6 Node.Join [5; 8] [1];
+      node 7 (Node.Block [!!"body"]) [5] [5];
+      node 8 (Node.Block [!!"orelse"]) [5] [6];
+    ];
 
   let conditional = {
     If.test = +True;
@@ -543,20 +543,20 @@ let test_while _ =
   } in
   assert_cfg
     [+While loop]
-    (Int.Table.of_alist_exn [
-        node 0 Node.Entry [] [5];
-        node 1 Node.Exit [6] [3];
-        node 2 Node.Error [] [3];
-        node 3 Node.Final [1; 2] [];
-        node 4 Node.Yield [] [];
-        node 5 (Node.While loop) [0; 10] [6; 7; 11];
-        node 6 Node.Join [5; 9; 11] [1];
-        node 7 (Node.If conditional) [5] [8; 9];
-        node 8 Node.Join [7] [10];
-        node 9 (Node.Block [assume (+True); +Break]) [7] [6];
-        node 10 (Node.Block [!!"body"]) [8] [5];
-        node 11 (Node.Block [!!"orelse"]) [5] [6];
-      ]);
+    [
+      node 0 Node.Entry [] [5];
+      node 1 Node.Exit [6] [3];
+      node 2 Node.Error [] [3];
+      node 3 Node.Final [1; 2] [];
+      node 4 Node.Yield [] [];
+      node 5 (Node.While loop) [0; 10] [6; 7; 11];
+      node 6 Node.Join [5; 9; 11] [1];
+      node 7 (Node.If conditional) [5] [8; 9];
+      node 8 Node.Join [7] [10];
+      node 9 (Node.Block [assume (+True); +Break]) [7] [6];
+      node 10 (Node.Block [!!"body"]) [8] [5];
+      node 11 (Node.Block [!!"orelse"]) [5] [6];
+    ];
 
   let conditional = {
     If.test = +True;
@@ -570,20 +570,20 @@ let test_while _ =
   } in
   assert_cfg
     [+While loop]
-    (Int.Table.of_alist_exn [
-        node 0 Node.Entry [] [5];
-        node 1 Node.Exit [6] [3];
-        node 2 Node.Error [] [3];
-        node 3 Node.Final [1; 2] [];
-        node 4 Node.Yield [] [];
-        node 5 (Node.While loop) [0; 9; 10] [6; 7; 11];
-        node 6 Node.Join [5; 11] [1];
-        node 7 (Node.If conditional) [5] [8; 9];
-        node 8 Node.Join [7] [10];
-        node 9 (Node.Block [assume (+True); +Continue]) [7] [5];
-        node 10 (Node.Block [assume (+False); !!"body"]) [8] [5];
-        node 11 (Node.Block [!!"orelse"]) [5] [6];
-      ]);
+    [
+      node 0 Node.Entry [] [5];
+      node 1 Node.Exit [6] [3];
+      node 2 Node.Error [] [3];
+      node 3 Node.Final [1; 2] [];
+      node 4 Node.Yield [] [];
+      node 5 (Node.While loop) [0; 9; 10] [6; 7; 11];
+      node 6 Node.Join [5; 11] [1];
+      node 7 (Node.If conditional) [5] [8; 9];
+      node 8 Node.Join [7] [10];
+      node 9 (Node.Block [assume (+True); +Continue]) [7] [5];
+      node 10 (Node.Block [assume (+False); !!"body"]) [8] [5];
+      node 11 (Node.Block [!!"orelse"]) [5] [6];
+    ];
 
   (* Jumps are reset after the loop. *)
   let inner = {
@@ -598,33 +598,33 @@ let test_while _ =
   } in
   assert_cfg
     [+While outer]
-    (Int.Table.of_alist_exn [
-        node 0 Node.Entry [] [5];
-        node 1 Node.Exit [6] [3];
-        node 2 Node.Error [] [3];
-        node 3 Node.Final [1; 2] [];
-        node 4 Node.Yield [] [];
-        node 5 (Node.While outer) [0; 10] [6; 7];
-        node 6 Node.Join [5] [1];
-        node 7 (Node.While inner) [5; 9] [8; 9];
-        node 8 Node.Join [7] [10];
-        node 9 (Node.Block [!!"body"]) [7] [7];
-        node 10 (Node.Block [+Continue]) [8] [5]
-      ])
+    [
+      node 0 Node.Entry [] [5];
+      node 1 Node.Exit [6] [3];
+      node 2 Node.Error [] [3];
+      node 3 Node.Final [1; 2] [];
+      node 4 Node.Yield [] [];
+      node 5 (Node.While outer) [0; 10] [6; 7];
+      node 6 Node.Join [5] [1];
+      node 7 (Node.While inner) [5; 9] [8; 9];
+      node 8 Node.Join [7] [10];
+      node 9 (Node.Block [!!"body"]) [7] [7];
+      node 10 (Node.Block [+Continue]) [8] [5]
+    ]
 
 
 let test_yield _ =
   let yield = +Ast.Statement.Yield (+True) in
   assert_cfg
     [yield]
-    (Int.Table.of_alist_exn [
-        node 0 Node.Entry [] [5];
-        node 1 Node.Exit [5] [3];
-        node 2 Node.Error [] [3];
-        node 3 Node.Final [1; 2] [];
-        node 4 Node.Yield [5] [];
-        node 5 (Node.Block [yield]) [0] [1; 4];
-      ])
+    [
+      node 0 Node.Entry [] [5];
+      node 1 Node.Exit [5] [3];
+      node 2 Node.Error [] [3];
+      node 3 Node.Final [1; 2] [];
+      node 4 Node.Yield [5] [];
+      node 5 (Node.Block [yield]) [0] [1; 4];
+    ]
 
 
 let () =
