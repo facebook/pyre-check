@@ -85,7 +85,7 @@ def _find_python_paths_at_root(root: str) -> List[str]:
         "posix-egrep",
         "-regex",
         r".*\.(py|pyi)",
-        "-type",
+        "-xtype",
         "f",
     ])\
         .decode('utf-8')\
@@ -101,7 +101,7 @@ def merge(target_root: str, source_directories: List[str]) -> None:
     except OSError:
         pass
     try:
-        os.makedirs(os.path.dirname(target_root))
+        os.makedirs(target_root)
     except OSError:
         pass
 
