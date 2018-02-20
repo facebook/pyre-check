@@ -1493,6 +1493,110 @@ let test_check _ =
     []
 
 
+let test_check_coverage _ =
+  let assert_covered ?(additional_errors = []) source =
+    assert_type_errors
+      source
+      (additional_errors @ ["Undefined attribute [16]: `A` has no attribute `undefined`."])
+  in
+  let assert_not_covered ?(additional_errors = []) source =
+    assert_type_errors source additional_errors
+  in
+
+  (* Return statement. *)
+  assert_covered
+    ~additional_errors:["Incompatible return type [7]: Expected `None` but got `unknown`."]
+    {|
+      def foo(a: A) -> None:
+        return a.undefined
+    |};
+
+  (* Assignment. *)
+  assert_covered
+    {|
+      def foo(a: A) -> None:
+        b = a.undefined
+    |};
+
+  (* Assertion. *)
+  assert_covered
+    {|
+      def foo(a: A) -> None:
+        assert a.undefined
+    |};
+
+  (* Nested definitions. *)
+  assert_not_covered
+    {|
+      def foo(a: A) -> None:
+        class B:
+          assert a.undefined
+    |};
+  assert_not_covered
+    {|
+      def foo(a: A) -> None:
+        def nested() -> None:
+          assert a.undefined
+    |};
+
+  (* Expressions. *)
+  assert_covered
+    {|
+      def foo(a: A) -> None:
+        a.undefined
+    |};
+
+  (* Yield. *)
+  (* TODO(T26146217): add coverage. *)
+  assert_not_covered
+    ~additional_errors:[
+      "Incompatible return type [7]: Expected `None` but got " ^
+      "`typing.Generator[unknown, None, None]`.";
+    ]
+    {|
+      def foo(a: A) -> None:
+        yield a.undefined
+    |};
+  assert_not_covered
+    ~additional_errors:[
+      "Incompatible return type [7]: Expected `None` but got " ^
+      "`typing.Generator[unknown, None, None]`.";
+    ]
+    {|
+      def foo(a: A) -> None:
+        yield from a.undefined
+    |};
+
+  (* Control statements. *)
+  (* TODO(T26146217): add coverage. *)
+  assert_not_covered
+    {|
+      def foo(a: A) -> None:
+        for i in a.undefined:
+          pass
+    |};
+  assert_not_covered
+    {|
+      def foo(a: A) -> None:
+        while a.undefined:
+          pass
+    |};
+  assert_covered
+    {|
+      def foo(a: A) -> None:
+        if a.undefined:
+          pass
+    |};
+
+  (* Raise. *)
+  (* TODO(T26146217): add coverage. *)
+  assert_not_covered
+    {|
+      def foo(a: A) -> None:
+        raise a.undefined
+    |}
+
+
 let test_check_non_debug _ =
   assert_type_errors
     ~debug:false
@@ -4674,6 +4778,7 @@ let () =
     "check_error_traces">::test_show_error_traces;
     "coverage">::test_coverage;
     "check">::test_check;
+    "check_coverage">::test_check_coverage;
     "check_strict">::test_strict;
     "check_declare">::test_declare;
     "check_non_debug">::test_check_non_debug;
