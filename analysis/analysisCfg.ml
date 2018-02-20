@@ -165,9 +165,12 @@ let equal left right =
 
 
 let pp format graph =
-  let print_node ~key:_ ~data =
-    Format.fprintf format "%a\n" Node.pp data in
-  Hashtbl.iteri graph ~f:print_node
+  let print_node index =
+    Format.fprintf format "%a\n" Node.pp (Hashtbl.find_exn graph index)
+  in
+  Hashtbl.keys graph
+  |> List.sort ~cmp:Int.compare
+  |> List.iter ~f:print_node
 
 
 let to_dot ?(precondition=fun _ -> "") ?(sort_labels=false) graph =
@@ -277,11 +280,13 @@ let create define =
         let split = Node.empty graph (Node.If conditional) in
         let join = Node.empty graph Node.Join in
         Node.connect predecessor split;
-
-        let body_statements =
-          let test = Expression.normalize conditional.If.test in
-          (assume test) :: conditional.If.body in
-        let body = create body_statements jumps split in
+        let body =
+          let body_statements =
+            let test = Expression.normalize conditional.If.test in
+            (assume test) :: conditional.If.body
+          in
+          create body_statements jumps split
+        in
         Node.connect_option body join;
 
         let orelse_statements =
@@ -368,7 +373,13 @@ let create define =
         let join = Node.empty graph Node.Join in
         let loop_jumps = { jumps with break = join; continue = split } in
         Node.connect predecessor split;
-        let body = create loop.While.body loop_jumps split in
+        let body =
+          let body_statements =
+            let test = Expression.normalize loop.While.test in
+            (assume test) :: loop.While.body
+          in
+          create body_statements loop_jumps split
+        in
         Node.connect_option body split;
         let orelse = create loop.While.orelse jumps split in
         Node.connect_option orelse join;

@@ -1600,7 +1600,7 @@ module State = struct
           errors
 
       | While _ ->
-          (* TODO(T26146217): add coverage. *)
+          (* Check happens implicitly in the generated assertions. *)
           errors
 
       | Statement.Yield { Node.value = Expression.Yield return; _ } ->

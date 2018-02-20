@@ -1593,7 +1593,7 @@ let test_check_coverage _ =
   (* Control statements. *)
   (* TODO(T26146217): add coverage. *)
   assert_not_covered "for i in ERROR: pass";
-  assert_not_covered "while ERROR: pass";
+  assert_covered "while ERROR: pass";
   assert_covered "if ERROR: pass";
 
   (* Raise. *)

@@ -527,7 +527,7 @@ let test_while _ =
       node 4 Node.Yield [] [];
       node 5 (Node.While loop) [0; 7] [6; 7; 8];
       node 6 Node.Join [5; 8] [1];
-      node 7 (Node.Block [!!"body"]) [5] [5];
+      node 7 (Node.Block [assume (+True); !!"body"]) [5] [5];
       node 8 (Node.Block [!!"orelse"]) [5] [6];
     ];
 
@@ -549,13 +549,14 @@ let test_while _ =
       node 2 Node.Error [] [3];
       node 3 Node.Final [1; 2] [];
       node 4 Node.Yield [] [];
-      node 5 (Node.While loop) [0; 10] [6; 7; 11];
-      node 6 Node.Join [5; 9; 11] [1];
-      node 7 (Node.If conditional) [5] [8; 9];
-      node 8 Node.Join [7] [10];
-      node 9 (Node.Block [assume (+True); +Break]) [7] [6];
-      node 10 (Node.Block [!!"body"]) [8] [5];
-      node 11 (Node.Block [!!"orelse"]) [5] [6];
+      node 5 (Node.While loop) [0; 11] [6; 7; 12];
+      node 6 Node.Join [5; 10; 12] [1];
+      node 7 (Node.Block [assume (+True)]) [5] [8];
+      node 8 (Node.If conditional) [7] [9; 10];
+      node 9 Node.Join [8] [11];
+      node 10 (Node.Block [assume (+True); +Break]) [8] [6];
+      node 11 (Node.Block [!!"body"]) [9] [5];
+      node 12 (Node.Block [!!"orelse"]) [5] [6];
     ];
 
   let conditional = {
@@ -576,13 +577,14 @@ let test_while _ =
       node 2 Node.Error [] [3];
       node 3 Node.Final [1; 2] [];
       node 4 Node.Yield [] [];
-      node 5 (Node.While loop) [0; 9; 10] [6; 7; 11];
-      node 6 Node.Join [5; 11] [1];
-      node 7 (Node.If conditional) [5] [8; 9];
-      node 8 Node.Join [7] [10];
-      node 9 (Node.Block [assume (+True); +Continue]) [7] [5];
-      node 10 (Node.Block [assume (+False); !!"body"]) [8] [5];
-      node 11 (Node.Block [!!"orelse"]) [5] [6];
+      node 5 (Node.While loop) [0; 10; 11] [6; 7; 12];
+      node 6 Node.Join [5; 12] [1];
+      node 7 (Node.Block [assume (+True)]) [5] [8];
+      node 8 (Node.If conditional) [7] [9; 10];
+      node 9 Node.Join [8] [11];
+      node 10 (Node.Block [assume (+True); +Continue]) [8] [5];
+      node 11 (Node.Block [assume (+False); !!"body"]) [9] [5];
+      node 12 (Node.Block [!!"orelse"]) [5] [6];
     ];
 
   (* Jumps are reset after the loop. *)
@@ -604,12 +606,13 @@ let test_while _ =
       node 2 Node.Error [] [3];
       node 3 Node.Final [1; 2] [];
       node 4 Node.Yield [] [];
-      node 5 (Node.While outer) [0; 10] [6; 7];
+      node 5 (Node.While outer) [0; 11] [6; 7];
       node 6 Node.Join [5] [1];
-      node 7 (Node.While inner) [5; 9] [8; 9];
-      node 8 Node.Join [7] [10];
-      node 9 (Node.Block [!!"body"]) [7] [7];
-      node 10 (Node.Block [+Continue]) [8] [5]
+      node 7 (Node.Block [assume (+True)]) [5] [8];
+      node 8 (Node.While inner) [7; 10] [9; 10];
+      node 9 Node.Join [8] [11];
+      node 10 (Node.Block [assume (+True); !!"body"]) [8] [8];
+      node 11 (Node.Block [+Continue]) [9] [5]
     ]
 
 
