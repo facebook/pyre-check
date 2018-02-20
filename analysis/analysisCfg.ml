@@ -26,6 +26,7 @@ module Node = struct
     | Yield
   [@@deriving compare, eq, show]
 
+
   type t = {
     id: int;
     mutable kind: kind;
@@ -33,6 +34,7 @@ module Node = struct
     mutable successors: Int.Set.t;
   }
   [@@deriving compare, eq]
+
 
   let pp format node =
     Format.fprintf
@@ -43,16 +45,22 @@ module Node = struct
       Sexp.pp (sexp_of_list sexp_of_int (Set.to_list node.predecessors))
       Sexp.pp (sexp_of_list sexp_of_int (Set.to_list node.successors))
 
+
   let show graph =
     Format.asprintf "%a" pp graph
+
 
   let create id kind predecessors successors =
     { id; kind; predecessors; successors }
 
-  let node_count = ref 0
+
+  let node_count =
+    ref 0
+
 
   let reset_count () =
     node_count := 0
+
 
   let empty graph kind =
     let node = {
@@ -65,23 +73,29 @@ module Node = struct
     node_count := !node_count + 1;
     node
 
-  let statements node =
-    match node.kind with
+
+  let statements { kind; _ } =
+    match kind with
     | Block statements -> statements
     | _ -> []
 
-  let successors node =
-    node.successors
 
-  let predecessors node =
-    node.predecessors
+  let successors { successors; _ } =
+    successors
+
+
+  let predecessors { predecessors; _ } =
+    predecessors
+
 
   let connect predecessor successor =
     predecessor.successors <- Set.add predecessor.successors successor.id;
     successor.predecessors <- Set.add successor.predecessors predecessor.id
 
+
   let connect_option predecessor successor =
     Option.iter predecessor ~f:(fun node -> connect node successor)
+
 
   let description { kind; _ } =
     let add_newlines string =
@@ -100,20 +114,37 @@ module Node = struct
     | Block statement_list ->
         List.map ~f:(fun statement -> Statement.show statement |> add_newlines) statement_list
         |> String.concat ~sep:"\n"
-    | Dispatch -> "Dispatch"
-    | Entry -> "Entry"
-    | Error -> "Error"
-    | Exit -> "Exit"
-    | For statement -> Statement.For statement |> process_statement
-    | If statement -> Statement.If statement |> process_statement
+    | Dispatch ->
+        "Dispatch"
+    | Entry ->
+        "Entry"
+    | Error ->
+        "Error"
+    | Exit ->
+        "Exit"
+    | For statement ->
+        Statement.For statement
+        |> process_statement
+    | If statement ->
+        Statement.If statement
+        |> process_statement
     | Join -> "Join"
-    | Try statement -> Statement.Try statement |> process_statement
-    | With statement -> Statement.With statement |> process_statement
-    | While statement ->Statement.While statement |> process_statement
-    | Yield -> "Yield"
+    | Try statement ->
+        Statement.Try statement
+        |> process_statement
+    | With statement ->
+        Statement.With statement
+        |> process_statement
+    | While statement ->
+        Statement.While statement
+        |> process_statement
+    | Yield ->
+        "Yield"
 end
 
+
 type t = Node.t Int.Table.t
+
 
 type jumps = {
   break: Node.t;
@@ -123,24 +154,26 @@ type jumps = {
   yield: Node.t;
 }
 
+
 let equal left right =
   Hashtbl.equal left right Node.equal
+
 
 let pp format graph =
   let print_node ~key:_ ~data =
     Format.fprintf format "%a\n" Node.pp data in
   Hashtbl.iteri graph ~f:print_node
 
-module M = Map.Make(Int)
-
-let sorted_iteri ht ~f =
-  let map = Hashtbl.fold ht
-      ~init:M.empty
-      ~f:(fun ~key ~data m -> M.set m ~key ~data)
-  in
-  M.iteri map ~f
 
 let to_dot ?(precondition=fun _ -> "") ?(sort_labels=false) graph =
+  let sorted_iteri table ~f =
+    let map =
+      Hashtbl.fold table
+        ~init:Int.Map.empty
+        ~f:(fun ~key ~data map -> Map.set ~key ~data map)
+    in
+    Map.iteri map ~f
+  in
   let buffer = Buffer.create 10000 in
   Buffer.add_string buffer "digraph {\n";
   let iteri = if sort_labels then sorted_iteri else Hashtbl.iteri in
@@ -170,14 +203,18 @@ let to_dot ?(precondition=fun _ -> "") ?(sort_labels=false) graph =
   Buffer.add_string buffer "}";
   Buffer.contents buffer
 
+
 let show graph =
   Format.asprintf "%a" pp graph
+
 
 let entry_index =
   0
 
+
 let exit_index =
   1
+
 
 let create define =
   Node.reset_count ();
@@ -362,6 +399,7 @@ let create define =
   let node = create define.Define.body jumps entry in
   Node.connect_option node exit;
   graph
+
 
 let node cfg ~id =
   Hashtbl.find_exn cfg id
