@@ -960,7 +960,7 @@ let simplify_access_chains source =
             {
               Node.location;
               value = Assign {
-                  Assign.value = Some (Node.create (Expression.Access access));
+                  Assign.value = Some (Node.create ~location (Expression.Access access));
                   target = Node.create ~location (Expression.Access [target]);
                   annotation = None;
                   compound = None;
