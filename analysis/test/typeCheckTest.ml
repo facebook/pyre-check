@@ -1544,9 +1544,13 @@ let test_check _ =
 
 let test_check_coverage _ =
   let preprocess source =
-    String.lstrip source
+    trim_extra_indentation source
+    |> String.lstrip
+    |> String.split ~on:'\n'
+    |> List.map ~f:(fun line -> "    " ^ line)
+    |> String.concat ~sep:"\n"
     |> String.substr_replace_all ~pattern:"ERROR" ~with_:"a.undefined"
-    |> Format.asprintf "def foo(a: A) -> None:\n\t%s\n"
+    |> Format.asprintf "def foo(a: A) -> None:\n%s\n"
   in
   let assert_covered ?(additional_errors = []) source =
     assert_type_errors
@@ -1595,7 +1599,15 @@ let test_check_coverage _ =
   assert_covered "if ERROR: pass";
 
   (* Raise. *)
-  assert_covered "raise ERROR"
+  assert_covered "raise ERROR";
+
+  assert_covered
+    {|
+      try:
+        pass
+      except ERROR:
+        pass
+    |}
 
 
 let test_check_non_debug _ =

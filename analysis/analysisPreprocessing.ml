@@ -824,7 +824,12 @@ let expand_excepts source =
                     in
                     { handler with Try.handler_body = assume :: handler_body }
                 | _ ->
-                    handler
+                    let assume =
+                      kind
+                      >>| (fun kind -> [Node.create ~location (Statement.Expression kind)])
+                      |> Option.value ~default:[]
+                    in
+                    { handler with Try.handler_body = assume @ handler_body }
               in
               List.map ~f:transform_handler handlers
             in

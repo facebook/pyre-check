@@ -870,6 +870,7 @@ let test_expand_excepts _ =
       try:
         pass
       except Exception:
+        Exception
         pass
     |};
   assert_expand
@@ -897,6 +898,7 @@ let test_expand_excepts _ =
       try:
         pass
       except (E1, E2):
+        (E1, E2)
         pass
     |};
   assert_expand
