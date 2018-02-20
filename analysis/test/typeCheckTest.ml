@@ -1543,57 +1543,37 @@ let test_check _ =
 
 
 let test_check_coverage _ =
+  let preprocess source =
+    String.lstrip source
+    |> String.substr_replace_all ~pattern:"ERROR" ~with_:"a.undefined"
+    |> Format.asprintf "def foo(a: A) -> None:\n\t%s\n"
+  in
   let assert_covered ?(additional_errors = []) source =
     assert_type_errors
-      source
+      (preprocess source)
       (additional_errors @ ["Undefined attribute [16]: `A` has no attribute `undefined`."])
   in
   let assert_not_covered ?(additional_errors = []) source =
-    assert_type_errors source additional_errors
+    assert_type_errors (preprocess source) additional_errors
   in
 
   (* Return statement. *)
   assert_covered
     ~additional_errors:["Incompatible return type [7]: Expected `None` but got `unknown`."]
-    {|
-      def foo(a: A) -> None:
-        return a.undefined
-    |};
+    "return ERROR";
 
   (* Assignment. *)
-  assert_covered
-    {|
-      def foo(a: A) -> None:
-        b = a.undefined
-    |};
+  assert_covered "b = ERROR";
 
   (* Assertion. *)
-  assert_covered
-    {|
-      def foo(a: A) -> None:
-        assert a.undefined
-    |};
+  assert_covered "assert ERROR";
 
   (* Nested definitions. *)
-  assert_not_covered
-    {|
-      def foo(a: A) -> None:
-        class B:
-          assert a.undefined
-    |};
-  assert_not_covered
-    {|
-      def foo(a: A) -> None:
-        def nested() -> None:
-          assert a.undefined
-    |};
+  assert_not_covered "class B: ERROR";
+  assert_not_covered "def nested() -> None: ERROR";
 
   (* Expressions. *)
-  assert_covered
-    {|
-      def foo(a: A) -> None:
-        a.undefined
-    |};
+  assert_covered "ERROR";
 
   (* Yield. *)
   (* TODO(T26146217): add coverage. *)
@@ -1602,47 +1582,22 @@ let test_check_coverage _ =
       "Incompatible return type [7]: Expected `None` but got " ^
       "`typing.Generator[unknown, None, None]`.";
     ]
-    {|
-      def foo(a: A) -> None:
-        yield a.undefined
-    |};
+    "yield ERROR";
   assert_not_covered
     ~additional_errors:[
       "Incompatible return type [7]: Expected `None` but got " ^
       "`typing.Generator[unknown, None, None]`.";
     ]
-    {|
-      def foo(a: A) -> None:
-        yield from a.undefined
-    |};
+    "yield from ERROR";
 
   (* Control statements. *)
   (* TODO(T26146217): add coverage. *)
-  assert_not_covered
-    {|
-      def foo(a: A) -> None:
-        for i in a.undefined:
-          pass
-    |};
-  assert_not_covered
-    {|
-      def foo(a: A) -> None:
-        while a.undefined:
-          pass
-    |};
-  assert_covered
-    {|
-      def foo(a: A) -> None:
-        if a.undefined:
-          pass
-    |};
+  assert_not_covered "for i in ERROR: pass";
+  assert_not_covered "while ERROR: pass";
+  assert_covered "if ERROR: pass";
 
   (* Raise. *)
-  assert_covered
-    {|
-      def foo(a: A) -> None:
-        raise a.undefined
-    |}
+  assert_covered "raise ERROR"
 
 
 let test_check_non_debug _ =
