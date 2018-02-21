@@ -1669,11 +1669,14 @@ let test_check_coverage _ =
 
   (* Starred. *)
   assert_covered "*ERROR";
-  assert_covered "**ERROR"
+  assert_covered "**ERROR";
+
+  (* Ternary. *)
+  assert_covered "ERROR if okay else okay";
+  assert_covered "okay if ERROR else okay";
+  assert_covered "okay if okay else ERROR"
 
 (* TODO(T26146217): Remaining coverage for
-   | String of string
-   | Ternary of t Ternary.t
    | True
    | Tuple of t list
    | UnaryOperator of t UnaryOperator.t
