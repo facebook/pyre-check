@@ -107,7 +107,7 @@ let parse_stubs
       let is_python_2 path =
         String.is_substring ~substring:"/2/" path ||
         String.is_substring ~substring:"/2.7/" path in
-      String.suffix path 4 = ".pyi" && not (is_python_2 path) in
+      (String.suffix path 4 = ".pyi" || String.suffix path 3 = ".py") && not (is_python_2 path) in
     sofar @ File.list ~filter:is_stub ~root
   in
   let paths = List.fold ~init:[] ~f:paths (source_root :: stub_roots) in

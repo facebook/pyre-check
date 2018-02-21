@@ -877,7 +877,7 @@ let connect_type_order
                   |> Path.relative
                 else
                   begin
-                    Log.log ~section:`Dependencies "Import path %s not found" path;
+                    Log.log ~section:`Dependencies "Import path %s not found in %s" relative path;
                     None
                   end
               in

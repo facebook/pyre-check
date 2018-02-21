@@ -13,18 +13,26 @@ open Ast
 open Pyre
 
 
-let test_parse_stubs_list _ =
+let test_parse_stubs_modules_list _ =
   let root = Path.current_working_directory () in
-  let create_with_relative relative =
+  let create_stub_with_relative relative =
     let content = Some "def f()->int: ...\n" in
+    File.create ~content (Path.create_relative ~root ~relative)
+  in
+  let create_module_with_relative relative =
+    let content = Some "def f()->int:\n    return 1\n" in
     File.create ~content (Path.create_relative ~root ~relative)
   in
   let files =
     [
-      create_with_relative "a.pyi";
-      create_with_relative "dir/b.pyi";
-      create_with_relative "2/c.pyi";
-      create_with_relative "2and3/d.pyi";
+      create_stub_with_relative "a.pyi";
+      create_stub_with_relative "dir/b.pyi";
+      create_stub_with_relative "2/c.pyi";
+      create_stub_with_relative "2and3/d.pyi";
+      create_module_with_relative "moda.py";
+      create_module_with_relative "dir/modb.py";
+      create_module_with_relative "2/modc.py";
+      create_module_with_relative "2and3/modd.py";
     ]
   in
   let handles =
@@ -51,10 +59,28 @@ let test_parse_stubs_list _ =
       | _ -> assert_unreached ()
     end
   in
+  let assert_module_matches_name handle define_name =
+    let source = AstSharedMemory.get_source handle in
+    assert_is_some source;
+    let { Source.statements; _ } = Option.value_exn source in
+    begin
+      match statements with
+      | [{
+          Node.value = Statement.Define { Statement.Define.name; _ };
+          _;
+        }] ->
+          assert_equal name (Expression.Access.create_from_identifiers define_name)
+      | _ -> assert_unreached ()
+    end
+  in
   assert_stub_matches_name (get_handle_at 0) [~~"a"; ~~"f"];
   assert_stub_matches_name (get_handle_at 1) [~~"dir"; ~~"b"; ~~"f"];
   assert_stub_matches_name (get_handle_at 2) [~~"c"; ~~"f"];
-  assert_stub_matches_name (get_handle_at 3) [~~"d"; ~~"f"]
+  assert_stub_matches_name (get_handle_at 3) [~~"d"; ~~"f"];
+  assert_module_matches_name (get_handle_at 4) [~~"moda"; ~~"f"];
+  assert_module_matches_name (get_handle_at 5) [~~"dir"; ~~"modb"; ~~"f"];
+  assert_module_matches_name (get_handle_at 6) [~~"modc"; ~~"f"];
+  assert_module_matches_name (get_handle_at 7) [~~"modd"; ~~"f"]
 
 
 let test_parse_sources_list _ =
@@ -108,7 +134,7 @@ let test_parse_sources_coverage _ =
 
 let () =
   "parser">:::[
-    "parse_stubs_list">::test_parse_stubs_list;
+    "parse_stubs_modules_list">::test_parse_stubs_modules_list;
     "parse_sources_list">::test_parse_sources_list;
     "parse_sources_coverage">::test_parse_sources_coverage;
   ]
