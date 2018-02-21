@@ -1684,9 +1684,6 @@ let test_check_coverage _ =
   assert_covered "not ERROR";
   assert_covered "-ERROR"
 
-(* TODO(T26146217): Remaining coverage for
-   | Yield of t option *)
-
 
 let test_check_non_debug _ =
   assert_type_errors
