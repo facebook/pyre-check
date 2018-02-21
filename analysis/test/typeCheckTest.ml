@@ -1629,10 +1629,15 @@ let test_check_coverage _ =
 
   (* Binary operator. *)
   assert_covered "ERROR | okay";
-  assert_covered "okay % ERROR"
+  assert_covered "okay % ERROR";
+
+  (* Boolean operator. *)
+  assert_covered "ERROR or okay";
+  assert_covered "okay or ERROR";
+  assert_covered "ERROR and okay";
+  assert_covered "okay and ERROR"
 
 (* TODO(T26146217): Remaining coverage for
-   | BooleanOperator of t BooleanOperator.t
    | Bytes of string
    | ComparisonOperator of t ComparisonOperator.t
    | Complex of float
@@ -2089,7 +2094,7 @@ let test_check_function_parameter_errors _ =
       def foo(input: typing.Optional[Foo]) -> None:
         optional_str_to_int(input and input.undefined)
     |}
-    []
+    ["Undefined attribute [16]: `Foo` has no attribute `undefined`."]
 
 
 let test_check_variable_arguments _ =
@@ -4120,8 +4125,21 @@ let test_check_assert _ =
       def foo(optional: typing.Optional[str]) -> None:
         if optional or len(optional) > 0:
           pass
+    |}
+    [
+      "Incompatible parameter type [6]: 1st parameter `o` to call `len` expected `typing.Sized` " ^
+      "but got `typing.Optional[str]`.";
+    ];
+  assert_type_errors
+    {|
+      def foo(optional: typing.Optional[str]) -> None:
         if optional is None or len(optional) > 0:
           pass
+    |}
+    [];
+  assert_type_errors
+    {|
+      def foo(optional: typing.Optional[str]) -> None:
         if optional and len(optional) > 0:
           pass
     |}

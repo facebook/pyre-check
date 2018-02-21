@@ -1263,20 +1263,27 @@ module State = struct
             let errors = check_expression ~resolution errors left in
             check_expression ~resolution errors right
 
-        | BooleanOperator { BooleanOperator.left; operator; right } ->
+        | BooleanOperator {
+            BooleanOperator.left;
+            operator;
+            right = ({ Node.location; _ } as right);
+          } ->
             let { errors; _ } =
-              match operator with
-              | BooleanOperator.And ->
-                  let annotations = forward_annotations state (Statement.assume left) in
-                  let right = forward_expression { state with annotations } right in
-                  let left = forward_expression state left in
-                  meet left right
-              | BooleanOperator.Or ->
-                  let negated_left = Expression.normalize (Expression.negate left) in
-                  let annotations = forward_annotations state (Statement.assume negated_left) in
-                  let right = forward_expression { state with annotations } right in
-                  let left = forward_expression state left in
-                  join left right
+              let right =
+                let assume =
+                  match operator with
+                  | BooleanOperator.And ->
+                      left;
+                  | BooleanOperator.Or ->
+                      Expression.normalize (Expression.negate left);
+                in
+                [
+                  Statement.assume assume;
+                  Node.create ~location (Statement.Expression right);
+                ]
+              in
+              let left = forward_expression state left in
+              List.fold ~init:left ~f:forward right
             in
             errors
 
