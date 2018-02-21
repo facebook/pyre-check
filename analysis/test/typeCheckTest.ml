@@ -1652,11 +1652,12 @@ let test_check_coverage _ =
   assert_not_covered {|f"format{ERROR}"|};
 
   (* Generator. *)
-  assert_covered "(ERROR for i in collection)"
+  assert_covered "(ERROR for i in collection)";
+
+  (* Lambdas. *)
+  assert_covered "lambda x: ERROR"
 
 (* TODO(T26146217): Remaining coverage for
-   | Integer of int
-   | Lambda of t Lambda.t
    | List of t list
    | ListComprehension of (t, t) Comprehension.t
    | Set of t list
