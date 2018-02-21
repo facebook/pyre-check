@@ -225,8 +225,4 @@ val assume: Expression.t -> t
 
 val terminates: t list -> bool
 
-val pp : Format.formatter -> t -> unit
-
-val show : t -> string
-
 val extract_docstring : t list -> string option

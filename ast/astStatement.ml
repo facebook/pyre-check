@@ -508,6 +508,337 @@ let terminates body =
   Option.is_some (List.find ~f:find_terminator body)
 
 
+module Class = struct
+  include Record.Class
+
+
+  type t = statement_node Record.Class.record
+  [@@deriving compare, eq, sexp, show, hash]
+
+
+  let constructors ?(in_test = false) { Record.Class.body; _ } =
+    let constructor = function
+      | { Node.value = Define define; _ } when Define.is_constructor ~in_test define ->
+          Some define
+      | _ ->
+          None
+    in
+    List.filter_map ~f:constructor body
+
+
+  let attribute_assigns
+      ?(include_generated_attributes = true)
+      ?(in_test = false)
+      ({ Record.Class.body; bases; _ } as definition) =
+    let explicit_attribute_assigns =
+      let attribute_assigns map { Node.location; value } =
+        match value with
+        | Assign ({
+            Assign.target = { Node.value = Expression.Access ([_] as access); _ };
+            _;
+          } as assign)
+        | Stub
+            (Stub.Assign
+               ({
+                 Assign.target = { Node.value = Expression.Access ([_] as access); _ };
+                 _;
+               } as assign)) ->
+            Map.set ~key:access ~data:(Node.create ~location assign) map
+        | _ ->
+            map
+      in
+      List.fold ~init:Expression.Access.Map.empty ~f:attribute_assigns body
+    in
+
+    if not include_generated_attributes then
+      explicit_attribute_assigns
+    else
+      let merge ~key:_ = function
+        | `Both (_, right) ->
+            Some right
+        | `Left value
+        | `Right value ->
+            Some value
+      in
+      let implicit_attribute_assigns =
+        constructors ~in_test definition
+        |> List.map ~f:(Define.implicit_attribute_assigns ~definition)
+        |> List.fold ~init:Expression.Access.Map.empty ~f:(Map.merge ~f:merge)
+      in
+      let named_tuple_assigns =
+        let open Expression in
+        let named_tuple_assigns sofar { Argument.value; _ } =
+          match Node.value value with
+          | Access [
+              Access.Identifier typing;
+              Access.Call {
+                Node.value = {
+                  Call.name = {
+                    Node.value = Access [Access.Identifier named_tuple];
+                    _;
+                  };
+                  arguments = [
+                    _;
+                    { Argument.value = { Node.value = List attributes; _; }; _ };
+                  ];
+                };
+                _;
+              }
+            ] when (Identifier.show typing = "typing" &&
+                    Identifier.show named_tuple = "NamedTuple") ||
+                   (Identifier.show typing = "collections" &&
+                    Identifier.show named_tuple = "namedtuple")->
+              let named_tuple_assigns sofar { Node.location; value } =
+                match value with
+                | String name ->
+                    let access = Access.create name in
+                    let assign =
+                      {
+                        Assign.target = { Node.location; value = Access access};
+                        annotation = None;
+                        value = None;
+                        compound = None;
+                        parent = None;
+                      }
+                    in
+                    Map.set ~key:access ~data:(Node.create ~location assign) sofar
+                | Tuple [{ Node.location; value = String name}; annotation] ->
+                    let access = Access.create name in
+                    let assign =
+                      {
+                        Assign.target = { Node.location; value = Access access};
+                        annotation = Some annotation;
+                        value = None;
+                        compound = None;
+                        parent = None;
+                      }
+                    in
+                    Map.set ~key:access ~data:(Node.create ~location assign) sofar
+                | _ ->
+                    sofar
+              in
+              List.fold ~f:named_tuple_assigns ~init:sofar attributes
+          | _ ->
+              sofar
+        in
+        List.fold ~f:named_tuple_assigns ~init:Expression.Access.Map.empty bases
+      in
+      let property_assigns =
+        let property_assigns map = function
+          | { Node.location; value = Stub (Stub.Define define) }
+          | { Node.location; value = Define define } ->
+              (Define.property_attribute_assign ~location define
+               >>= fun ({ Node.value = { Assign.target; _ }; _ } as assign) ->
+               match target with
+               | { Node.value = Expression.Access ([_] as access); _ } ->
+                   Some (Map.set ~key:access ~data:assign map)
+               | _ ->
+                   None)
+              |> Option.value ~default:map
+          | _ ->
+              map
+        in
+        List.fold ~init:Expression.Access.Map.empty ~f:property_assigns body
+      in
+      let callable_assigns =
+        let callable_assigns map { Node.location; value } =
+          match value with
+          | Stub (Stub.Define { Define.name; _ })
+          | Define { Define.name; _ } ->
+              let assign =
+                Node.create
+                  ~location
+                  {
+                    Assign.target = Node.create ~location (Expression.Access name);
+                    annotation = None;  (* This should be a `Callable`. Ignoring for now... *)
+                    value = None;
+                    compound = None;
+                    parent = None;
+                  }
+              in
+              Map.set ~key:name ~data:assign map
+          | _ ->
+              map
+        in
+        List.fold ~init:Expression.Access.Map.empty ~f:callable_assigns body
+      in
+      let class_assigns =
+        let callable_assigns map { Node.location; value } =
+          match value with
+          | Stub (Stub.Class { Record.Class.name; _ })
+          | Class { Record.Class.name; _ } when not (List.is_empty name) ->
+              let open Expression in
+              let annotation =
+                let meta_annotation =
+                  Node.create
+                    ~location
+                    (Access [
+                        Access.Identifier (Identifier.create "typing");
+                        Access.Identifier (Identifier.create "Type");
+                        Access.Subscript [Access.Index (Node.create ~location (Access name))];
+                      ])
+                in
+                Node.create
+                  ~location
+                  (Access [
+                      Access.Identifier (Identifier.create "typing");
+                      Access.Identifier (Identifier.create "ClassVar");
+                      Access.Subscript [Access.Index meta_annotation];
+                    ])
+              in
+              let assign =
+                Node.create
+                  ~location
+                  {
+                    Assign.target = Node.create ~location (Expression.Access [List.last_exn name]);
+                    annotation = Some annotation;
+                    value = None;
+                    compound = None;
+                    parent = None;
+                  }
+              in
+              Map.set ~key:name ~data:assign map
+          | _ ->
+              map
+        in
+        List.fold ~init:Expression.Access.Map.empty ~f:callable_assigns body
+      in
+      (* Merge with decreasing priority. Explicit attributes override all. *)
+      explicit_attribute_assigns
+      |> Map.merge ~f:merge property_assigns
+      |> Map.merge ~f:merge named_tuple_assigns
+      |> Map.merge ~f:merge callable_assigns
+      |> Map.merge ~f:merge class_assigns
+      |> Map.merge ~f:merge implicit_attribute_assigns
+
+
+  let update
+      { Record.Class.body = stub; _ }
+      ~definition:({ Record.Class.body; _ } as definition) =
+    let updated, undefined =
+      let update (updated, undefined) statement =
+        match statement with
+        | { Node.location; value = Assign ({ Assign.target; _ } as assign)} ->
+            begin
+              let is_stub = function
+                | { Node.value = Stub (Stub.Assign { Assign.target = stub_target; _ }); _ }
+                | { Node.value = Assign { Assign.target = stub_target; _; }; _; }
+                  when Expression.equal target stub_target ->
+                    true
+                | _ ->
+                    false
+              in
+              match List.find ~f:is_stub stub with
+              | Some { Node.value = Stub (Stub.Assign { Assign.annotation; _ }); _ } ->
+                  let updated_assign =
+                    {
+                      Node.location;
+                      value = Assign { assign with Assign.annotation }
+                    }
+                  in
+                  updated_assign :: updated,
+                  (List.filter ~f:(fun statement -> not (is_stub statement)) undefined)
+              | _ ->
+                  statement :: updated, undefined
+            end
+        | { Node.location; value = Define ({ Record.Define.name; parameters; _ } as define)} ->
+            begin
+              let is_stub = function
+                | {
+                  Node.value = Stub (Stub.Define {
+                      Record.Define.name = stub_name;
+                      parameters = stub_parameters;
+                      _;
+                    });
+                  _;
+                }
+                | {
+                  Node.value = Define {
+                      Record.Define.name = stub_name;
+                      parameters = stub_parameters;
+                      _;
+                    };
+                  _;
+                } when Expression.Access.equal name stub_name &&
+                       List.length parameters = List.length stub_parameters ->
+                    true
+                | _ ->
+                    false
+              in
+              match List.find ~f:is_stub stub with
+              | Some {
+                  Node.value = Stub (Stub.Define { Define.parameters; return_annotation; _ });
+                  _;
+                } ->
+                  let updated_define =
+                    {
+                      Node.location;
+                      value = Define { define with Define.parameters; return_annotation }
+                    }
+                  in
+                  updated_define :: updated,
+                  (List.filter ~f:(fun statement -> not (is_stub statement)) undefined)
+              | _ ->
+                  statement :: updated, undefined
+            end
+        | _ ->
+            statement :: updated, undefined
+      in
+      List.fold ~init:([], stub) ~f:update body
+    in
+    { definition with Record.Class.body = undefined @ updated }
+end
+
+
+module With = struct
+  include Record.With
+
+
+  type t = statement_node Record.With.record
+  [@@deriving compare, eq, sexp, show, hash]
+
+
+  let preamble { items; _ } =
+    let preamble ({ Node.location; _ } as expression, target) =
+      (target
+       >>| fun target ->
+       let assign =
+         {
+           Assign.target;
+           annotation = None;
+           value = Some expression;
+           compound = None;
+           parent = None;
+         }
+       in
+       Node.create ~location (Assign assign))
+      |> Option.value
+        ~default:(Node.create ~location (Expression expression))
+    in
+    List.map ~f:preamble items
+end
+
+
+let extract_docstring statements =
+  (* See PEP 257 for Docstring formatting. The main idea is that we want to get the shortest
+   * indentation from line 2 onwards as the indentation of the docstring. *)
+  let unindent docstring =
+    let indentation line =
+      let line_without_indentation = String.lstrip line in
+      (String.length line) - (String.length line_without_indentation) in
+    match String.split ~on:'\n' docstring with
+    | [] -> docstring
+    | first :: rest ->
+        let indentations = List.map ~f:indentation rest in
+        let difference = List.fold ~init:Int.max_value ~f:Int.min indentations in
+        let rest = List.map ~f:(fun s -> String.drop_prefix s difference) rest in
+        String.concat ~sep:"\n" (first::rest)
+  in
+  match statements with
+  | { Node.value = Expression { Node.value = Expression.String s; _ }; _ } :: _ -> Some (unindent s)
+  | _ -> None
+
+
 module PrettyPrinter = struct
   let pp_decorators formatter =
     function
@@ -828,342 +1159,12 @@ module PrettyPrinter = struct
 end
 
 
-module Class = struct
-  include Record.Class
-
-
-  type t = statement_node Record.Class.record
-  [@@deriving compare, eq, sexp, show, hash]
-
-
-  let constructors ?(in_test = false) { Record.Class.body; _ } =
-    let constructor = function
-      | { Node.value = Define define; _ } when Define.is_constructor ~in_test define ->
-          Some define
-      | _ ->
-          None
-    in
-    List.filter_map ~f:constructor body
-
-
-  let attribute_assigns
-      ?(include_generated_attributes = true)
-      ?(in_test = false)
-      ({ Record.Class.body; bases; _ } as definition) =
-    let explicit_attribute_assigns =
-      let attribute_assigns map { Node.location; value } =
-        match value with
-        | Assign ({
-            Assign.target = { Node.value = Expression.Access ([_] as access); _ };
-            _;
-          } as assign)
-        | Stub
-            (Stub.Assign
-               ({
-                 Assign.target = { Node.value = Expression.Access ([_] as access); _ };
-                 _;
-               } as assign)) ->
-            Map.set ~key:access ~data:(Node.create ~location assign) map
-        | _ ->
-            map
-      in
-      List.fold ~init:Expression.Access.Map.empty ~f:attribute_assigns body
-    in
-
-    if not include_generated_attributes then
-      explicit_attribute_assigns
-    else
-      let merge ~key:_ = function
-        | `Both (_, right) ->
-            Some right
-        | `Left value
-        | `Right value ->
-            Some value
-      in
-      let implicit_attribute_assigns =
-        constructors ~in_test definition
-        |> List.map ~f:(Define.implicit_attribute_assigns ~definition)
-        |> List.fold ~init:Expression.Access.Map.empty ~f:(Map.merge ~f:merge)
-      in
-      let named_tuple_assigns =
-        let open Expression in
-        let named_tuple_assigns sofar { Argument.value; _ } =
-          match Node.value value with
-          | Access [
-              Access.Identifier typing;
-              Access.Call {
-                Node.value = {
-                  Call.name = {
-                    Node.value = Access [Access.Identifier named_tuple];
-                    _;
-                  };
-                  arguments = [
-                    _;
-                    { Argument.value = { Node.value = List attributes; _; }; _ };
-                  ];
-                };
-                _;
-              }
-            ] when (Identifier.show typing = "typing" &&
-                    Identifier.show named_tuple = "NamedTuple") ||
-                   (Identifier.show typing = "collections" &&
-                    Identifier.show named_tuple = "namedtuple")->
-              let named_tuple_assigns sofar { Node.location; value } =
-                match value with
-                | String name ->
-                    let access = Access.create name in
-                    let assign =
-                      {
-                        Assign.target = { Node.location; value = Access access};
-                        annotation = None;
-                        value = None;
-                        compound = None;
-                        parent = None;
-                      }
-                    in
-                    Map.set ~key:access ~data:(Node.create ~location assign) sofar
-                | Tuple [{ Node.location; value = String name}; annotation] ->
-                    let access = Access.create name in
-                    let assign =
-                      {
-                        Assign.target = { Node.location; value = Access access};
-                        annotation = Some annotation;
-                        value = None;
-                        compound = None;
-                        parent = None;
-                      }
-                    in
-                    Map.set ~key:access ~data:(Node.create ~location assign) sofar
-                | _ ->
-                    sofar
-              in
-              List.fold ~f:named_tuple_assigns ~init:sofar attributes
-          | _ ->
-              sofar
-        in
-        List.fold ~f:named_tuple_assigns ~init:Expression.Access.Map.empty bases
-      in
-      let property_assigns =
-        let property_assigns map = function
-          | { Node.location; value = Stub (Stub.Define define) }
-          | { Node.location; value = Define define } ->
-              (Define.property_attribute_assign ~location define
-               >>= fun ({ Node.value = { Assign.target; _ }; _ } as assign) ->
-               match target with
-               | { Node.value = Expression.Access ([_] as access); _ } ->
-                   Some (Map.set ~key:access ~data:assign map)
-               | _ ->
-                   None)
-              |> Option.value ~default:map
-          | _ ->
-              map
-        in
-        List.fold ~init:Expression.Access.Map.empty ~f:property_assigns body
-      in
-      let callable_assigns =
-        let callable_assigns map { Node.location; value } =
-          match value with
-          | Stub (Stub.Define { Define.name; _ })
-          | Define { Define.name; _ } ->
-              let assign =
-                Node.create
-                  ~location
-                  {
-                    Assign.target = Node.create ~location (Expression.Access name);
-                    annotation = None;  (* This should be a `Callable`. Ignoring for now... *)
-                    value = None;
-                    compound = None;
-                    parent = None;
-                  }
-              in
-              Map.set ~key:name ~data:assign map
-          | _ ->
-              map
-        in
-        List.fold ~init:Expression.Access.Map.empty ~f:callable_assigns body
-      in
-      let class_assigns =
-        let callable_assigns map { Node.location; value } =
-          match value with
-          | Stub (Stub.Class { Record.Class.name; _ })
-          | Class { Record.Class.name; _ } when not (List.is_empty name) ->
-              let open Expression in
-              let annotation =
-                let meta_annotation =
-                  Node.create
-                    ~location
-                    (Access [
-                        Access.Identifier (Identifier.create "typing");
-                        Access.Identifier (Identifier.create "Type");
-                        Access.Subscript [Access.Index (Node.create ~location (Access name))];
-                      ])
-                in
-                Node.create
-                  ~location
-                  (Access [
-                      Access.Identifier (Identifier.create "typing");
-                      Access.Identifier (Identifier.create "ClassVar");
-                      Access.Subscript [Access.Index meta_annotation];
-                    ])
-              in
-              let assign =
-                Node.create
-                  ~location
-                  {
-                    Assign.target = Node.create ~location (Expression.Access [List.last_exn name]);
-                    annotation = Some annotation;
-                    value = None;
-                    compound = None;
-                    parent = None;
-                  }
-              in
-              Map.set ~key:name ~data:assign map
-          | _ ->
-              map
-        in
-        List.fold ~init:Expression.Access.Map.empty ~f:callable_assigns body
-      in
-      (* Merge with decreasing priority. Explicit attributes override all. *)
-      explicit_attribute_assigns
-      |> Map.merge ~f:merge property_assigns
-      |> Map.merge ~f:merge named_tuple_assigns
-      |> Map.merge ~f:merge callable_assigns
-      |> Map.merge ~f:merge class_assigns
-      |> Map.merge ~f:merge implicit_attribute_assigns
-
-
-  let update
-      { Record.Class.body = stub; _ }
-      ~definition:({ Record.Class.body; _ } as definition) =
-    let updated, undefined =
-      let update (updated, undefined) statement =
-        match statement with
-        | { Node.location; value = Assign ({ Assign.target; _ } as assign)} ->
-            begin
-              let is_stub = function
-                | { Node.value = Stub (Stub.Assign { Assign.target = stub_target; _ }); _ }
-                | { Node.value = Assign { Assign.target = stub_target; _; }; _; }
-                  when Expression.equal target stub_target ->
-                    true
-                | _ ->
-                    false
-              in
-              match List.find ~f:is_stub stub with
-              | Some { Node.value = Stub (Stub.Assign { Assign.annotation; _ }); _ } ->
-                  let updated_assign =
-                    {
-                      Node.location;
-                      value = Assign { assign with Assign.annotation }
-                    }
-                  in
-                  updated_assign :: updated,
-                  (List.filter ~f:(fun statement -> not (is_stub statement)) undefined)
-              | _ ->
-                  statement :: updated, undefined
-            end
-        | { Node.location; value = Define ({ Record.Define.name; parameters; _ } as define)} ->
-            begin
-              let is_stub = function
-                | {
-                  Node.value = Stub (Stub.Define {
-                      Record.Define.name = stub_name;
-                      parameters = stub_parameters;
-                      _;
-                    });
-                  _;
-                }
-                | {
-                  Node.value = Define {
-                      Record.Define.name = stub_name;
-                      parameters = stub_parameters;
-                      _;
-                    };
-                  _;
-                } when Expression.Access.equal name stub_name &&
-                       List.length parameters = List.length stub_parameters ->
-                    true
-                | _ ->
-                    false
-              in
-              match List.find ~f:is_stub stub with
-              | Some {
-                  Node.value = Stub (Stub.Define { Define.parameters; return_annotation; _ });
-                  _;
-                } ->
-                  let updated_define =
-                    {
-                      Node.location;
-                      value = Define { define with Define.parameters; return_annotation }
-                    }
-                  in
-                  updated_define :: updated,
-                  (List.filter ~f:(fun statement -> not (is_stub statement)) undefined)
-              | _ ->
-                  statement :: updated, undefined
-            end
-        | _ ->
-            statement :: updated, undefined
-      in
-      List.fold ~init:([], stub) ~f:update body
-    in
-    { definition with Record.Class.body = undefined @ updated }
-end
-
-
-module With = struct
-  include Record.With
-
-
-  type t = statement_node Record.With.record
-  [@@deriving compare, eq, sexp, show, hash]
-
-
-  let preamble { items; _ } =
-    let preamble ({ Node.location; _ } as expression, target) =
-      (target
-       >>| fun target ->
-       let assign =
-         {
-           Assign.target;
-           annotation = None;
-           value = Some expression;
-           compound = None;
-           parent = None;
-         }
-       in
-       Node.create ~location (Assign assign))
-      |> Option.value
-        ~default:(Node.create ~location (Expression expression))
-    in
-    List.map ~f:preamble items
-end
-
-
 let pp formatter statement =
   Format.fprintf
     formatter
     "%a"
     PrettyPrinter.pp statement
 
-let show statement = Format.asprintf "%a" pp statement
 
-
-
-let extract_docstring statements =
-  (* See PEP 257 for Docstring formatting. The main idea is that we want to get the shortest
-   * indentation from line 2 onwards as the indentation of the docstring. *)
-  let unindent docstring =
-    let indentation line =
-      let line_without_indentation = String.lstrip line in
-      (String.length line) - (String.length line_without_indentation) in
-    match String.split ~on:'\n' docstring with
-    | [] -> docstring
-    | first :: rest ->
-        let indentations = List.map ~f:indentation rest in
-        let difference = List.fold ~init:Int.max_value ~f:Int.min indentations in
-        let rest = List.map ~f:(fun s -> String.drop_prefix s difference) rest in
-        String.concat ~sep:"\n" (first::rest)
-  in
-  match statements with
-  | { Node.value = Expression { Node.value = Expression.String s; _ }; _ } :: _ -> Some (unindent s)
-  | _ -> None
+let show statement =
+  Format.asprintf "%a" pp statement
