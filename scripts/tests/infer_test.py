@@ -425,6 +425,7 @@ class InferTest(unittest.TestCase):
     def test_infer(self) -> None:
         arguments = mock_arguments()
         arguments.recursive = False
+        arguments.strict = False
 
         configuration = mock_configuration()
 

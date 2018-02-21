@@ -77,6 +77,7 @@ class Command:
 
         self._source_directories = source_directories
         self._debug = arguments.debug
+        self._strict = arguments.strict
         self._show_error_traces = arguments.show_error_traces
         self._verbose = arguments.verbose
         self._logging_sections = arguments.logging_sections
@@ -105,6 +106,8 @@ class Command:
         flags = []
         if self._debug:
             flags.extend(['-debug', '-sequential'])
+        if self._strict:
+            flags.extend(['-strict'])
         if self._show_error_traces:
             flags.append('-show-error-traces')
         if self._verbose:

@@ -64,11 +64,11 @@ let create
   }
 
 
-let localize ({ debug; _ } as configuration) ~local_debug ~strict ~declare =
+let localize ({ debug; strict; _ } as configuration) ~local_debug ~local_strict ~declare =
   {
     configuration with
     debug = debug || local_debug;
-    strict;
+    strict = strict || local_strict;
     declare;
   }
 

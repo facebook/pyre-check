@@ -23,6 +23,7 @@ def mock_arguments():
     arguments = MagicMock()
 
     arguments.debug = False
+    arguments.strict = False
     arguments.show_error_traces = False
     arguments.verbose = False
     arguments.logging_sections = None

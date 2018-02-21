@@ -423,6 +423,11 @@ def main():
         action='store_true',
         help='Run in debug mode')
     parser.add_argument(
+        '--strict',
+        action='store_true',
+        help=argparse.SUPPRESS)
+
+    parser.add_argument(
         '--verbose',
         action='store_true',
         help='Enable verbose logging')
