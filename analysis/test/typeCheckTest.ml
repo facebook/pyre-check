@@ -1678,10 +1678,13 @@ let test_check_coverage _ =
 
   (* Tuples. *)
   assert_covered "ERROR, okay";
-  assert_covered "okay, ERROR"
+  assert_covered "okay, ERROR";
+
+  (* Unary operators. *)
+  assert_covered "not ERROR";
+  assert_covered "-ERROR"
 
 (* TODO(T26146217): Remaining coverage for
-   | UnaryOperator of t UnaryOperator.t
    | Yield of t option *)
 
 
