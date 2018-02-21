@@ -414,7 +414,7 @@ class Check(ErrorHandling):
             should_merge_directories=True)
         self._log_identifier = arguments.log_identifier
         self._shared_directory_name = (
-            shared_source_directory.get_directory_name(suffix=os.getpid()))
+            shared_source_directory.get_directory_name(suffix=str(os.getpid())))
 
     def _run(self, retries: int = 1) -> None:
         flags = self._flags()
