@@ -1172,7 +1172,8 @@ module State = struct
 
       and check_generator
           state
-          { Comprehension.target; iterator; conditions; _ } = (* TODO(T23723699): check async. *)
+          { Comprehension.target; iterator = { Node.location; _ } as iterator; conditions; _ } =
+        (* TODO(T23723699): check async. *)
         (* Propagate `target = iterator.__iter__().__next__()`. *)
         let assign =
           let access =
@@ -1183,21 +1184,26 @@ module State = struct
             in
             let call name =
               Access.Call
-                (Node.create {
-                    Call.name = (Node.create (Access [Access.Identifier (Identifier.create name)]));
-                    arguments = [];
-                  })
+                (Node.create
+                   ~location
+                   {
+                     Call.name =
+                       Node.create
+                         ~location
+                         (Access [Access.Identifier (Identifier.create name)]);
+                     arguments = [];
+                   })
             in
             iterator @ [call "__iter__"; call "__next__"]
           in
           Assign {
             Assign.target;
             annotation = None;
-            value = Some (Node.create (Access access));
+            value = Some (Node.create ~location (Access access));
             compound = None;
             parent = None;
           }
-          |> Node.create
+          |> Node.create ~location
         in
 
         (* Check conditions. *)

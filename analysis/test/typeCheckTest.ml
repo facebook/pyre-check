@@ -1639,12 +1639,16 @@ let test_check_coverage _ =
 
   (* Comparison operator. *)
   assert_covered "okay == ERROR";
-  assert_covered "ERROR < okay"
+  assert_covered "ERROR < okay";
+
+  (* Dictionaries. *)
+  assert_covered "{ ERROR: 1 }";
+  assert_covered "{ 1: ERROR }";
+  assert_covered "{ ERROR: i for i in collection }";
+  assert_covered "{ i: ERROR for i in collection }";
+  assert_covered "{ i: 1 for i in ERROR }"
 
 (* TODO(T26146217): Remaining coverage for
-   | Complex of float
-   | Dictionary of t Dictionary.t
-   | DictionaryComprehension of ((t Dictionary.entry), t) Comprehension.t
    | False
    | Float of float
    | Format of string
