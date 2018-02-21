@@ -1649,10 +1649,12 @@ let test_check_coverage _ =
   assert_covered "{ i: 1 for i in ERROR }";
 
   (* TODO(T26146217): we're not handling format strings yet. *)
-  assert_not_covered {|f"format{ERROR}"|}
+  assert_not_covered {|f"format{ERROR}"|};
+
+  (* Generator. *)
+  assert_covered "(ERROR for i in collection)"
 
 (* TODO(T26146217): Remaining coverage for
-   | Generator of (t, t) Comprehension.t
    | Integer of int
    | Lambda of t Lambda.t
    | List of t list
