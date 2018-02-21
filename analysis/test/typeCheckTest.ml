@@ -1635,11 +1635,13 @@ let test_check_coverage _ =
   assert_covered "ERROR or okay";
   assert_covered "okay or ERROR";
   assert_covered "ERROR and okay";
-  assert_covered "okay and ERROR"
+  assert_covered "okay and ERROR";
+
+  (* Comparison operator. *)
+  assert_covered "okay == ERROR";
+  assert_covered "ERROR < okay"
 
 (* TODO(T26146217): Remaining coverage for
-   | Bytes of string
-   | ComparisonOperator of t ComparisonOperator.t
    | Complex of float
    | Dictionary of t Dictionary.t
    | DictionaryComprehension of ((t Dictionary.entry), t) Comprehension.t
