@@ -1513,25 +1513,12 @@ module State = struct
       | Assert { Assert.test; _ } ->
           check_expression ~resolution errors test
 
-      | Class _
-      | Define _ ->
-          (* Don't check accesses in nested classes and functions, they're analyzed separately. *)
-          errors
-
       | Delete _ ->
           (* TODO(T26146217): add coverage. *)
           errors
 
       | Expression expression ->
           check_expression ~resolution errors expression
-
-      | For _ ->
-          (* TODO(T26146217): add coverage. *)
-          errors
-
-      | If _ ->
-          (* Check happens implicitly in the generated assertions. *)
-          errors
 
       | Raise (Some expression) ->
           check_expression ~resolution errors expression
@@ -1576,18 +1563,6 @@ module State = struct
             add_errors errors [error]
           else
             errors
-
-      | Try _ ->
-          (* Check happens implicitly in the generated assertions. *)
-          errors
-
-      | With _ ->
-          (* TODO(T26146217): add coverage. *)
-          errors
-
-      | While _ ->
-          (* Check happens implicitly in the generated assertions. *)
-          errors
 
       | Statement.Yield { Node.value = Expression.Yield return; _ } ->
           let errors =
@@ -1656,6 +1631,14 @@ module State = struct
           else
             errors
       | YieldFrom _ ->
+          errors
+
+      | Class _ | Define _ ->
+          (* Don't check accesses in nested classes and functions, they're analyzed separately. *)
+          errors
+
+      | For _  | If _ | Try _ | With _ | While _ ->
+          (* Check happens implicitly in the resulting control flow. *)
           errors
 
       | Break | Continue | Global _ | Import _ | Nonlocal _ | Pass | Stub _ ->
