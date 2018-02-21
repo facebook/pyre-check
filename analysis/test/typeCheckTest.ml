@@ -1620,15 +1620,18 @@ let test_check_coverage _ =
         pass
     |};
 
-  (* Expressions. *)
+  (* Await. *)
   assert_covered
     ~additional_errors:[
       "Incompatible awaitable type [12]: Expected an awaitable but got `unknown`.";
     ]
-    "await ERROR"
+    "await ERROR";
+
+  (* Binary operator. *)
+  assert_covered "ERROR | okay";
+  assert_covered "okay % ERROR"
 
 (* TODO(T26146217): Remaining coverage for
-   | BinaryOperator of t BinaryOperator.t
    | BooleanOperator of t BooleanOperator.t
    | Bytes of string
    | ComparisonOperator of t ComparisonOperator.t
