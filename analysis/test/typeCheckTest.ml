@@ -1667,12 +1667,11 @@ let test_check_coverage _ =
   assert_covered "{ERROR for i in collection}";
   assert_covered "{i for i in ERROR}";
 
+  (* Starred. *)
+  assert_covered "*ERROR";
+  assert_covered "**ERROR"
+
 (* TODO(T26146217): Remaining coverage for
-   | List of t list
-   | ListComprehension of (t, t) Comprehension.t
-   | Set of t list
-   | SetComprehension of (t, t) Comprehension.t
-   | Starred of t Starred.t
    | String of string
    | Ternary of t Ternary.t
    | True
