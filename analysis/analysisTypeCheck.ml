@@ -162,6 +162,7 @@ module State = struct
         configuration;
         environment;
         errors;
+        annotations;
         define = ({ Node.location; value = define; _ } as define_node);
         _;
       } as state) =
@@ -180,25 +181,10 @@ module State = struct
             | Access name
               when not (Type.equal expected Type.Top ||
                         Option.is_some (Attribute.value attribute)) ->
-                let assign_exists { Statement.Define.body; _ } name =
-                  let iterate initial { Node.value; _ } =
-                    match value with
-                    | Assign {
-                        Statement.Assign.target = { Node.value = Access (self::access); _ };
-                        value = Some _;
-                        compound = None;
-                        _;
-                      } ->
-                        if Expression.Access.equal [self] (Expression.Access.create "self") &&
-                           Expression.Access.equal access name then
-                          true
-                        else
-                          initial
-                    | _ -> initial
-                  in
-                  List.fold ~f:iterate ~init:false body
+                let access =
+                  (Expression.Access.Identifier (Identifier.create "self")) :: name
                 in
-                if assign_exists define name || Type.is_optional expected then
+                if Option.is_some (Map.find annotations access) || Type.is_optional expected then
                   errors
                 else
                   let error =

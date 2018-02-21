@@ -2431,6 +2431,7 @@ let test_check_init _ =
       "Uninitialized attribute [13]: Attribute `attribute` is declared in class `Foo` to have " ^
       "non-optional type `int` but is never initialized.";
     ];
+
   assert_type_errors
     {|
     class Foo:
@@ -2471,6 +2472,39 @@ let test_check_init _ =
         self.attribute = 0
     |}
     [];
+
+  assert_type_errors
+    {|
+      class Foo:
+        attribute: int
+        def __init__(self) -> None:
+          self.attribute = 0 if True else 1
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      class Foo:
+        attribute: int
+        def __init__(self) -> None:
+          if True:
+            self.attribute = 0
+          else:
+            self.attribute = 1
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      class Foo:
+        attribute: int
+        def __init__(self) -> None:
+          self.attribute = unknown if True else unknown2
+    |}
+    [
+      "Incompatible attribute type [8]: Attribute `attribute` declared in class `Foo` " ^
+      "has type `int` but is used as type `unknown`."
+    ];
 
   (* No need to initialize properties. *)
   assert_type_errors
