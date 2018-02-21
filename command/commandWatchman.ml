@@ -266,11 +266,11 @@ let command =
       +> flag
         "-logging-sections"
         (optional_with_default [] (Arg_type.comma_separated string))
-        ~doc:"Comma-separated list of logging sections."
+        ~doc:"SECTION1,... Comma-separated list of logging sections."
       +> flag
         "-project-root"
         (optional string)
-        ~doc:"Only follow sources under this root directory."
+        ~doc:"ROOT Only follow sources under this root directory."
         ~aliases:["-type-check-root"]
       +> anon (maybe_with_default "." ("source-root" %: string)))
     run_command

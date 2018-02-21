@@ -186,11 +186,11 @@ let spec =
   Command.Spec.(
     empty
     +> flag "-verbose" no_arg ~doc:"Turn on verbose logging"
-    +> flag "-version" (optional string) ~doc:"Pyre version"
+    +> flag "-version" (optional string) ~doc:"VERSION Pyre version"
     +> flag
       "-logging-sections"
       (optional_with_default [] (Arg_type.comma_separated string))
-      ~doc:"Comma-separated list of logging sections."
+      ~doc:"SECTION1,... Comma-separated list of logging sections."
     +> flag "-debug" no_arg ~doc:"Turn on debug mode"
     +> flag "-strict" no_arg ~doc:"Turn on strict mode"
     +> flag "-declare" no_arg ~doc:"Turn on declare mode"
@@ -204,16 +204,16 @@ let spec =
     +> flag
       "-log-identifier"
       (optional_with_default "" string)
-      ~doc:"Add given identifier to logged samples."
+      ~doc:"IDENTIFIER Add given identifier to logged samples."
     +> flag
       "-project-root"
       (optional_with_default "/" string)
-      ~doc:"Only check sources under this root directory."
+      ~doc:"ROOT Only check sources under this root directory."
       ~aliases:["-type-check-root"]
     +> flag
       "-stub-roots"
       (optional_with_default [] (Arg_type.comma_separated string))
-      ~doc:"Directory containing stubs to include"
+      ~doc:"STUB1,... Directory containing stubs to include"
     +> anon (maybe_with_default "." ("source-root" %: string)))
 
 

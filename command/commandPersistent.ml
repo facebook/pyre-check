@@ -150,10 +150,10 @@ let command =
     ~summary:"Opens a persistent connection to the server (IDE integration)"
     Command.Spec.(
       empty
-      +> flag "-version" (optional string) ~doc:"Pyre version"
+      +> flag "-version" (optional string) ~doc:"VERSION Pyre version"
       +> flag
         "-log-identifier"
         (optional_with_default "" string)
-        ~doc:"Add given identifier to logged samples."
+        ~doc:"IDENTIFIER Add given identifier to logged samples."
       +> anon (maybe_with_default "." ("source-root" %: string)))
     run_command
