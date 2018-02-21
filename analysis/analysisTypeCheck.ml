@@ -1242,7 +1242,7 @@ module State = struct
 
         | Await expression ->
             let errors = check_expression ~resolution errors expression in
-            let actual = (Annotated.resolve ~resolution expression) in
+            let actual = Annotated.resolve ~resolution expression in
             let is_awaitable =
               TypeOrder.less_or_equal
                 (Resolution.order resolution)
