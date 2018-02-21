@@ -33,7 +33,7 @@ class Configuration:
         self.logger = None
 
         self._disabled = False
-        self._stub_roots = []
+        self._search_path = []
         self._version_hash = None
         self._binary = None
         self._typeshed = None
@@ -72,10 +72,10 @@ class Configuration:
             # Validate stub roots.
             if not self._typeshed:
                 raise InvalidConfiguration('`typeshed` must be defined')
-            for stub_root in self.get_stub_roots():
-                if not os.path.isdir(stub_root):
+            for path in self.get_search_path():
+                if not os.path.isdir(path):
                     raise InvalidConfiguration(
-                        '`{}` is not a valid stub root'.format(stub_root))
+                        '`{}` is not a valid directory'.format(path))
         except InvalidConfiguration as error:
             raise EnvironmentException(
                 'Configuration file at `{}` or `{}` is invalid: {}.'.format(
@@ -98,7 +98,7 @@ class Configuration:
             return self._binary
 
     @functools.lru_cache(1)
-    def get_stub_roots(self):
+    def get_search_path(self):
         if not self._typeshed:
             raise InvalidConfiguration('Configuration was not validated')
 
@@ -108,7 +108,7 @@ class Configuration:
         else:
             typeshed = self._typeshed
 
-        return self._stub_roots + [typeshed]
+        return self._search_path + [typeshed]
 
     def disabled(self) -> bool:
         return self._disabled
@@ -151,8 +151,11 @@ class Configuration:
                 if not self._binary:
                     self._binary = configuration.get('binary')
 
-                self._stub_roots.extend(
+                # TODO(T25858716): remove this once migration is complete
+                self._search_path.extend(
                     configuration.get('additional_stub_roots', []))
+                self._search_path.extend(
+                    configuration.get('search_path', []))
 
                 if not self._version_hash:
                     self._version_hash = os.getenv('PYRE_VERSION_HASH')

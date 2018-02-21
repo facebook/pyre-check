@@ -36,7 +36,7 @@ def mock_arguments():
 def mock_configuration():
     configuration = MagicMock()
     configuration.source_directories = ['.']
-    configuration.get_stub_roots = MagicMock()
+    configuration.get_search_path = MagicMock()
     return configuration
 
 
@@ -246,7 +246,7 @@ class CheckTest(unittest.TestCase):
         arguments = mock_arguments()
 
         configuration = mock_configuration()
-        configuration.get_stub_roots.return_value = ['stub', 'root']
+        configuration.get_search_path.return_value = ['stub', 'root']
 
         with patch.object(commands.Command, '_call_client') as call_client:
             commands.Check(
@@ -294,7 +294,7 @@ class IncrementalTest(unittest.TestCase):
         arguments = mock_arguments()
 
         configuration = mock_configuration()
-        configuration.get_stub_roots.return_value = ['stub', 'root']
+        configuration.get_search_path.return_value = ['stub', 'root']
 
         with patch.object(commands.Command, '_call_client') as call_client:
             commands.Incremental(
@@ -346,7 +346,7 @@ class StartTest(unittest.TestCase):
         arguments.terminal = False
 
         configuration = mock_configuration()
-        configuration.get_stub_roots.return_value = ['root']
+        configuration.get_search_path.return_value = ['root']
 
         # Check start without watchman.
         with patch.object(commands.Command, '_call_client') as call_client:
@@ -430,7 +430,7 @@ class StopTest(unittest.TestCase):
         arguments.terminal = False
 
         configuration = mock_configuration()
-        configuration.get_stub_roots.return_value = ['root']
+        configuration.get_search_path.return_value = ['root']
 
         # Check start without watchman.
         with patch.object(commands.Command, '_call_client') as call_client:
@@ -463,7 +463,7 @@ class RestartTest(unittest.TestCase):
         arguments.terminal = False
 
         configuration = mock_configuration()
-        configuration.get_stub_roots.return_value = ['root']
+        configuration.get_search_path.return_value = ['root']
 
         source_directories = ['.']
 

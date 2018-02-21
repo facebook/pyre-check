@@ -48,7 +48,7 @@ def _compare_parallel_check(arguments, configuration):
             .format(arguments.source_directory))
     flags = [
         '-stub-roots',
-        ','.join(configuration.get_stub_roots()),
+        ','.join(configuration.get_search_path()),
         '-project-root',
         arguments.current_directory,
     ]

@@ -420,7 +420,7 @@ class Check(ErrorHandling):
         flags = self._flags()
         flags.extend([
             '-stub-roots',
-            ','.join(self._configuration.get_stub_roots()),
+            ','.join(self._configuration.get_search_path()),
         ])
         if self._log_identifier:
             flags.extend(['-log-identifier', self._log_identifier])
@@ -489,7 +489,7 @@ class Incremental(ErrorHandling):
         flags = self._flags()
         flags.extend([
             '-stub-roots',
-            ','.join(self._configuration.get_stub_roots())
+            ','.join(self._configuration.get_search_path())
         ])
 
         if dead:
@@ -557,7 +557,7 @@ class Start(Command):
             flags.append('-terminal')
         flags.extend([
             '-stub-roots',
-            ','.join(self._configuration.get_stub_roots()),
+            ','.join(self._configuration.get_search_path()),
         ])
         results = self._call_client(
             command=START,

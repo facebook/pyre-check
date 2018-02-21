@@ -45,11 +45,11 @@ class ConfigurationTest(unittest.TestCase):
             {},
         ]
         configuration = Configuration()
-        self.assertEqual(configuration.get_stub_roots(), ['TYPESHED/'])
+        self.assertEqual(configuration.get_search_path(), ['TYPESHED/'])
 
         json_load.side_effect = [
             {
-                "additional_stub_roots": ["additional/"],
+                "search_path": ["additional/"],
                 "version": "VERSION",
                 "typeshed": "TYPE/%V/SHED/",
             },
@@ -57,7 +57,7 @@ class ConfigurationTest(unittest.TestCase):
         ]
         configuration = Configuration()
         self.assertEqual(
-            configuration.get_stub_roots(),
+            configuration.get_search_path(),
             ['additional/', 'TYPE/VERSION/SHED/'])
 
         json_load.side_effect = [
