@@ -1655,7 +1655,12 @@ let test_check_coverage _ =
   assert_covered "(ERROR for i in collection)";
 
   (* Lambdas. *)
-  assert_covered "lambda x: ERROR"
+  assert_covered "lambda x: ERROR";
+
+  (* Lists. *)
+  assert_covered "[1, ERROR]";
+  assert_covered "[ERROR for i in collection]";
+  assert_covered "[i for i in ERROR]"
 
 (* TODO(T26146217): Remaining coverage for
    | List of t list
