@@ -1674,11 +1674,13 @@ let test_check_coverage _ =
   (* Ternary. *)
   assert_covered "ERROR if okay else okay";
   assert_covered "okay if ERROR else okay";
-  assert_covered "okay if okay else ERROR"
+  assert_covered "okay if okay else ERROR";
+
+  (* Tuples. *)
+  assert_covered "ERROR, okay";
+  assert_covered "okay, ERROR"
 
 (* TODO(T26146217): Remaining coverage for
-   | True
-   | Tuple of t list
    | UnaryOperator of t UnaryOperator.t
    | Yield of t option *)
 
