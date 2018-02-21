@@ -1251,7 +1251,7 @@ module State = struct
             in
             if not is_awaitable then
               [{
-                Error.location = expression.Node.location;
+                Error.location;
                 kind = Error.IncompatibleAwaitableType actual;
                 define = define_node;
               }]

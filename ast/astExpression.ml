@@ -748,7 +748,7 @@ module PrettyPrinter = struct
     | Await expression ->
         Format.fprintf
           formatter
-          "%a"
+          "await %a"
           pp_expression_node expression
 
     | BinaryOperator { BinaryOperator.left; operator; right } ->

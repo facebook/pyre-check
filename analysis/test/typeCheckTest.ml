@@ -1618,7 +1618,40 @@ let test_check_coverage _ =
     {|
       with ERROR as derp:
         pass
-    |}
+    |};
+
+  (* Expressions. *)
+  assert_covered
+    ~additional_errors:[
+      "Incompatible awaitable type [12]: Expected an awaitable but got `unknown`.";
+    ]
+    "await ERROR"
+
+(* TODO(T26146217): Remaining coverage for
+   | BinaryOperator of t BinaryOperator.t
+   | BooleanOperator of t BooleanOperator.t
+   | Bytes of string
+   | ComparisonOperator of t ComparisonOperator.t
+   | Complex of float
+   | Dictionary of t Dictionary.t
+   | DictionaryComprehension of ((t Dictionary.entry), t) Comprehension.t
+   | False
+   | Float of float
+   | Format of string
+   | Generator of (t, t) Comprehension.t
+   | Integer of int
+   | Lambda of t Lambda.t
+   | List of t list
+   | ListComprehension of (t, t) Comprehension.t
+   | Set of t list
+   | SetComprehension of (t, t) Comprehension.t
+   | Starred of t Starred.t
+   | String of string
+   | Ternary of t Ternary.t
+   | True
+   | Tuple of t list
+   | UnaryOperator of t UnaryOperator.t
+   | Yield of t option *)
 
 
 let test_check_non_debug _ =
