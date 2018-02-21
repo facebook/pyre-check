@@ -11,8 +11,11 @@ import shutil
 import subprocess
 import uuid
 
+from contextlib import contextmanager
 from time import time
 from typing import (
+    Any,
+    Generator,
     List,
     Optional,
 )
@@ -155,3 +158,16 @@ def merge(target_root: str, source_directories: List[str]) -> None:
         log.PERFORMANCE,
         "Merged source directories in %fs",
         stop - start)
+
+
+@contextmanager
+def try_lock(path: str) -> Optional[int]:
+    """Raises an OSError if the lock can't be acquired"""
+    try:
+        with open(path, "w+") as lockfile:
+            fcntl.lockf(lockfile.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            yield lockfile.fileno()
+            fcntl.lockf(lockfile.fileno(), fcntl.LOCK_UN)
+
+    except FileNotFoundError:
+        yield

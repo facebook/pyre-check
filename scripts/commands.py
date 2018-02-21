@@ -537,7 +537,6 @@ class Rage(Command):
 
 class Start(Command):
     def __init__(self, arguments, configuration, source_directories) -> None:
-        shared_source_directory.write_existing(source_directories)
         super(Start, self).__init__(
             arguments,
             configuration,
@@ -547,26 +546,52 @@ class Start(Command):
         self._no_watchman = arguments.no_watchman
 
     def _run(self) -> None:
-        flags = self._flags()
-        flags.append('-daemonize')
-        if not self._no_watchman:
-            results = self._call_client(
-                command=WATCHMAN,
-                source_directories=self._source_directories,
-                flags=flags)
+        try:
+            with shared_source_directory.try_lock(".pyre/client.lock"):
+                for source_directory in self._source_directories:
+                    # This unsafe call is OK due to the client lock always
+                    # being acquired before starting a server - no server can
+                    # spawn in the interim which would cause a race.
+                    try:
+                        with shared_source_directory.try_lock(
+                            os.path.join(
+                                source_directory,
+                                ".pyre",
+                                "server",
+                                "server.lock")):
+                            pass
+                    except OSError:
+                        LOG.warn(
+                            "Server at %s exists, skipping.",
+                            source_directory)
+                        continue
 
-        flags = self._flags()
-        if self._terminal:
-            flags.append('-terminal')
-        flags.extend([
-            '-stub-roots',
-            ','.join(self._configuration.get_search_path()),
-        ])
-        results = self._call_client(
-            command=START,
-            source_directories=self._source_directories,
-            flags=flags)
-        self._check_results(results)
+                    shared_source_directory.write_existing(
+                        self._original_source_directories)
+                    flags = self._flags()
+                    flags.append('-daemonize')
+                    if not self._no_watchman:
+                        results = self._call_client(
+                            command=WATCHMAN,
+                            source_directories=self._source_directories,
+                            flags=flags)
+
+                    flags = self._flags()
+                    if self._terminal:
+                        flags.append('-terminal')
+                    flags.extend([
+                        '-stub-roots',
+                        ','.join(self._configuration.get_search_path()),
+                    ])
+                    results = self._call_client(
+                        command=START,
+                        source_directories=self._source_directories,
+                        flags=flags)
+                    self._check_results(results)
+
+        except OSError:
+            LOG.warning("Server is already running")
+            return None
 
 
 State = namedtuple('State', ['running', 'dead'])

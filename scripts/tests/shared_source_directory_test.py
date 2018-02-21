@@ -3,6 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import fcntl
 import io
 import os
 import tempfile
@@ -11,10 +12,11 @@ import unittest
 from unittest.mock import call, patch, mock_open
 
 from ..shared_source_directory import (  # noqa
+    __name__ as shared_source_directory_name,
+    _find_python_paths_at_root,
     merge,
     missing,
-    _find_python_paths_at_root,
-    __name__ as shared_source_directory_name,
+    try_lock,
 )
 
 
@@ -108,3 +110,24 @@ class SharedSourceDirectoryTest(unittest.TestCase):
                 call(os.getcwd() + "/first/b/z.py", ".pyre/shared_root/b/z.py"),
                 call(os.getcwd() + "/second/a.py", ".pyre/shared_root/a.py"),
             ])
+
+    @patch('fcntl.lockf')
+    def test_try_lock(self, lock_file: unittest.mock.Mock) -> None:
+        (_, path) = tempfile.mkstemp()
+        lockfile_file_descriptor = None
+        with try_lock(path) as file_descriptor:
+            lockfile_file_descriptor = file_descriptor
+        lock_file.assert_has_calls([
+            call(lockfile_file_descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB),
+            call(lockfile_file_descriptor, fcntl.LOCK_UN)
+        ])
+
+        def fail_on_exclusive(_, lock_kind):
+            if lock_kind == fcntl.LOCK_EX | fcntl.LOCK_NB:
+                raise OSError()
+            return None
+
+        lock_file.side_effect = fail_on_exclusive
+        with self.assertRaises(OSError):
+            with try_lock(path):
+                pass
