@@ -7,11 +7,13 @@ open Core
 
 open Ast
 open Pyre
+open ServerProtocol
+
 
 module Socket = CommandSocket
 
 
-let parse_query query =
+let parse_query ~root query =
   let query =
     try
       ParserParser.parse [query]
@@ -34,40 +36,49 @@ let parse_query query =
         | "less_or_equal", [left; right] ->
             let left = Analysis.Type.create ~aliases:(fun _ -> None) left in
             let right = Analysis.Type.create ~aliases:(fun _ -> None) right in
-            Some (ServerProtocol.LessOrEqual (left, right))
+            Some (Request.TypeQueryRequest (ServerProtocol.LessOrEqual (left, right)))
         | "meet", [left; right] ->
             let left = Analysis.Type.create ~aliases:(fun _ -> None) left in
             let right = Analysis.Type.create ~aliases:(fun _ -> None) right in
-            Some (ServerProtocol.Meet (left, right))
+            Some (Request.TypeQueryRequest (ServerProtocol.Meet (left, right)))
         | "join", [left; right] ->
             let left = Analysis.Type.create ~aliases:(fun _ -> None) left in
             let right = Analysis.Type.create ~aliases:(fun _ -> None) right in
-            Some (ServerProtocol.Join (left, right))
+            Some (Request.TypeQueryRequest (ServerProtocol.Join (left, right)))
+        | "typecheckPath", arguments ->
+            let files =
+              arguments
+              |> List.map ~f:Expression.show
+              |> List.map ~f:(fun relative -> Path.create_relative ~root ~relative)
+              |> List.map ~f:File.create
+            in
+            Some (Request.TypeCheckRequest { check_dependents = false; files })
         | _ -> None
       end
   | _ -> None
 
 
-let run_query query source_root () =
+let run_query serialized source_root () =
   Log.initialize ~verbose:false ~sections:[];
-  let query = parse_query query in
+  let source_root = Path.create_absolute source_root in
+  let query = parse_query ~root:source_root serialized in
   begin
     match query with
     | Some _ ->
         ()
     | None ->
-        Log.error "%s"
-          ("Could not parse query %s; exiting.\n" ^
-           "Query kind must be one of less_or_equal, join and meet.");
+        Log.error "Could not parse query %s; exiting.\n" serialized;
         exit 1
   end;
   let query = Option.value_exn query in
-  let configuration = Configuration.create ~source_root:(Path.create_absolute source_root) () in
+  let configuration = Configuration.create ~source_root () in
   let socket = Server.connect ~retries:3 ~configuration in
-  Socket.write socket (ServerProtocol.Request.TypeQueryRequest query);
+  Socket.write socket query;
   match Socket.read socket with
   | ServerProtocol.TypeQueryResponse serialized ->
       Log.print "%s" serialized
+  | (TypeCheckResponse _) as response ->
+      Log.print "%s" (show_response response)
   | response ->
       Log.error "Unexpected response %s from server" (ServerProtocol.show_response response)
 
