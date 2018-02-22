@@ -396,6 +396,15 @@ let resolution
                 _ ->
                   let arguments =
                     let primitive, _ = Type.split parameter in
+                    (* This is for performance - having Type.Bottom is common when we don't know
+                       the parameters being passed into a signature, which causes a full traversal
+                       of the type order. *)
+                    let argument =
+                      if Type.equal argument Type.Bottom then
+                        Type.Object
+                      else
+                        argument
+                    in
                     TypeOrder.instantiate_parameters
                       (module Handler.TypeOrderHandler)
                       ~source:argument ~target:primitive
