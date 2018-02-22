@@ -5,4 +5,6 @@
 
 open Core
 
+val parse_query: string -> ServerProtocol.type_query_request option
+
 val command: Command.t
