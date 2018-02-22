@@ -38,7 +38,7 @@ B _build/all/ast
 B _build/all/analysis
 B _build/all/service
 B _build/all/command
-B _build/all/commands/server
+B _build/all/command/server
 B _build/all/language_server
 B _build/all/facebook
 B _build/test/test
