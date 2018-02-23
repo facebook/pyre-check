@@ -101,21 +101,33 @@ let parse_stubs
     scheduler
     ~configuration:({ Configuration.source_root; stub_roots; _ } as configuration) =
   let timer = Timer.start () in
-  let paths sofar root =
-    Log.info "Parsing type stubs in `%a`..." Path.pp root;
-    let is_stub path =
-      let is_python_2 path =
-        String.is_substring ~substring:"/2/" path ||
-        String.is_substring ~substring:"/2.7/" path in
-      (String.suffix path 4 = ".pyi" || String.suffix path 3 = ".py") && not (is_python_2 path) in
+  let is_stub path =
+    let is_python_2 path =
+      String.is_substring ~substring:"/2/" path ||
+      String.is_substring ~substring:"/2.7/" path in
+    String.suffix path 4 = ".pyi" && not (is_python_2 path)
+  in
+  let is_module path = String.suffix path 3 = ".py" in
+
+  let filter_stubs sofar root =
+    Log.info "Enumerating type stubs in `%a`..." Path.pp root;
     sofar @ File.list ~filter:is_stub ~root
   in
-  let paths = List.fold ~init:[] ~f:paths (source_root :: stub_roots) in
+  let filter_modules sofar root =
+    Log.info "Enumerating external modules in `%a`..." Path.pp root;
+    sofar @ File.list ~filter:is_module ~root
+  in
+
+  let stubs = List.fold ~init:[] ~f:filter_stubs (source_root :: stub_roots) in
+  let modules = List.fold ~init:[] ~f:filter_modules stub_roots in
+  let paths = stubs @ modules in
+
+  Log.info "Parsing %d stubs and external modules ..." (List.length paths);
   let handles = parse_stubs_list scheduler (List.map ~f:File.create paths) in
   Statistics.performance ~name:"stubs parsed" ~timer ~configuration ();
   let not_parsed = (List.length paths) - (List.length handles) in
   if not_parsed > 0 then
-    Log.info "Unable to parse %d stubs" not_parsed;
+    Log.info "Unable to parse %d stubs or external modules" not_parsed;
   handles
 
 

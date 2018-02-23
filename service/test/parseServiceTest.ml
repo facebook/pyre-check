@@ -83,6 +83,53 @@ let test_parse_stubs_modules_list _ =
   assert_module_matches_name (get_handle_at 7) [~~"modd"; ~~"f"]
 
 
+let test_parse_stubs context =
+  let write_stub root relative =
+    let content = Some "def f()->int: ...\n" in
+    let file = File.create ~content (Path.create_relative ~root ~relative) in
+    File.write file;
+    file
+  in
+  let write_module root relative =
+    let content = Some "def f()->int:\n    return 1\n" in
+    let file = File.create ~content (Path.create_relative ~root ~relative) in
+    File.write file;
+    file
+  in
+
+  (* top-level directories *)
+  let source_root = Path.create_absolute (bracket_tmpdir context) in
+  let stub_root = Path.create_absolute (bracket_tmpdir context) in
+
+  (* stubs match in all directories, while modules will match in stub roots only *)
+  let matching =
+    [
+      write_stub source_root "a.pyi";
+      write_stub stub_root "b.pyi";
+      write_module stub_root "c.py";
+    ]
+  in
+  (* modules should not match in source_root *)
+  let _not_matching =
+    [
+      write_module source_root "d.py";
+    ]
+  in
+
+  let handles =
+    Service.Parser.parse_stubs
+      (Scheduler.mock ())
+      ~configuration:
+        (Configuration.create
+           ~source_root
+           ~stub_roots:[stub_root]
+           ()
+        )
+  in
+
+  assert_equal (List.length matching) (List.length handles)
+
+
 let test_parse_sources_list _ =
   let file =
     File.create
@@ -135,6 +182,7 @@ let test_parse_sources_coverage _ =
 let () =
   "parser">:::[
     "parse_stubs_modules_list">::test_parse_stubs_modules_list;
+    "parse_stubs">::test_parse_stubs;
     "parse_sources_list">::test_parse_sources_list;
     "parse_sources_coverage">::test_parse_sources_coverage;
   ]
