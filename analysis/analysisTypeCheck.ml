@@ -220,11 +220,8 @@ module State = struct
       let module Reader = (val environment : Environment.Handler) in
       let _, errors =
         let ignore error =
-          let stripped_location =
-            let line = { Location.line = (Error.location error |> Location.line); column = -1 } in
-            { Location.path = (Error.location error |> Location.path); start = line; stop = line; }
-          in
-          Reader.ignore_lines stripped_location
+          Location.start_line (Error.location error) (Location.line (Error.location error))
+          |> Reader.ignore_lines
           >>| (fun ignore_instance ->
               List.is_empty (Source.Ignore.codes ignore_instance) ||
               List.mem ~equal:(=) (Source.Ignore.codes ignore_instance) (Error.code error)
