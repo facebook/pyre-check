@@ -426,6 +426,7 @@ let start ({
     log_path;
     daemonize;
     configuration;
+    use_watchman;
     _;
   } as server_configuration) =
   try
@@ -440,6 +441,9 @@ let start ({
 
     Log.log ~section:`Server "Creating server socket at `%a`" Path.pp socket_path;
     let socket = Socket.initialize_unix_socket socket_path in
+
+    if use_watchman then
+      spawn_watchman_client server_configuration;
 
     if daemonize then
       let stdin = Daemon.null_fd () in
