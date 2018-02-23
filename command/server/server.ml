@@ -21,19 +21,9 @@ module Socket = CommandSocket
 module Request = ServerRequest
 module State = ServerState
 
-type version_mismatch = {
-  server_version: string;
-  client_version: string;
-}
-[@@deriving show]
-
 exception AlreadyRunning
 exception NotRunning
-exception ConnectionFailure
-exception VersionMismatch of version_mismatch
-
 open State
-
 
 let register_signal_handlers server_configuration socket =
   Signal.Expert.handle
@@ -42,60 +32,6 @@ let register_signal_handlers server_configuration socket =
   Signal.Expert.handle
     Signal.pipe
     (fun _ -> ())
-
-
-let connect ~retries ~configuration:({ version; _ } as configuration) =
-  let rec connect attempt =
-    if attempt >= retries then begin
-      Log.error "Could not connect to server after %d retries" attempt;
-      raise ConnectionFailure
-    end;
-    (* The socket path is computed in each iteration because the server might set up a symlink
-       after a connection attempt - in that case, we want to avoid using the stale file. *)
-    try
-      let socket_path = ServerConfiguration.socket_path configuration in
-      if Path.file_exists socket_path then
-        begin
-          match
-            (Unix.handle_unix_error
-               (fun () -> Socket.open_connection (ServerConfiguration.socket_path configuration)))
-          with
-          | `Success socket ->
-              Log.info "Connected to server";
-              socket
-          | `Failure ->
-              Log.info "Client could not connect.";
-              Unix.sleep 1;
-              connect (attempt + 1)
-        end
-      else
-        begin
-          Log.info "No valid socket found.";
-          Unix.sleep 1;
-          connect (attempt + 1)
-        end
-    with
-    | ServerNotRunning ->
-        Log.info "Waiting for server...";
-        Unix.sleep 1;
-        connect (attempt + 1)
-  in
-  let socket =
-    let in_channel, _ = connect 0 in
-    Unix.descr_of_in_channel in_channel
-  in
-  Log.debug "Waiting for server response...";
-  Socket.read socket
-  |> fun (Handshake.ServerConnected server_version) ->
-  Socket.write socket Handshake.ClientConnected;
-  match version with
-  | Some version when version = server_version ->
-      socket
-  | None ->
-      socket
-  | Some client_version ->
-      Unix.close socket;
-      raise (VersionMismatch { server_version; client_version })
 
 
 let computation_thread request_queue configuration state =
@@ -524,6 +460,7 @@ let start ({
 let run_start_command
     log_path
     terminal
+    use_watchman
     verbose
     version
     sections
@@ -558,7 +495,7 @@ let run_start_command
       ()
   in
   let log_path = log_path >>| Path.create_absolute in
-  start (ServerConfiguration.create ~daemonize:(not terminal) ?log_path configuration)
+  start (ServerConfiguration.create ~daemonize:(not terminal) ~use_watchman ?log_path configuration)
   |> ignore
 
 
@@ -575,6 +512,10 @@ let start_command =
          "-terminal"
          no_arg
          ~doc:"Run the server from the terminal instead of running as a daemon.")
+      +> flag
+        "-use-watchman"
+        no_arg
+        ~doc:"Subscribe to watchman for file changes."
       ++ Check.spec)
     run_start_command
 

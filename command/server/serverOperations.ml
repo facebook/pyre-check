@@ -12,7 +12,18 @@ open ServerConfiguration
 open ServerState
 
 module Check = CommandCheck
+module Handshake = CommandHandshake
 module WatchmanConstants = CommandWatchmanConstants
+
+type version_mismatch = {
+  server_version: string;
+  client_version: string;
+}
+[@@deriving show]
+
+exception ConnectionFailure
+exception VersionMismatch of version_mismatch
+
 
 let initialize ?old_state lock connections { configuration; _ } =
   Log.log ~section:`Server  "Initializing server...";
@@ -79,3 +90,57 @@ let stop_server ~reason ({ configuration; _ } as server_configuration) socket =
   Unix.close socket;
   Worker.killall ();
   exit 0
+
+
+let connect ~retries ~configuration:({ version; _ } as configuration) =
+  let rec connect attempt =
+    if attempt >= retries then begin
+      Log.error "Could not connect to server after %d retries" attempt;
+      raise ConnectionFailure
+    end;
+    (* The socket path is computed in each iteration because the server might set up a symlink
+       after a connection attempt - in that case, we want to avoid using the stale file. *)
+    try
+      let socket_path = ServerConfiguration.socket_path configuration in
+      if Path.file_exists socket_path then
+        begin
+          match
+            (Unix.handle_unix_error
+               (fun () -> Socket.open_connection (ServerConfiguration.socket_path configuration)))
+          with
+          | `Success socket ->
+              Log.info "Connected to server";
+              socket
+          | `Failure ->
+              Log.info "Client could not connect.";
+              Unix.sleep 1;
+              connect (attempt + 1)
+        end
+      else
+        begin
+          Log.info "No valid socket found.";
+          Unix.sleep 1;
+          connect (attempt + 1)
+        end
+    with
+    | ServerNotRunning ->
+        Log.info "Waiting for server...";
+        Unix.sleep 1;
+        connect (attempt + 1)
+  in
+  let socket =
+    let in_channel, _ = connect 0 in
+    Unix.descr_of_in_channel in_channel
+  in
+  Log.debug "Waiting for server response...";
+  Socket.read socket
+  |> fun (Handshake.ServerConnected server_version) ->
+  Socket.write socket Handshake.ClientConnected;
+  match version with
+  | Some version when version = server_version ->
+      socket
+  | None ->
+      socket
+  | Some client_version ->
+      Unix.close socket;
+      raise (VersionMismatch { server_version; client_version })

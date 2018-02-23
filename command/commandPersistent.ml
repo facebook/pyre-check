@@ -18,13 +18,13 @@ let run_command version log_identifier source_root () =
   let connect_to_server () =
     let server_socket =
       try
-        Server.connect
+        ServerOperations.connect
           ~retries:3
           ~configuration
       with
-      | Server.ConnectionFailure ->
+      | ServerOperations.ConnectionFailure ->
           exit 1
-      | Server.VersionMismatch { Server.server_version; client_version } ->
+      | ServerOperations.VersionMismatch { ServerOperations.server_version; client_version } ->
           Log.error
             "Exiting due to version mismatch. \
              The server version is %s, but the client was called with %s"

@@ -356,8 +356,11 @@ let test_connect _ =
   Exn.protect
     ~f:(fun () ->
         assert_raises
-          (Server.VersionMismatch { Server.server_version = "A"; client_version = "B" })
-          (fun () -> Server.connect ~retries:1 ~configuration))
+          (ServerOperations.VersionMismatch {
+              ServerOperations.server_version = "A";
+              client_version = "B";
+            })
+          (fun () -> ServerOperations.connect ~retries:1 ~configuration))
     ~finally:cleanup
 
 

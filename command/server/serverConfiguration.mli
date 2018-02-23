@@ -15,6 +15,7 @@ type t = {
   pid_path: Path.t;
   log_path: Path.t;
   daemonize: bool;
+  use_watchman: bool;
   (* Analysis configuration *)
   configuration: Configuration.t
 }
@@ -23,7 +24,8 @@ type t = {
 val socket_path: ?create: bool -> Configuration.t -> Path.t
 
 val create
-  :  ?daemonize:bool
+  :  ?daemonize: bool
   -> ?log_path: Path.t
+  -> ?use_watchman: bool
   -> Configuration.t
   -> t

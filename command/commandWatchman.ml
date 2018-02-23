@@ -177,9 +177,9 @@ let initialize watchman_directory configuration =
     (Yojson.pretty_to_string (subscription watchman_directory));
   let server_socket =
     try
-      Server.connect ~retries:5 ~configuration
+      ServerOperations.connect ~retries:5 ~configuration
     with
-    | Server.ConnectionFailure -> stop_watchman None configuration
+    | ServerOperations.ConnectionFailure -> stop_watchman None configuration
   in
   Socket.write server_socket (Protocol.Request.ClientConnectionRequest Protocol.FileNotifier);
   if Socket.read server_socket <> Protocol.ClientConnectionResponse Protocol.FileNotifier then

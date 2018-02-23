@@ -72,7 +72,7 @@ let run_query serialized source_root () =
   end;
   let query = Option.value_exn query in
   let configuration = Configuration.create ~source_root () in
-  let socket = Server.connect ~retries:3 ~configuration in
+  let socket = ServerOperations.connect ~retries:3 ~configuration in
   Socket.write socket query;
   match Socket.read socket with
   | ServerProtocol.TypeQueryResponse serialized ->

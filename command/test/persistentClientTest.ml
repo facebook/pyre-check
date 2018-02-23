@@ -18,7 +18,7 @@ let test_persistent_client_connect context =
     Format.pp_set_formatter_out_channel
       Format.err_formatter (Out_channel.create "/dev/null");
     CommandTest.start_server () |> ignore;
-    Server.connect
+    ServerOperations.connect
       ~retries:5
       ~configuration:(CommandTest.mock_server_configuration ()).configuration
   in

@@ -18,6 +18,7 @@ type t = {
   pid_path: Path.t;
   log_path: Path.t;
   daemonize: bool;
+  use_watchman: bool;
   (* Analysis configuration *)
   configuration: Configuration.t;
 }
@@ -56,6 +57,7 @@ let socket_path ?(create=false) configuration =
 let create
     ?(daemonize = true)
     ?log_path
+    ?(use_watchman = false)
     configuration =
   let server_root = server_root configuration in
   (* Allow absolute log_path path (e.g., for /dev/null) *)
@@ -71,5 +73,6 @@ let create
     pid_path = server_root ^| "server.pid";
     log_path;
     daemonize;
+    use_watchman;
     configuration;
   }
