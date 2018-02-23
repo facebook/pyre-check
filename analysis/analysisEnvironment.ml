@@ -649,8 +649,7 @@ let dependencies (module Handler: Handler) =
 
 let register_ignore_lines (module Handler: Handler) ({ Source.path; _ } as source) =
   Source.ignore_lines source
-  |> List.map ~f:(fun ignore -> Handler.register_ignore_line ~path ~ignore)
-  |> ignore
+  |> List.iter ~f:(fun ignore -> Handler.register_ignore_line ~path ~ignore)
 
 
 let register_class_definitions (module Handler: Handler) source =
