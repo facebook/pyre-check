@@ -4494,9 +4494,18 @@ let test_check_constructors _ =
       "expected `int` but got `str`."
     ];
 
+  assert_type_errors
+    {|
+      class Subclass(A, B):
+        def foo(self)->A:
+          return super()
+        def wrong(self)->B:
+          return super()
+    |}
+    ["Incompatible return type [7]: Expected `B` but got `A`."];
+
   (* Overloaded constructors. *)
   assert_type_errors "str(True)" []
-
 
 
 let test_check_explicit_method_call _ =

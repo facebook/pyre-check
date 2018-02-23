@@ -336,6 +336,22 @@ module Class = struct
     |> List.map ~f:create
 
 
+  let immediate_superclasses ~resolution definition =
+    let (module Handler: TypeOrder.Handler) = Resolution.order resolution in
+    let annotation = annotation definition ~resolution in
+
+    let has_definition { TypeOrder.Target.target; _ } =
+      Handler.find (Handler.annotations ()) target
+      >>= Resolution.class_definition resolution
+      >>| create
+    in
+    Handler.find (Handler.indices ()) annotation
+    >>= Handler.find (Handler.edges ())
+    |> Option.value ~default:[]
+    |> List.rev
+    |> List.find_map ~f:has_definition
+
+
   let constructors ({ Node.value = { Class.name; body; _ }; _ } as definition) ~resolution =
     let constructors =
       let declared =
@@ -1299,9 +1315,9 @@ module Access = struct
         when Expression.show name = "super" ->
           (Define.create define
            |> Define.parent_definition ~resolution
-           >>| Class.superclasses ~resolution
+           >>| Class.immediate_superclasses ~resolution
            >>| function
-           | superclass :: _ ->
+           | Some superclass ->
                let super = Access.Identifier (Identifier.create "$super") in
                let resolution =
                  let annotation =
@@ -1317,7 +1333,7 @@ module Access = struct
                  Resolution.with_annotations resolution annotations
                in
                super :: tail, resolution
-           | _ ->
+           | None ->
                access, resolution)
           |> Option.value ~default:(access, resolution)
       | _ ->
