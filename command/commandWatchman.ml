@@ -216,7 +216,7 @@ let run_watchman_daemon_entry : run_watchman_daemon_entry =
            listen_for_changed_files server_socket watchman_directory configuration)
 
 
-let run_command daemonize verbose sections _ source_root () =
+let run_command ~daemonize ~verbose ~sections ~source_root =
   let source_root = Path.create_absolute source_root in
   let configuration = Configuration.create ~source_root:source_root () in
   Log.initialize ~verbose ~sections;
@@ -255,6 +255,9 @@ let run_command daemonize verbose sections _ source_root () =
     end
 
 
+let run daemonize verbose sections _ source_root () =
+  run_command ~daemonize ~verbose ~sections ~source_root
+
 let command =
   Command.basic_spec
     ~summary:"Starts a watchman listener in the current directory. \
@@ -273,4 +276,4 @@ let command =
         ~doc:"ROOT Only follow sources under this root directory."
         ~aliases:["-type-check-root"]
       +> anon (maybe_with_default "." ("source-root" %: string)))
-    run_command
+    run

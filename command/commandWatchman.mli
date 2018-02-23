@@ -17,12 +17,10 @@ val process_response
   -> (Path.t Path.Map.t * ServerProtocol.Request.t) Option.t
 
 val run_command
-  :  bool
-  -> bool
-  -> string list
-  -> string option
-  -> string
-  -> unit
+  :  daemonize: bool
+  -> verbose: bool
+  -> sections: string list
+  -> source_root: string
   -> unit
 
 val command : Command.t

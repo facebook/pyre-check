@@ -34,6 +34,14 @@ let register_signal_handlers server_configuration socket =
     (fun _ -> ())
 
 
+let spawn_watchman_client { configuration = { sections; source_root; _ }; _ } =
+  CommandWatchman.run_command
+    ~daemonize:true
+    ~verbose:false
+    ~sections
+    ~source_root:(Path.absolute source_root)
+
+
 let computation_thread request_queue configuration state =
   let rec loop ({ configuration = { source_root; _ }; _ } as configuration) state =
     let errors_to_lsp_responses error_map =
@@ -208,7 +216,7 @@ let computation_thread request_queue configuration state =
 
 
 let request_handler_thread (
-    { configuration = { version; source_root; _ }; _ } as server_configuration,
+    { configuration = { version; source_root; _ }; use_watchman; _ } as server_configuration,
     lock,
     connections,
     request_queue) =
@@ -292,6 +300,8 @@ let request_handler_thread (
                         [file_notifier_socket])
                   !(connections).file_notifiers
               in
+              if List.is_empty file_notifiers && use_watchman then
+                spawn_watchman_client server_configuration;
               connections := { !connections with file_notifiers });
   in
   let rec loop () =

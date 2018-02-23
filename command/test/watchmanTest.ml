@@ -17,7 +17,7 @@ module Watchman = CommandWatchman
 
 
 let start_watchman pid_path () =
-  Watchman.run_command true false [] None "." ();
+  Watchman.run_command ~daemonize:true ~verbose:false ~sections:[] ~source_root:".";
   In_channel.read_all (Path.absolute pid_path) |> Int.of_string
 
 
@@ -53,7 +53,7 @@ let test_watchman_exists context =
 
   assert_raises
     (Failure "Watchman client exists (lock is held). Exiting.")
-    (Watchman.run_command false false [] None ".");
+    (fun () -> Watchman.run_command ~daemonize:false ~verbose:false ~sections:[] ~source_root:".");
   CommandTest.clean_environment ()
 
 
