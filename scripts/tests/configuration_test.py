@@ -60,6 +60,40 @@ class ConfigurationTest(unittest.TestCase):
             configuration.get_search_path(),
             ['additional/', 'TYPE/VERSION/SHED/'])
 
+        # Test loading of additional directories in the search path
+        # via environment.
+        json_load.side_effect = [
+            {
+                "search_path": ["json/", "file/"],
+                "typeshed": "TYPESHED/",
+            },
+            {},
+        ]
+        with patch.object(os, 'getenv', return_value='additional/:directories/'):
+            with patch.object(os.path, 'isdir', return_value=True):
+                configuration = Configuration(search_path=['command/', 'line/'],
+                                              preserve_pythonpath=True)
+                self.assertEqual(
+                    configuration.get_search_path(),
+                    ['additional/', 'directories/', 'command/', 'line/',
+                     'json/', 'file/', 'TYPESHED/'])
+
+        # Test case where we ignore the PYTHONPATH environment variable.
+        json_load.side_effect = [
+            {
+                "search_path": ["json/", "file/"],
+                "typeshed": "TYPESHED/",
+            },
+            {},
+        ]
+        with patch.object(os, 'getenv', return_value='additional/:directories/'):
+            with patch.object(os.path, 'isdir', return_value=True):
+                configuration = Configuration(search_path=['command/', 'line/'],
+                                              preserve_pythonpath=False)
+                self.assertEqual(
+                    configuration.get_search_path(),
+                    ['command/', 'line/', 'json/', 'file/', 'TYPESHED/'])
+
         json_load.side_effect = [
             {"binary": "/binary"},
             {},

@@ -13,6 +13,10 @@ from . import (
     CONFIGURATION_FILE,
 )
 
+from typing import (
+    List,
+)
+
 
 LOG = logging.getLogger(__name__)
 
@@ -27,16 +31,33 @@ class Configuration:
     def __init__(
             self,
             original_directory=None,
-            local_configuration=None) -> None:
+            local_configuration=None,
+            search_path=None,
+            preserve_pythonpath=False) -> None:
         self.source_directories = []
         self.targets = []
         self.logger = None
 
         self._disabled = False
-        self._search_path = []
         self._version_hash = None
         self._binary = None
         self._typeshed = None
+
+        # Handle search path from multiple sources
+        self._search_directories = []
+        pythonpath = os.getenv('PYTHONPATH')
+        if preserve_pythonpath and pythonpath:
+            for path in pythonpath.split(':'):
+                if os.path.isdir(path):
+                    self._search_directories.append(path)
+                else:
+                    LOG.warning(
+                        '`{}` is not a valid directory, dropping it '
+                        'from PYTHONPATH'.format(path))
+        if search_path:
+            self._search_directories.extend(search_path)
+        # We will extend the search path further, with the config file
+        # items, inside _read().
 
         # Order matters. The values will only be updated if a field is None.
         local_configuration = local_configuration or original_directory
@@ -69,7 +90,7 @@ class Configuration:
                 raise InvalidConfiguration(
                     'Binary at `{}` does not exist'.format(self._binary))
 
-            # Validate stub roots.
+            # Validate elements of the search path.
             if not self._typeshed:
                 raise InvalidConfiguration('`typeshed` must be defined')
             for path in self.get_search_path():
@@ -98,7 +119,7 @@ class Configuration:
             return self._binary
 
     @functools.lru_cache(1)
-    def get_search_path(self):
+    def get_search_path(self) -> List[str]:
         if not self._typeshed:
             raise InvalidConfiguration('Configuration was not validated')
 
@@ -108,7 +129,7 @@ class Configuration:
         else:
             typeshed = self._typeshed
 
-        return self._search_path + [typeshed]
+        return self._search_directories + [typeshed]
 
     def disabled(self) -> bool:
         return self._disabled
@@ -152,9 +173,9 @@ class Configuration:
                     self._binary = configuration.get('binary')
 
                 # TODO(T25858716): remove this once migration is complete
-                self._search_path.extend(
+                self._search_directories.extend(
                     configuration.get('additional_stub_roots', []))
-                self._search_path.extend(
+                self._search_directories.extend(
                     configuration.get('search_path', []))
 
                 if not self._version_hash:

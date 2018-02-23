@@ -32,6 +32,15 @@ LOG = logging.getLogger(__name__)
 
 
 def main() -> int:
+    def readable_directory(directory: str) -> str:
+        if not os.path.isdir(directory):
+            raise argparse.ArgumentTypeError(
+                '{} is not a valid directory'.format(directory))
+        if not os.access(directory, os.R_OK):
+            raise argparse.ArgumentTypeError(
+                '{} is not a readable directory'.format(directory))
+        return directory
+
     parser = argparse.ArgumentParser(
         epilog='environment variables:  `PYRE_BINARY` overrides the pyre '
         'client binary used.',
@@ -102,6 +111,19 @@ def main() -> int:
         action='append',
         help='The source directory to check')
 
+    # Handling of search path
+    parser.add_argument(
+        '--search-path',
+        action='append',
+        default=[],
+        type=readable_directory,
+        help='Additional directories to search for module files')
+    parser.add_argument(
+        '--preserve-pythonpath',
+        action='store_true',
+        default=False,
+        help='Preserves the value of the PYTHONPATH environment variable')
+
     # Subcommands.
     parsed_commands = parser.add_subparsers()
 
@@ -171,7 +193,9 @@ def main() -> int:
 
         configuration = Configuration(
             original_directory=arguments.original_directory,
-            local_configuration=arguments.local_configuration)
+            local_configuration=arguments.local_configuration,
+            search_path=arguments.search_path,
+            preserve_pythonpath=arguments.preserve_pythonpath)
         source_directories = []
         if configuration.disabled():
             LOG.log(
