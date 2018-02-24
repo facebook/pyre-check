@@ -218,19 +218,16 @@ module State = struct
 
     let ignore_suppressed_errors errors =
       let module Reader = (val environment : Environment.Handler) in
-      let _, errors =
-        let ignore error =
-          Location.start_line (Error.location error) (Location.line (Error.location error))
-          |> Reader.ignore_lines
-          >>| (fun ignore_instance ->
-              List.is_empty (Source.Ignore.codes ignore_instance) ||
-              List.mem ~equal:(=) (Source.Ignore.codes ignore_instance) (Error.code error)
-            )
-          |> Option.value ~default:false
-        in
-        List.partition_tf ~f:ignore errors
+      let ignore error =
+        Location.start_line (Error.location error) (Location.line (Error.location error))
+        |> Reader.ignore_lines
+        >>| (fun ignore_instance ->
+            List.is_empty (Source.Ignore.codes ignore_instance) ||
+            List.mem ~equal:(=) (Source.Ignore.codes ignore_instance) (Error.code error)
+          )
+        |> Option.value ~default:false
       in
-      errors
+      List.filter ~f:(fun error -> not (ignore error)) errors
     in
 
     let ignore_mock_errors errors =
@@ -248,8 +245,7 @@ module State = struct
         | _ ->
             false
       in
-      let _, errors = List.partition_tf ~f:ignore_mock_error errors in
-      errors
+      List.filter ~f:(fun error -> not (ignore_mock_error error)) errors
     in
 
     let ignore_callable_errors errors =
@@ -267,8 +263,7 @@ module State = struct
         | _ ->
             false
       in
-      let _, errors = List.partition_tf ~f:ignore_callable_error errors in
-      errors
+      List.filter ~f:(fun error -> not (ignore_callable_error error)) errors
     in
 
     let ignore_unimplemented_returns errors =
