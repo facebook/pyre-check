@@ -56,7 +56,7 @@ let analyze_source
         ~flush:false
         ~randomly_log_every:100
         ~section:`Check
-        ~name:"SingleFileTypeCheck"
+        ~name:(Format.asprintf "SingleFileTypeCheck of %s" path)
         ~timer
         ~normals:["path", path; "request kind", "SingleFileTypeCheck"]
         ~configuration
