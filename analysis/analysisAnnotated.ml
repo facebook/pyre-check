@@ -724,16 +724,14 @@ module Class = struct
           }
         }
     in
-    let search sofar attribute =
-      match sofar with
-      | Some attribute -> Some attribute
-      | None ->
-          if Expression.equal_expression (Access name) (Attribute.name attribute) then
-            Some attribute
-          else
-            None
-    in
-    attribute_fold ~transitive ~class_attributes ~initial:None ~f:search ~resolution definition
+    attributes
+      ~transitive
+      ~class_attributes
+      ~include_generated_attributes:true
+      ~resolution
+      definition
+    |> List.find
+      ~f:(fun attribute -> Expression.equal_expression (Access name) (Attribute.name attribute))
     |> Option.value ~default:undefined
     |> (fun attribute ->
         let constraints =
