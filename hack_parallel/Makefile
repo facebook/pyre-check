@@ -119,6 +119,23 @@ all: $(BUILT_OBJECT_FILES)
 install:
 	ocamlfind install hack_parallel META $(shell cat install.txt)
 
+.PHONY: generate_install
+generate_install:
+	find _build -type f  '('\
+		-name '*.a' -o\
+		-name '*.annot' -o\
+		-name '*.cma' -o\
+		-name '*.cmi' -o\
+		-name '*.cmo' -o\
+		-name '*.cmt' -o\
+		-name '*.cmti' -o\
+		-name '*.cmx' -o\
+		-name '*.cmxa' -o\
+		-name '*.ml' -o\
+		-name '*.mli'\
+		')'\
+		> install.txt
+
 .PHONY: remove
 remove:
 	ocamlfind remove hack_parallel
