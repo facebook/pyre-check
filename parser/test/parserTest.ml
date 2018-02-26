@@ -3072,6 +3072,43 @@ let test_end_position _ =
     expected_location
     location
 
+let test_multiline_strings_positions _ =
+  let test_one source_code =
+    let statement = parse_last_statement source_code in
+    let location = statement.Node.location in
+    (* The path is empty here since parse_untrimmed lexes from string. *)
+    let expected_location = {
+      Location.path="test.py";
+      start = {Location.line = 5; Location.column = 0};
+      stop = {Location.line = 5; Location.column = 4};
+    } in
+    assert_equal
+      ~cmp:Location.equal
+      ~printer:(fun location -> Format.asprintf "%a" Location.pp location)
+      ~pp_diff:(diff ~print:Location.pp)
+      expected_location
+      location
+  in
+
+  (* variations of the multiline string:
+     '''
+     AAA
+     BBB
+     '''
+     pass
+  *)
+  test_one "'''\nAAA\nBBB\n'''\npass";
+  test_one "\"\"\"\nAAA\nBBB\n\"\"\"\npass";
+  (* variations of the multiline string: (note the backslash in line 2)
+     '''
+     AAA \
+     BBB
+     '''
+     pass
+  *)
+  test_one "'''\nAAA \\\nBBB\n'''\npass";
+  test_one "\"\"\"\nAAA \\\nBBB\n\"\"\"\npass"
+
 
 let test_global _ =
   assert_parsed_equal "global a" [+Global [~~"a"]];
@@ -3447,6 +3484,7 @@ let () =
     "assert">::test_assert;
     "import">::test_import;
     "end_position">::test_end_position;
+    "multiline_strings_positions">::test_multiline_strings_positions;
     "global">::test_global;
     "tuple">::test_tuple;
     "stubs">::test_stubs;

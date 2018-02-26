@@ -313,7 +313,12 @@ and single_long_string position prefix buffer = parse
       Buffer.add_string buffer value;
       single_long_string position prefix buffer lexbuf
     }
-  | ([^ '\\'] | escape) as value {
+  | [^ '\\'] as value {
+      Buffer.add_string buffer (Char.to_string value);
+      single_long_string position prefix buffer lexbuf
+    }
+  | escape as value {
+      line_breaks lexbuf value;
       Buffer.add_string buffer value;
       single_long_string position prefix buffer lexbuf
     }
@@ -327,7 +332,12 @@ and double_long_string position prefix buffer = parse
       Buffer.add_string buffer value;
       double_long_string position prefix buffer lexbuf
     }
-  | ([^ '\\'] | escape) as value {
+  | [^ '\\'] as value {
+      Buffer.add_string buffer (Char.to_string value);
+      double_long_string position prefix buffer lexbuf
+    }
+  | escape as value {
+      line_breaks lexbuf value;
       Buffer.add_string buffer value;
       double_long_string position prefix buffer lexbuf
     }
