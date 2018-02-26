@@ -61,31 +61,47 @@ let single_job { workers; _ } ~f work =
   | [] -> failwith "This service contains no workers"
 
 
-let heap_handle : SharedMemory.handle option ref = ref None
 
+module Memory = struct
+  type bytes = int
 
-let initialize_heap_handle () =
-  match !heap_handle with
-  | None ->
-      let shared_mem_config =
-        let open SharedMemory in
-        {
-          global_size = 4096 * 1024 * 1024; (* 4096 MB *)
-          heap_size = 4096 * 1024 * 1024; (* 4096 MB *)
-          dep_table_pow = 19;
-          hash_table_pow = 21;
-          shm_dirs = default_shm_dirs;
-          shm_min_avail = 1024 * 1024 * 512; (* 512 MB *)
-          log_level = 0;
-        } in
-      let new_heap_handle = SharedMemory.init shared_mem_config in
-      heap_handle := Some new_heap_handle;
-      new_heap_handle
-  | Some heap_handle -> heap_handle
+  type configuration = {
+    heap_handle: SharedMemory.handle;
+    minor_heap_size: bytes;
+  }
+
+  let configuration: configuration option ref = ref None
+
+  let initialize () =
+    match !configuration with
+    | None ->
+        let minor_heap_size = 2 * 1024 * 1024 in (* 2 MB *)
+        Gc.set { (Gc.get ()) with Gc.minor_heap_size };
+        let shared_mem_config =
+          let open SharedMemory in
+          {
+            global_size = 4096 * 1024 * 1024; (* 4096 MB *)
+            heap_size = 4096 * 1024 * 1024; (* 4096 MB *)
+            dep_table_pow = 19;
+            hash_table_pow = 21;
+            shm_dirs = default_shm_dirs;
+            shm_min_avail = 1024 * 1024 * 512; (* 512 MB *)
+            log_level = 0;
+          } in
+        let heap_handle = SharedMemory.init shared_mem_config in
+        configuration := Some { heap_handle; minor_heap_size };
+        { heap_handle; minor_heap_size }
+    | Some configuration ->
+        configuration
+
+  let get_heap_handle () =
+    let { heap_handle; _ } = initialize () in
+    heap_handle
+end
 
 
 let create ~is_parallel ?(bucket_multiplier = 10) () =
-  let heap_handle = initialize_heap_handle () in
+  let heap_handle = Memory.get_heap_handle () in
   let workers =
     Hack_parallel.Std.Worker.make
       ?call_wrapper:None
@@ -100,7 +116,7 @@ let create ~is_parallel ?(bucket_multiplier = 10) () =
 
 
 let mock () =
-  initialize_heap_handle () |> ignore;
+  Memory.initialize () |> ignore;
   { workers = []; is_parallel = false; bucket_multiplier = 1 }
 
 
