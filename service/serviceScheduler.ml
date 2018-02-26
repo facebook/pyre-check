@@ -61,7 +61,6 @@ let single_job { workers; _ } ~f work =
   | [] -> failwith "This service contains no workers"
 
 
-
 module Memory = struct
   type bytes = int
 
@@ -75,8 +74,13 @@ module Memory = struct
   let initialize () =
     match !configuration with
     | None ->
-        let minor_heap_size = 2 * 1024 * 1024 in (* 2 MB *)
-        Gc.set { (Gc.get ()) with Gc.minor_heap_size };
+        let minor_heap_size = 4 * 1024 * 1024 in (* 2 MB *)
+        let space_overhead = 50 in
+        Gc.set {
+          (Gc.get ()) with
+          Gc.minor_heap_size;
+          space_overhead;
+        };
         let shared_mem_config =
           let open SharedMemory in
           {
