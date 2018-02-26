@@ -119,15 +119,6 @@ let test_method_overrides _ =
 
 
 let test_method_implements _ =
-  let resolution =
-    populate {|
-      class foo():
-        first : int
-        second : int
-      foo : foo
-    |}
-    |> resolution
-  in
   let definition ?(parameters = []) ?return_annotation name =
     Method.create
       ~define:{
@@ -154,12 +145,10 @@ let test_method_implements _ =
 
   assert_true
     (Method.implements
-       ~resolution
        ~protocol_method:(definition "match")
        (definition "match"));
   assert_false
     (Method.implements
-       ~resolution
        ~protocol_method:(definition "mismatch")
        (definition "match"));
 
@@ -171,7 +160,6 @@ let test_method_implements _ =
   in
   assert_true
     (Method.implements
-       ~resolution
        ~protocol_method:(definition ~parameters "match")
        (definition ~parameters "match"));
 
@@ -190,7 +178,6 @@ let test_method_implements _ =
   in
   assert_true
     (Method.implements
-       ~resolution
        ~protocol_method:(definition ~parameters:protocol_parameters "match")
        (definition ~parameters:definition_parameters "match"));
 
@@ -210,7 +197,6 @@ let test_method_implements _ =
   in
   assert_false
     (Method.implements
-       ~resolution
        ~protocol_method:(definition ~parameters:protocol_parameters "match")
        (definition ~parameters:definition_parameters "match"));
 
@@ -218,18 +204,15 @@ let test_method_implements _ =
   let protocol_parameters = [Parameter.create ~name:(~~"a") ()] in
   assert_false
     (Method.implements
-       ~resolution
        ~protocol_method:(definition ~parameters:protocol_parameters "match")
        (definition ~parameters:definition_parameters "match"));
 
   assert_true
     (Method.implements
-       ~resolution
        ~protocol_method:(definition ~return_annotation:!"int" "match")
        (definition ~return_annotation:!"int" "match"));
   assert_false
     (Method.implements
-       ~resolution
        ~protocol_method:(definition ~return_annotation:!"int" "match")
        (definition ~return_annotation:!"float" "match"))
 
@@ -500,7 +483,6 @@ let test_is_protocol _ =
 
 let test_implements _ =
   let assert_conforms definition protocol conforms =
-    let resolution = populate definition |> resolution in
     match parse_last_statement definition with
     | { Node.value = Statement.Class definition; _ }
     | { Node.value = Statement.Stub (Stub.Class definition); _ } ->
@@ -510,7 +492,6 @@ let test_implements _ =
           | { Node.value = Statement.Stub (Stub.Class protocol); _ } ->
               assert_equal
                 (Class.implements
-                   ~resolution
                    ~protocol:(Class.create (Node.create protocol))
                    (Class.create (Node.create definition)))
                 conforms

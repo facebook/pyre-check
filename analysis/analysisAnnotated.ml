@@ -221,7 +221,6 @@ module Class = struct
 
     let implements
         { define; _ }
-        ~resolution:_
         ~protocol_method:{ define = protocol; _ } =
       let open Define in
       let parameter_equal
@@ -425,7 +424,7 @@ module Class = struct
     List.exists ~f:is_protocol bases
 
 
-  let implements definition ~resolution ~protocol =
+  let implements definition ~protocol =
     let rec implements instance_methods protocol_methods =
       match instance_methods, protocol_methods with
       | _, [] ->
@@ -434,7 +433,7 @@ module Class = struct
           false
       | instance_method :: instance_methods,
         ((protocol_method :: protocol_methods) as old_protocol_methods) ->
-          if Method.implements ~resolution ~protocol_method instance_method then
+          if Method.implements ~protocol_method instance_method then
             implements instance_methods protocol_methods
           else
             implements instance_methods old_protocol_methods

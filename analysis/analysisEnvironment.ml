@@ -1034,7 +1034,7 @@ let infer_implementations (module Handler: Handler) ~protocol =
               >>| Class.create
               >>| (fun definition ->
                   not (Class.is_protocol definition) &&
-                  Class.implements ~resolution ~protocol:protocol_definition definition)
+                  Class.implements ~protocol:protocol_definition definition)
               |> Option.value ~default:false
             in
             TypeOrder.greatest (module Handler.TypeOrderHandler) ~matches:implements
