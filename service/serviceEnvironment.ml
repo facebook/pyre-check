@@ -372,11 +372,7 @@ let shared_memory_handler
 
 
       let register_ignore_line ~path ~ignore =
-        let location =
-          Ast.Location.start_line
-            (Ast.Source.Ignore.location ignore)
-            (Ast.Source.Ignore.ignored_line ignore)
-        in
+        let location = Ast.Source.Ignore.key ignore in
         DependencyHandler.add_ignore_key ~path location;
         IgnoreLines.remove_batch (IgnoreLines.KeySet.singleton location);
         IgnoreLines.add location ignore

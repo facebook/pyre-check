@@ -167,6 +167,11 @@ let location { location; _ } =
   location
 
 
+let key { location; _ } =
+  let start = { Location.line = (Location.line location); column = -1 } in
+  { location with Location.start; stop = start }
+
+
 let code { kind; _ } =
   match kind with
   | IncompatibleAwaitableType _ -> 12
@@ -859,10 +864,9 @@ let process_ignores environment handles errors =
     in
     let not_ignored error =
       add_to_lookup
-        ~key:(Location.start_line (location error) (Location.line (location error)))
+        ~key:(key error)
         ~code:(code error);
-      Reader.ignore_lines
-        (Location.start_line (location error) (Location.line (location error)))
+      Reader.ignore_lines (key error)
       >>| (fun ignore_instance ->
           not (List.is_empty (Source.Ignore.codes ignore_instance) ||
                List.mem ~equal:(=) (Source.Ignore.codes ignore_instance) (code error)))
@@ -893,13 +897,8 @@ let process_ignores environment handles errors =
           match Source.Ignore.kind ignore with
           | Source.Ignore.TypeIgnore -> sofar
           | _ ->
-              let key =
-                Location.start_line
-                  (Source.Ignore.location ignore)
-                  (Source.Ignore.ignored_line ignore)
-              in
               begin
-                match Hashtbl.find error_lookup key with
+                match Hashtbl.find error_lookup (Source.Ignore.key ignore) with
                 | Some codes ->
                     let unused_codes =
                       let find_unused sofar code =

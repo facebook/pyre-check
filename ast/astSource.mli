@@ -35,6 +35,7 @@ module Ignore : sig
   val codes: t -> int list
   val location: t -> Location.t
   val kind: t -> kind
+  val key: t -> Location.t
 end
 
 

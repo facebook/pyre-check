@@ -40,6 +40,10 @@ module Ignore = struct
 
   let kind { kind; _ } =
     kind
+
+  let key { location; ignored_line; _ } =
+    let start = { Location.line = ignored_line; column = -1 } in
+    { location with Location.start; stop = start }
 end
 
 

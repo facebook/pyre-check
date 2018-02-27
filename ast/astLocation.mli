@@ -33,8 +33,6 @@ val create: start:Lexing.position -> stop:Lexing.position -> t
 
 val any: t
 
-val start_line: t -> int -> t
-
 val line: t -> int
 val column: t -> int
 val path: t -> string

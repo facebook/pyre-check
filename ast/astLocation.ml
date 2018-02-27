@@ -86,10 +86,6 @@ let any =
   { path = "*"; start = any_position; stop = any_position }
 
 
-let start_line location line =
-  let start = { line; column = -1 } in
-  { location with start; stop = start }
-
 let line { start = { line; _ }; _ } =
   line
 

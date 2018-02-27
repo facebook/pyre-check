@@ -134,6 +134,7 @@ type t = {
 include Hashable with type t := t
 
 val location: t -> Location.t
+val key: t -> Location.t
 val code: t -> int
 val description: t -> detailed:bool -> string
 
