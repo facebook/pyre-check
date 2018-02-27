@@ -160,7 +160,6 @@ module State = struct
   let errors
       ({
         configuration;
-        environment;
         errors;
         annotations;
         define = ({ Node.location; value = define; _ } as define_node);
@@ -214,20 +213,6 @@ module State = struct
         Define.parent_definition ~resolution (Define.create define)
         >>| check_class_attributes
         |> Option.value ~default:errors
-    in
-
-    let ignore_suppressed_errors errors =
-      let module Reader = (val environment : Environment.Handler) in
-      let ignore error =
-        Location.start_line (Error.location error) (Location.line (Error.location error))
-        |> Reader.ignore_lines
-        >>| (fun ignore_instance ->
-            List.is_empty (Source.Ignore.codes ignore_instance) ||
-            List.mem ~equal:(=) (Source.Ignore.codes ignore_instance) (Error.code error)
-          )
-        |> Option.value ~default:false
-      in
-      List.filter ~f:(fun error -> not (ignore error)) errors
     in
 
     let ignore_mock_errors errors =
@@ -369,7 +354,6 @@ module State = struct
     |> Error.join_at_define ~resolution ~location
     |> class_initialization_errors
     |> ignore_unimplemented_returns
-    |> ignore_suppressed_errors
     |> ignore_mock_errors
     |> ignore_callable_errors
     |> apply_if ~f:filter_errors ~condition:(not configuration.debug)

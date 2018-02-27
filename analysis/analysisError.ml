@@ -541,7 +541,7 @@ let description
         in
         [
           Format.asprintf
-            "Pyre ignore%s %s %s extraneous; there is no type error here."
+            "Pyre ignore%s %s %s extraneous; there is no matching type error here."
             (if plural then "s" else "")
             (string_from_codes unused_error_codes)
             (if plural then "are" else "is")

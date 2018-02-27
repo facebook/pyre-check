@@ -21,6 +21,104 @@ type analysis_results = {
 }
 
 
+let process_ignores environment handles errors =
+  let module Reader = (val environment : Environment.Handler) in
+  let paths_from_handles =
+    let get_path paths handle =
+      match AstSharedMemory.get_source handle with
+      | Some { Source.path; _ } ->
+          path :: paths
+      | _ -> paths
+    in
+    List.fold ~init:[] ~f:get_path
+  in
+  let error_lookup = Location.Table.create () in
+  List.iter
+    ~f:(fun error ->
+        Hashtbl.set
+          ~key:(Location.start_line (Error.location error) (Location.line (Error.location error)))
+          ~data:error error_lookup)
+    errors;
+  let errors_with_ignore_suppression =
+    let not_ignored error =
+      Reader.ignore_lines
+        (Location.start_line (Error.location error) (Location.line (Error.location error)))
+      >>| (fun ignore_instance ->
+          not (List.is_empty (Source.Ignore.codes ignore_instance) ||
+               List.mem ~equal:(=) (Source.Ignore.codes ignore_instance) (Error.code error))
+        )
+      |> Option.value ~default:true
+    in
+    List.filter ~f:not_ignored errors
+  in
+  let unused_ignores =
+    let get_unused_ignores sofar path =
+      let ignores =
+        let key_to_ignores sofar key =
+          match Reader.ignore_lines key with
+          | Some ignore -> ignore :: sofar
+          | _ -> sofar
+        in
+        List.fold ~init:[] ~f:key_to_ignores (Reader.DependencyHandler.get_ignore_keys ~path)
+      in
+      let unused_ignores =
+        let is_inactive ignore =
+          match Source.Ignore.kind ignore with
+          | Source.Ignore.TypeIgnore -> false
+          | _ ->
+              begin
+                let key =
+                  Location.start_line
+                    (Source.Ignore.location ignore)
+                    (Source.Ignore.ignored_line ignore)
+                in
+                match Hashtbl.find error_lookup key with
+                | Some error ->
+                    not (List.is_empty (Source.Ignore.codes ignore) ||
+                         List.mem ~equal:(=) (Source.Ignore.codes ignore) (Error.code error))
+                | _ -> true
+              end
+        in
+        List.filter ~f:is_inactive ignores
+      in
+      sofar @ unused_ignores
+    in
+    List.fold ~init:[] ~f:get_unused_ignores (paths_from_handles handles)
+  in
+  let errors_with_unused_ignores =
+    let create_unused_ignore_error errors unused_ignore =
+      let placeholder_define =
+        {
+          Statement.Define.name = Expression.Access.create "";
+          parameters = [];
+          body = [];
+          decorators = [];
+          docstring = None;
+          return_annotation = None;
+          async = false;
+          generated = false;
+          parent = None;
+        }
+      in
+      let error =
+        {
+          Error.location = Source.Ignore.location unused_ignore;
+          kind = Error.UnusedIgnore {
+              Error.unused_error_codes = Source.Ignore.codes unused_ignore;
+            };
+          define = {
+            Node.location = Source.Ignore.location unused_ignore;
+            value = placeholder_define
+          };
+        }
+      in
+      error :: errors
+    in
+    List.fold ~init:errors_with_ignore_suppression ~f:create_unused_ignore_error unused_ignores
+  in
+  errors_with_unused_ignores
+
+
 let analyze_source
     ({ Configuration.verbose; sections; _ } as configuration)
     environment
@@ -143,7 +241,8 @@ let analyze_sources_parallel
           number_files;
           type_coverage = TypeCheck.Coverage.sum left.type_coverage right.type_coverage;
         })
-  |> (fun { errors; lookups; type_coverage; _ } -> (errors, lookups, type_coverage))
+  |> (fun { errors; lookups; type_coverage; _ } ->
+      (process_ignores environment handles errors, lookups, type_coverage))
 
 
 let analyze_sources
@@ -159,7 +258,8 @@ let analyze_sources
     ~configuration
     ~handles:repopulate_handles;
   match Scheduler.is_parallel scheduler with
-  | true -> analyze_sources_parallel scheduler configuration environment handles
+  | true ->
+      analyze_sources_parallel scheduler configuration environment handles
   | false ->
       let get_sources =
         List.fold
@@ -197,3 +297,5 @@ let analyze_sources
         sources
       |> (fun (error_list, lookups, type_coverage) ->
           List.concat error_list, lookups, type_coverage)
+      |> (fun (errors, lookups, type_coverage) ->
+          process_ignores environment handles errors, lookups, type_coverage)
