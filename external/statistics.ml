@@ -31,10 +31,12 @@ let performance
     ~name:_
     ~timer:_
     ~configuration:_
+    ?(integers = [])
     ?(normals = [])
     () =
   ignore flush;
   ignore randomly_log_every;
+  ignore integers;
   ignore normals;
   ignore section
 

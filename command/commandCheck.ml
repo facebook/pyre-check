@@ -166,10 +166,16 @@ let run_check
 
   let timer = Timer.start () in
   let { errors; _ } = check configuration None () in
+  let { Caml.Gc.minor_collections; major_collections; compactions; _ } = Caml.Gc.stat () in
   Statistics.performance
     ~name:"check"
     ~timer
     ~configuration
+    ~integers:[
+      "gc_minor_collections", minor_collections;
+      "gc_major_collections", major_collections;
+      "gc_compactions", compactions;
+    ]
     ~normals:["request kind", "FullCheck"]
     ();
   (* Print results. *)
