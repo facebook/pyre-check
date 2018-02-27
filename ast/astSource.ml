@@ -7,44 +7,9 @@ open Core
 
 open AstExpression
 
+module Ignore = AstIgnore
 module Location = AstLocation
 module Statement = AstStatement
-
-
-module Ignore = struct
-  type kind =
-    | TypeIgnore
-    | PyreFixme
-    | PyreIgnore
-  [@@deriving compare, eq, show, sexp, hash]
-
-  type t = {
-    ignored_line: int;
-    codes: int list;
-    location: Location.t;
-    kind: kind;
-  }
-  [@@deriving compare, eq, show, sexp, hash]
-
-  let create ~ignored_line ~codes ~location ~kind =
-    { ignored_line; codes; location; kind }
-
-  let ignored_line { ignored_line; _ } =
-    ignored_line
-
-  let codes { codes; _ } =
-    codes
-
-  let location { location; _ } =
-    location
-
-  let kind { kind; _ } =
-    kind
-
-  let key { location; ignored_line; _ } =
-    let start = { Location.line = ignored_line; column = -1 } in
-    { location with Location.start; stop = start }
-end
 
 
 module Metadata = struct

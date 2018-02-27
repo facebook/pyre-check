@@ -8,6 +8,7 @@ module Argument = AstArgument
 module Codex = AstCodex
 module Expression = AstExpression
 module Identifier = AstIdentifier
+module Ignore = AstIgnore
 module Location = AstLocation
 module Node = AstNode
 module Parameter = AstParameter

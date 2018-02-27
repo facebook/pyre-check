@@ -868,8 +868,8 @@ let process_ignores environment handles errors =
         ~code:(code error);
       Reader.ignore_lines (key error)
       >>| (fun ignore_instance ->
-          not (List.is_empty (Source.Ignore.codes ignore_instance) ||
-               List.mem ~equal:(=) (Source.Ignore.codes ignore_instance) (code error)))
+          not (List.is_empty (Ignore.codes ignore_instance) ||
+               List.mem ~equal:(=) (Ignore.codes ignore_instance) (code error)))
       |> Option.value ~default:true
     in
     List.filter ~f:not_ignored errors
@@ -894,22 +894,22 @@ let process_ignores environment handles errors =
       in
       let unused_ignores =
         let filter_active_ignores sofar ignore =
-          match Source.Ignore.kind ignore with
-          | Source.Ignore.TypeIgnore -> sofar
+          match Ignore.kind ignore with
+          | Ignore.TypeIgnore -> sofar
           | _ ->
               begin
-                match Hashtbl.find error_lookup (Source.Ignore.key ignore) with
+                match Hashtbl.find error_lookup (Ignore.key ignore) with
                 | Some codes ->
                     let unused_codes =
                       let find_unused sofar code =
                         if List.mem ~equal:(=) codes code then sofar else code :: sofar
                       in
-                      List.fold ~init:[] ~f:find_unused (Source.Ignore.codes ignore)
+                      List.fold ~init:[] ~f:find_unused (Ignore.codes ignore)
                     in
-                    if List.is_empty (Source.Ignore.codes ignore) || List.is_empty unused_codes then
+                    if List.is_empty (Ignore.codes ignore) || List.is_empty unused_codes then
                       sofar
                     else
-                      { ignore with Source.Ignore.codes = unused_codes } :: sofar
+                      { ignore with Ignore.codes = unused_codes } :: sofar
                 | _ -> ignore :: sofar
               end
         in
@@ -922,12 +922,12 @@ let process_ignores environment handles errors =
   let create_unused_ignore_error errors unused_ignore =
     let error =
       {
-        location = Source.Ignore.location unused_ignore;
+        location = Ignore.location unused_ignore;
         kind = UnusedIgnore {
-            unused_error_codes = Source.Ignore.codes unused_ignore;
+            unused_error_codes = Ignore.codes unused_ignore;
           };
         define = {
-          Node.location = Source.Ignore.location unused_ignore;
+          Node.location = Ignore.location unused_ignore;
           value = Statement.Define.create_toplevel []
         };
       }
