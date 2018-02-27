@@ -153,6 +153,7 @@ let analyze_sources
     environment
     handles =
   Log.info "Checking...";
+  Annotated.Class.AttributesCache.clear ();
   ServiceEnvironment.repopulate
     environment
     ~configuration
