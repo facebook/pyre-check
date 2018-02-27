@@ -16,6 +16,8 @@ module Resolution = AnalysisResolution
 module Type = AnalysisType
 module TypeOrder = AnalysisTypeOrder
 
+module AstSharedMemory = ServiceAstSharedMemory
+
 
 type undefined_method = {
   annotation: Type.t;
@@ -846,6 +848,96 @@ let join_at_source ~resolution errors =
   |> Map.data
 
 
+let process_ignores environment handles errors =
+  let module Reader = (val environment : Environment.Handler) in
+  let error_lookup = Location.Table.create () in
+  let errors_with_ignore_suppression =
+    let add_to_lookup ~key ~code =
+      match Hashtbl.find error_lookup key with
+      | Some codes -> Hashtbl.set ~key ~data:(code :: codes) error_lookup
+      | _ -> Hashtbl.set ~key ~data:[code] error_lookup
+    in
+    let not_ignored error =
+      add_to_lookup
+        ~key:(Location.start_line (location error) (Location.line (location error)))
+        ~code:(code error);
+      Reader.ignore_lines
+        (Location.start_line (location error) (Location.line (location error)))
+      >>| (fun ignore_instance ->
+          not (List.is_empty (Source.Ignore.codes ignore_instance) ||
+               List.mem ~equal:(=) (Source.Ignore.codes ignore_instance) (code error)))
+      |> Option.value ~default:true
+    in
+    List.filter ~f:not_ignored errors
+  in
+  let unused_ignores =
+    let paths_from_handles =
+      let get_path paths handle =
+        AstSharedMemory.get_source handle
+        >>| (fun { Source.path; _ } -> path :: paths)
+        |> Option.value ~default:paths
+      in
+      List.fold ~init:[] ~f:get_path
+    in
+    let get_unused_ignores sofar path =
+      let ignores =
+        let key_to_ignores sofar key =
+          Reader.ignore_lines key
+          >>| (fun ignore -> ignore :: sofar)
+          |> Option.value ~default:sofar
+        in
+        List.fold ~init:[] ~f:key_to_ignores (Reader.DependencyHandler.get_ignore_keys ~path)
+      in
+      let unused_ignores =
+        let filter_active_ignores sofar ignore =
+          match Source.Ignore.kind ignore with
+          | Source.Ignore.TypeIgnore -> sofar
+          | _ ->
+              let key =
+                Location.start_line
+                  (Source.Ignore.location ignore)
+                  (Source.Ignore.ignored_line ignore)
+              in
+              begin
+                match Hashtbl.find error_lookup key with
+                | Some codes ->
+                    let unused_codes =
+                      let find_unused sofar code =
+                        if List.mem ~equal:(=) codes code then sofar else code :: sofar
+                      in
+                      List.fold ~init:[] ~f:find_unused (Source.Ignore.codes ignore)
+                    in
+                    if List.is_empty (Source.Ignore.codes ignore) || List.is_empty unused_codes then
+                      sofar
+                    else
+                      { ignore with Source.Ignore.codes = unused_codes } :: sofar
+                | _ -> ignore :: sofar
+              end
+        in
+        List.fold ~init:[] ~f:filter_active_ignores ignores
+      in
+      sofar @ unused_ignores
+    in
+    List.fold ~init:[] ~f:get_unused_ignores (paths_from_handles handles)
+  in
+  let create_unused_ignore_error errors unused_ignore =
+    let error =
+      {
+        location = Source.Ignore.location unused_ignore;
+        kind = UnusedIgnore {
+            unused_error_codes = Source.Ignore.codes unused_ignore;
+          };
+        define = {
+          Node.location = Source.Ignore.location unused_ignore;
+          value = Statement.Define.create_toplevel []
+        };
+      }
+    in
+    error :: errors
+  in
+  List.fold ~init:errors_with_ignore_suppression ~f:create_unused_ignore_error unused_ignores
+
+
 let dequalify
     dequalify_map
     environment
@@ -940,7 +1032,6 @@ let dequalify
     { define with Define.parameters; return_annotation }
   in
   { error with kind; define = { Node.location; value = define} }
-
 
 
 let to_json ~detailed ({ kind; define = { Node.value = define; _ }; location; _ } as error) =
