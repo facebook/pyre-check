@@ -527,18 +527,11 @@ let description
              Type.pp actual)
         ]
     | UnusedIgnore { unused_error_codes; } ->
-        let rec string_from_codes codes =
-          match codes with
-          | [] -> ""
-          | code :: [] -> Format.sprintf "[%d]" code
-          | code :: other -> Format.sprintf "[%d], %s" code (string_from_codes other)
+        let string_from_codes codes =
+          List.map ~f:(Format.asprintf "[%d]") codes
+          |> String.concat ~sep:", "
         in
-        let plural =
-          match unused_error_codes with
-          | []
-          | [_] -> false
-          | _ -> true
-        in
+        let plural = List.length unused_error_codes > 1 in
         [
           Format.asprintf
             "Pyre ignore%s %s %s extraneous; there is no matching type error here."
