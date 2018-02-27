@@ -1045,11 +1045,7 @@ let test_show_error_traces _ =
       def f() -> dict: return {}
       def foo() -> typing.Dict[typing.Any, typing.Any]: return f()
     |}
-    [
-      "Incompatible return type [7]: Expected `typing.Dict[typing.Any, typing.Any]` but got " ^
-      "`typing.Dict[unknown, unknown]`. Type `typing.Dict[typing.Any, typing.Any]` expected on " ^
-      "line 3, specified on line 3.";
-    ];
+    [];
 
   assert_type_errors ~show_error_traces:true
     "def foo(): pass"
@@ -1257,9 +1253,16 @@ let test_check _ =
       def f() -> dict: return {}
       def foo() -> typing.Dict[typing.Any, typing.Any]: return f()
     |}
+    [];
+
+  assert_type_errors
+    {|
+      def f() -> dict: return {}
+      def foo() -> typing.Dict[typing.Any]: return f()
+    |}
     [
-      "Incompatible return type [7]: Expected `typing.Dict[typing.Any, typing.Any]` but got " ^
-      "`typing.Dict[unknown, unknown]`.";
+      "Incompatible return type [7]: Expected `typing.Dict[typing.Any]` but got " ^
+      "`typing.Dict[typing.Any, typing.Any]`."
     ];
 
   assert_type_errors

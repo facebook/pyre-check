@@ -352,7 +352,7 @@ let yield parameter =
 
 let primitive_substitution_map =
   let complex = Primitive (Identifier.create "complex") in
-  let object_dict = Parametric { name = Identifier.create "dict"; parameters = [Top; Top] } in
+  let object_dict = Parametric { name = Identifier.create "dict"; parameters = [Object; Object] } in
   [
     "object", Object;
     "typing.Any", Object;
