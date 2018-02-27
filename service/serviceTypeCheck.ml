@@ -33,11 +33,16 @@ let process_ignores environment handles errors =
     List.fold ~init:[] ~f:get_path
   in
   let error_lookup = Location.Table.create () in
+  let add_to_lookup ~key ~code =
+    match Hashtbl.find error_lookup key with
+    | Some codes -> Hashtbl.set ~key ~data:(code :: codes) error_lookup
+    | _ -> Hashtbl.set ~key ~data:[code] error_lookup
+  in
   List.iter
     ~f:(fun error ->
-        Hashtbl.set
+        add_to_lookup
           ~key:(Location.start_line (Error.location error) (Location.line (Error.location error)))
-          ~data:error error_lookup)
+          ~code:(Error.code error))
     errors;
   let errors_with_ignore_suppression =
     let not_ignored error =
@@ -62,24 +67,32 @@ let process_ignores environment handles errors =
         List.fold ~init:[] ~f:key_to_ignores (Reader.DependencyHandler.get_ignore_keys ~path)
       in
       let unused_ignores =
-        let is_inactive ignore =
+        let filter_active_ignores sofar ignore =
           match Source.Ignore.kind ignore with
-          | Source.Ignore.TypeIgnore -> false
+          | Source.Ignore.TypeIgnore -> sofar
           | _ ->
+              let key =
+                Location.start_line
+                  (Source.Ignore.location ignore)
+                  (Source.Ignore.ignored_line ignore)
+              in
               begin
-                let key =
-                  Location.start_line
-                    (Source.Ignore.location ignore)
-                    (Source.Ignore.ignored_line ignore)
-                in
                 match Hashtbl.find error_lookup key with
-                | Some error ->
-                    not (List.is_empty (Source.Ignore.codes ignore) ||
-                         List.mem ~equal:(=) (Source.Ignore.codes ignore) (Error.code error))
-                | _ -> true
+                | Some codes ->
+                    let unused_codes =
+                      let find_unused sofar code =
+                        if List.mem ~equal:(=) codes code then sofar else code :: sofar
+                      in
+                      List.fold ~init:[] ~f:find_unused (Source.Ignore.codes ignore)
+                    in
+                    if List.is_empty (Source.Ignore.codes ignore) || List.is_empty unused_codes then
+                      sofar
+                    else
+                      { ignore with Source.Ignore.codes = unused_codes } :: sofar
+                | _ -> ignore :: sofar
               end
         in
-        List.filter ~f:is_inactive ignores
+        List.fold ~init:[] ~f:filter_active_ignores ignores
       in
       sofar @ unused_ignores
     in

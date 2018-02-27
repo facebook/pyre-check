@@ -203,7 +203,38 @@ let ignore_lines_test _ =
     [
       "Unused ignore [0]: Pyre ignore [5] is extraneous; there is no matching type error here.";
       "Incompatible return type [7]: Expected `str` but got `float`."
-    ]
+    ];
+  assert_errors
+    {|
+      def foo(a: int) -> int:
+        return a  # pyre-ignore[7][5]
+    |}
+    [
+      "Unused ignore [0]: Pyre ignores [7], [5] are extraneous; " ^
+      "there is no matching type error here."
+    ];
+  assert_errors
+    {|
+      def foo(a: int) -> str:
+        return a  # pyre-ignore[7][5]
+    |}
+    ["Unused ignore [0]: Pyre ignore [5] is extraneous; there is no matching type error here."];
+  assert_errors
+    {|
+      def bar(x: int) -> int:
+        return x
+      def foo(a: int) -> str:
+        return bar(a.undefined)  # pyre-ignore[7][16]
+    |}
+    [];
+  assert_errors
+    {|
+      def bar(x: int) -> int:
+        return x
+      def foo(a: int) -> str:
+        return bar(a.undefined)  # pyre-ignore[7][5][16]
+    |}
+    ["Unused ignore [0]: Pyre ignore [5] is extraneous; there is no matching type error here."]
 
 
 let () =
