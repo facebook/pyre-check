@@ -188,8 +188,8 @@ def main() -> int:
         if arguments.debug or not os.isatty(sys.stderr.fileno()):
             arguments.noninteractive = True
 
-        log.initialize(arguments)
         switch_root(arguments)
+        log.initialize(arguments)
 
         configuration = Configuration(
             original_directory=arguments.original_directory,
