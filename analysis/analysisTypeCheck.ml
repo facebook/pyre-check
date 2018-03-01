@@ -759,8 +759,8 @@ module State = struct
             | _, _ ->
                 Map.set ~key:access ~data:(Annotation.create value_annotation) annotations
           in
-          Annotated.Assign.create assign
-          |> Annotated.Assign.fold ~resolution ~f:forward_annotations ~initial:annotations
+          Assign.create assign
+          |> Assign.fold ~resolution ~f:forward_annotations ~initial:annotations
 
       | Assert { Assert.test; _ } ->
           let rec asserted annotations expression =
