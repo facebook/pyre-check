@@ -216,12 +216,7 @@ let handler
 
 
     let register_ignore_line ~path ~ignore =
-      let location =
-        let position =
-          { Location.line = Source.Ignore.ignored_line ignore; column = -1 }
-        in
-        { Location.path; start = position; stop = position }
-      in
+      let location = Source.Ignore.key ignore in
       DependencyHandler.add_ignore_key ~path location;
       Hashtbl.set ~key:location ~data:ignore ignore_lines
 
