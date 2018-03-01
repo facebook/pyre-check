@@ -16,6 +16,7 @@ module Metadata : sig
     debug: bool;
     declare: bool;
     ignore_lines: Ignore.t list;
+    number_of_lines: int;
     strict: bool;
     version: int;
   }
@@ -28,6 +29,7 @@ module Metadata : sig
     -> ?ignore_lines: Ignore.t list
     -> ?strict: bool
     -> ?version: int
+    -> number_of_lines: int
     -> unit
     -> t
 

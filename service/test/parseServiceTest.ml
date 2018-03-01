@@ -148,8 +148,11 @@ let test_parse_sources_list _ =
   let source = AstSharedMemory.get_source handle in
   assert_equal (Option.is_some source) true;
 
-  let { Source.path; statements; _ } = Option.value_exn source in
+  let { Source.path; statements; metadata = { Source.Metadata.number_of_lines; _ }; _ } =
+    Option.value_exn source
+  in
   assert_equal path "a.py";
+  assert_equal number_of_lines 3;
   begin
     match statements with
     | [{ Node.value = Statement.Define { Statement.Define.name; _ }; _ }] ->

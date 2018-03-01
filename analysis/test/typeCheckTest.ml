@@ -980,6 +980,7 @@ let assert_type_errors
         ~ignore_lines:[]
         ~strict
         ~version:3
+        ~number_of_lines:(-1)
         ()
     in
     parse source

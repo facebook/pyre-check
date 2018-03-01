@@ -43,6 +43,7 @@ let parse_untrimmed
         ~ignore_lines
         ~strict
         ~version
+        ~number_of_lines:(-1)
         ()
     in
     Source.create
