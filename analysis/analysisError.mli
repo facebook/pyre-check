@@ -100,11 +100,6 @@ type initialization_mismatch = {
 }
 [@@deriving compare, eq, show, sexp, hash]
 
-type unused_ignore = {
-  unused_error_codes: int list;
-}
-[@@deriving compare, eq, sexp, show, hash]
-
 type kind =
   | IncompatibleAwaitableType of Type.t
   | IncompatibleParameterType of parameter_mismatch
@@ -121,7 +116,7 @@ type kind =
   | UndefinedMethod of undefined_method
   | UndefinedType of Type.t
   | UninitializedAttribute of initialization_mismatch
-  | UnusedIgnore of unused_ignore
+  | UnusedIgnore of int list
 [@@deriving compare, eq, show, hash]
 
 type t = {

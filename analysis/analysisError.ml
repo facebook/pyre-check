@@ -119,12 +119,6 @@ type missing_return = {
 [@@deriving compare, eq, sexp, show, hash]
 
 
-type unused_ignore = {
-  unused_error_codes: int list;
-}
-[@@deriving compare, eq, sexp, show, hash]
-
-
 type kind =
   | IncompatibleAwaitableType of Type.t
   | IncompatibleParameterType of parameter_mismatch
@@ -141,7 +135,7 @@ type kind =
   | UndefinedMethod of undefined_method
   | UndefinedType of Type.t
   | UninitializedAttribute of initialization_mismatch
-  | UnusedIgnore of unused_ignore
+  | UnusedIgnore of int list
 [@@deriving compare, eq, show, sexp, hash]
 
 
@@ -535,17 +529,17 @@ let description
              (Location.line location)
              Type.pp actual)
         ]
-    | UnusedIgnore { unused_error_codes; } ->
+    | UnusedIgnore codes ->
         let string_from_codes codes =
           List.map ~f:(Format.asprintf "[%d]") codes
           |> String.concat ~sep:", "
         in
-        let plural = List.length unused_error_codes > 1 in
+        let plural = List.length codes > 1 in
         [
           Format.asprintf
             "Pyre ignore%s %s %s extraneous."
             (if plural then "s" else "")
-            (string_from_codes unused_error_codes)
+            (string_from_codes codes)
             (if plural then "are" else "is")
         ]
   in
@@ -669,7 +663,7 @@ let less_or_equal ~resolution left right =
           ~right:right.annotation
     | UndefinedType left, UndefinedType right ->
         TypeOrder.less_or_equal order ~left ~right
-    | UnusedIgnore { unused_error_codes = left }, UnusedIgnore { unused_error_codes = right } ->
+    | UnusedIgnore left, UnusedIgnore right ->
         Set.is_subset (Int.Set.of_list left) ~of_:(Int.Set.of_list right)
     | _, Top -> true
     | _ ->
@@ -769,10 +763,8 @@ let join ~resolution left right =
         }
     | UndefinedType left, UndefinedType right ->
         UndefinedType (TypeOrder.join order left right)
-    | UnusedIgnore { unused_error_codes = left }, UnusedIgnore { unused_error_codes = right } ->
-        UnusedIgnore {
-          unused_error_codes =
-            (Set.to_list (Set.union (Int.Set.of_list left) (Int.Set.of_list right))) }
+    | UnusedIgnore left, UnusedIgnore right ->
+        UnusedIgnore (Set.to_list (Set.union (Int.Set.of_list left) (Int.Set.of_list right)))
     | _ ->
         Format.asprintf
           "Incompatible type in error join at %a."
@@ -925,9 +917,7 @@ let process_ignores environment handles errors =
     let error =
       {
         location = Ignore.location unused_ignore;
-        kind = UnusedIgnore {
-            unused_error_codes = Ignore.codes unused_ignore;
-          };
+        kind = UnusedIgnore (Ignore.codes unused_ignore);
         define = {
           Node.location = Ignore.location unused_ignore;
           value = Statement.Define.create_toplevel []
