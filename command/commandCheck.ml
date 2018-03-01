@@ -217,9 +217,10 @@ let spec =
       ~doc:"ROOT Only check sources under this root directory."
       ~aliases:["-type-check-root"]
     +> flag
-      "-stub-roots"
+      "-search-path"
       (optional_with_default [] (Arg_type.comma_separated string))
-      ~doc:"STUB1,... Directory containing stubs to include"
+      ~doc:"DIRECTORY1,... Directories containing stubs and external modules to include"
+      ~aliases:["-stub-roots"]
     +> anon (maybe_with_default "." ("source-root" %: string)))
 
 
