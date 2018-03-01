@@ -16,6 +16,7 @@ die() {
 # Switch to pyre directory.
 cd "$(dirname "$0")/.."
 
+COMPILER="4.06.0"
 # Parse arguments.
 arguments=("$@")
 for index in "${!arguments[@]}";
@@ -33,6 +34,9 @@ do
       ;;
     "--configure")
       CONFIGURE=1
+      ;;
+    "--release")
+      COMPILER="4.06.0+flambda"
       ;;
   esac
 done
@@ -52,7 +56,6 @@ if [ -n "${CONFIGURE+x}" ]; then exit 0; fi
 # Set default values.
 if [ -z "${OPAM_ROOT+x}" ]; then OPAM_ROOT="$(mktemp -d)"; fi
 if [ -z "${OPAM_REPOSITORY+x}" ]; then OPAM_REPOSITORY="https://opam.ocaml.org"; fi
-COMPILER="4.06.0"
 
 # Extract packaged repository.
 if [ ${OPAM_REPOSITORY: -7} == ".tar.gz" ]; then
