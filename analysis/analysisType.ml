@@ -691,6 +691,13 @@ let is_primitive = function
   | _ -> false
 
 
+let is_protocol = function
+  | Parametric { name; _ } ->
+      Identifier.show name = "typing.Protocol"
+  | _ ->
+      false
+
+
 let is_tuple (annotation: t) =
   match annotation with
   | Tuple _ -> true

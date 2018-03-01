@@ -241,6 +241,9 @@ module Class = struct
       | Type.Parametric { Type.parameters; _ }
         when Type.is_generic annotation ->
           Some parameters
+      | Type.Parametric { Type.parameters; _ }
+        when Type.is_protocol annotation ->
+          Some parameters
       | _ ->
           None in
     List.find_map ~f:generic bases

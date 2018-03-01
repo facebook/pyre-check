@@ -242,7 +242,14 @@ let test_generics _ =
       _S = typing.TypeVar('_S')
       class Foo(typing.Generic[_T, _S]): pass
     |}
-    [variable "_T"; variable "_S"]
+    [variable "_T"; variable "_S"];
+
+  assert_generics
+    {|
+      _T = typing.TypeVar('_T')
+      class Foo(typing.Protocol[_T]): pass
+    |}
+    [variable "_T"]
 
 
 let test_superclasses _ =
@@ -902,7 +909,17 @@ let test_constraints _ =
       class Foo(typing.Generic[_K, _V], Bar[_K], Baz[_V]):
         pass
     |}
-    [variable "_T", Type.float]
+    [variable "_T", Type.float];
+
+  assert_constraints
+    ~target:"Iterator"
+    ~instantiated:(Type.parametric "Iterator" [Type.integer])
+    {|
+      _T = typing.TypeVar('_T')
+      class Iterator(typing.Protocol[_T]):
+        pass
+    |}
+    [variable "_T", Type.integer]
 
 
 let test_return_annotation _ =
