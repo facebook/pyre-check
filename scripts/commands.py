@@ -263,11 +263,17 @@ class Persistent(Command):
 
     def _run(self) -> None:
         arguments = self._arguments
+        log_identifier = ",".join(
+            sorted(list(self._original_source_directories)))
+
+        flags = ['-log-identifier', '"{}"'.format(log_identifier)]
         try:
+            print("\n\n\n\nArgs: {}".format(arguments))
             results = self._call_client(
                 command=PERSISTENT,
                 source_directories=self._source_directories,
-                capture_output=False)
+                capture_output=False,
+                flags=flags)
             self._check_results(results)
         except (ClientException,
                 EnvironmentException,
@@ -285,10 +291,12 @@ class Persistent(Command):
                 ]
             else:
                 source_directories = self._source_directories
+
             results = self._call_client(
                 command=PERSISTENT,
                 source_directories=source_directories,
-                capture_output=False)
+                capture_output=False,
+                flags=flags)
             self._check_results(results)
 
     def on_client_exception(self) -> None:

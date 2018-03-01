@@ -92,6 +92,7 @@ class PersistentTest(unittest.TestCase):
                 source_directories=['.']).run()
             call_client.assert_called_once_with(
                 command=commands.PERSISTENT,
+                flags=["-log-identifier", '"."'],
                 source_directories=['.'],
                 capture_output=False)
             commands.Persistent(
@@ -100,6 +101,7 @@ class PersistentTest(unittest.TestCase):
                 source_directories=["first", "second"]).run()
             call_client.assert_called_with(
                 command=commands.PERSISTENT,
+                flags=["-log-identifier", '"first,second"'],
                 source_directories=['.pyre/shared_source_directory'],
                 capture_output=False)
 
@@ -121,6 +123,7 @@ class PersistentTest(unittest.TestCase):
                 [
                     call(command=commands.PERSISTENT,
                          source_directories=['.'],
+                         flags=["-log-identifier", '"."'],
                          capture_output=False),
                     call(command=commands.START,
                          flags=['-project-root', '.', '-stub-roots', ''],
