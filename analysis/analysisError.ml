@@ -543,7 +543,7 @@ let description
         let plural = List.length unused_error_codes > 1 in
         [
           Format.asprintf
-            "Pyre ignore%s %s %s extraneous; there is no matching type error here."
+            "Pyre ignore%s %s %s extraneous."
             (if plural then "s" else "")
             (string_from_codes unused_error_codes)
             (if plural then "are" else "is")

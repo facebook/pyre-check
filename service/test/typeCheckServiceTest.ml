@@ -186,13 +186,13 @@ let ignore_lines_test context =
         def foo(a: int) -> int:
           return a  # pyre-ignore
       |}
-      ["Unused ignore [0]: Pyre ignore  is extraneous; there is no matching type error here."];
+      ["Unused ignore [0]: Pyre ignore  is extraneous."];
     assert_errors
       {|
         def foo(a: int) -> int:
           return a  # pyre-fixme
       |}
-      ["Unused ignore [0]: Pyre ignore  is extraneous; there is no matching type error here."];
+      ["Unused ignore [0]: Pyre ignore  is extraneous."];
     assert_errors
       {|
         def foo(a: int) -> int:
@@ -205,7 +205,7 @@ let ignore_lines_test context =
           return 1.0  # pyre-ignore[5]
       |}
       [
-        "Unused ignore [0]: Pyre ignore [5] is extraneous; there is no matching type error here.";
+        "Unused ignore [0]: Pyre ignore [5] is extraneous.";
         "Incompatible return type [7]: Expected `str` but got `float`."
       ];
     assert_errors
@@ -213,16 +213,13 @@ let ignore_lines_test context =
         def foo(a: int) -> int:
           return a  # pyre-ignore[7][5]
       |}
-      [
-        "Unused ignore [0]: Pyre ignores [7], [5] are extraneous; " ^
-        "there is no matching type error here."
-      ];
+      ["Unused ignore [0]: Pyre ignores [7], [5] are extraneous."];
     assert_errors
       {|
         def foo(a: int) -> str:
           return a  # pyre-ignore[7][5]
       |}
-      ["Unused ignore [0]: Pyre ignore [5] is extraneous; there is no matching type error here."];
+      ["Unused ignore [0]: Pyre ignore [5] is extraneous."];
     assert_errors
       {|
         def bar(x: int) -> int:
@@ -238,7 +235,7 @@ let ignore_lines_test context =
         def foo(a: int) -> str:
           return bar(a.undefined)  # pyre-ignore[7][5][16]
       |}
-      ["Unused ignore [0]: Pyre ignore [5] is extraneous; there is no matching type error here."]
+      ["Unused ignore [0]: Pyre ignore [5] is extraneous."]
   in
   with_bracket_chdir context (bracket_tmpdir context) check
 
