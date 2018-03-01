@@ -108,6 +108,12 @@ let test_parse _ =
     ]
     [create_ignore 1 [7; 1; 2] PyreFixme 1 30 1 49];
 
+  assert_ignore
+    [
+      "def foo() -> str: return 1  # pyre-fixme[7, 1, 2]: something about Class[Derp4]"
+    ]
+    [create_ignore 1 [7; 1; 2] PyreFixme 1 30 1 79];
+
   (* Comment on preceding line. *)
   assert_ignore
     ["# pyre-ignore[7]"; "def foo() -> str: return"]

@@ -65,7 +65,10 @@ module Metadata = struct
       let create_ignore ~index ~line ~kind =
         let codes =
           try
-            Str.search_forward (Str.regexp "pyre-\\(ignore\\|fixme\\)\\[\\(.*\\)\\]") line 0
+            Str.search_forward
+              (Str.regexp "pyre-\\(ignore\\|fixme\\)\\[\\([0-9, ]+\\)\\]")
+              line
+              0
             |> ignore;
             Str.matched_group 2 line
             |> Str.split (Str.regexp "[^0-9]+")
