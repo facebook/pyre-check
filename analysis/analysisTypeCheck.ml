@@ -670,11 +670,11 @@ module State = struct
       | `Right state ->
           Some state
     in
-    let widen_annotations ~key:_ = function
+    let widen_annotations ~key = function
       | `Both (previous, next) ->
           Some (Refinement.widen ~resolution ~widening_threshold ~previous ~next ~iteration)
       | `Left previous
-      | `Right previous ->
+      | `Right previous when List.length key = 1->
           let widened =
             Refinement.widen
               ~resolution
@@ -684,6 +684,8 @@ module State = struct
               ~iteration
           in
           Some widened
+      | _ ->
+          None
     in
     {
       previous with

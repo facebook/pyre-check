@@ -4492,7 +4492,17 @@ let test_check_unbound_variables _ =
         assert unknown is None or 1
         return unknown
     |}
-    ["Incompatible return type [7]: Expected `int` but got `unknown`."]
+    ["Incompatible return type [7]: Expected `int` but got `unknown`."];
+  assert_type_errors
+    {|
+      class Foo:
+        attribute: bool
+        def foo(self) -> int:
+          if not self.attribute:
+            self.attribute = True
+          return self.attribute
+    |}
+    ["Incompatible return type [7]: Expected `int` but got `bool`."]
 
 
 let assert_infer
