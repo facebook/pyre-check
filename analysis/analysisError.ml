@@ -531,13 +531,17 @@ let description
         ]
     | UnusedIgnore codes ->
         let string_from_codes codes =
-          List.map ~f:(Format.asprintf "[%d]") codes
-          |> String.concat ~sep:", "
+          if List.length codes > 0 then
+            List.map ~f:Int.to_string codes
+            |> String.concat ~sep:", "
+            |> Format.asprintf "[%s] "
+          else
+            ""
         in
         let plural = List.length codes > 1 in
         [
           Format.asprintf
-            "Pyre ignore%s %s %s extraneous."
+            "Pyre ignore%s %s%s extraneous."
             (if plural then "s" else "")
             (string_from_codes codes)
             (if plural then "are" else "is")

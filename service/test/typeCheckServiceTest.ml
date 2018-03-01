@@ -186,13 +186,13 @@ let ignore_lines_test context =
         def foo(a: int) -> int:
           return a  # pyre-ignore
       |}
-      ["Unused ignore [0]: Pyre ignore  is extraneous."];
+      ["Unused ignore [0]: Pyre ignore is extraneous."];
     assert_errors
       {|
         def foo(a: int) -> int:
           return a  # pyre-fixme
       |}
-      ["Unused ignore [0]: Pyre ignore  is extraneous."];
+      ["Unused ignore [0]: Pyre ignore is extraneous."];
     assert_errors
       {|
         def foo(a: int) -> int:
@@ -213,7 +213,7 @@ let ignore_lines_test context =
         def foo(a: int) -> int:
           return a  # pyre-ignore[7][5]
       |}
-      ["Unused ignore [0]: Pyre ignores [7], [5] are extraneous."];
+      ["Unused ignore [0]: Pyre ignores [7, 5] are extraneous."];
     assert_errors
       {|
         def foo(a: int) -> str:
