@@ -320,18 +320,18 @@ let test_join _ =
   assert_state_equal (State.join (create []) (create [])) (create []);
   assert_state_equal
     (State.join (create []) (create ["x", Type.integer]))
-    (create ["x", Type.union [Type.integer; Type.unbound]]);
+    (create ["x", Type.Top]);
   assert_state_equal (State.join (create []) (create ["x", Type.Top])) (create ["x", Type.Top]);
   assert_state_equal
     (State.join
        (create ["x", Type.integer])
        (create ["x", Type.integer; "y", Type.integer]))
-    (create ["x", Type.integer; "y", Type.union [Type.integer; Type.unbound]]);
+    (create ["x", Type.integer; "y", Type.Top]);
 
   (* > *)
   assert_state_equal
     (State.join (create ["x", Type.integer]) (create []))
-    (create ["x", Type.union [Type.integer; Type.unbound]]);
+    (create ["x", Type.Top]);
   assert_state_equal
     (State.join (create ["x", Type.Top]) (create []))
     (create ["x", Type.Top]);
@@ -347,7 +347,7 @@ let test_join _ =
        (create ["x", Type.integer])
        (create ["y", Type.integer]))
     (create
-      ["x", Type.union [Type.integer; Type.unbound]; "y", Type.union [Type.integer; Type.unbound]])
+      ["x", Type.Top; "y", Type.Top])
 
 
 let test_widen _ =
@@ -4485,7 +4485,14 @@ let test_check_unbound_variables _ =
           other = 1
         return result
     |}
-    ["Incompatible return type [7]: Expected `int` but got `typing.Union[int, typing.Unbound]`."]
+    ["Incompatible return type [7]: Expected `int` but got `typing.Union[int, typing.Unbound]`."];
+  assert_type_errors
+    {|
+      def foo() -> int:
+        assert unknown is None or 1
+        return unknown
+    |}
+    ["Incompatible return type [7]: Expected `int` but got `unknown`."]
 
 
 let assert_infer

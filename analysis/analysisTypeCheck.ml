@@ -570,9 +570,9 @@ module State = struct
     let merge_annotations ~key:_ = function
       | `Both (left, right) ->
           Some (Refinement.join ~resolution left right)
-      | `Left annotation
-      | `Right annotation ->
-          Some (Refinement.join ~resolution annotation (Annotation.create Type.unbound))
+      | `Left _
+      | `Right _ ->
+          Some (Annotation.create Type.Top)
     in
     {
       left with
