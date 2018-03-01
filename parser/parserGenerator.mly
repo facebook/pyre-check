@@ -321,13 +321,13 @@ small_statement:
       }]
     }
 
-  | start = ASSERT; test = test_list {
+  | start = ASSERT; test = test {
       [{
         Node.location = location_create_with_stop ~start ~stop:(Node.stop test);
         value = Assert { Assert.test; message = None }
       }]
     }
-  | start = ASSERT; test = expression;
+  | start = ASSERT; test = test;
     COMMA; message = test {
       [{
         Node.location = location_create_with_stop ~start ~stop:(Node.stop test);

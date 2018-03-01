@@ -2809,16 +2809,15 @@ let test_assert _ =
       };
     ];
   assert_parsed_equal
-    "assert a, b or c"
+    "assert a is not None, 'b or c'"
     [
       +Assert {
-        Assert.test = !"a";
-        message = Some (+BooleanOperator {
-            BooleanOperator.left = !"b";
-            operator = BooleanOperator.Or;
-            right = !"c";
-          });
-      };
+        Assert.test = +ComparisonOperator {
+          ComparisonOperator.left = !"a";
+          right = [ComparisonOperator.IsNot, !"None"];
+        };
+        message = Some (+String "b or c");
+      }
     ]
 
 
