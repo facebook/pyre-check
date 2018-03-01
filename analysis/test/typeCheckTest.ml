@@ -1717,8 +1717,7 @@ let test_strict _ =
     |}
     [
       "Missing return annotation [3]: Returning `int` but no return type is specified.";
-      "Incompatible parameter type [6]: 1st parameter `x` to call `foo` expected `int` but " ^
-      "got `unknown`.";
+      "Incompatible parameter type [6]: Expected `int` but got `unknown`.";
     ]
 
 
@@ -1867,8 +1866,7 @@ let test_check_optional _ =
     [
       "Missing return annotation [3]: Returning `typing.Union[bool, int]` " ^
       "but type `Any` is specified.";
-      "Incompatible parameter type [6]: 1st parameter `i` to call `int_to_bool` expected `int` " ^
-      "but got `typing.Optional[int]`.";
+      "Incompatible parameter type [6]: Expected `int` but got `typing.Optional[int]`.";
     ];
 
   assert_type_errors
@@ -1926,8 +1924,7 @@ let test_check_function_parameters _ =
         int_to_int(1.0)
     |}
     [
-      "Incompatible parameter type [6]: 1st parameter `i` to call `int_to_int` expected `int` " ^
-      "but got `float`.";
+      "Incompatible parameter type [6]: Expected `int` but got `float`.";
     ];
   assert_type_errors
     {|
@@ -1937,8 +1934,7 @@ let test_check_function_parameters _ =
         preprocessed(1.0)
     |}
     [
-      "Incompatible parameter type [6]: 1st parameter `i` to call `preprocessed` expected `str` " ^
-      "but got `float`.";
+      "Incompatible parameter type [6]: Expected `str` but got `float`.";
     ];
 
   assert_type_errors
@@ -1947,8 +1943,7 @@ let test_check_function_parameters _ =
         return int_to_int(1.0)
     |}
     [
-      "Incompatible parameter type [6]: 1st parameter `i` to call `int_to_int` expected `int` " ^
-      "but got `float`.";
+      "Incompatible parameter type [6]: Expected `int` but got `float`.";
     ];
 
   assert_type_errors
@@ -1986,8 +1981,7 @@ let test_check_function_parameters _ =
       return to_int(a or int_to_str(a))
     |}
     [
-      "Incompatible parameter type [6]: 1st parameter `i` to call `int_to_str` expected `int` " ^
-      "but got `typing.Optional[int]`.";
+      "Incompatible parameter type [6]: Expected `int` but got `typing.Optional[int]`.";
     ];
 
   assert_type_errors
@@ -2101,8 +2095,7 @@ let test_check_variable_arguments _ =
         foo('asdf', *b)
     |}
     [
-      "Incompatible parameter type [6]: 1st parameter `a` to call `foo` expected `int` but got " ^
-      "`str`.";
+      "Incompatible parameter type [6]: Expected `int` but got `str`.";
     ];
 
   assert_type_errors
@@ -2113,8 +2106,7 @@ let test_check_variable_arguments _ =
         foo ( *b, 'asdf' )  # assuming b = []
     |}
     [
-      "Incompatible parameter type [6]: 1st parameter `a` to call `foo` expected `int` but got " ^
-      "`str`.";
+      "Incompatible parameter type [6]: Expected `int` but got `str`.";
     ];
 
   assert_type_errors
@@ -2143,8 +2135,7 @@ let test_check_variable_arguments _ =
         durp ( *b, 1.0 )  # assuming b = [_]
     |}
     [
-      "Incompatible parameter type [6]: 2nd parameter `b` to call `durp` expected `str` but got " ^
-      "`float`.";
+      "Incompatible parameter type [6]: Expected `str` but got `float`.";
     ];
 
   assert_type_errors
@@ -2155,8 +2146,7 @@ let test_check_variable_arguments _ =
         return foo('asdf', *b)
     |}
     [
-      "Incompatible parameter type [6]: 1st parameter `a` to call `foo` expected `int` but got " ^
-      "`str`.";
+      "Incompatible parameter type [6]: Expected `int` but got `str`.";
     ]
 
 
@@ -2197,8 +2187,7 @@ let test_check_method_parameters _ =
         input.substr('asdf')
     |}
     [
-      "Incompatible parameter type [6]: 1st parameter `index` to call `str.substr` expected " ^
-      "`int` but got `str`.";
+      "Incompatible parameter type [6]: Expected `int` but got `str`.";
     ];
 
   assert_type_errors
@@ -2209,10 +2198,8 @@ let test_check_method_parameters _ =
         foo(1, 2)
     |}
     [
-      "Incompatible parameter type [6]: 1st parameter `a` to call `foo` expected `str` but got " ^
-      "`int`.";
-      "Incompatible parameter type [6]: 2nd parameter `b` to call `foo` expected `str` but got " ^
-      "`int`.";
+      "Incompatible parameter type [6]: Expected `str` but got `int`.";
+      "Incompatible parameter type [6]: Expected `str` but got `int`.";
     ];
 
   assert_type_errors
@@ -2221,8 +2208,7 @@ let test_check_method_parameters _ =
         return input.substr('asdf')
     |}
     [
-      "Incompatible parameter type [6]: 1st parameter `index` to call `str.substr` expected " ^
-      "`int` but got `str`.";
+      "Incompatible parameter type [6]: Expected `int` but got `str`.";
     ];
 
   assert_type_errors
@@ -2231,10 +2217,8 @@ let test_check_method_parameters _ =
         input.substr('asdf').substr('asdf')
     |}
     [
-      "Incompatible parameter type [6]: 1st parameter `index` to call `str.substr` expected " ^
-      "`int` but got `str`.";
-      "Incompatible parameter type [6]: 1st parameter `index` to call `str.substr` expected " ^
-      "`int` but got `str`.";
+      "Incompatible parameter type [6]: Expected `int` but got `str`.";
+      "Incompatible parameter type [6]: Expected `int` but got `str`.";
     ];
 
   assert_type_errors
@@ -2242,10 +2226,7 @@ let test_check_method_parameters _ =
       def foo(input: str) -> None:
         input + 1
     |}
-    [
-      "Incompatible parameter type [6]: 1st parameter `other` to call `str.__add__` expected " ^
-      "`str` but got `int`.";
-    ];
+    ["Incompatible parameter type [6]: Expected `str` but got `int`."];
 
   assert_type_errors
     {|
@@ -2343,10 +2324,7 @@ let test_check_static _ =
       def foo() -> None:
         Foo.foo('asdf')
     |}
-    [
-      "Incompatible parameter type [6]: 1st parameter `input` to call `Foo.foo` expected `int` " ^
-      "but got `str`.";
-    ];
+    ["Incompatible parameter type [6]: Expected `int` but got `str`."];
   assert_type_errors
     {|
       class Foo:
@@ -2358,10 +2336,7 @@ let test_check_static _ =
           self.foo('asdf')
 
     |}
-    [
-      "Incompatible parameter type [6]: 1st parameter `input` to call `Foo.foo` expected `int` " ^
-      "but got `str`.";
-    ];
+    ["Incompatible parameter type [6]: Expected `int` but got `str`."];
 
   (* Class method calls are properly resolved. *)
   assert_type_errors
@@ -2374,10 +2349,7 @@ let test_check_static _ =
       def foo() -> None:
         Foo.foo('asdf')
     |}
-    [
-      "Incompatible parameter type [6]: 1st parameter `input` to call `Foo.foo` expected `int` " ^
-      "but got `str`.";
-    ];
+    ["Incompatible parameter type [6]: Expected `int` but got `str`."];
 
   assert_type_errors
     {|
@@ -2395,10 +2367,7 @@ let test_check_static _ =
         def classmethod(cls, i: int) -> None:
           cls.classmethod('1234')
     |}
-    [
-      "Incompatible parameter type [6]: 1st parameter `i` to call `Foo.classmethod` expected " ^
-      "`int` but got `str`.";
-    ];
+    ["Incompatible parameter type [6]: Expected `int` but got `str`."];
   assert_type_errors
     {|
       class Foo:
@@ -2409,10 +2378,7 @@ let test_check_static _ =
         def classmethod(cls, i: int) -> None:
           cls.staticmethod('1234')
     |}
-    [
-      "Incompatible parameter type [6]: 1st parameter `i` to call `Foo.staticmethod` expected " ^
-      "`int` but got `str`.";
-    ];
+    ["Incompatible parameter type [6]: Expected `int` but got `str`."];
   assert_type_errors
     {|
       class Foo:
@@ -2422,10 +2388,7 @@ let test_check_static _ =
         def classmethod(cls, i: int) -> None:
           cls.instancemethod(Foo(), '1234')
     |}
-    [
-      "Incompatible parameter type [6]: 1st parameter `i` to call `Foo.instancemethod` expected " ^
-      "`int` but got `str`.";
-    ]
+    ["Incompatible parameter type [6]: Expected `int` but got `str`."]
 
 
 let test_check_init _ =
@@ -2578,10 +2541,7 @@ let test_check_init _ =
         pass
     a = Foo("")
     |}
-    [
-      "Incompatible parameter type [6]: 1st parameter `x` to call `Foo.Foo` expected `int` but " ^
-      "got `str`.";
-    ]
+    ["Incompatible parameter type [6]: Expected `int` but got `str`."]
 
 
 let test_check_attributes _ =
@@ -3378,10 +3338,8 @@ let test_check_named_arguments _ =
         return str_float_to_int(f="No",i="Hi")
     |}
     [
-      "Incompatible parameter type [6]: 1st parameter `i` to call `str_float_to_int` expected " ^
-      "`str` but got `float`.";
-      "Incompatible parameter type [6]: 1st parameter `f` to call `str_float_to_int` expected " ^
-      "`float` but got `str`.";
+      "Incompatible parameter type [6]: Expected `str` but got `float`.";
+      "Incompatible parameter type [6]: Expected `float` but got `str`.";
     ]
 
 
@@ -3806,10 +3764,8 @@ let test_check_nested _ =
         int_to_int(1.0)
     |}
     [
-      "Incompatible parameter type [6]: 1st parameter `i` to call `int_to_int` expected `int` " ^
-      "but got `float`.";
-      "Incompatible parameter type [6]: 1st parameter `i` to call `int_to_int` expected `int` " ^
-      "but got `float`.";
+      "Incompatible parameter type [6]: Expected `int` but got `float`.";
+      "Incompatible parameter type [6]: Expected `int` but got `float`.";
     ]
 
 
@@ -3974,10 +3930,7 @@ let test_check_refinement _ =
 let test_check_toplevel _ =
   assert_type_errors
     "int_to_int(1.0)"
-    [
-      "Incompatible parameter type [6]: 1st parameter `i` to call `int_to_int` expected `int` " ^
-      "but got `float`.";
-    ]
+    ["Incompatible parameter type [6]: Expected `int` but got `float`."]
 
 
 let test_check_tuple _ =
@@ -3986,10 +3939,7 @@ let test_check_tuple _ =
       def foo(a: typing.Tuple[int, int]) -> None:
         a.tuple_method(1.0)
     |}
-    [
-      "Incompatible parameter type [6]: 1st parameter `a` to call `tuple.tuple_method` expected " ^
-      "`int` but got `float`.";
-    ];
+    ["Incompatible parameter type [6]: Expected `int` but got `float`."];
   assert_type_errors
     {|
       def foo() -> typing.Tuple[int, ...]:
@@ -4094,10 +4044,7 @@ let test_check_assert _ =
         if optional or len(optional) > 0:
           pass
     |}
-    [
-      "Incompatible parameter type [6]: 1st parameter `o` to call `len` expected `typing.Sized` " ^
-      "but got `typing.Optional[str]`.";
-    ];
+    ["Incompatible parameter type [6]: Expected `typing.Sized` but got `typing.Optional[str]`."];
   assert_type_errors
     {|
       def foo(optional: typing.Optional[str]) -> None:
@@ -4377,10 +4324,7 @@ let test_check_constructors _ =
       def foo() -> Foo:
         return Foo('asdf')
     |}
-    [
-      "Incompatible parameter type [6]: 1st parameter `i` to call `Foo.Foo` expected `int` but " ^
-      "got `str`.";
-    ];
+    ["Incompatible parameter type [6]: Expected `int` but got `str`."];
   assert_type_errors
     {|
       class Foo:
@@ -4391,10 +4335,8 @@ let test_check_constructors _ =
         Foo(1, 2)
     |}
     [
-      "Incompatible parameter type [6]: 1st parameter `i` to call `Foo.Foo` expected `int` but " ^
-      "got `str`.";
-      "Incompatible parameter type [6]: 2nd parameter `s` to call `Foo.Foo` expected " ^
-      "`typing.Optional[str]` but got `int`.";
+      "Incompatible parameter type [6]: Expected `int` but got `str`.";
+      "Incompatible parameter type [6]: Expected `typing.Optional[str]` but got `int`.";
     ];
 
   (* Explicit call. *)
@@ -4406,10 +4348,7 @@ let test_check_constructors _ =
         def foo(self) -> None:
           Foo.__init__(self, 'asdf')
     |}
-    [
-      "Incompatible parameter type [6]: 1st parameter `i` to call `Foo.__init__` expected `int` " ^
-      "but got `str`.";
-    ];
+    ["Incompatible parameter type [6]: Expected `int` but got `str`."];
 
   (* Super calls. *)
   assert_type_errors
@@ -4421,10 +4360,7 @@ let test_check_constructors _ =
         def foo(self, i: int) -> None:
           super().foo('asdf')
     |}
-    [
-      "Incompatible parameter type [6]: 1st parameter `i` to call " ^
-      "`Super.foo` expected `int` but got `str`.";
-    ];
+    ["Incompatible parameter type [6]: Expected `int` but got `str`."];
   assert_type_errors
     {|
       class Super:
@@ -4434,10 +4370,7 @@ let test_check_constructors _ =
         def __init__(self, i: int) -> None:
           super().__init__('asdf')
     |}
-    [
-      "Incompatible parameter type [6]: 1st parameter `i` to call `Super.__init__` " ^
-      "expected `int` but got `str`."
-    ];
+    ["Incompatible parameter type [6]: Expected `int` but got `str`."];
 
   assert_type_errors
     {|

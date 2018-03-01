@@ -393,13 +393,15 @@ let description
         in
         [
           Format.asprintf
-            "%s parameter %s to call `%s%a` expected %a but got %a."
+            "Expected %a but got %a."
+            Type.pp expected
+            Type.pp actual;
+          Format.asprintf
+            "%s parameter %s to call `%s%a`."
             (ordinal position)
             name
             parent
             Access.pp callee_name
-            Type.pp expected
-            Type.pp actual
         ]
     | IncompatibleReturnType { actual; expected } ->
         [
