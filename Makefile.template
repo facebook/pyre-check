@@ -11,7 +11,7 @@ TEST_FLAGS = -runner sequential
 TESTS = $(foreach include, $(INCLUDES), $(patsubst %.ml, %.native, $(wildcard $(include)/test/*Test.ml)))
 
 .PHONY: all
-all: hack_parallel
+all: hack_parallel development_tags
 	$(BUILD) -build-dir _build/all main.native
 
 .PHONY: byte
@@ -26,9 +26,13 @@ $(RUN_TESTS):
 	@$@ $(TEST_FLAGS)
 
 .PHONY: test
-test: hack_parallel
+test: hack_parallel development_tags
 	$(BUILD) -pkg oUnit -build-dir _build/test $(TESTS)
 	@$(MAKE) --keep-going $(RUN_TESTS)
+
+.PHONY: release
+release: hack_parallel release_tags
+	$(BUILD) -build-dir _build/all main.native
 
 .PHONY: clean
 clean:
@@ -55,6 +59,14 @@ hack_parallel:
 	@cp -r _build/hack_parallel _build/all/
 	@mkdir -p _build/test
 	@cp -r _build/hack_parallel _build/test/
+
+.PHONY: development_tags
+development_tags:
+	@cp _tags.development _tags
+
+.PHONY: release_tags
+release_tags:
+	@cp _tags.release _tags
 
 .PHONY: remove_hack_parallel
 remove_hack_parallel:

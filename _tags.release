@@ -34,5 +34,4 @@ true: annot
 true: thread
 true: use_menhir
 true: warn(A-4-32-39-42-44-48-57)
-true: debug
-true: optimize(classic)
+true: optimize(3)
