@@ -702,6 +702,101 @@ let test_language_scheduler_definition context =
     (Some (Protocol.LanguageServerProtocolResponse expected_response))
 
 
+let test_incremental_attribute_caching context =
+  let server_lock = Mutex.create () in
+  let connections = ref {
+      ServerState.socket = Unix.stdout;
+      persistent_clients = Unix.File_descr.Table.create ();
+      file_notifiers = [];
+    }
+  in
+  let directory = bracket_tmpdir context |> Path.create_absolute in
+  let configuration =
+    Configuration.create ~source_root:directory ~project_root:directory ()
+  in
+  let server_configuration = ServerConfiguration.create configuration in
+  let old_state = {
+    ServerState.deferred_requests = [];
+    environment =
+      Analysis.Environment.Builder.create ~configuration ()
+      |> Analysis.Environment.handler ~configuration;
+    initial_errors = Error.Hash_set.create ();
+    errors = File.Handle.Table.create ();
+    handles = File.Handle.Set.empty;
+    lookups = String.Table.create ();
+    scheduler = Scheduler.mock ();
+    lock = Mutex.create ();
+    last_request_time = -1.0;
+    connections = connections;
+  }
+  in
+  let source_path = Path.create_relative ~root:directory ~relative:"a.py" in
+  let write_to_file ~content =
+    Out_channel.write_all (Path.absolute source_path) ~data:(trim_extra_indentation content)
+  in
+  let content_with_annotation =
+    {|
+      class A:
+        pass
+      class C:
+        def __init__(self):
+          self.a = A()
+        def f(self)->int:
+          bleh = self.a
+          return 1
+    |}
+  in
+  let content_without_annotation =
+    {|
+      class A:
+        pass
+      class C:
+        def f(self)->int:
+          bleh = self.a
+          return 1
+    |}
+  in
+  write_to_file ~content:content_with_annotation;
+  let initial_state =
+    ServerOperations.initialize ~old_state server_lock connections server_configuration
+  in
+  let request_typecheck state =
+    ServerRequest.process_request
+      Unix.stdout
+      state
+      server_configuration
+      (ServerProtocol.Request.TypeCheckRequest {
+          ServerProtocol.check_dependents = true;
+          files = [File.create source_path];
+        })
+    |> fst
+  in
+  let get_errors { ServerState.errors; _ } = Hashtbl.to_alist errors in
+  let state = request_typecheck initial_state in
+  assert_equal (get_errors state) [];
+
+  write_to_file ~content:content_without_annotation;
+  let state = request_typecheck state in
+  begin
+    match get_errors state with
+    | [_, [{ Analysis.Error.kind; _ }]] ->
+        assert_equal
+          ~printer:Analysis.Error.show_kind
+          kind
+          (Analysis.Error.UndefinedAttribute {
+              Analysis.Error.annotation = Type.primitive "C";
+              attribute = Ast.Expression.Access.create "a";
+              class_attribute = true;
+            })
+    | _ ->
+        assert_unreached ()
+  end;
+
+  write_to_file ~content:content_with_annotation;
+  let state = request_typecheck state in
+  assert_equal (get_errors state) []
+
+
 let () =
   CommandTest.run_command_tests
     "server"
@@ -721,6 +816,7 @@ let () =
       "incremental_typecheck", test_incremental_typecheck;
       "incremental_repopulate", test_incremental_repopulate;
       "incremental_lookups", test_incremental_lookups;
+      "incremental_attribute_caching", test_incremental_attribute_caching;
       "language_scheduler_definition", test_language_scheduler_definition;
       "language_server_protocol_json_format", test_language_server_protocol_json_format;
     ]
