@@ -399,7 +399,7 @@ let test_forward _ =
     ["a", Type.integer; "b", Type.Top; "c", Type.integer; "d", Type.Top];
 
   (* Here be dragons... *)
-  assert_forward ["z", Type.integer] "x, y = z" ["z", Type.integer];
+  assert_forward ["z", Type.integer] "x, y = z" ["x", Type.Top; "y", Type.Top; "z", Type.integer];
 
   (* Literals. *)
   assert_forward [] "x = 1.0" ["x", Type.float];

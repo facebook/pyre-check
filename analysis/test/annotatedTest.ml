@@ -82,7 +82,7 @@ let test_assign_fold _ =
   assert_fold "a = i" ["a", Type.integer];
   assert_fold "a, b = i, s" ["a", Type.integer; "b", Type.string];
   assert_fold "a, b = t" ["a", Type.integer; "b", Type.float];
-  assert_fold "a, b = unknown" []
+  assert_fold "a, b = unknown" ["a", Type.Top; "b", Type.Top]
 
 
 let test_method_overrides _ =

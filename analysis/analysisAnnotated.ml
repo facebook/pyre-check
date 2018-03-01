@@ -91,7 +91,7 @@ module Assign = struct
                 | Type.Tuple (Type.Unbounded parameter) ->
                     List.map ~f:(fun _ -> parameter) targets
                 | _ ->
-                    []
+                    List.map ~f:(fun _ -> Type.Top) targets
               in
               if List.length targets = List.length parameters then
                 List.fold2_exn ~init:accumulator ~f:fold_simple_assign targets parameters
