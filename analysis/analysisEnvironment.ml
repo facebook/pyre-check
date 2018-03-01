@@ -97,7 +97,7 @@ let register_type
     (* Handle definition. *)
     begin
       match definition with
-      | Some ({ Node.value = definition; _ } as definition_node) ->
+      | Some ({ Node.value = { Class.bases; _ } as definition; _ } as definition_node) ->
           add_class_key ~path primitive;
           let annotated = Annotated.Class.create definition_node in
 
@@ -150,7 +150,15 @@ let register_type
                     "Trivial cycle found: %a -> %a"
                     Type.pp primitive
                     Type.pp super_annotation in
-              List.iter definition.Class.bases ~f:register_supertype
+              let bases =
+                let inferred_base =
+                  Annotated.Class.inferred_generic_base
+                    ~aliases
+                    (Annotated.Class.create definition_node)
+                in
+                inferred_base @ bases
+              in
+              List.iter bases ~f:register_supertype
             end
           else if not (Type.equal primitive Type.Object) &&
                   not (Type.equal primitive Type.Top) then

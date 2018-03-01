@@ -766,6 +766,8 @@ let base_environment =
     class str(): ...
     class int(): ...
     class list(typing.Iterable[_T], typing.Generic[_T]): ...
+    # implicitly subclasses generic.
+    class typing.Collection(typing.Iterable[_T]): ...
   |}
 
 let assert_instantiated
@@ -926,6 +928,17 @@ let test_function_signature_variable_instantiation _ =
     "foo"
     (normal [Type.string]) (* Not all parameter types provided. *)
     ["a", Some Type.string; "b", Some Type.integer]
+    None;
+
+  assert_instantiated
+    {|
+      _T = typing.TypeVar('_T')
+      def foo(a: typing.Iterable[_T]):
+        pass
+    |}
+    "foo"
+    (normal [Type.parametric "typing.Collection" [Type.integer]])
+    ["a", Some (Type.parametric "typing.Iterable" [Type.integer])]
     None;
 
   assert_instantiated

@@ -245,8 +245,20 @@ module Class = struct
         when Type.is_protocol annotation ->
           Some parameters
       | _ ->
-          None in
-    List.find_map ~f:generic bases
+          None
+    in
+    let find_single_type_variable { Argument.value; _ } =
+      match Resolution.parse_annotation resolution value with
+      | Type.Parametric { Type.parameters = [AnalysisType.Variable variable]; _ } ->
+          Some [AnalysisType.Variable variable]
+      | _ ->
+          None
+    in
+    begin
+      match List.find_map ~f:generic bases with
+      | None -> List.find_map ~f:find_single_type_variable bases
+      | Some parameters -> Some parameters
+    end
     |> Option.value ~default:[]
 
 
@@ -274,6 +286,40 @@ module Class = struct
           free_variables
     in
     iterate ~free_variables:[] ~bases ~parameters |> List.rev
+
+
+  let inferred_generic_base { Node.value = { Class.bases; _ }; _ } ~aliases =
+    let is_generic { Argument.value; _ } =
+      let primitive, _ =
+        Type.create ~aliases value
+        |> Type.split
+      in
+      Type.equal primitive Type.generic
+    in
+    let find_single_type_variable { Argument.value; _ } =
+      let _, parameters =
+        Type.create ~aliases value
+        |> Type.split
+      in
+      match parameters with
+      | [AnalysisType.Variable variable] ->
+          Some (AnalysisType.Variable variable)
+      | _ ->
+          None
+    in
+    if List.exists ~f:is_generic bases then
+      []
+    else
+      begin
+        List.find_map ~f:find_single_type_variable bases
+        >>| fun annotation -> [{
+            Ast.Argument.name = None;
+            value =
+              Type.parametric "typing.Generic" [annotation]
+              |> Type.expression;
+          }]
+      end
+      |> Option.value ~default:[]
 
 
   module ConstraintsKey = struct

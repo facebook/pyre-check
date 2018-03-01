@@ -249,6 +249,13 @@ let test_generics _ =
       _T = typing.TypeVar('_T')
       class Foo(typing.Protocol[_T]): pass
     |}
+    [variable "_T"];
+
+  assert_generics
+    {|
+      _T = typing.TypeVar('_T')
+      class Foo(typing.Iterable[_T]): pass
+    |}
     [variable "_T"]
 
 
@@ -922,6 +929,71 @@ let test_constraints _ =
     [variable "_T", Type.integer]
 
 
+let test_inferred_generic_base _ =
+  let assert_inferred_generic ~target ~aliases source expected =
+    let target =
+      let { Source.statements; _ } = parse source in
+      let target = function
+        | { Node.location; value = Statement.Class ({ Statement.Class.name; _ } as definition) }
+          when Expression.Access.show name = target ->
+            Some (Class.create { Node.location; value = definition })
+        | _ ->
+            None
+      in
+      List.find_map ~f:target statements
+      |> value
+    in
+    assert_equal
+      ~cmp:(List.equal ~equal:(Argument.equal Expression.equal))
+      expected
+      (Annotated.Class.inferred_generic_base ~aliases target)
+  in
+  let aliases = function
+    | Type.Primitive identifier ->
+        if Identifier.show identifier = "_T" then
+          Some (Type.Variable {Type.variable = identifier; constraints = [] })
+        else
+          None
+    | _ -> None
+  in
+  assert_inferred_generic
+    ~target:"C"
+    ~aliases
+    {|
+       class C:
+         pass
+     |}
+    [];
+  assert_inferred_generic
+    ~target:"C"
+    ~aliases
+    {|
+       _T = TypeVar("_T")
+       class List(typing.Generic[_T]):
+         pass
+       class C(List[_T]):
+         pass
+     |}
+    [{
+      Ast.Argument.name = None;
+      value = Type.expression
+          (Type.parametric
+             "typing.Generic"
+             [Type.Variable { Type.variable = Identifier.create "_T"; constraints = [] }])
+    }];
+  assert_inferred_generic
+    ~target:"List"
+    ~aliases
+    {|
+       _T = TypeVar("_T")
+       class Iterable(typing.Generic[_T]):
+         pass
+       class List(Iterable[_T], typing.Generic[_T]):
+         pass
+     |}
+    []
+
+
 let test_return_annotation _ =
   let assert_return_annotation return_annotation async expected =
     let return_annotation =
@@ -1276,6 +1348,7 @@ let () =
     "attributes">::test_class_attributes;
     "fallback_attribute">::test_fallback_attribute;
     "constraints">::test_constraints;
+    "inferred_generic_base">::test_inferred_generic_base;
   ]
   |> run_test_tt_main;
   "define">:::[

@@ -85,6 +85,11 @@ module Class : sig
     -> parameters: Type.t list
     -> (Type.t option) list
 
+  val inferred_generic_base
+    :  t
+    -> aliases: (Type.t -> Type.t option)
+    -> (Expression.t Argument.t) list
+
   val constraints
     :  ?target: t
     -> t
