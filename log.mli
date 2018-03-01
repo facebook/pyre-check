@@ -13,6 +13,7 @@ type section = [
   | `Environment
   | `Error
   | `Event
+  | `Fixpoint
   | `Info
   | `Performance
   | `Protocols

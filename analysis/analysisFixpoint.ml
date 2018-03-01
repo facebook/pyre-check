@@ -113,7 +113,17 @@ module Make (State: State) = struct
 
   let forward cfg ~initial =
     let transition init statements =
-      List.fold_left ~f:State.forward ~init statements
+      let forward before statement =
+        let after = State.forward before statement in
+        Log.log
+          ~section:`Fixpoint
+          "\n%a\n  {  %a  }\n\n%a"
+          State.pp before
+          Ast.Statement.pp statement
+          State.pp after;
+        after
+      in
+      List.fold_left ~f:forward ~init statements
     in
     compute_fixpoint
       cfg

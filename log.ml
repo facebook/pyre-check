@@ -15,6 +15,7 @@ type section = [
   | `Environment
   | `Error
   | `Event
+  | `Fixpoint
   | `Info
   | `Performance
   | `Protocols
@@ -32,6 +33,7 @@ let section_to_string = function
   | `Environment -> "Environment"
   | `Error -> "Error"
   | `Event -> "Event"
+  | `Fixpoint -> "Fixpoint"
   | `Info -> "Info"
   | `Performance -> "Performance"
   | `Protocols -> "Protocols"
