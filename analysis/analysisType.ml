@@ -312,6 +312,9 @@ let tuple parameters: t =
   | _ -> Tuple (Bounded parameters)
 
 
+let unbound =
+  primitive "typing.Unbound"
+
 let union parameters =
   let parameters =
     let rec flattened parameters =

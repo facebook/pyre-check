@@ -1148,6 +1148,7 @@ module Builder = struct
     insert_unconnected (Type.primitive "typing.Protocol");
     insert_unconnected (Type.primitive "typing.Callable");
     insert_unconnected (Type.primitive "typing.Optional");
+    insert_unconnected (Type.primitive "typing.Unbound");
 
     let type_special_form = Type.Primitive (Identifier.create "typing.Type") in
     let type_builtin = Type.Primitive (Identifier.create "type") in

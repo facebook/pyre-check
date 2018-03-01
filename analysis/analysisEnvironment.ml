@@ -1072,20 +1072,21 @@ module Builder = struct
     let dependencies = Dependencies.create () in
     let ignore_lines = Location.Table.create () in
 
-    (* Add class for `typing.Optional` that is currently not encoded in the stubs. *)
-    let optional =
-      {
-        Class.name = Access.create "typing.Optional";
-        bases = [];
-        body = [];
-        decorators = [];
-        docstring = None;
-      }
+    (* Add classes for `typing.Optional` and `typing.Unbound` that are currently not encoded in the
+       stubs. *)
+    let add_special_class name =
+      let definition =
+        {
+          Class.name = Access.create name;
+          bases = [];
+          body = [];
+          decorators = [];
+          docstring = None;
+        }
+      in
+      Hashtbl.set ~key:(Type.primitive name) ~data:(Node.create definition) class_definitions;
     in
-    Hashtbl.set
-      ~key:(Type.primitive "typing.Optional")
-      ~data:(Node.create optional)
-      class_definitions;
+    List.iter ~f:add_special_class ["typing.Optional"; "typing.Unbound"];
 
     {
       function_definitions;

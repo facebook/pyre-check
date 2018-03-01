@@ -560,25 +560,24 @@ module State = struct
   let rec join left right =
     let resolution = resolution left in
 
-    let merge join ~key:_ = function
+    let merge_errors ~key:_ = function
       | `Both (left, right) ->
-          Some (join left right)
+          Some (Error.join ~resolution left right)
       | `Left state
       | `Right state ->
           Some state
     in
+    let merge_annotations ~key:_ = function
+      | `Both (left, right) ->
+          Some (Refinement.join ~resolution left right)
+      | `Left annotation
+      | `Right annotation ->
+          Some (Refinement.join ~resolution annotation (Annotation.create Type.unbound))
+    in
     {
       left with
-      errors =
-        Map.merge
-          ~f:(merge (Error.join ~resolution))
-          left.errors
-          right.errors;
-      annotations =
-        Map.merge
-          ~f:(merge (Refinement.join ~resolution))
-          left.annotations
-          right.annotations;
+      errors = Map.merge ~f:merge_errors left.errors right.errors;
+      annotations = Map.merge ~f:merge_annotations left.annotations right.annotations;
     }
 
 
@@ -664,25 +663,32 @@ module State = struct
   and widen ~previous ~next ~iteration =
     let resolution = resolution previous in
 
-    let merge widen ~key:_ = function
+    let widen_errors ~key:_ = function
       | `Both (previous, next) ->
-          Some (widen ~previous ~next ~iteration)
+          Some (Error.widen ~resolution ~previous ~next ~iteration)
       | `Left state
       | `Right state ->
           Some state
     in
+    let widen_annotations ~key:_ = function
+      | `Both (previous, next) ->
+          Some (Refinement.widen ~resolution ~widening_threshold ~previous ~next ~iteration)
+      | `Left previous
+      | `Right previous ->
+          let widened =
+            Refinement.widen
+              ~resolution
+              ~widening_threshold
+              ~previous
+              ~next:(Annotation.create Type.unbound)
+              ~iteration
+          in
+          Some widened
+    in
     {
       previous with
-      errors =
-        Map.merge
-          ~f:(merge (Error.widen ~resolution))
-          previous.errors
-          next.errors;
-      annotations =
-        Map.merge
-          ~f:(merge (Refinement.widen ~resolution ~widening_threshold))
-          previous.annotations
-          next.annotations;
+      errors = Map.merge ~f:widen_errors previous.errors next.errors;
+      annotations = Map.merge ~f:widen_annotations previous.annotations next.annotations;
     }
 
 

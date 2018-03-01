@@ -320,18 +320,18 @@ let test_join _ =
   assert_state_equal (State.join (create []) (create [])) (create []);
   assert_state_equal
     (State.join (create []) (create ["x", Type.integer]))
-    (create ["x", Type.integer]);
+    (create ["x", Type.union [Type.integer; Type.unbound]]);
   assert_state_equal (State.join (create []) (create ["x", Type.Top])) (create ["x", Type.Top]);
   assert_state_equal
     (State.join
        (create ["x", Type.integer])
        (create ["x", Type.integer; "y", Type.integer]))
-    (create ["x", Type.integer; "y", Type.integer]);
+    (create ["x", Type.integer; "y", Type.union [Type.integer; Type.unbound]]);
 
   (* > *)
   assert_state_equal
     (State.join (create ["x", Type.integer]) (create []))
-    (create ["x", Type.integer]);
+    (create ["x", Type.union [Type.integer; Type.unbound]]);
   assert_state_equal
     (State.join (create ["x", Type.Top]) (create []))
     (create ["x", Type.Top]);
@@ -346,7 +346,8 @@ let test_join _ =
     (State.join
        (create ["x", Type.integer])
        (create ["y", Type.integer]))
-    (create ["x", Type.integer; "y", Type.integer])
+    (create
+      ["x", Type.union [Type.integer; Type.unbound]; "y", Type.union [Type.integer; Type.unbound]])
 
 
 let test_widen _ =
@@ -3126,7 +3127,7 @@ let test_check_immutables _ =
         constant: str
       return constant
     |}
-    [];
+    ["Incompatible return type [7]: Expected `str` but got `typing.Union[str, typing.Unbound]`."];
 
   assert_type_errors
     {|
@@ -4474,6 +4475,19 @@ let test_check_meta_annotations _ =
     []
 
 
+let test_check_unbound_variables _ =
+  assert_type_errors
+    {|
+      def foo(flag) -> int:
+        if flag:
+          result = 1
+        else:
+          other = 1
+        return result
+    |}
+    ["Incompatible return type [7]: Expected `int` but got `typing.Union[int, typing.Unbound]`."]
+
+
 let assert_infer
     ?(debug = false)
     ?(infer = true)
@@ -4907,6 +4921,7 @@ let () =
     "check_constructors">::test_check_constructors;
     "check_explicit_method_call">::test_check_explicit_method_call;
     "check_meta_annotations">::test_check_meta_annotations;
+    "check_unbound_variables">::test_check_unbound_variables;
     "infer">::test_infer;
     "infer_backward">::test_infer_backward;
     "recursive_infer">::test_recursive_infer;

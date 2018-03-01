@@ -70,6 +70,7 @@ val meta: t -> t
 val set: t -> t
 val string: t
 val tuple: t list -> t
+val unbound: t
 val union: t list -> t
 val none: t
 val yield: t -> t
