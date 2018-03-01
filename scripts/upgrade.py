@@ -43,25 +43,35 @@ def run_fixme(arguments) -> None:
 
             # Build map from line to error codes.
             codes = defaultdict(lambda: set())
+            descriptions = defaultdict(lambda: set())
             for error in errors:
-                code = re.search(r'\[(\d+)\]', error['description'])
-                if code:
-                    codes[error['line']].add(code.group(1))
+                match = re.search(r'\[(\d+)\]: (.*)', error['description'])
+                if match:
+                    codes[error['line']].add(match.group(1))
+                    descriptions[error['line']].add(match.group(2))
 
             # Replace lines in file.
             path = pathlib.Path(path)
             lines = path.read_text().split('\n')
 
             new_lines = []
-            for number, line in enumerate(lines):
-                if number + 1 in codes:
-                    sorted_codes = sorted(list(codes[number + 1]))
+            for index, line in enumerate(lines):
+                number = index + 1
+                if number in codes:
+                    sorted_codes = sorted(list(codes[number]))
+                    sorted_descriptions = sorted(list(descriptions[number]))
+
+                    description = ''
+                    if arguments.comment:
+                        description = ': ' + arguments.comment
+                    elif arguments.description:
+                        description = ': ' + ', '.join(sorted_descriptions)
+
                     comment = '{}# pyre-fixme[{}]{}'.format(
                         line[:(len(line) - len(line.lstrip(' ')))],  # indent
                         ', '.join([str(code) for code in sorted_codes]),
-                        '' if not arguments.comment \
-                        else ': ' + arguments.comment)
-                    LOG.info('Adding `%s` on line %d', comment, number + 1)
+                        description)
+                    LOG.info('Adding `%s` on line %d', comment, number)
 
                     new_lines.extend([comment, line])
                 else:
@@ -151,6 +161,10 @@ if __name__ == '__main__':
     fixme.add_argument(
         '--comment',
         help='Comment after fixme comments')
+    fixme.add_argument(
+        '--description',
+        action='store_true',
+        help='Comment with the error\'s description')
 
     unused_ignores = commands.add_parser("unused-ignores")
     unused_ignores.set_defaults(function=run_unused_ignores)

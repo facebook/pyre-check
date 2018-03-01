@@ -17,6 +17,7 @@ class PostprocessTest(unittest.TestCase):
     def test_fixme(self, path_read_text, json_load) -> None:
         arguments = MagicMock()
         arguments.comment = None
+        arguments.description = False
 
         # Test empty.
         json_load.return_value = []
@@ -96,3 +97,20 @@ class PostprocessTest(unittest.TestCase):
                 call("# pyre-fixme[0]\n1\n2"),
                 call("1\n#pyre-fixme[1]\n2"),
             ])
+
+        # Test error with description.
+        with patch.object(pathlib.Path, 'write_text') as path_write_text:
+            json_load.return_value = [
+                {
+                    'path': 'path.py',
+                    'line': 1,
+                    'description': 'Error [0]: description',
+                },
+            ]
+
+            path_read_text.return_value = "  1\n2"
+            arguments.description = True
+            upgrade.run_fixme(arguments)
+            arguments.comment = None
+            path_write_text.assert_called_once_with(
+                "  # pyre-fixme[0]: description\n  1\n2")
