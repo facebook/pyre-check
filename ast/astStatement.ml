@@ -802,11 +802,21 @@ module With = struct
     let preamble ({ Node.location; _ } as expression, target) =
       (target
        >>| fun target ->
+       let open Expression in
+       let enter_call = Node.create ~location (Access [
+           Access.Expression expression;
+           Access.Call (Node.create ~location {
+               Call.name = Access (Access.create "__enter__")
+                           |> Node.create ~location;
+               arguments = [];
+             })
+         ])
+       in
        let assign =
          {
            Assign.target;
            annotation = None;
-           value = Some expression;
+           value = Some enter_call;
            compound = None;
            parent = None;
          }

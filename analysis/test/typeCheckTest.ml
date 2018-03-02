@@ -1484,7 +1484,39 @@ let test_check _ =
         pass
       foo(str)
     |}
-    []
+    [];
+
+  assert_type_errors
+    {|
+      class WithClass():
+        def __enter__(self) -> str:
+          return ''
+
+      def expect_string(x: str) -> None:
+        pass
+
+      def test() -> None:
+        with WithClass() as x:
+          expect_string(x)
+
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      class WithClass():
+        def __enter__(self) -> int:
+          return 5
+
+      def expect_string(x: str) -> None:
+        pass
+
+      def test() -> None:
+        with WithClass() as x:
+          expect_string(x)
+
+    |}
+    ["Incompatible parameter type [6]: Expected `str` but got `int`."]
 
 
 let test_check_coverage _ =

@@ -361,7 +361,7 @@ let create define =
         create statements jumps normal
 
     | { Ast.Node.value = With ({ With.body; _ } as block); _ } :: statements ->
-        (* -> [split] -> [body] -> *)
+        (* -> [split] -> [preamble; body] -> *)
         let split = Node.empty graph (Node.With block) in
         Node.connect predecessor split;
         create ((With.preamble block) @ body) jumps split

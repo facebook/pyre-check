@@ -515,7 +515,9 @@ let test_preamble _ =
         (Assign {
             Assign.target = !"name";
             annotation = None;
-            value = Some !"item";
+            value = Some (+Access [Access.Expression !"item";
+                                   Access.Call (+{ Call.name = !"__enter__"; arguments = []; })]
+                         );
             compound = None;
             parent = None;
           })
