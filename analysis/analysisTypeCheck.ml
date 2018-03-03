@@ -1272,8 +1272,9 @@ module State = struct
                   Node.create ~location (Statement.Expression right);
                 ]
               in
-              let left = forward_expression state left in
-              List.fold ~init:left ~f:forward right
+              (* We only analyze right, as it contains the assumption of `left` as a
+                 statement that will be checked. *)
+              List.fold ~init:state ~f:forward right
             in
             errors
 
