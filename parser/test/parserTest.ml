@@ -2267,13 +2267,13 @@ let test_assign _ =
         Assign.target = +Access (Access.create "a");
         annotation = None;
         value = Some (+BooleanOperator {
-            BooleanOperator.left = (+BooleanOperator {
-                BooleanOperator.left = !"b";
-                operator = BooleanOperator.Or;
-                right = !"c";
-              });
+            BooleanOperator.left = !"b";
             operator = BooleanOperator.Or;
-            right = !"d";
+            right = +BooleanOperator {
+              BooleanOperator.left = !"c";
+              operator = BooleanOperator.Or;
+              right = !"d";
+            };
           });
         compound = None;
         parent = None;
@@ -2543,21 +2543,21 @@ let test_if _ =
     [
       +If {
         If.test = +BooleanOperator {
-          BooleanOperator.left = +BooleanOperator {
+          BooleanOperator.left = +ComparisonOperator {
+            ComparisonOperator.left = !"a";
+            right = [ComparisonOperator.Is, +Integer 1];
+          };
+          operator = BooleanOperator.Or;
+          right = +BooleanOperator {
             BooleanOperator.left = +ComparisonOperator {
-              ComparisonOperator.left = !"a";
+              ComparisonOperator.left = !"b";
               right = [ComparisonOperator.Is, +Integer 1];
             };
             operator = BooleanOperator.Or;
             right = +ComparisonOperator {
-              ComparisonOperator.left = !"b";
+              ComparisonOperator.left = !"c";
               right = [ComparisonOperator.Is, +Integer 1];
             };
-          };
-          operator = BooleanOperator.Or;
-          right = +ComparisonOperator {
-            ComparisonOperator.left = !"c";
-            right = [ComparisonOperator.Is, +Integer 1];
           };
         };
         body = [+Expression !"d"];

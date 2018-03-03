@@ -156,8 +156,8 @@
 %token FINALLY
 %token IN
 
-%left OR
-%left AND
+%right OR
+%right AND
 %left NOT
 %left IS
 %left BAR
