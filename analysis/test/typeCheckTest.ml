@@ -347,7 +347,7 @@ let test_join _ =
        (create ["x", Type.integer])
        (create ["y", Type.integer]))
     (create
-      ["x", Type.Top; "y", Type.Top])
+       ["x", Type.Top; "y", Type.Top])
 
 
 let test_widen _ =
@@ -1351,6 +1351,19 @@ let test_check _ =
       @overload
       def overloaded()->int:
         pass
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      class Derp:
+        @property
+        async def get_int(self) -> int:
+          return 5
+
+        def test(self) -> int:
+          x = await self.get_int
+          return x
     |}
     [];
 

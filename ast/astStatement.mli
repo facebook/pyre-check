@@ -129,6 +129,17 @@ module Assign : sig
   val is_static_attribute_initialization: t -> bool
 end
 
+module Attribute : sig
+  type attribute = {
+    async: bool;
+    assign: Assign.t;
+  }
+  [@@deriving compare, eq, sexp, show, hash]
+
+  type t = attribute Node.t
+  [@@deriving compare, eq, sexp, show, hash]
+end
+
 module Stub : sig
   type 'statement t =
     | Assign of Assign.t
@@ -207,7 +218,7 @@ module Class : sig
     :  ?include_generated_attributes: bool
     -> ?in_test: bool
     -> t
-    -> (Assign.t Node.t) Expression.Access.Map.t
+    -> Attribute.t Expression.Access.Map.t
 
   val update: t -> definition: t -> t
 end

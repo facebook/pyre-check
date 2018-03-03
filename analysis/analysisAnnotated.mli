@@ -117,6 +117,7 @@ module Class : sig
       location: Location.t;
       defined: bool;
       class_attribute: bool;
+      async: bool;
     }
     [@@deriving eq, show]
 
@@ -124,7 +125,7 @@ module Class : sig
       :  resolution: Resolution.t
       -> parent: parent_class
       -> ?defined: bool
-      -> Statement.Assign.t Node.t
+      -> Statement.Attribute.t
       -> t
 
     val name: t -> Expression.expression

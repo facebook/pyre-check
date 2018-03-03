@@ -148,6 +148,24 @@ module Assign = struct
     Option.is_some parent
 end
 
+module Attribute = struct
+  type attribute = {
+    async: bool;
+    assign: Assign.t;
+  }
+  [@@deriving compare, eq, sexp, show, hash]
+
+  type t = attribute Node.t
+  [@@deriving compare, eq, sexp, show, hash]
+
+
+  let create ~location ~async ~assign =
+    Node.create ~location { async; assign }
+
+  let create_from_node { Node.location; value = assign } =
+    create ~location ~async:false ~assign
+end
+
 module Stub = struct
   type 'statement t =
     | Assign of Assign.t
@@ -277,6 +295,10 @@ module Define = struct
 
   let is_untyped { return_annotation; _ } =
     Option.is_none return_annotation
+
+
+  let is_async { async; _ } =
+    async
 
 
   let create_generated_constructor { Record.Class.name; docstring; _ } =
@@ -543,7 +565,7 @@ module Class = struct
                  Assign.target = { Node.value = Expression.Access ([_] as access); _ };
                  _;
                } as assign)) ->
-            Map.set ~key:access ~data:(Node.create ~location assign) map
+            Map.set ~key:access ~data:(Attribute.create ~location ~async:false ~assign) map
         | _ ->
             map
       in
@@ -564,6 +586,7 @@ module Class = struct
         constructors ~in_test definition
         |> List.map ~f:(Define.implicit_attribute_assigns ~definition)
         |> List.fold ~init:Expression.Access.Map.empty ~f:(Map.merge ~f:merge)
+        |> Map.map ~f:Attribute.create_from_node
       in
       let named_tuple_assigns =
         let open Expression in
@@ -601,7 +624,10 @@ module Class = struct
                         parent = None;
                       }
                     in
-                    Map.set ~key:access ~data:(Node.create ~location assign) sofar
+                    Map.set
+                      ~key:access
+                      ~data:(Attribute.create ~location ~async:false ~assign)
+                      sofar
                 | Tuple [{ Node.location; value = String name}; annotation] ->
                     let access = Access.create name in
                     let assign =
@@ -613,7 +639,10 @@ module Class = struct
                         parent = None;
                       }
                     in
-                    Map.set ~key:access ~data:(Node.create ~location assign) sofar
+                    Map.set
+                      ~key:access
+                      ~data:(Attribute.create ~location ~async:false ~assign)
+                      sofar
                 | _ ->
                     sofar
               in
@@ -628,10 +657,18 @@ module Class = struct
           | { Node.location; value = Stub (Stub.Define define) }
           | { Node.location; value = Define define } ->
               (Define.property_attribute_assign ~location define
-               >>= fun ({ Node.value = { Assign.target; _ }; _ } as assign) ->
+               >>= fun ({ Node.value = { Assign.target; _ } as assign; _ }) ->
                match target with
                | { Node.value = Expression.Access ([_] as access); _ } ->
-                   Some (Map.set ~key:access ~data:assign map)
+                   Some
+                     (Map.set
+                        ~key:access
+                        ~data:
+                          (Attribute.create
+                             ~location
+                             ~async:(Define.is_async define)
+                             ~assign)
+                        map)
                | _ ->
                    None)
               |> Option.value ~default:map
@@ -646,17 +683,15 @@ module Class = struct
           | Stub (Stub.Define { Define.name; _ })
           | Define { Define.name; _ } ->
               let assign =
-                Node.create
-                  ~location
-                  {
-                    Assign.target = Node.create ~location (Expression.Access name);
-                    annotation = None;  (* This should be a `Callable`. Ignoring for now... *)
-                    value = None;
-                    compound = None;
-                    parent = None;
-                  }
+                {
+                  Assign.target = Node.create ~location (Expression.Access name);
+                  annotation = None;  (* This should be a `Callable`. Ignoring for now... *)
+                  value = None;
+                  compound = None;
+                  parent = None;
+                }
               in
-              Map.set ~key:name ~data:assign map
+              Map.set ~key:name ~data:(Attribute.create ~location ~async:false ~assign) map
           | _ ->
               map
         in
@@ -687,17 +722,15 @@ module Class = struct
                     ])
               in
               let assign =
-                Node.create
-                  ~location
-                  {
-                    Assign.target = Node.create ~location (Expression.Access [List.last_exn name]);
-                    annotation = Some annotation;
-                    value = None;
-                    compound = None;
-                    parent = None;
-                  }
+                {
+                  Assign.target = Node.create ~location (Expression.Access [List.last_exn name]);
+                  annotation = Some annotation;
+                  value = None;
+                  compound = None;
+                  parent = None;
+                }
               in
-              Map.set ~key:name ~data:assign map
+              Map.set ~key:name ~data:(Attribute.create ~location ~async:false ~assign) map
           | _ ->
               map
         in

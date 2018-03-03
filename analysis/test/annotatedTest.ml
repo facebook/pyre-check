@@ -592,12 +592,16 @@ let test_class_attributes _ =
       |}
   in
 
-  let create_assign
+  let create_attribute
       ?(value = None)
       ?(annotation = Some !"int")
       ?(parent = Some (Expression.Access.create "foo"))
+      ?(async = false)
       name =
-    +{ Statement.Assign.target = !name; annotation; value; compound = None; parent }
+    +{
+      Statement.Attribute.async;
+      assign = {Statement.Assign.target = !name; annotation; value; compound = None; parent }
+    }
   in
 
   (* Test `Class.attributes`. *)
@@ -626,15 +630,15 @@ let test_class_attributes _ =
   assert_attributes
     parent
     [
-      Attribute.create ~resolution ~parent (create_assign "__init__");
-      Attribute.create ~resolution ~parent (create_assign "class_attribute");
-      Attribute.create ~resolution ~parent (create_assign "first");
-      Attribute.create ~resolution ~parent (create_assign "implicit");
-      Attribute.create ~resolution ~parent (create_assign "second");
+      Attribute.create ~resolution ~parent (create_attribute "__init__");
+      Attribute.create ~resolution ~parent (create_attribute "class_attribute");
+      Attribute.create ~resolution ~parent (create_attribute "first");
+      Attribute.create ~resolution ~parent (create_attribute "implicit");
+      Attribute.create ~resolution ~parent (create_attribute "second");
       Attribute.create
         ~resolution
         ~parent
-        (create_assign "third" ~value:(Some (+Expression.Integer 1)));
+        (create_attribute "third" ~value:(Some (+Expression.Integer 1)));
     ];
 
 
@@ -643,7 +647,7 @@ let test_class_attributes _ =
     Attribute.create
       ~resolution
       ~parent
-      (create_assign ~annotation:(Some !"int") "first")
+      (create_attribute ~annotation:(Some !"int") "first")
   in
   assert_equal
     (Attribute.name attribute)
@@ -657,7 +661,7 @@ let test_class_attributes _ =
     Attribute.create
       ~resolution
       ~parent
-      (create_assign
+      (create_attribute
          ~annotation:(Some (Type.expression (Type.parametric "typing.ClassVar" [Type.integer])))
          "first")
   in
@@ -1298,6 +1302,7 @@ let test_fold _ =
       value = None;
       defined = true;
       class_attribute = false;
+      async = false;
     }
   in
   assert_fold
@@ -1317,6 +1322,7 @@ let test_fold _ =
       value = None;
       defined = false;
       class_attribute = false;
+      async = false;
     }
   in
   assert_fold

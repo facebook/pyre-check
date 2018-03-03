@@ -153,11 +153,33 @@ let test_attribute_assigns _ =
     }
     |> Node.create
   in
-  let assign_equal { Node.value = left; _ } { Node.value = right; _ } =
+  let test_assign_equal left right =
     let open Assign in
+    (* explicitly ignoring the 'parent' field for tests *)
     Expression.equal left.target right.target &&
     Option.equal Expression.equal left.annotation right.annotation &&
     Option.equal Expression.equal left.value right.value
+  in
+
+  let create_attribute ~target ~annotation ~value =
+    {
+      Attribute.async = false;
+      assign =
+        {
+          Assign.target = Node.create (Expression.Access (Access.create target));
+          annotation;
+          value = value >>| (fun value -> (Node.create (Expression.Access (Access.create value))));
+          compound = None;
+          parent = None;
+        }
+    }
+    |> Node.create
+  in
+  let test_attribute_node_equal { Node.value = left; _ } { Node.value = right; _ } =
+    let open Attribute in
+    (* this is needed to call test_assign_equal explicitly *)
+    left.async = right.async &&
+    test_assign_equal left.assign right.assign
   in
 
   (* Test define field assigns. *)
@@ -177,7 +199,7 @@ let test_attribute_assigns _ =
       }
     in
     assert_equal
-      ~cmp:(List.equal ~equal:assign_equal)
+      ~cmp:(List.equal ~equal:(Node.equal Assign.equal))
       expected
       (parse_single_define source |> Define.implicit_attribute_assigns ~definition |> Map.data)
   in
@@ -231,7 +253,7 @@ let test_attribute_assigns _ =
       >>| fun (target, annotation, value) -> create_assign ~target ~annotation ~value
     in
     assert_equal
-      ~cmp:(Option.equal assign_equal)
+      ~cmp:(Option.equal (Node.equal Assign.equal))
       expected
       (parse_single_define source |> Define.property_attribute_assign ~location:Location.any)
   in
@@ -256,15 +278,15 @@ let test_attribute_assigns _ =
       expected =
     let expected =
       List.map
-        ~f:(fun (target, annotation, value) -> create_assign ~target ~annotation ~value)
+        ~f:(fun (target, annotation, value) -> create_attribute ~target ~annotation ~value)
         expected
     in
-    let printer assigns =
-      List.map ~f:(fun { Node.value; _ } -> Assign.show value) assigns
+    let printer attributes =
+      List.map ~f:(fun node -> Attribute.show node) attributes
       |> String.concat ~sep:", "
     in
     assert_equal
-      ~cmp:(List.equal ~equal:assign_equal)
+      ~cmp:(List.equal ~equal:test_attribute_node_equal)
       ~printer
       expected
       (parse_single_class source

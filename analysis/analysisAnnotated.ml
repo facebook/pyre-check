@@ -497,6 +497,7 @@ module Class = struct
       location: Location.t;
       defined: bool;
       class_attribute: bool;
+      async: bool;
     }
     [@@deriving eq, show]
 
@@ -508,10 +509,13 @@ module Class = struct
         {
           Node.location;
           value = {
-            Assign.target = { Node.value = target; _ };
-            annotation = assign_annotation;
-            value;
-            _;
+            Attribute.async;
+            assign = {
+              Assign.target = { Node.value = target; _ };
+              annotation = assign_annotation;
+              value;
+              _;
+            };
           };
         } =
       let class_annotation = annotation in
@@ -557,7 +561,7 @@ module Class = struct
         | _ ->
             Annotation.create_immutable ~global:true Type.Top
       in
-      { name = target; parent; annotation; value; location; defined; class_attribute }
+      { name = target; parent; annotation; value; location; defined; class_attribute; async }
 
 
     let name { name; _ } =
@@ -592,6 +596,10 @@ module Class = struct
 
     let class_attribute { class_attribute; _ } =
       class_attribute
+
+
+    let async { async; _ } =
+      async
 
 
     let instantiate ({ annotation; _ } as attribute) ~constraints =
@@ -762,11 +770,14 @@ module Class = struct
         {
           Node.location;
           value = {
-            Statement.Assign.target = Node.create (Expression.Access name);
-            annotation = None;
-            value = None;
-            compound = None;
-            parent = None;
+            Statement.Attribute.async = false;
+            assign = {
+              Statement.Assign.target = Node.create (Expression.Access name);
+              annotation = None;
+              value = None;
+              compound = None;
+              parent = None;
+            }
           }
         }
     in
@@ -804,11 +815,14 @@ module Class = struct
                  {
                    Node.location;
                    value = {
-                     Assign.target = Node.create ~location (Expression.Access access);
-                     annotation = return_annotation;
-                     value = None;
-                     compound = None;
-                     parent = None;
+                     Statement.Attribute.async = false;
+                     assign = {
+                       Assign.target = Node.create ~location (Expression.Access access);
+                       annotation = return_annotation;
+                       value = None;
+                       compound = None;
+                       parent = None;
+                     }
                    };
                  })
         | _ ->
@@ -1577,6 +1591,18 @@ module Access = struct
                  ~instantiated:(Annotation.annotation annotation)
                  definition
              in
+
+             (* Handle async attributes. *)
+             let resolved =
+               if Attribute.async attribute then
+                 Attribute.annotation attribute
+                 |> Annotation.annotation
+                 |> Type.awaitable
+                 |> Annotation.create
+               else
+                 Attribute.annotation attribute
+             in
+
              let access = access @ attribute_access in
              if not (Attribute.defined attribute) then
                let attribute, resolved =
@@ -1599,7 +1625,6 @@ module Access = struct
                    resolved,
                    (f accumulator ~annotations ~resolved ~element:(Element.Attribute attribute))
                | None ->
-                   let resolved = Attribute.annotation attribute in
                    resolution,
                    resolved,
                    (f accumulator ~annotations ~resolved ~element:(Element.Attribute attribute)))
