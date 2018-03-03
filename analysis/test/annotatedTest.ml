@@ -492,7 +492,7 @@ let test_is_protocol _ =
   assert_is_protocol [{ Argument.name = None; value = !"typing.Protocol" }] true;
   assert_is_protocol
     [{ Argument.name = Some ~~"metaclass"; value = !"abc.ABCMeta" }]
-    true
+    false
 
 
 let test_implements _ =

@@ -380,7 +380,8 @@ class StartTest(unittest.TestCase):
                         '.',
                         '-use-watchman',
                         '-stub-roots',
-                        'root']),
+                        'root',
+                    ]),
             ])
 
         # Check start with multiple source directories
@@ -400,7 +401,8 @@ class StartTest(unittest.TestCase):
                             '.',
                             '-use-watchman',
                             '-stub-roots',
-                            'root']),
+                            'root',
+                        ]),
                 ])
                 merge_directories.assert_called_once()
                 open().write.assert_has_calls([call('x\n'), call('y\n')])
@@ -422,7 +424,8 @@ class StartTest(unittest.TestCase):
                     '.',
                     '-terminal',
                     '-stub-roots',
-                    'root'])
+                    'root',
+                ])
 
 
 class StopTest(unittest.TestCase):

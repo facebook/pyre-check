@@ -465,8 +465,6 @@ module Class = struct
       match name, Expression.show value with
       | None , "typing.Protocol" ->
           true
-      | Some name, "abc.ABCMeta" when Identifier.show name = "metaclass" ->
-          true
       | _ ->
           false
     in

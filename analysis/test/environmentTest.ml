@@ -1597,7 +1597,7 @@ let test_protocols _ =
   assert_equal
     ~cmp:(List.equal ~equal:Type.equal)
     (Handler.protocols ())
-    ([Type.Primitive ~~"B"; Type.Primitive ~~"D"])
+    ([Type.Primitive ~~"B"])
 
 
 let test_import_dependencies context =
