@@ -77,12 +77,27 @@ let infer_protocols
           |> Set.union edges)
       protocols
   in
+  let protocols =
+    (* Skip useless protocols for better performance. *)
+    let skip_protocol protocol =
+      match Handler.class_definition protocol with
+      | Some protocol_definition ->
+          let protocol_definition = Annotated.Class.create protocol_definition in
+          let whitelisted = ["typing.Hashable"] in
+          let name = Annotated.Class.name protocol_definition |> Ast.Expression.Access.show in
+          List.is_empty (Annotated.Class.methods protocol_definition) ||
+          List.mem ~equal:String.equal whitelisted name
+      | _ ->
+          true
+    in
+    List.filter ~f:(fun protocol -> not (skip_protocol protocol)) (Handler.protocols ())
+  in
   Scheduler.map_reduce
     scheduler
     ~init:Edge.Set.empty
     ~map
     ~reduce:Set.union
-    (Handler.protocols ())
+    protocols
   |> Set.iter ~f:(fun { Edge.source; target } ->
       TypeOrder.connect
         (module Handler.TypeOrderHandler)

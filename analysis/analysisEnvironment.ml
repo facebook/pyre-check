@@ -1017,50 +1017,36 @@ let infer_implementations (module Handler: Handler) ~protocol =
   >>| (fun protocol_definition ->
       let open Annotated in
       let protocol_definition = Class.create protocol_definition in
-
-      (* Skip useless protocols for better performance. *)
-      let skip_protocol =
-        let whitelisted = ["typing.Hashable"] in
-        let name = Class.name protocol_definition |> Expression.Access.show in
-        List.is_empty (Class.methods protocol_definition) ||
-        List.mem ~equal:String.equal whitelisted name
+      (* Get all implementing classes. *)
+      let implementations =
+        let implements annotation =
+          Handler.class_definition annotation
+          >>| Class.create
+          >>| (fun definition ->
+              not (Class.is_protocol definition) &&
+              Class.implements ~protocol:protocol_definition definition)
+          |> Option.value ~default:false
+        in
+        TypeOrder.greatest (module Handler.TypeOrderHandler) ~matches:implements
       in
 
-      if skip_protocol then
-        Edge.Set.empty
-      else
-        begin
-          (* Get all implementing classes. *)
-          let implementations =
-            let implements annotation =
-              Resolution.class_definition resolution annotation
-              >>| Class.create
-              >>| (fun definition ->
-                  not (Class.is_protocol definition) &&
-                  Class.implements ~protocol:protocol_definition definition)
-              |> Option.value ~default:false
-            in
-            TypeOrder.greatest (module Handler.TypeOrderHandler) ~matches:implements
-          in
-
-          (* Get edges to protocol. *)
-          let edges =
-            let add_edge sofar source =
-              (* Even if `object` technically implements a protocol, do not add cyclic edge. *)
-              if Type.equal source protocol || Type.equal source Type.Object then
-                sofar
-              else
-                Set.add sofar { Edge.source; target = protocol }
-            in
-            List.fold ~init:Edge.Set.empty ~f:add_edge implementations
-          in
-          Log.log
-            ~section:`Protocols
-            "Found implementations for protocol %a: %s"
-            Type.pp protocol
-            (List.map ~f:Type.show implementations |> String.concat ~sep:", ");
-          edges
-        end)
+      (* Get edges to protocol. *)
+      let edges =
+        let add_edge sofar source =
+          (* Even if `object` technically implements a protocol, do not add cyclic edge. *)
+          if Type.equal source protocol || Type.equal source Type.Object then
+            sofar
+          else
+            Set.add sofar { Edge.source; target = protocol }
+        in
+        List.fold ~init:Edge.Set.empty ~f:add_edge implementations
+      in
+      Log.log
+        ~section:`Protocols
+        "Found implementations for protocol %a: %s"
+        Type.pp protocol
+        (List.map ~f:Type.show implementations |> String.concat ~sep:", ");
+      edges)
   |> Option.value ~default:Edge.Set.empty
 
 
