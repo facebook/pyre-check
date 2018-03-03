@@ -373,13 +373,14 @@ class StartTest(unittest.TestCase):
                 source_directories=['.']).run()
             call_client.assert_has_calls([
                 call(
-                    command=commands.WATCHMAN,
-                    source_directories=['.'],
-                    flags=['-project-root', '.', '-daemonize']),
-                call(
                     command=commands.START,
                     source_directories=['.'],
-                    flags=['-project-root', '.', '-stub-roots', 'root']),
+                    flags=[
+                        '-project-root',
+                        '.',
+                        '-use-watchman',
+                        '-stub-roots',
+                        'root']),
             ])
 
         # Check start with multiple source directories
@@ -392,13 +393,14 @@ class StartTest(unittest.TestCase):
                     source_directories=['x', 'y']).run()
                 call_client.assert_has_calls([
                     call(
-                        command=commands.WATCHMAN,
-                        source_directories=['.pyre/shared_source_directory'],
-                        flags=['-project-root', '.', '-daemonize']),
-                    call(
                         command=commands.START,
                         source_directories=['.pyre/shared_source_directory'],
-                        flags=['-project-root', '.', '-stub-roots', 'root']),
+                        flags=[
+                            '-project-root',
+                            '.',
+                            '-use-watchman',
+                            '-stub-roots',
+                            'root']),
                 ])
                 merge_directories.assert_called_once()
                 open().write.assert_has_calls([call('x\n'), call('y\n')])

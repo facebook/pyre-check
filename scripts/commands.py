@@ -576,15 +576,10 @@ class Start(Command):
 
                     shared_source_directory.write_existing(
                         self._original_source_directories)
-                    flags = self._flags()
-                    flags.append('-daemonize')
-                    if not self._no_watchman:
-                        results = self._call_client(
-                            command=WATCHMAN,
-                            source_directories=self._source_directories,
-                            flags=flags)
 
                     flags = self._flags()
+                    if not self._no_watchman:
+                        flags.append('-use-watchman')
                     if self._terminal:
                         flags.append('-terminal')
                     flags.extend([
