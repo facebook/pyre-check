@@ -45,6 +45,9 @@ let test_parse_query _ =
   assert_parses "meet(int)" None;
 
   assert_parses "join(int)" None;
+  assert_parses "superclasses(int)" (Some (Request.TypeQueryRequest (Superclasses (Type.integer))));
+  assert_parses "superclasses()" None;
+  assert_parses "superclasses(int, bool)" None;
 
   assert_parses
     "typecheckPath(fiddle.py)"

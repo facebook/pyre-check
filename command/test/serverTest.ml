@@ -307,7 +307,7 @@ let test_protocol_type_check _ =
 
 
 let test_query _ =
-  let source = "a = 1" in
+  let source = "class C(int):\n  pass\na = 1" in
   assert_request_gets_response
     source
     (Protocol.Request.TypeQueryRequest (Protocol.LessOrEqual (Type.integer, Type.string)))
@@ -335,7 +335,12 @@ let test_query _ =
        (Protocol.Meet
           (Type.list (Type.Primitive (Identifier.create "C")),
            Type.list (Type.integer))))
-    (Some (Protocol.TypeQueryResponse "`typing.List[C]`"))
+    (Some (Protocol.TypeQueryResponse "`typing.List[C]`"));
+
+  assert_request_gets_response
+    source
+    (Protocol.Request.TypeQueryRequest (Protocol.Superclasses (Type.primitive "C")))
+    (Some (Protocol.TypeQueryResponse "`int`"))
 
 
 let test_connect _ =

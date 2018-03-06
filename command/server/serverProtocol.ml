@@ -28,6 +28,7 @@ type type_query_request =
   | LessOrEqual of Type.t * Type.t
   | Join of Type.t * Type.t
   | Meet of Type.t * Type.t
+  | Superclasses of Type.t
 [@@deriving eq, show]
 
 

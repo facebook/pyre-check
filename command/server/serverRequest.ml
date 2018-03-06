@@ -189,6 +189,18 @@ let rec process_request
         in
         state,
         (Some (TypeQueryResponse response))
+    | Superclasses annotation ->
+        let resolution = Environment.resolution state.environment () in
+        let response =
+          Handler.class_definition annotation
+          >>| Annotated.Class.create
+          >>| Annotated.Class.superclasses ~resolution
+          >>| List.map ~f:(Annotated.Class.annotation ~resolution)
+          >>| List.map ~f:Type.show
+          >>| String.concat ~sep:", "
+          >>| (fun response -> TypeQueryResponse response)
+        in
+        state, response
   in
   let handle_client_shutdown_request id =
     let response = LanguageServer.Protocol.ShutdownResponse.default id in
