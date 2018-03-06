@@ -1048,7 +1048,7 @@ module State = struct
             | Call { call; callee; _ } ->
                 check_parameters ~resolution call callee
             | Method { location; access; annotation; call; callee; backup; } ->
-                let annotation = Annotation.annotation annotation in
+                let annotation = Annotation.original annotation in
                 let unresolved_method_errors =
                   match callee, Resolution.class_definition resolution annotation with
                   | None, Some _ ->
