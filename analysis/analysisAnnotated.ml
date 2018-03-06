@@ -987,6 +987,10 @@ module Call = struct
   [@@deriving compare, eq, sexp, show, hash]
 
 
+  let name_equal { call = { Call.name = left; _ }; _ } { call = { Call.name = right; _ }; _ } =
+    Expression.equal left right
+
+
   let create ~kind call =
     { call; kind }
 
@@ -997,7 +1001,6 @@ module Call = struct
 
   let name { call = { Call.name; _ }; _ } =
     name
-
 
 
   let arguments { call = { Call.arguments; _ }; _ } =

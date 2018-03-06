@@ -19,8 +19,8 @@ module TypeOrder = AnalysisTypeOrder
 module AstSharedMemory = ServiceAstSharedMemory
 
 
-type undefined_method = {
-  annotation: Type.t;
+type undefined_function = {
+  annotation: Type.t option;
   call: Annotated.Call.t;
 }
 [@@deriving compare, eq, show, sexp, hash]
@@ -132,7 +132,7 @@ type kind =
   | MissingReturnAnnotation of missing_return
   | Top
   | UndefinedAttribute of undefined_attribute
-  | UndefinedMethod of undefined_method
+  | UndefinedFunction of undefined_function
   | UndefinedType of Type.t
   | UninitializedAttribute of initialization_mismatch
   | UnusedIgnore of int list
@@ -185,7 +185,7 @@ let code { kind; _ } =
   | MissingGlobalAnnotation _ -> 5
   | Top -> 1
   | UndefinedAttribute _ -> 16
-  | UndefinedMethod _ -> 10
+  | UndefinedFunction _ -> 10
   | UndefinedType _ -> 11
   | UninitializedAttribute _ -> 13
   | UnusedIgnore _ -> 0
@@ -205,7 +205,7 @@ let name { kind; _ } =
   | MissingReturnAnnotation _ -> "Missing return annotation"
   | Top -> "Undefined error"
   | UndefinedAttribute _ -> "Undefined attribute"
-  | UndefinedMethod _ -> "Undefined method"
+  | UndefinedFunction _ -> "Undefined function"
   | UndefinedType _ -> "Undefined type"
   | UninitializedAttribute _ -> "Uninitialized attribute"
   | UnusedIgnore _ -> "Unused ignore"
@@ -491,7 +491,7 @@ let description
           List.append message class_attribute_detail
         else
           message
-    | UndefinedMethod { annotation; call } ->
+    | UndefinedFunction { annotation; call } ->
         let name =
           match Annotated.Call.name call with
           | { Node.value = Access access; _ } ->
@@ -499,12 +499,12 @@ let description
           | name ->
               Expression.show name
         in
-        [
-          Format.asprintf
-            "Could not resolve call `%s` on %a."
-            name
-            Type.pp annotation
-        ]
+        let target =
+          annotation
+          >>| Format.asprintf " on %a" Type.pp
+          |> Option.value ~default:""
+        in
+        [Format.asprintf "Could not resolve call `%s`%s." name target]
     | UndefinedType annotation ->
         [
           Format.asprintf
@@ -580,9 +580,10 @@ let due_to_analysis_limitations { kind; _ } =
       Type.is_unknown actual
   | Top -> true
   | UndefinedAttribute { annotation; _ }
-  | UndefinedMethod { annotation; _ }
+  | UndefinedFunction { annotation = Some annotation; _ }
   | UndefinedType annotation ->
       Type.is_unknown annotation
+  | UndefinedFunction _
   | UnusedIgnore _ -> false
 
 
@@ -593,11 +594,12 @@ let due_to_mismatch_with_any { kind; _ } =
   | MissingParameterAnnotation _
   | MissingReturnAnnotation _
   | Top
+  | UndefinedFunction { annotation = None; _ }
   | UndefinedType _
   | UnusedIgnore _ ->
       false
   | UndefinedAttribute { annotation = actual; _ }
-  | UndefinedMethod { annotation = actual; _ }
+  | UndefinedFunction { annotation = Some actual; _ }
   | IncompatibleAwaitableType actual ->
       Type.equal actual Type.Object
   | InconsistentOverride { mismatch = { actual; expected }; _ }
@@ -605,7 +607,7 @@ let due_to_mismatch_with_any { kind; _ } =
   | IncompatibleReturnType { actual; expected }
   | IncompatibleAttributeType { incompatible_type = { mismatch = { actual; expected }; _ }; _ }
   | IncompatibleVariableType { mismatch = { actual; expected }; _ }
-  | UninitializedAttribute { mismatch = { actual; expected }; _ }->
+  | UninitializedAttribute { mismatch = { actual; expected }; _ } ->
       Type.mismatch_with_any actual expected
 
 
@@ -660,11 +662,17 @@ let less_or_equal ~resolution left right =
           order
           ~left:left.annotation
           ~right:right.annotation
-    | UndefinedMethod left, UndefinedMethod right ->
-        TypeOrder.less_or_equal
-          order
-          ~left:left.annotation
-          ~right:right.annotation
+    | UndefinedFunction left, UndefinedFunction right ->
+        let annotation_less_or_equal =
+          match left.annotation, right.annotation with
+          | Some left, Some right ->
+              TypeOrder.less_or_equal order ~left ~right
+          | None, None ->
+              true
+          | _ ->
+              false
+        in
+        annotation_less_or_equal && Annotated.Call.name_equal left.call right.call
     | UndefinedType left, UndefinedType right ->
         TypeOrder.less_or_equal order ~left ~right
     | UnusedIgnore left, UnusedIgnore right ->
@@ -759,21 +767,27 @@ let join ~resolution left right =
           left with
           annotation = TypeOrder.join order left.annotation right.annotation;
         }
-    | UndefinedMethod left, UndefinedMethod right ->
-        UndefinedMethod {
-          annotation =
-            TypeOrder.join order left.annotation right.annotation;
-          call = left.call;
-        }
+    | UndefinedFunction ({ call; _ } as left), UndefinedFunction right
+      when Annotated.Call.name_equal left.call right.call ->
+        begin
+          match left.annotation, right.annotation with
+          | Some left, Some right ->
+              UndefinedFunction { annotation = Some (TypeOrder.join order left right); call; }
+          | None, None ->
+              UndefinedFunction left
+          | _ ->
+              Top
+        end
     | UndefinedType left, UndefinedType right ->
         UndefinedType (TypeOrder.join order left right)
     | UnusedIgnore left, UnusedIgnore right ->
         UnusedIgnore (Set.to_list (Set.union (Int.Set.of_list left) (Int.Set.of_list right)))
     | _ ->
-        Format.asprintf
-          "Incompatible type in error join at %a."
+        Log.debug
+          "Incompatible type in error join at %a: %a %a"
           Location.pp left.location
-        |> Log.debug "%s";
+          pp_kind left.kind
+          pp_kind right.kind;
         Top
   in
   { location = left.location; kind; define = left.define }
@@ -1002,9 +1016,8 @@ let dequalify
             dequalify annotation
         in
         UndefinedAttribute { annotation; attribute; class_attribute }
-
-    | UndefinedMethod { annotation; call } ->
-        UndefinedMethod { annotation = dequalify annotation; call }
+    | UndefinedFunction { annotation; call } ->
+        UndefinedFunction { annotation = annotation >>| dequalify; call }
     | UndefinedType annotation -> UndefinedType (dequalify annotation)
     | UnusedIgnore codes -> UnusedIgnore codes
   in

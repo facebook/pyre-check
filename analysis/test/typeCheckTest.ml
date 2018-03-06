@@ -32,6 +32,8 @@ let plain_environment =
         class typing.Sized: ...
         def len(o: typing.Sized) -> int: ...
 
+        def not_annotated(input = ...): ...
+
         class bool(): ...
         class bytes(): ...
         class float():
@@ -42,6 +44,7 @@ let plain_environment =
           def __lt__(self, other) -> int: ...
           def __ne__(self, other) -> bool: ...
           def __add__(self, other: int) -> int: ...
+          def __mod__(self, other) -> int: ...
           def __radd__(self, other: int) -> int: ...
           def __neg__(self) -> int: ...
           def __str__(self) -> str: ...
@@ -75,6 +78,7 @@ let plain_environment =
         def return_tuple() -> typing.Tuple[int, int]: ...
         def unknown_to_int(i) -> int: ...
 
+        def typing.TypeVar(args): ...
         _T = typing.TypeVar('_T')
         _S = typing.TypeVar('_S')
         _V = typing.TypeVar('_V')
@@ -83,6 +87,8 @@ let plain_environment =
 
         class type:
           __name__: str = ...
+
+        def isinstance(a, b) -> bool: ...
 
         class typing.Iterable(typing.Generic[_T]):
           def __iter__(self)->typing.Iterator[_T]: pass
@@ -99,6 +105,7 @@ let plain_environment =
           def items(self) -> typing.Iterable[typing.Tuple[_T, _S]]: pass
         class list(typing.Iterable[_T], typing.Generic[_T]):
           def __add__(self, x: list[_T]) -> list[_T]: ...
+          def __iter__(self) -> typing.Iterator[_T]: ...
           def append(self, element: _T) -> None: ...
         class set(typing.Iterable[_T], typing.Generic[_T]): pass
         class typing.Generator(typing.Generic[_T, _S, _V], typing.Iterable[_T]):
@@ -1294,12 +1301,13 @@ let test_check _ =
     [];
 
   (* Angelic assumption about unknown functions in non-debug mode. *)
-  assert_type_errors ~debug:false
-    "def foo() -> str: return bar()"
+  assert_type_errors
+    ~debug:false
+    "def foo() -> str: return not_annotated()"
     [];
 
   assert_type_errors
-    "def foo() -> str: return bar()"
+    "def foo() -> str: return not_annotated()"
     ["Incompatible return type [7]: Expected `str` but got `unknown`."];
 
   assert_type_errors
@@ -1308,7 +1316,7 @@ let test_check _ =
       def foo() -> other:
         result = 0
         if True:
-          result = durp()
+          result = not_annotated()
         return result
     |}
     ["Incompatible return type [7]: Expected `other` but got `unknown`."];
@@ -1578,13 +1586,17 @@ let test_check_coverage _ =
     "yield ERROR";
   assert_covered
     ~additional_errors:[
+      "Undefined function [10]: Could not resolve call `__iter__`.";
       "Incompatible return type [7]: Expected `None` but got " ^
       "`typing.Generator[unknown, None, None]`.";
     ]
     "yield from ERROR";
 
   (* Control statements. *)
-  assert_covered "for i in ERROR: pass";
+  (* TODO(T26558543): we're firing a bunch of errors on the same location here. *)
+  assert_not_covered
+    ~additional_errors:["Undefined function [10]: Could not resolve call `__next__`."]
+    "for i in ERROR: pass";
   assert_covered "while ERROR: pass";
   assert_covered "if ERROR: pass";
 
@@ -1619,7 +1631,7 @@ let test_check_coverage _ =
 
   (* Binary operator. *)
   assert_covered "ERROR | okay";
-  assert_covered "okay % ERROR";
+  assert_covered "1 % ERROR";
 
   (* Boolean operator. *)
   assert_covered "ERROR or okay";
@@ -1634,27 +1646,27 @@ let test_check_coverage _ =
   (* Dictionaries. *)
   assert_covered "{ ERROR: 1 }";
   assert_covered "{ 1: ERROR }";
-  assert_covered "{ ERROR: i for i in collection }";
-  assert_covered "{ i: ERROR for i in collection }";
+  assert_covered "{ ERROR: i for i in dict() }";
+  assert_covered "{ i: ERROR for i in dict() }";
   assert_covered "{ i: 1 for i in ERROR }";
 
   (* TODO(T26146217): we're not handling format strings yet. *)
   assert_not_covered {|f"format{ERROR}"|};
 
   (* Generator. *)
-  assert_covered "(ERROR for i in collection)";
+  assert_covered "(ERROR for i in list)";
 
   (* Lambdas. *)
   assert_covered "lambda x: ERROR";
 
   (* Lists. *)
   assert_covered "[1, ERROR]";
-  assert_covered "[ERROR for i in collection]";
+  assert_covered "[ERROR for i in list()]";
   assert_covered "[i for i in ERROR]";
 
   (* Sets. *)
   assert_covered "{1, ERROR}";
-  assert_covered "{ERROR for i in collection}";
+  assert_covered "{ERROR for i in list()}";
   assert_covered "{i for i in ERROR}";
 
   (* Starred. *)
@@ -2304,7 +2316,7 @@ let test_check_method_resolution _ =
       def foo() -> None:
         bar().baz()
     |}
-    [];
+    ["Undefined function [10]: Could not resolve call `baz`."];
   assert_type_errors
     {|
       def foo(input: str) -> None:
@@ -2316,7 +2328,7 @@ let test_check_method_resolution _ =
       def foo(input: str) -> None:
         input.baz()
     |}
-    ["Undefined method [10]: Could not resolve call `baz` on `str`."];
+    ["Undefined function [10]: Could not resolve call `baz` on `str`."];
   assert_type_errors
     {|
       def undefined() -> Undefined: ...
@@ -2353,7 +2365,7 @@ let test_check_static _ =
         def bar(cls, input: str) -> str:
           return input.lower()
 
-        def baz() -> None:
+        def baz(self) -> None:
           self.bar("")
     |}
     [];
@@ -2633,6 +2645,7 @@ let test_check_attributes _ =
           return self.bar
     |}
     [];
+  (* TODO(T26558543): why are we not erring on an optional method call? *)
   assert_type_errors
     ~debug:true
     ~strict:true
@@ -2645,7 +2658,7 @@ let test_check_attributes _ =
         def foo() -> None:
           self.bar.bar()
     |}
-    [];
+    ["Undefined function [10]: Could not resolve call `bar`."];
 
   assert_type_errors
     ~show_error_traces:true
@@ -2989,7 +3002,7 @@ let test_check_attributes _ =
       class Foo:
         attribute: int = 1
         def foo(self) -> None:
-          self.attribute = unknown()
+          self.attribute = not_annotated()
           a = self.attribute.something
     |}
     [
@@ -3369,12 +3382,16 @@ let test_check_named_arguments _ =
       Bar.bar("asdf", 10)
     |}
     [];
+  (* TODO(T26558543): we should not warn twice here. *)
   assert_type_errors
     {|
       def bar()->int:
         return str_float_to_int(i="")
     |}
-    ["Incompatible return type [7]: Expected `int` but got `unknown`."];
+    [
+      "Incompatible return type [7]: Expected `int` but got `unknown`.";
+      "Undefined function [10]: Could not resolve call `str_float_to_int`.";
+    ];
   assert_type_errors
     {|
       def bar()->int:
@@ -3834,7 +3851,10 @@ let test_check_value_restrictions _ =
        def f(x:float)->str:
            return value_restricted_identity(x)
     |}
-    ["Incompatible return type [7]: Expected `str` but got `unknown`."]
+    [
+      "Incompatible return type [7]: Expected `str` but got `unknown`.";
+      "Undefined function [10]: Could not resolve call `value_restricted_identity`.";
+    ]
 
 
 let test_check_refinement _ =
@@ -3962,7 +3982,7 @@ let test_check_refinement _ =
     {|
       def bar(input: typing.Optional[int]) -> int:
           if not input:
-            input = unknown()
+            input = not_annotated()
           return input
     |}
     [

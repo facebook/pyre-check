@@ -13,8 +13,8 @@ module Environment = AnalysisEnvironment
 module Resolution = AnalysisResolution
 module Type = AnalysisType
 
-type undefined_method = {
-  annotation: Type.t;
+type undefined_function = {
+  annotation: Type.t option;
   call: Annotated.Call.t;
 }
 [@@deriving compare, eq, show, hash]
@@ -113,7 +113,7 @@ type kind =
   | MissingReturnAnnotation of missing_return
   | Top
   | UndefinedAttribute of undefined_attribute
-  | UndefinedMethod of undefined_method
+  | UndefinedFunction of undefined_function
   | UndefinedType of Type.t
   | UninitializedAttribute of initialization_mismatch
   | UnusedIgnore of int list

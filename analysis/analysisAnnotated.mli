@@ -215,6 +215,8 @@ module Call : sig
   type t
   [@@deriving compare, eq, sexp, show, hash]
 
+  val name_equal: t -> t -> bool
+
   val create: kind: kind -> Call.t -> t
 
   val call: t -> Call.t

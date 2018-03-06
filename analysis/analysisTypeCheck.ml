@@ -285,7 +285,7 @@ module State = struct
           | MissingParameterAnnotation _
           | MissingReturnAnnotation _
           | UndefinedAttribute _
-          | UndefinedMethod _ ->
+          | UndefinedFunction _ ->
               false
           | IncompatibleAwaitableType _
           | IncompatibleAttributeType _
@@ -1046,7 +1046,24 @@ module State = struct
             let open Annotated.Access.Element in
             match element with
             | Call { call; callee; _ } ->
-                check_parameters ~resolution call callee
+                let undefined_function_error =
+                  match callee with
+                  | None ->
+                      [
+                        {
+                          Error.location;
+                          kind = Error.UndefinedFunction {
+                              Error.annotation = None;
+                              call;
+                            };
+                          define = define_node;
+                        }
+                      ]
+                  | _ ->
+                      []
+                in
+                let parameter_errors = check_parameters ~resolution call callee in
+                undefined_function_error @ parameter_errors
             | Method { location; access; annotation; call; callee; backup; } ->
                 let annotation = Annotation.original annotation in
                 let unresolved_method_errors =
@@ -1055,8 +1072,8 @@ module State = struct
                       [
                         {
                           Error.location;
-                          kind = Error.UndefinedMethod {
-                              Error.annotation;
+                          kind = Error.UndefinedFunction {
+                              Error.annotation = Some annotation;
                               call;
                             };
                           define = define_node;

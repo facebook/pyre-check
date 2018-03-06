@@ -244,12 +244,12 @@ let test_due_to_analysis_limitations _ =
               expected = Type.Top;
             })));
 
-  (* UndefinedMethod. *)
+  (* UndefinedFunction. *)
   assert_true
     (Error.due_to_analysis_limitations
        (error
-          (Error.UndefinedMethod {
-              Error.annotation = Type.Top;
+          (Error.UndefinedFunction {
+              Error.annotation = Some Type.Top;
               call =
                 Annotated.Call.create
                   ~kind:Annotated.Call.Method
@@ -258,8 +258,8 @@ let test_due_to_analysis_limitations _ =
   assert_false
     (Error.due_to_analysis_limitations
        (error
-          (Error.UndefinedMethod {
-              Error.annotation = Type.string;
+          (Error.UndefinedFunction {
+              Error.annotation = Some Type.string;
               call =
                 Annotated.Call.create
                   ~kind:Annotated.Call.Method
@@ -296,8 +296,8 @@ let test_join _ =
            };
          }))
     (error
-       (Error.UndefinedMethod {
-           Error.annotation = Type.string;
+       (Error.UndefinedFunction {
+           Error.annotation = Some Type.string;
            call =
              Annotated.Call.create
                ~kind:Annotated.Call.Method
