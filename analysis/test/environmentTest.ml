@@ -242,9 +242,10 @@ let test_register_aliases _ =
   assert_true (TypeOrder.contains order (Type.primitive "typing.Iterable"));
   assert_equal
     (parse_annotation (module Handler) (!"collections.Iterator"))
-    (Type.primitive "typing.Iterator");
+    (Type.parametric "typing.Iterator" [Type.Object]);
   assert_equal
-    (parse_annotation (module Handler) (!"collections.Iterable")) (Type.primitive "typing.Iterable")
+    (parse_annotation (module Handler) (!"collections.Iterable"))
+    (Type.parametric "typing.Iterable" [Type.Object])
 
 
 let test_connect_type_order _ =

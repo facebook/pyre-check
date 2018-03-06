@@ -355,7 +355,20 @@ let yield parameter =
 
 let primitive_substitution_map =
   let complex = Primitive (Identifier.create "complex") in
-  let object_dict = Parametric { name = Identifier.create "dict"; parameters = [Object; Object] } in
+  let parametric_anys name number_of_anys =
+    let rec parameters sofar remaining =
+      match remaining with
+      | 0 -> sofar
+      | _ -> parameters (Object :: sofar) (remaining - 1)
+    in
+    Parametric { name = Identifier.create name; parameters = (parameters [] number_of_anys) }
+  in
+  let parametricized_callable =
+    Parametric {
+      name = Identifier.create "typing.Callable";
+      parameters = [Primitive (Identifier.create "..."); Object]
+    }
+  in
   [
     "object", Object;
     "typing.Any", Object;
@@ -364,12 +377,28 @@ let primitive_substitution_map =
     "numbers.Complex", complex;
     "numbers.Real", Primitive (Identifier.create "float");
     "numbers.Integral", Primitive (Identifier.create "int");
-    "dict", object_dict;
-    "typing.Dict", object_dict;
-    "typing.Tuple", Tuple (Unbounded Object);
-    "typing.List", list Object;
     "$bottom", Bottom;
     "$unknown", Top;
+    "typing.AsyncGenerator", parametric_anys "typing.AsyncGenerator" 2;
+    "typing.AsyncIterable", parametric_anys "typing.AsyncIterable" 1;
+    "typing.AsyncIterator", parametric_anys "typing.AsyncIterator" 1;
+    "typing.Awaitable", parametric_anys "typing.Awaitable" 1;
+    "typing.Callable", parametricized_callable;
+    "typing.ContextManager", parametric_anys "typing.ContextManager" 1;
+    "typing.Coroutine", parametric_anys "typing.Coroutine" 3;
+    "typing.DefaultDict", parametric_anys "collections.defaultdict" 2;
+    "dict", parametric_anys "dict" 2;
+    "typing.Dict", parametric_anys "dict" 2;
+    "typing.Generator", parametric_anys "typing.Generator" 3;
+    "typing.Iterable", parametric_anys "typing.Iterable" 1;
+    "typing.Iterator", parametric_anys "typing.Iterator" 1;
+    "list", list Object;
+    "typing.List", list Object;
+    "typing.Mapping", parametric_anys "typing.Mapping" 2;
+    "typing.Sequence", parametric_anys "typing.Sequence" 1;
+    "typing.Set", parametric_anys "typing.Set" 1;
+    "typing.Tuple", Tuple (Unbounded Object);
+    "typing.Type", parametric_anys "typing.Type" 1;
   ]
   |> List.map
     ~f:(fun (original, substitute) -> Identifier.create original, substitute)

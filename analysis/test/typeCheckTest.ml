@@ -1276,6 +1276,30 @@ let test_check _ =
 
   assert_type_errors
     {|
+      x: typing.Type
+      def foo() -> typing.Type[typing.Any]:
+        return x
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      x: typing.List[int]
+      def foo() -> list:
+        return x
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      x: typing.Generator[int, int, int]
+      def foo() -> typing.Generator:
+        return x
+    |}
+    [];
+
+  assert_type_errors
+    {|
       def foo(a:typing.Optional[int])->str:
         return int_to_str(a) if a else ""
     |}
