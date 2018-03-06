@@ -284,7 +284,8 @@ module State = struct
           | IncompatibleReturnType _
           | MissingParameterAnnotation _
           | MissingReturnAnnotation _
-          | UndefinedAttribute _ ->
+          | UndefinedAttribute _
+          | UndefinedMethod _ ->
               false
           | IncompatibleAwaitableType _
           | IncompatibleAttributeType _
@@ -293,7 +294,6 @@ module State = struct
           | MissingAttributeAnnotation _
           | MissingGlobalAnnotation _
           | Top
-          | UndefinedMethod _
           | UndefinedType _
           | UninitializedAttribute _
           | UnusedIgnore _ ->
@@ -312,7 +312,6 @@ module State = struct
         | MissingParameterAnnotation _
         | MissingAttributeAnnotation _
         | MissingGlobalAnnotation _
-        | UndefinedMethod _
         | UndefinedType _ ->
             true
         | _ ->
