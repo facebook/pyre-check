@@ -311,7 +311,14 @@ let handler
       Hash_set.to_list protocols
 
     let register_module access =
-      Hashtbl.set ~key:access ~data:() modules
+      let rec register_submodules = function
+        | [] ->
+            ()
+        | (_ :: tail) as reversed ->
+            Hashtbl.set ~key:(List.rev reversed) ~data:() modules;
+            register_submodules tail
+      in
+      register_submodules (List.rev access)
 
     let is_module access =
       Hashtbl.mem modules access

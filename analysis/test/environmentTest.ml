@@ -1610,13 +1610,17 @@ let test_modules _ =
     populate_with_sources [
       Source.create ~qualifier:(Access.create "wingus") [];
       Source.create ~qualifier:(Access.create "dingus") [];
+      Source.create ~qualifier:(Access.create "os.path") [];
     ]
   in
   let module Handler = (val environment) in
 
   assert_true (Handler.is_module (Access.create "wingus"));
   assert_true (Handler.is_module (Access.create "dingus"));
-  assert_false (Handler.is_module (Access.create "zap"))
+  assert_false (Handler.is_module (Access.create "zap"));
+
+  assert_true (Handler.is_module (Access.create "os"));
+  assert_true (Handler.is_module (Access.create "os.path"))
 
 
 let test_import_dependencies context =
