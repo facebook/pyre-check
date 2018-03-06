@@ -132,6 +132,7 @@ let shared_memory_handler
         function_definitions;
         class_definitions;
         protocols;
+        modules;
         aliases;
         globals;
         order;
@@ -179,6 +180,7 @@ let shared_memory_handler
     ClassDefinitionsKeys.add "ClassDefinitionsKeys" (Type.Table.keys class_definitions);
 
     Protocols.add "Protocols" (Hash_set.to_list protocols);
+    add_table Modules.add modules;
   in
 
   Log.initialize ~verbose ~sections;
@@ -194,6 +196,14 @@ let shared_memory_handler
       let protocols () =
         Protocols.get "Protocols"
         |> Option.value ~default:[]
+
+
+      let register_module access =
+        Modules.add access ()
+
+      let is_module access =
+        Modules.get access
+        |> Option.is_some
 
       let in_class_definition_keys annotation =
         let keys = ClassDefinitionsKeys.find_unsafe "ClassDefinitionsKeys" in

@@ -18,6 +18,7 @@ type t = {
   function_definitions: ((Define.t Node.t) list) Access.Table.t;
   class_definitions: (Class.t Node.t) Type.Table.t;
   protocols: Type.Hash_set.t;
+  modules: unit Access.Table.t;
   order: TypeOrder.t;
   aliases: Type.t Type.Table.t;
   globals: Resolution.global Access.Table.t;
@@ -50,6 +51,10 @@ module type Handler = sig
   val function_definitions: Access.t -> (Define.t Node.t) list option
   val class_definition: Type.t -> (Class.t Node.t) option
   val protocols: unit -> Type.t list
+
+  val register_module: Access.t -> unit
+  val is_module: Access.t -> bool
+
   val in_class_definition_keys: Type.t -> bool
   val aliases: Type.t -> Type.t option
   val globals: Access.t -> Resolution.global option

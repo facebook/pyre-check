@@ -33,20 +33,24 @@ let variable name =
 let configuration = Configuration.create ()
 
 
-let plain_populate ?source_root ?(check_dependency_exists = false) source =
+let plain_populate ?source_root ?(check_dependency_exists = false) sources =
   let environment = Environment.Builder.create ~configuration () in
   Environment.populate
     ~configuration
     ?source_root
     ~check_dependency_exists
     (Environment.handler ~configuration environment)
-    [parse source];
+    sources;
   environment
 
 
-let populate ?source_root ?(check_dependency_exists = false) source =
-  plain_populate ?source_root ~check_dependency_exists source
+let populate_with_sources ?source_root ?(check_dependency_exists = false) sources =
+  plain_populate ?source_root ~check_dependency_exists sources
   |> Environment.handler ~configuration
+
+
+let populate ?source_root ?(check_dependency_exists = false) source =
+  populate_with_sources ?source_root ~check_dependency_exists [parse source]
 
 
 let resolution environment =
@@ -98,9 +102,9 @@ let test_create _ =
 
 let test_copy _ =
   let plain_environment =
-    plain_populate {|
+    plain_populate [parse {|
       def foo.foo(): ...
-    |} in
+    |}] in
 
   let environment =
     populate {|
@@ -1600,6 +1604,20 @@ let test_protocols _ =
     ([Type.Primitive ~~"B"])
 
 
+let test_modules _ =
+  let environment =
+    populate_with_sources [
+      Source.create ~qualifier:(Access.create "wingus") [];
+      Source.create ~qualifier:(Access.create "dingus") [];
+    ]
+  in
+  let module Handler = (val environment) in
+
+  assert_true (Handler.is_module (Access.create "wingus"));
+  assert_true (Handler.is_module (Access.create "dingus"));
+  assert_false (Handler.is_module (Access.create "zap"))
+
+
 let test_import_dependencies context =
   let create_files_and_test _ =
     Out_channel.create "test.py" |> Out_channel.close;
@@ -1683,6 +1701,7 @@ let () =
     "method_signature">::test_method_signature;
     "class_definition">::test_class_definition;
     "protocols">::test_protocols;
+    "modules">::test_modules;
     "import_dependencies">::test_import_dependencies;
     "purge">::test_purge;
   ]

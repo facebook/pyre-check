@@ -22,6 +22,7 @@ type t = {
   function_definitions: ((Define.t Node.t) list) Access.Table.t;
   class_definitions: (Class.t Node.t) Type.Table.t;
   protocols: Type.Hash_set.t;
+  modules: unit Access.Table.t;
   order: TypeOrder.t;
   aliases: Type.t Type.Table.t;
   globals: Resolution.global Access.Table.t;
@@ -50,6 +51,10 @@ module type Handler = sig
   val function_definitions: Access.t -> (Define.t Node.t) list option
   val class_definition: Type.t -> (Class.t Node.t) option
   val protocols: unit -> Type.t list
+
+  val register_module: Access.t -> unit
+  val is_module: Access.t -> bool
+
   val in_class_definition_keys: Type.t -> bool
   val aliases: Type.t -> Type.t option
   val globals: Access.t -> Resolution.global option
@@ -179,6 +184,7 @@ let handler
       function_definitions;
       class_definitions;
       protocols;
+      modules;
       order;
       aliases;
       globals;
@@ -303,6 +309,12 @@ let handler
 
     let protocols () =
       Hash_set.to_list protocols
+
+    let register_module access =
+      Hashtbl.set ~key:access ~data:() modules
+
+    let is_module access =
+      Hashtbl.mem modules access
 
     let in_class_definition_keys =
       Hashtbl.mem class_definitions
@@ -650,6 +662,10 @@ let dependencies (module Handler: Handler) =
   Handler.dependencies
 
 
+let register_modules (module Handler: Handler) { Source.qualifier; _ } =
+  Handler.register_module qualifier
+
+
 let register_ignore_lines (module Handler: Handler) ({ Source.path; _ } as source) =
   Source.ignore_lines source
   |> List.iter ~f:(fun ignore -> Handler.register_ignore_line ~path ~ignore)
@@ -990,6 +1006,7 @@ let populate
     Type.Primitive (Identifier.create "collections.defaultdict");
   ];
 
+  List.iter ~f:(register_modules (module Handler)) sources;
   List.iter ~f:(register_ignore_lines (module Handler)) sources;
   List.iter ~f:(register_class_definitions (module Handler)) sources;
   Type.TypeCache.disable ();
@@ -1055,6 +1072,7 @@ module Builder = struct
     let function_definitions = Access.Table.create () in
     let class_definitions = Type.Table.create () in
     let protocols = Type.Hash_set.create () in
+    let modules = Access.Table.create () in
     let order = TypeOrder.Builder.default ~configuration () in
     let aliases = Type.Table.create () in
     let globals = Access.Table.create () in
@@ -1081,6 +1099,7 @@ module Builder = struct
       function_definitions;
       class_definitions;
       protocols;
+      modules;
       order;
       aliases;
       globals;
@@ -1094,6 +1113,7 @@ module Builder = struct
         function_definitions;
         class_definitions;
         protocols;
+        modules;
         order;
         aliases;
         globals;
@@ -1104,6 +1124,7 @@ module Builder = struct
       function_definitions = Hashtbl.copy function_definitions;
       class_definitions = Hashtbl.copy class_definitions;
       protocols = Hash_set.copy protocols;
+      modules = Hashtbl.copy modules;
       order = TypeOrder.Builder.copy order;
       aliases = Hashtbl.copy aliases;
       globals = Hashtbl.copy globals;
