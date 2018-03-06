@@ -278,7 +278,7 @@ module State = struct
     let filter_errors errors =
       let open Error in
       let suppress_in_strict ({ kind; _ } as error) =
-        if due_to_analysis_limitations error then
+        if Error.due_to_analysis_limitations error then
           match kind with
           | IncompatibleParameterType _
           | IncompatibleReturnType _
@@ -315,8 +315,8 @@ module State = struct
         | UndefinedType _ ->
             true
         | _ ->
-            due_to_analysis_limitations error ||
-            due_to_mismatch_with_any error ||
+            Error.due_to_analysis_limitations error ||
+            Error.due_to_mismatch_with_any error ||
             Define.is_untyped define
       in
 
@@ -326,7 +326,7 @@ module State = struct
         | MissingParameterAnnotation { annotation = actual; _ }
         | MissingAttributeAnnotation { missing_annotation = { annotation = actual; _ }; _ }
         | MissingGlobalAnnotation { annotation = actual; _ } ->
-            due_to_analysis_limitations error ||
+            Error.due_to_analysis_limitations error ||
             Type.equal actual Type.Object
         | _ ->
             true
