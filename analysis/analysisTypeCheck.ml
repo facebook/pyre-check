@@ -179,11 +179,12 @@ module State = struct
             match Attribute.name attribute with
             | Access name
               when not (Type.equal expected Type.Top ||
+                        Type.is_optional expected ||
                         Option.is_some (Attribute.value attribute)) ->
                 let access =
                   (Expression.Access.Identifier (Identifier.create "self")) :: name
                 in
-                if Option.is_some (Map.find annotations access) || Type.is_optional expected then
+                if Option.is_some (Map.find annotations access) then
                   errors
                 else
                   let error =
@@ -682,7 +683,7 @@ module State = struct
       | `Both (previous, next) ->
           Some (Refinement.widen ~resolution ~widening_threshold ~previous ~next ~iteration)
       | `Left previous
-      | `Right previous when List.length key = 1->
+      | `Right previous when List.length key = 1 ->
           let widened =
             Refinement.widen
               ~resolution
@@ -692,6 +693,9 @@ module State = struct
               ~iteration
           in
           Some widened
+      | `Left previous
+      | `Right previous ->
+          Some previous
       | _ ->
           None
     in

@@ -2552,6 +2552,28 @@ let test_check_init _ =
       class Foo:
         attribute: int
         def __init__(self) -> None:
+          if False:
+            return None
+          self.attribute = 1
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      class Foo:
+        attribute: int
+        def __init__(self) -> None:
+          if True:
+            raise
+          self.attribute = 1
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      class Foo:
+        attribute: int
+        def __init__(self) -> None:
           self.attribute = unknown if True else unknown2
     |}
     [
