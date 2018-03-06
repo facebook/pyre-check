@@ -284,8 +284,7 @@ module State = struct
           | IncompatibleReturnType _
           | MissingParameterAnnotation _
           | MissingReturnAnnotation _
-          | UndefinedAttribute _
-          | UndefinedFunction _ ->
+          | UndefinedAttribute _ ->
               false
           | IncompatibleAwaitableType _
           | IncompatibleAttributeType _
@@ -298,6 +297,10 @@ module State = struct
           | UninitializedAttribute _
           | UnusedIgnore _ ->
               true
+          | UndefinedFunction _ ->
+              (* TODO(T26558543): un-gate this once it is ready. *)
+              Sys.getenv "PYRE_REPORT_UNDEFINED_FUNCTIONS"
+              |> Option.is_none
         else
           match kind with
           | MissingParameterAnnotation { due_to_any; _ } ->
@@ -314,6 +317,12 @@ module State = struct
         | MissingGlobalAnnotation _
         | UndefinedType _ ->
             true
+        | UndefinedFunction _ ->
+            (* TODO(T26558543): un-gate this once it is ready. *)
+            (Sys.getenv "PYRE_REPORT_UNDEFINED_FUNCTIONS" |> Option.is_none) ||
+            Error.due_to_analysis_limitations error ||
+            Error.due_to_mismatch_with_any error ||
+            Define.is_untyped define
         | _ ->
             Error.due_to_analysis_limitations error ||
             Error.due_to_mismatch_with_any error ||
