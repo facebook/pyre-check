@@ -1011,7 +1011,7 @@ module Call = struct
     { call = { call with Call.arguments }; kind }
 
 
-  let insert_implicit_arguments ~callee { call; kind } =
+  let insert_implicit_arguments ~callee ~location { call; kind } =
     let call =
       callee
       >>| (fun { Signature.instantiated = callee; _ } ->
@@ -1019,7 +1019,7 @@ module Call = struct
             let self =
               {
                 Argument.name = None;
-                value = Node.create_with_default_location (Access (Access.create "self"));
+                value = Node.create ~location (Access (Access.create "self"));
               }
             in
             { call with Call.arguments = self :: call.Call.arguments }
@@ -1469,7 +1469,7 @@ module Access = struct
                 ~check_parameter
                 ~add_error
                 ~init:0
-                (Call.insert_implicit_arguments ~callee:(Some callee) call)
+                (Call.insert_implicit_arguments ~location:Location.any ~callee:(Some callee) call)
                 callee
             in
             let no_error_call =
@@ -1542,7 +1542,7 @@ module Access = struct
                 Element.location;
                 access;
                 annotation;
-                call = Call.insert_implicit_arguments ~callee call;
+                call = Call.insert_implicit_arguments ~location ~callee call;
                 callee;
                 backup;
               }
@@ -1687,7 +1687,7 @@ module Access = struct
                   let element =
                     Element.Call {
                       Element.location;
-                      call = Call.insert_implicit_arguments ~callee call;
+                      call = Call.insert_implicit_arguments ~location ~callee call;
                       callee;
                     }
                   in
