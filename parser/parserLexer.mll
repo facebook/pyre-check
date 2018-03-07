@@ -75,7 +75,8 @@ let empty = ""
 let newline = ("\r\n" | '\n')
 let whitespace = [' ' '\t']
 let comment = '#' [^ '\n' '\r']*
-let signature = '#' whitespace* "type: (...) ->" whitespace* [^ '\n' '\r']+
+let signature = '#' whitespace* "type: ("
+  (['a'-'z' 'A'-'Z' ' ' ',' '[' ']' '.' '0'-'9']+)*  ") ->" whitespace* [^ '\n' '\r']+
 
 let identifier = ['$' 'a'-'z' 'A'-'Z' '_'] ['a'-'z' 'A'-'Z' '0'-'9' '_']*
 
@@ -104,11 +105,20 @@ let escape = '\\' _
 rule read state = parse
   | newline whitespace* signature {
     line_break lexbuf;
-    let value =
-      let value = lexeme lexbuf in
-      Str.split (Str.regexp "-> *") value
+    let comment =
+      lexeme lexbuf
+      |> Str.split (Str.regexp "-> *")
+      |> fun elements -> List.nth_exn elements 1
     in
-    SIGNATURE_COMMENT (List.nth_exn value 1)
+    SIGNATURE_COMMENT comment
+  }
+  | whitespace* signature {
+    let comment =
+      lexeme lexbuf
+      |> Str.split (Str.regexp "-> *")
+      |> fun elements -> List.nth_exn elements 1
+    in
+    SIGNATURE_COMMENT comment
   }
   | newline whitespace* comment {
       line_break lexbuf;

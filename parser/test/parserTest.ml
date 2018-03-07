@@ -844,7 +844,7 @@ let test_define _ =
   assert_parsed_equal
     (trim_extra_indentation {|
       def foo():
-        # type: (..) -> str
+        # type: () -> str
         return 4
     |})
     [
@@ -854,7 +854,83 @@ let test_define _ =
         body = [+Return (Some (+Integer 4))];
         decorators = [];
         docstring = None;
-        return_annotation = None;
+        return_annotation = Some !"str";
+        async = false;
+        generated = false;
+        parent = None;
+      };
+    ];
+
+  assert_parsed_equal
+    (trim_extra_indentation {|
+      def foo(a):
+        # type: (str) -> str
+        return 4
+    |})
+    [
+      +Define {
+        Define.name = Access.create "foo";
+        parameters = [
+          +{
+            Parameter.name = ~~"a";
+            value = None;
+            annotation = None;
+          };
+        ];
+        body = [+Return (Some (+Integer 4))];
+        decorators = [];
+        docstring = None;
+        return_annotation = Some !"str";
+        async = false;
+        generated = false;
+        parent = None;
+      };
+    ];
+
+  assert_parsed_equal
+    (trim_extra_indentation {|
+      def foo(a): # type: (str) -> str
+        return 4
+    |})
+    [
+      +Define {
+        Define.name = Access.create "foo";
+        parameters = [
+          +{
+            Parameter.name = ~~"a";
+            value = None;
+            annotation = None;
+          };
+        ];
+        body = [+Return (Some (+Integer 4))];
+        decorators = [];
+        docstring = None;
+        return_annotation = Some !"str";
+        async = false;
+        generated = false;
+        parent = None;
+      };
+    ];
+
+  assert_parsed_equal
+    (trim_extra_indentation {|
+      def foo(a): # type: (typing.Union[typing.List[int], str], str) -> str
+        return 4
+    |})
+    [
+      +Define {
+        Define.name = Access.create "foo";
+        parameters = [
+          +{
+            Parameter.name = ~~"a";
+            value = None;
+            annotation = None;
+          };
+        ];
+        body = [+Return (Some (+Integer 4))];
+        decorators = [];
+        docstring = None;
+        return_annotation = Some !"str";
         async = false;
         generated = false;
         parent = None;
