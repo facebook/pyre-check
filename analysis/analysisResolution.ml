@@ -29,6 +29,8 @@ type t = {
   parse_annotation: Expression.t -> Type.t;
 
   global: Access.t -> global option;
+
+  is_module: Access.t -> bool;
   class_definition: Type.t -> (Class.t Node.t) option;
 
   function_signature:
@@ -51,6 +53,7 @@ let create
     ~resolve
     ~parse_annotation
     ~global
+    ~is_module
     ~class_definition
     ~function_signature
     ~method_signature =
@@ -61,6 +64,7 @@ let create
     resolve;
     parse_annotation;
     global;
+    is_module;
     class_definition;
     function_signature;
     method_signature;
@@ -97,6 +101,10 @@ let parse_annotation { parse_annotation; _ } =
 
 let global { global; _ } =
   global
+
+
+let is_module { is_module; _ } =
+  is_module
 
 
 let class_definition { class_definition; _ } =

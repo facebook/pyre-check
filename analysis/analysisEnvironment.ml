@@ -660,6 +660,7 @@ let resolution
            expression)
     ~parse_annotation
     ~global:Handler.globals
+    ~is_module:Handler.is_module
     ~class_definition
     ~function_signature
     ~method_signature
