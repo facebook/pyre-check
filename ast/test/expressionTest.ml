@@ -14,7 +14,7 @@ open Test
 let test_is_explicit_constructor_call _ =
   let call name =
     {
-      Call.name = Node.create (Expression.Access (Access.create name));
+      Call.name = Node.create_with_default_location (Expression.Access (Access.create name));
       arguments = [];
     }
   in

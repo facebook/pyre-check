@@ -152,8 +152,8 @@ module Class = struct
     body
 
 
-  let annotation { Node.value = { Class.name; _ }; _ } ~resolution =
-    Resolution.parse_annotation resolution (Node.create (Access name))
+  let annotation { Node.value = { Class.name; _ }; location } ~resolution =
+    Resolution.parse_annotation resolution (Node.create ~location (Access name))
 
 
   module Method = struct
@@ -424,7 +424,7 @@ module Class = struct
         let parsed =
           Resolution.parse_annotation
             resolution
-            (Node.create (Access name))
+            (Node.create_with_default_location (Access name))
         in
         if List.is_empty generics then
           parsed
@@ -772,7 +772,7 @@ module Class = struct
           value = {
             Statement.Attribute.async = false;
             assign = {
-              Statement.Assign.target = Node.create (Expression.Access name);
+              Statement.Assign.target = Node.create_with_default_location (Expression.Access name);
               annotation = None;
               value = None;
               compound = None;
@@ -886,7 +886,7 @@ module Define = struct
         let annotation =
           Resolution.parse_annotation
             resolution
-            (Node.create (Access parent))
+            (Node.create_with_default_location (Access parent))
         in
         Resolution.class_definition resolution annotation
         >>| Class.create
@@ -1019,7 +1019,7 @@ module Call = struct
             let self =
               {
                 Argument.name = None;
-                value = Node.create (Access (Access.create "self"));
+                value = Node.create_with_default_location (Access (Access.create "self"));
               }
             in
             { call with Call.arguments = self :: call.Call.arguments }
@@ -1671,7 +1671,7 @@ module Access = struct
                   let annotation =
                     Resolution.resolve
                       resolution
-                      (Node.create (Access access))
+                      (Node.create_with_default_location (Access access))
                   in
                   step (Some (access, (Annotation.create annotation))) call
               | None ->
@@ -1735,7 +1735,7 @@ module Access = struct
                     let definition =
                       Resolution.parse_annotation
                         resolution
-                        (Node.create (Expression.Access access))
+                        (Node.create_with_default_location (Expression.Access access))
                       |> Resolution.class_definition resolution
                     in
                     match definition with
@@ -1783,10 +1783,10 @@ module Access = struct
             ignore arguments;
             let signatures =
               let argument _ =
-                Node.create
+                Node.create_with_default_location
                   (Signature.Normal {
                       Signature.annotation = Type.Top;
-                      value = Node.create (Expression.Access []);
+                      value = Node.create_with_default_location (Expression.Access []);
                     })
               in
               Resolution.function_signature
@@ -1802,7 +1802,9 @@ module Access = struct
         | element :: tail ->
             let access = List.rev (element :: reversed_lead) in
             let definition =
-              Resolution.parse_annotation resolution (Node.create (Access access))
+              Resolution.parse_annotation
+                resolution
+                (Node.create_with_default_location (Access access))
               |> Resolution.class_definition resolution
             in
             if Option.is_some definition then

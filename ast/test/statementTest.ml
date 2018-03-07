@@ -145,13 +145,16 @@ let test_constructor _ =
 let test_attribute_assigns _ =
   let create_assign ~target ~annotation ~value =
     {
-      Assign.target = Node.create (Expression.Access (Access.create target));
+      Assign.target = Node.create_with_default_location (Expression.Access (Access.create target));
       annotation;
-      value = value >>| (fun value -> (Node.create (Expression.Access (Access.create value))));
+      value =
+        value
+        >>| (fun value ->
+            (Node.create_with_default_location (Expression.Access (Access.create value))));
       compound = None;
       parent = None;
     }
-    |> Node.create
+    |> Node.create_with_default_location
   in
   let test_assign_equal left right =
     let open Assign in
@@ -166,14 +169,18 @@ let test_attribute_assigns _ =
       Attribute.async = false;
       assign =
         {
-          Assign.target = Node.create (Expression.Access (Access.create target));
+          Assign.target =
+            Node.create_with_default_location (Expression.Access (Access.create target));
           annotation;
-          value = value >>| (fun value -> (Node.create (Expression.Access (Access.create value))));
+          value =
+            value
+            >>| (fun value ->
+                (Node.create_with_default_location (Expression.Access (Access.create value))));
           compound = None;
           parent = None;
         }
     }
-    |> Node.create
+    |> Node.create_with_default_location
   in
   let test_attribute_node_equal { Node.value = left; _ } { Node.value = right; _ } =
     let open Attribute in
@@ -533,7 +540,7 @@ let test_preamble _ =
   assert_preamble
     [!"item", Some !"name"]
     [
-      Node.create
+      Node.create_with_default_location
         (Assign {
             Assign.target = !"name";
             annotation = None;

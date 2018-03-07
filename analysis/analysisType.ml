@@ -615,7 +615,9 @@ let expression annotation =
   in
 
   let rec access annotation =
-    let index parameter = Access.Index (Node.create (Access (access parameter))) in
+    let index parameter =
+      Access.Index (Node.create_with_default_location (Access (access parameter)))
+    in
     match annotation with
     | Bottom -> Access.create "$bottom"
     | Object -> Access.create "object"
@@ -637,7 +639,9 @@ let expression annotation =
           | Bounded parameters -> List.map ~f:index parameters
           | Unbounded parameter ->
               let ellipses =
-                Access.Index (Node.create (Access [Access.Identifier (Identifier.create "...")]))
+                Access.Index
+                  (Node.create_with_default_location
+                     (Access [Access.Identifier (Identifier.create "...")]))
               in
               [index parameter; ellipses]
         in
@@ -647,7 +651,7 @@ let expression annotation =
         (Access.create "typing.Union") @ [subscript]
     | Variable { variable; _ } -> split variable
   in
-  Node.create (Access (access annotation))
+  Node.create_with_default_location (Access (access annotation))
 
 
 let access annotation =

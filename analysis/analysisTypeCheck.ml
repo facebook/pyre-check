@@ -411,7 +411,7 @@ module State = struct
               let annotation =
                 Resolution.parse_annotation
                   resolution
-                  (Node.create (Access parent))
+                  (Node.create_with_default_location (Access parent))
               in
               if Define.is_class_method define then
                 (* First parameter of a method is a class object. *)
@@ -961,7 +961,7 @@ module State = struct
       | Global identifiers ->
           let access = Access.create_from_identifiers identifiers in
           let annotation =
-            Resolution.resolve resolution (Node.create (Access access))
+            Resolution.resolve resolution (Node.create_with_default_location (Access access))
             |> Annotation.create_immutable ~global:true
           in
           Map.set ~key:access ~data:annotation annotations
@@ -1118,11 +1118,12 @@ module State = struct
                             [
                               {
                                 Argument.name = None;
-                                value = Node.create (Access (Access.create "self"));
+                                value =
+                                  Node.create_with_default_location (Access (Access.create "self"));
                               };
                               {
                                 Argument.name = None;
-                                value = Node.create (Access access);
+                                value = Node.create_with_default_location (Access access);
                               };
                             ]
                           in
@@ -1177,7 +1178,7 @@ module State = struct
         |> add_errors errors
 
       and forward_expression state expression =
-        forward state (Node.create (Expression expression))
+        forward state (Node.create_with_default_location (Expression expression))
 
       and check_entry ~resolution errors { Dictionary.key; value } =
         let errors = check_expression ~resolution errors key in
@@ -1459,7 +1460,10 @@ module State = struct
               match Access.last_element ~resolution (Access.create access) with
               | Access.Element.Attribute attribute when Attribute.defined attribute ->
                   let expected = Annotation.original (Attribute.annotation attribute) in
-                  let name = Expression.Access.access (Node.create (Attribute.name attribute)) in
+                  let name =
+                    Expression.Access.access
+                      (Node.create_with_default_location (Attribute.name attribute))
+                  in
                   errors
                   |> add_incompatible_type_error
                     ~expected

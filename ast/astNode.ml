@@ -12,9 +12,11 @@ type 'node_type t = {
 [@@deriving sexp, show, hash]
 
 
-let create ?(location = Location.any) value =
+let create ~location value =
   { location; value }
 
+let create_with_default_location value =
+  { location = Location.any; value }
 
 let pp print_node format { value; _ } =
   print_node format value

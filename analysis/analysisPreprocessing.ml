@@ -683,9 +683,9 @@ let expand_yield_from source =
           } ->
             let call name =
               Access.Call
-                (Node.create
+                (Node.create_with_default_location
                    {
-                     Call.name = Node.create (Access (Access.create name));
+                     Call.name = Node.create_with_default_location (Access (Access.create name));
                      arguments = [];
                    })
             in
@@ -694,7 +694,8 @@ let expand_yield_from source =
             [{ Node.location;
                value = YieldFrom {
                    Node.location = expression_location;
-                   value = Expression.Yield (Some (Node.create (Access add_call)))
+                   value =
+                     Expression.Yield (Some (Node.create_with_default_location (Access add_call)))
                  }
              }]
 
@@ -730,9 +731,10 @@ let expand_for_loop source =
                   let next =
                     let call name =
                       Access.Call
-                        (Node.create
+                        (Node.create_with_default_location
                            {
-                             Call.name = Node.create (Access (Access.create name));
+                             Call.name =
+                               Node.create_with_default_location (Access (Access.create name));
                              arguments = [];
                            })
                     in
@@ -746,7 +748,7 @@ let expand_for_loop source =
                     | Access access ->
                         access @ next
                     | expression ->
-                        [Access.Expression (Node.create expression)] @ next
+                        [Access.Expression (Node.create_with_default_location expression)] @ next
                   end
                 in
                 {
@@ -921,7 +923,7 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
           {
             Class.name;
             bases = [{ Argument.name = None; value = tuple }];
-            body = [Node.create Pass];
+            body = [Node.create_with_default_location Pass];
             decorators = [];
             docstring = None;
           }
@@ -1034,7 +1036,7 @@ let simplify_access_chains source =
 
 let defines ({ Source.statements; _ } as source) =
   let toplevel =
-    Node.create(Statement.Define.create_toplevel statements)
+    Node.create_with_default_location (Statement.Define.create_toplevel statements)
   in
   let module Collector = Visit.StatementCollector(struct
       type t = Define.t Node.t

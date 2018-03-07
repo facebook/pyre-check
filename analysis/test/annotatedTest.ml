@@ -133,7 +133,7 @@ let test_method_implements _ =
         parent = Some (Expression.Access.create "Parent");
       }
       ~parent:(Class.create
-                 (Node.create
+                 (Node.create_with_default_location
                     {
                       Statement.Class.name = Expression.Access.create "Parent";
                       bases = [];
@@ -224,7 +224,8 @@ let test_generics _ =
         let resolution = populate source |> resolution in
         assert_equal
           ~cmp:(List.equal ~equal:Type.equal)
-          (Class.create (Node.create definition) |> Class.generics ~resolution)
+          (Class.create (Node.create_with_default_location definition)
+           |> Class.generics ~resolution)
           generics
     | _ ->
         assert_unreached ()
@@ -284,7 +285,7 @@ let test_superclasses _ =
       decorators = [];
       docstring = None;
     }
-    |> Node.create
+    |> Node.create_with_default_location
     |> Class.create
   in
 
@@ -335,7 +336,7 @@ let test_constructors _ =
           List.map ~f:define constructors
         in
         let actuals =
-          Node.create definition
+          Node.create_with_default_location definition
           |> Class.create
           |> Class.constructors ~resolution
         in
@@ -447,7 +448,7 @@ let test_methods _ =
           let method_name { Statement.Define.name; _ } =
             Expression.Access.show name
           in
-          Node.create definition
+          Node.create_with_default_location definition
           |> Class.create
           |> Class.methods
           |> List.map ~f:(fun definition -> Method.define definition |> method_name)
@@ -480,7 +481,7 @@ let test_is_protocol _ =
         decorators = [];
         docstring = None;
       }
-      |> Node.create
+      |> Node.create_with_default_location
       |> Class.create
       |> Class.is_protocol
     in
@@ -506,8 +507,8 @@ let test_implements _ =
           | { Node.value = Statement.Stub (Stub.Class protocol); _ } ->
               assert_equal
                 (Class.implements
-                   ~protocol:(Class.create (Node.create protocol))
-                   (Class.create (Node.create definition)))
+                   ~protocol:(Class.create (Node.create_with_default_location protocol))
+                   (Class.create (Node.create_with_default_location definition)))
                 conforms
           | _ ->
               assert_unreached ()
@@ -573,7 +574,7 @@ let test_class_attributes _ =
           failwith "Could not parse class"
     in
     populate source |> resolution,
-    Class.create (Node.create parent)
+    Class.create (Node.create_with_default_location parent)
   in
 
   let resolution, parent =
@@ -1290,7 +1291,7 @@ let test_fold _ =
       decorators = [];
       docstring = None;
     }
-    |> Node.create
+    |> Node.create_with_default_location
     |> Class.create
   in
   let defined_attribute =

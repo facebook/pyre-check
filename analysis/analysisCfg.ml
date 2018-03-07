@@ -109,7 +109,7 @@ module Node = struct
         string
     in
     let process_statement statement =
-      Ast.Node.create statement
+      Ast.Node.create_with_default_location statement
       |> Statement.show
       |> add_newlines
     in

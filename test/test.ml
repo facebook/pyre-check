@@ -166,7 +166,7 @@ let assert_source_equal =
 
 (* Expression helpers. *)
 let (~+) value =
-  Node.create value
+  Node.create_with_default_location value
 
 
 let (~~) = Identifier.create

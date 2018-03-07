@@ -78,7 +78,7 @@ let register_type
     let annotation =
       Type.create
         ~aliases
-        (Node.create (Access name))
+        (Node.create_with_default_location (Access name))
     in
     let primitive, parameters = Type.split annotation in
     let (module Handler: TypeOrder.Handler) = order in
@@ -390,7 +390,7 @@ let resolution
         let self_or_class_argument =
           Signature.Normal {
             Signature.annotation = Type.Object;
-            value = Node.create (Access (Access.create "self_or_class"));
+            value = Node.create_with_default_location (Access (Access.create "self_or_class"));
           }
         in
         self_or_class_argument :: arguments
@@ -690,7 +690,7 @@ let register_class_definitions (module Handler: Handler) source =
         | { Node.value = Class { Class.name; _ }; _ }
         | { Node.value = Stub (Stub.Class { Class.name; _ }); _ } ->
             let primitive, _ =
-              Type.create ~aliases:Handler.aliases (Node.create (Access name))
+              Type.create ~aliases:Handler.aliases (Node.create_with_default_location (Access name))
               |> Type.split
             in
             if not (TypeOrder.contains order primitive) then
@@ -731,14 +731,14 @@ let register_aliases (module Handler: Handler) sources =
             let qualified_name =
               match alias with
               | None ->
-                  Node.create (Access (qualifier @ name))
+                  Node.create_with_default_location (Access (qualifier @ name))
               | Some alias ->
-                  Node.create (Access (qualifier @ alias))
+                  Node.create_with_default_location (Access (qualifier @ alias))
             in
             [
               path,
               qualified_name,
-              Node.create (Access (from @ name));
+              Node.create_with_default_location (Access (from @ name));
             ]
           in
           List.rev_append (List.concat_map ~f:import_to_alias imports) aliases
@@ -1098,7 +1098,10 @@ module Builder = struct
           docstring = None;
         }
       in
-      Hashtbl.set ~key:(Type.primitive name) ~data:(Node.create definition) class_definitions;
+      Hashtbl.set
+        ~key:(Type.primitive name)
+        ~data:(Node.create_with_default_location definition)
+        class_definitions;
     in
     List.iter ~f:add_special_class ["typing.Optional"; "typing.Unbound"];
 

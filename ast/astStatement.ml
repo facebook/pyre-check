@@ -305,7 +305,7 @@ module Define = struct
     {
       name;
       parameters = [Parameter.create ~name:(Identifier.create "self") ()];
-      body = [Node.create Pass];
+      body = [Node.create_with_default_location Pass];
       decorators = [];
       return_annotation = None;
       async = false;

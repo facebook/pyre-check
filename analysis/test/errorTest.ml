@@ -33,7 +33,7 @@ let mock_parent =
     decorators = [];
     docstring = None;
   }
-  |> Node.create
+  |> Node.create_with_default_location
   |> Annotated.Class.create
 
 
