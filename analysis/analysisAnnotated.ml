@@ -920,6 +920,25 @@ module Define = struct
         else
           List.nth parameter_names index
     | Some name, _ -> Some name
+
+
+  let apply_decorators define ~resolution =
+    let return_annotation = return_annotation define ~resolution in
+    match Define.has_decorator define "contextlib.contextmanager", return_annotation with
+    | true, AnalysisType.Parametric { AnalysisType.name; parameters = [single_parameter] }
+      when Identifier.show name = "typing.Iterator" ->
+        {
+          define with
+          Define.return_annotation =
+            Some
+              (AnalysisType.Parametric {
+                  AnalysisType.name = Identifier.create "contextlib.GeneratorContextManager";
+                  parameters = [single_parameter];
+                }
+               |> Type.expression);
+        }
+    | _ ->
+        define
 end
 
 

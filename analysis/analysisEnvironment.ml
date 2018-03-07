@@ -884,6 +884,10 @@ let connect_type_order
 
         | { Node.value = Define definition; location }
         | { Node.value = Stub (Stub.Define definition); location } ->
+            let definition =
+              Annotated.Define.apply_decorators ~resolution (Annotated.Define.create definition)
+              |> Annotated.Define.define
+            in
             if Define.is_method definition then
               let parent = Option.value_exn definition.Define.parent in
               Handler.register_definition

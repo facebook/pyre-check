@@ -195,6 +195,8 @@ module Define : sig
     -> index: int
     -> argument: Expression.t Argument.t
     -> Identifier.t option
+
+  val apply_decorators: t -> resolution: Resolution.t -> t
 end
 
 module BinaryOperator : sig

@@ -108,7 +108,7 @@ let plain_environment =
           def __iter__(self) -> typing.Iterator[_T]: ...
           def append(self, element: _T) -> None: ...
         class set(typing.Iterable[_T], typing.Generic[_T]): pass
-        class typing.Generator(typing.Generic[_T, _S, _V], typing.Iterable[_T]):
+        class typing.Generator(typing.Generic[_T, _S, _V], typing.Iterator[_T]):
           pass
 
         class A: ...
@@ -127,6 +127,11 @@ let plain_environment =
         class typing.Awaitable: pass
         class typing.AsyncGenerator: pass
         class IsAwaitable(typing.Awaitable[int]): pass
+        class contextlib.ContextManager(typing.Generic[_T]):
+          def __enter__(self) -> _T:
+            pass
+        class contextlib.GeneratorContextManager(contextlib.ContextManager[_T], typing.Generic[_T]):
+          pass
 
         def sum(iterable: typing.Iterable[_T]) -> typing.Union[_T, int]: ...
         class Attributes:
@@ -4549,6 +4554,49 @@ let test_check_unbound_variables _ =
     ["Incompatible return type [7]: Expected `int` but got `bool`."]
 
 
+let test_check_contextmanager _ =
+  assert_type_errors
+    {|
+      @contextlib.contextmanager
+      def f()->typing.Iterator[int]:
+        yield 1
+
+      def g()->int:
+        with f() as number:
+          return number
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      @contextlib.contextmanager
+      def f()->typing.Iterator[int]:
+        yield 1
+
+      def g()->str:
+        with f() as number:
+          return number
+    |}
+    ["Incompatible return type [7]: Expected `str` but got `int`."];
+
+  assert_type_errors
+    {|
+      @contextlib.contextmanager
+      def f()->typing.Iterable[int]:
+        yield 1
+
+      def g()->int:
+        with f() as number:
+          return number
+    |}
+    [
+      "Undefined function [10]: Could not resolve call `__enter__` on `typing.Iterable[int]`.";
+      "Incompatible return type [7]: Expected `int` but got `unknown`.";
+    ]
+
+
+
+
 let assert_infer
     ?(debug = false)
     ?(infer = true)
@@ -4983,6 +5031,7 @@ let () =
     "check_explicit_method_call">::test_check_explicit_method_call;
     "check_meta_annotations">::test_check_meta_annotations;
     "check_unbound_variables">::test_check_unbound_variables;
+    "check_contextmanager">::test_check_contextmanager;
     "infer">::test_infer;
     "infer_backward">::test_infer_backward;
     "recursive_infer">::test_recursive_infer;
