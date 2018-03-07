@@ -278,6 +278,13 @@ module State = struct
 
     let filter_errors errors =
       let open Error in
+
+      let suppress_undefined_function =
+        (* TODO(T26558543): un-gate this once it is ready. *)
+        Sys.getenv "PYRE_REPORT_UNDEFINED_FUNCTIONS"
+        |> Option.is_none
+      in
+
       let suppress_in_strict ({ kind; _ } as error) =
         if Error.due_to_analysis_limitations error then
           match kind with
@@ -299,13 +306,13 @@ module State = struct
           | UnusedIgnore _ ->
               true
           | UndefinedFunction _ ->
-              (* TODO(T26558543): un-gate this once it is ready. *)
-              Sys.getenv "PYRE_REPORT_UNDEFINED_FUNCTIONS"
-              |> Option.is_none
+              suppress_undefined_function
         else
           match kind with
           | MissingParameterAnnotation { due_to_any; _ } ->
               due_to_any
+          | UndefinedFunction _ ->
+              suppress_undefined_function
           | _ ->
               false
       in
@@ -319,8 +326,7 @@ module State = struct
         | UndefinedType _ ->
             true
         | UndefinedFunction _ ->
-            (* TODO(T26558543): un-gate this once it is ready. *)
-            (Sys.getenv "PYRE_REPORT_UNDEFINED_FUNCTIONS" |> Option.is_none) ||
+            suppress_undefined_function ||
             Error.due_to_analysis_limitations error ||
             Error.due_to_mismatch_with_any error ||
             Define.is_untyped define
