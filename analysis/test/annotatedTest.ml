@@ -1226,26 +1226,18 @@ let test_fold _ =
   let assert_fold ~environment access expected =
     let equal left right =
       match (snd left), (snd right) with
-      | Access.Element.Array, Access.Element.Array
       | Access.Element.Call _, Access.Element.Call _
-      | Access.Element.Expression, Access.Element.Expression
       | Access.Element.Attribute _, Access.Element.Attribute _
-      | Access.Element.Global, Access.Element.Global
-      | Access.Element.Identifier, Access.Element.Identifier
+      | Access.Element.Value, Access.Element.Value
       | Access.Element.Method _, Access.Element.Method _ -> Annotation.equal (fst left) (fst right)
       | _, _ -> false
     in
     let printer elements =
       let print element =
         match snd element with
-        | Access.Element.Array -> "(" ^ (Annotation.show (fst element)) ^ ", Array)"
         | Access.Element.Call _ -> "(" ^ (Annotation.show (fst element)) ^ ", Call)"
-        | Access.Element.Expression ->
-            "(" ^ (Annotation.show (fst element)) ^ ", Expression)"
         | Access.Element.Attribute _ -> "(" ^ (Annotation.show (fst element)) ^ ", Attribute)"
-        | Access.Element.Global -> "(" ^ (Annotation.show (fst element)) ^ ", Global)"
-        | Access.Element.Identifier ->
-            "(" ^ (Annotation.show (fst element)) ^ ", Identifier) "
+        | Access.Element.Value -> "(" ^ (Annotation.show (fst element)) ^ ", Value)"
         | Access.Element.Method _ -> "(" ^ (Annotation.show (fst element)) ^ ", Method) "
       in
       List.map ~f:print elements
@@ -1272,8 +1264,6 @@ let test_fold _ =
     ~environment:(populate "")
     (Expression.Access.create "foo")
     [
-      Annotation.create Type.Top, Access.Element.Global;
-      Annotation.create Type.Top, Access.Element.Global;
     ];
 
   let environment =
@@ -1311,7 +1301,7 @@ let test_fold _ =
     (Expression.Access.create "foo.bar")
     [
       Annotation.create_immutable ~global:true Type.integer, defined_attribute;
-      Annotation.create_immutable ~global:true (Type.Primitive ~~"Foo"), Access.Element.Global;
+      Annotation.create_immutable ~global:true (Type.Primitive ~~"Foo"), Access.Element.Value;
     ];
 
   let undefined_attribute =
@@ -1331,7 +1321,7 @@ let test_fold _ =
     (Expression.Access.create "foo.baz")
     [
       Annotation.create Type.Top, undefined_attribute;
-      Annotation.create_immutable ~global:true (Type.Primitive ~~"Foo"), Access.Element.Global;
+      Annotation.create_immutable ~global:true (Type.Primitive ~~"Foo"), Access.Element.Value;
     ]
 
 

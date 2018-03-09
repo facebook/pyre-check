@@ -28,6 +28,8 @@ let plain_environment =
     (Environment.handler ~configuration environment)
     ~configuration
     [
+      Source.create ~qualifier:(Access.create "typing") [];
+      Source.create ~qualifier:(Access.create "unittest.mock") [];
       parse {|
         class typing.Sized: ...
         def len(o: typing.Sized) -> int: ...
@@ -1615,16 +1617,17 @@ let test_check_coverage _ =
     "yield ERROR";
   assert_covered
     ~additional_errors:[
-      "Undefined function [10]: Could not resolve call `__iter__`.";
+      "Undefined type [11]: Type `unknown` is not defined.";
       "Incompatible return type [7]: Expected `None` but got " ^
       "`typing.Generator[unknown, None, None]`.";
     ]
     "yield from ERROR";
 
   (* Control statements. *)
-  (* TODO(T26558543): we're firing a bunch of errors on the same location here. *)
-  assert_not_covered
-    ~additional_errors:["Undefined function [10]: Could not resolve call `__next__`."]
+  assert_covered
+    ~additional_errors:[
+      "Undefined type [11]: Type `unknown` is not defined.";
+    ]
     "for i in ERROR: pass";
   assert_covered "while ERROR: pass";
   assert_covered "if ERROR: pass";
@@ -1964,36 +1967,6 @@ let test_check_optional _ =
       "Missing return annotation [3]: Returning `typing.Optional[typing.Union[bool, int]]` but " ^
       "type `Any` is specified."
     ]
-
-
-let test_check_environment_precedence _ =
-  assert_type_errors
-    {|
-      def string.attribute.call() -> None: ...
-      def foo(string: str) -> None:
-        string.attribute.call()
-    |}
-    [];
-  assert_type_errors
-    {|
-      class string.attribute.Constructor:
-        ATTRIBUTE = 1
-        def __init__(self, a: int): ...
-      def foo(string: str) -> None:
-        string.attribute.Constructor(1)
-        string.attribute.Constructor.ATTRIBUTE
-    |}
-    [];
-  assert_type_errors
-    {|
-      class Foo:
-        def send(self) -> None:
-          pass
-      string.attribute: Foo = Foo()
-      def foo(string: str) -> None:
-        string.attribute.send()
-    |}
-    []
 
 
 let test_check_function_parameters _ =
@@ -2345,7 +2318,10 @@ let test_check_method_resolution _ =
       def foo() -> None:
         bar().baz()
     |}
-    ["Undefined function [10]: Could not resolve call `baz`."];
+    [
+      "Undefined function [10]: Could not resolve call `bar`.";
+      "Undefined type [11]: Type `unknown` is not defined.";
+    ];
   assert_type_errors
     {|
       def foo(input: str) -> None:
@@ -2709,7 +2685,7 @@ let test_check_attributes _ =
         def foo() -> None:
           self.bar.bar()
     |}
-    ["Undefined function [10]: Could not resolve call `bar`."];
+    [];
 
   assert_type_errors
     ~show_error_traces:true
@@ -4994,7 +4970,6 @@ let () =
     "check_non_debug">::test_check_non_debug;
     "check_comprehensions">::test_check_comprehensions;
     "check_optional">::test_check_optional;
-    "check_environment_precedence">::test_check_environment_precedence;
     "check_function_parameters">::test_check_function_parameters;
     "check_function_parameters_with_backups">::test_check_function_parameters_with_backups;
     "check_function_parameter_errors">::test_check_function_parameter_errors;

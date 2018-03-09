@@ -280,6 +280,11 @@ end
 
 
 module Access: sig
+  type t
+  [@@deriving compare, eq, sexp, show, hash]
+
+  val create: Access.t -> t
+
   module Element: sig
     type call = {
       location: Location.t;
@@ -297,19 +302,11 @@ module Access: sig
     }
 
     type t =
-      | Array
       | Call of call
-      | Expression
       | Attribute of Attribute.t
-      | Global
-      | Identifier
       | Method of method_call
+      | Value
   end
-
-  type t
-  [@@deriving compare, eq, sexp, show, hash]
-
-  val create: Access.t -> t
 
   val fold
     :  resolution: Resolution.t

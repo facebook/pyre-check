@@ -1303,6 +1303,14 @@ end
 
 
 module Access = struct
+  type t = Access.t
+  [@@deriving compare, eq, sexp, show, hash]
+
+
+  let create access =
+    access
+
+
   module Element = struct
     type call = {
       location: Location.t;
@@ -1322,22 +1330,34 @@ module Access = struct
 
 
     type t =
-      | Array
       | Call of call
-      | Expression
       | Attribute of Attribute.t
-      | Global
-      | Identifier
       | Method of method_call
+      | Value
   end
 
 
-  type t = Access.t
-  [@@deriving compare, eq, sexp, show, hash]
+  module Result = struct
+    type 'accumulator t = {
+      resolution: Resolution.t;
+      accumulator: 'accumulator;
+      resolved: Annotation.t option;
+      abort: bool;
+    }
 
 
-  let create access =
-    access
+    let create ~resolution ~accumulator ?resolved ?(abort = false) () =
+      { resolution; accumulator; resolved; abort }
+
+
+    let abort ~resolution ~accumulator =
+      {
+        resolution;
+        accumulator;
+        resolved = Some (Annotation.create Type.Top);
+        abort = true;
+      }
+  end
 
 
   (* Fold over an access path. Callbacks will be passed the current `accumulator`, the current
@@ -1464,7 +1484,7 @@ module Access = struct
           access
     in
 
-    let rec fold ~accumulator ~reversed_lead ~tail ~annotation ~resolution =
+    let rec fold ~accumulator ~lead ~tail ~resolved ~resolution =
       let annotations = Resolution.annotations resolution in
       let pick_signature call signatures =
         match signatures with
@@ -1520,333 +1540,295 @@ module Access = struct
                 >>| fst
       in
 
-      let rec step annotation reversed_lead =
-        match annotation, reversed_lead with
-        | Some (access, annotation),
-          [Access.Call { Node.location; value = call }] ->
-            (* Method call. *)
-            let annotation, call =
-              if Type.is_meta (Annotation.annotation annotation) then
-                begin
-                  let annotation =
-                    match Annotation.annotation annotation |> Type.parameters with
-                    | [parameter] -> Annotation.create parameter
-                    | _ -> failwith "Not a meta annotation"
-                  in
-                  annotation,
-                  Call.create ~kind:Call.Function call
-                end
-              else
-                annotation,
-                Call.create ~kind:Call.Method call in
+      match tail with
+      | head :: tail ->
+          let qualifier = lead in
+          let lead = lead @ [head] in
+          let { Result.resolution; resolved; accumulator; abort } =
+            match resolved, head with
+            (* Typed context: operations are on a class definition. *)
+            | Some resolved,
+              Access.Call { Node.location; value = call } ->
+                (* Method call. *)
+                let resolved, call =
+                  if Type.is_meta (Annotation.annotation resolved) then
+                    begin
+                      let resolved =
+                        match Annotation.annotation resolved |> Type.parameters with
+                        | [parameter] -> Annotation.create parameter
+                        | _ -> failwith "Not a meta annotation"
+                      in
+                      resolved,
+                      Call.create ~kind:Call.Function call
+                    end
+                  else
+                    resolved,
+                    Call.create ~kind:Call.Method call in
 
-            let callee =
-              Resolution.method_signature
-                resolution
-                (Annotation.original annotation)
-                (Call.call call)
-                (Call.argument_annotations ~resolution call)
-              |> pick_signature call
-            in
-            let backup =
-              Call.backup call
-              >>= fun call ->
-              begin
-                match call with
-                | {
-                  Call.call = { Expression.Call.arguments = [{ Argument.value; _ }]; _ };
-                  _;
-                } ->
-                    let annotation = Resolution.resolve resolution value in
-                    Resolution.method_signature
-                      resolution
-                      annotation
-                      (Call.call call)
-                      (Call.argument_annotations ~resolution call)
-                    |> pick_signature call
-                | _ -> None
-              end
-              >>= fun signature -> Some (call, signature)
-            in
-            let element =
-              {
-                Element.location;
-                access;
-                annotation;
-                call = Call.insert_implicit_arguments ~location ~callee call;
-                callee;
-                backup;
-              }
-            in
-            let determined = determine_annotation ~element in
-            let resolved = Annotation.create (return_annotation resolution callee) in
-            let annotations =
-              Map.find annotations access
-              >>| (fun existing ->
-                  Map.set
-                    ~key:access
-                    ~data:{ existing with Annotation.annotation = determined }
-                    annotations)
-              |> Option.value
-                ~default:(Map.set ~key:access ~data:(Annotation.create determined) annotations)
-            in
-            (Resolution.with_annotations resolution annotations),
-            resolved,
-            (f accumulator ~annotations ~resolved ~element:(Element.Method element))
-
-        | Some (access, annotation), ([Access.Identifier _] as attribute_access) ->
-            (* Attribute access. *)
-            let annotation, class_attributes =
-              if Type.is_meta (Annotation.annotation annotation) then
-                let annotation =
-                  match Annotation.annotation annotation |> Type.parameters with
-                  | [parameter] -> Annotation.create parameter
-                  | _ -> failwith "Not a meta annotation"
+                let callee =
+                  Resolution.method_signature
+                    resolution
+                    (Annotation.original resolved)
+                    (Call.call call)
+                    (Call.argument_annotations ~resolution call)
+                  |> pick_signature call
                 in
-                annotation,
-                true
-              else
-                annotation,
-                false
-            in
-            let definition =
-              Resolution.class_definition
-                resolution
-                (Annotation.annotation annotation)
-            in
-            (definition
-             >>| fun definition ->
-             let attribute =
-               Class.attribute
-                 ~transitive:true
-                 ~class_attributes
-                 ~resolution
-                 ~name:attribute_access
-                 ~instantiated:(Annotation.annotation annotation)
-                 definition
-             in
-
-             (* Handle async attributes. *)
-             let resolved =
-               if Attribute.async attribute then
-                 Attribute.annotation attribute
-                 |> Annotation.annotation
-                 |> Type.awaitable
-                 |> Annotation.create
-               else
-                 Attribute.annotation attribute
-             in
-
-             let access = access @ attribute_access in
-             if not (Attribute.defined attribute) then
-               let attribute, resolved =
-                 match Class.fallback_attribute ~resolution ~access:attribute_access definition with
-                 | Some attribute ->
-                     attribute,
-                     Attribute.annotation attribute
-                 | None ->
-                     attribute,
-                     Map.find annotations access
-                     |> Option.value ~default:(Annotation.create Type.Top)
-               in
-               resolution,
-               resolved,
-               (f accumulator ~annotations ~resolved ~element:(Element.Attribute attribute))
-             else
-               match Map.find annotations access with
-               | Some resolved ->
-                   resolution,
-                   resolved,
-                   (f accumulator ~annotations ~resolved ~element:(Element.Attribute attribute))
-               | None ->
-                   resolution,
-                   resolved,
-                   (f accumulator ~annotations ~resolved ~element:(Element.Attribute attribute)))
-            |> Option.value ~default:(resolution, Annotation.create Type.Top, accumulator)
-
-        | Some (_, annotation), (Access.Subscript subscript) :: _ ->
-            (* Array access. *)
-            let resolved =
-              match subscript, Annotation.annotation annotation with
-              | [Access.Index _],
-                (Type.Parametric {
-                    Type.parameters;
-                    _;
-                  }) ->
-                  (* TODO(T22845396): improve temporary fix *)
+                let backup =
+                  Call.backup call
+                  >>= fun call ->
                   begin
-                    match parameters with
-                    | _ :: parameter :: _ -> parameter
-                    | parameter :: _ -> parameter
-                    | [] -> Type.Top
+                    match call with
+                    | {
+                      Call.call = { Expression.Call.arguments = [{ Argument.value; _ }]; _ };
+                      _;
+                    } ->
+                        let resolved = Resolution.resolve resolution value in
+                        Resolution.method_signature
+                          resolution
+                          resolved
+                          (Call.call call)
+                          (Call.argument_annotations ~resolution call)
+                        |> pick_signature call
+                    | _ -> None
                   end
-              | [Access.Slice _], _ ->
-                  (Annotation.annotation annotation)
-              | _ ->
-                  Type.Top
-            in
-            resolution,
-            Annotation.create resolved,
-            (f accumulator
-               ~annotations
-               ~resolved:(Annotation.create resolved)
-               ~element:Element.Array)
+                  >>= fun signature -> Some (call, signature)
+                in
+                let element =
+                  {
+                    Element.location;
+                    access = qualifier;
+                    annotation = resolved;
+                    call = Call.insert_implicit_arguments ~location ~callee call;
+                    callee;
+                    backup;
+                  }
+                in
+                let determined = determine_annotation ~element in
+                let resolved = Annotation.create (return_annotation resolution callee) in
+                let annotations =
+                  Map.find annotations qualifier
+                  >>| (fun existing ->
+                      Map.set
+                        ~key:qualifier
+                        ~data:{ existing with Annotation.annotation = determined }
+                        annotations)
+                  |> Option.value
+                    ~default:
+                      (Map.set ~key:qualifier ~data:(Annotation.create determined) annotations)
+                in
+                Result.create
+                  ~resolution:(Resolution.with_annotations resolution annotations)
+                  ~resolved
+                  ~accumulator:
+                    (f accumulator ~annotations ~resolved ~element:(Element.Method element))
+                  ()
 
-        | None,
-          Access.Call { Node.location; value = call } :: qualifier ->
-            (* Call. *)
-            let call = Call.create ~kind:Call.Function call in
-            let callee =
-              Resolution.function_signature
-                resolution
-                (List.rev qualifier)
-                (Call.call call)
-                (Call.argument_annotations ~resolution call)
-              |> pick_signature call
-            in
-            let resolved = Annotation.create (return_annotation resolution callee) in
-            let element =
-              Element.Call {
-                Element.location;
-                call = Call.insert_implicit_arguments ~location ~callee call;
-                callee;
-              }
-            in
-            resolution,
-            resolved,
-            (f accumulator ~annotations ~resolved ~element)
-
-        | None, Access.Expression expression :: _ ->
-            (* Arbitrary expression. *)
-            let resolved = Annotation.create (Resolution.resolve resolution expression) in
-            resolution,
-            resolved,
-            (f accumulator ~annotations ~resolved ~element:Element.Expression)
-
-        | None, [Access.Identifier identifier]
-          when Identifier.show identifier = "None" ->
-            (* `None`. *)
-            let resolved = Annotation.create (Type.Optional Type.Bottom) in
-            resolution,
-            resolved,
-            (f accumulator ~annotations ~resolved ~element:Element.Identifier)
-
-        | _, access ->
-            (* Known accesses. *)
-            begin
-              let resolved =
-                let lead = List.rev reversed_lead in
-                match Map.find annotations lead with
-                | Some resolved ->
-                    Some resolved
-                | None ->
-                    Resolution.global resolution lead
-                    >>| fun { Resolution.annotation; _ } -> annotation
-              in
-              match resolved with
-              | Some resolved ->
-                  (* Known global. *)
-                  resolution,
-                  resolved,
-                  (f accumulator ~annotations ~resolved ~element:Element.Global)
-              | None ->
-                  begin
-                    let access = List.rev access in
-                    let definition =
-                      Resolution.parse_annotation
-                        resolution
-                        (Node.create_with_default_location (Expression.Access access))
-                      |> Resolution.class_definition resolution
+            | Some resolved, Access.Identifier _ ->
+                (* Attribute access. *)
+                let resolved, class_attributes =
+                  if Type.is_meta (Annotation.annotation resolved) then
+                    let resolved =
+                      match Annotation.annotation resolved |> Type.parameters with
+                      | [parameter] -> Annotation.create parameter
+                      | _ -> failwith "Not a meta annotation"
                     in
-                    match definition with
-                    | Some definition ->
-                        (* Resolve class to the corresponding meta annotation (Type[C]). *)
-                        let annotation =
-                          Class.annotation ~resolution definition
-                          |> Type.meta
-                        in
-                        step (Some (access, (Annotation.create annotation))) []
-                    | _ ->
-                        let resolved = Annotation.create Type.Top in
-                        resolution,
-                        resolved,
-                        (f accumulator ~annotations ~resolved ~element:Element.Global)
-                  end
-            end
-      in
-      let resolution, resolved, accumulator = step annotation reversed_lead in
+                    resolved,
+                    true
+                  else
+                    resolved,
+                    false
+                in
+                let definition =
+                  Resolution.class_definition
+                    resolution
+                    (Annotation.annotation resolved)
+                in
+                (definition
+                 >>| fun definition ->
+                 let attribute =
+                   Class.attribute
+                     ~transitive:true
+                     ~class_attributes
+                     ~resolution
+                     ~name:[head]
+                     ~instantiated:(Annotation.annotation resolved)
+                     definition
+                 in
 
-      match Annotation.annotation resolved, tail with
-      | Type.Top, head :: tail ->
-          fold
-            ~resolution
-            ~accumulator
-            ~reversed_lead:(head :: reversed_lead)
-            ~tail
-            ~annotation:None
-      | _, head :: tail ->
-          fold
-            ~resolution
-            ~accumulator
-            ~reversed_lead:[head]
-            ~tail
-            ~annotation:(Some (List.rev reversed_lead, resolved))
+                 (* Handle async attributes. *)
+                 let resolved =
+                   if Attribute.async attribute then
+                     Attribute.annotation attribute
+                     |> Annotation.annotation
+                     |> Type.awaitable
+                     |> Annotation.create
+                   else
+                     Attribute.annotation attribute
+                 in
+
+                 if not (Attribute.defined attribute) then
+                   let attribute, resolved =
+                     match Class.fallback_attribute ~resolution ~access:[head] definition with
+                     | Some attribute ->
+                         attribute,
+                         Attribute.annotation attribute
+                     | None ->
+                         attribute,
+                         Map.find annotations lead
+                         |> Option.value ~default:(Annotation.create Type.Top)
+                   in
+                   let element = Element.Attribute attribute in
+                   Result.create
+                     ~resolution
+                     ~resolved
+                     ~accumulator:(f accumulator ~annotations ~resolved ~element)
+                     ()
+                 else
+                   let resolved =
+                     (* Local definitions can override attributes. *)
+                     Map.find annotations lead
+                     |> Option.value ~default:resolved
+                   in
+                   let element = Element.Attribute attribute in
+                   Result.create
+                     ~resolution
+                     ~resolved
+                     ~accumulator:(f accumulator ~annotations ~resolved ~element)
+                     ())
+                |> Option.value ~default:(Result.abort ~resolution ~accumulator)
+
+            | Some resolved, Access.Subscript subscript ->
+                (* Array access. *)
+                let resolved =
+                  let resolved =
+                    match subscript, Annotation.annotation resolved with
+                    | [Access.Index _],
+                      (Type.Parametric {
+                          Type.parameters;
+                          _;
+                        }) ->
+                        (* TODO(T22845396): improve temporary fix *)
+                        begin
+                          match parameters with
+                          | _ :: parameter :: _ -> parameter
+                          | parameter :: _ -> parameter
+                          | [] -> Type.Top
+                        end
+                    | [Access.Slice _], resolved ->
+                        resolved
+                    | _ ->
+                        Type.Top
+                  in
+                  Annotation.create resolved
+                in
+                Result.create
+                  ~resolution
+                  ~resolved
+                  ~accumulator:(f accumulator ~annotations ~resolved ~element:Element.Value)
+                  ()
+
+            | Some resolved, _ ->
+                (* TODO(T26558543): Undefined access on type. *)
+                Result.create ~resolution ~resolved ~accumulator ()
+
+            (* Untyped context: this is either a module, variable, or function call. *)
+            | None,
+              Access.Call { Node.location; value = call } ->
+                (* Call. *)
+                let call = Call.create ~kind:Call.Function call in
+                let callee =
+                  Resolution.function_signature
+                    resolution
+                    qualifier
+                    (Call.call call)
+                    (Call.argument_annotations ~resolution call)
+                  |> pick_signature call
+                in
+                let resolved = Annotation.create (return_annotation resolution callee) in
+                let element =
+                  Element.Call {
+                    Element.location;
+                    call = Call.insert_implicit_arguments ~location ~callee call;
+                    callee;
+                  }
+                in
+                Result.create
+                  ~resolution
+                  ~resolved
+                  ~accumulator:(f accumulator ~annotations ~resolved ~element)
+                  ()
+
+            | None, Access.Expression expression ->
+                (* Arbitrary expression. *)
+                let resolved = Annotation.create (Resolution.resolve resolution expression) in
+                Result.create
+                  ~resolution
+                  ~resolved
+                  ~accumulator:(f accumulator ~annotations ~resolved ~element:Element.Value)
+                  ()
+
+            | None, Access.Identifier identifier when Identifier.show identifier = "None" ->
+                (* None. *)
+                let resolved = Annotation.create (Type.optional Type.Bottom) in
+                Result.create
+                  ~resolution
+                  ~resolved
+                  ~accumulator:(f accumulator ~annotations ~resolved ~element:Element.Value)
+                  ()
+
+            | None, _ ->
+                (* Module or global variable. *)
+                begin
+                  let resolved =
+                    match Map.find annotations lead with
+                    | Some resolved ->
+                        Some resolved
+                    | None ->
+                        Resolution.global resolution lead
+                        >>| fun { Resolution.annotation; _ } -> annotation
+                  in
+                  match resolved with
+                  | Some resolved ->
+                      (* Locally known variable (either local or global). *)
+                      Result.create
+                        ~resolution
+                        ~resolved
+                        ~accumulator:
+                          (f accumulator ~annotations ~resolved ~element:Element.Value)
+                        ()
+                  | None ->
+                      if Resolution.is_module resolution lead then
+                        (* Skip over modules. *)
+                        Result.create ~resolution ~accumulator ()
+                      else
+                        (* Attempt to resolve meta variables. E.g. `module.Class` to
+                           `typing.Type[module.Class]`. *)
+                        (Resolution.parse_annotation
+                           resolution
+                           (Node.create_with_default_location (Expression.Access lead))
+                         |> Resolution.class_definition resolution
+                         >>| Class.annotation ~resolution
+                         >>| Type.meta
+                         >>| Annotation.create
+                         >>| fun resolved -> Result.create ~resolution ~resolved ~accumulator ())
+                        (* TODO(T26558543): undefined global access. *)
+                        |> Option.value ~default:(Result.abort ~resolution ~accumulator)
+                end
+          in
+          if abort then
+            accumulator
+          else
+            fold ~resolution ~accumulator ~lead ~tail ~resolved
       | _ ->
           accumulator
     in
-
-    (* Greedy function lookup to avoid variable shadowing. *)
-    let reversed_lead, tail =
-      let rec first_call_or_definition ?(reversed_lead = []) access =
-        match access with
-        | (Access.Call ({ Node.value = { Expression.Call.arguments; _ }; _ } as call)) :: tail ->
-            ignore arguments;
-            let signatures =
-              let argument _ =
-                Node.create_with_default_location
-                  (Signature.Normal {
-                      Signature.annotation = Type.Top;
-                      value = Node.create_with_default_location (Expression.Access []);
-                    })
-              in
-              Resolution.function_signature
-                resolution
-                (List.rev reversed_lead)
-                (Node.value call)
-                (List.map ~f:argument arguments)
-            in
-            if not (List.is_empty signatures) then
-              Some ((Access.Call call) :: reversed_lead, tail)
-            else
-              None
-        | element :: tail ->
-            let access = List.rev (element :: reversed_lead) in
-            let definition =
-              Resolution.parse_annotation
-                resolution
-                (Node.create_with_default_location (Access access))
-              |> Resolution.class_definition resolution
-            in
-            if Option.is_some definition then
-              Some (element :: reversed_lead, tail)
-            else
-              let global = Resolution.global resolution access in
-              if Option.is_some global then
-                Some (element :: reversed_lead, tail)
-              else
-                first_call_or_definition ~reversed_lead:(element :: reversed_lead) tail
-        | [] -> None
-      in
-      first_call_or_definition access
-      |> Option.value ~default:([], access)
-    in
-    fold ~resolution ~accumulator:initial ~reversed_lead ~tail ~annotation:None
+    fold ~resolution ~accumulator:initial ~lead:[] ~tail:access ~resolved:None
 
 
   let last_element ~resolution access =
     fold
       ~resolution
-      ~initial:Element.Global
+      ~initial:Element.Value
       ~f:(fun _ ~annotations:_ ~resolved:_ ~element -> element)
       access
 end
