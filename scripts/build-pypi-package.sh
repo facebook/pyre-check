@@ -49,7 +49,7 @@ if [[ ! -f "${BINARY_FILE}" ]]; then
   exit 1
 fi
 mkdir -p "${BUILD_ROOT}/bin"
-cp "${BINARY_FILE}" "${BUILD_ROOT}/bin"
+cp "${BINARY_FILE}" "${BUILD_ROOT}/bin/pyre.bin"
 
 # create setup.py file
 cat > "${BUILD_ROOT}/setup.py" <<HEREDOC
@@ -79,7 +79,7 @@ setup(
     keywords='typechecker development',
 
     packages=find_packages(exclude=['tests']),
-    data_files=[('bin', ['bin/main.native'])],
+    data_files=[('bin', ['bin/pyre.bin'])],
     python_requires='>=3',
     entry_points={
         'console_scripts': [
