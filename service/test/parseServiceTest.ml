@@ -173,7 +173,7 @@ let test_parse_sources_coverage _ =
           ~content:(Some "#pyre-strict\ndef foo()->int:\n    return 1\n")
           (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:"b.py");
         File.create
-          ~content:(Some "#pyre-declare-but-dont-check\ndef foo()->int:\n    return 1\n")
+          ~content:(Some "#pyre-do-not-check\ndef foo()->int:\n    return 1\n")
           (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:"c.py");
       ]
       ~configuration:(Configuration.create ~source_root:(Path.current_working_directory ()) ())

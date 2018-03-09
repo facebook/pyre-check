@@ -58,8 +58,7 @@ module Metadata = struct
     in
     let is_declare line =
       String.is_prefix ~prefix:"#" line &&
-      (String.is_substring ~substring:"pyre-declare-but-dont-check" line ||
-       String.is_substring ~substring:"pyre-declare-but-don't-check" line)
+      String.is_substring ~substring:"pyre-do-not-check" line
     in
     let parse_ignore index line ignored_lines =
       let create_ignore ~index ~line ~kind =
