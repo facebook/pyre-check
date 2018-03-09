@@ -12,7 +12,6 @@ open Statement
 
 module Annotation = AnalysisAnnotation
 module Resolution = AnalysisResolution
-module Signature = AnalysisSignature
 module Type = AnalysisType
 module TypeOrder = AnalysisTypeOrder
 
@@ -992,6 +991,103 @@ module BinaryOperator = struct
 end
 
 
+module Signature = struct
+  include AnalysisSignature
+
+
+  let return_annotation ~resolution = function
+    | Some { instantiated = callee; _ } ->
+        Define.create callee
+        |> Define.return_annotation ~resolution
+    | None ->
+        Type.Top
+
+
+  (* Calls on methods can determine previously undetermined annotations. E.g. `a.append(1)` can
+      determine the type of `a: List[Bottom]` to `a: List[int]`. *)
+  let determine ~annotation ~resolution signature =
+    let annotation = Annotation.annotation annotation in
+    signature
+    >>| (fun { constraints; _ } ->
+        let primitive, parameters = Type.split annotation in
+        let free_variables =
+          (Resolution.class_definition resolution) primitive
+          >>| Class.free_variables ~resolution ~parameters
+          |> Option.value ~default:[]
+        in
+        let inferred =
+          let instantiate parameter = function
+            | Some variable ->
+                Map.find constraints variable
+                |> Option.value ~default:parameter
+            | _ -> parameter
+          in
+          match List.map2 ~f:instantiate parameters free_variables with
+          | List.Or_unequal_lengths.Ok inferred -> inferred
+          | List.Or_unequal_lengths.Unequal_lengths -> parameters
+        in
+        match annotation with
+        | Type.Parametric parametric ->
+            Type.Parametric { parametric with Type.parameters = inferred }
+        | _ -> annotation)
+    |> Option.value ~default:annotation
+
+
+  let pick ~resolution ~check_parameters ~insert_implicit_arguments ~call signatures =
+    match signatures with
+    (* This match is done for performance. In the overwhelming majority of cases,
+       there is only one signature for a call, and doing the redundant parameter check
+       would add 13 seconds of overhead on instagram (order of magnitude: 100k function
+       definitions, 95s total runtime beforehand). *)
+    | [signature] -> Some signature
+    | _ ->
+        let count_call_errors ~resolution call callee =
+          let order = Resolution.order resolution in
+          let check_parameter
+              ~argument
+              ~position:_
+              ~offset:_
+              ~location:_
+              ~name
+              ~actual
+              ~expected =
+            if not (TypeOrder.less_or_equal order ~left:actual ~right:expected ||
+                    Type.mismatch_with_any actual expected ||
+                    Type.equal actual Type.Top ||
+                    Type.equal expected Type.Top) ||
+               (String.is_prefix ~prefix:"**" (Identifier.show name) &&
+                Argument.is_positional argument) then
+              Some ()
+            else
+              None
+          in
+          let add_error errors _ = errors + 1 in
+          check_parameters
+            ~resolution
+            ~check_parameter
+            ~add_error
+            ~init:0
+            (insert_implicit_arguments ~callee:(Some callee) ~location:Location.any call)
+            callee
+        in
+        let no_error_call =
+          (* The find exists for performance reasons. Without it, typechecking would slow down
+             by ~2.5x. *)
+          List.find
+            ~f:(fun signature -> count_call_errors ~resolution call signature = 0)
+            signatures
+        in
+        match no_error_call with
+        | Some signature -> Some signature
+        | None ->
+            List.map
+              ~f:(fun signature -> signature, count_call_errors ~resolution call signature)
+              signatures
+            |> List.min_elt ~cmp:(fun (_, left) (_, right) -> Int.compare left right)
+            >>| fst
+end
+
+
 module Call = struct
   type kind =
     | Function
@@ -1370,43 +1466,6 @@ module Access = struct
           Define.create_toplevel []
           |> Define.define
     in
-    let return_annotation resolution = function
-      | Some { Signature.instantiated = callee; _ } ->
-          Define.create callee
-          |> Define.return_annotation ~resolution
-      | None ->
-          Type.Top
-    in
-
-    (* Calls on methods can determine previously undetermined annotations. E.g. `a.append(1)` can
-        determine the type of `a: List[Bottom]` to `a: List[int]`. *)
-    let determine_annotation ~element:{ Element.annotation; callee; _ } =
-      let annotation = Annotation.annotation annotation in
-      callee
-      >>| (fun { Signature.constraints; _ } ->
-          let primitive, parameters = Type.split annotation in
-          let free_variables =
-            (Resolution.class_definition resolution) primitive
-            >>| Class.free_variables ~resolution ~parameters
-            |> Option.value ~default:[]
-          in
-          let inferred =
-            let instantiate parameter = function
-              | Some variable ->
-                  Map.find constraints variable
-                  |> Option.value ~default:parameter
-              | _ -> parameter
-            in
-            match List.map2 ~f:instantiate parameters free_variables with
-            | List.Or_unequal_lengths.Ok inferred -> inferred
-            | List.Or_unequal_lengths.Unequal_lengths -> parameters
-          in
-          match annotation with
-          | Type.Parametric parametric ->
-              Type.Parametric { parametric with Type.parameters = inferred }
-          | _ -> annotation)
-      |> Option.value ~default:annotation
-    in
 
     (* Resolve `super()` calls. *)
     let access, resolution =
@@ -1487,59 +1546,13 @@ module Access = struct
     let rec fold ~accumulator ~lead ~tail ~resolved ~resolution =
       let annotations = Resolution.annotations resolution in
       let pick_signature call signatures =
-        match signatures with
-        (* This match is done for performance. In the overwhelming majority of cases,
-           there is only one signature for a call, and doing the redundant parameter check
-           would add 13 seconds of overhead on instagram (order of magnitude: 100k function
-           definitions, 95s total runtime beforehand). *)
-        | [signature] -> Some signature
-        | _ ->
-            let count_call_errors ~resolution call callee =
-              let order = Resolution.order resolution in
-              let check_parameter
-                  ~argument
-                  ~position:_
-                  ~offset:_
-                  ~location:_
-                  ~name
-                  ~actual
-                  ~expected =
-                if not (TypeOrder.less_or_equal order ~left:actual ~right:expected ||
-                        Type.mismatch_with_any actual expected ||
-                        Type.equal actual Type.Top ||
-                        Type.equal expected Type.Top) ||
-                   (String.is_prefix ~prefix:"**" (Identifier.show name) &&
-                    Argument.is_positional argument) then
-                  Some ()
-                else
-                  None
-              in
-              let add_error errors _ = errors + 1 in
-              Call.check_parameters
-                ~resolution
-                ~check_parameter
-                ~add_error
-                ~init:0
-                (Call.insert_implicit_arguments ~location:Location.any ~callee:(Some callee) call)
-                callee
-            in
-            let no_error_call =
-              (* The find exists for performance reasons. Without it, typechecking would slow down
-                 by ~2.5x. *)
-              List.find
-                ~f:(fun signature -> count_call_errors ~resolution call signature = 0)
-                signatures
-            in
-            match no_error_call with
-            | Some signature -> Some signature
-            | None ->
-                List.map
-                  ~f:(fun signature -> signature, count_call_errors ~resolution call signature)
-                  signatures
-                |> List.min_elt ~cmp:(fun (_, left) (_, right) -> Int.compare left right)
-                >>| fst
+        Signature.pick
+          ~resolution
+          ~check_parameters:Call.check_parameters
+          ~insert_implicit_arguments:Call.insert_implicit_arguments
+          ~call
+          signatures
       in
-
       match tail with
       | head :: tail ->
           let qualifier = lead in
@@ -1603,8 +1616,8 @@ module Access = struct
                     backup;
                   }
                 in
-                let determined = determine_annotation ~element in
-                let resolved = Annotation.create (return_annotation resolution callee) in
+                let determined = Signature.determine ~annotation:resolved ~resolution callee in
+                let resolved = Annotation.create (Signature.return_annotation ~resolution callee) in
                 let annotations =
                   Map.find annotations qualifier
                   >>| (fun existing ->
@@ -1744,7 +1757,7 @@ module Access = struct
                     (Call.argument_annotations ~resolution call)
                   |> pick_signature call
                 in
-                let resolved = Annotation.create (return_annotation resolution callee) in
+                let resolved = Annotation.create (Signature.return_annotation ~resolution callee) in
                 let element =
                   Element.Call {
                     Element.location;

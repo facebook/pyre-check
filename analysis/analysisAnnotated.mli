@@ -11,7 +11,6 @@ open Statement
 
 module Annotation = AnalysisAnnotation
 module Resolution = AnalysisResolution
-module Signature = AnalysisSignature
 module Type = AnalysisType
 
 module Assign : sig
@@ -206,6 +205,10 @@ module BinaryOperator : sig
   val create: Expression.t BinaryOperator.t -> t
 
   val override: t -> Expression.t
+end
+
+module Signature : sig
+  include module type of struct include AnalysisSignature end
 end
 
 module Call : sig
