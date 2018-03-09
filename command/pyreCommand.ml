@@ -6,7 +6,8 @@
 
 module Check = CommandCheck
 module CodexGenerator = CommandCodexGenerator
-module Query = CommandQuery
+module Incremental = CommandIncremental
 module Persistent = CommandPersistent
-module Watchman = CommandWatchman
+module Query = CommandQuery
 module Rage = CommandRage
+module Watchman = CommandWatchman

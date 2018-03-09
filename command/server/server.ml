@@ -15,7 +15,6 @@ open ServerConfiguration
 open ServerProtocol
 
 module Time = Core_kernel.Time_ns.Span
-module Check = CommandCheck
 module Handshake = CommandHandshake
 module Socket = CommandSocket
 module Request = ServerRequest
@@ -530,7 +529,7 @@ let start_command =
         "-use-watchman"
         no_arg
         ~doc:"Subscribe to watchman for file changes."
-      ++ Check.spec)
+      ++ CommandSpec.base_spec)
     run_start_command
 
 

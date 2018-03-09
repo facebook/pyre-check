@@ -9,9 +9,7 @@ open Analysis
 open Configuration
 open Pyre
 
-module Socket = CommandSocket
 module Scheduler = Service.Scheduler
-module Handshake = CommandHandshake
 
 
 let server_not_running = 2
@@ -188,138 +186,8 @@ let run_check
   Statistics.flush ()
 
 
-let spec =
-  Command.Spec.(
-    empty
-    +> flag "-verbose" no_arg ~doc:"Turn on verbose logging"
-    +> flag "-version" (optional string) ~doc:"VERSION Pyre version"
-    +> flag
-      "-logging-sections"
-      (optional_with_default [] (Arg_type.comma_separated string))
-      ~doc:"SECTION1,... Comma-separated list of logging sections."
-    +> flag "-debug" no_arg ~doc:"Turn on debug mode"
-    +> flag "-strict" no_arg ~doc:"Turn on strict mode"
-    +> flag "-declare" no_arg ~doc:"Turn on declare mode"
-    +> flag "-show-error-traces" no_arg ~doc:"Outputs additional error information"
-    +> flag "-infer" no_arg ~doc:"Outputs extra information and errors for inference purposes"
-    +> flag
-      "-recursive-infer"
-      no_arg
-      ~doc:"Recursively run infer until no new annotations are generated."
-    +> flag "-sequential" no_arg ~doc:"Turn off parallel processing (parallel on by default)."
-    +> flag
-      "-log-identifier"
-      (optional_with_default "" string)
-      ~doc:"IDENTIFIER Add given identifier to logged samples."
-    +> flag
-      "-project-root"
-      (optional_with_default "/" string)
-      ~doc:"ROOT Only check sources under this root directory."
-      ~aliases:["-type-check-root"]
-    +> flag
-      "-search-path"
-      (optional_with_default [] (Arg_type.comma_separated string))
-      ~doc:"DIRECTORY1,... Directories containing stubs and external modules to include"
-      ~aliases:["-stub-roots"]
-    +> anon (maybe_with_default "." ("source-root" %: string)))
-
-
 let check_command =
   Command.basic_spec
     ~summary:"Runs a full check without a server (default)"
-    spec
+    CommandSpec.base_spec
     run_check
-
-
-let run_incremental
-    recheck_all
-    verbose
-    version
-    sections
-    debug
-    strict
-    declare
-    show_error_traces
-    infer
-    recursive_infer
-    sequential
-    log_identifier
-    project_root
-    stub_roots
-    source_root
-    () =
-  try
-    Log.initialize ~verbose ~sections;
-    let configuration =
-      Configuration.create
-        ~verbose
-        ?version
-        ~sections
-        ~debug
-        ~strict
-        ~declare
-        ~show_error_traces
-        ~log_identifier
-        ~infer
-        ~recursive_infer
-        ~parallel:(not sequential)
-        ~stub_roots:(List.map ~f:Path.create_absolute stub_roots)
-        ~project_root:(Path.create_absolute project_root)
-        ~source_root:(Path.create_absolute source_root)
-        ()
-    in
-
-    let socket =
-      let socket =
-        match Socket.open_connection (ServerConfiguration.socket_path configuration) with
-        | `Success socket ->
-            Log.log ~section:`Server "Connected to server";
-            socket
-        | `Failure ->
-            raise ServerConfiguration.ServerNotRunning
-      in
-      let in_channel, _ = socket in
-      Log.log ~section:`Server "Waiting for server response...";
-      let socket = Unix.descr_of_in_channel in_channel in
-      Socket.read socket
-      |> fun (Handshake.ServerConnected _) ->
-      Socket.write socket Handshake.ClientConnected;
-      socket
-    in
-
-    if recheck_all then
-      Socket.write socket ServerProtocol.Request.ReinitializeStateRequest
-    else
-      Socket.write
-        socket
-        (ServerProtocol.Request.TypeCheckRequest
-           { ServerProtocol.files = []; check_dependents = false });
-
-    let response_json =
-      match Socket.read socket with
-      | ServerProtocol.TypeCheckResponse errors ->
-          errors
-          |> List.map ~f:snd
-          |> List.concat
-          |> (fun errors ->
-              `List (List.map
-                       ~f:(fun error -> Error.to_json ~detailed:show_error_traces error)
-                       errors))
-      | _ -> failwith "Unexpected response in incremental check."
-    in
-    Log.print "%s" (Yojson.Safe.to_string response_json);
-    Statistics.flush ()
-  with ServerConfiguration.ServerNotRunning ->
-    Log.error "Server is not running";
-    exit server_not_running
-
-
-let incremental_command =
-  Command.basic_spec
-    ~summary:"Shows current errors by asking the server. \
-              Starts a daemon server in the current directory if it does not exist."
-    Command.Spec.(
-      empty
-      +> flag "-recheck-all" no_arg ~doc:"Recheck the entire project on the server"
-      ++ spec)
-    run_incremental

@@ -14,7 +14,7 @@ let commands = [
   "codex", CodexGenerator.command;
   "query", Query.command;
   "rage", Rage.command;
-  "incremental", Check.incremental_command;
+  "incremental", Incremental.command;
   "persistent", Persistent.command;
   "start", Server.start_command;
   "stop", Server.stop_command;
