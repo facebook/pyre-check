@@ -16,7 +16,7 @@ from typing import (
     Dict,
     Optional,
 )
-from tools.pyre.scripts import (
+from . import (
     buck,
 )
 

@@ -14,6 +14,9 @@ AUTHOR='Facebook'
 AUTHOR_EMAIL='mleogrande@fb.com'
 MAINTAINER='Facebook'
 MAINTAINER_EMAIL='mleogrande@fb.com'
+URL='https://github.com/facebookexperimental/pyre-check'
+# https://www.python.org/dev/peps/pep-0008/#package-and-module-names
+MODULE_NAME="pyre_check"
 
 # helpers
 die() {
@@ -35,8 +38,8 @@ mkdir "${BUILD_ROOT}"
 cd "${BUILD_ROOT}"
 
 # copy source files
-mkdir "${PACKAGE_NAME}"
-cp "${SCRIPTS_DIRECTORY}"/*.py "${BUILD_ROOT}/${PACKAGE_NAME}"
+mkdir "${MODULE_NAME}"
+cp "${SCRIPTS_DIRECTORY}"/*.py "${BUILD_ROOT}/${MODULE_NAME}"
 
 # copy binary files
 BINARY_FILE="${SCRIPTS_DIRECTORY}/../_build/all/main.native"
@@ -57,7 +60,7 @@ setup(
     version='${PACKAGE_VERSION}',
     description='A performant type checker for Python',
 
-    url='https://github.com/facebookexperimental/pyre-check',
+    url='${URL}',
     author='${AUTHOR}',
     author_email='${AUTHOR_EMAIL}',
     maintainer='${MAINTAINER}',
@@ -78,11 +81,22 @@ setup(
     packages=find_packages(exclude=['tests']),
     data_files=[('bin', ['bin/main.native'])],
     python_requires='>=3',
+    entry_points={
+        'console_scripts': [
+            'pyre = ${MODULE_NAME}.pyre:main',
+        ],
+    }
 )
 HEREDOC
 
+# create setup.cfg file
+cat > "${BUILD_ROOT}/setup.cfg" <<HEREDOC
+[metadata]
+license_file = ../../LICENSE
+HEREDOC
+
 # build
-python setup.py sdist bdist_wheel
+python setup.py bdist_wheel
 
 # copy artifacts outside of the the build directory
 mkdir -p "${SCRIPTS_DIRECTORY}/dist"
