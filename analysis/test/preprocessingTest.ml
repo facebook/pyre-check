@@ -403,11 +403,11 @@ let test_cleanup _ =
     |}
 
 
-let test_replace_version_specific_stubs _ =
-  let assert_preprocessed source expected =
+let test_replace_version_specific_code _ =
+  let assert_preprocessed ?(path="stub.pyi") source expected =
     assert_source_equal
-      (Preprocessing.replace_version_specific_stubs (parse ~path:"stub.pyi" source))
-      (parse ~path:"stub.pyi" expected)
+      (Preprocessing.replace_version_specific_code (parse ~path source))
+      (parse ~path expected)
   in
   assert_preprocessed
     {|
@@ -515,8 +515,17 @@ let test_replace_version_specific_stubs _ =
        class C():
          def compatible()->str:
            ...
+    |};
+  assert_preprocessed ~path:"file.py"
+    {|
+      if sys.version_info >= (3, 5):
+        from A import B
+      else:
+        from A import C
     |}
-
+    {|
+       from A import B
+    |}
 
 
 let test_expand_optional_assigns _ =
@@ -1140,7 +1149,7 @@ let () =
     "rename_shadowed_variables">::test_rename_shadowed_variables;
     "qualify">::test_qualify;
     "cleanup">::test_cleanup;
-    "replace_version_specific_stubs">::test_replace_version_specific_stubs;
+    "replace_version_specific_code">::test_replace_version_specific_code;
     "expand_optional_assigns">::test_expand_optional_assigns;
     "expand_operators">::test_expand_operators;
     "expand_returns">::test_expand_returns;

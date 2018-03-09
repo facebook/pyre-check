@@ -428,7 +428,7 @@ let cleanup source =
   Cleanup.transform () source |> snd
 
 
-let replace_version_specific_stubs ( { Source.path; _ } as source) =
+let replace_version_specific_code source =
   let module Transform = Transform.Make(struct
       type t = unit
 
@@ -486,10 +486,7 @@ let replace_version_specific_stubs ( { Source.path; _ } as source) =
             (), [statement]
     end)
   in
-  if String.is_suffix ~suffix:".pyi" path then
-    Transform.transform () source |> snd
-  else
-    source
+  Transform.transform () source |> snd
 
 
 (* TODO(T22862979) Our parser currently parses {""} as Dictionary(kwarg = "").
@@ -1110,7 +1107,7 @@ let preprocess source =
   rename_shadowed_variables source
   |> qualify
   |> cleanup
-  |> replace_version_specific_stubs
+  |> replace_version_specific_code
   |> fix_singleton_sets
   |> expand_optional_assigns
   |> expand_operators
