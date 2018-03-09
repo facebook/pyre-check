@@ -29,7 +29,7 @@ error_trap () {
 
 trap error_trap ERR
 
-# create build tree
+# Create build tree.
 SCRIPTS_DIRECTORY="$(dirname "$(readlink -f "$0")")"
 cd "${SCRIPTS_DIRECTORY}/"
 BUILD_ROOT="${SCRIPTS_DIRECTORY}/buildroot"
@@ -37,11 +37,11 @@ rm -rf "${BUILD_ROOT}"
 mkdir "${BUILD_ROOT}"
 cd "${BUILD_ROOT}"
 
-# copy source files
+# Copy source files.
 mkdir "${MODULE_NAME}"
 cp "${SCRIPTS_DIRECTORY}"/*.py "${BUILD_ROOT}/${MODULE_NAME}"
 
-# copy binary files
+# Copy binary files.
 BINARY_FILE="${SCRIPTS_DIRECTORY}/../_build/all/main.native"
 if [[ ! -f "${BINARY_FILE}" ]]; then
   echo "The binary file ${BINARY_FILE} does not exist."
@@ -51,7 +51,7 @@ fi
 mkdir -p "${BUILD_ROOT}/bin"
 cp "${BINARY_FILE}" "${BUILD_ROOT}/bin/pyre.bin"
 
-# create setup.py file
+# Create setup.py file.
 cat > "${BUILD_ROOT}/setup.py" <<HEREDOC
 from setuptools import setup, find_packages
 
@@ -59,6 +59,7 @@ setup(
     name='${PACKAGE_NAME}',
     version='${PACKAGE_VERSION}',
     description='A performant type checker for Python',
+    long_description='A performant type checker for Python',
 
     url='${URL}',
     author='${AUTHOR}',
@@ -89,20 +90,24 @@ setup(
 )
 HEREDOC
 
-# create setup.cfg file
+# Create setup.cfg file.
 cat > "${BUILD_ROOT}/setup.cfg" <<HEREDOC
 [metadata]
 license_file = ../../LICENSE
 HEREDOC
 
-# build
+# Test descriptions before building:
+# https://github.com/pypa/readme_renderer
+python setup.py check -r -s
+
+# Build.
 python setup.py bdist_wheel
 
-# copy artifacts outside of the the build directory
+# Copy artifacts outside the build directory.
 mkdir -p "${SCRIPTS_DIRECTORY}/dist"
 cp "${BUILD_ROOT}"/dist/* "${SCRIPTS_DIRECTORY}/dist/"
 
-# cleanup
+# Cleanup.
 cd "${SCRIPTS_DIRECTORY}"
 rm -rf "${BUILD_ROOT}"
 
