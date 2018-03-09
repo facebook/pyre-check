@@ -82,6 +82,7 @@ class PersistentTest(unittest.TestCase):
     def test_persistent(self, run_null_server, merge_directories) -> None:
         arguments = mock_arguments()
         configuration = mock_configuration()
+        configuration.get_version_hash.return_value = 'hash'
 
         # Check start without watchman.
         with patch.object(commands.Command, '_call_client') as call_client:
@@ -92,7 +93,7 @@ class PersistentTest(unittest.TestCase):
                 source_directories=['.']).run()
             call_client.assert_called_once_with(
                 command=commands.PERSISTENT,
-                flags=["-log-identifier", '"."'],
+                flags=["-log-identifier", '"."', '-version', 'hash'],
                 source_directories=['.'],
                 capture_output=False)
             commands.Persistent(
@@ -101,7 +102,7 @@ class PersistentTest(unittest.TestCase):
                 source_directories=["first", "second"]).run()
             call_client.assert_called_with(
                 command=commands.PERSISTENT,
-                flags=["-log-identifier", '"first,second"'],
+                flags=["-log-identifier", '"first,second"', '-version', 'hash'],
                 source_directories=['.pyre/shared_source_directory'],
                 capture_output=False)
 
@@ -123,10 +124,17 @@ class PersistentTest(unittest.TestCase):
                 [
                     call(command=commands.PERSISTENT,
                          source_directories=['.'],
-                         flags=["-log-identifier", '"."'],
+                         flags=["-log-identifier", '"."', '-version', 'hash'],
                          capture_output=False),
                     call(command=commands.START,
-                         flags=['-project-root', '.', '-stub-roots', ''],
+                         flags=[
+                             '-project-root',
+                             '.',
+                             '-stub-roots',
+                             '',
+                             '-version',
+                             'hash',
+                         ],
                          source_directories=['.']),
                 ])
             run_null_server.assert_called_once()
@@ -260,7 +268,12 @@ class CheckTest(unittest.TestCase):
             call_client.assert_called_once_with(
                 command=commands.CHECK,
                 source_directories=['.'],
-                flags=['-project-root', '.', '-stub-roots', 'stub,root'])
+                flags=[
+                    '-project-root',
+                    '.',
+                    '-stub-roots',
+                    'stub,root',
+                ])
 
         with patch.object(commands.Command, '_call_client') as call_client:
             check_output.return_value = b""
@@ -273,7 +286,12 @@ class CheckTest(unittest.TestCase):
                 source_directories=[
                     '.pyre/shared_source_directory_{}'.format(os.getpid()),
                 ],
-                flags=['-project-root', '.', '-stub-roots', 'stub,root'])
+                flags=[
+                    '-project-root',
+                    '.',
+                    '-stub-roots',
+                    'stub,root',
+                ])
 
 
 class IncrementalTest(unittest.TestCase):
@@ -299,6 +317,7 @@ class IncrementalTest(unittest.TestCase):
 
         configuration = mock_configuration()
         configuration.get_search_path.return_value = ['stub', 'root']
+        configuration.get_version_hash.return_value = 'hash'
 
         with patch.object(commands.Command, '_call_client') as call_client:
             commands.Incremental(
@@ -308,7 +327,14 @@ class IncrementalTest(unittest.TestCase):
             call_client.assert_called_once_with(
                 command=commands.INCREMENTAL,
                 source_directories=['running'],
-                flags=['-project-root', '.', '-stub-roots', 'stub,root'])
+                flags=[
+                    '-project-root',
+                    '.',
+                    '-stub-roots',
+                    'stub,root',
+                    '-version',
+                    'hash',
+                ])
 
         state.running = ['running']
         state.dead = ['dead']
@@ -337,7 +363,10 @@ class IncrementalTest(unittest.TestCase):
                              '-project-root',
                              '.',
                              '-stub-roots',
-                             'stub,root']),
+                             'stub,root',
+                             '-version',
+                             'hash',
+                         ]),
                 ],
                 any_order=True)
 
@@ -351,6 +380,7 @@ class StartTest(unittest.TestCase):
 
         configuration = mock_configuration()
         configuration.get_search_path.return_value = ['root']
+        configuration.get_version_hash.return_value = 'hash'
 
         # Check start without watchman.
         with patch.object(commands.Command, '_call_client') as call_client:
@@ -362,7 +392,14 @@ class StartTest(unittest.TestCase):
             call_client.assert_called_once_with(
                 command=commands.START,
                 source_directories=['.'],
-                flags=['-project-root', '.', '-stub-roots', 'root'])
+                flags=[
+                    '-project-root',
+                    '.',
+                    '-stub-roots',
+                    'root',
+                    '-version',
+                    'hash',
+                ])
 
         # Check start with watchman.
         with patch.object(commands.Command, '_call_client') as call_client:
@@ -381,6 +418,8 @@ class StartTest(unittest.TestCase):
                         '-use-watchman',
                         '-stub-roots',
                         'root',
+                        '-version',
+                        'hash',
                     ]),
             ])
 
@@ -402,6 +441,8 @@ class StartTest(unittest.TestCase):
                             '-use-watchman',
                             '-stub-roots',
                             'root',
+                            '-version',
+                            'hash',
                         ]),
                 ])
                 merge_directories.assert_called_once()
@@ -425,6 +466,8 @@ class StartTest(unittest.TestCase):
                     '-terminal',
                     '-stub-roots',
                     'root',
+                    '-version',
+                    'hash',
                 ])
 
 

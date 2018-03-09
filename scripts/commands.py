@@ -266,7 +266,12 @@ class Persistent(Command):
         log_identifier = ",".join(
             sorted(list(self._original_source_directories)))
 
-        flags = ['-log-identifier', '"{}"'.format(log_identifier)]
+        flags = [
+            '-log-identifier',
+            '"{}"'.format(log_identifier),
+            '-version',
+            str(self._configuration.get_version_hash()),
+        ]
         try:
             print("\n\n\n\nArgs: {}".format(arguments))
             results = self._call_client(
@@ -500,7 +505,9 @@ class Incremental(ErrorHandling):
         flags = self._flags()
         flags.extend([
             '-stub-roots',
-            ','.join(self._configuration.get_search_path())
+            ','.join(self._configuration.get_search_path()),
+            '-version',
+            str(self._configuration.get_version_hash()),
         ])
 
         if dead:
@@ -585,6 +592,8 @@ class Start(Command):
                     flags.extend([
                         '-stub-roots',
                         ','.join(self._configuration.get_search_path()),
+                        '-version',
+                        str(self._configuration.get_version_hash()),
                     ])
                     results = self._call_client(
                         command=START,
