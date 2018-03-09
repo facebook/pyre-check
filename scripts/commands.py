@@ -273,7 +273,6 @@ class Persistent(Command):
             str(self._configuration.get_version_hash()),
         ]
         try:
-            print("\n\n\n\nArgs: {}".format(arguments))
             results = self._call_client(
                 command=PERSISTENT,
                 source_directories=self._source_directories,
