@@ -706,7 +706,7 @@ let register_class_definitions (module Handler: Handler) source =
 let register_aliases (module Handler: Handler) sources =
   let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
   let collect_aliases { Source.path; statements; qualifier; _ } =
-    let rec visit_statement aliases { Node.value; _ } =
+    let visit_statement aliases { Node.value; _ } =
       match value with
       | Assign {
           Assign.target;
@@ -723,10 +723,6 @@ let register_aliases (module Handler: Handler) sources =
             (path, target, value) :: aliases
           else
             aliases
-      | If { If.body; orelse; _ } ->
-          let aliases = List.fold ~init:aliases ~f:visit_statement body in
-          let aliases = List.fold ~init:aliases ~f:visit_statement orelse in
-          aliases
       | Import { Import.from = Some from; imports } ->
           let import_to_alias { Import.name; alias } =
             let qualified_name =

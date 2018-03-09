@@ -224,6 +224,8 @@ let test_register_aliases _ =
        A = B
        def foo()->A:
          return D()
+       if __name__ == '__main__':
+         C = D
     |}
   in
   Environment.register_class_definitions (module Handler) typing;
