@@ -6,6 +6,8 @@
 open Core
 open Sexplib.Std
 
+open Pyre
+
 module Argument = AstArgument
 module Identifier = AstIdentifier
 module Parameter = AstParameter
@@ -40,139 +42,6 @@ module BooleanOperator = struct
   let inverse = function
     | And -> Or
     | Or -> And
-end
-
-
-module BinaryOperator = struct
-  type operator =
-    | Add
-    | At
-    | BitAnd
-    | BitOr
-    | BitXor
-    | Divide
-    | FloorDivide
-    | LeftShift
-    | Modulo
-    | Multiply
-    | Power
-    | RightShift
-    | Subtract
-  [@@deriving compare, eq, sexp, show, hash]
-
-
-  type 'expression t = {
-    left: 'expression;
-    operator: operator;
-    right: 'expression;
-  }
-  [@@deriving compare, eq, sexp, show, hash]
-
-
-  let pp_binary_operator formatter operator =
-    Format.fprintf
-      formatter
-      "%s"
-      begin
-        match operator with
-        | Add -> "+"
-        | At -> "@"
-        | BitAnd -> "&"
-        | BitOr -> "|"
-        | BitXor -> "^"
-        | Divide -> "/"
-        | FloorDivide -> "//"
-        | LeftShift -> "<<"
-        | Modulo -> "%"
-        | Multiply -> "*"
-        | Power -> "**"
-        | RightShift -> ">>"
-        | Subtract -> "-"
-      end
-end
-
-
-module UnaryOperator = struct
-  type operator =
-    | Invert
-    | Negative
-    | Not
-    | Positive
-  [@@deriving compare, eq, sexp, show, hash]
-
-
-  type 'expression t = {
-    operator: operator;
-    operand: 'expression;
-  }
-  [@@deriving compare, eq, sexp, show, hash]
-
-
-  let pp_unary_operator formatter operator =
-    Format.fprintf
-      formatter "%s"
-      begin
-        match operator with
-        | Invert -> "~"
-        | Negative -> "-"
-        | Not -> "not"
-        | Positive -> "+"
-      end
-end
-
-
-module ComparisonOperator = struct
-  type operator =
-    | Equals
-    | GreaterThan
-    | GreaterThanOrEquals
-    | In
-    | Is
-    | IsNot
-    | LessThan
-    | LessThanOrEquals
-    | NotEquals
-    | NotIn
-  [@@deriving compare, eq, sexp, show, hash]
-
-
-  type 'expression t = {
-    left: 'expression;
-    right: (operator * 'expression) list;
-  }
-  [@@deriving compare, eq, sexp, show, hash]
-
-
-  let inverse = function
-    | Equals -> NotEquals
-    | GreaterThan -> LessThanOrEquals
-    | GreaterThanOrEquals -> LessThan
-    | In -> NotIn
-    | Is -> IsNot
-    | IsNot -> Is
-    | LessThan -> GreaterThanOrEquals
-    | LessThanOrEquals -> GreaterThan
-    | NotEquals -> Equals
-    | NotIn -> In
-
-
-  let pp_comparison_operator formatter operator =
-    Format.fprintf
-      formatter
-      "%s"
-      begin
-        match operator with
-        | Equals -> "="
-        | GreaterThan -> ">"
-        | GreaterThanOrEquals -> ">="
-        | In -> "in"
-        | Is -> "is"
-        | IsNot -> "is not"
-        | LessThan -> "<"
-        | LessThanOrEquals -> "<="
-        | NotEquals -> "!="
-        | NotIn -> "not in"
-      end
 end
 
 
@@ -211,6 +80,139 @@ module Record = struct
 
     type 'expression record = ('expression access) list
     [@@deriving compare, eq, sexp, show, hash]
+  end
+
+
+  module BinaryOperator = struct
+    type operator =
+      | Add
+      | At
+      | BitAnd
+      | BitOr
+      | BitXor
+      | Divide
+      | FloorDivide
+      | LeftShift
+      | Modulo
+      | Multiply
+      | Power
+      | RightShift
+      | Subtract
+    [@@deriving compare, eq, sexp, show, hash]
+
+
+    type 'expression record = {
+      left: 'expression;
+      operator: operator;
+      right: 'expression;
+    }
+    [@@deriving compare, eq, sexp, show, hash]
+
+
+    let pp_binary_operator formatter operator =
+      Format.fprintf
+        formatter
+        "%s"
+        begin
+          match operator with
+          | Add -> "+"
+          | At -> "@"
+          | BitAnd -> "&"
+          | BitOr -> "|"
+          | BitXor -> "^"
+          | Divide -> "/"
+          | FloorDivide -> "//"
+          | LeftShift -> "<<"
+          | Modulo -> "%"
+          | Multiply -> "*"
+          | Power -> "**"
+          | RightShift -> ">>"
+          | Subtract -> "-"
+        end
+  end
+
+
+  module ComparisonOperator = struct
+    type operator =
+      | Equals
+      | GreaterThan
+      | GreaterThanOrEquals
+      | In
+      | Is
+      | IsNot
+      | LessThan
+      | LessThanOrEquals
+      | NotEquals
+      | NotIn
+    [@@deriving compare, eq, sexp, show, hash]
+
+
+    type 'expression record = {
+      left: 'expression;
+      right: (operator * 'expression) list;
+    }
+    [@@deriving compare, eq, sexp, show, hash]
+
+
+    let inverse = function
+      | Equals -> NotEquals
+      | GreaterThan -> LessThanOrEquals
+      | GreaterThanOrEquals -> LessThan
+      | In -> NotIn
+      | Is -> IsNot
+      | IsNot -> Is
+      | LessThan -> GreaterThanOrEquals
+      | LessThanOrEquals -> GreaterThan
+      | NotEquals -> Equals
+      | NotIn -> In
+
+
+    let pp_comparison_operator formatter operator =
+      Format.fprintf
+        formatter
+        "%s"
+        begin
+          match operator with
+          | Equals -> "="
+          | GreaterThan -> ">"
+          | GreaterThanOrEquals -> ">="
+          | In -> "in"
+          | Is -> "is"
+          | IsNot -> "is not"
+          | LessThan -> "<"
+          | LessThanOrEquals -> "<="
+          | NotEquals -> "!="
+          | NotIn -> "not in"
+        end
+  end
+
+
+  module UnaryOperator = struct
+    type operator =
+      | Invert
+      | Negative
+      | Not
+      | Positive
+    [@@deriving compare, eq, sexp, show, hash]
+
+
+    type 'expression record = {
+      operator: operator;
+      operand: 'expression;
+    }
+    [@@deriving compare, eq, sexp, show, hash]
+
+
+    let pp_unary_operator formatter operator =
+      Format.fprintf
+        formatter "%s"
+        begin
+          match operator with
+          | Invert -> "~"
+          | Negative -> "-"
+          | Not -> "not"
+          | Positive -> "+"
+        end
   end
 end
 
@@ -279,10 +281,10 @@ end
 type expression =
   | Access of t Record.Access.record
   | Await of t
-  | BinaryOperator of t BinaryOperator.t
+  | BinaryOperator of t Record.BinaryOperator.record
   | BooleanOperator of t BooleanOperator.t
   | Bytes of string
-  | ComparisonOperator of t ComparisonOperator.t
+  | ComparisonOperator of t Record.ComparisonOperator.record
   | Complex of float
   | Dictionary of t Dictionary.t
   | DictionaryComprehension of ((t Dictionary.entry), t) Comprehension.t
@@ -301,7 +303,7 @@ type expression =
   | Ternary of t Ternary.t
   | True
   | Tuple of t list
-  | UnaryOperator of t UnaryOperator.t
+  | UnaryOperator of t Record.UnaryOperator.record
   | Yield of t option
 
 
@@ -380,6 +382,140 @@ module Access = struct
     match value with
     | Access access -> access
     | _ -> [Expression expression]
+end
+
+
+module BinaryOperator = struct
+  include Record.BinaryOperator
+
+
+  type t = expression_node Record.BinaryOperator.record
+  [@@deriving compare, eq, sexp, show, hash]
+
+
+  let override {
+      left = ({ Node.location; _ } as left);
+      operator;
+      right;
+    } =
+    let name =
+      match operator with
+      | Add -> "__add__"
+      | At -> "__matmul__"
+      | BitAnd -> "__and__"
+      | BitOr -> "__or__"
+      | BitXor -> "__xor__"
+      | Divide -> "__truediv__"
+      | FloorDivide -> "__floordiv__"
+      | LeftShift -> "__lshift__"
+      | Modulo -> "__mod__"
+      | Multiply -> "__mul__"
+      | Power -> "__pow__"
+      | RightShift -> "__rshift__"
+      | Subtract -> "__sub__"
+    in
+    {
+      Node.location;
+      value = Access
+          ((Access.access left) @ [
+              Access.Call {
+                Node.location;
+                value = {
+                  Record.Call.name = {
+                    Node.location;
+                    value = Access (Access.create name);
+                  };
+                  arguments = [{ Argument.name = None; value = right }];
+                };
+              }
+            ]);
+    }
+end
+
+
+module ComparisonOperator = struct
+  include Record.ComparisonOperator
+
+
+  type t = expression_node Record.ComparisonOperator.record
+  [@@deriving compare, eq, sexp, show, hash]
+
+
+  let override { left; right } =
+    let simple_override ({ Node.location; _ } as left) (operator, right) =
+      begin
+        match operator with
+        | Equals -> Some "__eq__"
+        | GreaterThan -> Some "__gt__"
+        | GreaterThanOrEquals -> Some "__ge__"
+        | In -> Some "__contains__"
+        | Is
+        | IsNot -> None
+        | LessThan -> Some "__lt__"
+        | LessThanOrEquals -> Some "__le__"
+        | NotEquals -> Some "__ne__"
+        | NotIn -> None
+      end
+      >>| (fun name ->
+          {
+            Node.location;
+            value = Access
+                ((Access.access left) @ [
+                    Access.Call {
+                      Node.location;
+                      value = {
+                        Record.Call.name = {
+                          Node.location;
+                          value = Access (Access.create name);
+                        };
+                        arguments = [{ Argument.name = None; value = right }];
+                      };
+                    }
+                  ]);
+          })
+    in
+    let rec collect left operands =
+      match operands with
+      | (operator, right) :: operands ->
+          (simple_override left (operator, right)) :: (collect right operands)
+      | [] -> []
+    in
+    collect left right
+end
+
+module UnaryOperator = struct
+  include Record.UnaryOperator
+
+
+  type t = expression_node Record.UnaryOperator.record
+  [@@deriving compare, eq, sexp, show, hash]
+
+
+  let override { operator; operand = ({ Node.location; _ } as operand) } =
+    begin
+      match operator with
+      | Invert -> Some "__invert__"
+      | Negative -> Some "__neg__"
+      | Not -> None
+      | Positive -> Some "__pos__"
+    end
+    >>| (fun name ->
+        {
+          Node.location;
+          value = Access
+              ((Access.access operand) @ [
+                  Access.Call {
+                    Node.location;
+                    value = {
+                      Record.Call.name = {
+                        Node.location;
+                        value = Access (Access.create name);
+                      };
+                      arguments = [];
+                    };
+                  }
+                ]);
+        })
 end
 
 

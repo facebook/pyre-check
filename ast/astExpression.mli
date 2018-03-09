@@ -24,69 +24,6 @@ module BooleanOperator : sig
   [@@deriving compare, eq, sexp, show, hash]
 end
 
-module BinaryOperator : sig
-  type operator =
-    | Add
-    | At
-    | BitAnd
-    | BitOr
-    | BitXor
-    | Divide
-    | FloorDivide
-    | LeftShift
-    | Modulo
-    | Multiply
-    | Power
-    | RightShift
-    | Subtract
-  [@@deriving compare, eq, sexp, show, hash]
-
-  type 'expression t = {
-    left: 'expression;
-    operator: operator;
-    right: 'expression;
-  }
-  [@@deriving compare, eq, sexp, show, hash]
-
-  val pp_binary_operator : Format.formatter -> operator -> unit
-end
-
-module UnaryOperator : sig
-  type operator =
-    | Invert
-    | Negative
-    | Not
-    | Positive
-  [@@deriving compare, eq, sexp, show, hash]
-
-  type 'expression t = {
-    operator: operator;
-    operand: 'expression;
-  }
-  [@@deriving compare, eq, sexp, show, hash]
-end
-
-module ComparisonOperator : sig
-  type operator =
-    | Equals
-    | GreaterThan
-    | GreaterThanOrEquals
-    | In
-    | Is
-    | IsNot
-    | LessThan
-    | LessThanOrEquals
-    | NotEquals
-    | NotIn
-  [@@deriving compare, eq, sexp, show, hash]
-
-  type 'expression t = {
-    left: 'expression;
-    right: (operator * 'expression) list;
-  }
-  [@@deriving compare, eq, sexp, show, hash]
-end
-
 module Record : sig
   module Call : sig
     type 'expression record = {
@@ -117,6 +54,69 @@ module Record : sig
     [@@deriving compare, eq, sexp, show, hash]
 
     type 'expression record = ('expression access) list
+    [@@deriving compare, eq, sexp, show, hash]
+  end
+
+  module BinaryOperator : sig
+    type operator =
+      | Add
+      | At
+      | BitAnd
+      | BitOr
+      | BitXor
+      | Divide
+      | FloorDivide
+      | LeftShift
+      | Modulo
+      | Multiply
+      | Power
+      | RightShift
+      | Subtract
+    [@@deriving compare, eq, sexp, show, hash]
+
+    type 'expression record = {
+      left: 'expression;
+      operator: operator;
+      right: 'expression;
+    }
+    [@@deriving compare, eq, sexp, show, hash]
+
+    val pp_binary_operator : Format.formatter -> operator -> unit
+  end
+
+  module ComparisonOperator : sig
+    type operator =
+      | Equals
+      | GreaterThan
+      | GreaterThanOrEquals
+      | In
+      | Is
+      | IsNot
+      | LessThan
+      | LessThanOrEquals
+      | NotEquals
+      | NotIn
+    [@@deriving compare, eq, sexp, show, hash]
+
+    type 'expression record = {
+      left: 'expression;
+      right: (operator * 'expression) list;
+    }
+    [@@deriving compare, eq, sexp, show, hash]
+  end
+
+  module UnaryOperator : sig
+    type operator =
+      | Invert
+      | Negative
+      | Not
+      | Positive
+    [@@deriving compare, eq, sexp, show, hash]
+
+    type 'expression record = {
+      operator: operator;
+      operand: 'expression;
+    }
     [@@deriving compare, eq, sexp, show, hash]
   end
 end
@@ -178,10 +178,10 @@ end
 type expression =
   | Access of t Record.Access.record
   | Await of t
-  | BinaryOperator of t BinaryOperator.t
+  | BinaryOperator of t Record.BinaryOperator.record
   | BooleanOperator of t BooleanOperator.t
   | Bytes of string
-  | ComparisonOperator of t ComparisonOperator.t
+  | ComparisonOperator of t Record.ComparisonOperator.record
   | Complex of float
   | Dictionary of t Dictionary.t
   | DictionaryComprehension of ((t Dictionary.entry), t) Comprehension.t
@@ -200,7 +200,7 @@ type expression =
   | Ternary of t Ternary.t
   | True
   | Tuple of t list
-  | UnaryOperator of t UnaryOperator.t
+  | UnaryOperator of t Record.UnaryOperator.record
   | Yield of t option
 
 and t = expression Node.t
@@ -208,6 +208,15 @@ and t = expression Node.t
 
 and expression_node = t
 [@@deriving compare, eq, sexp, show, hash]
+
+module Call : sig
+  include module type of struct include Record.Call end
+
+  type t = expression_node Record.Call.record
+  [@@deriving compare, eq, sexp, show, hash]
+
+  val is_explicit_constructor_call: t -> bool
+end
 
 module Access : sig
   include module type of struct include Record.Access end
@@ -225,13 +234,31 @@ module Access : sig
   val access: expression_node -> t
 end
 
-module Call : sig
-  include module type of struct include Record.Call end
+module BinaryOperator : sig
+  include module type of struct include Record.BinaryOperator end
 
-  type t = expression_node Record.Call.record
+  type t = expression_node Record.BinaryOperator.record
   [@@deriving compare, eq, sexp, show, hash]
 
-  val is_explicit_constructor_call: t -> bool
+  val override: t -> expression_node
+end
+
+module ComparisonOperator : sig
+  include module type of struct include Record.ComparisonOperator end
+
+  type t = expression_node Record.ComparisonOperator.record
+  [@@deriving compare, eq, sexp, show, hash]
+
+  val override: t -> (expression_node option) list
+end
+
+module UnaryOperator : sig
+  include module type of struct include Record.UnaryOperator end
+
+  type t = expression_node Record.UnaryOperator.record
+  [@@deriving compare, eq, sexp, show, hash]
+
+  val override: t -> expression_node option
 end
 
 val negate: t -> t

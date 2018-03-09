@@ -552,8 +552,7 @@ let expand_operators source =
         let value =
           match value with
           | BinaryOperator operator ->
-              Annotated.BinaryOperator.create operator
-              |> Annotated.BinaryOperator.override
+              BinaryOperator.override operator
               |> Node.value
           | _ -> value
         in

@@ -198,15 +198,6 @@ module Define : sig
   val apply_decorators: t -> resolution: Resolution.t -> t
 end
 
-module BinaryOperator : sig
-  type t
-  [@@deriving compare, eq, sexp, show, hash]
-
-  val create: Expression.t BinaryOperator.t -> t
-
-  val override: t -> Expression.t
-end
-
 module Signature : sig
   include module type of struct include AnalysisSignature end
 end
@@ -266,21 +257,6 @@ module Call : sig
     -> Signature.t
     -> 'accumulator
 end
-
-module ComparisonOperator : sig
-  type t
-  [@@deriving compare, eq, sexp, show, hash]
-
-  val override: t -> (Expression.t option) list
-end
-
-module UnaryOperator : sig
-  type t
-  [@@deriving compare, eq, sexp, show, hash]
-
-  val override: t -> Expression.t option
-end
-
 
 module Access: sig
   type t
