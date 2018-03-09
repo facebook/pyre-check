@@ -75,9 +75,13 @@ let run
     in
     Log.print "%s" (Yojson.Safe.to_string response_json);
     Statistics.flush ()
-  with ServerConfiguration.ServerNotRunning ->
-    Log.error "Server is not running";
-    exit 1
+  with
+  | ServerConfiguration.ServerNotRunning ->
+      Log.print "Server is not running.\n";
+      exit 1
+  | ServerOperations.VersionMismatch _ ->
+      Log.print "The running server has an incompatible version with the current version.\n";
+      exit 1
 
 
 let command =
