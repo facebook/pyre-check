@@ -1452,6 +1452,18 @@ module Access = struct
           access, resolution
     in
 
+    (* Resolve function redirects. E.g. resolve `abs(x)` to `x.__abs__()`. *)
+    let access =
+      match access with
+      | (Access.Call { Node.value = call; _ }) :: tail ->
+          Call.create ~kind:Call.Function call
+          |> Call.redirect
+          >>| (fun { Call.access; call } -> access @ call @ tail)
+          |> Option.value ~default:access
+      | _ ->
+          access
+    in
+
     let rec fold ~accumulator ~reversed_lead ~tail ~annotation ~resolution =
       let annotations = Resolution.annotations resolution in
       let pick_signature call signatures =
@@ -1683,37 +1695,26 @@ module Access = struct
         | None,
           Access.Call { Node.location; value = call } :: qualifier ->
             (* Call. *)
-            begin
-              let call = Call.create ~kind:Call.Function call in
-              match Call.redirect call with
-              | Some { Call.access; call } ->
-                  let annotation =
-                    Resolution.resolve
-                      resolution
-                      (Node.create_with_default_location (Access access))
-                  in
-                  step (Some (access, (Annotation.create annotation))) call
-              | None ->
-                  let callee =
-                    Resolution.function_signature
-                      resolution
-                      (List.rev qualifier)
-                      (Call.call call)
-                      (Call.argument_annotations ~resolution call)
-                    |> pick_signature call
-                  in
-                  let resolved = Annotation.create (return_annotation resolution callee) in
-                  let element =
-                    Element.Call {
-                      Element.location;
-                      call = Call.insert_implicit_arguments ~location ~callee call;
-                      callee;
-                    }
-                  in
-                  resolution,
-                  resolved,
-                  (f accumulator ~annotations ~resolved ~element)
-            end
+            let call = Call.create ~kind:Call.Function call in
+            let callee =
+              Resolution.function_signature
+                resolution
+                (List.rev qualifier)
+                (Call.call call)
+                (Call.argument_annotations ~resolution call)
+              |> pick_signature call
+            in
+            let resolved = Annotation.create (return_annotation resolution callee) in
+            let element =
+              Element.Call {
+                Element.location;
+                call = Call.insert_implicit_arguments ~location ~callee call;
+                callee;
+              }
+            in
+            resolution,
+            resolved,
+            (f accumulator ~annotations ~resolved ~element)
 
         | None, Access.Expression expression :: _ ->
             (* Arbitrary expression. *)
