@@ -529,7 +529,7 @@ let start_command =
         "-use-watchman"
         no_arg
         ~doc:"Subscribe to watchman for file changes."
-      ++ CommandSpec.base_spec)
+      ++ CommandSpec.base_command_line_arguments)
     run_start_command
 
 

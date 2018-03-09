@@ -5,7 +5,7 @@
 
 open Core
 
-let base_spec =
+let base_command_line_arguments =
   Command.Spec.(
     empty
     +> flag "-verbose" no_arg ~doc:"Turn on verbose logging"

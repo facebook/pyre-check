@@ -8,6 +8,7 @@ open Pyre
 
 module Socket = CommandSocket
 
+
 let run
     recheck_all
     verbose
@@ -47,10 +48,10 @@ let run
     in
 
     let socket =
-      try ServerOperations.connect ~retries:3 ~configuration
-      with
-      | ServerOperations.ConnectionFailure ->
-          raise ServerConfiguration.ServerNotRunning
+      try
+        ServerOperations.connect ~retries:3 ~configuration
+      with ServerOperations.ConnectionFailure ->
+        raise ServerConfiguration.ServerNotRunning
     in
 
     if recheck_all then
@@ -68,9 +69,10 @@ let run
           |> List.map ~f:snd
           |> List.concat
           |> (fun errors ->
-              `List (List.map
-                       ~f:(fun error -> Analysis.Error.to_json ~detailed:show_error_traces error)
-                       errors))
+              `List
+                (List.map
+                   ~f:(fun error -> Analysis.Error.to_json ~detailed:show_error_traces error)
+                   errors))
       | _ -> failwith "Unexpected response in incremental check."
     in
     Log.print "%s" (Yojson.Safe.to_string response_json);
@@ -91,5 +93,5 @@ let command =
     Command.Spec.(
       empty
       +> flag "-recheck-all" no_arg ~doc:"Recheck the entire project on the server"
-      ++ CommandSpec.base_spec)
+      ++ CommandSpec.base_command_line_arguments)
     run
