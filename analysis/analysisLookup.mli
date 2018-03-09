@@ -5,7 +5,6 @@
 
 open Ast
 
-module Annotated = AnalysisAnnotated
 
 type t = Location.t Location.Table.t
 

@@ -4,7 +4,6 @@
     LICENSE file in the root directory of this source tree. *)
 
 
-module Annotated = AnalysisAnnotated
 module Annotation = AnalysisAnnotation
 module Cfg = AnalysisCfg
 module Dependencies = AnalysisDependencies

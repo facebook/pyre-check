@@ -10,7 +10,6 @@ open Expression
 open Pyre
 open Statement
 
-module Annotated = AnalysisAnnotated
 
 exception PreprocessingError
 

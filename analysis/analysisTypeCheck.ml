@@ -11,7 +11,6 @@ open Expression
 open Pyre
 open Statement
 
-module Annotated = AnalysisAnnotated
 module Annotation = AnalysisAnnotation
 module Cfg = AnalysisCfg
 module Environment = AnalysisEnvironment
@@ -104,7 +103,7 @@ module State = struct
       } as state) =
     let resolution = resolution state in
     let expected =
-      let open AnalysisAnnotated in
+      let open Annotated in
       Define.create define
       |> Define.return_annotation ~resolution
     in

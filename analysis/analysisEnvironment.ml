@@ -10,7 +10,6 @@ open Expression
 open Pyre
 open Statement
 
-module Annotated = AnalysisAnnotated
 module Annotation = AnalysisAnnotation
 module Dependencies = AnalysisDependencies
 module Resolution = AnalysisResolution

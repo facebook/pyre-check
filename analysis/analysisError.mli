@@ -8,7 +8,6 @@ open Core
 open Ast
 open Expression
 
-module Annotated = AnalysisAnnotated
 module Environment = AnalysisEnvironment
 module Resolution = AnalysisResolution
 module Type = AnalysisType
