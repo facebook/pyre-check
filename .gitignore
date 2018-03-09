@@ -1,0 +1,6 @@
+/_build
+/Makefile
+/_tags
+/hack_parallel/_build
+/scripts/buildroot
+/scripts/dist
