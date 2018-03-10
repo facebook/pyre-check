@@ -13,37 +13,10 @@ open Pyre
 open Statement
 
 open Test
-
+open AnnotatedTest
 
 module Class = Annotated.Class
 module Define = Annotated.Define
-
-
-let configuration = Configuration.create ()
-
-
-let populate source =
-  let environment =
-    let environment = Environment.Builder.create ~configuration () in
-    Environment.populate
-      ~configuration
-      (Environment.handler ~configuration environment)
-      [parse source];
-    environment
-  in
-  Environment.handler ~configuration environment
-
-
-let resolution environment =
-  Environment.resolution environment ()
-
-
-let value option =
-  Option.value_exn option
-
-
-let variable name =
-  Type.Variable { Type.variable = Identifier.create name; constraints = [] }
 
 
 let test_return_annotation _ =

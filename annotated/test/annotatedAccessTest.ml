@@ -11,30 +11,11 @@ open Analysis
 open Statement
 
 open Test
+open AnnotatedTest
 
 module Access = Annotated.Access
 module Class = Annotated.Class
 module Attribute = Annotated.Attribute
-
-
-let configuration =
-  Configuration.create ()
-
-
-let populate source =
-  let environment =
-    let environment = Environment.Builder.create ~configuration () in
-    Environment.populate
-      ~configuration
-      (Environment.handler ~configuration environment)
-      [parse source];
-    environment
-  in
-  Environment.handler ~configuration environment
-
-
-let resolution environment =
-  Environment.resolution environment ()
 
 
 let test_fold _ =
