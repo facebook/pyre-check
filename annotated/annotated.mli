@@ -13,23 +13,8 @@ module Annotation = AnalysisAnnotation
 module Resolution = AnalysisResolution
 module Type = AnalysisType
 
-module Assign : sig
-  type t
-  [@@deriving compare, eq, sexp, show, hash]
+module Assign = AnnotatedAssign
 
-  val create: Assign.t -> t
-
-  val fold
-    :  resolution: Resolution.t
-    -> initial: 'accumulator
-    -> f:
-         (access: Access.t Node.t
-          -> value_annotation: Type.t
-          -> 'accumulator
-          -> 'accumulator)
-    -> t
-    -> 'accumulator
-end
 
 module Class : sig
   type t

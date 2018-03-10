@@ -50,41 +50,6 @@ let variable name =
   Type.Variable { Type.variable = Identifier.create name; constraints = [] }
 
 
-let test_assign_fold _ =
-  let resolution =
-    populate {|
-      i = 1
-      s = 'asdf'
-      t = 1, 1.0
-    |}
-    |> resolution
-  in
-  let assert_fold source expected =
-    let assign =
-      match parse_single_statement source with
-      | { Node.value = Statement.Assign assign; _ } -> assign
-      | _ -> failwith "No Assign to parse"
-    in
-    let single_assignments ~access:{ Node.value = access; _ } ~value_annotation assignments =
-      (Expression.Access.show access, value_annotation) :: assignments
-    in
-    let actual =
-      Assign.create assign
-      |> Assign.fold
-        ~resolution
-        ~f:single_assignments
-        ~initial:[]
-      |> List.rev
-    in
-    assert_equal actual expected
-  in
-
-  assert_fold "a = i" ["a", Type.integer];
-  assert_fold "a, b = i, s" ["a", Type.integer; "b", Type.string];
-  assert_fold "a, b = t" ["a", Type.integer; "b", Type.float];
-  assert_fold "a, b = unknown" ["a", Type.Top; "b", Type.Top]
-
-
 let test_method_overrides _ =
   let resolution =
     populate {|
@@ -1326,10 +1291,6 @@ let test_fold _ =
 
 
 let () =
-  "assign">:::[
-    "fold">::test_assign_fold;
-  ]
-  |> run_test_tt_main;
   "method">:::[
     "overrides">::test_method_overrides;
     "implements">::test_method_implements;
