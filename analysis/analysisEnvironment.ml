@@ -26,7 +26,6 @@ type t = {
   aliases: Type.t Type.Table.t;
   globals: Resolution.global Access.Table.t;
   dependencies: Dependencies.t;
-  ignore_lines: Source.Ignore.t Location.Table.t;
 }
 
 module type Handler = sig
@@ -36,7 +35,6 @@ module type Handler = sig
     -> (Define.t Node.t)
     -> unit
   val register_dependency: path: string -> dependency: string -> unit
-  val register_ignore_line: path: string -> ignore: Source.Ignore.t -> unit
   val register_global: path: string -> key: Access.t -> data:Resolution.global -> unit
   val register_type
     :  path: string
@@ -58,7 +56,6 @@ module type Handler = sig
   val aliases: Type.t -> Type.t option
   val globals: Access.t -> Resolution.global option
   val dependencies: string -> string list option
-  val ignore_lines: Location.t -> Source.Ignore.t option
 
   module DependencyHandler: Dependencies.Handler
 
@@ -188,7 +185,6 @@ let handler
       aliases;
       globals;
       dependencies;
-      ignore_lines;
     }
     ~configuration =
   let (module DependencyHandler: Dependencies.Handler) =
@@ -226,12 +222,6 @@ let handler
         dependency
         path;
       DependencyHandler.add_dependent ~path dependency
-
-
-    let register_ignore_line ~path ~ignore =
-      let location = Source.Ignore.key ignore in
-      DependencyHandler.add_ignore_key ~path location;
-      Hashtbl.set ~key:location ~data:ignore ignore_lines
 
 
     let register_global ~path ~key ~data =
@@ -296,7 +286,6 @@ let handler
       DependencyHandler.get_alias_keys ~path |> purge_table_given_keys aliases;
       DependencyHandler.get_global_keys ~path |> purge_table_given_keys globals;
       DependencyHandler.get_dependent_keys ~path |> purge_dependents;
-      DependencyHandler.get_ignore_keys ~path |> purge_table_given_keys ignore_lines;
       DependencyHandler.clear_all_keys ~path
 
 
@@ -333,9 +322,6 @@ let handler
 
     let dependencies =
       DependencyHandler.dependents
-
-    let ignore_lines =
-      Hashtbl.find ignore_lines
 
     module TypeOrderHandler =
       (val TypeOrder.handler order: TypeOrder.Handler)
@@ -671,11 +657,6 @@ let dependencies (module Handler: Handler) =
 
 let register_modules (module Handler: Handler) { Source.qualifier; _ } =
   Handler.register_module qualifier
-
-
-let register_ignore_lines (module Handler: Handler) ({ Source.path; _ } as source) =
-  Source.ignore_lines source
-  |> List.iter ~f:(fun ignore -> Handler.register_ignore_line ~path ~ignore)
 
 
 let register_class_definitions (module Handler: Handler) source =
@@ -1014,7 +995,6 @@ let populate
   ];
 
   List.iter ~f:(register_modules (module Handler)) sources;
-  List.iter ~f:(register_ignore_lines (module Handler)) sources;
   List.iter ~f:(register_class_definitions (module Handler)) sources;
   Type.TypeCache.disable ();
   register_aliases (module Handler) sources;
@@ -1084,7 +1064,6 @@ module Builder = struct
     let aliases = Type.Table.create () in
     let globals = Access.Table.create () in
     let dependencies = Dependencies.create () in
-    let ignore_lines = Location.Table.create () in
 
     (* Add classes for `typing.Optional` and `typing.Unbound` that are currently not encoded in the
        stubs. *)
@@ -1114,7 +1093,6 @@ module Builder = struct
       aliases;
       globals;
       dependencies;
-      ignore_lines
     }
 
 
@@ -1128,7 +1106,6 @@ module Builder = struct
         aliases;
         globals;
         dependencies;
-        ignore_lines;
       } =
     {
       function_definitions = Hashtbl.copy function_definitions;
@@ -1139,7 +1116,6 @@ module Builder = struct
       aliases = Hashtbl.copy aliases;
       globals = Hashtbl.copy globals;
       dependencies = Dependencies.copy dependencies;
-      ignore_lines = Hashtbl.copy ignore_lines;
     }
 
 

@@ -23,7 +23,6 @@ type t = {
   aliases: Type.t Type.Table.t;
   globals: Resolution.global Access.Table.t;
   dependencies: Dependencies.t;
-  ignore_lines: Source.Ignore.t Location.Table.t;
 }
 
 (** The handler module is an interface for performing lookups on the type
@@ -37,7 +36,6 @@ module type Handler = sig
     -> (Define.t Node.t)
     -> unit
   val register_dependency: path: string -> dependency: string -> unit
-  val register_ignore_line: path: string -> ignore:Source.Ignore.t -> unit
   val register_global: path: string -> key: Access.t -> data:Resolution.global -> unit
   val register_type
     :  path: string
@@ -59,7 +57,6 @@ module type Handler = sig
   val aliases: Type.t -> Type.t option
   val globals: Access.t -> Resolution.global option
   val dependencies: string -> string list option
-  val ignore_lines: Location.t -> Source.Ignore.t option
 
   module DependencyHandler: Dependencies.Handler
   module TypeOrderHandler: TypeOrder.Handler

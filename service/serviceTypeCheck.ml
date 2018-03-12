@@ -11,6 +11,8 @@ open Pyre
 
 module Scheduler = ServiceScheduler
 module AstSharedMemory = ServiceAstSharedMemory
+module Environment = ServiceEnvironment
+module Ignore = ServiceIgnore
 
 
 type analysis_results = {
@@ -147,7 +149,7 @@ let analyze_sources_parallel
           coverage = Coverage.sum left.coverage right.coverage;
         })
   |> (fun { errors; lookups; coverage; _ } ->
-      (Error.process_ignores environment handles errors, lookups, coverage))
+      (Ignore.postprocess handles errors, lookups, coverage))
 
 
 let analyze_sources
@@ -157,11 +159,14 @@ let analyze_sources
     environment
     handles =
   Log.info "Checking...";
+
   Annotated.Class.AttributesCache.clear ();
-  ServiceEnvironment.repopulate
+  Environment.repopulate
     environment
     ~configuration
     ~handles:repopulate_handles;
+  Ignore.register (if List.is_empty repopulate_handles then handles else repopulate_handles);
+
   match Scheduler.is_parallel scheduler with
   | true ->
       analyze_sources_parallel scheduler configuration environment handles
@@ -203,4 +208,4 @@ let analyze_sources
       |> (fun (error_list, lookups, coverage) ->
           List.concat error_list, lookups, coverage)
       |> (fun (errors, lookups, coverage) ->
-          Error.process_ignores environment handles errors, lookups, coverage)
+          Ignore.postprocess handles errors, lookups, coverage)

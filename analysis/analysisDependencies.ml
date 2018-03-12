@@ -17,7 +17,6 @@ type index = {
   alias_keys: (Type.t Hash_set.t) String.Table.t;
   global_keys: (Access.t Hash_set.t) String.Table.t;
   dependent_keys: (string Hash_set.t) String.Table.t;
-  ignore_keys: (Location.t Hash_set.t) String.Table.t;
 }
 
 
@@ -33,7 +32,6 @@ module type Handler = sig
   val add_alias_key: path: string -> Type.t -> unit
   val add_global_key: path: string -> Access.t -> unit
   val add_dependent_key: path: string -> string -> unit
-  val add_ignore_key: path: string -> Location.t -> unit
 
   val add_dependent: path: string -> string -> unit
   val dependents: string -> (string list) option
@@ -43,14 +41,13 @@ module type Handler = sig
   val get_alias_keys: path: string -> Type.t list
   val get_global_keys: path: string -> Access.t list
   val get_dependent_keys: path: string -> string list
-  val get_ignore_keys: path: string -> Location.t list
 
   val clear_all_keys: path: string -> unit
 end
 
 
 let handler {
-    index = { function_keys; class_keys; alias_keys; global_keys; dependent_keys; ignore_keys };
+    index = { function_keys; class_keys; alias_keys; global_keys; dependent_keys };
     dependents;
   } =
   (module struct
@@ -109,17 +106,6 @@ let handler {
           Hash_set.add hash_set dependent
 
 
-    let add_ignore_key ~path ignore_line =
-      match Hashtbl.find ignore_keys path with
-      | None ->
-          Hashtbl.set
-            ignore_keys
-            ~key:path
-            ~data:(Location.Hash_set.of_list [ignore_line])
-      | Some hash_set ->
-          Hash_set.add hash_set ignore_line
-
-
     let add_dependent ~path dependent =
       add_dependent_key ~path dependent;
       Hashtbl.add_multi ~key:dependent ~data:path dependents
@@ -158,19 +144,12 @@ let handler {
       |> Option.value ~default:[]
 
 
-    let get_ignore_keys ~path =
-      Hashtbl.find ignore_keys path
-      >>| Hash_set.to_list
-      |> Option.value ~default:[]
-
-
     let clear_all_keys ~path =
       Hashtbl.remove function_keys path;
       Hashtbl.remove class_keys path;
       Hashtbl.remove alias_keys path;
       Hashtbl.remove global_keys path;
-      Hashtbl.remove dependent_keys path;
-      Hashtbl.remove ignore_keys path
+      Hashtbl.remove dependent_keys path
   end: Handler)
 
 
@@ -181,14 +160,13 @@ let create () =
     alias_keys = String.Table.create ();
     global_keys = String.Table.create ();
     dependent_keys = String.Table.create ();
-    ignore_keys = String.Table.create ();
   }
   in
   { index = index; dependents = String.Table.create (); }
 
 
 let copy {
-    index = { function_keys; class_keys; alias_keys; global_keys; dependent_keys; ignore_keys; };
+    index = { function_keys; class_keys; alias_keys; global_keys; dependent_keys };
     dependents } =
   {
     index = {
@@ -197,7 +175,6 @@ let copy {
       alias_keys = Hashtbl.copy alias_keys;
       global_keys = Hashtbl.copy global_keys;
       dependent_keys = Hashtbl.copy dependent_keys;
-      ignore_keys = Hashtbl.copy ignore_keys;
     };
     dependents = Hashtbl.copy dependents;
   }
