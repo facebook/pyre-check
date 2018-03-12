@@ -1408,13 +1408,15 @@ let test_check _ =
     [];
 
   assert_type_errors
+    ~debug:false
     {|
-      def x()->int:
+      def x() -> int:
         pass
     |}
     [];
 
   assert_type_errors
+    ~debug:false
     {|
       def x()->int:
         "Comment"
@@ -1513,6 +1515,7 @@ let test_check _ =
     ];
 
   assert_type_errors
+    ~debug:false
     {|
       class unittest.mock.Mock:
         ...
@@ -1532,6 +1535,7 @@ let test_check _ =
     [];
 
   assert_type_errors
+    ~debug:false
     {|
       def foo(x: typing.Union[int, typing.Callable[typing.Any]]) -> None:
         pass
@@ -4353,7 +4357,7 @@ let test_check_behavioral_subtyping _ =
       class Foo():
         def __eq__(self, o: object) -> bool: ...
       class Bar(Foo):
-        def __eq__(self, other) -> bool: pass
+        def __eq__(self, other) -> bool: ...
     |}
     [];
 
