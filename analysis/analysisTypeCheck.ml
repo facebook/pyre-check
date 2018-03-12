@@ -1870,19 +1870,6 @@ let check configuration environment ({ Source.path; _ } as source) =
         }
   in
 
-  let aggregate_errors_and_coverage check_output =
-    let coverage =
-      List.map ~f:SingleSourceResult.coverage check_output
-      |> Coverage.aggregate_over_source ~source
-    in
-    let errors =
-      List.map ~f:SingleSourceResult.errors check_output
-      |> List.concat
-    in
-    Coverage.log coverage ~configuration ~total_errors:(List.length errors) ~path;
-    (errors, coverage)
-  in
-
   let rec recursive_infer_source added_global_errors iterations =
     let add_errors_to_environment errors =
       let add_error (changed, globals_added_sofar) error =
@@ -2020,17 +2007,23 @@ let check configuration environment ({ Source.path; _ } as source) =
       |> fun errors -> { Result.errors; lookup = Some lookup; coverage = Coverage.create () }
   in
 
-  let apply_to_errors (error_list, coverage) ~f =
-    (f error_list, coverage)
-  in
-
   if configuration.infer && configuration.recursive_infer then
     recursive_infer_source [] 0
   else
-    Preprocessing.defines source
-    |> List.map ~f:check
-    |> aggregate_errors_and_coverage
-    |> apply_to_errors ~f:(Error.join_at_source ~resolution)
-    |> apply_to_errors ~f:(List.map ~f:(Error.dequalify dequalify_map environment))
-    |> apply_to_errors ~f:(List.sort ~cmp:Error.compare)
-    |> fun (errors, coverage) -> { Result.errors; lookup = Some lookup; coverage }
+    let results = Preprocessing.defines source |> List.map ~f:check in
+
+    let errors =
+      List.map ~f:SingleSourceResult.errors results
+      |> List.concat
+      |> Error.join_at_source ~resolution
+      |> List.map ~f:(Error.dequalify dequalify_map environment)
+      |> List.sort ~cmp:Error.compare
+    in
+
+    let coverage =
+      List.map ~f:SingleSourceResult.coverage results
+      |> Coverage.aggregate_over_source ~source
+    in
+    Coverage.log coverage ~configuration ~total_errors:(List.length errors) ~path;
+
+    { Result.errors; lookup = Some lookup; coverage }
