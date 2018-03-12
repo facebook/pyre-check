@@ -130,7 +130,7 @@ class PersistentTest(unittest.TestCase):
                          flags=[
                              '-project-root',
                              '.',
-                             '-stub-roots',
+                             '-search-path',
                              '',
                              '-version',
                              'hash',
@@ -271,7 +271,7 @@ class CheckTest(unittest.TestCase):
                 flags=[
                     '-project-root',
                     '.',
-                    '-stub-roots',
+                    '-search-path',
                     'stub,root',
                 ])
 
@@ -289,7 +289,7 @@ class CheckTest(unittest.TestCase):
                 flags=[
                     '-project-root',
                     '.',
-                    '-stub-roots',
+                    '-search-path',
                     'stub,root',
                 ])
 
@@ -330,7 +330,7 @@ class IncrementalTest(unittest.TestCase):
                 flags=[
                     '-project-root',
                     '.',
-                    '-stub-roots',
+                    '-search-path',
                     'stub,root',
                     '-version',
                     'hash',
@@ -362,7 +362,7 @@ class IncrementalTest(unittest.TestCase):
                          flags=[
                              '-project-root',
                              '.',
-                             '-stub-roots',
+                             '-search-path',
                              'stub,root',
                              '-version',
                              'hash',
@@ -395,7 +395,7 @@ class StartTest(unittest.TestCase):
                 flags=[
                     '-project-root',
                     '.',
-                    '-stub-roots',
+                    '-search-path',
                     'root',
                     '-version',
                     'hash',
@@ -416,7 +416,7 @@ class StartTest(unittest.TestCase):
                         '-project-root',
                         '.',
                         '-use-watchman',
-                        '-stub-roots',
+                        '-search-path',
                         'root',
                         '-version',
                         'hash',
@@ -439,7 +439,7 @@ class StartTest(unittest.TestCase):
                             '-project-root',
                             '.',
                             '-use-watchman',
-                            '-stub-roots',
+                            '-search-path',
                             'root',
                             '-version',
                             'hash',
@@ -464,7 +464,7 @@ class StartTest(unittest.TestCase):
                     '-project-root',
                     '.',
                     '-terminal',
-                    '-stub-roots',
+                    '-search-path',
                     'root',
                     '-version',
                     'hash',

@@ -434,7 +434,7 @@ class Check(ErrorHandling):
     def _run(self, retries: int = 1) -> None:
         flags = self._flags()
         flags.extend([
-            '-stub-roots',
+            '-search-path',
             ','.join(self._configuration.get_search_path()),
         ])
         if self._log_identifier:
@@ -503,7 +503,7 @@ class Incremental(ErrorHandling):
 
         flags = self._flags()
         flags.extend([
-            '-stub-roots',
+            '-search-path',
             ','.join(self._configuration.get_search_path()),
             '-version',
             str(self._configuration.get_version_hash()),
@@ -589,7 +589,7 @@ class Start(Command):
                     if self._terminal:
                         flags.append('-terminal')
                     flags.extend([
-                        '-stub-roots',
+                        '-search-path',
                         ','.join(self._configuration.get_search_path()),
                         '-version',
                         str(self._configuration.get_version_hash()),

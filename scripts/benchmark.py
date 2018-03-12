@@ -47,7 +47,7 @@ def _compare_parallel_check(arguments, configuration):
             '`{}` is not a valid source directory.'
             .format(arguments.source_directory))
     flags = [
-        '-stub-roots',
+        '-search-path',
         ','.join(configuration.get_search_path()),
         '-project-root',
         arguments.current_directory,
