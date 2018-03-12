@@ -10,24 +10,8 @@ module Annotation = AnalysisAnnotation
 module Environment = AnalysisEnvironment
 module Error = AnalysisError
 module Lookup = AnalysisLookup
+module Coverage = AnalysisCoverage
 
-module Coverage : sig
-  type t = {
-    full: int;
-    partial: int;
-    untyped: int;
-    ignore: int;
-  }
-
-  val create_empty: t
-
-  val full: t -> int
-  val partial: t -> int
-  val untyped: t -> int
-  val ignore: t -> int
-
-  val sum: t -> t -> t
-end
 
 module State : sig
   type t

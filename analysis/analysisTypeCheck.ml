@@ -22,39 +22,7 @@ module Resolution = AnalysisResolution
 module Signature = AnalysisSignature
 module Type = AnalysisType
 module TypeOrder = AnalysisTypeOrder
-
-
-module Coverage = struct
-  type t = {
-    full: int;
-    partial: int;
-    untyped: int;
-    ignore: int;
-  }
-
-  let create_empty =
-    { full = 0; partial = 0; untyped = 0; ignore = 0 }
-
-  let full { full; _ } =
-    full
-
-  let partial { partial; _ } =
-    partial
-
-  let untyped { untyped; _ } =
-    untyped
-
-  let ignore { ignore; _ } =
-    ignore
-
-  let sum left right =
-    {
-      full = full left + full right;
-      partial = partial left + partial right;
-      untyped = untyped left + untyped right;
-      ignore = ignore left + ignore right;
-    }
-end
+module Coverage = AnalysisCoverage
 
 
 module State = struct
@@ -374,18 +342,8 @@ module State = struct
 
 
   let coverage { annotations; _ } =
-    let aggregate
-        ~key:_
-        ~data:{ Annotation.annotation; _ }
-        ({ Coverage.full; partial; untyped; _ } as coverage) =
-      if Type.is_untyped annotation then
-        { coverage with Coverage.untyped = untyped + 1 }
-      else if Type.is_partially_typed annotation then
-        { coverage with Coverage.partial = partial + 1 }
-      else
-        { coverage with Coverage.full = full + 1 }
-    in
-    Map.fold ~init:(Coverage.create_empty) ~f:aggregate annotations
+    Map.data annotations
+    |> Coverage.aggregate
 
 
   let initial_forward
@@ -2023,7 +1981,7 @@ let check configuration environment ({ Source.path; _ } as source) =
       let type_coverage =
         exit
         >>| State.coverage
-        |> Option.value ~default:(Coverage.create_empty)
+        |> Option.value ~default:(Coverage.create ())
       in
       { error_list; type_coverage }
     with
@@ -2048,61 +2006,21 @@ let check configuration environment ({ Source.path; _ } as source) =
               }]
             else
               [];
-          type_coverage = Coverage.create_empty;
+          type_coverage = Coverage.create ();
         }
   in
 
   let aggregate_errors_and_coverage check_output =
-    let { Coverage.full; partial; untyped; ignore; } =
-      List.fold
-        ~init:{
-          Coverage.full = 0;
-          partial = 0;
-          untyped = 0;
-          ignore = List.length (Source.ignore_lines source); }
-        ~f:(fun
-             { Coverage.full; partial; untyped; ignore; }
-             {
-               type_coverage = {
-                 Coverage.full = previous_full;
-                 partial = previous_partial;
-                 untyped = previous_untyped;
-                 _;
-               };
-               error_list = _;
-             } ->
-             {
-               Coverage.full = full + previous_full;
-               partial = partial + previous_partial;
-               untyped = untyped + previous_untyped;
-               ignore;
-             }
-           )
-        check_output
+    let coverage =
+      List.map ~f:(fun { type_coverage; error_list = _ } -> type_coverage) check_output
+      |> Coverage.aggregate_over_source ~source
     in
-    let error_list =
-      List.fold
-        ~init:[]
-        ~f:(fun errors current ->
-            let { error_list; _ } = current in
-            List.append errors error_list
-          )
-        check_output
+    let error_list: Error.t list =
+      List.map ~f:(fun { error_list; _ } -> error_list) check_output
+      |> List.concat
     in
-    Statistics.coverage
-      ~coverage:[
-        "full_type_coverage", full;
-        "partial_type_coverage", partial;
-        "no_type_coverage", untyped;
-        "ignore_coverage", ignore;
-        "total_errors", List.length error_list;
-      ]
-      ~configuration
-      ~normals:[
-        "file_name", path;
-      ]
-      ();
-    (error_list, { Coverage.full; partial; untyped; ignore; })
+    Coverage.log coverage ~configuration ~total_errors:(List.length error_list) ~path;
+    (error_list, coverage)
   in
 
   let rec recursive_infer_source added_global_errors iterations =
@@ -2239,7 +2157,7 @@ let check configuration environment ({ Source.path; _ } as source) =
       errors @ added_global_errors
       |> List.map ~f:(Error.dequalify dequalify_map environment)
       |> List.sort ~cmp:Error.compare
-      |> fun errors -> { errors; lookup = Some lookup; type_coverage = Coverage.create_empty }
+      |> fun errors -> { errors; lookup = Some lookup; type_coverage = Coverage.create () }
   in
 
   let apply_to_errors (error_list, coverage) ~f =

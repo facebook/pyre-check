@@ -6,6 +6,7 @@
 
 module Annotation = AnalysisAnnotation
 module Cfg = AnalysisCfg
+module Coverage = AnalysisCoverage
 module Dependencies = AnalysisDependencies
 module Environment = AnalysisEnvironment
 module Fixpoint = AnalysisFixpoint
