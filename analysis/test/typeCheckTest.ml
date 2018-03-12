@@ -1332,12 +1332,6 @@ let test_check _ =
     "def bar() -> str: return ''\ndef foo() -> str: return bar()"
     [];
 
-  (* Angelic assumption about unknown functions in non-debug mode. *)
-  assert_type_errors
-    ~debug:false
-    "def foo() -> str: return not_annotated()"
-    [];
-
   assert_type_errors
     "def foo() -> str: return not_annotated()"
     ["Incompatible return type [7]: Expected `str` but got `unknown`."];
@@ -1404,26 +1398,6 @@ let test_check _ =
         def test(self) -> int:
           x = await self.get_int
           return x
-    |}
-    [];
-
-  assert_type_errors
-    ~debug:false
-    {|
-      def x() -> int:
-        pass
-    |}
-    [];
-
-  assert_type_errors
-    ~debug:false
-    {|
-      def x()->int:
-        "Comment"
-        """
-        Multi-line Comment
-        """
-        pass
     |}
     [];
 
@@ -1513,35 +1487,6 @@ let test_check _ =
       "Incompatible return type [7]: Expected `str` but got `int`."
 
     ];
-
-  assert_type_errors
-    ~debug:false
-    {|
-      class unittest.mock.Mock:
-        ...
-      class unittest.mock.MagicMock:
-        ...
-      class typing.Callable:
-        ...
-      def foo() -> str:
-        return unittest.mock.Mock()
-      def boo() -> int:
-        return unittest.mock.MagicMock()
-      def baz(a: unittest.mock.Mock) -> None:
-        a.b
-      def a() -> str:
-        return typing.Callable()
-    |}
-    [];
-
-  assert_type_errors
-    ~debug:false
-    {|
-      def foo(x: typing.Union[int, typing.Callable[typing.Any]]) -> None:
-        pass
-      foo(str)
-    |}
-    [];
 
   assert_type_errors
     {|
@@ -1722,117 +1667,6 @@ let test_check_coverage _ =
   (* Unary operators. *)
   assert_covered "not ERROR";
   assert_covered "-ERROR"
-
-
-let test_check_non_debug _ =
-  assert_type_errors
-    ~debug:false
-    "def foo(): pass"
-    [];
-
-  (* Suppression of `typing.Any`. *)
-  assert_type_errors
-    ~debug:false
-    {|
-      def foo() -> str:
-        d: typing.Any
-        return d
-    |}
-    [];
-  assert_type_errors
-    ~debug:false
-    {|
-      def foo() -> typing.Dict[str, typing.Any]:
-        d: typing.Dict[typing.Any, typing.Any];
-        return d
-    |}
-    [];
-  assert_type_errors
-    ~debug:false
-    {|
-      def foo() -> typing.Any:
-        d: typing.Dict[typing.Any, typing.Any];
-        return d
-    |}
-    [];
-  assert_type_errors
-    ~debug:false
-    {|
-      def foo(input) -> None:
-        generator = (i for i in input)
-        sum(generator)
-    |}
-    []
-
-
-let test_strict _ =
-  let assert_strict_errors = assert_type_errors ~debug:false ~strict:true  in
-
-  assert_strict_errors
-    "def foo(): pass"
-    ["Missing return annotation [3]: Returning `None` but no return type is specified."];
-  assert_strict_errors "def foo() -> None: return" [];
-  assert_strict_errors "def foo() -> float: return 1.0" [];
-  assert_strict_errors "def foo() -> float: return 1" [];
-  assert_strict_errors
-    "def foo() -> int: return 1.0"
-    ["Incompatible return type [7]: Expected `int` but got `float`."];
-  assert_strict_errors
-    "def foo() -> str: return 1.0"
-    ["Incompatible return type [7]: Expected `str` but got `float`."];
-  assert_strict_errors
-    "def foo() -> str: return"
-    [
-      "Incompatible return type [7]: Expected `str` but got `None`."
-    ];
-  assert_strict_errors
-    "def foo() -> typing.List[str]: return 1"
-    [
-      "Incompatible return type [7]: Expected `typing.List[str]` but got `int`."
-    ];
-  assert_strict_errors "def foo() -> typing.List[str]: return []" [];
-  assert_strict_errors "def foo() -> typing.Dict[str, int]: return {}" [];
-  assert_strict_errors
-    "def foo() -> str: return 1.0\ndef bar() -> int: return ''"
-    [
-      "Incompatible return type [7]: Expected `str` but got `float`.";
-      "Incompatible return type [7]: Expected `int` but got `str`.";
-    ];
-  assert_strict_errors "class A: pass\ndef foo() -> A: return A()" [];
-  assert_strict_errors
-    "class A: pass\ndef foo() -> A: return 1"
-    ["Incompatible return type [7]: Expected `A` but got `int`."];
-  assert_strict_errors "def bar() -> str: return ''\ndef foo() -> str: return bar()" [];
-  assert_strict_errors
-    {|
-      def foo(x:int):
-        return 0
-      foo(y)
-    |}
-    [
-      "Missing return annotation [3]: Returning `int` but no return type is specified.";
-      "Incompatible parameter type [6]: Expected `int` but got `unknown`.";
-    ]
-
-
-let test_declare _ =
-  let assert_declare_errors source =
-    assert_type_errors ~debug:false ~declare:true source []
-  in
-  assert_declare_errors "def foo(): pass";
-  assert_declare_errors "def foo() -> None: return";
-  assert_declare_errors "def foo() -> float: return 1.0";
-  assert_declare_errors "def foo() -> float: return 1";
-  assert_declare_errors "def foo() -> int: return 1.0";
-  assert_declare_errors "def foo() -> str: return 1.0";
-  assert_declare_errors "def foo() -> str: return";
-  assert_declare_errors "def foo() -> typing.List[str]: return 1";
-  assert_declare_errors "def foo() -> typing.List[str]: return []";
-  assert_declare_errors "def foo() -> typing.Dict[str, int]: return {}";
-  assert_declare_errors "def foo() -> str: return 1.0\ndef bar() -> int: return ''";
-  assert_declare_errors "class A: pass\ndef foo() -> A: return A()";
-  assert_declare_errors "class A: pass\ndef foo() -> A: return 1";
-  assert_declare_errors "def bar() -> str: return ''\ndef foo() -> str: return bar()"
 
 
 let test_check_comprehensions _ =
@@ -4970,9 +4804,6 @@ let () =
     "coverage">::test_coverage;
     "check">::test_check;
     "check_coverage">::test_check_coverage;
-    "check_strict">::test_strict;
-    "check_declare">::test_declare;
-    "check_non_debug">::test_check_non_debug;
     "check_comprehensions">::test_check_comprehensions;
     "check_optional">::test_check_optional;
     "check_function_parameters">::test_check_function_parameters;

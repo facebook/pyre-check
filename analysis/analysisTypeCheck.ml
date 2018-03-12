@@ -183,15 +183,10 @@ module State = struct
         |> Option.value ~default:errors
     in
 
-    let errors =
-      Map.data errors
-      |> Error.join_at_define ~resolution ~location
-      |> class_initialization_errors
-    in
-    if not configuration.debug then
-      Error.filter errors ~configuration
-    else
-      errors
+    Map.data errors
+    |> Error.join_at_define ~resolution ~location
+    |> class_initialization_errors
+    |> Error.filter ~configuration
 
 
   let coverage { annotations; _ } =

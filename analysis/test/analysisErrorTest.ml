@@ -3,6 +3,7 @@
     This source code is licensed under the MIT license found in the
     LICENSE file in the root directory of this source tree. *)
 
+open Core
 open OUnit2
 
 open Ast
@@ -11,18 +12,22 @@ open Expression
 open Test
 
 
-let mock_define =
+let define ?(body = []) () =
   +{
     Statement.Define.name = Access.create "foo";
     parameters = [];
-    body = [];
+    body;
     decorators = [];
     docstring = None;
-    return_annotation = None;
+    return_annotation = Some !"int";
     async = false;
     generated = false;
     parent = None;
   }
+
+
+let mock_define =
+  define ()
 
 
 let mock_parent =
@@ -43,15 +48,29 @@ let create_mock_location path =
   { Location.path; start; stop; }
 
 
-let error kind =
-  { Error.location = Location.any; kind; define = mock_define }
+let error ?(define = mock_define) kind =
+  { Error.location = Location.any; kind; define }
+
+
+let missing_return annotation =
+  Error.MissingReturnAnnotation {
+    Error.annotation;
+    evidence_locations = [];
+    due_to_any = false;
+  }
+
+
+let incompatible_return_type actual expected =
+  Error.IncompatibleReturnType {
+    Error.actual;
+    expected;
+  }
 
 
 let configuration = Configuration.create ()
 
 
 let test_due_to_analysis_limitations _ =
-
   (* IncompatibleAttributeType. *)
   assert_true
     (Error.due_to_analysis_limitations
@@ -381,9 +400,70 @@ let test_join _ =
          }))
 
 
+let test_filter _ =
+  let assert_filtered ?(define = mock_define) ~configuration kind =
+    assert_equal
+      []
+      (Error.filter ~configuration [error ~define kind])
+  in
+  let assert_not_filtered ?(define = mock_define) ~configuration kind =
+    let errors = [error ~define kind] in
+    assert_equal
+      ~cmp:(List.equal ~equal:Error.equal)
+      errors
+      (Error.filter ~configuration errors)
+  in
+
+  (* Test different modes. *)
+  let debug = Configuration.create ~debug:true () in
+  assert_not_filtered ~configuration:debug (Error.UndefinedType Type.Object);
+
+  let infer = Configuration.create ~infer:true () in
+  assert_filtered ~configuration:infer (missing_return Type.Top);
+  assert_filtered ~configuration:infer (missing_return Type.Object);
+  assert_not_filtered ~configuration:infer (missing_return Type.integer);
+  assert_filtered ~configuration:infer (Error.UndefinedType Type.integer);
+
+  let strict = Configuration.create ~strict:true () in
+  assert_not_filtered ~configuration:strict (missing_return Type.Top);
+  assert_filtered ~configuration:strict (Error.IncompatibleAwaitableType Type.Top);
+  assert_not_filtered ~configuration:strict (missing_return Type.Object);
+
+  let default = Configuration.create () in
+  assert_filtered ~configuration:default (missing_return Type.integer);
+  assert_not_filtered ~configuration:default (incompatible_return_type Type.integer Type.float);
+  assert_filtered ~configuration:default (incompatible_return_type Type.integer Type.Object);
+
+  (* Suppress mock errors. *)
+  assert_filtered
+    ~configuration:default
+    (incompatible_return_type (Type.primitive "unittest.mock.Mock") Type.integer);
+  assert_not_filtered
+    ~configuration:default
+    (incompatible_return_type Type.integer (Type.primitive "unittest.mock.Mock"));
+
+  (* Suppress callable errors. *)
+  assert_filtered
+    ~configuration:default
+    (incompatible_return_type (Type.parametric "typing.Callable" []) Type.integer);
+  assert_filtered
+    ~configuration:default
+    (incompatible_return_type Type.integer (Type.parametric "typing.Callable" []));
+
+  (* Suppress return errors in unimplemented defines. *)
+  assert_not_filtered
+    ~configuration:default
+    (incompatible_return_type Type.integer Type.float);
+  assert_filtered
+    ~define:(define ~body:[+Statement.Pass; +Statement.Return None] ())
+    ~configuration:default
+    (incompatible_return_type Type.integer Type.float)
+
+
 let () =
-  "pyreError">:::[
+  "error">:::[
     "due_to_analysis_limitations">::test_due_to_analysis_limitations;
     "join">::test_join;
+    "filter">::test_filter;
   ]
   |> run_test_tt_main

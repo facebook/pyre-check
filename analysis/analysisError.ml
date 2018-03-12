@@ -864,141 +864,144 @@ let join_at_source ~resolution errors =
   |> Map.data
 
 
-let filter errors ~configuration:{ Configuration.infer; strict; declare; _  } =
-  let suppress error =
-    let suppress_undefined_function =
-      (* TODO(T26558543): un-gate this once it is ready. *)
-      Sys.getenv "PYRE_REPORT_UNDEFINED_FUNCTIONS"
-      |> Option.is_none
-    in
+let filter errors ~configuration:{ Configuration.infer; strict; declare; debug; _  } =
+  if debug then
+    errors
+  else
+    let suppress error =
+      let suppress_undefined_function =
+        (* TODO(T26558543): un-gate this once it is ready. *)
+        Sys.getenv "PYRE_REPORT_UNDEFINED_FUNCTIONS"
+        |> Option.is_none
+      in
 
-    let suppress_in_strict ({ kind; _ } as error) =
-      if due_to_analysis_limitations error then
+      let suppress_in_strict ({ kind; _ } as error) =
+        if due_to_analysis_limitations error then
+          match kind with
+          | IncompatibleParameterType _
+          | IncompatibleReturnType _
+          | MissingParameterAnnotation _
+          | MissingReturnAnnotation _
+          | UndefinedAttribute _ ->
+              false
+          | IncompatibleAwaitableType _
+          | IncompatibleAttributeType _
+          | IncompatibleVariableType _
+          | InconsistentOverride _
+          | MissingAttributeAnnotation _
+          | MissingGlobalAnnotation _
+          | Top
+          | UndefinedType _
+          | UninitializedAttribute _
+          | UnusedIgnore _ ->
+              true
+          | UndefinedFunction _ ->
+              suppress_undefined_function
+        else
+          match kind with
+          | MissingParameterAnnotation { due_to_any; _ } ->
+              due_to_any
+          | UndefinedFunction _ ->
+              suppress_undefined_function
+          | _ ->
+              false
+      in
+
+      let suppress_in_default ({ kind; define = { Node.value = define; _ }; _ } as error) =
         match kind with
-        | IncompatibleParameterType _
-        | IncompatibleReturnType _
-        | MissingParameterAnnotation _
         | MissingReturnAnnotation _
-        | UndefinedAttribute _ ->
-            false
-        | IncompatibleAwaitableType _
-        | IncompatibleAttributeType _
-        | IncompatibleVariableType _
-        | InconsistentOverride _
+        | MissingParameterAnnotation _
         | MissingAttributeAnnotation _
         | MissingGlobalAnnotation _
-        | Top
-        | UndefinedType _
-        | UninitializedAttribute _
-        | UnusedIgnore _ ->
+        | UndefinedType _ ->
             true
         | UndefinedFunction _ ->
-            suppress_undefined_function
-      else
+            suppress_undefined_function ||
+            due_to_analysis_limitations error ||
+            due_to_mismatch_with_any error ||
+            Define.is_untyped define
+        | _ ->
+            due_to_analysis_limitations error ||
+            due_to_mismatch_with_any error ||
+            Define.is_untyped define
+      in
+
+      let suppress_in_infer ({ kind; _ } as error) =
         match kind with
-        | MissingParameterAnnotation { due_to_any; _ } ->
-            due_to_any
-        | UndefinedFunction _ ->
-            suppress_undefined_function
+        | MissingReturnAnnotation { annotation = actual; _ }
+        | MissingParameterAnnotation { annotation = actual; _ }
+        | MissingAttributeAnnotation { missing_annotation = { annotation = actual; _ }; _ }
+        | MissingGlobalAnnotation { annotation = actual; _ } ->
+            due_to_analysis_limitations error ||
+            Type.equal actual Type.Object
+        | _ ->
+            true
+      in
+
+      let suppress =
+        if infer then
+          suppress_in_infer error
+        else if strict then
+          suppress_in_strict error
+        else if declare then
+          true
+        else
+          suppress_in_default error
+      in
+
+      let is_mock_error { kind; _ } =
+        match kind with
+        | IncompatibleAttributeType { incompatible_type = { mismatch = { actual; _ }; _ }; _ }
+        | IncompatibleAwaitableType actual
+        | IncompatibleParameterType { mismatch = { actual; _ }; _ }
+        | IncompatibleReturnType { actual; _ }
+        | IncompatibleVariableType { mismatch = { actual; _ }; _ }
+        | UndefinedAttribute { annotation = actual; _ } ->
+            Type.equal actual (Type.Primitive (Identifier.create "unittest.mock.Mock")) ||
+            Type.equal actual (Type.Primitive (Identifier.create "unittest.mock.MagicMock"))
         | _ ->
             false
-    in
+      in
 
-    let suppress_in_default ({ kind; define = { Node.value = define; _ }; _ } as error) =
-      match kind with
-      | MissingReturnAnnotation _
-      | MissingParameterAnnotation _
-      | MissingAttributeAnnotation _
-      | MissingGlobalAnnotation _
-      | UndefinedType _ ->
-          true
-      | UndefinedFunction _ ->
-          suppress_undefined_function ||
-          due_to_analysis_limitations error ||
-          due_to_mismatch_with_any error ||
-          Define.is_untyped define
-      | _ ->
-          due_to_analysis_limitations error ||
-          due_to_mismatch_with_any error ||
-          Define.is_untyped define
-    in
+      let is_callable_error { kind;_ } =
+        match kind with
+        | IncompatibleAttributeType {
+            incompatible_type = { mismatch = { actual; expected }; _ }; _ }
+        | IncompatibleParameterType { mismatch = { actual; expected }; _ }
+        | IncompatibleReturnType { actual; expected }
+        | IncompatibleVariableType { mismatch = { actual; expected }; _ } ->
+            Type.is_callable actual || Type.is_callable expected
+        | IncompatibleAwaitableType actual ->
+            Type.is_callable actual
+        | _ ->
+            false
+      in
 
-    let suppress_in_infer ({ kind; _ } as error) =
-      match kind with
-      | MissingReturnAnnotation { annotation = actual; _ }
-      | MissingParameterAnnotation { annotation = actual; _ }
-      | MissingAttributeAnnotation { missing_annotation = { annotation = actual; _ }; _ }
-      | MissingGlobalAnnotation { annotation = actual; _ } ->
-          due_to_analysis_limitations error ||
-          Type.equal actual Type.Object
-      | _ ->
-          true
-    in
+      let is_unimplemented_return_error error =
+        match error with
+        | { kind = IncompatibleReturnType _; define = { Node.value = { Define.body; _ }; _ }; _ } ->
+            let rec check_statements = function
+              | [{ Node.value = Statement.Pass; _ }; { Node.value = Statement.Return None; _ }] ->
+                  true
+              | {
+                Node.value = Statement.Expression { Node.value = Expression.String _; _ };
+                _;
+              } :: tail ->
+                  check_statements tail
+              | _ ->
+                  false
+            in
+            check_statements body
+        | _ ->
+            false
+      in
 
-    let suppress =
-      if infer then
-        suppress_in_infer error
-      else if strict then
-        suppress_in_strict error
-      else if declare then
-        true
-      else
-        suppress_in_default error
+      suppress ||
+      is_mock_error error ||
+      is_callable_error error ||
+      is_unimplemented_return_error error
     in
-
-    let is_mock_error { kind; _ } =
-      match kind with
-      | IncompatibleAttributeType { incompatible_type = { mismatch = { actual; _ }; _ }; _ }
-      | IncompatibleAwaitableType actual
-      | IncompatibleParameterType { mismatch = { actual; _ }; _ }
-      | IncompatibleReturnType { actual; _ }
-      | IncompatibleVariableType { mismatch = { actual; _ }; _ }
-      | UndefinedAttribute { annotation = actual; _ } ->
-          Type.equal actual (Type.Primitive (Identifier.create "unittest.mock.Mock")) ||
-          Type.equal actual (Type.Primitive (Identifier.create "unittest.mock.MagicMock"))
-      | _ ->
-          false
-    in
-
-    let is_callable_error { kind;_ } =
-      match kind with
-      | IncompatibleAttributeType {
-          incompatible_type = { mismatch = { actual; expected }; _ }; _ }
-      | IncompatibleParameterType { mismatch = { actual; expected }; _ }
-      | IncompatibleReturnType { actual; expected }
-      | IncompatibleVariableType { mismatch = { actual; expected }; _ } ->
-          Type.is_callable actual || Type.is_callable expected
-      | IncompatibleAwaitableType actual ->
-          Type.is_callable actual
-      | _ ->
-          false
-    in
-
-    let is_unimplemented_return_error error =
-      match error with
-      | { kind = IncompatibleReturnType _; define = { Node.value = { Define.body; _ }; _ }; _ } ->
-          let rec check_statements = function
-            | [{ Node.value = Statement.Pass; _ }; { Node.value = Statement.Return None; _ }] ->
-                true
-            | {
-              Node.value = Statement.Expression { Node.value = Expression.String _; _ };
-              _;
-            } :: tail ->
-                check_statements tail
-            | _ ->
-                false
-          in
-          check_statements body
-      | _ ->
-          false
-    in
-
-    suppress ||
-    is_mock_error error ||
-    is_callable_error error ||
-    is_unimplemented_return_error error
-  in
-  List.filter ~f:(fun error -> not (suppress error)) errors
+    List.filter ~f:(fun error -> not (suppress error)) errors
 
 
 let process_ignores environment handles errors =
