@@ -1868,17 +1868,29 @@ end
 module Fixpoint = AnalysisFixpoint.Make(State)
 
 
-type result = {
-  errors: Error.t list;
-  lookup: Lookup.t option;
-  type_coverage: Coverage.t;
-}
+module Result = struct
+  type t = {
+    errors: Error.t list;
+    lookup: Lookup.t option;
+    coverage: Coverage.t;
+  }
+end
 
 
-type check_result = {
-  error_list: Error.t list;
-  type_coverage: Coverage.t;
-}
+module SingleSourceResult = struct
+  type t = {
+    errors: Error.t list;
+    coverage: Coverage.t;
+  }
+
+
+  let errors { errors; _ } =
+    errors
+
+
+  let coverage { coverage; _ } =
+    coverage
+end
 
 
 let check configuration environment ({ Source.path; _ } as source) =
@@ -1973,17 +1985,17 @@ let check configuration environment ({ Source.path; _ } as source) =
           >>| print_state "Entry"
           >>| State.check_entry resolution
       in
-      let error_list =
+      let errors =
         exit
         >>| State.errors
         |> Option.value ~default:[]
       in
-      let type_coverage =
+      let coverage =
         exit
         >>| State.coverage
         |> Option.value ~default:(Coverage.create ())
       in
-      { error_list; type_coverage }
+      { SingleSourceResult.errors; coverage }
     with
     | TypeOrder.Undefined annotation ->
         Statistics.event
@@ -1997,7 +2009,7 @@ let check configuration environment ({ Source.path; _ } as source) =
           ]
           ();
         {
-          error_list =
+          SingleSourceResult.errors =
             if configuration.debug then
               [{
                 Error.location;
@@ -2006,21 +2018,21 @@ let check configuration environment ({ Source.path; _ } as source) =
               }]
             else
               [];
-          type_coverage = Coverage.create ();
+          coverage = Coverage.create ();
         }
   in
 
   let aggregate_errors_and_coverage check_output =
     let coverage =
-      List.map ~f:(fun { type_coverage; error_list = _ } -> type_coverage) check_output
+      List.map ~f:SingleSourceResult.coverage check_output
       |> Coverage.aggregate_over_source ~source
     in
-    let error_list: Error.t list =
-      List.map ~f:(fun { error_list; _ } -> error_list) check_output
+    let errors =
+      List.map ~f:SingleSourceResult.errors check_output
       |> List.concat
     in
-    Coverage.log coverage ~configuration ~total_errors:(List.length error_list) ~path;
-    (error_list, coverage)
+    Coverage.log coverage ~configuration ~total_errors:(List.length errors) ~path;
+    (errors, coverage)
   in
 
   let rec recursive_infer_source added_global_errors iterations =
@@ -2146,7 +2158,7 @@ let check configuration environment ({ Source.path; _ } as source) =
     let errors =
       Preprocessing.defines source
       |> List.map ~f:check
-      |> List.map ~f:(fun { error_list; _ } -> error_list)
+      |> List.map ~f:SingleSourceResult.errors
       |> List.concat
       |> Error.join_at_source ~resolution
     in
@@ -2157,7 +2169,7 @@ let check configuration environment ({ Source.path; _ } as source) =
       errors @ added_global_errors
       |> List.map ~f:(Error.dequalify dequalify_map environment)
       |> List.sort ~cmp:Error.compare
-      |> fun errors -> { errors; lookup = Some lookup; type_coverage = Coverage.create () }
+      |> fun errors -> { Result.errors; lookup = Some lookup; coverage = Coverage.create () }
   in
 
   let apply_to_errors (error_list, coverage) ~f =
@@ -2173,4 +2185,4 @@ let check configuration environment ({ Source.path; _ } as source) =
     |> apply_to_errors ~f:(Error.join_at_source ~resolution)
     |> apply_to_errors ~f:(List.map ~f:(Error.dequalify dequalify_map environment))
     |> apply_to_errors ~f:(List.sort ~cmp:Error.compare)
-    |> fun (errors, type_coverage) -> { errors; lookup = Some lookup; type_coverage }
+    |> fun (errors, coverage) -> { Result.errors; lookup = Some lookup; coverage }

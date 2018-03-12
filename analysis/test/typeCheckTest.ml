@@ -16,7 +16,8 @@ open TypeCheck
 
 open Test
 
-let check_errors configuration environment source = (check configuration environment source).errors
+let check_errors configuration environment source =
+  (check configuration environment source).Result.errors
 
 
 let configuration = Configuration.create ()

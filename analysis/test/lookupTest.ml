@@ -34,7 +34,7 @@ let test_lookup _ =
   let parsed = parse source in
   let configuration = (Configuration.create ~debug:true ~infer:false ()) in
   let environment = (Environment.handler ~configuration environment) in
-  let { TypeCheck.lookup; _ } = TypeCheck.check configuration environment parsed in
+  let { TypeCheck.Result.lookup; _ } = TypeCheck.check configuration environment parsed in
   assert_is_some lookup;
   assert_equal
     (Lookup.get_definition
@@ -71,7 +71,7 @@ let test_lookup_across_files _ =
   let parsed = parse use_source in
   let configuration = (Configuration.create ~debug:true ~infer:false ()) in
   let environment = (Environment.handler ~configuration environment) in
-  let { TypeCheck.lookup; _ } = TypeCheck.check configuration environment parsed in
+  let { TypeCheck.Result.lookup; _ } = TypeCheck.check configuration environment parsed in
   assert_is_some lookup;
   assert_equal
     (Lookup.get_definition
@@ -99,7 +99,7 @@ let test_lookup_method _ =
   let configuration = (Configuration.create ~debug:true ~infer:false ()) in
   let environment = environment source |> Environment.handler ~configuration in
   let parsed = parse source in
-  let { TypeCheck.lookup; _ } = TypeCheck.check configuration environment parsed in
+  let { TypeCheck.Result.lookup; _ } = TypeCheck.check configuration environment parsed in
   assert_is_some lookup;
   assert_equal
     (Lookup.get_definition

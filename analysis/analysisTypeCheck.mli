@@ -49,14 +49,16 @@ end
 
 module Fixpoint : AnalysisFixpoint.Fixpoint with type state := State.t
 
-type result = {
-  errors: Error.t list;
-  lookup: Lookup.t option;
-  type_coverage: Coverage.t;
-}
+module Result : sig
+  type t = {
+    errors: Error.t list;
+    lookup: Lookup.t option;
+    coverage: Coverage.t;
+  }
+end
 
 val check
   :  Configuration.t
   -> (module Environment.Handler)
   -> Source.t
-  -> result
+  -> Result.t

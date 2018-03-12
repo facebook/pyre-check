@@ -65,7 +65,7 @@ let make_errors source =
   let environment_handler = Environment.handler ~configuration (environment ()) in
   Environment.populate ~configuration environment_handler [source];
   let configuration = mock_analysis_configuration () in
-  (Analysis.TypeCheck.check configuration environment_handler source).Analysis.TypeCheck.errors
+  (TypeCheck.check configuration environment_handler source).TypeCheck.Result.errors
 
 
 let run_command_tests test_category tests =

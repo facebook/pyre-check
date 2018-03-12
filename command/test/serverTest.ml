@@ -196,7 +196,7 @@ let make_errors ?(path = "test.py") ?(qualifier = []) source =
   let source = Preprocessing.preprocess (parse ~path ~qualifier source) in
   let environment_handler = Environment.handler ~configuration (environment ()) in
   Environment.populate ~configuration (environment_handler) [source];
-  (Analysis.TypeCheck.check configuration environment_handler source).TypeCheck.errors
+  (TypeCheck.check configuration environment_handler source).TypeCheck.Result.errors
 
 let mock_server_state
     ?(initial_errors = Error.Hash_set.create ())
