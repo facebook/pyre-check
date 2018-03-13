@@ -78,7 +78,6 @@ let ignore_lines_test context =
         descriptions
     in
 
-    Log.dump "BEFORE";
     assert_errors
       {|
         def foo() -> int:
