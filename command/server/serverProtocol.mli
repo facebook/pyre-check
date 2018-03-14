@@ -38,11 +38,7 @@ module TypeCheckRequest: sig
   }
   [@@deriving eq, show]
 
-  val has_no_files: t -> bool
-
   val create: ?update_environment_with: File.t list -> ?check: File.t list -> unit -> t
-
-  val empty: t
 end
 
 module Request : sig
@@ -53,6 +49,7 @@ module Request : sig
     | RageRequest of int
     | ReinitializeStateRequest
     | DisplayTypeErrors of File.t list
+    | FlushTypeErrorsRequest
     | TypeCheckRequest of TypeCheckRequest.t
     | TypeQueryRequest of type_query_request
     | StopRequest

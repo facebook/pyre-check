@@ -59,7 +59,7 @@ let run
     else
       Socket.write
         socket
-        (ServerProtocol.Request.TypeCheckRequest ServerProtocol.TypeCheckRequest.empty);
+        ServerProtocol.Request.FlushTypeErrorsRequest;
 
     let response_json =
       match Socket.read socket with

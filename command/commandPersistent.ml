@@ -90,7 +90,7 @@ let run_command version log_identifier source_root () =
   (* Get all initial errors *)
   Socket.write
     server_socket
-    (Protocol.Request.TypeCheckRequest Protocol.TypeCheckRequest.empty);
+    Protocol.Request.FlushTypeErrorsRequest;
 
   let rec listen server_socket () =
     let read =

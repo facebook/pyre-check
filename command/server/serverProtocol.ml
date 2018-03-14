@@ -40,19 +40,8 @@ module TypeCheckRequest = struct
   [@@deriving eq, show]
 
 
-  let has_no_files = function
-    | { update_environment_with = []; check = [] } ->
-        true
-    | _ ->
-        false
-
-
   let create ?(update_environment_with = []) ?(check = []) () =
     { update_environment_with; check }
-
-
-  let empty =
-    { update_environment_with = []; check = [] }
 end
 
 
@@ -64,6 +53,7 @@ module Request = struct
     | RageRequest of int
     | ReinitializeStateRequest
     | DisplayTypeErrors of File.t list
+    | FlushTypeErrorsRequest
     | TypeCheckRequest of TypeCheckRequest.t
     | TypeQueryRequest of type_query_request
     | StopRequest
@@ -121,6 +111,7 @@ module Request = struct
     | RageRequest _ -> "Rage"
     | ReinitializeStateRequest -> "ReinitializeState"
     | DisplayTypeErrors _ -> "DisplayTypeErrors"
+    | FlushTypeErrorsRequest -> "FlushTypeErrors"
     | TypeCheckRequest { TypeCheckRequest.check = []; update_environment_with = [] } -> "TypeCheck"
     | TypeCheckRequest _ -> "IncrementalCheck"
     | TypeQueryRequest _ -> "TypeQuery"

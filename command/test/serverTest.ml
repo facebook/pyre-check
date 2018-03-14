@@ -296,13 +296,13 @@ let test_protocol_type_check _ =
   let errors = make_errors source in
   assert_request_gets_response
     source
-    (Protocol.Request.TypeCheckRequest Protocol.TypeCheckRequest.empty)
+    Protocol.Request.FlushTypeErrorsRequest
     (Some (Protocol.TypeCheckResponse (associate_errors_and_filenames errors)));
 
   assert_request_gets_response
     ~initial_errors:(Error.Hash_set.of_list errors)
     source
-    (Protocol.Request.TypeCheckRequest Protocol.TypeCheckRequest.empty)
+    Protocol.Request.FlushTypeErrorsRequest
     (Some (Protocol.TypeCheckResponse (associate_errors_and_filenames errors)))
 
 
@@ -414,13 +414,13 @@ let test_incremental_typecheck _ =
     ~path
     source
     ~state
-    (Protocol.Request.TypeCheckRequest Protocol.TypeCheckRequest.empty)
+    Protocol.Request.FlushTypeErrorsRequest
     (Some (Protocol.TypeCheckResponse []));
   assert_request_gets_response
     ~path
     source
     ~state:{ state with State.deferred_requests = [request_with_content] }
-    (Protocol.Request.TypeCheckRequest Protocol.TypeCheckRequest.empty)
+    Protocol.Request.FlushTypeErrorsRequest
     (Some (Protocol.TypeCheckResponse errors))
 
 
