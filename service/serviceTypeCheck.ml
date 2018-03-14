@@ -165,7 +165,6 @@ let analyze_sources
     environment
     ~configuration
     ~handles:repopulate_handles;
-  Ignore.register (if List.is_empty repopulate_handles then handles else repopulate_handles);
 
   if Scheduler.is_parallel scheduler then
     analyze_sources_parallel scheduler configuration environment handles

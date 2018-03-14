@@ -148,6 +148,8 @@ let rec process_request
       else
         [], List.filter_map ~f:(File.handle ~root:source_root) check
     in
+    Service.Ignore.register repopulate_handles;
+
     let new_errors, lookups =
       let errors, lookups, _ =
         Service.TypeCheck.analyze_sources

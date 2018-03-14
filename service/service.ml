@@ -6,6 +6,7 @@
 
 module AstSharedMemory = ServiceAstSharedMemory
 module Environment = ServiceEnvironment
+module Ignore = ServiceIgnore
 module Parser = ServiceParser
 module Scheduler = ServiceScheduler
 module TypeCheck = ServiceTypeCheck

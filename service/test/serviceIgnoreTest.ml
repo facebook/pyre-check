@@ -55,6 +55,7 @@ let ignore_lines_test context =
       let environment =
         Service.Environment.in_process_handler scheduler ~configuration ~stubs:[] ~sources:handles
       in
+      Service.Ignore.register handles;
       let descriptions =
         Service.TypeCheck.analyze_sources
           scheduler
