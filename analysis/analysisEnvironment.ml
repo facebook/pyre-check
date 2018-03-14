@@ -299,14 +299,7 @@ let handler
       Hash_set.to_list protocols
 
     let register_module access =
-      let rec register_submodules = function
-        | [] ->
-            ()
-        | (_ :: tail) as reversed ->
-            Hashtbl.set ~key:(List.rev reversed) ~data:() modules;
-            register_submodules tail
-      in
-      register_submodules (List.rev access)
+      Hashtbl.set ~key:access ~data:() modules
 
     let is_module access =
       Hashtbl.mem modules access
@@ -655,8 +648,15 @@ let dependencies (module Handler: Handler) =
   Handler.dependencies
 
 
-let register_modules (module Handler: Handler) { Source.qualifier; _ } =
-  Handler.register_module qualifier
+let register_module (module Handler: Handler) { Source.qualifier; _ } =
+  let rec register_submodules = function
+    | [] ->
+        ()
+    | (_ :: tail) as reversed ->
+        Handler.register_module (List.rev reversed);
+        register_submodules tail
+  in
+  register_submodules (List.rev qualifier)
 
 
 let register_class_definitions (module Handler: Handler) source =
@@ -994,7 +994,7 @@ let populate
     Type.Primitive (Identifier.create "collections.defaultdict");
   ];
 
-  List.iter ~f:(register_modules (module Handler)) sources;
+  List.iter ~f:(register_module (module Handler)) sources;
   List.iter ~f:(register_class_definitions (module Handler)) sources;
   Type.TypeCache.disable ();
   register_aliases (module Handler) sources;
