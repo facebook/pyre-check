@@ -76,7 +76,7 @@ module ProtocolValue = struct
 end
 
 module ModuleValue = struct
-  type t = unit
+  type t = Ast.Module.t
   let prefix = Prefix.make ()
   let description = "Modules"
 end

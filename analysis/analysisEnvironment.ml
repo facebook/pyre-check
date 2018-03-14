@@ -21,7 +21,7 @@ type t = {
   function_definitions: ((Define.t Node.t) list) Access.Table.t;
   class_definitions: (Class.t Node.t) Type.Table.t;
   protocols: Type.Hash_set.t;
-  modules: unit Access.Table.t;
+  modules: Module.t Access.Table.t;
   order: TypeOrder.t;
   aliases: Type.t Type.Table.t;
   globals: Resolution.global Access.Table.t;
@@ -49,7 +49,7 @@ module type Handler = sig
   val class_definition: Type.t -> (Class.t Node.t) option
   val protocols: unit -> Type.t list
 
-  val register_module: Access.t -> unit
+  val register_module: qualifier: Access.t -> statements: Statement.t list -> unit
   val is_module: Access.t -> bool
 
   val in_class_definition_keys: Type.t -> bool
@@ -306,8 +306,8 @@ let handler
     let protocols () =
       Hash_set.to_list protocols
 
-    let register_module access =
-      Hashtbl.set ~key:access ~data:() modules
+    let register_module ~qualifier ~statements =
+      Hashtbl.set ~key:qualifier ~data:(Module.create statements) modules
 
     let is_module access =
       Hashtbl.mem modules access
@@ -656,15 +656,19 @@ let dependencies (module Handler: Handler) =
   Handler.dependencies
 
 
-let register_module (module Handler: Handler) { Source.qualifier; _ } =
+let register_module (module Handler: Handler) { Source.qualifier; statements; _ } =
   let rec register_submodules = function
     | [] ->
         ()
     | (_ :: tail) as reversed ->
-        Handler.register_module (List.rev reversed);
+        let qualifier = List.rev reversed in
+        if not (Handler.is_module qualifier) then
+          Handler.register_module ~qualifier ~statements:[];
         register_submodules tail
   in
-  register_submodules (List.rev qualifier)
+  Handler.register_module ~qualifier ~statements;
+  if List.length qualifier > 1 then
+    register_submodules (List.rev qualifier |> List.tl_exn)
 
 
 let register_class_definitions (module Handler: Handler) source =

@@ -10,6 +10,7 @@ module Expression = AstExpression
 module Identifier = AstIdentifier
 module Ignore = AstIgnore
 module Location = AstLocation
+module Module = AstModule
 module Node = AstNode
 module Parameter = AstParameter
 module Source = AstSource

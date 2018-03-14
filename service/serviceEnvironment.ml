@@ -193,9 +193,9 @@ let shared_memory_handler
         Protocols.get "Protocols"
         |> Option.value ~default:[]
 
-
-      let register_module access =
-        Modules.add access ()
+      let register_module ~qualifier ~statements =
+        Modules.remove_batch (Modules.KeySet.singleton qualifier);
+        Modules.add qualifier (Ast.Module.create statements)
 
       let is_module access =
         Modules.get access
