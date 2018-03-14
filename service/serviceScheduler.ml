@@ -71,6 +71,8 @@ module Memory = struct
 
   let configuration: configuration option ref = ref None
 
+  let initial_heap_size = 4096 * 1024 * 1024 (* 4 GB *)
+
   let initialize () =
     match !configuration with
     | None ->
@@ -84,8 +86,8 @@ module Memory = struct
         let shared_mem_config =
           let open SharedMemory in
           {
-            global_size = 4096 * 1024 * 1024; (* 4096 MB *)
-            heap_size = 4096 * 1024 * 1024; (* 4096 MB *)
+            global_size = initial_heap_size;
+            heap_size = initial_heap_size;
             dep_table_pow = 19;
             hash_table_pow = 21;
             shm_dirs = default_shm_dirs;
@@ -101,6 +103,14 @@ module Memory = struct
   let get_heap_handle () =
     let { heap_handle; _ } = initialize () in
     heap_handle
+
+  let heap_use_ratio () =
+    Core.Float.of_int (SharedMem.heap_size ()) /.
+    Core.Float.of_int initial_heap_size
+
+  let slot_use_ratio () =
+    let { SharedMem.used_slots; slots; _ } = SharedMem.hash_stats () in
+    Core.Float.of_int used_slots /. Core.Float.of_int slots
 end
 
 

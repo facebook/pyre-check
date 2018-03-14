@@ -5,6 +5,13 @@
 
 type t
 
+module Memory: sig
+  (* Between 0.0 and 1.0 *)
+  val heap_use_ratio: unit -> float
+
+  val slot_use_ratio: unit -> float
+end
+
 val create : is_parallel:bool -> ?bucket_multiplier: int -> unit -> t
 
 val map_reduce:

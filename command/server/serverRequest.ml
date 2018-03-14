@@ -76,7 +76,16 @@ let rec process_request
       end
     else
       begin
-        SharedMem.collect `aggressive;
+        if Scheduler.Memory.heap_use_ratio () > 0.5 then
+          begin
+            let previous_use_ratio = Scheduler.Memory.heap_use_ratio () in
+            SharedMem.collect `aggressive;
+            Log.log
+              ~section:`Server
+              "Garbage collected due to a previous heap use ratio of %f. New ratio is %f."
+              previous_use_ratio
+              (Scheduler.Memory.heap_use_ratio ())
+          end;
         let deferred_requests =
           if not (List.is_empty update_environment_with) then
             let files =
