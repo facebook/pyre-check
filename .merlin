@@ -21,6 +21,7 @@ S scripts
 S parser
 S ast
 S analysis
+S annotated
 S service
 S command
 S command/server
@@ -36,12 +37,14 @@ B _build/all/
 B _build/all/parser
 B _build/all/ast
 B _build/all/analysis
+B _build/all/annotated
 B _build/all/service
 B _build/all/command
 B _build/all/command/server
 B _build/all/language_server
 B _build/all/facebook
 B _build/test/test
+B _build/test/annotated/test
 B _build/test/command/test
 B _build/test/parser/test
 B _build/test/ast/test
