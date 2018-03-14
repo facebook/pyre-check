@@ -81,7 +81,13 @@ let register_type
     if Handler.contains (Handler.indices ()) subtype &&
        Handler.contains (Handler.indices ()) primitive &&
        not (Type.equal subtype primitive) then
-      TypeOrder.connect order ~configuration ~predecessor:subtype ~successor:primitive ~parameters;
+      TypeOrder.connect
+        order
+        ~add_backedge:false
+        ~configuration
+        ~predecessor:subtype
+        ~successor:primitive
+        ~parameters;
     (* Register meta annotation. *)
     register_global
       ~path
@@ -142,6 +148,7 @@ let register_type
                   (* Meta-programming can introduce cycles. *)
                   TypeOrder.connect
                     order
+                    ~add_backedge:false
                     ~configuration
                     ~predecessor:primitive
                     ~successor:super_annotation
@@ -165,6 +172,7 @@ let register_type
                   not (Type.equal primitive Type.Top) then
             TypeOrder.connect
               order
+              ~add_backedge:false
               ~configuration
               ~predecessor:primitive
               ~successor:Type.Object;

@@ -847,12 +847,12 @@ let test_add_backedges _ =
     insert order !"B";
     insert order !"C";
     insert order !"D";
-    connect order ~predecessor:Type.Bottom ~successor:!"D";
-    connect order ~predecessor:!"D" ~successor:!"B";
-    connect order ~predecessor:!"D" ~successor:!"C";
-    connect order ~predecessor:!"B" ~successor:!"A";
-    connect order ~predecessor:!"C" ~successor:!"A";
-    connect order ~predecessor:!"A" ~successor:Type.Top;
+    connect order ~add_backedge:false ~predecessor:Type.Bottom ~successor:!"D";
+    connect order ~add_backedge:false ~predecessor:!"D" ~successor:!"B";
+    connect order ~add_backedge:false ~predecessor:!"D" ~successor:!"C";
+    connect order ~add_backedge:false ~predecessor:!"B" ~successor:!"A";
+    connect order ~add_backedge:false ~predecessor:!"C" ~successor:!"A";
+    connect order ~add_backedge:false ~predecessor:!"A" ~successor:Type.Top;
     order
   in
   let assert_backedges annotation number_of_backedges =
