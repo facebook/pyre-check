@@ -121,8 +121,57 @@ let test_fold _ =
     ]
 
 
+let test_module_exports _ =
+  let assert_resolved access expected =
+    let resolution =
+      populate_with_sources
+        [
+          parse
+            ~qualifier:(Expression.Access.create "implementing")
+            {|
+              def implementing.function() -> int: ...
+              implementing.constant: int = 1
+            |};
+          parse
+            ~qualifier:(Expression.Access.create "exporting")
+            "from implementing import function, constant";
+        ]
+      |> resolution
+    in
+    let resolved =
+      Access.fold
+        ~resolution
+        ~initial:Type.Top
+        ~f:(fun _ ~annotations:_ ~resolved ~element:_ -> Annotation.annotation resolved)
+        (Access.create access)
+    in
+    assert_equal ~cmp:Type.equal expected resolved
+  in
+
+  assert_resolved
+    (parse_single_access "implementing.constant")
+    Type.integer;
+  assert_resolved
+    (parse_single_access "implementing.function()")
+    Type.integer;
+  assert_resolved
+    (parse_single_access "implementing.undefined")
+    Type.Top;
+
+  assert_resolved
+    (parse_single_access "exporting.constant")
+    Type.integer;
+  assert_resolved
+    (parse_single_access "exporting.function()")
+    Type.Top;  (* TODO(T26921099): still need to resolve function names. *)
+  assert_resolved
+    (parse_single_access "exporting.undefined")
+    Type.Top
+
+
 let () =
   "access">:::[
     "fold">::test_fold;
+    "module_exports">::test_module_exports;
   ]
   |> run_test_tt_main

@@ -143,6 +143,12 @@ let parse_single_expression source =
   | _ -> failwith "Could not parse single expression"
 
 
+let parse_single_access source =
+  match parse_single_expression source with
+  | { Node.value = Expression.Access access; _ } -> access
+  | _ -> failwith "Could not parse single access"
+
+
 let diff ~print format (left, right) =
   let escape string =
     String.substr_replace_all string ~pattern:"\"" ~with_:"\\\""

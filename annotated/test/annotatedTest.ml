@@ -16,6 +16,18 @@ let configuration =
   Configuration.create ()
 
 
+let populate_with_sources sources =
+  let environment =
+    let environment = Environment.Builder.create ~configuration () in
+    Environment.populate
+      ~configuration
+      (Environment.handler ~configuration environment)
+      sources;
+    environment
+  in
+  Environment.handler ~configuration environment
+
+
 let populate source =
   let environment =
     let environment = Environment.Builder.create ~configuration () in
