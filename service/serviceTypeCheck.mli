@@ -10,7 +10,6 @@ open Analysis
 
 val analyze_sources
   : ServiceScheduler.t
-  -> ?repopulate_handles: (File.Handle.t list)
   -> Configuration.t
   -> (module Environment.Handler)
   -> File.Handle.t list

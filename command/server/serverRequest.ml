@@ -148,12 +148,17 @@ let rec process_request
       else
         [], List.filter_map ~f:(File.handle ~root:source_root) check
     in
+    Annotated.Class.AttributesCache.clear ();
+    Service.Environment.repopulate
+      state.environment
+      ~configuration
+      ~handles:repopulate_handles;
+
     Service.Ignore.register repopulate_handles;
 
     let new_errors, lookups =
       let errors, lookups, _ =
         Service.TypeCheck.analyze_sources
-          ~repopulate_handles
           scheduler
           configuration
           state.environment

@@ -11,7 +11,6 @@ open Pyre
 
 module Scheduler = ServiceScheduler
 module AstSharedMemory = ServiceAstSharedMemory
-module Environment = ServiceEnvironment
 module Ignore = ServiceIgnore
 
 
@@ -154,17 +153,12 @@ let analyze_sources_parallel
 
 let analyze_sources
     scheduler
-    ?(repopulate_handles = [])
     ({Configuration.source_root; project_root = directory; _ } as configuration)
     environment
     handles =
   Log.info "Checking...";
 
   Annotated.Class.AttributesCache.clear ();
-  Environment.repopulate
-    environment
-    ~configuration
-    ~handles:repopulate_handles;
 
   if Scheduler.is_parallel scheduler then
     analyze_sources_parallel scheduler configuration environment handles
