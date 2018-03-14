@@ -85,6 +85,7 @@ let check
   let sources = Service.Parser.parse_sources scheduler ~configuration in
 
   (* Build environment. *)
+  ServiceIgnore.register ~configuration sources;
   let environment =
     let handler =
       if Scheduler.is_parallel scheduler then
@@ -94,7 +95,6 @@ let check
     in
     handler scheduler ~configuration ~stubs ~sources
   in
-  ServiceIgnore.register ~configuration sources;
   (* Run type checker. *)
   let errors, _, { TypeCheck.Coverage.full; partial; untyped; ignore } =
     Service.TypeCheck.analyze_sources scheduler configuration environment sources

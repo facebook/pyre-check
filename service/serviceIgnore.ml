@@ -20,12 +20,11 @@ let register ~configuration handles =
   let register handle =
     (* Remove existing ignores. *)
     let key = File.Handle.show handle in
-    let keys =
-      IgnoreKeys.get key
-      |> Option.value ~default:[]
-      |> IgnoreLines.KeySet.of_list
-    in
-    IgnoreLines.remove_batch keys;
+
+    IgnoreKeys.get key
+    >>| IgnoreLines.KeySet.of_list
+    >>| IgnoreLines.remove_batch
+    |> ignore;
 
     (* Register new ignores. *)
     match AstSharedMemory.get_source handle with
