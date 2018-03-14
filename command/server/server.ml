@@ -88,6 +88,7 @@ let computation_thread request_queue configuration state =
     let handle_request state ~request:(origin, request) =
       let process_request socket state configuration request =
         try
+          Log.log ~section:`Server "Processing request %a" ServerProtocol.Request.pp request;
           Request.process_request socket state configuration request
         with
         | Request.InvalidRequest ->

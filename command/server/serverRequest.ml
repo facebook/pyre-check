@@ -59,7 +59,6 @@ let rec process_request
   let handle_type_check state ({ TypeCheckRequest.update_environment_with; check} as request) =
     if TypeCheckRequest.has_no_files request then
       begin
-        Log.log ~section:`Server "Handling type check request";
         let state =
           let deferred_requests = state.deferred_requests in
           let state = { state with deferred_requests = [] } in
@@ -226,7 +225,7 @@ let rec process_request
     | TypeQueryRequest request -> handle_type_query state request
     | DisplayTypeErrors request -> display_cached_type_errors state request
     | StopRequest ->
-        Log.log ~section:`Server "Stopping the server";
+        Log.info "Stopping the server";
         Socket.write new_socket StopResponse;
         Mutex.critical_section
           state.lock
@@ -237,7 +236,6 @@ let rec process_request
                 !(state.connections).socket);
         state, None
     | LanguageServerProtocolRequest request ->
-        Log.log ~section:`Server "Server received LSP request %s" request;
         LanguageServer.RequestParser.parse
           ~root:configuration.source_root
           ~check_on_save:false
