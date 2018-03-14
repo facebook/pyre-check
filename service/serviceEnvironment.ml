@@ -488,4 +488,8 @@ let repopulate
     | None -> []
   in
   List.concat_map ~f:repopulate_path handles
-  |> Environment.populate ~configuration ~source_root (module Handler: Environment.Handler)
+  |> Environment.populate
+    ~configuration
+    ~check_integrity:false
+    ~source_root
+    (module Handler: Environment.Handler)

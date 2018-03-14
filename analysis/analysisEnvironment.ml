@@ -988,6 +988,7 @@ let populate
     (module Handler: Handler)
     ~configuration
     ?(source_root = Path.current_working_directory ())
+    ?(check_integrity = true)
     ?(check_dependency_exists = true)
     sources =
 
@@ -1017,7 +1018,8 @@ let populate
     (module Handler.TypeOrderHandler)
     ~bottom:Type.Bottom
     ~top:Type.Object;
-  TypeOrder.check_integrity (module Handler.TypeOrderHandler)
+  if check_integrity then
+    TypeOrder.check_integrity (module Handler.TypeOrderHandler)
 
 
 let infer_implementations (module Handler: Handler) ~protocol =
