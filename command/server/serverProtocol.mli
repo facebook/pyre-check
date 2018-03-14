@@ -31,12 +31,19 @@ type type_query_request =
 [@@deriving eq, show]
 
 
-type type_check_request = {
-  check_dependents: bool;
-  files: File.t list;
-}
-[@@deriving eq, show]
+module TypeCheckRequest: sig
+  type t = {
+    update_environment_with: File.t list;
+    check: File.t list;
+  }
+  [@@deriving eq, show]
 
+  val has_no_files: t -> bool
+
+  val create: ?update_environment_with: File.t list -> ?check: File.t list -> unit -> t
+
+  val empty: t
+end
 
 module Request : sig
   type t =
@@ -46,7 +53,7 @@ module Request : sig
     | RageRequest of int
     | ReinitializeStateRequest
     | DisplayTypeErrors of File.t list
-    | TypeCheckRequest of type_check_request
+    | TypeCheckRequest of TypeCheckRequest.t
     | TypeQueryRequest of type_query_request
     | StopRequest
     | ClientShutdownRequest of int

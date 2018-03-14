@@ -296,13 +296,13 @@ let test_protocol_type_check _ =
   let errors = make_errors source in
   assert_request_gets_response
     source
-    (Protocol.Request.TypeCheckRequest { Protocol.files = []; check_dependents = true })
+    (Protocol.Request.TypeCheckRequest Protocol.TypeCheckRequest.empty)
     (Some (Protocol.TypeCheckResponse (associate_errors_and_filenames errors)));
 
   assert_request_gets_response
     ~initial_errors:(Error.Hash_set.of_list errors)
     source
-    (Protocol.Request.TypeCheckRequest { Protocol.files = []; check_dependents = true })
+    (Protocol.Request.TypeCheckRequest Protocol.TypeCheckRequest.empty)
     (Some (Protocol.TypeCheckResponse (associate_errors_and_filenames errors)))
 
 
@@ -394,11 +394,15 @@ let test_incremental_typecheck _ =
   assert_request_gets_response
     source
     (Protocol.Request.TypeCheckRequest
-       { Protocol.files = [file path]; check_dependents = true })
+       (Protocol.TypeCheckRequest.create
+          ~update_environment_with:[file path]
+          ~check:[file path]
+          ()))
     (Some (Protocol.TypeCheckResponse [(File.Handle.create relative_path), []]));
+  let files = [file ~content:(Some source) path] in
   let request_with_content =
     (Protocol.Request.TypeCheckRequest
-       { Protocol.files = [file ~content:(Some source) path]; check_dependents = true })
+       (Protocol.TypeCheckRequest.create ~update_environment_with:files ~check:files ()))
   in
   assert_request_gets_response
     ~path
@@ -410,13 +414,13 @@ let test_incremental_typecheck _ =
     ~path
     source
     ~state
-    (Protocol.Request.TypeCheckRequest { Protocol.files = []; check_dependents = false })
+    (Protocol.Request.TypeCheckRequest Protocol.TypeCheckRequest.empty)
     (Some (Protocol.TypeCheckResponse []));
   assert_request_gets_response
     ~path
     source
     ~state:{ state with State.deferred_requests = [request_with_content] }
-    (Protocol.Request.TypeCheckRequest { Protocol.files = []; check_dependents = false })
+    (Protocol.Request.TypeCheckRequest Protocol.TypeCheckRequest.empty)
     (Some (Protocol.TypeCheckResponse errors))
 
 
@@ -514,7 +518,18 @@ let test_incremental_dependencies _ =
       initial_state
       (CommandTest.mock_server_configuration ())
       (Protocol.Request.TypeCheckRequest
-         { Protocol.files = [file "b.py"]; check_dependents = true })
+         (Protocol.TypeCheckRequest.create
+            ~update_environment_with:[file "b.py"]
+            ~check:[file "b.py"]
+            ()))
+  in
+  let second_state, second_response = ServerRequest.process_request
+      mock_client_socket
+      initial_state
+      (CommandTest.mock_server_configuration ())
+      (Protocol.Request.TypeCheckRequest
+         (Protocol.TypeCheckRequest.create
+            ~update_environment_with:[file "b.py"] ~check:[file "a.py"; file "b.py"] ()))
   in
   Sys.remove "a.py";
   Sys.remove "b.py";
@@ -527,8 +542,18 @@ let test_incremental_dependencies _ =
     (Option.value_exn response);
   assert_equal
     state.State.deferred_requests
-    [Protocol.Request.TypeCheckRequest { Protocol.files = [file "a.py"]; check_dependents = false }]
-
+    [Protocol.Request.TypeCheckRequest (Protocol.TypeCheckRequest.create ~check:[file "a.py"] ())];
+  assert_equal
+    ~printer:Protocol.show_response
+    (Protocol.TypeCheckResponse [
+        File.Handle.create "a.py", [];
+        File.Handle.create "b.py", [];
+      ])
+    (Option.value_exn second_response);
+  assert_equal
+    ~printer:(List.to_string ~f:(Protocol.Request.show))
+    second_state.State.deferred_requests
+    []
 
 let test_incremental_lookups _ =
   let path, _ =
@@ -566,7 +591,10 @@ let test_incremental_lookups _ =
     [parse source];
   let request =
     Protocol.Request.TypeCheckRequest
-      { Protocol.files = [file ~content:(Some source) path]; check_dependents = true }
+      (Protocol.TypeCheckRequest.create
+         ~update_environment_with:[file ~content:(Some source) path]
+         ~check:[file ~content:(Some source) path]
+         ())
   in
   let errors = File.Handle.Table.create () in
   let initial_state =
@@ -661,7 +689,10 @@ let test_incremental_repopulate _ =
       initial_state
       (CommandTest.mock_server_configuration ())
       (Protocol.Request.TypeCheckRequest
-         { Protocol.files = [file "test.py"]; check_dependents = true })
+         (Protocol.TypeCheckRequest.create
+            ~update_environment_with:[file "test.py"]
+            ~check:[file "test.py"]
+            ()))
   in
   Sys.remove "test.py";
   begin match (get_annotation "test.foo") with
@@ -770,10 +801,11 @@ let test_incremental_attribute_caching context =
       Unix.stdout
       state
       server_configuration
-      (ServerProtocol.Request.TypeCheckRequest {
-          ServerProtocol.check_dependents = true;
-          files = [File.create source_path];
-        })
+      (ServerProtocol.Request.TypeCheckRequest
+         (Protocol.TypeCheckRequest.create
+            ~update_environment_with:[File.create source_path]
+            ~check:[File.create source_path]
+            ()))
     |> fst
   in
   let get_errors { ServerState.errors; _ } = Hashtbl.to_alist errors in

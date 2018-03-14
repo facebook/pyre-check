@@ -56,8 +56,9 @@ let rec process_request
     in
     state, Some (TypeCheckResponse (build_file_to_error_map errors))
   in
-  let handle_type_check state = function
-    | { files = []; _ } ->
+  let handle_type_check state ({ TypeCheckRequest.update_environment_with; check} as request) =
+    if TypeCheckRequest.has_no_files request then
+      begin
         Log.log ~section:`Server "Handling type check request";
         let state =
           let deferred_requests = state.deferred_requests in
@@ -73,18 +74,25 @@ let rec process_request
           |> List.concat
         in
         state, Some (TypeCheckResponse (build_file_to_error_map errors))
-
-    | { files; check_dependents } ->
+      end
+    else
+      begin
         SharedMem.collect `aggressive;
         let deferred_requests =
-          if check_dependents then
+          if not (List.is_empty update_environment_with) then
             let files =
               let dependents =
                 let paths =
                   List.filter_map
                     ~f:(fun file ->
                         Path.get_relative_to_root ~root:source_root ~path:(File.path file))
-                    files
+                    update_environment_with
+                in
+                let check_paths =
+                  List.filter_map
+                    ~f:(fun file ->
+                        Path.get_relative_to_root ~root:source_root ~path:(File.path file))
+                    check
                 in
                 Log.log
                   ~section:`Server
@@ -92,8 +100,10 @@ let rec process_request
                   Sexp.pp (sexp_of_list sexp_of_string paths);
                 let (module Handler: Environment.Handler) = state.environment in
                 Dependencies.of_list ~get_dependencies:(Handler.dependencies) ~paths
+                |> (fun dependency_set -> Set.diff dependency_set (String.Set.of_list check_paths))
                 |> Set.to_list
               in
+
               Log.log
                 ~section:`Server
                 "Inferred affected files: %a"
@@ -105,10 +115,11 @@ let rec process_request
                     |> File.create)
                 dependents
             in
+
             if List.is_empty files then
               state.deferred_requests
             else
-              (TypeCheckRequest { files; check_dependents = false })
+              (TypeCheckRequest (TypeCheckRequest.create ~check:files ()))
               :: state.deferred_requests
           else
             state.deferred_requests
@@ -116,18 +127,18 @@ let rec process_request
         let scheduler =
           Scheduler.with_parallel
             state.scheduler
-            ~is_parallel:(List.length files > 5)
+            ~is_parallel:(List.length check > 5)
         in
         let repopulate_handles, new_source_handles =
-          if check_dependents then
-            List.filter_map ~f:(File.handle ~root:source_root) files,
+          if not (List.is_empty update_environment_with) then
+            List.filter_map ~f:(File.handle ~root:source_root) update_environment_with,
             Service.Parser.parse_sources_list
               scheduler
-              files
+              check
               ~configuration
             |> fst
           else
-            [], List.filter_map ~f:(File.handle ~root:source_root) files
+            [], List.filter_map ~f:(File.handle ~root:source_root) check
         in
         let new_errors, lookups =
           let errors, lookups, _ =
@@ -158,11 +169,12 @@ let rec process_request
         let checked_files =
           List.filter_map
             ~f:(fun file -> File.path file |> Path.relative >>| File.Handle.create)
-            files
+            check
           |> fun handles -> Some handles
         in
         { state with handles = Set.union state.handles new_files; deferred_requests },
         Some (TypeCheckResponse (build_file_to_error_map ~checked_files new_errors))
+      end
   in
   let handle_type_query state request =
     let (module Handler: Environment.Handler) = state.environment in
@@ -284,7 +296,7 @@ let rec process_request
             state.connections
             server_configuration
         in
-        handle_type_check state { files = []; check_dependents = false }
+        handle_type_check state TypeCheckRequest.empty
 
     | GetDefinitionRequest { DefinitionRequest.path; position; _ } ->
         state, Some (GetDefinitionResponse (

@@ -102,8 +102,12 @@ let test_watchman_client context =
         with
         | Some (
             _,
-            Protocol.Request.TypeCheckRequest { Protocol.files = [file]; check_dependents = true }) ->
-            assert_equal (File.path file |> Path.relative) (Some "other/c.py")
+            Protocol.Request.TypeCheckRequest {
+              Protocol.TypeCheckRequest.update_environment_with = [file];
+              check = [other_file]
+            }) ->
+            assert_equal (File.path file |> Path.relative) (Some "other/c.py");
+            assert_equal file other_file
         | _ ->
             assert_failure "Malformed watchman response")
     ~cleanup;
@@ -119,10 +123,11 @@ let test_watchman_client context =
         | Some
             (_,
              Protocol.Request.TypeCheckRequest {
-               Protocol.files = [file];
-               check_dependents = true
+               Protocol.TypeCheckRequest.update_environment_with = [file];
+               check = [other_file]
              }) ->
-            assert_equal (File.path file |> Path.relative) (Some "test.py")
+            assert_equal (File.path file |> Path.relative) (Some "test.py");
+            assert_equal file other_file
         | _ ->
             assert_failure "Malformed watchman response")
     ~cleanup;
@@ -169,8 +174,12 @@ let test_different_root context =
     with
     | Some (
         _,
-        Protocol.Request.TypeCheckRequest { Protocol.files = [file]; check_dependents = true }) ->
-        assert_equal (File.path file |> Path.relative) (Some expected_file)
+        Protocol.Request.TypeCheckRequest {
+          Protocol.TypeCheckRequest.update_environment_with = [file];
+          check = [other_file];
+        }) ->
+        assert_equal (File.path file |> Path.relative) (Some expected_file);
+        assert_equal file other_file
     | _ ->
         assert_failure "Unexpected watchman response"
   in

@@ -32,11 +32,28 @@ type type_query_request =
 [@@deriving eq, show]
 
 
-type type_check_request = {
-  check_dependents: bool;
-  files: File.t list;
-}
-[@@deriving eq, show]
+module TypeCheckRequest = struct
+  type t = {
+    update_environment_with: File.t list;
+    check: File.t list;
+  }
+  [@@deriving eq, show]
+
+
+  let has_no_files = function
+    | { update_environment_with = []; check = [] } ->
+        true
+    | _ ->
+        false
+
+
+  let create ?(update_environment_with = []) ?(check = []) () =
+    { update_environment_with; check }
+
+
+  let empty =
+    { update_environment_with = []; check = [] }
+end
 
 
 module Request = struct
@@ -47,7 +64,7 @@ module Request = struct
     | RageRequest of int
     | ReinitializeStateRequest
     | DisplayTypeErrors of File.t list
-    | TypeCheckRequest of type_check_request
+    | TypeCheckRequest of TypeCheckRequest.t
     | TypeQueryRequest of type_query_request
     | StopRequest
     | ClientShutdownRequest of int
@@ -72,8 +89,8 @@ module Request = struct
   let flatten requests =
     let incremental_requests, unrelated =
       let is_incremental_request = function
-        | TypeCheckRequest { files; check_dependents = false }
-          when not (List.is_empty files) ->
+        | TypeCheckRequest { TypeCheckRequest.check; _ }
+          when not (List.is_empty check) ->
             true
         | _ ->
             false
@@ -85,15 +102,15 @@ module Request = struct
     else
       let add_files file_set request =
         match request with
-        | TypeCheckRequest { files; check_dependents = false } ->
-            Set.union file_set (File.Set.of_list files)
+        | TypeCheckRequest { TypeCheckRequest.check; _ } ->
+            Set.union file_set (File.Set.of_list check)
         | _ -> file_set
       in
       TypeCheckRequest {
-        files =
+        TypeCheckRequest.check =
           List.fold ~init:File.Set.empty ~f:add_files incremental_requests
           |> File.Set.to_list;
-        check_dependents = false;
+        update_environment_with = [];
       } :: unrelated
 
 
@@ -104,7 +121,7 @@ module Request = struct
     | RageRequest _ -> "Rage"
     | ReinitializeStateRequest -> "ReinitializeState"
     | DisplayTypeErrors _ -> "DisplayTypeErrors"
-    | TypeCheckRequest { files = []; _ } -> "TypeCheck"
+    | TypeCheckRequest { TypeCheckRequest.check = []; update_environment_with = [] } -> "TypeCheck"
     | TypeCheckRequest _ -> "IncrementalCheck"
     | TypeQueryRequest _ -> "TypeQuery"
     | StopRequest -> "Stop"

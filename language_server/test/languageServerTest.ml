@@ -256,8 +256,9 @@ let test_request_parser context =
     (Some
        (Protocol.Request.TypeCheckRequest
           {
-            Protocol.files = [File.create (Path.create_absolute filename)];
-            check_dependents = true;
+            Protocol.TypeCheckRequest.update_environment_with =
+              [File.create (Path.create_absolute filename)];
+            check = [File.create (Path.create_absolute filename)];
           }));
   assert_equal
     ~cmp:(Option.equal Protocol.Request.equal)

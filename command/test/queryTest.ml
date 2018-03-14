@@ -51,10 +51,14 @@ let test_parse_query _ =
 
   assert_parses
     "typecheckPath(fiddle.py)"
-    (Some (Request.TypeCheckRequest {
-         check_dependents = false;
-         files = [File.create (Path.create_relative ~root:fake_root ~relative:"fiddle.py")];
-       }));
+    (Some
+       (Request.TypeCheckRequest
+          (TypeCheckRequest.create
+             ~check:[
+               File.create (Path.create_relative ~root:fake_root ~relative:"fiddle.py");
+             ]
+             ()
+          )));
 
   assert_parses "typecheck(1+2)" None
 

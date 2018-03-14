@@ -134,7 +134,9 @@ let parse ~root ~check_on_save request =
                       Path.create_relative ~root ~relative)
                   |> File.create ~content:text
                 in
-                Some (TypeCheckRequest { files = [file]; check_dependents = true })
+                Some
+                  (TypeCheckRequest {
+                      TypeCheckRequest.update_environment_with = [file]; check = [file]; })
             | Ok _ -> log_method_error request_method; None
             | Error yojson_error -> Log.log ~section:`Server "Error: %s" yojson_error; None
           end

@@ -52,7 +52,7 @@ let parse_query ~root query =
               |> List.map ~f:(fun relative -> Path.create_relative ~root ~relative)
               |> List.map ~f:File.create
             in
-            Some (Request.TypeCheckRequest { check_dependents = false; files })
+            Some (Request.TypeCheckRequest (TypeCheckRequest.create ~check:files ()))
         | "superclasses", [class_name] ->
             let class_annotation = Analysis.Type.create ~aliases:(fun _ -> None) class_name in
             Some (Request.TypeQueryRequest (ServerProtocol.Superclasses class_annotation))

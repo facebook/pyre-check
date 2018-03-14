@@ -112,7 +112,10 @@ let process_response ~root ~watchman_directory ~symlinks response =
               >>| File.create)
           paths
       in
-      Some (symlinks, Protocol.Request.TypeCheckRequest { Protocol.files; check_dependents = true })
+      Some
+        (symlinks,
+         Protocol.Request.TypeCheckRequest
+           (Protocol.TypeCheckRequest.create ~update_environment_with:files ~check:files ()))
   else
     None
 

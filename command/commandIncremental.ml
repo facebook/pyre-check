@@ -59,8 +59,7 @@ let run
     else
       Socket.write
         socket
-        (ServerProtocol.Request.TypeCheckRequest
-           { ServerProtocol.files = []; check_dependents = false });
+        (ServerProtocol.Request.TypeCheckRequest ServerProtocol.TypeCheckRequest.empty);
 
     let response_json =
       match Socket.read socket with
