@@ -4,7 +4,8 @@
     LICENSE file in the root directory of this source tree. *)
 
 module Statement = AstStatement
-module Access = AstExpression.Access
+module Expression = AstExpression
+module Access = Expression.Access
 
 
 type t
@@ -13,3 +14,8 @@ type t
 val create: Statement.t list -> t
 
 val export: t -> Access.t -> Access.t option
+
+val resolve_export
+  :  t
+  -> head: Expression.t Access.access
+  -> (Access.t * AstExpression.t Access.access) option

@@ -134,7 +134,10 @@ let test_module_exports _ =
             |};
           parse
             ~qualifier:(Expression.Access.create "exporting")
-            "from implementing import function, constant";
+            {|
+              from implementing import function, constant
+              from implementing import function as aliased
+            |};
         ]
       |> resolution
     in
@@ -163,7 +166,10 @@ let test_module_exports _ =
     Type.integer;
   assert_resolved
     (parse_single_access "exporting.function()")
-    Type.Top;  (* TODO(T26921099): still need to resolve function names. *)
+    Type.integer;
+  assert_resolved
+    (parse_single_access "exporting.aliased()")
+    Type.integer;
   assert_resolved
     (parse_single_access "exporting.undefined")
     Type.Top

@@ -280,14 +280,7 @@ let fold ~resolution ~initial ~f access =
         (* Resolve module exports. TODO(T26918135): this should be a fixpoint. *)
         let qualifier, head =
           (Resolution.module_definition resolution lead
-           >>= fun definition ->
-           Module.export definition [head]
-           >>= fun export ->
-           match List.rev export with
-           | head :: reversed_qualifier ->
-               Some (List.rev reversed_qualifier, head)
-           | _ ->
-               None)
+           >>= Module.resolve_export ~head)
           |> Option.value ~default:(lead, head)
         in
         let lead = qualifier @ [head] in

@@ -52,8 +52,49 @@ let test_export _ =
     ]
 
 
+let test_resolve_export _ =
+  let assert_resolve source access expected_resolved =
+    let module_definition =
+      let { Source.statements; _ } = parse source in
+      Module.create statements
+    in
+    let actual_resolved =
+      let qualifier, head =
+        Module.resolve_export
+          module_definition
+          ~head:(List.hd_exn (parse_single_access access))
+        |> fun value -> Option.value_exn value
+      in
+      qualifier @ [head]
+    in
+    assert_equal
+      ~cmp:Access.equal
+      ~printer:Access.show
+      (parse_single_access expected_resolved)
+      actual_resolved
+  in
+
+  assert_resolve
+    "from implementation import identifier"
+    "identifier"
+    "implementation.identifier";
+  assert_resolve
+    "from implementation import identifier as alias"
+    "alias"
+    "implementation.identifier";
+  assert_resolve
+    "from implementation import function"
+    "function()"
+    "implementation.function()";
+  assert_resolve
+    "from implementation import function"
+    "function(a, b)"
+    "implementation.function(a, b)"
+
+
 let () =
   "module">:::[
     "export">::test_export;
+    "resolve_export">::test_resolve_export;
   ]
   |> run_test_tt_main

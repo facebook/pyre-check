@@ -7,7 +7,8 @@ open Core
 
 open Pyre
 
-module Access = AstExpression.Access
+module Expression = AstExpression
+module Access = Expression.Access
 module Node = AstNode
 module Statement = AstStatement
 
@@ -54,3 +55,33 @@ let export { exports } source =
       | `Ok exports -> Some exports
       | _ -> None)
   >>= (fun exports -> Map.find exports source)
+
+
+let resolve_export definition ~head =
+  let alias, call =
+    match head with
+    | Access.Call ({
+        Node.value = { Expression.Call.name = { Node.value = Expression.Access name; _ }; _ };
+        _;
+      } as call) ->
+        name, Some call
+    | _ ->
+        [head], None
+  in
+  export definition alias
+  >>= fun export ->
+  match List.rev export with
+  | head :: reversed_qualifier ->
+      let head =
+        (call
+         >>| fun ({ Node.location; value = call } as call_node) ->
+         Access.Call {
+           call_node with Node.value = {
+             call with Expression.Call.name = Node.create ~location (Expression.Access [head])
+           }
+         })
+        |> Option.value ~default:head
+      in
+      Some (List.rev reversed_qualifier, head)
+  | _ ->
+      None
