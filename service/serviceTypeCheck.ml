@@ -167,45 +167,44 @@ let analyze_sources
     ~handles:repopulate_handles;
   Ignore.register (if List.is_empty repopulate_handles then handles else repopulate_handles);
 
-  match Scheduler.is_parallel scheduler with
-  | true ->
-      analyze_sources_parallel scheduler configuration environment handles
-  | false ->
-      let get_sources =
-        List.fold
-          ~init:[]
-          ~f:(fun sources path ->
-              match AstSharedMemory.get_source path with
-              | Some ({ Source.path; _ } as source) ->
-                  if Path.create_relative ~root:source_root ~relative:path
-                     |> Path.directory_contains ~follow_symlinks:true ~directory then
-                    source::sources
-                  else
-                    sources
-              | _ -> sources)
-      in
-      let sources = get_sources handles in
-      let analyze_and_postprocess
-          configuration
-          environment
-          (current_errors, lookups, total_coverage)
-          source =
-        let { TypeCheck.Result.errors; lookup; coverage; } =
-          analyze_source configuration environment source
-        in
-        (errors :: current_errors,
-         begin
-           match lookup with
-           | None -> lookups
-           | Some lookup -> String.Map.set ~key:source.Source.path ~data:lookup lookups
-         end,
-         (Coverage.sum total_coverage coverage))
-      in
+  if Scheduler.is_parallel scheduler then
+    analyze_sources_parallel scheduler configuration environment handles
+  else
+    let get_sources =
       List.fold
-        ~init:([], String.Map.empty, Coverage.create ())
-        ~f:(analyze_and_postprocess configuration environment)
-        sources
-      |> (fun (error_list, lookups, coverage) ->
-          List.concat error_list, lookups, coverage)
-      |> (fun (errors, lookups, coverage) ->
-          Ignore.postprocess handles errors, lookups, coverage)
+        ~init:[]
+        ~f:(fun sources path ->
+            match AstSharedMemory.get_source path with
+            | Some ({ Source.path; _ } as source) ->
+                if Path.create_relative ~root:source_root ~relative:path
+                   |> Path.directory_contains ~follow_symlinks:true ~directory then
+                  source::sources
+                else
+                  sources
+            | _ -> sources)
+    in
+    let sources = get_sources handles in
+    let analyze_and_postprocess
+        configuration
+        environment
+        (current_errors, lookups, total_coverage)
+        source =
+      let { TypeCheck.Result.errors; lookup; coverage; } =
+        analyze_source configuration environment source
+      in
+      (errors :: current_errors,
+       begin
+         match lookup with
+         | None -> lookups
+         | Some lookup -> String.Map.set ~key:source.Source.path ~data:lookup lookups
+       end,
+       (Coverage.sum total_coverage coverage))
+    in
+    List.fold
+      ~init:([], String.Map.empty, Coverage.create ())
+      ~f:(analyze_and_postprocess configuration environment)
+      sources
+    |> (fun (error_list, lookups, coverage) ->
+        List.concat error_list, lookups, coverage)
+    |> (fun (errors, lookups, coverage) ->
+        Ignore.postprocess handles errors, lookups, coverage)
