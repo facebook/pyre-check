@@ -79,8 +79,7 @@ module Request = struct
   let flatten requests =
     let incremental_requests, unrelated =
       let is_incremental_request = function
-        | TypeCheckRequest { TypeCheckRequest.check; _ }
-          when not (List.is_empty check) ->
+        | TypeCheckRequest _ ->
             true
         | _ ->
             false
@@ -90,17 +89,20 @@ module Request = struct
     if List.is_empty incremental_requests then
       unrelated
     else
-      let add_files file_set request =
+      let add_files (current_update, current_check) request =
         match request with
-        | TypeCheckRequest { TypeCheckRequest.check; _ } ->
-            Set.union file_set (File.Set.of_list check)
-        | _ -> file_set
+        | TypeCheckRequest { TypeCheckRequest.update_environment_with; check } ->
+            Set.union current_update (File.Set.of_list update_environment_with),
+            Set.union current_check (File.Set.of_list check)
+        | _ ->
+            current_update, current_check
+      in
+      let (update, check) =
+        List.fold ~init:(File.Set.empty, File.Set.empty) ~f:add_files requests
       in
       TypeCheckRequest {
-        TypeCheckRequest.check =
-          List.fold ~init:File.Set.empty ~f:add_files incremental_requests
-          |> File.Set.to_list;
-        update_environment_with = [];
+        TypeCheckRequest.update_environment_with = Set.to_list update;
+        check = Set.to_list check;
       } :: unrelated
 
 

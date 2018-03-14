@@ -21,6 +21,7 @@ module Scheduler = Service.Scheduler
 
 exception InvalidRequest
 
+
 let rec process_request
     new_socket
     state
@@ -59,7 +60,7 @@ let rec process_request
   let flush_type_errors state =
     begin
       let state =
-        let deferred_requests = state.deferred_requests in
+        let deferred_requests = Request.flatten state.deferred_requests in
         let state = { state with deferred_requests = [] } in
         let update_state state request =
           let state, _ = process_request new_socket state server_configuration request in

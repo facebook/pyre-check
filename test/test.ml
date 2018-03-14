@@ -200,3 +200,7 @@ let assert_is_none test =
 
 let assert_unreached () =
   assert_true false
+
+
+let mock_path path =
+  Path.create_relative ~root:(Path.current_working_directory ()) ~relative:path
