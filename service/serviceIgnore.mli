@@ -4,5 +4,5 @@
     LICENSE file in the root directory of this source tree. *)
 
 
-val register: File.Handle.t list -> unit
+val register: configuration: Configuration.t -> File.Handle.t list -> unit
 val postprocess: File.Handle.t list -> Analysis.Error.t list -> Analysis.Error.t list

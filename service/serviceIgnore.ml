@@ -15,7 +15,8 @@ module IgnoreSharedMemory = ServiceIgnoreSharedMemory
 open IgnoreSharedMemory
 
 
-let register handles =
+let register ~configuration handles =
+  let timer = Timer.start () in
   let register handle =
     (* Remove existing ignores. *)
     let key = File.Handle.show handle in
@@ -37,7 +38,8 @@ let register handles =
     | _ ->
         ()
   in
-  List.iter ~f:register handles
+  List.iter ~f:register handles;
+  Statistics.performance ~name:"Registered ignores" ~timer ~configuration ~normals:[] ()
 
 
 let postprocess handles errors =
