@@ -30,7 +30,7 @@ type t = {
 
   global: Access.t -> global option;
 
-  is_module: Access.t -> bool;
+  module_definition: Access.t -> Module.t option;
   class_definition: Type.t -> (Class.t Node.t) option;
 
   function_signature:
@@ -53,7 +53,7 @@ let create
     ~resolve
     ~parse_annotation
     ~global
-    ~is_module
+    ~module_definition
     ~class_definition
     ~function_signature
     ~method_signature =
@@ -64,7 +64,7 @@ let create
     resolve;
     parse_annotation;
     global;
-    is_module;
+    module_definition;
     class_definition;
     function_signature;
     method_signature;
@@ -103,8 +103,8 @@ let global { global; _ } =
   global
 
 
-let is_module { is_module; _ } =
-  is_module
+let module_definition { module_definition; _ } =
+  module_definition
 
 
 let class_definition { class_definition; _ } =

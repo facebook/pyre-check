@@ -107,7 +107,7 @@ let parse_stubs
       String.is_substring ~substring:"/2.7/" path in
     String.suffix path 4 = ".pyi" && not (is_python_2 path)
   in
-  let is_module path = String.suffix path 3 = ".py" in
+  let is_module_definition path = String.suffix path 3 = ".py" in
 
   let filter_stubs sofar root =
     Log.info "Enumerating type stubs in `%a`..." Path.pp root;
@@ -115,7 +115,7 @@ let parse_stubs
   in
   let filter_modules sofar root =
     Log.info "Enumerating external modules in `%a`..." Path.pp root;
-    sofar @ File.list ~filter:is_module ~root
+    sofar @ File.list ~filter:is_module_definition ~root
   in
 
   let stubs = List.fold ~init:[] ~f:filter_stubs (source_root :: stub_roots) in

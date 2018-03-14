@@ -50,7 +50,7 @@ module type Handler = sig
   val protocols: unit -> Type.t list
 
   val register_module: qualifier: Access.t -> statements: Statement.t list -> unit
-  val is_module: Access.t -> bool
+  val module_definition: Access.t -> Module.t option
 
   val in_class_definition_keys: Type.t -> bool
   val aliases: Type.t -> Type.t option
@@ -309,8 +309,8 @@ let handler
     let register_module ~qualifier ~statements =
       Hashtbl.set ~key:qualifier ~data:(Module.create statements) modules
 
-    let is_module access =
-      Hashtbl.mem modules access
+    let module_definition access =
+      Hashtbl.find modules access
 
     let in_class_definition_keys =
       Hashtbl.mem class_definitions
@@ -646,7 +646,7 @@ let resolution
            expression)
     ~parse_annotation
     ~global:Handler.globals
-    ~is_module:Handler.is_module
+    ~module_definition:Handler.module_definition
     ~class_definition
     ~function_signature
     ~method_signature
@@ -662,7 +662,7 @@ let register_module (module Handler: Handler) { Source.qualifier; statements; _ 
         ()
     | (_ :: tail) as reversed ->
         let qualifier = List.rev reversed in
-        if not (Handler.is_module qualifier) then
+        if Option.is_none (Handler.module_definition qualifier) then
           Handler.register_module ~qualifier ~statements:[];
         register_submodules tail
   in

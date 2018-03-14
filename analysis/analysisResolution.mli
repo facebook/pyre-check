@@ -27,7 +27,7 @@ val create
   -> resolve: (resolution: t -> Expression.t -> Type.t)
   -> parse_annotation: (Expression.t -> Type.t)
   -> global: (Access.t -> global option)
-  -> is_module: (Access.t -> bool)
+  -> module_definition: (Access.t -> Module.t option)
   -> class_definition:(Type.t -> (Class.t Node.t) option)
   -> function_signature:
        (Access.t
@@ -53,7 +53,7 @@ val parse_annotation: t -> Expression.t -> Type.t
 
 val global: t -> Access.t -> global option
 
-val is_module: t -> Access.t -> bool
+val module_definition: t -> Access.t -> Module.t option
 val class_definition: t -> Type.t -> (Class.t Node.t) option
 
 val function_signature

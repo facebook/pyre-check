@@ -197,9 +197,8 @@ let shared_memory_handler
         Modules.remove_batch (Modules.KeySet.singleton qualifier);
         Modules.add qualifier (Ast.Module.create statements)
 
-      let is_module access =
+      let module_definition access =
         Modules.get access
-        |> Option.is_some
 
       let in_class_definition_keys annotation =
         let keys = ClassDefinitionsKeys.find_unsafe "ClassDefinitionsKeys" in
