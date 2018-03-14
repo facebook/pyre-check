@@ -170,41 +170,43 @@ let analyze_sources
   if Scheduler.is_parallel scheduler then
     analyze_sources_parallel scheduler configuration environment handles
   else
-    let get_sources =
-      List.fold
-        ~init:[]
-        ~f:(fun sources path ->
-            match AstSharedMemory.get_source path with
-            | Some ({ Source.path; _ } as source) ->
-                if Path.create_relative ~root:source_root ~relative:path
-                   |> Path.directory_contains ~follow_symlinks:true ~directory then
-                  source::sources
-                else
-                  sources
-            | _ -> sources)
+    let sources =
+      let source handle =
+        AstSharedMemory.get_source handle
+        >>= fun ({ Source.path; _ } as source) ->
+        let path = Path.create_relative ~root:source_root ~relative:path in
+        if Path.directory_contains ~follow_symlinks:true ~directory path then
+          Some source
+        else
+          None
+      in
+      List.filter_map ~f:source handles
     in
-    let sources = get_sources handles in
     let analyze_and_postprocess
         configuration
         environment
         (current_errors, lookups, total_coverage)
-        source =
+        ({ Source.path; _ } as source) =
       let { TypeCheck.Result.errors; lookup; coverage; } =
         analyze_source configuration environment source
       in
-      (errors :: current_errors,
-       begin
-         match lookup with
-         | None -> lookups
-         | Some lookup -> String.Map.set ~key:source.Source.path ~data:lookup lookups
-       end,
-       (Coverage.sum total_coverage coverage))
+      let lookups =
+        lookup
+        >>| (fun lookup -> String.Map.set ~key:path ~data:lookup lookups)
+        |> Option.value ~default:lookups
+      in
+      errors :: current_errors,
+      lookups,
+      Coverage.sum total_coverage coverage
     in
-    List.fold
-      ~init:([], String.Map.empty, Coverage.create ())
-      ~f:(analyze_and_postprocess configuration environment)
-      sources
-    |> (fun (error_list, lookups, coverage) ->
-        List.concat error_list, lookups, coverage)
-    |> (fun (errors, lookups, coverage) ->
-        Ignore.postprocess handles errors, lookups, coverage)
+    let errors, lookups, coverage =
+      List.fold
+        ~init:([], String.Map.empty, Coverage.create ())
+        ~f:(analyze_and_postprocess configuration environment)
+        sources
+    in
+    let errors =
+      List.concat errors
+      |> Ignore.postprocess handles
+    in
+    errors, lookups, coverage
