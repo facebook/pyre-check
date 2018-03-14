@@ -822,7 +822,12 @@ let test_connect_annotations_to_top _ =
 
   assert_equal
     (least_upper_bound order !"1" !"2")
-    [!"3"]
+    [!"3"];
+
+  (* Ensure that the backedge gets added as well *)
+  assert_equal
+    (greatest_lower_bound order !"1" !"3")
+    [!"1"]
 
 
 let test_add_backedges _ =

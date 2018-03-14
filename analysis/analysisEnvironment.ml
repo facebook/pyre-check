@@ -83,7 +83,7 @@ let register_type
        not (Type.equal subtype primitive) then
       TypeOrder.connect
         order
-        ~add_backedge:false
+        ~add_backedge:true
         ~configuration
         ~predecessor:subtype
         ~successor:primitive
@@ -148,7 +148,7 @@ let register_type
                   (* Meta-programming can introduce cycles. *)
                   TypeOrder.connect
                     order
-                    ~add_backedge:false
+                    ~add_backedge:true
                     ~configuration
                     ~predecessor:primitive
                     ~successor:super_annotation
@@ -172,7 +172,7 @@ let register_type
                   not (Type.equal primitive Type.Top) then
             TypeOrder.connect
               order
-              ~add_backedge:false
+              ~add_backedge:true
               ~configuration
               ~predecessor:primitive
               ~successor:Type.Object;
@@ -1013,7 +1013,6 @@ let populate
     ~configuration
     ~bottom:Type.Bottom
     ~top:Type.Object;
-  TypeOrder.add_backedges (module Handler.TypeOrderHandler : TypeOrder.Handler) ~bottom:Type.Bottom;
   TypeOrder.remove_extra_edges
     (module Handler.TypeOrderHandler)
     ~bottom:Type.Bottom

@@ -959,7 +959,7 @@ let connect_annotations_to_top ((module Handler: Handler) as order) ~configurati
             |> List.map ~f:Target.target
             |> List.iter ~f:visit
         | _ ->
-            connect order ~add_backedge:false ~configuration ~predecessor:annotation ~successor:top
+            connect order ~add_backedge:true ~configuration ~predecessor:annotation ~successor:top
       end in
   visit (index_of bottom)
 

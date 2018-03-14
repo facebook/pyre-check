@@ -250,6 +250,48 @@ let test_register_aliases _ =
     (Type.parametric "typing.Iterable" [Type.Object])
 
 
+let test_register_type _ =
+  let environment = Environment.Builder.create ~configuration () in
+  let (module Handler: Environment.Handler) = Environment.handler ~configuration environment in
+  let c_primitive = Type.primitive "C" in
+
+  let (module TypeOrderHandler: TypeOrder.Handler) = (module Handler.TypeOrderHandler) in
+  TypeOrder.insert (module TypeOrderHandler) c_primitive;
+
+  let class_definition =
+    +{
+      Class.name = Access.create "C";
+      bases = [];
+      body = [];
+      decorators = [];
+      docstring = None
+    }
+  in
+
+  let primitive, parameters = Handler.register_type
+      ~path:"a.py"
+      Type.Bottom
+      (Access.create "C")
+      (Some class_definition)
+  in
+  assert_equal primitive c_primitive;
+  assert_equal parameters [];
+  let c_index = TypeOrderHandler.find_unsafe (TypeOrderHandler.indices ()) c_primitive in
+  let bottom_index = TypeOrderHandler.find_unsafe (TypeOrderHandler.indices ()) Type.Bottom in
+
+  assert_true
+    (List.mem
+       ~equal:TypeOrder.Target.equal
+       (TypeOrderHandler.find_unsafe (TypeOrderHandler.edges ()) bottom_index)
+       { TypeOrder.Target.target = c_index; parameters = [] });
+
+  assert_true
+    (List.mem
+       ~equal:TypeOrder.Target.equal
+       (TypeOrderHandler.find_unsafe (TypeOrderHandler.backedges ()) c_index)
+       { TypeOrder.Target.target = bottom_index; parameters = []})
+
+
 let test_connect_type_order _ =
   let environment = Environment.Builder.create ~configuration () in
   let (module Handler: Environment.Handler) = Environment.handler ~configuration environment in
@@ -1693,6 +1735,7 @@ let () =
     "copy">::test_copy;
     "register_class_definitions">::test_register_class_definitions;
     "register_aliases">::test_register_aliases;
+    "register_type">::test_register_type;
     "connect_type_order">::test_connect_type_order;
     "populate">::test_populate;
     "infer_protocols">::test_infer_protocols;
