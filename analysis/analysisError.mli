@@ -148,7 +148,7 @@ val widen
 val join_at_define: resolution: Resolution.t -> location: Location.t -> t list -> t list
 val join_at_source: resolution:Resolution.t -> t list -> t list
 
-val filter: t list -> configuration: Configuration.t -> t list
+val filter: t list -> resolution:Resolution.t -> configuration:Configuration.t -> t list
 
 val dequalify: Access.t Access.Map.t -> (module Environment.Handler) -> t -> t
 

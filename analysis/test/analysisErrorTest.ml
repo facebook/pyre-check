@@ -67,6 +67,14 @@ let incompatible_return_type actual expected =
   }
 
 
+let undefined_attribute actual =
+  Error.UndefinedAttribute {
+    Error.annotation = actual;
+    attribute = Access.create "foo";
+    class_attribute = false;
+  }
+
+
 let configuration = Configuration.create ()
 
 
@@ -401,17 +409,32 @@ let test_join _ =
 
 
 let test_filter _ =
+  let environment =
+    Environment.handler ~configuration (Environment.Builder.create ~configuration ())
+  in
+  add_defaults_to_environment ~configuration environment;
+  Environment.populate
+    environment
+    ~configuration
+    [
+      parse {|
+        class Foo: ...
+        class MockChild(unittest.mock.Mock): ...
+        class NonMockChild(Foo): ...
+      |};
+    ];
+  let resolution = Environment.resolution environment () in
   let assert_filtered ?(define = mock_define) ~configuration kind =
     assert_equal
       []
-      (Error.filter ~configuration [error ~define kind])
+      (Error.filter ~resolution ~configuration [error ~define kind])
   in
   let assert_not_filtered ?(define = mock_define) ~configuration kind =
     let errors = [error ~define kind] in
     assert_equal
       ~cmp:(List.equal ~equal:Error.equal)
       errors
-      (Error.filter ~configuration errors)
+      (Error.filter ~resolution ~configuration errors)
   in
 
   (* Test different modes. *)
@@ -441,6 +464,12 @@ let test_filter _ =
   assert_not_filtered
     ~configuration:default
     (incompatible_return_type Type.integer (Type.primitive "unittest.mock.Mock"));
+  assert_filtered
+    ~configuration:default
+    (undefined_attribute (Type.primitive "MockChild"));
+  assert_not_filtered
+    ~configuration:default
+    (undefined_attribute (Type.primitive "NonMockChild"));
 
   (* Suppress callable errors. *)
   assert_filtered

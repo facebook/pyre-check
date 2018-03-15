@@ -6,6 +6,7 @@
 open Core
 open OUnit2
 
+open Analysis
 open Ast
 open Pyre
 open PyreParser
@@ -168,6 +169,16 @@ let assert_source_equal =
     ~cmp:Source.equal
     ~printer:(fun source -> Format.asprintf "%a" Source.pp source)
     ~pp_diff:(diff ~print:Source.pp)
+
+
+let add_defaults_to_environment ~configuration environment_handler =
+  let source =
+    parse {|
+      class unittest.mock.Mock: ...
+      class unittest.mock.MagicMock: ...
+    |};
+  in
+  Environment.populate ~configuration environment_handler [source]
 
 
 (* Expression helpers. *)

@@ -40,6 +40,8 @@ let test_language_server_protocol_json_format context =
   let type_error : TypeCheck.Error.t =
     CommandTest.make_errors
       {|
+        class unittest.mock.Mock: ...
+        class unittest.mock.MagicMock: ...
         def foo() -> None:
           return 1
       |}
@@ -70,10 +72,10 @@ let test_language_server_protocol_json_format context =
             "diagnostics": [
               {
                 "message":
-                  "Incompatible return type [7]: Expected `None` but got `int`. Type `None` expected on line 3, specified on line 2.",
+                  "Incompatible return type [7]: Expected `None` but got `int`. Type `None` expected on line 5, specified on line 4.",
                 "range": {
-                  "end": { "character": 10, "line": 2 },
-                  "start": { "character": 2, "line": 2 }
+                  "end": { "character": 10, "line": 4 },
+                  "start": { "character": 2, "line": 4 }
                 },
                 "severity": 1,
                 "source": "Pyre"
@@ -195,6 +197,7 @@ let make_errors ?(path = "test.py") ?(qualifier = []) source =
   let configuration = CommandTest.mock_analysis_configuration () in
   let source = Preprocessing.preprocess (parse ~path ~qualifier source) in
   let environment_handler = Environment.handler ~configuration (environment ()) in
+  add_defaults_to_environment ~configuration environment_handler;
   Environment.populate ~configuration (environment_handler) [source];
   (TypeCheck.check configuration environment_handler source).TypeCheck.Result.errors
 
@@ -203,9 +206,11 @@ let mock_server_state
     ?(initial_environment = environment ())
     errors =
   let configuration = Configuration.create () in
+  let environment = Environment.handler ~configuration initial_environment in
+  add_defaults_to_environment ~configuration environment;
   {
     State.deferred_requests = [];
-    environment = Environment.handler ~configuration initial_environment;
+    environment;
     initial_errors;
     errors;
     handles = File.Handle.Set.empty;
@@ -501,12 +506,15 @@ let test_incremental_dependencies _ =
   Out_channel.write_all "a.py" ~data:a_source;
   Out_channel.write_all "b.py" ~data:b_source;
   let environment = Environment.Builder.create ~configuration () in
+  let environment_handler = Environment.handler ~configuration environment in
+  add_defaults_to_environment ~configuration environment_handler;
   Environment.populate
     ~configuration
-    (Environment.handler ~configuration environment) [
-    parse ~path:"a.py" a_source;
-    parse ~path:"b.py" b_source;
-  ];
+    environment_handler
+    [
+      parse ~path:"a.py" a_source;
+      parse ~path:"b.py" b_source;
+    ];
   let expected_errors = [
     File.Handle.create "b.py", [];
   ]
@@ -585,10 +593,9 @@ let test_incremental_lookups _ =
   in
   let environment = Environment.Builder.create ~configuration () in
   let (module Handler: Environment.Handler) = Environment.handler ~configuration environment in
-  Environment.populate
-    ~configuration
-    (Environment.handler ~configuration environment)
-    [parse source];
+  let environment_handler = Environment.handler ~configuration environment in
+  add_defaults_to_environment ~configuration environment_handler;
+  Environment.populate ~configuration environment_handler [parse source];
   let request =
     Protocol.Request.TypeCheckRequest
       (Protocol.TypeCheckRequest.create
@@ -653,11 +660,10 @@ let test_incremental_repopulate _ =
   in
   let environment = Environment.Builder.create ~configuration () in
   let (module Handler: Environment.Handler) = Environment.handler ~configuration environment in
+  let environment_handler = Environment.handler ~configuration environment in
   Out_channel.write_all ~data:source "test.py";
-  Environment.populate
-    ~configuration
-    (Environment.handler ~configuration environment)
-    [parse source];
+  add_defaults_to_environment ~configuration environment_handler;
+  Environment.populate ~configuration environment_handler [parse source];
   let errors = File.Handle.Table.create () in
   let initial_state =
     mock_server_state
@@ -751,11 +757,14 @@ let test_incremental_attribute_caching context =
     Configuration.create ~source_root:directory ~project_root:directory ()
   in
   let server_configuration = ServerConfiguration.create configuration in
+  let environment =
+    Analysis.Environment.Builder.create ~configuration ()
+    |> Analysis.Environment.handler ~configuration
+  in
+  add_defaults_to_environment ~configuration environment;
   let old_state = {
     ServerState.deferred_requests = [];
-    environment =
-      Analysis.Environment.Builder.create ~configuration ()
-      |> Analysis.Environment.handler ~configuration;
+    environment;
     initial_errors = Error.Hash_set.create ();
     errors = File.Handle.Table.create ();
     handles = File.Handle.Set.empty;
@@ -813,7 +822,7 @@ let test_incremental_attribute_caching context =
   assert_equal (get_errors state) [];
 
   write_to_file ~content:content_without_annotation;
-  let state = request_typecheck state in
+  let state = request_typecheck { state with ServerState.environment } in
   begin
     match get_errors state with
     | [_, [{ Analysis.Error.kind; _ }]] ->
@@ -830,7 +839,7 @@ let test_incremental_attribute_caching context =
   end;
 
   write_to_file ~content:content_with_annotation;
-  let state = request_typecheck state in
+  let state = request_typecheck { state with ServerState.environment } in
   assert_equal (get_errors state) []
 
 

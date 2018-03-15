@@ -186,7 +186,7 @@ module State = struct
     Map.data errors
     |> Error.join_at_define ~resolution ~location
     |> class_initialization_errors
-    |> Error.filter ~configuration
+    |> Error.filter ~resolution ~configuration
 
 
   let coverage { annotations; _ } =

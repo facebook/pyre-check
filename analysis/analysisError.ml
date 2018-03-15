@@ -862,7 +862,8 @@ let join_at_source ~resolution errors =
   |> Map.data
 
 
-let filter errors ~configuration:{ Configuration.infer; strict; declare; debug; _  } =
+let filter errors ~resolution ~configuration:{ Configuration.infer; strict; declare; debug; _  } =
+  let order = Resolution.order resolution in
   if debug then
     errors
   else
@@ -955,8 +956,14 @@ let filter errors ~configuration:{ Configuration.infer; strict; declare; debug; 
         | IncompatibleReturnType { actual; _ }
         | IncompatibleVariableType { mismatch = { actual; _ }; _ }
         | UndefinedAttribute { annotation = actual; _ } ->
-            Type.equal actual (Type.Primitive (Identifier.create "unittest.mock.Mock")) ||
-            Type.equal actual (Type.Primitive (Identifier.create "unittest.mock.MagicMock"))
+            (TypeOrder.less_or_equal
+               order
+               ~left:actual
+               ~right:(Type.Primitive (Identifier.create "unittest.mock.Mock"))) ||
+            (TypeOrder.less_or_equal
+               order
+               ~left:actual
+               ~right:(Type.Primitive (Identifier.create "unittest.mock.MagicMock")))
         | _ ->
             false
       in
