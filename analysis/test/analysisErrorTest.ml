@@ -420,6 +420,7 @@ let test_filter _ =
       parse {|
         class Foo: ...
         class MockChild(unittest.mock.Mock): ...
+        class NonCallableChild(unittest.mock.NonCallableMock): ...
         class NonMockChild(Foo): ...
       |};
     ];
@@ -467,6 +468,9 @@ let test_filter _ =
   assert_filtered
     ~configuration:default
     (undefined_attribute (Type.primitive "MockChild"));
+  assert_filtered
+    ~configuration:default
+    (undefined_attribute (Type.primitive "NonCallableChild"));
   assert_not_filtered
     ~configuration:default
     (undefined_attribute (Type.primitive "NonMockChild"));

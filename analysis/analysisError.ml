@@ -959,11 +959,12 @@ let filter errors ~resolution ~configuration:{ Configuration.infer; strict; decl
             (TypeOrder.less_or_equal
                order
                ~left:actual
-               ~right:(Type.Primitive (Identifier.create "unittest.mock.Mock"))) ||
+               ~right:(Type.Primitive (Identifier.create "unittest.mock.Base"))) ||
+            (* Special-case mypy's workaround for mocks. *)
             (TypeOrder.less_or_equal
                order
                ~left:actual
-               ~right:(Type.Primitive (Identifier.create "unittest.mock.MagicMock")))
+               ~right:(Type.Primitive (Identifier.create "unittest.mock.NonCallableMock")))
         | _ ->
             false
       in
