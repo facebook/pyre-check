@@ -269,6 +269,20 @@ let test_qualify _ =
 
   assert_qualify
     {|
+      from typing import Optional
+      def f():
+        # type: (...) -> Optional[int]
+        pass
+    |}
+    {|
+      from typing import Optional
+      def some.qualifier.f() -> "typing.Optional[int]":
+        #
+        pass
+    |};
+
+  assert_qualify
+    {|
       class Foo:
         def foo(): pass
       def bar():

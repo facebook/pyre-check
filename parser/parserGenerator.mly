@@ -545,7 +545,7 @@ compound_statement:
               >>= (fun signature_comment ->
                   Some {
                     Node.location;
-                    value = Access (Access.create signature_comment)
+                    value = String signature_comment
                   }
                 )
           in
