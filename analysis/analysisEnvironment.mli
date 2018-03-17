@@ -36,7 +36,7 @@ module type Handler = sig
     -> (Define.t Node.t)
     -> unit
   val register_dependency: path: string -> dependency: string -> unit
-  val register_global: path: string -> key: Access.t -> data:Resolution.global -> unit
+  val register_global: path: string -> access: Access.t -> global: Resolution.global -> unit
   val register_type
     :  path: string
     -> Type.t
@@ -82,7 +82,7 @@ val register_type
   -> add_class_definition: (primitive: Type.t -> definition: Class.t Node.t -> unit)
   -> add_class_key: (path: string -> Type.t -> unit)
   -> add_protocol: (Type.t -> unit)
-  -> register_global: (path: string -> key: Access.t -> data: Resolution.global -> unit)
+  -> register_global: (path: string -> access: Access.t -> global: Resolution.global -> unit)
   -> (path: string -> Type.t -> Access.t -> (Class.t Node.t) option -> (Type.t * Type.t list))
 
 val register_class_definitions

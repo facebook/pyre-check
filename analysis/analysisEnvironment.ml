@@ -35,7 +35,7 @@ module type Handler = sig
     -> (Define.t Node.t)
     -> unit
   val register_dependency: path: string -> dependency: string -> unit
-  val register_global: path: string -> key: Access.t -> data:Resolution.global -> unit
+  val register_global: path: string -> access: Access.t -> global: Resolution.global -> unit
   val register_type
     :  path: string
     -> Type.t
@@ -91,8 +91,8 @@ let register_type
     (* Register meta annotation. *)
     register_global
       ~path
-      ~key:name
-      ~data:{
+      ~access:name
+      ~global:{
         Resolution.annotation =
           Annotation.create_immutable
             ~global:true
@@ -232,9 +232,9 @@ let handler
       DependencyHandler.add_dependent ~path dependency
 
 
-    let register_global ~path ~key ~data =
-      DependencyHandler.add_global_key ~path key;
-      Hashtbl.set ~key ~data globals
+    let register_global ~path ~access ~global =
+      DependencyHandler.add_global_key ~path access;
+      Hashtbl.set ~key:access ~data:global globals
 
 
     let register_type =
@@ -944,8 +944,8 @@ let connect_type_order
            | Access access, annotation ->
                Handler.register_global
                  ~path
-                 ~key:access
-                 ~data:{
+                 ~access
+                 ~global:{
                    Resolution.annotation =
                      (Annotation.create_immutable
                         ~global:true
@@ -977,8 +977,8 @@ let connect_type_order
     } ->
         Handler.register_global
           ~path
-          ~key:access
-          ~data:{
+          ~access
+          ~global:{
             Resolution.annotation =
               (Annotation.create_immutable ~global:true (parse_annotation annotation));
             location;

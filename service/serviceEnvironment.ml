@@ -383,10 +383,10 @@ let shared_memory_handler
         DependencyHandler.add_dependent ~path dependency
 
 
-      let register_global ~path ~key ~data =
-        DependencyHandler.add_global_key ~path key;
-        Globals.remove_batch (Globals.KeySet.singleton key);
-        Globals.add key data
+      let register_global ~path ~access ~global =
+        DependencyHandler.add_global_key ~path access;
+        Globals.remove_batch (Globals.KeySet.singleton access);
+        Globals.add access global
 
 
       let register_type =

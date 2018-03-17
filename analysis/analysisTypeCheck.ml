@@ -1874,19 +1874,19 @@ let check configuration environment ({ Source.path; _ } as source) =
     let add_errors_to_environment errors =
       let add_error (changed, globals_added_sofar) error =
         let module Handler = (val environment : Environment.Handler) in
-        let add_missing_annotation_error ~key ~name ~location ~annotation =
+        let add_missing_annotation_error ~access ~name ~location ~annotation =
           match Handler.globals name with
           | Some { Resolution.annotation; _ }
             when not (Type.is_unknown (Annotation.annotation annotation)) ->
               changed, globals_added_sofar
           | _ ->
-              let data = {
+              let global = {
                 Resolution.annotation =
                   Annotation.create_immutable ~global:true ~original:(Some Type.Top) annotation;
                 location;
               }
               in
-              Handler.register_global ~path ~key ~data;
+              Handler.register_global ~path ~access ~global;
               true, error :: globals_added_sofar
         in
         match error with
@@ -1975,7 +1975,7 @@ let check configuration environment ({ Source.path; _ } as source) =
           _;
         } ->
             add_missing_annotation_error
-              ~key:((Annotated.Class.name parent) @ name)
+              ~access:((Annotated.Class.name parent) @ name)
               ~name
               ~location
               ~annotation
@@ -1984,7 +1984,7 @@ let check configuration environment ({ Source.path; _ } as source) =
           location;
           _;
         } ->
-            add_missing_annotation_error ~key:name ~name ~location ~annotation
+            add_missing_annotation_error ~access:name ~name ~location ~annotation
         | _ ->
             changed, globals_added_sofar
       in
