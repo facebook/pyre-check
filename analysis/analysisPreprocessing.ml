@@ -1134,10 +1134,11 @@ let dequalify_map source =
 
 
 let preprocess source =
-  rename_shadowed_variables source
+  source
+  |> replace_version_specific_code
+  |> rename_shadowed_variables
   |> qualify
   |> cleanup
-  |> replace_version_specific_code
   |> fix_singleton_sets
   |> expand_optional_assigns
   |> expand_operators

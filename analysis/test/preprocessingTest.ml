@@ -1197,6 +1197,31 @@ let test_classes _ =
     [class_define; inner]
 
 
+let test_preprocess _ =
+  let assert_preprocess ?(qualifier = "some/qualifier") source expected =
+    let parse = parse ~qualifier:(Source.qualifier ~path:qualifier) in
+    assert_source_equal
+      (Preprocessing.preprocess (parse source))
+      (parse expected)
+  in
+
+  assert_preprocess
+    {|
+      a = 1
+    |}
+    {|
+      some.qualifier.a = 1
+    |};
+  assert_preprocess
+    {|
+      if sys.version_info > (3, 0):
+        a = 1
+    |}
+    {|
+      some.qualifier.a = 1
+    |}
+
+
 let () =
   "preprocessing">:::[
     "rename_shadowed_variables">::test_rename_shadowed_variables;
@@ -1213,5 +1238,6 @@ let () =
     "expand_named_tuples">::test_expand_named_tuples;
     "defines">::test_defines;
     "classes">::test_classes;
+    "preprocess">::test_preprocess;
   ]
   |> run_test_tt_main
