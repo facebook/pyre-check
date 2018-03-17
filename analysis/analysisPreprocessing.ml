@@ -271,16 +271,15 @@ let qualify source =
           match expression with
           | {
             Node.location;
-            value = Access [
-                Access.Call {
-                  Node.value = ({
-                      Call.name = { Node.value = Access access; _; };
-                      _;
-                    } as call);
-                  _;
-                };
-              ]
-          } when List.length access > 1 ->
+            value = Access
+                (Access.Call {
+                    Node.value = ({
+                        Call.name = { Node.value = Access access; _; };
+                        _;
+                      } as call);
+                    _;
+                  } :: tail)
+          } ->
               begin
                 match List.rev access with
                 | name :: qualifier ->
@@ -295,7 +294,7 @@ let qualify source =
                     in
                     {
                       Node.location;
-                      value = Access ((List.rev qualifier) @ [call_access]);
+                      value = Access ((List.rev qualifier) @ [call_access] @ tail);
                     }
                 | _ ->
                     expression

@@ -92,6 +92,15 @@ let test_qualify _ =
       from a import b
       a.b()
     |};
+  assert_qualify
+    {|
+      from a import b
+      b().derp
+    |}
+    {|
+      from a import b
+      a.b().derp
+    |};
 
   assert_qualify
     {|
