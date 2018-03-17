@@ -292,6 +292,37 @@ let test_register_type _ =
        { TypeOrder.Target.target = bottom_index; parameters = []})
 
 
+
+let test_register_globals _ =
+  let environment = Environment.Builder.create ~configuration () in
+  let (module Handler: Environment.Handler) = Environment.handler ~configuration environment in
+  let source =
+    parse
+      {|
+        qualifier.with_join = 1 or 'asdf'  # don't join with an incomplete environment
+        qualifier.annotated: int = 1
+        qualifier.unannotated = 'string'
+        qualifier.stub: int = ...
+      |}
+  in
+  Environment.register_globals (module Handler) source;
+
+  let assert_global access expected =
+    let actual =
+      Access.create access
+      |> Handler.globals
+      >>| fun { Resolution.annotation; _ } -> Annotation.annotation annotation
+    in
+    assert_equal ~cmp:(Option.equal Type.equal) expected actual
+  in
+
+  assert_global "qualifier.undefined" None;
+  assert_global "qualifier.with_join" None;
+  assert_global "qualifier.annotated" (Some Type.integer);
+  assert_global "qualifier.unannotated" (Some Type.string);
+  assert_global "qualifier.stub" (Some Type.integer)
+
+
 let test_connect_type_order _ =
   let environment = Environment.Builder.create ~configuration () in
   let (module Handler: Environment.Handler) = Environment.handler ~configuration environment in
@@ -1736,6 +1767,7 @@ let () =
     "register_class_definitions">::test_register_class_definitions;
     "register_aliases">::test_register_aliases;
     "register_type">::test_register_type;
+    "register_globals">::test_register_globals;
     "connect_type_order">::test_connect_type_order;
     "populate">::test_populate;
     "infer_protocols">::test_infer_protocols;

@@ -95,6 +95,8 @@ val register_aliases
   -> Source.t list
   -> unit
 
+val register_globals :  (module Handler) -> Source.t -> unit
+
 val connect_type_order
   :  (module Handler)
   -> ?source_root: Path.t
