@@ -997,17 +997,11 @@ let populate
     ?(check_integrity = true)
     ?(check_dependency_exists = true)
     sources =
-
-  let add_aliases aliases =
-    List.iter
-      ~f:(fun (path, target, value) -> Handler.register_alias ~path ~key:target ~data:value)
-      aliases
-  in
-  add_aliases [
-    "typing.py",
-    Type.Primitive (Identifier.create "typing.DefaultDict"),
-    Type.Primitive (Identifier.create "collections.defaultdict");
-  ];
+  (* Yikes... *)
+  Handler.register_alias
+    ~path:"typing.py"
+    ~key:(Type.primitive "typing.DefaultDict")
+    ~data:(Type.primitive "collections.defaultdict");
 
   List.iter ~f:(register_module (module Handler)) sources;
   List.iter ~f:(register_class_definitions (module Handler)) sources;
