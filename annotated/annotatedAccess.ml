@@ -312,8 +312,7 @@ let fold ~resolution ~initial ~f access =
                let is_object_call =
                  let annotation = Annotation.annotation resolved in
                  not (Type.equal annotation Type.Top) &&
-                 not (Type.is_meta annotation) &&
-                 not (Type.is_callable annotation)
+                 not (Type.is_meta annotation)
                in
                if is_object_call then
                  let head =
@@ -337,7 +336,8 @@ let fold ~resolution ~initial ~f access =
           match resolved, head with
           (* Typed context: operations are on a class definition. *)
           | Some resolved,
-            Access.Call { Node.location; value = call } ->
+            Access.Call { Node.location; value = call }
+            when not (Type.is_callable (Annotation.annotation resolved)) ->
               (* Method call. *)
               let resolved, call =
                 if Type.is_meta (Annotation.annotation resolved) then
