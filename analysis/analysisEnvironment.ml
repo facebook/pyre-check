@@ -794,6 +794,7 @@ let register_aliases (module Handler: Handler) sources =
   List.concat_map ~f:collect_aliases sources
   |> resolve_aliases
 
+
 let connect_type_order
     (module Handler: Handler)
     ?(source_root = Path.current_working_directory ())
@@ -987,6 +988,7 @@ let connect_type_order
         ()
   in
   List.iter ~f:visit source.Source.statements
+
 
 let populate
     (module Handler: Handler)
