@@ -795,20 +795,82 @@ let register_aliases (module Handler: Handler) sources =
   |> resolve_aliases
 
 
+let register_globals
+    (module Handler: Handler)
+    ({ Source.path; _ } as source) =
+  let resolution = resolution (module Handler: Handler) ~annotations:Access.Map.empty () in
+
+  let visit = function
+    | {
+      Node.value = Assign {
+          Assign.target;
+          annotation = None;
+          compound = None;
+          value = Some value;
+          _;
+        };
+      location;
+    } ->
+        (try
+           match target.Node.value, (Resolution.resolve resolution value)
+           with
+           | Access access, annotation ->
+               Handler.register_global
+                 ~path
+                 ~access
+                 ~global:{
+                   Resolution.annotation =
+                     (Annotation.create_immutable
+                        ~global:true
+                        ~original:(Some Type.Top)
+                        annotation);
+                   location;
+                 }
+           | _ -> ()
+         with _ ->
+           (* TODO(T19628746): joins are not sound when building the environment. *)
+           ())
+    | {
+      Node.value = Assign {
+          Assign.target = { Node.value = Access access; _ };
+          annotation = Some annotation;
+          compound = None;
+          _;
+        };
+      location;
+    }
+    | {
+      Node.value = Stub (Stub.Assign {
+          Assign.target = { Node.value = Access access; _ };
+          annotation = Some annotation;
+          compound = None;
+          _;
+        });
+      location;
+    } ->
+        Handler.register_global
+          ~path
+          ~access
+          ~global:{
+            Resolution.annotation =
+              Annotation.create_immutable
+                ~global:true
+                (Type.create ~aliases:Handler.aliases annotation);
+            location;
+          }
+    | _ ->
+        ()
+  in
+  List.iter ~f:visit source.Source.statements
+
+
 let connect_type_order
     (module Handler: Handler)
     ?(source_root = Path.current_working_directory ())
     ?(check_dependency_exists = true)
-    source =
-  let path = source.Source.path in
-  let parse_annotation = Type.create ~aliases:(Handler.aliases) in
-  let resolution =
-    resolution
-      (module Handler: Handler)
-      ~annotations:Access.Map.empty ()
-  in
+    ({ Source.path; _ } as source) =
+  let resolution = resolution (module Handler: Handler) ~annotations:Access.Map.empty () in
 
-  (* Visit everything. *)
   let module Visit = Visit.Make(struct
       type t = unit
 
@@ -839,7 +901,7 @@ let connect_type_order
 
             (* Handle enumeration constants. *)
             let enumeration { Argument.value; _ } =
-              match parse_annotation value with
+              match Type.create ~aliases:Handler.aliases value with
               | Type.Primitive identifier
                 when String.Set.mem
                     Recognized.enumeration_classes
@@ -925,69 +987,7 @@ let connect_type_order
             ()
     end)
   in
-  Visit.visit () source;
-
-  (* Visit toplevel statements. *)
-  let visit = function
-    | {
-      Node.value = Assign {
-          Assign.target;
-          annotation = None;
-          compound = None;
-          value = Some value;
-          _;
-        };
-      location;
-    } ->
-        (try
-           match target.Node.value, (Resolution.resolve resolution value)
-           with
-           | Access access, annotation ->
-               Handler.register_global
-                 ~path
-                 ~access
-                 ~global:{
-                   Resolution.annotation =
-                     (Annotation.create_immutable
-                        ~global:true
-                        ~original:(Some Type.Top)
-                        annotation);
-                   location;
-                 }
-           | _ -> ()
-         with _ ->
-           (* TODO(T19628746): joins are not sound when building the environment. *)
-           ())
-    | {
-      Node.value = Assign {
-          Assign.target = { Node.value = Access access; _ };
-          annotation = Some annotation;
-          compound = None;
-          _;
-        };
-      location;
-    }
-    | {
-      Node.value = Stub (Stub.Assign {
-          Assign.target = { Node.value = Access access; _ };
-          annotation = Some annotation;
-          compound = None;
-          _;
-        });
-      location;
-    } ->
-        Handler.register_global
-          ~path
-          ~access
-          ~global:{
-            Resolution.annotation =
-              (Annotation.create_immutable ~global:true (parse_annotation annotation));
-            location;
-          }
-    | _ ->
-        ()
-  in
-  List.iter ~f:visit source.Source.statements
+  Visit.visit () source
 
 
 let populate
@@ -1009,6 +1009,8 @@ let populate
   Type.TypeCache.disable ();
   register_aliases (module Handler) sources;
   Type.TypeCache.enable ();
+
+  List.iter ~f:(register_globals (module Handler)) sources;
 
   List.iter ~f:(connect_type_order ~source_root ~check_dependency_exists (module Handler)) sources;
   TypeOrder.connect_annotations_to_top
