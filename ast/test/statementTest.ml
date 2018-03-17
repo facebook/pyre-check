@@ -525,7 +525,7 @@ let test_preamble _ =
   let assert_preamble items preamble =
     let block =
       {
-        With.items;
+        With.items = List.map ~f:(fun (item, alias) -> !item, alias >>| (!)) items;
         body = [];
         async = false;  (* Not yet handled. *)
       }
@@ -535,21 +535,22 @@ let test_preamble _ =
       (With.preamble block)
   in
 
-  assert_preamble [!"item", None] [!!"item"];
-  assert_preamble [!"item", None; !"other", None] [!!"item"; !!"other"];
+  assert_preamble ["item", None] [!!"item"];
+  assert_preamble ["item", None; "other", None] [!!"item"; !!"other"];
   assert_preamble
-    [!"item", Some !"name"]
+    ["item", Some "name"]
     [
-      Node.create_with_default_location
-        (Assign {
-            Assign.target = !"name";
-            annotation = None;
-            value = Some (+Access [Access.Expression !"item";
-                                   Access.Call (+{ Call.name = !"__enter__"; arguments = []; })]
-                         );
-            compound = None;
-            parent = None;
-          })
+      +Assign {
+        Assign.target = !"name";
+        annotation = None;
+        value = Some
+            (+Access [
+               Access.Expression !"item";
+               Access.Call (+{ Call.name = !"__enter__"; arguments = [] });
+             ]);
+        compound = None;
+        parent = None;
+      };
     ]
 
 
