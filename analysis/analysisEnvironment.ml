@@ -797,71 +797,79 @@ let register_aliases (module Handler: Handler) sources =
 
 let register_globals
     (module Handler: Handler)
-    ({ Source.path; _ } as source) =
+    { Source.path; statements; _ } =
   let resolution = resolution (module Handler: Handler) ~annotations:Access.Map.empty () in
 
-  let visit = function
-    | {
-      Node.value = Assign {
-          Assign.target;
-          annotation = None;
-          compound = None;
-          value = Some value;
-          _;
-        };
-      location;
-    } ->
-        (try
-           match target.Node.value, (Resolution.resolve resolution value)
-           with
-           | Access access, annotation ->
-               Handler.register_global
-                 ~path
-                 ~access
-                 ~global:{
-                   Resolution.annotation =
-                     (Annotation.create_immutable
-                        ~global:true
-                        ~original:(Some Type.Top)
-                        annotation);
-                   location;
-                 }
-           | _ -> ()
-         with _ ->
-           (* TODO(T19628746): joins are not sound when building the environment. *)
-           ())
-    | {
-      Node.value = Assign {
-          Assign.target = { Node.value = Access access; _ };
-          annotation = Some annotation;
-          compound = None;
-          _;
-        };
-      location;
-    }
-    | {
-      Node.value = Stub (Stub.Assign {
-          Assign.target = { Node.value = Access access; _ };
-          annotation = Some annotation;
-          compound = None;
-          _;
-        });
-      location;
-    } ->
-        Handler.register_global
-          ~path
-          ~access
-          ~global:{
-            Resolution.annotation =
-              Annotation.create_immutable
-                ~global:true
-                (Type.create ~aliases:Handler.aliases annotation);
-            location;
-          }
-    | _ ->
-        ()
+  let visit statement =
+    let global =
+      match statement with
+      | {
+        Node.location;
+        value = Assign {
+            Assign.target;
+            annotation = None;
+            compound = None;
+            value = Some value;
+            _;
+          };
+      } ->
+          begin
+            try
+              match target.Node.value, (Resolution.resolve resolution value) with
+              | Access access, annotation ->
+                  let global =
+                    {
+                      Resolution.annotation =
+                        Annotation.create_immutable
+                          ~global:true
+                          ~original:(Some Type.Top)
+                          annotation;
+                      location;
+                    }
+                  in
+                  Some (access, global)
+              | _ ->
+                  None
+            with _ ->
+              (* TODO(T19628746): joins are not sound when building the environment. *)
+              None
+          end
+      | {
+        Node.location;
+        value = Assign {
+            Assign.target = { Node.value = Access access; _ };
+            annotation = Some annotation;
+            compound = None;
+            _;
+          };
+      }
+      | {
+        Node.location;
+        value = Stub (Stub.Assign {
+            Assign.target = { Node.value = Access access; _ };
+            annotation = Some annotation;
+            compound = None;
+            _;
+          });
+      } ->
+          let global =
+            {
+              Resolution.annotation =
+                Annotation.create_immutable
+                  ~global:true
+                  (Type.create ~aliases:Handler.aliases annotation);
+              location;
+            }
+          in
+          Some (access, global)
+      | _ ->
+          None
+    in
+    global
+    >>| (fun (access, global) -> Handler.register_global ~path ~access ~global)
+    |> ignore
   in
-  List.iter ~f:visit source.Source.statements
+  List.iter ~f:visit statements
 
 
 let connect_type_order
