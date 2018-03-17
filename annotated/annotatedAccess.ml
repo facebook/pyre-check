@@ -267,6 +267,16 @@ let fold ~resolution ~initial ~f access =
 
   let rec fold ~accumulator ~lead ~tail ~resolved ~resolution =
     let annotations = Resolution.annotations resolution in
+
+    let local_annotation access =
+      match Map.find annotations access with
+      | Some resolved ->
+          Some resolved
+      | None ->
+          Resolution.global resolution access
+          >>| fun { Resolution.annotation; _ } -> annotation
+    in
+
     let pick_signature call signatures =
       Signature.pick
         ~resolution
@@ -275,6 +285,7 @@ let fold ~resolution ~initial ~f access =
         ~call
         signatures
     in
+
     match tail with
     | head :: tail ->
         (* Resolve module exports. TODO(T26918135): this should be a fixpoint. *)
@@ -284,6 +295,43 @@ let fold ~resolution ~initial ~f access =
           |> Option.value ~default:(lead, head)
         in
         let lead = qualifier @ [head] in
+
+        (* Resolve callables. E.g. `f()` could be either a function or a call to `f.__call__()`. *)
+        let resolved, head =
+          match resolved, head with
+          | None,
+            Access.Call ({
+                Node.value = ({
+                    Expression.Call.name = { Node.value = Access name; _ } as name_node;
+                    _;
+                  } as call);
+                _;
+              } as call_node) ->
+              (local_annotation (qualifier @ name)
+               >>= fun resolved ->
+               let is_object_call =
+                 let annotation = Annotation.annotation resolved in
+                 not (Type.equal annotation Type.Top) &&
+                 not (Type.is_meta annotation) &&
+                 not (Type.is_callable annotation)
+               in
+               if is_object_call then
+                 let head =
+                   Access.Call {
+                     call_node with Node.value = {
+                       call with Expression.Call.name = {
+                       name_node with Node.value = Access (Access.create "__call__");
+                     }
+                     };
+                   }
+                 in
+                 Some (Some resolved, head)
+               else
+                 None)
+              |> Option.value ~default:(resolved, head)
+          | _ ->
+              resolved, head
+        in
 
         let { Result.resolution; resolved; accumulator; abort } =
           match resolved, head with
@@ -518,15 +566,7 @@ let fold ~resolution ~initial ~f access =
           | None, _ ->
               (* Module or global variable. *)
               begin
-                let resolved =
-                  match Map.find annotations lead with
-                  | Some resolved ->
-                      Some resolved
-                  | None ->
-                      Resolution.global resolution lead
-                      >>| fun { Resolution.annotation; _ } -> annotation
-                in
-                match resolved with
+                match local_annotation lead with
                 | Some resolved ->
                     (* Locally known variable (either local or global). *)
                     Result.create

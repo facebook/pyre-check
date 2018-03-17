@@ -121,63 +121,73 @@ let test_fold _ =
     ]
 
 
+let assert_resolved sources access expected =
+  let resolution =
+    populate_with_sources sources
+    |> resolution
+  in
+  let resolved =
+    Access.fold
+      ~resolution
+      ~initial:Type.Top
+      ~f:(fun _ ~annotations:_ ~resolved ~element:_ -> Annotation.annotation resolved)
+      (Access.create (parse_single_access access))
+  in
+  assert_equal ~cmp:Type.equal expected resolved
+
+
 let test_module_exports _ =
-  let assert_resolved access expected =
-    let resolution =
-      populate_with_sources
-        [
-          parse
-            ~qualifier:(Expression.Access.create "implementing")
-            {|
-              def implementing.function() -> int: ...
-              implementing.constant: int = 1
-            |};
-          parse
-            ~qualifier:(Expression.Access.create "exporting")
-            {|
-              from implementing import function, constant
-              from implementing import function as aliased
-            |};
-        ]
-      |> resolution
-    in
-    let resolved =
-      Access.fold
-        ~resolution
-        ~initial:Type.Top
-        ~f:(fun _ ~annotations:_ ~resolved ~element:_ -> Annotation.annotation resolved)
-        (Access.create access)
-    in
-    assert_equal ~cmp:Type.equal expected resolved
+  let assert_resolved =
+    assert_resolved
+      [
+        parse
+          ~qualifier:(Expression.Access.create "implementing")
+          {|
+            def implementing.function() -> int: ...
+            implementing.constant: int = 1
+          |};
+        parse
+          ~qualifier:(Expression.Access.create "exporting")
+          {|
+            from implementing import function, constant
+            from implementing import function as aliased
+          |};
+      ]
   in
 
-  assert_resolved
-    (parse_single_access "implementing.constant")
-    Type.integer;
-  assert_resolved
-    (parse_single_access "implementing.function()")
-    Type.integer;
-  assert_resolved
-    (parse_single_access "implementing.undefined")
-    Type.Top;
+  assert_resolved "implementing.constant" Type.integer;
+  assert_resolved "implementing.function()" Type.integer;
+  assert_resolved "implementing.undefined" Type.Top;
 
-  assert_resolved
-    (parse_single_access "exporting.constant")
-    Type.integer;
-  assert_resolved
-    (parse_single_access "exporting.function()")
-    Type.integer;
-  assert_resolved
-    (parse_single_access "exporting.aliased()")
-    Type.integer;
-  assert_resolved
-    (parse_single_access "exporting.undefined")
-    Type.Top
+  assert_resolved "exporting.constant" Type.integer;
+  assert_resolved "exporting.function()" Type.integer;
+  assert_resolved "exporting.aliased()" Type.integer;
+  assert_resolved "exporting.undefined" Type.Top
+
+
+let test_object_callables _ =
+  let assert_resolved =
+    assert_resolved
+      [
+        parse
+          ~qualifier:(Expression.Access.create "module")
+          {|
+            class module.Call:
+              def __call__(self) -> int: ...
+
+            module.call: module.Call = ...
+          |};
+      ]
+  in
+
+  assert_resolved "module.call" (Type.primitive "module.Call");
+  assert_resolved "module.call()" Type.integer
 
 
 let () =
   "access">:::[
     "fold">::test_fold;
     "module_exports">::test_module_exports;
+    "object_callables">::test_object_callables;
   ]
   |> run_test_tt_main
