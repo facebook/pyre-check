@@ -8,6 +8,7 @@ open Core
 open Ast
 open Expression
 open Pyre
+open PyreParser
 open Statement
 
 
@@ -64,6 +65,62 @@ let rename_shadowed_variables source =
   in
   Transform.transform Identifier.Set.empty source
   |> snd
+
+
+let expand_string_annotations source =
+  let module Transform = Transform.Make(struct
+      type t = unit
+
+      let expression _ expression =
+        (), expression
+
+      let statement _ ({ Node.location; value } as statement) =
+        let transform ({ Define.parameters; return_annotation; _ } as define) =
+          let access = function
+            | { Node.location; value = String string } ->
+                let parsed =
+                  try
+                    let buffer = Lexing.from_string (string ^ "\n") in
+                    let state = Lexer.State.initial () in
+                    match ParserGenerator.parse (Lexer.read state) buffer with
+                    | [{ Node.value = Expression { Node.value = Access access; _ } ; _ }] ->
+                        access
+                    | _ ->
+                        raise PreprocessingError
+                  with ParserGenerator.Error ->
+                    raise PreprocessingError
+                in
+                { Node.location; value = Access parsed }
+            | expression ->
+                expression
+          in
+          let parameter ({ Node.value = ({ Parameter.annotation; _ } as parameter); _ } as node) =
+            {
+              node with
+              Node.value = { parameter with Parameter.annotation = annotation >>| access };
+            }
+          in
+          {
+            define with
+            Define.parameters = List.map ~f:parameter parameters;
+            return_annotation = return_annotation >>| access;
+          }
+        in
+        let statement =
+          match value with
+          | Define define ->
+              Define (transform define)
+              |> Node.create ~location
+          | Stub (Stub.Define define) ->
+              Stub (Stub.Define (transform define))
+              |> Node.create ~location
+          | _ ->
+              statement
+        in
+        (), [statement]
+    end)
+  in
+  Transform.transform () source |> snd
 
 
 let qualify source =
@@ -1102,6 +1159,7 @@ let dequalify_map source =
 
 let preprocess source =
   source
+  |> expand_string_annotations
   |> replace_version_specific_code
   |> rename_shadowed_variables
   |> qualify

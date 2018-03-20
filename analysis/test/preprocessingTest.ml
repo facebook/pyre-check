@@ -55,6 +55,35 @@ let test_rename_shadowed_variables _ =
     |}
 
 
+let test_expand_string_annotations _ =
+  let assert_expand ?(qualifier = "some/qualifier") source expected =
+    let parse =
+      parse ~qualifier:(Source.qualifier ~path:qualifier) in
+    assert_source_equal
+      (Preprocessing.expand_string_annotations (parse source))
+      (parse expected)
+  in
+
+  assert_expand
+    {|
+      class qualifier.Foo: ...
+      def foo(f: 'qualifier.Foo') -> 'qualifier.Foo': ...
+    |}
+    {|
+      class qualifier.Foo: ...
+      def foo(f: qualifier.Foo) -> qualifier.Foo: ...
+    |};
+  assert_expand
+    {|
+      class Foo: ...
+      def foo(f: 'Foo[K, V]'): ...
+    |}
+    {|
+      class Foo: ...
+      def foo(f: Foo[K, V]): ...
+    |}
+
+
 let test_qualify _ =
   let assert_qualify ?(qualifier = "some/qualifier") source expected =
     let parse =
@@ -1175,12 +1204,30 @@ let test_preprocess _ =
     |}
     {|
       some.qualifier.a = 1
+    |};
+
+  (* String annotations get qualified. *)
+  assert_preprocess
+    {|
+      class Foo: ...
+      def foo(f: 'Foo') -> 'Foo': ...
+      def bar(f: 'List[Foo]') -> 'Foo':
+        pass
     |}
+    {|
+      class some.qualifier.Foo: ...
+      def some.qualifier.foo(f: some.qualifier.Foo) -> some.qualifier.Foo: ...
+      def some.qualifier.bar(f: List[some.qualifier.Foo]) -> some.qualifier.Foo:
+        pass
+        return
+    |}
+
 
 
 let () =
   "preprocessing">:::[
     "rename_shadowed_variables">::test_rename_shadowed_variables;
+    "expand_string_annotations">::test_expand_string_annotations;
     "qualify">::test_qualify;
     "cleanup">::test_cleanup;
     "replace_version_specific_code">::test_replace_version_specific_code;
