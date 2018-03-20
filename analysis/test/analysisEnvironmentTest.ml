@@ -359,33 +359,19 @@ let test_populate _ =
     populate {|
       class foo.foo(): ...
       class bar(): ...
-    |} in
+    |}
+  in
   assert_equal
-    (parse_annotation
-       environment
-       (+Access (access ["foo.foo"])))
+    (parse_annotation environment !"foo.foo")
     (Type.primitive "foo.foo");
   assert_equal
-    (parse_annotation
-       environment
-       (+Access
-         ((Access.create "Optional") @
-          [Access.Subscript [Access.Index (+Access (access ["foo.foo"]))]])))
-    (Type.Parametric {
-        Type.name = ~~"Optional";
-        parameters = [Type.primitive "foo.foo"];
-      });
-  assert_equal
-    (parse_annotation
-       environment
-       (+Access (access ["bar"])))
-    (Type.primitive "bar");
+    (parse_annotation environment (+Access (parse_single_access "Optional[foo.foo]")))
+    (Type.parametric "Optional" [Type.primitive "foo.foo"]);
+  assert_equal (parse_annotation environment !"bar") (Type.primitive "bar");
 
   (* Check custom aliases. *)
   assert_equal
-    (parse_annotation
-       environment
-       (+Access (access ["typing.DefaultDict"])))
+    (parse_annotation environment !"typing.DefaultDict")
     (Type.primitive "collections.defaultdict");
 
   (* Check type aliases. *)
@@ -395,16 +381,11 @@ let test_populate _ =
       _T = typing.TypeVar('_T')
       S = str
       S2 = S
-    |} in
-  assert_equal
-    (parse_annotation environment (+Access (access ["_T"])))
-    (variable ~~"_T");
-  assert_equal
-    (parse_annotation environment (+Access (access ["S"])))
-    Type.string;
-  assert_equal
-    (parse_annotation environment (+Access (access ["S2"])))
-    Type.string;
+    |}
+  in
+  assert_equal (parse_annotation environment !"_T") (variable ~~"_T");
+  assert_equal (parse_annotation environment !"S") Type.string;
+  assert_equal (parse_annotation environment !"S2") Type.string;
 
   let environment =
     populate {|
@@ -412,26 +393,25 @@ let test_populate _ =
       A: int = 0
       B = 0
       C = ... # type: int
-    |} in
+    |}
+  in
   assert_equal
     (global environment (access ["A"]))
     (Some {
-        Resolution.annotation =
-          (Annotation.create_immutable ~global:true Type.integer);
+        Resolution.annotation = Annotation.create_immutable ~global:true Type.integer;
         location = create_location "test.py" 3 0 3 1;
       });
   assert_equal
     (global environment (access ["B"]))
     (Some {
         Resolution.annotation =
-          (Annotation.create_immutable ~global:true ~original:(Some Type.Top) Type.integer);
+          Annotation.create_immutable ~global:true ~original:(Some Type.Top) Type.integer;
         location = create_location "test.py" 4 0 4 1;
       });
   assert_equal
     (global environment (access ["C"]))
     (Some {
-        Resolution.annotation =
-          (Annotation.create_immutable ~global:true Type.integer);
+        Resolution.annotation = Annotation.create_immutable ~global:true Type.integer;
         location = create_location "test.py" 5 0 5 1;
       });
 
@@ -446,41 +426,38 @@ let test_populate _ =
         pass
       def function():
         pass
-    |} in
+    |}
+  in
   assert_equal
     (global environment (access ["global_value_set"]))
     (Some {
         Resolution.annotation =
-          (Annotation.create_immutable ~global:true ~original:(Some Type.Top) Type.integer);
+          Annotation.create_immutable ~global:true ~original:(Some Type.Top) Type.integer;
         location = create_location "test.py" 2 0 2 16;
       });
   assert_equal
     (global environment (access ["global_annotated"]))
     (Some {
-        Resolution.annotation =
-          (Annotation.create_immutable ~global:true Type.integer);
+        Resolution.annotation = Annotation.create_immutable ~global:true Type.integer;
         location = create_location "test.py" 3 0 3 16;
       });
   assert_equal
     (global environment (access ["global_both"]))
     (Some {
-        Resolution.annotation =
-          (Annotation.create_immutable ~global:true Type.integer);
+        Resolution.annotation = Annotation.create_immutable ~global:true Type.integer;
         location = create_location "test.py" 4 0 4 11;
       });
   assert_equal
     (global environment (access ["global_unknown"]))
     (Some {
-        Resolution.annotation =
-          (Annotation.create_immutable ~global:true Type.Top);
+        Resolution.annotation = Annotation.create_immutable ~global:true Type.Top;
         location = create_location "test.py" 5 0 5 14;
       });
   assert_equal
     ~printer:(function | Some global -> Resolution.show_global global | None -> "None")
     (global environment (access ["function"]))
     (Some {
-        Resolution.annotation =
-          (Annotation.create_immutable ~global:true Type.Top);
+        Resolution.annotation = Annotation.create_immutable ~global:true Type.Top;
         location = create_location "test.py" 8 0 9 6;
       });
 
