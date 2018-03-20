@@ -840,6 +840,25 @@ let test_define _ =
         parent = None;
       };
     ];
+  assert_parsed_equal
+    (trim_extra_indentation {|
+      def foo():
+        # type: (...) -> 'int'
+        return 4
+    |})
+    [
+      +Define {
+        Define.name = Access.create "foo";
+        parameters = [];
+        body = [+Return (Some (+Integer 4))];
+        decorators = [];
+        docstring = None;
+        return_annotation = Some (+String "int");
+        async = false;
+        generated = false;
+        parent = None;
+      };
+    ];
 
   assert_parsed_equal
     (trim_extra_indentation {|

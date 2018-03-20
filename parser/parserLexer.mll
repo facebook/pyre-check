@@ -68,6 +68,18 @@
       Int.of_string (strip_underscores value)
     with Failure _ ->
       Int.max_value
+
+  let parse_signature_comment comment =
+    let strip_quotes string =
+      let quote char = char = '\'' || char = '"' in
+      string
+      |> String.lstrip ~drop:quote
+      |> String.rstrip ~drop:quote
+    in
+    comment
+    |> Str.split (Str.regexp "-> *")
+    |> fun elements -> List.nth_exn elements 1
+    |> strip_quotes
 }
 
 let empty = ""
@@ -105,20 +117,10 @@ let escape = '\\' _
 rule read state = parse
   | newline whitespace* signature {
     line_break lexbuf;
-    let comment =
-      lexeme lexbuf
-      |> Str.split (Str.regexp "-> *")
-      |> fun elements -> List.nth_exn elements 1
-    in
-    SIGNATURE_COMMENT comment
+    SIGNATURE_COMMENT (parse_signature_comment (lexeme lexbuf))
   }
   | whitespace* signature {
-    let comment =
-      lexeme lexbuf
-      |> Str.split (Str.regexp "-> *")
-      |> fun elements -> List.nth_exn elements 1
-    in
-    SIGNATURE_COMMENT comment
+    SIGNATURE_COMMENT (parse_signature_comment (lexeme lexbuf))
   }
   | newline whitespace* comment {
       line_break lexbuf;
