@@ -248,50 +248,6 @@ let test_qualify _ =
 
   assert_qualify
     {|
-      class Foo: pass
-      def foo(foo: 'Foo[Foo]') -> None: pass
-    |}
-    {|
-      class some.qualifier.Foo: pass
-      def some.qualifier.foo(foo: 'some.qualifier.Foo[some.qualifier.Foo]') -> None: pass
-    |};
-
-  assert_qualify
-    {|
-      class Foo: pass
-      def foo(foo: 'typing.Optional[Foo]') -> None: pass
-    |}
-    {|
-      class some.qualifier.Foo: pass
-      def some.qualifier.foo(foo: 'typing.Optional[some.qualifier.Foo]') -> None: pass
-    |};
-
-  assert_qualify
-    {|
-      class Foo: pass
-      def foo(foo: 'typing.Union[Foo, int]') -> None: pass
-    |}
-    {|
-      class some.qualifier.Foo: pass
-      def some.qualifier.foo(foo: "typing.Union[some.qualifier.Foo,int]") -> None: pass
-    |};
-
-  assert_qualify
-    {|
-      from typing import Optional
-      def f():
-        # type: (...) -> Optional[int]
-        pass
-    |}
-    {|
-      from typing import Optional
-      def some.qualifier.f() -> "typing.Optional[int]":
-        #
-        pass
-    |};
-
-  assert_qualify
-    {|
       class Foo:
         def foo(): pass
       def bar():

@@ -230,42 +230,6 @@ let qualify source =
          result in a transformation rule from `b` to `a`. *)
       type t = Access.t * Access.t Access.Map.t
 
-      let rec qualify_annotation map annotation =
-        let qualify_identifier map identifier =
-          match Map.find map (Access.create (Identifier.show identifier)) with
-          | Some replacement ->
-              Identifier.create (Access.show replacement)
-          | None ->
-              identifier
-        in
-        match annotation with
-        | AnalysisType.Primitive identifier ->
-            AnalysisType.Primitive (qualify_identifier map identifier)
-        | AnalysisType.Parametric { AnalysisType.name; parameters } ->
-            AnalysisType.Parametric {
-              AnalysisType.name = qualify_identifier map name;
-              parameters = List.map ~f:(qualify_annotation map) parameters;
-            }
-        | AnalysisType.Optional annotation ->
-            AnalysisType.Optional (qualify_annotation map annotation)
-        | AnalysisType.Tuple (AnalysisType.Bounded annotations) ->
-            AnalysisType.Tuple
-              (AnalysisType.Bounded (List.map ~f:(qualify_annotation map) annotations))
-        | AnalysisType.Tuple (AnalysisType.Unbounded annotation) ->
-            AnalysisType.Tuple
-              (AnalysisType.Unbounded (qualify_annotation map annotation))
-        | AnalysisType.Union annotations ->
-            AnalysisType.Union (List.map ~f:(qualify_annotation map) annotations)
-        | AnalysisType.Variable { AnalysisType.variable; constraints } ->
-            AnalysisType.Variable {
-              AnalysisType.variable = qualify_identifier map variable;
-              constraints = List.map ~f:(qualify_annotation map) constraints;
-            }
-        | AnalysisType.Top
-        | AnalysisType.Bottom
-        | AnalysisType.Object ->
-            annotation
-
       let expression (qualifier, map) expression =
         let rebased =
           match expression with
@@ -310,14 +274,17 @@ let qualify source =
                 | None ->
                     expression
               end
-          | { Node.location; value = String _ } ->
-              let annotation =
-                qualify_annotation map (AnalysisType.create ~aliases:(fun _ -> None) expression)
-              in
-              {
-                Node.location;
-                value = String (Expression.show (AnalysisType.expression annotation));
-              }
+          | { Node.location; value = String value } ->
+              begin
+                match Map.find map (Access.create value) with
+                | Some replacement ->
+                    {
+                      Node.location;
+                      value = String (Access.show replacement);
+                    }
+                | None ->
+                    expression
+              end
           | _ ->
               expression
         in
