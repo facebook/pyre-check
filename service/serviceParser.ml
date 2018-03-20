@@ -29,7 +29,9 @@ let parse_path_to_source file =
         ~qualifier:(Source.qualifier ~path)
         statements)
   with
-  | Parser.Error error
+  | Parser.Error error ->
+      Log.debug "%s" error;
+      None
   | Failure error ->
       Log.error "%s" error;
       None
