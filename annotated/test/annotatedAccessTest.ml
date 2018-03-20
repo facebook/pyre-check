@@ -219,7 +219,7 @@ let test_object_callables _ =
 
   assert_resolved "module.call" (Type.primitive "module.Call");
   assert_resolved "module.call()" Type.integer;
-  assert_resolved "module.callable()" Type.Top;
+  assert_resolved "module.callable()" Type.integer;
 
   assert_resolved "module.meta" (Type.primitive "module.Call" |> Type.meta);
   assert_resolved "module.meta()" (Type.primitive "module.Call")

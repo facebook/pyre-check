@@ -416,6 +416,22 @@ let fold ~resolution ~initial ~f access =
                   (f accumulator ~annotations ~resolved ~element:(Element.Method element))
                 ()
 
+          | Some resolved,
+            Access.Call { Node.value = { Expression.Call.name; _ }; _ }
+            when not (Type.is_not_instantiated (Annotation.annotation resolved)) &&
+                 Expression.show name = "__call__" ->
+              (* Callable invocation. *)
+              let resolved =
+                match Annotation.annotation resolved with
+                | Type.Callable { Type.annotation } -> Annotation.create annotation
+                | _ -> resolved
+              in
+              Result.create
+                ~resolution
+                ~resolved
+                ~accumulator: (f accumulator ~annotations ~resolved ~element:Element.Value)
+                ()
+
           | Some resolved, Access.Identifier _ ->
               (* Attribute access. *)
               let resolved, class_attributes =
