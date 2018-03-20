@@ -836,14 +836,14 @@ module With = struct
       (target
        >>| fun target ->
        let open Expression in
-       let enter_call = Node.create ~location (Access [
-           Access.Expression expression;
-           Access.Call (Node.create ~location {
-               Call.name = Access (Access.create "__enter__")
-                           |> Node.create ~location;
-               arguments = [];
-             })
-         ])
+       let enter_call =
+         {
+           Call.name = Access (Access.create "__enter__") |> Node.create ~location;
+           arguments = [];
+         }
+         |> Node.create ~location
+         |> (fun call -> Access.Call call)
+         |> fun call -> Node.create ~location (Access ((Access.access expression) @ [call]))
        in
        let assign =
          {
@@ -855,8 +855,7 @@ module With = struct
          }
        in
        Node.create ~location (Assign assign))
-      |> Option.value
-        ~default:(Node.create ~location (Expression expression))
+      |> Option.value ~default:(Node.create ~location (Expression expression))
     in
     List.map ~f:preamble items
 end

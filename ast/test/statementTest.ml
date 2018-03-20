@@ -531,6 +531,8 @@ let test_preamble _ =
       }
     in
     assert_equal
+      ~cmp:(List.equal ~equal:Statement.equal)
+      ~printer:(fun statements -> List.map ~f:Statement.show statements |> String.concat ~sep:", ")
       preamble
       (With.preamble block)
   in
@@ -543,11 +545,7 @@ let test_preamble _ =
       +Assign {
         Assign.target = !"name";
         annotation = None;
-        value = Some
-            (+Access [
-               Access.Expression !"item";
-               Access.Call (+{ Call.name = !"__enter__"; arguments = [] });
-             ]);
+        value = Some (+Access (parse_single_access "item.__enter__()"));
         compound = None;
         parent = None;
       };
