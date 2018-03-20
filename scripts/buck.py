@@ -64,8 +64,14 @@ def _normalize(targets: List[str]) -> List[str]:
         command.append('--show-output')
         targets_to_destinations = subprocess.check_output(
             command,
-            stderr=subprocess.DEVNULL).decode().strip().split('\n')
+            stderr=subprocess.DEVNULL,
+            timeout=200).decode().strip().split('\n')
         return targets_to_destinations
+    except subprocess.TimeoutExpired:
+        raise BuckException(
+            'Seems like `{}` is hanging.\n   '
+            'Try running `buck clean` before trying again.'.format(
+                ' '.join(command[:-1])))
     except subprocess.CalledProcessError:
         raise BuckException(
             'Could not normalize targets. Check the paths or run `buck clean`.')
