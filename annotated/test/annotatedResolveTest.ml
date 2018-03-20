@@ -43,7 +43,7 @@ let test_resolve_literal _ =
   assert_resolve_literal "\"\"" Type.string;
   assert_resolve_literal "1" Type.integer;
   assert_resolve_literal "1+1" Type.Object;
-  assert_resolve_literal "j" Type.Top;
+  assert_resolve_literal "j" Type.integer;
   assert_resolve_literal "foo()" Type.Object
 
 
