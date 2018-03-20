@@ -84,26 +84,29 @@ let expand_string_annotations source =
                     let state = Lexer.State.initial () in
                     match ParserGenerator.parse (Lexer.read state) buffer with
                     | [{ Node.value = Expression { Node.value = Access access; _ } ; _ }] ->
-                        access
+                        Some access
                     | _ ->
-                        raise PreprocessingError
+                        raise ParserGenerator.Error
                   with ParserGenerator.Error ->
-                    raise PreprocessingError
+                    begin
+                      Log.debug "Invalid string annotation `%s` at %a" string Location.pp location;
+                      None
+                    end
                 in
-                { Node.location; value = Access parsed }
+                parsed >>| (fun parsed -> { Node.location; value = Access parsed })
             | expression ->
-                expression
+                Some expression
           in
           let parameter ({ Node.value = ({ Parameter.annotation; _ } as parameter); _ } as node) =
             {
               node with
-              Node.value = { parameter with Parameter.annotation = annotation >>| access };
+              Node.value = { parameter with Parameter.annotation = annotation >>= access };
             }
           in
           {
             define with
             Define.parameters = List.map ~f:parameter parameters;
-            return_annotation = return_annotation >>| access;
+            return_annotation = return_annotation >>= access;
           }
         in
         let statement =

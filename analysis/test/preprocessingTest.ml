@@ -74,6 +74,9 @@ let test_expand_string_annotations _ =
       def foo(f: qualifier.Foo) -> qualifier.Foo: ...
     |};
   assert_expand
+    "def foo(f: '1234'): ..."
+    "def foo(f): ...";
+  assert_expand
     {|
       class Foo: ...
       def foo(f: 'Foo[K, V]'): ...
