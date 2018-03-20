@@ -27,6 +27,7 @@ and variable =
 
 and t =
   | Bottom
+  | Callable
   | Object
   | Optional of t
   | Parametric of parametric

@@ -432,6 +432,12 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
   | _, Type.Tuple _ ->
       false
 
+  | Type.Callable, Type.Callable ->
+      true
+  | Type.Callable, _
+  | _, Type.Callable ->
+      false
+
   (* A[...] <= B iff A <= B. *)
   | Type.Parametric _, Type.Primitive _  ->
       let parametric_primitive, _ = Type.split left in
@@ -660,6 +666,13 @@ and join ((module Handler: Handler) as order) left right =
           left
         else
           Type.Object
+
+    | Type.Callable, Type.Callable ->
+        Type.Callable
+    | Type.Callable, _
+    | _, Type.Callable ->
+        Type.Object
+
     | _ ->
         match List.hd (least_upper_bound order left right) with
         | Some joined ->
@@ -757,6 +770,12 @@ and meet order left right =
         else
           Type.Bottom
 
+    | Type.Callable, Type.Callable ->
+        Type.Callable
+    | Type.Callable, _
+    | _, Type.Callable ->
+        Type.Bottom
+
     | _ ->
         match List.hd (greatest_lower_bound order left right) with
         | Some bound -> bound
@@ -817,6 +836,9 @@ and instantiate_parameters
                     Type.name;
                     parameters = List.map ~f:instantiate_type_variables parameters
                   }
+
+              | Type.Callable ->
+                  annotation
 
               | Type.Tuple (Type.Bounded list) ->
                   Type.Tuple (Type.Bounded (List.map ~f:instantiate_type_variables list))

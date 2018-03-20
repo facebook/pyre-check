@@ -547,15 +547,9 @@ let test_is_generator _ =
 
 
 let test_is_callable _ =
-  assert_true
-    (Type.is_callable
-       (Type.Primitive (Identifier.create "typing.Callable")));
-  assert_true
-    (Type.is_callable
-       (Type.Optional (Type.Primitive (Identifier.create "typing.Callable"))));
-  assert_true
-    (Type.is_callable
-       (Type.union[Type.string; (Type.Primitive (Identifier.create "typing.Callable"))]));
+  assert_true (Type.is_callable Type.Callable);
+  assert_true (Type.is_callable (Type.Optional (Type.Callable)));
+  assert_true (Type.is_callable (Type.union[Type.string; Type.Callable]));
   assert_false (Type.is_callable (Type.Primitive (Identifier.create "foo")))
 
 

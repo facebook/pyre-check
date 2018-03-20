@@ -30,6 +30,7 @@ and variable =
 
 and t =
   | Bottom
+  | Callable
   | Object
   | Optional of t
   | Parametric of parametric
@@ -125,6 +126,8 @@ let rec pp format annotation =
   match annotation with
   | Bottom ->
       Format.fprintf format "`typing.Any`"
+  | Callable ->
+      Format.fprintf format "`typing.Callable`"
   | Object ->
       Format.fprintf format "`typing.Any`"
   | Optional Bottom ->
@@ -206,10 +209,7 @@ let bytes =
 
 
 let callable =
-  Parametric {
-    name = Identifier.create "typing.Callable";
-    parameters = [Object; Object];
-  }
+  Callable
 
 
 let complex =
@@ -370,12 +370,6 @@ let primitive_substitution_map =
     in
     Parametric { name = Identifier.create name; parameters = (parameters [] number_of_anys) }
   in
-  let parametricized_callable =
-    Parametric {
-      name = Identifier.create "typing.Callable";
-      parameters = [Primitive (Identifier.create "..."); Object]
-    }
-  in
   [
     "object", Object;
     "typing.Any", Object;
@@ -390,7 +384,7 @@ let primitive_substitution_map =
     "typing.AsyncIterable", parametric_anys "typing.AsyncIterable" 1;
     "typing.AsyncIterator", parametric_anys "typing.AsyncIterator" 1;
     "typing.Awaitable", parametric_anys "typing.Awaitable" 1;
-    "typing.Callable", parametricized_callable;
+    "typing.Callable", Callable;
     "typing.ContextManager", parametric_anys "typing.ContextManager" 1;
     "typing.Coroutine", parametric_anys "typing.Coroutine" 3;
     "typing.DefaultDict", parametric_anys "collections.defaultdict" 2;
@@ -509,6 +503,7 @@ let create ~aliases { Node.value = expression; _ } =
                     | Union elements ->
                         Union (List.map ~f:(resolve visited) elements)
                     | Bottom
+                    | Callable
                     | Object
                     | Primitive _
                     | Top ->
@@ -627,6 +622,7 @@ let expression annotation =
     in
     match annotation with
     | Bottom -> Access.create "$bottom"
+    | Callable -> Access.create "typing.Callable"
     | Object -> Access.create "object"
     | Optional Bottom -> split (Identifier.create "None")
     | Optional parameter ->
@@ -695,8 +691,10 @@ let rec is_callable = function
       List.exists ~f:is_callable tuple
   | Tuple (Unbounded annotation) ->
       is_callable annotation
-  | other ->
-      equal other (Primitive (Identifier.create "typing.Callable"))
+  | Callable ->
+      true
+  | _ ->
+      false
 
 
 let is_generic = function
@@ -790,6 +788,7 @@ let rec variables = function
   | Union elements ->
       List.concat_map ~f:variables elements
   | Bottom
+  | Callable
   | Object
   | Primitive _
   | Top ->
@@ -807,6 +806,8 @@ let rec is_partially_typed = function
       true
   | Bottom ->
       true
+  | Callable ->
+      false
   | Parametric { parameters; _ }
   | Union parameters
   | Tuple (Bounded parameters) ->

@@ -750,6 +750,9 @@ let register_aliases (module Handler: Handler) sources =
               let primitive, _ = Type.split annotation in
               TypeOrder.contains order primitive
 
+          | Type.Callable ->
+              true
+
           | Type.Tuple (Type.Bounded annotations)
           | Type.Union annotations ->
               List.for_all ~f:annotation_in_order annotations
