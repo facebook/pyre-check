@@ -100,8 +100,8 @@ val is_protocol: t -> bool
 val is_tuple: t -> bool
 val is_unknown: t -> bool
 
-(* Does not contain `Bottom`. *)
-val is_instantiated: t -> bool
+(* Contains `Bottom` or variables. *)
+val is_not_instantiated: t -> bool
 
 val variables: t -> t list
 (* Does not contain `Variable`. *)

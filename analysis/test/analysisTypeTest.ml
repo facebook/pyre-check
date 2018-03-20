@@ -575,13 +575,13 @@ let test_is_callable _ =
   assert_false (Type.is_callable (Type.Primitive (Identifier.create "foo")))
 
 
-let test_is_instantiated _ =
-  assert_true (Type.is_instantiated Type.Bottom);
-  assert_true (Type.is_instantiated (Type.dictionary ~key:Type.Bottom ~value:Type.Bottom));
-  assert_true (Type.is_instantiated (Type.Optional Type.Bottom));
-  assert_false (Type.is_instantiated Type.Top);
+let test_is_not_instantiated _ =
+  assert_true (Type.is_not_instantiated Type.Bottom);
+  assert_true (Type.is_not_instantiated (Type.dictionary ~key:Type.Bottom ~value:Type.Bottom));
+  assert_true (Type.is_not_instantiated (Type.Optional Type.Bottom));
+  assert_false (Type.is_not_instantiated Type.Top);
   assert_true
-    (Type.is_instantiated
+    (Type.is_not_instantiated
        (Type.Variable { Type.variable = Identifier.create "_T"; constraints = [] }))
 
 
@@ -839,7 +839,7 @@ let () =
     "exists">::test_exists;
     "is_async_generator">::test_is_generator;
     "is_callable">::test_is_callable;
-    "is_instantiated">::test_is_instantiated;
+    "is_not_instantiated">::test_is_not_instantiated;
     "is_meta">::test_is_meta;
     "is_none">::test_is_none;
     "is_unknown">::test_is_unknown;

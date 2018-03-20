@@ -756,7 +756,7 @@ let is_unknown annotation =
   exists annotation ~predicate:(function | Top -> true | _ -> false)
 
 
-let is_instantiated annotation =
+let is_not_instantiated annotation =
   let predicate = function
     | Bottom -> true
     | Variable { constraints; _ } when constraints = [] -> true

@@ -448,7 +448,7 @@ module State = struct
     let combine_annotations left right =
       let add_annotation ~key ~data map =
         if Type.is_unknown data.Annotation.annotation ||
-           Type.is_instantiated data.Annotation.annotation ||
+           Type.is_not_instantiated data.Annotation.annotation ||
            Access.equal key Preprocessing.return_access then
           map
         else
