@@ -663,6 +663,29 @@ let access annotation =
   | _ -> failwith "Annotation expression is not an access"
 
 
+let rec exists annotation ~predicate =
+  if predicate annotation then
+    true
+  else
+    match annotation with
+    | Optional annotation
+    | Tuple (Unbounded annotation) ->
+        exists ~predicate annotation
+
+    | Variable { constraints = parameters; _ }
+    | Parametric { parameters; _ }
+    | Tuple (Bounded parameters)
+    | Union parameters ->
+        List.exists ~f:(exists ~predicate) parameters
+
+    | Callable
+    | Bottom
+    | Top
+    | Object
+    | Primitive _ ->
+        false
+
+
 let is_generator = function
   | Parametric { name; _ } ->
       List.mem
@@ -680,21 +703,8 @@ let is_awaitable = function
       false
 
 
-let rec is_callable = function
-  | Optional annotation ->
-      is_callable annotation
-  | Parametric { name; _ } ->
-      is_callable (Primitive name)
-  | Union parameters ->
-      List.exists ~f:is_callable parameters
-  | Tuple (Bounded tuple) ->
-      List.exists ~f:is_callable tuple
-  | Tuple (Unbounded annotation) ->
-      is_callable annotation
-  | Callable ->
-      true
-  | _ ->
-      false
+let is_callable annotation =
+  exists annotation ~predicate:(function | Callable -> true | _ -> false)
 
 
 let is_generic = function
@@ -742,36 +752,17 @@ let is_tuple (annotation: t) =
   | _ -> false
 
 
-let rec is_unknown = function
-  | Top ->
-      true
-  | Optional annotation ->
-      is_unknown annotation
-  | Parametric { parameters; _ } ->
-      List.exists ~f:is_unknown parameters
-  | Union parameters ->
-      List.exists ~f:is_unknown parameters
-  | Tuple (Bounded tuple) ->
-      List.exists ~f:is_unknown tuple
-  | Tuple (Unbounded annotation) ->
-      is_unknown annotation
-  | _ ->
-      false
+let is_unknown annotation =
+  exists annotation ~predicate:(function | Top -> true | _ -> false)
 
 
-let rec is_instantiated = function
-  | Bottom ->
-      true
-  | Optional annotation ->
-      is_instantiated annotation
-  | Parametric { parameters; _ } ->
-      List.exists ~f:is_instantiated parameters
-  | Union parameters ->
-      List.exists ~f:is_instantiated parameters
-  | Variable { constraints; _ } when constraints = [] ->
-      true
-  | _ ->
-      false
+let is_instantiated annotation =
+  let predicate = function
+    | Bottom -> true
+    | Variable { constraints; _ } when constraints = [] -> true
+    | _ -> false
+  in
+  exists annotation ~predicate
 
 
 let rec variables = function
@@ -799,24 +790,8 @@ let is_resolved annotation =
   List.is_empty (variables annotation)
 
 
-let rec is_partially_typed = function
-  | Object ->
-      true
-  | Top ->
-      true
-  | Bottom ->
-      true
-  | Callable ->
-      false
-  | Parametric { parameters; _ }
-  | Union parameters
-  | Tuple (Bounded parameters) ->
-      List.exists ~f:is_partially_typed parameters
-  | Optional annotation
-  | Tuple (Unbounded annotation) ->
-      is_partially_typed annotation
-  | _ ->
-      false
+let is_partially_typed annotation =
+  exists annotation ~predicate:(function | Object | Top | Bottom -> true | _ -> false)
 
 
 let is_untyped = function

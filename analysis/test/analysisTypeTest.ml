@@ -538,6 +538,30 @@ let test_union _ =
     (Type.union [Type.float; Type.string; Type.bytes])
 
 
+let test_exists _ =
+  let top_exists = Type.exists ~predicate:(function | Type.Top -> true | _ -> false) in
+
+  assert_true (top_exists (Type.optional Type.Top));
+  assert_false (top_exists (Type.optional Type.integer));
+  assert_true (top_exists (Type.Tuple (Type.Unbounded Type.Top)));
+  assert_false (top_exists (Type.Tuple (Type.Unbounded Type.integer)));
+
+  assert_true (top_exists (Type.Variable { Type.variable = ~~"T"; constraints = [Type.Top] }));
+  assert_false (top_exists (Type.Variable { Type.variable = ~~"T"; constraints = [Type.integer] }));
+  assert_true (top_exists (Type.parametric "parametric" [Type.integer; Type.Top]));
+  assert_false (top_exists (Type.parametric "parametric" [Type.integer; Type.string]));
+  assert_true (top_exists (Type.tuple [Type.Top; Type.string]));
+  assert_false (top_exists (Type.tuple [Type.integer; Type.string]));
+  assert_true (top_exists (Type.union [Type.integer; Type.Top]));
+  assert_false (top_exists (Type.union [Type.integer; Type.string]));
+
+  assert_false (top_exists Type.Callable);
+  assert_true (top_exists Type.Top);
+  assert_false (top_exists Type.Bottom);
+  assert_false (top_exists Type.integer);
+  assert_false (top_exists Type.Object)
+
+
 let test_is_generator _ =
   assert_true (Type.is_generator (Type.generator Type.string));
   assert_false (Type.is_generator Type.string);
@@ -812,6 +836,7 @@ let () =
     "create">::test_create;
     "expression">::test_expression;
     "union">::test_union;
+    "exists">::test_exists;
     "is_async_generator">::test_is_generator;
     "is_callable">::test_is_callable;
     "is_instantiated">::test_is_instantiated;

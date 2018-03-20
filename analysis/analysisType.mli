@@ -85,6 +85,8 @@ val create
 val expression: t -> Expression.t
 val access: t -> Access.t
 
+val exists: t -> predicate: (t -> bool) -> bool
+
 val is_generator: t -> bool
 val is_awaitable: t -> bool
 val is_callable: t -> bool
