@@ -55,6 +55,7 @@ val parametric: string -> t list -> t
 val awaitable: t -> t
 val bool: t
 val bytes: t
+val callable: t
 val complex: t
 val dictionary: key:t -> value:t -> t
 val float: t

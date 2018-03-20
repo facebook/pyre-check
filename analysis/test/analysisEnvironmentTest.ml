@@ -457,7 +457,7 @@ let test_populate _ =
     ~printer:(function | Some global -> Resolution.show_global global | None -> "None")
     (global environment (access ["function"]))
     (Some {
-        Resolution.annotation = Annotation.create_immutable ~global:true Type.Top;
+        Resolution.annotation = Annotation.create_immutable ~global:true Type.callable;
         location = create_location "test.py" 8 0 9 6;
       });
 

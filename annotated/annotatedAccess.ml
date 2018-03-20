@@ -312,7 +312,8 @@ let fold ~resolution ~initial ~f access =
                let is_object_call =
                  let annotation = Annotation.annotation resolved in
                  not (Type.equal annotation Type.Top) &&
-                 not (Type.is_meta annotation)
+                 not (Type.is_meta annotation) &&
+                 not (Resolution.is_function resolution (qualifier @ name))
                in
                if is_object_call then
                  let head =

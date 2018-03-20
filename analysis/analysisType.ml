@@ -205,6 +205,13 @@ let bytes =
   Primitive (Identifier.create "bytes")
 
 
+let callable =
+  Parametric {
+    name = Identifier.create "typing.Callable";
+    parameters = [Object; Object];
+  }
+
+
 let complex =
   Primitive (Identifier.create "complex")
 

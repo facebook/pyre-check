@@ -207,8 +207,7 @@ let handler
       DependencyHandler.add_function_key ~path name;
       let annotation =
         {
-          Resolution.annotation =
-            (Annotation.create_immutable ~global:true Type.Top);
+          Resolution.annotation = Annotation.create_immutable ~global:true Type.callable;
           location;
         }
       in
@@ -648,6 +647,7 @@ let resolution
     ~global:Handler.globals
     ~module_definition:Handler.module_definition
     ~class_definition
+    ~is_function:(fun name -> Handler.function_definitions name |> Option.is_some)
     ~function_signature
     ~method_signature
 
