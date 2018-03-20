@@ -654,13 +654,37 @@ let test_join _ =
 
   (* Callables. *)
   assert_equal
-    ~printer:Type.show
-    (Type.callable ~annotation:(Type.union [Type.integer; Type.string]))
-    (join order (Type.callable ~annotation:Type.integer) (Type.callable ~annotation:Type.string));
+    (Type.callable ~annotation:(Type.union [Type.integer; Type.string]) ())
+    (join
+       order
+       (Type.callable ~annotation:Type.integer ())
+       (Type.callable ~annotation:Type.string ()));
   assert_equal
-    ~printer:Type.show
-    (Type.callable ~annotation:Type.integer)
-    (join order (Type.callable ~annotation:Type.integer) (Type.callable ~annotation:Type.Bottom))
+    (Type.callable ~annotation:Type.integer ())
+    (join
+       order
+       (Type.callable ~annotation:Type.integer ())
+       (Type.callable ~annotation:Type.Bottom ()));
+
+  assert_equal
+    (Type.callable ~name:(Expression.Access.create "derp") ~annotation:Type.integer ())
+    (join
+       order
+       (Type.callable ~name:(Expression.Access.create "derp") ~annotation:Type.integer ())
+       (Type.callable ~name:(Expression.Access.create "derp") ~annotation:Type.integer ()));
+  assert_equal
+    Type.Object
+    (join
+       order
+       (Type.callable ~name:(Expression.Access.create "derp") ~annotation:Type.integer ())
+       (Type.callable ~annotation:Type.integer ()));
+
+  assert_equal
+    Type.Object
+    (join
+       order
+       (Type.callable ~overrides:[{ Type.annotation = Type.string }] ~annotation:Type.integer ())
+       (Type.callable ~annotation:Type.integer ()))
 
 
 let test_meet _ =

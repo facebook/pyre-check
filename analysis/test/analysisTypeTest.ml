@@ -455,13 +455,13 @@ let test_create _ =
   (* Callables. *)
   assert_equal
     (Type.create ~aliases (+String "typing.Callable"))
-    (Type.callable ~annotation:Type.Top);
+    (Type.callable ~annotation:Type.Top ());
   assert_equal
     (Type.create ~aliases (+String "typing.Callable[..., int]"))
-    (Type.callable ~annotation:Type.integer);
+    (Type.callable ~annotation:Type.integer ());
   assert_equal
     (Type.create ~aliases (+String "typing.Callable[[int, str], int]"))
-    (Type.callable ~annotation:Type.integer);
+    (Type.callable ~annotation:Type.integer ());
   assert_equal
     (Type.create ~aliases (+String "typing.Callable[int]"))
     Type.Top
@@ -527,15 +527,36 @@ let test_expression _ =
 
   (* Callables. *)
   assert_equal
-    (Type.expression (Type.callable ~annotation:Type.integer))
+    (Type.expression (Type.callable ~annotation:Type.integer ()))
     (+Access [
        identifier "typing";
        identifier "Callable";
        Access.Subscript [
          Access.Index (+Access (Access.create "int"));
        ];
+     ]);
+  assert_equal
+    (Type.expression (Type.callable ~name:(Access.create "name") ~annotation:Type.integer ()))
+    (+Access [
+       identifier "typing";
+       identifier "Callable";
+       Access.Subscript [
+         Access.Index (+Access (Access.create "int"));
+       ];
+     ]);
+  assert_equal
+    (Type.expression
+       (Type.callable ~overrides:[{ Type.annotation = Type.string }] ~annotation:Type.integer ()))
+    (+Access [
+       identifier "typing";
+       identifier "Callable";
+       Access.Subscript [
+         Access.Index (+Access (Access.create "int"));
+       ];
+       Access.Subscript [
+         Access.Index (+Access (Access.create "str"));
+       ];
      ])
-
 
 let test_union _ =
   assert_equal
@@ -566,8 +587,8 @@ let test_union _ =
 let test_exists _ =
   let top_exists = Type.exists ~predicate:(function | Type.Top -> true | _ -> false) in
 
-  assert_true (top_exists (Type.callable ~annotation:Type.Top));
-  assert_false (top_exists (Type.callable ~annotation:Type.integer));
+  assert_true (top_exists (Type.callable ~annotation:Type.Top ()));
+  assert_false (top_exists (Type.callable ~annotation:Type.integer ()));
   assert_true (top_exists (Type.optional Type.Top));
   assert_false (top_exists (Type.optional Type.integer));
   assert_true (top_exists (Type.Tuple (Type.Unbounded Type.Top)));
@@ -595,10 +616,10 @@ let test_is_generator _ =
 
 
 let test_is_callable _ =
-  assert_true (Type.is_callable (Type.callable ~annotation:Type.integer));
-  assert_true (Type.is_callable (Type.Optional (Type.callable ~annotation:Type.integer)));
+  assert_true (Type.is_callable (Type.callable ~annotation:Type.integer ()));
+  assert_true (Type.is_callable (Type.Optional (Type.callable ~annotation:Type.integer ())));
   assert_true
-    (Type.is_callable (Type.union[Type.string; (Type.callable ~annotation:Type.integer)]));
+    (Type.is_callable (Type.union[Type.string; (Type.callable ~annotation:Type.integer ())]));
   assert_false (Type.is_callable (Type.Primitive (Identifier.create "foo")))
 
 

@@ -423,8 +423,10 @@ let fold ~resolution ~initial ~f access =
               (* Callable invocation. *)
               let resolved =
                 match Annotation.annotation resolved with
-                | Type.Callable { Type.annotation } -> Annotation.create annotation
-                | _ -> resolved
+                | Type.Callable { Type.overrides = [{ Type.annotation }]; _ } ->
+                    Annotation.create annotation
+                | _ ->
+                    resolved
               in
               Result.create
                 ~resolution

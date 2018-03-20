@@ -216,7 +216,7 @@ let handler
           Resolution.annotation =
             Annotation.create_immutable
               ~global:true
-              (Type.callable ~annotation);
+              (Type.callable ~annotation ());
           location;
         }
       in

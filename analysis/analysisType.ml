@@ -7,6 +7,7 @@ open Core
 
 open Ast
 open Expression
+open Pyre
 
 
 type parametric =
@@ -16,9 +17,21 @@ type parametric =
   }
 
 
-and callable =
+and kind =
+  | Anonymous
+  | Named of Access.t
+
+
+and override =
   {
     annotation: t;
+  }
+
+
+and callable =
+  {
+    kind: kind;
+    overrides: override list;
   }
 
 
@@ -132,8 +145,20 @@ let rec pp format annotation =
   match annotation with
   | Bottom ->
       Format.fprintf format "`typing.Any`"
-  | Callable { annotation; _ } ->
-      Format.fprintf format "`typing.Callable[..., %s]`" (without_backtick [annotation])
+  | Callable { kind; overrides } ->
+      let kind =
+        match kind with
+        | Anonymous -> ""
+        | Named name -> Format.asprintf "(%a)" Access.pp name
+      in
+      let overrides =
+        let override { annotation } =
+          Format.asprintf "..., %s" (without_backtick [annotation])
+        in
+        List.map ~f:override overrides
+        |> String.concat ~sep:"; "
+      in
+      Format.fprintf format "`typing.Callable%s[%s]`" kind overrides
   | Object ->
       Format.fprintf format "`typing.Any`"
   | Optional Bottom ->
@@ -214,8 +239,9 @@ let bytes =
   Primitive (Identifier.create "bytes")
 
 
-let callable ~annotation =
-  Callable { annotation }
+let callable ?name ?(overrides = []) ~annotation () =
+  let kind = name >>| (fun name -> Named name) |> Option.value ~default:Anonymous in
+  Callable { kind; overrides = { annotation } :: overrides }
 
 
 let complex =
@@ -390,7 +416,7 @@ let primitive_substitution_map =
     "typing.AsyncIterable", parametric_anys "typing.AsyncIterable" 1;
     "typing.AsyncIterator", parametric_anys "typing.AsyncIterator" 1;
     "typing.Awaitable", parametric_anys "typing.Awaitable" 1;
-    "typing.Callable", callable ~annotation:Top;
+    "typing.Callable", callable ~annotation:Top ();
     "typing.ContextManager", parametric_anys "typing.ContextManager" 1;
     "typing.Coroutine", parametric_anys "typing.Coroutine" 3;
     "typing.DefaultDict", parametric_anys "collections.defaultdict" 2;
@@ -538,7 +564,7 @@ let create ~aliases { Node.value = expression; _ } =
                     | "typing.Callable" ->
                         begin
                           match parameters with
-                          | [ _; annotation ] -> callable ~annotation
+                          | [ _; annotation ] -> callable ~annotation ()
                           | _ -> Top
                         end
 
@@ -635,9 +661,14 @@ let expression annotation =
     in
     match annotation with
     | Bottom -> Access.create "$bottom"
-    | Callable { annotation } ->
-        let subscript = Access.Subscript [index annotation] in
-        Access.create "typing.Callable" @ [subscript]
+    | Callable { overrides; _ } ->
+        let subscripts =
+          let subscript { annotation } =
+            Access.Subscript [index annotation]
+          in
+          List.map ~f:subscript overrides;
+        in
+        Access.create "typing.Callable" @ subscripts
     | Object -> Access.create "object"
     | Optional Bottom -> split (Identifier.create "None")
     | Optional parameter ->
@@ -683,7 +714,9 @@ let rec exists annotation ~predicate =
     true
   else
     match annotation with
-    | Callable { annotation }
+    | Callable { overrides; _ } ->
+        List.exists ~f:(fun { annotation } -> exists annotation ~predicate) overrides
+
     | Optional annotation
     | Tuple (Unbounded annotation) ->
         exists ~predicate annotation
@@ -781,7 +814,8 @@ let is_not_instantiated annotation =
 
 
 let rec variables = function
-  | Callable { annotation }
+  | Callable { overrides; _ } ->
+      List.concat_map ~f:(fun { annotation } -> variables annotation) overrides
   | Optional annotation ->
       variables annotation
   | Tuple (Bounded elements) ->

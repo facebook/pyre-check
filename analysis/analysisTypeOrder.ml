@@ -432,8 +432,12 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
   | _, Type.Tuple _ ->
       false
 
-  | Type.Callable left, Type.Callable right ->
+  | Type.Callable { Type.kind = Type.Anonymous; overrides = [left] },
+    Type.Callable { Type.kind = Type.Anonymous; overrides = [right] } ->
       less_or_equal order ~left:left.Type.annotation ~right:right.Type.annotation
+  | Type.Callable { Type.kind = Type.Named left; _ },
+    Type.Callable { Type.kind = Type.Named right; _ } when Expression.Access.equal left right ->
+      true
   | Type.Callable _, _
   | _, Type.Callable _ ->
       false
@@ -667,8 +671,12 @@ and join ((module Handler: Handler) as order) left right =
         else
           Type.Object
 
-    | Type.Callable left, Type.Callable right ->
-        Type.callable ~annotation:(join order left.Type.annotation right.Type.annotation)
+    | Type.Callable { Type.kind = Type.Anonymous; overrides = [left] },
+      Type.Callable { Type.kind = Type.Anonymous; overrides = [right] } ->
+        Type.callable ~annotation:(join order left.Type.annotation right.Type.annotation) ()
+    | (Type.Callable { Type.kind = Type.Named left; _ } as callable),
+      Type.Callable { Type.kind = Type.Named right; _ } when Expression.Access.equal left right ->
+        callable
     | Type.Callable _, _
     | _, Type.Callable _ ->
         Type.Object
@@ -770,8 +778,12 @@ and meet order left right =
         else
           Type.Bottom
 
-    | Type.Callable left, Type.Callable right ->
-        Type.callable ~annotation:(meet order left.Type.annotation right.Type.annotation)
+    | Type.Callable { Type.kind = Type.Anonymous; overrides = [left] },
+      Type.Callable { Type.kind = Type.Anonymous; overrides = [right] } ->
+        Type.callable ~annotation:(meet order left.Type.annotation right.Type.annotation) ()
+    | (Type.Callable { Type.kind = Type.Named left; _ } as callable),
+      Type.Callable { Type.kind = Type.Named right; _ } when Expression.Access.equal left right ->
+        callable
     | Type.Callable _, _
     | _, Type.Callable _ ->
         Type.Bottom
@@ -837,8 +849,11 @@ and instantiate_parameters
                     parameters = List.map ~f:instantiate_type_variables parameters
                   }
 
-              | Type.Callable { Type.annotation } ->
-                  Type.callable ~annotation:(instantiate_type_variables annotation)
+              | Type.Callable { Type.kind; overrides } ->
+                  let override { Type.annotation } =
+                    { Type.annotation = instantiate_type_variables annotation }
+                  in
+                  Type.Callable { Type.kind; overrides = List.map ~f:override overrides }
 
               | Type.Tuple (Type.Bounded list) ->
                   Type.Tuple (Type.Bounded (List.map ~f:instantiate_type_variables list))

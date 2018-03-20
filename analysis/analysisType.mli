@@ -15,9 +15,21 @@ type parametric =
     parameters: t list;
   }
 
-and callable =
+and kind =
+  | Anonymous
+  | Named of Access.t
+
+
+and override =
   {
     annotation: t;
+  }
+
+
+and callable =
+  {
+    kind: kind;
+    overrides: override list;
   }
 
 and tuple =
@@ -61,7 +73,7 @@ val parametric: string -> t list -> t
 val awaitable: t -> t
 val bool: t
 val bytes: t
-val callable: annotation: t -> t
+val callable: ?name: Access.t -> ?overrides: override list -> annotation: t -> unit -> t
 val complex: t
 val dictionary: key:t -> value:t -> t
 val float: t

@@ -461,7 +461,7 @@ let test_populate _ =
         Resolution.annotation =
           Annotation.create_immutable
             ~global:true
-            (Type.callable ~annotation:Type.Top);
+            (Type.callable ~annotation:Type.Top ());
         location = create_location "test.py" 9 0 10 6;
       });
   assert_equal
@@ -472,7 +472,7 @@ let test_populate _ =
           Annotation.create_immutable
             ~global:true
             ~original:(Some Type.Top)
-            (Type.callable ~annotation:Type.Top);
+            (Type.callable ~annotation:Type.Top ());
         location = create_location "test.py" 6 0 6 15;
       });
 
