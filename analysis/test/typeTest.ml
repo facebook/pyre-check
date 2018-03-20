@@ -453,8 +453,6 @@ let test_create _ =
     (Type.union [Type.string; Type.bytes])
 
 
-
-
 let test_expression _ =
   assert_equal
     (Type.expression (Type.Primitive ~~"foo"))
