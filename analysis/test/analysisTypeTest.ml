@@ -450,7 +450,21 @@ let test_create _ =
   in
   assert_equal
     (Type.create ~aliases (+String "typing.Union[A, str]"))
-    (Type.union [Type.string; Type.bytes])
+    (Type.union [Type.string; Type.bytes]);
+
+  (* Callables. *)
+  assert_equal
+    (Type.create ~aliases (+String "typing.Callable"))
+    (Type.callable ~annotation:Type.Top);
+  assert_equal
+    (Type.create ~aliases (+String "typing.Callable[..., int]"))
+    (Type.callable ~annotation:Type.integer);
+  assert_equal
+    (Type.create ~aliases (+String "typing.Callable[[int, str], int]"))
+    (Type.callable ~annotation:Type.integer);
+  assert_equal
+    (Type.create ~aliases (+String "typing.Callable[int]"))
+    Type.Top
 
 
 let test_expression _ =
@@ -509,6 +523,17 @@ let test_expression _ =
        Access.Subscript [
          Access.Index (+Access (Access.create "int"));
        ];
+     ]);
+
+  (* Callables. *)
+  assert_equal
+    (Type.expression (Type.callable ~annotation:Type.integer))
+    (+Access [
+       identifier "typing";
+       identifier "Callable";
+       Access.Subscript [
+         Access.Index (+Access (Access.create "int"));
+       ];
      ])
 
 
@@ -541,6 +566,8 @@ let test_union _ =
 let test_exists _ =
   let top_exists = Type.exists ~predicate:(function | Type.Top -> true | _ -> false) in
 
+  assert_true (top_exists (Type.callable ~annotation:Type.Top));
+  assert_false (top_exists (Type.callable ~annotation:Type.integer));
   assert_true (top_exists (Type.optional Type.Top));
   assert_false (top_exists (Type.optional Type.integer));
   assert_true (top_exists (Type.Tuple (Type.Unbounded Type.Top)));
@@ -555,7 +582,6 @@ let test_exists _ =
   assert_true (top_exists (Type.union [Type.integer; Type.Top]));
   assert_false (top_exists (Type.union [Type.integer; Type.string]));
 
-  assert_false (top_exists Type.Callable);
   assert_true (top_exists Type.Top);
   assert_false (top_exists Type.Bottom);
   assert_false (top_exists Type.integer);
@@ -569,9 +595,10 @@ let test_is_generator _ =
 
 
 let test_is_callable _ =
-  assert_true (Type.is_callable Type.Callable);
-  assert_true (Type.is_callable (Type.Optional (Type.Callable)));
-  assert_true (Type.is_callable (Type.union[Type.string; Type.Callable]));
+  assert_true (Type.is_callable (Type.callable ~annotation:Type.integer));
+  assert_true (Type.is_callable (Type.Optional (Type.callable ~annotation:Type.integer)));
+  assert_true
+    (Type.is_callable (Type.union[Type.string; (Type.callable ~annotation:Type.integer)]));
   assert_false (Type.is_callable (Type.Primitive (Identifier.create "foo")))
 
 

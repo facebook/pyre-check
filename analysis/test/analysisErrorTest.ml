@@ -478,10 +478,10 @@ let test_filter _ =
   (* Suppress callable errors. *)
   assert_filtered
     ~configuration:default
-    (incompatible_return_type Type.Callable Type.integer);
+    (incompatible_return_type (Type.callable ~annotation:Type.integer) Type.integer);
   assert_filtered
     ~configuration:default
-    (incompatible_return_type Type.integer Type.Callable);
+    (incompatible_return_type Type.integer (Type.callable ~annotation:Type.integer));
 
   (* Suppress return errors in unimplemented defines. *)
   assert_not_filtered

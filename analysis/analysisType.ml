@@ -16,6 +16,12 @@ type parametric =
   }
 
 
+and callable =
+  {
+    annotation: t;
+  }
+
+
 and tuple =
   | Bounded of t list
   | Unbounded of t
@@ -30,7 +36,7 @@ and variable =
 
 and t =
   | Bottom
-  | Callable
+  | Callable of callable
   | Object
   | Optional of t
   | Parametric of parametric
@@ -126,8 +132,8 @@ let rec pp format annotation =
   match annotation with
   | Bottom ->
       Format.fprintf format "`typing.Any`"
-  | Callable ->
-      Format.fprintf format "`typing.Callable`"
+  | Callable { annotation; _ } ->
+      Format.fprintf format "`typing.Callable[..., %s]`" (without_backtick [annotation])
   | Object ->
       Format.fprintf format "`typing.Any`"
   | Optional Bottom ->
@@ -208,8 +214,8 @@ let bytes =
   Primitive (Identifier.create "bytes")
 
 
-let callable =
-  Callable
+let callable ~annotation =
+  Callable { annotation }
 
 
 let complex =
@@ -384,7 +390,7 @@ let primitive_substitution_map =
     "typing.AsyncIterable", parametric_anys "typing.AsyncIterable" 1;
     "typing.AsyncIterator", parametric_anys "typing.AsyncIterator" 1;
     "typing.Awaitable", parametric_anys "typing.Awaitable" 1;
-    "typing.Callable", Callable;
+    "typing.Callable", callable ~annotation:Top;
     "typing.ContextManager", parametric_anys "typing.ContextManager" 1;
     "typing.Coroutine", parametric_anys "typing.Coroutine" 3;
     "typing.DefaultDict", parametric_anys "collections.defaultdict" 2;
@@ -503,7 +509,7 @@ let create ~aliases { Node.value = expression; _ } =
                     | Union elements ->
                         Union (List.map ~f:(resolve visited) elements)
                     | Bottom
-                    | Callable
+                    | Callable _
                     | Object
                     | Primitive _
                     | Top ->
@@ -529,6 +535,13 @@ let create ~aliases { Node.value = expression; _ } =
               | None ->
                   begin
                     match Identifier.show name with
+                    | "typing.Callable" ->
+                        begin
+                          match parameters with
+                          | [ _; annotation ] -> callable ~annotation
+                          | _ -> Top
+                        end
+
                     | "typing.Optional" when List.length parameters = 1 ->
                         optional (List.hd_exn parameters)
 
@@ -622,7 +635,9 @@ let expression annotation =
     in
     match annotation with
     | Bottom -> Access.create "$bottom"
-    | Callable -> Access.create "typing.Callable"
+    | Callable { annotation } ->
+        let subscript = Access.Subscript [index annotation] in
+        Access.create "typing.Callable" @ [subscript]
     | Object -> Access.create "object"
     | Optional Bottom -> split (Identifier.create "None")
     | Optional parameter ->
@@ -668,6 +683,7 @@ let rec exists annotation ~predicate =
     true
   else
     match annotation with
+    | Callable { annotation }
     | Optional annotation
     | Tuple (Unbounded annotation) ->
         exists ~predicate annotation
@@ -678,7 +694,6 @@ let rec exists annotation ~predicate =
     | Union parameters ->
         List.exists ~f:(exists ~predicate) parameters
 
-    | Callable
     | Bottom
     | Top
     | Object
@@ -704,7 +719,7 @@ let is_awaitable = function
 
 
 let is_callable annotation =
-  exists annotation ~predicate:(function | Callable -> true | _ -> false)
+  exists annotation ~predicate:(function | Callable _ -> true | _ -> false)
 
 
 let is_generic = function
@@ -766,6 +781,7 @@ let is_not_instantiated annotation =
 
 
 let rec variables = function
+  | Callable { annotation }
   | Optional annotation ->
       variables annotation
   | Tuple (Bounded elements) ->
@@ -779,7 +795,6 @@ let rec variables = function
   | Union elements ->
       List.concat_map ~f:variables elements
   | Bottom
-  | Callable
   | Object
   | Primitive _
   | Top ->

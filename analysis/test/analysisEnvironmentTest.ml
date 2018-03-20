@@ -458,7 +458,10 @@ let test_populate _ =
     ~printer:(function | Some global -> Resolution.show_global global | None -> "None")
     (global environment (access ["function"]))
     (Some {
-        Resolution.annotation = Annotation.create_immutable ~global:true Type.callable;
+        Resolution.annotation =
+          Annotation.create_immutable
+            ~global:true
+            (Type.callable ~annotation:Type.Top);
         location = create_location "test.py" 9 0 10 6;
       });
   assert_equal
@@ -466,7 +469,10 @@ let test_populate _ =
     (global environment (access ["global_function"]))
     (Some {
         Resolution.annotation =
-          Annotation.create_immutable ~global:true ~original:(Some Type.Top) Type.callable;
+          Annotation.create_immutable
+            ~global:true
+            ~original:(Some Type.Top)
+            (Type.callable ~annotation:Type.Top);
         location = create_location "test.py" 6 0 6 15;
       });
 

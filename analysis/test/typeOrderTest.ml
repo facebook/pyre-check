@@ -650,7 +650,17 @@ let test_join _ =
 
   assert_equal
     (join disconnected_order !"A" !"B")
-    Type.Object
+    Type.Object;
+
+  (* Callables. *)
+  assert_equal
+    ~printer:Type.show
+    (Type.callable ~annotation:(Type.union [Type.integer; Type.string]))
+    (join order (Type.callable ~annotation:Type.integer) (Type.callable ~annotation:Type.string));
+  assert_equal
+    ~printer:Type.show
+    (Type.callable ~annotation:Type.integer)
+    (join order (Type.callable ~annotation:Type.integer) (Type.callable ~annotation:Type.Bottom))
 
 
 let test_meet _ =

@@ -15,6 +15,11 @@ type parametric =
     parameters: t list;
   }
 
+and callable =
+  {
+    annotation: t;
+  }
+
 and tuple =
   | Bounded of t list
   | Unbounded of t
@@ -27,7 +32,7 @@ and variable =
 
 and t =
   | Bottom
-  | Callable
+  | Callable of callable
   | Object
   | Optional of t
   | Parametric of parametric
@@ -56,7 +61,7 @@ val parametric: string -> t list -> t
 val awaitable: t -> t
 val bool: t
 val bytes: t
-val callable: t
+val callable: annotation: t -> t
 val complex: t
 val dictionary: key:t -> value:t -> t
 val float: t

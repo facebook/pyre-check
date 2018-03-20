@@ -195,23 +195,34 @@ let handler
       dependencies;
     }
     ~configuration =
-  let (module DependencyHandler: Dependencies.Handler) =
-    Dependencies.handler dependencies
-  in
+  let (module DependencyHandler: Dependencies.Handler) = Dependencies.handler dependencies in
+  let parse_annotation = Type.create ~aliases:(Hashtbl.find aliases) in
+
   (module struct
     let register_definition
         ~path
         ?name_override
-        ({ Node.location; value = { Define.name; _ }; _ } as definition) =
+        ({ Node.location; value = { Define.name; return_annotation; _  }; _ } as definition) =
       let name = Option.value ~default:name name_override in
       DependencyHandler.add_function_key ~path name;
+
       let annotation =
+        let annotation =
+          return_annotation
+          >>| parse_annotation
+          |> Option.value ~default:Type.Top
+        in
         {
-          Resolution.annotation = Annotation.create_immutable ~global:true Type.callable;
+          Resolution.annotation =
+            Annotation.create_immutable
+              ~global:true
+              (Type.callable ~annotation);
           location;
         }
       in
+      (* TODO(T27138096): this should be registered after building the type order. *)
       Hashtbl.set ~key:name ~data:annotation globals;
+
       let definitions =
         match Hashtbl.find function_definitions name with
         | Some definitions ->
@@ -750,7 +761,7 @@ let register_aliases (module Handler: Handler) sources =
               let primitive, _ = Type.split annotation in
               TypeOrder.contains order primitive
 
-          | Type.Callable ->
+          | Type.Callable _ ->
               true
 
           | Type.Tuple (Type.Bounded annotations)

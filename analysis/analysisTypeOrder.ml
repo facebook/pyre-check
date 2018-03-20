@@ -432,10 +432,10 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
   | _, Type.Tuple _ ->
       false
 
-  | Type.Callable, Type.Callable ->
-      true
-  | Type.Callable, _
-  | _, Type.Callable ->
+  | Type.Callable left, Type.Callable right ->
+      less_or_equal order ~left:left.Type.annotation ~right:right.Type.annotation
+  | Type.Callable _, _
+  | _, Type.Callable _ ->
       false
 
   (* A[...] <= B iff A <= B. *)
@@ -667,10 +667,10 @@ and join ((module Handler: Handler) as order) left right =
         else
           Type.Object
 
-    | Type.Callable, Type.Callable ->
-        Type.Callable
-    | Type.Callable, _
-    | _, Type.Callable ->
+    | Type.Callable left, Type.Callable right ->
+        Type.callable ~annotation:(join order left.Type.annotation right.Type.annotation)
+    | Type.Callable _, _
+    | _, Type.Callable _ ->
         Type.Object
 
     | _ ->
@@ -770,10 +770,10 @@ and meet order left right =
         else
           Type.Bottom
 
-    | Type.Callable, Type.Callable ->
-        Type.Callable
-    | Type.Callable, _
-    | _, Type.Callable ->
+    | Type.Callable left, Type.Callable right ->
+        Type.callable ~annotation:(meet order left.Type.annotation right.Type.annotation)
+    | Type.Callable _, _
+    | _, Type.Callable _ ->
         Type.Bottom
 
     | _ ->
@@ -837,8 +837,8 @@ and instantiate_parameters
                     parameters = List.map ~f:instantiate_type_variables parameters
                   }
 
-              | Type.Callable ->
-                  annotation
+              | Type.Callable { Type.annotation } ->
+                  Type.callable ~annotation:(instantiate_type_variables annotation)
 
               | Type.Tuple (Type.Bounded list) ->
                   Type.Tuple (Type.Bounded (List.map ~f:instantiate_type_variables list))
