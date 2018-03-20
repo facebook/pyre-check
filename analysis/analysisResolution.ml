@@ -26,6 +26,7 @@ type t = {
   order: (module TypeOrder.Handler);
 
   resolve: resolution: t -> Expression.t -> Type.t;
+  resolve_literal: resolution: t -> Expression.t -> Type.t;
   parse_annotation: Expression.t -> Type.t;
 
   global: Access.t -> global option;
@@ -52,6 +53,7 @@ let create
     ~annotations
     ~order
     ~resolve
+    ~resolve_literal
     ~parse_annotation
     ~global
     ~module_definition
@@ -64,6 +66,7 @@ let create
     define = None;
     order;
     resolve;
+    resolve_literal;
     parse_annotation;
     global;
     module_definition;
@@ -96,6 +99,10 @@ let order { order; _ } =
 
 let resolve ({ resolve; _  } as resolution) =
   resolve ~resolution
+
+
+let resolve_literal ({ resolve_literal; _  } as resolution) =
+  resolve_literal ~resolution
 
 
 let parse_annotation { parse_annotation; _ } =

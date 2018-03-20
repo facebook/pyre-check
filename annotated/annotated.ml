@@ -260,3 +260,60 @@ let rec resolve ~resolution expression =
 
   | Expression.Yield _ ->
       Type.yield Type.Object
+
+
+(* In general, python expressions can be self-referential. This non-recursive resolution only checks
+   literals and annotations found in the resolution map, without any resolutions/joins. *)
+let rec resolve_literal ~resolution expression =
+  match Node.value expression with
+  | Access access ->
+      begin
+        match
+          Map.find (Resolution.annotations resolution) access,
+          Resolution.global resolution access with
+        | Some local, _ ->
+            Annotation.annotation local
+        | None, Some { Resolution.annotation; _ } ->
+            Annotation.annotation annotation
+        | None, None ->
+            Type.Object
+      end
+
+  | Await expression ->
+      resolve_literal ~resolution expression
+      |> Type.awaitable_value
+
+  | Bytes _ ->
+      Type.bytes
+
+  | Complex _ ->
+      Type.complex
+
+  | False ->
+      Type.bool
+
+  | Float _ ->
+      Type.float
+
+  | Format _ ->
+      Type.string
+
+  | Integer _ ->
+      Type.integer
+  | Starred _ ->
+      Type.Object
+
+  | String _ ->
+      Type.string
+
+  | True ->
+      Type.bool
+
+  | Tuple elements ->
+      Type.tuple (List.map elements ~f:(resolve_literal ~resolution))
+
+  | Expression.Yield _ ->
+      Type.yield Type.Object
+
+  | _ ->
+      Type.Object

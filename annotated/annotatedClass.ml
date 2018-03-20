@@ -494,7 +494,7 @@ module Attribute = struct
           Annotation.create_immutable
             ~global:true
             ~original:(Some Type.Top)
-            (Resolution.parse_annotation resolution value)
+            (Resolution.resolve_literal resolution value)
       | _ ->
           Annotation.create_immutable ~global:true Type.Top
     in

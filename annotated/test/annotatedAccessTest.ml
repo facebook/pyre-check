@@ -62,10 +62,11 @@ let test_fold _ =
     [
     ];
 
-  let environment =
+  let ((module Handler: Environment.Handler) as environment) =
     populate {|
       class Foo:
         bar : int
+        zod = ""
       foo : Foo
     |}
   in
@@ -117,6 +118,40 @@ let test_fold _ =
     (Expression.Access.create "foo.baz")
     [
       Annotation.create Type.Top, undefined_attribute;
+      Annotation.create_immutable ~global:true (Type.Primitive ~~"Foo"), Access.Element.Value;
+    ];
+
+  let foo_class = Option.value_exn (Handler.class_definition (AnalysisType.primitive "Foo")) in
+  Class.create foo_class |> ignore;
+  let unannotated_attribute =
+    Access.Element.Attribute {
+      Attribute.name = Ast.Expression.Access (Expression.Access.create "zod");
+      parent = Class.create foo_class;
+      annotation = (Annotation.create_immutable ~original:(Some Type.Top) ~global:true Type.string);
+      location = {
+        Location.path = "test.py";
+        start = { Location.line = 4; column = 2 };
+        stop = { Location.line = 4; column = 5 };
+      };
+      value = Some {
+          Node.location = {
+            Location.path = "test.py";
+            start = { Location.line = 3; column = 9 };
+            stop = { Location.line = 3; column = 10 };
+          };
+          value = Ast.Expression.String ""
+        };
+      defined = true;
+      class_attribute = true;
+      async = false;
+    }
+  in
+  assert_fold
+    ~environment
+    (Expression.Access.create "foo.zod")
+    [
+      Annotation.create_immutable ~global:true ~original:(Some Type.Top) Type.string,
+      unannotated_attribute;
       Annotation.create_immutable ~global:true (Type.Primitive ~~"Foo"), Access.Element.Value;
     ]
 

@@ -654,6 +654,7 @@ let resolution
          Annotated.resolve
            ~resolution
            expression)
+    ~resolve_literal:Annotated.resolve_literal
     ~parse_annotation
     ~global:Handler.globals
     ~module_definition:Handler.module_definition
