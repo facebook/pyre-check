@@ -37,5 +37,4 @@ let base_command_line_arguments =
       "-search-path"
       (optional_with_default [] (Arg_type.comma_separated string))
       ~doc:"DIRECTORY1,... Directories containing stubs and external modules to include"
-      ~aliases:["-stub-roots"]
     +> anon (maybe_with_default "." ("source-root" %: string)))
