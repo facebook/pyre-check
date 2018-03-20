@@ -1018,8 +1018,6 @@ let populate
   register_aliases (module Handler) sources;
   Type.TypeCache.enable ();
 
-  List.iter ~f:(register_globals (module Handler)) sources;
-
   List.iter ~f:(connect_type_order ~source_root ~check_dependency_exists (module Handler)) sources;
   TypeOrder.connect_annotations_to_top
     (module Handler.TypeOrderHandler)
@@ -1031,7 +1029,9 @@ let populate
     ~bottom:Type.Bottom
     ~top:Type.Object;
   if check_integrity then
-    TypeOrder.check_integrity (module Handler.TypeOrderHandler)
+    TypeOrder.check_integrity (module Handler.TypeOrderHandler);
+
+  List.iter ~f:(register_globals (module Handler)) sources
 
 
 let infer_implementations (module Handler: Handler) ~protocol =

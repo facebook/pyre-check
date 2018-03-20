@@ -422,6 +422,7 @@ let test_populate _ =
       global_annotated: int
       global_both: int = 1
       global_unknown = x
+      global_function = function
       class Foo():
         pass
       def function():
@@ -458,7 +459,15 @@ let test_populate _ =
     (global environment (access ["function"]))
     (Some {
         Resolution.annotation = Annotation.create_immutable ~global:true Type.callable;
-        location = create_location "test.py" 8 0 9 6;
+        location = create_location "test.py" 9 0 10 6;
+      });
+  assert_equal
+    ~printer:(function | Some global -> Resolution.show_global global | None -> "None")
+    (global environment (access ["global_function"]))
+    (Some {
+        Resolution.annotation =
+          Annotation.create_immutable ~global:true ~original:(Some Type.Top) Type.callable;
+        location = create_location "test.py" 6 0 6 15;
       });
 
   (* Loops. *)
