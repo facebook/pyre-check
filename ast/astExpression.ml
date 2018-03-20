@@ -382,6 +382,26 @@ module Access = struct
     match value with
     | Access access -> access
     | _ -> [Expression expression]
+
+
+  let call_with_name ~access ~name =
+    match access with
+    | Call ({
+        Node.value = ({
+            Record.Call.name = name_node;
+            _;
+          } as call);
+        _;
+      } as call_node) ->
+        Call {
+          call_node with Node.value = {
+            call with Record.Call.name = {
+            name_node with Node.value = Access name;
+          }
+          };
+        }
+    | _ ->
+        access
 end
 
 

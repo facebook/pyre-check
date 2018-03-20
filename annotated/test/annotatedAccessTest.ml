@@ -176,6 +176,7 @@ let test_object_callables _ =
               def __call__(self) -> int: ...
 
             module.call: module.Call = ...
+            module.meta: typing.Type[module.Call] = ...
             module.callable: typing.Callable[..., int] = ...
           |};
       ]
@@ -183,7 +184,10 @@ let test_object_callables _ =
 
   assert_resolved "module.call" (Type.primitive "module.Call");
   assert_resolved "module.call()" Type.integer;
-  assert_resolved "module.callable()" Type.Top
+  assert_resolved "module.callable()" Type.Top;
+
+  assert_resolved "module.meta" (Type.primitive "module.Call" |> Type.meta);
+  assert_resolved "module.meta()" (Type.primitive "module.Call")
 
 
 let () =

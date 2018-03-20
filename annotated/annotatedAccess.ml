@@ -294,44 +294,52 @@ let fold ~resolution ~initial ~f access =
            >>= Module.resolve_export ~head)
           |> Option.value ~default:(lead, head)
         in
-        let lead = qualifier @ [head] in
 
         (* Resolve callables. E.g. `f()` could be either a function or a call to `f.__call__()`. *)
-        let resolved, head =
+        let resolved, qualifier, head =
           match resolved, head with
           | None,
-            Access.Call ({
-                Node.value = ({
-                    Expression.Call.name = { Node.value = Access name; _ } as name_node;
-                    _;
-                  } as call);
+            Access.Call {
+              Node.value = {
+                Expression.Call.name = { Node.value = Access name; _ };
                 _;
-              } as call_node) ->
+              };
+              _;
+            } ->
               (local_annotation (qualifier @ name)
                >>= fun resolved ->
+               let annotation = Annotation.annotation resolved in
                let is_object_call =
-                 let annotation = Annotation.annotation resolved in
                  not (Type.equal annotation Type.Top) &&
-                 not (Type.is_meta annotation) &&
                  not (Resolution.is_function resolution (qualifier @ name))
                in
                if is_object_call then
-                 let head =
-                   Access.Call {
-                     call_node with Node.value = {
-                       call with Expression.Call.name = {
-                       name_node with Node.value = Access (Access.create "__call__");
-                     }
-                     };
-                   }
-                 in
-                 Some (Some resolved, head)
+                 if Type.is_meta annotation then
+                   annotation
+                   |> Type.single_parameter
+                   |> Type.split
+                   |> fst
+                   |> Type.expression
+                   |> (function
+                       | { Node.value = Access access; _ } -> Some (List.rev access)
+                       | _ -> None)
+                   >>= (function
+                       | name :: reversed_qualifier ->
+                           let call = Access.call_with_name ~access:head ~name:[name] in
+                           Some (None, List.rev reversed_qualifier, call)
+                       | _ ->
+                           None)
+                 else
+                   let call = Access.call_with_name ~access:head ~name:(Access.create "__call__") in
+                   Some (Some resolved, qualifier, call)
                else
                  None)
-              |> Option.value ~default:(resolved, head)
+              |> Option.value ~default:(resolved, qualifier, head)
           | _ ->
-              resolved, head
+              resolved, qualifier, head
         in
+
+        let lead = qualifier @ [head] in
 
         let { Result.resolution; resolved; accumulator; abort } =
           match resolved, head with

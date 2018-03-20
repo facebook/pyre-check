@@ -114,6 +114,7 @@ val async_generator_value: t -> t
 val awaitable_value: t -> t
 
 val parameters: t -> t list
+val single_parameter: t -> t
 val split: t -> t * (t list)
 
 val class_variable: t -> t

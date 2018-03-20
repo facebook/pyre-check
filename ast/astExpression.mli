@@ -232,6 +232,8 @@ module Access : sig
   val create_from_identifiers: Identifier.t list -> t
 
   val access: expression_node -> t
+
+  val call_with_name: access: expression_node access -> name: t -> expression_node access
 end
 
 module BinaryOperator : sig

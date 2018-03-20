@@ -925,6 +925,11 @@ let parameters = function
   | _ -> []
 
 
+let single_parameter = function
+  | Parametric { parameters = [parameter]; _ } -> parameter
+  | _ -> failwith "Type does not have single parameter"
+
+
 let split = function
   | Optional parameter ->
       primitive "typing.Optional", [parameter]
