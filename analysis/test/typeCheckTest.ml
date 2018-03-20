@@ -4410,6 +4410,27 @@ let test_check_contextmanager _ =
     ]
 
 
+let test_check_callable_objects _ =
+  assert_type_errors
+    {|
+      class Call:
+        def __call__(self) -> int: ...
+      def foo(call: Call) -> int:
+        return call()
+    |}
+    [];
+  assert_type_errors
+    {|
+      class patch:
+        def __call__(self) -> int: ...
+
+      unittest.mock.patch: patch = ...
+
+      def foo() -> None:
+        unittest.mock.patch()
+        unittest.mock.patch()  # subequent calls should not modify annotation map
+    |}
+    []
 
 
 let assert_infer
@@ -4843,6 +4864,7 @@ let () =
     "check_meta_annotations">::test_check_meta_annotations;
     "check_unbound_variables">::test_check_unbound_variables;
     "check_contextmanager">::test_check_contextmanager;
+    "check_callable_objects">::test_check_callable_objects;
     "infer">::test_infer;
     "infer_backward">::test_infer_backward;
     "recursive_infer">::test_recursive_infer;

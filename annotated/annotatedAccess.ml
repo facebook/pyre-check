@@ -398,9 +398,7 @@ let fold ~resolution ~initial ~f access =
                       ~key:qualifier
                       ~data:{ existing with Annotation.annotation = determined }
                       annotations)
-                |> Option.value
-                  ~default:
-                    (Map.set ~key:qualifier ~data:(Annotation.create determined) annotations)
+                |> Option.value ~default:annotations
               in
               Result.create
                 ~resolution:(Resolution.with_annotations resolution annotations)
