@@ -87,11 +87,17 @@ let expand_string_annotations source =
                         Some access
                     | _ ->
                         raise ParserGenerator.Error
-                  with ParserGenerator.Error ->
-                    begin
-                      Log.debug "Invalid string annotation `%s` at %a" string Location.pp location;
-                      None
-                    end
+                  with
+                  | ParserGenerator.Error
+                  | Failure _ ->
+                      begin
+                        Log.debug
+                          "Invalid string annotation `%s` at %a"
+                          string
+                          Location.pp
+                          location;
+                        None
+                      end
                 in
                 parsed >>| (fun parsed -> { Node.location; value = Access parsed })
             | expression ->
