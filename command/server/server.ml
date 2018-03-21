@@ -353,6 +353,7 @@ let request_handler_thread (
 
 (** Main server either as a daemon or in terminal *)
 let serve (socket, server_configuration) =
+  Log.info "Server running as pid %d" (Pid.to_int (Unix.getpid ()));
   let ({ Configuration.verbose; sections; _ } as configuration) =
     server_configuration.configuration
   in
@@ -461,7 +462,6 @@ let start ({
       pid
     else begin
       setup server_configuration;
-      Log.log ~section:`Server "Server running in terminal as pid %d" (Pid.to_int (Unix.getpid ()));
       serve (socket, server_configuration);
       0
     end
