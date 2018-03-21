@@ -179,9 +179,6 @@ class Configuration:
                 if not self._binary:
                     self._binary = configuration.get('binary')
 
-                # TODO(T25858716): remove this once migration is complete
-                self._search_directories.extend(
-                    configuration.get('additional_stub_roots', []))
                 self._search_directories.extend(
                     configuration.get('search_path', []))
 
