@@ -811,8 +811,7 @@ and instantiate_parameters
      concrete parameters, all occurences of _T1, _T2, etc. in other supertypes
      need to be replaced with the concrete parameter corresponding to the type
      variable. This function takes a target with concrete parameters and its supertypes,
-     and instantiates the supertypes accordingly.
-  *)
+     and instantiates the supertypes accordingly. *)
   let get_instantiated_successors { Target.parameters; _ } successors =
     let generic_parameters =
       let generic_parameters { Target.target; parameters } =
@@ -824,50 +823,18 @@ and instantiate_parameters
       List.find_map ~f:generic_parameters successors
     in
     generic_parameters
-    >>| (fun type_variables ->
-        if List.length type_variables = List.length parameters then
-          let type_variables =
-            List.zip_exn type_variables parameters
+    >>| (fun variables ->
+        if List.length variables = List.length parameters then
+          let constraints =
+            List.zip_exn variables parameters
             |> Type.Map.of_alist_reduce ~f:(fun first _ -> first)
+            |> Map.find
           in
-          let instantiate_parameters {Target.target; parameters } =
-            let rec instantiate_type_variables annotation =
-              match annotation with
-              | Type.Bottom | Type.Object | Type.Top ->
-                  annotation
-
-              | Type.Variable _ | Type.Primitive _ ->
-                  begin
-                    match Map.find type_variables annotation with
-                    | Some instantiated -> instantiated
-                    | None -> annotation
-                  end
-
-              | Type.Parametric { Type.name; parameters } ->
-                  Type.Parametric {
-                    Type.name;
-                    parameters = List.map ~f:instantiate_type_variables parameters
-                  }
-
-              | Type.Callable { Type.kind; overrides } ->
-                  let override { Type.annotation } =
-                    { Type.annotation = instantiate_type_variables annotation }
-                  in
-                  Type.Callable { Type.kind; overrides = List.map ~f:override overrides }
-
-              | Type.Tuple (Type.Bounded list) ->
-                  Type.Tuple (Type.Bounded (List.map ~f:instantiate_type_variables list))
-
-              | Type.Tuple (Type.Unbounded annotation) ->
-                  Type.Tuple (Type.Unbounded (instantiate_type_variables annotation))
-
-              | Type.Union union ->
-                  Type.Union (List.map ~f:instantiate_type_variables union)
-
-              | Type.Optional optional ->
-                  Type.Optional (instantiate_type_variables optional)
-            in
-            { Target.target; parameters = List.map ~f:instantiate_type_variables parameters }
+          let instantiate_parameters { Target.target; parameters } =
+            {
+              Target.target;
+              parameters = List.map ~f:(Type.instantiate ~constraints) parameters;
+            }
           in
           List.map ~f:instantiate_parameters successors
         else

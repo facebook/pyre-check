@@ -1001,6 +1001,11 @@ let instantiate ?(widen = false) annotation ~constraints =
           match annotation with
           | Optional parameter ->
               optional (instantiate parameter)
+          | Callable { kind; overrides } ->
+              let override { annotation } =
+                { annotation = instantiate annotation }
+              in
+              Callable { kind; overrides = List.map ~f:override overrides }
           | Parametric ({ parameters; _ } as parametric) ->
               Parametric {
                 parametric with
