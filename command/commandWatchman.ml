@@ -74,48 +74,52 @@ let set_symlink ~root ~symlinks ~path =
     symlinks
 
 
-let process_response ~root ~watchman_directory ~symlinks response =
+let process_response ~root ~watchman_directory ~symlinks serialized_response =
   let open Yojson.Safe in
-  Log.info "Processing response %s" response;
-  let response = from_string response in
+  let response = from_string serialized_response in
   let keys = Util.keys response in
   if List.mem ~equal:String.equal keys "files" then
-    (* If a list of updated files exists, default to typechecking. *)
-    response
-    |> Util.member "files"
-    |> Util.to_list
-    |> Util.filter_string
-    |> fun files ->
-    Log.info "Updated files: %a" Sexp.pp (sexp_of_list sexp_of_string files);
-    if List.length files > recheck_threshold then
-      begin
-        Log.info "Detected a significant number of file changes, rechecking repository.";
-        Some (build_symlink_map ~root, Protocol.Request.ReinitializeStateRequest)
-      end
-    else
-      let relativize_to_root path =
-        match Path.get_relative_to_root ~root ~path with
-        | None -> path
-        | Some relative -> Path.create_relative ~root ~relative
-      in
-      let paths =
-        List.map ~f:(fun relative -> Path.create_relative ~root:watchman_directory ~relative) files
-        |> List.map ~f:relativize_to_root
-      in
-      let symlinks =
-        List.fold ~init:symlinks ~f:(fun symlinks path -> set_symlink ~symlinks ~root ~path) paths
-      in
-      let files =
-        List.filter_map
-          ~f:(fun path ->
-              Map.find symlinks path
-              >>| File.create)
-          paths
-      in
-      Some
-        (symlinks,
-         Protocol.Request.TypeCheckRequest
-           (Protocol.TypeCheckRequest.create ~update_environment_with:files ~check:files ()))
+    begin
+      Log.info "Processing response %s" serialized_response;
+      (* If a list of updated files exists, default to typechecking. *)
+      response
+      |> Util.member "files"
+      |> Util.to_list
+      |> Util.filter_string
+      |> fun files ->
+      Log.info "Updated files: %a" Sexp.pp (sexp_of_list sexp_of_string files);
+      if List.length files > recheck_threshold then
+        begin
+          Log.info "Detected a significant number of file changes, rechecking repository.";
+          Some (build_symlink_map ~root, Protocol.Request.ReinitializeStateRequest)
+        end
+      else
+        let relativize_to_root path =
+          match Path.get_relative_to_root ~root ~path with
+          | None -> path
+          | Some relative -> Path.create_relative ~root ~relative
+        in
+        let paths =
+          List.map
+            ~f:(fun relative -> Path.create_relative ~root:watchman_directory ~relative)
+            files
+          |> List.map ~f:relativize_to_root
+        in
+        let symlinks =
+          List.fold ~init:symlinks ~f:(fun symlinks path -> set_symlink ~symlinks ~root ~path) paths
+        in
+        let files =
+          List.filter_map
+            ~f:(fun path ->
+                Map.find symlinks path
+                >>| File.create)
+            paths
+        in
+        Some
+          (symlinks,
+           Protocol.Request.TypeCheckRequest
+             (Protocol.TypeCheckRequest.create ~update_environment_with:files ~check:files ()))
+    end
   else
     None
 
