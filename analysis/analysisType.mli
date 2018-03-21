@@ -19,12 +19,10 @@ and kind =
   | Anonymous
   | Named of Access.t
 
-
 and override =
   {
     annotation: t;
   }
-
 
 and callable =
   {
