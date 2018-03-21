@@ -33,6 +33,7 @@ val parameter_annotations_positional
   -> resolution: Resolution.t
   -> Type.t Int.Map.t
 val return_annotation: t -> resolution: Resolution.t -> Type.t
+val callable: t -> resolution: Resolution.t -> Type.t
 
 val parent_definition: t -> resolution: Resolution.t -> Class.t option
 val method_definition: t -> resolution: Resolution.t -> Method.t option

@@ -92,6 +92,10 @@ let return_annotation ({ Define.return_annotation; async; _ } as define) ~resolu
     annotation
 
 
+let callable ({ Define.name; _ } as define) ~resolution =
+  Type.callable ~name ~annotation:(return_annotation define ~resolution) ()
+
+
 let parent_definition { Define.parent; _ } ~resolution =
   match parent with
   | Some parent ->

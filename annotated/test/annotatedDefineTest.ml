@@ -48,6 +48,24 @@ let test_return_annotation _ =
   assert_return_annotation (Some (Type.expression Type.integer)) true (Type.awaitable Type.integer)
 
 
+let test_callable _ =
+  let assert_callable source expected =
+    let resolution = populate source |> resolution in
+    let callable =
+      parse_single_define source
+      |> Define.create
+      |> Define.callable ~resolution
+    in
+    assert_equal ~printer:Type.show expected callable
+  in
+  assert_callable
+    "def foo() -> int: ..."
+    (Type.callable ~name:(Access.create "foo") ~annotation:Type.integer ());
+  assert_callable
+    "async def foo() -> int: ..."
+    (Type.callable ~name:(Access.create "foo") ~annotation:(Type.awaitable Type.integer) ())
+
+
 let test_parent_definition _ =
   let parent_class_definition environment name parent =
     {
@@ -228,6 +246,7 @@ let test_infer_argument_name _ =
 let () =
   "define">:::[
     "return_annotation">::test_return_annotation;
+    "callable">::test_callable;
     "parent_definition">::test_parent_definition;
     "method_definition">::test_method_definition;
     "infer_argument_name">::test_infer_argument_name;
