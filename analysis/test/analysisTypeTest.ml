@@ -468,98 +468,45 @@ let test_create _ =
 
 
 let test_expression _ =
-  assert_equal
-    (Type.expression (Type.Primitive ~~"foo"))
-    (+Access (Access.create "foo"));
+  let assert_expression annotation expression =
+    assert_equal
+      ~printer:Expression.show
+      ~cmp:Expression.equal
+      (Type.expression annotation)
+      (parse_single_expression expression)
+  in
 
-  assert_equal
-    (Type.expression (Type.Primitive ~~"foo.bar"))
-    (+Access (Access.create "foo.bar"));
+  assert_expression (Type.Primitive ~~"foo") "foo";
+  assert_expression (Type.Primitive ~~"foo.bar") "foo.bar";
+  assert_expression Type.Top "$unknown";
 
-  assert_equal
-    (Type.expression (Type.Top))
-    (+Access (Access.create "$unknown"));
+  assert_expression
+    (Type.Parametric {
+        Type.name = ~~"foo.bar";
+        parameters = [Type.Primitive ~~"baz"];
+      })
+    "foo.bar[baz]";
 
-  assert_equal
-    (Type.expression
-       (Type.Parametric {
-           Type.name = ~~"foo.bar";
-           parameters = [Type.Primitive ~~"baz"];
-         }))
-    (+Access [
-       identifier "foo";
-       identifier "bar";
-       Access.Subscript [Access.Index (+Access (Access.create "baz"))];
-     ]);
-
-  assert_equal
-    (Type.expression (Type.Tuple (Type.Bounded [Type.integer; Type.string])))
-    (+Access [
-       identifier "typing";
-       identifier "Tuple";
-       Access.Subscript [
-         Access.Index (+Access (Access.create "int"));
-         Access.Index (+Access (Access.create "str"));
-       ];
-     ]);
-  assert_equal
-    (Type.expression (Type.Tuple (Type.Unbounded Type.integer)))
-    (+Access [
-       identifier "typing";
-       identifier "Tuple";
-       Access.Subscript [
-         Access.Index (+Access (Access.create "int"));
-         Access.Index (+Access (Access.create "..."));
-       ];
-     ]);
-  assert_equal
-    (Type.expression (Type.Parametric {
-         Type.name = ~~"list";
-         parameters = [Type.integer];
-       }))
-    (+Access [
-       identifier "typing";
-       identifier "List";
-       Access.Subscript [
-         Access.Index (+Access (Access.create "int"));
-       ];
-     ]);
+  assert_expression
+    (Type.Tuple (Type.Bounded [Type.integer; Type.string]))
+    "typing.Tuple[int, str]";
+  assert_expression (Type.Tuple (Type.Unbounded Type.integer)) "typing.Tuple[int, ...]";
+  assert_expression
+    (Type.Parametric { Type.name = ~~"list"; parameters = [Type.integer] })
+    "typing.List[int]";
 
   (* Callables. *)
-  assert_equal
-    (Type.expression (Type.callable ~annotation:Type.integer ()))
-    (+Access [
-       identifier "typing";
-       identifier "Callable";
-       Access.Subscript [
-         Access.Index (+Access (Access.create "int"));
-       ];
-     ]);
-  assert_equal
-    (Type.expression (Type.callable ~name:(Access.create "name") ~annotation:Type.integer ()))
-    (+Access [
-       identifier "typing";
-       identifier "Callable";
-       Access.Subscript [
-         Access.Index (+Access (Access.create "int"));
-       ];
-     ]);
-  assert_equal
-    (Type.expression
-       (Type.callable
-          ~overrides:[{ Type.Callable.annotation = Type.string }]
-          ~annotation:Type.integer
-          ()))
-    (+Access [
-       identifier "typing";
-       identifier "Callable";
-       Access.Subscript [
-         Access.Index (+Access (Access.create "int"));
-       ];
-       Access.Subscript [
-         Access.Index (+Access (Access.create "str"));
-       ];
-     ])
+  assert_expression (Type.callable ~annotation:Type.integer ()) "typing.Callable[int]";
+  assert_expression
+    (Type.callable ~name:(Access.create "name") ~annotation:Type.integer ())
+    "typing.Callable[int]";
+  assert_expression
+    (Type.callable
+       ~overrides:[{ Type.Callable.annotation = Type.string }]
+       ~annotation:Type.integer
+       ())
+    "typing.Callable[int][str]"
+
 
 let test_union _ =
   assert_equal
