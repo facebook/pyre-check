@@ -683,7 +683,10 @@ let test_join _ =
     Type.Object
     (join
        order
-       (Type.callable ~overrides:[{ Type.annotation = Type.string }] ~annotation:Type.integer ())
+       (Type.callable
+          ~overrides:[{ Type.Callable.annotation = Type.string }]
+          ~annotation:Type.integer
+          ())
        (Type.callable ~annotation:Type.integer ()))
 
 

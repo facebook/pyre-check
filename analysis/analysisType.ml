@@ -10,28 +10,36 @@ open Expression
 open Pyre
 
 
+module Record = struct
+  module Callable = struct
+    type kind =
+      | Anonymous
+      | Named of Access.t
+
+
+    and 'annotation override =
+      {
+        annotation: 'annotation;
+      }
+
+
+    and 'annotation record =
+      {
+        kind: kind;
+        overrides: ('annotation override) list;
+      }
+    [@@deriving compare, eq, sexp, show, hash]
+  end
+end
+
+
+open Record.Callable
+
+
 type parametric =
   {
     name: Identifier.t;
     parameters: t list;
-  }
-
-
-and kind =
-  | Anonymous
-  | Named of Access.t
-
-
-and override =
-  {
-    annotation: t;
-  }
-
-
-and callable =
-  {
-    kind: kind;
-    overrides: override list;
   }
 
 
@@ -49,7 +57,7 @@ and variable =
 
 and t =
   | Bottom
-  | Callable of callable
+  | Callable of t Record.Callable.record
   | Object
   | Optional of t
   | Parametric of parametric
@@ -58,6 +66,10 @@ and t =
   | Tuple of tuple
   | Union of t list
   | Variable of variable
+[@@deriving compare, eq, sexp, show, hash]
+
+
+type type_t = t
 [@@deriving compare, eq, sexp, show, hash]
 
 
@@ -1071,3 +1083,12 @@ let rec dequalify map annotation =
         constraints = List.map ~f:(dequalify map) constraints;
       }
   | _ -> annotation
+
+
+module Callable = struct
+  include Record.Callable
+
+
+  type t = type_t Record.Callable.record
+  [@@deriving compare, eq, sexp, show, hash]
+end

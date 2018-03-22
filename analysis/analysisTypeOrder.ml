@@ -432,11 +432,12 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
   | _, Type.Tuple _ ->
       false
 
-  | Type.Callable { Type.kind = Type.Anonymous; overrides = [left] },
-    Type.Callable { Type.kind = Type.Anonymous; overrides = [right] } ->
-      less_or_equal order ~left:left.Type.annotation ~right:right.Type.annotation
-  | Type.Callable { Type.kind = Type.Named left; _ },
-    Type.Callable { Type.kind = Type.Named right; _ } when Expression.Access.equal left right ->
+  | Type.Callable { Type.Callable.kind = Type.Callable.Anonymous; overrides = [left] },
+    Type.Callable { Type.Callable.kind = Type.Callable.Anonymous; overrides = [right] } ->
+      less_or_equal order ~left:left.Type.Callable.annotation ~right:right.Type.Callable.annotation
+  | Type.Callable { Type.Callable.kind = Type.Callable.Named left; _ },
+    Type.Callable { Type.Callable.kind = Type.Callable.Named right; _ }
+    when Expression.Access.equal left right ->
       true
   | Type.Callable _, _
   | _, Type.Callable _ ->
@@ -671,11 +672,14 @@ and join ((module Handler: Handler) as order) left right =
         else
           Type.Object
 
-    | Type.Callable { Type.kind = Type.Anonymous; overrides = [left] },
-      Type.Callable { Type.kind = Type.Anonymous; overrides = [right] } ->
-        Type.callable ~annotation:(join order left.Type.annotation right.Type.annotation) ()
-    | (Type.Callable { Type.kind = Type.Named left; _ } as callable),
-      Type.Callable { Type.kind = Type.Named right; _ } when Expression.Access.equal left right ->
+    | Type.Callable { Type.Callable.kind = Type.Callable.Anonymous; overrides = [left] },
+      Type.Callable { Type.Callable.kind = Type.Callable.Anonymous; overrides = [right] } ->
+        Type.callable
+          ~annotation:(join order left.Type.Callable.annotation right.Type.Callable.annotation)
+          ()
+    | (Type.Callable { Type.Callable.kind = Type.Callable.Named left; _ } as callable),
+      Type.Callable { Type.Callable.kind = Type.Callable.Named right; _ }
+      when Expression.Access.equal left right ->
         callable
     | Type.Callable _, _
     | _, Type.Callable _ ->
@@ -778,11 +782,14 @@ and meet order left right =
         else
           Type.Bottom
 
-    | Type.Callable { Type.kind = Type.Anonymous; overrides = [left] },
-      Type.Callable { Type.kind = Type.Anonymous; overrides = [right] } ->
-        Type.callable ~annotation:(meet order left.Type.annotation right.Type.annotation) ()
-    | (Type.Callable { Type.kind = Type.Named left; _ } as callable),
-      Type.Callable { Type.kind = Type.Named right; _ } when Expression.Access.equal left right ->
+    | Type.Callable { Type.Callable.kind = Type.Callable.Anonymous; overrides = [left] },
+      Type.Callable { Type.Callable.kind = Type.Callable.Anonymous; overrides = [right] } ->
+        Type.callable
+          ~annotation:(meet order left.Type.Callable.annotation right.Type.Callable.annotation)
+          ()
+    | (Type.Callable { Type.Callable.kind = Type.Callable.Named left; _ } as callable),
+      Type.Callable { Type.Callable.kind = Type.Callable.Named right; _ }
+      when Expression.Access.equal left right ->
         callable
     | Type.Callable _, _
     | _, Type.Callable _ ->

@@ -9,25 +9,30 @@ open Ast
 open Expression
 
 
+module Record : sig
+  module Callable : sig
+    type kind =
+      | Anonymous
+      | Named of Access.t
+
+    and 'annotation override =
+      {
+        annotation: 'annotation;
+      }
+
+    and 'annotation record =
+      {
+        kind: kind;
+        overrides: ('annotation override) list;
+      }
+    [@@deriving compare, eq, sexp, show, hash]
+  end
+end
+
 type parametric =
   {
     name: Identifier.t;
     parameters: t list;
-  }
-
-and kind =
-  | Anonymous
-  | Named of Access.t
-
-and override =
-  {
-    annotation: t;
-  }
-
-and callable =
-  {
-    kind: kind;
-    overrides: override list;
   }
 
 and tuple =
@@ -42,7 +47,7 @@ and variable =
 
 and t =
   | Bottom
-  | Callable of callable
+  | Callable of t Record.Callable.record
   | Object
   | Optional of t
   | Parametric of parametric
@@ -52,6 +57,8 @@ and t =
   | Union of t list
   | Variable of variable
 [@@deriving compare, eq, sexp, show]
+
+type type_t = t
 
 module Map : Map.S with type Key.t = t
 module Set: Set.S with type Elt.t = t
@@ -71,7 +78,12 @@ val parametric: string -> t list -> t
 val awaitable: t -> t
 val bool: t
 val bytes: t
-val callable: ?name: Access.t -> ?overrides: override list -> annotation: t -> unit -> t
+val callable
+  :  ?name: Access.t
+  -> ?overrides: (t Record.Callable.override) list
+  -> annotation: t
+  -> unit
+  -> t
 val complex: t
 val dictionary: key:t -> value:t -> t
 val float: t
@@ -143,3 +155,10 @@ val instantiate: ?widen: bool -> t -> constraints:(t -> t option) -> t
 
 (* Takes a map generated from Preprocessing.dequalify_map and a type and dequalifies the type *)
 val dequalify: Access.t Access.Map.t -> t -> t
+
+module Callable : sig
+  include module type of struct include Record.Callable end
+
+  type t = type_t Record.Callable.record
+  [@@deriving compare, eq, sexp, show, hash]
+end

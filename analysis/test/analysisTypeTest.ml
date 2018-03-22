@@ -546,7 +546,10 @@ let test_expression _ =
      ]);
   assert_equal
     (Type.expression
-       (Type.callable ~overrides:[{ Type.annotation = Type.string }] ~annotation:Type.integer ()))
+       (Type.callable
+          ~overrides:[{ Type.Callable.annotation = Type.string }]
+          ~annotation:Type.integer
+          ()))
     (+Access [
        identifier "typing";
        identifier "Callable";
