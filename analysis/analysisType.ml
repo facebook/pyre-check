@@ -191,7 +191,7 @@ let rec pp format annotation =
           Format.asprintf "..., %s" (without_backtick [annotation])
         in
         List.map ~f:override overrides
-        |> String.concat ~sep:"; "
+        |> String.concat ~sep:"]["
       in
       Format.fprintf format "`typing.Callable%s[%s]`" kind overrides
   | Object ->
@@ -511,22 +511,47 @@ let create ~aliases { Node.value = expression; _ } =
           match tail with
           | (Access.Identifier _ as access) :: tail ->
               create (access :: reversed_lead) tail
-          | (Access.Subscript subscript) :: [] ->
-              let parameters =
-                let parameter = function
-                  | Access.Index { Node.value = Access access; _ } ->
-                      create [] access
-                  | Access.Index { Node.value = String string; _ } ->
-                      create [] (Access.create string)
-                  | _ ->
+          | (Access.Subscript subscript) :: tail ->
+              begin
+                let name = name reversed_lead in
+                match Identifier.show name with
+                | "typing.Callable" ->
+                    let overrides =
+                      let subscripts =
+                        let extract_subscript element =
+                          match element with
+                          | Access.Subscript subscript -> Some subscript
+                          | _ -> None
+                        in
+                        subscript :: (List.filter_map ~f:extract_subscript tail)
+                      in
+                      let override subscript =
+                        match subscript with
+                        | [_; Access.Index { Node.value = Access access; _ }] ->
+                            Some { annotation = create [] access; parameters = Parameter.Undefined }
+                        | _ ->
+                            None
+                      in
+                      List.filter_map ~f:override subscripts
+                    in
+                    if not (List.is_empty overrides) then
+                      Callable { kind = Anonymous; overrides }
+                    else
                       Top
-                in
-                List.map ~f:parameter subscript
-              in
-              Parametric {
-                name = name reversed_lead;
-                parameters;
-              }
+                | _ ->
+                    let parameters =
+                      let parameter = function
+                        | Access.Index { Node.value = Access access; _ } ->
+                            create [] access
+                        | Access.Index { Node.value = String string; _ } ->
+                            create [] (Access.create string)
+                        | _ ->
+                            Top
+                      in
+                      List.map ~f:parameter subscript
+                    in
+                    Parametric { name; parameters }
+              end
           | [] ->
               let name = name reversed_lead in
               if Identifier.show name = "None" then
@@ -600,14 +625,6 @@ let create ~aliases { Node.value = expression; _ } =
               | None ->
                   begin
                     match Identifier.show name with
-                    | "typing.Callable" ->
-                        begin
-                          match parameters with
-                          | [ _; annotation ] ->
-                              callable ~annotation ()
-                          | _ -> Top
-                        end
-
                     | "typing.Optional" when List.length parameters = 1 ->
                         optional (List.hd_exn parameters)
 

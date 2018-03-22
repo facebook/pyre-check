@@ -25,8 +25,8 @@ let test_create _ =
     assert_equal
       ~printer:Type.show
       ~cmp:Type.equal
-      (Type.create ~aliases (parse_single_expression source))
       annotation
+      (Type.create ~aliases (parse_single_expression source))
   in
 
   assert_create "foo" (Type.Primitive ~~"foo");
@@ -154,6 +154,17 @@ let test_create _ =
   (* Callables. *)
   assert_create "typing.Callable" (Type.callable ~annotation:Type.Top ());
   assert_create "typing.Callable[..., int]" (Type.callable ~annotation:Type.integer ());
+  assert_create
+    "typing.Callable[..., int][..., str]"
+    (Type.callable
+       ~overrides:[
+         {
+           Type.Callable.annotation = Type.string;
+           parameters = Type.Callable.Parameter.Undefined;
+         };
+       ]
+       ~annotation:Type.integer
+       ());
   assert_create "typing.Callable[[int, str], int]" (Type.callable ~annotation:Type.integer ());
   assert_create "typing.Callable[int]" Type.Top
 
