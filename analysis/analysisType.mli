@@ -95,6 +95,7 @@ val serialize: t -> string
 
 val primitive: string -> t
 val parametric: string -> t list -> t
+val variable: ?constraints: t list -> string -> t
 
 val awaitable: t -> t
 val bool: t

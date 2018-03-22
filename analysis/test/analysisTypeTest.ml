@@ -21,379 +21,88 @@ let variable name =
 
 
 let test_create _ =
-  let aliases _ = None in
+  let assert_create ?(aliases = (fun _ -> None)) source annotation =
+    assert_equal
+      ~printer:Type.show
+      ~cmp:Type.equal
+      (Type.create ~aliases (parse_single_expression source))
+      annotation
+  in
 
-  assert_equal
-    (Type.create ~aliases (+Access []))
-    (Type.Primitive ~~"");
-  assert_equal
-    (Type.create ~aliases (+Access (Access.create "foo")))
-    (Type.Primitive ~~"foo");
-  assert_equal
-    (Type.create ~aliases (+Access (Access.create "foo.bar")))
-    (Type.Primitive ~~"foo.bar");
+  assert_create "foo" (Type.Primitive ~~"foo");
+  assert_create "foo.bar" (Type.Primitive ~~"foo.bar");
 
-  assert_equal
-    (Type.create ~aliases (+Access (Access.create "object")))
-    Type.Object;
+  assert_create "object" Type.Object;
+  assert_create "$unknown" Type.Top;
 
-  assert_equal
-    (Type.create ~aliases (+Access (Access.create "$unknown")))
-    Type.Top;
-
-  assert_equal
-    (Type.create
-       ~aliases
-       (+Access [
-          identifier "foo";
-          Access.Subscript [Access.Index !"bar"];
-        ]))
-    (Type.Parametric {
-        Type.name = ~~"foo";
-        parameters = [Type.Primitive ~~"bar"];
-      });
-  assert_equal
-    (Type.create
-       ~aliases
-       (+Access [
-          identifier "foo";
-          Access.Subscript [Access.Index !"bar"; Access.Index !"baz"];
-        ]))
-    (Type.Parametric {
-        Type.name = ~~"foo";
-        parameters = [
-          Type.Primitive ~~"bar";
-          Type.Primitive ~~"baz";
-        ];
-      });
-  assert_equal
-    (Type.create
-       ~aliases
-       (+Access [
-          identifier "foo";
-          Access.Subscript [
-            Access.Slice {
-              Access.lower = None;
-              upper = None;
-              step = None;
-            };
-          ];
-        ]))
-    (Type.Parametric {
-        Type.name = ~~"foo";
-        parameters = [Type.Top];
-      });
+  assert_create "foo[bar]" (Type.parametric "foo" [Type.primitive "bar"]);
+  assert_create
+    "foo[bar, baz]"
+    (Type.parametric "foo" [Type.primitive "bar"; Type.primitive "baz"]);
 
   (* Check renaming. *)
-  assert_equal
-    (Type.create
-       ~aliases
-       (+Access [
-          identifier "typing";
-          identifier "List";
-          Access.Subscript [Access.Index !"int"];
-        ]))
-    (Type.list Type.integer);
-  assert_equal
-    (Type.create ~aliases (+String "typing.List"))
-    (Type.list Type.Object);
-  assert_equal
-    (Type.create
-       ~aliases
-       (+Access [
-          identifier "typing";
-          identifier "DefaultDict";
-          Access.Subscript [
-            Access.Index !"int";
-            Access.Index !"str";
-          ];
-        ]))
+  assert_create "typing.List[int]" (Type.list Type.integer);
+  assert_create "typing.List" (Type.list Type.Object);
+  assert_create
+    "typing.DefaultDict[int, str]"
     (Type.parametric "collections.defaultdict" [Type.integer; Type.string]);
-  assert_equal
-    (Type.create
-       ~aliases
-       (+Access [
-          identifier "typing";
-          identifier "Dict";
-          Access.Subscript [
-            Access.Index !"int";
-            Access.Index !"str";
-          ];
-        ]))
+  assert_create
+    "typing.Dict[int, str]"
     (Type.dictionary ~key:Type.integer ~value:Type.string);
 
-  assert_equal
-    (Type.create
-       ~aliases
-       (+Access [
-          identifier "typing";
-          identifier "Tuple";
-          Access.Subscript [
-            Access.Index !"int";
-            Access.Index !"str";
-          ];
-        ]))
-    (Type.Tuple (Type.Bounded [Type.integer; Type.string]));
-  assert_equal
-    (Type.create
-       ~aliases
-       (+Access [
-          identifier "typing";
-          identifier "Tuple";
-          Access.Subscript [
-            Access.Index !"int";
-            Access.Index !"...";
-          ];
-        ]))
-    (Type.Tuple (Type.Unbounded Type.integer));
+  assert_create "typing.Tuple[int, str]" (Type.tuple [Type.integer; Type.string]);
+  assert_create "typing.Tuple[int, ...]" (Type.Tuple (Type.Unbounded Type.integer));
 
-  assert_equal
-    ~printer:(Format.asprintf "%a" Type.pp)
-    (Type.create
-       ~aliases
-       (+Access [
-          identifier "typing";
-          identifier "Any";
-        ]))
-    (Type.Object);
-  assert_equal
-    (Type.create
-       ~aliases
-       (+Access [
-          identifier "typing";
-          identifier "Optional";
-          Access.Subscript [Access.Index !"int"];
-        ]))
-    (Type.Optional Type.integer);
-  assert_equal
-    (Type.create
-       ~aliases
-       (+Access [
-          identifier "typing";
-          identifier "Set";
-          Access.Subscript [Access.Index !"int"];
-        ]))
-    (Type.set Type.integer);
-  assert_equal
-    (Type.create
-       ~aliases
-       (+Access [
-          identifier "typing";
-          identifier "Union";
-          Access.Subscript [Access.Index !"int"; Access.Index !"str"];
-        ]))
-    (Type.Union [Type.integer; Type.string]);
-  assert_equal
-    (Type.create
-       ~aliases
-       (+Access [
-          identifier "typing";
-          identifier "Union";
-          Access.Subscript [Access.Index !"int"; Access.Index !"typing.Any"];
-        ]))
-    (Type.Object);
-  assert_equal
-    ~printer:Type.show
-    (Type.create
-       ~aliases
-       (+Access [
-          identifier "typing";
-          identifier "Union";
-          Access.Subscript [
-            Access.Index !"int";
-            Access.Index (+Access [
-                identifier "typing";
-                identifier "Optional";
-                Access.Subscript [Access.Index !"$bottom"];
-              ]);
-          ];
-        ]))
-    (Type.Optional Type.integer);
+  assert_create "typing.Any" Type.Object;
+  assert_create "typing.Optional[int]" (Type.optional Type.integer);
+  assert_create "typing.Set[int]" (Type.set Type.integer);
+
+  assert_create "typing.Union[int, str]" (Type.union [Type.integer; Type.string]);
+  assert_create "typing.Union[int, typing.Any]" Type.Object;
+  assert_create "typing.Union[int, typing.Optional[$bottom]]" (Type.optional Type.integer);
 
   (* Nested renaming. *)
-  assert_equal
-    (Type.create
-       ~aliases
-       (+Access [
-          identifier "typing";
-          identifier "Set";
-          Access.Subscript [Access.Index !"typing.Any"];
-        ]))
-    (Type.set Type.Object);
-  assert_equal
-    (Type.create
-       ~aliases
-       (+Access [
-          identifier "typing";
-          identifier "Dict";
-          Access.Subscript [Access.Index !"str"; Access.Index !"typing.Any"];
-        ]))
+  assert_create "typing.Set[typing.Any]" (Type.set Type.Object);
+  assert_create
+    "typing.Dict[str, typing.Any]"
     (Type.dictionary ~key:Type.string ~value:Type.Object);
 
   (* Renaming numbers (PEP 3141). *)
-  assert_equal
-    (Type.create ~aliases (+Access (Access.create "numbers.Number")))
-    Type.complex;
-  assert_equal
-    (Type.create ~aliases (+Access (Access.create "numbers.Complex")))
-    Type.complex;
-  assert_equal
-    (Type.create ~aliases (+Access (Access.create "numbers.Real")))
-    Type.float;
-  assert_equal
-    (Type.create ~aliases (+Access (Access.create "numbers.Integral")))
-    Type.integer;
+  assert_create "numbers.Number" Type.complex;
+  assert_create "numbers.Complex" Type.complex;
+  assert_create "numbers.Real" Type.float;
+  assert_create "numbers.Integral" Type.integer;
 
   (* Check variables. *)
-  assert_equal
-    ~printer:(Format.asprintf "%a" Type.pp)
-    (Type.create
-       ~aliases
-       (+Access [
-          identifier "typing";
-          Access.Call (+{
-              Call.name = +Access [identifier "TypeVar"];
-              arguments = [
-                { Argument.name = None; value = +String "_T" }
-              ];
-            });
-        ]))
-    (variable ~~"_T");
-
-  (* Check that type variables are correctly created when they have multiple arguments *)
-  assert_equal
-    ~printer:(Format.asprintf "%a" Type.pp)
-    (Type.create
-       ~aliases
-       (+Access [
-          identifier "typing";
-          Access.Call (+{
-              Call.name = +Access [identifier "TypeVar"];
-              arguments = [
-                { Argument.name = None; value = +String "_T" };
-                { Argument.name = Some ~~"covariant"; value = +True };
-              ];
-            });
-        ]))
-    (variable ~~"_T");
-
-  (* Check that type variables with value restrictions are created correctly.
-   * See http://mypy.readthedocs.io/en/latest/generics.html#type-variables-with-value-restriction *)
-  assert_equal
-    ~printer:(Format.asprintf "%a" Type.pp)
-    (Type.create
-       ~aliases
-       (+Access [
-          identifier "typing";
-          Access.Call (+{
-              Call.name = !"TypeVar";
-              arguments = [
-                { Argument.name = None; value = +String "_T" };
-                {
-                  Argument.name = None;
-                  value = +Access (Access.create "numbers.Integral");
-                }
-              ];
-            });
-        ]))
-    (Type.Variable { Type.variable =  ~~"_T"; constraints = [Type.integer] });
-
-  assert_equal
-    ~printer:(Format.asprintf "%a" Type.pp)
-    (Type.create
-       ~aliases
-       (+Access [
-          identifier "typing";
-          Access.Call (+{
-              Call.name = !"TypeVar";
-              arguments = [
-                { Argument.name = None; value = +String "_T" };
-                {
-                  Argument.name = Some ~~"name";
-                  value = +Access (Access.create "numbers.Integral")
-                }
-              ];
-            });
-        ]))
-    (variable ~~"_T");
-
-  assert_equal
-    ~printer:(Format.asprintf "%a" Type.pp)
-    (Type.create
-       ~aliases
-       (+Access [
-          identifier "typing";
-          Access.Call (+{
-              Call.name = +Access [identifier "TypeVar"];
-              arguments = [
-                { Argument.name = None; value = +String "_T" };
-                {
-                  Argument.name = None;
-                  value = +Access (Access.create "numbers.Integral");
-                };
-                {
-                  Argument.name = Some ~~"name";
-                  value = +Access (Access.create "numbers.Real");
-                }
-              ];
-            });
-        ]))
-    (Type.Variable { Type.variable =  ~~"_T"; constraints = [Type.integer] });
+  assert_create "typing.TypeVar('_T')" (Type.variable "_T");
+  assert_create "typing.TypeVar('_T', covariant=True)" (Type.variable "_T");
+  assert_create
+    "typing.TypeVar('_T', numbers.Integral)"
+    (Type.variable ~constraints:[Type.integer] "_T");
+  assert_create
+    "typing.TypeVar('_T', name=numbers.Integral)"
+    (Type.variable "_T");
+  assert_create
+    "typing.TypeVar('_T', numbers.Integral, name=numbers.Real)"
+    (Type.variable ~constraints:[Type.integer] "_T");
 
   (* Check that type aliases are resolved. *)
   let aliases =
     Type.Table.of_alist_exn [
       Type.Primitive ~~"_T",
       variable ~~"_T";
-    ] in
-  let aliases = Type.Table.find aliases in
-  assert_equal
-    ~printer:(Format.asprintf "%a" Type.pp)
-    (Type.create ~aliases (+Access (Access.create "_T")))
-    (variable ~~"_T");
-  assert_equal
-    ~printer:(Format.asprintf "%a" Type.pp)
-    (Type.create
-       ~aliases
-       (+Access [
-          identifier "foo";
-          Access.Subscript [Access.Index !"_T"];
-        ]))
-    (Type.Parametric {
-        Type.name = ~~"foo";
-        parameters = [variable ~~"_T"];
-      });
+    ]
+    |> Type.Table.find
+  in
+  assert_create ~aliases "_T" (Type.variable "_T");
+  assert_create ~aliases "foo[_T]" (Type.parametric "foo" [Type.variable "_T"]);
 
   (* String literals. *)
-  assert_equal
-    (Type.create ~aliases (+String "foo"))
-    (Type.Primitive ~~"foo");
-  assert_equal
-    (Type.create ~aliases (+String "foo.bar"))
-    (Type.Primitive ~~"foo.bar");
-
-  assert_equal
-    ~printer:Type.show
-    (Type.create
-       ~aliases
-       (+Access [
-          identifier "foo";
-          Access.Subscript [Access.Index (+String "bar")]]))
-    (Type.Parametric {
-        Type.name = ~~"foo";
-        parameters = [Type.Primitive ~~"bar"]
-      });
-
-  assert_equal
-    (Type.create
-       ~aliases
-       (+String "Type[str]"))
-    (Type.parametric "Type" [Type.string]);
-  assert_equal
-    (Type.create
-       ~aliases
-       (+String "Type[[[]str]"))
-    (Type.Primitive ~~"Type[[[]str]");
+  assert_create "'foo'" (Type.primitive "foo");
+  assert_create "'foo.bar'" (Type.primitive "foo.bar");
+  assert_create "foo['bar']" (Type.parametric "foo" [Type.primitive "bar"]);
+  assert_create "'Type[str]'" (Type.parametric "Type" [Type.primitive "str"]);
+  assert_create "'Type[[[]str]'" (Type.primitive "Type[[[]str]");
 
   (* Recursive aliasing. *)
   let aliases = function
@@ -404,29 +113,23 @@ let test_create _ =
     | _ ->
         None
   in
-  assert_equal
-    (Type.create ~aliases (+String "A"))
-    (Type.Primitive ~~"C");
+  assert_create ~aliases "A" (Type.primitive "C");
 
   (* Recursion with loop. *)
   let aliases = function
     | Type.Primitive name when Identifier.show name = "A" ->
-        Some (Type.Primitive ~~"A")
+        Some (Type.primitive "A")
     | _ ->
         None
   in
-  assert_equal
-    (Type.create ~aliases (+String "A"))
-    (Type.Primitive ~~"A");
+  assert_create ~aliases "A" (Type.primitive "A");
   let aliases = function
     | Type.Primitive name when Identifier.show name = "A" ->
-        Some (Type.list (Type.Primitive ~~"A"))
+        Some (Type.list (Type.primitive "A"))
     | _ ->
         None
   in
-  assert_equal
-    (Type.create ~aliases (+String "A"))
-    (Type.list (Type.list (Type.Primitive ~~"A")));
+  assert_create ~aliases "A" (Type.list (Type.list (Type.primitive "A")));
 
   (* Nested aliasing. *)
   let aliases = function
@@ -437,9 +140,7 @@ let test_create _ =
     | _ ->
         None
   in
-  assert_equal
-    (Type.create ~aliases (+String "A"))
-    (Type.list (Type.Primitive ~~"C"));
+  assert_create ~aliases "A" (Type.list (Type.primitive "C"));
 
   (* Aliases with Unions. *)
   let aliases = function
@@ -448,23 +149,13 @@ let test_create _ =
     | _ ->
         None
   in
-  assert_equal
-    (Type.create ~aliases (+String "typing.Union[A, str]"))
-    (Type.union [Type.string; Type.bytes]);
+  assert_create ~aliases "typing.Union[A, str]" (Type.union [Type.string; Type.bytes]);
 
   (* Callables. *)
-  assert_equal
-    (Type.create ~aliases (+String "typing.Callable"))
-    (Type.callable ~annotation:Type.Top ());
-  assert_equal
-    (Type.create ~aliases (+String "typing.Callable[..., int]"))
-    (Type.callable ~annotation:Type.integer ());
-  assert_equal
-    (Type.create ~aliases (+String "typing.Callable[[int, str], int]"))
-    (Type.callable ~annotation:Type.integer ());
-  assert_equal
-    (Type.create ~aliases (+String "typing.Callable[int]"))
-    Type.Top
+  assert_create "typing.Callable" (Type.callable ~annotation:Type.Top ());
+  assert_create "typing.Callable[..., int]" (Type.callable ~annotation:Type.integer ());
+  assert_create "typing.Callable[[int, str], int]" (Type.callable ~annotation:Type.integer ());
+  assert_create "typing.Callable[int]" Type.Top
 
 
 let test_expression _ =

@@ -259,6 +259,10 @@ let parametric name parameters =
   Parametric { name = Identifier.create name; parameters }
 
 
+let variable ?(constraints = []) name =
+  Variable { variable = Identifier.create name; constraints }
+
+
 let awaitable parameter =
   Parametric {
     name = Identifier.create "typing.Awaitable";
@@ -599,7 +603,8 @@ let create ~aliases { Node.value = expression; _ } =
                     | "typing.Callable" ->
                         begin
                           match parameters with
-                          | [ _; annotation ] -> callable ~annotation ()
+                          | [ _; annotation ] ->
+                              callable ~annotation ()
                           | _ -> Top
                         end
 
