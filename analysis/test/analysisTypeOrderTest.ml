@@ -8,6 +8,7 @@ open OUnit2
 
 open Ast
 open Analysis
+open Expression
 open Test
 open TypeOrder
 
@@ -684,10 +685,110 @@ let test_join _ =
     (join
        order
        (Type.callable
-          ~overrides:[{ Type.Callable.annotation = Type.string }]
+          ~overrides:[
+            {
+              Type.Callable.annotation = Type.string;
+              parameters = Type.Callable.Parameter.Undefined;
+            };
+          ]
           ~annotation:Type.integer
           ())
-       (Type.callable ~annotation:Type.integer ()))
+       (Type.callable ~annotation:Type.integer ()));
+
+  (* Identical. *)
+  assert_equal
+    (Type.callable
+       ~parameters:(Type.Callable.Parameter.Defined [
+           Type.Callable.Parameter.Named {
+             Type.Callable.Parameter.name = Access.create "a";
+             annotation = Type.integer;
+           };
+           Type.Callable.Parameter.Named {
+             Type.Callable.Parameter.name = Access.create "b";
+             annotation = Type.string;
+           };
+         ])
+       ~annotation:Type.integer
+       ())
+    (join
+       order
+       (Type.callable
+          ~parameters:(Type.Callable.Parameter.Defined [
+              Type.Callable.Parameter.Named {
+                Type.Callable.Parameter.name = Access.create "a";
+                annotation = Type.integer;
+              };
+              Type.Callable.Parameter.Named {
+                Type.Callable.Parameter.name = Access.create "b";
+                annotation = Type.string;
+              };
+            ])
+          ~annotation:Type.integer
+          ())
+       (Type.callable
+          ~parameters:(Type.Callable.Parameter.Defined [
+              Type.Callable.Parameter.Named {
+                Type.Callable.Parameter.name = Access.create "a";
+                annotation = Type.integer;
+              };
+              Type.Callable.Parameter.Named {
+                Type.Callable.Parameter.name = Access.create "b";
+                annotation = Type.string;
+              };
+            ])
+          ~annotation:Type.integer
+          ()));
+
+  (* Incompatible callables join to Object. *)
+  assert_equal
+    Type.Object
+    (join
+       order
+       (Type.callable
+          ~parameters:(Type.Callable.Parameter.Defined [
+              Type.Callable.Parameter.Named {
+                Type.Callable.Parameter.name = Access.create "a";
+                annotation = Type.integer;
+              };
+            ])
+          ~annotation:Type.integer
+          ())
+       (Type.callable
+          ~parameters:(Type.Callable.Parameter.Defined [])
+          ~annotation:Type.integer
+          ()));
+
+  (* Behavioral subtyping is preserved. *)
+  assert_equal
+    (Type.callable
+       ~parameters:(Type.Callable.Parameter.Defined [
+           Type.Callable.Parameter.Named {
+             Type.Callable.Parameter.name = Access.create "a";
+             annotation = Type.Bottom;
+           };
+         ])
+       ~annotation:Type.integer
+       ())
+    (join
+       order
+       (Type.callable
+          ~parameters:(Type.Callable.Parameter.Defined [
+              Type.Callable.Parameter.Named {
+                Type.Callable.Parameter.name = Access.create "a";
+                annotation = Type.integer;
+              };
+            ])
+          ~annotation:Type.integer
+          ())
+       (Type.callable
+          ~parameters:(Type.Callable.Parameter.Defined [
+              Type.Callable.Parameter.Named {
+                Type.Callable.Parameter.name = Access.create "a";
+                annotation = Type.string;
+              };
+            ])
+          ~annotation:Type.Bottom
+          ()))
 
 
 let test_meet _ =

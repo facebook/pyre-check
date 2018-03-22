@@ -496,16 +496,57 @@ let test_expression _ =
     "typing.List[int]";
 
   (* Callables. *)
-  assert_expression (Type.callable ~annotation:Type.integer ()) "typing.Callable[int]";
+  assert_expression (Type.callable ~annotation:Type.integer ()) "typing.Callable[..., int]";
   assert_expression
     (Type.callable ~name:(Access.create "name") ~annotation:Type.integer ())
-    "typing.Callable[int]";
+    "typing.Callable[..., int]";
+
   assert_expression
     (Type.callable
-       ~overrides:[{ Type.Callable.annotation = Type.string }]
+       ~overrides:[
+         {
+           Type.Callable.annotation = Type.string;
+           parameters = Type.Callable.Parameter.Undefined;
+         };
+       ]
        ~annotation:Type.integer
        ())
-    "typing.Callable[int][str]"
+    "typing.Callable[..., int][..., str]";
+
+  assert_expression
+    (Type.callable
+       ~parameters:(Type.Callable.Parameter.Defined [
+           Type.Callable.Parameter.Anonymous Type.integer;
+           Type.Callable.Parameter.Anonymous Type.string;
+         ])
+       ~annotation:Type.integer
+       ())
+    "typing.Callable[[int, str], int]";
+  assert_expression
+    (Type.callable
+       ~parameters:(Type.Callable.Parameter.Defined [
+           Type.Callable.Parameter.Named {
+             Type.Callable.Parameter.name = Access.create "a";
+             annotation = Type.integer;
+           };
+           Type.Callable.Parameter.Named {
+             Type.Callable.Parameter.name = Access.create "b";
+             annotation = Type.string;
+           };
+         ])
+       ~annotation:Type.integer
+       ())
+    "typing.Callable[[Named(a, int), Named(b, str)], int]";
+  assert_expression
+    (Type.callable
+       ~parameters:(Type.Callable.Parameter.Defined [
+           Type.Callable.Parameter.Anonymous Type.integer;
+           Type.Callable.Parameter.Variable (Access.create "variable");
+           Type.Callable.Parameter.Keywords (Access.create "keywords");
+         ])
+       ~annotation:Type.integer
+       ())
+    "typing.Callable[[int, Variable(variable), Keywords(keywords)], int]"
 
 
 let test_union _ =

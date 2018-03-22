@@ -11,6 +11,25 @@ open Expression
 
 module Record : sig
   module Callable : sig
+    module Parameter : sig
+      type 'annotation named =
+        {
+          name: Access.t;
+          annotation: 'annotation;
+        }
+
+      and 'annotation parameter =
+        | Anonymous of 'annotation
+        | Named of 'annotation named
+        | Variable of Access.t
+        | Keywords of Access.t
+
+      and 'annotation t =
+        | Defined of ('annotation parameter) list
+        | Undefined
+      [@@deriving compare, eq, sexp, show, hash]
+    end
+
     type kind =
       | Anonymous
       | Named of Access.t
@@ -18,6 +37,7 @@ module Record : sig
     and 'annotation override =
       {
         annotation: 'annotation;
+        parameters: 'annotation Parameter.t;
       }
 
     and 'annotation record =
@@ -59,6 +79,7 @@ and t =
 [@@deriving compare, eq, sexp, show]
 
 type type_t = t
+[@@deriving compare, eq, sexp, show]
 
 module Map : Map.S with type Key.t = t
 module Set: Set.S with type Elt.t = t
@@ -81,6 +102,7 @@ val bytes: t
 val callable
   :  ?name: Access.t
   -> ?overrides: (t Record.Callable.override) list
+  -> ?parameters: t Record.Callable.Parameter.t
   -> annotation: t
   -> unit
   -> t

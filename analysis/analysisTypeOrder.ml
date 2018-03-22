@@ -434,7 +434,43 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
 
   | Type.Callable { Type.Callable.kind = Type.Callable.Anonymous; overrides = [left] },
     Type.Callable { Type.Callable.kind = Type.Callable.Anonymous; overrides = [right] } ->
-      less_or_equal order ~left:left.Type.Callable.annotation ~right:right.Type.Callable.annotation
+      let open Type.Callable in
+      let parameters_less_or_equal () =
+        match left.parameters, right.parameters with
+        | Parameter.Undefined, Parameter.Undefined ->
+            true
+        | Parameter.Defined left, Parameter.Defined right ->
+            begin
+              try
+                let parameter_less_or_equal left right =
+                  match left, right with
+                  | Parameter.Anonymous left, Parameter.Anonymous right ->
+                      (* The inversion here follows from the substitution principle. *)
+                      less_or_equal order ~left:right ~right:left
+                  | Parameter.Named left, Parameter.Named right
+                    when Expression.Access.equal left.Parameter.name right.Parameter.name ->
+                      less_or_equal
+                        order
+                        ~left:right.Parameter.annotation
+                        ~right:left.Parameter.annotation;
+                  | Parameter.Variable left, Parameter.Variable right
+                    when Expression.Access.equal left right ->
+                      true
+                  | Parameter.Keywords left, Parameter.Keywords right
+                    when Expression.Access.equal left right ->
+                      true
+                  | _ ->
+                      false
+                in
+                List.for_all2_exn ~f:parameter_less_or_equal left right
+              with _ ->
+                false
+            end
+        | _ ->
+            false
+      in
+      less_or_equal order ~left:left.annotation ~right:right.annotation &&
+      parameters_less_or_equal ()
   | Type.Callable { Type.Callable.kind = Type.Callable.Named left; _ },
     Type.Callable { Type.Callable.kind = Type.Callable.Named right; _ }
     when Expression.Access.equal left right ->
@@ -559,6 +595,69 @@ and greatest_lower_bound ((module Handler: Handler) as order) =
   least_common_successor order ~successors:predecessors
 
 
+and join_override ~parameter_join ~return_join order left right =
+  let open Type.Callable in
+  let parameters =
+    match left.parameters, right.parameters with
+    | Parameter.Undefined, Parameter.Undefined ->
+        Some Parameter.Undefined
+    | Parameter.Defined left, Parameter.Defined right ->
+        begin
+          try
+            let join_parameter sofar left right =
+              match sofar with
+              | Some sofar ->
+                  let joined =
+                    match left, right with
+                    | Parameter.Anonymous left, Parameter.Anonymous right ->
+                        Some (Parameter.Anonymous (parameter_join order left right))
+                    | Parameter.Named left, Parameter.Named right
+                      when Expression.Access.equal left.Parameter.name right.Parameter.name ->
+                        Some
+                          (Parameter.Named {
+                              Parameter.name = left.Parameter.name;
+                              annotation =
+                                parameter_join
+                                  order
+                                  left.Parameter.annotation
+                                  right.Parameter.annotation;
+                            })
+                    | Parameter.Variable left, Parameter.Variable right
+                      when Expression.Access.equal left right ->
+                        Some (Parameter.Variable left)
+                    | Parameter.Keywords left, Parameter.Keywords right
+                      when Expression.Access.equal left right ->
+                        Some (Parameter.Keywords left)
+                    | _ ->
+                        None
+                  in
+                  joined
+                  >>| (fun joined -> joined :: sofar)
+              | None ->
+                  None
+            in
+            List.fold2_exn ~init:(Some []) ~f:join_parameter left right
+            >>| List.rev
+            >>| fun parameters -> Parameter.Defined parameters
+          with _ ->
+            None
+        end
+    | _ ->
+        None
+  in
+  parameters
+  >>| fun parameters ->
+  Type.Callable {
+    Type.Callable.kind = Type.Callable.Anonymous;
+    overrides = [
+      {
+        annotation = return_join order left.annotation right.annotation;
+        parameters = parameters;
+      }
+    ];
+  }
+
+
 and join ((module Handler: Handler) as order) left right =
   if Type.equal left right then
     left
@@ -674,9 +773,8 @@ and join ((module Handler: Handler) as order) left right =
 
     | Type.Callable { Type.Callable.kind = Type.Callable.Anonymous; overrides = [left] },
       Type.Callable { Type.Callable.kind = Type.Callable.Anonymous; overrides = [right] } ->
-        Type.callable
-          ~annotation:(join order left.Type.Callable.annotation right.Type.Callable.annotation)
-          ()
+        join_override ~parameter_join:meet ~return_join:join order left right
+        |> Option.value ~default:Type.Object
     | (Type.Callable { Type.Callable.kind = Type.Callable.Named left; _ } as callable),
       Type.Callable { Type.Callable.kind = Type.Callable.Named right; _ }
       when Expression.Access.equal left right ->
@@ -784,9 +882,8 @@ and meet order left right =
 
     | Type.Callable { Type.Callable.kind = Type.Callable.Anonymous; overrides = [left] },
       Type.Callable { Type.Callable.kind = Type.Callable.Anonymous; overrides = [right] } ->
-        Type.callable
-          ~annotation:(meet order left.Type.Callable.annotation right.Type.Callable.annotation)
-          ()
+        join_override ~parameter_join:join ~return_join:meet order left right
+        |> Option.value ~default:Type.Bottom
     | (Type.Callable { Type.Callable.kind = Type.Callable.Named left; _ } as callable),
       Type.Callable { Type.Callable.kind = Type.Callable.Named right; _ }
       when Expression.Access.equal left right ->

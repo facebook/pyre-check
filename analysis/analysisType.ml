@@ -12,6 +12,28 @@ open Pyre
 
 module Record = struct
   module Callable = struct
+    module Parameter = struct
+      type 'annotation named =
+        {
+          name: Access.t;
+          annotation: 'annotation;
+        }
+
+
+      and 'annotation parameter =
+        | Anonymous of 'annotation
+        | Named of 'annotation named
+        | Variable of Access.t
+        | Keywords of Access.t
+
+
+      and 'annotation t =
+        | Defined of ('annotation parameter) list
+        | Undefined
+      [@@deriving compare, eq, sexp, show, hash]
+    end
+
+
     type kind =
       | Anonymous
       | Named of Access.t
@@ -20,6 +42,7 @@ module Record = struct
     and 'annotation override =
       {
         annotation: 'annotation;
+        parameters: 'annotation Parameter.t;
       }
 
 
@@ -164,7 +187,7 @@ let rec pp format annotation =
         | Named name -> Format.asprintf "(%a)" Access.pp name
       in
       let overrides =
-        let override { annotation } =
+        let override { annotation; _ } =
           Format.asprintf "..., %s" (without_backtick [annotation])
         in
         List.map ~f:override overrides
@@ -251,9 +274,9 @@ let bytes =
   Primitive (Identifier.create "bytes")
 
 
-let callable ?name ?(overrides = []) ~annotation () =
+let callable ?name ?(overrides = []) ?(parameters = Parameter.Undefined) ~annotation () =
   let kind = name >>| (fun name -> Named name) |> Option.value ~default:Anonymous in
-  Callable { kind; overrides = { annotation } :: overrides }
+  Callable { kind; overrides = { annotation; parameters } :: overrides }
 
 
 let complex =
@@ -658,7 +681,7 @@ let create ~aliases { Node.value = expression; _ } =
       result
 
 
-let expression annotation =
+let rec expression annotation =
   let split name =
     Identifier.show name
     |> String.split ~on:'.'
@@ -675,8 +698,54 @@ let expression annotation =
     | Bottom -> Access.create "$bottom"
     | Callable { overrides; _ } ->
         let subscripts =
-          let subscript { annotation } =
-            Access.Subscript [index annotation]
+          let subscript { annotation; parameters } =
+            let parameters =
+              match parameters with
+              | Parameter.Defined parameters ->
+                  let parameter parameter =
+                    let call name argument annotation =
+                      let annotation =
+                        annotation
+                        >>| (fun annotation ->
+                            [{
+                              Argument.name = None;
+                              value = expression annotation;
+                            }])
+                        |> Option.value ~default:[]
+                      in
+                      {
+                        Call.name = Node.create_with_default_location (Access (Access.create name));
+                        arguments = [
+                          {
+                            Argument.name = None;
+                            value = Node.create_with_default_location (Access argument);
+                          };
+                        ] @ annotation;
+                      }
+                      |> Node.create_with_default_location
+                      |> (fun call -> Access.Call call)
+                      |> (fun access -> Access [access])
+                      |> Node.create_with_default_location
+                    in
+                    match parameter with
+                    | Parameter.Anonymous annotation ->
+                        expression annotation
+                    | Parameter.Keywords name ->
+                        call "Keywords" name None
+                    | Parameter.Named { Parameter.name; annotation } ->
+                        call "Named" name (Some annotation)
+                    | Parameter.Variable name ->
+                        call "Variable" name None
+                  in
+                  List (List.map ~f:parameter parameters)
+                  |> Node.create_with_default_location
+                  |> fun index -> Access.Index index
+              | Parameter.Undefined ->
+                  Access (Access.create "...")
+                  |> Node.create_with_default_location
+                  |> fun index -> Access.Index index
+            in
+            Access.Subscript [parameters; index annotation]
           in
           List.map ~f:subscript overrides;
         in
@@ -727,7 +796,25 @@ let rec exists annotation ~predicate =
   else
     match annotation with
     | Callable { overrides; _ } ->
-        List.exists ~f:(fun { annotation } -> exists annotation ~predicate) overrides
+        let exists { annotation; parameters } =
+          let exists_in_parameters =
+            match parameters with
+            | Parameter.Defined parameters ->
+                let parameter = function
+                  | Parameter.Anonymous annotation
+                  | Parameter.Named { Parameter.annotation; _ } ->
+                      exists annotation ~predicate
+                  | Parameter.Variable _
+                  | Parameter.Keywords _ ->
+                      false
+                in
+                List.exists ~f:parameter parameters
+            | Parameter.Undefined ->
+                false
+          in
+          exists annotation ~predicate || exists_in_parameters
+        in
+        List.exists ~f:exists overrides
 
     | Optional annotation
     | Tuple (Unbounded annotation) ->
@@ -827,7 +914,25 @@ let is_not_instantiated annotation =
 
 let rec variables = function
   | Callable { overrides; _ } ->
-      List.concat_map ~f:(fun { annotation } -> variables annotation) overrides
+      let variables { annotation; parameters } =
+        let variables_in_parameters  =
+          match parameters with
+          | Parameter.Defined parameters ->
+              let variables = function
+                | Parameter.Anonymous annotation
+                | Parameter.Named { Parameter.annotation; _ } ->
+                    variables annotation
+                | Parameter.Variable _
+                | Parameter.Keywords _ ->
+                    []
+              in
+              List.concat_map ~f:variables parameters
+          | Parameter.Undefined ->
+              []
+        in
+        variables annotation @ variables_in_parameters
+      in
+      List.concat_map ~f:variables overrides
   | Optional annotation ->
       variables annotation
   | Tuple (Bounded elements) ->
@@ -1014,10 +1119,29 @@ let instantiate ?(widen = false) annotation ~constraints =
           | Optional parameter ->
               optional (instantiate parameter)
           | Callable { kind; overrides } ->
-              let override { annotation } =
-                { annotation = instantiate annotation }
+              let instantiate { annotation; parameters } =
+                let parameters  =
+                  match parameters with
+                  | Parameter.Defined parameters ->
+                      let parameter parameter =
+                        match parameter with
+                        | Parameter.Anonymous annotation ->
+                            Parameter.Anonymous (instantiate annotation)
+                        | Parameter.Named ({ Parameter.annotation; _ } as named) ->
+                            Parameter.Named {
+                              named with Parameter.annotation = instantiate annotation;
+                            }
+                        | Parameter.Variable _
+                        | Parameter.Keywords _ ->
+                            parameter
+                      in
+                      Parameter.Defined (List.map ~f:parameter parameters)
+                  | Parameter.Undefined ->
+                      Parameter.Undefined
+                in
+                { annotation = instantiate annotation; parameters }
               in
-              Callable { kind; overrides = List.map ~f:override overrides }
+              Callable { kind; overrides = List.map ~f:instantiate overrides }
           | Parametric ({ parameters; _ } as parametric) ->
               Parametric {
                 parametric with
