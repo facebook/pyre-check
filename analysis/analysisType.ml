@@ -187,8 +187,27 @@ let rec pp format annotation =
         | Named name -> Format.asprintf "(%a)" Access.pp name
       in
       let overrides =
-        let override { annotation; _ } =
-          Format.asprintf "..., %s" (without_backtick [annotation])
+        let override { annotation; parameters } =
+          let parameters =
+            match parameters with
+            | Parameter.Undefined ->
+                "..."
+            | Parameter.Defined parameters ->
+                let parameter = function
+                  | Parameter.Anonymous annotation ->
+                      without_backtick [annotation]
+                  | Parameter.Named { Parameter.name; annotation } ->
+                      Format.asprintf "Named(%a, %s)" Access.pp name (without_backtick [annotation])
+                  | Parameter.Variable name ->
+                      Format.asprintf "Variable(%a)" Access.pp name
+                  | Parameter.Keywords name ->
+                      Format.asprintf "Keywords(%a)" Access.pp name
+                in
+                List.map ~f:parameter parameters
+                |> String.concat ~sep:", "
+                |> fun parameters -> Format.asprintf "[%s]" parameters
+          in
+          Format.asprintf "%s, %s" parameters (without_backtick [annotation])
         in
         List.map ~f:override overrides
         |> String.concat ~sep:"]["
@@ -526,9 +545,55 @@ let create ~aliases { Node.value = expression; _ } =
                         subscript :: (List.filter_map ~f:extract_subscript tail)
                       in
                       let override subscript =
+                        let extract_parameters parameters =
+                          let extract_parameter parameter =
+                            match Node.value parameter with
+                            | Access
+                                [
+                                  Access.Call {
+                                    Node.value = { Call.name; arguments };
+                                    _;
+                                  };
+                                ] ->
+                                begin
+                                  let arguments =
+                                    List.map
+                                      ~f:(fun { Argument.value; _ } -> Node.value value)
+                                      arguments
+                                  in
+                                  match Expression.show name, arguments with
+                                  | "Named", [Access name; Access annotation] ->
+                                      Parameter.Named {
+                                        Parameter.name;
+                                        annotation = create [] annotation;
+                                      }
+                                  | "Variable", [Access name] ->
+                                      Parameter.Variable name
+                                  | "Keywords", [Access name] ->
+                                      Parameter.Keywords name
+                                  | _ ->
+                                      Parameter.Anonymous Top
+                                end
+                            | Access access ->
+                                Parameter.Anonymous (create [] access)
+                            | _ ->
+                                Parameter.Anonymous Top
+                          in
+                          match parameters with
+                          | List parameters ->
+                              Parameter.Defined (List.map ~f:extract_parameter parameters)
+                          | _ ->
+                              Parameter.Undefined
+                        in
                         match subscript with
-                        | [_; Access.Index { Node.value = Access access; _ }] ->
-                            Some { annotation = create [] access; parameters = Parameter.Undefined }
+                        | [
+                          Access.Index { Node.value = parameters; _ };
+                          Access.Index { Node.value = Access access; _ };
+                        ] ->
+                            Some {
+                              annotation = create [] access;
+                              parameters = extract_parameters parameters;
+                            }
                         | _ ->
                             None
                       in

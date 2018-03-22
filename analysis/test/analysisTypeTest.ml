@@ -152,6 +152,7 @@ let test_create _ =
   assert_create ~aliases "typing.Union[A, str]" (Type.union [Type.string; Type.bytes]);
 
   (* Callables. *)
+  let open Type.Callable in
   assert_create "typing.Callable" (Type.callable ~annotation:Type.Top ());
   assert_create "typing.Callable[..., int]" (Type.callable ~annotation:Type.integer ());
   assert_create
@@ -159,13 +160,45 @@ let test_create _ =
     (Type.callable
        ~overrides:[
          {
-           Type.Callable.annotation = Type.string;
-           parameters = Type.Callable.Parameter.Undefined;
+           annotation = Type.string;
+           parameters = Parameter.Undefined;
          };
        ]
        ~annotation:Type.integer
        ());
-  assert_create "typing.Callable[[int, str], int]" (Type.callable ~annotation:Type.integer ());
+  assert_create
+    "typing.Callable[[int, str], int]"
+    (Type.Callable {
+        kind = Type.Callable.Anonymous;
+        overrides = [
+          {
+            annotation = Type.integer;
+            parameters = Parameter.Defined [
+                Parameter.Anonymous Type.integer;
+                Parameter.Anonymous Type.string;
+              ];
+          };
+        ];
+      });
+  assert_create
+    "typing.Callable[[int, Named(a, int), Variable(variable), Keywords(keywords)], int]"
+    (Type.Callable {
+        kind = Anonymous;
+        overrides = [
+          {
+            annotation = Type.integer;
+            parameters = Parameter.Defined [
+                Parameter.Anonymous Type.integer;
+                Parameter.Named {
+                  Parameter.name = Access.create "a";
+                  annotation = Type.integer;
+                };
+                Parameter.Variable (Access.create "variable");
+                Parameter.Keywords (Access.create "keywords");
+              ];
+          };
+        ];
+      });
   assert_create "typing.Callable[int]" Type.Top
 
 
