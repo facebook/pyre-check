@@ -516,81 +516,64 @@ let test_less_or_equal _ =
 
 
 let test_join _ =
+  let assert_join ?(order = default) ?(aliases = (fun _ -> None)) left right expected =
+    let parse_annotation source =
+      let integer = try Int.of_string source |> ignore; true with _ -> false in
+      if integer then
+        Type.Primitive ~~source
+      else
+        parse_single_expression source
+        |> Type.create ~aliases
+    in
+    assert_equal
+      ~printer:Type.show
+      ~cmp:Type.equal
+      (parse_annotation expected)
+      (join order (parse_annotation left) (parse_annotation right))
+  in
+
+
   (* Primitive types. *)
-  assert_equal (join default !"list" !"typing.Sized") !"typing.Sized";
-  assert_equal (join default !"typing.Sized" !"list") !"typing.Sized";
-  assert_equal (join default (Type.list Type.integer) !"typing.Sized") !"typing.Sized";
-  assert_equal (join default (Type.integer) (Type.string)) (Type.union [Type.integer; Type.string]);
+  assert_join "list" "typing.Sized" "typing.Sized";
+  assert_join "typing.Sized" "list" "typing.Sized";
+  assert_join "typing.List[int]" "typing.Sized" "typing.Sized";
+  assert_join "int" "str" "typing.Union[int, str]";
 
   (* Parametric types. *)
-  assert_equal
-    (join default (Type.list Type.integer) (Type.iterator Type.integer))
-    (Type.iterator Type.integer);
-  assert_equal
-    (join default (Type.iterator Type.integer) (Type.list Type.integer))
-    (Type.iterator Type.integer);
-  assert_equal
-    (join default (Type.list Type.float) (Type.iterator Type.integer))
-    (Type.iterator Type.float);
-  assert_equal
-    (join default (Type.list Type.float) (Type.parametric "float" [Type.integer]))
-    Type.Object;
+  assert_join "typing.List[int]" "typing.Iterator[int]" "typing.Iterator[int]";
+  assert_join "typing.Iterator[int]" "typing.List[int]" "typing.Iterator[int]";
+  assert_join "typing.List[float]" "typing.Iterator[int]" "typing.Iterator[float]";
+  assert_join "typing.List[float]" "float[int]" "typing.Any";
 
   (* Optionals. *)
-  assert_equal
-    (join default Type.string (Type.optional Type.string))
-    (Type.optional Type.string);
-  assert_equal
-    (join default Type.string (Type.optional Type.Bottom))
-    (Type.optional Type.string);
-  assert_equal
-    (join default (Type.optional Type.Bottom) Type.string)
-    (Type.optional Type.string);
+  assert_join "str" "typing.Optional[str]" "typing.Optional[str]";
+  assert_join "str" "typing.Optional[$bottom]" "typing.Optional[str]";
+  assert_join "typing.Optional[$bottom]" "str" "typing.Optional[str]";
 
-  assert_equal
-    (join default (Type.list Type.Bottom) (Type.optional (Type.list Type.integer)))
-    (Type.list Type.integer);
-  assert_equal
-    (join default (Type.optional (Type.list Type.integer)) (Type.list Type.Bottom))
-    (Type.list Type.integer);
-  assert_equal
-    (join default (Type.optional (Type.set Type.integer)) (Type.set Type.Bottom))
-    (Type.set Type.integer);
+  (* Handles `[] or optional_list`. *)
+  assert_join "typing.List[$bottom]" "typing.Optional[typing.List[int]]" "typing.List[int]";
+  assert_join "typing.Optional[typing.List[int]]" "typing.List[$bottom]" "typing.List[int]";
+  assert_join "typing.Optional[typing.Set[int]]" "typing.Set[$bottom]" "typing.Set[int]";
 
   (* Union types. *)
-  assert_equal
-    (join default (Type.Optional Type.bool) (Type.Union [Type.integer; Type.Optional Type.bool]))
-    (Type.Union [Type.integer; Type.Optional Type.bool]);
+  assert_join
+    "typing.Optional[bool]"
+    "typing.Union[int, typing.Optional[bool]]"
+    "typing.Union[int, typing.Optional[bool]]";
+  assert_join "typing.Union[int, str]" "typing.Union[int, bytes]" "typing.Union[int, str, bytes]";
 
-  assert_equal
-    (join
-       default
-       (Type.union [Type.integer; Type.string])
-       (Type.union [Type.integer; Type.bytes]))
-    (Type.union [Type.integer; Type.string; Type.bytes]);
+  assert_join
+    "typing.Dict[str, str]"
+    "typing.Dict[str, typing.List[str]]"
+    "typing.Dict[str, typing.Any]";
 
-  assert_equal
-    (join
-       default
-       (Type.dictionary ~key:Type.string ~value:Type.string)
-       (Type.dictionary ~key:Type.string ~value:(Type.list Type.string)))
-    (Type.dictionary ~key:Type.string ~value:Type.Object);
+  assert_join "typing.Union[typing.List[int], typing.Set[int]]" "typing.Sized" "typing.Sized";
 
-  assert_equal
-    ~printer:Type.show
-    (join
-       default
-       (Type.union [Type.list Type.integer; Type.set Type.integer])
-       !"typing.Sized")
-    (!"typing.Sized");
+  assert_join
+    "typing.Optional[float]"
+    "typing.Union[float, int]"
+    "typing.Optional[typing.Union[float, int]]";
 
-  assert_equal
-    (join
-       default
-       (Type.Optional Type.float)
-       (Type.union [Type.float; Type.integer]))
-    (Type.Optional (Type.union [Type.float; Type.integer]));
-  let variable name = Type.Variable { Type.variable = name; constraints = [] } in
   let order =
     let order = Builder.create () |> TypeOrder.handler in
     let add_simple annotation =
@@ -602,9 +585,9 @@ let test_join _ =
     insert order Type.Bottom;
     insert order Type.Object;
     insert order Type.Top;
-    add_simple (variable ~~"_1");
-    add_simple (variable ~~"_2");
-    add_simple (variable ~~"_T");
+    add_simple (Type.variable "_1");
+    add_simple (Type.variable "_2");
+    add_simple (Type.variable "_T");
     add_simple (Type.string);
     add_simple (Type.integer);
     add_simple (Type.float);
@@ -618,54 +601,52 @@ let test_join _ =
       order
       ~predecessor:!"A"
       ~successor:!"B"
-      ~parameters:[Type.tuple [variable ~~"_1"; variable ~~"_2"]];
+      ~parameters:[Type.tuple [Type.variable "_1"; Type.variable "_2"]];
     connect
       order
       ~predecessor:!"A"
       ~successor:!"typing.Generic"
-      ~parameters:[variable ~~"_1"; variable ~~"_2"];
+      ~parameters:[Type.variable "_1"; Type.variable "_2"];
     connect
       order
       ~predecessor:!"B"
       ~successor:!"typing.Generic"
-      ~parameters:[variable ~~"_T"];
+      ~parameters:[Type.variable "_T"];
     connect
       order
       ~predecessor:!"B"
       ~successor:!"C"
-      ~parameters:[Type.union [variable ~~"_T"; Type.float]];
+      ~parameters:[Type.union [Type.variable "_T"; Type.float]];
     connect order ~predecessor:!"typing.Generic" ~successor:Type.Object;
     order
   in
-  assert_equal
-    ~printer:Type.show
-    (Type.Parametric
-       {
-         Type.name = ~~"C";
-         parameters = [Type.union [Type.float; Type.tuple [Type.integer; Type.string]]]
-       })
-    (join
-       order
-       (Type.Parametric { Type.name = ~~"A"; parameters = [Type.integer; Type.string] })
-       (Type.Parametric { Type.name = ~~"C"; parameters = [Type.Bottom] }));
+  let aliases =
+    Type.Table.of_alist_exn [
+      Type.primitive "_1", Type.variable "_1";
+      Type.primitive "_2", Type.variable "_2";
+      Type.primitive "_T", Type.variable "_T";
+    ]
+    |> Type.Table.find
+  in
 
-  assert_equal
-    (join disconnected_order !"A" !"B")
-    Type.Object;
+  assert_join
+    ~order
+    ~aliases
+    "A[int, str]"
+    "C[$bottom]"
+    "C[typing.Union[float, typing.Tuple[int, str]]]";
+
+  assert_join ~order:disconnected_order "A" "B" "typing.Any";
 
   (* Callables. *)
-  assert_equal
-    (Type.callable ~annotation:(Type.union [Type.integer; Type.string]) ())
-    (join
-       order
-       (Type.callable ~annotation:Type.integer ())
-       (Type.callable ~annotation:Type.string ()));
-  assert_equal
-    (Type.callable ~annotation:Type.integer ())
-    (join
-       order
-       (Type.callable ~annotation:Type.integer ())
-       (Type.callable ~annotation:Type.Bottom ()));
+  assert_join
+    "typing.Callable[..., int]"
+    "typing.Callable[..., str]"
+    "typing.Callable[..., typing.Union[int, str]]";
+  assert_join
+    "typing.Callable[..., int]"
+    "typing.Callable[..., $bottom]"
+    "typing.Callable[..., int]";
 
   assert_equal
     (Type.callable ~name:(Expression.Access.create "derp") ~annotation:Type.integer ())
@@ -680,115 +661,27 @@ let test_join _ =
        (Type.callable ~name:(Expression.Access.create "derp") ~annotation:Type.integer ())
        (Type.callable ~annotation:Type.integer ()));
 
-  assert_equal
-    Type.Object
-    (join
-       order
-       (Type.callable
-          ~overrides:[
-            {
-              Type.Callable.annotation = Type.string;
-              parameters = Type.Callable.Parameter.Undefined;
-            };
-          ]
-          ~annotation:Type.integer
-          ())
-       (Type.callable ~annotation:Type.integer ()));
+  (* Do not join with overrides. *)
+  assert_join "typing.Callable[..., int][..., str]" "typing.Callable[..., int]" "typing.Any";
 
-  (* Identical. *)
-  assert_equal
-    (Type.callable
-       ~parameters:(Type.Callable.Parameter.Defined [
-           Type.Callable.Parameter.Named {
-             Type.Callable.Parameter.name = Access.create "a";
-             annotation = Type.integer;
-           };
-           Type.Callable.Parameter.Named {
-             Type.Callable.Parameter.name = Access.create "b";
-             annotation = Type.string;
-           };
-         ])
-       ~annotation:Type.integer
-       ())
-    (join
-       order
-       (Type.callable
-          ~parameters:(Type.Callable.Parameter.Defined [
-              Type.Callable.Parameter.Named {
-                Type.Callable.Parameter.name = Access.create "a";
-                annotation = Type.integer;
-              };
-              Type.Callable.Parameter.Named {
-                Type.Callable.Parameter.name = Access.create "b";
-                annotation = Type.string;
-              };
-            ])
-          ~annotation:Type.integer
-          ())
-       (Type.callable
-          ~parameters:(Type.Callable.Parameter.Defined [
-              Type.Callable.Parameter.Named {
-                Type.Callable.Parameter.name = Access.create "a";
-                annotation = Type.integer;
-              };
-              Type.Callable.Parameter.Named {
-                Type.Callable.Parameter.name = Access.create "b";
-                annotation = Type.string;
-              };
-            ])
-          ~annotation:Type.integer
-          ()));
-
-  (* Incompatible callables join to Object. *)
-  assert_equal
-    Type.Object
-    (join
-       order
-       (Type.callable
-          ~parameters:(Type.Callable.Parameter.Defined [
-              Type.Callable.Parameter.Named {
-                Type.Callable.Parameter.name = Access.create "a";
-                annotation = Type.integer;
-              };
-            ])
-          ~annotation:Type.integer
-          ())
-       (Type.callable
-          ~parameters:(Type.Callable.Parameter.Defined [])
-          ~annotation:Type.integer
-          ()));
+  assert_join
+    "typing.Callable[[Named(a, int), Named(b, str)], int]"
+    "typing.Callable[[Named(a, int), Named(b, str)], int]"
+    "typing.Callable[[Named(a, int), Named(b, str)], int]";
+  assert_join
+    "typing.Callable[[Named(a, int)], int]"
+    "typing.Callable[[int], int]"
+    "typing.Any";
 
   (* Behavioral subtyping is preserved. *)
-  assert_equal
-    (Type.callable
-       ~parameters:(Type.Callable.Parameter.Defined [
-           Type.Callable.Parameter.Named {
-             Type.Callable.Parameter.name = Access.create "a";
-             annotation = Type.Bottom;
-           };
-         ])
-       ~annotation:Type.integer
-       ())
-    (join
-       order
-       (Type.callable
-          ~parameters:(Type.Callable.Parameter.Defined [
-              Type.Callable.Parameter.Named {
-                Type.Callable.Parameter.name = Access.create "a";
-                annotation = Type.integer;
-              };
-            ])
-          ~annotation:Type.integer
-          ())
-       (Type.callable
-          ~parameters:(Type.Callable.Parameter.Defined [
-              Type.Callable.Parameter.Named {
-                Type.Callable.Parameter.name = Access.create "a";
-                annotation = Type.string;
-              };
-            ])
-          ~annotation:Type.Bottom
-          ()))
+  assert_join
+    "typing.Callable[[Named(a, str)], int]"
+    "typing.Callable[[Named(a, int)], int]"
+    "typing.Callable[[Named(a, $bottom)], int]";
+  assert_join
+    "typing.Callable[..., int]"
+    "typing.Callable[..., $bottom]"
+    "typing.Callable[..., int]"
 
 
 let test_meet _ =
