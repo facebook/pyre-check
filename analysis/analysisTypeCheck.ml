@@ -151,7 +151,7 @@ module State = struct
                 let access =
                   (Expression.Access.Identifier (Identifier.create "self")) :: name
                 in
-                if Option.is_some (Map.find annotations access) then
+                if Map.mem annotations access then
                   errors
                 else
                   let error =
@@ -465,7 +465,7 @@ module State = struct
 
   and update_only_existing_annotations initial_state new_state =
     let update ~key ~data map =
-      if Option.is_some (Map.find map key) then
+      if Map.mem map key then
         Map.set ~key ~data map
       else
         map

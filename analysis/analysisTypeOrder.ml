@@ -175,10 +175,8 @@ let index_of (module Handler: Handler) annotation =
 
 
 let insert (module Handler: Handler) annotation =
-  match Handler.find (Handler.indices ()) annotation with
-  | Some _ ->
-      ()
-  | None ->
+  if not (Handler.contains (Handler.indices ()) annotation) then
+    begin
       let indices = Handler.indices () in
       let index = Handler.length indices in
       Handler.add_key index;
@@ -186,6 +184,7 @@ let insert (module Handler: Handler) annotation =
       Handler.set (Handler.annotations ()) ~key:index ~data:annotation;
       Handler.set (Handler.edges ()) ~key:index ~data:[];
       Handler.set (Handler.backedges ()) ~key:index ~data:[]
+    end
 
 
 let connect
@@ -195,8 +194,8 @@ let connect
     ~configuration
     ~predecessor
     ~successor =
-  if Option.is_none (Handler.find (Handler.indices ()) predecessor) ||
-     Option.is_none (Handler.find (Handler.indices ()) successor) then
+  if not (Handler.contains (Handler.indices ()) predecessor) ||
+     not (Handler.contains (Handler.indices ()) successor) then
     Statistics.event
       ~name:"Invalid type order connection"
       ~configuration
