@@ -11,6 +11,7 @@ import shutil
 import subprocess
 import uuid
 
+
 from contextlib import contextmanager
 from time import time
 from typing import (
@@ -82,19 +83,25 @@ def _is_empty(path: str) -> bool:
 
 # Exposed for testing.
 def _find_python_paths_at_root(root: str) -> List[str]:
-    output = subprocess.check_output([
-        "find",
-        root,
-        "-regextype",
-        "posix-egrep",
-        "-regex",
-        r".*\.(py|pyi)",
-        "-xtype",
-        "f",
-    ])\
-        .decode('utf-8')\
-        .strip()
-    return output.split('\n')
+    try:
+        output = subprocess.check_output([
+            "find",
+            root,
+            "-regextype",
+            "posix-egrep",
+            "-regex",
+            r".*\.(py|pyi)",
+            "-xtype",
+            "f",
+        ])\
+            .decode('utf-8')\
+            .strip()
+        return output.split('\n')
+    except subprocess.CalledProcessError:
+        LOG.error(
+            "pyre was unable to locate a source directory. "
+            "Ensure that your project is built and re-run pyre.")
+        exit(1)
 
 
 def merge(target_root: str, source_directories: List[str]) -> None:
