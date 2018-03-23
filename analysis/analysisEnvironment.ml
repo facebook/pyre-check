@@ -376,7 +376,7 @@ let resolution
     }
   in
 
-  let instantiate_signature call arguments definitions =
+  let instantiate_signature parent_annotation call arguments definitions =
     let insert_implicit_arguments { Node.value = define; _ } =
       let arguments = List.map ~f:Node.value arguments in
       if Define.is_class_method define ||
@@ -385,7 +385,7 @@ let resolution
           not (Call.is_explicit_constructor_call call)) then
         let self_or_class_argument =
           Signature.Normal {
-            Signature.annotation = Type.Object;
+            Signature.annotation = Option.value ~default:Type.Object parent_annotation;
             value = Node.create_with_default_location (Access (Access.create "self_or_class"));
           }
         in
@@ -597,7 +597,7 @@ let resolution
       end
     in
     Handler.function_definitions name
-    >>| instantiate_signature call arguments
+    >>| instantiate_signature None call arguments
     |> Option.value ~default:[]
   in
 
@@ -644,7 +644,7 @@ let resolution
     in
     (annotation :: successors)
     |> List.find_map ~f:definitions
-    >>| instantiate_signature call arguments
+    >>| instantiate_signature (Some annotation) call arguments
     |> Option.value ~default:[]
   in
 

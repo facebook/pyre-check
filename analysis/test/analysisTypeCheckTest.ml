@@ -3962,10 +3962,42 @@ let test_check_meta _ =
         @classmethod
         def __construct__(cls: typing.Type[T]) -> T:
           ...
+      class Subclass(C):
+        ...
       def foo()-> C:
-       return C.__construct__()
+        return C.__construct__()
+      def boo() -> Subclass:
+        return Subclass.__construct__()
     |}
-    ["Incompatible return type [7]: Expected `C` but got `typing.Any`."];
+    [];
+
+  assert_type_errors
+    {|
+      T = typing.TypeVar('T')
+      class C:
+        @classmethod
+        def __construct__(cls: typing.Type[T]) -> T:
+          ...
+      class Subclass(C):
+        ...
+      def foo()-> C:
+        return Subclass.__construct__()
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      T = typing.TypeVar('T')
+      class C:
+        @classmethod
+        def __construct__(cls: typing.Type[T]) -> T:
+          ...
+      class Subclass(C):
+        ...
+      def foo()-> Subclass:
+        return C.__construct__()
+    |}
+    ["Incompatible return type [7]: Expected `Subclass` but got `C`."];
 
   assert_type_errors
     {|
