@@ -20,16 +20,11 @@ module Record = struct
         }
 
 
-      and 'annotation parameter =
+      and 'annotation t =
         | Anonymous of 'annotation
         | Named of 'annotation named
         | Variable of Access.t
         | Keywords of Access.t
-
-
-      and 'annotation t =
-        | Defined of ('annotation parameter) list
-        | Undefined
       [@@deriving compare, eq, sexp, show, hash]
     end
 
@@ -39,10 +34,15 @@ module Record = struct
       | Named of Access.t
 
 
+    and 'annotation parameters =
+      | Defined of ('annotation Parameter.t) list
+      | Undefined
+
+
     and 'annotation override =
       {
         annotation: 'annotation;
-        parameters: 'annotation Parameter.t;
+        parameters: 'annotation parameters;
       }
 
 
@@ -190,9 +190,9 @@ let rec pp format annotation =
         let override { annotation; parameters } =
           let parameters =
             match parameters with
-            | Parameter.Undefined ->
+            | Undefined ->
                 "..."
-            | Parameter.Defined parameters ->
+            | Defined parameters ->
                 let parameter = function
                   | Parameter.Anonymous annotation ->
                       without_backtick [annotation]
@@ -297,7 +297,7 @@ let bytes =
   Primitive (Identifier.create "bytes")
 
 
-let callable ?name ?(overrides = []) ?(parameters = Parameter.Undefined) ~annotation () =
+let callable ?name ?(overrides = []) ?(parameters = Undefined) ~annotation () =
   let kind = name >>| (fun name -> Named name) |> Option.value ~default:Anonymous in
   Callable { kind; overrides = { annotation; parameters } :: overrides }
 
@@ -603,9 +603,9 @@ let create ~aliases { Node.value = expression; _ } =
                           in
                           match parameters with
                           | List parameters ->
-                              Parameter.Defined (List.map ~f:extract_parameter parameters)
+                              Defined (List.map ~f:extract_parameter parameters)
                           | _ ->
-                              Parameter.Undefined
+                              Undefined
                         in
                         match subscript with
                         | [
@@ -815,7 +815,7 @@ let rec expression annotation =
           let subscript { annotation; parameters } =
             let parameters =
               match parameters with
-              | Parameter.Defined parameters ->
+              | Defined parameters ->
                   let parameter parameter =
                     let call name argument annotation =
                       let annotation =
@@ -854,7 +854,7 @@ let rec expression annotation =
                   List (List.map ~f:parameter parameters)
                   |> Node.create_with_default_location
                   |> fun index -> Access.Index index
-              | Parameter.Undefined ->
+              | Undefined ->
                   Access (Access.create "...")
                   |> Node.create_with_default_location
                   |> fun index -> Access.Index index
@@ -913,7 +913,7 @@ let rec exists annotation ~predicate =
         let exists { annotation; parameters } =
           let exists_in_parameters =
             match parameters with
-            | Parameter.Defined parameters ->
+            | Defined parameters ->
                 let parameter = function
                   | Parameter.Anonymous annotation
                   | Parameter.Named { Parameter.annotation; _ } ->
@@ -923,7 +923,7 @@ let rec exists annotation ~predicate =
                       false
                 in
                 List.exists ~f:parameter parameters
-            | Parameter.Undefined ->
+            | Undefined ->
                 false
           in
           exists annotation ~predicate || exists_in_parameters
@@ -1031,7 +1031,7 @@ let rec variables = function
       let variables { annotation; parameters } =
         let variables_in_parameters  =
           match parameters with
-          | Parameter.Defined parameters ->
+          | Defined parameters ->
               let variables = function
                 | Parameter.Anonymous annotation
                 | Parameter.Named { Parameter.annotation; _ } ->
@@ -1041,7 +1041,7 @@ let rec variables = function
                     []
               in
               List.concat_map ~f:variables parameters
-          | Parameter.Undefined ->
+          | Undefined ->
               []
         in
         variables annotation @ variables_in_parameters
@@ -1236,7 +1236,7 @@ let instantiate ?(widen = false) annotation ~constraints =
               let instantiate { annotation; parameters } =
                 let parameters  =
                   match parameters with
-                  | Parameter.Defined parameters ->
+                  | Defined parameters ->
                       let parameter parameter =
                         match parameter with
                         | Parameter.Anonymous annotation ->
@@ -1249,9 +1249,9 @@ let instantiate ?(widen = false) annotation ~constraints =
                         | Parameter.Keywords _ ->
                             parameter
                       in
-                      Parameter.Defined (List.map ~f:parameter parameters)
-                  | Parameter.Undefined ->
-                      Parameter.Undefined
+                      Defined (List.map ~f:parameter parameters)
+                  | Undefined ->
+                      Undefined
                 in
                 { annotation = instantiate annotation; parameters }
               in

@@ -12,7 +12,7 @@ module Type = AnalysisType
 
 exception Cyclic
 exception Incomplete
-exception Undefined of Type.t
+exception Untracked of Type.t
 
 
 module Target = struct
@@ -250,7 +250,7 @@ let is_instantiated (module Handler: Handler) annotation =
 
 let raise_if_untracked order annotation =
   if not (contains order annotation) then
-    raise (Undefined annotation)
+    raise (Untracked annotation)
 
 
 let breadth_first_fold
@@ -448,9 +448,9 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
       let open Type.Callable in
       let parameters_less_or_equal () =
         match left.parameters, right.parameters with
-        | Parameter.Undefined, Parameter.Undefined ->
+        | Undefined, Undefined ->
             true
-        | Parameter.Defined left, Parameter.Defined right ->
+        | Defined left, Defined right ->
             begin
               try
                 let parameter_less_or_equal left right =
@@ -610,9 +610,9 @@ and join_override ~parameter_join ~return_join order left right =
   let open Type.Callable in
   let parameters =
     match left.parameters, right.parameters with
-    | Parameter.Undefined, Parameter.Undefined ->
-        Some Parameter.Undefined
-    | Parameter.Defined left, Parameter.Defined right ->
+    | Undefined, Undefined ->
+        Some Undefined
+    | Defined left, Defined right ->
         begin
           try
             let join_parameter sofar left right =
@@ -649,7 +649,7 @@ and join_override ~parameter_join ~return_join order left right =
             in
             List.fold2_exn ~init:(Some []) ~f:join_parameter left right
             >>| List.rev
-            >>| fun parameters -> Parameter.Defined parameters
+            >>| fun parameters -> Defined parameters
           with _ ->
             None
         end
@@ -714,7 +714,7 @@ and join ((module Handler: Handler) as order) left right =
               left_primitive
             else
               join order left_primitive right_primitive
-          with Undefined _ ->
+          with Untracked _ ->
             Type.Object
         in
         if Handler.contains (Handler.indices ()) target then

@@ -1845,7 +1845,7 @@ let check configuration environment ({ Source.path; _ } as source) =
       in
       { SingleSourceResult.errors; coverage }
     with
-    | TypeOrder.Undefined annotation ->
+    | TypeOrder.Untracked annotation ->
         Statistics.event
           ~name:"undefined type"
           ~configuration

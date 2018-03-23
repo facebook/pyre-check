@@ -827,7 +827,7 @@ let join_at_source ~resolution errors =
                 Map.set ~key ~data:error errors
           | _ ->
               Map.set ~key ~data:error errors
-        with TypeOrder.Undefined _ ->
+        with TypeOrder.Untracked _ ->
           errors
       in
       match error with

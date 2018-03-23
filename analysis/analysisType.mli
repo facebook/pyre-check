@@ -18,15 +18,11 @@ module Record : sig
           annotation: 'annotation;
         }
 
-      and 'annotation parameter =
+      and 'annotation t =
         | Anonymous of 'annotation
         | Named of 'annotation named
         | Variable of Access.t
         | Keywords of Access.t
-
-      and 'annotation t =
-        | Defined of ('annotation parameter) list
-        | Undefined
       [@@deriving compare, eq, sexp, show, hash]
     end
 
@@ -34,10 +30,14 @@ module Record : sig
       | Anonymous
       | Named of Access.t
 
+    and 'annotation parameters =
+      | Defined of ('annotation Parameter.t) list
+      | Undefined
+
     and 'annotation override =
       {
         annotation: 'annotation;
-        parameters: 'annotation Parameter.t;
+        parameters: 'annotation parameters;
       }
 
     and 'annotation record =
@@ -103,7 +103,7 @@ val bytes: t
 val callable
   :  ?name: Access.t
   -> ?overrides: (t Record.Callable.override) list
-  -> ?parameters: t Record.Callable.Parameter.t
+  -> ?parameters: t Record.Callable.parameters
   -> annotation: t
   -> unit
   -> t

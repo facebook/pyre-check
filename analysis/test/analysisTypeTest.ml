@@ -161,7 +161,7 @@ let test_create _ =
        ~overrides:[
          {
            annotation = Type.string;
-           parameters = Parameter.Undefined;
+           parameters = Undefined;
          };
        ]
        ~annotation:Type.integer
@@ -171,7 +171,7 @@ let test_create _ =
     "typing.Callable('name')[..., int]"
     (Type.Callable {
         kind = Type.Callable.Named (Access.create "name");
-        overrides = [ { annotation = Type.integer; parameters = Parameter.Undefined }];
+        overrides = [ { annotation = Type.integer; parameters = Undefined }];
       });
   assert_create
     "typing.Other('name')[..., int]"
@@ -184,7 +184,7 @@ let test_create _ =
         overrides = [
           {
             annotation = Type.integer;
-            parameters = Parameter.Defined [
+            parameters = Defined [
                 Parameter.Anonymous Type.integer;
                 Parameter.Anonymous Type.string;
               ];
@@ -198,7 +198,7 @@ let test_create _ =
         overrides = [
           {
             annotation = Type.integer;
-            parameters = Parameter.Defined [
+            parameters = Defined [
                 Parameter.Anonymous Type.integer;
                 Parameter.Named {
                   Parameter.name = Access.create "a";
@@ -252,7 +252,7 @@ let test_expression _ =
        ~overrides:[
          {
            Type.Callable.annotation = Type.string;
-           parameters = Type.Callable.Parameter.Undefined;
+           parameters = Type.Callable.Undefined;
          };
        ]
        ~annotation:Type.integer
@@ -261,7 +261,7 @@ let test_expression _ =
 
   assert_expression
     (Type.callable
-       ~parameters:(Type.Callable.Parameter.Defined [
+       ~parameters:(Type.Callable.Defined [
            Type.Callable.Parameter.Anonymous Type.integer;
            Type.Callable.Parameter.Anonymous Type.string;
          ])
@@ -270,7 +270,7 @@ let test_expression _ =
     "typing.Callable[[int, str], int]";
   assert_expression
     (Type.callable
-       ~parameters:(Type.Callable.Parameter.Defined [
+       ~parameters:(Type.Callable.Defined [
            Type.Callable.Parameter.Named {
              Type.Callable.Parameter.name = Access.create "a";
              annotation = Type.integer;
@@ -285,7 +285,7 @@ let test_expression _ =
     "typing.Callable[[Named(a, int), Named(b, str)], int]";
   assert_expression
     (Type.callable
-       ~parameters:(Type.Callable.Parameter.Defined [
+       ~parameters:(Type.Callable.Defined [
            Type.Callable.Parameter.Anonymous Type.integer;
            Type.Callable.Parameter.Variable (Access.create "variable");
            Type.Callable.Parameter.Keywords (Access.create "keywords");

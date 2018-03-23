@@ -771,7 +771,7 @@ let test_join _ =
     (Type.Union [Type.integer; Type.string]);
 
   assert_raises
-    (TypeOrder.Undefined (Type.primitive "durp"))
+    (TypeOrder.Untracked (Type.primitive "durp"))
     (fun _ -> TypeOrder.join order bar (Type.primitive "durp"));
 
   (* Special cases. *)
