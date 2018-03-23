@@ -37,49 +37,48 @@ let create_files ~root content =
   ]
 
 
+let assert_errors
+    ?(show_error_traces = false)
+    input_source
+    expected_errors =
+  let root = Path.current_working_directory () in
+  let configuration =
+    Configuration.create ~source_root:root ~project_root:(Path.create_absolute "/") ()
+  in
+  let scheduler = Scheduler.mock () in
+  let (handles, _) =
+    Service.Parser.parse_sources_list scheduler (create_files ~root input_source) ~configuration
+  in
+  let environment =
+    Service.Environment.in_process_handler scheduler ~configuration ~stubs:[] ~sources:handles
+  in
+  add_defaults_to_environment ~configuration environment;
+  Service.Ignore.register ~configuration handles;
+  let descriptions =
+    Service.TypeCheck.analyze_sources
+      scheduler
+      configuration
+      environment
+      handles
+    |> fun (errors, _, _) ->
+    List.map ~f:(fun error -> Error.description error ~detailed:show_error_traces) errors
+  in
+  let description_list_to_string descriptions =
+    Format.asprintf "%a" Sexp.pp (sexp_of_list sexp_of_string descriptions)
+  in
+  assert_equal
+    ~cmp:(List.equal ~equal:String.equal)
+    ~printer:description_list_to_string
+    ~pp_diff:
+      (diff
+         ~print:(fun format expected_errors ->
+             Format.fprintf format "%s" (description_list_to_string expected_errors)))
+    expected_errors
+    descriptions
+
+
 let ignore_lines_test context =
   let check _ =
-    let root = Path.current_working_directory () in
-    let configuration =
-      Configuration.create ~source_root:root ~project_root:(Path.create_absolute "/") ()
-    in
-    let scheduler = Scheduler.mock () in
-
-    let assert_errors
-        ?(show_error_traces = false)
-        input_source
-        expected_errors =
-      let (handles, _) =
-        Service.Parser.parse_sources_list scheduler (create_files ~root input_source) ~configuration
-      in
-      let environment =
-        Service.Environment.in_process_handler scheduler ~configuration ~stubs:[] ~sources:handles
-      in
-      add_defaults_to_environment ~configuration environment;
-      Service.Ignore.register ~configuration handles;
-      let descriptions =
-        Service.TypeCheck.analyze_sources
-          scheduler
-          configuration
-          environment
-          handles
-        |> fun (errors, _, _) ->
-        List.map ~f:(fun error -> Error.description error ~detailed:show_error_traces) errors
-      in
-      let description_list_to_string descriptions =
-        Format.asprintf "%a" Sexp.pp (sexp_of_list sexp_of_string descriptions)
-      in
-      assert_equal
-        ~cmp:(List.equal ~equal:String.equal)
-        ~printer:description_list_to_string
-        ~pp_diff:
-          (diff
-             ~print:(fun format expected_errors ->
-                 Format.fprintf format "%s" (description_list_to_string expected_errors)))
-        expected_errors
-        descriptions
-    in
-
     assert_errors
       {|
         def foo() -> int:
@@ -202,8 +201,41 @@ let ignore_lines_test context =
   with_bracket_chdir context (bracket_tmpdir context) check
 
 
+let ignore_modes_test context =
+  let check _ =
+    assert_errors
+      {|
+        def foo():
+        return 1
+      |}
+      [];
+    assert_errors
+      {|
+        # pyre-strict
+        def foo():
+          return 1
+      |}
+      ["Missing return annotation [3]: Returning `int` but no return type is specified."];
+    assert_errors
+      {|
+        def foo() -> str:
+          return 1
+      |}
+      ["Incompatible return type [7]: Expected `str` but got `int`."];
+    assert_errors
+      {|
+        # pyre-do-not-check
+        def foo() -> str:
+          return 1
+      |}
+      []
+  in
+  with_bracket_chdir context (bracket_tmpdir context) check
+
+
 let () =
   "typeChecker">:::[
-    "ignore_lines">::ignore_lines_test
+    "ignore_lines">::ignore_lines_test;
+    "ignore_modes">::ignore_modes_test;
   ]
   |> run_test_tt_main

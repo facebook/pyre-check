@@ -46,6 +46,17 @@ type t = {
 [@@deriving compare, eq, show]
 
 
+type mode =
+  | Default
+  | Declare
+  | Strict
+  | Infer
+[@@deriving compare, eq, show, sexp, hash]
+
+
+val mode: t -> configuration:Configuration.t -> mode
+
+
 val create
   :  ?docstring: string option
   -> ?metadata: Metadata.t

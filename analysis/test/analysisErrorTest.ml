@@ -425,72 +425,64 @@ let test_filter _ =
       |};
     ];
   let resolution = Environment.resolution environment () in
-  let assert_filtered ?(define = mock_define) ~configuration kind =
+  let assert_filtered ?(define = mock_define) kind =
+    let errors = [error ~define kind] in
     assert_equal
       []
-      (Error.filter ~resolution ~configuration [error ~define kind])
+      (Error.filter ~configuration ~resolution errors)
   in
-  let assert_not_filtered ?(define = mock_define) ~configuration kind =
+  let assert_unfiltered ?(define = mock_define) kind =
     let errors = [error ~define kind] in
     assert_equal
       ~cmp:(List.equal ~equal:Error.equal)
       errors
-      (Error.filter ~resolution ~configuration errors)
+      (Error.filter ~configuration ~resolution errors)
   in
-
-  (* Test different modes. *)
-  let debug = Configuration.create ~debug:true () in
-  assert_not_filtered ~configuration:debug (Error.UndefinedType Type.Object);
-
-  let infer = Configuration.create ~infer:true () in
-  assert_filtered ~configuration:infer (missing_return Type.Top);
-  assert_filtered ~configuration:infer (missing_return Type.Object);
-  assert_not_filtered ~configuration:infer (missing_return Type.integer);
-  assert_filtered ~configuration:infer (Error.UndefinedType Type.integer);
-
-  let strict = Configuration.create ~strict:true () in
-  assert_not_filtered ~configuration:strict (missing_return Type.Top);
-  assert_filtered ~configuration:strict (Error.IncompatibleAwaitableType Type.Top);
-  assert_not_filtered ~configuration:strict (missing_return Type.Object);
-
-  let default = Configuration.create () in
-  assert_filtered ~configuration:default (missing_return Type.integer);
-  assert_not_filtered ~configuration:default (incompatible_return_type Type.integer Type.float);
-  assert_filtered ~configuration:default (incompatible_return_type Type.integer Type.Object);
-
   (* Suppress mock errors. *)
-  assert_filtered
-    ~configuration:default
-    (incompatible_return_type (Type.primitive "unittest.mock.Mock") Type.integer);
-  assert_not_filtered
-    ~configuration:default
-    (incompatible_return_type Type.integer (Type.primitive "unittest.mock.Mock"));
-  assert_filtered
-    ~configuration:default
-    (undefined_attribute (Type.primitive "MockChild"));
-  assert_filtered
-    ~configuration:default
-    (undefined_attribute (Type.primitive "NonCallableChild"));
-  assert_not_filtered
-    ~configuration:default
-    (undefined_attribute (Type.primitive "NonMockChild"));
+  assert_filtered (incompatible_return_type (Type.primitive "unittest.mock.Mock") Type.integer);
+  assert_unfiltered (incompatible_return_type Type.integer (Type.primitive "unittest.mock.Mock"));
+  assert_filtered (undefined_attribute (Type.primitive "MockChild"));
+  assert_filtered (undefined_attribute (Type.primitive "NonCallableChild"));
+  assert_unfiltered (undefined_attribute (Type.primitive "NonMockChild"));
 
   (* Suppress callable errors. *)
   assert_filtered
-    ~configuration:default
     (incompatible_return_type (Type.callable ~annotation:Type.integer ()) Type.integer);
   assert_filtered
-    ~configuration:default
     (incompatible_return_type Type.integer (Type.callable ~annotation:Type.integer ()));
 
   (* Suppress return errors in unimplemented defines. *)
-  assert_not_filtered
-    ~configuration:default
-    (incompatible_return_type Type.integer Type.float);
+  assert_unfiltered (incompatible_return_type Type.integer Type.float);
   assert_filtered
     ~define:(define ~body:[+Statement.Pass; +Statement.Return None] ())
-    ~configuration:default
     (incompatible_return_type Type.integer Type.float)
+
+
+let test_suppress _ =
+  let assert_suppressed mode ?(define = mock_define) kind =
+    assert_equal
+      true
+      (Error.suppress ~mode (error ~define kind))
+  in
+  let assert_not_suppressed mode ?(define = mock_define) kind =
+    assert_equal
+      false
+      (Error.suppress ~mode (error ~define kind))
+  in
+
+  (* Test different modes. *)
+  assert_suppressed Source.Infer (missing_return Type.Top);
+  assert_suppressed Source.Infer (missing_return Type.Object);
+  assert_not_suppressed Source.Infer (missing_return Type.integer);
+  assert_suppressed Source.Infer (Error.UndefinedType Type.integer);
+
+  assert_not_suppressed Source.Strict (missing_return Type.Top);
+  assert_suppressed Source.Strict (Error.IncompatibleAwaitableType Type.Top);
+  assert_not_suppressed Source.Strict (missing_return Type.Object);
+
+  assert_suppressed Source.Default (missing_return Type.integer);
+  assert_not_suppressed Source.Default (incompatible_return_type Type.integer Type.float);
+  assert_suppressed Source.Default (incompatible_return_type Type.integer Type.Object)
 
 
 let () =
@@ -498,5 +490,6 @@ let () =
     "due_to_analysis_limitations">::test_due_to_analysis_limitations;
     "join">::test_join;
     "filter">::test_filter;
+    "suppress">::test_suppress;
   ]
   |> run_test_tt_main

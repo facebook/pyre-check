@@ -38,5 +38,13 @@ module LocationListValue = struct
 end
 
 
+module ModeValue = struct
+  type t = Source.mode
+  let prefix = Prefix.make ()
+  let description = "Mode"
+end
+
+
 module IgnoreLines = SharedMemory.WithCache (LocationKey) (IgnoreValue)
 module IgnoreKeys = SharedMemory.WithCache (StringKey) (LocationListValue)
+module ErrorModes = SharedMemory.WithCache (StringKey) (ModeValue)

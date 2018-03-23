@@ -15,30 +15,60 @@ module IgnoreSharedMemory = ServiceIgnoreSharedMemory
 open IgnoreSharedMemory
 
 
+let register_ignores handle =
+  (* Remove existing ignores. *)
+  let key = File.Handle.show handle in
+
+  IgnoreKeys.get key
+  >>| IgnoreLines.KeySet.of_list
+  >>| IgnoreLines.remove_batch
+  |> ignore;
+
+  (* Register new ignores. *)
+  match AstSharedMemory.get_source handle with
+  | Some source ->
+      let ignore_lines = Source.ignore_lines source in
+      List.iter
+        ~f:(fun ignore_line -> IgnoreLines.add (Ignore.key ignore_line) ignore_line)
+        ignore_lines;
+      IgnoreKeys.add key (List.map ~f:Ignore.key ignore_lines)
+  | _ ->
+      ()
+
+
+let register_mode ~configuration handle =
+  let key = File.Handle.show handle in
+  let mode =
+    match AstSharedMemory.get_source handle with
+    | Some source -> Source.mode source ~configuration
+    | _ -> Source.Default
+  in
+  ErrorModes.add key mode
+
+
 let register ~configuration handles =
   let timer = Timer.start () in
   let register handle =
-    (* Remove existing ignores. *)
-    let key = File.Handle.show handle in
-
-    IgnoreKeys.get key
-    >>| IgnoreLines.KeySet.of_list
-    >>| IgnoreLines.remove_batch
-    |> ignore;
-
-    (* Register new ignores. *)
-    match AstSharedMemory.get_source handle with
-    | Some source ->
-        let ignore_lines = Source.ignore_lines source in
-        List.iter
-          ~f:(fun ignore_line -> IgnoreLines.add (Ignore.key ignore_line) ignore_line)
-          ignore_lines;
-        IgnoreKeys.add key (List.map ~f:Ignore.key ignore_lines)
-    | _ ->
-        ()
+    register_ignores handle;
+    register_mode ~configuration handle;
   in
   List.iter ~f:register handles;
   Statistics.performance ~name:"Registered ignores" ~timer ~configuration ~normals:[] ()
+
+
+let filter_by_mode ~configuration:{ Configuration.debug; _ } errors =
+  if debug then
+    errors
+  else
+    let suppress ({ Error.location = { Location.path; _ }; _ } as error) =
+      let mode =
+        match ErrorModes.get path with
+        | Some mode -> mode
+        | _ -> Source.Default
+      in
+      Error.suppress ~mode error
+    in
+    List.filter ~f:(fun error -> not (suppress error)) errors
 
 
 let postprocess handles errors =

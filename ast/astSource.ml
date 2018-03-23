@@ -146,6 +146,28 @@ type t = {
 [@@deriving compare, eq, show]
 
 
+type mode =
+  | Default
+  | Declare
+  | Strict
+  | Infer
+[@@deriving compare, eq, show, sexp, hash]
+
+
+let mode source ~configuration =
+  match configuration, source with
+  | { Configuration.infer = true; _ }, _ ->
+      Infer
+  | { Configuration.strict = true; _ }, _
+  | _, { metadata = { Metadata.strict = true; _ }; _ } ->
+      Strict
+  | { Configuration.declare = true; _ }, _
+  | _, { metadata = { Metadata.declare = true; _ }; _ } ->
+      Declare
+  | _ ->
+      Default
+
+
 let create
     ?(docstring = None)
     ?(metadata = Metadata.create ~number_of_lines:(-1) ())

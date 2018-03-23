@@ -69,7 +69,10 @@ let analyze_source
         ~integers:["number of lines", number_of_lines]
         ~configuration
         ();
-      errors
+      let filtered_errors =
+        Ignore.filter_by_mode ~configuration (errors.TypeCheck.Result.errors)
+      in
+      { errors with TypeCheck.Result.errors = filtered_errors }
     end
 
 

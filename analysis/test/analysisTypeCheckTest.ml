@@ -16,8 +16,15 @@ open TypeCheck
 
 open Test
 
-let check_errors configuration environment source =
-  (check configuration environment source).Result.errors
+
+let check_errors ?(mode=None) configuration environment source =
+  let suppress mode errors =
+    List.filter ~f:(fun error -> not (Error.suppress ~mode error)) errors
+  in
+  let errors = (check configuration environment source).Result.errors in
+  match mode with
+  | Some mode -> suppress mode errors
+  | _ -> errors
 
 
 let configuration = Configuration.create ()
@@ -150,7 +157,9 @@ let plain_environment =
 
 
 let environment =
-  Environment.handler ~configuration plain_environment
+  let handler = Environment.handler ~configuration plain_environment in
+  add_defaults_to_environment ~configuration handler;
+  handler
 
 
 let empty_define = {
@@ -1000,6 +1009,7 @@ let check_with_default_environment
     ?(strict = false)
     ?(declare = false)
     ?(infer = false)
+    ?(mode = None)
     source =
   let source =
     let metadata =
@@ -1022,10 +1032,8 @@ let check_with_default_environment
     Environment.populate ~configuration (Environment.handler ~configuration environment) [source];
     Environment.handler ~configuration environment
   in
-  check
-    (Configuration.create ~debug ~strict ~declare ~infer ())
-    environment
-    source
+  let configuration = Configuration.create ~debug ~strict ~declare ~infer () in
+  check_errors ~mode configuration environment source
 
 
 let assert_type_errors
@@ -1039,6 +1047,18 @@ let assert_type_errors
     errors =
   Annotated.Class.AttributesCache.clear ();
   let descriptions =
+    let mode =
+      if infer then
+        Some Source.Infer
+      else if strict then
+        Some Source.Strict
+      else if declare then
+        Some Source.Declare
+      else if debug then
+        None
+      else
+        Some Source.Default
+    in
     List.map
       ~f:(fun error -> Error.description error ~detailed:show_error_traces)
       (check_with_default_environment
@@ -1046,7 +1066,8 @@ let assert_type_errors
          ~strict
          ~debug
          ~declare
-         ~infer source).Result.errors
+         ~infer
+         ~mode source)
   in
   let description_list_to_string descriptions =
     Format.asprintf "%a" Sexp.pp (sexp_of_list sexp_of_string descriptions)
@@ -4577,6 +4598,7 @@ let assert_infer
     (List.map
        ~f:fields_of_error
        (check_errors
+          ~mode:(Some Source.Infer)
           (Configuration.create ~debug ~infer ~recursive_infer ()) environment_handler source)
      |> List.concat
      |> List.map ~f:to_string)

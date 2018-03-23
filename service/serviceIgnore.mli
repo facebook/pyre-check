@@ -3,6 +3,14 @@
     This source code is licensed under the MIT license found in the
     LICENSE file in the root directory of this source tree. *)
 
+open Analysis
+
 
 val register: configuration: Configuration.t -> File.Handle.t list -> unit
-val postprocess: File.Handle.t list -> Analysis.Error.t list -> Analysis.Error.t list
+
+val filter_by_mode
+  :  configuration: Configuration.t
+  -> Error.t list
+  -> Error.t list
+
+val postprocess: File.Handle.t list -> Error.t list -> Error.t list
