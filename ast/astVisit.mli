@@ -18,7 +18,7 @@ end
 
 module type StatementVisitor = sig
   type t
-  val statement: t -> Statement.t -> t
+  val statement: Source.t -> t -> Statement.t -> t
 end
 
 module Make (Visitor: Visitor) : sig

@@ -20,7 +20,7 @@ end
 
 module type StatementVisitor = sig
   type t
-  val statement: t -> Statement.t -> t
+  val statement: Source.t -> t -> Statement.t -> t
 end
 
 module Make (Visitor: Visitor) = struct
@@ -195,7 +195,7 @@ module MakeStatementVisitor (Visitor: StatementVisitor) = struct
             List.iter ~f:visit_statement orelse;
             List.iter ~f:visit_statement finally;
       end;
-      state := Visitor.statement !state { Node.location; value }
+      state := Visitor.statement source !state { Node.location; value }
     in
     List.iter ~f:visit_statement source.Source.statements;
     !state

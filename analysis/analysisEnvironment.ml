@@ -691,7 +691,7 @@ let register_class_definitions (module Handler: Handler) source =
   let module Visit = Visit.MakeStatementVisitor(struct
       type t = unit
 
-      let statement _ = function
+      let statement _ _ = function
         | { Node.value = Class { Class.name; _ }; _ }
         | { Node.value = Stub (Stub.Class { Class.name; _ }); _ } ->
             let primitive, _ =
@@ -887,13 +887,13 @@ let register_globals
   List.iter ~f:visit statements
 
 
-let register_classes (module Handler: Handler) ({ Source.path; _ } as source) =
+let register_classes (module Handler: Handler) source =
   let resolution = resolution (module Handler: Handler) ~annotations:Access.Map.empty () in
 
   let module Visit = Visit.MakeStatementVisitor(struct
       type t = unit
 
-      let statement _ = function
+      let statement { Source.path; _ } _ = function
         | { Node.location; value = Class definition }
         | { Node.location; value = Stub (Stub.Class definition) } ->
             (* Register constructors. *)
@@ -960,12 +960,12 @@ let register_dependencies
     ?(source_root = Path.current_working_directory ())
     ?(check_dependency_exists = true)
     (module Handler: Handler)
-    ({ Source.path; _ } as source) =
+    source =
 
   let module Visit = Visit.MakeStatementVisitor(struct
       type t = unit
 
-      let statement _ = function
+      let statement { Source.path; _ } _ = function
         | { Node.value = Import { Import.from; imports }; _ } ->
             let imports =
               let path_of_import access =
@@ -1010,13 +1010,13 @@ let register_dependencies
 
 let register_functions
     (module Handler: Handler)
-    ({ Source.path; _ } as source) =
+    source =
   let resolution = resolution (module Handler: Handler) ~annotations:Access.Map.empty () in
 
   let module Visit = Visit.MakeStatementVisitor(struct
       type t = unit
 
-      let statement _ = function
+      let statement { Source.path; _ } _ = function
         | { Node.value = Define definition; location }
         | { Node.value = Stub (Stub.Define definition); location } ->
             let definition =

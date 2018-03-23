@@ -143,7 +143,7 @@ let test_statement_visitor _ =
   struct
     type t = int String.Table.t
 
-    let statement visited statement =
+    let statement _ visited statement =
       let increment hash_table key =
         match Hashtbl.find hash_table key with
         | None ->
@@ -192,10 +192,28 @@ let test_statement_visitor _ =
   ()
 
 
+let test_statement_visitor_source _ =
+  let module StatementVisitor =
+  struct
+    type t = string (* Last source *)
+
+    let statement { Source.path; _ } _ _ =
+      path
+  end
+  in
+  let module Visit = Visit.MakeStatementVisitor(StatementVisitor) in
+  let path = Visit.visit "" (parse ~path:"test.py" "a = 1") in
+  assert_equal path "test.py";
+
+  let path = Visit.visit "" (parse ~path:"test2.py" "b = 2") in
+  assert_equal path "test2.py";
+  ()
+
 let () =
   "visit">:::[
     "collect">::test_collect;
     "collect_accesses_in_position">::test_collect_accesses_in_position;
     "statement_visitor">::test_statement_visitor;
+    "statement_visitor_source">::test_statement_visitor_source;
   ]
   |> run_test_tt_main
