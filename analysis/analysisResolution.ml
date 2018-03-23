@@ -31,7 +31,9 @@ type t = {
 
   global: Access.t -> global option;
 
+  is_module: Access.t -> bool;
   module_definition: Access.t -> Module.t option;
+
   class_definition: Type.t -> (Class.t Node.t) option;
 
   is_function: Access.t -> bool;
@@ -56,6 +58,7 @@ let create
     ~resolve_literal
     ~parse_annotation
     ~global
+    ~is_module
     ~module_definition
     ~class_definition
     ~is_function
@@ -69,6 +72,7 @@ let create
     resolve_literal;
     parse_annotation;
     global;
+    is_module;
     module_definition;
     class_definition;
     is_function;
@@ -111,6 +115,10 @@ let parse_annotation { parse_annotation; _ } =
 
 let global { global; _ } =
   global
+
+
+let is_module { is_module; _ } =
+  is_module
 
 
 let module_definition { module_definition; _ } =

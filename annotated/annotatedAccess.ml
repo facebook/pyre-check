@@ -615,7 +615,7 @@ let fold ~resolution ~initial ~f access =
                         (f accumulator ~annotations ~resolved ~element:Element.Value)
                       ()
                 | None ->
-                    if Resolution.module_definition resolution lead |> Option.is_some then
+                    if Resolution.is_module resolution lead then
                       (* Skip over modules. *)
                       Result.create ~resolution ~accumulator ()
                     else

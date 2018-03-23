@@ -1706,7 +1706,12 @@ let test_modules _ =
   assert_is_none (Handler.module_definition (Access.create "zap"));
 
   assert_is_some (Handler.module_definition (Access.create "os"));
-  assert_is_some (Handler.module_definition (Access.create "os.path"))
+  assert_is_some (Handler.module_definition (Access.create "os.path"));
+
+  assert_true (Handler.is_module (Access.create "wingus"));
+  assert_true (Handler.is_module (Access.create "dingus"));
+  assert_false (Handler.is_module (Access.create "zap"));
+  ()
 
 
 let test_import_dependencies context =

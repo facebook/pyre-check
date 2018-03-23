@@ -51,6 +51,7 @@ module type Handler = sig
   val protocols: unit -> Type.t list
 
   val register_module: qualifier: Access.t -> statements: Statement.t list -> unit
+  val is_module: Access.t -> bool
   val module_definition: Access.t -> Module.t option
 
   val in_class_definition_keys: Type.t -> bool
