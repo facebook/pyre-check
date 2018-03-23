@@ -114,7 +114,7 @@ let callable ({ Define.name; parameters; _ } as define) ~resolution =
   in
   Type.Callable {
     kind = Named name;
-    overrides = [
+    overloads = [
       {
         annotation = return_annotation define ~resolution;
         parameters = Defined (List.map ~f:parameter parameters);

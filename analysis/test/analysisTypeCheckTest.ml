@@ -4201,7 +4201,7 @@ let test_check_behavioral_subtyping _ =
       class Bar(Foo):
         def foo() -> float: return 1.0
     |}
-    ["Inconsistent override [15]: `foo` overrides method defined in `Foo` inconsistently."];
+    ["Inconsistent override [15]: `foo` overloads method defined in `Foo` inconsistently."];
   assert_type_errors
     {|
       class Foo():
@@ -4217,7 +4217,7 @@ let test_check_behavioral_subtyping _ =
       class Bar(Foo):
         def foo() -> None: pass
     |}
-    ["Inconsistent override [15]: `foo` overrides method defined in `Foo` inconsistently."];
+    ["Inconsistent override [15]: `foo` overloads method defined in `Foo` inconsistently."];
   assert_type_errors
     {|
       class Foo():
@@ -4226,7 +4226,7 @@ let test_check_behavioral_subtyping _ =
         def foo(): pass
     |}
     [
-      "Inconsistent override [15]: `foo` overrides method defined in `Foo` inconsistently.";
+      "Inconsistent override [15]: `foo` overloads method defined in `Foo` inconsistently.";
       "Missing return annotation [3]: Returning `None` but no return type is specified."
     ];
   assert_type_errors ~show_error_traces:true
@@ -4239,7 +4239,7 @@ let test_check_behavioral_subtyping _ =
           return 1
     |}
     [
-      "Inconsistent override [15]: `bar` overrides method defined in `Foo` " ^
+      "Inconsistent override [15]: `bar` overloads method defined in `Foo` " ^
       "inconsistently. Returned type `typing.Union[int, str]` is not a subtype " ^
       "of the overridden return `int`."
     ];
@@ -4252,7 +4252,7 @@ let test_check_behavioral_subtyping _ =
       class Bar(Foo):
         def foo(a: int) -> None: pass
     |}
-    ["Inconsistent override [14]: `foo` overrides method defined in `Foo` inconsistently."];
+    ["Inconsistent override [14]: `foo` overloads method defined in `Foo` inconsistently."];
   assert_type_errors
     {|
       class Foo():
@@ -4260,7 +4260,7 @@ let test_check_behavioral_subtyping _ =
       class Bar(Foo):
         def foo() -> None: pass
     |}
-    ["Inconsistent override [14]: `foo` overrides method defined in `Foo` inconsistently."];
+    ["Inconsistent override [14]: `foo` overloads method defined in `Foo` inconsistently."];
   assert_type_errors
     {|
       class Foo():
@@ -4295,7 +4295,7 @@ let test_check_behavioral_subtyping _ =
           pass
     |}
     [
-      "Inconsistent override [14]: `bar` overrides method defined in `Foo` " ^
+      "Inconsistent override [14]: `bar` overloads method defined in `Foo` " ^
       "inconsistently. Parameter of type `int` is not a " ^
       "supertype of the overridden parameter `typing.Union[int, str]`."
     ];

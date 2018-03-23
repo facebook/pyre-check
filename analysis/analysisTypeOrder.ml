@@ -443,8 +443,8 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
   | _, Type.Tuple _ ->
       false
 
-  | Type.Callable { Type.Callable.kind = Type.Callable.Anonymous; overrides = [left] },
-    Type.Callable { Type.Callable.kind = Type.Callable.Anonymous; overrides = [right] } ->
+  | Type.Callable { Type.Callable.kind = Type.Callable.Anonymous; overloads = [left] },
+    Type.Callable { Type.Callable.kind = Type.Callable.Anonymous; overloads = [right] } ->
       let open Type.Callable in
       let parameters_less_or_equal () =
         match left.parameters, right.parameters with
@@ -660,7 +660,7 @@ and join_override ~parameter_join ~return_join order left right =
   >>| fun parameters ->
   Type.Callable {
     Type.Callable.kind = Type.Callable.Anonymous;
-    overrides = [
+    overloads = [
       {
         annotation = return_join order left.annotation right.annotation;
         parameters = parameters;
@@ -782,8 +782,8 @@ and join ((module Handler: Handler) as order) left right =
         else
           Type.Object
 
-    | Type.Callable { Type.Callable.kind = Type.Callable.Anonymous; overrides = [left] },
-      Type.Callable { Type.Callable.kind = Type.Callable.Anonymous; overrides = [right] } ->
+    | Type.Callable { Type.Callable.kind = Type.Callable.Anonymous; overloads = [left] },
+      Type.Callable { Type.Callable.kind = Type.Callable.Anonymous; overloads = [right] } ->
         join_override ~parameter_join:meet ~return_join:join order left right
         |> Option.value ~default:Type.Object
     | (Type.Callable { Type.Callable.kind = Type.Callable.Named left; _ } as callable),
@@ -891,8 +891,8 @@ and meet order left right =
         else
           Type.Bottom
 
-    | Type.Callable { Type.Callable.kind = Type.Callable.Anonymous; overrides = [left] },
-      Type.Callable { Type.Callable.kind = Type.Callable.Anonymous; overrides = [right] } ->
+    | Type.Callable { Type.Callable.kind = Type.Callable.Anonymous; overloads = [left] },
+      Type.Callable { Type.Callable.kind = Type.Callable.Anonymous; overloads = [right] } ->
         join_override ~parameter_join:join ~return_join:meet order left right
         |> Option.value ~default:Type.Bottom
     | (Type.Callable { Type.Callable.kind = Type.Callable.Named left; _ } as callable),

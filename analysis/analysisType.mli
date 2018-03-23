@@ -43,7 +43,7 @@ module Record : sig
     and 'annotation record =
       {
         kind: kind;
-        overrides: ('annotation override) list;
+        overloads: ('annotation override) list;
       }
     [@@deriving compare, eq, sexp, show, hash]
   end
@@ -102,7 +102,7 @@ val bool: t
 val bytes: t
 val callable
   :  ?name: Access.t
-  -> ?overrides: (t Record.Callable.override) list
+  -> ?overloads: (t Record.Callable.override) list
   -> ?parameters: t Record.Callable.parameters
   -> annotation: t
   -> unit

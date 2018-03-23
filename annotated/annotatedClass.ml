@@ -129,8 +129,8 @@ module Method = struct
       annotation
 
 
-  let overrides { define = { Define.name; _ }; parent } ~resolution =
-    let find_overrides sofar annotation =
+  let overloads { define = { Define.name; _ }; parent } ~resolution =
+    let find_overloads sofar annotation =
       match sofar with
       | Some _ -> sofar
       | None ->
@@ -152,7 +152,7 @@ module Method = struct
     TypeOrder.successors_fold
       (Resolution.order resolution)
       ~initial:None
-      ~f:find_overrides
+      ~f:find_overloads
       (annotation parent ~resolution)
 
 

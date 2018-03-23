@@ -283,7 +283,7 @@ module State = struct
         let open Annotated in
         (Define.create define
          |> Define.method_definition ~resolution
-         >>= fun definition -> Method.overrides definition ~resolution
+         >>= fun definition -> Method.overloads definition ~resolution
          >>| fun overridden_method ->
          (* Check strengthening of postcondition. *)
          let errors =

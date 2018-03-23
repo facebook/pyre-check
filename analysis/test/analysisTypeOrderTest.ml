@@ -653,7 +653,7 @@ let test_join _ =
     "typing.Callable('derp')[..., int]"
     "typing.Callable('derp')[..., int]";
 
-  (* Do not join with overrides. *)
+  (* Do not join with overloads. *)
   assert_join "typing.Callable[..., int][..., str]" "typing.Callable[..., int]" "typing.Any";
 
   assert_join

@@ -158,7 +158,7 @@ let test_create _ =
   assert_create
     "typing.Callable[..., int][..., str]"
     (Type.callable
-       ~overrides:[
+       ~overloads:[
          {
            annotation = Type.string;
            parameters = Undefined;
@@ -171,7 +171,7 @@ let test_create _ =
     "typing.Callable('name')[..., int]"
     (Type.Callable {
         kind = Type.Callable.Named (Access.create "name");
-        overrides = [ { annotation = Type.integer; parameters = Undefined }];
+        overloads = [ { annotation = Type.integer; parameters = Undefined }];
       });
   assert_create
     "typing.Other('name')[..., int]"
@@ -181,7 +181,7 @@ let test_create _ =
     "typing.Callable[[int, str], int]"
     (Type.Callable {
         kind = Type.Callable.Anonymous;
-        overrides = [
+        overloads = [
           {
             annotation = Type.integer;
             parameters = Defined [
@@ -195,7 +195,7 @@ let test_create _ =
     "typing.Callable[[int, Named(a, int), Variable(variable), Keywords(keywords)], int]"
     (Type.Callable {
         kind = Anonymous;
-        overrides = [
+        overloads = [
           {
             annotation = Type.integer;
             parameters = Defined [
@@ -249,7 +249,7 @@ let test_expression _ =
 
   assert_expression
     (Type.callable
-       ~overrides:[
+       ~overloads:[
          {
            Type.Callable.annotation = Type.string;
            parameters = Type.Callable.Undefined;

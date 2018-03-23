@@ -801,7 +801,7 @@ let test_inferred_generic_base _ =
     []
 
 
-let test_method_overrides _ =
+let test_method_overloads _ =
   let resolution =
     populate {|
       class Foo:
@@ -825,12 +825,12 @@ let test_method_overrides _ =
     |> value
   in
 
-  assert_is_none (Method.overrides ~resolution baz);
-  let overrides = Method.overrides ~resolution foo in
-  assert_is_some overrides;
+  assert_is_none (Method.overloads ~resolution baz);
+  let overloads = Method.overloads ~resolution foo in
+  assert_is_some overloads;
   assert_equal
     ~cmp:Expression.Access.equal
-    (Method.parent (Option.value_exn overrides) |> Class.name)
+    (Method.parent (Option.value_exn overloads) |> Class.name)
     (Expression.Access.create "Foo")
 
 
@@ -950,7 +950,7 @@ let () =
   ]
   |> run_test_tt_main;
   "method">:::[
-    "overrides">::test_method_overrides;
+    "overloads">::test_method_overloads;
     "implements">::test_method_implements;
   ]
   |> run_test_tt_main

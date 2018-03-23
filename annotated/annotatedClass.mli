@@ -51,7 +51,7 @@ module Method : sig
     -> Type.t Int.Map.t
   val return_annotation: t -> resolution: Resolution.t -> Type.t
 
-  val overrides: t -> resolution: Resolution.t -> t option
+  val overloads: t -> resolution: Resolution.t -> t option
 
   val implements: t -> protocol_method: t -> bool
 end

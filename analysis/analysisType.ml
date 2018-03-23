@@ -49,7 +49,7 @@ module Record = struct
     and 'annotation record =
       {
         kind: kind;
-        overrides: ('annotation override) list;
+        overloads: ('annotation override) list;
       }
     [@@deriving compare, eq, sexp, show, hash]
   end
@@ -180,13 +180,13 @@ let rec pp format annotation =
   match annotation with
   | Bottom ->
       Format.fprintf format "`typing.Any`"
-  | Callable { kind; overrides } ->
+  | Callable { kind; overloads } ->
       let kind =
         match kind with
         | Anonymous -> ""
         | Named name -> Format.asprintf "(%a)" Access.pp name
       in
-      let overrides =
+      let overloads =
         let override { annotation; parameters } =
           let parameters =
             match parameters with
@@ -209,10 +209,10 @@ let rec pp format annotation =
           in
           Format.asprintf "%s, %s" parameters (without_backtick [annotation])
         in
-        List.map ~f:override overrides
+        List.map ~f:override overloads
         |> String.concat ~sep:"]["
       in
-      Format.fprintf format "`typing.Callable%s[%s]`" kind overrides
+      Format.fprintf format "`typing.Callable%s[%s]`" kind overloads
   | Object ->
       Format.fprintf format "`typing.Any`"
   | Optional Bottom ->
@@ -297,9 +297,9 @@ let bytes =
   Primitive (Identifier.create "bytes")
 
 
-let callable ?name ?(overrides = []) ?(parameters = Undefined) ~annotation () =
+let callable ?name ?(overloads = []) ?(parameters = Undefined) ~annotation () =
   let kind = name >>| (fun name -> Named name) |> Option.value ~default:Anonymous in
-  Callable { kind; overrides = { annotation; parameters } :: overrides }
+  Callable { kind; overloads = { annotation; parameters } :: overloads }
 
 
 let complex =
@@ -557,7 +557,7 @@ let create ~aliases { Node.value = expression; _ } =
                 let name, argument = name reversed_lead in
                 match Identifier.show name with
                 | "typing.Callable" ->
-                    let overrides =
+                    let overloads =
                       let subscripts =
                         let extract_subscript element =
                           match element with
@@ -621,13 +621,13 @@ let create ~aliases { Node.value = expression; _ } =
                       in
                       List.filter_map ~f:override subscripts
                     in
-                    if not (List.is_empty overrides) then
+                    if not (List.is_empty overloads) then
                       let kind =
                         match argument with
                         | Some name -> Named name
                         | None -> Anonymous
                       in
-                      Callable { kind; overrides }
+                      Callable { kind; overloads }
                     else
                       Top
                 | _ ->
@@ -810,7 +810,7 @@ let rec expression annotation =
     in
     match annotation with
     | Bottom -> Access.create "$bottom"
-    | Callable { overrides; _ } ->
+    | Callable { overloads; _ } ->
         let subscripts =
           let subscript { annotation; parameters } =
             let parameters =
@@ -861,7 +861,7 @@ let rec expression annotation =
             in
             Access.Subscript [parameters; index annotation]
           in
-          List.map ~f:subscript overrides;
+          List.map ~f:subscript overloads;
         in
         Access.create "typing.Callable" @ subscripts
     | Object -> Access.create "object"
@@ -909,7 +909,7 @@ let rec exists annotation ~predicate =
     true
   else
     match annotation with
-    | Callable { overrides; _ } ->
+    | Callable { overloads; _ } ->
         let exists { annotation; parameters } =
           let exists_in_parameters =
             match parameters with
@@ -928,7 +928,7 @@ let rec exists annotation ~predicate =
           in
           exists annotation ~predicate || exists_in_parameters
         in
-        List.exists ~f:exists overrides
+        List.exists ~f:exists overloads
 
     | Optional annotation
     | Tuple (Unbounded annotation) ->
@@ -1027,7 +1027,7 @@ let is_not_instantiated annotation =
 
 
 let rec variables = function
-  | Callable { overrides; _ } ->
+  | Callable { overloads; _ } ->
       let variables { annotation; parameters } =
         let variables_in_parameters  =
           match parameters with
@@ -1046,7 +1046,7 @@ let rec variables = function
         in
         variables annotation @ variables_in_parameters
       in
-      List.concat_map ~f:variables overrides
+      List.concat_map ~f:variables overloads
   | Optional annotation ->
       variables annotation
   | Tuple (Bounded elements) ->
@@ -1232,7 +1232,7 @@ let instantiate ?(widen = false) annotation ~constraints =
           match annotation with
           | Optional parameter ->
               optional (instantiate parameter)
-          | Callable { kind; overrides } ->
+          | Callable { kind; overloads } ->
               let instantiate { annotation; parameters } =
                 let parameters  =
                   match parameters with
@@ -1255,7 +1255,7 @@ let instantiate ?(widen = false) annotation ~constraints =
                 in
                 { annotation = instantiate annotation; parameters }
               in
-              Callable { kind; overrides = List.map ~f:instantiate overrides }
+              Callable { kind; overloads = List.map ~f:instantiate overloads }
           | Parametric ({ parameters; _ } as parametric) ->
               Parametric {
                 parametric with

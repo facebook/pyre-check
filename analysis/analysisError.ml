@@ -462,7 +462,7 @@ let description
         in
         [
           Format.asprintf
-            "`%a` overrides method defined in `%a` inconsistently."
+            "`%a` overloads method defined in `%a` inconsistently."
             Access.pp define_name
             Access.pp
             (Annotated.Method.parent overridden_method |> Annotated.Class.name);
