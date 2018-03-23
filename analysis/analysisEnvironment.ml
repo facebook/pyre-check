@@ -890,11 +890,7 @@ let register_globals
   List.iter ~f:visit statements
 
 
-let connect_type_order
-    (module Handler: Handler)
-    ?(source_root = Path.current_working_directory ())
-    ?(check_dependency_exists = true)
-    ({ Source.path; _ } as source) =
+let register_classes (module Handler: Handler) ({ Source.path; _ } as source) =
   let resolution = resolution (module Handler: Handler) ~annotations:Access.Map.empty () in
 
   let module Visit = Visit.Make(struct
@@ -959,7 +955,27 @@ let connect_type_order
                     };
                   })
             |> ignore
+        | _ ->
+            ()
+    end)
+  in
+  Visit.visit () source |> ignore
 
+
+let connect_type_order
+    (module Handler: Handler)
+    ?(source_root = Path.current_working_directory ())
+    ?(check_dependency_exists = true)
+    ({ Source.path; _ } as source) =
+  let resolution = resolution (module Handler: Handler) ~annotations:Access.Map.empty () in
+
+  let module Visit = Visit.Make(struct
+      type t = unit
+
+      let expression _ _ =
+        ()
+
+      let statement _ = function
         | { Node.value = Define definition; location }
         | { Node.value = Stub (Stub.Define definition); location } ->
             let definition =
@@ -1036,6 +1052,7 @@ let populate
   register_aliases (module Handler) sources;
   Type.TypeCache.enable ();
 
+  List.iter ~f:(register_classes (module Handler)) sources;
   List.iter ~f:(connect_type_order ~source_root ~check_dependency_exists (module Handler)) sources;
   TypeOrder.connect_annotations_to_top
     (module Handler.TypeOrderHandler)

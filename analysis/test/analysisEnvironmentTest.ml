@@ -323,7 +323,7 @@ let test_register_globals _ =
   assert_global "qualifier.stub" (Some Type.integer)
 
 
-let test_connect_type_order _ =
+let test_register_classes _ =
   let environment = Environment.Builder.create ~configuration () in
   let (module Handler: Environment.Handler) = Environment.handler ~configuration environment in
   let source =
@@ -341,16 +341,35 @@ let test_connect_type_order _ =
   let order = (module Handler.TypeOrderHandler: TypeOrder.Handler) in
   Environment.register_class_definitions (module Handler) source;
   Environment.register_aliases (module Handler) [source];
-  Environment.connect_type_order (module Handler) source;
+  Environment.register_classes (module Handler) source;
   assert_equal (parse_annotation (module Handler) (!"C")) (Type.primitive "C");
   assert_equal (parse_annotation (module Handler) (!"D")) (Type.primitive "D");
   assert_equal (parse_annotation (module Handler) (!"B")) (Type.primitive "D");
   assert_equal (parse_annotation (module Handler) (!"A")) (Type.primitive "D");
-  assert_is_some (Handler.function_definitions (access ["foo"]));
+  assert_is_none (Handler.function_definitions (access ["foo"]));
   assert_equal (TypeOrder.successors order (Type.primitive "C")) [Type.Object; Type.Top];
   assert_equal
     (TypeOrder.successors order (Type.primitive "D"))
     [Type.primitive "C"; Type.Object; Type.Top]
+
+
+let test_connect_type_order _ =
+  let environment = Environment.Builder.create ~configuration () in
+  let (module Handler: Environment.Handler) = Environment.handler ~configuration environment in
+  let source =
+    parse {|
+       class C:
+         ...
+       class D(C):
+         pass
+       B = D
+       A = B
+       def foo()->A:
+         return D()
+    |}
+  in
+  Environment.connect_type_order (module Handler) source;
+  assert_is_some (Handler.function_definitions (access ["foo"]))
 
 
 let test_populate _ =

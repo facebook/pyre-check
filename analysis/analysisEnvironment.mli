@@ -97,6 +97,11 @@ val register_aliases
 
 val register_globals :  (module Handler) -> Source.t -> unit
 
+val register_classes
+  :  (module Handler)
+  -> Source.t
+  -> unit
+
 val connect_type_order
   :  (module Handler)
   -> ?source_root: Path.t
