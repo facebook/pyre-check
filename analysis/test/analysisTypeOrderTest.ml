@@ -648,18 +648,10 @@ let test_join _ =
     "typing.Callable[..., $bottom]"
     "typing.Callable[..., int]";
 
-  assert_equal
-    (Type.callable ~name:(Expression.Access.create "derp") ~annotation:Type.integer ())
-    (join
-       order
-       (Type.callable ~name:(Expression.Access.create "derp") ~annotation:Type.integer ())
-       (Type.callable ~name:(Expression.Access.create "derp") ~annotation:Type.integer ()));
-  assert_equal
-    Type.Object
-    (join
-       order
-       (Type.callable ~name:(Expression.Access.create "derp") ~annotation:Type.integer ())
-       (Type.callable ~annotation:Type.integer ()));
+  assert_join
+    "typing.Callable('derp')[..., int]"
+    "typing.Callable('derp')[..., int]"
+    "typing.Callable('derp')[..., int]";
 
   (* Do not join with overrides. *)
   assert_join "typing.Callable[..., int][..., str]" "typing.Callable[..., int]" "typing.Any";

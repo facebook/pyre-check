@@ -166,6 +166,17 @@ let test_create _ =
        ]
        ~annotation:Type.integer
        ());
+
+  assert_create
+    "typing.Callable('name')[..., int]"
+    (Type.Callable {
+        kind = Type.Callable.Named (Access.create "name");
+        overrides = [ { annotation = Type.integer; parameters = Parameter.Undefined }];
+      });
+  assert_create
+    "typing.Other('name')[..., int]"
+    Type.Top;
+
   assert_create
     "typing.Callable[[int, str], int]"
     (Type.Callable {

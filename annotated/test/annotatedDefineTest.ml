@@ -56,14 +56,14 @@ let test_callable _ =
       |> Define.create
       |> Define.callable ~resolution
     in
-    assert_equal ~printer:Type.show expected callable
+    assert_equal
+      ~printer:Type.show
+      ~cmp:Type.equal
+      (Type.create ~aliases:(fun _ -> None) (parse_single_expression expected))
+      callable
   in
-  assert_callable
-    "def foo() -> int: ..."
-    (Type.callable ~name:(Access.create "foo") ~annotation:Type.integer ());
-  assert_callable
-    "async def foo() -> int: ..."
-    (Type.callable ~name:(Access.create "foo") ~annotation:(Type.awaitable Type.integer) ())
+  assert_callable "def foo() -> int: ..." "typing.Callable('foo')[..., int]";
+  assert_callable "async def foo() -> int: ..." "typing.Callable('foo')[..., typing.Awaitable[int]]"
 
 
 let test_parent_definition _ =

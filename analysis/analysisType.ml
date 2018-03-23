@@ -519,20 +519,42 @@ let create ~aliases { Node.value = expression; _ } =
           let show = function
             | Access.Identifier element ->
                 Identifier.show element
+            | Access.Call { Node.value = { Call.name; _ }; _ } ->
+                Expression.show name
             | _ ->
                 "?" in
-          List.rev reversed_access
-          |> List.map ~f:show
-          |> String.concat ~sep:"."
-          |> Identifier.create in
+          let name =
+            List.rev reversed_access
+            |> List.map ~f:show
+            |> String.concat ~sep:"."
+            |> Identifier.create
+          in
+          let argument =
+            match reversed_access with
+            | Access.Call {
+                Node.value = {
+                  Call.arguments = [{ Argument.value = { Node.value = String argument; _ }; _ }];
+                  _;
+                };
+                _;
+              } :: _ ->
+                Some (Access.create argument)
+            | _ ->
+                None
+          in
+          name, argument
+        in
 
         let annotation =
           match tail with
           | (Access.Identifier _ as access) :: tail ->
               create (access :: reversed_lead) tail
+          | ((Access.Call { Node.value = { Call.name; _ }; _ }) as access) :: tail
+            when Expression.show name = "Callable" ->
+              create (access :: reversed_lead) tail
           | (Access.Subscript subscript) :: tail ->
               begin
-                let name = name reversed_lead in
+                let name, argument = name reversed_lead in
                 match Identifier.show name with
                 | "typing.Callable" ->
                     let overrides =
@@ -600,7 +622,12 @@ let create ~aliases { Node.value = expression; _ } =
                       List.filter_map ~f:override subscripts
                     in
                     if not (List.is_empty overrides) then
-                      Callable { kind = Anonymous; overrides }
+                      let kind =
+                        match argument with
+                        | Some name -> Named name
+                        | None -> Anonymous
+                      in
+                      Callable { kind; overrides }
                     else
                       Top
                 | _ ->
@@ -618,7 +645,7 @@ let create ~aliases { Node.value = expression; _ } =
                     Parametric { name; parameters }
               end
           | [] ->
-              let name = name reversed_lead in
+              let name, _ = name reversed_lead in
               if Identifier.show name = "None" then
                 none
               else
