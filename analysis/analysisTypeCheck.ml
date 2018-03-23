@@ -1866,7 +1866,7 @@ let check configuration environment ({ Source.path; _ } as source) =
               }]
             else
               [];
-          coverage = Coverage.create ();
+          coverage = Coverage.create ~crashes:1 ();
         }
   in
 
@@ -2004,7 +2004,11 @@ let check configuration environment ({ Source.path; _ } as source) =
       errors @ added_global_errors
       |> List.map ~f:(Error.dequalify dequalify_map environment)
       |> List.sort ~cmp:Error.compare
-      |> fun errors -> { Result.errors; lookup = Some lookup; coverage = Coverage.create () }
+      |> fun errors -> {
+        Result.errors;
+        lookup = Some lookup;
+        coverage = Coverage.create ();
+      }
   in
 
   if configuration.infer && configuration.recursive_infer then

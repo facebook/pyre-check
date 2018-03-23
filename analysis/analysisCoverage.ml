@@ -16,11 +16,12 @@ type t = {
   partial: int;
   untyped: int;
   ignore: int;
+  crashes: int;
 }
 
 
-let create ?(full = 0) ?(partial = 0) ?(untyped = 0) ?(ignore = 0) () =
-  { full; partial; untyped; ignore }
+let create ?(full = 0) ?(partial = 0) ?(untyped = 0) ?(ignore = 0) ?(crashes = 0) () =
+  { full; partial; untyped; ignore; crashes }
 
 
 let full { full; _ } =
@@ -39,12 +40,17 @@ let ignore { ignore; _ } =
   ignore
 
 
+let crashes { crashes; _ } =
+  crashes
+
+
 let sum left right =
   {
     full = full left + full right;
     partial = partial left + partial right;
     untyped = untyped left + untyped right;
     ignore = ignore left + ignore right;
+    crashes = crashes left + crashes right;
   }
 
 
@@ -69,7 +75,7 @@ let aggregate_over_source ~source coverages =
     coverages
 
 
-let log { full; partial; untyped; ignore } ~configuration ~total_errors ~path =
+let log { full; partial; untyped; ignore; crashes } ~configuration ~total_errors ~path =
   Statistics.coverage
     ~coverage:[
       "full_type_coverage", full;
@@ -77,6 +83,7 @@ let log { full; partial; untyped; ignore } ~configuration ~total_errors ~path =
       "no_type_coverage", untyped;
       "ignore_coverage", ignore;
       "total_errors", total_errors;
+      "crashes", crashes;
     ]
     ~configuration
     ~normals:["file_name", path]

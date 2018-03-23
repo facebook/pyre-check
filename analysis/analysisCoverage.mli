@@ -11,14 +11,23 @@ type t = {
   partial: int;
   untyped: int;
   ignore: int;
+  crashes: int;
 }
 
-val create: ?full: int -> ?partial: int -> ?untyped: int -> ?ignore: int -> unit -> t
+val create
+  :  ?full: int
+  -> ?partial: int
+  -> ?untyped: int
+  -> ?ignore: int
+  -> ?crashes: int
+  -> unit
+  -> t
 
 val full: t -> int
 val partial: t -> int
 val untyped: t -> int
 val ignore: t -> int
+val crashes: t -> int
 
 val sum: t -> t -> t
 val aggregate: AnalysisAnnotation.t list -> t

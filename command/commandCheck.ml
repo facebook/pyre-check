@@ -96,7 +96,7 @@ let check
     handler scheduler ~configuration ~stubs ~sources
   in
   (* Run type checker. *)
-  let errors, _, { TypeCheck.Coverage.full; partial; untyped; ignore } =
+  let errors, _, { TypeCheck.Coverage.full; partial; untyped; ignore; crashes } =
     Service.TypeCheck.analyze_sources scheduler configuration environment sources
   in
   (* Log coverage results *)
@@ -111,12 +111,14 @@ let check
       "no_type_coverage", untyped;
       "ignore_coverage", ignore;
       "total_errors", List.length errors;
+      "crashes", crashes;
     ]
     ~configuration
     ~normals:[
       "file_name", path_to_files;
     ]
     ();
+
   (* Only destroy the scheduler if the check command created it. *)
   begin
     match original_scheduler with
