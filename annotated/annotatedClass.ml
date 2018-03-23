@@ -443,6 +443,7 @@ module Attribute = struct
       ~resolution
       ~parent
       ?(defined = true)
+      ?(default_class_attribute = true)
       {
         Node.location;
         value = {
@@ -465,7 +466,7 @@ module Attribute = struct
            match Type.class_variable_value annotation with
            | Some annotation -> Some annotation, true
            | _ -> Some annotation, false))
-      |> Option.value ~default:(None, true)
+      |> Option.value ~default:(None, default_class_attribute)
     in
 
     (* Handle enumeration attributes. *)
@@ -704,6 +705,7 @@ let attribute
       ~resolution
       ~parent:definition
       ~defined:false
+      ~default_class_attribute:class_attributes
       {
         Node.location;
         value = {

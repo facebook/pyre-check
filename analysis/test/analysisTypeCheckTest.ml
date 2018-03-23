@@ -2605,6 +2605,21 @@ let test_check_attributes _ =
     ];
 
   assert_type_errors
+    ~show_error_traces:true
+    {|
+      class Bar:
+        bar: int = 1
+      def foo(self) -> int:
+        x = Bar()
+        return x.baz
+    |}
+    [
+      "Incompatible return type [7]: Expected `int` but got `unknown`. Type `int` expected on " ^
+      "line 6, specified on line 4.";
+      "Undefined attribute [16]: `Bar` has no attribute `baz`."
+    ];
+
+  assert_type_errors
     {|
       class Bar:
         bar: int

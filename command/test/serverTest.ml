@@ -832,7 +832,7 @@ let test_incremental_attribute_caching context =
           (Analysis.Error.UndefinedAttribute {
               Analysis.Error.annotation = Type.primitive "C";
               attribute = Ast.Expression.Access.create "a";
-              class_attribute = true;
+              class_attribute = false;
             })
     | _ ->
         assert_unreached ()

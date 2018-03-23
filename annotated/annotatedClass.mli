@@ -110,6 +110,7 @@ module Attribute : sig
     :  resolution: Resolution.t
     -> parent: parent_class
     -> ?defined: bool
+    -> ?default_class_attribute: bool
     -> Statement.Attribute.t
     -> t
 
