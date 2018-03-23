@@ -36,11 +36,12 @@ module Signature = struct
         (* If we pick an uninstantiated signature, the type variable can escape. Replace those
            type variables with bottom. Note that this loses the information of which type
            variable an annotation came from, but prevents analysis crashes. *)
-        begin
-          match return_annotation with
-          | Type.Variable _ -> Type.Bottom
-          | annotation -> annotation
-        end
+        if TypeOrder.is_instantiated
+            (Resolution.order resolution)
+            return_annotation then
+          return_annotation
+        else
+          Type.Bottom
     | None ->
         Type.Top
 

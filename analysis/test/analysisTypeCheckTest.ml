@@ -138,6 +138,10 @@ let plain_environment =
           pass
 
         def sum(iterable: typing.Iterable[_T]) -> typing.Union[_T, int]: ...
+        def returns_undefined()->Undefined: ...
+        class Spooky:
+          def undefined(self)->Undefined: ...
+
         class Attributes:
           int_attribute: int
       |};
@@ -1229,7 +1233,7 @@ let test_coverage _ =
         (Environment.handler ~configuration plain_environment)
         (parse source)
     in
-    assert_equal coverage expected
+    assert_equal ~printer:Coverage.show coverage expected
   in
   assert_coverage
     {| def foo(): pass |}
@@ -1251,7 +1255,15 @@ let test_coverage _ =
       else:
         x = 1
     |}
-    { Coverage.full = 0; partial = 0; untyped = 0; ignore = 0; crashes = 1 }
+    { Coverage.full = 0; partial = 0; untyped = 0; ignore = 0; crashes = 1 };
+
+  assert_coverage
+    {|
+      def foo(y) -> int:
+        x = returns_undefined()
+        return x
+    |}
+    { Coverage.full = 0; partial = 0; untyped = 2; ignore = 0; crashes = 0 }
 
 
 let test_check _ =
@@ -2209,7 +2221,7 @@ let test_check_method_resolution _ =
       def foo() -> None:
         undefined().call()
     |}
-    ["Undefined type [11]: Type `Undefined` is not defined."]
+    ["Undefined type [11]: Type `typing.Any` is not defined."]
 
 
 let test_check_self _ =

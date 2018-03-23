@@ -18,6 +18,7 @@ type t = {
   ignore: int;
   crashes: int;
 }
+[@@deriving show]
 
 
 let create ?(full = 0) ?(partial = 0) ?(untyped = 0) ?(ignore = 0) ?(crashes = 0) () =

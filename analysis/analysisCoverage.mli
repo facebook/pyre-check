@@ -13,6 +13,7 @@ type t = {
   ignore: int;
   crashes: int;
 }
+[@@deriving show]
 
 val create
   :  ?full: int
