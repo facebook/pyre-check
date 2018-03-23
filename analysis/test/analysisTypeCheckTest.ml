@@ -122,6 +122,7 @@ let plain_environment =
           @staticmethod
           def static_int_to_str(i: int) -> str: ...
 
+        def identity(x: _T) -> _T: ...
         _VR = typing.TypeVar("_VR", str, int)
         def value_restricted_identity(x: _VR) -> _VR: pass
 
@@ -568,7 +569,19 @@ let test_forward _ =
     ["x", Type.awaitable Type.integer; "y", Type.integer];
 
   (* Redirects. *)
-  assert_forward [] "x = str(1)" ["x", Type.string]
+  assert_forward [] "x = str(1)" ["x", Type.string];
+
+  (* Unresolved type variables. *)
+  assert_forward
+    ["x", Type.set Type.Bottom]
+    "y, z = x.__iter__(), x.__iter__().__next__()"
+    ["x", Type.set Type.Bottom; "y", Type.iterator Type.Bottom; "z", Type.Bottom];
+
+  assert_forward
+    ["x", Type.Bottom]
+    "y = identity(x)"
+    ["x", Type.Bottom; "y", Type.Bottom] (* Limitation: We're losing y's constraints here. *)
+
 
 
 let test_forward_immutables _ =
