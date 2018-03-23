@@ -62,8 +62,23 @@ let test_callable _ =
       (Type.create ~aliases:(fun _ -> None) (parse_single_expression expected))
       callable
   in
-  assert_callable "def foo() -> int: ..." "typing.Callable('foo')[..., int]";
-  assert_callable "async def foo() -> int: ..." "typing.Callable('foo')[..., typing.Awaitable[int]]"
+
+  assert_callable "def foo() -> int: ..." "typing.Callable('foo')[[], int]";
+  assert_callable "async def foo() -> int: ..." "typing.Callable('foo')[[], typing.Awaitable[int]]";
+
+  assert_callable
+    "def foo(a, b) -> str: ..."
+    "typing.Callable('foo')[[Named(a, $unknown), Named(b, $unknown)], str]";
+  assert_callable
+    "def foo(a: int, b) -> str: ..."
+    "typing.Callable('foo')[[Named(a, int), Named(b, $unknown)], str]";
+
+  assert_callable
+    "def foo(a, *args, **kwargs) -> str: ..."
+    "typing.Callable('foo')[[Named(a, $unknown), Variable(args), Keywords(kwargs)], str]";
+  assert_callable
+    "def foo(**kwargs: typing.Dict[str, typing.Any]) -> str: ..."
+    "typing.Callable('foo')[[Keywords(kwargs)], str]"
 
 
 let test_parent_definition _ =

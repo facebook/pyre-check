@@ -92,8 +92,35 @@ let return_annotation ({ Define.return_annotation; async; _ } as define) ~resolu
     annotation
 
 
-let callable ({ Define.name; _ } as define) ~resolution =
-  Type.callable ~name ~annotation:(return_annotation define ~resolution) ()
+let callable ({ Define.name; parameters; _ } as define) ~resolution =
+  let open Type.Callable in
+  let parameter { Node.value = { Ast.Parameter.name; annotation; _ }; _ } =
+    let name = Identifier.show name in
+    let access =
+      String.lstrip ~drop:(function | '*' -> true | _ -> false) name
+      |> Access.create
+    in
+    let annotation =
+      annotation
+      >>| Resolution.parse_annotation resolution
+      |> Option.value ~default:Type.Top
+    in
+    if String.is_prefix ~prefix:"**" name then
+      Parameter.Keywords access
+    else if String.is_prefix ~prefix:"*" name then
+      Parameter.Variable access
+    else
+      Parameter.Named { Parameter.name = access; annotation }
+  in
+  Type.Callable {
+    kind = Named name;
+    overrides = [
+      {
+        annotation = return_annotation define ~resolution;
+        parameters = Parameter.Defined (List.map ~f:parameter parameters);
+      }
+    ];
+  }
 
 
 let parent_definition { Define.parent; _ } ~resolution =
