@@ -3938,10 +3938,35 @@ let test_check_meta _ =
   assert_type_errors "typing.cast(asdf, 'asdf')" [];
   assert_type_errors
     {|
+      class float():
+        ...
       def foo(input) -> typing.List[int]:
         return typing.cast(typing.List[float], a)
     |}
     ["Incompatible return type [7]: Expected `typing.List[int]` but got `typing.List[float]`."];
+
+  assert_type_errors
+    {|
+      def foo(input) -> typing.List[int]:
+        return typing.cast(typing.List[unknown], a)
+    |}
+    [
+      "Incompatible return type [7]:" ^
+      " Expected `typing.List[int]` but got `typing.List[typing.Any]`.";
+    ];
+
+  assert_type_errors
+    {|
+      T = typing.TypeVar('T')
+      class C:
+        @classmethod
+        def __construct__(cls: typing.Type[T]) -> T:
+          ...
+      def foo()-> C:
+       return C.__construct__()
+    |}
+    ["Incompatible return type [7]: Expected `C` but got `typing.Any`."];
+
   assert_type_errors
     {|
       class Foo:

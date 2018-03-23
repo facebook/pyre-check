@@ -77,7 +77,16 @@ val connect
   -> successor: Type.t
   -> unit
 
+(* Returns true if the type order contains the literal annotation. For example, if typing.List
+   is in order, `contains order typing.List` will evaluate to true, whereas
+   `contains order typing.List[int]` will evaluate to false. *)
 val contains: (module Handler) -> Type.t -> bool
+
+(* Returns true if the annotation can be deconstructed into primitive types that exist in the type
+   order. If typing.List and int are in the type order, both `contains order typing.List` and
+   `is_instantiated order typing.List[int]` will evaluate to true, but
+   `is_instantiated order typing.List[str]` will evaluate to false. *)
+val is_instantiated: (module Handler) -> Type.t -> bool
 
 val successors_fold
   :  (module Handler)

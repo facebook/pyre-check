@@ -166,6 +166,7 @@ let handler order =
       Hashtbl.length table
 
     let show () = show order
+
   end : Handler)
 
 
@@ -235,6 +236,17 @@ let connect
 
 let contains (module Handler: Handler) annotation =
   Handler.contains (Handler.indices ()) annotation
+
+
+let is_instantiated (module Handler: Handler) annotation =
+  let is_invalid = function
+    | Type.Variable { Type.constraints = []; _ } -> true
+    | Type.Primitive name ->
+        not (Handler.contains (Handler.indices ()) (Type.Primitive name))
+    | _ ->
+        false
+  in
+  not (Type.exists ~predicate:is_invalid annotation)
 
 
 let raise_if_untracked order annotation =

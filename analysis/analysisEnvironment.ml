@@ -409,7 +409,10 @@ let resolution
                   (* From `typing.Type[_T]` and the actual argument extract constraint
                      `_T` -> `type(argument)`. *)
                   let annotation = parse_annotation value in
-                  Some (Map.set constraints ~key:variable ~data:annotation)
+                  if TypeOrder.is_instantiated (module Handler.TypeOrderHandler) annotation then
+                    Some (Map.set constraints ~key:variable ~data:annotation)
+                  else
+                    Some (Map.set constraints ~key:variable ~data:argument)
               | Type.Parametric { Type.parameters = parameters; name },
                 _ ->
                   let arguments =
