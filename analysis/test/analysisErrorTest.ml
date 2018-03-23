@@ -444,6 +444,7 @@ let test_filter _ =
   assert_filtered (undefined_attribute (Type.primitive "MockChild"));
   assert_filtered (undefined_attribute (Type.primitive "NonCallableChild"));
   assert_unfiltered (undefined_attribute (Type.primitive "NonMockChild"));
+  assert_filtered (undefined_attribute (Type.Optional (Type.primitive "NonCallableChild")));
 
   (* Suppress callable errors. *)
   assert_filtered
