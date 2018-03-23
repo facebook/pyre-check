@@ -138,9 +138,64 @@ let test_collect_accesses_in_position _ =
   assert_collected_accesses source 2 2 [];
   assert_collected_accesses source 2 8 ["ham.egg(...).bake"; "egg"]
 
+let test_statement_visitor _ =
+  let module StatementVisitor =
+  struct
+    type t = int String.Table.t
+
+    let statement visited statement =
+      let increment hash_table key =
+        match Hashtbl.find hash_table key with
+        | None ->
+            Hashtbl.set hash_table ~key ~data:1
+        | Some value ->
+            Hashtbl.set hash_table ~key ~data:(value + 1)
+      in
+      match Node.value statement with
+      | Assign _ ->
+          increment visited "assign";
+          visited
+      | Import _ ->
+          increment visited "import";
+          visited
+      | Return _ ->
+          increment visited "return";
+          visited
+      | _ ->
+          visited
+
+  end
+  in
+  let module Visit = Visit.MakeStatementVisitor(StatementVisitor) in
+  let assert_counts source expected_counts =
+    let table = Visit.visit (String.Table.create ()) source in
+    List.iter
+      ~f:(fun (key, expected_value) -> assert_equal (Hashtbl.find table key) (Some expected_value))
+      expected_counts
+  in
+  let source = parse {|
+      from b import c
+      def f():
+        a = 1
+        return
+      b = 2
+      if x < 3:
+        import a
+        c = 3
+  |}
+  in
+  assert_counts source [
+    "assign", 3;
+    "return", 1;
+    "import", 2;
+  ];
+  ()
+
+
 let () =
   "visit">:::[
     "collect">::test_collect;
     "collect_accesses_in_position">::test_collect_accesses_in_position;
+    "statement_visitor">::test_statement_visitor;
   ]
   |> run_test_tt_main

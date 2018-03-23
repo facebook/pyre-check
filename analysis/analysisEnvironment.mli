@@ -109,7 +109,7 @@ val register_dependencies
   -> Source.t
   -> unit
 
-val connect_type_order
+val register_functions
   :  (module Handler)
   -> Source.t
   -> unit

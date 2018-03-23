@@ -688,11 +688,8 @@ let register_module (module Handler: Handler) { Source.qualifier; statements; _ 
 
 let register_class_definitions (module Handler: Handler) source =
   let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
-  let module Visit = Visit.Make(struct
+  let module Visit = Visit.MakeStatementVisitor(struct
       type t = unit
-
-      let expression _ _ =
-        ()
 
       let statement _ = function
         | { Node.value = Class { Class.name; _ }; _ }
@@ -893,11 +890,8 @@ let register_globals
 let register_classes (module Handler: Handler) ({ Source.path; _ } as source) =
   let resolution = resolution (module Handler: Handler) ~annotations:Access.Map.empty () in
 
-  let module Visit = Visit.Make(struct
+  let module Visit = Visit.MakeStatementVisitor(struct
       type t = unit
-
-      let expression _ _ =
-        ()
 
       let statement _ = function
         | { Node.location; value = Class definition }
@@ -968,11 +962,8 @@ let register_dependencies
     (module Handler: Handler)
     ({ Source.path; _ } as source) =
 
-  let module Visit = Visit.Make(struct
+  let module Visit = Visit.MakeStatementVisitor(struct
       type t = unit
-
-      let expression _ _ =
-        ()
 
       let statement _ = function
         | { Node.value = Import { Import.from; imports }; _ } ->
@@ -1017,16 +1008,13 @@ let register_dependencies
   Visit.visit () source
 
 
-let connect_type_order
+let register_functions
     (module Handler: Handler)
     ({ Source.path; _ } as source) =
   let resolution = resolution (module Handler: Handler) ~annotations:Access.Map.empty () in
 
-  let module Visit = Visit.Make(struct
+  let module Visit = Visit.MakeStatementVisitor(struct
       type t = unit
-
-      let expression _ _ =
-        ()
 
       let statement _ = function
         | { Node.value = Define definition; location }
@@ -1074,7 +1062,7 @@ let populate
   List.iter
     ~f:(register_dependencies ~source_root ~check_dependency_exists (module Handler))
     sources;
-  List.iter ~f:(connect_type_order (module Handler)) sources;
+  List.iter ~f:(register_functions (module Handler)) sources;
   TypeOrder.connect_annotations_to_top
     (module Handler.TypeOrderHandler)
     ~configuration

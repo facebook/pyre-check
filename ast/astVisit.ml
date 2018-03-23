@@ -18,6 +18,11 @@ module type Visitor = sig
   val statement: t -> Statement.t -> t
 end
 
+module type StatementVisitor = sig
+  type t
+  val statement: t -> Statement.t -> t
+end
+
 module Make (Visitor: Visitor) = struct
   module Adaptor : sig
     type t = Visitor.t
@@ -141,3 +146,57 @@ let collect_accesses_in_position statement { Location.line; column } =
         | _ -> None
     end) in
   Collector.collect (Source.create [statement])
+
+
+module MakeStatementVisitor (Visitor: StatementVisitor) = struct
+  let visit state source =
+    let state = ref state in
+    let open Statement in
+    let rec visit_statement { Node.location; value } =
+      (* Visit sub-statements. *)
+      begin
+        match value with
+        | Assign _
+        | Assert _
+        | Break
+        | Continue
+        | Delete _
+        | Expression _
+        | Global _
+        | Import _
+        | Pass
+        | Raise _
+        | Return _
+        | Stub (Stub.Assign _)
+        | Nonlocal _
+        | Yield _
+        | YieldFrom _ ->
+            ()
+
+        | Class { Class.body; _ }
+        | Define { Define.body; _ }
+        | Stub (Stub.Class { Class.body; _ })
+        | Stub (Stub.Define { Define.body; _ })
+        | With { With.body; _ } ->
+            List.iter ~f:visit_statement body
+
+        | For { For.body; orelse; _ }
+        | If { If.body; orelse; _ }
+        | While { While.body; orelse; _ } ->
+            List.iter ~f:visit_statement body;
+            List.iter ~f:visit_statement orelse
+
+        | Try { Try.body; handlers; orelse; finally } ->
+            let visit_handler { Try.handler_body; _ } =
+              List.iter ~f:visit_statement handler_body
+            in
+            List.iter ~f:visit_statement body;
+            List.iter ~f:visit_handler handlers;
+            List.iter ~f:visit_statement orelse;
+            List.iter ~f:visit_statement finally;
+      end;
+      state := Visitor.statement !state { Node.location; value }
+    in
+    List.iter ~f:visit_statement source.Source.statements;
+    !state
+end

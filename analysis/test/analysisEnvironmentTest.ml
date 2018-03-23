@@ -353,7 +353,7 @@ let test_register_classes _ =
     [Type.primitive "C"; Type.Object; Type.Top]
 
 
-let test_connect_type_order _ =
+let test_register_functions _ =
   let environment = Environment.Builder.create ~configuration () in
   let (module Handler: Environment.Handler) = Environment.handler ~configuration environment in
   let source =
@@ -368,7 +368,7 @@ let test_connect_type_order _ =
          return D()
     |}
   in
-  Environment.connect_type_order (module Handler) source;
+  Environment.register_functions (module Handler) source;
   assert_is_some (Handler.function_definitions (access ["foo"]))
 
 
@@ -1799,7 +1799,7 @@ let () =
     "register_aliases">::test_register_aliases;
     "register_type">::test_register_type;
     "register_globals">::test_register_globals;
-    "connect_type_order">::test_connect_type_order;
+    "connect_type_order">::test_register_functions;
     "populate">::test_populate;
     "infer_protocols">::test_infer_protocols;
     "less_or_equal">::test_less_or_equal;

@@ -16,7 +16,16 @@ module type Visitor = sig
   val statement: t -> Statement.t -> t
 end
 
+module type StatementVisitor = sig
+  type t
+  val statement: t -> Statement.t -> t
+end
+
 module Make (Visitor: Visitor) : sig
+  val visit: Visitor.t -> Source.t -> Visitor.t
+end
+
+module MakeStatementVisitor (Visitor: StatementVisitor) : sig
   val visit: Visitor.t -> Source.t -> Visitor.t
 end
 
