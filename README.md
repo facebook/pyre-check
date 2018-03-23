@@ -1,22 +1,16 @@
 # Pyre
 Pyre is a performant type checker for python.
 
+## Getting Started
+To install Pyre on your system run `pip install pyre-check` and you should be good to go! Run it on your project with `pyre --source-directory . check`.
+
+TODO(T23492848): Add gif illustrating a pyre run & sandbox for casual testing like on http://fbinfer.com/.
+Also link to docusaurus site here with more detailed documentation.
+
 ## Installation
 See [INSTALL.md](./INSTALL.md) for details on installing packaged versions of Pyre
-or building Pyre from source.
-
-## Examples
-TODO(T23492848)
-
-## Full documentation
-TODO(T23492848)
 
 ## Join the Pyre community
-TODO(T23492848)
-* Website:
-* Facebook page:
-* Mailing list:
-* irc:
 See [CONTRIBUTING.md](./CONTRIBUTING.md) for how to help out.
 
 ## License
