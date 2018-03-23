@@ -962,12 +962,11 @@ let register_classes (module Handler: Handler) ({ Source.path; _ } as source) =
   Visit.visit () source |> ignore
 
 
-let connect_type_order
-    (module Handler: Handler)
+let register_dependencies
     ?(source_root = Path.current_working_directory ())
     ?(check_dependency_exists = true)
+    (module Handler: Handler)
     ({ Source.path; _ } as source) =
-  let resolution = resolution (module Handler: Handler) ~annotations:Access.Map.empty () in
 
   let module Visit = Visit.Make(struct
       type t = unit
@@ -976,20 +975,6 @@ let connect_type_order
         ()
 
       let statement _ = function
-        | { Node.value = Define definition; location }
-        | { Node.value = Stub (Stub.Define definition); location } ->
-            let definition =
-              Annotated.Define.apply_decorators ~resolution (Annotated.Define.create definition)
-              |> Annotated.Define.define
-            in
-            if Define.is_method definition then
-              let parent = Option.value_exn definition.Define.parent in
-              Handler.register_definition
-                ~path
-                ~name_override:(parent @ definition.Define.name)
-                { Node.value = definition; location }
-            else
-              Handler.register_definition ~path { Node.value = definition; location }
         | { Node.value = Import { Import.from; imports }; _ } ->
             let imports =
               let path_of_import access =
@@ -1032,6 +1017,39 @@ let connect_type_order
   Visit.visit () source
 
 
+let connect_type_order
+    (module Handler: Handler)
+    ({ Source.path; _ } as source) =
+  let resolution = resolution (module Handler: Handler) ~annotations:Access.Map.empty () in
+
+  let module Visit = Visit.Make(struct
+      type t = unit
+
+      let expression _ _ =
+        ()
+
+      let statement _ = function
+        | { Node.value = Define definition; location }
+        | { Node.value = Stub (Stub.Define definition); location } ->
+            let definition =
+              Annotated.Define.apply_decorators ~resolution (Annotated.Define.create definition)
+              |> Annotated.Define.define
+            in
+            if Define.is_method definition then
+              let parent = Option.value_exn definition.Define.parent in
+              Handler.register_definition
+                ~path
+                ~name_override:(parent @ definition.Define.name)
+                { Node.value = definition; location }
+            else
+              Handler.register_definition ~path { Node.value = definition; location }
+        | _ ->
+            ()
+    end)
+  in
+  Visit.visit () source
+
+
 let populate
     (module Handler: Handler)
     ~configuration
@@ -1053,7 +1071,10 @@ let populate
   Type.TypeCache.enable ();
 
   List.iter ~f:(register_classes (module Handler)) sources;
-  List.iter ~f:(connect_type_order ~source_root ~check_dependency_exists (module Handler)) sources;
+  List.iter
+    ~f:(register_dependencies ~source_root ~check_dependency_exists (module Handler))
+    sources;
+  List.iter ~f:(connect_type_order (module Handler)) sources;
   TypeOrder.connect_annotations_to_top
     (module Handler.TypeOrderHandler)
     ~configuration

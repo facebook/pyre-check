@@ -102,10 +102,15 @@ val register_classes
   -> Source.t
   -> unit
 
+val register_dependencies
+  :  ?source_root: Path.t
+  -> ?check_dependency_exists: bool
+  -> (module Handler)
+  -> Source.t
+  -> unit
+
 val connect_type_order
   :  (module Handler)
-  -> ?source_root: Path.t
-  -> ?check_dependency_exists: bool
   -> Source.t
   -> unit
 

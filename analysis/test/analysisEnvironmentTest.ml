@@ -1738,6 +1738,26 @@ let test_import_dependencies context =
   in
   with_bracket_chdir context (bracket_tmpdir context) create_files_and_test
 
+let test_register_dependencies _ =
+  let environment = Environment.Builder.create ~configuration () in
+  let (module Handler: Environment.Handler) = Environment.handler ~configuration environment in
+  let source = {|
+         import a # a is added here
+         from subdirectory.b import c # subdirectory.b is added here
+         from . import ignored # no dependency created here
+      |}
+  in
+  Environment.register_dependencies
+    ~check_dependency_exists:false
+    (module Handler)
+    (parse ~path:"test.py" source);
+  assert_equal
+    (Environment.dependencies (module Handler) "subdirectory/b.py")
+    (Some ["test.py"]);
+  assert_equal
+    (Environment.dependencies (module Handler) "a.py")
+    (Some ["test.py"])
+
 
 let test_purge _ =
   let environment = Environment.Builder.create ~configuration () in
@@ -1796,6 +1816,7 @@ let () =
     "protocols">::test_protocols;
     "modules">::test_modules;
     "import_dependencies">::test_import_dependencies;
+    "register_dependencies">::test_register_dependencies;
     "purge">::test_purge;
   ]
   |> run_test_tt_main
