@@ -34,7 +34,7 @@ module Record : sig
       | Defined of ('annotation Parameter.t) list
       | Undefined
 
-    and 'annotation override =
+    and 'annotation overload =
       {
         annotation: 'annotation;
         parameters: 'annotation parameters;
@@ -43,7 +43,7 @@ module Record : sig
     and 'annotation record =
       {
         kind: kind;
-        overloads: ('annotation override) list;
+        overloads: ('annotation overload) list;
       }
     [@@deriving compare, eq, sexp, show, hash]
   end
@@ -102,7 +102,7 @@ val bool: t
 val bytes: t
 val callable
   :  ?name: Access.t
-  -> ?overloads: (t Record.Callable.override) list
+  -> ?overloads: (t Record.Callable.overload) list
   -> ?parameters: t Record.Callable.parameters
   -> annotation: t
   -> unit

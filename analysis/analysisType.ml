@@ -39,7 +39,7 @@ module Record = struct
       | Undefined
 
 
-    and 'annotation override =
+    and 'annotation overload =
       {
         annotation: 'annotation;
         parameters: 'annotation parameters;
@@ -49,7 +49,7 @@ module Record = struct
     and 'annotation record =
       {
         kind: kind;
-        overloads: ('annotation override) list;
+        overloads: ('annotation overload) list;
       }
     [@@deriving compare, eq, sexp, show, hash]
   end
@@ -187,7 +187,7 @@ let rec pp format annotation =
         | Named name -> Format.asprintf "(%a)" Access.pp name
       in
       let overloads =
-        let override { annotation; parameters } =
+        let overload { annotation; parameters } =
           let parameters =
             match parameters with
             | Undefined ->
@@ -209,7 +209,7 @@ let rec pp format annotation =
           in
           Format.asprintf "%s, %s" parameters (without_backtick [annotation])
         in
-        List.map ~f:override overloads
+        List.map ~f:overload overloads
         |> String.concat ~sep:"]["
       in
       Format.fprintf format "`typing.Callable%s[%s]`" kind overloads
@@ -584,7 +584,7 @@ let create ~aliases { Node.value = expression; _ } =
                         in
                         subscript :: (List.filter_map ~f:extract_subscript tail)
                       in
-                      let override subscript =
+                      let overload subscript =
                         let extract_parameters parameters =
                           let extract_parameter parameter =
                             match Node.value parameter with
@@ -637,7 +637,7 @@ let create ~aliases { Node.value = expression; _ } =
                         | _ ->
                             None
                       in
-                      List.filter_map ~f:override subscripts
+                      List.filter_map ~f:overload subscripts
                     in
                     if not (List.is_empty overloads) then
                       let kind =
