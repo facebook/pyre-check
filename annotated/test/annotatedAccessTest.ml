@@ -168,7 +168,7 @@ let assert_resolved sources access expected =
       ~f:(fun _ ~annotations:_ ~resolved ~element:_ -> Annotation.annotation resolved)
       (Access.create (parse_single_access access))
   in
-  assert_equal ~cmp:Type.equal expected resolved
+  assert_equal ~printer:Type.show ~cmp:Type.equal expected resolved
 
 
 let test_module_exports _ =
@@ -201,28 +201,35 @@ let test_module_exports _ =
 
 
 let test_object_callables _ =
-  let assert_resolved =
+  let assert_resolved access annotation =
     assert_resolved
       [
         parse
           ~qualifier:(Expression.Access.create "module")
           {|
-            class module.Call:
-              def __call__(self) -> int: ...
+            _K = typing.TypeVar('_K')
+            _V = typing.TypeVar('_V')
 
-            module.call: module.Call = ...
-            module.meta: typing.Type[module.Call] = ...
+            class module.Call(typing.Generic[_K, _V]):
+              generic_callable: typing.Callable[[_K], _V]
+              def __call__(self) -> _V: ...
+
+            module.call: module.Call[int, str] = ...
+            module.meta: typing.Type[module.Call[int, str]] = ...
             module.callable: typing.Callable[..., int][..., str] = ...
           |};
       ]
+      access
+      (Type.create ~aliases:(fun _ -> None) (parse_single_expression annotation))
   in
 
-  assert_resolved "module.call" (Type.primitive "module.Call");
-  assert_resolved "module.call()" Type.integer;
-  assert_resolved "module.callable()" Type.integer;
+  assert_resolved "module.call" "module.Call[int, str]";
+  assert_resolved "module.call.generic_callable" "typing.Callable[[int], str]";
+  assert_resolved "module.call()" "str";
+  assert_resolved "module.callable()" "int";
 
-  assert_resolved "module.meta" (Type.primitive "module.Call" |> Type.meta);
-  assert_resolved "module.meta()" (Type.primitive "module.Call")
+  assert_resolved "module.meta" "typing.Type[module.Call[int, str]]";
+  assert_resolved "module.meta()" "module.Call[$bottom, $bottom]"
 
 
 let () =
