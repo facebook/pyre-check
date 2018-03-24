@@ -428,16 +428,18 @@ let fold ~resolution ~initial ~f access =
                 ()
 
           | Some resolved,
-            Access.Call { Node.value = { Expression.Call.name; _ }; _ }
+            Access.Call { Node.value = ({ Expression.Call.name; _ } as call); _ }
             when not (Type.is_not_instantiated (Annotation.annotation resolved)) &&
                  Expression.show name = "__call__" ->
               (* Callable invocation. *)
               begin
+                let call = Call.create ~kind:Call.Function call in
                 let callable =
                   match Annotation.annotation resolved with
-                  | Type.Callable { Type.Callable.kind; overloads = overload :: _ } ->
+                  | Type.Callable { Type.Callable.kind; overloads } ->
                       (* Blindly drop overloads for now. *)
-                      Some { Type.Callable.kind; overloads = [overload] }
+                      Call.overload call ~overloads ~resolution
+                      >>| fun overload -> { Type.Callable.kind; overloads = [overload] }
                   | _ ->
                       None
                 in

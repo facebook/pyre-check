@@ -245,3 +245,49 @@ let check_parameters
   argument_annotations ~resolution call
   |> List.foldi ~init:(0, init) ~f:accumulate_errors
   |> snd
+
+
+let overload call ~resolution ~overloads =
+  (* Assuming calls have the following format:
+     `[argument, ]* [\*variable,]* [keyword=value,]* [\*\*keywords]*` *)
+  ignore call; ignore resolution;
+  let open Type.Callable in
+  let overload ({ parameters; _ } as overload) =
+    match parameters with
+    | Defined parameters ->
+        let arguments = arguments call in
+
+        let compatible { Argument.value; _ } parameter =
+          let actual = Resolution.resolve resolution value in
+          let expected =
+            match parameter with
+            | Parameter.Anonymous annotation
+            | Parameter.Named { Parameter.annotation; _ } ->
+                annotation
+            | _ ->
+                Type.Top
+          in
+          Resolution.less_or_equal resolution ~left:actual ~right:expected
+        in
+
+        let rec consume_anonymous arguments parameters =
+          match arguments, parameters with
+          | ({ Argument.name = None; _ } as argument) :: arguments,
+            ((Parameter.Anonymous _) as parameter) :: parameters
+          | ({ Argument.name = None; _ } as argument) :: arguments,
+            ((Parameter.Named _) as parameter) :: parameters
+            when compatible argument parameter ->
+              consume_anonymous arguments parameters
+          | arguments, parameters ->
+              arguments, parameters
+        in
+        let arguments, parameters = consume_anonymous arguments parameters in
+
+        if List.is_empty arguments && List.is_empty parameters then
+          Some overload
+        else
+          None
+    | Undefined ->
+        Some overload
+  in
+  List.find_map ~f:overload overloads

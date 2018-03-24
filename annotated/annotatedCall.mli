@@ -70,3 +70,9 @@ val check_parameters
   -> t
   -> Signature.t
   -> 'accumulator
+
+val overload
+  :  t
+  -> resolution: Resolution.t
+  -> overloads: (Type.t Type.Callable.overload) list
+  -> (Type.t Type.Callable.overload) option

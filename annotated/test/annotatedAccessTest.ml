@@ -232,10 +232,23 @@ let test_object_callables _ =
   assert_resolved "module.meta()" "module.Call[$bottom, $bottom]"
 
 
+let test_callable_selection _ =
+  let assert_resolved source access annotation =
+    assert_resolved
+      [parse source]
+      access
+      (Type.create ~aliases:(fun _ -> None) (parse_single_expression annotation))
+  in
+
+  assert_resolved "call: typing.Callable[[], int]" "call()" "int";
+  assert_resolved "call: typing.Callable[[int], int]" "call()" "$unknown"
+
+
 let () =
   "access">:::[
     "fold">::test_fold;
     "module_exports">::test_module_exports;
     "object_callables">::test_object_callables;
+    "callable_selection">::test_callable_selection;
   ]
   |> run_test_tt_main
