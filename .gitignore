@@ -4,3 +4,10 @@
 /hack_parallel/_build
 /scripts/buildroot
 /scripts/dist
+/website/node_modules
+/website/lib/core/metadata.js
+/website/lib/core/MetadataBlog.js
+/website/build/
+/website/yarn.lock
+/website/i18n/*
+!website/i18n/en.json
