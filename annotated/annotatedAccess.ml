@@ -432,21 +432,29 @@ let fold ~resolution ~initial ~f access =
             when not (Type.is_not_instantiated (Annotation.annotation resolved)) &&
                  Expression.show name = "__call__" ->
               (* Callable invocation. *)
-              let resolved =
-                match Annotation.annotation resolved with
-                | Type.Callable {
+              begin
+                let callable =
+                  match Annotation.annotation resolved with
+                  | Type.Callable { Type.Callable.kind; overloads = overload :: _ } ->
+                      (* Blindly drop overloads for now. *)
+                      Some { Type.Callable.kind; overloads = [overload] }
+                  | _ ->
+                      None
+                in
+                match callable with
+                | Some {
                     Type.Callable.overloads = [{ Type.Callable.annotation; _ }];
                     _;
                   } ->
-                    Annotation.create annotation
+                    let resolved = Annotation.create annotation in
+                    Result.create
+                      ~resolution
+                      ~resolved
+                      ~accumulator:(f accumulator ~annotations ~resolved ~element:Element.Value)
+                      ()
                 | _ ->
-                    resolved
-              in
-              Result.create
-                ~resolution
-                ~resolved
-                ~accumulator: (f accumulator ~annotations ~resolved ~element:Element.Value)
-                ()
+                    Result.abort ~resolution ~accumulator
+              end
 
           | Some resolved, Access.Identifier _ ->
               (* Attribute access. *)
