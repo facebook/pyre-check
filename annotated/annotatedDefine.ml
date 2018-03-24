@@ -92,7 +92,7 @@ let return_annotation ({ Define.return_annotation; async; _ } as define) ~resolu
     annotation
 
 
-let callable ({ Define.name; parameters; _ } as define) ~resolution =
+let callable ({ Define.name; parameters; parent; _ } as define) ~resolution =
   let open Type.Callable in
   let parameter { Node.value = { Ast.Parameter.name; annotation; _ }; _ } =
     let name = Identifier.show name in
@@ -112,6 +112,7 @@ let callable ({ Define.name; parameters; _ } as define) ~resolution =
     else
       Parameter.Named { Parameter.name = access; annotation }
   in
+  let name = parent >>| (fun parent -> parent @ name) |> Option.value ~default:name in
   Type.Callable {
     kind = Named name;
     overloads = [

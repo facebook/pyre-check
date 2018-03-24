@@ -49,10 +49,12 @@ let test_return_annotation _ =
 
 
 let test_callable _ =
-  let assert_callable source expected =
+  let assert_callable ?parent source expected =
     let resolution = populate source |> resolution in
     let callable =
+      let parent = parent >>| Access.create in
       parse_single_define source
+      |> (fun define -> { define with Statement.Define.parent })
       |> Define.create
       |> Define.callable ~resolution
     in
@@ -78,7 +80,12 @@ let test_callable _ =
     "typing.Callable('foo')[[Named(a, $unknown), Variable(args), Keywords(kwargs)], str]";
   assert_callable
     "def foo(**kwargs: typing.Dict[str, typing.Any]) -> str: ..."
-    "typing.Callable('foo')[[Keywords(kwargs)], str]"
+    "typing.Callable('foo')[[Keywords(kwargs)], str]";
+
+  assert_callable
+    ~parent:"module.Foo"
+    "def foo(a: int, b) -> str: ..."
+    "typing.Callable('module.Foo.foo')[[Named(a, int), Named(b, $unknown)], str]"
 
 
 let test_parent_definition _ =
