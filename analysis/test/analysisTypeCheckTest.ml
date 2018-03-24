@@ -1321,6 +1321,11 @@ let test_check _ =
     ["Incompatible return type [7]: Expected `typing.List[str]` but got `int`."];
 
   assert_type_errors
+    ~debug:false
+    "def foo() -> int: return"
+    ["Incompatible return type [7]: Expected `int` but got `None`."];
+
+  assert_type_errors
     "def foo() -> typing.List[str]: return []"
     [];
 

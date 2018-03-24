@@ -887,15 +887,16 @@ let filter ~configuration ~resolution errors =
       | IncompatibleVariableType { mismatch = { actual; _ }; _ }
       | UndefinedAttribute { annotation = actual; _ } ->
           let is_subclass_of_mock annotation =
-            (TypeOrder.less_or_equal
-               order
-               ~left:annotation
-               ~right:(Type.Primitive (Identifier.create "unittest.mock.Base"))) ||
-            (* Special-case mypy's workaround for mocks. *)
-            (TypeOrder.less_or_equal
-               order
-               ~left:annotation
-               ~right:(Type.Primitive (Identifier.create "unittest.mock.NonCallableMock")))
+            (not (Type.equal annotation Type.Bottom)) &&
+            ((TypeOrder.less_or_equal
+                order
+                ~left:annotation
+                ~right:(Type.Primitive (Identifier.create "unittest.mock.Base"))) ||
+             (* Special-case mypy's workaround for mocks. *)
+             (TypeOrder.less_or_equal
+                order
+                ~left:annotation
+                ~right:(Type.Primitive (Identifier.create "unittest.mock.NonCallableMock"))))
           in
           Type.exists actual ~predicate:is_subclass_of_mock
       | _ ->
