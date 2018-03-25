@@ -225,7 +225,7 @@ let test_object_callables _ =
 
   assert_resolved "module.call" "module.Call[int, str]";
   assert_resolved "module.call.generic_callable" "typing.Callable[[int], str]";
-  assert_resolved "module.call()" "str";
+  assert_resolved "module.call()" "$bottom";
   assert_resolved "module.callable()" "int";
 
   assert_resolved "module.meta" "typing.Type[module.Call[int, str]]";
