@@ -184,8 +184,10 @@ let rec resolve ~resolution expression =
   | Integer _ ->
       Type.integer
 
-  | Lambda { Lambda.body; _ } ->
-      Type.lambda (resolve ~resolution body)
+  | Lambda { Lambda.body; Lambda.parameters; _ } ->
+      Type.lambda
+        ~parameters:(List.map ~f:(fun _ -> Type.Object) parameters)
+        ~return_annotation:(resolve ~resolution body)
 
   | List elements ->
       List.map ~f:(resolve ~resolution) elements

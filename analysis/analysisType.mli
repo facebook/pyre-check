@@ -116,7 +116,7 @@ val generic: t
 val integer: t
 val iterable: t -> t
 val iterator: t -> t
-val lambda: t -> t
+val lambda: parameters: t list -> return_annotation: t -> t
 val list: t -> t
 val optional: t -> t
 val meta: t -> t

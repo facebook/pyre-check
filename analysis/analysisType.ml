@@ -374,10 +374,19 @@ let iterator parameter =
   }
 
 
-let lambda parameter =
-  Parametric {
-    name = Identifier.create "lambda";
-    parameters = [parameter];
+let lambda ~parameters ~return_annotation =
+  Callable {
+    kind = Anonymous;
+    overloads = [
+      {
+        annotation = return_annotation;
+        parameters =
+          Defined
+            (List.map
+               ~f:(fun parameter -> Parameter.Anonymous parameter)
+               parameters);
+      };
+    ];
   }
 
 

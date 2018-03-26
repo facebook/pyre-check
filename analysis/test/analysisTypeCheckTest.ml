@@ -562,7 +562,15 @@ let test_forward _ =
   assert_forward [] "x = (element for target in iterator)" ["x", Type.generator Type.Object];
 
   (* Lambda. *)
-  assert_forward [] "x = lambda: 1.0" ["x", Type.lambda Type.float];
+  assert_forward
+    []
+    "x = lambda: 1.0"
+    ["x", Type.lambda ~parameters:[] ~return_annotation:Type.float];
+
+  assert_forward
+    []
+    "x = lambda y: 1"
+    ["x", Type.lambda ~parameters:[Type.Object] ~return_annotation:Type.integer];
 
   (* Set. *)
   assert_forward [] "x = { 1.0, }" ["x", Type.set Type.float];
