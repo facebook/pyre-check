@@ -312,22 +312,28 @@ module State = struct
            let expected = data in
            match Map.find parameters key with
            | Some actual ->
-               if not (Type.equal Type.Top expected) &&
-                  not (Resolution.less_or_equal resolution ~left:expected ~right:actual) then
-                 let error =
-                   {
-                     Error.location;
-                     kind = Error.InconsistentOverride {
-                         Error.overridden_method;
-                         override = Error.StrengthenedPrecondition;
-                         mismatch = { Error.actual; expected };
-                       };
-                     define = define_node;
-                   }
-                 in
-                 Map.set ~key:location ~data:error errors
-               else
-                 errors
+               begin
+                 try
+                   if not (Type.equal Type.Top expected) &&
+                      not (Resolution.less_or_equal resolution ~left:expected ~right:actual) then
+                     let error =
+                       {
+                         Error.location;
+                         kind = Error.InconsistentOverride {
+                             Error.overridden_method;
+                             override = Error.StrengthenedPrecondition;
+                             mismatch = { Error.actual; expected };
+                           };
+                         define = define_node;
+                       }
+                     in
+                     Map.set ~key:location ~data:error errors
+                   else
+                     errors
+                 with TypeOrder.Untracked _ ->
+                   (* TODO(T27409168): Error here. *)
+                   errors
+               end
            | None ->
                let error =
                  {
