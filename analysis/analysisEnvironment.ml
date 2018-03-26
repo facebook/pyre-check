@@ -804,10 +804,10 @@ let register_aliases (module Handler: Handler) sources =
       else
         let show_unresolved (path, target, value) =
           Log.debug
-            "Unresolved alias %s:%s <- %s"
+            "Unresolved alias %s:%a <- %a"
             path
-            (Expression.show target)
-            (Expression.show value)
+            Expression.pp target
+            Expression.pp value
         in
         List.iter ~f:show_unresolved unresolved
   in
