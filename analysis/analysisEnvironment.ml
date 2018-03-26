@@ -777,6 +777,8 @@ let register_aliases (module Handler: Handler) sources =
           | Type.Tuple (Type.Unbounded annotation) ->
               annotation_in_order annotation
 
+          | Type.Optional Type.Bottom ->
+              true
           | Type.Optional annotation ->
               annotation_in_order annotation
 
@@ -784,8 +786,8 @@ let register_aliases (module Handler: Handler) sources =
           | Type.Variable _ ->
               true
 
-          | Type.Bottom
-          | Type.Top ->
+          | Type.Top
+          | Type.Bottom ->
               false
         in
         let primitive, _ = Type.split target_annotation in
@@ -1055,6 +1057,10 @@ let populate
     ~path:"typing.py"
     ~key:(Type.primitive "typing.DefaultDict")
     ~data:(Type.primitive "collections.defaultdict");
+  Handler.register_alias
+    ~path:"builtins.py"
+    ~key:(Type.primitive "None")
+    ~data:(Type.Optional Type.Bottom);
 
   List.iter ~f:(register_module (module Handler)) sources;
   List.iter ~f:(register_class_definitions (module Handler)) sources;

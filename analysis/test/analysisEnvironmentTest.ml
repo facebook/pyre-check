@@ -222,8 +222,11 @@ let test_register_aliases _ =
          pass
        B = D
        A = B
+       X = None
        def foo()->A:
          return D()
+       def boo()->X:
+         return
        if __name__ == '__main__':
          C = D
     |}
@@ -237,6 +240,7 @@ let test_register_aliases _ =
   assert_equal (parse_annotation (module Handler) (!"D")) (Type.primitive "D");
   assert_equal (parse_annotation (module Handler) (!"B")) (Type.primitive "D");
   assert_equal (parse_annotation (module Handler) (!"A")) (Type.primitive "D");
+  assert_equal (parse_annotation( module Handler) (!"X")) (Type.none);
   assert_equal (Handler.function_definitions (access ["foo"])) None;
 
   let order = (module Handler.TypeOrderHandler: TypeOrder.Handler) in
