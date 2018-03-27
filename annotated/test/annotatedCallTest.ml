@@ -104,7 +104,20 @@ let test_overload _ =
   assert_overload
     "[[int, Variable(variable)], int]"
     "(1, 2)"
-    (Some "[[int, Variable(variable)], int]")
+    (Some "[[int, Variable(variable)], int]");
+
+  (* Named arguments. *)
+  assert_overload
+    "[[Named(i, int), Named(j, int)], int]"
+    "(i=1, j=2)"
+    (Some "[[Named(i, int), Named(j, int)], int]");
+  assert_overload
+    "[[Named(i, int), Named(j, int)], int]"
+    "(j=1, i=2)"
+    (Some "[[Named(i, int), Named(j, int)], int]");
+  assert_overload "[[Named(i, int), Named(j, int)], int]" "(j=1, q=2)" None;
+  assert_overload "[[Named(i, int), Named(j, int)], int]" "(j=1, j=2, q=3)" None;
+  assert_overload "[[Named(i, int), Named(j, str)], int]" "(i=1, j=2)" None
 
 
 let () =

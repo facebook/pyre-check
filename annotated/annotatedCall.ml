@@ -302,10 +302,66 @@ let overload call ~resolution ~overloads =
               arguments, parameters
         in
 
+        let consume_named (arguments, parameters) =
+          let named_arguments =
+            let argument map { Argument.name; value } =
+              Map.set map ~key:(Option.value_exn name) ~data:(Resolution.resolve resolution value)
+            in
+            List.take_while ~f:(fun { Argument.name; _ } -> Option.is_some name) arguments
+            |> List.fold ~init:Identifier.Map.empty ~f:argument
+          in
+
+          let named_parameters =
+            let parameter map = function
+              | Parameter.Named { Parameter.name; annotation } ->
+                  Map.set map ~key:(Access.show name |> Identifier.create) ~data:annotation
+              | _ ->
+                  map
+            in
+            List.take_while ~f:(function | Parameter.Named _ -> true | _ -> false) parameters
+            |> List.fold ~init:Identifier.Map.empty ~f:parameter
+          in
+
+          let consumed =
+            let argument ~key ~data consumed =
+              match Map.find named_parameters key with
+              | Some annotation ->
+                  if Resolution.less_or_equal resolution ~left:data ~right:annotation then
+                    Set.add consumed key
+                  else
+                    consumed
+              | _ ->
+                  consumed
+            in
+            Map.fold ~init:Identifier.Set.empty ~f:argument named_arguments
+          in
+
+          let arguments =
+            let argument_consumed { Argument.name; _ } =
+              name
+              >>| Set.mem consumed
+              |> Option.value ~default:false
+            in
+            List.drop_while ~f:argument_consumed arguments
+          in
+          let parameters =
+            let parameter_consumed = function
+              | Parameter.Named { Parameter.name; _ } ->
+                  Set.mem consumed (Access.show name |> Identifier.create)
+              | _ ->
+                  false
+            in
+            List.drop_while ~f:parameter_consumed parameters
+          in
+
+          arguments, parameters
+        in
+
         let arguments, parameters =
           (arguments, parameters)
           |> consume_anonymous
           |> consume_variable
+          |> consume_named
         in
 
         if List.is_empty arguments && List.is_empty parameters then
