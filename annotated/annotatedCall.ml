@@ -255,6 +255,7 @@ let overload call ~resolution ~overloads =
     match parameters with
     | Defined parameters ->
         let arguments = arguments call in
+        let constraints = Type.Map.empty in
 
         let compatible { Argument.value; _ } parameter =
           let actual = Resolution.resolve resolution value in
@@ -380,6 +381,13 @@ let overload call ~resolution ~overloads =
           |> consume_variable
           |> consume_named
           |> consume_keywords
+        in
+
+        let overload =
+          if not (Map.is_empty constraints) then
+            (ignore constraints; overload)
+          else
+            overload
         in
 
         if List.is_empty arguments && List.is_empty parameters then
