@@ -96,7 +96,7 @@ test $ocaml_succeeded = 1 \
   || die 'Unable to setup OCaml environment'
 
 opam install --yes \
-  core \
+  core.v0.10.0 \
   yojson \
   ppx_deriving \
   ppx_deriving_yojson \
