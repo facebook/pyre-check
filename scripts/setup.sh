@@ -38,15 +38,30 @@ do
     "--release")
       COMPILER="4.06.0+flambda"
       ;;
+    "--build-type")
+      REQUESTED_BUILD_TYPE="${arguments[$index+1]}"
+      ;;
   esac
 done
 
-# Check if this is an internal build.
-if [ -e ".facebook" ]; then
-  BUILD="facebook"
-else
-  BUILD="external"
-fi
+# Check if this is an internal build, and honor the user request if possible.
+case "${REQUESTED_BUILD_TYPE}" in
+  facebook)
+    BUILD="facebook"
+    ;;
+  external)
+    BUILD="external"
+    ;;
+  *)
+    # This includes both the case in which the user made no specific
+    # request, and invalid requests.
+    if [ -e ".facebook" ]; then
+      BUILD="facebook"
+    else
+      BUILD="external"
+    fi
+    ;;
+esac
 
 sed "s/%VERSION%/$BUILD/" Makefile.template > Makefile
 
