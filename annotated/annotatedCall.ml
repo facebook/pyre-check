@@ -270,18 +270,43 @@ let overload call ~resolution ~overloads =
           Resolution.less_or_equal resolution ~left:actual ~right:expected
         in
 
-        let rec consume_anonymous arguments parameters =
+        let rec consume_anonymous (arguments, parameters) =
           match arguments, parameters with
           | ({ Argument.name = None; _ } as argument) :: arguments,
             ((Parameter.Anonymous _) as parameter) :: parameters
           | ({ Argument.name = None; _ } as argument) :: arguments,
             ((Parameter.Named _) as parameter) :: parameters
             when compatible argument parameter ->
-              consume_anonymous arguments parameters
+              consume_anonymous (arguments, parameters)
           | arguments, parameters ->
               arguments, parameters
         in
-        let arguments, parameters = consume_anonymous arguments parameters in
+
+        let rec consume_variable (arguments, parameters) =
+          match arguments, parameters with
+          | { Argument.name = None; _ } :: arguments, (Parameter.Variable _) :: _ ->
+              consume_variable (arguments, parameters)
+          | arguments, (Parameter.Variable _) :: parameters ->
+              consume_variable (arguments, parameters)
+
+          | { Argument.value = { Node.value = Starred (Starred.Once _); _ }; _ } :: _,
+            (Parameter.Anonymous _) :: parameters
+          | { Argument.value = { Node.value = Starred (Starred.Once _); _ }; _ } :: _,
+            (Parameter.Named _) :: parameters ->
+              consume_variable (arguments, parameters)
+          | { Argument.value = { Node.value = Starred (Starred.Once _); _ }; _ } :: arguments,
+            parameters ->
+              consume_variable (arguments, parameters)
+
+          | arguments, parameters ->
+              arguments, parameters
+        in
+
+        let arguments, parameters =
+          (arguments, parameters)
+          |> consume_anonymous
+          |> consume_variable
+        in
 
         if List.is_empty arguments && List.is_empty parameters then
           Some overload

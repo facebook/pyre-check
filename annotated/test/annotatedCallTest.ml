@@ -92,7 +92,19 @@ let test_overload _ =
   assert_overload "[[Named(i, int)], int]" "(1)" (Some "[[Named(i, int)], int]");
 
   assert_overload "[[int], int]" "('string')" None;
-  assert_overload "[[int], int]" "(name='string')" None
+  assert_overload "[[int], int]" "(name='string')" None;
+
+  (* Traverse variable arguments. *)
+  assert_overload "[[Variable(variable)], int]" "()" (Some "[[Variable(variable)], int]");
+  assert_overload "[[Variable(variable)], int]" "(1, 2)" (Some "[[Variable(variable)], int]");
+
+  assert_overload "[[int], int]" "(*a)" (Some "[[int], int]");
+  assert_overload "[[int, Named(i, int)], int]" "(*a)" (Some "[[int, Named(i, int)], int]");
+
+  assert_overload
+    "[[int, Variable(variable)], int]"
+    "(1, 2)"
+    (Some "[[int, Variable(variable)], int]")
 
 
 let () =
