@@ -129,7 +129,7 @@ let parse_stubs
   Statistics.performance ~name:"stubs parsed" ~timer ~configuration ();
   let not_parsed = (List.length paths) - (List.length handles) in
   if not_parsed > 0 then
-    Log.info "Unable to parse %d stubs or external modules" not_parsed;
+    Log.debug "Unable to parse %d stubs or external modules" not_parsed;
   handles
 
 
