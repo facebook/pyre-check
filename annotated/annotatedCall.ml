@@ -250,7 +250,6 @@ let check_parameters
 let overload call ~resolution ~overloads =
   (* Assuming calls have the following format:
      `[argument, ]* [\*variable,]* [keyword=value,]* [\*\*keywords]*` *)
-  ignore call; ignore resolution;
   let open Type.Callable in
   let overload ({ parameters; _ } as overload) =
     match parameters with
