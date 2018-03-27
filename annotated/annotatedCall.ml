@@ -357,11 +357,30 @@ let overload call ~resolution ~overloads =
           arguments, parameters
         in
 
+        let rec consume_keywords (arguments, parameters) =
+          match arguments, parameters with
+          | { Argument.name = Some _; _ } :: arguments, (Parameter.Keywords _) :: _ ->
+              consume_keywords (arguments, parameters)
+          | arguments, (Parameter.Keywords _) :: parameters ->
+              consume_keywords (arguments, parameters)
+
+          | { Argument.value = { Node.value = Starred (Starred.Twice _); _ }; _ } :: _,
+            (Parameter.Named _) :: parameters ->
+              consume_keywords (arguments, parameters)
+          | { Argument.value = { Node.value = Starred (Starred.Twice _); _ }; _ } :: arguments,
+            parameters ->
+              consume_keywords (arguments, parameters)
+
+          | arguments, parameters ->
+              arguments, parameters
+        in
+
         let arguments, parameters =
           (arguments, parameters)
           |> consume_anonymous
           |> consume_variable
           |> consume_named
+          |> consume_keywords
         in
 
         if List.is_empty arguments && List.is_empty parameters then

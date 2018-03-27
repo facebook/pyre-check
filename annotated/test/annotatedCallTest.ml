@@ -117,7 +117,15 @@ let test_overload _ =
     (Some "[[Named(i, int), Named(j, int)], int]");
   assert_overload "[[Named(i, int), Named(j, int)], int]" "(j=1, q=2)" None;
   assert_overload "[[Named(i, int), Named(j, int)], int]" "(j=1, j=2, q=3)" None;
-  assert_overload "[[Named(i, int), Named(j, str)], int]" "(i=1, j=2)" None
+  assert_overload "[[Named(i, int), Named(j, str)], int]" "(i=1, j=2)" None;
+
+  (* Keywords. *)
+  assert_overload "[[Keywords(keywords)], int]" "()" (Some "[[Keywords(keywords)], int]");
+  assert_overload "[[Keywords(keywords)], int]" "(a=1, b=2)" (Some "[[Keywords(keywords)], int]");
+
+  assert_overload "[[int], int]" "(**a)" None;
+  assert_overload "[[Named(i, int)], int]" "(**a)" (Some "[[Named(i, int)], int]");
+  assert_overload "[[int, Named(i, int)], int]" "(1, **a)" (Some "[[int, Named(i, int)], int]")
 
 
 let () =
