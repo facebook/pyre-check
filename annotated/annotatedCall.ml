@@ -247,16 +247,20 @@ let check_parameters
   |> snd
 
 
+type resolution_state = {
+  arguments: (Expression.t Argument.t) list;
+  parameters: (Type.t Type.Callable.Parameter.t) list;
+  constraints: Type.t Type.Map.t;
+}
+
+
 let overload call ~resolution ~overloads =
   (* Assuming calls have the following format:
-     `[argument, ]* [\*variable,]* [keyword=value,]* [\*\*keywords]*` *)
+     `[argument,]* [\*variable,]* [keyword=value,]* [\*\*keywords]*` *)
   let open Type.Callable in
-  let overload ({ parameters; _ } as overload) =
+  let overload ({ Type.Callable.parameters; _ } as overload) =
     match parameters with
     | Defined parameters ->
-        let arguments = arguments call in
-        let constraints = Type.Map.empty in
-
         let compatible { Argument.value; _ } parameter =
           let actual = Resolution.resolve resolution value in
           let expected =
@@ -270,39 +274,40 @@ let overload call ~resolution ~overloads =
           Resolution.less_or_equal resolution ~left:actual ~right:expected
         in
 
-        let rec consume_anonymous (arguments, parameters) =
+        let rec consume_anonymous ({ arguments; parameters; _ } as state) =
           match arguments, parameters with
           | ({ Argument.name = None; _ } as argument) :: arguments,
             ((Parameter.Anonymous _) as parameter) :: parameters
           | ({ Argument.name = None; _ } as argument) :: arguments,
             ((Parameter.Named _) as parameter) :: parameters
             when compatible argument parameter ->
-              consume_anonymous (arguments, parameters)
-          | arguments, parameters ->
-              arguments, parameters
+              consume_anonymous { state with arguments; parameters }
+          | _ ->
+              state
         in
 
-        let rec consume_variable (arguments, parameters) =
+        let rec consume_variable ({ arguments; parameters; _ } as state) =
           match arguments, parameters with
           | { Argument.name = None; _ } :: arguments, (Parameter.Variable _) :: _ ->
-              consume_variable (arguments, parameters)
-          | arguments, (Parameter.Variable _) :: parameters ->
-              consume_variable (arguments, parameters)
+              consume_variable { state with arguments }
+          | _, (Parameter.Variable _) :: parameters ->
+              consume_variable { state with parameters }
 
           | { Argument.value = { Node.value = Starred (Starred.Once _); _ }; _ } :: _,
             (Parameter.Anonymous _) :: parameters
           | { Argument.value = { Node.value = Starred (Starred.Once _); _ }; _ } :: _,
             (Parameter.Named _) :: parameters ->
-              consume_variable (arguments, parameters)
+              consume_variable { state with parameters }
+
           | { Argument.value = { Node.value = Starred (Starred.Once _); _ }; _ } :: arguments,
             parameters ->
-              consume_variable (arguments, parameters)
+              consume_variable { state with arguments; parameters }
 
-          | arguments, parameters ->
-              arguments, parameters
+          | _ ->
+              state
         in
 
-        let consume_named (arguments, parameters) =
+        let consume_named ({ arguments; parameters; _ } as state) =
           let named_arguments =
             let argument map { Argument.name; value } =
               Map.set map ~key:(Option.value_exn name) ~data:(Resolution.resolve resolution value)
@@ -354,40 +359,33 @@ let overload call ~resolution ~overloads =
             List.drop_while ~f:parameter_consumed parameters
           in
 
-          arguments, parameters
+          { state with arguments; parameters }
         in
 
-        let rec consume_keywords (arguments, parameters) =
+        let rec consume_keywords ({ arguments; parameters; _ } as state) =
           match arguments, parameters with
           | { Argument.name = Some _; _ } :: arguments, (Parameter.Keywords _) :: _ ->
-              consume_keywords (arguments, parameters)
-          | arguments, (Parameter.Keywords _) :: parameters ->
-              consume_keywords (arguments, parameters)
+              consume_keywords { state with arguments }
+          | _, (Parameter.Keywords _) :: parameters ->
+              consume_keywords { state with parameters }
 
           | { Argument.value = { Node.value = Starred (Starred.Twice _); _ }; _ } :: _,
             (Parameter.Named _) :: parameters ->
-              consume_keywords (arguments, parameters)
+              consume_keywords { state with parameters }
           | { Argument.value = { Node.value = Starred (Starred.Twice _); _ }; _ } :: arguments,
             parameters ->
-              consume_keywords (arguments, parameters)
+              consume_keywords { state with arguments; parameters }
 
-          | arguments, parameters ->
-              arguments, parameters
+          | _ ->
+              state
         in
 
-        let arguments, parameters =
-          (arguments, parameters)
+        let { arguments; parameters; _ } =
+          { arguments = arguments call; parameters; constraints = Type.Map.empty }
           |> consume_anonymous
           |> consume_variable
           |> consume_named
           |> consume_keywords
-        in
-
-        let overload =
-          if not (Map.is_empty constraints) then
-            (ignore constraints; overload)
-          else
-            overload
         in
 
         if List.is_empty arguments && List.is_empty parameters then
