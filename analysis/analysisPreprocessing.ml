@@ -133,7 +133,7 @@ let expand_string_annotations source =
 
 
 let qualify source =
-  let qualifier = source.Source.qualifier in
+  let global_qualifier = source.Source.qualifier in
 
   let module OrderIndependent = Transform.Make(struct
       type t = Access.t Access.Map.t
@@ -261,21 +261,21 @@ let qualify source =
           match value with
           (* Add `name -> qualifier.name` for classes. *)
           | Class definition ->
-              let qualified = qualify_class qualifier definition in
+              let qualified = qualify_class global_qualifier definition in
               Map.set map ~key:definition.Class.name ~data:qualified.Class.name,
               { Node.location; value = Class qualified }
           | Stub (Stub.Class definition) ->
-              let qualified = qualify_class qualifier definition in
+              let qualified = qualify_class global_qualifier definition in
               Map.set map ~key:definition.Class.name ~data:qualified.Class.name,
               { Node.location; value = Stub (Stub.Class qualified) }
 
           (* Add `name -> qualifier.name` for functions, not methods. *)
           | Define definition when not (Define.is_method definition) ->
-              let qualified = qualify_define qualifier definition in
+              let qualified = qualify_define global_qualifier definition in
               Map.set map ~key:definition.Define.name ~data:qualified.Define.name,
               { Node.location; value = Define qualified }
           | Stub (Stub.Define definition) when not (Define.is_method definition) ->
-              let qualified = qualify_define qualifier definition in
+              let qualified = qualify_define global_qualifier definition in
               Map.set map ~key:definition.Define.name ~data:qualified.Define.name,
               { Node.location; value = Stub (Stub.Define qualified) }
           | If { If.test; body; orelse } ->
@@ -420,7 +420,7 @@ let qualify source =
           begin
             match target with
             | { Node.value = Access access; _ } ->
-                Map.set ~key:access ~data:(qualifier @ access) sofar
+                Map.set ~key:access ~data:(global_qualifier @ access) sofar
             | _ ->
                 sofar
           end
@@ -434,7 +434,7 @@ let qualify source =
   in
 
   let map, source = OrderIndependent.transform ~shallow:true map source in
-  OrderDependent.transform (qualifier, map) source |> snd
+  OrderDependent.transform (global_qualifier, map) source |> snd
 
 
 let cleanup source =
