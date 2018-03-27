@@ -309,8 +309,8 @@ let overload call ~resolution ~overloads =
 
         let consume_named ({ arguments; parameters; _ } as state) =
           let named_arguments =
-            let argument map { Argument.name; value } =
-              Map.set map ~key:(Option.value_exn name) ~data:(Resolution.resolve resolution value)
+            let argument map ({ Argument.name; _ } as argument) =
+              Map.set map ~key:(Option.value_exn name) ~data:argument
             in
             List.take_while ~f:(fun { Argument.name; _ } -> Option.is_some name) arguments
             |> List.fold ~init:Identifier.Map.empty ~f:argument
@@ -318,8 +318,8 @@ let overload call ~resolution ~overloads =
 
           let named_parameters =
             let parameter map = function
-              | Parameter.Named { Parameter.name; annotation } ->
-                  Map.set map ~key:(Access.show name |> Identifier.create) ~data:annotation
+              | (Parameter.Named { Parameter.name; _ }) as parameter ->
+                  Map.set map ~key:(Access.show name |> Identifier.create) ~data:parameter
               | _ ->
                   map
             in
@@ -330,8 +330,8 @@ let overload call ~resolution ~overloads =
           let consumed =
             let argument ~key ~data consumed =
               match Map.find named_parameters key with
-              | Some annotation ->
-                  if Resolution.less_or_equal resolution ~left:data ~right:annotation then
+              | Some parameter ->
+                  if compatible data parameter then
                     Set.add consumed key
                   else
                     consumed
