@@ -2941,18 +2941,6 @@ let test_check_attributes _ =
     |}
     ["Undefined attribute [16]: `Foo` has no attribute `attribute`."];
 
-  (* Check class properties. *)
-  assert_type_errors
-    {|
-      class Foo:
-        @util.etc.class_property
-        def attribute() -> int:
-          return 1
-      def bar() -> str:
-        return Foo.attribute
-    |}
-    ["Incompatible return type [7]: Expected `str` but got `int`."];
-
   (* Check attribute type propagation. *)
   assert_type_errors
     {|

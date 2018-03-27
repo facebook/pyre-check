@@ -269,13 +269,6 @@ let test_attribute_assigns _ =
   assert_property_attribute_assign
     "@abc.abstractproperty\ndef foo() -> int: pass"
     (Some ("foo", Some (Type.expression Type.integer), None));
-  assert_property_attribute_assign
-    "@util.etc.lazy_property\ndef foo() -> int: pass"
-    (Some ("foo", Some (Type.expression Type.integer), None));
-
-  assert_property_attribute_assign
-    "@util.etc.cached_classproperty\ndef foo() -> int: pass"
-    (Some ("foo", Some (Type.expression (Type.class_variable Type.integer)), None));
 
   (* Test class field assigns. *)
   let assert_attribute_assigns
@@ -416,24 +409,6 @@ let test_attribute_assigns _ =
       "setUp", None, None;
       "with_context", None, None;
     ];
-
-  (* Class properties. *)
-  assert_attribute_assigns
-    {|
-      class Foo:
-        @util.etc.class_property
-        def property(self) -> int:
-          pass
-    |}
-    ["property", Some (Type.expression (Type.parametric "typing.ClassVar" [Type.integer])), None];
-  assert_attribute_assigns
-    {|
-      class Foo:
-        @util.classproperty
-        def property(self) -> int:
-          pass
-    |}
-    ["property", Some (Type.expression (Type.parametric "typing.ClassVar" [Type.integer])), None];
 
   (* Named tuple attributes. *)
   assert_attribute_assigns
