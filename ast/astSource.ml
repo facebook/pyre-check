@@ -187,6 +187,10 @@ let ignore_lines { metadata = { Metadata.ignore_lines; _ }; _ } =
   ignore_lines
 
 
+let statements { statements; _ } =
+  statements
+
+
 let qualifier ~path =
   let reversed_elements =
     Filename.parts path
