@@ -22,6 +22,8 @@ val map_reduce:
   'b list ->
   'a
 
+val iter: t -> f: ('a -> unit) -> 'a list -> unit
+
 val single_job : t -> f:('a -> 'b) -> 'a -> 'b
 
 val is_parallel : t -> bool

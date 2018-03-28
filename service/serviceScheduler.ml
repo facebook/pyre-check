@@ -44,6 +44,15 @@ let map_reduce { workers; bucket_multiplier; _ } ~init ~map ~reduce work =
     ~next:(Bucket.make ~num_workers:(number_of_processes * bucket_multiplier) work)
 
 
+let iter scheduler ~f work =
+  map_reduce
+    scheduler
+    ~init:()
+    ~map:(fun _ work -> Core.List.iter ~f work)
+    ~reduce:(fun _ _ -> ())
+    work
+
+
 let rec wait_until_ready handle =
   let { Worker.readys; _ } = Worker.select [handle] in
   match readys with

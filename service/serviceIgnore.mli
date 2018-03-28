@@ -5,8 +5,9 @@
 
 open Analysis
 
+module Scheduler = ServiceScheduler
 
-val register: configuration: Configuration.t -> File.Handle.t list -> unit
+val register: configuration: Configuration.t -> Scheduler.t -> File.Handle.t list -> unit
 
 val filter_by_mode
   :  configuration: Configuration.t

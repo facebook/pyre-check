@@ -11,19 +11,21 @@ open Pyre
 
 module AstSharedMemory = ServiceAstSharedMemory
 module IgnoreSharedMemory = ServiceIgnoreSharedMemory
+module Scheduler = ServiceScheduler
 
 open IgnoreSharedMemory
 
 
+let remove_ignores handles =
+  let keys = List.map ~f:File.Handle.show handles in
+  List.filter_map ~f:IgnoreKeys.get keys
+  |> List.concat
+  |> IgnoreLines.KeySet.of_list
+  |> IgnoreLines.remove_batch
+
+
 let register_ignores handle =
-  (* Remove existing ignores. *)
   let key = File.Handle.show handle in
-
-  IgnoreKeys.get key
-  >>| IgnoreLines.KeySet.of_list
-  >>| IgnoreLines.remove_batch
-  |> ignore;
-
   (* Register new ignores. *)
   match AstSharedMemory.get_source handle with
   | Some source ->
@@ -46,13 +48,18 @@ let register_mode ~configuration handle =
   ErrorModes.add key mode
 
 
-let register ~configuration handles =
+let register ~configuration scheduler handles =
   let timer = Timer.start () in
+  remove_ignores handles;
+
   let register handle =
     register_ignores handle;
     register_mode ~configuration handle;
   in
-  List.iter ~f:register handles;
+  if Scheduler.is_parallel scheduler then
+    Scheduler.iter scheduler ~f:register handles
+  else
+    List.iter ~f:register handles;
   Statistics.performance ~name:"Registered ignores" ~timer ~configuration ~normals:[] ()
 
 

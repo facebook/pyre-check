@@ -53,7 +53,7 @@ let assert_errors
     Service.Environment.in_process_handler scheduler ~configuration ~stubs:[] ~sources:handles
   in
   add_defaults_to_environment ~configuration environment;
-  Service.Ignore.register ~configuration handles;
+  Service.Ignore.register ~configuration scheduler handles;
   let descriptions =
     Service.TypeCheck.analyze_sources
       scheduler

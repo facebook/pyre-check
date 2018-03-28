@@ -154,7 +154,7 @@ let rec process_request
       ~configuration
       ~handles:repopulate_handles;
 
-    Service.Ignore.register ~configuration repopulate_handles;
+    Service.Ignore.register ~configuration scheduler repopulate_handles;
 
     let new_errors, lookups =
       let errors, lookups, _ =
