@@ -365,6 +365,7 @@ let shared_memory_handler
             location;
           }
         in
+        Globals.remove_batch (Globals.KeySet.singleton name);
         Globals.add name annotation;
         let definitions =
           match FunctionDefinitions.get name with
@@ -422,6 +423,7 @@ let shared_memory_handler
 
       let register_alias ~path ~key ~data =
         DependencyHandler.add_alias_key ~path key;
+        Aliases.remove_batch (Aliases.KeySet.singleton key);
         Aliases.add key data
 
       let purge handle =
