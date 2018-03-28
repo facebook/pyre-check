@@ -513,6 +513,11 @@ let test_mismatch_with_any _ =
   assert_true
     (Type.mismatch_with_any
        (Type.iterable Type.string)
+       (Type.Parametric { Type.name = ~~"typing.List"; parameters = [Type.Object] }));
+
+  assert_true
+    (Type.mismatch_with_any
+       (Type.iterable Type.string)
        (Type.list Type.Object));
   assert_true
     (Type.mismatch_with_any
