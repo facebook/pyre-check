@@ -215,11 +215,15 @@ let computation_thread request_queue configuration state =
   loop configuration state
 
 
-let request_handler_thread (
-    { configuration = { version; source_root; _ }; use_watchman; _ } as server_configuration,
-    lock,
-    connections,
-    request_queue) =
+let request_handler_thread
+    ({
+      configuration = ({ version; source_root; _ } as configuration);
+      use_watchman;
+      _;
+    } as server_configuration,
+      lock,
+      connections,
+      request_queue) =
 
   let get_readable_sockets () =
     Mutex.critical_section lock ~f:(fun () -> !connections)
@@ -348,7 +352,18 @@ let request_handler_thread (
     List.iter ~f:handle_socket readable;
     loop ()
   in
-  loop ()
+  try
+    loop ()
+  with _ ->
+    let backtrace = Printexc.get_backtrace () in
+    Statistics.event
+      ~flush:true
+      ~name:"uncaught exception"
+      ~configuration
+      ~integers:[]
+      ~normals:["exception backtrace", backtrace]
+      ();
+    ServerOperations.stop_server ~reason:"exception" server_configuration (!connections).socket
 
 
 (** Main server either as a daemon or in terminal *)
