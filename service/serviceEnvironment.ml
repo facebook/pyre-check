@@ -173,7 +173,6 @@ let shared_memory_handler
     add_table AliasKeys.add (Hashtbl.map ~f:Hash_set.to_list alias_keys);
     add_table GlobalKeys.add (Hashtbl.map ~f:Hash_set.to_list global_keys);
     add_table DependentKeys.add (Hashtbl.map ~f:Hash_set.to_list dependent_keys);
-    ClassDefinitionsKeys.add "ClassDefinitionsKeys" (Type.Table.keys class_definitions);
 
     Protocols.add "Protocols" (Hash_set.to_list protocols);
     add_table Modules.add modules;
@@ -204,8 +203,7 @@ let shared_memory_handler
         Modules.get access
 
       let in_class_definition_keys annotation =
-        let keys = ClassDefinitionsKeys.find_unsafe "ClassDefinitionsKeys" in
-        List.mem keys annotation ~equal:Type.equal
+        ClassDefinitions.mem annotation
 
       let aliases =
         Aliases.get

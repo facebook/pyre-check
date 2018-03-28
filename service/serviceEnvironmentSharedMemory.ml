@@ -117,12 +117,6 @@ module DependentValue = struct
   let description = "Dependent"
 end
 
-module ClassDefinitionKeyValue = struct
-  type t = Type.t list
-  let prefix = Prefix.make ()
-  let description = "Class definition keys"
-end
-
 module OrderIndexValue = struct
   type t = int
   let prefix = Prefix.make ()
@@ -157,8 +151,6 @@ end
 module FunctionDefinitions = SharedMemory.WithCache (AccessKey) (FunctionValue)
 
 module ClassDefinitions = SharedMemory.WithCache (TypeKey) (ClassValue)
-
-module ClassDefinitionsKeys = SharedMemory.WithCache (StringKey) (ClassDefinitionKeyValue)
 
 module Aliases = SharedMemory.WithCache (TypeKey) (AliasValue)
 
