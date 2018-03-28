@@ -398,12 +398,15 @@ let test_class_attributes _ =
   let create_attribute
       ?(value = None)
       ?(annotation = Some !"int")
-      ?(parent = Some (Expression.Access.create "foo"))
       ?(async = false)
+      ?(setter = false)
       name =
     +{
-      Statement.Attribute.async;
-      assign = { Assign.target = !name; annotation; value; compound = None; parent }
+      Statement.Attribute.target = !name;
+      annotation;
+      value;
+      async;
+      setter;
     }
   in
 

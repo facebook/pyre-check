@@ -131,8 +131,11 @@ end
 
 module Attribute : sig
   type attribute = {
+    target: Expression.t;
+    annotation: Expression.t option;
+    value: Expression.t option;
     async: bool;
-    assign: Assign.t;
+    setter: bool;
   }
   [@@deriving compare, eq, sexp, show, hash]
 
@@ -193,6 +196,7 @@ module Define : sig
   val is_class_method: t -> bool
   val is_constructor: ?in_test: bool -> t -> bool
   val is_generated_constructor: t -> bool
+  val is_property_setter: t -> bool
   val is_untyped: t -> bool
 
   val create_generated_constructor: statement_node Record.Class.record -> t
@@ -204,7 +208,7 @@ module Define : sig
     :  t
     -> definition: statement_node Record.Class.record
     -> (Assign.t Node.t) Expression.Access.Map.t
-  val property_attribute_assign: location: Location.t -> t -> (Assign.t Node.t) option
+  val property_attributes: location: Location.t -> t -> Attribute.t option
 
   val has_decorator: t -> string -> bool
 end
@@ -216,7 +220,7 @@ module Class : sig
   [@@deriving compare, eq, sexp, show, hash]
 
   val constructors: ?in_test: bool -> t -> Define.t list
-  val attribute_assigns
+  val attributes
     :  ?include_generated_attributes: bool
     -> ?in_test: bool
     -> t

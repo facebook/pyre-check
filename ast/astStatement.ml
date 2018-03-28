@@ -150,20 +150,25 @@ end
 
 module Attribute = struct
   type attribute = {
+    target: Expression.t;
+    annotation: Expression.t option;
+    value: Expression.t option;
     async: bool;
-    assign: Assign.t;
+    setter: bool;
   }
   [@@deriving compare, eq, sexp, show, hash]
 
   type t = attribute Node.t
   [@@deriving compare, eq, sexp, show, hash]
 
+  let create ~location ~async ~setter ~target ~annotation ~value =
+    Node.create ~location { target; annotation; value; async; setter }
 
-  let create ~location ~async ~assign =
-    Node.create ~location { async; assign }
+  let create_from_assign ~location ~async ~setter ~assign:{ Assign.target; annotation; value; _ } =
+    create ~location ~async ~setter ~target ~annotation ~value
 
-  let create_from_node { Node.location; value = assign } =
-    create ~location ~async:false ~assign
+  let create_from_node { Node.location; value = { Assign.target; annotation; value; _ } } =
+    create ~location ~async:false ~setter:false ~target ~annotation ~value
 end
 
 module Stub = struct
@@ -291,6 +296,10 @@ module Define = struct
 
 
   let is_generated_constructor { generated; _ } = generated
+
+
+  let is_property_setter ({ name; _ } as define) =
+    has_decorator define ((Expression.Access.show name) ^ ".setter")
 
 
   let is_untyped { return_annotation; _ } =
@@ -473,17 +482,15 @@ module Define = struct
     |> Map.map ~f:merge_assigns
 
 
-  let property_attribute_assign ~location ({ name; return_annotation; _ } as define) =
-    let assign return_annotation =
-      Node.create
+  let property_attributes ~location ({ name; return_annotation; parameters; _ } as define) =
+    let attribute annotation =
+      Attribute.create
         ~location
-        {
-          Assign.target = Node.create ~location (Expression.Access name);
-          annotation = return_annotation;
-          value = None;
-          compound = None;
-          parent = None;
-        }
+        ~target:(Node.create ~location (Expression.Access name))
+        ~annotation
+        ~value:None
+        ~async:(is_async define)
+        ~setter:false
     in
     match String.Set.find ~f:(has_decorator define) Recognized.property_decorators with
     | Some "util.classproperty"
@@ -504,11 +511,24 @@ module Define = struct
           | _ ->
               None
         in
-        Some (assign return_annotation)
+        Some (attribute return_annotation)
     | Some _ ->
-        Some (assign return_annotation)
+        Some (attribute return_annotation)
     | None ->
-        None
+        begin
+          match is_property_setter define, parameters with
+          | true, _ :: { Node.value = { Parameter.annotation; _ }; _ } :: _ ->
+              (Some
+                 (Attribute.create
+                    ~location
+                    ~target:(Node.create ~location (Expression.Access name))
+                    ~annotation:None
+                    ~value:annotation
+                    ~async:(is_async define)
+                    ~setter:true))
+          | _ ->
+              None
+        end
 end
 
 
@@ -548,12 +568,12 @@ module Class = struct
     List.filter_map ~f:constructor body
 
 
-  let attribute_assigns
+  let attributes
       ?(include_generated_attributes = true)
       ?(in_test = false)
       ({ Record.Class.body; bases; _ } as definition) =
-    let explicit_attribute_assigns =
-      let attribute_assigns map { Node.location; value } =
+    let explicitly_assigned_attributes =
+      let assigned_attributes map { Node.location; value } =
         match value with
         | Assign ({
             Assign.target = { Node.value = Expression.Access ([_] as access); _ };
@@ -565,15 +585,18 @@ module Class = struct
                  Assign.target = { Node.value = Expression.Access ([_] as access); _ };
                  _;
                } as assign)) ->
-            Map.set ~key:access ~data:(Attribute.create ~location ~async:false ~assign) map
+            Map.set
+              ~key:access
+              ~data:(Attribute.create_from_assign ~location ~async:false ~setter:false ~assign)
+              map
         | _ ->
             map
       in
-      List.fold ~init:Expression.Access.Map.empty ~f:attribute_assigns body
+      List.fold ~init:Expression.Access.Map.empty ~f:assigned_attributes body
     in
 
     if not include_generated_attributes then
-      explicit_attribute_assigns
+      explicitly_assigned_attributes
     else
       let merge ~key:_ = function
         | `Both (_, right) ->
@@ -582,15 +605,15 @@ module Class = struct
         | `Right value ->
             Some value
       in
-      let implicit_attribute_assigns =
+      let implicitly_assigned_attributes =
         constructors ~in_test definition
         |> List.map ~f:(Define.implicit_attribute_assigns ~definition)
         |> List.fold ~init:Expression.Access.Map.empty ~f:(Map.merge ~f:merge)
         |> Map.map ~f:Attribute.create_from_node
       in
-      let named_tuple_assigns =
+      let named_tuple_attributes =
         let open Expression in
-        let named_tuple_assigns sofar { Argument.value; _ } =
+        let named_tuple_attributes sofar { Argument.value; _ } =
           match Node.value value with
           | Access [
               Access.Identifier typing;
@@ -611,94 +634,87 @@ module Class = struct
                     Identifier.show named_tuple = "NamedTuple") ||
                    (Identifier.show typing = "collections" &&
                     Identifier.show named_tuple = "namedtuple")->
-              let named_tuple_assigns sofar { Node.location; value } =
+              let named_tuple_attributes sofar { Node.location; value } =
                 match value with
                 | String name ->
                     let access = Access.create name in
-                    let assign =
-                      {
-                        Assign.target = { Node.location; value = Access access};
-                        annotation = None;
-                        value = None;
-                        compound = None;
-                        parent = None;
-                      }
-                    in
                     Map.set
                       ~key:access
-                      ~data:(Attribute.create ~location ~async:false ~assign)
+                      ~data:(
+                        Attribute.create
+                          ~location
+                          ~async:false
+                          ~setter:false
+                          ~target:({ Node.location; value = Access access})
+                          ~annotation:None
+                          ~value:None)
                       sofar
                 | Tuple [{ Node.location; value = String name}; annotation] ->
                     let access = Access.create name in
-                    let assign =
-                      {
-                        Assign.target = { Node.location; value = Access access};
-                        annotation = Some annotation;
-                        value = None;
-                        compound = None;
-                        parent = None;
-                      }
-                    in
                     Map.set
                       ~key:access
-                      ~data:(Attribute.create ~location ~async:false ~assign)
+                      ~data:(
+                        Attribute.create
+                          ~location
+                          ~async:false
+                          ~setter:false
+                          ~target:({ Node.location; value = Access access})
+                          ~annotation:(Some annotation)
+                          ~value:None)
                       sofar
                 | _ ->
                     sofar
               in
-              List.fold ~f:named_tuple_assigns ~init:sofar attributes
+              List.fold ~f:named_tuple_attributes ~init:sofar attributes
           | _ ->
               sofar
         in
-        List.fold ~f:named_tuple_assigns ~init:Expression.Access.Map.empty bases
+        List.fold ~f:named_tuple_attributes ~init:Expression.Access.Map.empty bases
       in
-      let property_assigns =
-        let property_assigns map = function
+      let property_attributes =
+        let property_attributes map = function
           | { Node.location; value = Stub (Stub.Define define) }
           | { Node.location; value = Define define } ->
-              (Define.property_attribute_assign ~location define
-               >>= fun ({ Node.value = { Assign.target; _ } as assign; _ }) ->
-               match target with
-               | { Node.value = Expression.Access ([_] as access); _ } ->
-                   Some
-                     (Map.set
-                        ~key:access
-                        ~data:
-                          (Attribute.create
-                             ~location
-                             ~async:(Define.is_async define)
-                             ~assign)
-                        map)
-               | _ ->
-                   None)
-              |> Option.value ~default:map
+              begin
+                match Define.property_attributes ~location define with
+                | Some ({
+                    Node.value =
+                      { Attribute.target =
+                          { Node.value = Expression.Access ([_] as access); _ };
+                        _; };
+                    _;
+                  } as attribute) ->
+                    Map.set ~key:access ~data:attribute map
+                | _ -> map
+              end
           | _ ->
               map
         in
-        List.fold ~init:Expression.Access.Map.empty ~f:property_assigns body
+        List.fold ~init:Expression.Access.Map.empty ~f:property_attributes body
       in
-      let callable_assigns =
-        let callable_assigns map { Node.location; value } =
+      let callable_attributes =
+        let callable_attributes map { Node.location; value } =
           match value with
           | Stub (Stub.Define { Define.name; _ })
           | Define { Define.name; _ } ->
-              let assign =
-                {
-                  Assign.target = Node.create ~location (Expression.Access name);
-                  annotation = None;  (* This should be a `Callable`. Ignoring for now... *)
-                  value = None;
-                  compound = None;
-                  parent = None;
-                }
-              in
-              Map.set ~key:name ~data:(Attribute.create ~location ~async:false ~assign) map
+              Map.set
+                ~key:name
+                ~data:(
+                  Attribute.create
+                    ~location
+                    ~async:false
+                    ~setter:false
+                    ~target:(Node.create ~location (Expression.Access name))
+                    ~annotation:None
+                    ~value:None)
+                map
           | _ ->
               map
         in
-        List.fold ~init:Expression.Access.Map.empty ~f:callable_assigns body
+        List.fold ~init:Expression.Access.Map.empty ~f:callable_attributes body
       in
-      let class_assigns =
-        let callable_assigns map { Node.location; value } =
+      let class_attributes =
+        let callable_attributes map { Node.location; value } =
           match value with
           | Stub (Stub.Class { Record.Class.name; _ })
           | Class { Record.Class.name; _ } when not (List.is_empty name) ->
@@ -721,28 +737,29 @@ module Class = struct
                       Access.Subscript [Access.Index meta_annotation];
                     ])
               in
-              let assign =
-                {
-                  Assign.target = Node.create ~location (Expression.Access [List.last_exn name]);
-                  annotation = Some annotation;
-                  value = None;
-                  compound = None;
-                  parent = None;
-                }
-              in
-              Map.set ~key:name ~data:(Attribute.create ~location ~async:false ~assign) map
+              Map.set
+                ~key:name
+                ~data:(
+                  Attribute.create
+                    ~location
+                    ~async:false
+                    ~setter:false
+                    ~target:(Node.create ~location (Expression.Access [List.last_exn name]))
+                    ~annotation:(Some annotation)
+                    ~value:None)
+                map
           | _ ->
               map
         in
-        List.fold ~init:Expression.Access.Map.empty ~f:callable_assigns body
+        List.fold ~init:Expression.Access.Map.empty ~f:callable_attributes body
       in
       (* Merge with decreasing priority. Explicit attributes override all. *)
-      explicit_attribute_assigns
-      |> Map.merge ~f:merge property_assigns
-      |> Map.merge ~f:merge named_tuple_assigns
-      |> Map.merge ~f:merge callable_assigns
-      |> Map.merge ~f:merge class_assigns
-      |> Map.merge ~f:merge implicit_attribute_assigns
+      explicitly_assigned_attributes
+      |> Map.merge ~f:merge implicitly_assigned_attributes
+      |> Map.merge ~f:merge named_tuple_attributes
+      |> Map.merge ~f:merge property_attributes
+      |> Map.merge ~f:merge callable_attributes
+      |> Map.merge ~f:merge class_attributes
 
 
   let update

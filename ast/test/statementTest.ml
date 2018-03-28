@@ -63,7 +63,11 @@ let test_decorator _ =
   assert_true (Define.is_abstract_method (define [!"abc.abstractproperty"]));
 
   assert_true (Define.is_overloaded_method (define [!"overload"]));
-  assert_true (Define.is_overloaded_method (define [!"typing.overload"]))
+  assert_true (Define.is_overloaded_method (define [!"typing.overload"]));
+
+  assert_true ((Define.is_property_setter) (define [!"foo.setter"]));
+  assert_false ((Define.is_property_setter) (define [!"setter"]));
+  assert_false ((Define.is_property_setter) (define [!"bar.setter"]))
 
 
 let test_is_constructor _ =
@@ -142,7 +146,7 @@ let test_constructor _ =
     ~exists:false
 
 
-let test_attribute_assigns _ =
+let test_attributes _ =
   let create_assign ~target ~annotation ~value =
     {
       Assign.target = Node.create_with_default_location (Expression.Access (Access.create target));
@@ -156,37 +160,28 @@ let test_attribute_assigns _ =
     }
     |> Node.create_with_default_location
   in
-  let test_assign_equal left right =
-    let open Assign in
-    (* explicitly ignoring the 'parent' field for tests *)
-    Expression.equal left.target right.target &&
-    Option.equal Expression.equal left.annotation right.annotation &&
-    Option.equal Expression.equal left.value right.value
-  in
 
-  let create_attribute ~target ~annotation ~value =
+  let create_attribute ?(setter = false) ~target ~annotation ~value =
     {
-      Attribute.async = false;
-      assign =
-        {
-          Assign.target =
-            Node.create_with_default_location (Expression.Access (Access.create target));
-          annotation;
-          value =
-            value
-            >>| (fun value ->
-                (Node.create_with_default_location (Expression.Access (Access.create value))));
-          compound = None;
-          parent = None;
-        }
+      Attribute.target =
+        Node.create_with_default_location (Expression.Access (Access.create target));
+      annotation;
+      value =
+        value
+        >>| (fun value ->
+            (Node.create_with_default_location (Expression.Access (Access.create value))));
+      async = false;
+      setter;
     }
     |> Node.create_with_default_location
   in
   let test_attribute_node_equal { Node.value = left; _ } { Node.value = right; _ } =
     let open Attribute in
-    (* this is needed to call test_assign_equal explicitly *)
     left.async = right.async &&
-    test_assign_equal left.assign right.assign
+    left.setter = right.setter &&
+    Expression.equal left.target right.target &&
+    Option.equal Expression.equal left.annotation right.annotation &&
+    Option.equal Expression.equal left.value right.value
   in
 
   (* Test define field assigns. *)
@@ -254,31 +249,33 @@ let test_attribute_assigns _ =
     ["attribute", None, None; "nested", None, None; "other", None, None];
 
   (* Test define field assigns. *)
-  let assert_property_attribute_assign source expected =
+  let assert_property_attributes source expected =
     let expected =
       expected
-      >>| fun (target, annotation, value) -> create_assign ~target ~annotation ~value
+      >>| fun (target, annotation, value, setter) ->
+      create_attribute ~setter ~target ~annotation ~value
     in
     assert_equal
-      ~cmp:(Option.equal (Node.equal Assign.equal))
+      ~cmp:(Option.equal Attribute.equal)
       expected
-      (parse_single_define source |> Define.property_attribute_assign ~location:Location.any)
+      (parse_single_define source |> Define.property_attributes ~location:Location.any)
   in
-  assert_property_attribute_assign "def foo(): pass" None;
-  assert_property_attribute_assign "@property\ndef foo(): pass" (Some ("foo", None, None));
-  assert_property_attribute_assign
+  assert_property_attributes "def foo(): pass" None;
+  assert_property_attributes "@property\ndef foo(): pass" (Some ("foo", None, None, false));
+  assert_property_attributes
     "@abc.abstractproperty\ndef foo() -> int: pass"
-    (Some ("foo", Some (Type.expression Type.integer), None));
+    (Some ("foo", Some (Type.expression Type.integer), None, false));
 
   (* Test class field assigns. *)
-  let assert_attribute_assigns
+  let assert_attributes
       ?(in_test = false)
       ?(include_generated_attributes = true)
       source
       expected =
     let expected =
       List.map
-        ~f:(fun (target, annotation, value) -> create_attribute ~target ~annotation ~value)
+        ~f:(fun (target, annotation, value, setter) ->
+            create_attribute ~target ~annotation ~value ~setter)
         expected
     in
     let printer attributes =
@@ -290,16 +287,16 @@ let test_attribute_assigns _ =
       ~printer
       expected
       (parse_single_class source
-       |> Class.attribute_assigns ~in_test ~include_generated_attributes
+       |> Class.attributes ~in_test ~include_generated_attributes
        |> Map.data)
   in
-  assert_attribute_assigns
+  assert_attributes
     {|
       class Foo:
         attribute: int = value
     |}
-    ["attribute", Some (Type.expression Type.integer), Some "value"];
-  assert_attribute_assigns
+    ["attribute", Some (Type.expression Type.integer), Some "value", false];
+  assert_attributes
     {|
       class Foo:
         def __init__(self):
@@ -311,12 +308,12 @@ let test_attribute_assigns _ =
         whatever()['asdf'] = 5
     |}
     [
-      "__init__", None, None;
-      "attribute", Some (Type.expression Type.integer), Some "value";
-      "ignored", None, None;
-      "implicit", None, None;
+      "__init__", None, None, false;
+      "attribute", Some (Type.expression Type.integer), Some "value", false;
+      "ignored", None, None, false;
+      "implicit", None, None, false;
     ];
-  assert_attribute_assigns
+  assert_attributes
     {|
       class Foo:
         def __init__(self):
@@ -324,10 +321,10 @@ let test_attribute_assigns _ =
         attribute: int = value
     |}
     [
-      "__init__", None, None;
-      "attribute", Some (Type.expression Type.integer), Some "value";
+      "__init__", None, None, false;
+      "attribute", Some (Type.expression Type.integer), Some "value", false;
     ];
-  assert_attribute_assigns
+  assert_attributes
     {|
       class Foo:
         def __init__(self):
@@ -338,12 +335,12 @@ let test_attribute_assigns _ =
           self.other: int = 1
     |}
     [
-      "__init__", None, None;
-      "attribute", Some (Type.expression Type.integer), None;
-      "init", None, None;
-      "not_inlined", None, None;
+      "__init__", None, None, false;
+      "attribute", Some (Type.expression Type.integer), None, false;
+      "init", None, None, false;
+      "not_inlined", None, None, false;
     ];
-  assert_attribute_assigns
+  assert_attributes
     {|
       class Foo:
         attribute: int = value
@@ -352,25 +349,25 @@ let test_attribute_assigns _ =
           pass
     |}
     [
-      "attribute", Some (Type.expression Type.integer), Some "value";
-      "property", Some (Type.expression Type.integer), None;
+      "attribute", Some (Type.expression Type.integer), Some "value", false;
+      "property", Some (Type.expression Type.integer), None, false;
     ];
-  assert_attribute_assigns
+  assert_attributes
     {|
       class Foo:
         @property
         def property(self) -> int:
           pass
     |}
-    ["property", Some (Type.expression Type.integer), None];
-  assert_attribute_assigns
+    ["property", Some (Type.expression Type.integer), None, false];
+  assert_attributes
     {|
       class Foo:
         @property
         def property(self) -> int: ...
     |}
-    ["property", Some (Type.expression Type.integer), None];
-  assert_attribute_assigns
+    ["property", Some (Type.expression Type.integer), None, false];
+  assert_attributes
     {|
       class Foo:
         class Foo.Bar:  # no preprocessing in tests
@@ -379,11 +376,31 @@ let test_attribute_assigns _ =
     [
       "Bar",
       Some (Type.expression (Type.class_variable (Type.meta (Type.primitive "Foo.Bar")))),
-      None;
+      None,
+      false;
+    ];
+  assert_attributes
+    {|
+      class Foo:
+        @x.setter
+        def x(self, value:str) -> None: ...
+    |}
+    ["x", None, Some "str", true];
+  assert_attributes
+    {|
+      class Foo:
+        @property
+        def x(self) -> int: ...
+        @x.setter
+        def x(self, value:str) -> None: ...
+    |}
+    [
+      (* TODO(T27592560): Merge these into one attribute instead of overriding. *)
+      "x", None, Some "str", true;
     ];
 
   (* Implicit attributes in tests. *)
-  assert_attribute_assigns
+  assert_attributes
     ~in_test:true
     {|
       class Test:
@@ -391,10 +408,10 @@ let test_attribute_assigns _ =
           self.attribute = 1
     |}
     [
-      "attribute", None, None;
-      "setUp", None, None;
+      "attribute", None, None, false;
+      "setUp", None, None, false;
     ];
-  assert_attribute_assigns
+  assert_attributes
     ~in_test:true
     {|
       class Test:
@@ -404,38 +421,38 @@ let test_attribute_assigns _ =
           self.context = 2
     |}
     [
-      "attribute", None, None;
-      "context", None, None;
-      "setUp", None, None;
-      "with_context", None, None;
+      "attribute", None, None, false;
+      "context", None, None, false;
+      "setUp", None, None, false;
+      "with_context", None, None, false;
     ];
 
   (* Named tuple attributes. *)
-  assert_attribute_assigns
+  assert_attributes
     {|
       class Foo(typing.NamedTuple('Foo', ['one', 'two'])):
         attribute: int
     |}
     [
-      "attribute", Some (Type.expression Type.integer), None;
-      "one", None, None;
-      "two", None, None;
+      "attribute", Some (Type.expression Type.integer), None, false;
+      "one", None, None, false;
+      "two", None, None, false;
     ];
-  assert_attribute_assigns
+  assert_attributes
     {|
       class Foo(collections.namedtuple('Foo', ['one', 'two'])):
         pass
     |}
-    ["one", None, None; "two", None, None];
-  assert_attribute_assigns
+    ["one", None, None, false; "two", None, None, false];
+  assert_attributes
     {|
       class Foo(typing.NamedTuple('Foo', [('one', int), 'two'])):
         attribute: int
     |}
     [
-      "attribute", Some (Type.expression Type.integer), None;
-      "one", Some (Type.expression Type.integer), None;
-      "two", None, None;
+      "attribute", Some (Type.expression Type.integer), None, false;
+      "one", Some (Type.expression Type.integer), None, false;
+      "two", None, None, false;
     ]
 
 
@@ -808,7 +825,7 @@ let () =
   |> run_test_tt_main;
   "class">:::[
     "constructor">::test_constructor;
-    "attribute_assigns">::test_attribute_assigns;
+    "attributes">::test_attributes;
     "update">::test_update;
   ]
   |> run_test_tt_main;

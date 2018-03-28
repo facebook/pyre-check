@@ -447,20 +447,18 @@ module Attribute = struct
       {
         Node.location;
         value = {
-          Attribute.async;
-          assign = {
-            Statement.Assign.target = { Node.value = target; _ };
-            annotation = assign_annotation;
-            value;
-            _;
-          };
+          Attribute.target = { Node.value = target; _ };
+          annotation = attribute_annotation;
+          value;
+          async;
+          _;
         };
       } =
     let class_annotation = annotation in
 
     (* Account for class attributes. *)
     let annotation, class_attribute =
-      (assign_annotation
+      (attribute_annotation
        >>| Resolution.parse_annotation resolution
        >>| (fun annotation ->
            match Type.class_variable_value annotation with
@@ -597,16 +595,16 @@ let attributes
           ~class_attributes
           attributes
           ({ Node.value = definition; _ } as parent) =
-        let assign_attributes attributes assign =
-          let attribute = Attribute.create ~resolution ~parent assign in
+        let collect_attributes attributes attribute =
+          let attribute = Attribute.create ~resolution ~parent attribute in
           if class_attributes && not (Attribute.class_attribute attribute) then
             attributes
           else
             attribute :: attributes
         in
-        Statement.Class.attribute_assigns ~include_generated_attributes ~in_test definition
+        Statement.Class.attributes ~include_generated_attributes ~in_test definition
         |> Map.data
-        |> List.fold ~init:attributes ~f:assign_attributes
+        |> List.fold ~init:attributes ~f:collect_attributes
       in
       let superclass_definitions = superclasses ~resolution definition in
       let in_test =
@@ -709,14 +707,11 @@ let attribute
       {
         Node.location;
         value = {
-          Statement.Attribute.async = false;
-          assign = {
-            Statement.Assign.target = Node.create_with_default_location (Expression.Access name);
-            annotation = None;
-            value = None;
-            compound = None;
-            parent = None;
-          }
+          Statement.Attribute.target = Node.create_with_default_location (Expression.Access name);
+          annotation = None;
+          value = None;
+          async = false;
+          setter = false;
         }
       }
   in
@@ -754,14 +749,11 @@ let fallback_attribute ~resolution ~access definition =
                {
                  Node.location;
                  value = {
-                   Statement.Attribute.async = false;
-                   assign = {
-                     Statement.Assign.target = Node.create ~location (Expression.Access access);
-                     annotation = return_annotation;
-                     value = None;
-                     compound = None;
-                     parent = None;
-                   }
+                   Statement.Attribute.target = Node.create ~location (Expression.Access access);
+                   annotation = return_annotation;
+                   value = None;
+                   async = false;
+                   setter = false;
                  };
                })
       | _ ->
