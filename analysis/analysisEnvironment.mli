@@ -59,6 +59,8 @@ module type Handler = sig
   val globals: Access.t -> Resolution.global option
   val dependencies: string -> string list option
 
+  val mode: string -> Source.mode option
+
   module DependencyHandler: Dependencies.Handler
   module TypeOrderHandler: TypeOrder.Handler
 end

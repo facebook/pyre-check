@@ -14,6 +14,7 @@ module AstSharedMemory = ServiceAstSharedMemory
 module EnvironmentSharedMemory = ServiceEnvironmentSharedMemory
 
 open EnvironmentSharedMemory
+open ServiceIgnoreSharedMemory
 
 
 let build
@@ -449,7 +450,9 @@ let shared_memory_handler
 
         DependencyHandler.get_dependent_keys ~path |> purge_dependents;
 
-        DependencyHandler.clear_all_keys ~path;
+        DependencyHandler.clear_all_keys ~path
+
+      let mode path = ErrorModes.get path
     end: Environment.Handler)
   in
   begin

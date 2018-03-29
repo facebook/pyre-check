@@ -63,21 +63,6 @@ let register ~configuration scheduler handles =
   Statistics.performance ~name:"Registered ignores" ~timer ~configuration ~normals:[] ()
 
 
-let filter_by_mode ~configuration:{ Configuration.debug; _ } errors =
-  if debug then
-    errors
-  else
-    let suppress ({ Error.location = { Location.path; _ }; _ } as error) =
-      let mode =
-        match ErrorModes.get path with
-        | Some mode -> mode
-        | _ -> Source.Default
-      in
-      Error.suppress ~mode error
-    in
-    List.filter ~f:(fun error -> not (suppress error)) errors
-
-
 let postprocess handles errors =
   let error_lookup = Location.Table.create () in
   let errors_with_ignore_suppression =

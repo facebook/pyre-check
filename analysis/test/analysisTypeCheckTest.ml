@@ -17,14 +17,8 @@ open TypeCheck
 open Test
 
 
-let check_errors ?(mode=None) configuration environment source =
-  let suppress mode errors =
-    List.filter ~f:(fun error -> not (Error.suppress ~mode error)) errors
-  in
-  let errors = (check configuration environment source).Result.errors in
-  match mode with
-  | Some mode -> suppress mode errors
-  | _ -> errors
+let check_errors configuration environment ?mode_override source =
+  (check configuration environment ?mode_override source).Result.errors
 
 
 let configuration = Configuration.create ()
@@ -1022,7 +1016,7 @@ let check_with_default_environment
     ?(strict = false)
     ?(declare = false)
     ?(infer = false)
-    ?(mode = None)
+    ?mode_override
     source =
   let source =
     let metadata =
@@ -1046,7 +1040,7 @@ let check_with_default_environment
     Environment.handler ~configuration environment
   in
   let configuration = Configuration.create ~debug ~strict ~declare ~infer () in
-  check_errors ~mode configuration environment source
+  check_errors configuration environment ?mode_override source
 
 
 let assert_type_errors
@@ -1060,7 +1054,7 @@ let assert_type_errors
     errors =
   Annotated.Class.AttributesCache.clear ();
   let descriptions =
-    let mode =
+    let mode_override =
       if infer then
         Some Source.Infer
       else if strict then
@@ -1080,7 +1074,7 @@ let assert_type_errors
          ~debug
          ~declare
          ~infer
-         ~mode source)
+         ?mode_override source)
   in
   let description_list_to_string descriptions =
     Format.asprintf "%a" Sexp.pp (sexp_of_list sexp_of_string descriptions)
@@ -4677,7 +4671,7 @@ let assert_infer
     (List.map
        ~f:fields_of_error
        (check_errors
-          ~mode:(Some Source.Infer)
+          ~mode_override:Source.Infer
           (Configuration.create ~debug ~infer ~recursive_infer ()) environment_handler source)
      |> List.concat
      |> List.map ~f:to_string)

@@ -58,6 +58,8 @@ module type Handler = sig
   val globals: Access.t -> Resolution.global option
   val dependencies: string -> string list option
 
+  val mode: string -> Source.mode option
+
   module DependencyHandler: Dependencies.Handler
 
   module TypeOrderHandler: TypeOrder.Handler
@@ -337,6 +339,9 @@ let handler
 
     let dependencies =
       DependencyHandler.dependents
+
+    let mode _ =
+      None
 
     module TypeOrderHandler =
       (val TypeOrder.handler order: TypeOrder.Handler)

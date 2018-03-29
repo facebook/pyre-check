@@ -201,41 +201,8 @@ let ignore_lines_test context =
   with_bracket_chdir context (bracket_tmpdir context) check
 
 
-let ignore_modes_test context =
-  let check _ =
-    assert_errors
-      {|
-        def foo():
-        return 1
-      |}
-      [];
-    assert_errors
-      {|
-        # pyre-strict
-        def foo():
-          return 1
-      |}
-      ["Missing return annotation [3]: Returning `int` but no return type is specified."];
-    assert_errors
-      {|
-        def foo() -> str:
-          return 1
-      |}
-      ["Incompatible return type [7]: Expected `str` but got `int`."];
-    assert_errors
-      {|
-        # pyre-do-not-check
-        def foo() -> str:
-          return 1
-      |}
-      []
-  in
-  with_bracket_chdir context (bracket_tmpdir context) check
-
-
 let () =
   "typeChecker">:::[
     "ignore_lines">::ignore_lines_test;
-    "ignore_modes">::ignore_modes_test;
   ]
   |> run_test_tt_main

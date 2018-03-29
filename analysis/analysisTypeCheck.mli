@@ -60,5 +60,6 @@ end
 val check
   :  Configuration.t
   -> (module Environment.Handler)
+  -> ?mode_override: Source.mode
   -> Source.t
   -> Result.t

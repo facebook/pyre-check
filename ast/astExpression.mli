@@ -225,7 +225,9 @@ module Access : sig
   [@@deriving compare, eq, sexp, show, hash]
 
   module Set: Set.S with type Elt.t = t
+
   module Map: Map.S with type Key.t = t
+
   include Hashable with type t := t
 
   val create: string -> t

@@ -9,9 +9,4 @@ module Scheduler = ServiceScheduler
 
 val register: configuration: Configuration.t -> Scheduler.t -> File.Handle.t list -> unit
 
-val filter_by_mode
-  :  configuration: Configuration.t
-  -> Error.t list
-  -> Error.t list
-
 val postprocess: File.Handle.t list -> Error.t list -> Error.t list

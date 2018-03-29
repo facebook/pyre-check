@@ -1758,7 +1758,7 @@ module SingleSourceResult = struct
 end
 
 
-let check configuration environment ({ Source.path; _ } as source) =
+let check configuration environment ?mode_override ({ Source.path; _ } as source) =
   Log.debug "Checking %s..." path;
   let resolution = Environment.resolution environment () in
 
@@ -1850,10 +1850,28 @@ let check configuration environment ({ Source.path; _ } as source) =
           >>| print_state "Entry"
           >>| State.check_entry resolution
       in
+      let (module Handler: Environment.Handler) = environment in
       let errors =
-        exit
-        >>| State.errors
-        |> Option.value ~default:[]
+        let errors =
+          exit
+          >>| State.errors
+          |> Option.value ~default:[]
+        in
+        if configuration.debug then
+          errors
+        else
+          let keep_error ({ Error.location = { Location.path; _ }; _ } as error) =
+            let mode =
+              match mode_override with
+              | Some mode ->
+                  mode
+              | None ->
+                  Handler.mode path
+                  |> Option.value ~default:Source.Default
+            in
+            not (Error.suppress ~mode error)
+          in
+          List.filter ~f:keep_error errors
       in
       let coverage =
         exit
