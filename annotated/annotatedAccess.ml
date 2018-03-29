@@ -436,12 +436,8 @@ let fold ~resolution ~initial ~f access =
                 let call = Call.create ~kind:Call.Function call in
                 let callable =
                   match Annotation.annotation resolved with
-                  | Type.Callable { Type.Callable.kind; overloads } ->
-                      (* Blindly drop overloads for now. *)
-                      Call.overload call ~overloads ~resolution
-                      >>| fun overload -> { Type.Callable.kind; overloads = [overload] }
-                  | _ ->
-                      None
+                  | Type.Callable callable -> Call.overload call ~resolution ~callable
+                  | _ -> None
                 in
                 match callable with
                 | Some {

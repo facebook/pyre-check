@@ -259,7 +259,7 @@ type resolution_state = {
 }
 
 
-let overload call ~resolution ~overloads =
+let overload call ~resolution ~callable:{ Type.Callable.kind; overloads } =
   (* Assuming calls have the following format:
      `[argument,]* [\*variable,]* [keyword=value,]* [\*\*keywords]*` *)
   let open Type.Callable in
@@ -491,3 +491,4 @@ let overload call ~resolution ~overloads =
         Some overload
   in
   List.find_map ~f:overload overloads
+  >>| fun overload -> { Type.Callable.kind; overloads = [overload] }

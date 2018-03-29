@@ -74,5 +74,5 @@ val check_parameters
 val overload
   :  t
   -> resolution: Resolution.t
-  -> overloads: (Type.t Type.Callable.overload) list
-  -> (Type.t Type.Callable.overload) option
+  -> callable: Type.Callable.t
+  -> Type.Callable.t option

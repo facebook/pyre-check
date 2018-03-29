@@ -55,24 +55,20 @@ let test_overload _ =
       |> parse_single_expression
       |> Resolution.parse_annotation resolution
     in
-    let call =
-      match parse_single_access (Format.asprintf "call%s" call) with
-      | [Access.Call { Node.value = call; _ }] -> call
-      | _ -> failwith "Could not parse call"
-    in
-    let overloads =
-      match parse_callable callable with
-      | Type.Callable { Type.Callable.overloads; _ } -> overloads
-      | _ -> failwith "Could not extract overloads"
-    in
     let overload =
+      let call =
+        match parse_single_access (Format.asprintf "call%s" call) with
+        | [Access.Call { Node.value = call; _ }] -> call
+        | _ -> failwith "Could not parse call"
+      in
+      let callable =
+        match parse_callable callable with
+        | Type.Callable callable -> callable
+        | _ -> failwith "Could not extract overloads"
+      in
       Call.create ~kind:Call.Function call
-      |> Call.overload ~overloads ~resolution
-      >>| fun overload ->
-      Type.Callable {
-        Type.Callable.kind = Type.Callable.Anonymous;
-        overloads = [overload];
-      }
+      |> Call.overload ~resolution ~callable
+      >>| fun callable -> Type.Callable callable
     in
     assert_equal
       ~printer:(function | Some annotation -> Type.show annotation | _ -> "None")
