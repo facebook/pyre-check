@@ -306,8 +306,7 @@ let constraints ?target definition ~instantiated ~resolution =
           Resolution.class_definition resolution instantiated
           >>= constraints
             ~visited:(Set.add visited key)
-            ~instantiated:(Type.instantiate ~constraints:(Map.find map)
-                             instantiated)
+            ~instantiated:(Type.instantiate ~constraints:(Map.find map) instantiated)
         in
         List.find_map ~f:base_constraints bases
   in
