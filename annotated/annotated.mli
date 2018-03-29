@@ -17,6 +17,7 @@ module Method = Class.Method
 module Define = AnnotatedDefine
 module Call = AnnotatedCall
 module Access = AnnotatedAccess
+module Signature = AnnotatedSignature
 
 
 val resolve

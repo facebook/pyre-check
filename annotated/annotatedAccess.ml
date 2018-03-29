@@ -437,11 +437,11 @@ let fold ~resolution ~initial ~f access =
                 let call = Call.create ~kind:Call.Function call in
                 let callable =
                   match Annotation.annotation resolved with
-                  | Type.Callable callable -> Call.overload call ~resolution ~callable
+                  | Type.Callable callable -> AnnotatedSignature.select call ~resolution ~callable
                   | _ -> failwith "Failed to extract callable"
                 in
                 match callable with
-                | Call.Found {
+                | AnnotatedSignature.Found {
                     Type.Callable.overloads = [{ Type.Callable.annotation; _ }];
                     _;
                   } ->
