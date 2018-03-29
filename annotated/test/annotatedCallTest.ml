@@ -7,7 +7,6 @@ open Core
 open OUnit2
 
 open Ast
-open Analysis
 open Expression
 open Statement
 open Pyre
@@ -36,6 +35,7 @@ let test_backup _ =
 
 
 let test_overload _ =
+  let open Call in
   let assert_overload callable call expected =
     let resolution =
       populate
@@ -71,11 +71,11 @@ let test_overload _ =
     let expected =
       match expected with
       | `Found expected ->
-          Call.Found (parse_callable expected)
-      | `NotFoundIdentical ->
-          Call.NotFound { Call.rank = 0; callable }
-      | `NotFound closest ->
-          Call.NotFound { Call.rank = 0; callable = (parse_callable closest) }
+          Found (parse_callable expected)
+      | `NotFoundIdentical reason ->
+          NotFound { rank = 0; callable; reason }
+      | `NotFound (closest, reason) ->
+          NotFound { rank = 0; callable = parse_callable closest; reason }
     in
     assert_equal
       ~printer:Call.show_overload
@@ -93,14 +93,17 @@ let test_overload _ =
   (* Traverse anonymous arguments. *)
   assert_overload "[[], int]" "()" (`Found "[[], int]");
 
-  assert_overload "[[int], int]" "()" `NotFoundIdentical;
-  assert_overload "[[], int]" "(1)" `NotFoundIdentical;
+  assert_overload "[[int], int]" "()" (`NotFoundIdentical None);
+  assert_overload "[[], int]" "(1)" (`NotFoundIdentical None);
 
   assert_overload "[[int], int]" "(1)" (`Found "[[int], int]");
   assert_overload "[[Named(i, int)], int]" "(1)" (`Found "[[Named(i, int)], int]");
 
-  assert_overload "[[int], int]" "('string')" `NotFoundIdentical;
-  assert_overload "[[int], int]" "(name='string')" `NotFoundIdentical;
+  assert_overload
+    "[[int], int]"
+    "('string')"
+    (`NotFoundIdentical (Some (Mismatch { actual = Type.string; expected = Type.integer })));
+  assert_overload "[[int], int]" "(name='string')" (`NotFoundIdentical None);
 
   (* Traverse variable arguments. *)
   assert_overload "[[Variable(variable)], int]" "()" (`Found "[[Variable(variable)], int]");
@@ -123,15 +126,18 @@ let test_overload _ =
     "[[Named(i, int), Named(j, int)], int]"
     "(j=1, i=2)"
     (`Found "[[Named(i, int), Named(j, int)], int]");
-  assert_overload "[[Named(i, int), Named(j, int)], int]" "(j=1, q=2)" `NotFoundIdentical;
-  assert_overload "[[Named(i, int), Named(j, int)], int]" "(j=1, j=2, q=3)" `NotFoundIdentical;
-  assert_overload "[[Named(i, int), Named(j, str)], int]" "(i=1, j=2)" `NotFoundIdentical;
+  assert_overload "[[Named(i, int), Named(j, int)], int]" "(j=1, q=2)" (`NotFoundIdentical None);
+  assert_overload
+    "[[Named(i, int), Named(j, int)], int]"
+    "(j=1, j=2, q=3)"
+    (`NotFoundIdentical None);
+  assert_overload "[[Named(i, int), Named(j, str)], int]" "(i=1, j=2)" (`NotFoundIdentical None);
 
   (* Keywords. *)
   assert_overload "[[Keywords(keywords)], int]" "()" (`Found "[[Keywords(keywords)], int]");
   assert_overload "[[Keywords(keywords)], int]" "(a=1, b=2)" (`Found "[[Keywords(keywords)], int]");
 
-  assert_overload "[[int], int]" "(**a)" `NotFoundIdentical;
+  assert_overload "[[int], int]" "(**a)" (`NotFoundIdentical None);
   assert_overload "[[Named(i, int)], int]" "(**a)" (`Found "[[Named(i, int)], int]");
   assert_overload "[[int, Named(i, int)], int]" "(1, **a)" (`Found "[[int, Named(i, int)], int]");
 
@@ -145,21 +151,29 @@ let test_overload _ =
 
   assert_overload "[[typing.List[_T]], int]" "([1])" (`Found "[[typing.List[int]], int]");
   assert_overload "[[typing.Sequence[_T]], int]" "([1])" (`Found "[[typing.Sequence[int]], int]");
-  assert_overload "[[typing.Sequence[_T]], int]" "(1)" `NotFoundIdentical;
+  assert_overload
+    "[[typing.Sequence[_T]], int]"
+    "(1)"
+    (`NotFoundIdentical
+       (Some
+          (Mismatch {
+              actual = Type.integer;
+              expected = Type.parametric "typing.Sequence" [Type.variable "_T"];
+            })));
 
   (* Ranking. *)
   assert_overload
     "[[int, int, str], int][[int, str, str], int]"
     "(0)"
-    (`NotFound "[[int, int, str], int]");  (* Ambiguous, pick the first one. *)
+    (`NotFound ("[[int, int, str], int]", None));  (* Ambiguous, pick the first one. *)
   assert_overload
     "[[int, int, str], int][[int, str, str], int]"
     "(0, 'string')"
-    (`NotFound "[[int, str, str], int]");  (* Clear winner. *)
+    (`NotFound ("[[int, str, str], int]", None));  (* Clear winner. *)
   assert_overload
     "[[int, str, str, str], int][[int, str, bool], int]"
     "(0, 'string')"
-    (`NotFound "[[int, str, bool], int]")
+    (`NotFound ("[[int, str, bool], int]", None))
 
 
 let () =

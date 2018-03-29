@@ -247,16 +247,30 @@ let check_parameters
   |> snd
 
 
+type mismatch = {
+  actual: Type.t;
+  expected: Type.t;
+}
+[@@deriving eq, show]
+
+
+type reason =
+  | Mismatch of mismatch
+[@@deriving eq, show]
+
+
 type closest = {
   rank: int;
   callable: Type.Callable.t;
+  reason: reason option;
 }
 [@@deriving eq, show]
 
 
 let equal_closest left right =
   (* Ignore rank. *)
-  Type.Callable.equal left.callable right.callable
+  Type.Callable.equal left.callable right.callable &&
+  Option.equal equal_reason left.reason right.reason
 
 
 type overload =
@@ -265,15 +279,11 @@ type overload =
 [@@deriving eq, show]
 
 
-type constraints =
-  | Consistent of Type.t Type.Map.t
-  | Contradiction
-
-
 type resolution_state = {
   arguments: (Expression.t Argument.t) list;
   parameters: (Type.t Type.Callable.Parameter.t) list;
-  constraints: constraints;
+  constraints: Type.t Type.Map.t;
+  reason: reason option;
 }
 
 
@@ -285,124 +295,125 @@ let overload call ~resolution ~callable:({ Type.Callable.overloads; _ } as calla
     let callable = { callable with Type.Callable.overloads = [overload] } in
     match parameters with
     | Defined parameters ->
-        let infer_constraints ~constraints ~argument:{ Argument.value; _ } ~parameter =
-          match constraints with
-          | Consistent constraints ->
-              begin
-                let actual = Resolution.resolve resolution value in
-                let expected =
-                  match parameter with
-                  | Parameter.Anonymous annotation
-                  | Parameter.Named { Parameter.annotation; _ } ->
-                      annotation
-                  | _ ->
-                      Type.Top
+        let check_parameter ~constraints ~reason ~argument:{ Argument.value; _ } ~parameter =
+          let actual = Resolution.resolve resolution value in
+          let expected =
+            match parameter with
+            | Parameter.Anonymous annotation
+            | Parameter.Named { Parameter.annotation; _ } ->
+                annotation
+            | _ ->
+                Type.Top
+          in
+          let mismatch = Some (Mismatch { actual; expected }) in
+
+          let parameters_to_infer = Type.variables expected |> List.length in
+          if parameters_to_infer > 0 then
+            match expected with
+            | Type.Variable _ as variable ->
+                let resolved =
+                  Map.find constraints variable
+                  >>| (fun resolved -> Resolution.join resolution actual resolved)
+                  |> Option.value ~default:actual
                 in
-                let parameters_to_infer = Type.variables expected |> List.length in
-                if parameters_to_infer > 0 then
-                  match expected with
-                  | Type.Variable _ as variable ->
-                      let resolved =
-                        Map.find constraints variable
-                        >>| (fun resolved -> Resolution.join resolution actual resolved)
-                        |> Option.value ~default:actual
-                      in
-                      Consistent (Map.set constraints ~key:variable ~data:resolved)
-                  | Type.Parametric _ ->
-                      let primitive, parameters = Type.split expected in
-                      (Resolution.class_definition resolution primitive
-                       >>| Class.create
-                       >>= fun target ->
-                       let primitive, _ = Type.split actual in
-                       Resolution.class_definition resolution primitive
-                       >>| Class.create
-                       >>| Class.constraints ~target ~instantiated:actual ~resolution
-                       >>| fun inferred ->
-                       let inferred =
-                         (* Translate type variables, e.g. a class might have a generic variable
-                            `_T` that is referred to with a differnet variable `_S` in the
-                            callable instantiation. *)
-                         let generics = Class.generics target ~resolution in
-                         if List.length generics = List.length parameters then
-                           let translation =
-                             let translation map generic parameter =
-                               match generic, parameter with
-                               | Type.Variable _, Type.Variable _ ->
-                                   Map.set map ~key:generic ~data:parameter
-                               | _ ->
-                                   map
-                             in
-                             List.fold2_exn ~init:Type.Map.empty ~f:translation generics parameters
-                           in
-                           let translate ~key ~data inferred =
-                             let key = Map.find translation key |> Option.value ~default:key in
-                             Map.set inferred ~key ~data
-                           in
-                           Map.fold ~init:Type.Map.empty ~f:translate inferred
-                         else
-                           Type.Map.empty
+                Map.set constraints ~key:variable ~data:resolved, reason
+            | Type.Parametric _ ->
+                let primitive, parameters = Type.split expected in
+                (Resolution.class_definition resolution primitive
+                 >>| Class.create
+                 >>= fun target ->
+                 let primitive, _ = Type.split actual in
+                 Resolution.class_definition resolution primitive
+                 >>| Class.create
+                 >>| Class.constraints ~target ~instantiated:actual ~resolution
+                 >>| fun inferred ->
+                 let inferred =
+                   (* Translate type variables, e.g. a class might have a generic variable
+                      `_T` that is referred to with a differnet variable `_S` in the
+                      callable instantiation. *)
+                   let generics = Class.generics target ~resolution in
+                   if List.length generics = List.length parameters then
+                     let translation =
+                       let translation map generic parameter =
+                         match generic, parameter with
+                         | Type.Variable _, Type.Variable _ ->
+                             Map.set map ~key:generic ~data:parameter
+                         | _ ->
+                             map
                        in
-                       if Map.length inferred < parameters_to_infer then
-                         Contradiction
-                       else
-                         let merge ~key:_ = function
-                           | `Both (left, right) -> Some (Resolution.join resolution left right)
-                           | `Left left -> Some left
-                           | `Right right -> Some right
-                         in
-                         Consistent (Map.merge ~f:merge constraints inferred))
-                      |> Option.value ~default:Contradiction
-                  | _ ->
-                      Contradiction
-                else if Resolution.less_or_equal resolution ~left:actual ~right:expected then
-                  Consistent constraints
-                else
-                  Contradiction
-              end
-          | Contradiction ->
-              Contradiction
+                       List.fold2_exn ~init:Type.Map.empty ~f:translation generics parameters
+                     in
+                     let translate ~key ~data inferred =
+                       let key = Map.find translation key |> Option.value ~default:key in
+                       Map.set inferred ~key ~data
+                     in
+                     Map.fold ~init:Type.Map.empty ~f:translate inferred
+                   else
+                     Type.Map.empty
+                 in
+                 if Map.length inferred < parameters_to_infer then
+                   constraints, mismatch
+                 else
+                   let merge ~key:_ = function
+                     | `Both (left, right) -> Some (Resolution.join resolution left right)
+                     | `Left left -> Some left
+                     | `Right right -> Some right
+                   in
+                   Map.merge ~f:merge constraints inferred, reason)
+                |> Option.value ~default:(constraints, mismatch)
+            | _ ->
+                constraints, reason
+          else if Resolution.less_or_equal resolution ~left:actual ~right:expected then
+            constraints, reason
+          else
+            constraints, mismatch
         in
 
-        let rec consume_anonymous ({ arguments; parameters; constraints } as state) =
+        let rec consume_anonymous ({ arguments; parameters; constraints; reason } as state) =
           match arguments, parameters with
           | ({ Argument.name = None; _ } as argument) :: arguments,
             ((Parameter.Anonymous _) as parameter) :: parameters
           | ({ Argument.name = None; _ } as argument) :: arguments,
             ((Parameter.Named _) as parameter) :: parameters ->
               begin
-                let constraints = infer_constraints ~constraints ~argument ~parameter in
-                match constraints with
-                | Consistent _ ->
-                    consume_anonymous { arguments; parameters; constraints }
-                | Contradiction ->
-                    state
+                let constraints, reason =
+                  check_parameter
+                    ~constraints
+                    ~reason
+                    ~argument
+                    ~parameter
+                in
+                match reason with
+                | None -> consume_anonymous { state with arguments; parameters; constraints }
+                | _ -> { state with reason }
               end
           | _ ->
               state
         in
 
         let rec consume_variable ({ arguments; parameters; _ } as state) =
+          let reason = None in
           match arguments, parameters with
           | { Argument.name = None; _ } :: arguments, (Parameter.Variable _) :: _ ->
               consume_variable { state with arguments }
           | _, (Parameter.Variable _) :: parameters ->
-              consume_variable { state with parameters }
+              consume_variable { state with parameters; reason }
 
           | { Argument.value = { Node.value = Starred (Starred.Once _); _ }; _ } :: _,
             (Parameter.Anonymous _) :: parameters
           | { Argument.value = { Node.value = Starred (Starred.Once _); _ }; _ } :: _,
             (Parameter.Named _) :: parameters ->
-              consume_variable { state with parameters }
+              consume_variable { state with parameters; reason }
 
           | { Argument.value = { Node.value = Starred (Starred.Once _); _ }; _ } :: arguments,
             parameters ->
-              consume_variable { state with arguments; parameters }
+              consume_variable { state with arguments; parameters; reason }
 
           | _ ->
               state
         in
 
-        let consume_named { arguments; parameters; constraints } =
+        let consume_named { arguments; parameters; constraints; reason } =
           let named_arguments =
             let argument map ({ Argument.name; _ } as argument) =
               Map.set map ~key:(Option.value_exn name) ~data:argument
@@ -410,7 +421,6 @@ let overload call ~resolution ~callable:({ Type.Callable.overloads; _ } as calla
             List.take_while ~f:(fun { Argument.name; _ } -> Option.is_some name) arguments
             |> List.fold ~init:Identifier.Map.empty ~f:argument
           in
-
           let named_parameters =
             let parameter map = function
               | (Parameter.Named { Parameter.name; _ }) as parameter ->
@@ -427,11 +437,17 @@ let overload call ~resolution ~callable:({ Type.Callable.overloads; _ } as calla
               match Map.find named_parameters key with
               | Some parameter ->
                   begin
-                    let constraints = infer_constraints ~constraints ~argument:data ~parameter in
+                    let constraints, reason =
+                      check_parameter
+                        ~constraints
+                        ~reason
+                        ~argument:data
+                        ~parameter
+                    in
                     let consumed =
-                      match constraints with
-                      | Consistent _ -> Set.add consumed key
-                      | Contradiction -> consumed
+                      match reason with
+                      | None -> Set.add consumed key
+                      | _ -> consumed
                     in
                     consumed, constraints
                   end
@@ -459,29 +475,30 @@ let overload call ~resolution ~callable:({ Type.Callable.overloads; _ } as calla
             List.drop_while ~f:parameter_consumed parameters
           in
 
-          { arguments; parameters; constraints }
+          { arguments; parameters; constraints; reason }
         in
 
         let rec consume_keywords ({ arguments; parameters; _ } as state) =
+          let reason = None in
           match arguments, parameters with
           | { Argument.name = Some _; _ } :: arguments, (Parameter.Keywords _) :: _ ->
-              consume_keywords { state with arguments }
+              consume_keywords { state with arguments; reason }
           | _, (Parameter.Keywords _) :: parameters ->
-              consume_keywords { state with parameters }
+              consume_keywords { state with parameters; reason }
 
           | { Argument.value = { Node.value = Starred (Starred.Twice _); _ }; _ } :: _,
             (Parameter.Named _) :: parameters ->
-              consume_keywords { state with parameters }
+              consume_keywords { state with parameters; reason }
           | { Argument.value = { Node.value = Starred (Starred.Twice _); _ }; _ } :: arguments,
             parameters ->
-              consume_keywords { state with arguments; parameters }
+              consume_keywords { state with arguments; parameters; reason }
 
           | _ ->
               state
         in
 
-        let { arguments; parameters; constraints } =
-          { arguments = arguments call; parameters; constraints = Consistent Type.Map.empty }
+        let { arguments; parameters; constraints; reason } =
+          { arguments = arguments call; parameters; constraints = Type.Map.empty; reason = None }
           |> consume_anonymous
           |> consume_variable
           |> consume_named
@@ -489,10 +506,11 @@ let overload call ~resolution ~callable:({ Type.Callable.overloads; _ } as calla
         in
 
         let rank = (List.length parameters) + (List.length arguments) in
+
         if List.is_empty arguments && List.is_empty parameters then
           begin
-            match constraints with
-            | Consistent constraints ->
+            match reason with
+            | None ->
                 Type.Callable { Type.Callable.kind = Anonymous; overloads = [overload] }
                 |> Type.instantiate ~widen:false ~constraints:(Map.find constraints)
                 |> (function
@@ -500,11 +518,11 @@ let overload call ~resolution ~callable:({ Type.Callable.overloads; _ } as calla
                         Found { callable with Type.Callable.overloads = [instantiated] }
                     | _ ->
                         failwith "Instantiate did not return a callable")
-            | Contradiction ->
-                NotFound { rank = 1; callable }
+            | _ ->
+                NotFound { rank = 1; callable; reason }
           end
         else
-          NotFound { rank; callable }
+          NotFound { rank; callable; reason }
     | Undefined ->
         Found callable
   in
@@ -528,6 +546,7 @@ let overload call ~resolution ~callable:({ Type.Callable.overloads; _ } as calla
     {
       rank = Int.max_value;
       callable = { callable with Type.Callable.overloads = [List.hd_exn overloads] };
+      reason = None;
     }
   in
   find ~overloads ~closest

@@ -71,9 +71,20 @@ val check_parameters
   -> Signature.t
   -> 'accumulator
 
+type mismatch = {
+  actual: Type.t;
+  expected: Type.t;
+}
+[@@deriving eq, show]
+
+type reason =
+  | Mismatch of mismatch
+[@@deriving eq, show]
+
 type closest = {
   rank: int;
   callable: Type.Callable.t;
+  reason: reason option;
 }
 [@@deriving eq, show]
 
