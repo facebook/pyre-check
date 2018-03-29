@@ -108,11 +108,11 @@ HEREDOC
 # Test descriptions before building:
 # https://github.com/pypa/readme_renderer
 if [[ "${HAS_PIP_GREATER_THAN_1_5}" == 'yes' ]]; then
-  python setup.py check -r -s
+  python3 setup.py check -r -s
 fi
 
 # Build.
-python setup.py bdist_wheel
+python3 setup.py bdist_wheel
 
 # Copy artifacts outside the build directory.
 mkdir -p "${SCRIPTS_DIRECTORY}/dist"
