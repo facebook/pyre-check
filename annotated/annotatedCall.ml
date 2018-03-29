@@ -279,19 +279,66 @@ let overload call ~resolution ~overloads =
                   | _ ->
                       Type.Top
                 in
-                match expected with
-                | (Type.Variable _) as variable ->
-                    let resolved =
-                      Map.find constraints variable
-                      >>| (fun resolved -> Resolution.join resolution actual resolved)
-                      |> Option.value ~default:actual
-                    in
-                    Consistent (Map.set constraints ~key:variable ~data:resolved)
-                | _ ->
-                    if Resolution.less_or_equal resolution ~left:actual ~right:expected then
-                      Consistent constraints
-                    else
+                let parameters_to_infer = Type.variables expected |> List.length in
+                if parameters_to_infer > 0 then
+                  match expected with
+                  | Type.Variable _ as variable ->
+                      let resolved =
+                        Map.find constraints variable
+                        >>| (fun resolved -> Resolution.join resolution actual resolved)
+                        |> Option.value ~default:actual
+                      in
+                      Consistent (Map.set constraints ~key:variable ~data:resolved)
+                  | Type.Parametric _ ->
+                      let primitive, parameters = Type.split expected in
+                      (Resolution.class_definition resolution primitive
+                       >>| Class.create
+                       >>= fun target ->
+                       let primitive, _ = Type.split actual in
+                       Resolution.class_definition resolution primitive
+                       >>| Class.create
+                       >>| Class.constraints ~target ~instantiated:actual ~resolution
+                       >>| fun inferred ->
+                       let inferred =
+                         (* Translate type variables, e.g. a class might have a generic variable
+                            `_T` that is referred to with a differnet variable `_S` in the
+                            callable instantiation. *)
+                         let generics = Class.generics target ~resolution in
+                         if List.length generics = List.length parameters then
+                           let translation =
+                             let translation map generic parameter =
+                               match generic, parameter with
+                               | Type.Variable _, Type.Variable _ ->
+                                   Map.set map ~key:generic ~data:parameter
+                               | _ ->
+                                   map
+                             in
+                             List.fold2_exn ~init:Type.Map.empty ~f:translation generics parameters
+                           in
+                           let translate ~key ~data inferred =
+                             let key = Map.find translation key |> Option.value ~default:key in
+                             Map.set inferred ~key ~data
+                           in
+                           Map.fold ~init:Type.Map.empty ~f:translate inferred
+                         else
+                           Type.Map.empty
+                       in
+                       if Map.length inferred < parameters_to_infer then
+                         Contradiction
+                       else
+                         let merge ~key:_ = function
+                           | `Both (left, right) -> Some (Resolution.join resolution left right)
+                           | `Left left -> Some left
+                           | `Right right -> Some right
+                         in
+                         Consistent (Map.merge ~f:merge constraints inferred))
+                      |> Option.value ~default:Contradiction
+                  | _ ->
                       Contradiction
+                else if Resolution.less_or_equal resolution ~left:actual ~right:expected then
+                  Consistent constraints
+                else
+                  Contradiction
               end
           | Contradiction ->
               Contradiction

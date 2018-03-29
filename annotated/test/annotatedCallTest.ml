@@ -40,10 +40,13 @@ let test_overload _ =
     let resolution =
       populate
         {|
-          _T = typing.TypeVar('_T')
-          _S = typing.TypeVar('_S')
           class int: ...
           class str: ...
+          _T = typing.TypeVar('_T')
+          _S = typing.TypeVar('_S')
+          class typing.Generic: ...
+          class typing.Sequence(typing.Generic[_S]): ...
+          class list(typing.Generic[_T], typing.Sequence[_T]): ...
         |}
       |> resolution
     in
@@ -135,7 +138,11 @@ let test_overload _ =
   assert_overload
     "[[_T, _T], int]"
     "(1, 'string')"
-    (Some "[[typing.Union[int, str], typing.Union[int, str]], int]")
+    (Some "[[typing.Union[int, str], typing.Union[int, str]], int]");
+
+  assert_overload "[[typing.List[_T]], int]" "([1])" (Some "[[typing.List[int]], int]");
+  assert_overload "[[typing.Sequence[_T]], int]" "([1])" (Some "[[typing.Sequence[int]], int]");
+  assert_overload "[[typing.Sequence[_T]], int]" "(1)" None
 
 
 
