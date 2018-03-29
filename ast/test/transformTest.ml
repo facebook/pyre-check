@@ -18,20 +18,18 @@ module ModifyingTransformer : sig
   include Transform.Transformer with type t := t
   val final: t -> int
 end = struct
+  include Transform.Identity
   type t = int
 
   let final count =
     count
 
-  let expression count = function
+  let expression_postorder count = function
     | { Node.location; value = Integer number } ->
         count + number,
         { Node.location; value = Integer (number + 1) }
     | expression ->
         count, expression
-
-  let statement count statement =
-    count, [statement]
 end
 
 module ModifyingTransform = Transform.Make(ModifyingTransformer)
@@ -121,12 +119,10 @@ module ExpandingTransformer : sig
   type t = unit
   include Transform.Transformer with type t := t
 end = struct
+  include Transform.Identity
   type t = unit
 
-  let expression state expression =
-    state, expression
-
-  let statement state statement =
+  let statement_postorder state statement =
     state, [statement; statement]
 end
 
@@ -217,10 +213,205 @@ let test_expansion _ =
       };
     ]
 
+let test_expansion_with_stop _ =
+  let module StoppingExpandingTransformer : sig
+    type t = unit
+    include Transform.Transformer with type t := t
+  end = struct
+    include ExpandingTransformer
+
+    let statement_keep_recursing _ _ =
+      Transform.Stop
+  end
+  in
+
+  let module StoppingExpandingTransform = Transform.Make(StoppingExpandingTransformer) in
+
+  let assert_expanded_source_with_stop ?(shallow=false) source expected_source =
+    let _, modified =
+      StoppingExpandingTransform.transform ~shallow () (parse source) in
+    assert_source_equal
+      modified
+      (parse expected_source)
+  in
+
+  assert_expanded_source_with_stop
+    {|
+       if (1):
+         if (2):
+           3
+         else:
+           4
+       else:
+         if (5):
+           6
+         else:
+           7
+    |}
+    {|
+       if (1):
+         if (2):
+           3
+         else:
+           4
+       else:
+         if (5):
+           6
+         else:
+           7
+       if (1):
+         if (2):
+           3
+         else:
+           4
+       else:
+         if (5):
+           6
+         else:
+           7
+    |}
+  ;
+
+  assert_expanded_source_with_stop
+    ~shallow:true
+    {|
+       if (1):
+         if (2):
+           3
+         else:
+           4
+       else:
+         if (5):
+           6
+         else:
+           7
+    |}
+    {|
+       if (1):
+         if (2):
+           3
+         else:
+           4
+       else:
+         if (5):
+           6
+         else:
+           7
+       if (1):
+         if (2):
+           3
+         else:
+           4
+       else:
+         if (5):
+           6
+         else:
+           7
+    |}
+
+
+let test_double_count _ =
+  let module DoubleCounterTransformer : sig
+    type t = int
+    include Transform.Transformer with type t := t
+    val final: t -> int
+  end = struct
+    include Transform.Identity
+    type t = int
+
+    let final count =
+      count
+
+    let statement_preorder count statement =
+      count + 1, statement
+
+    let statement_postorder count statement =
+      count + 1, [statement]
+  end
+  in
+
+  let module DoubleCounterTransform = Transform.Make(DoubleCounterTransformer) in
+
+  let assert_double_count ?(shallow=false) source expected_sum =
+    let state, modified =
+      DoubleCounterTransform.transform ~shallow 0 (parse source)
+    in
+    (* expect no change in the source *)
+    assert_source_equal
+      modified
+      (parse source);
+    assert_equal
+      (ModifyingTransformer.final state)
+      expected_sum
+      ~printer:string_of_int
+  in
+
+  assert_double_count
+    {|
+      1.0
+      2.0
+    |}
+    4;
+  assert_double_count
+    ~shallow:true
+    {|
+      1.0
+      2.0
+    |}
+    2;
+  assert_double_count
+    {|
+      if (1):
+        3
+      else:
+        5
+    |}
+    6;
+  assert_double_count
+    ~shallow:true
+    {|
+      if (1):
+        3
+      else:
+        5
+    |}
+    1;
+  assert_double_count
+    {|
+      if (1):
+        if (2):
+          3
+        else:
+          4
+      else:
+        if (5):
+          6
+        else:
+          7
+    |}
+    14;
+  assert_double_count
+    ~shallow:true
+    {|
+      if (1):
+        if (2):
+          3
+        else:
+          4
+      else:
+        if (5):
+          6
+        else:
+          7
+    |}
+    1
+
 
 let () =
   "transform">:::[
     "transform">::test_transform;
     "expansion">::test_expansion;
+    "expansion_with_stop">::test_expansion_with_stop;
+    "statement_double_counter">::test_double_count;
   ]
   |> run_test_tt_main

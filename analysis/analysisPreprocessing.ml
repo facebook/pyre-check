@@ -17,9 +17,10 @@ exception PreprocessingError
 
 let rename_shadowed_variables source =
   let module Transform = Transform.Make(struct
+      include Transform.Identity
       type t = Identifier.Set.t
 
-      let expression shadowing_imports { Node.location; value } =
+      let expression_postorder shadowing_imports { Node.location; value } =
         let value =
           match value with
           | Access ((Access.Identifier identifier) :: tail)
@@ -37,7 +38,7 @@ let rename_shadowed_variables source =
         in
         shadowing_imports, { Node.location; value }
 
-      let statement shadowing_imports ({ Node.value; _ } as statement) =
+      let statement_postorder shadowing_imports ({ Node.value; _ } as statement) =
         let shadowing_imports, value =
           match value with
           | Import { Import.from = Some ((Access.Identifier identifier) :: _); _ }
@@ -69,12 +70,10 @@ let rename_shadowed_variables source =
 
 let expand_string_annotations source =
   let module Transform = Transform.Make(struct
+      include Transform.Identity
       type t = unit
 
-      let expression _ expression =
-        (), expression
-
-      let statement _ ({ Node.location; value } as statement) =
+      let statement_postorder _ ({ Node.location; value } as statement) =
         let transform ({ Define.parameters; return_annotation; _ } as define) =
           let access = function
             | { Node.location; value = String string } ->
@@ -136,12 +135,10 @@ let qualify source =
   let global_qualifier = source.Source.qualifier in
 
   let module OrderIndependent = Transform.Make(struct
+      include Transform.Identity
       type t = Access.t Access.Map.t
 
-      let expression map expression =
-        map, expression
-
-      let statement map { Node.location; value } =
+      let statement_postorder map { Node.location; value } =
         let rec qualify_class qualifier ({ Class.name; body; _ } as definition) =
           let qualified_name = qualifier @ name in
           let parent = Some qualified_name in
@@ -294,9 +291,10 @@ let qualify source =
   let module OrderDependent = Transform.Make(struct
       (* Keeps track of transformations we need to make. E.g. `import a as b` will
          result in a transformation rule from `b` to `a`. *)
+      include Transform.Identity
       type t = Access.t * Access.t Access.Map.t
 
-      let expression (qualifier, map) expression =
+      let expression_postorder (qualifier, map) expression =
         let rebased =
           match expression with
           | {
@@ -356,7 +354,7 @@ let qualify source =
         in
         (qualifier, map), rebased
 
-      let statement (qualifier, map) ({ Node.location; value } as statement) =
+      let statement_postorder (qualifier, map) ({ Node.location; value } as statement) =
         match value with
         | Import { Import.from = None; imports } ->
             let add_import map { Import.name; alias } =
@@ -439,12 +437,10 @@ let qualify source =
 
 let cleanup source =
   let module Cleanup = Transform.Make(struct
+      include Transform.Identity
       type t = unit
 
-      let expression _ expression =
-        (), expression
-
-      let statement _ ({ Node.location; value } as statement) =
+      let statement_postorder _ ({ Node.location; value } as statement) =
         let statement =
           match value with
           | Class ({ Class.body; _ } as definition) ->
@@ -494,12 +490,10 @@ let cleanup source =
 
 let replace_version_specific_code source =
   let module Transform = Transform.Make(struct
+      include Transform.Identity
       type t = unit
 
-      let expression _ expression =
-        (), expression
-
-      let statement _ ({ Node.location; value } as statement) =
+      let statement_postorder _ ({ Node.location; value } as statement) =
         match value with
         | If { If.test; body; orelse } ->
             (* Normalizes a comparison of a < b, a <= b, b >= a or b > a to Some (a, b). *)
@@ -557,9 +551,10 @@ let replace_version_specific_code source =
    The real solution is to fix parsing of singleton dictionaries. *)
 let fix_singleton_sets source =
   let module Transform = Transform.Make(struct
+      include Transform.Identity
       type t = unit
 
-      let expression _ ({ Node.location; value } as expression) =
+      let expression_postorder _ ({ Node.location; value } as expression) =
         match value with
         | Dictionary {
             Dictionary.entries = [];
@@ -579,8 +574,6 @@ let fix_singleton_sets source =
 
         | _ ->
             (), expression
-
-      let statement _ statement = (), [statement]
     end)
   in
   Transform.transform () source |> snd
@@ -591,11 +584,10 @@ let fix_singleton_sets source =
    there is no explicit else: in the code. *)
 let expand_optional_assigns source =
   let module Transform = Transform.Make(struct
+      include Transform.Identity
       type t = unit
 
-      let expression _ expression = (), expression
-
-      let statement _ { Node.location; value } =
+      let statement_postorder _ { Node.location; value } =
         match value with
         | If { If.test; body; orelse = [] } ->
             (), [{
@@ -611,9 +603,10 @@ let expand_optional_assigns source =
 
 let expand_operators source =
   let module Transform = Transform.Make(struct
+      include Transform.Identity
       type t = unit
 
-      let expression _ { Node.location; value } =
+      let expression_postorder _ { Node.location; value } =
         let value =
           match value with
           | BinaryOperator operator ->
@@ -622,9 +615,6 @@ let expand_operators source =
           | _ -> value
         in
         (), { Node.location; value }
-
-      let statement _ statement =
-        (), [statement]
     end)
   in
   Transform.transform () source |> snd
@@ -635,12 +625,10 @@ let return_access = Access.create "$return"
 
 let expand_returns source =
   let module ExpandingTransform = Transform.Make(struct
+      include Transform.Identity
       type t = unit
 
-      let expression state expression =
-        state, expression
-
-      let statement state statement =
+      let statement_postorder state statement =
         match statement with
         (* Expand returns to make them more amenable for analyses. E.g:
            `return x` -> `$return = x; return $return` *)
@@ -728,12 +716,10 @@ let expand_returns source =
 
 let expand_yield_from source =
   let module NormalizingTransform = Transform.Make(struct
+      include Transform.Identity
       type t = unit
 
-      let expression state expression =
-        state, expression
-
-      let statement state statement =
+      let statement_postorder state statement =
         match statement with
         | { Node.location;
             value = YieldFrom ({
@@ -768,12 +754,10 @@ let expand_yield_from source =
 
 let expand_for_loop source =
   let module ExpandingTransform = Transform.Make(struct
+      include Transform.Identity
       type t = unit
 
-      let expression state expression =
-        state, expression
-
-      let statement state statement =
+      let statement_postorder state statement =
         match statement with
         | {
           Node.location;
@@ -838,12 +822,10 @@ let expand_for_loop source =
 
 let expand_excepts source =
   let module ExpandingTransform = Transform.Make(struct
+      include Transform.Identity
       type t = unit
 
-      let expression state expression =
-        state, expression
-
-      let statement state statement =
+      let statement_postorder state statement =
         match statement with
         | {
           Node.location;
@@ -906,12 +888,10 @@ let expand_excepts source =
 
 let expand_ternary_assign source =
   let module ExpandingTransform = Transform.Make(struct
+      include Transform.Identity
       type t = unit
 
-      let expression state expression =
-        state, expression
-
-      let statement state statement =
+      let statement_postorder state statement =
         match statement with
         | {
           Node.location;
@@ -997,14 +977,12 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
 
 let simplify_access_chains source =
   let module SimplifyAccessChains = Transform.Make(struct
+      include Transform.Identity
       type t = unit
 
       let count = ref 0
 
-      let expression state expression =
-        state, expression
-
-      let statement state statement =
+      let statement_postorder state statement =
         (* simplify_access_chain breaks down a chain of calls in an access of the form a().b().c to
            [$3 = $2.c; $2 = $1.b(); $1 = a()]. This function creates temporary variables in order to
            build later assignments. The statements are returned in reverse order to make
@@ -1125,12 +1103,10 @@ let classes source =
 
 let dequalify_map source =
   let module ImportDequalifier = Transform.Make(struct
+      include Transform.Identity
       type t = Access.t Access.Map.t
 
-      let expression map expression =
-        map, expression
-
-      let statement map ({ Node.value; _ } as statement) =
+      let statement_postorder map ({ Node.value; _ } as statement) =
         match value with
         | Import { Import.from = None; imports } ->
             let add_import map { Import.name; alias } =

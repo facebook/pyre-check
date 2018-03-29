@@ -14,11 +14,39 @@ module Statement = AstStatement
 module Source = AstSource
 
 
+type recursion_behavior =
+  | Recurse
+  | Stop
+
+
 module type Transformer = sig
   type t
-  val expression: t -> Expression.t -> t * Expression.t
-  val statement: t -> Statement.t -> t * Statement.t list
+  val expression_postorder: t -> Expression.t -> t * Expression.t
+  val statement_preorder: t -> Statement.t -> t * Statement.t
+  val statement_keep_recursing: t -> Statement.t -> recursion_behavior
+  val statement_postorder: t -> Statement.t -> t * Statement.t list
 end
+
+
+module Identity : sig
+  val expression_postorder: 't -> Expression.t -> 't * Expression.t
+  val statement_preorder: 't -> Statement.t -> 't * Statement.t
+  val statement_keep_recursing: 't -> Statement.t -> recursion_behavior
+  val statement_postorder: 't -> Statement.t -> 't * Statement.t list
+end = struct
+  let expression_postorder state expression =
+    state, expression
+
+  let statement_preorder state statement =
+    state, statement
+
+  let statement_keep_recursing _state _statement =
+    Recurse
+
+  let statement_postorder state statement =
+    state, [statement]
+end
+
 
 module Make (Transformer : Transformer) = struct
   let transform ?(shallow=false) state source =
@@ -65,13 +93,16 @@ module Make (Transformer : Transformer) = struct
       }
     in
 
-    let rec transform_expression { Node.location; value } =
+    let rec transform_expression expression =
       if shallow then
-        let new_state, value = Transformer.expression !state { Node.location; value } in
+        let new_state, expression =
+          Transformer.expression_postorder !state expression
+        in
         state := new_state;
-        value
+        expression
       else
-        let value = match value with
+        let transform_children value =
+          match value with
           | Access access ->
               let transform_access access =
                 let transform_subscript subscript =
@@ -219,18 +250,29 @@ module Make (Transformer : Transformer) = struct
               Expression.Yield (expression >>| transform_expression)
         in
 
-        let new_state, value = Transformer.expression !state { Node.location; value } in
+        let expression =
+          {
+            expression with
+            Node.value = transform_children (Node.value expression)
+          }
+        in
+        let new_state, expression =
+          Transformer.expression_postorder !state expression
+        in
         state := new_state;
-        value
+        expression
     in
 
-    let rec transform_statement { Node.location; value } =
+    let rec transform_statement statement =
       if shallow then
-        let new_state, value = Transformer.statement !state { Node.location; value } in
+        let new_state, statements =
+          Transformer.statement_postorder !state statement
+        in
         state := new_state;
-        value
+        statements
       else
-        let value = match value with
+        let transform_children value =
+          match value with
           | Assign { Assign.target; annotation; value; compound; parent } ->
               Assign {
                 Assign.target = transform_expression target;
@@ -415,9 +457,26 @@ module Make (Transformer : Transformer) = struct
               Statement.YieldFrom (transform_expression expression)
         in
 
-        let new_state, value = Transformer.statement !state { Node.location; value } in
+        let new_state, statement =
+          Transformer.statement_preorder !state statement
+        in
         state := new_state;
-        value
+
+        let statement =
+          match Transformer.statement_keep_recursing !state statement with
+          | Recurse ->
+              { statement with Node.value = transform_children (Node.value statement) }
+          | Stop ->
+              statement
+        in
+
+        let new_state, statements =
+          Transformer.statement_postorder
+            !state
+            statement
+        in
+        state := new_state;
+        statements
     in
 
     let statements =

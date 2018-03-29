@@ -28,12 +28,13 @@ module Make (Visitor: Visitor) = struct
     type t = Visitor.t
     include Transform.Transformer with type t := t
   end = struct
+    include Transform.Identity
     type t = Visitor.t
 
-    let expression state expression =
+    let expression_postorder state expression =
       (Visitor.expression state expression), expression
 
-    let statement state statement =
+    let statement_postorder state statement =
       (Visitor.statement state statement), [statement]
   end
 
