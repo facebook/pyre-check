@@ -131,17 +131,67 @@ let expand_string_annotations source =
   Transform.transform () source |> snd
 
 
+type global_entities = {
+  variables: Access.t Access.Map.t;
+  methods: Access.t Access.Map.t;
+}
+
+
+type define_qualifier_state = {
+  local_qualifier: Access.t;
+  current_scope: Access.t Access.Map.t;
+  globals: Access.t Access.Map.t;
+}
+
+
 let qualify source =
   let global_qualifier = source.Source.qualifier in
 
-  let module OrderIndependent = Transform.Make(struct
+  let module QualifyToplevelStatements = Transform.Make(struct
       include Transform.Identity
-      type t = Access.t Access.Map.t
+      type t = global_entities
 
-      let statement_postorder map { Node.location; value } =
-        let rec qualify_class qualifier ({ Class.name; body; _ } as definition) =
+      let expression_postorder ({ variables; _ } as state) expression =
+        let expression =
+          match expression with
+          | { Node.location; value = Access access } ->
+              Map.find variables access
+              >>| (fun replacement -> { Node.location; value = Access replacement })
+              |> Option.value ~default:expression
+          | _ ->
+              expression
+        in
+        state, expression
+
+      let statement_keep_recursing _ { Node.value; _ } =
+        (* We are qualifying only top-level statements only, hence do
+           not recurse into children nodes. Top-level expressions are
+           the exception, variables therein need to be fully qualified. *)
+        match value with
+        | Expression _ -> Transform.Recurse
+        | _ -> Transform.Stop
+
+      let statement_postorder ({ variables; _ } as state) { Node.location; value } =
+        let rec qualify_class qualifier ({ Class.name; bases; body; _ } as definition) =
           let qualified_name = qualifier @ name in
           let parent = Some qualified_name in
+          let qualify_bases ({
+              Argument.value = ({ Node.value; _ } as expression);
+              _;
+            } as argument) =
+            let expression =
+              match value with
+              | Access access ->
+                  let access =
+                    Map.find variables access
+                    |> Option.value ~default:access
+                  in
+                  { expression with Node.value = Access access }
+              | _ ->
+                  expression
+            in
+            { argument with Argument.value = expression }
+          in
           let qualify_in_class node =
             match node.Node.value with
             | Assign assign ->
@@ -159,6 +209,7 @@ let qualify source =
           {
             definition with
             Class.name = qualified_name;
+            bases = List.map ~f:qualify_bases bases;
             body = List.map ~f:qualify_in_class body;
           }
 
@@ -246,44 +297,104 @@ let qualify source =
           }
         in
 
-        let rec qualify_toplevel_statement map ({ Node.location; value } as statement) =
-          let qualify_statements map statements =
-            let add_statement (map, statements) statement =
-              let map, qualified = qualify_toplevel_statement map statement in
-              map, qualified :: statements
+        let rec qualify_toplevel_statement
+            ({ variables; methods } as state)
+            ({ Node.location; value } as statement) =
+          let qualify_statements { variables; methods } statements =
+            let add_statement (variables, methods, statements) statement =
+              let { variables; methods }, qualified =
+                qualify_toplevel_statement
+                  { variables; methods }
+                  statement
+              in
+              variables, methods, qualified :: statements
             in
-            let map, reversed = List.fold ~init:(map, []) ~f:add_statement statements in
-            map, List.rev reversed
+            let variables, methods, reversed =
+              List.fold
+                ~init:(variables, methods, [])
+                ~f:add_statement
+                statements
+            in
+            { variables; methods }, List.rev reversed
           in
           match value with
           (* Add `name -> qualifier.name` for classes. *)
           | Class definition ->
               let qualified = qualify_class global_qualifier definition in
-              Map.set map ~key:definition.Class.name ~data:qualified.Class.name,
+              {
+                state with
+                methods = Map.set methods ~key:definition.Class.name ~data:qualified.Class.name;
+              },
               { Node.location; value = Class qualified }
           | Stub (Stub.Class definition) ->
               let qualified = qualify_class global_qualifier definition in
-              Map.set map ~key:definition.Class.name ~data:qualified.Class.name,
+              {
+                state with
+                methods = Map.set methods ~key:definition.Class.name ~data:qualified.Class.name;
+              },
               { Node.location; value = Stub (Stub.Class qualified) }
 
           (* Add `name -> qualifier.name` for functions, not methods. *)
           | Define definition when not (Define.is_method definition) ->
               let qualified = qualify_define global_qualifier definition in
-              Map.set map ~key:definition.Define.name ~data:qualified.Define.name,
+              {
+                state with
+                methods = Map.set methods ~key:definition.Define.name ~data:qualified.Define.name;
+              },
               { Node.location; value = Define qualified }
           | Stub (Stub.Define definition) when not (Define.is_method definition) ->
               let qualified = qualify_define global_qualifier definition in
-              Map.set map ~key:definition.Define.name ~data:qualified.Define.name,
+              {
+                state with
+                methods = Map.set methods ~key:definition.Define.name ~data:qualified.Define.name;
+              },
               { Node.location; value = Stub (Stub.Define qualified) }
           | If { If.test; body; orelse } ->
-              let map, body = qualify_statements map body in
-              let map, orelse = qualify_statements map orelse in
-              map, { Node.location; value = If { If.test; body; orelse }  }
+              let state, body = qualify_statements state body in
+              let state, orelse = qualify_statements state orelse in
+              state, { Node.location; value = If { If.test; body; orelse }  }
+
+          (* Qualify globals *)
+          | Assign (
+              {
+                Assign.target = ({ Node.value = Access access; _ } as access_node);
+                value;
+                _;
+              } as assign) ->
+              let qualified = global_qualifier @ access in
+              let qualified_access = { access_node with Node.value = Access qualified } in
+              (* All assigned targets are variables by default,
+                 unless we have already classified their values as methods. *)
+              let state =
+                match value with
+                | Some { Node.value = Access value_access; _ } when Map.mem methods value_access ->
+                    { state with methods = Map.set methods ~key:access ~data:qualified }
+                | _ ->
+                    { state with variables = Map.set variables ~key:access ~data:qualified }
+              in
+              state,
+              {
+                Node.location;
+                value = Assign { assign with Assign.target = qualified_access };
+              }
+          | Stub (
+              Stub.Assign ({
+                  Assign.target = ({ Node.value = Access access; _ } as access_node);
+                  _;
+                } as assign)) ->
+              let qualified = global_qualifier @ access in
+              let qualified_access = { access_node with Node.value = Access qualified } in
+              { state with variables = Map.set variables ~key:access ~data:qualified },
+              {
+                Node.location;
+                value = Stub (Stub.Assign { assign with Assign.target = qualified_access });
+              }
+
           | _ ->
-              map, statement
+              state, statement
         in
-        let map, statement = qualify_toplevel_statement map { Node.location; value } in
-        map, [statement]
+        let state, statement = qualify_toplevel_statement state { Node.location; value } in
+        state, [statement]
 
     end)
   in
@@ -410,29 +521,180 @@ let qualify source =
     end)
   in
 
+  let module QualifyDefines = Transform.Make(struct
+      include Transform.Identity
+      type t = Access.t Access.Map.t
 
-  let map =
-    let collect_globals sofar = function
-      | { Node.value = Assign { Assign.target; _ }; _ }
-      | { Node.value = Stub (Stub.Assign { Assign.target; _ }); _ } ->
-          begin
-            match target with
-            | { Node.value = Access access; _ } ->
-                Map.set ~key:access ~data:(global_qualifier @ access) sofar
-            | _ ->
-                sofar
-          end
-      | _ ->
-          sofar
-    in
-    List.fold
-      ~f:collect_globals
-      ~init:Access.Map.empty
-      source.Source.statements
+      let statement_preorder map ({ Node.value; _ } as statement) =
+        (* Handle qualification of variables in one specific method. *)
+        let rec qualify_define
+            ~parent_scope
+            ~globals
+            ~parent_qualifier
+            ({ Define.name; parameters; body; _ } as define) =
+          let module DefineQualifier = Transform.Make(struct
+              include Transform.Identity
+              type t = define_qualifier_state
+
+              let expression_postorder
+                  ({ current_scope; globals; _ } as state)
+                  ({ Node.value; _ } as expression) =
+                match value with
+                (* Weak globals. *)
+                | Access access ->
+                    begin
+                      match Map.find current_scope access with
+                      | Some rewrite ->
+                          state, { expression with Node.value = Access rewrite }
+                      | None ->
+                          match Map.find globals access with
+                          | Some global_access ->
+                              (* This is a valid global access. *)
+                              {
+                                state with
+                                current_scope = Map.set
+                                    current_scope
+                                    ~key:access
+                                    ~data:global_access;
+                              },
+                              { expression with Node.value = Access global_access }
+                          | None ->
+                              (* Invalid global access. *)
+                              state, expression
+                    end
+                | _ ->
+                    state, expression
+
+              let statement_preorder
+                  ({ local_qualifier; current_scope; globals } as state)
+                  ({ Node.value; _ } as statement) =
+                match value with
+                (* Locals. *)
+                | Assign (
+                    {
+                      Assign.target = ({ Node.value = Access access; _ } as access_node);
+                      _
+                    } as assign
+                  ) ->
+                    let state, statement =
+                      match Map.find current_scope access with
+                      | Some rewrite ->
+                          let rewritten_access = { access_node with Node.value = Access rewrite } in
+                          state,
+                          {
+                            statement with
+                            Node.value = Assign { assign with Assign.target = rewritten_access }
+                          }
+                      | None ->
+                          {
+                            state with
+                            current_scope = Map.set current_scope ~key:access ~data:access;
+                          },
+                          statement
+                    in
+                    state, statement
+                | Stub (
+                    Stub.Assign ({
+                        Assign.target = ({ Node.value = Access access; _ } as access_node);
+                        _;
+                      } as assign)) ->
+                    let state, statement =
+                      match Map.find current_scope access with
+                      | Some rewrite ->
+                          let rewritten_access = { access_node with Node.value = Access rewrite } in
+                          state,
+                          {
+                            statement with
+                            Node.value = Stub (Stub.Assign {
+                                assign with
+                                Assign.target = rewritten_access
+                              })
+                          }
+                      | None ->
+                          {
+                            state with
+                            current_scope = Map.set current_scope ~key:access ~data:access;
+                          },
+                          statement
+                    in
+                    state, statement
+
+                (* Strong globals. *)
+                | Global identifiers ->
+                    let access = Access.create_from_identifiers identifiers in
+                    let qualified_access = global_qualifier @ access in
+                    {
+                      state with
+                      current_scope = Map.set current_scope ~key:access ~data:qualified_access;
+                    },
+                    statement
+
+                | Define define ->
+                    (* Open a new recursion tree with its own state,
+                       that will not be propagated further. *)
+                    let define = qualify_define
+                        ~parent_scope:current_scope
+                        ~globals
+                        ~parent_qualifier:local_qualifier
+                        define
+                    in
+                    state, { statement with Node.value = Define define }
+                | _ ->
+                    state, statement
+
+              let statement_keep_recursing _ { Node.value; _ } =
+                match value with
+                | Define _ -> Transform.Stop
+                | _ -> Transform.Recurse
+            end)
+          in
+
+          (* Initialize local scope with the parameters. *)
+          let add_parameter map { Node.value = { Parameter.name; _ }; _ } =
+            let access = Access.create_from_identifiers [name] in
+            Map.set ~key:access ~data:access map
+          in
+          let current_scope = List.fold ~init:parent_scope ~f:add_parameter parameters in
+          let local_qualifier = parent_qualifier @ name in
+
+          let source =
+            Source.create body
+            |> DefineQualifier.transform {local_qualifier; current_scope; globals}
+            |> snd  (* Discard the generated state, it is not useful. *)
+          in
+          { define with Define.body = Source.statements source }
+        in
+
+        match value with
+        | Define define ->
+            let define = qualify_define
+                ~parent_scope:Access.Map.empty
+                ~globals:map
+                ~parent_qualifier:global_qualifier
+                define
+            in
+            map, { statement with Node.value = Define define }
+        | _ ->
+            map, statement
+
+      let statement_keep_recursing _ { Node.value; _ } =
+        match value with
+        | Define _ -> Transform.Stop
+        | _ -> Transform.Recurse
+    end)
   in
 
-  let map, source = OrderIndependent.transform ~shallow:true map source in
-  OrderDependent.transform (global_qualifier, map) source |> snd
+
+  let { variables = global_variables; methods = global_methods }, source =
+    QualifyToplevelStatements.transform
+      ~shallow:true
+      { variables = Access.Map.empty; methods = Access.Map.empty }
+      source
+  in
+  QualifyDefines.transform global_variables source
+  |> snd  (* Discard the generated state, it is not useful. *)
+  |> OrderDependent.transform (global_qualifier, global_methods)
+  |> snd
 
 
 let cleanup source =

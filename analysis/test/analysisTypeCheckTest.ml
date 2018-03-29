@@ -1253,6 +1253,98 @@ let test_show_error_traces _ =
     ]
 
 
+let test_check_with_qualification _ =
+  assert_type_errors
+    {|
+      x: int = 1
+      def foo(x: str) -> str:
+        return x
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      x: int = 1
+      def foo(y: str) -> str:
+        return x
+    |}
+    ["Incompatible return type [7]: Expected `str` but got `int`."];
+
+  assert_type_errors
+    {|
+      list: typing.List[int] = [1]
+      def hello() -> int:
+        for i in list:
+          return i
+        return -1
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      kek=123 # type: int
+
+      def duh(kek: str) -> int:
+          return len(kek)
+      def wut(kek: str) -> None:
+          def wut_inner_access() -> int:
+              # TODO(T27001301): replace with next line when nested scopes will work
+              #return len(kek)
+              return kek
+          def wut_inner_global() -> int:
+              global kek
+              return kek
+      def rly() -> int:
+          def rly_inner(kek: str) -> None:
+              pass
+          return kek
+
+      def assign() -> int:
+          kek="a" # type: str
+          return len(kek)
+      def assign_outer() -> None:
+          kek="a" # type: str
+          def assign_inner_access() -> int:
+              # TODO(T27001301): replace with next line when nested scopes will work
+              #return len(kek)
+              return kek
+          def assign_inner_global() -> int:
+              global kek
+              return kek
+      def derp() -> int:
+          def derp_inner() -> None:
+              kek="a" # type: str
+              pass
+          return kek
+
+      def access_side_effect(kek: str) -> int:
+          side_effect=kek
+          return len(kek)
+      def access_side_effect_2() -> int:
+          side_effect=kek
+          return kek
+      def pure_sideffect() -> None:
+          side_effect=kek
+          def pure_side_effect_inner() -> int:
+              return kek
+
+      def access_transitive() -> int:
+          transitive=kek
+          return transitive
+      def assign_transitive() -> None:
+          another=kek
+          # TODO(T27001301): uncomment next two lines when nested scopes will work
+          #def out_of_ideas_3() -> int:
+          #    return another
+      def assign_transitive_2() -> int:
+          transitive=kek
+          def assign_transitive_inner() -> None:
+              kek="a"
+          return transitive
+    |}
+    []
+
+
 let test_coverage _ =
   let assert_coverage source expected =
     let { Result.coverage; _ } =
@@ -5016,6 +5108,7 @@ let () =
     "fixpoint_forward">::test_fixpoint_forward;
     "fixpoint_backward">::test_fixpoint_backward;
     "check_error_traces">::test_show_error_traces;
+    "check_with_qualification">::test_check_with_qualification;
     "coverage">::test_coverage;
     "check">::test_check;
     "check_coverage">::test_check_coverage;

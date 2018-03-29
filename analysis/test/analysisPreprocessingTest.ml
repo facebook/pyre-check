@@ -1223,6 +1223,80 @@ let test_preprocess _ =
       def some.qualifier.bar(f: List[some.qualifier.Foo]) -> some.qualifier.Foo:
         pass
         return
+    |};
+
+  assert_preprocess
+    {|
+      a = 1
+      def access() -> int:
+         return a
+      def assign() -> None:
+         a = 2
+      def globalvar() -> None:
+         global a
+         a = 3
+         return a
+    |}
+    {|
+      some.qualifier.a = 1
+      def some.qualifier.access() -> int:
+         $return = some.qualifier.a
+         return $return
+      def some.qualifier.assign() -> None:
+         a = 2
+         return
+      def some.qualifier.globalvar() -> None:
+         global a
+         some.qualifier.a = 3
+         $return = some.qualifier.a
+         return $return
+    |};
+
+  assert_preprocess
+    {|
+      a = 1
+      def indirect_access_1() -> int:
+         access(a)
+         return a
+      def indirect_access_2() -> int:
+         b = a
+         return a
+      def indirect_access_3() -> int:
+         b = access(a)
+         return a
+    |}
+    {|
+      some.qualifier.a = 1
+      def some.qualifier.indirect_access_1() -> int:
+         access(some.qualifier.a)
+         $return = some.qualifier.a
+         return $return
+      def some.qualifier.indirect_access_2() -> int:
+         b = some.qualifier.a
+         $return = some.qualifier.a
+         return $return
+      def some.qualifier.indirect_access_3() -> int:
+         b = access(some.qualifier.a)
+         $return = some.qualifier.a
+         return $return
+    |};
+
+  assert_preprocess
+    {|
+      a = 1
+      def access_with_parameter(a: int) -> int:
+         return a
+      def assign_with_parameter() -> None:
+         a = 2
+    |}
+    {|
+      some.qualifier.a = 1
+      def some.qualifier.access_with_parameter(a: int) -> int:
+         $return = a
+         return $return
+      def some.qualifier.assign_with_parameter() -> None:
+         a = 2
+         return
     |}
 
 
