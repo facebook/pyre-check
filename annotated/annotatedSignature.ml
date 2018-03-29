@@ -202,8 +202,8 @@ let select call ~resolution ~callable:({ Type.Callable.overloads; _ } as callabl
             |> List.fold ~init:Identifier.Map.empty ~f:parameter
           in
 
-          let consumed, constraints =
-            let argument ~key ~data (consumed, constraints) =
+          let consumed, constraints, reason =
+            let argument ~key ~data (consumed, constraints, reason) =
               match Map.find named_parameters key with
               | Some parameter ->
                   begin
@@ -219,12 +219,12 @@ let select call ~resolution ~callable:({ Type.Callable.overloads; _ } as callabl
                       | None -> Set.add consumed key
                       | _ -> consumed
                     in
-                    consumed, constraints
+                    consumed, constraints, reason
                   end
               | _ ->
-                  consumed, constraints
+                  consumed, constraints, reason
             in
-            Map.fold ~init:(Identifier.Set.empty, constraints) ~f:argument named_arguments
+            Map.fold ~init:(Identifier.Set.empty, constraints, reason) ~f:argument named_arguments
           in
 
           let arguments =

@@ -118,7 +118,10 @@ let test_select _ =
     "[[Named(i, int), Named(j, int)], int]"
     "(j=1, j=2, q=3)"
     (`NotFoundIdentical None);
-  assert_select "[[Named(i, int), Named(j, str)], int]" "(i=1, j=2)" (`NotFoundIdentical None);
+  assert_select
+    "[[Named(i, int), Named(j, str)], int]"
+    "(i=1, j=2)"
+    (`NotFoundIdentical (Some (Mismatch { actual = Type.integer; expected = Type.string })));
 
   (* Keywords. *)
   assert_select "[[Keywords(keywords)], int]" "()" (`Found "[[Keywords(keywords)], int]");
