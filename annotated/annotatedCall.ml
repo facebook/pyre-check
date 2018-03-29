@@ -247,6 +247,24 @@ let check_parameters
   |> snd
 
 
+type closest = {
+  rank: int;
+  callable: Type.Callable.t;
+}
+[@@deriving eq, show]
+
+
+let equal_closest left right =
+  (* Ignore rank. *)
+  Type.Callable.equal left.callable right.callable
+
+
+type overload =
+  | Found of Type.Callable.t
+  | NotFound of closest
+[@@deriving eq, show]
+
+
 type constraints =
   | Consistent of Type.t Type.Map.t
   | Contradiction
@@ -259,11 +277,12 @@ type resolution_state = {
 }
 
 
-let overload call ~resolution ~callable:{ Type.Callable.kind; overloads } =
+let overload call ~resolution ~callable:({ Type.Callable.overloads; _ } as callable) =
   (* Assuming calls have the following format:
      `[argument,]* [\*variable,]* [keyword=value,]* [\*\*keywords]*` *)
   let open Type.Callable in
-  let overload ({ Type.Callable.parameters; _ } as overload) =
+  let ranked ({ Type.Callable.parameters; _ } as overload) =
+    let callable = { callable with Type.Callable.overloads = [overload] } in
     match parameters with
     | Defined parameters ->
         let infer_constraints ~constraints ~argument:{ Argument.value; _ } ~parameter =
@@ -469,26 +488,46 @@ let overload call ~resolution ~callable:{ Type.Callable.kind; overloads } =
           |> consume_keywords
         in
 
+        let rank = (List.length parameters) + (List.length arguments) in
         if List.is_empty arguments && List.is_empty parameters then
           begin
             match constraints with
             | Consistent constraints ->
-                begin
-                  let annotation =
-                    Type.Callable { Type.Callable.kind = Anonymous; overloads = [overload] }
-                    |> Type.instantiate ~widen:false ~constraints:(Map.find constraints)
-                  in
-                  match annotation with
-                  | Type.Callable { overloads = [overload]; _  } -> Some overload
-                  | _ -> None
-                end
+                Type.Callable { Type.Callable.kind = Anonymous; overloads = [overload] }
+                |> Type.instantiate ~widen:false ~constraints:(Map.find constraints)
+                |> (function
+                    | Type.Callable { overloads = [instantiated]; _  } ->
+                        Found { callable with Type.Callable.overloads = [instantiated] }
+                    | _ ->
+                        failwith "Instantiate did not return a callable")
             | Contradiction ->
-                None
+                NotFound { rank = 1; callable }
           end
         else
-          None
+          NotFound { rank; callable }
     | Undefined ->
-        Some overload
+        Found callable
   in
-  List.find_map ~f:overload overloads
-  >>| fun overload -> { Type.Callable.kind; overloads = [overload] }
+
+  let rec find ~overloads ~closest =
+    match overloads with
+    | overload :: overloads ->
+        begin
+          match ranked overload with
+          | Found callable ->
+              Found callable
+          | NotFound candidate ->
+              let closest = if candidate.rank < closest.rank then candidate else closest in
+              find ~overloads ~closest
+        end
+    | [] ->
+        NotFound closest
+  in
+  let closest =
+    assert (List.length overloads > 0);
+    {
+      rank = Int.max_value;
+      callable = { callable with Type.Callable.overloads = [List.hd_exn overloads] };
+    }
+  in
+  find ~overloads ~closest

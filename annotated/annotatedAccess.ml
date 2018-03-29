@@ -430,6 +430,7 @@ let fold ~resolution ~initial ~f access =
           | Some resolved,
             Access.Call { Node.value = ({ Expression.Call.name; _ } as call); _ }
             when not (Type.is_not_instantiated (Annotation.annotation resolved)) &&
+                 Type.is_callable (Annotation.annotation resolved) &&
                  Expression.show name = "__call__" ->
               (* Callable invocation. *)
               begin
@@ -437,10 +438,10 @@ let fold ~resolution ~initial ~f access =
                 let callable =
                   match Annotation.annotation resolved with
                   | Type.Callable callable -> Call.overload call ~resolution ~callable
-                  | _ -> None
+                  | _ -> failwith "Failed to extract callable"
                 in
                 match callable with
-                | Some {
+                | Call.Found {
                     Type.Callable.overloads = [{ Type.Callable.annotation; _ }];
                     _;
                   } ->

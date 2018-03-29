@@ -138,9 +138,11 @@ val access: t -> Access.t
 
 val exists: t -> predicate: (t -> bool) -> bool
 
+val contains_callable: t -> bool
+
+val is_callable:t -> bool
 val is_generator: t -> bool
 val is_awaitable: t -> bool
-val is_callable: t -> bool
 val is_generic: t -> bool
 val is_meta: t -> bool
 val is_none: t -> bool

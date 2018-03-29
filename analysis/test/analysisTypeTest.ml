@@ -382,12 +382,12 @@ let test_is_generator _ =
   assert_true (Type.is_generator (Type.generator ~async:true Type.string))
 
 
-let test_is_callable _ =
-  assert_true (Type.is_callable (Type.callable ~annotation:Type.integer ()));
-  assert_true (Type.is_callable (Type.Optional (Type.callable ~annotation:Type.integer ())));
+let test_contains_callable _ =
+  assert_true (Type.contains_callable (Type.callable ~annotation:Type.integer ()));
+  assert_true (Type.contains_callable (Type.Optional (Type.callable ~annotation:Type.integer ())));
   assert_true
-    (Type.is_callable (Type.union[Type.string; (Type.callable ~annotation:Type.integer ())]));
-  assert_false (Type.is_callable (Type.Primitive (Identifier.create "foo")))
+    (Type.contains_callable (Type.union[Type.string; (Type.callable ~annotation:Type.integer ())]));
+  assert_false (Type.contains_callable (Type.Primitive (Identifier.create "foo")))
 
 
 let test_is_not_instantiated _ =
@@ -659,7 +659,7 @@ let () =
     "union">::test_union;
     "exists">::test_exists;
     "is_async_generator">::test_is_generator;
-    "is_callable">::test_is_callable;
+    "contains_callable">::test_contains_callable;
     "is_not_instantiated">::test_is_not_instantiated;
     "is_meta">::test_is_meta;
     "is_none">::test_is_none;

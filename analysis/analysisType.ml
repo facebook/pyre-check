@@ -974,6 +974,15 @@ let rec exists annotation ~predicate =
         false
 
 
+let contains_callable annotation =
+  exists annotation ~predicate:(function | Callable _ -> true | _ -> false)
+
+
+let is_callable = function
+  | Callable _ -> true
+  | _ -> false
+
+
 let is_generator = function
   | Parametric { name; _ } ->
       List.mem
@@ -989,10 +998,6 @@ let is_awaitable = function
       true
   | _ ->
       false
-
-
-let is_callable annotation =
-  exists annotation ~predicate:(function | Callable _ -> true | _ -> false)
 
 
 let is_generic = function

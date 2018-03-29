@@ -909,9 +909,9 @@ let filter ~configuration ~resolution errors =
       | IncompatibleParameterType { mismatch = { actual; expected }; _ }
       | IncompatibleReturnType { actual; expected }
       | IncompatibleVariableType { mismatch = { actual; expected }; _ } ->
-          Type.is_callable actual || Type.is_callable expected
+          Type.contains_callable actual || Type.contains_callable expected
       | IncompatibleAwaitableType actual ->
-          Type.is_callable actual
+          Type.contains_callable actual
       | _ ->
           false
     in

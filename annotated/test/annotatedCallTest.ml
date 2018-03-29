@@ -54,92 +54,112 @@ let test_overload _ =
       Format.asprintf "typing.Callable%s" callable
       |> parse_single_expression
       |> Resolution.parse_annotation resolution
+      |> function
+      | Type.Callable callable -> callable
+      | _ -> failwith "Could not extract overloads"
     in
+    let callable = parse_callable callable in
     let overload =
       let call =
         match parse_single_access (Format.asprintf "call%s" call) with
         | [Access.Call { Node.value = call; _ }] -> call
         | _ -> failwith "Could not parse call"
       in
-      let callable =
-        match parse_callable callable with
-        | Type.Callable callable -> callable
-        | _ -> failwith "Could not extract overloads"
-      in
       Call.create ~kind:Call.Function call
       |> Call.overload ~resolution ~callable
-      >>| fun callable -> Type.Callable callable
+    in
+    let expected =
+      match expected with
+      | `Found expected ->
+          Call.Found (parse_callable expected)
+      | `NotFoundIdentical ->
+          Call.NotFound { Call.rank = 0; callable }
+      | `NotFound closest ->
+          Call.NotFound { Call.rank = 0; callable = (parse_callable closest) }
     in
     assert_equal
-      ~printer:(function | Some annotation -> Type.show annotation | _ -> "None")
-      ~cmp:(Option.equal Type.equal)
-      (expected >>| parse_callable)
+      ~printer:Call.show_overload
+      ~cmp:Call.equal_overload
+      expected
       overload
   in
 
   (* Undefined callables always match. *)
-  assert_overload "[..., int]" "()" (Some "[..., int]");
-  assert_overload "[..., int]" "(a, b)" (Some "[..., int]");
-  assert_overload "[..., int]" "(a, b='depr', *variable, **keywords)" (Some "[..., int]");
-  assert_overload "[..., int][[int], int]" "(1)" (Some "[..., int]");
+  assert_overload "[..., int]" "()" (`Found "[..., int]");
+  assert_overload "[..., int]" "(a, b)" (`Found "[..., int]");
+  assert_overload "[..., int]" "(a, b='depr', *variable, **keywords)" (`Found "[..., int]");
+  assert_overload "[..., int][[int], int]" "(1)" (`Found "[..., int]");
 
   (* Traverse anonymous arguments. *)
-  assert_overload "[[], int]" "()" (Some "[[], int]");
+  assert_overload "[[], int]" "()" (`Found "[[], int]");
 
-  assert_overload "[[int], int]" "()" None;
-  assert_overload "[[], int]" "(1)" None;
+  assert_overload "[[int], int]" "()" `NotFoundIdentical;
+  assert_overload "[[], int]" "(1)" `NotFoundIdentical;
 
-  assert_overload "[[int], int]" "(1)" (Some "[[int], int]");
-  assert_overload "[[Named(i, int)], int]" "(1)" (Some "[[Named(i, int)], int]");
+  assert_overload "[[int], int]" "(1)" (`Found "[[int], int]");
+  assert_overload "[[Named(i, int)], int]" "(1)" (`Found "[[Named(i, int)], int]");
 
-  assert_overload "[[int], int]" "('string')" None;
-  assert_overload "[[int], int]" "(name='string')" None;
+  assert_overload "[[int], int]" "('string')" `NotFoundIdentical;
+  assert_overload "[[int], int]" "(name='string')" `NotFoundIdentical;
 
   (* Traverse variable arguments. *)
-  assert_overload "[[Variable(variable)], int]" "()" (Some "[[Variable(variable)], int]");
-  assert_overload "[[Variable(variable)], int]" "(1, 2)" (Some "[[Variable(variable)], int]");
+  assert_overload "[[Variable(variable)], int]" "()" (`Found "[[Variable(variable)], int]");
+  assert_overload "[[Variable(variable)], int]" "(1, 2)" (`Found "[[Variable(variable)], int]");
 
-  assert_overload "[[int], int]" "(*a)" (Some "[[int], int]");
-  assert_overload "[[int, Named(i, int)], int]" "(*a)" (Some "[[int, Named(i, int)], int]");
+  assert_overload "[[int], int]" "(*a)" (`Found "[[int], int]");
+  assert_overload "[[int, Named(i, int)], int]" "(*a)" (`Found "[[int, Named(i, int)], int]");
 
   assert_overload
     "[[int, Variable(variable)], int]"
     "(1, 2)"
-    (Some "[[int, Variable(variable)], int]");
+    (`Found "[[int, Variable(variable)], int]");
 
   (* Named arguments. *)
   assert_overload
     "[[Named(i, int), Named(j, int)], int]"
     "(i=1, j=2)"
-    (Some "[[Named(i, int), Named(j, int)], int]");
+    (`Found "[[Named(i, int), Named(j, int)], int]");
   assert_overload
     "[[Named(i, int), Named(j, int)], int]"
     "(j=1, i=2)"
-    (Some "[[Named(i, int), Named(j, int)], int]");
-  assert_overload "[[Named(i, int), Named(j, int)], int]" "(j=1, q=2)" None;
-  assert_overload "[[Named(i, int), Named(j, int)], int]" "(j=1, j=2, q=3)" None;
-  assert_overload "[[Named(i, int), Named(j, str)], int]" "(i=1, j=2)" None;
+    (`Found "[[Named(i, int), Named(j, int)], int]");
+  assert_overload "[[Named(i, int), Named(j, int)], int]" "(j=1, q=2)" `NotFoundIdentical;
+  assert_overload "[[Named(i, int), Named(j, int)], int]" "(j=1, j=2, q=3)" `NotFoundIdentical;
+  assert_overload "[[Named(i, int), Named(j, str)], int]" "(i=1, j=2)" `NotFoundIdentical;
 
   (* Keywords. *)
-  assert_overload "[[Keywords(keywords)], int]" "()" (Some "[[Keywords(keywords)], int]");
-  assert_overload "[[Keywords(keywords)], int]" "(a=1, b=2)" (Some "[[Keywords(keywords)], int]");
+  assert_overload "[[Keywords(keywords)], int]" "()" (`Found "[[Keywords(keywords)], int]");
+  assert_overload "[[Keywords(keywords)], int]" "(a=1, b=2)" (`Found "[[Keywords(keywords)], int]");
 
-  assert_overload "[[int], int]" "(**a)" None;
-  assert_overload "[[Named(i, int)], int]" "(**a)" (Some "[[Named(i, int)], int]");
-  assert_overload "[[int, Named(i, int)], int]" "(1, **a)" (Some "[[int, Named(i, int)], int]");
+  assert_overload "[[int], int]" "(**a)" `NotFoundIdentical;
+  assert_overload "[[Named(i, int)], int]" "(**a)" (`Found "[[Named(i, int)], int]");
+  assert_overload "[[int, Named(i, int)], int]" "(1, **a)" (`Found "[[int, Named(i, int)], int]");
 
   (* Constraint resolution. *)
-  assert_overload "[[_T], _T]" "(1)" (Some "[[int], int]");
-  assert_overload "[[_T, _S], _T]" "(1, 'string')" (Some "[[int, str], int]");
+  assert_overload "[[_T], _T]" "(1)" (`Found "[[int], int]");
+  assert_overload "[[_T, _S], _T]" "(1, 'string')" (`Found "[[int, str], int]");
   assert_overload
     "[[_T, _T], int]"
     "(1, 'string')"
-    (Some "[[typing.Union[int, str], typing.Union[int, str]], int]");
+    (`Found "[[typing.Union[int, str], typing.Union[int, str]], int]");
 
-  assert_overload "[[typing.List[_T]], int]" "([1])" (Some "[[typing.List[int]], int]");
-  assert_overload "[[typing.Sequence[_T]], int]" "([1])" (Some "[[typing.Sequence[int]], int]");
-  assert_overload "[[typing.Sequence[_T]], int]" "(1)" None
+  assert_overload "[[typing.List[_T]], int]" "([1])" (`Found "[[typing.List[int]], int]");
+  assert_overload "[[typing.Sequence[_T]], int]" "([1])" (`Found "[[typing.Sequence[int]], int]");
+  assert_overload "[[typing.Sequence[_T]], int]" "(1)" `NotFoundIdentical;
 
+  (* Ranking. *)
+  assert_overload
+    "[[int, int, str], int][[int, str, str], int]"
+    "(0)"
+    (`NotFound "[[int, int, str], int]");  (* Ambiguous, pick the first one. *)
+  assert_overload
+    "[[int, int, str], int][[int, str, str], int]"
+    "(0, 'string')"
+    (`NotFound "[[int, str, str], int]");  (* Clear winner. *)
+  assert_overload
+    "[[int, str, str, str], int][[int, str, bool], int]"
+    "(0, 'string')"
+    (`NotFound "[[int, str, bool], int]")
 
 
 let () =

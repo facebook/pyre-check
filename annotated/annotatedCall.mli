@@ -71,8 +71,19 @@ val check_parameters
   -> Signature.t
   -> 'accumulator
 
+type closest = {
+  rank: int;
+  callable: Type.Callable.t;
+}
+[@@deriving eq, show]
+
+type overload =
+  | Found of Type.Callable.t
+  | NotFound of closest
+[@@deriving eq, show]
+
 val overload
   :  t
   -> resolution: Resolution.t
   -> callable: Type.Callable.t
-  -> Type.Callable.t option
+  -> overload
