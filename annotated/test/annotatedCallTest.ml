@@ -37,18 +37,20 @@ let test_backup _ =
 
 let test_overload _ =
   let assert_overload callable call expected =
-    let parse_callable callable =
-      Format.asprintf "typing.Callable%s" callable
-      |> parse_single_expression
-      |> Type.create ~aliases:(fun _ -> None)
-    in
     let resolution =
       populate
         {|
+          _T = typing.TypeVar('_T')
+          _S = typing.TypeVar('_S')
           class int: ...
           class str: ...
         |}
       |> resolution
+    in
+    let parse_callable callable =
+      Format.asprintf "typing.Callable%s" callable
+      |> parse_single_expression
+      |> Resolution.parse_annotation resolution
     in
     let call =
       match parse_single_access (Format.asprintf "call%s" call) with
@@ -125,7 +127,16 @@ let test_overload _ =
 
   assert_overload "[[int], int]" "(**a)" None;
   assert_overload "[[Named(i, int)], int]" "(**a)" (Some "[[Named(i, int)], int]");
-  assert_overload "[[int, Named(i, int)], int]" "(1, **a)" (Some "[[int, Named(i, int)], int]")
+  assert_overload "[[int, Named(i, int)], int]" "(1, **a)" (Some "[[int, Named(i, int)], int]");
+
+  (* Constraint resolution. *)
+  assert_overload "[[_T], _T]" "(1)" (Some "[[int], int]");
+  assert_overload "[[_T, _S], _T]" "(1, 'string')" (Some "[[int, str], int]");
+  assert_overload
+    "[[_T, _T], int]"
+    "(1, 'string')"
+    (Some "[[typing.Union[int, str], typing.Union[int, str]], int]")
+
 
 
 let () =

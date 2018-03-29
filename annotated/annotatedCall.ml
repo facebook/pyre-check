@@ -247,10 +247,15 @@ let check_parameters
   |> snd
 
 
+type constraints =
+  | Consistent of Type.t Type.Map.t
+  | Contradiction
+
+
 type resolution_state = {
   arguments: (Expression.t Argument.t) list;
   parameters: (Type.t Type.Callable.Parameter.t) list;
-  constraints: Type.t Type.Map.t;
+  constraints: constraints;
 }
 
 
@@ -261,27 +266,51 @@ let overload call ~resolution ~overloads =
   let overload ({ Type.Callable.parameters; _ } as overload) =
     match parameters with
     | Defined parameters ->
-        let compatible { Argument.value; _ } parameter =
-          let actual = Resolution.resolve resolution value in
-          let expected =
-            match parameter with
-            | Parameter.Anonymous annotation
-            | Parameter.Named { Parameter.annotation; _ } ->
-                annotation
-            | _ ->
-                Type.Top
-          in
-          Resolution.less_or_equal resolution ~left:actual ~right:expected
+        let infer_constraints ~constraints ~argument:{ Argument.value; _ } ~parameter =
+          match constraints with
+          | Consistent constraints ->
+              begin
+                let actual = Resolution.resolve resolution value in
+                let expected =
+                  match parameter with
+                  | Parameter.Anonymous annotation
+                  | Parameter.Named { Parameter.annotation; _ } ->
+                      annotation
+                  | _ ->
+                      Type.Top
+                in
+                match expected with
+                | (Type.Variable _) as variable ->
+                    let resolved =
+                      Map.find constraints variable
+                      >>| (fun resolved -> Resolution.join resolution actual resolved)
+                      |> Option.value ~default:actual
+                    in
+                    Consistent (Map.set constraints ~key:variable ~data:resolved)
+                | _ ->
+                    if Resolution.less_or_equal resolution ~left:actual ~right:expected then
+                      Consistent constraints
+                    else
+                      Contradiction
+              end
+          | Contradiction ->
+              Contradiction
         in
 
-        let rec consume_anonymous ({ arguments; parameters; _ } as state) =
+        let rec consume_anonymous ({ arguments; parameters; constraints } as state) =
           match arguments, parameters with
           | ({ Argument.name = None; _ } as argument) :: arguments,
             ((Parameter.Anonymous _) as parameter) :: parameters
           | ({ Argument.name = None; _ } as argument) :: arguments,
-            ((Parameter.Named _) as parameter) :: parameters
-            when compatible argument parameter ->
-              consume_anonymous { state with arguments; parameters }
+            ((Parameter.Named _) as parameter) :: parameters ->
+              begin
+                let constraints = infer_constraints ~constraints ~argument ~parameter in
+                match constraints with
+                | Consistent _ ->
+                    consume_anonymous { arguments; parameters; constraints }
+                | Contradiction ->
+                    state
+              end
           | _ ->
               state
         in
@@ -307,7 +336,7 @@ let overload call ~resolution ~overloads =
               state
         in
 
-        let consume_named ({ arguments; parameters; _ } as state) =
+        let consume_named { arguments; parameters; constraints } =
           let named_arguments =
             let argument map ({ Argument.name; _ } as argument) =
               Map.set map ~key:(Option.value_exn name) ~data:argument
@@ -327,18 +356,23 @@ let overload call ~resolution ~overloads =
             |> List.fold ~init:Identifier.Map.empty ~f:parameter
           in
 
-          let consumed =
-            let argument ~key ~data consumed =
+          let consumed, constraints =
+            let argument ~key ~data (consumed, constraints) =
               match Map.find named_parameters key with
               | Some parameter ->
-                  if compatible data parameter then
-                    Set.add consumed key
-                  else
-                    consumed
+                  begin
+                    let constraints = infer_constraints ~constraints ~argument:data ~parameter in
+                    let consumed =
+                      match constraints with
+                      | Consistent _ -> Set.add consumed key
+                      | Contradiction -> consumed
+                    in
+                    consumed, constraints
+                  end
               | _ ->
-                  consumed
+                  consumed, constraints
             in
-            Map.fold ~init:Identifier.Set.empty ~f:argument named_arguments
+            Map.fold ~init:(Identifier.Set.empty, constraints) ~f:argument named_arguments
           in
 
           let arguments =
@@ -359,7 +393,7 @@ let overload call ~resolution ~overloads =
             List.drop_while ~f:parameter_consumed parameters
           in
 
-          { state with arguments; parameters }
+          { arguments; parameters; constraints }
         in
 
         let rec consume_keywords ({ arguments; parameters; _ } as state) =
@@ -380,8 +414,8 @@ let overload call ~resolution ~overloads =
               state
         in
 
-        let { arguments; parameters; _ } =
-          { arguments = arguments call; parameters; constraints = Type.Map.empty }
+        let { arguments; parameters; constraints } =
+          { arguments = arguments call; parameters; constraints = Consistent Type.Map.empty }
           |> consume_anonymous
           |> consume_variable
           |> consume_named
@@ -389,7 +423,21 @@ let overload call ~resolution ~overloads =
         in
 
         if List.is_empty arguments && List.is_empty parameters then
-          Some overload
+          begin
+            match constraints with
+            | Consistent constraints ->
+                begin
+                  let annotation =
+                    Type.Callable { Type.Callable.kind = Anonymous; overloads = [overload] }
+                    |> Type.instantiate ~widen:false ~constraints:(Map.find constraints)
+                  in
+                  match annotation with
+                  | Type.Callable { overloads = [overload]; _  } -> Some overload
+                  | _ -> None
+                end
+            | Contradiction ->
+                None
+          end
         else
           None
     | Undefined ->
