@@ -29,8 +29,17 @@ error_trap () {
 
 trap error_trap ERR
 
+# Compatibility settings with MacOS.
+if [[ "${MACHTYPE}" = *apple* ]]; then
+  READLINK=greadlink
+  HAS_PIP_GREATER_THAN_1_5=no
+else
+  READLINK=readlink
+  HAS_PIP_GREATER_THAN_1_5=yes
+fi
+
 # Create build tree.
-SCRIPTS_DIRECTORY="$(dirname "$(readlink -f "$0")")"
+SCRIPTS_DIRECTORY="$(dirname "$("${READLINK}" -f "$0")")"
 cd "${SCRIPTS_DIRECTORY}/"
 BUILD_ROOT="${SCRIPTS_DIRECTORY}/buildroot"
 rm -rf "${BUILD_ROOT}"
@@ -98,7 +107,9 @@ HEREDOC
 
 # Test descriptions before building:
 # https://github.com/pypa/readme_renderer
-python setup.py check -r -s
+if [[ "${HAS_PIP_GREATER_THAN_1_5}" == 'yes' ]]; then
+  python setup.py check -r -s
+fi
 
 # Build.
 python setup.py bdist_wheel
