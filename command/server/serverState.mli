@@ -31,6 +31,7 @@ type t = {
   lookups: Analysis.Lookup.t String.Table.t;
   scheduler: Scheduler.t;
   lock: Mutex.t;
+  last_integrity_check: float;
   last_request_time: float;
   connections: connections ref;
 }
@@ -38,3 +39,5 @@ type t = {
 val failure_threshold: int
 
 val stop_after_idle_for: float
+
+val integrity_check_every: float

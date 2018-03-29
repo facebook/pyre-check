@@ -215,6 +215,7 @@ let mock_server_state
     errors;
     handles = File.Handle.Set.empty;
     last_request_time = Unix.time ();
+    last_integrity_check = Unix.time ();
     lookups = String.Table.create ();
     lock = Mutex.create ();
     connections = ref {
@@ -772,6 +773,7 @@ let test_incremental_attribute_caching context =
     scheduler = Scheduler.mock ();
     lock = Mutex.create ();
     last_request_time = -1.0;
+    last_integrity_check = -1.0;
     connections = connections;
   }
   in

@@ -60,6 +60,7 @@ let initialize ?old_state lock connections { configuration; _ } =
     scheduler;
     lock;
     last_request_time = Unix.time ();
+    last_integrity_check = Unix.time ();
     connections;
     lookups = String.Table.create ();
   }
