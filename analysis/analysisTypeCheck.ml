@@ -618,7 +618,18 @@ module State = struct
                   | _ ->
                       Resolution.parse_annotation resolution annotation
                 in
-                Map.set ~key:access ~data:(Annotation.create annotation) annotations
+                let updated_annotation =
+                  match Map.find annotations access with
+                  | Some existing_annotation when
+                      Refinement.less_or_equal
+                        ~resolution
+                        existing_annotation
+                        (Annotation.create annotation) ->
+                      existing_annotation
+                  | _ ->
+                      Annotation.create annotation
+                in
+                Map.set ~key:access ~data:updated_annotation annotations
             | UnaryOperator {
                 UnaryOperator.operator = UnaryOperator.Not;
                 operand = {

@@ -703,7 +703,12 @@ let test_forward_assert_isinstance _ =
   assert_forward
     ["x", Type.Object]
     "assert isinstance(x, (int, str))"
-    ["x", Type.union [Type.integer; Type.string]]
+    ["x", Type.union [Type.integer; Type.string]];
+
+  assert_forward
+    ["x", Type.integer]
+    "assert isinstance(x, (int, str))"
+    ["x", Type.integer]
 
 
 let assert_backward precondition statement postcondition =
