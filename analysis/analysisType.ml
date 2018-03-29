@@ -1144,6 +1144,12 @@ let rec mismatch_with_any left right =
   | Object, Variable _
   | Variable _, Object ->
       true
+  | Parametric { name; parameters = [left] }, right
+    when Identifier.equal name (Identifier.create "typing.Optional") ->
+      mismatch_with_any left right
+  | left, Parametric { name; parameters = [right] }
+    when Identifier.equal name (Identifier.create "typing.Optional") ->
+      mismatch_with_any left right
   | Optional left, Optional right
   | Optional left, right
   | left, Optional right ->

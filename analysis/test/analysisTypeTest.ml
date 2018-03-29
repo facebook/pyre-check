@@ -505,15 +505,22 @@ let test_mismatch_with_any _ =
   assert_true
     (Type.mismatch_with_any
        (Type.dictionary ~key:Type.Object ~value:Type.bool)
-       (Type.Parametric {
-           Type.name = ~~"typing.Mapping";
-           parameters = [Type.integer; Type.bool];
-         }));
+       (Type.parametric "typing.Mapping" [Type.integer; Type.bool]));
 
   assert_true
     (Type.mismatch_with_any
        (Type.iterable Type.string)
-       (Type.Parametric { Type.name = ~~"typing.List"; parameters = [Type.Object] }));
+       (Type.parametric "typing.List" [Type.Object]));
+
+  assert_true
+    (Type.mismatch_with_any
+       (Type.iterable Type.string)
+       (Type.parametric "typing.Optional" [Type.Object]));
+
+  assert_false
+    (Type.mismatch_with_any
+       (Type.iterable Type.string)
+       (Type.parametric "typing.Optional" [Type.string]));
 
   assert_true
     (Type.mismatch_with_any
