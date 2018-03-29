@@ -2991,6 +2991,52 @@ let test_check_attributes _ =
     [
       "Incompatible return type [7]: Expected `int` but got `unknown`.";
       "Undefined attribute [16]: Optional type has no attribute `debug`.";
+    ];
+
+  (* Attributes defined with getters and setters. *)
+  assert_type_errors
+    {|
+      class Foo:
+        @property
+        def x(self) -> int: ...
+        @x.setter
+        def x(self, value: int) -> None: ...
+      def bar() -> int:
+        foo = Foo()
+        return foo.x
+      def baz() -> None:
+        foo = Foo()
+        foo.x = 1
+        foo.x = None
+        foo.x = "string"
+    |}
+    [
+      "Incompatible attribute type [8]: Attribute `x` declared in class `Foo`" ^
+      " has type `int` but is used as type `None`.";
+      "Incompatible attribute type [8]: Attribute `x` declared in class `Foo`" ^
+      " has type `int` but is used as type `str`.";
+    ];
+
+  assert_type_errors
+    {|
+      x: Optional[int]
+      class Foo:
+        @property
+        def x(self) -> int: ...
+        @x.setter
+        def x(self, value: typing.Optional[int]) -> None: ...
+      def bar() -> int:
+        foo = Foo()
+        return foo.x
+      def baz() -> None:
+        foo = Foo()
+        foo.x = 1
+        foo.x = None
+        foo.x = "string"
+    |}
+    [
+      "Incompatible attribute type [8]: Attribute `x` declared in class `Foo`" ^
+      " has type `typing.Optional[int]` but is used as type `str`.";
     ]
 
 

@@ -450,7 +450,7 @@ module Attribute = struct
           annotation = attribute_annotation;
           value;
           async;
-          _;
+          setter;
         };
       } =
     let class_annotation = annotation in
@@ -485,14 +485,20 @@ module Attribute = struct
           Annotation.create_immutable
             ~global:true
             ~original:(Some annotation)
-            (Resolution.resolve resolution value)
+            (if setter then
+               (Resolution.parse_annotation resolution value)
+             else
+               (Resolution.resolve resolution value))
       | Some annotation, None ->
           Annotation.create_immutable ~global:true annotation
       | None, Some value ->
           Annotation.create_immutable
             ~global:true
             ~original:(Some Type.Top)
-            (Resolution.resolve_literal resolution value)
+            (if setter then
+               (Resolution.parse_annotation resolution value)
+             else
+               (Resolution.resolve_literal resolution value))
       | _ ->
           Annotation.create_immutable ~global:true Type.Top
     in

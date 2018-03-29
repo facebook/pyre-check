@@ -482,7 +482,7 @@ module Define = struct
     |> Map.map ~f:merge_assigns
 
 
-  let property_attributes ~location ({ name; return_annotation; parameters; _ } as define) =
+  let property_attribute ~location ({ name; return_annotation; parameters; _ } as define) =
     let attribute annotation =
       Attribute.create
         ~location
@@ -522,8 +522,8 @@ module Define = struct
                  (Attribute.create
                     ~location
                     ~target:(Node.create ~location (Expression.Access name))
-                    ~annotation:None
-                    ~value:annotation
+                    ~annotation
+                    ~value:None
                     ~async:(is_async define)
                     ~setter:true))
           | _ ->
@@ -676,15 +676,42 @@ module Class = struct
           | { Node.location; value = Stub (Stub.Define define) }
           | { Node.location; value = Define define } ->
               begin
-                match Define.property_attributes ~location define with
+                match Define.property_attribute ~location define with
                 | Some ({
                     Node.value =
-                      { Attribute.target =
+                      ({
+                        Attribute.target =
                           { Node.value = Expression.Access ([_] as access); _ };
-                        _; };
+                        setter = new_setter;
+                        annotation = new_annotation;
+                        _;
+                      } as attribute);
                     _;
-                  } as attribute) ->
-                    Map.set ~key:access ~data:attribute map
+                  } as attribute_node) ->
+                    let merged_attribute =
+                      match Map.find map access, new_setter with
+                      | Some { Node.value = { Attribute.setter = true; annotation; _ }; _ },
+                        false ->
+                          {
+                            attribute with
+                            Attribute.annotation;
+                            value = new_annotation;
+                            setter = true
+                          }
+                          |> (fun edited -> { attribute_node with Node.value = edited })
+                      | Some { Node.value = { Attribute.setter = false; annotation; _ }; _ },
+                        true ->
+                          {
+                            attribute with
+                            Attribute.annotation = new_annotation;
+                            value = annotation;
+                            setter = true
+                          }
+                          |> (fun edited -> { attribute_node with Node.value = edited })
+                      | _ ->
+                          attribute_node
+                    in
+                    Map.set ~key:access ~data:merged_attribute map
                 | _ -> map
               end
           | _ ->

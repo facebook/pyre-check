@@ -249,7 +249,7 @@ let test_attributes _ =
     ["attribute", None, None; "nested", None, None; "other", None, None];
 
   (* Test define field assigns. *)
-  let assert_property_attributes source expected =
+  let assert_property_attribute source expected =
     let expected =
       expected
       >>| fun (target, annotation, value, setter) ->
@@ -258,11 +258,11 @@ let test_attributes _ =
     assert_equal
       ~cmp:(Option.equal Attribute.equal)
       expected
-      (parse_single_define source |> Define.property_attributes ~location:Location.any)
+      (parse_single_define source |> Define.property_attribute ~location:Location.any)
   in
-  assert_property_attributes "def foo(): pass" None;
-  assert_property_attributes "@property\ndef foo(): pass" (Some ("foo", None, None, false));
-  assert_property_attributes
+  assert_property_attribute "def foo(): pass" None;
+  assert_property_attribute "@property\ndef foo(): pass" (Some ("foo", None, None, false));
+  assert_property_attribute
     "@abc.abstractproperty\ndef foo() -> int: pass"
     (Some ("foo", Some (Type.expression Type.integer), None, false));
 
@@ -385,7 +385,7 @@ let test_attributes _ =
         @x.setter
         def x(self, value:str) -> None: ...
     |}
-    ["x", None, Some "str", true];
+    ["x", Some (Type.expression Type.string), None, true];
   assert_attributes
     {|
       class Foo:
@@ -395,8 +395,7 @@ let test_attributes _ =
         def x(self, value:str) -> None: ...
     |}
     [
-      (* TODO(T27592560): Merge these into one attribute instead of overriding. *)
-      "x", None, Some "str", true;
+      "x", Some (Type.expression Type.string), Some "int", true;
     ];
 
   (* Implicit attributes in tests. *)

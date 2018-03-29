@@ -208,7 +208,7 @@ module Define : sig
     :  t
     -> definition: statement_node Record.Class.record
     -> (Assign.t Node.t) Expression.Access.Map.t
-  val property_attributes: location: Location.t -> t -> Attribute.t option
+  val property_attribute: location: Location.t -> t -> Attribute.t option
 
   val has_decorator: t -> string -> bool
 end
