@@ -26,7 +26,7 @@ type closest = {
 }
 [@@deriving eq, show]
 
-type overload =
+type t =
   | Found of Type.Callable.t
   | NotFound of closest
 [@@deriving eq, show]
@@ -35,4 +35,4 @@ val select
   :  Call.t
   -> resolution: Resolution.t
   -> callable: Type.Callable.t
-  -> overload
+  -> t

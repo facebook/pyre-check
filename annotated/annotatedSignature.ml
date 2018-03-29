@@ -43,7 +43,7 @@ let equal_closest left right =
   Option.equal equal_reason left.reason right.reason
 
 
-type overload =
+type t =
   | Found of Type.Callable.t
   | NotFound of closest
 [@@deriving eq, show]

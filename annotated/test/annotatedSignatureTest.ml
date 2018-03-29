@@ -65,8 +65,8 @@ let test_select _ =
           NotFound { rank = 0; callable = parse_callable closest; reason }
     in
     assert_equal
-      ~printer:Signature.show_overload
-      ~cmp:Signature.equal_overload
+      ~printer:Signature.show
+      ~cmp:Signature.equal
       expected
       overload
   in
