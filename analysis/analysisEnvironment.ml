@@ -912,8 +912,8 @@ let register_classes (module Handler: Handler) source =
       type t = unit
 
       let statement { Source.path; _ } _ = function
-        | { Node.location; value = Class ({ Class.name; bases; _ } as definition) }
-        | { Node.location; value = Stub (Stub.Class ({ Class.name; bases; _ } as definition)) } ->
+        | { Node.location; value = Class ({ Class.name; _ } as definition) }
+        | { Node.location; value = Stub (Stub.Class ({ Class.name; _ } as definition)) } ->
             (* Register constructors. *)
             let constructors =
               Node.create ~location definition
@@ -928,41 +928,6 @@ let register_classes (module Handler: Handler) source =
 
             Handler.register_type ~path Type.Bottom name (Some (Node.create ~location definition))
             |> ignore;
-
-            (* Handle enumeration constants. *)
-            let enumeration { Argument.value; _ } =
-              match Type.create ~aliases:Handler.aliases value with
-              | Type.Primitive identifier
-                when String.Set.mem
-                    Recognized.enumeration_classes
-                    (Identifier.show identifier) ->
-                  Some (Access.create (Identifier.show identifier))
-              | _ ->
-                  None
-            in
-            List.find_map ~f:enumeration bases
-            >>| (fun enumeration ->
-                (* Register generated constructor. *)
-                Handler.register_definition
-                  ~path
-                  {
-                    Node.location;
-                    value = {
-                      Define.name = enumeration @ (Access.create "__init__");
-                      parameters = [Parameter.create ~name:(Identifier.create "a") ()];
-                      body = [];
-                      decorators = [];
-                      docstring = None;
-                      return_annotation = Some {
-                          Node.location;
-                          value = Access enumeration;
-                        };
-                      async = false;
-                      generated = true;
-                      parent = Some enumeration;
-                    };
-                  })
-            |> ignore
         | _ ->
             ()
     end)
