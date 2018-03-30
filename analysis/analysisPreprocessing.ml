@@ -1201,26 +1201,42 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
             Node.value = Access name;
             _;
           };
-          value = Some ({
+          value = Some {
               Node.value =
                 Access [
-                  Access.Identifier typing;
+                  Access.Identifier module_name;
                   Access.Call {
                     Node.value = {
                       Call.name = {
                         Node.value = Access [Access.Identifier named_tuple];
-                        _;
+                        location = name_location;
                       };
-                      _;
+                      arguments;
                     };
-                    _;
+                    location = call_location;
                   }
                 ];
-              _;
-            } as tuple);
+              location = tuple_location;
+            };
           _;
         };
-    } when Identifier.show typing = "typing" && Identifier.show named_tuple = "NamedTuple" ->
+    } when
+        Identifier.show module_name = "typing" && Identifier.show named_tuple = "NamedTuple" ||
+        Identifier.show module_name = "collections" && Identifier.show named_tuple = "namedtuple"
+      ->
+        let tuple =
+          let call =
+            {
+              Call.name =
+                Access [Access.Identifier (Identifier.create "NamedTuple")]
+                |> Node.create ~location:name_location;
+              arguments;
+            }
+            |> fun call -> Access.Call (Node.create ~location:call_location call)
+          in
+          Access [Access.Identifier (Identifier.create "typing"); call]
+          |> Node.create ~location:tuple_location
+        in
         let definition =
           {
             Class.name;

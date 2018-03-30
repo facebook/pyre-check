@@ -1001,6 +1001,14 @@ let test_expand_named_tuples _ =
     |};
   assert_expand
     {|
+      T = collections.namedtuple('T', ['a'])
+    |}
+    {|
+      class T(typing.NamedTuple('T', ['a'])):
+        pass
+    |};
+  assert_expand
+    {|
       T = typing.NamedTuple('T', ['one', 'two'])
     |}
     {|
