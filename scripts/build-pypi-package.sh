@@ -20,7 +20,7 @@ MODULE_NAME="pyre_check"
 
 # helpers
 die() {
-  printf '%s: %s, exiting.\n' "$(basename "$0")" "$*" >&2
+  printf '\n%s: %s, exiting.\n' "$(basename "$0")" "$*" >&2
   exit 1
 }
 error_trap () {
@@ -33,9 +33,11 @@ trap error_trap ERR
 if [[ "${MACHTYPE}" = *apple* ]]; then
   READLINK=greadlink
   HAS_PIP_GREATER_THAN_1_5=no
+  WHEEL_DISTRIBUTION_PLATFORM=macosx_10_13_x86_64
 else
   READLINK=readlink
   HAS_PIP_GREATER_THAN_1_5=yes
+  WHEEL_DISTRIBUTION_PLATFORM=manylinux1_x86_64
 fi
 
 # Create build tree.
@@ -114,13 +116,19 @@ fi
 # Build.
 python3 setup.py bdist_wheel
 
-# Copy artifacts outside the build directory.
+# Move artifact outside the build directory.
 mkdir -p "${SCRIPTS_DIRECTORY}/dist"
-cp "${BUILD_ROOT}"/dist/* "${SCRIPTS_DIRECTORY}/dist/"
+files_count="$(find "${BUILD_ROOT}/dist/" -type f | wc -l | tr -d ' ')"
+[[ "${files_count}" == '1' ]] || \
+  die "${files_count} files created in ${BUILD_ROOT}/dist, but only one was expected"
+source_file="$(find "${BUILD_ROOT}/dist/" -type f)"
+destination="$(basename "${source_file}")"
+destination="${destination/%-any.whl/-${WHEEL_DISTRIBUTION_PLATFORM}.whl}"
+mv "${source_file}" "${SCRIPTS_DIRECTORY}/dist/${destination}"
 
 # Cleanup.
 cd "${SCRIPTS_DIRECTORY}"
 rm -rf "${BUILD_ROOT}"
 
-printf '\nAll done. Build artifacts are available in: %s/dist/\n' "${SCRIPTS_DIRECTORY}"
+printf '\nAll done. Build artifact available at:\n  %s\n' "${SCRIPTS_DIRECTORY}/dist/${destination}"
 exit 0
