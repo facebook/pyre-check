@@ -912,25 +912,21 @@ let register_classes (module Handler: Handler) source =
       type t = unit
 
       let statement { Source.path; _ } _ = function
-        | { Node.location; value = Class definition }
-        | { Node.location; value = Stub (Stub.Class definition) } ->
+        | { Node.location; value = Class ({ Class.name; bases; _ } as definition) }
+        | { Node.location; value = Stub (Stub.Class ({ Class.name; bases; _ } as definition)) } ->
             (* Register constructors. *)
             let constructors =
-              Annotated.Class.create (Node.create ~location definition)
+              Node.create ~location definition
+              |> Annotated.Class.create
               |> Annotated.Class.constructors ~resolution
             in
-            List.iter
-              ~f:(fun constructor ->
-                  Handler.register_definition
-                    ~path
-                    { Node.value = constructor; location })
-              constructors;
+            let register constructor =
+              Node.create ~location constructor
+              |> Handler.register_definition ~path
+            in
+            List.iter ~f:register constructors;
 
-            Handler.register_type
-              ~path
-              Type.Bottom
-              definition.Class.name
-              (Some (Node.create ~location definition))
+            Handler.register_type ~path Type.Bottom name (Some (Node.create ~location definition))
             |> ignore;
 
             (* Handle enumeration constants. *)
@@ -944,7 +940,7 @@ let register_classes (module Handler: Handler) source =
               | _ ->
                   None
             in
-            List.find_map ~f:enumeration definition.Class.bases
+            List.find_map ~f:enumeration bases
             >>| (fun enumeration ->
                 (* Register generated constructor. *)
                 Handler.register_definition
@@ -1037,18 +1033,18 @@ let register_functions
       let statement { Source.path; _ } _ = function
         | { Node.value = Define definition; location }
         | { Node.value = Stub (Stub.Define definition); location } ->
-            let definition =
-              Annotated.Define.apply_decorators ~resolution (Annotated.Define.create definition)
+            let define =
+              Annotated.Define.create definition
+              |> Annotated.Define.apply_decorators ~resolution
               |> Annotated.Define.define
             in
-            if Define.is_method definition then
-              let parent = Option.value_exn definition.Define.parent in
-              Handler.register_definition
-                ~path
-                ~name_override:(parent @ definition.Define.name)
-                { Node.value = definition; location }
+            if Define.is_method define then
+              let parent = Option.value_exn define.Define.parent in
+              Node.create ~location define
+              |> Handler.register_definition ~path ~name_override:(parent @ definition.Define.name)
             else
-              Handler.register_definition ~path { Node.value = definition; location }
+              Node.create ~location define
+              |> Handler.register_definition ~path
         | _ ->
             ()
     end)
