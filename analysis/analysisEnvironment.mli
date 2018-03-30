@@ -100,7 +100,7 @@ val register_aliases
 
 val register_globals :  (module Handler) -> Source.t -> unit
 
-val register_classes
+val connect_type_order
   :  (module Handler)
   -> Source.t
   -> unit

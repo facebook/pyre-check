@@ -907,15 +907,15 @@ let register_globals
   List.iter ~f:visit statements
 
 
-let register_classes (module Handler: Handler) source =
+let register_constructors (module Handler: Handler) source =
   let resolution = resolution (module Handler: Handler) ~annotations:Access.Map.empty () in
 
   let module Visit = Visit.MakeStatementVisitor(struct
       type t = unit
 
       let statement { Source.path; _ } _ = function
-        | { Node.location; value = Class ({ Class.name; _ } as definition) }
-        | { Node.location; value = Stub (Stub.Class ({ Class.name; _ } as definition)) } ->
+        | { Node.location; value = Class definition }
+        | { Node.location; value = Stub (Stub.Class definition ) } ->
             (* Register constructors. *)
             let constructors =
               Node.create ~location definition
@@ -927,14 +927,28 @@ let register_classes (module Handler: Handler) source =
               |> Handler.register_definition ~path
             in
             List.iter ~f:register constructors;
+        | _ ->
+            ()
+    end)
+  in
+  Visit.visit () source |> ignore
 
+
+let connect_type_order (module Handler: Handler) source =
+  let module Visit = Visit.MakeStatementVisitor(struct
+      type t = unit
+
+      let statement { Source.path; _ } _ = function
+        | { Node.location; value = Class ({ Class.name; _ } as definition) }
+        | { Node.location; value = Stub (Stub.Class ({ Class.name; _ } as definition)) } ->
             Handler.register_type ~path Type.Bottom name (Some (Node.create ~location definition))
             |> ignore;
         | _ ->
             ()
     end)
   in
-  Visit.visit () source |> ignore
+  Visit.visit () source
+  |> ignore
 
 
 let register_dependencies
@@ -1037,7 +1051,9 @@ let populate
     ~data:(Type.Optional Type.Bottom);
 
   List.iter ~f:(register_module (module Handler)) sources;
+
   List.iter ~f:(register_class_definitions (module Handler)) sources;
+  List.iter ~f:(register_constructors (module Handler)) sources;
 
   register_aliases (module Handler) sources;
 
@@ -1046,7 +1062,7 @@ let populate
     sources;
 
   (* Build type order. *)
-  List.iter ~f:(register_classes (module Handler)) sources;
+  List.iter ~f:(connect_type_order (module Handler)) sources;
   TypeOrder.connect_annotations_to_top
     (module Handler.TypeOrderHandler)
     ~configuration
