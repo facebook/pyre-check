@@ -1083,8 +1083,10 @@ module State = struct
         in
 
         (* Check conditions. *)
-        forward state assign
-        |> fun state -> List.fold ~init:state ~f:forward_expression conditions
+        let state = forward state assign in
+        List.map ~f:Statement.assume conditions
+        |> List.fold ~init:state ~f:forward
+
 
       and check_expression ~resolution errors { Node.location; value } =
         match value with

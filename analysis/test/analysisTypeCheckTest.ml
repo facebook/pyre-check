@@ -1902,7 +1902,24 @@ let test_check_comprehensions _ =
     [
       "Incompatible return type [7]: Expected `typing.Dict[str, int]` but got " ^
       "`typing.Dict[int, str]`.";
-    ]
+    ];
+
+  (* TODO(T27669622): Infer the refined types. *)
+  assert_type_errors
+    {|
+      def foo(a: typing.Dict[str, typing.Optional[int]]) -> typing.Dict[str, int]:
+        return { x: y for (x, y) in a.items() if y }
+    |}
+    [
+      "Incompatible return type [7]: Expected `typing.Dict[str, int]` but " ^
+      "got `typing.Dict[str, typing.Optional[int]]`.";
+    ];
+  assert_type_errors
+    {|
+      def foo(a: typing.Dict[str, typing.Optional[int]]) -> typing.Dict[str, int]:
+        return { x: int_to_int(y) for (x, y) in a.items() if y }
+    |}
+    []
 
 
 let test_check_optional _ =
