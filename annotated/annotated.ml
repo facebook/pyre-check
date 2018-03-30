@@ -28,12 +28,12 @@ module Signature = AnnotatedSignature
 let rec resolve ~resolution expression =
   let with_generators resolution generators =
     let add_generator resolution {
-        Comprehension.target = { Node.value = target_value; _ } as target;
+        Comprehension.target;
         iterator;
         conditions;
         async = _; (* TODO(T23723699): resolve async comprehensions. *)
       } =
-      let iterator_type =
+      let iterator_annotation =
         match
           TypeOrder.join
             (Resolution.order resolution)
@@ -70,13 +70,21 @@ let rec resolve ~resolution expression =
         | _ -> []
       in
       let optional_accesses = List.concat_map ~f:collect_optionals conditions in
-      let iterator_type = match iterator_type, target_value with
-        | Type.Optional annotation, Access target_value ->
-            if List.mem ~equal:Expression.Access.equal optional_accesses target_value then
+      let iterator_annotation =
+        let rec refine_optionals annotation { Node.value; _ } =
+          match annotation, value with
+          | Type.Tuple (Type.Bounded annotations), Tuple accesses
+            when List.length annotations = List.length accesses ->
+              Type.Tuple (Type.Bounded (List.map2_exn ~f:refine_optionals annotations accesses))
+          | Type.Optional annotation, Access target_value ->
+              if List.mem ~equal:Expression.Access.equal optional_accesses target_value then
+                annotation
+              else
+                Type.Optional annotation
+          | _ ->
               annotation
-            else
-              iterator_type
-        | _ -> iterator_type
+        in
+        refine_optionals iterator_annotation target
       in
       let annotations =
         let rec add annotations_sofar target annotation =
@@ -91,7 +99,7 @@ let rec resolve ~resolution expression =
               List.fold2_exn ~init:annotations_sofar ~f:add accesses parameters
           | _ -> annotations_sofar
         in
-        add (Resolution.annotations resolution) target iterator_type
+        add (Resolution.annotations resolution) target iterator_annotation
       in
       Resolution.with_annotations resolution annotations
     in
