@@ -430,7 +430,7 @@ let fold ~resolution ~initial ~f access =
 
           | Some resolved,
             Access.Call { Node.value = ({ Expression.Call.name; _ } as call); _ }
-            when not (Type.is_not_instantiated (Annotation.annotation resolved)) &&
+            when Type.is_resolved (Annotation.annotation resolved) &&
                  Type.is_callable (Annotation.annotation resolved) &&
                  Expression.show name = "__call__" ->
               (* Callable invocation. *)

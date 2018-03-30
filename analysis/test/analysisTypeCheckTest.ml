@@ -4721,7 +4721,7 @@ let test_check_callables _ =
   (* Callable parameter checks. *)
   assert_type_errors
     {|
-      def foo(callable: typing.Callable[[str], int]) -> None:
+      def foo(callable: typing.Callable[[str], None]) -> None:
         callable(1)
     |}
     ["Incompatible parameter type [6]: Expected `str` but got `int`."]

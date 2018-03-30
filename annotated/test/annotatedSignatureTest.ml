@@ -167,7 +167,15 @@ let test_select _ =
   assert_select
     "[[int, str, str, str], int][[int, str, bool], int]"
     "(0, 'string')"
-    (`NotFound ("[[int, str, bool], int]", None))
+    (`NotFound ("[[int, str, bool], int]", None));
+
+  (* Void functions. *)
+  assert_select "[..., None]" "()" (`Found "[..., None]");
+  assert_select "[[int], None]" "(1)" (`Found "[[int], None]");
+  assert_select
+    "[[int], None]"
+    "('string')"
+    (`NotFoundMismatch (Type.string, Type.integer, None, 1))
 
 
 let () =
