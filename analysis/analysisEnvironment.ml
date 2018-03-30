@@ -1080,7 +1080,6 @@ let populate
   List.iter
     ~f:(register_dependencies ~source_root ~check_dependency_exists (module Handler))
     sources;
-  List.iter ~f:(register_functions (module Handler)) sources;
   TypeOrder.connect_annotations_to_top
     (module Handler.TypeOrderHandler)
     ~configuration
@@ -1093,6 +1092,7 @@ let populate
   if check_integrity then
     TypeOrder.check_integrity (module Handler.TypeOrderHandler);
 
+  List.iter ~f:(register_functions (module Handler)) sources;
   List.iter ~f:(register_globals (module Handler)) sources
 
 
