@@ -468,78 +468,80 @@ let fold ~resolution ~initial ~f access =
 
           | Some resolved, Access.Identifier _ ->
               (* Attribute access. *)
-              let resolved, class_attributes =
-                if Type.is_meta (Annotation.annotation resolved) then
-                  let resolved =
-                    match Annotation.annotation resolved |> Type.parameters with
-                    | [parameter] -> Annotation.create parameter
-                    | _ -> failwith "Not a meta annotation"
-                  in
-                  resolved,
-                  true
-                else
-                  resolved,
-                  false
+              let attribute ~annotation =
+                let annotation, class_attributes =
+                  if Type.is_meta annotation then
+                    let annotation =
+                      match Type.parameters annotation with
+                      | [parameter] -> parameter
+                      | _ -> failwith "Not a meta annotation"
+                    in
+                    annotation,
+                    true
+                  else
+                    annotation,
+                    false
+                in
+                Resolution.class_definition resolution annotation
+                >>| Class.create
+                >>| fun definition ->
+                let attribute =
+                  Class.attribute
+                    ~transitive:true
+                    ~class_attributes
+                    ~resolution
+                    ~name:[head]
+                    ~instantiated:annotation
+                    definition
+                in
+                attribute, definition
               in
-              let definition =
-                Resolution.class_definition
-                  resolution
-                  (Annotation.annotation resolved)
+              let attribute_with_definition =
+                match Annotation.annotation resolved with
+                | Type.Union annotations ->
+                    List.filter_map ~f:(fun annotation -> attribute ~annotation) annotations
+                    |> List.hd (* TODO(T27165573): More sophisticated algorithm for picking here. *)
+                | annotation ->
+                    attribute ~annotation
               in
-              (definition
-               >>| Class.create
-               >>| fun definition ->
-               let attribute =
-                 Class.attribute
-                   ~transitive:true
-                   ~class_attributes
-                   ~resolution
-                   ~name:[head]
-                   ~instantiated:(Annotation.annotation resolved)
-                   definition
-               in
-
-               (* Handle async attributes. *)
-               let resolved =
-                 if Attribute.async attribute then
-                   Attribute.annotation attribute
-                   |> Annotation.annotation
-                   |> Type.awaitable
-                   |> Annotation.create
-                 else
-                   Attribute.annotation attribute
-               in
-
-               if not (Attribute.defined attribute) then
-                 let attribute, resolved =
-                   match Class.fallback_attribute ~resolution ~access:[head] definition with
-                   | Some attribute ->
-                       attribute,
-                       Attribute.annotation attribute
-                   | None ->
-                       attribute,
-                       Map.find annotations lead
-                       |> Option.value ~default:(Annotation.create Type.Top)
-                 in
-                 let element = Element.Attribute attribute in
-                 Result.create
-                   ~resolution
-                   ~resolved
-                   ~accumulator:(f accumulator ~annotations ~resolved ~element)
-                   ()
-               else
-                 let resolved =
-                   (* Local definitions can override attributes. *)
-                   Map.find annotations lead
-                   |> Option.value ~default:resolved
-                 in
-                 let element = Element.Attribute attribute in
-                 Result.create
-                   ~resolution
-                   ~resolved
-                   ~accumulator:(f accumulator ~annotations ~resolved ~element)
-                   ())
-              |> Option.value ~default:(Result.abort ~resolution ~accumulator)
+              begin
+                match attribute_with_definition with
+                | Some (attribute, definition) ->
+                    (* Handle async attributes. *)
+                    let resolved =
+                      if Attribute.async attribute then
+                        Attribute.annotation attribute
+                        |> Annotation.annotation
+                        |> Type.awaitable
+                        |> Annotation.create
+                      else
+                        Attribute.annotation attribute
+                    in
+                    let attribute, resolved =
+                      if not (Attribute.defined attribute) then
+                        match Class.fallback_attribute ~resolution ~access:[head] definition with
+                        | Some attribute ->
+                            attribute,
+                            Attribute.annotation attribute
+                        | None ->
+                            attribute,
+                            Map.find annotations lead
+                            |> Option.value ~default:(Annotation.create Type.Top)
+                      else
+                        attribute,
+                        (* Local definitions can override attributes. *)
+                        Map.find annotations lead
+                        |> Option.value ~default:resolved
+                    in
+                    let element = Element.Attribute attribute in
+                    Result.create
+                      ~resolution
+                      ~resolved
+                      ~accumulator:(f accumulator ~annotations ~resolved ~element)
+                      ()
+                | None ->
+                    Result.abort ~resolution ~accumulator
+              end
 
           | Some resolved, Access.Subscript subscript ->
               (* Array access. *)

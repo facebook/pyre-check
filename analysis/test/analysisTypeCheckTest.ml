@@ -145,6 +145,10 @@ let plain_environment =
 
         class Attributes:
           int_attribute: int
+
+        class OtherAttributes:
+          int_attribute: int
+          str_attribute: str
       |};
     ];
   environment
@@ -2099,7 +2103,24 @@ let test_check_function_parameters _ =
       def baz(x: typing.Optional[int]) -> None:
           pass
     |}
-    []
+    [];
+
+  assert_type_errors
+    {|
+      def foo(x: typing.Union[Attributes, OtherAttributes])->int:
+        return x.int_attribute
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      def foo(x: typing.Union[Attributes, OtherAttributes])->int:
+        return x.str_attribute
+    |}
+    [
+      "Incompatible return type [7]: Expected `int` but got `unknown`.";
+      "Undefined attribute [16]: `Attributes` has no attribute `str_attribute`.";
+    ]
 
 
 let test_check_function_parameters_with_backups _ =
