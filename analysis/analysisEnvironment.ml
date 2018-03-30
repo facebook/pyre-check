@@ -1041,10 +1041,12 @@ let populate
   register_aliases (module Handler) sources;
   Type.TypeCache.enable ();
 
-  List.iter ~f:(register_classes (module Handler)) sources;
   List.iter
     ~f:(register_dependencies ~source_root ~check_dependency_exists (module Handler))
     sources;
+
+  (* Build type order. *)
+  List.iter ~f:(register_classes (module Handler)) sources;
   TypeOrder.connect_annotations_to_top
     (module Handler.TypeOrderHandler)
     ~configuration
