@@ -724,6 +724,7 @@ let register_class_definitions (module Handler: Handler) source =
 
 
 let register_aliases (module Handler: Handler) sources =
+  Type.TypeCache.disable ();
   let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
   let collect_aliases { Source.path; statements; qualifier; _ } =
     let visit_statement aliases { Node.value; _ } =
@@ -825,7 +826,8 @@ let register_aliases (module Handler: Handler) sources =
         List.iter ~f:show_unresolved unresolved
   in
   List.concat_map ~f:collect_aliases sources
-  |> resolve_aliases
+  |> resolve_aliases;
+  Type.TypeCache.enable ()
 
 
 let register_globals
@@ -1037,9 +1039,7 @@ let populate
   List.iter ~f:(register_module (module Handler)) sources;
   List.iter ~f:(register_class_definitions (module Handler)) sources;
 
-  Type.TypeCache.disable ();
   register_aliases (module Handler) sources;
-  Type.TypeCache.enable ();
 
   List.iter
     ~f:(register_dependencies ~source_root ~check_dependency_exists (module Handler))
