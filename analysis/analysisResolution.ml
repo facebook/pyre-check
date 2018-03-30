@@ -34,6 +34,7 @@ type t = {
   is_module: Access.t -> bool;
   module_definition: Access.t -> Module.t option;
 
+  function_definitions: Access.t -> (Define.t Node.t) list;
   class_definition: Type.t -> (Class.t Node.t) option;
 
   is_function: Access.t -> bool;
@@ -60,6 +61,7 @@ let create
     ~global
     ~is_module
     ~module_definition
+    ~function_definitions
     ~class_definition
     ~is_function
     ~function_signature
@@ -74,6 +76,7 @@ let create
     global;
     is_module;
     module_definition;
+    function_definitions;
     class_definition;
     is_function;
     function_signature;
@@ -123,6 +126,10 @@ let is_module { is_module; _ } =
 
 let module_definition { module_definition; _ } =
   module_definition
+
+
+let function_definitions { function_definitions; _ } =
+  function_definitions
 
 
 let class_definition { class_definition; _ } =

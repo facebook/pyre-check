@@ -47,9 +47,9 @@ type missing_parameter = {
 
 
 type parameter_mismatch = {
-  name: Identifier.t;
+  name: Identifier.t option;
   position: int;
-  callee: Define.t;
+  callee: Define.t option;
   mismatch: mismatch;
 }
 [@@deriving compare, eq, show, sexp, hash]
@@ -367,33 +367,31 @@ let description
                 evidence_string
             ]
         end
-    | IncompatibleParameterType {
-        name;
-        position;
-        callee = { Define.name = callee_name; parent; _ };
-        mismatch = { actual; expected };
-      } ->
-        let parent =
-          match parent with
-          | Some parent -> Format.asprintf "%a." Access.pp parent
-          | _ -> ""
+    | IncompatibleParameterType { name; position; callee; mismatch = { actual; expected } } ->
+        let evidence =
+          let parameter =
+            match name with
+            | Some name ->
+                Str.global_replace (Str.regexp "^\\$.*_") "" (Identifier.show name)
+                |> Format.asprintf "parameter `%s`"
+            | _ ->
+                "anonymous parameter"
+          in
+          let callee =
+            match callee with
+            | Some { Define.name; parent; _ } ->
+                let parent =
+                  match parent with
+                  | Some parent -> Format.asprintf "%a." Access.pp parent
+                  | _ -> ""
+                in
+                Format.asprintf "call `%s%a`." parent Access.pp name
+            | _ ->
+                "anoynmous call"
+          in
+          Format.asprintf "%s %s to %s" (ordinal position) parameter callee
         in
-        let name =
-          let replaced = Str.global_replace (Str.regexp "^\\$.*_") "" (Identifier.show name) in
-          "`" ^ replaced ^ "`"
-        in
-        [
-          Format.asprintf
-            "Expected %a but got %a."
-            Type.pp expected
-            Type.pp actual;
-          Format.asprintf
-            "%s parameter %s to call `%s%a`."
-            (ordinal position)
-            name
-            parent
-            Access.pp callee_name
-        ]
+        [Format.asprintf "Expected %a but got %a." Type.pp expected Type.pp actual; evidence]
     | IncompatibleReturnType { actual; expected } ->
         [
           (Format.asprintf
@@ -639,7 +637,8 @@ let less_or_equal ~resolution left right =
           order
           ~left:left.annotation
           ~right:right.annotation
-    | IncompatibleParameterType left, IncompatibleParameterType right when left.name = right.name ->
+    | IncompatibleParameterType left, IncompatibleParameterType right
+      when Option.equal Identifier.equal left.name right.name ->
         less_or_equal_mismatch left.mismatch right.mismatch
     | IncompatibleReturnType left, IncompatibleReturnType right ->
         less_or_equal_mismatch left right
@@ -731,8 +730,9 @@ let join ~resolution left right =
     | MissingGlobalAnnotation left, MissingGlobalAnnotation right when left.name = right.name ->
         MissingGlobalAnnotation (join_missing_annotation left right)
     | IncompatibleParameterType left, IncompatibleParameterType right
-      when left.name = right.name &&
-           left.position = right.position && Define.equal left.callee right.callee ->
+      when Option.equal Identifier.equal left.name right.name &&
+           left.position = right.position &&
+           Option.equal Define.equal left.callee right.callee ->
         IncompatibleParameterType {
           left with mismatch = join_mismatch left.mismatch right.mismatch
         }

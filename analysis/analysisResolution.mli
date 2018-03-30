@@ -30,6 +30,7 @@ val create
   -> global: (Access.t -> global option)
   -> is_module: (Access.t -> bool)
   -> module_definition: (Access.t -> Module.t option)
+  -> function_definitions: (Access.t -> (Define.t Node.t) list)
   -> class_definition:(Type.t -> (Class.t Node.t) option)
   -> is_function: (Access.t -> bool)
   -> function_signature:
@@ -59,6 +60,7 @@ val global: t -> Access.t -> global option
 
 val is_module: t -> Access.t -> bool
 val module_definition: t -> Access.t -> Module.t option
+val function_definitions: t -> Access.t -> (Define.t Node.t) list
 val class_definition: t -> Type.t -> (Class.t Node.t) option
 
 val is_function: t -> Access.t -> bool

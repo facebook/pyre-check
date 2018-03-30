@@ -215,9 +215,9 @@ let test_due_to_analysis_limitations _ =
     (Error.due_to_analysis_limitations
        (error
           (Error.IncompatibleParameterType {
-              Error.name = ~~"";
+              Error.name = Some (~~"");
               position = 1;
-              callee = mock_define.Node.value;
+              callee = Some mock_define.Node.value;
               mismatch = {
                 Error.actual = Type.Top;
                 expected = Type.Top;
@@ -227,9 +227,9 @@ let test_due_to_analysis_limitations _ =
     (Error.due_to_analysis_limitations
        (error
           (Error.IncompatibleParameterType {
-              Error.name = ~~"";
+              Error.name = Some (~~"");
               position = 1;
-              callee = mock_define.Node.value;
+              callee = Some mock_define.Node.value;
               mismatch = {
                 Error.actual = Type.Top;
                 expected = Type.string;
@@ -239,9 +239,9 @@ let test_due_to_analysis_limitations _ =
     (Error.due_to_analysis_limitations
        (error
           (Error.IncompatibleParameterType {
-              Error.name = ~~"";
+              Error.name = Some (~~"");
               position = 1;
-              callee = mock_define.Node.value;
+              callee = Some mock_define.Node.value;
               mismatch = {
                 Error.actual = Type.string;
                 expected = Type.Top;
@@ -356,9 +356,9 @@ let test_join _ =
   assert_join
     (error
        (Error.IncompatibleParameterType {
-           Error.name = ~~"";
+           Error.name = Some (~~"");
            position = 1;
-           callee = mock_define.Node.value;
+           callee = Some mock_define.Node.value;
            mismatch = {
              Error.actual = Type.integer;
              expected = Type.string;
@@ -366,9 +366,9 @@ let test_join _ =
          }))
     (error
        (Error.IncompatibleParameterType {
-           Error.name = ~~"";
+           Error.name = Some (~~"");
            position = 1;
-           callee = mock_define.Node.value;
+           callee = Some mock_define.Node.value;
            mismatch = {
              Error.actual = Type.float;
              expected = Type.string;
@@ -376,9 +376,9 @@ let test_join _ =
          }))
     (error
        (Error.IncompatibleParameterType {
-           Error.name = ~~"";
+           Error.name = Some (~~"");
            position = 1;
-           callee = mock_define.Node.value;
+           callee = Some mock_define.Node.value;
            mismatch = {
              Error.actual = Type.float;
              expected = Type.string;

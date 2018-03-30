@@ -40,3 +40,7 @@ let stop {location; _ } =
 
 let value { value; _ } =
   value
+
+
+let location { location; _ } =
+  location

@@ -29,12 +29,14 @@ let test_fold _ =
       | _, _ -> false
     in
     let printer elements =
-      let print element =
-        match snd element with
-        | Access.Element.Call _ -> "(" ^ (Annotation.show (fst element)) ^ ", Call)"
-        | Access.Element.Attribute _ -> "(" ^ (Annotation.show (fst element)) ^ ", Attribute)"
-        | Access.Element.Value -> "(" ^ (Annotation.show (fst element)) ^ ", Value)"
-        | Access.Element.Method _ -> "(" ^ (Annotation.show (fst element)) ^ ", Method) "
+      let print (annotation, element) =
+        let open Access.Element in
+        match element with
+        | Call _ -> "(" ^ (Annotation.show annotation) ^ ", Call)"
+        | Callable _ -> "(" ^ (Annotation.show annotation) ^ ", Call)"
+        | Attribute _ -> "(" ^ (Annotation.show annotation) ^ ", Attribute)"
+        | Value -> "(" ^ (Annotation.show annotation) ^ ", Value)"
+        | Method _ -> "(" ^ (Annotation.show annotation) ^ ", Method) "
       in
       List.map ~f:print elements
       |> String.concat ~sep:"\n"

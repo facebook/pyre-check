@@ -160,6 +160,7 @@ module Element = struct
 
   type t =
     | Call of call
+    | Callable of AnnotatedSignature.t
     | Attribute of Attribute.t
     | Method of method_call
     | Value
@@ -434,8 +435,8 @@ let fold ~resolution ~initial ~f access =
                  Expression.show name = "__call__" ->
               (* Callable invocation. *)
               begin
-                let call = Call.create ~kind:Call.Function call in
                 let callable =
+                  let call = Call.create ~kind:Call.Function call in
                   match Annotation.annotation resolved with
                   | Type.Callable callable -> AnnotatedSignature.select call ~resolution ~callable
                   | _ -> failwith "Failed to extract callable"
@@ -446,12 +447,22 @@ let fold ~resolution ~initial ~f access =
                     _;
                   } ->
                     let resolved = Annotation.create annotation in
-                    Result.create
-                      ~resolution
-                      ~resolved
-                      ~accumulator:(f accumulator ~annotations ~resolved ~element:Element.Value)
-                      ()
+                    let accumulator =
+                      f
+                        accumulator
+                        ~annotations
+                        ~resolved
+                        ~element:(Element.Callable callable)
+                    in
+                    Result.create ~resolution ~resolved ~accumulator ()
                 | _ ->
+                    let accumulator =
+                      f
+                        accumulator
+                        ~annotations
+                        ~resolved:(Annotation.create Type.Top)
+                        ~element:(Element.Callable callable)
+                    in
                     Result.abort ~resolution ~accumulator
               end
 

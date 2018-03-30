@@ -3,6 +3,8 @@
     This source code is licensed under the MIT license found in the
     LICENSE file in the root directory of this source tree. *)
 
+open Ast
+
 module Resolution = AnalysisResolution
 module Type = AnalysisType
 
@@ -12,11 +14,13 @@ module Call = AnnotatedCall
 type mismatch = {
   actual: Type.t;
   expected: Type.t;
+  name: Identifier.t option;
+  position: int;
 }
 [@@deriving eq, show]
 
 type reason =
-  | Mismatch of mismatch
+  | Mismatch of mismatch Node.t
 [@@deriving eq, show]
 
 type closest = {

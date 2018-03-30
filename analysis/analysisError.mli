@@ -39,9 +39,9 @@ type missing_parameter = {
 [@@deriving compare, eq, show, hash]
 
 type parameter_mismatch = {
-  name: Identifier.t;
+  name: Identifier.t option;
   position: int;
-  callee: Statement.Define.t;
+  callee: Statement.Define.t option;
   mismatch: mismatch;
 }
 [@@deriving compare, eq, show, hash]

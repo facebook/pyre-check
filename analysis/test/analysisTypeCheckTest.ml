@@ -4695,7 +4695,8 @@ let test_check_contextmanager _ =
     ]
 
 
-let test_check_callable_objects _ =
+let test_check_callables _ =
+  (* Objects with a `__call__` method are callables. *)
   assert_type_errors
     {|
       class Call:
@@ -4715,7 +4716,15 @@ let test_check_callable_objects _ =
         unittest.mock.patch()
         unittest.mock.patch()  # subequent calls should not modify annotation map
     |}
-    []
+    [];
+
+  (* Callable parameter checks. *)
+  assert_type_errors
+    {|
+      def foo(callable: typing.Callable[[str], int]) -> None:
+        callable(1)
+    |}
+    ["Incompatible parameter type [6]: Expected `str` but got `int`."]
 
 
 let assert_infer
@@ -5151,7 +5160,7 @@ let () =
     "check_meta_annotations">::test_check_meta_annotations;
     "check_unbound_variables">::test_check_unbound_variables;
     "check_contextmanager">::test_check_contextmanager;
-    "check_callable_objects">::test_check_callable_objects;
+    "check_callables">::test_check_callables;
     "infer">::test_infer;
     "infer_backward">::test_infer_backward;
     "recursive_infer">::test_recursive_infer;

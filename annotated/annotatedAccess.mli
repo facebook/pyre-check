@@ -46,6 +46,7 @@ module Element: sig
 
   type t =
     | Call of call
+    | Callable of AnnotatedSignature.t
     | Attribute of Attribute.t
     | Method of method_call
     | Value

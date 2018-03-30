@@ -610,6 +610,11 @@ let resolution
     |> Option.value ~default:[]
   in
 
+  let function_definitions name =
+    Handler.function_definitions name
+    |> Option.value ~default:[]
+  in
+
   let class_definition annotation =
     let primitive, _ = Type.split annotation in
     Handler.class_definition primitive
@@ -671,6 +676,7 @@ let resolution
     ~global:Handler.globals
     ~is_module:Handler.is_module
     ~module_definition:Handler.module_definition
+    ~function_definitions
     ~class_definition
     ~is_function:(fun name -> Handler.function_definitions name |> Option.is_some)
     ~function_signature

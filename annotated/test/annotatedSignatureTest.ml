@@ -9,6 +9,7 @@ open OUnit2
 open Ast
 open Expression
 open Statement
+open Pyre
 
 open Test
 open AnnotatedTest
@@ -59,7 +60,14 @@ let test_select _ =
       match expected with
       | `Found expected ->
           Found (parse_callable expected)
-      | `NotFoundIdentical reason ->
+      | `NotFoundNoReason ->
+          NotFound { rank = 0; callable; reason = None }
+      | `NotFoundMismatch (actual, expected, name, position) ->
+          let reason =
+            { actual; expected; name = name >>| Identifier.create; position }
+            |> Node.create_with_default_location
+            |> fun mismatch -> Some (Mismatch mismatch)
+          in
           NotFound { rank = 0; callable; reason }
       | `NotFound (closest, reason) ->
           NotFound { rank = 0; callable = parse_callable closest; reason }
@@ -80,8 +88,8 @@ let test_select _ =
   (* Traverse anonymous arguments. *)
   assert_select "[[], int]" "()" (`Found "[[], int]");
 
-  assert_select "[[int], int]" "()" (`NotFoundIdentical None);
-  assert_select "[[], int]" "(1)" (`NotFoundIdentical None);
+  assert_select "[[int], int]" "()" `NotFoundNoReason;
+  assert_select "[[], int]" "(1)" `NotFoundNoReason;
 
   assert_select "[[int], int]" "(1)" (`Found "[[int], int]");
   assert_select "[[Named(i, int)], int]" "(1)" (`Found "[[Named(i, int)], int]");
@@ -89,8 +97,8 @@ let test_select _ =
   assert_select
     "[[int], int]"
     "('string')"
-    (`NotFoundIdentical (Some (Mismatch { actual = Type.string; expected = Type.integer })));
-  assert_select "[[int], int]" "(name='string')" (`NotFoundIdentical None);
+    (`NotFoundMismatch (Type.string, Type.integer, None, 1));
+  assert_select "[[int], int]" "(name='string')" `NotFoundNoReason;
 
   (* Traverse variable arguments. *)
   assert_select "[[Variable(variable)], int]" "()" (`Found "[[Variable(variable)], int]");
@@ -113,21 +121,21 @@ let test_select _ =
     "[[Named(i, int), Named(j, int)], int]"
     "(j=1, i=2)"
     (`Found "[[Named(i, int), Named(j, int)], int]");
-  assert_select "[[Named(i, int), Named(j, int)], int]" "(j=1, q=2)" (`NotFoundIdentical None);
+  assert_select "[[Named(i, int), Named(j, int)], int]" "(j=1, q=2)" `NotFoundNoReason;
   assert_select
     "[[Named(i, int), Named(j, int)], int]"
     "(j=1, j=2, q=3)"
-    (`NotFoundIdentical None);
+    `NotFoundNoReason;
   assert_select
     "[[Named(i, int), Named(j, str)], int]"
     "(i=1, j=2)"
-    (`NotFoundIdentical (Some (Mismatch { actual = Type.integer; expected = Type.string })));
+    (`NotFoundMismatch (Type.integer, Type.string, Some "j", 0));
 
   (* Keywords. *)
   assert_select "[[Keywords(keywords)], int]" "()" (`Found "[[Keywords(keywords)], int]");
   assert_select "[[Keywords(keywords)], int]" "(a=1, b=2)" (`Found "[[Keywords(keywords)], int]");
 
-  assert_select "[[int], int]" "(**a)" (`NotFoundIdentical None);
+  assert_select "[[int], int]" "(**a)" `NotFoundNoReason;
   assert_select "[[Named(i, int)], int]" "(**a)" (`Found "[[Named(i, int)], int]");
   assert_select "[[int, Named(i, int)], int]" "(1, **a)" (`Found "[[int, Named(i, int)], int]");
 
@@ -144,12 +152,8 @@ let test_select _ =
   assert_select
     "[[typing.Sequence[_T]], int]"
     "(1)"
-    (`NotFoundIdentical
-       (Some
-          (Mismatch {
-              actual = Type.integer;
-              expected = Type.parametric "typing.Sequence" [Type.variable "_T"];
-            })));
+    (`NotFoundMismatch
+       (Type.integer, Type.parametric "typing.Sequence" [Type.variable "_T"], None, 1));
 
   (* Ranking. *)
   assert_select

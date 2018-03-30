@@ -15,6 +15,7 @@ val create: location: Location.t -> 'node_value -> 'node_value t
 val create_with_default_location: 'node_value -> 'node_value t
 
 val value: 'node_type t -> 'node_type
+val location: 'node_type t -> Location.t
 
 val start: 'node_type t -> Location.position
 val stop: 'node_type t -> Location.position

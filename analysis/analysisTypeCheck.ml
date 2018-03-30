@@ -849,9 +849,9 @@ module State = struct
                     Some {
                       Error.location;
                       kind = Error.IncompatibleParameterType {
-                          Error.name;
+                          Error.name = Some name;
                           position = position + offset + start_position;
-                          callee;
+                          callee = Some callee;
                           mismatch = { Error.expected; actual };
                         };
                       define = define_node;
@@ -905,6 +905,40 @@ module State = struct
                 in
                 let parameter_errors = check_parameters ~resolution call callee in
                 undefined_function_error @ parameter_errors
+            | Callable
+                (Annotated.Signature.NotFound {
+                    Annotated.Signature.callable = { Type.Callable.kind; _ };
+                    reason = Some (Annotated.Signature.Mismatch mismatch);
+                    _;
+                  }) ->
+                let open Annotated.Signature in
+                let mismatch, name, position, location =
+                  let { Annotated.Signature.actual; expected; name; position } =
+                    Node.value mismatch
+                  in
+                  { Error.actual; expected }, name, position, (Node.location mismatch)
+                in
+                let callee =
+                  match kind with
+                  | Type.Callable.Named access ->
+                      Resolution.function_definitions resolution access
+                      |> List.hd
+                      >>| Node.value
+                  | _ ->
+                      None
+                in
+                [
+                  {
+                    Error.location;
+                    kind = Error.IncompatibleParameterType {
+                        Error.name;
+                        position;
+                        callee;
+                        mismatch;
+                      };
+                    define = define_node;
+                  };
+                ]
             | Method { location; access; annotation; call; callee; backup; } ->
                 let annotation = Annotation.original annotation in
                 let unresolved_method_errors =
