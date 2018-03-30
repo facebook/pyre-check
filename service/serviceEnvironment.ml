@@ -392,7 +392,7 @@ let shared_memory_handler
         Globals.add access global
 
 
-      let register_type =
+      let connect_definition =
         let add_class_definition ~primitive ~definition =
           let definition =
             let open Ast in
@@ -408,7 +408,7 @@ let shared_memory_handler
           ClassDefinitions.remove_batch (ClassDefinitions.KeySet.singleton primitive);
           ClassDefinitions.add primitive definition
         in
-        Environment.register_type
+        Environment.connect_definition
           ~order:(module TypeOrderHandler: TypeOrder.Handler)
           ~configuration
           ~aliases:Aliases.get

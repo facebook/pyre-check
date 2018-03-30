@@ -254,7 +254,7 @@ let test_register_aliases _ =
     (Type.parametric "typing.Iterable" [Type.Object])
 
 
-let test_register_type _ =
+let test_connect_definition _ =
   let environment = Environment.Builder.create ~configuration () in
   let (module Handler: Environment.Handler) = Environment.handler ~configuration environment in
   let c_primitive = Type.primitive "C" in
@@ -272,11 +272,12 @@ let test_register_type _ =
     }
   in
 
-  let primitive, parameters = Handler.register_type
+  let primitive, parameters =
+    Handler.connect_definition
       ~path:"a.py"
-      Type.Bottom
-      (Access.create "C")
-      (Some class_definition)
+      ~predecessor:Type.Bottom
+      ~name:(Access.create "C")
+      ~definition:(Some class_definition)
   in
   assert_equal primitive c_primitive;
   assert_equal parameters [];
@@ -1806,7 +1807,7 @@ let () =
     "copy">::test_copy;
     "register_class_definitions">::test_register_class_definitions;
     "register_aliases">::test_register_aliases;
-    "register_type">::test_register_type;
+    "connect_definition">::test_connect_definition;
     "register_globals">::test_register_globals;
     "connect_type_order">::test_register_functions;
     "populate">::test_populate;

@@ -36,11 +36,11 @@ module type Handler = sig
     -> unit
   val register_dependency: path: string -> dependency: string -> unit
   val register_global: path: string -> access: Access.t -> global: Resolution.global -> unit
-  val register_type
+  val connect_definition
     :  path: string
-    -> Type.t
-    -> Access.t
-    -> (Class.t Node.t) option
+    -> predecessor: Type.t
+    -> name: Access.t
+    -> definition: (Class.t Node.t) option
     -> (Type.t * Type.t list)
   val register_alias: path: string -> key: Type.t -> data: Type.t -> unit
   val purge: File.Handle.t -> unit
@@ -65,7 +65,7 @@ module type Handler = sig
   module TypeOrderHandler: TypeOrder.Handler
 end
 
-let register_type
+let connect_definition
     ~order
     ~configuration
     ~aliases
@@ -73,7 +73,7 @@ let register_type
     ~add_class_key
     ~add_protocol
     ~register_global =
-  let rec register_type ~path subtype name definition =
+  let rec connect_definition ~path ~predecessor ~name ~definition =
     let annotation =
       Type.create
         ~aliases
@@ -81,14 +81,14 @@ let register_type
     in
     let primitive, parameters = Type.split annotation in
     let (module Handler: TypeOrder.Handler) = order in
-    if Handler.contains (Handler.indices ()) subtype &&
+    if Handler.contains (Handler.indices ()) predecessor &&
        Handler.contains (Handler.indices ()) primitive &&
-       not (Type.equal subtype primitive) then
+       not (Type.equal predecessor primitive) then
       TypeOrder.connect
         order
         ~add_backedge:true
         ~configuration
-        ~predecessor:subtype
+        ~predecessor
         ~successor:primitive
         ~parameters;
     (* Register meta annotation. *)
@@ -143,7 +143,7 @@ let register_type
                 let super_annotation, parameters =
                   match qualified_name with
                   | Some name ->
-                      register_type ~path annotation name None
+                      connect_definition ~path ~predecessor:annotation ~name ~definition:None
                   | None ->
                       Type.Object, [] in
                 if not (Type.equal primitive super_annotation) &&
@@ -183,7 +183,7 @@ let register_type
           ()
     end;
     primitive, parameters
-  in register_type
+  in connect_definition
 
 
 let handler
@@ -250,7 +250,7 @@ let handler
       Hashtbl.set ~key:access ~data:global globals
 
 
-    let register_type =
+    let connect_definition =
       let add_class_definition ~primitive ~definition =
         let definition =
           match Hashtbl.find class_definitions primitive with
@@ -264,7 +264,7 @@ let handler
         in
         Hashtbl.set class_definitions ~key:primitive ~data:definition
       in
-      register_type
+      connect_definition
         ~order:(TypeOrder.handler order)
         ~configuration
         ~aliases:(Hashtbl.find aliases)
@@ -941,7 +941,11 @@ let connect_type_order (module Handler: Handler) source =
       let statement { Source.path; _ } _ = function
         | { Node.location; value = Class ({ Class.name; _ } as definition) }
         | { Node.location; value = Stub (Stub.Class ({ Class.name; _ } as definition)) } ->
-            Handler.register_type ~path Type.Bottom name (Some (Node.create ~location definition))
+            Handler.connect_definition
+              ~path
+              ~predecessor:Type.Bottom
+              ~name
+              ~definition:(Some (Node.create ~location definition))
             |> ignore;
         | _ ->
             ()
