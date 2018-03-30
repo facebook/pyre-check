@@ -572,7 +572,17 @@ let test_mismatch_with_any _ =
     (Type.mismatch_with_any
        (Type.iterator (Type.list Type.integer))
        (Type.generator (Type.list Type.Object)));
-  assert_false (Type.mismatch_with_any (Type.iterator Type.integer) (Type.generator Type.float))
+  assert_false (Type.mismatch_with_any (Type.iterator Type.integer) (Type.generator Type.float));
+
+  assert_true
+    (Type.mismatch_with_any
+       (Type.Union [Type.list Type.integer; Type.string])
+       (Type.list Type.Object));
+
+  assert_false
+    (Type.mismatch_with_any
+       (Type.Union [Type.list Type.integer; Type.string])
+       (Type.parametric "unknown" [Type.Object]))
 
 
 let test_optional_value _ =

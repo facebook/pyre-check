@@ -1186,10 +1186,7 @@ let rec mismatch_with_any left right =
       mismatched left right || mismatched right left
   | Union union, other
   | other, Union union ->
-      if List.mem ~equal union Object then
-        mismatch_with_any Object other
-      else
-        false
+      List.exists ~f:(mismatch_with_any other) union
 
   | _ ->
       false
