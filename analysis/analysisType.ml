@@ -457,7 +457,7 @@ let union parameters =
           annotation :: sofar
     in
     Set.fold ~init:[] ~f:filter_redundant_annotations parameters
-    |> List.sort ~cmp:compare
+    |> List.sort ~compare
   in
   if List.mem ~equal parameters Object then
     Object

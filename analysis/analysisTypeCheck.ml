@@ -2074,7 +2074,7 @@ let check configuration environment ?mode_override ({ Source.path; _ } as source
     else
       errors @ added_global_errors
       |> List.map ~f:(Error.dequalify dequalify_map environment)
-      |> List.sort ~cmp:Error.compare
+      |> List.sort ~compare:Error.compare
       |> fun errors -> {
         Result.errors;
         lookup = Some lookup;
@@ -2092,7 +2092,7 @@ let check configuration environment ?mode_override ({ Source.path; _ } as source
       |> List.concat
       |> Error.join_at_source ~resolution
       |> List.map ~f:(Error.dequalify dequalify_map environment)
-      |> List.sort ~cmp:Error.compare
+      |> List.sort ~compare:Error.compare
     in
 
     let coverage =

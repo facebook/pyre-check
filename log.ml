@@ -128,7 +128,7 @@ let rotate ?(number_to_keep = 10) basename =
     |> Sys.ls_dir
     (* The "." is to prevent us from counting a symlinked log as a log to keep. *)
     |> List.filter ~f:(String.is_prefix ~prefix:((Filename.basename basename) ^ "."))
-    |> List.sort ~cmp:String.compare (* Sorts by earliest date, i.e. least recent *)
+    |> List.sort ~compare:String.compare (* Sorts by earliest date, i.e. least recent *)
     |> List.rev
     |> (fun list -> List.drop list number_to_keep)
     |> List.iter

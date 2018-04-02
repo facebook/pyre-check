@@ -42,10 +42,10 @@ let test_flatten _ =
         |> Option.value ~default:"NONE"
       in
       assert_equal
-        (List.map ~f:get_path update_environment_with |> List.sort ~cmp:String.compare)
+        (List.map ~f:get_path update_environment_with |> List.sort ~compare:String.compare)
         ["a.py"; "b.py"];
       assert_equal
-        (List.map ~f:get_path check |> List.sort ~cmp:String.compare)
+        (List.map ~f:get_path check |> List.sort ~compare:String.compare)
         ["a.py"; "b.py"; "c.py"]
   | _ ->
       assert_unreached ()

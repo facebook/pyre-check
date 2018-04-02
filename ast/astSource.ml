@@ -72,8 +72,7 @@ module Metadata = struct
             Str.matched_group 2 line
             |> Str.split (Str.regexp "[^0-9]+")
             |> List.map ~f:Int.of_string
-          with
-            Not_found -> []
+          with Not_found -> []
         in
         let ignored_line =
           if String.is_prefix ~prefix:"#" (String.strip line) then

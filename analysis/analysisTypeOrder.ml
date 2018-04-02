@@ -1180,7 +1180,7 @@ let check_integrity (module Handler: Handler) =
 
 
 let to_dot (module Handler: Handler) =
-  let indices = List.sort ~cmp:compare (Handler.keys ()) in
+  let indices = List.sort ~compare (Handler.keys ()) in
   let nodes =
     List.map ~f:(fun index -> (index, Handler.find_unsafe (Handler.annotations ()) index)) indices
   in
@@ -1193,7 +1193,7 @@ let to_dot (module Handler: Handler) =
     nodes;
   let add_edges index =
     Handler.find (Handler.edges ()) index
-    >>| List.sort ~cmp:compare
+    >>| List.sort ~compare
     >>| List.iter ~f:(
       fun { Target.target = successor; parameters } ->
         Format.asprintf "  %d -> %d" index successor

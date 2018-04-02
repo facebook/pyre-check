@@ -5,7 +5,7 @@
   core,
   sexplib,
   yojson,
-  ppx_core,
+  ppxlib,
   ppx_deriving.eq,
   ppx_deriving.show,
   ppx_deriving_yojson,
@@ -18,7 +18,7 @@ not <command/*>: package(
   core,
   sexplib,
   yojson,
-  ppx_core,
+  ppxlib,
   ppx_compare,
   ppx_deriving.eq,
   ppx_deriving.show,
@@ -33,5 +33,5 @@ true: bin_annot
 true: annot
 true: thread
 true: use_menhir
-true: warn(A-4-32-39-42-44-48-57)
+true: warn(A-3-4-32-39-42-44-48-57)
 true: optimize(3)

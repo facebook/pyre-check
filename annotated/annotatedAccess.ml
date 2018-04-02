@@ -127,7 +127,7 @@ module Signature = struct
             List.map
               ~f:(fun signature -> signature, count_call_errors ~resolution call signature)
               signatures
-            |> List.min_elt ~cmp:(fun (_, left) (_, right) -> Int.compare left right)
+            |> List.min_elt ~compare:(fun (_, left) (_, right) -> Int.compare left right)
             >>| fst
 end
 

@@ -322,7 +322,7 @@ let shared_memory_handler
         let show () =
           let keys =
             keys ()
-            |> List.sort ~cmp:Int.compare
+            |> List.sort ~compare:Int.compare
           in
           let serialized_keys = List.to_string ~f:Int.to_string keys in
           let serialized_annotations =

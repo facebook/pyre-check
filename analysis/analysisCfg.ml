@@ -169,7 +169,7 @@ let pp format graph =
     Format.fprintf format "%a\n" Node.pp (Hashtbl.find_exn graph index)
   in
   Hashtbl.keys graph
-  |> List.sort ~cmp:Int.compare
+  |> List.sort ~compare:Int.compare
   |> List.iter ~f:print_node
 
 
