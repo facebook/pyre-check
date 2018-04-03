@@ -113,7 +113,7 @@ let callable ({ Define.name; parameters; parent; _ } as define) ~resolution =
       Parameter.Named { Parameter.name = access; annotation }
   in
   let name = parent >>| (fun parent -> parent @ name) |> Option.value ~default:name in
-  Type.Callable {
+  {
     kind = Named name;
     overloads = [
       {

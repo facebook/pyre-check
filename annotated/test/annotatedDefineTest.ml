@@ -57,6 +57,7 @@ let test_callable _ =
       |> (fun define -> { define with Statement.Define.parent })
       |> Define.create
       |> Define.callable ~resolution
+      |> fun callable -> Type.Callable callable
     in
     assert_equal
       ~printer:Type.show

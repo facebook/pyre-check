@@ -1002,6 +1002,7 @@ let register_functions
           let callable =
             Annotated.Define.create define
             |> Annotated.Define.callable ~resolution
+            |> fun callable -> Type.Callable callable
             |> Annotation.create_immutable ~global:true
             |> Node.create ~location
           in
