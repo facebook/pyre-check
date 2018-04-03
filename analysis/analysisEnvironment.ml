@@ -991,6 +991,14 @@ let register_functions
           Handler.register_definition ~path ?name_override (Node.create ~location define);
 
           (* Register callable global. *)
+          let name =
+            if constructor then
+              parent
+              >>| (fun parent -> parent @ [Access.Identifier (Identifier.create "__init__")])
+              |> Option.value ~default:name
+            else
+              name
+          in
           let callable =
             Annotated.Define.create define
             |> Annotated.Define.callable ~resolution

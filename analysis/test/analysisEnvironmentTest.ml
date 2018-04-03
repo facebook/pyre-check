@@ -398,7 +398,7 @@ let test_register_functions _ =
     "function_with_arguments"
     (Some "typing.Callable('function_with_arguments')[[Named(i, int)], None]");
   assert_global
-    "Class"
+    "Class.__init__"
     (Some "typing.Callable('Class.Class')[[Named(self, $unknown)], Class]")  (* Eww... *)
 
 
@@ -508,6 +508,20 @@ let test_populate _ =
        ~global:true
        ~original:(Some Type.Top)
        (Type.meta (Type.primitive "Class")));
+  assert_global
+    "Class.__init__"
+    (Annotation.create_immutable
+       ~global:true
+       (Type.callable
+          ~name:(Access.create "Class.Class")
+          ~parameters:(Type.Callable.Defined [
+              Type.Callable.Parameter.Named {
+                Type.Callable.Parameter.name = Access.create "self";
+                annotation = Type.Top;
+              };
+            ])
+          ~annotation:(Type.primitive "Class")
+          ()));
 
   (* Loops. *)
   try
