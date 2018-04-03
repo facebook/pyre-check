@@ -258,7 +258,14 @@ let select call ~resolution ~callable:({ Type.Callable.overloads; _ } as callabl
               | _ ->
                   false
             in
+            let has_default = function
+              | Parameter.Named { Parameter.default; _ } ->
+                  default
+              | _ ->
+                  false
+            in
             List.drop_while ~f:parameter_consumed parameters
+            |> List.filter ~f:(fun parameter -> not (has_default parameter))
           in
 
           { arguments; parameters; constraints; reason }

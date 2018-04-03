@@ -119,6 +119,10 @@ let test_select _ =
     "(i=1, j=2)"
     (`Found "[[Named(i, int), Named(j, int)], int]");
   assert_select
+    "[[Named(i, int), Named(j, int, default)], int]"
+    "(i=1)"
+    (`Found "[[Named(i, int), Named(j, int, default)], int]");
+  assert_select
     "[[Named(i, int), Named(j, int)], int]"
     "(j=1, i=2)"
     (`Found "[[Named(i, int), Named(j, int)], int]");
