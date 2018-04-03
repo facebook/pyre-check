@@ -980,7 +980,7 @@ let register_dependencies
               let import_accesses =
                 match from with
                 (* If analyzing from x import y, only add x to the dependencies.
-                 * Otherwise, add all dependencies. *)
+                   Otherwise, add all dependencies. *)
                 | None -> imports |> List.map ~f:(fun { Import.name; _ } -> name)
                 | Some base_module -> [base_module]
               in
