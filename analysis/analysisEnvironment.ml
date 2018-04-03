@@ -923,33 +923,6 @@ let register_globals
   List.iter ~f:visit statements
 
 
-let register_constructors (module Handler: Handler) source =
-  let resolution = resolution (module Handler: Handler) ~annotations:Access.Map.empty () in
-
-  let module Visit = Visit.MakeStatementVisitor(struct
-      type t = unit
-
-      let statement { Source.path; _ } _ = function
-        | { Node.location; value = Class definition }
-        | { Node.location; value = Stub (Stub.Class definition ) } ->
-            (* Register constructors. *)
-            let constructors =
-              Node.create ~location definition
-              |> Annotated.Class.create
-              |> Annotated.Class.constructors ~resolution
-            in
-            let register constructor =
-              Node.create ~location constructor
-              |> Handler.register_definition ~path
-            in
-            List.iter ~f:register constructors;
-        | _ ->
-            ()
-    end)
-  in
-  Visit.visit () source |> ignore
-
-
 let connect_type_order (module Handler: Handler) source =
   let module Visit = Visit.MakeStatementVisitor(struct
       type t = unit
@@ -1032,17 +1005,34 @@ let register_functions
       type t = unit
 
       let statement { Source.path; _ } _ = function
-        | { Node.value = Define definition; location }
-        | { Node.value = Stub (Stub.Define definition); location } ->
+        | { Node.location; value = Class definition }
+        | { Node.location; value = Stub (Stub.Class definition ) } ->
+            (* Register constructors. *)
+            let constructors =
+              Node.create ~location definition
+              |> Annotated.Class.create
+              |> Annotated.Class.constructors ~resolution
+            in
+            let register constructor =
+              Node.create ~location constructor
+              |> Handler.register_definition ~path
+            in
+            List.iter ~f:register constructors;
+
+        | { Node.location; value = Define ({ Define.name; parent; _ } as definition) }
+        | {
+            Node.location;
+            value = Stub (Stub.Define ({ Define.name; parent; _ } as definition));
+          } ->
             let define =
               Annotated.Define.create definition
               |> Annotated.Define.apply_decorators ~resolution
               |> Annotated.Define.define
             in
             if Define.is_method define then
-              let parent = Option.value_exn define.Define.parent in
+              let parent = Option.value_exn parent in
               Node.create ~location define
-              |> Handler.register_definition ~path ~name_override:(parent @ definition.Define.name)
+              |> Handler.register_definition ~path ~name_override:(parent @ name)
             else
               Node.create ~location define
               |> Handler.register_definition ~path
@@ -1073,7 +1063,6 @@ let populate
   List.iter ~f:(register_module (module Handler)) sources;
 
   List.iter ~f:(register_class_definitions (module Handler)) sources;
-  List.iter ~f:(register_constructors (module Handler)) sources;
 
   register_aliases (module Handler) sources;
 
