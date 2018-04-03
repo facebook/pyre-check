@@ -33,6 +33,7 @@ let test_select _ =
           _T = typing.TypeVar('_T')
           _S = typing.TypeVar('_S')
           class typing.Generic: ...
+          class typing.Type(typing.Generic[_T]): ...
           class typing.Sequence(typing.Generic[_S]): ...
           class list(typing.Generic[_T], typing.Sequence[_T]): ...
         |}
@@ -141,6 +142,7 @@ let test_select _ =
 
   (* Constraint resolution. *)
   assert_select "[[_T], _T]" "(1)" (`Found "[[int], int]");
+  assert_select "[[typing.Type[_T]], _T]" "(int)" (`Found "[[typing.Type[int]], int]");
   assert_select "[[_T, _S], _T]" "(1, 'string')" (`Found "[[int, str], int]");
   assert_select
     "[[_T, _T], int]"

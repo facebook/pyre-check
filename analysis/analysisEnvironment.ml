@@ -1165,11 +1165,11 @@ module Builder = struct
 
     (* Add classes for `typing.Optional` and `typing.Unbound` that are currently not encoded in the
        stubs. *)
-    let add_special_class name =
+    let add_special_class name bases =
       let definition =
         {
           Class.name = Access.create name;
-          bases = [];
+          bases = bases;
           body = [];
           decorators = [];
           docstring = None;
@@ -1180,7 +1180,18 @@ module Builder = struct
         ~data:(Node.create_with_default_location definition)
         class_definitions;
     in
-    List.iter ~f:add_special_class ["typing.Optional"; "typing.Unbound"];
+    List.iter
+      ~f:(fun (name, bases) -> add_special_class name bases)
+      [
+        "typing.Optional", [];
+        "typing.Unbound", [];
+        "typing.Type", [
+          {
+            Argument.name = None;
+            value = Type.parametric "typing.Generic" [Type.variable "typing._T"] |> Type.expression
+          };
+        ];
+      ];
 
     {
       function_definitions;
