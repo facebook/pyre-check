@@ -174,6 +174,7 @@ let test_create _ =
     (Type.Callable {
         kind = Type.Callable.Named (Access.create "name");
         overloads = [ { annotation = Type.integer; parameters = Undefined }];
+        implicit_argument = false;
       });
   assert_create
     "typing.Other('name')[..., int]"
@@ -192,6 +193,7 @@ let test_create _ =
               ];
           };
         ];
+        implicit_argument = false;
       });
   assert_create
     "typing.Callable[[int, Named(a, int), Variable(variable), Keywords(keywords)], int]"
@@ -211,6 +213,7 @@ let test_create _ =
               ];
           };
         ];
+        implicit_argument = false;
       });
   assert_create "typing.Callable[int]" Type.Top
 

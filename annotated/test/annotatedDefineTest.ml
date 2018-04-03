@@ -86,7 +86,39 @@ let test_callable _ =
   assert_callable
     ~parent:"module.Foo"
     "def foo(a: int, b) -> str: ..."
-    "typing.Callable('module.Foo.foo')[[Named(a, int), Named(b, $unknown)], str]"
+    "typing.Callable('module.Foo.foo')[[Named(a, int), Named(b, $unknown)], str]";
+
+  let assert_implicit_argument ?parent source expected =
+    let resolution = populate source |> resolution in
+    let implicit_argument =
+      let parent = parent >>| Access.create in
+      parse_single_define source
+      |> (fun define -> { define with Statement.Define.parent })
+      |> Define.create
+      |> Define.callable ~resolution
+      |> fun { Type.Callable.implicit_argument; _ } -> implicit_argument
+    in
+    assert_equal
+      expected
+      implicit_argument
+  in
+  assert_implicit_argument "def foo(self) -> None: ..." false;
+  assert_implicit_argument ~parent:"module.Foo" "def foo(self) -> None: ..." true;
+  assert_implicit_argument
+    ~parent:"module.Foo"
+    {|
+      @classmethod
+      def foo(cls, other) -> None: ...
+    |}
+    true;
+  assert_implicit_argument
+    ~parent:"module.Foo"
+    {|
+      @staticmethod
+      def foo(other) -> None: ...
+    |}
+    false
+
 
 
 let test_parent_definition _ =

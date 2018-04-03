@@ -121,6 +121,7 @@ let callable ({ Define.name; parameters; parent; _ } as define) ~resolution =
         parameters = Defined (List.map ~f:parameter parameters);
       }
     ];
+    implicit_argument = Option.is_some parent && not (Define.is_static_method define);
   }
 
 

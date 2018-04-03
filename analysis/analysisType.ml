@@ -50,8 +50,15 @@ module Record = struct
       {
         kind: kind;
         overloads: ('annotation overload) list;
+        implicit_argument: bool;
       }
     [@@deriving compare, eq, sexp, show, hash]
+
+
+    let equal_record equal_annotation left right =
+      (* Ignores implicit argument to simplify unit tests. *)
+      equal_kind left.kind right.kind &&
+      List.equal ~equal:(equal_overload equal_annotation) left.overloads right.overloads
   end
 end
 
@@ -180,7 +187,7 @@ let rec pp format annotation =
   match annotation with
   | Bottom ->
       Format.fprintf format "`typing.Any`"
-  | Callable { kind; overloads } ->
+  | Callable { kind; overloads; _ } ->
       let kind =
         match kind with
         | Anonymous -> ""
@@ -299,7 +306,7 @@ let bytes =
 
 let callable ?name ?(overloads = []) ?(parameters = Undefined) ~annotation () =
   let kind = name >>| (fun name -> Named name) |> Option.value ~default:Anonymous in
-  Callable { kind; overloads = { annotation; parameters } :: overloads }
+  Callable { kind; overloads = { annotation; parameters } :: overloads; implicit_argument = false }
 
 
 let complex =
@@ -369,6 +376,7 @@ let lambda ~parameters ~return_annotation =
                parameters);
       };
     ];
+    implicit_argument = false;
   }
 
 
@@ -636,7 +644,7 @@ let create ~aliases { Node.value = expression; _ } =
                         | Some name -> Named name
                         | None -> Anonymous
                       in
-                      Callable { kind; overloads }
+                      Callable { kind; overloads; implicit_argument = false }
                     else
                       Top
                 | _ ->
@@ -1250,7 +1258,7 @@ let instantiate ?(widen = false) annotation ~constraints =
           match annotation with
           | Optional parameter ->
               optional (instantiate parameter)
-          | Callable { kind; overloads } ->
+          | Callable { kind; overloads; implicit_argument } ->
               let instantiate { annotation; parameters } =
                 let parameters  =
                   match parameters with
@@ -1273,7 +1281,7 @@ let instantiate ?(widen = false) annotation ~constraints =
                 in
                 { annotation = instantiate annotation; parameters }
               in
-              Callable { kind; overloads = List.map ~f:instantiate overloads }
+              Callable { kind; overloads = List.map ~f:instantiate overloads; implicit_argument }
           | Parametric ({ parameters; _ } as parametric) ->
               Parametric {
                 parametric with
@@ -1354,9 +1362,9 @@ module Callable = struct
     | ({ kind = Named _; _ } as initial) :: overloads ->
         let fold sofar overload =
           match sofar, overload with
-          | Some sofar, { kind; overloads } ->
-              if equal_kind kind sofar.kind then
-                Some { kind; overloads = sofar.overloads @ overloads}
+          | Some sofar, { kind; overloads; implicit_argument } ->
+              if equal_kind kind sofar.kind && implicit_argument = sofar.implicit_argument then
+                Some { kind; overloads = sofar.overloads @ overloads; implicit_argument }
               else
                 None
           | _ ->

@@ -302,7 +302,11 @@ let select call ~resolution ~callable:({ Type.Callable.overloads; _ } as callabl
           begin
             match reason with
             | None ->
-                Type.Callable { Type.Callable.kind = Anonymous; overloads = [overload] }
+                Type.Callable {
+                  Type.Callable.kind = Anonymous;
+                  overloads = [overload];
+                  implicit_argument = false;
+                }
                 |> Type.instantiate ~widen:false ~constraints:(Map.find constraints)
                 |> (function
                     | Type.Callable { overloads = [instantiated]; _  } ->

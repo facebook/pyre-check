@@ -44,6 +44,7 @@ module Record : sig
       {
         kind: kind;
         overloads: ('annotation overload) list;
+        implicit_argument: bool;
       }
     [@@deriving compare, eq, sexp, show, hash]
   end
