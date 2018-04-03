@@ -365,18 +365,35 @@ let test_register_functions _ =
   let (module Handler: Environment.Handler) = Environment.handler ~configuration environment in
   let source =
     parse {|
-       class C:
-         ...
-       class D(C):
-         pass
-       B = D
-       A = B
-       def foo()->A:
-         return D()
+       def function() -> int: ...
+       def function_with_arguments(i: int) -> None: ...
+       class Class: ...
     |}
   in
   Environment.register_functions (module Handler) source;
-  assert_is_some (Handler.function_definitions (access ["foo"]))
+  assert_is_some (Handler.function_definitions (access ["function"]));
+  assert_is_some (Handler.function_definitions (access ["Class"]));
+
+  let assert_global access expected =
+    let actual =
+      Access.create access
+      |> Handler.globals
+      >>| fun { Resolution.annotation; _ } -> Annotation.annotation annotation
+    in
+    let expected =
+      expected
+      >>| parse_single_expression
+      >>| Type.create ~aliases:(fun _ -> None)
+    in
+    assert_equal
+      ~printer:(function | Some annotation -> Type.show annotation | _ -> "None")
+      ~cmp:(Option.equal Type.equal)
+      expected
+      actual
+  in
+  assert_global "function" (Some "typing.Callable[..., int]");
+  assert_global "function_with_arguments" (Some "typing.Callable[..., None]");
+  assert_global "Class" (Some "typing.Callable[..., Class]")
 
 
 let test_populate _ =
@@ -1811,7 +1828,7 @@ let () =
     "register_aliases">::test_register_aliases;
     "connect_definition">::test_connect_definition;
     "register_globals">::test_register_globals;
-    "connect_type_order">::test_register_functions;
+    "register_functions">::test_register_functions;
     "populate">::test_populate;
     "infer_protocols">::test_infer_protocols;
     "less_or_equal">::test_less_or_equal;
