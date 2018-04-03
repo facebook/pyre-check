@@ -391,9 +391,13 @@ let test_register_functions _ =
       expected
       actual
   in
-  assert_global "function" (Some "typing.Callable[..., int]");
-  assert_global "function_with_arguments" (Some "typing.Callable[..., None]");
-  assert_global "Class" (Some "typing.Callable[..., Class]")
+  assert_global "function" (Some "typing.Callable('function')[[], int]");
+  assert_global
+    "function_with_arguments"
+    (Some "typing.Callable('function_with_arguments')[[Named(i, int)], None]");
+  assert_global
+    "Class"
+    (Some "typing.Callable('Class.Class')[[Named(self, $unknown)], Class]")  (* Eww... *)
 
 
 let test_populate _ =
@@ -504,7 +508,11 @@ let test_populate _ =
         Resolution.annotation =
           Annotation.create_immutable
             ~global:true
-            (Type.callable ~annotation:Type.Top ());
+            (Type.callable
+               ~name:(Access.create "function")
+               ~parameters:(Type.Callable.Defined [])
+               ~annotation:Type.Top
+               ());
         location = create_location "test.py" 9 0 10 6;
       });
   assert_equal
@@ -515,7 +523,11 @@ let test_populate _ =
           Annotation.create_immutable
             ~global:true
             ~original:(Some Type.Top)
-            (Type.callable ~annotation:Type.Top ());
+            (Type.callable
+               ~name:(Access.create "function")
+               ~parameters:(Type.Callable.Defined [])
+               ~annotation:Type.Top
+               ());
         location = create_location "test.py" 6 0 6 15;
       });
 

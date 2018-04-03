@@ -185,32 +185,14 @@ let handler
     }
     ~configuration =
   let (module DependencyHandler: Dependencies.Handler) = Dependencies.handler dependencies in
-  let parse_annotation = Type.create ~aliases:(Hashtbl.find aliases) in
 
   (module struct
     let register_definition
         ~path
         ?name_override
-        ({ Node.location; value = { Define.name; return_annotation; _  }; _ } as definition) =
+        ({ Node.value = { Define.name; _  }; _ } as definition) =
       let name = Option.value ~default:name name_override in
       DependencyHandler.add_function_key ~path name;
-
-      let annotation =
-        let annotation =
-          return_annotation
-          >>| parse_annotation
-          |> Option.value ~default:Type.Top
-        in
-        {
-          Resolution.annotation =
-            Annotation.create_immutable
-              ~global:true
-              (Type.callable ~annotation ());
-          location;
-        }
-      in
-      (* TODO(T27138096): this should be registered after building the type order. *)
-      Hashtbl.set ~key:name ~data:annotation globals;
 
       let definitions =
         match Hashtbl.find function_definitions name with
@@ -1015,7 +997,20 @@ let register_functions
             else
               None
           in
-          Handler.register_definition ~path ?name_override (Node.create ~location define)
+          Handler.register_definition ~path ?name_override (Node.create ~location define);
+
+          (* Register callable global. *)
+          let callable =
+            let callable =
+              Annotated.Define.create define
+              |> Annotated.Define.callable ~resolution
+            in
+            {
+              Resolution.annotation = Annotation.create_immutable ~global:true callable;
+              location;
+            }
+          in
+          Handler.register_global ~path ~access:name ~global:callable
         in
         match statement with
         | { Node.location; value = Class definition }
