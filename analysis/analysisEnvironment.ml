@@ -969,18 +969,26 @@ let register_dependencies
   Visit.visit () source
 
 
+type callable_state = {
+  callables: (Type.Callable.t Node.t) Access.Map.t;
+  overloads: ((Type.Callable.t Node.t) list) Access.Map.t;
+}
+
+
 let register_functions
     (module Handler: Handler)
-    source =
+    ({ Source.path; _ } as source) =
   let resolution = resolution (module Handler: Handler) ~annotations:Access.Map.empty () in
 
   let module Visit = Visit.MakeStatementVisitor(struct
-      type t = unit
+      type t = callable_state
 
-      let statement { Source.path; _ } _ statement =
+      let statement _ state statement =
         let register_define
             ?(constructor = false)
             ~location
+            ~overload
+            ({ callables; overloads } as state)
             ({ Define.name; parent; _ } as define) =
           let name_override =
             if Define.is_method define && not constructor then
@@ -1002,11 +1010,16 @@ let register_functions
           let callable =
             Annotated.Define.create define
             |> Annotated.Define.callable ~resolution
-            |> fun callable -> Type.Callable callable
-            |> Annotation.create_immutable ~global:true
             |> Node.create ~location
           in
-          Handler.register_global ~path ~access:name ~global:callable
+          if overload then
+            let change callable = function
+              | None -> Some [callable]
+              | Some existing -> Some (callable :: existing)
+            in
+            { state with overloads = Map.change overloads name ~f:(change callable) }
+          else
+            { state with callables = Map.set ~key:name ~data:callable callables }
         in
         match statement with
         | { Node.location; value = Class definition }
@@ -1015,7 +1028,9 @@ let register_functions
             Node.create ~location definition
             |> Annotated.Class.create
             |> Annotated.Class.constructors ~resolution
-            |> List.iter ~f:(register_define ~constructor:true ~location)
+            |> List.fold
+              ~init:state
+              ~f:(register_define ~constructor:true ~location ~overload:false)
 
         | { Node.location; value = Define define }
         | {
@@ -1025,13 +1040,30 @@ let register_functions
             Annotated.Define.create define
             |> Annotated.Define.apply_decorators ~resolution
             |> Annotated.Define.define
-            |> register_define ~location
+            |> register_define ~location ~overload:(Define.is_overloaded_method define) state
 
         | _ ->
-            ()
+            state
     end)
   in
-  Visit.visit () source
+
+  let register_callables overloads ~key ~data =
+    let { Node.location; value = callable } = data in
+    let overloads =
+      Map.find overloads key
+      >>| List.map ~f:Node.value
+      |> Option.value ~default:[]
+    in
+    Type.Callable.from_overloads (callable :: overloads)
+    >>| (fun callable -> Type.Callable callable)
+    >>| Annotation.create_immutable ~global:true
+    >>| Node.create ~location
+    >>| (fun global -> Handler.register_global ~path ~access:key ~global)
+    |> ignore
+  in
+
+  Visit.visit { callables = Access.Map.empty; overloads = Access.Map.empty } source
+  |> fun { callables; overloads } -> Map.iteri ~f:(register_callables overloads) callables
 
 
 let populate

@@ -369,6 +369,13 @@ let test_register_functions _ =
        def function() -> int: ...
        def function_with_arguments(i: int) -> None: ...
        class Class: ...
+
+       @overload
+       def overloaded(i: int) -> None: ...
+       def overloaded(i: str) -> None:
+         pass
+       @overload
+       def overloaded(i: float) -> None: ...
     |}
   in
   Environment.register_functions (module Handler) source;
@@ -399,7 +406,12 @@ let test_register_functions _ =
     (Some "typing.Callable('function_with_arguments')[[Named(i, int)], None]");
   assert_global
     "Class.__init__"
-    (Some "typing.Callable('Class.Class')[[Named(self, $unknown)], Class]")  (* Eww... *)
+    (Some "typing.Callable('Class.Class')[[Named(self, $unknown)], Class]");  (* Eww... *)
+  assert_global
+    "overloaded"
+    (Some
+       ("typing.Callable('overloaded')" ^
+        "[[Named(i, str)], None][[Named(i, float)], None][[Named(i, int)], None]"))
 
 
 let test_populate _ =
