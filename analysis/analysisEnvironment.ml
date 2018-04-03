@@ -1004,38 +1004,38 @@ let register_functions
   let module Visit = Visit.MakeStatementVisitor(struct
       type t = unit
 
-      let statement { Source.path; _ } _ = function
+      let statement { Source.path; _ } _ statement =
+        let register_define
+            ?(constructor = false)
+            ~location
+            ({ Define.name; parent; _ } as define) =
+          let name_override =
+            if Define.is_method define && not constructor then
+              Some ((Option.value_exn parent) @ name)
+            else
+              None
+          in
+          Handler.register_definition ~path ?name_override (Node.create ~location define)
+        in
+        match statement with
         | { Node.location; value = Class definition }
         | { Node.location; value = Stub (Stub.Class definition ) } ->
             (* Register constructors. *)
-            let constructors =
-              Node.create ~location definition
-              |> Annotated.Class.create
-              |> Annotated.Class.constructors ~resolution
-            in
-            let register constructor =
-              Node.create ~location constructor
-              |> Handler.register_definition ~path
-            in
-            List.iter ~f:register constructors;
+            Node.create ~location definition
+            |> Annotated.Class.create
+            |> Annotated.Class.constructors ~resolution
+            |> List.iter ~f:(register_define ~constructor:true ~location)
 
-        | { Node.location; value = Define ({ Define.name; parent; _ } as definition) }
+        | { Node.location; value = Define define }
         | {
             Node.location;
-            value = Stub (Stub.Define ({ Define.name; parent; _ } as definition));
+            value = Stub (Stub.Define define);
           } ->
-            let define =
-              Annotated.Define.create definition
-              |> Annotated.Define.apply_decorators ~resolution
-              |> Annotated.Define.define
-            in
-            if Define.is_method define then
-              let parent = Option.value_exn parent in
-              Node.create ~location define
-              |> Handler.register_definition ~path ~name_override:(parent @ name)
-            else
-              Node.create ~location define
-              |> Handler.register_definition ~path
+            Annotated.Define.create define
+            |> Annotated.Define.apply_decorators ~resolution
+            |> Annotated.Define.define
+            |> register_define ~location
+
         | _ ->
             ()
     end)
