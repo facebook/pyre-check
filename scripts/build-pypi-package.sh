@@ -93,6 +93,7 @@ setup(
     packages=find_packages(exclude=['tests']),
     data_files=[('bin', ['bin/pyre.bin'])],
     python_requires='>=3',
+    install_requires=['typeshed'],
     entry_points={
         'console_scripts': [
             'pyre = ${MODULE_NAME}.pyre:main',
