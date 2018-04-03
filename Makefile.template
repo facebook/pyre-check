@@ -8,7 +8,10 @@ INCLUDES = . parser analysis annotated ast test service language_server command 
 BUILD = ocamlbuild $(FLAGS) $(addprefix -I , $(INCLUDES))
 
 TEST_FLAGS = -runner sequential
-TESTS = $(foreach include, $(INCLUDES), $(patsubst %.ml, %.native, $(wildcard $(include)/test/*Test.ml)))
+FILTER=%
+TESTS = $(foreach include, \
+	 $(INCLUDES), \
+	 $(filter $(FILTER), $(patsubst %.ml, %.native, $(wildcard $(include)/test/*Test.ml))))
 
 .PHONY: all
 all: hack_parallel development_tags
