@@ -85,7 +85,6 @@ val connect_definition
   -> add_class_definition: (primitive: Type.t -> definition: Class.t Node.t -> unit)
   -> add_class_key: (path: string -> Type.t -> unit)
   -> add_protocol: (Type.t -> unit)
-  -> register_global: (path: string -> access: Access.t -> global: Resolution.global -> unit)
   -> ( path: string
        -> predecessor: Type.t
        -> name: Access.t

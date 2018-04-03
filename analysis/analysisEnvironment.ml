@@ -71,8 +71,7 @@ let connect_definition
     ~aliases
     ~add_class_definition
     ~add_class_key
-    ~add_protocol
-    ~register_global =
+    ~add_protocol =
   let rec connect_definition ~path ~predecessor ~name ~definition =
     let annotation =
       Type.create
@@ -91,19 +90,6 @@ let connect_definition
         ~predecessor
         ~successor:primitive
         ~parameters;
-    (* Register meta annotation. *)
-    register_global
-      ~path
-      ~access:name
-      ~global:{
-        Resolution.annotation =
-          Annotation.create_immutable
-            ~global:true
-            ~original:(Some Type.Top)
-            (Type.meta primitive);
-        location = Location.any;
-      };
-
     (* Handle definition. *)
     begin
       match definition with
@@ -271,7 +257,6 @@ let handler
         ~add_class_definition
         ~add_class_key:DependencyHandler.add_class_key
         ~add_protocol:(Hash_set.add protocols)
-        ~register_global
 
 
     let register_alias ~path ~key ~data =
@@ -832,8 +817,39 @@ let register_aliases (module Handler: Handler) sources =
 
 let register_globals
     (module Handler: Handler)
-    { Source.path; statements; _ } =
+    ({ Source.path; statements; _ } as source) =
   let resolution = resolution (module Handler: Handler) ~annotations:Access.Map.empty () in
+
+  (* Register meta annotations for classes. *)
+  let module Visit = Visit.MakeStatementVisitor(struct
+      type t = unit
+
+      let statement { Source.path; _ } _ = function
+        | { Node.location; value = Class { Class.name; _ } }
+        | { Node.location; value = Stub (Stub.Class { Class.name; _ }) } ->
+            (* Register meta annotation. *)
+            let primitive, _ =
+              Node.create ~location (Access name)
+              |> Resolution.parse_annotation resolution
+              |> Type.split
+            in
+            let global =
+              {
+                Resolution.annotation =
+                  Annotation.create_immutable
+                    ~global:true
+                    ~original:(Some Type.Top)
+                    (Type.meta primitive);
+                location;
+              }
+            in
+            Handler.register_global ~path ~access:name ~global
+       | _ ->
+            ()
+    end)
+  in
+  Visit.visit () source
+  |> ignore;
 
   let visit statement =
     let global =

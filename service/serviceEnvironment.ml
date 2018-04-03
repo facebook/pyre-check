@@ -418,7 +418,6 @@ let shared_memory_handler
               let protocols = Protocols.get "Protocols" |> Option.value ~default:[] in
               Protocols.remove_batch (Protocols.KeySet.singleton "Protocols");
               Protocols.add "Protocols" (protocol :: protocols))
-          ~register_global
 
       let register_alias ~path ~key ~data =
         DependencyHandler.add_alias_key ~path key;

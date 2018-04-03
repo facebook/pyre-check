@@ -308,6 +308,7 @@ let test_register_globals _ =
         qualifier.annotated: int = 1
         qualifier.unannotated = 'string'
         qualifier.stub: int = ...
+        class qualifier.Class: ...
       |}
   in
   Environment.register_globals (module Handler) source;
@@ -325,7 +326,8 @@ let test_register_globals _ =
   assert_global "qualifier.with_join" None;
   assert_global "qualifier.annotated" (Some Type.integer);
   assert_global "qualifier.unannotated" (Some Type.string);
-  assert_global "qualifier.stub" (Some Type.integer)
+  assert_global "qualifier.stub" (Some Type.integer);
+  assert_global "qualifier.Class" (Some (Type.meta (Type.primitive "qualifier.Class")))
 
 
 let test_connect_type_order _ =
