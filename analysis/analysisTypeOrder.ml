@@ -9,6 +9,7 @@ open Ast
 open Pyre
 
 module Type = AnalysisType
+module Callable = Type.Callable
 
 exception Cyclic
 exception Incomplete
@@ -443,9 +444,9 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
   | _, Type.Tuple _ ->
       false
 
-  | Type.Callable { Type.Callable.kind = Type.Callable.Anonymous; overloads = [left]; _ },
-    Type.Callable { Type.Callable.kind = Type.Callable.Anonymous; overloads = [right]; _ } ->
-      let open Type.Callable in
+  | Type.Callable { Callable.kind = Callable.Anonymous; overloads = [left]; _ },
+    Type.Callable { Callable.kind = Callable.Anonymous; overloads = [right]; _ } ->
+      let open Callable in
       let parameters_less_or_equal () =
         match left.parameters, right.parameters with
         | Undefined, Undefined ->
@@ -482,8 +483,8 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
       in
       less_or_equal order ~left:left.annotation ~right:right.annotation &&
       parameters_less_or_equal ()
-  | Type.Callable { Type.Callable.kind = Type.Callable.Named left; _ },
-    Type.Callable { Type.Callable.kind = Type.Callable.Named right; _ }
+  | Type.Callable { Callable.kind = Callable.Named left; _ },
+    Type.Callable { Callable.kind = Callable.Named right; _ }
     when Expression.Access.equal left right ->
       true
   | Type.Callable _, _
@@ -606,8 +607,8 @@ and greatest_lower_bound ((module Handler: Handler) as order) =
   least_common_successor order ~successors:predecessors
 
 
-and join_override ~parameter_join ~return_join order left right =
-  let open Type.Callable in
+and join_overloads ~parameter_join ~return_join order left right =
+  let open Callable in
   let parameters =
     match left.parameters, right.parameters with
     | Undefined, Undefined ->
@@ -658,16 +659,7 @@ and join_override ~parameter_join ~return_join order left right =
   in
   parameters
   >>| fun parameters ->
-  Type.Callable {
-    Type.Callable.kind = Type.Callable.Anonymous;
-    overloads = [
-      {
-        annotation = return_join order left.annotation right.annotation;
-        parameters = parameters;
-      }
-    ];
-    implicit_argument = false;
-  }
+  [{ annotation = return_join order left.annotation right.annotation; parameters = parameters }]
 
 
 and join ((module Handler: Handler) as order) left right =
@@ -783,12 +775,21 @@ and join ((module Handler: Handler) as order) left right =
         else
           Type.Object
 
-    | Type.Callable { Type.Callable.kind = Type.Callable.Anonymous; overloads = [left]; _ },
-      Type.Callable { Type.Callable.kind = Type.Callable.Anonymous; overloads = [right]; _ } ->
-        join_override ~parameter_join:meet ~return_join:join order left right
+    | Type.Callable ({ Callable.kind = Callable.Anonymous; _ } as left),
+      Type.Callable ({ Callable.kind = Callable.Anonymous; _ } as right)
+      when List.length left.Callable.overloads = 1 &&
+           List.length right.Callable.overloads = 1 &&
+           left.Callable.implicit_argument = right.Callable.implicit_argument ->
+        join_overloads
+          ~parameter_join:meet
+          ~return_join:join
+          order
+          (List.hd_exn left.Callable.overloads)
+          (List.hd_exn right.Callable.overloads)
+        >>| (fun overloads -> Type.Callable { left with Callable.overloads })
         |> Option.value ~default:Type.Object
-    | (Type.Callable { Type.Callable.kind = Type.Callable.Named left; _ } as callable),
-      Type.Callable { Type.Callable.kind = Type.Callable.Named right; _ }
+    | (Type.Callable { Callable.kind = Callable.Named left; _ } as callable),
+      Type.Callable { Callable.kind = Callable.Named right; _ }
       when Expression.Access.equal left right ->
         callable
     | Type.Callable _, _
@@ -892,12 +893,21 @@ and meet order left right =
         else
           Type.Bottom
 
-    | Type.Callable { Type.Callable.kind = Type.Callable.Anonymous; overloads = [left]; _ },
-      Type.Callable { Type.Callable.kind = Type.Callable.Anonymous; overloads = [right]; _ } ->
-        join_override ~parameter_join:join ~return_join:meet order left right
+    | Type.Callable ({ Callable.kind = Callable.Anonymous; _ } as left),
+      Type.Callable ({ Callable.kind = Callable.Anonymous; _ } as right)
+      when List.length left.Callable.overloads = 1 &&
+           List.length right.Callable.overloads = 1 &&
+           left.Callable.implicit_argument = right.Callable.implicit_argument ->
+        join_overloads
+          ~parameter_join:join
+          ~return_join:meet
+          order
+          (List.hd_exn left.Callable.overloads)
+          (List.hd_exn right.Callable.overloads)
+        >>| (fun overloads -> Type.Callable { left with Callable.overloads })
         |> Option.value ~default:Type.Bottom
-    | (Type.Callable { Type.Callable.kind = Type.Callable.Named left; _ } as callable),
-      Type.Callable { Type.Callable.kind = Type.Callable.Named right; _ }
+    | (Type.Callable { Callable.kind = Callable.Named left; _ } as callable),
+      Type.Callable { Callable.kind = Callable.Named right; _ }
       when Expression.Access.equal left right ->
         callable
     | Type.Callable _, _
