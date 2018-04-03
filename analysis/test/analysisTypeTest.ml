@@ -9,6 +9,7 @@ open OUnit2
 open Ast
 open Analysis
 open Expression
+open Pyre
 
 open Test
 
@@ -320,35 +321,6 @@ let test_union _ =
   assert_equal
     (Type.union [Type.float; Type.union[Type.string; Type.bytes]])
     (Type.union [Type.float; Type.string; Type.bytes])
-
-
-let test_callable_from_overloads _ =
-  let assert_create ?(aliases = (fun _ -> None)) sources expected =
-    let merged =
-      sources
-      |> List.map ~f:(fun source -> Type.create ~aliases (parse_single_expression source))
-      |> Type.callable_from_overloads
-      |> Option.value ~default:Type.Top
-    in
-    assert_equal
-      ~printer:Type.show
-      ~cmp:Type.equal
-      (Type.create ~aliases (parse_single_expression expected))
-      merged
-  in
-
-  assert_create ["typing.Callable('foo')[..., int]"; "int"] "$unknown";
-  assert_create ["typing.Callable('foo')[..., int]"; "typing.Callable('bar')[..., int]"] "$unknown";
-  assert_create
-    ["typing.Callable('foo')[..., int]"; "typing.Callable('foo')[..., str]"]
-    "typing.Callable('foo')[..., int][..., str]";
-  assert_create
-    [
-      "typing.Callable('foo')[..., int]";
-      "typing.Callable('foo')[[int, str], str]";
-      "typing.Callable('foo')[[int, str, str], int]";
-    ]
-    "typing.Callable('foo')[..., int][[int, str], str][[int, str, str], int]"
 
 
 let test_exists _ =
@@ -667,12 +639,47 @@ let test_dequalify _ =
     (Type.parametric "C" [Type.parametric "Optional" [Type.integer]])
 
 
+let test_from_overloads _ =
+  let assert_create ?(aliases = (fun _ -> None)) sources expected =
+    let merged =
+      let parse_callable source =
+        match Type.create ~aliases (parse_single_expression source) with
+        | Type.Callable callable -> callable
+        | _ -> failwith ("Could not extract callable from " ^ source)
+      in
+      sources
+      |> List.map ~f:parse_callable
+      |> Type.Callable.from_overloads
+      >>| (fun callable -> Type.Callable callable)
+      |> Option.value ~default:Type.Top
+    in
+    assert_equal
+      ~printer:Type.show
+      ~cmp:Type.equal
+      (Type.create ~aliases (parse_single_expression expected))
+      merged
+  in
+
+  assert_create ["typing.Callable('foo')[..., int]"; "typing.Callable('bar')[..., int]"] "$unknown";
+  assert_create
+    ["typing.Callable('foo')[..., int]"; "typing.Callable('foo')[..., str]"]
+    "typing.Callable('foo')[..., int][..., str]";
+  assert_create
+    [
+      "typing.Callable('foo')[..., int]";
+      "typing.Callable('foo')[[int, str], str]";
+      "typing.Callable('foo')[[int, str, str], int]";
+    ]
+    "typing.Callable('foo')[..., int][[int, str], str][[int, str, str], int]"
+
+
+
+
 let () =
   Analysis.Type.TypeCache.disable ();
   "type">:::[
     "create">::test_create;
     "expression">::test_expression;
-    "callable_from_overloads">::test_callable_from_overloads;
     "union">::test_union;
     "exists">::test_exists;
     "is_async_generator">::test_is_generator;
@@ -686,5 +693,9 @@ let () =
     "optional_value">::test_optional_value;
     "async_generator_value">::test_async_generator_value;
     "dequalify">::test_dequalify;
+  ]
+  |> run_test_tt_main;
+  "callable">:::[
+    "from_overloads">::test_from_overloads;
   ]
   |> run_test_tt_main

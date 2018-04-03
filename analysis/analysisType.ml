@@ -302,24 +302,6 @@ let callable ?name ?(overloads = []) ?(parameters = Undefined) ~annotation () =
   Callable { kind; overloads = { annotation; parameters } :: overloads }
 
 
-let callable_from_overloads overloads =
-  match overloads with
-  | ((Callable { kind = Named _; _ }) as initial) :: overloads ->
-      let fold sofar overload =
-        match sofar, overload with
-        | Some (Callable sofar), Callable { kind; overloads } ->
-            if equal_kind kind sofar.kind then
-              Some (Callable { kind; overloads = sofar.overloads @ overloads})
-            else
-              None
-        | _ ->
-            None
-      in
-      List.fold ~init:(Some initial) ~f:fold overloads
-  | _ ->
-      None
-
-
 let complex =
   Primitive (Identifier.create "complex")
 
@@ -1365,4 +1347,22 @@ module Callable = struct
 
   type t = type_t Record.Callable.record
   [@@deriving compare, eq, sexp, show, hash]
+
+
+  let from_overloads overloads =
+    match overloads with
+    | ({ kind = Named _; _ } as initial) :: overloads ->
+        let fold sofar overload =
+          match sofar, overload with
+          | Some sofar, { kind; overloads } ->
+              if equal_kind kind sofar.kind then
+                Some { kind; overloads = sofar.overloads @ overloads}
+              else
+                None
+          | _ ->
+              None
+        in
+        List.fold ~init:(Some initial) ~f:fold overloads
+    | _ ->
+        None
 end

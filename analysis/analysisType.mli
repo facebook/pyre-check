@@ -107,7 +107,6 @@ val callable
   -> annotation: t
   -> unit
   -> t
-val callable_from_overloads: t list -> t option
 val complex: t
 val dictionary: key:t -> value:t -> t
 val float: t
@@ -187,4 +186,6 @@ module Callable : sig
 
   type t = type_t Record.Callable.record
   [@@deriving compare, eq, sexp, show, hash]
+
+  val from_overloads: t list -> t option
 end
