@@ -624,11 +624,12 @@ and join_overloads ~parameter_join ~return_join order left right =
                     | Parameter.Anonymous left, Parameter.Anonymous right ->
                         Some (Parameter.Anonymous (parameter_join order left right))
                     | Parameter.Named left, Parameter.Named right
-                      when Expression.Access.equal left.Parameter.name right.Parameter.name ->
+                      when Expression.Access.equal left.Parameter.name right.Parameter.name &&
+                           left.Parameter.default = right.Parameter.default ->
                         Some
                           (Parameter.Named {
-                              Parameter.name = left.Parameter.name;
-                              annotation =
+                              left with
+                              Parameter.annotation =
                                 parameter_join
                                   order
                                   left.Parameter.annotation

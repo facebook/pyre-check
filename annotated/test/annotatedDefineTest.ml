@@ -75,6 +75,9 @@ let test_callable _ =
   assert_callable
     "def foo(a: int, b) -> str: ..."
     "typing.Callable('foo')[[Named(a, int), Named(b, $unknown)], str]";
+  assert_callable
+    "def foo(a: int = 1) -> str: ..."
+    "typing.Callable('foo')[[Named(a, int, default)], str]";
 
   assert_callable
     "def foo(a, *args, **kwargs) -> str: ..."

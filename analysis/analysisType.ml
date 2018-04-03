@@ -17,6 +17,7 @@ module Record = struct
         {
           name: Access.t;
           annotation: 'annotation;
+          default: bool;
         }
 
 
@@ -203,8 +204,12 @@ let rec pp format annotation =
                 let parameter = function
                   | Parameter.Anonymous annotation ->
                       without_backtick [annotation]
-                  | Parameter.Named { Parameter.name; annotation } ->
-                      Format.asprintf "Named(%a, %s)" Access.pp name (without_backtick [annotation])
+                  | Parameter.Named { Parameter.name; annotation; default } ->
+                      Format.asprintf
+                        "Named(%a, %s%s)"
+                        Access.pp name
+                        (without_backtick [annotation])
+                        (if default then ", default" else "")
                   | Parameter.Variable name ->
                       Format.asprintf "Variable(%a)" Access.pp name
                   | Parameter.Keywords name ->
@@ -601,10 +606,19 @@ let create ~aliases { Node.value = expression; _ } =
                                       arguments
                                   in
                                   match Expression.show name, arguments with
-                                  | "Named", [Access name; Access annotation] ->
+                                  | "Named", (Access name) :: (Access annotation) :: tail ->
+                                      let default =
+                                        match tail with
+                                        | [Access [Access.Identifier default]]
+                                          when Identifier.show default = "default" ->
+                                            true
+                                        | _ ->
+                                            false
+                                      in
                                       Parameter.Named {
                                         Parameter.name;
                                         annotation = create [] annotation;
+                                        default;
                                       }
                                   | "Variable", [Access name] ->
                                       Parameter.Variable name
@@ -834,7 +848,7 @@ let rec expression annotation =
               match parameters with
               | Defined parameters ->
                   let parameter parameter =
-                    let call name argument annotation =
+                    let call ?(default = false) name argument annotation =
                       let annotation =
                         annotation
                         >>| (fun annotation ->
@@ -844,6 +858,19 @@ let rec expression annotation =
                             }])
                         |> Option.value ~default:[]
                       in
+                      let default =
+                        if default then
+                          [
+                            {
+                              Argument.name = None;
+                              value =
+                                Node.create_with_default_location
+                                  (Access (Access.create "default"));
+                            };
+                          ]
+                        else
+                          []
+                      in
                       {
                         Call.name = Node.create_with_default_location (Access (Access.create name));
                         arguments = [
@@ -851,7 +878,7 @@ let rec expression annotation =
                             Argument.name = None;
                             value = Node.create_with_default_location (Access argument);
                           };
-                        ] @ annotation;
+                        ] @ annotation @ default;
                       }
                       |> Node.create_with_default_location
                       |> (fun call -> Access.Call call)
@@ -863,8 +890,8 @@ let rec expression annotation =
                         expression annotation
                     | Parameter.Keywords name ->
                         call "Keywords" name None
-                    | Parameter.Named { Parameter.name; annotation } ->
-                        call "Named" name (Some annotation)
+                    | Parameter.Named { Parameter.name; annotation; default } ->
+                        call "Named" ~default name (Some annotation)
                     | Parameter.Variable name ->
                         call "Variable" name None
                   in

@@ -94,7 +94,7 @@ let return_annotation ({ Define.return_annotation; async; _ } as define) ~resolu
 
 let callable ({ Define.name; parameters; parent; _ } as define) ~resolution =
   let open Type.Callable in
-  let parameter { Node.value = { Ast.Parameter.name; annotation; _ }; _ } =
+  let parameter { Node.value = { Ast.Parameter.name; annotation; value }; _ } =
     let name = Identifier.show name in
     let access =
       String.lstrip ~drop:(function | '*' -> true | _ -> false) name
@@ -110,7 +110,7 @@ let callable ({ Define.name; parameters; parent; _ } as define) ~resolution =
     else if String.is_prefix ~prefix:"*" name then
       Parameter.Variable access
     else
-      Parameter.Named { Parameter.name = access; annotation }
+      Parameter.Named { Parameter.name = access; annotation; default = Option.is_some value }
   in
   let name = parent >>| (fun parent -> parent @ name) |> Option.value ~default:name in
   {

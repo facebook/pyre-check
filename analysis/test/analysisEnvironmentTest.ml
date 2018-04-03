@@ -540,6 +540,7 @@ let test_populate _ =
               Type.Callable.Parameter.Named {
                 Type.Callable.Parameter.name = Access.create "self";
                 annotation = Type.Top;
+                default = false;
               };
             ])
           ~annotation:(Type.primitive "Class")

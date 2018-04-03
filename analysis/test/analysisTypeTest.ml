@@ -207,9 +207,28 @@ let test_create _ =
                 Parameter.Named {
                   Parameter.name = Access.create "a";
                   annotation = Type.integer;
+                  default = false;
                 };
                 Parameter.Variable (Access.create "variable");
                 Parameter.Keywords (Access.create "keywords");
+              ];
+          };
+        ];
+        implicit_argument = false;
+      });
+  assert_create
+    "typing.Callable[[Named(a, int, default)], int]"
+    (Type.Callable {
+        kind = Anonymous;
+        overloads = [
+          {
+            annotation = Type.integer;
+            parameters = Defined [
+                Parameter.Named {
+                  Parameter.name = Access.create "a";
+                  annotation = Type.integer;
+                  default = true;
+                };
               ];
           };
         ];
@@ -279,15 +298,29 @@ let test_expression _ =
            Type.Callable.Parameter.Named {
              Type.Callable.Parameter.name = Access.create "a";
              annotation = Type.integer;
+             default = false;
            };
            Type.Callable.Parameter.Named {
              Type.Callable.Parameter.name = Access.create "b";
              annotation = Type.string;
+             default = false;
            };
          ])
        ~annotation:Type.integer
        ())
     "typing.Callable[[Named(a, int), Named(b, str)], int]";
+  assert_expression
+    (Type.callable
+       ~parameters:(Type.Callable.Defined [
+           Type.Callable.Parameter.Named {
+             Type.Callable.Parameter.name = Access.create "a";
+             annotation = Type.integer;
+             default = true;
+           };
+         ])
+       ~annotation:Type.integer
+       ())
+    "typing.Callable[[Named(a, int, default)], int]";
   assert_expression
     (Type.callable
        ~parameters:(Type.Callable.Defined [

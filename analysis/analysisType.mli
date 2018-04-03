@@ -16,6 +16,7 @@ module Record : sig
         {
           name: Access.t;
           annotation: 'annotation;
+          default: bool;
         }
 
       and 'annotation t =
