@@ -12,12 +12,9 @@ module Signature = AnalysisSignature
 module Type = AnalysisType
 module TypeOrder = AnalysisTypeOrder
 
-type global = {
-  annotation: Annotation.t;
-  location: Location.t;
-}
-[@@deriving show]
 
+type global = Annotation.t Node.t
+[@@deriving eq, show]
 
 type t
 

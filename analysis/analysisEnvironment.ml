@@ -816,17 +816,14 @@ let register_globals
               |> Type.split
             in
             let global =
-              {
-                Resolution.annotation =
-                  Annotation.create_immutable
-                    ~global:true
-                    ~original:(Some Type.Top)
-                    (Type.meta primitive);
-                location;
-              }
+              Annotation.create_immutable
+                ~global:true
+                ~original:(Some Type.Top)
+                (Type.meta primitive)
+              |> Node.create ~location
             in
             Handler.register_global ~path ~access:name ~global
-       | _ ->
+        | _ ->
             ()
     end)
   in
@@ -851,14 +848,11 @@ let register_globals
               match target.Node.value, (Resolution.resolve resolution value) with
               | Access access, annotation ->
                   let global =
-                    {
-                      Resolution.annotation =
-                        Annotation.create_immutable
-                          ~global:true
-                          ~original:(Some Type.Top)
-                          annotation;
-                      location;
-                    }
+                    Annotation.create_immutable
+                      ~global:true
+                      ~original:(Some Type.Top)
+                      annotation
+                    |> Node.create ~location
                   in
                   Some (access, global)
               | _ ->
@@ -886,13 +880,10 @@ let register_globals
           });
       } ->
           let global =
-            {
-              Resolution.annotation =
-                Annotation.create_immutable
-                  ~global:true
-                  (Type.create ~aliases:Handler.aliases annotation);
-              location;
-            }
+            Annotation.create_immutable
+              ~global:true
+              (Type.create ~aliases:Handler.aliases annotation)
+            |> Node.create ~location
           in
           Some (access, global)
       | _ ->
@@ -1001,14 +992,10 @@ let register_functions
 
           (* Register callable global. *)
           let callable =
-            let callable =
-              Annotated.Define.create define
-              |> Annotated.Define.callable ~resolution
-            in
-            {
-              Resolution.annotation = Annotation.create_immutable ~global:true callable;
-              location;
-            }
+            Annotated.Define.create define
+            |> Annotated.Define.callable ~resolution
+            |> Annotation.create_immutable ~global:true
+            |> Node.create ~location
           in
           Handler.register_global ~path ~access:name ~global:callable
         in
@@ -1023,9 +1010,9 @@ let register_functions
 
         | { Node.location; value = Define define }
         | {
-            Node.location;
-            value = Stub (Stub.Define define);
-          } ->
+          Node.location;
+          value = Stub (Stub.Define define);
+        } ->
             Annotated.Define.create define
             |> Annotated.Define.apply_decorators ~resolution
             |> Annotated.Define.define
@@ -1220,11 +1207,12 @@ module Builder = struct
       |> List.map ~f:alias
       |> String.concat ~sep:"\n" in
     let globals =
-      let global (key, { Resolution.annotation; _ }) =
+      let global (key, { Node.value; _ }) =
         Format.asprintf
           "  %a -> %a"
           Access.pp key
-          Annotation.pp annotation in
+          Annotation.pp value
+      in
       Hashtbl.to_alist globals
       |> List.map ~f:global
       |> String.concat ~sep:"\n" in

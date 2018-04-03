@@ -358,11 +358,8 @@ let shared_memory_handler
         let name = Option.value ~default:name name_override in
         DependencyHandler.add_function_key ~path name;
         let annotation =
-          {
-            Resolution.annotation =
-              (Annotation.create_immutable ~global:true Type.Top);
-            location;
-          }
+          Annotation.create_immutable ~global:true Type.Top
+          |> Ast.Node.create ~location
         in
         Globals.remove_batch (Globals.KeySet.singleton name);
         Globals.add name annotation;

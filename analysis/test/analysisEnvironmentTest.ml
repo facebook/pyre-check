@@ -317,7 +317,8 @@ let test_register_globals _ =
     let actual =
       Access.create access
       |> Handler.globals
-      >>| fun { Resolution.annotation; _ } -> Annotation.annotation annotation
+      >>| Node.value
+      >>| Annotation.annotation
     in
     assert_equal ~cmp:(Option.equal Type.equal) expected actual
   in
@@ -378,7 +379,8 @@ let test_register_functions _ =
     let actual =
       Access.create access
       |> Handler.globals
-      >>| fun { Resolution.annotation; _ } -> Annotation.annotation annotation
+      >>| Node.value
+      >>| Annotation.annotation
     in
     let expected =
       expected
@@ -434,102 +436,78 @@ let test_populate _ =
   assert_equal (parse_annotation environment !"S") Type.string;
   assert_equal (parse_annotation environment !"S2") Type.string;
 
-  let environment =
-    populate {|
+  (* Globals *)
+  let assert_global_with_environment environment actual expected =
+    assert_equal
+      ~cmp:(Option.equal (Node.equal Annotation.equal))
+      ~printer:(function | Some global -> Resolution.show_global global | None -> "None")
+      (Some (Node.create_with_default_location expected))
+      (global environment (parse_single_access actual))
+  in
+
+  let assert_global =
+    {|
       class int(): pass
       A: int = 0
       B = 0
       C = ... # type: int
     |}
+    |> populate
+    |> assert_global_with_environment
   in
-  assert_equal
-    (global environment (access ["A"]))
-    (Some {
-        Resolution.annotation = Annotation.create_immutable ~global:true Type.integer;
-        location = create_location "test.py" 3 0 3 1;
-      });
-  assert_equal
-    (global environment (access ["B"]))
-    (Some {
-        Resolution.annotation =
-          Annotation.create_immutable ~global:true ~original:(Some Type.Top) Type.integer;
-        location = create_location "test.py" 4 0 4 1;
-      });
-  assert_equal
-    (global environment (access ["C"]))
-    (Some {
-        Resolution.annotation = Annotation.create_immutable ~global:true Type.integer;
-        location = create_location "test.py" 5 0 5 1;
-      });
 
-  (* Globals *)
-  let environment =
-    populate {|
+  assert_global "A" (Annotation.create_immutable ~global:true Type.integer);
+  assert_global
+    "B"
+    (Annotation.create_immutable ~global:true ~original:(Some Type.Top) Type.integer);
+  assert_global "C" (Annotation.create_immutable ~global:true Type.integer);
+
+  let assert_global =
+    {|
       global_value_set = 1
       global_annotated: int
       global_both: int = 1
       global_unknown = x
       global_function = function
-      class Foo():
+      class Class():
         pass
       def function():
         pass
     |}
+    |> populate
+    |> assert_global_with_environment
   in
-  assert_equal
-    (global environment (access ["global_value_set"]))
-    (Some {
-        Resolution.annotation =
-          Annotation.create_immutable ~global:true ~original:(Some Type.Top) Type.integer;
-        location = create_location "test.py" 2 0 2 16;
-      });
-  assert_equal
-    (global environment (access ["global_annotated"]))
-    (Some {
-        Resolution.annotation = Annotation.create_immutable ~global:true Type.integer;
-        location = create_location "test.py" 3 0 3 16;
-      });
-  assert_equal
-    (global environment (access ["global_both"]))
-    (Some {
-        Resolution.annotation = Annotation.create_immutable ~global:true Type.integer;
-        location = create_location "test.py" 4 0 4 11;
-      });
-  assert_equal
-    (global environment (access ["global_unknown"]))
-    (Some {
-        Resolution.annotation = Annotation.create_immutable ~global:true Type.Top;
-        location = create_location "test.py" 5 0 5 14;
-      });
-  assert_equal
-    ~printer:(function | Some global -> Resolution.show_global global | None -> "None")
-    (global environment (access ["function"]))
-    (Some {
-        Resolution.annotation =
-          Annotation.create_immutable
-            ~global:true
-            (Type.callable
-               ~name:(Access.create "function")
-               ~parameters:(Type.Callable.Defined [])
-               ~annotation:Type.Top
-               ());
-        location = create_location "test.py" 9 0 10 6;
-      });
-  assert_equal
-    ~printer:(function | Some global -> Resolution.show_global global | None -> "None")
-    (global environment (access ["global_function"]))
-    (Some {
-        Resolution.annotation =
-          Annotation.create_immutable
-            ~global:true
-            ~original:(Some Type.Top)
-            (Type.callable
-               ~name:(Access.create "function")
-               ~parameters:(Type.Callable.Defined [])
-               ~annotation:Type.Top
-               ());
-        location = create_location "test.py" 6 0 6 15;
-      });
+  assert_global
+    "global_value_set"
+    (Annotation.create_immutable ~global:true ~original:(Some Type.Top) Type.integer);
+  assert_global "global_annotated" (Annotation.create_immutable ~global:true Type.integer);
+  assert_global "global_both" (Annotation.create_immutable ~global:true Type.integer);
+  assert_global "global_unknown" (Annotation.create_immutable ~global:true Type.Top);
+  assert_global
+    "function"
+    (Annotation.create_immutable
+       ~global:true
+       (Type.callable
+          ~name:(Access.create "function")
+          ~parameters:(Type.Callable.Defined [])
+          ~annotation:Type.Top
+          ()));
+  assert_global
+    "global_function"
+    (Annotation.create_immutable
+       ~global:true
+       ~original:(Some Type.Top)
+       (Type.callable
+          ~name:(Access.create "function")
+          ~parameters:(Type.Callable.Defined [])
+          ~annotation:Type.Top
+          ()));
+  assert_global
+    "Class"
+    (Annotation.create_immutable
+       ~global:true
+       ~original:(Some Type.Top)
+       (Type.meta (Type.primitive "Class")));
 
   (* Loops. *)
   try
@@ -542,20 +520,15 @@ let test_populate _ =
     assert_unreached ();
 
     (* Check meta variables are registered. *)
-    let environment =
-      populate {|
-      class A:
-        pass
-      |} in
-    assert_equal
-      (global environment (access ["A"]))
-      (Some {
-          Resolution.annotation =
-            Type.primitive "A"
-            |> Type.meta
-            |> Annotation.create_immutable ~global:true;
-          location = Location.any;
-        })
+    let assert_global =
+      {|
+        class A:
+          pass
+      |}
+      |> populate
+      |> assert_global_with_environment
+    in
+    assert_global "A" (Type.primitive "A" |> Type.meta |> Annotation.create_immutable ~global:true)
 
 
 let test_infer_protocols _ =

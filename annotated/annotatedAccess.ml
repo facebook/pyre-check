@@ -286,7 +286,7 @@ let fold ~resolution ~initial ~f access =
           Some resolved
       | None ->
           Resolution.global resolution access
-          >>| fun { Resolution.annotation; _ } -> annotation
+          >>| Node.value
     in
 
     let pick_signature call signatures =

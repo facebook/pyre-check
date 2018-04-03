@@ -284,8 +284,8 @@ let rec resolve_literal ~resolution expression =
           Resolution.global resolution access with
         | Some local, _ ->
             Annotation.annotation local
-        | None, Some { Resolution.annotation; _ } ->
-            Annotation.annotation annotation
+        | None, Some { Node.value; _ } ->
+            Annotation.annotation value
         | None, None ->
             Type.Object
       end

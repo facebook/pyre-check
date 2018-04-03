@@ -1357,9 +1357,9 @@ module State = struct
                   let name = access in
                   let module Handler = (val environment : Environment.Handler) in
                   let location =
-                    match Handler.globals access with
-                    | Some { Resolution.location; _ } -> location
-                    | _ -> location
+                    Handler.globals access
+                    >>| Node.location
+                    |> Option.value ~default:location
                   in
                   match Map.find annotations access with
                   | Some {
@@ -1947,15 +1947,13 @@ let check configuration environment ?mode_override ({ Source.path; _ } as source
         let module Handler = (val environment : Environment.Handler) in
         let add_missing_annotation_error ~access ~name ~location ~annotation =
           match Handler.globals name with
-          | Some { Resolution.annotation; _ }
-            when not (Type.is_unknown (Annotation.annotation annotation)) ->
+          | Some { Node.value; _ }
+            when not (Type.is_unknown (Annotation.annotation value)) ->
               changed, globals_added_sofar
           | _ ->
-              let global = {
-                Resolution.annotation =
-                  Annotation.create_immutable ~global:true ~original:(Some Type.Top) annotation;
-                location;
-              }
+              let global =
+                Annotation.create_immutable ~global:true ~original:(Some Type.Top) annotation
+                |> Node.create ~location
               in
               Handler.register_global ~path ~access ~global;
               true, error :: globals_added_sofar
