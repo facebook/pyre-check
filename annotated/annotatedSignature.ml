@@ -305,6 +305,26 @@ let select call ~resolution ~callable:({ Type.Callable.overloads; _ } as callabl
 
         let rank = (List.length parameters) + (List.length arguments) in
 
+        (* Map unresolved constraints to `Bottom`. *)
+        let constraints =
+          let variables =
+            Type.Callable {
+              Type.Callable.kind = Anonymous;
+              overloads = [overload];
+              implicit_argument = false;
+            }
+            |> Type.variables
+          in
+          let remaining_to_bottom constraints variable =
+            let update = function
+              | None -> Some Type.Bottom
+              | value -> value
+            in
+            Map.change constraints variable ~f:update
+          in
+          List.fold ~f:remaining_to_bottom ~init:constraints variables
+        in
+
         if List.is_empty arguments && List.is_empty parameters then
           begin
             match reason with

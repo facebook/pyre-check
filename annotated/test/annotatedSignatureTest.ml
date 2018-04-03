@@ -152,6 +152,7 @@ let test_select _ =
     "[[_T, _T], int]"
     "(1, 'string')"
     (`Found "[[typing.Union[int, str], typing.Union[int, str]], int]");
+  assert_select "[[_T], _S]" "(1)" (`Found "[[int], $bottom]");
 
   assert_select "[[typing.List[_T]], int]" "([1])" (`Found "[[typing.List[int]], int]");
   assert_select "[[typing.Sequence[_T]], int]" "([1])" (`Found "[[typing.Sequence[int]], int]");
