@@ -987,7 +987,6 @@ let register_functions
         let register_define
             ?(constructor = false)
             ~location
-            ~overload
             ({ callables; overloads } as state)
             ({ Define.name; parent; _ } as define) =
           let name_override =
@@ -1012,7 +1011,7 @@ let register_functions
             |> Annotated.Define.callable ~resolution
             |> Node.create ~location
           in
-          if overload then
+          if Define.is_overloaded_method define then
             let change callable = function
               | None -> Some [callable]
               | Some existing -> Some (callable :: existing)
@@ -1030,7 +1029,7 @@ let register_functions
             |> Annotated.Class.constructors ~resolution
             |> List.fold
               ~init:state
-              ~f:(register_define ~constructor:true ~location ~overload:false)
+              ~f:(register_define ~constructor:true ~location)
 
         | { Node.location; value = Define define }
         | {
@@ -1040,7 +1039,7 @@ let register_functions
             Annotated.Define.create define
             |> Annotated.Define.apply_decorators ~resolution
             |> Annotated.Define.define
-            |> register_define ~location ~overload:(Define.is_overloaded_method define) state
+            |> register_define ~location state
 
         | _ ->
             state

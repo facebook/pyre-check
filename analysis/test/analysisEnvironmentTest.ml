@@ -369,6 +369,10 @@ let test_register_functions _ =
        def function() -> int: ...
        def function_with_arguments(i: int) -> None: ...
        class Class: ...
+       class ClassWithOverloadedConstructor:
+         @overload
+         def __init__(self, s: str) -> None: ...
+         def __init__(self, i: int) -> None: ...
 
        @overload
        def overloaded(i: int) -> None: ...
@@ -411,7 +415,13 @@ let test_register_functions _ =
     "overloaded"
     (Some
        ("typing.Callable('overloaded')" ^
-        "[[Named(i, str)], None][[Named(i, float)], None][[Named(i, int)], None]"))
+        "[[Named(i, str)], None][[Named(i, float)], None][[Named(i, int)], None]"));
+  assert_global
+    "ClassWithOverloadedConstructor.__init__"
+    (Some
+       ("typing.Callable('ClassWithOverloadedConstructor.ClassWithOverloadedConstructor')" ^
+        "[[Named(self, $unknown), Named(i, int)], ClassWithOverloadedConstructor]" ^
+        "[[Named(self, $unknown), Named(s, str)], ClassWithOverloadedConstructor]"))
 
 
 let test_populate _ =
