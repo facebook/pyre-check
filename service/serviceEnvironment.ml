@@ -433,7 +433,12 @@ let shared_memory_handler
           DependentKeys.remove_batch (DependentKeys.KeySet.singleton path)
         in
         DependencyHandler.get_function_keys ~path
-        |> fun keys -> FunctionDefinitions.remove_batch (FunctionDefinitions.KeySet.of_list keys);
+        |> fun keys ->
+        begin
+          FunctionDefinitions.remove_batch (FunctionDefinitions.KeySet.of_list keys);
+          (* We add a global name for each function definition as well. *)
+          Globals.remove_batch (Globals.KeySet.of_list keys);
+        end;
 
         DependencyHandler.get_class_keys ~path
         |> fun keys -> ClassDefinitions.remove_batch (ClassDefinitions.KeySet.of_list keys);
