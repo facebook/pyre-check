@@ -359,8 +359,13 @@ module Define = struct
 
 
   let implicit_attribute_assigns
-      { body; _ }
+      { body; parameters; _ }
       ~definition:{ Record.Class.body = definition_body; _ } =
+    let self_parameter_name =
+      match parameters with
+      | { Node.value = { Parameter.name; _ }; _ } :: _ -> name
+      | _ -> Identifier.create "self"
+    in
     let open Expression in
     let attribute_assign map { Node.location; value } =
       match value with
@@ -370,7 +375,7 @@ module Define = struct
             | ({
                 Node.value = Access ((Access.Identifier self) :: ([_] as access));
                 _;
-              } as target) when Identifier.show self = "self" ->
+              } as target) when Identifier.equal self self_parameter_name ->
                 let assign =
                   Node.create
                     ~location
@@ -461,7 +466,7 @@ module Define = struct
                 }
               ];
             _;
-          } when Identifier.show self = "self" ->
+          } when self = self_parameter_name ->
             (* Look for method in class definition. *)
             let inline = function
               | { Node.value = Define { name = callee; body; _ }; _ }

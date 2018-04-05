@@ -248,6 +248,14 @@ let test_attributes _ =
     |}
     ["attribute", None, None; "nested", None, None; "other", None, None];
 
+  (* `self` isn't special cased if a self parameter is passed into the function. *)
+  assert_implicit_attribute_assigns
+    {|
+    def foo(renamed_self):
+      renamed_self.attribute: int = value
+  |}
+    ["attribute", Some (Type.expression Type.integer), None];
+
   (* Test define field assigns. *)
   let assert_property_attribute source expected =
     let expected =
