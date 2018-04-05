@@ -541,23 +541,23 @@ let qualify source =
                   ({ Node.value; _ } as expression) =
                 match value with
                 (* Weak globals. *)
-                | Access access ->
+                | Access (head :: tail) ->
                     begin
-                      match Map.find current_scope access with
+                      match Map.find current_scope [head] with
                       | Some rewrite ->
-                          state, { expression with Node.value = Access rewrite }
+                          state, { expression with Node.value = Access (rewrite @ tail)  }
                       | None ->
-                          match Map.find globals access with
+                          match Map.find globals [head] with
                           | Some global_access ->
                               (* This is a valid global access. *)
                               {
                                 state with
                                 current_scope = Map.set
                                     current_scope
-                                    ~key:access
+                                    ~key:[head]
                                     ~data:global_access;
                               },
-                              { expression with Node.value = Access global_access }
+                              { expression with Node.value = Access (global_access @ tail) }
                           | None ->
                               (* Invalid global access. *)
                               state, expression

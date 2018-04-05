@@ -403,6 +403,18 @@ let test_qualify _ =
       import a as b
       def some.qualifier.foo(a: A):
         a.attribute = 1
+    |};
+
+  assert_qualify
+    {|
+      from a import B
+      def foo(B)->None:
+        B.c = 3
+    |}
+    {|
+      from a import B
+      def some.qualifier.foo(B)->None:
+        a.B.c = 3
     |}
 
 
