@@ -687,7 +687,6 @@ let qualify source =
 
   let { variables = global_variables; methods = global_methods }, source =
     QualifyToplevelStatements.transform
-      ~shallow:true
       { variables = Access.Map.empty; methods = Access.Map.empty }
       source
   in

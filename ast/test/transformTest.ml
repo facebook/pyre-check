@@ -32,11 +32,30 @@ end = struct
         count, expression
 end
 
+
+module ShallowModifyingTransformer : sig
+  type t = int
+  include Transform.Transformer with type t := t
+  val final: t -> int
+end = struct
+  include Transform.Identity
+  include ModifyingTransformer
+
+  let statement_keep_recursing _state _statement =
+    Transform.Stop
+end
+
+
 module ModifyingTransform = Transform.Make(ModifyingTransformer)
+
+module ShallowModifyingTransform = Transform.Make(ShallowModifyingTransformer)
 
 let assert_modifying_source ?(shallow=false) statements expected_statements expected_sum =
   let state, modified =
-    ModifyingTransform.transform ~shallow 0 (Source.create statements)
+    if shallow then
+      ShallowModifyingTransform.transform 0 (Source.create statements)
+    else
+      ModifyingTransform.transform 0 (Source.create statements)
   in
   assert_source_equal
     modified
@@ -126,11 +145,27 @@ end = struct
     state, [statement; statement]
 end
 
+module ShallowExpandingTransformer : sig
+  type t = unit
+  include Transform.Transformer with type t := t
+end = struct
+  include Transform.Identity
+  include ExpandingTransformer
+  let statement_keep_recursing _state _statement =
+    Transform.Stop
+end
+
 module ExpandingTransform = Transform.Make(ExpandingTransformer)
+
+module ShallowExpandingTransform = Transform.Make(ShallowExpandingTransformer)
 
 let assert_expanded_source ?(shallow=false) statements expected_statements =
   let _, modified =
-    ExpandingTransform.transform ~shallow () (Source.create statements) in
+    if shallow then
+      ShallowExpandingTransform.transform () (Source.create statements)
+    else
+      ExpandingTransform.transform () (Source.create statements)
+  in
   assert_source_equal
     modified
     (Source.create expected_statements)
@@ -227,53 +262,15 @@ let test_expansion_with_stop _ =
 
   let module StoppingExpandingTransform = Transform.Make(StoppingExpandingTransformer) in
 
-  let assert_expanded_source_with_stop ?(shallow=false) source expected_source =
+  let assert_expanded_source_with_stop source expected_source =
     let _, modified =
-      StoppingExpandingTransform.transform ~shallow () (parse source) in
+      StoppingExpandingTransform.transform () (parse source) in
     assert_source_equal
       modified
       (parse expected_source)
   in
 
   assert_expanded_source_with_stop
-    {|
-       if (1):
-         if (2):
-           3
-         else:
-           4
-       else:
-         if (5):
-           6
-         else:
-           7
-    |}
-    {|
-       if (1):
-         if (2):
-           3
-         else:
-           4
-       else:
-         if (5):
-           6
-         else:
-           7
-       if (1):
-         if (2):
-           3
-         else:
-           4
-       else:
-         if (5):
-           6
-         else:
-           7
-    |}
-  ;
-
-  assert_expanded_source_with_stop
-    ~shallow:true
     {|
        if (1):
          if (2):
@@ -330,11 +327,29 @@ let test_double_count _ =
   end
   in
 
+  let module ShallowDoubleCounterTransformer : sig
+    type t = int
+    include Transform.Transformer with type t := t
+    val final: t -> int
+  end = struct
+    include Transform.Identity
+    include DoubleCounterTransformer
+
+    let statement_keep_recursing _state _statement =
+      Transform.Stop
+  end
+  in
+
   let module DoubleCounterTransform = Transform.Make(DoubleCounterTransformer) in
+
+  let module ShallowDoubleCounterTransform = Transform.Make(ShallowDoubleCounterTransformer) in
 
   let assert_double_count ?(shallow=false) source expected_sum =
     let state, modified =
-      DoubleCounterTransform.transform ~shallow 0 (parse source)
+      if shallow then
+        ShallowDoubleCounterTransform.transform 0 (parse source)
+      else
+        DoubleCounterTransform.transform 0 (parse source)
     in
     (* expect no change in the source *)
     assert_source_equal
@@ -358,7 +373,7 @@ let test_double_count _ =
       1.0
       2.0
     |}
-    2;
+    4;
   assert_double_count
     {|
       if (1):
@@ -375,7 +390,7 @@ let test_double_count _ =
       else:
         5
     |}
-    1;
+    2;
   assert_double_count
     {|
       if (1):
@@ -404,7 +419,7 @@ let test_double_count _ =
         else:
           7
     |}
-    1
+    2
 
 
 let () =

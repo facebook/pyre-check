@@ -38,5 +38,5 @@ module Identity : sig
 end
 
 module Make (Transformer: Transformer) : sig
-  val transform: ?shallow:bool -> Transformer.t -> Source.t -> Transformer.t * Source.t
+  val transform: Transformer.t -> Source.t -> Transformer.t * Source.t
 end
