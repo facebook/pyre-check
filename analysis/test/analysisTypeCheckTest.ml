@@ -589,6 +589,10 @@ let test_forward _ =
 
   (* Redirects. *)
   assert_forward [] "x = str(1)" ["x", Type.string];
+  assert_forward
+    ["y", Type.union [Type.integer; Type.string]]
+    "x = str(y)"
+    ["x", Type.string; "y", Type.union [Type.integer; Type.string]];
 
   (* Unresolved type variables. *)
   assert_forward
@@ -2390,7 +2394,17 @@ let test_check_method_resolution _ =
       def foo() -> None:
         undefined().call()
     |}
-    ["Undefined type [11]: Type `typing.Any` is not defined."]
+    ["Undefined type [11]: Type `typing.Any` is not defined."];
+  assert_type_errors
+    {|
+      class Foo:
+        def derp(self) -> int: ...
+      class Bar:
+        def derp(self) -> int: ...
+      def baz(x: typing.Union[Foo, Bar]) -> int:
+        return x.derp()
+    |}
+    []
 
 
 let test_check_self _ =

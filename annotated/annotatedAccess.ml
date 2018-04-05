@@ -372,6 +372,13 @@ let fold ~resolution ~initial ~f access =
                     Call.create ~kind:Call.Function call
                   end
                 else
+                  let resolved =
+                    match Annotation.annotation resolved with
+                    | Type.Union (parameter :: _) ->
+                        Annotation.create parameter (* TODO(T27165573): Don't just pick first. *)
+                    | _ ->
+                        resolved
+                  in
                   resolved,
                   Call.create ~kind:Call.Method call in
 

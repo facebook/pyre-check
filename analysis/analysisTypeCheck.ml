@@ -941,9 +941,22 @@ module State = struct
                 ]
             | Method { location; access; annotation; call; callee; backup; } ->
                 let annotation = Annotation.original annotation in
+                let non_existent_parent =
+                  match annotation with
+                  | Type.Union annotations ->
+                      List.find
+                        ~f:(fun annotation ->
+                            Option.is_none (Resolution.class_definition resolution annotation))
+                        annotations
+                  | annotation ->
+                      if Option.is_some (Resolution.class_definition resolution annotation) then
+                        None
+                      else
+                        Some annotation
+                in
                 let unresolved_method_errors =
-                  match callee, Resolution.class_definition resolution annotation with
-                  | None, Some _ ->
+                  match callee, non_existent_parent with
+                  | None, None ->
                       [
                         {
                           Error.location;
@@ -954,7 +967,7 @@ module State = struct
                           define = define_node;
                         }
                       ]
-                  | None, None ->
+                  | None, Some annotation ->
                       [
                         {
                           Error.location;
