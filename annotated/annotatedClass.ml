@@ -488,7 +488,7 @@ module Attribute = struct
             (if setter then
                (Resolution.parse_annotation resolution value)
              else
-               (Resolution.resolve resolution value))
+               (Resolution.resolve_literal resolution value))
       | Some annotation, None ->
           Annotation.create_immutable ~global:true annotation
       | None, Some value ->

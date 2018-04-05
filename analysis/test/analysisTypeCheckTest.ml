@@ -2704,7 +2704,7 @@ let test_check_attributes _ =
         def foo(self) -> typing.Optional[int]:
           return self.bar
     |}
-    [];
+    ["Incompatible return type [7]: Expected `typing.Optional[int]` but got `typing.Any`."];
   assert_type_errors
     {|
       class Bar:
@@ -2887,6 +2887,20 @@ let test_check_attributes _ =
   assert_type_errors
     {|
       class Foo:
+        def __init__(self) -> None:
+            self.a = 3
+        def foo(self) -> str:
+            return self.a
+    |}
+    [
+      "Missing attribute annotation [4]: Attribute `a` of class `Foo` has type `int` " ^
+      "but no type is specified.";
+      "Incompatible return type [7]: Expected `str` but got `int`."
+    ];
+
+  assert_type_errors
+    {|
+      class Foo:
         bar: typing.Optional[int]
       def foo() -> int:
         foo_obj = Foo()
@@ -3010,7 +3024,6 @@ let test_check_attributes _ =
     [
       "Missing attribute annotation [4]: Attribute `attribute` of class `Foo` has type `int` but " ^
       "no type is specified.";
-      "Incompatible return type [7]: Expected `int` but got `unknown`.";
     ];
   assert_type_errors
     {|

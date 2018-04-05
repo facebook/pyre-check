@@ -154,7 +154,7 @@ let test_attributes _ =
       value =
         value
         >>| (fun value ->
-            (Node.create_with_default_location (Expression.Access (Access.create value))));
+            (Node.create_with_default_location (Expression.Access value)));
       compound = None;
       parent = None;
     }
@@ -166,10 +166,7 @@ let test_attributes _ =
       Attribute.target =
         Node.create_with_default_location (Expression.Access (Access.create target));
       annotation;
-      value =
-        value
-        >>| (fun value ->
-            (Node.create_with_default_location (Expression.Access (Access.create value))));
+      value;
       async = false;
       setter;
     }
@@ -213,27 +210,58 @@ let test_attributes _ =
         self.attribute = value
         self.attribute: int = value
     |}
-    ["attribute", Some (Type.expression Type.integer), None];
+    ["attribute", Some (Type.expression Type.integer), Some (Access.create "value")];
   assert_implicit_attribute_assigns
     {|
       def foo():
         self.attribute: int = value
         self.attribute = value
     |}
-    ["attribute", Some (Type.expression Type.integer), None];
+    ["attribute", Some (Type.expression Type.integer), Some (Access.create "value")];
   assert_implicit_attribute_assigns
     {|
       def foo():
         self.attribute: int = value
         self.attribute: str = value
     |}
-    ["attribute", Some (Type.expression (Type.Union [Type.string; Type.integer])), None];
+    [
+      "attribute",
+      Some (Type.expression (Type.Union [Type.string; Type.integer])),
+      Some (Access.create "value")
+    ];
   assert_implicit_attribute_assigns
     {|
       def foo():
         self.attribute, self.other = derp()
     |}
-    ["attribute", None, None; "other", None, None];
+    [
+      "attribute",
+      None,
+      Some [
+        Access.Call {
+          Node.value = {
+            Call.name = {
+              Node.value = Access (Access.create "derp");
+              location = Location.any
+            };
+            arguments = []
+          };
+          location = Location.any;
+        }];
+      "other",
+      None,
+      Some [
+        Access.Call {
+          Node.value = {
+            Call.name = {
+              Node.value = Access (Access.create "derp");
+              location = Location.any
+            };
+            arguments = []
+          };
+          location = Location.any;
+        }];
+    ];
 
   (* Implicit arguments in branches. *)
   assert_implicit_attribute_assigns
@@ -246,7 +274,11 @@ let test_attributes _ =
           if False:
             self.nested = value
     |}
-    ["attribute", None, None; "nested", None, None; "other", None, None];
+    [
+      "attribute", None, Some (Access.create "value");
+      "nested", None, Some (Access.create "value");
+      "other", None, Some (Access.create "value")
+    ];
 
   (* `self` isn't special cased if a self parameter is passed into the function. *)
   assert_implicit_attribute_assigns
@@ -254,7 +286,7 @@ let test_attributes _ =
     def foo(renamed_self):
       renamed_self.attribute: int = value
   |}
-    ["attribute", Some (Type.expression Type.integer), None];
+    ["attribute", Some (Type.expression Type.integer), Some (Access.create "value")];
 
   (* Test define field assigns. *)
   let assert_property_attribute source expected =
@@ -298,12 +330,15 @@ let test_attributes _ =
        |> Class.attributes ~in_test ~include_generated_attributes
        |> Map.data)
   in
+  let create_access_node value =
+    (Node.create_with_default_location (Expression.Access (Access.create value)))
+  in
   assert_attributes
     {|
       class Foo:
         attribute: int = value
     |}
-    ["attribute", Some (Type.expression Type.integer), Some "value", false];
+    ["attribute", Some (Type.expression Type.integer), Some (create_access_node "value"), false];
   assert_attributes
     {|
       class Foo:
@@ -317,9 +352,9 @@ let test_attributes _ =
     |}
     [
       "__init__", None, None, false;
-      "attribute", Some (Type.expression Type.integer), Some "value", false;
-      "ignored", None, None, false;
-      "implicit", None, None, false;
+      "attribute", Some (Type.expression Type.integer), Some (create_access_node "value"), false;
+      "ignored", None, Some (create_access_node "ignored"), false;
+      "implicit", None, Some ((create_access_node "implicit")), false;
     ];
   assert_attributes
     {|
@@ -330,7 +365,7 @@ let test_attributes _ =
     |}
     [
       "__init__", None, None, false;
-      "attribute", Some (Type.expression Type.integer), Some "value", false;
+      "attribute", Some (Type.expression Type.integer), Some (create_access_node "value"), false;
     ];
   assert_attributes
     {|
@@ -344,7 +379,7 @@ let test_attributes _ =
     |}
     [
       "__init__", None, None, false;
-      "attribute", Some (Type.expression Type.integer), None, false;
+      "attribute", Some (Type.expression Type.integer), Some (create_access_node "value"), false;
       "init", None, None, false;
       "not_inlined", None, None, false;
     ];
@@ -357,7 +392,7 @@ let test_attributes _ =
           pass
     |}
     [
-      "attribute", Some (Type.expression Type.integer), Some "value", false;
+      "attribute", Some (Type.expression Type.integer), Some (create_access_node "value"), false;
       "property", Some (Type.expression Type.integer), None, false;
     ];
   assert_attributes
@@ -403,7 +438,7 @@ let test_attributes _ =
         def x(self, value:str) -> None: ...
     |}
     [
-      "x", Some (Type.expression Type.string), Some "int", true;
+      "x", Some (Type.expression Type.string), Some (create_access_node "int"), true;
     ];
 
   (* Implicit attributes in tests. *)
@@ -415,7 +450,7 @@ let test_attributes _ =
           self.attribute = 1
     |}
     [
-      "attribute", None, None, false;
+      "attribute", None, Some (+Integer 1), false;
       "setUp", None, None, false;
     ];
   assert_attributes
@@ -428,8 +463,8 @@ let test_attributes _ =
           self.context = 2
     |}
     [
-      "attribute", None, None, false;
-      "context", None, None, false;
+      "attribute", None, Some (+Integer 1), false;
+      "context", None, Some (+Integer 2), false;
       "setUp", None, None, false;
       "with_context", None, None, false;
     ];

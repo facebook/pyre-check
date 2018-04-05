@@ -385,7 +385,6 @@ module Define = struct
                         target with
                         Node.value = Access access;
                       };
-                      value = None;
                     }
                 in
                 let update = function
