@@ -205,29 +205,34 @@ let computation_thread request_queue configuration state =
                       !(state.connections).socket)
             end;
           (* Stop if there's any inconsistencies in the .pyre directory. *)
-          if current_time -. state.last_integrity_check > State.integrity_check_every then
-            begin
-              let pid =
-                Path.absolute pid_path
-                |> In_channel.create
-                |> In_channel.input_all
-              in
-              if not (Pid.to_string (Unix.getpid ()) = pid) then
-                Mutex.critical_section
-                  state.lock
-                  ~f:(fun () ->
-                      Log.error
-                        "Stopping server in integrity check. Got %s in the pid file, expected %s."
-                        pid
-                        (Pid.to_string (Unix.getpid ()));
-                      ServerOperations.stop_server
-                        ~reason:"failed integrity check"
-                        configuration
-                        !(state.connections).socket)
-            end;
+          let last_integrity_check =
+            if current_time -. state.last_integrity_check > State.integrity_check_every then
+              begin
+                let pid =
+                  Path.absolute pid_path
+                  |> In_channel.create
+                  |> In_channel.input_all
+                in
+                if not (Pid.to_string (Unix.getpid ()) = pid) then
+                  Mutex.critical_section
+                    state.lock
+                    ~f:(fun () ->
+                        Log.error
+                          "Stopping server in integrity check. Got %s in the pid file, expected %s."
+                          pid
+                          (Pid.to_string (Unix.getpid ()));
+                        ServerOperations.stop_server
+                          ~reason:"failed integrity check"
+                          configuration
+                          !(state.connections).socket);
+                current_time
+              end
+            else
+              state.last_integrity_check
+          in
           (* This sleep is necessary because OCaml threads aren't pre-emptively scheduled. *)
           Unix.nanosleep 0.1 |> ignore;
-          state
+          { state with last_integrity_check }
       | _ ->
           let state = { state with last_request_time = Unix.time () } in
           handle_request state ~request:(Squeue.pop request_queue)
