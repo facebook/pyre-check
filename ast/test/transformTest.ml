@@ -58,11 +58,11 @@ let assert_modifying_source ?(shallow=false) statements expected_statements expe
       ModifyingTransform.transform 0 (Source.create statements)
   in
   assert_source_equal
-    modified
-    (Source.create expected_statements);
+    (Source.create expected_statements)
+    modified;
   assert_equal
-    (ModifyingTransformer.final state)
     expected_sum
+    (ModifyingTransformer.final state)
     ~printer:string_of_int
 
 let test_transform _ =
@@ -167,8 +167,8 @@ let assert_expanded_source ?(shallow=false) statements expected_statements =
       ExpandingTransform.transform () (Source.create statements)
   in
   assert_source_equal
-    modified
     (Source.create expected_statements)
+    modified
 
 let test_expansion _ =
   assert_expanded_source
@@ -266,8 +266,8 @@ let test_expansion_with_stop _ =
     let _, modified =
       StoppingExpandingTransform.transform () (parse source) in
     assert_source_equal
-      modified
       (parse expected_source)
+      modified
   in
 
   assert_expanded_source_with_stop
@@ -353,11 +353,11 @@ let test_double_count _ =
     in
     (* expect no change in the source *)
     assert_source_equal
-      modified
-      (parse source);
+      (parse source)
+      modified;
     assert_equal
-      (ModifyingTransformer.final state)
       expected_sum
+      (ModifyingTransformer.final state)
       ~printer:string_of_int
   in
 
