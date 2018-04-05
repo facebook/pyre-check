@@ -208,10 +208,14 @@ let computation_thread request_queue configuration state =
           let last_integrity_check =
             if current_time -. state.last_integrity_check > State.integrity_check_every then
               begin
-                let pid =
+                let pid_file =
                   Path.absolute pid_path
                   |> In_channel.create
-                  |> In_channel.input_all
+                in
+                let pid =
+                  protect
+                    ~f:(fun () -> In_channel.input_all pid_file)
+                    ~finally:(fun () -> In_channel.close pid_file)
                 in
                 if not (Pid.to_string (Unix.getpid ()) = pid) then
                   Mutex.critical_section
