@@ -32,6 +32,7 @@ let test_select _ =
           class str: ...
           _T = typing.TypeVar('_T')
           _S = typing.TypeVar('_S')
+          _R = typing.TypeVar('_R', int, float)
           class typing.Generic: ...
           class typing.Type(typing.Generic[_T]): ...
           class typing.Sequence(typing.Generic[_S]): ...
@@ -161,6 +162,22 @@ let test_select _ =
     "(1)"
     (`NotFoundMismatch
        (Type.integer, Type.parametric "typing.Sequence" [Type.variable "_T"], None, 1));
+
+  assert_select "[[_R], _R]" "(1)" (`Found "[[int], int]");
+  assert_select
+    "[[_R], _R]"
+    "('string')"
+    (`NotFoundMismatch
+       (Type.string, Type.variable ~constraints:[Type.integer; Type.float] "_R", None, 1));
+  assert_select "[[typing.List[_R]], _R]" "([1])" (`Found "[[typing.List[int]], int]");
+  assert_select
+    "[[typing.List[_R]], _R]"
+    "(['string'])"
+    (`NotFoundMismatch
+       (Type.list Type.string,
+        Type.list (Type.variable ~constraints:[Type.integer; Type.float] "_R"),
+        None,
+        1));
 
   (* Ranking. *)
   assert_select
