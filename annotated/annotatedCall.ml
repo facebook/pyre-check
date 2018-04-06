@@ -99,10 +99,7 @@ type redirect = {
 let redirect { call = { Call.name; arguments }; kind = _ } =
   match name, arguments with
   | { Node.location; value = Access [Access.Identifier name]; _ },
-    [{
-      Argument.value = { Node.value = Access access; _ };
-      _;
-    } as argument] ->
+    [{ Argument.value; _ } as argument] ->
       begin
         match Identifier.show name with
         | "abs" -> Some "__abs__"
@@ -123,7 +120,7 @@ let redirect { call = { Call.name; arguments }; kind = _ } =
                 };
               }]
           in
-          { access; call })
+          { access = Access.access value; call })
 
   | _ -> None
 

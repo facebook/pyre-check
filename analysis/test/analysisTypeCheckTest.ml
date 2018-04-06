@@ -51,7 +51,7 @@ let plain_environment =
           def __mod__(self, other) -> int: ...
           def __radd__(self, other: int) -> int: ...
           def __neg__(self) -> int: ...
-          def __str__(self) -> str: ...
+          def __str__(self) -> bool: ...
         class complex():
           def __radd__(self, other: int) -> int: ...
         class str(typing.Sized):
@@ -588,11 +588,11 @@ let test_forward _ =
     ["x", Type.awaitable Type.integer; "y", Type.integer];
 
   (* Redirects. *)
-  assert_forward [] "x = str(1)" ["x", Type.string];
   assert_forward
     ["y", Type.union [Type.integer; Type.string]]
     "x = str(y)"
-    ["x", Type.string; "y", Type.union [Type.integer; Type.string]];
+    ["x", Type.bool; "y", Type.union [Type.integer; Type.string]];
+  assert_forward [] "x = str(1)" ["x", Type.bool];
 
   (* Unresolved type variables. *)
   assert_forward
@@ -4670,7 +4670,17 @@ let test_check_constructors _ =
     ["Incompatible return type [7]: Expected `B` but got `A`."];
 
   (* Overloaded constructors. *)
-  assert_type_errors "str(True)" []
+  assert_type_errors
+    {|
+      class Class:
+        @overload
+        def __init__(self, i: int) -> None: ...
+        def __init__(self, s: str) -> None: ...
+      def construct() -> None:
+        Class(1)
+        Class('asdf')
+    |}
+    []
 
 
 let test_check_explicit_method_call _ =
