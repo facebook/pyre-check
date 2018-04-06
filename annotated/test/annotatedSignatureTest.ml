@@ -24,7 +24,7 @@ open Signature
 
 
 let test_select _ =
-  let assert_select callable call expected =
+  let assert_select ?(allow_undefined = false) callable call expected =
     let resolution =
       populate
         {|
@@ -45,8 +45,18 @@ let test_select _ =
       |> parse_single_expression
       |> Resolution.parse_annotation resolution
       |> function
-      | Type.Callable callable -> callable
-      | _ -> failwith "Could not extract overloads"
+      | Type.Callable ({ Type.Callable.overloads; _ } as callable) ->
+          let undefined { Type.Callable.parameters; _ } =
+            match parameters with
+            | Type.Callable.Undefined -> true
+            | _ -> false
+          in
+          if List.exists overloads ~f:undefined && not allow_undefined then
+            failwith "Undefined parameters"
+          else
+            callable
+      | _ ->
+          failwith "Could not extract overloads"
     in
     let callable = parse_callable callable in
     let overload =
@@ -82,10 +92,14 @@ let test_select _ =
   in
 
   (* Undefined callables always match. *)
-  assert_select "[..., int]" "()" (`Found "[..., int]");
-  assert_select "[..., int]" "(a, b)" (`Found "[..., int]");
-  assert_select "[..., int]" "(a, b='depr', *variable, **keywords)" (`Found "[..., int]");
-  assert_select "[..., int][[int], int]" "(1)" (`Found "[..., int]");
+  assert_select ~allow_undefined:true "[..., int]" "()" (`Found "[..., int]");
+  assert_select ~allow_undefined:true "[..., int]" "(a, b)" (`Found "[..., int]");
+  assert_select
+    ~allow_undefined:true
+    "[..., int]"
+    "(a, b='depr', *variable, **keywords)"
+    (`Found "[..., int]");
+  assert_select ~allow_undefined:true "[..., int][[int], int]" "(1)" (`Found "[..., int]");
 
   (* Traverse anonymous arguments. *)
   assert_select "[[], int]" "()" (`Found "[[], int]");
@@ -194,7 +208,7 @@ let test_select _ =
     (`NotFound ("[[int, str, bool], int]", None));
 
   (* Void functions. *)
-  assert_select "[..., None]" "()" (`Found "[..., None]");
+  assert_select ~allow_undefined:true "[..., None]" "()" (`Found "[..., None]");
   assert_select "[[int], None]" "(1)" (`Found "[[int], None]");
   assert_select
     "[[int], None]"
