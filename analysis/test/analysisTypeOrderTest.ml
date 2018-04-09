@@ -810,7 +810,7 @@ let test_remove_extra_edges _ =
     connect order ~predecessor:!"0" ~successor:!"3";
     connect order ~predecessor:!"1" ~successor:!"2";
     connect order ~predecessor:!"2" ~successor:!"3";
-    remove_extra_edges order ~bottom:!"0" ~top:!"3";
+    remove_extra_edges order ~bottom:!"0" ~top:!"3" [!"0"; !"1"; !"2"; !"3"];
     order
   in
   let zero_index = Handler.find_unsafe (Handler.indices ()) !"0" in
@@ -840,7 +840,7 @@ let test_connect_annotations_to_top _ =
     insert order !"3";
     connect order ~predecessor:!"0" ~successor:!"2";
     connect order ~predecessor:!"0" ~successor:!"1";
-    connect_annotations_to_top order ~configuration ~bottom:!"0" ~top:!"3";
+    connect_annotations_to_top order ~configuration ~top:!"3" [!"0"; !"1"; !"2"; !"3"];
     order in
 
   assert_equal
@@ -969,7 +969,7 @@ let test_to_dot _ =
     insert order Type.Top;
     connect order ~predecessor:!"0" ~successor:!"2";
     connect order ~predecessor:!"0" ~successor:!"1" ~parameters:[Type.string];
-    connect_annotations_to_top order ~configuration ~bottom:!"0" ~top:!"3";
+    connect_annotations_to_top order ~configuration ~top:!"3" [!"0"; !"1"; !"2"; !"3"];
     order in
   let (module Handler) = order in
   assert_equal

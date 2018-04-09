@@ -1035,7 +1035,7 @@ let add_backedges (module Handler: Handler) ~bottom =
   List.iter ~f:add_bottom edge_keys
 
 
-let remove_extra_edges (module Handler: Handler) ~bottom ~top =
+let remove_extra_edges (module Handler: Handler) ~bottom ~top annotations =
   let disconnect keys ~edges ~backedges special_index =
     let remove_extra_references key =
       (Handler.find edges key
@@ -1065,34 +1065,36 @@ let remove_extra_edges (module Handler: Handler) ~bottom ~top =
   in
   let edges = Handler.edges () in
   let backedges = Handler.backedges () in
-  disconnect (Handler.keys ()) ~edges ~backedges (Handler.find_unsafe (Handler.indices ()) top);
+  let index_of annotation = Handler.find_unsafe (Handler.indices ()) annotation in
+  let keys = List.map ~f:index_of annotations in
+  disconnect keys ~edges ~backedges (index_of top);
   disconnect
-    (Handler.keys ())
+    keys
     ~edges:backedges
     ~backedges:edges
-    (Handler.find_unsafe (Handler.indices ()) bottom)
+    (index_of bottom)
 
 
-let connect_annotations_to_top ((module Handler: Handler) as order) ~configuration ~bottom ~top =
-  let index_of annotation = Handler.find_unsafe (Handler.indices ()) annotation in
-  let top_index = index_of top in
-  let visited = ref (Int.Set.of_list [top_index]) in
-
-  let rec visit index =
+let connect_annotations_to_top
+    ((module Handler: Handler) as order)
+    ~configuration
+    ~top
+    annotations =
+  let indices =
+    let index_of annotation = Handler.find_unsafe (Handler.indices ()) annotation in
+    List.map ~f:index_of annotations
+  in
+  let connect_to_top index =
     let annotation = Handler.find_unsafe (Handler.annotations ()) index in
-    if not (Set.mem !visited index) &&
-       not (less_or_equal order ~left:top ~right:annotation) then
+    if not (less_or_equal order ~left:top ~right:annotation) then
       begin
-        visited := Set.add !visited index;
         match Handler.find (Handler.edges ()) index with
         | Some targets when List.length targets > 0 ->
-            targets
-            |> List.map ~f:Target.target
-            |> List.iter ~f:visit
+            ()
         | _ ->
             connect order ~add_backedge:true ~configuration ~predecessor:annotation ~successor:top
       end in
-  visit (index_of bottom)
+  List.iter ~f:connect_to_top indices
 
 
 let check_integrity (module Handler: Handler) =

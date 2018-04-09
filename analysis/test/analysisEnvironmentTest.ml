@@ -183,7 +183,8 @@ let test_register_class_definitions _ =
        A = B
        def foo()->A:
          return C()
-    |});
+    |})
+  |> ignore;
   assert_equal (parse_annotation (module Handler) (!"C")) (Type.primitive "C");
   assert_equal (parse_annotation (module Handler) (!"D")) (Type.primitive "D");
   assert_equal (parse_annotation (module Handler) (!"B")) (Type.primitive "B");
@@ -231,16 +232,16 @@ let test_register_aliases _ =
          C = D
     |}
   in
-  Environment.register_class_definitions (module Handler) typing;
-  Environment.register_class_definitions (module Handler) source;
-  Environment.register_class_definitions (module Handler) other;
+  Environment.register_class_definitions (module Handler) typing |> ignore;
+  Environment.register_class_definitions (module Handler) source |> ignore;
+  Environment.register_class_definitions (module Handler) other |> ignore;
   Environment.register_aliases (module Handler) [typing; other; source];
 
   assert_equal (parse_annotation (module Handler) (!"C")) (Type.primitive "C");
   assert_equal (parse_annotation (module Handler) (!"D")) (Type.primitive "D");
   assert_equal (parse_annotation (module Handler) (!"B")) (Type.primitive "D");
   assert_equal (parse_annotation (module Handler) (!"A")) (Type.primitive "D");
-  assert_equal (parse_annotation( module Handler) (!"X")) (Type.none);
+  assert_equal (parse_annotation (module Handler) (!"X")) (Type.none);
   assert_equal (Handler.function_definitions (access ["foo"])) None;
 
   let order = (module Handler.TypeOrderHandler: TypeOrder.Handler) in
@@ -347,7 +348,7 @@ let test_connect_type_order _ =
     |}
   in
   let order = (module Handler.TypeOrderHandler: TypeOrder.Handler) in
-  Environment.register_class_definitions (module Handler) source;
+  Environment.register_class_definitions (module Handler) source |> ignore;
   Environment.register_aliases (module Handler) [source];
   Environment.connect_type_order (module Handler) source;
   assert_equal (parse_annotation (module Handler) (!"C")) (Type.primitive "C");

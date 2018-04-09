@@ -94,14 +94,14 @@ val connect_definition
 val register_class_definitions
   :  (module Handler)
   -> Source.t
-  -> unit
+  -> Type.Set.t
 
 val register_aliases
   :  (module Handler)
   -> Source.t list
   -> unit
 
-val register_globals :  (module Handler) -> Source.t -> unit
+val register_globals: (module Handler) -> Source.t -> unit
 
 val connect_type_order
   :  (module Handler)

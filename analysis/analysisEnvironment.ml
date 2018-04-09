@@ -672,9 +672,9 @@ let register_module (module Handler: Handler) { Source.qualifier; statements; _ 
 let register_class_definitions (module Handler: Handler) source =
   let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
   let module Visit = Visit.MakeStatementVisitor(struct
-      type t = unit
+      type t = Type.Set.t
 
-      let statement _ _ = function
+      let statement _ new_annotations = function
         | { Node.value = Class { Class.name; _ }; _ }
         | { Node.value = Stub (Stub.Class { Class.name; _ }); _ } ->
             let primitive, _ =
@@ -682,12 +682,17 @@ let register_class_definitions (module Handler: Handler) source =
               |> Type.split
             in
             if not (TypeOrder.contains order primitive) then
-              TypeOrder.insert order primitive;
+              begin
+                TypeOrder.insert order primitive;
+                Set.add new_annotations primitive
+              end
+            else
+              new_annotations
         | _ ->
-            ()
+            new_annotations
     end)
   in
-  Visit.visit () source
+  Visit.visit Type.Set.empty source
 
 
 let register_aliases (module Handler: Handler) sources =
@@ -1084,7 +1089,11 @@ let populate
 
   List.iter ~f:(register_module (module Handler)) sources;
 
-  List.iter ~f:(register_class_definitions (module Handler)) sources;
+  let all_annotations =
+    List.map ~f:(register_class_definitions (module Handler)) sources
+    |> List.fold ~init:Type.Set.empty ~f:Set.union
+    |> Set.to_list
+  in
 
   register_aliases (module Handler) sources;
 
@@ -1097,12 +1106,13 @@ let populate
   TypeOrder.connect_annotations_to_top
     (module Handler.TypeOrderHandler)
     ~configuration
-    ~bottom:Type.Bottom
-    ~top:Type.Object;
+    ~top:Type.Object
+    all_annotations;
   TypeOrder.remove_extra_edges
     (module Handler.TypeOrderHandler)
     ~bottom:Type.Bottom
-    ~top:Type.Object;
+    ~top:Type.Object
+    all_annotations;
   if check_integrity then
     TypeOrder.check_integrity (module Handler.TypeOrderHandler);
 
