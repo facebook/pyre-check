@@ -372,23 +372,27 @@ let fold ~resolution ~initial ~f access =
                     Call.create ~kind:Call.Function call
                   end
                 else
-                  let resolved =
-                    match Annotation.annotation resolved with
-                    | Type.Union (parameter :: _) ->
-                        Annotation.create parameter (* TODO(T27165573): Don't just pick first. *)
-                    | _ ->
-                        resolved
-                  in
                   resolved,
                   Call.create ~kind:Call.Method call in
-
               let callee =
-                Resolution.method_signature
-                  resolution
-                  (Annotation.original resolved)
-                  (Call.call call)
-                  (Call.argument_annotations ~resolution call)
-                |> pick_signature call
+                let method_signature annotation =
+                  Resolution.method_signature
+                    resolution
+                    annotation
+                    (Call.call call)
+                    (Call.argument_annotations ~resolution call)
+                  |> pick_signature call
+                in
+                match Annotation.original resolved with
+                | Type.Union ((parameter :: _ ) as parameters) ->
+                    let undefined_method_exists =
+                      List.exists
+                        ~f:(fun parameter -> Option.is_none (method_signature parameter))
+                        parameters
+                    in
+                    if undefined_method_exists then None else method_signature parameter
+                | original ->
+                    method_signature original
               in
               let backup =
                 Call.backup call

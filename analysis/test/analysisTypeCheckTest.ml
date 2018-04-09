@@ -67,6 +67,7 @@ let plain_environment =
           def __add__(self, other: str) -> str: ...
           def __pos__(self) -> float: ...
           def __repr__(self) -> float: ...
+          def __str__(self) -> str: ...
         class object():
           def __sizeof__() -> int: pass
 
@@ -2485,7 +2486,20 @@ let test_check_method_resolution _ =
       def baz(x: typing.Union[Foo, Bar]) -> int:
         return x.derp()
     |}
-    []
+    [];
+  assert_type_errors
+    {|
+      class Foo:
+        def derp(self) -> int: ...
+      class Bar:
+        def herp(self) -> int: ...
+      def baz(x: typing.Union[Foo, Bar]) -> int:
+        return x.derp()
+    |}
+    [
+      "Incompatible return type [7]: Expected `int` but got `unknown`.";
+      "Undefined function [10]: Could not resolve call `derp` on `typing.Union[Bar, Foo]`.";
+    ]
 
 
 let test_check_self _ =
