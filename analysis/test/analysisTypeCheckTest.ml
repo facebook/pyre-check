@@ -2195,6 +2195,16 @@ let test_check_function_parameters _ =
     [
       "Incompatible return type [7]: Expected `int` but got `unknown`.";
       "Undefined attribute [16]: `Attributes` has no attribute `str_attribute`.";
+    ];
+
+  assert_type_errors
+    {|
+      def foo(x: typing.Union[OtherAttributes, Attributes])->int:
+        return x.str_attribute
+    |}
+    [
+      "Incompatible return type [7]: Expected `int` but got `unknown`.";
+      "Undefined attribute [16]: `Attributes` has no attribute `str_attribute`.";
     ]
 
 

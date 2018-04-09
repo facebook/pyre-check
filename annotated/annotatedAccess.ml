@@ -506,8 +506,18 @@ let fold ~resolution ~initial ~f access =
               let attribute_with_definition =
                 match Annotation.annotation resolved with
                 | Type.Union annotations ->
-                    List.filter_map ~f:(fun annotation -> attribute ~annotation) annotations
-                    |> List.hd (* TODO(T27165573): More sophisticated algorithm for picking here. *)
+                    let attributes =
+                      List.filter_map ~f:(fun annotation -> attribute ~annotation) annotations
+                    in
+                    (match
+                       List.find
+                         ~f:(fun (attribute, _) -> not (Attribute.defined attribute))
+                         attributes
+                     with
+                     | Some found ->
+                         Some found (* Don't suppress `undefined attribute` errors. *)
+                     | None ->
+                         List.hd attributes)
                 | annotation ->
                     attribute ~annotation
               in
