@@ -418,6 +418,31 @@ let test_qualify _ =
       def some.qualifier.f() -> a.B:
         $renamed_a = None
         return a.B
+    |};
+
+  (* Do not rename type annotations. *)
+  assert_qualify
+    {|
+      from a import b
+      def foo(a: a.b):
+        a = 5
+    |}
+    {|
+      from a import b
+      def some.qualifier.foo($renamed_a: a.b):
+        $renamed_a = 5
+    |};
+
+  assert_qualify
+    {|
+      import a
+      def foo(a: a):
+        a = 5
+    |}
+    {|
+      import a
+      def some.qualifier.foo($renamed_a: a):
+        $renamed_a = 5
     |}
 
 
