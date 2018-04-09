@@ -32,14 +32,14 @@ type mismatch = {
 [@@deriving compare, eq, show, hash]
 
 type missing_parameter = {
-  name: Identifier.t;
+  name: Access.t;
   annotation: Type.t;
   due_to_any: bool;
 }
 [@@deriving compare, eq, show, hash]
 
 type parameter_mismatch = {
-  name: Identifier.t option;
+  name: Access.t option;
   position: int;
   callee: Statement.Define.t option;
   mismatch: mismatch;

@@ -787,7 +787,7 @@ let test_incremental_attribute_caching context =
         pass
       class C:
         def __init__(self):
-          self.a = A()
+          self.a: A = A()
         def f(self)->int:
           bleh = self.a
           return 1

@@ -39,7 +39,7 @@ type mismatch = {
 
 
 type missing_parameter = {
-  name: Identifier.t;
+  name: Access.t;
   annotation: Type.t;
   due_to_any: bool;
 }
@@ -47,7 +47,7 @@ type missing_parameter = {
 
 
 type parameter_mismatch = {
-  name: Identifier.t option;
+  name: Access.t option;
   position: int;
   callee: Define.t option;
   mismatch: mismatch;
@@ -224,6 +224,10 @@ let description
     in
     (string_of_int number) ^ suffix
   in
+  let renaming_pattern = Str.regexp "^\\$[a-zA-Z]*_" in
+  let access_sanitized_show name =
+    Str.global_replace renaming_pattern "" (Access.show name)
+  in
   let message kind =
     match kind with
     | IncompatibleAwaitableType actual ->
@@ -237,15 +241,15 @@ let description
     | MissingParameterAnnotation { name; annotation; due_to_any = false } ->
         [
           Format.asprintf
-            "Parameter %a has type %a but no type is specified."
-            Identifier.pp name
+            "Parameter `%s` has type %a but no type is specified."
+            (access_sanitized_show name)
             Type.pp annotation
         ]
     | MissingParameterAnnotation { name; annotation; due_to_any = true } ->
         [
           Format.asprintf
-            "Parameter %a has type %a but type `Any` is specified."
-            Identifier.pp name
+            "Parameter `%s` has type %a but type `Any` is specified."
+            (access_sanitized_show name)
             Type.pp annotation
         ]
     | MissingReturnAnnotation { annotation; evidence_locations; due_to_any } ->
@@ -372,7 +376,7 @@ let description
           let parameter =
             match name with
             | Some name ->
-                Str.global_replace (Str.regexp "^\\$.*_") "" (Identifier.show name)
+                access_sanitized_show name
                 |> Format.asprintf "parameter `%s`"
             | _ ->
                 "anonymous parameter"
@@ -432,8 +436,8 @@ let description
       } ->
         [
           (Format.asprintf
-             "%a is declared to have type %a but is used as type %a."
-             Access.pp name
+             "%s is declared to have type %a but is used as type %a."
+             (access_sanitized_show name)
              Type.pp expected
              Type.pp actual);
           (Format.asprintf
@@ -638,7 +642,7 @@ let less_or_equal ~resolution left right =
           ~left:left.annotation
           ~right:right.annotation
     | IncompatibleParameterType left, IncompatibleParameterType right
-      when Option.equal Identifier.equal left.name right.name ->
+      when Option.equal Access.equal left.name right.name ->
         less_or_equal_mismatch left.mismatch right.mismatch
     | IncompatibleReturnType left, IncompatibleReturnType right ->
         less_or_equal_mismatch left right
@@ -730,7 +734,7 @@ let join ~resolution left right =
     | MissingGlobalAnnotation left, MissingGlobalAnnotation right when left.name = right.name ->
         MissingGlobalAnnotation (join_missing_annotation left right)
     | IncompatibleParameterType left, IncompatibleParameterType right
-      when Option.equal Identifier.equal left.name right.name &&
+      when Option.equal Access.equal left.name right.name &&
            left.position = right.position &&
            Option.equal Define.equal left.callee right.callee ->
         IncompatibleParameterType {
@@ -1117,7 +1121,7 @@ let to_json ~detailed ({ kind; define = { Node.value = define; _ }; location; _ 
       let annotation =
         match kind with
         | MissingParameterAnnotation { name = parameter_name; annotation = parameter_annotation; _ }
-          when name = parameter_name ->
+          when Access.create_from_identifiers [name] = parameter_name ->
             parameter_annotation
             |> print_annotation
             |> (fun string -> `String string)

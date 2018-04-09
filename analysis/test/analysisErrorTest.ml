@@ -153,7 +153,7 @@ let test_due_to_analysis_limitations _ =
     (Error.due_to_analysis_limitations
        (error
           (Error.MissingParameterAnnotation {
-              Error.name = ~~"";
+              Error.name = (Access.create "");
               annotation = Type.Top;
               due_to_any = false;
             })));
@@ -161,7 +161,7 @@ let test_due_to_analysis_limitations _ =
     (Error.due_to_analysis_limitations
        (error
           (Error.MissingParameterAnnotation {
-              Error.name = ~~"";
+              Error.name = (Access.create "");
               annotation = Type.string;
               due_to_any = false;
             })));
@@ -191,7 +191,7 @@ let test_due_to_analysis_limitations _ =
           (Error.MissingAttributeAnnotation {
               Error.parent = mock_parent;
               Error.missing_annotation = {
-                Error.name = [Expression.Access.Identifier (~~"")];
+                Error.name = [Expression.Access.Identifier ~~""];
                 annotation = Type.Top;
                 due_to_any = false;
                 evidence_locations = [];
@@ -203,7 +203,7 @@ let test_due_to_analysis_limitations _ =
           (Error.MissingAttributeAnnotation {
               Error.parent = mock_parent;
               Error.missing_annotation = {
-                Error.name = [Expression.Access.Identifier (~~"")];
+                Error.name = [Expression.Access.Identifier ~~""];
                 annotation = Type.string;
                 due_to_any = false;
                 evidence_locations = [];
@@ -215,7 +215,7 @@ let test_due_to_analysis_limitations _ =
     (Error.due_to_analysis_limitations
        (error
           (Error.IncompatibleParameterType {
-              Error.name = Some (~~"");
+              Error.name = Some ((Access.create ""));
               position = 1;
               callee = Some mock_define.Node.value;
               mismatch = {
@@ -227,7 +227,7 @@ let test_due_to_analysis_limitations _ =
     (Error.due_to_analysis_limitations
        (error
           (Error.IncompatibleParameterType {
-              Error.name = Some (~~"");
+              Error.name = Some ((Access.create ""));
               position = 1;
               callee = Some mock_define.Node.value;
               mismatch = {
@@ -239,7 +239,7 @@ let test_due_to_analysis_limitations _ =
     (Error.due_to_analysis_limitations
        (error
           (Error.IncompatibleParameterType {
-              Error.name = Some (~~"");
+              Error.name = Some ((Access.create ""));
               position = 1;
               callee = Some mock_define.Node.value;
               mismatch = {
@@ -356,7 +356,7 @@ let test_join _ =
   assert_join
     (error
        (Error.IncompatibleParameterType {
-           Error.name = Some (~~"");
+           Error.name = Some (Access.create "");
            position = 1;
            callee = Some mock_define.Node.value;
            mismatch = {
@@ -366,7 +366,7 @@ let test_join _ =
          }))
     (error
        (Error.IncompatibleParameterType {
-           Error.name = Some (~~"");
+           Error.name = Some (Access.create "");
            position = 1;
            callee = Some mock_define.Node.value;
            mismatch = {
@@ -376,7 +376,7 @@ let test_join _ =
          }))
     (error
        (Error.IncompatibleParameterType {
-           Error.name = Some (~~"");
+           Error.name = Some (Access.create "");
            position = 1;
            callee = Some mock_define.Node.value;
            mismatch = {

@@ -238,7 +238,11 @@ module State = struct
               let error =
                 {
                   Error.location;
-                  kind = Error.MissingParameterAnnotation { Error.name; annotation; due_to_any };
+                  kind = Error.MissingParameterAnnotation {
+                      Error.name = Access.create_from_identifiers [name];
+                      annotation;
+                      due_to_any;
+                    };
                   define = define_node;
                 }
               in
@@ -849,7 +853,7 @@ module State = struct
                     Some {
                       Error.location;
                       kind = Error.IncompatibleParameterType {
-                          Error.name = Some name;
+                          Error.name = Some (Access.create_from_identifiers [name]);
                           position = position + offset + start_position;
                           callee = Some callee;
                           mismatch = { Error.expected; actual };
@@ -931,7 +935,7 @@ module State = struct
                   {
                     Error.location;
                     kind = Error.IncompatibleParameterType {
-                        Error.name;
+                        Error.name = (name >>| fun name -> Access.create_from_identifiers [name]);
                         position;
                         callee;
                         mismatch;
@@ -1750,6 +1754,7 @@ module State = struct
       let add_missing_parameter_error ~due_to_any =
         Map.find annotations access
         >>| (fun { Annotation.annotation; _ } ->
+            let name = Access.create_from_identifiers [name] in
             let error = {
               Error.location;
               kind = Error.MissingParameterAnnotation { Error.name; annotation; due_to_any };
@@ -2006,7 +2011,7 @@ let check configuration environment ?mode_override ({ Source.path; _ } as source
             let is_redundant
                 ({ Node.value = { Define.parameters; _ }; _ } as define_node) =
               let find_parameter { Node.value = parameter; _ } =
-                parameter.Parameter.name = name &&
+                Access.equal (Access.create_from_identifiers [parameter.Parameter.name]) name &&
                 parameter.Parameter.annotation = Some (Type.expression annotation)
               in
               define_node.Node.location = location &&
@@ -2019,7 +2024,7 @@ let check configuration environment ?mode_override ({ Source.path; _ } as source
               | _ ->
                   let update_parameter parameters name annotation =
                     let update updated ({ Node.value = parameter; _ } as parameter_node) =
-                      if Parameter.name parameter_node = name then
+                      if Access.create_from_identifiers [Parameter.name parameter_node] = name then
                         let updated_parameter =
                           {
                             parameter_node with

@@ -38,3 +38,10 @@ let length =
 
 let append ~separator identifier other =
   identifier ^ separator ^ other
+
+let add_prefix ~prefix identifier =
+  prefix ^ identifier
+
+let remove_prefix ~prefix identifier =
+  String.chop_prefix ~prefix identifier
+  |> Option.value ~default:identifier

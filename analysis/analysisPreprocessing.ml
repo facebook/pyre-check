@@ -15,59 +15,6 @@ open Statement
 exception PreprocessingError
 
 
-let rename_shadowed_variables source =
-  let module Transform = Transform.Make(struct
-      include Transform.Identity
-      type t = Identifier.Set.t
-
-      let expression_postorder shadowing_imports { Node.location; value } =
-        let value =
-          match value with
-          | Access ((Access.Identifier identifier) :: tail)
-            when Set.mem shadowing_imports identifier ->
-              let renamed =
-                let renamed =
-                  "$renamed_" ^ (Identifier.show identifier)
-                  |> Identifier.create
-                in
-                Access.Identifier renamed
-              in
-              Access (renamed :: tail)
-          | _ ->
-              value
-        in
-        shadowing_imports, { Node.location; value }
-
-      let statement_postorder shadowing_imports ({ Node.value; _ } as statement) =
-        let shadowing_imports, value =
-          match value with
-          | Import { Import.from = Some ((Access.Identifier identifier) :: _); _ }
-            when Identifier.show identifier <> "." ->
-              Set.add shadowing_imports identifier, value
-          | Define ({ Define.parameters; _ } as define) ->
-              let rename_parameter
-                  ({ Node.value = ({ Parameter.name; _ } as parameter); _ } as node) =
-                let renamed =
-                  if Set.mem shadowing_imports name then
-                    "$renamed_" ^ (Identifier.show name)
-                    |> Identifier.create
-                  else
-                    name
-                in
-                { node with Node.value = { parameter with Parameter.name = renamed } }
-              in
-              shadowing_imports,
-              (Define { define with Define.parameters = List.map ~f:rename_parameter parameters })
-          | _ ->
-              shadowing_imports, value
-        in
-        shadowing_imports, [{ statement with Node.value }]
-    end)
-  in
-  Transform.transform Identifier.Set.empty source
-  |> snd
-
-
 let expand_string_annotations source =
   let module Transform = Transform.Make(struct
       include Transform.Identity
@@ -146,6 +93,21 @@ type define_qualifier_state = {
 
 let qualify source =
   let global_qualifier = source.Source.qualifier in
+  let rename_named_arguments access =
+    let rename = function
+      | Access.Call { Node.value = { Call.arguments; name }; location } ->
+          let rename_argument { Argument.name; value } =
+            {
+              Argument.name = name >>| Identifier.add_prefix ~prefix:"$renamed_";
+              value;
+            }
+          in
+          Access.Call
+            (Node.create ~location { Call.arguments = List.map ~f:rename_argument arguments; name })
+      | access -> access
+    in
+    List.map ~f:rename access
+  in
 
   let module QualifyToplevelStatements = Transform.Make(struct
       include Transform.Identity
@@ -155,9 +117,10 @@ let qualify source =
         let expression =
           match expression with
           | { Node.location; value = Access access } ->
+              let access = rename_named_arguments access in
               Map.find variables access
               >>| (fun replacement -> { Node.location; value = Access replacement })
-              |> Option.value ~default:expression
+              |> Option.value ~default:(Node.create ~location (Access access))
           | _ ->
               expression
         in
@@ -317,20 +280,21 @@ let qualify source =
             in
             { variables; methods }, List.rev reversed
           in
+          let open Class in
           match value with
           (* Add `name -> qualifier.name` for classes. *)
           | Class definition ->
               let qualified = qualify_class global_qualifier definition in
               {
-                state with
-                methods = Map.set methods ~key:definition.Class.name ~data:qualified.Class.name;
+                methods = Map.set methods ~key:definition.name ~data:qualified.Class.name;
+                variables = Map.set variables ~key:definition.name ~data:qualified.Class.name;
               },
               { Node.location; value = Class qualified }
           | Stub (Stub.Class definition) ->
               let qualified = qualify_class global_qualifier definition in
               {
-                state with
-                methods = Map.set methods ~key:definition.Class.name ~data:qualified.Class.name;
+                methods = Map.set methods ~key:definition.name ~data:qualified.name;
+                variables = Map.set variables ~key:definition.name ~data:qualified.name;
               },
               { Node.location; value = Stub (Stub.Class qualified) }
 
@@ -525,7 +489,14 @@ let qualify source =
       include Transform.Identity
       type t = Access.t Access.Map.t
 
+
       let statement_preorder map ({ Node.value; _ } as statement) =
+        let prepend_function_prefix access =
+          if Access.starts_with ~prefix:"*" access then
+            access
+          else
+            Access.add_prefix ~prefix:"$renamed_" access
+        in
         (* Handle qualification of variables in one specific method. *)
         let rec qualify_define
             ~parent_scope
@@ -539,13 +510,20 @@ let qualify source =
               let expression_postorder
                   ({ current_scope; globals; _ } as state)
                   ({ Node.value; _ } as expression) =
+                let value =
+                  match value with
+                  | Access access ->
+                      Access (rename_named_arguments access)
+                  | _ ->
+                      value
+                in
                 match value with
                 (* Weak globals. *)
                 | Access (head :: tail) ->
                     begin
                       match Map.find current_scope [head] with
                       | Some rewrite ->
-                          state, { expression with Node.value = Access (rewrite @ tail)  }
+                          state, { expression with Node.value = Access (rewrite @ tail) }
                       | None ->
                           match Map.find globals [head] with
                           | Some global_access ->
@@ -560,64 +538,52 @@ let qualify source =
                               { expression with Node.value = Access (global_access @ tail) }
                           | None ->
                               (* Invalid global access. *)
-                              state, expression
+                              state, { expression with Node.value }
                     end
                 | _ ->
-                    state, expression
+                    state, { expression with Node.value }
 
               let statement_preorder
                   ({ local_qualifier; current_scope; globals } as state)
-                  ({ Node.value; _ } as statement) =
+                  ({ Node.value; location } as statement) =
+                let qualify_assign state assign =
+                  match assign with
+                  | {
+                    Assign.target = { Node.value = Access [head]; _ } as access_node;
+                    _;
+                  } as assign ->
+                      begin
+                        match Map.find current_scope [head] with
+                        | Some replacement ->
+                            state,
+                            {
+                              assign with
+                              Assign.target = { access_node with Node.value = Access replacement };
+                            }
+                        | None ->
+                            let replacement = prepend_function_prefix [head] in
+                            {
+                              state with
+                              current_scope = Map.set current_scope ~key:[head] ~data:replacement;
+                            },
+                            {
+                              assign with
+                              Assign.target = { access_node with Node.value = Access replacement };
+                            }
+                      end
+                  | _ ->
+                      state,
+                      assign
+                in
                 match value with
                 (* Locals. *)
-                | Assign (
-                    {
-                      Assign.target = ({ Node.value = Access access; _ } as access_node);
-                      _
-                    } as assign
-                  ) ->
-                    let state, statement =
-                      match Map.find current_scope access with
-                      | Some rewrite ->
-                          let rewritten_access = { access_node with Node.value = Access rewrite } in
-                          state,
-                          {
-                            statement with
-                            Node.value = Assign { assign with Assign.target = rewritten_access }
-                          }
-                      | None ->
-                          {
-                            state with
-                            current_scope = Map.set current_scope ~key:access ~data:access;
-                          },
-                          statement
-                    in
-                    state, statement
-                | Stub (
-                    Stub.Assign ({
-                        Assign.target = ({ Node.value = Access access; _ } as access_node);
-                        _;
-                      } as assign)) ->
-                    let state, statement =
-                      match Map.find current_scope access with
-                      | Some rewrite ->
-                          let rewritten_access = { access_node with Node.value = Access rewrite } in
-                          state,
-                          {
-                            statement with
-                            Node.value = Stub (Stub.Assign {
-                                assign with
-                                Assign.target = rewritten_access
-                              })
-                          }
-                      | None ->
-                          {
-                            state with
-                            current_scope = Map.set current_scope ~key:access ~data:access;
-                          },
-                          statement
-                    in
-                    state, statement
+                | Assign assign ->
+                    let state, assign = qualify_assign state assign in
+                    state,
+                    Node.create ~location (Assign assign)
+                | Stub (Stub.Assign assign) ->
+                    let state, assign = qualify_assign state assign in
+                    state, Node.create ~location (Stub (Stub.Assign assign))
 
                 (* Strong globals. *)
                 | Global identifiers ->
@@ -652,7 +618,7 @@ let qualify source =
           (* Initialize local scope with the parameters. *)
           let add_parameter map { Node.value = { Parameter.name; _ }; _ } =
             let access = Access.create_from_identifiers [name] in
-            Map.set ~key:access ~data:access map
+            Map.set ~key:access ~data:(prepend_function_prefix access) map
           in
           let current_scope = List.fold ~init:parent_scope ~f:add_parameter parameters in
           let local_qualifier = parent_qualifier @ name in
@@ -662,18 +628,42 @@ let qualify source =
             |> DefineQualifier.transform {local_qualifier; current_scope; globals}
             |> snd  (* Discard the generated state, it is not useful. *)
           in
-          { define with Define.body = Source.statements source }
+          let parameters =
+            let rewrite ({ Node.value = { Parameter.name; _ } as parameter; location }) =
+              let name =
+                Access.create_from_identifiers [name]
+                |> prepend_function_prefix
+                |> Access.show
+                |> Identifier.create
+              in
+              Node.create ~location { parameter with Parameter.name }
+            in
+            List.map ~f:rewrite parameters
+          in
+          { define with Define.body = Source.statements source; parameters }
         in
 
         match value with
         | Define define ->
-            let define = qualify_define
+            let define =
+              qualify_define
                 ~parent_scope:Access.Map.empty
                 ~globals:map
                 ~parent_qualifier:global_qualifier
                 define
             in
             map, { statement with Node.value = Define define }
+
+        | Stub (Stub.Define define) ->
+            let define =
+              qualify_define
+                ~parent_scope:Access.Map.empty
+                ~globals:map
+                ~parent_qualifier:global_qualifier
+                define
+            in
+            map, { statement with Node.value = Stub (Stub.Define define) }
+
         | _ ->
             map, statement
 
@@ -720,11 +710,7 @@ let cleanup source =
                         in
                         match last with
                         | Access.Identifier name ->
-                            let renamed =
-                              Str.global_replace (Str.regexp "\\$.*_") "" (Identifier.show name)
-                              |> Identifier.create
-                            in
-                            Access.Identifier renamed
+                            Access.Identifier (Identifier.remove_prefix ~prefix:"$renamed_" name)
                         | last ->
                             last
                       in
@@ -1423,7 +1409,6 @@ let preprocess source =
   source
   |> expand_string_annotations
   |> replace_version_specific_code
-  |> rename_shadowed_variables
   |> qualify
   |> cleanup
   |> fix_singleton_sets

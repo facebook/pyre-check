@@ -7,8 +7,6 @@ open Ast
 open Expression
 
 
-val rename_shadowed_variables: Source.t -> Source.t
-
 val expand_string_annotations: Source.t -> Source.t
 
 (* Resolve imports and fully qualify names. *)

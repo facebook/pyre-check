@@ -14,47 +14,6 @@ open Statement
 open Test
 
 
-let test_rename_shadowed_variables _ =
-  let assert_rename ?(qualifier = "some/qualifier") source expected =
-    let parse =
-      parse ~qualifier:(Source.qualifier ~path:qualifier) in
-    assert_source_equal
-      (Preprocessing.rename_shadowed_variables (parse source))
-      (parse expected)
-  in
-
-  assert_rename
-    {|
-      from a import b
-      from a import c
-      def foo(a: A):
-        a.attribute = 1
-        1 + a
-        bar(a)
-        a = b
-    |}
-    {|
-      from a import b
-      from a import c
-      def foo($renamed_a: A):
-        $renamed_a.attribute = 1
-        1 + $renamed_a
-        bar($renamed_a)
-        $renamed_a = b
-    |};
-  assert_rename
-    {|
-      from a import b
-      class Foo:
-        a: int = 1
-    |}
-    {|
-      from a import b
-      class Foo:
-        $renamed_a: int = 1
-    |}
-
-
 let test_expand_string_annotations _ =
   let assert_expand ?(qualifier = "some/qualifier") source expected =
     let parse =
@@ -264,7 +223,7 @@ let test_qualify _ =
     |}
     {|
       class some.qualifier.Foo: pass
-      def some.qualifier.foo(foo: some.qualifier.Foo) -> some.qualifier.Foo:
+      def some.qualifier.foo($renamed_foo: some.qualifier.Foo) -> some.qualifier.Foo:
         pass
     |};
   assert_qualify
@@ -274,7 +233,7 @@ let test_qualify _ =
     |}
     {|
       class some.qualifier.Foo: pass
-      def some.qualifier.foo(foo: some.qualifier.Foo) -> 'some.qualifier.Foo':
+      def some.qualifier.foo($renamed_foo: some.qualifier.Foo) -> 'some.qualifier.Foo':
         pass
     |};
 
@@ -290,8 +249,8 @@ let test_qualify _ =
       class some.qualifier.Foo:
         def foo(): pass
       def some.qualifier.bar():
-        f = some.qualifier.Foo()
-        f.foo()
+        $renamed_f = some.qualifier.Foo()
+        $renamed_f.foo()
     |};
 
   assert_qualify
@@ -303,7 +262,7 @@ let test_qualify _ =
     {|
       some.qualifier.constant = 1
       def some.qualifier.foo():
-        nonconstant = some.qualifier.constant
+        $renamed_nonconstant = some.qualifier.constant
     |};
 
   assert_qualify
@@ -315,7 +274,7 @@ let test_qualify _ =
     {|
       some.qualifier.constant = ...
       def some.qualifier.foo():
-        nonconstant = some.qualifier.constant
+        $renamed_nonconstant = some.qualifier.constant
     |};
 
   assert_qualify
@@ -332,8 +291,8 @@ let test_qualify _ =
         class some.qualifier.Foo.Foo2:
           def foo(): pass
       def some.qualifier.bar():
-        f = some.qualifier.Foo.Foo2()
-        f.foo()
+        $renamed_f = some.qualifier.Foo.Foo2()
+        $renamed_f.foo()
     |};
 
   assert_qualify
@@ -401,8 +360,8 @@ let test_qualify _ =
     |}
     {|
       import a as b
-      def some.qualifier.foo(a: A):
-        a.attribute = 1
+      def some.qualifier.foo($renamed_a: A):
+        $renamed_a.attribute = 1
     |};
 
   assert_qualify
@@ -413,8 +372,52 @@ let test_qualify _ =
     |}
     {|
       from a import B
-      def some.qualifier.foo(B)->None:
-        a.B.c = 3
+      def some.qualifier.foo($renamed_B)->None:
+        $renamed_B.c = 3
+    |};
+
+  assert_qualify
+    {|
+      class Foo:
+         a: typing.ClassVar[int]
+      def f() -> int:
+        return Foo.a
+    |}
+    {|
+      class some.qualifier.Foo:
+        a: typing.ClassVar[int]
+      def some.qualifier.f() -> int:
+        return some.qualifier.Foo.a
+    |};
+
+  assert_qualify
+    {|
+      class Foo:
+         a: typing.ClassVar[int]
+      def f() -> int:
+        Foo.a = 3
+        return Foo.a
+    |}
+    {|
+      class some.qualifier.Foo:
+        a: typing.ClassVar[int]
+      def some.qualifier.f() -> int:
+        some.qualifier.Foo.a = 3
+        return some.qualifier.Foo.a
+    |};
+
+  assert_qualify
+    {|
+      from a import B
+      def f() -> B:
+        a = None
+        return B
+    |}
+    {|
+      from a import B
+      def some.qualifier.f() -> a.B:
+        $renamed_a = None
+        return a.B
     |}
 
 
@@ -1239,11 +1242,21 @@ let test_preprocess _ =
     |}
     {|
       class some.qualifier.Foo: ...
-      def some.qualifier.foo(f: some.qualifier.Foo) -> some.qualifier.Foo: ...
-      def some.qualifier.bar(f: List[some.qualifier.Foo]) -> some.qualifier.Foo:
+      def some.qualifier.foo($renamed_f: some.qualifier.Foo) -> some.qualifier.Foo: ...
+      def some.qualifier.bar($renamed_f: List[some.qualifier.Foo]) -> some.qualifier.Foo:
         pass
         return
     |};
+
+  assert_preprocess
+    {|
+    class Foo:
+      def foo(f: 'Foo') -> 'Foo': ...
+  |}
+    {|
+    class some.qualifier.Foo:
+      def foo($renamed_f: some.qualifier.Foo) -> some.qualifier.Foo: ...
+  |};
 
   assert_preprocess
     {|
@@ -1263,7 +1276,7 @@ let test_preprocess _ =
          $return = some.qualifier.a
          return $return
       def some.qualifier.assign() -> None:
-         a = 2
+         $renamed_a = 2
          return
       def some.qualifier.globalvar() -> None:
          global a
@@ -1292,11 +1305,11 @@ let test_preprocess _ =
          $return = some.qualifier.a
          return $return
       def some.qualifier.indirect_access_2() -> int:
-         b = some.qualifier.a
+         $renamed_b = some.qualifier.a
          $return = some.qualifier.a
          return $return
       def some.qualifier.indirect_access_3() -> int:
-         b = access(some.qualifier.a)
+         $renamed_b = access(some.qualifier.a)
          $return = some.qualifier.a
          return $return
     |};
@@ -1311,11 +1324,11 @@ let test_preprocess _ =
     |}
     {|
       some.qualifier.a = 1
-      def some.qualifier.access_with_parameter(a: int) -> int:
-         $return = a
+      def some.qualifier.access_with_parameter($renamed_a: int) -> int:
+         $return = $renamed_a
          return $return
       def some.qualifier.assign_with_parameter() -> None:
-         a = 2
+         $renamed_a = 2
          return
     |}
 
@@ -1323,7 +1336,6 @@ let test_preprocess _ =
 
 let () =
   "preprocessing">:::[
-    "rename_shadowed_variables">::test_rename_shadowed_variables;
     "expand_string_annotations">::test_expand_string_annotations;
     "qualify">::test_qualify;
     "cleanup">::test_cleanup;

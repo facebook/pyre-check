@@ -32,7 +32,7 @@ let plain_environment =
     [
       Source.create ~qualifier:(Access.create "typing") [];
       Source.create ~qualifier:(Access.create "unittest.mock") [];
-      parse {|
+      parse ~qualifier:[] {|
         class typing.Sized: ...
         def len(o: typing.Sized) -> int: ...
 
@@ -149,7 +149,8 @@ let plain_environment =
         class OtherAttributes:
           int_attribute: int
           str_attribute: str
-      |};
+      |}
+      |> Preprocessing.qualify;
     ];
   environment
 
@@ -829,8 +830,8 @@ let test_fixpoint_forward _ =
     |}
     (Int.Table.of_alist_exn [
         0, create [];
-        1, create ["x", Type.Top];
-        3, create ["x", Type.Top];
+        1, create ["$renamed_x", Type.Top];
+        3, create ["$renamed_x", Type.Top];
         5, create [];
       ]);
   assert_fixpoint_forward
@@ -839,16 +840,16 @@ let test_fixpoint_forward _ =
        x = y
     |}
     (Int.Table.of_alist_exn [
-        0, create ~immutables:["y", false] ["y", Type.integer];
-        1, create ~immutables:["y", false] [
-          "x", Type.integer;
-          "y", Type.integer;
+        0, create ~immutables:["$renamed_y", false] ["$renamed_y", Type.integer];
+        1, create ~immutables:["$renamed_y", false] [
+          "$renamed_x", Type.integer;
+          "$renamed_y", Type.integer;
         ];
-        3, create ~immutables:["y", false] [
-          "x", Type.integer;
-          "y", Type.integer;
+        3, create ~immutables:["$renamed_y", false] [
+          "$renamed_x", Type.integer;
+          "$renamed_y", Type.integer;
         ];
-        5, create ~immutables:["y", false] ["y", Type.integer];
+        5, create ~immutables:["$renamed_y", false] ["$renamed_y", Type.integer];
       ]);
   assert_fixpoint_forward
     {|
@@ -859,27 +860,28 @@ let test_fixpoint_forward _ =
          x = z
     |}
     (Int.Table.of_alist_exn [
-        0, create ~immutables:["y", false] ["y", Type.integer]; (* Entry *)
-        1, create ~immutables:["y", false] [
-          "x", Type.Top;
-          "y", Type.integer;
+        0, create ~immutables:["$renamed_y", false] ["$renamed_y", Type.integer]; (* Entry *)
+        1, create ~immutables:["$renamed_y", false] [
+          "$renamed_x", Type.Top;
+          "$renamed_y", Type.integer;
         ]; (* Exit *)
-        3, create ~immutables:["y", false] [
-          "x", Type.Top;
-          "y", Type.integer;
+        3, create ~immutables:["$renamed_y", false] [
+          "$renamed_x", Type.Top;
+          "$renamed_y", Type.integer;
         ]; (* Final *)
-        5, create ~immutables:["y", false] ["y", Type.integer]; (* If *)
-        6, create ~immutables:["y", false] [
-          "x", Type.Top;
-          "y", Type.integer;
+        5, create ~immutables:["$renamed_y", false] ["$renamed_y", Type.integer]; (* If *)
+        6, create ~immutables:["$renamed_y", false] [
+          "$renamed_x", Type.Top;
+          "$renamed_y", Type.integer;
         ]; (* Join *)
-        7, create ~immutables:["y", false] ["y", Type.integer]; (* Body *)
-        8, create ~immutables:["y", false] ["y", Type.integer]; (* Orelse *)
-        9, create ~immutables:["y", false] [
-          "x", Type.Top;
-          "y", Type.integer;
+        7, create ~immutables:["$renamed_y", false] ["$renamed_y", Type.integer]; (* Body *)
+        8, create ~immutables:["$renamed_y", false] ["$renamed_y", Type.integer]; (* Orelse *)
+        9, create ~immutables:["$renamed_y", false] [
+          "$renamed_x", Type.Top;
+          "$renamed_y", Type.integer;
         ]; (* Return *)
-      ])
+      ]);
+  ()
 
 
 let test_fixpoint_backward _ =
@@ -923,7 +925,7 @@ let test_fixpoint_backward _ =
         0,
         create
           ~expected_return:Type.integer
-          ["$return", Type.integer; "x", Type.integer; "y", Type.integer];
+          ["$return", Type.integer; "$renamed_x", Type.integer; "y", Type.integer];
         1,
         create
           ~expected_return:Type.integer
@@ -981,7 +983,12 @@ let test_fixpoint_backward _ =
         0,
         create
           ~expected_return:Type.integer
-          ["$return", Type.integer; "x", Type.integer; "y", Type.integer; "z", Type.integer];
+          [
+            "$return", Type.integer;
+            "$renamed_x", Type.integer;
+            "y", Type.integer;
+            "z", Type.integer;
+          ];
         1,
         create
           ~expected_return:Type.integer
@@ -1010,7 +1017,7 @@ let test_fixpoint_backward _ =
        return (x,z)
     |}
     (Int.Table.of_alist_exn [
-        0, create ~expected_return:tuple ["$return", tuple; "x", b; "y", b; "z", c];
+        0, create ~expected_return:tuple ["$return", tuple; "$renamed_x", b; "y", b; "z", c];
         1, create ~expected_return:tuple ["$return", tuple];
         2, create ~expected_return:tuple ["$return", tuple];
         3, create ~expected_return:tuple ["$return", tuple];
@@ -1290,67 +1297,131 @@ let test_check_with_qualification _ =
 
   assert_type_errors
     {|
-      kek=123 # type: int
+      global_number=123 # type: int
 
-      def duh(kek: str) -> int:
-          return len(kek)
-      def wut(kek: str) -> None:
-          def wut_inner_access() -> int:
-              # TODO(T27001301): replace with next line when nested scopes will work
-              #return len(kek)
-              return kek
+      def duh(global_number: str) -> int:
+          return len(global_number)
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      global_number = 123 # type: int
+      def wut(global_number: str) -> None:
+          def nonglobal_inner_access() -> int:
+              return len(global_number)
+    |}
+
+    (* TODO(T27001301): Our analysis doesn't propagate parameters from parent functions yet.
+       The unknown indicates that we're not viewing `global_number` as a global in the analysis. *)
+    ["Incompatible parameter type [6]: Expected `typing.Sized` but got `unknown`."];
+
+  assert_type_errors
+    {|
+      global_number = 123 # type: int
+      def wut(global_number: str) -> None:
           def wut_inner_global() -> int:
-              global kek
-              return kek
-      def rly() -> int:
-          def rly_inner(kek: str) -> None:
-              pass
-          return kek
+              global global_number
+              return global_number
 
+  |}
+    [];
+
+  assert_type_errors
+    {|
+      global_number = 123
+      def rly() -> int:
+          def rly_inner(global_number: str) -> None:
+              pass
+          return global_number
+      def len(s: str) -> int:
+          return 1
       def assign() -> int:
-          kek="a" # type: str
-          return len(kek)
+          global_number="a" # type: str
+          return len(global_number)
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      global_number = 1
+      def len(s: str) -> int:
+        return 1
       def assign_outer() -> None:
-          kek="a" # type: str
+          global_number="a" # type: str
           def assign_inner_access() -> int:
-              # TODO(T27001301): replace with next line when nested scopes will work
-              #return len(kek)
-              return kek
+              # TODO(T27001301): This errors because we don't propagate variables from the parent in
+              # nested functions.
+              return len(global_number)
           def assign_inner_global() -> int:
-              global kek
-              return kek
+              global global_number
+              return global_number
+    |}
+    ["Incompatible parameter type [6]: Expected `str` but got `unknown`."];
+
+  assert_type_errors
+    {|
+      global_number = 1
       def derp() -> int:
           def derp_inner() -> None:
-              kek="a" # type: str
+              global_number="a" # type: str
               pass
-          return kek
+          return global_number
+    |}
+    [];
 
-      def access_side_effect(kek: str) -> int:
-          side_effect=kek
-          return len(kek)
+  assert_type_errors
+    {|
+      def access_side_effect(global_number: str) -> int:
+          side_effect=global_number
+          return len(global_number)
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      global_number = 1
       def access_side_effect_2() -> int:
-          side_effect=kek
-          return kek
-      def pure_sideffect() -> None:
-          side_effect=kek
-          def pure_side_effect_inner() -> int:
-              return kek
+          side_effect=global_number
+          return global_number
+    |}
+    [];
 
+  assert_type_errors
+    {|
+      global_number = 1
+      def pure_sideffect() -> None:
+          side_effect=global_number
+          def pure_side_effect_inner() -> int:
+              return global_number
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      global_number = 1
       def access_transitive() -> int:
-          transitive=kek
+          transitive=global_number
           return transitive
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      global_number = 1
       def assign_transitive() -> None:
-          another=kek
+          another=global_number
           # TODO(T27001301): uncomment next two lines when nested scopes will work
           #def out_of_ideas_3() -> int:
           #    return another
       def assign_transitive_2() -> int:
-          transitive=kek
+          transitive=global_number
           def assign_transitive_inner() -> None:
-              kek="a"
+              global_number="a"
           return transitive
     |}
-    []
+    [];
+  ()
 
 
 let test_coverage _ =
@@ -4898,7 +4969,7 @@ let test_infer _ =
       def with_params (x: int,y):
           return 5
     |}
-    [{|[{"name":"x","type":"int","value":null},{"name":"y","type":null,"value":null}]|}];
+    [{|[{"name":"$renamed_x","type":"int","value":null},{"name":"$renamed_y","type":null,"value":null}]|}];
 
   assert_infer
     {|
@@ -4971,14 +5042,15 @@ let test_infer _ =
       def with_params (x: int = 5,y):
           return 5
     |}
-    [{|[{"name":"x","type":"int","value":"5"},{"name":"y","type":null,"value":null}]|}];
+    [{|[{"name":"$renamed_x","type":"int","value":"5"},
+        {"name":"$renamed_y","type":null,"value":null}]|}];
 
   assert_infer ~fields:["inference.parameters"]
     {|
       def testing_assert_infer_fragility (x: int = 5):
           return 5
     |}
-    [{|[{"type":"int","name":"x","value":"5"}]|}];
+    [{|[{"type":"int","name":"$renamed_x","value":"5"}]|}];
 
   assert_infer ~fields:["inference.annotation"; "inference.parameters"]
     {|
@@ -4986,7 +5058,7 @@ let test_infer _ =
           return x
     |}
     [
-      {|"int"|};{|[{"name":"x","type":"int","value":"5"}]|};
+      {|"int"|};{|[{"name":"$renamed_x","type":"int","value":"5"}]|};
     ];
 
   assert_infer ~fields:["inference.annotation"]
@@ -5004,7 +5076,7 @@ let test_infer _ =
       def test_optional(x: Optional[str]):
           return 5
     |}
-    [{|[{"name":"x","type":"Optional[str]","value":null}]|}];
+    [{|[{"name":"$renamed_x","type":"Optional[str]","value":null}]|}];
 
   assert_infer ~fields:["inference.annotation"; "inference.parameters"]
     {|
@@ -5013,7 +5085,7 @@ let test_infer _ =
           return x
     |}
     [
-      {|"Optional[str]"|};{|[{"name":"x","type":"Optional[str]","value":null}]|}
+      {|"Optional[str]"|};{|[{"name":"$renamed_x","type":"Optional[str]","value":null}]|}
     ];
 
   assert_infer ~fields:["inference.parameters"]
@@ -5021,14 +5093,14 @@ let test_infer _ =
       def ret_int(x: typing.List[int]):
           return 5
     |}
-    [{|[{"name":"x","type":"typing.List[int]","value":null}]|}];
+    [{|[{"name":"$renamed_x","type":"typing.List[int]","value":null}]|}];
 
   assert_infer ~fields:["inference.parameters"]
     {|
       def ret_list(x) -> typing.List[int]:
         return x
     |}
-    [{|[{"name":"x","type":"typing.List[int]","value":null}]|}];
+    [{|[{"name":"$renamed_x","type":"typing.List[int]","value":null}]|}];
 
   assert_infer ~fields:["inference.async"]
     {|
@@ -5054,7 +5126,7 @@ let test_infer _ =
           z = y
           return (x, z)
     |}
-    [{|[{"name":"y","type":"int","value":null}]|}];
+    [{|[{"name":"$renamed_y","type":"int","value":null}]|}];
 
   assert_infer ~fields:["inference.parameters"]
     {|
@@ -5063,16 +5135,7 @@ let test_infer _ =
           x = y
           return (x, z)
     |}
-    [{|[{"name":"x","type":"int","value":null}]|}];
-
-  (* The next two illustrate where we mess up with current simple dequalify implementation *)
-  assert_infer ~fields:["inference.parameters"]
-    {|
-      def test_optional_bad(x: Optional[str]):
-          return 5
-      from typing import Optional
-    |}
-    [{|[{"name":"x","type":"Optional[str]","value":null}]|}]; (* Should be typing.Optional[str] *)
+    [{|[{"name":"$renamed_x","type":"int","value":null}]|}];
 
   assert_infer ~fields:["inference.parameters"]
     {|
@@ -5082,7 +5145,16 @@ let test_infer _ =
       def test_bad_import(x: A.C):
           return 5
     |}
-    [{|[{"name":"x","type":"$renamed_A.C","value":null}]|}] (* Should be A.C *)
+    [{|[{"name":"$renamed_x","type":"C","value":null}]|}]; (* Should be A.C *)
+
+  (* The next illustrates where we mess up with current simple dequalify implementation *)
+  assert_infer ~fields:["inference.parameters"]
+    {|
+      def test_optional_bad(x: Optional[str]):
+          return 5
+      from typing import Optional
+    |}
+    [{|[{"name":"$renamed_x","type":"Optional[str]","value":null}]|}]
 
 
 let test_infer_backward _ =
@@ -5093,7 +5165,7 @@ let test_infer_backward _ =
           return x
     |}
     [
-      {|[{"name":"y","type":"int","value":null}]|};
+      {|[{"name":"$renamed_y","type":"int","value":null}]|};
     ];
 
   assert_infer ~fields:["inference.parameters"]
@@ -5104,7 +5176,7 @@ let test_infer_backward _ =
           return x
     |}
     [
-      {|[{"name":"x","type":"int","value":null}]|};
+      {|[{"name":"$renamed_x","type":"int","value":null}]|};
     ];
 
   assert_infer ~fields:["inference.annotation";"inference.parameters"]
@@ -5115,7 +5187,7 @@ let test_infer_backward _ =
           return x
     |}
     [
-      {|"int"|};{|[{"name":"y","type":"int","value":null}]|};
+      {|"int"|};{|[{"name":"$renamed_y","type":"int","value":null}]|};
     ];
 
   assert_infer ~fields:["inference.parameters"]
@@ -5127,9 +5199,9 @@ let test_infer_backward _ =
           return a
     |}
     [
-      {|[{"name":"x","type":"int","value":null},{"name":"y","type":null,"value":null}]|};
-      {|[{"name":"x","type":null,"value":null},{"name":"y","type":"int","value":null}]|};
-    ]
+      {|[{"name":"$renamed_x","type":null,"value":null},{"name":"$renamed_y","type":"int","value":null}]|};
+    ];
+  ()
 
 
 let test_recursive_infer _ =
@@ -5162,8 +5234,8 @@ let test_recursive_infer _ =
     |}
     [
       {|"int"|};{|[]|};
-      {|"int"|};{|[{"name":"a","type":null,"value":null}]|};
-      {|null|};{|[{"name":"a","type":"int","value":null}]|};
+      {|"int"|};{|[{"name":"$renamed_a","type":null,"value":null}]|};
+      {|null|};{|[{"name":"$renamed_a","type":"int","value":null}]|};
     ];
 
   assert_infer ~recursive_infer:true ~fields:["inference.annotation";"inference.parameters"]
@@ -5178,8 +5250,8 @@ let test_recursive_infer _ =
         return bar()
     |}
     [
-      {|"int"|};{|[{"name":"a","type":null,"value":null}]|};
-      {|null|};{|[{"name":"a","type":"int","value":null}]|};
+      {|"int"|};{|[{"name":"$renamed_a","type":null,"value":null}]|};
+      {|null|};{|[{"name":"$renamed_a","type":"int","value":null}]|};
     ]
 
 

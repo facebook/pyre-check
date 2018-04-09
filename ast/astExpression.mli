@@ -233,6 +233,10 @@ module Access : sig
   val create: string -> t
   val create_from_identifiers: Identifier.t list -> t
 
+  val add_prefix: prefix: string -> t -> t
+  val remove_prefix: prefix: string -> t -> t
+  val starts_with: prefix: string -> t -> bool
+
   val access: expression_node -> t
 
   val call_with_name: access: expression_node access -> name: t -> expression_node access
