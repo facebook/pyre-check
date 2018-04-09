@@ -108,7 +108,7 @@ opam install --yes \
   utop \
   && opam_install_dependencies_succeeded=1
 test $opam_install_dependencies_succeeded = 1 \
-  || die 'Could not install depenencies'
+  || die 'Could not install dependencies'
 
 # Build and install hack parallel.
 (cd hack_parallel \
