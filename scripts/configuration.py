@@ -224,6 +224,12 @@ class Configuration:
                 LOG.info("Found: `%s`", self._typeshed)
 
     def _find_typeshed(self) -> Optional[str]:
+        try:
+            import typeshed
+            return typeshed.typeshed
+        except ImportError:
+            LOG.debug("`import typeshed` failed, attempting a manual lookup")
+
         # This is a terrible, terrible hack.
         directory = os.path.realpath(__file__)
         while True:
