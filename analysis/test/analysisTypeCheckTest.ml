@@ -2603,6 +2603,15 @@ let test_check_init _ =
 
   assert_type_errors
     {|
+      class Foo:
+        attribute: int
+        def __init__(renamed_self) -> None:
+          renamed_self.attribute = 0
+    |}
+    [];
+
+  assert_type_errors
+    {|
     class Foo:
       def __init__(self) -> None:
         self.attribute: bool = False

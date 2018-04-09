@@ -149,7 +149,7 @@ module State = struct
                         Type.is_optional expected ||
                         Option.is_some (Attribute.value attribute)) ->
                 let access =
-                  (Expression.Access.Identifier (Identifier.create "self")) :: name
+                  (Expression.Access.Identifier (Statement.Define.self_identifier define)) :: name
                 in
                 if Map.mem annotations access then
                   errors

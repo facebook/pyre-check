@@ -199,6 +199,8 @@ module Define : sig
   val is_property_setter: t -> bool
   val is_untyped: t -> bool
 
+  val self_identifier: t -> Identifier.t
+
   val create_generated_constructor: statement_node Record.Class.record -> t
   val create_toplevel: statement_node list -> t
   val dump: t -> bool

@@ -358,14 +358,15 @@ module Define = struct
     contains_call define "pyre_dump_cfg"
 
 
+  let self_identifier { parameters; _ } =
+    match parameters with
+    | { Node.value = { Parameter.name; _ }; _ } :: _ -> name
+    | _ -> Identifier.create "self"
+
+
   let implicit_attribute_assigns
-      { body; parameters; _ }
+      ({ body; _ } as define)
       ~definition:{ Record.Class.body = definition_body; _ } =
-    let self_parameter_name =
-      match parameters with
-      | { Node.value = { Parameter.name; _ }; _ } :: _ -> name
-      | _ -> Identifier.create "self"
-    in
     let open Expression in
     let attribute_assign map { Node.location; value } =
       match value with
@@ -375,7 +376,7 @@ module Define = struct
             | ({
                 Node.value = Access ((Access.Identifier self) :: ([_] as access));
                 _;
-              } as target) when Identifier.equal self self_parameter_name ->
+              } as target) when Identifier.equal self (self_identifier define) ->
                 let assign =
                   Node.create
                     ~location
@@ -465,7 +466,7 @@ module Define = struct
                 }
               ];
             _;
-          } when self = self_parameter_name ->
+          } when Identifier.equal self (self_identifier define) ->
             (* Look for method in class definition. *)
             let inline = function
               | { Node.value = Define { name = callee; body; _ }; _ }
