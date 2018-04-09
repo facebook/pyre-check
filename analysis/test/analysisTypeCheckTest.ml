@@ -3407,7 +3407,7 @@ let test_check_immutables _ =
     def foo() -> None:
       x: int = "hi"
     |}
-    [];
+    ["Incompatible variable type [9]: x is declared to have type `int` but is used as type `str`."];
 
   assert_type_errors
     {|
@@ -4110,6 +4110,26 @@ let test_check_refinement _ =
         l.append('asdf')
     |}
     [];
+
+  assert_type_errors
+    {|
+      def foo() -> None:
+        l: typing.List[int] = []
+        l.append('a')
+    |}
+    ["Incompatible parameter type [6]: Expected `int` but got `str`."];
+
+  assert_type_errors
+    {|
+      def foo() -> None:
+        l: typing.List[int] = None
+        l.append('a')
+    |}
+    [
+      "Incompatible variable type [9]: l is declared to have type `typing.List[int]` but is " ^
+      "used as type `None`.";
+      "Incompatible parameter type [6]: Expected `int` but got `str`.";
+    ];
 
   assert_type_errors
     {|

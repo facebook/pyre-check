@@ -1264,7 +1264,7 @@ module State = struct
       in
 
       match Node.value statement with
-      | Assign ({ Assign.target; annotation = None; value = Some value; _ } as assign) ->
+      | Assign ({ Assign.target; annotation = _; value = Some value; _ } as assign) ->
           let check_assign ~access:{ Node.location; value = access } ~value_annotation errors =
             let add_incompatible_type_error ~expected ~parent ~name ~declare_location errors =
               if Resolution.less_or_equal resolution ~left:value_annotation ~right:expected then
