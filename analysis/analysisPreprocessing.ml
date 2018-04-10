@@ -140,6 +140,11 @@ let qualify source =
           | Access access ->
               let qualify_access access =
                 let qualify_subaccess = function
+                  | Access.Call ({ Node.value = { Call.name; _ } as call; _ } as node) ->
+                      let value =
+                        { call with Call.name = qualify_expression state name }
+                      in
+                      Access.Call { node with Node.value }
                   | Access.Subscript elements ->
                       let qualify_subscript = function
                         | Access.Index index ->
@@ -339,7 +344,11 @@ let qualify source =
                       { state with variables = Map.set variables ~key:access ~data:qualified }
                 in
                 state,
-                Assign { assign with Assign.target = qualified_access }
+                Assign {
+                  assign with
+                  Assign.target = qualified_access;
+                  value = value >>| qualify_expression state;
+                }
             | Stub (
                 Stub.Assign ({
                     Assign.target = ({ Node.value = Access access; _ } as access_node);

@@ -446,14 +446,16 @@ let test_qualify _ =
     ~qualifier:"typing"
     {|
       Any = object()
+      TypeVar = object()
       Type: _SpecialForm = ...
       _T = TypeVar('_T')
       def cast(target: Type[_T], value: Any) -> _T: ...
     |}
     {|
       typing.Any = object()
+      typing.TypeVar = object()
       typing.Type: _SpecialForm = ...
-      typing._T = TypeVar('_T')
+      typing._T = typing.TypeVar('_T')
       def typing.cast(
           $renamed_target: typing.Type[typing._T],
           $renamed_value: typing.Any) -> typing._T: ...
