@@ -134,13 +134,40 @@ let qualify source =
         | Expression _ -> Transform.Recurse
         | _ -> Transform.Stop
 
-      let qualify_expression { variables; _ } ({ Node.value; _ } as expression) =
+      let rec qualify_expression ({ variables; _ } as state) ({ Node.value; _ } as expression) =
         let value =
           match value with
           | Access access ->
-              Map.find variables access
-              |> Option.value ~default:access
-              |> fun access -> Access access
+              let qualify_access access =
+                let qualify_subaccess = function
+                  | Access.Subscript elements ->
+                      let qualify_subscript = function
+                        | Access.Index index ->
+                            Access.Index (qualify_expression state index)
+                        | Access.Slice { Access.lower; upper; step } ->
+                            Access.Slice {
+                              Access.lower = lower >>| qualify_expression state;
+                              upper = upper >>| qualify_expression state;
+                              step = step >>| qualify_expression state;
+                            }
+                      in
+                      Access.Subscript (List.map ~f:qualify_subscript elements)
+                  | access ->
+                      (* Not sure if we want to qualify other accesses as well... *)
+                      access
+                in
+                let lead, tail =
+                  List.partition_tf
+                    ~f:(function | Access.Identifier _ -> true | _ -> false)
+                    access
+                in
+                let lead =
+                  Map.find variables lead
+                  |> Option.value ~default:lead
+                in
+                lead @ (List.map ~f:qualify_subaccess tail)
+              in
+              Access (qualify_access access)
           | _ ->
               value
         in

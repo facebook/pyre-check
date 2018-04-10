@@ -441,6 +441,22 @@ let test_qualify _ =
       qualifier._Q = typing.TypeVar('_Q')
       def qualifier.identity($renamed_input: qualifier._Q) -> qualifier._Q:
         def qualifier.identity.nested(input: qualifier._Q) -> qualifier._Q: ...
+    |};
+  assert_qualify
+    ~qualifier:"typing"
+    {|
+      Any = object()
+      Type: _SpecialForm = ...
+      _T = TypeVar('_T')
+      def cast(target: Type[_T], value: Any) -> _T: ...
+    |}
+    {|
+      typing.Any = object()
+      typing.Type: _SpecialForm = ...
+      typing._T = TypeVar('_T')
+      def typing.cast(
+          $renamed_target: typing.Type[typing._T],
+          $renamed_value: typing.Any) -> typing._T: ...
     |}
 
 
