@@ -15,7 +15,7 @@ open Test
 
 
 let test_expand_string_annotations _ =
-  let assert_expand ?(qualifier = "some/qualifier") source expected =
+  let assert_expand ?(qualifier = "qualifier") source expected =
     let parse =
       parse ~qualifier:(Source.qualifier ~path:qualifier) in
     assert_source_equal
@@ -47,7 +47,7 @@ let test_expand_string_annotations _ =
 
 
 let test_qualify _ =
-  let assert_qualify ?(qualifier = "some/qualifier") source expected =
+  let assert_qualify ?(qualifier = "qualifier") source expected =
     let parse =
       parse ~qualifier:(Source.qualifier ~path:qualifier) in
     assert_source_equal
@@ -183,9 +183,9 @@ let test_qualify _ =
       class Bar: ...
     |}
     {|
-      class some.qualifier.Foo: pass
-      some.qualifier.f = some.qualifier.Foo()
-      class some.qualifier.Bar: ...
+      class qualifier.Foo: pass
+      qualifier.f = qualifier.Foo()
+      class qualifier.Bar: ...
     |};
 
   assert_qualify
@@ -196,10 +196,10 @@ let test_qualify _ =
       def baz(): ...
     |}
     {|
-      def some.qualifier.bar():
-        return some.qualifier.foo()
-      def some.qualifier.foo(): pass
-      def some.qualifier.baz(): ...
+      def qualifier.bar():
+        return qualifier.foo()
+      def qualifier.foo(): pass
+      def qualifier.baz(): ...
     |};
   assert_qualify
     {|
@@ -207,8 +207,8 @@ let test_qualify _ =
       def foo(foo: Foo) -> Foo: pass
     |}
     {|
-      class some.qualifier.Foo: pass
-      def some.qualifier.foo($renamed_foo: some.qualifier.Foo) -> some.qualifier.Foo:
+      class qualifier.Foo: pass
+      def qualifier.foo($renamed_foo: qualifier.Foo) -> qualifier.Foo:
         pass
     |};
   assert_qualify
@@ -217,8 +217,8 @@ let test_qualify _ =
       def foo(foo: Foo) -> 'Foo': pass
     |}
     {|
-      class some.qualifier.Foo: pass
-      def some.qualifier.foo($renamed_foo: some.qualifier.Foo) -> 'some.qualifier.Foo':
+      class qualifier.Foo: pass
+      def qualifier.foo($renamed_foo: qualifier.Foo) -> 'qualifier.Foo':
         pass
     |};
 
@@ -231,10 +231,10 @@ let test_qualify _ =
         f.foo()
     |}
     {|
-      class some.qualifier.Foo:
+      class qualifier.Foo:
         def foo(): pass
-      def some.qualifier.bar():
-        $renamed_f = some.qualifier.Foo()
+      def qualifier.bar():
+        $renamed_f = qualifier.Foo()
         $renamed_f.foo()
     |};
 
@@ -245,9 +245,9 @@ let test_qualify _ =
         nonconstant = constant
     |}
     {|
-      some.qualifier.constant = 1
-      def some.qualifier.foo():
-        $renamed_nonconstant = some.qualifier.constant
+      qualifier.constant = 1
+      def qualifier.foo():
+        $renamed_nonconstant = qualifier.constant
     |};
 
   assert_qualify
@@ -257,9 +257,9 @@ let test_qualify _ =
         nonconstant = constant
     |}
     {|
-      some.qualifier.constant = ...
-      def some.qualifier.foo():
-        $renamed_nonconstant = some.qualifier.constant
+      qualifier.constant = ...
+      def qualifier.foo():
+        $renamed_nonconstant = qualifier.constant
     |};
 
   assert_qualify
@@ -272,11 +272,11 @@ let test_qualify _ =
         f.foo()
     |}
     {|
-      class some.qualifier.Foo:
-        class some.qualifier.Foo.Foo2:
+      class qualifier.Foo:
+        class qualifier.Foo.Foo2:
           def foo(): pass
-      def some.qualifier.bar():
-        $renamed_f = some.qualifier.Foo.Foo2()
+      def qualifier.bar():
+        $renamed_f = qualifier.Foo.Foo2()
         $renamed_f.foo()
     |};
 
@@ -288,8 +288,8 @@ let test_qualify _ =
         pass
     |}
     {|
-      def some.qualifier.hello():
-        class some.qualifier.hello.Foo2:
+      def qualifier.hello():
+        class qualifier.hello.Foo2:
           def foo(): pass
         pass
     |};
@@ -301,8 +301,8 @@ let test_qualify _ =
         pass
     |}
     {|
-      def some.qualifier.hello():
-        def some.qualifier.hello.foo(): pass
+      def qualifier.hello():
+        def qualifier.hello.foo(): pass
         pass
     |};
 
@@ -315,10 +315,10 @@ let test_qualify _ =
             pass
     |}
     {|
-      some.qualifier.list = []
-      def some.qualifier.hello():
-        for i in some.qualifier.list:
-          def some.qualifier.hello.foo():
+      qualifier.list = []
+      def qualifier.hello():
+        for i in qualifier.list:
+          def qualifier.hello.foo():
             pass
     |};
 
@@ -330,9 +330,9 @@ let test_qualify _ =
             pass
     |}
     {|
-      def some.qualifier.hello():
+      def qualifier.hello():
         if True:
-          def some.qualifier.hello.foo():
+          def qualifier.hello.foo():
             pass
     |};
 
@@ -345,7 +345,7 @@ let test_qualify _ =
     |}
     {|
       import a as b
-      def some.qualifier.foo($renamed_a: A):
+      def qualifier.foo($renamed_a: A):
         $renamed_a.attribute = 1
     |};
 
@@ -357,7 +357,7 @@ let test_qualify _ =
     |}
     {|
       from a import B
-      def some.qualifier.foo($renamed_B)->None:
+      def qualifier.foo($renamed_B)->None:
         $renamed_B.c = 3
     |};
 
@@ -369,10 +369,10 @@ let test_qualify _ =
         return Foo.a
     |}
     {|
-      class some.qualifier.Foo:
+      class qualifier.Foo:
         a: typing.ClassVar[int]
-      def some.qualifier.f() -> int:
-        return some.qualifier.Foo.a
+      def qualifier.f() -> int:
+        return qualifier.Foo.a
     |};
 
   assert_qualify
@@ -384,11 +384,11 @@ let test_qualify _ =
         return Foo.a
     |}
     {|
-      class some.qualifier.Foo:
+      class qualifier.Foo:
         a: typing.ClassVar[int]
-      def some.qualifier.f() -> int:
-        some.qualifier.Foo.a = 3
-        return some.qualifier.Foo.a
+      def qualifier.f() -> int:
+        qualifier.Foo.a = 3
+        return qualifier.Foo.a
     |};
 
   assert_qualify
@@ -400,7 +400,7 @@ let test_qualify _ =
     |}
     {|
       from a import B
-      def some.qualifier.f() -> a.B:
+      def qualifier.f() -> a.B:
         $renamed_a = None
         return a.B
     |};
@@ -414,7 +414,7 @@ let test_qualify _ =
     |}
     {|
       from a import b
-      def some.qualifier.foo($renamed_a: a.b):
+      def qualifier.foo($renamed_a: a.b):
         $renamed_a = 5
     |};
 
@@ -426,7 +426,7 @@ let test_qualify _ =
     |}
     {|
       import a
-      def some.qualifier.foo($renamed_a: a):
+      def qualifier.foo($renamed_a: a):
         $renamed_a = 5
     |};
 
@@ -438,14 +438,14 @@ let test_qualify _ =
         def nested(input: _Q) -> _Q: ...
     |}
     {|
-      some.qualifier._Q = typing.TypeVar('_Q')
-      def some.qualifier.identity($renamed_input: some.qualifier._Q) -> some.qualifier._Q:
-        def some.qualifier.identity.nested(input: some.qualifier._Q) -> some.qualifier._Q: ...
+      qualifier._Q = typing.TypeVar('_Q')
+      def qualifier.identity($renamed_input: qualifier._Q) -> qualifier._Q:
+        def qualifier.identity.nested(input: qualifier._Q) -> qualifier._Q: ...
     |}
 
 
 let test_cleanup _ =
-  let assert_cleanup ?(qualifier = "some/qualifier") source expected =
+  let assert_cleanup ?(qualifier = "qualifier") source expected =
     let parse =
       parse ~qualifier:(Source.qualifier ~path:qualifier) in
     assert_source_equal
@@ -1232,7 +1232,7 @@ let test_classes _ =
 
 
 let test_preprocess _ =
-  let assert_preprocess ?(qualifier = "some/qualifier") source expected =
+  let assert_preprocess ?(qualifier = "qualifier") source expected =
     let parse = parse ~qualifier:(Source.qualifier ~path:qualifier) in
     assert_source_equal
       (Preprocessing.preprocess (parse source))
@@ -1244,7 +1244,7 @@ let test_preprocess _ =
       a = 1
     |}
     {|
-      some.qualifier.a = 1
+      qualifier.a = 1
     |};
   assert_preprocess
     {|
@@ -1252,7 +1252,7 @@ let test_preprocess _ =
         a = 1
     |}
     {|
-      some.qualifier.a = 1
+      qualifier.a = 1
     |};
 
   (* String annotations get qualified. *)
@@ -1264,9 +1264,9 @@ let test_preprocess _ =
         pass
     |}
     {|
-      class some.qualifier.Foo: ...
-      def some.qualifier.foo($renamed_f: some.qualifier.Foo) -> some.qualifier.Foo: ...
-      def some.qualifier.bar($renamed_f: List[some.qualifier.Foo]) -> some.qualifier.Foo:
+      class qualifier.Foo: ...
+      def qualifier.foo($renamed_f: qualifier.Foo) -> qualifier.Foo: ...
+      def qualifier.bar($renamed_f: List[qualifier.Foo]) -> qualifier.Foo:
         pass
         return
     |};
@@ -1277,8 +1277,8 @@ let test_preprocess _ =
       def foo(f: 'Foo') -> 'Foo': ...
   |}
     {|
-    class some.qualifier.Foo:
-      def foo($renamed_f: some.qualifier.Foo) -> some.qualifier.Foo: ...
+    class qualifier.Foo:
+      def foo($renamed_f: qualifier.Foo) -> qualifier.Foo: ...
   |};
 
   assert_preprocess
@@ -1294,17 +1294,17 @@ let test_preprocess _ =
          return a
     |}
     {|
-      some.qualifier.a = 1
-      def some.qualifier.access() -> int:
-         $return = some.qualifier.a
+      qualifier.a = 1
+      def qualifier.access() -> int:
+         $return = qualifier.a
          return $return
-      def some.qualifier.assign() -> None:
+      def qualifier.assign() -> None:
          $renamed_a = 2
          return
-      def some.qualifier.globalvar() -> None:
+      def qualifier.globalvar() -> None:
          global a
-         some.qualifier.a = 3
-         $return = some.qualifier.a
+         qualifier.a = 3
+         $return = qualifier.a
          return $return
     |};
 
@@ -1322,18 +1322,18 @@ let test_preprocess _ =
          return a
     |}
     {|
-      some.qualifier.a = 1
-      def some.qualifier.indirect_access_1() -> int:
-         access(some.qualifier.a)
-         $return = some.qualifier.a
+      qualifier.a = 1
+      def qualifier.indirect_access_1() -> int:
+         access(qualifier.a)
+         $return = qualifier.a
          return $return
-      def some.qualifier.indirect_access_2() -> int:
-         $renamed_b = some.qualifier.a
-         $return = some.qualifier.a
+      def qualifier.indirect_access_2() -> int:
+         $renamed_b = qualifier.a
+         $return = qualifier.a
          return $return
-      def some.qualifier.indirect_access_3() -> int:
-         $renamed_b = access(some.qualifier.a)
-         $return = some.qualifier.a
+      def qualifier.indirect_access_3() -> int:
+         $renamed_b = access(qualifier.a)
+         $return = qualifier.a
          return $return
     |};
 
@@ -1346,11 +1346,11 @@ let test_preprocess _ =
          a = 2
     |}
     {|
-      some.qualifier.a = 1
-      def some.qualifier.access_with_parameter($renamed_a: int) -> int:
+      qualifier.a = 1
+      def qualifier.access_with_parameter($renamed_a: int) -> int:
          $return = $renamed_a
          return $return
-      def some.qualifier.assign_with_parameter() -> None:
+      def qualifier.assign_with_parameter() -> None:
          $renamed_a = 2
          return
     |}
