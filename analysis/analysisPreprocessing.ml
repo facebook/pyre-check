@@ -127,21 +127,19 @@ let qualify source =
         state, expression
 
       let statement_keep_recursing _ { Node.value; _ } =
-        (* We are qualifying only top-level statements only, hence do
-           not recurse into children nodes. Top-level expressions are
-           the exception, variables therein need to be fully qualified. *)
+        (* We are qualifying only top-level statements only, hence do not recurse into children
+           nodes. Top-level expressions are the exception, variables therein need to be fully
+           qualified. *)
         match value with
         | Expression _ -> Transform.Recurse
         | _ -> Transform.Stop
 
-      let statement_postorder ({ variables; _ } as state) { Node.location; value } =
+      let statement_postorder ({ variables; _ } as state) ({ Node.value; _ } as statement) =
         let rec qualify_class qualifier ({ Class.name; bases; body; _ } as definition) =
           let qualified_name = qualifier @ name in
           let parent = Some qualified_name in
-          let qualify_bases ({
-              Argument.value = ({ Node.value; _ } as expression);
-              _;
-            } as argument) =
+          let qualify_bases
+              ({ Argument.value = ({ Node.value; _ } as expression); _ } as argument) =
             let expression =
               match value with
               | Access access ->
@@ -155,19 +153,23 @@ let qualify source =
             in
             { argument with Argument.value = expression }
           in
-          let qualify_in_class node =
-            match node.Node.value with
-            | Assign assign ->
-                { node with Node.value = Assign { assign with Assign.parent }}
-            | Define define ->
-                { node with Node.value = Define (qualify_define ~parent [] define) }
-            | Stub (Stub.Define define) ->
-                { node with Node.value = Stub (Stub.Define (qualify_define ~parent [] define)) }
-            | Class define ->
-                { node with Node.value = Class (qualify_class qualified_name define) }
-            | Stub (Stub.Class define) ->
-                { node with Node.value = Stub (Stub.Class (qualify_class qualified_name define)) }
-            | _ -> node
+          let qualify_in_class ({ Node.value; _ } as statement) =
+            let value =
+              match value with
+              | Assign assign ->
+                  Assign { assign with Assign.parent }
+              | Define define ->
+                  Define (qualify_define ~parent [] define)
+              | Stub (Stub.Define define) ->
+                  Stub (Stub.Define (qualify_define ~parent [] define))
+              | Class define ->
+                  Class (qualify_class qualified_name define)
+              | Stub (Stub.Class define) ->
+                  Stub (Stub.Class (qualify_class qualified_name define))
+              | _ ->
+                  value
+            in
+            { statement with Node.value }
           in
           {
             definition with
@@ -179,81 +181,60 @@ let qualify source =
         and qualify_define
             ?(parent=None)
             qualifier
-            ({ Define.name; body; _ } as definition) =
+            ({ Define.name; body; _ } as define) =
           let qualified_name = qualifier @ name in
-          let rec qualify_in_define node =
-            match node.Node.value with
-            | Define define ->
-                { node with Node.value = Define (qualify_define ~parent qualified_name define) }
-            | Stub (Stub.Define define) ->
-                let define = qualify_define ~parent qualified_name define in
-                { node with Node.value = Stub (Stub.Define define) }
-            | Class define ->
-                { node with Node.value = Class (qualify_class qualified_name define) }
-            | Stub (Stub.Class define) ->
-                { node with Node.value = Stub (Stub.Class (qualify_class qualified_name define)) }
-            | For ({ For.body; For.orelse; _ } as loop) ->
-                {
-                  node with
-                  Node.value =
-                    For {
-                      loop with
-                      For.body = List.map ~f:qualify_in_define body;
-                      For.orelse = List.map ~f:qualify_in_define orelse;
-                    }
-                }
-            | While ({ While.body; While.orelse; _ } as loop) ->
-                {
-                  node with
-                  Node.value =
-                    While {
-                      loop with
-                      While.body = List.map ~f:qualify_in_define body;
-                      While.orelse = List.map ~f:qualify_in_define orelse;
-                    }
-                }
-            | If ({ If.body; If.orelse; _ } as statement) ->
-                {
-                  node with
-                  Node.value =
-                    If {
-                      statement with
-                      If.body = List.map ~f:qualify_in_define body;
-                      If.orelse = List.map ~f:qualify_in_define orelse;
-                    }
-                }
-            | With ({ With.body; _ } as statement) ->
-                {
-                  node with
-                  Node.value =
-                    With {
-                      statement with
-                      With.body = List.map ~f:qualify_in_define body;
-                    }
-                }
-            | Try { Try.body; Try.orelse; Try.finally; Try.handlers } ->
-                {
-                  node with
-                  Node.value =
-                    Try {
-                      Try.body = List.map ~f:qualify_in_define body;
-                      Try.orelse = List.map ~f:qualify_in_define orelse;
-                      Try.finally = List.map ~f:qualify_in_define finally;
-                      Try.handlers = List.map
-                          ~f:(fun handler ->
-                              let handler_body =
-                                List.map
-                                  ~f:qualify_in_define
-                                  handler.Try.handler_body
-                              in
-                              { handler with Try.handler_body })
-                          handlers;
-                    }
-                }
-            | _ -> node
+          let rec qualify_in_define ({ Node.value; _ } as statement) =
+            let qualify_statements = List.map ~f:qualify_in_define in
+            let value =
+              match value with
+              | Define define ->
+                  Define (qualify_define ~parent qualified_name define)
+              | Stub (Stub.Define define) ->
+                  Stub (Stub.Define (qualify_define ~parent qualified_name define))
+              | Class define ->
+                  Class (qualify_class qualified_name define)
+              | Stub (Stub.Class define) ->
+                  Stub (Stub.Class (qualify_class qualified_name define))
+              | For ({ For.body; orelse; _ } as loop) ->
+                  For {
+                    loop with
+                    For.body = qualify_statements body;
+                    orelse = qualify_statements orelse;
+                  }
+              | While ({ While.body; While.orelse; _ } as loop) ->
+                  While {
+                    loop with
+                    While.body = qualify_statements body;
+                    orelse = qualify_statements orelse;
+                  }
+              | If ({ If.body; If.orelse; _ } as statement) ->
+                  If {
+                    statement with
+                    If.body = qualify_statements body;
+                    orelse = qualify_statements orelse;
+                  }
+              | With ({ With.body; _ } as statement) ->
+                  With {
+                    statement with
+                    With.body = qualify_statements body;
+                  }
+              | Try { Try.body; orelse; finally; handlers } ->
+                  let qualify_handler ({ Try.handler_body; _ } as handler) =
+                    { handler with Try.handler_body = qualify_statements handler_body }
+                  in
+                  Try {
+                    Try.body = qualify_statements body;
+                    orelse = qualify_statements orelse;
+                    finally = qualify_statements finally;
+                    handlers = List.map ~f:qualify_handler handlers;
+                  }
+              | _ ->
+                  value
+            in
+            { statement with Node.value }
           in
           {
-            definition with
+            define with
             Define.name = qualified_name;
             body = List.map ~f:qualify_in_define body;
             parent;
@@ -262,7 +243,7 @@ let qualify source =
 
         let rec qualify_toplevel_statement
             ({ variables; methods } as state)
-            ({ Node.location; value } as statement) =
+            ({ Node.value; _ } as statement) =
           let qualify_statements { variables; methods } statements =
             let add_statement (variables, methods, statements) statement =
               let { variables; methods }, qualified =
@@ -280,92 +261,90 @@ let qualify source =
             in
             { variables; methods }, List.rev reversed
           in
-          let open Class in
-          match value with
-          (* Add `name -> qualifier.name` for classes. *)
-          | Class definition ->
-              let qualified = qualify_class global_qualifier definition in
-              {
-                methods = Map.set methods ~key:definition.name ~data:qualified.Class.name;
-                variables = Map.set variables ~key:definition.name ~data:qualified.Class.name;
-              },
-              { Node.location; value = Class qualified }
-          | Stub (Stub.Class definition) ->
-              let qualified = qualify_class global_qualifier definition in
-              {
-                methods = Map.set methods ~key:definition.name ~data:qualified.name;
-                variables = Map.set variables ~key:definition.name ~data:qualified.name;
-              },
-              { Node.location; value = Stub (Stub.Class qualified) }
+          let state, value =
+            match value with
+            (* Add `name -> qualifier.name` for classes. *)
+            | Class definition ->
+                let qualified = qualify_class global_qualifier definition in
+                {
+                  state with
+                  methods = Map.set methods ~key:definition.Class.name ~data:qualified.Class.name;
+                },
+                Class qualified
+            | Stub (Stub.Class definition) ->
+                let qualified = qualify_class global_qualifier definition in
+                {
+                  state with
+                  methods = Map.set methods ~key:definition.Class.name ~data:qualified.Class.name;
+                },
+                Stub (Stub.Class qualified)
 
-          (* Add `name -> qualifier.name` for functions, not methods. *)
-          | Define definition when not (Define.is_method definition) ->
-              let qualified = qualify_define global_qualifier definition in
-              {
-                state with
-                methods = Map.set methods ~key:definition.Define.name ~data:qualified.Define.name;
-              },
-              { Node.location; value = Define qualified }
-          | Stub (Stub.Define definition) when not (Define.is_method definition) ->
-              let qualified = qualify_define global_qualifier definition in
-              {
-                state with
-                methods = Map.set methods ~key:definition.Define.name ~data:qualified.Define.name;
-              },
-              { Node.location; value = Stub (Stub.Define qualified) }
-          | If { If.test; body; orelse } ->
-              let state, body = qualify_statements state body in
-              let state, orelse = qualify_statements state orelse in
-              state, { Node.location; value = If { If.test; body; orelse }  }
+            (* Add `name -> qualifier.name` for functions, not methods. *)
+            | Define definition when not (Define.is_method definition) ->
+                let qualified = qualify_define global_qualifier definition in
+                {
+                  state with
+                  methods = Map.set methods ~key:definition.Define.name ~data:qualified.Define.name;
+                },
+                Define qualified
+            | Stub (Stub.Define definition) when not (Define.is_method definition) ->
+                let qualified = qualify_define global_qualifier definition in
+                {
+                  state with
+                  methods = Map.set methods ~key:definition.Define.name ~data:qualified.Define.name;
+                },
+                Stub (Stub.Define qualified)
+            | If { If.test; body; orelse } ->
+                let state, body = qualify_statements state body in
+                let state, orelse = qualify_statements state orelse in
+                state, If { If.test; body; orelse }
 
-          (* Qualify globals *)
-          | Assign (
-              {
-                Assign.target = ({ Node.value = Access access; _ } as access_node);
-                value;
-                _;
-              } as assign) ->
-              let qualified = global_qualifier @ access in
-              let qualified_access = { access_node with Node.value = Access qualified } in
-              (* All assigned targets are variables by default,
-                 unless we have already classified their values as methods. *)
-              let state =
-                match value with
-                | Some { Node.value = Access value_access; _ } when Map.mem methods value_access ->
-                    { state with methods = Map.set methods ~key:access ~data:qualified }
-                | _ ->
-                    { state with variables = Map.set variables ~key:access ~data:qualified }
-              in
-              state,
-              {
-                Node.location;
-                value = Assign { assign with Assign.target = qualified_access };
-              }
-          | Stub (
-              Stub.Assign ({
+            (* Qualify globals *)
+            | Assign (
+                {
                   Assign.target = ({ Node.value = Access access; _ } as access_node);
+                  value;
                   _;
-                } as assign)) ->
-              let qualified = global_qualifier @ access in
-              let qualified_access = { access_node with Node.value = Access qualified } in
-              { state with variables = Map.set variables ~key:access ~data:qualified },
-              {
-                Node.location;
-                value = Stub (Stub.Assign { assign with Assign.target = qualified_access });
-              }
+                } as assign) ->
+                let qualified = global_qualifier @ access in
+                let qualified_access = { access_node with Node.value = Access qualified } in
+                (* All assigned targets are variables by default,
+                   unless we have already classified their values as methods. *)
+                let state =
+                  match value with
+                  | Some { Node.value = Access value_access; _ }
+                    when Map.mem methods value_access ->
+                      { state with methods = Map.set methods ~key:access ~data:qualified }
+                  | _ ->
+                      { state with variables = Map.set variables ~key:access ~data:qualified }
+                in
+                state,
+                Assign { assign with Assign.target = qualified_access }
+            | Stub (
+                Stub.Assign ({
+                    Assign.target = ({ Node.value = Access access; _ } as access_node);
+                    _;
+                  } as assign)) ->
+                let qualified = global_qualifier @ access in
+                let qualified_access = { access_node with Node.value = Access qualified } in
+                { state with variables = Map.set variables ~key:access ~data:qualified },
+                Stub (Stub.Assign { assign with Assign.target = qualified_access })
 
-          | _ ->
-              state, statement
+            | _ ->
+                state, value
+          in
+          state,
+          { statement with Node.value }
         in
-        let state, statement = qualify_toplevel_statement state { Node.location; value } in
+        let state, statement = qualify_toplevel_statement state { statement with Node.value } in
         state, [statement]
 
     end)
   in
 
   let module OrderDependent = Transform.Make(struct
-      (* Keeps track of transformations we need to make. E.g. `import a as b` will
-         result in a transformation rule from `b` to `a`. *)
+      (* Keeps track of transformations we need to make. E.g. `import a as b` will result in a
+         transformation rule from `b` to `a`. *)
       include Transform.Identity
       type t = Access.t * Access.t Access.Map.t
 
@@ -545,7 +524,7 @@ let qualify source =
 
               let statement_preorder
                   ({ local_qualifier; current_scope; globals } as state)
-                  ({ Node.value; location } as statement) =
+                  ({ Node.value; _ } as statement) =
                 let qualify_assign state assign =
                   match assign with
                   | {
@@ -579,11 +558,10 @@ let qualify source =
                 (* Locals. *)
                 | Assign assign ->
                     let state, assign = qualify_assign state assign in
-                    state,
-                    Node.create ~location (Assign assign)
+                    state, { statement with Node.value = Assign assign }
                 | Stub (Stub.Assign assign) ->
                     let state, assign = qualify_assign state assign in
-                    state, Node.create ~location (Stub (Stub.Assign assign))
+                    state, { statement with Node.value = Stub (Stub.Assign assign) }
 
                 (* Strong globals. *)
                 | Global identifiers ->
@@ -596,9 +574,10 @@ let qualify source =
                     statement
 
                 | Define define ->
-                    (* Open a new recursion tree with its own state,
-                       that will not be propagated further. *)
-                    let define = qualify_define
+                    (* Open a new recursion tree with its own state, that will not be propagated
+                       further. *)
+                    let define =
+                      qualify_define
                         ~parent_scope:current_scope
                         ~globals
                         ~parent_qualifier:local_qualifier
