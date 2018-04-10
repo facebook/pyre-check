@@ -203,21 +203,6 @@ let test_qualify _ =
     |};
   assert_qualify
     {|
-      if python_version > 3.6:
-        def bar():
-          return 1
-        class C:
-          pass
-    |}
-    {|
-      if python_version > 3.6:
-        def some.qualifier.bar():
-          return 1
-        class some.qualifier.C:
-          pass
-    |};
-  assert_qualify
-    {|
       class Foo: pass
       def foo(foo: Foo) -> Foo: pass
     |}

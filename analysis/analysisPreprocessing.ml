@@ -244,23 +244,6 @@ let qualify source =
         let rec qualify_toplevel_statement
             ({ variables; methods } as state)
             ({ Node.value; _ } as statement) =
-          let qualify_statements { variables; methods } statements =
-            let add_statement (variables, methods, statements) statement =
-              let { variables; methods }, qualified =
-                qualify_toplevel_statement
-                  { variables; methods }
-                  statement
-              in
-              variables, methods, qualified :: statements
-            in
-            let variables, methods, reversed =
-              List.fold
-                ~init:(variables, methods, [])
-                ~f:add_statement
-                statements
-            in
-            { variables; methods }, List.rev reversed
-          in
           let state, value =
             match value with
             (* Add `name -> qualifier.name` for classes. *)
@@ -294,10 +277,6 @@ let qualify source =
                   methods = Map.set methods ~key:definition.Define.name ~data:qualified.Define.name;
                 },
                 Stub (Stub.Define qualified)
-            | If { If.test; body; orelse } ->
-                let state, body = qualify_statements state body in
-                let state, orelse = qualify_statements state orelse in
-                state, If { If.test; body; orelse }
 
             (* Qualify globals *)
             | Assign (
