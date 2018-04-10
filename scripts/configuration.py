@@ -72,6 +72,7 @@ class Configuration:
             self._read(local_configuration)
         self._read(CONFIGURATION_FILE + '.local')
         self._read(CONFIGURATION_FILE)
+        self._resolve_versioned_paths()
         self._apply_defaults()
 
     def validate(self) -> None:
@@ -118,24 +119,14 @@ class Configuration:
         if not self._binary:
             raise InvalidConfiguration('Configuration was not validated')
 
-        version_hash = self.get_version_hash()
-        if version_hash and '%V' in self._binary:
-            return self._binary.replace('%V', version_hash)
-        else:
-            return self._binary
+        return self._binary
 
     @functools.lru_cache(1)
     def get_search_path(self) -> List[str]:
         if not self._typeshed:
             raise InvalidConfiguration('Configuration was not validated')
 
-        version_hash = self.get_version_hash()
-        if version_hash and '%V' in self._typeshed:
-            typeshed = self._typeshed.replace('%V', version_hash)
-        else:
-            typeshed = self._typeshed
-
-        return self._search_directories + [typeshed]
+        return self._search_directories + [self._typeshed]
 
     def disabled(self) -> bool:
         return self._disabled
@@ -192,6 +183,13 @@ class Configuration:
                 'Configuration file at `{}` is invalid: {}.'.format(
                     path,
                     str(error)))
+
+    def _resolve_versioned_paths(self) -> None:
+        version_hash = self.get_version_hash()
+        if version_hash and self._binary:
+            self._binary = self._binary.replace('%V', version_hash)
+        if version_hash and self._typeshed:
+            self._typeshed = self._typeshed.replace('%V', version_hash)
 
     def _apply_defaults(self) -> None:
         if not self.source_directories:
