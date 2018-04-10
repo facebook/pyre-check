@@ -126,7 +126,7 @@ let plain_environment =
 
         def identity(x: _T) -> _T: ...
         _VR = typing.TypeVar("_VR", str, int)
-        def value_restricted_identity(x: _VR) -> _VR: pass
+        def variable_restricted_identity(x: _VR) -> _VR: pass
 
         def typing.cast(tp: typing.Type[_T], o) -> _T: ...
 
@@ -4088,29 +4088,29 @@ let test_check_nested _ =
     ]
 
 
-let test_check_value_restrictions _ =
+let test_check_variable_restrictions _ =
   assert_type_errors
     {|
-       def f(x:str)->int:
-           return value_restricted_identity(x)
+       def f(x: str) -> int:
+         return variable_restricted_identity(x)
     |}
-    ["Incompatible return type [7]: Expected `int` but got `str`.";];
+    ["Incompatible return type [7]: Expected `int` but got `str`."];
 
   assert_type_errors
     {|
-       def f(x:str)->str:
-           return value_restricted_identity(x)
+       def f(x: str) -> str:
+         return variable_restricted_identity(x)
     |}
     [];
 
   assert_type_errors
     {|
-       def f(x:float)->str:
-           return value_restricted_identity(x)
+       def f(x: float) -> str:
+         return variable_restricted_identity(x)
     |}
     [
       "Incompatible return type [7]: Expected `str` but got `unknown`.";
-      "Undefined function [10]: Could not resolve call `value_restricted_identity`.";
+      "Undefined function [10]: Could not resolve call `variable_restricted_identity`.";
     ]
 
 
@@ -5351,7 +5351,7 @@ let () =
     "check_return_joining">::test_check_return_joining;
     "check_missing_parameter">::test_check_missing_parameter;
     "check_nested">::test_check_nested;
-    "check_value_restrictions">::test_check_value_restrictions;
+    "check_variable_restrictions">::test_check_variable_restrictions;
     "check_refinement">::test_check_refinement;
     "check_toplevel">::test_check_toplevel;
     "check_tuple">::test_check_tuple;
