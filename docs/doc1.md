@@ -1,6 +1,6 @@
 ---
 id: doc1
-title: Installing Pyre-Check 
+title: Installing Pyre-Check
 sidebar_label: Installation
 ---
 
@@ -52,3 +52,39 @@ which builds the typechecker binary and runs the unit tests:
 ```bash
   $ ./scripts/setup.sh --local
 ```
+
+## Getting the type stubs from Typeshed
+
+To reliably type check calls to the Python standard library and Python
+builtins, stub annotations from the [`typeshed`
+project](https://github.com/python/typeshed) are needed. These
+annotations are not distributed with this source code, and are
+downloaded separately.
+
+If you have installed this package through `pip`, the annotations have
+been installed automatically as a dependency, and you do not need
+anything else.
+
+If you are installing this package from source, you can install the
+stubs through `pip`:
+
+```bash
+  $ pip install typeshed
+```
+
+This way, Pyre-Check will be able to find the annotations automatically.
+
+Alternatively, for the latest version of `typeshed`, you can clone the
+Github repository:
+
+```bash
+  $ git clone https://github.com/python/typeshed.git
+```
+
+In this case, the location of the downloaded stubs can be passed to
+Pyre-Check via the `--typeshed` commandline parameter.
+
+If you install the annotations separately, please note, however, that
+`typeshed` might have introduced new features not yet recognized by
+Pyre-Check, so this workflow is not officially supported. You are
+encouraged to open a pull request with a patch though! :)

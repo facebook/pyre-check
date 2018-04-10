@@ -124,6 +124,13 @@ def main() -> int:
         default=False,
         help='Preserves the value of the PYTHONPATH environment variable')
 
+    # Typeshed stubs location
+    parser.add_argument(
+        '--typeshed',
+        default=None,
+        type=readable_directory,
+        help='Location of the typeshed stubs')
+
     # Subcommands.
     parsed_commands = parser.add_subparsers()
 
@@ -195,6 +202,7 @@ def main() -> int:
             original_directory=arguments.original_directory,
             local_configuration=arguments.local_configuration,
             search_path=arguments.search_path,
+            typeshed=arguments.typeshed,
             preserve_pythonpath=arguments.preserve_pythonpath)
         source_directories = []
         if configuration.disabled():
