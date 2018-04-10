@@ -73,6 +73,7 @@ val inferred_generic_base
 
 val constraints
   :  ?target: t
+  -> ?parameters: Type.t list
   -> t
   -> instantiated: Type.t
   -> resolution: Resolution.t

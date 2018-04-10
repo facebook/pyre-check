@@ -259,59 +259,64 @@ let inferred_generic_base { Node.value = { Class.bases; _ }; _ } ~aliases =
     |> Option.value ~default:[]
 
 
-module ConstraintsKey = struct
-  type t = {
-    definition: parent_class;
-    instantiated: Type.t;
-  }
-  [@@deriving compare, sexp]
-
-  module Set = Set.Make(struct
-      type nonrec t = t
-      let compare = compare
-      let sexp_of_t = sexp_of_t
-      let t_of_sexp = t_of_sexp
-    end)
-end
-
-
-let constraints ?target definition ~instantiated ~resolution =
-  let rec constraints
-      ~visited
-      ({ Node.value = { Class.bases; _ }; _ } as definition)
-      ~instantiated =
-    let key = { ConstraintsKey.definition; instantiated } in
-    if ConstraintsKey.Set.mem visited key then
-      None
-    else
-      let target = Option.value ~default:definition target in
-      let _, parameters = Type.split instantiated in
-      let generics = generics ~resolution definition in
-      let map =
-        match List.zip generics parameters with
-        | Some zipped ->
-            (* Don't instantiate Bottom. *)
-            List.filter
-              ~f:(fun (_, parameter) -> not (Type.equal parameter Type.Bottom))
-              zipped
-            |> Type.Map.of_alist_exn
-        | None ->
-            Type.Map.empty
-      in
-      if equal target definition then
-        Some map
-      else
-        let base_constraints { Argument.value = base; _ } =
-          let instantiated = Resolution.parse_annotation resolution base in
-          Resolution.class_definition resolution instantiated
-          >>= constraints
-            ~visited:(Set.add visited key)
-            ~instantiated:(Type.instantiate ~constraints:(Map.find map) instantiated)
-        in
-        List.find_map ~f:base_constraints bases
+let constraints ?target ?parameters definition ~instantiated ~resolution =
+  let target = Option.value ~default:definition target in
+  let parameters =
+    match parameters with
+    | None ->
+        generics ~resolution target
+    | Some parameters ->
+        parameters
   in
-  constraints ~visited:ConstraintsKey.Set.empty definition ~instantiated
-  |> Option.value ~default:Type.Map.empty
+  let resolved_parameters =
+    let target =
+      annotation ~resolution target
+      |> Type.split
+      |> fst
+    in
+    TypeOrder.instantiate_parameters (Resolution.order resolution) ~source:instantiated ~target
+    |> Option.value ~default:[]
+  in
+  if List.length parameters = List.length resolved_parameters then
+    let rec compute_constraints map expected instantiated =
+      match expected, instantiated with
+      | Type.Parametric { Type.name = left_name; parameters = left_parameters },
+        Type.Parametric { Type.name = right_name; parameters = right_parameters }
+        when Identifier.equal left_name right_name ->
+          List.fold2 ~init:map ~f:compute_constraints left_parameters right_parameters
+          |>
+          (function
+            | List.Or_unequal_lengths.Ok map ->
+                map
+            | _ ->
+                None)
+      | Type.Variable { Type.constraints = []; _ }, _
+        when not (Type.equal instantiated Type.Bottom) ->
+          map
+          >>| Map.set ~key:expected ~data:instantiated
+      | Type.Variable { Type.constraints; _ }, _ ->
+          let matches_constraint variable_constraint =
+            TypeOrder.less_or_equal
+              (Resolution.order resolution)
+              ~left:instantiated
+              ~right:variable_constraint
+          in
+          if List.exists ~f:matches_constraint constraints then
+            map
+            >>| Map.set ~key:expected ~data:instantiated
+          else
+            None
+      | _ ->
+          map
+    in
+    List.fold2_exn
+      ~init:(Some Type.Map.empty)
+      ~f:compute_constraints
+      parameters
+      resolved_parameters
+    |> Option.value ~default:Type.Map.empty
+  else
+    Type.Map.empty
 
 
 let superclasses definition ~resolution =

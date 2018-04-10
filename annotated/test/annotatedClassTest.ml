@@ -591,7 +591,7 @@ let test_fallback_attribute _ =
 
 
 let test_constraints _ =
-  let assert_constraints ~target ~instantiated source expected =
+  let assert_constraints ~target ~instantiated ?parameters source expected =
     let resolution =
       populate source
       |> resolution
@@ -615,7 +615,7 @@ let test_constraints _ =
               Class.create (Node.create ~location definition)
           | _ ->
               failwith "Last statement was not a class")
-      |> Class.constraints ~target ~resolution ~instantiated
+      |> Class.constraints ~target ~resolution ?parameters ~instantiated
     in
     assert_equal
       ~cmp:(Type.Map.equal Type.equal)
@@ -736,7 +736,33 @@ let test_constraints _ =
       class Iterator(typing.Protocol[_T]):
         pass
     |}
+    [variable "_T", Type.integer];
+
+  assert_constraints
+    ~target:"Iterator"
+    ~instantiated:(Type.parametric "Iterable" [Type.integer])
+    {|
+      _T = typing.TypeVar('_T')
+      class Iterator(typing.Protocol[_T]):
+        pass
+      class Iterable(Iterator[_T]):
+        pass
+    |}
+    [variable "_T", Type.integer];
+
+  assert_constraints
+    ~target:"Iterator"
+    ~instantiated:(Type.parametric "Iterable" [Type.parametric "Iterable" [Type.integer]])
+    ~parameters:[Type.parametric "Iterable" [variable "_T"]]
+    {|
+      _T = typing.TypeVar('_T')
+      class Iterator(typing.Protocol[_T]):
+        pass
+      class Iterable(Iterator[_T]):
+        pass
+    |}
     [variable "_T", Type.integer]
+
 
 
 let test_inferred_generic_base _ =

@@ -37,6 +37,7 @@ let test_select _ =
           class typing.Type(typing.Generic[_T]): ...
           class typing.Sequence(typing.Generic[_S]): ...
           class list(typing.Generic[_T], typing.Sequence[_T]): ...
+          meta: typing.Type[typing.List[int]] = ...
         |}
       |> resolution
     in
@@ -192,6 +193,12 @@ let test_select _ =
         Type.list (Type.variable ~constraints:[Type.integer; Type.float] "_R"),
         None,
         1));
+
+  assert_select "[[typing.Type[_T]], _T]" "(int)" (`Found "[[typing.Type[int]], int]");
+  assert_select
+    "[[typing.Type[typing.List[_T]]], _T]"
+    "(meta)"
+    (`Found "[[typing.Type[typing.List[int]]], int]");
 
   (* Ranking. *)
   assert_select

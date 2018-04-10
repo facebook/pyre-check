@@ -126,32 +126,8 @@ let select call ~resolution ~callable:({ Type.Callable.overloads; _ } as callabl
                   let primitive, _ = Type.split actual in
                   Resolution.class_definition resolution primitive
                   >>| Class.create
-                  >>| Class.constraints ~target ~instantiated:actual ~resolution
+                  >>| Class.constraints ~target ~parameters ~instantiated:actual ~resolution
                   >>= fun inferred ->
-                  let inferred =
-                    (* Translate type variables, e.g. a class might have a generic variable
-                       `_T` that is referred to with a differnet variable `_S` in the
-                       callable instantiation. *)
-                    let generics = Class.generics target ~resolution in
-                    if List.length generics = List.length parameters then
-                      let translation =
-                        let translation map generic parameter =
-                          match generic, parameter with
-                          | Type.Variable _, Type.Variable _ ->
-                              Map.set map ~key:generic ~data:parameter
-                          | _ ->
-                              map
-                        in
-                        List.fold2_exn ~init:Type.Map.empty ~f:translation generics parameters
-                      in
-                      let translate ~key ~data inferred =
-                        let key = Map.find translation key |> Option.value ~default:key in
-                        Map.set inferred ~key ~data
-                      in
-                      Map.fold ~init:Type.Map.empty ~f:translate inferred
-                    else
-                      Type.Map.empty
-                  in
                   if Map.length inferred < parameters_to_infer then
                     None
                   else
