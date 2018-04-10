@@ -134,34 +134,34 @@ let qualify source =
         | Expression _ -> Transform.Recurse
         | _ -> Transform.Stop
 
-      let statement_postorder ({ variables; _ } as state) ({ Node.value; _ } as statement) =
+      let qualify_expression { variables; _ } ({ Node.value; _ } as expression) =
+        let value =
+          match value with
+          | Access access ->
+              Map.find variables access
+              |> Option.value ~default:access
+              |> fun access -> Access access
+          | _ ->
+              value
+        in
+        { expression with Node.value }
+
+      let statement_postorder state ({ Node.value; _ } as statement) =
         let rec qualify_class qualifier ({ Class.name; bases; body; _ } as definition) =
           let qualified_name = qualifier @ name in
           let parent = Some qualified_name in
-          let qualify_bases
-              ({ Argument.value = ({ Node.value; _ } as expression); _ } as argument) =
-            let expression =
-              match value with
-              | Access access ->
-                  let access =
-                    Map.find variables access
-                    |> Option.value ~default:access
-                  in
-                  { expression with Node.value = Access access }
-              | _ ->
-                  expression
-            in
-            { argument with Argument.value = expression }
+          let qualify_bases ({ Argument.value; _ } as argument) =
+            { argument with Argument.value = qualify_expression state value }
           in
-          let qualify_in_class ({ Node.value; _ } as statement) =
+          let qualify_statement ({ Node.value; _ } as statement) =
             let value =
               match value with
               | Assign assign ->
                   Assign { assign with Assign.parent }
               | Define define ->
-                  Define (qualify_define ~parent [] define)
+                  Define (qualify_define state ~parent [] define)
               | Stub (Stub.Define define) ->
-                  Stub (Stub.Define (qualify_define ~parent [] define))
+                  Stub (Stub.Define (qualify_define state ~parent [] define))
               | Class define ->
                   Class (qualify_class qualified_name define)
               | Stub (Stub.Class define) ->
@@ -175,22 +175,23 @@ let qualify source =
             definition with
             Class.name = qualified_name;
             bases = List.map ~f:qualify_bases bases;
-            body = List.map ~f:qualify_in_class body;
+            body = List.map ~f:qualify_statement body;
           }
 
         and qualify_define
+            state
             ?(parent=None)
             qualifier
-            ({ Define.name; body; _ } as define) =
+            ({ Define.name; body; parameters; return_annotation; _ } as define) =
           let qualified_name = qualifier @ name in
           let rec qualify_in_define ({ Node.value; _ } as statement) =
             let qualify_statements = List.map ~f:qualify_in_define in
             let value =
               match value with
               | Define define ->
-                  Define (qualify_define ~parent qualified_name define)
+                  Define (qualify_define state ~parent qualified_name define)
               | Stub (Stub.Define define) ->
-                  Stub (Stub.Define (qualify_define ~parent qualified_name define))
+                  Stub (Stub.Define (qualify_define state ~parent qualified_name define))
               | Class define ->
                   Class (qualify_class qualified_name define)
               | Stub (Stub.Class define) ->
@@ -233,11 +234,24 @@ let qualify source =
             in
             { statement with Node.value }
           in
+          let qualify_parameter
+              ({ Node.value = { Parameter.name; value; annotation }; _ } as parameter) =
+            {
+              parameter with
+              Node.value = {
+                Parameter.name;
+                value = value >>| qualify_expression state;
+                annotation = annotation >>| qualify_expression state;
+              }
+            }
+          in
           {
             define with
             Define.name = qualified_name;
             body = List.map ~f:qualify_in_define body;
             parent;
+            parameters = List.map ~f:qualify_parameter parameters;
+            return_annotation = return_annotation >>| qualify_expression state
           }
         in
 
@@ -264,14 +278,14 @@ let qualify source =
 
             (* Add `name -> qualifier.name` for functions, not methods. *)
             | Define definition when not (Define.is_method definition) ->
-                let qualified = qualify_define global_qualifier definition in
+                let qualified = qualify_define state global_qualifier definition in
                 {
                   state with
                   methods = Map.set methods ~key:definition.Define.name ~data:qualified.Define.name;
                 },
                 Define qualified
             | Stub (Stub.Define definition) when not (Define.is_method definition) ->
-                let qualified = qualify_define global_qualifier definition in
+                let qualified = qualify_define state global_qualifier definition in
                 {
                   state with
                   methods = Map.set methods ~key:definition.Define.name ~data:qualified.Define.name;

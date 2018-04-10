@@ -428,6 +428,19 @@ let test_qualify _ =
       import a
       def some.qualifier.foo($renamed_a: a):
         $renamed_a = 5
+    |};
+
+  (* Qualify type annotations. *)
+  assert_qualify
+    {|
+      _Q = typing.TypeVar('_Q')
+      def identity(input: _Q) -> _Q:
+        def nested(input: _Q) -> _Q: ...
+    |}
+    {|
+      some.qualifier._Q = typing.TypeVar('_Q')
+      def some.qualifier.identity($renamed_input: some.qualifier._Q) -> some.qualifier._Q:
+        def some.qualifier.identity.nested(input: some.qualifier._Q) -> some.qualifier._Q: ...
     |}
 
 
