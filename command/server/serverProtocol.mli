@@ -55,6 +55,7 @@ module Request : sig
     | StopRequest
     | ClientShutdownRequest of int
     | GetDefinitionRequest of DefinitionRequest.t
+    | HoverRequest of DefinitionRequest.t
   [@@deriving eq, show]
 
   type origin =
@@ -78,4 +79,5 @@ type response =
   | TypeQueryResponse of string
   | StopResponse
   | GetDefinitionResponse of Ast.Location.t option
+  | HoverResponse of Ast.Location.t option
 [@@deriving eq, show]

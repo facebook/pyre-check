@@ -159,6 +159,15 @@ module VersionedTextDocumentIdentifier = struct
 end
 
 
+module TextDocumentPositionParams = struct
+  type t = {
+    textDocument: TextDocumentIdentifier.t;
+    position: Position.t;
+  }
+  [@@deriving yojson]
+end
+
+
 module DidCloseTextDocumentParams = struct
   type t = {
     textDocument: TextDocumentIdentifier.t;
@@ -794,13 +803,6 @@ end
 
 
 module TextDocumentDefinitionRequest = struct
-  module TextDocumentPositionParams = struct
-    type t = {
-      textDocument: TextDocumentIdentifier.t;
-      position: Position.t;
-    }
-    [@@deriving of_yojson]
-  end
   include RequestMessage.Make(TextDocumentPositionParams)
 end
 
@@ -808,6 +810,14 @@ end
 module RageRequest = struct
   module RageParameters = None
   include RequestMessage.Make(RageParameters)
+end
+
+
+module HoverRequest = struct
+  include RequestMessage.Make(struct
+      type t = TextDocumentPositionParams.t
+      [@@deriving yojson]
+    end)
 end
 
 
@@ -894,6 +904,24 @@ module TextDocumentDefinitionResponse = struct
 
   include ResponseMessage.Make (DefinitionResult) (DefinitionError)
 end
+
+
+module HoverResponse = struct
+  module HoverResult = struct
+    type t = {
+      contents: string;
+      range: Range.t option;
+    }
+    [@@deriving yojson]
+  end
+
+
+  module HoverError = ResponseError.Make(Null)
+
+
+  include ResponseMessage.Make (HoverResult) (HoverError)
+end
+
 
 module RageResponse = struct
   module RageResult = struct

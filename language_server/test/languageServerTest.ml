@@ -59,6 +59,7 @@ let test_initialize_response _ =
         "result": {
           "capabilities": {
             "definitionProvider": true,
+            "hoverProvider": true,
             "rageProvider": true,
             "textDocumentSync": { "change": 0, "openClose": true }
           }
@@ -224,6 +225,76 @@ let test_language_server_definition_response _ =
   assert_equal ~printer:ident expected_message message
 
 
+let test_language_server_hover_request _ =
+  let message =
+    {|
+      {
+        "jsonrpc": "2.0",
+        "id": 0,
+        "method": "textDocument/hover",
+        "params": {
+          "textDocument": {
+            "uri": "file:///some/uri.py"
+          },
+          "position": { "line": 3, "character": 5 }
+        }
+      }
+    |}
+    |> Test.trim_extra_indentation
+    |> String.strip
+  in
+
+  let expected: HoverRequest.t =
+    let open HoverRequest in
+    let open TextDocumentPositionParams in
+    let open TextDocumentIdentifier in
+    let open Position in
+    {
+      jsonrpc = "2.0";
+      id = 0;
+      method_ = "textDocument/hover";
+      parameters = Some {
+          textDocument = {
+            uri = "file:///some/uri.py";
+          };
+          position = {
+            line = 3;
+            character = 5;
+          };
+        };
+    }
+  in
+
+  match HoverRequest.of_yojson (Yojson.Safe.from_string message) with
+  | Ok actual ->
+      assert_equal actual expected
+  | Error _ ->
+      assert_failure "Could not parse request of JSON"
+
+
+let test_language_server_hover_response _ =
+  let message =
+    HoverResponse.create
+      ~contents:"Hover response contents"
+      ~id:1
+    |> HoverResponse.to_yojson
+    |> Yojson.Safe.sort
+    |> Yojson.Safe.pretty_to_string
+  in
+  let expected_message =
+    `Assoc [
+      "id", `Int 1;
+      "jsonrpc", `String "2.0";
+      "result", `Assoc [
+        "contents", `String "Hover response contents";
+        "range", `Null;
+      ];
+    ]
+    |> Yojson.Safe.pretty_to_string
+  in
+  assert_equal ~printer:ident expected_message message
+
+
 let test_request_parser context =
   let filename, _ = bracket_tmpfile ~suffix:".py" context in
   let save_message =
@@ -275,6 +346,8 @@ let () =
     "language_server_protocol_message_format">::test_language_server_protocol_message_format;
     "language_server_protocol_read_message">::test_language_server_protocol_read_message;
     "language_server_definition_response">::test_language_server_definition_response;
+    "language_server_hover_request">::test_language_server_hover_request;
+    "language_server_hover_response">::test_language_server_hover_response;
     "language_server_protocol_deserialize_request">::
     test_language_server_protocol_deserialize_request;
     "initialize_response">::test_initialize_response;

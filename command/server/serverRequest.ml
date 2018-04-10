@@ -277,6 +277,19 @@ let rec process_request
                            ~location:definition
                          |> LanguageServer.Protocol.TextDocumentDefinitionResponse.to_yojson
                          |> Yojson.Safe.to_string)))
+            | HoverRequest { DefinitionRequest.id; path; position } ->
+                let contents =
+                  Format.asprintf "Received request for\n\n  - path:%s\n  - position:%a\n"
+                    path
+                    AstLocation.pp_position position
+                in
+                Some
+                  (state,
+                   Some
+                     (LanguageServerProtocolResponse
+                        (LanguageServer.Protocol.HoverResponse.create ~contents ~id
+                         |> LanguageServer.Protocol.HoverResponse.to_yojson
+                         |> Yojson.Safe.to_string)))
             | RageRequest id ->
                 let items = Rage.get_logs configuration in
                 Some
@@ -314,6 +327,11 @@ let rec process_request
 
     | GetDefinitionRequest { DefinitionRequest.path; position; _ } ->
         state, Some (GetDefinitionResponse (
+            Hashtbl.find state.lookups path
+            >>= fun lookup -> Lookup.get_definition lookup position))
+
+    | HoverRequest { DefinitionRequest.path; position; _ } ->
+        state, Some (HoverResponse (
             Hashtbl.find state.lookups path
             >>= fun lookup -> Lookup.get_definition lookup position))
 

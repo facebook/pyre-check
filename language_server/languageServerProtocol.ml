@@ -118,7 +118,7 @@ module InitializeResponse = struct
                   will_save_wait_until = None;
                   save = None;
                 };
-              hover_provider = None;
+              hover_provider = Some true;
               completion_provider = None;
               signature_help_provider = None;
               definition_provider = Some true;
@@ -178,6 +178,23 @@ module TextDocumentDefinitionResponse = struct
                  Location.range = Range.create ~start ~stop;
                })
            |> Option.to_list);
+      error = None;
+    }
+end
+
+
+module HoverResponse = struct
+  include LanguageServerProtocolTypes.HoverResponse
+
+  let create ~contents ~id =
+    {
+      jsonrpc = "2.0";
+      id;
+      result =
+        Some {
+          HoverResult.contents;
+          range = None;
+        };
       error = None;
     }
 end

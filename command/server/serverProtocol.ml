@@ -59,6 +59,7 @@ module Request = struct
     | StopRequest
     | ClientShutdownRequest of int
     | GetDefinitionRequest of DefinitionRequest.t
+    | HoverRequest of DefinitionRequest.t
   [@@deriving eq, show]
 
 
@@ -120,6 +121,7 @@ module Request = struct
     | StopRequest -> "Stop"
     | ClientShutdownRequest _ -> "ClientConnection"
     | GetDefinitionRequest _ -> "GetDefinition"
+    | HoverRequest _ -> "Hover"
 end
 
 
@@ -131,4 +133,5 @@ type response =
   | TypeQueryResponse of string
   | StopResponse
   | GetDefinitionResponse of Ast.Location.t option
+  | HoverResponse of Ast.Location.t option
 [@@deriving eq, show]

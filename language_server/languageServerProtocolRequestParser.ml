@@ -39,7 +39,7 @@ let parse ~root ~check_on_save request =
           match TextDocumentDefinitionRequest.of_yojson request with
           | Ok {
               TextDocumentDefinitionRequest.parameters = Some {
-                  TextDocumentDefinitionRequest.TextDocumentPositionParams.textDocument = {
+                  TextDocumentPositionParams.textDocument = {
                     TextDocumentIdentifier.uri;
                     _;
                   };
@@ -145,6 +145,34 @@ let parse ~root ~check_on_save request =
             Log.log ~section:`Server "Explicitly ignoring didSave request";
             None
           end
+
+    | "textDocument/hover" ->
+        begin
+          match HoverRequest.of_yojson request with
+          | Ok {
+              HoverRequest.parameters = Some {
+                  TextDocumentPositionParams.textDocument = {
+                    TextDocumentIdentifier.uri;
+                    _;
+                  };
+                  position = { Position.line; character };
+                };
+              id;
+              _;
+            } ->
+              let path =
+                uri_to_contained_relative_path
+                  ~root:(Path.absolute root)
+                  ~uri
+              in
+              Some (HoverRequest {
+                  DefinitionRequest.id;
+                  path;
+                  position = { Ast.Location.line; column = character };
+                })
+          | Ok _ -> None
+          | Error yojson_error -> Log.log ~section:`Server "Error: %s" yojson_error; None
+        end
 
     | "shutdown" ->
         begin
