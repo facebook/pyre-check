@@ -126,7 +126,11 @@ class Configuration:
         if not self._typeshed:
             raise InvalidConfiguration('Configuration was not validated')
 
-        return self._search_directories + [self._typeshed]
+        if self._typeshed in self._search_directories:
+            # Avoid redundant lookups.
+            return self._search_directories
+        else:
+            return self._search_directories + [self._typeshed]
 
     def disabled(self) -> bool:
         return self._disabled
