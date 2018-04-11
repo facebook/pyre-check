@@ -35,8 +35,13 @@ let test_select _ =
           _R = typing.TypeVar('_R', int, float)
           class typing.Generic: ...
           class typing.Type(typing.Generic[_T]): ...
+
           class typing.Sequence(typing.Generic[_S]): ...
+          class typing.Mapping(typing.Generic[_T, _S]): ...
+
           class list(typing.Generic[_T], typing.Sequence[_T]): ...
+          class dict(typing.Generic[_T, _S], typing.Mapping[_T, _S]): ...
+
           meta: typing.Type[typing.List[int]] = ...
         |}
       |> resolution
@@ -167,6 +172,18 @@ let test_select _ =
   (* Keywords. *)
   assert_select "[[Keywords(keywords)], int]" "()" (`Found "[[Keywords(keywords)], int]");
   assert_select "[[Keywords(keywords)], int]" "(a=1, b=2)" (`Found "[[Keywords(keywords)], int]");
+  assert_select
+    "[[Keywords(keywords, int)], int]"
+    "(a=1, b=2)"
+    (`Found "[[Keywords(keywords, int)], int]");
+  assert_select
+    "[[Keywords(keywords, typing.Dict[str, str])], int]"
+    "(a=1, b=2)"
+    (`NotFoundMismatch (Type.integer, Type.string, Some "a", 1));
+  assert_select
+    "[[Keywords(keywords, typing.Dict[str, str])], int]"
+    "(a='string', b=2)"
+    (`NotFoundMismatch (Type.integer, Type.string, Some "b", 2));
 
   assert_select "[[int], int]" "(**a)" `NotFoundNoReason;
   assert_select "[[Named(i, int)], int]" "(**a)" (`Found "[[Named(i, int)], int]");

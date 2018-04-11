@@ -89,8 +89,15 @@ let select call ~resolution ~callable:({ Type.Callable.overloads; _ } as callabl
                   |> Option.value ~default:Type.Top
                 else
                   Type.Top
-            | Parameter.Keywords _ ->
-                Type.Top
+            | Parameter.Keywords { Parameter.annotation; _ } ->
+                let mapping = Type.parametric "typing.Mapping" [Type.string; Type.Object] in
+                if Resolution.less_or_equal resolution ~left:annotation ~right:mapping then
+                  (* Try to extract second parameter. *)
+                  Type.parameters annotation
+                  |> (fun parameters -> List.nth parameters 1)
+                  |> Option.value ~default:Type.Top
+                else
+                  Type.Top
           in
           let actual =
             let actual = Resolution.resolve resolution value in
@@ -296,11 +303,24 @@ let select call ~resolution ~callable:({ Type.Callable.overloads; _ } as callabl
           { arguments; parameters; constraints; reason }
         in
 
-        let rec consume_keywords ({ arguments; parameters; _ } as state) =
+        let rec consume_keywords ({ arguments; parameters; constraints; _ } as state) =
           let reason = None in
           match arguments, parameters with
-          | { Argument.name = Some _; _ } :: arguments, (Parameter.Keywords _) :: _ ->
-              consume_keywords { state with arguments; reason }
+          | ({ Argument.name = Some _; _ } as argument) :: arguments,
+            ((Parameter.Keywords _) as parameter) :: _ ->
+              begin
+                let constraints, reason =
+                  check_parameter
+                    ~constraints
+                    ~reason
+                    ~argument
+                    ~parameter
+                    ~remaining_arguments:(List.length arguments)
+                in
+                match reason with
+                | None -> consume_keywords { state with arguments; parameters; constraints }
+                | _ -> { state with reason }
+              end
           | _, (Parameter.Keywords _) :: parameters ->
               consume_keywords { state with parameters; reason }
 
