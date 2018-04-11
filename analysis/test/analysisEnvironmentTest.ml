@@ -377,10 +377,9 @@ let test_register_functions _ =
 
        @overload
        def overloaded(i: int) -> None: ...
+       def overloaded(i: float) -> None: ...
        def overloaded(i: str) -> None:
          pass
-       @overload
-       def overloaded(i: float) -> None: ...
     |}
   in
   Environment.register_functions (module Handler) source;
