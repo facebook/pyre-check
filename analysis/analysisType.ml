@@ -24,8 +24,8 @@ module Record = struct
       and 'annotation t =
         | Anonymous of 'annotation
         | Named of 'annotation named
-        | Variable of Access.t
-        | Keywords of Access.t
+        | Variable of 'annotation named
+        | Keywords of 'annotation named
       [@@deriving compare, eq, sexp, show, hash]
     end
 
@@ -210,10 +210,16 @@ let rec pp format annotation =
                         Access.pp name
                         (without_backtick [annotation])
                         (if default then ", default" else "")
-                  | Parameter.Variable name ->
-                      Format.asprintf "Variable(%a)" Access.pp name
-                  | Parameter.Keywords name ->
-                      Format.asprintf "Keywords(%a)" Access.pp name
+                  | Parameter.Variable { Parameter.name; annotation; _ } ->
+                      Format.asprintf
+                        "Variable(%a, %s)"
+                        Access.pp name
+                        (without_backtick [annotation])
+                  | Parameter.Keywords { Parameter.name; annotation; _ } ->
+                      Format.asprintf
+                        "Keywords(%a, %s)"
+                        Access.pp name
+                        (without_backtick [annotation])
                 in
                 List.map ~f:parameter parameters
                 |> String.concat ~sep:", "
@@ -620,10 +626,28 @@ let create ~aliases { Node.value = expression; _ } =
                                         annotation = create [] annotation;
                                         default;
                                       }
-                                  | "Variable", [Access name] ->
-                                      Parameter.Variable name
-                                  | "Keywords", [Access name] ->
-                                      Parameter.Keywords name
+                                  | "Variable", (Access name) :: tail ->
+                                      let annotation =
+                                        match tail with
+                                        | [Access annotation] -> create [] annotation
+                                        | _ -> Top
+                                      in
+                                      Parameter.Variable {
+                                        Parameter.name;
+                                        annotation;
+                                        default = false;
+                                      }
+                                  | "Keywords", (Access name) :: tail ->
+                                      let annotation =
+                                        match tail with
+                                        | [Access annotation] -> create [] annotation
+                                        | _ -> Top
+                                      in
+                                      Parameter.Keywords {
+                                        Parameter.name;
+                                        annotation;
+                                        default = false;
+                                      }
                                   | _ ->
                                       Parameter.Anonymous Top
                                 end
@@ -888,12 +912,12 @@ let rec expression annotation =
                     match parameter with
                     | Parameter.Anonymous annotation ->
                         expression annotation
-                    | Parameter.Keywords name ->
-                        call "Keywords" name None
+                    | Parameter.Keywords { Parameter.name; annotation; _ } ->
+                        call "Keywords" name (Some annotation)
                     | Parameter.Named { Parameter.name; annotation; default } ->
                         call "Named" ~default name (Some annotation)
-                    | Parameter.Variable name ->
-                        call "Variable" name None
+                    | Parameter.Variable { Parameter.name; annotation; _ } ->
+                        call "Variable" name (Some annotation)
                   in
                   List (List.map ~f:parameter parameters)
                   |> Node.create_with_default_location

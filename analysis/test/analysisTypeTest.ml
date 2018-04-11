@@ -209,8 +209,40 @@ let test_create _ =
                   annotation = Type.integer;
                   default = false;
                 };
-                Parameter.Variable (Access.create "variable");
-                Parameter.Keywords (Access.create "keywords");
+                Parameter.Variable {
+                  Parameter.name = Access.create "variable";
+                  annotation = Type.Top;
+                  default = false;
+                };
+                Parameter.Keywords {
+                  Parameter.name = Access.create "keywords";
+                  annotation = Type.Top;
+                  default = false;
+                };
+              ];
+          };
+        ];
+        implicit_argument = false;
+      });
+  assert_create
+    "typing.Callable[[int, Variable(variable, int), Keywords(keywords, str)], int]"
+    (Type.Callable {
+        kind = Anonymous;
+        overloads = [
+          {
+            annotation = Type.integer;
+            parameters = Defined [
+                Parameter.Anonymous Type.integer;
+                Parameter.Variable {
+                  Parameter.name = Access.create "variable";
+                  annotation = Type.integer;
+                  default = false;
+                };
+                Parameter.Keywords {
+                  Parameter.name = Access.create "keywords";
+                  annotation = Type.string;
+                  default = false;
+                };
               ];
           };
         ];
@@ -266,6 +298,7 @@ let test_expression _ =
     "typing.List[int]";
 
   (* Callables. *)
+  let open Type.Callable in
   assert_expression (Type.callable ~annotation:Type.integer ()) "typing.Callable[..., int]";
   assert_expression
     (Type.callable ~name:(Access.create "name") ~annotation:Type.integer ())
@@ -286,8 +319,8 @@ let test_expression _ =
   assert_expression
     (Type.callable
        ~parameters:(Type.Callable.Defined [
-           Type.Callable.Parameter.Anonymous Type.integer;
-           Type.Callable.Parameter.Anonymous Type.string;
+           Parameter.Anonymous Type.integer;
+           Parameter.Anonymous Type.string;
          ])
        ~annotation:Type.integer
        ())
@@ -295,13 +328,13 @@ let test_expression _ =
   assert_expression
     (Type.callable
        ~parameters:(Type.Callable.Defined [
-           Type.Callable.Parameter.Named {
-             Type.Callable.Parameter.name = Access.create "a";
+           Parameter.Named {
+             Parameter.name = Access.create "a";
              annotation = Type.integer;
              default = false;
            };
-           Type.Callable.Parameter.Named {
-             Type.Callable.Parameter.name = Access.create "b";
+           Parameter.Named {
+             Parameter.name = Access.create "b";
              annotation = Type.string;
              default = false;
            };
@@ -312,8 +345,8 @@ let test_expression _ =
   assert_expression
     (Type.callable
        ~parameters:(Type.Callable.Defined [
-           Type.Callable.Parameter.Named {
-             Type.Callable.Parameter.name = Access.create "a";
+           Parameter.Named {
+             Parameter.name = Access.create "a";
              annotation = Type.integer;
              default = true;
            };
@@ -323,14 +356,22 @@ let test_expression _ =
     "typing.Callable[[Named(a, int, default)], int]";
   assert_expression
     (Type.callable
-       ~parameters:(Type.Callable.Defined [
-           Type.Callable.Parameter.Anonymous Type.integer;
-           Type.Callable.Parameter.Variable (Access.create "variable");
-           Type.Callable.Parameter.Keywords (Access.create "keywords");
+       ~parameters:(Defined [
+           Parameter.Anonymous Type.integer;
+           Parameter.Variable {
+             Parameter.name = Access.create "variable";
+             annotation = Type.integer;
+             default = false;
+           };
+           Parameter.Keywords {
+             Parameter.name = Access.create "keywords";
+             annotation = Type.string;
+             default = false;
+           };
          ])
        ~annotation:Type.integer
        ())
-    "typing.Callable[[int, Variable(variable), Keywords(keywords)], int]"
+    "typing.Callable[[int, Variable(variable, int), Keywords(keywords, str)], int]"
 
 
 let test_union _ =

@@ -106,9 +106,9 @@ let callable ({ Define.name; parameters; parent; _ } as define) ~resolution =
       |> Option.value ~default:Type.Top
     in
     if String.is_prefix ~prefix:"**" name then
-      Parameter.Keywords access
+      Parameter.Keywords { Parameter.name = access; annotation; default = false }
     else if String.is_prefix ~prefix:"*" name then
-      Parameter.Variable access
+      Parameter.Variable { Parameter.name = access; annotation; default = false }
     else
       Parameter.Named { Parameter.name = access; annotation; default = Option.is_some value }
   in

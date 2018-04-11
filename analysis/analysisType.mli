@@ -22,8 +22,8 @@ module Record : sig
       and 'annotation t =
         | Anonymous of 'annotation
         | Named of 'annotation named
-        | Variable of Access.t
-        | Keywords of Access.t
+        | Variable of 'annotation named
+        | Keywords of 'annotation named
       [@@deriving compare, eq, sexp, show, hash]
     end
 

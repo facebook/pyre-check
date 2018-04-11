@@ -84,7 +84,7 @@ let test_callable _ =
     "typing.Callable('foo')[[Named(a, $unknown), Variable(args), Keywords(kwargs)], str]";
   assert_callable
     "def foo(**kwargs: typing.Dict[str, typing.Any]) -> str: ..."
-    "typing.Callable('foo')[[Keywords(kwargs)], str]";
+    "typing.Callable('foo')[[Keywords(kwargs, typing.Dict[str, typing.Any])], str]";
 
   assert_callable
     ~parent:"module.Foo"

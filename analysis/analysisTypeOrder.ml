@@ -460,17 +460,13 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
                       (* The inversion here follows from the substitution principle. *)
                       less_or_equal order ~left:right ~right:left
                   | Parameter.Named left, Parameter.Named right
+                  | Parameter.Keywords left, Parameter.Keywords right
+                  | Parameter.Variable left, Parameter.Variable right
                     when Expression.Access.equal left.Parameter.name right.Parameter.name ->
                       less_or_equal
                         order
                         ~left:right.Parameter.annotation
                         ~right:left.Parameter.annotation;
-                  | Parameter.Variable left, Parameter.Variable right
-                    when Expression.Access.equal left right ->
-                      true
-                  | Parameter.Keywords left, Parameter.Keywords right
-                    when Expression.Access.equal left right ->
-                      true
                   | _ ->
                       false
                 in
@@ -636,11 +632,27 @@ and join_overloads ~parameter_join ~return_join order left right =
                                   right.Parameter.annotation;
                             })
                     | Parameter.Variable left, Parameter.Variable right
-                      when Expression.Access.equal left right ->
-                        Some (Parameter.Variable left)
+                      when Expression.Access.equal left.Parameter.name right.Parameter.name ->
+                        Some
+                          (Parameter.Variable {
+                              left with
+                              Parameter.annotation =
+                                parameter_join
+                                  order
+                                  left.Parameter.annotation
+                                  right.Parameter.annotation;
+                            })
                     | Parameter.Keywords left, Parameter.Keywords right
-                      when Expression.Access.equal left right ->
-                        Some (Parameter.Keywords left)
+                      when Expression.Access.equal left.Parameter.name right.Parameter.name ->
+                        Some
+                          (Parameter.Keywords {
+                              left with
+                              Parameter.annotation =
+                                parameter_join
+                                  order
+                                  left.Parameter.annotation
+                                  right.Parameter.annotation;
+                            })
                     | _ ->
                         None
                   in
