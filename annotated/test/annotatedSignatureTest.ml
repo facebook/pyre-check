@@ -130,6 +130,10 @@ let test_select _ =
   assert_select "[[Variable(variable)], int]" "()" (`Found "[[Variable(variable)], int]");
   assert_select "[[Variable(variable)], int]" "(1, 2)" (`Found "[[Variable(variable)], int]");
   assert_select
+    "[[Variable(variable, int)], int]"
+    "(1, 2)"
+    (`Found "[[Variable(variable, int)], int]");
+  assert_select
     "[[Variable(variable, typing.List[int])], int]"
     "(1, 2)"
     (`Found "[[Variable(variable, typing.List[int])], int]");

@@ -83,7 +83,7 @@ let select call ~resolution ~callable:({ Type.Callable.overloads; _ } as callabl
               |> List.hd
               |> Option.value ~default:Type.Top
             else
-              Type.Top
+              annotation
           in
           let mapping_value_parameter annotation =
             let mapping = Type.parametric "typing.Mapping" [Type.string; Type.Object] in
@@ -93,7 +93,7 @@ let select call ~resolution ~callable:({ Type.Callable.overloads; _ } as callabl
               |> (fun parameters -> List.nth parameters 1)
               |> Option.value ~default:Type.Top
             else
-              Type.Top
+              annotation
           in
 
           let expected =
