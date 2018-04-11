@@ -162,7 +162,6 @@ let test_select _ =
 
   (* Constraint resolution. *)
   assert_select "[[_T], _T]" "(1)" (`Found "[[int], int]");
-  assert_select "[[typing.Type[_T]], _T]" "(int)" (`Found "[[typing.Type[int]], int]");
   assert_select "[[_T, _S], _T]" "(1, 'string')" (`Found "[[int, str], int]");
   assert_select
     "[[_T, _T], int]"
@@ -199,6 +198,10 @@ let test_select _ =
     "[[typing.Type[typing.List[_T]]], _T]"
     "(meta)"
     (`Found "[[typing.Type[typing.List[int]]], int]");
+  assert_select
+    "[[typing.Type[_T]], _T]"
+    "(typing.List[str])"
+    (`Found "[[typing.Type[typing.List[str]]], typing.List[str]]");
 
   (* Ranking. *)
   assert_select

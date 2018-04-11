@@ -75,7 +75,6 @@ let select call ~resolution ~callable:({ Type.Callable.overloads; _ } as callabl
             ~argument:{ Argument.name; value = { Node.location; _ } as value }
             ~parameter
             ~remaining_arguments =
-          let actual = Resolution.resolve resolution value in
           let expected =
             match parameter with
             | Parameter.Anonymous annotation
@@ -83,6 +82,14 @@ let select call ~resolution ~callable:({ Type.Callable.overloads; _ } as callabl
                 annotation
             | _ ->
                 Type.Top
+          in
+          let actual =
+            let actual = Resolution.resolve resolution value in
+            if Type.is_meta expected && Type.equal actual Type.Top then
+              Resolution.parse_annotation resolution value
+              |> Type.meta
+            else
+              actual
           in
           let mismatch =
             let position = List.length arguments - remaining_arguments in
