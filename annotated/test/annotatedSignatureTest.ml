@@ -120,6 +120,18 @@ let test_select _ =
   (* Traverse variable arguments. *)
   assert_select "[[Variable(variable)], int]" "()" (`Found "[[Variable(variable)], int]");
   assert_select "[[Variable(variable)], int]" "(1, 2)" (`Found "[[Variable(variable)], int]");
+  assert_select
+    "[[Variable(variable, typing.List[int])], int]"
+    "(1, 2)"
+    (`Found "[[Variable(variable, typing.List[int])], int]");
+  assert_select
+    "[[Variable(variable, typing.List[str])], int]"
+    "(1, 2)"
+    (`NotFoundMismatch (Type.integer, Type.string, None, 1));
+  assert_select
+    "[[Variable(variable, typing.List[str])], int]"
+    "('string', 2)"
+    (`NotFoundMismatch (Type.integer, Type.string, None, 2));
 
   assert_select "[[int], int]" "(*a)" (`Found "[[int], int]");
   assert_select "[[int, Named(i, int)], int]" "(*a)" (`Found "[[int, Named(i, int)], int]");

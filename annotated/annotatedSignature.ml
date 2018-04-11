@@ -80,7 +80,16 @@ let select call ~resolution ~callable:({ Type.Callable.overloads; _ } as callabl
             | Parameter.Anonymous annotation
             | Parameter.Named { Parameter.annotation; _ } ->
                 annotation
-            | _ ->
+            | Parameter.Variable { Parameter.annotation; _ } ->
+                let sequence = Type.parametric "typing.Sequence" [Type.Object] in
+                if Resolution.less_or_equal resolution ~left:annotation ~right:sequence then
+                  (* Try to extract first parameter. *)
+                  Type.parameters annotation
+                  |> List.hd
+                  |> Option.value ~default:Type.Top
+                else
+                  Type.Top
+            | Parameter.Keywords _ ->
                 Type.Top
           in
           let actual =
@@ -179,11 +188,24 @@ let select call ~resolution ~callable:({ Type.Callable.overloads; _ } as callabl
               state
         in
 
-        let rec consume_variable ({ arguments; parameters; _ } as state) =
+        let rec consume_variable ({ arguments; parameters; constraints; _ } as state) =
           let reason = None in
           match arguments, parameters with
-          | { Argument.name = None; _ } :: arguments, (Parameter.Variable _) :: _ ->
-              consume_variable { state with arguments }
+          | ({ Argument.name = None; _ } as argument) :: arguments,
+            ((Parameter.Variable _) as parameter) :: _ ->
+              begin
+                let constraints, reason =
+                  check_parameter
+                    ~constraints
+                    ~reason
+                    ~argument
+                    ~parameter
+                    ~remaining_arguments:(List.length arguments)
+                in
+                match reason with
+                | None -> consume_variable { state with arguments; parameters; constraints }
+                | _ -> { state with reason }
+              end
           | _, (Parameter.Variable _) :: parameters ->
               consume_variable { state with parameters; reason }
 
