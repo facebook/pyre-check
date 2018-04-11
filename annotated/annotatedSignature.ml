@@ -85,6 +85,17 @@ let select call ~resolution ~callable:({ Type.Callable.overloads; _ } as callabl
             else
               Type.Top
           in
+          let mapping_value_parameter annotation =
+            let mapping = Type.parametric "typing.Mapping" [Type.string; Type.Object] in
+            if Resolution.less_or_equal resolution ~left:annotation ~right:mapping then
+              (* Try to extract second parameter. *)
+              Type.parameters annotation
+              |> (fun parameters -> List.nth parameters 1)
+              |> Option.value ~default:Type.Top
+            else
+              Type.Top
+          in
+
           let expected =
             match parameter with
             | Parameter.Anonymous annotation
@@ -93,20 +104,16 @@ let select call ~resolution ~callable:({ Type.Callable.overloads; _ } as callabl
             | Parameter.Variable { Parameter.annotation; _ } ->
                 sequence_parameter annotation
             | Parameter.Keywords { Parameter.annotation; _ } ->
-                let mapping = Type.parametric "typing.Mapping" [Type.string; Type.Object] in
-                if Resolution.less_or_equal resolution ~left:annotation ~right:mapping then
-                  (* Try to extract second parameter. *)
-                  Type.parameters annotation
-                  |> (fun parameters -> List.nth parameters 1)
-                  |> Option.value ~default:Type.Top
-                else
-                  Type.Top
+                mapping_value_parameter annotation
           in
           let actual =
             match Node.value expression with
             | Starred (Starred.Once expression) ->
                 Resolution.resolve resolution expression
                 |> sequence_parameter
+            | Starred (Starred.Twice expression) ->
+                Resolution.resolve resolution expression
+                |> mapping_value_parameter
             | _ ->
                 let actual = Resolution.resolve resolution expression in
                 if Type.is_meta expected && Type.equal actual Type.Top then
@@ -181,11 +188,17 @@ let select call ~resolution ~callable:({ Type.Callable.overloads; _ } as callabl
         in
 
         let rec consume_anonymous ({ arguments; parameters; constraints; reason } as state) =
+          let starred_twice { Argument.value = { Node.value; _ }; _ } =
+            match value with
+            | Starred (Starred.Twice _) -> true
+            | _ -> false
+          in
           match arguments, parameters with
           | ({ Argument.name = None; _ } as argument) :: arguments,
             ((Parameter.Anonymous _) as parameter) :: parameters
           | ({ Argument.name = None; _ } as argument) :: arguments,
-            ((Parameter.Named _) as parameter) :: parameters ->
+            ((Parameter.Named _) as parameter) :: parameters
+            when not (starred_twice argument)->
               begin
                 let constraints, reason =
                   check_parameter
@@ -199,7 +212,6 @@ let select call ~resolution ~callable:({ Type.Callable.overloads; _ } as callabl
                 | None -> consume_anonymous { state with arguments; parameters; constraints }
                 | _ -> { state with reason }
               end
-
 
           (* Eagerly consume arguments when types of variable parameters match. *)
           | ({
@@ -235,8 +247,8 @@ let select call ~resolution ~callable:({ Type.Callable.overloads; _ } as callabl
         in
 
         let rec consume_named ({ arguments; parameters; constraints; reason } as state) =
-          match arguments with
-          | ({ Argument.name = Some argument_name; _ } as argument) :: arguments ->
+          match arguments, parameters with
+          | ({ Argument.name = Some argument_name; _ } as argument) :: arguments, _ ->
               begin
                 let parameter, parameters =
                   let matching_parameter = function
@@ -267,6 +279,28 @@ let select call ~resolution ~callable:({ Type.Callable.overloads; _ } as callabl
                     state
               end
 
+          | ({
+              Argument.value = { Node.value = Starred (Starred.Twice _); _ };
+              _;
+            } as argument) :: _,
+            ((Parameter.Named _) as parameter) :: parameters ->
+              begin
+                let constraints, reason =
+                  check_parameter
+                    ~constraints
+                    ~reason
+                    ~argument
+                    ~parameter
+                    ~remaining_arguments:(List.length arguments)
+                in
+                match reason with
+                | None -> consume_named { state with arguments; parameters; constraints }
+                | _ -> { state with reason }
+              end
+          | { Argument.value = { Node.value = Starred (Starred.Twice _); _ }; _ } :: arguments,
+            parameters ->
+              consume_named { state with arguments; parameters; reason }
+
           | _ ->
               state
         in
@@ -283,8 +317,7 @@ let select call ~resolution ~callable:({ Type.Callable.overloads; _ } as callabl
         in
 
 
-        let rec consume_keywords ({ arguments; parameters; constraints; _ } as state) =
-          let reason = None in
+        let rec consume_keywords ({ arguments; parameters; constraints; reason } as state) =
           match arguments, parameters with
           | ({ Argument.name = Some _; _ } as argument) :: arguments,
             ((Parameter.Keywords _) as parameter) :: _ ->
@@ -303,13 +336,6 @@ let select call ~resolution ~callable:({ Type.Callable.overloads; _ } as callabl
               end
           | _, (Parameter.Keywords _) :: parameters ->
               consume_keywords { state with parameters; reason }
-
-          | { Argument.value = { Node.value = Starred (Starred.Twice _); _ }; _ } :: _,
-            (Parameter.Named _) :: parameters ->
-              consume_keywords { state with parameters; reason }
-          | { Argument.value = { Node.value = Starred (Starred.Twice _); _ }; _ } :: arguments,
-            parameters ->
-              consume_keywords { state with arguments; parameters; reason }
 
           | _ ->
               state

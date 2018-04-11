@@ -180,6 +180,20 @@ let test_select _ =
     "[[Named(i, int), Named(j, str)], int]"
     "(i=1, j=2)"
     (`NotFoundMismatch (Type.integer, Type.string, Some "j", 2));
+  assert_select
+    "[[Named(i, int), Named(j, int)], int]"
+    "(**{'j': 1, 'i': 2})"
+    (`Found "[[Named(i, int), Named(j, int)], int]");
+  assert_select
+    "[[Named(i, int), Named(j, int)], int]"
+    "(**{'j': 'string', 'i': 'string'})"
+    (`NotFoundMismatch (Type.string, Type.integer, None, 0));
+  assert_select "[[int], int]" "(**a)" `NotFoundNoReason;
+  assert_select
+    "[[int, Named(i, int)], int]"
+    "(1, **{'a': 1})"
+    (`Found "[[int, Named(i, int)], int]");
+
 
   (* Keywords. *)
   assert_select "[[Keywords(keywords)], int]" "()" (`Found "[[Keywords(keywords)], int]");
@@ -196,10 +210,6 @@ let test_select _ =
     "[[Keywords(keywords, typing.Dict[str, str])], int]"
     "(a='string', b=2)"
     (`NotFoundMismatch (Type.integer, Type.string, Some "b", 2));
-
-  assert_select "[[int], int]" "(**a)" `NotFoundNoReason;
-  assert_select "[[Named(i, int)], int]" "(**a)" (`Found "[[Named(i, int)], int]");
-  assert_select "[[int, Named(i, int)], int]" "(1, **a)" (`Found "[[int, Named(i, int)], int]");
 
   (* Constraint resolution. *)
   assert_select "[[_T], _T]" "(1)" (`Found "[[int], int]");
