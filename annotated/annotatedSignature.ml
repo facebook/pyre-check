@@ -72,23 +72,26 @@ let select call ~resolution ~callable:({ Type.Callable.overloads; _ } as callabl
         let check_parameter
             ~constraints
             ~reason
-            ~argument:{ Argument.name; value = { Node.location; _ } as value }
+            ~argument:{ Argument.name; value = { Node.location; _ } as expression }
             ~parameter
             ~remaining_arguments =
+          let sequence_parameter annotation =
+            let sequence = Type.parametric "typing.Sequence" [Type.Object] in
+            if Resolution.less_or_equal resolution ~left:annotation ~right:sequence then
+              (* Try to extract first parameter. *)
+              Type.parameters annotation
+              |> List.hd
+              |> Option.value ~default:Type.Top
+            else
+              Type.Top
+          in
           let expected =
             match parameter with
             | Parameter.Anonymous annotation
             | Parameter.Named { Parameter.annotation; _ } ->
                 annotation
             | Parameter.Variable { Parameter.annotation; _ } ->
-                let sequence = Type.parametric "typing.Sequence" [Type.Object] in
-                if Resolution.less_or_equal resolution ~left:annotation ~right:sequence then
-                  (* Try to extract first parameter. *)
-                  Type.parameters annotation
-                  |> List.hd
-                  |> Option.value ~default:Type.Top
-                else
-                  Type.Top
+                sequence_parameter annotation
             | Parameter.Keywords { Parameter.annotation; _ } ->
                 let mapping = Type.parametric "typing.Mapping" [Type.string; Type.Object] in
                 if Resolution.less_or_equal resolution ~left:annotation ~right:mapping then
@@ -100,12 +103,17 @@ let select call ~resolution ~callable:({ Type.Callable.overloads; _ } as callabl
                   Type.Top
           in
           let actual =
-            let actual = Resolution.resolve resolution value in
-            if Type.is_meta expected && Type.equal actual Type.Top then
-              Resolution.parse_annotation resolution value
-              |> Type.meta
-            else
-              actual
+            match Node.value expression with
+            | Starred (Starred.Once expression) ->
+                Resolution.resolve resolution expression
+                |> sequence_parameter
+            | _ ->
+                let actual = Resolution.resolve resolution expression in
+                if Type.is_meta expected && Type.equal actual Type.Top then
+                  Resolution.parse_annotation resolution expression
+                  |> Type.meta
+                else
+                  actual
           in
           let mismatch =
             let position = List.length arguments - remaining_arguments in
@@ -191,13 +199,32 @@ let select call ~resolution ~callable:({ Type.Callable.overloads; _ } as callabl
                 | None -> consume_anonymous { state with arguments; parameters; constraints }
                 | _ -> { state with reason }
               end
-          | _ ->
-              state
-        in
 
-        let rec consume_variable ({ arguments; parameters; constraints; _ } as state) =
-          let reason = None in
-          match arguments, parameters with
+          (* Eagerly consume parameters when types of starred arguments match. *)
+          | ({ Argument.value = { Node.value = Starred (Starred.Once _); _ }; _ } as argument) :: _,
+            ((Parameter.Anonymous _) as parameter) :: parameters
+          | ({ Argument.value = { Node.value = Starred (Starred.Once _); _ }; _ } as argument) :: _,
+            ((Parameter.Named _) as parameter) :: parameters ->
+              begin
+                let constraints, reason =
+                  check_parameter
+                    ~constraints
+                    ~reason
+                    ~argument
+                    ~parameter
+                    ~remaining_arguments:(List.length arguments)
+                in
+                match reason with
+                | None -> consume_anonymous { state with arguments; parameters; constraints }
+                | _ -> { state with reason }
+              end
+
+          (* Eagerly consume arguments when types of variable parameters match. *)
+          | ({
+              Argument.value = { Node.value = Starred (Starred.Once _); _ };
+              _;
+            } as argument) :: arguments,
+            ((Parameter.Variable _) as parameter) :: _
           | ({ Argument.name = None; _ } as argument) :: arguments,
             ((Parameter.Variable _) as parameter) :: _ ->
               begin
@@ -210,21 +237,16 @@ let select call ~resolution ~callable:({ Type.Callable.overloads; _ } as callabl
                     ~remaining_arguments:(List.length arguments)
                 in
                 match reason with
-                | None -> consume_variable { state with arguments; parameters; constraints }
+                | None -> consume_anonymous { state with arguments; parameters; constraints }
                 | _ -> { state with reason }
               end
+
+          (* Cleanup variable arguments. *)
           | _, (Parameter.Variable _) :: parameters ->
-              consume_variable { state with parameters; reason }
-
-          | { Argument.value = { Node.value = Starred (Starred.Once _); _ }; _ } :: _,
-            (Parameter.Anonymous _) :: parameters
-          | { Argument.value = { Node.value = Starred (Starred.Once _); _ }; _ } :: _,
-            (Parameter.Named _) :: parameters ->
-              consume_variable { state with parameters; reason }
-
+              consume_anonymous { state with parameters; reason }
           | { Argument.value = { Node.value = Starred (Starred.Once _); _ }; _ } :: arguments,
             parameters ->
-              consume_variable { state with arguments; parameters; reason }
+              consume_anonymous { state with arguments; parameters; reason }
 
           | _ ->
               state
@@ -343,7 +365,6 @@ let select call ~resolution ~callable:({ Type.Callable.overloads; _ } as callabl
             reason = None;
           }
           |> consume_anonymous
-          |> consume_variable
           |> consume_named
           |> consume_keywords
         in

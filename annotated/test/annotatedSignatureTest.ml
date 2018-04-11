@@ -122,6 +122,10 @@ let test_select _ =
     (`NotFoundMismatch (Type.string, Type.integer, None, 1));
   assert_select "[[int], int]" "(name='string')" `NotFoundNoReason;
 
+  assert_select "[[int], int]" "(*[1])" (`Found "[[int], int]");
+  assert_select "[[str], int]" "(*[1])" (`NotFoundMismatch (Type.integer, Type.string, None, 1));
+  assert_select "[[int, str], int]" "(*[1], 'asdf')" (`Found "[[int, str], int]");
+
   (* Traverse variable arguments. *)
   assert_select "[[Variable(variable)], int]" "()" (`Found "[[Variable(variable)], int]");
   assert_select "[[Variable(variable)], int]" "(1, 2)" (`Found "[[Variable(variable)], int]");
@@ -137,14 +141,18 @@ let test_select _ =
     "[[Variable(variable, typing.List[str])], int]"
     "('string', 2)"
     (`NotFoundMismatch (Type.integer, Type.string, None, 2));
-
-  assert_select "[[int], int]" "(*a)" (`Found "[[int], int]");
-  assert_select "[[int, Named(i, int)], int]" "(*a)" (`Found "[[int, Named(i, int)], int]");
-
   assert_select
-    "[[int, Variable(variable)], int]"
-    "(1, 2)"
-    (`Found "[[int, Variable(variable)], int]");
+    "[[Variable(variable, typing.List[int])], int]"
+    "(*[1, 2], 3)"
+    (`Found "[[Variable(variable, typing.List[int])], int]");
+  assert_select
+    "[[Variable(variable, typing.List[int]), Named(a, str)], int]"
+    "(*[1, 2], a='string')"
+    (`Found "[[Variable(variable, typing.List[int]), Named(a, str)], int]");
+  assert_select
+    "[[Variable(variable, typing.List[int])], int]"
+    "(*['string'])"
+    (`NotFoundMismatch (Type.string, Type.integer, None, 1));
 
   (* Named arguments. *)
   assert_select
