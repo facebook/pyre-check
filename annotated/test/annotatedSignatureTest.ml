@@ -150,6 +150,10 @@ let test_select _ =
     "(*[1, 2], a='string')"
     (`Found "[[Variable(variable, typing.List[int]), Named(a, str)], int]");
   assert_select
+    "[[Variable(variable, typing.List[int]), Named(a, str)], int]"
+    "(*[1, 2], *[3, 4], a='string')"
+    (`Found "[[Variable(variable, typing.List[int]), Named(a, str)], int]");
+  assert_select
     "[[Variable(variable, typing.List[int])], int]"
     "(*['string'])"
     (`NotFoundMismatch (Type.string, Type.integer, None, 1));
@@ -175,7 +179,7 @@ let test_select _ =
   assert_select
     "[[Named(i, int), Named(j, str)], int]"
     "(i=1, j=2)"
-    (`NotFoundMismatch (Type.integer, Type.string, Some "j", 0));
+    (`NotFoundMismatch (Type.integer, Type.string, Some "j", 2));
 
   (* Keywords. *)
   assert_select "[[Keywords(keywords)], int]" "()" (`Found "[[Keywords(keywords)], int]");

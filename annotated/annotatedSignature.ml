@@ -200,24 +200,6 @@ let select call ~resolution ~callable:({ Type.Callable.overloads; _ } as callabl
                 | _ -> { state with reason }
               end
 
-          (* Eagerly consume parameters when types of starred arguments match. *)
-          | ({ Argument.value = { Node.value = Starred (Starred.Once _); _ }; _ } as argument) :: _,
-            ((Parameter.Anonymous _) as parameter) :: parameters
-          | ({ Argument.value = { Node.value = Starred (Starred.Once _); _ }; _ } as argument) :: _,
-            ((Parameter.Named _) as parameter) :: parameters ->
-              begin
-                let constraints, reason =
-                  check_parameter
-                    ~constraints
-                    ~reason
-                    ~argument
-                    ~parameter
-                    ~remaining_arguments:(List.length arguments)
-                in
-                match reason with
-                | None -> consume_anonymous { state with arguments; parameters; constraints }
-                | _ -> { state with reason }
-              end
 
           (* Eagerly consume arguments when types of variable parameters match. *)
           | ({
@@ -252,78 +234,54 @@ let select call ~resolution ~callable:({ Type.Callable.overloads; _ } as callabl
               state
         in
 
-        let consume_named { arguments; parameters; constraints; reason } =
-          let named_arguments =
-            let argument map ({ Argument.name; _ } as argument) =
-              Map.set map ~key:(Option.value_exn name) ~data:argument
-            in
-            List.take_while ~f:(fun { Argument.name; _ } -> Option.is_some name) arguments
-            |> List.fold ~init:Identifier.Map.empty ~f:argument
-          in
-          let named_parameters =
-            let parameter map = function
-              | (Parameter.Named { Parameter.name; _ }) as parameter ->
-                  Map.set map ~key:(Access.show name |> Identifier.create) ~data:parameter
-              | _ ->
-                  map
-            in
-            List.take_while ~f:(function | Parameter.Named _ -> true | _ -> false) parameters
-            |> List.fold ~init:Identifier.Map.empty ~f:parameter
-          in
-
-          let consumed, constraints, reason =
-            let argument ~key ~data (consumed, constraints, reason) =
-              match Map.find named_parameters key with
-              | Some parameter ->
-                  begin
-                    let constraints, reason =
-                      check_parameter
-                        ~constraints
-                        ~reason
-                        ~argument:data
-                        ~parameter
-                        ~remaining_arguments:(List.length arguments)
-                    in
-                    let consumed =
+        let rec consume_named ({ arguments; parameters; constraints; reason } as state) =
+          match arguments with
+          | ({ Argument.name = Some argument_name; _ } as argument) :: arguments ->
+              begin
+                let parameter, parameters =
+                  let matching_parameter = function
+                    | Parameter.Named { Parameter.name = [Access.Identifier parameter_name]; _ }
+                      when Identifier.equal argument_name parameter_name -> true
+                    | _ -> false
+                  in
+                  List.find ~f:matching_parameter parameters,
+                  List.filter ~f:(fun parameter -> not (matching_parameter parameter)) parameters
+                in
+                match parameter with
+                | Some parameter ->
+                    begin
+                      let constraints, reason =
+                        check_parameter
+                          ~constraints
+                          ~reason
+                          ~argument
+                          ~parameter
+                          ~remaining_arguments:(List.length arguments)
+                      in
                       match reason with
-                      | None -> Set.add consumed key
-                      | _ -> consumed
-                    in
-                    consumed, constraints, reason
-                  end
-              | _ ->
-                  consumed, constraints, reason
-            in
-            Map.fold ~init:(Identifier.Set.empty, constraints, reason) ~f:argument named_arguments
-          in
+                      | None -> consume_named { state with arguments; parameters; constraints }
+                      | _ -> { state with reason }
+                    end
+                | None ->
+                    (* Extraneous arguments. Not yet handled. *)
+                    state
+              end
 
-          let arguments =
-            let argument_consumed { Argument.name; _ } =
-              name
-              >>| Set.mem consumed
-              |> Option.value ~default:false
-            in
-            List.drop_while ~f:argument_consumed arguments
-          in
-          let parameters =
-            let parameter_consumed = function
-              | Parameter.Named { Parameter.name; _ } ->
-                  Set.mem consumed (Access.show name |> Identifier.create)
-              | _ ->
-                  false
-            in
-            let has_default = function
-              | Parameter.Named { Parameter.default; _ } ->
-                  default
-              | _ ->
-                  false
-            in
-            List.drop_while ~f:parameter_consumed parameters
-            |> List.filter ~f:(fun parameter -> not (has_default parameter))
-          in
-
-          { arguments; parameters; constraints; reason }
+          | _ ->
+              state
         in
+
+        let consume_named_with_defaults ({ arguments = _; parameters; _ } as state) =
+          let parameters =
+            let has_default = function
+              | Parameter.Named { Parameter.default; _ } -> default
+              | _ -> false
+            in
+            List.filter ~f:(fun parameter -> not (has_default parameter)) parameters
+          in
+          { state with parameters }
+        in
+
 
         let rec consume_keywords ({ arguments; parameters; constraints; _ } as state) =
           let reason = None in
@@ -366,6 +324,7 @@ let select call ~resolution ~callable:({ Type.Callable.overloads; _ } as callabl
           }
           |> consume_anonymous
           |> consume_named
+          |> consume_named_with_defaults
           |> consume_keywords
         in
 
