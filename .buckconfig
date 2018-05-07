@@ -1,0 +1,5 @@
+[buildfile]
+    includes = //.buck_definitions
+
+[python#py3]
+    interpreter = /usr/local/bin/python3

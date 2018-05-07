@@ -1,0 +1,23 @@
+{
+	"name": "pyre-vscode",
+	"description": "VSCode integration for Pyre",
+	"author": "Facebook",
+	"license": "MIT",
+	"version": "0.0.1",
+	"publisher": "facebook",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/facebookexperimental/pyre-check"
+	},
+	"scripts": {
+		"postinstall": "cd client && npm install && cd ..",
+		"compile": "tsc -p client/tsconfig.json",
+		"compile:client": "tsc -p client/tsconfig.json",
+		"watch:client": "tsc -w -p client/tsconfig.json"
+	},
+	"devDependencies": {
+		"@types/mocha": "^2.2.48",
+		"@types/node": "^6.0.101",
+		"typescript": "^2.7.2"
+	}
+}

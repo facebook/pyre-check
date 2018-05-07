@@ -1,0 +1,51 @@
+FLG -short-paths
+FLG -w +a-4-32-39-42-44-48
+
+PKG core
+PKG oUnit
+PKG async async_extra
+PKG yojson
+PKG ppx_compare
+PKG ppx_deriving.eq
+PKG ppx_deriving.show
+PKG ppx_deriving_yojson
+PKG ppx_sexp_conv
+PKG hack_parallel
+PKG sexplib
+
+EXT ounit
+EXT nonrec
+
+S .
+S scripts
+S parser
+S ast
+S analysis
+S annotated
+S service
+S command
+S command/server
+S language_server
+S test
+S facebook
+S command/test
+S parser/test
+S ast/test
+S analysis/test
+
+B _build/all/
+B _build/all/parser
+B _build/all/ast
+B _build/all/analysis
+B _build/all/annotated
+B _build/all/service
+B _build/all/command
+B _build/all/command/server
+B _build/all/language_server
+B _build/all/facebook
+B _build/test/test
+B _build/test/annotated/test
+B _build/test/command/test
+B _build/test/parser/test
+B _build/test/ast/test
+B _build/test/analysis/test

@@ -1,0 +1,42 @@
+# Copyright (c) 2016-present, Facebook, Inc.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
+# Adapter for internal buck configuration.
+
+original_python_binary = python_binary
+def python_binary(
+    name,
+    srcs=None,
+    platform=None,
+    gen_srcs=None,
+    main_module=None,
+    deps=None,
+):
+    original_python_library(
+        name=name + '.lib',
+        deps=deps,
+    )
+    original_python_binary(
+        name=name,
+        platform=platform,
+        main_module=main_module,
+        visibility=[
+            'PUBLIC',
+        ],
+        deps=[':%s.lib' % (name,)]
+    )
+
+original_python_library = python_library
+def python_library(name, deps=None, **kwargs):
+    original_python_library(
+        name=name,
+        deps=deps,
+        visibility=kwargs.pop('visibility', ['PUBLIC']),
+        **kwargs
+    )
+
+
+def python_unittest(**kwargs):
+    pass

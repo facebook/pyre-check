@@ -1,0 +1,3 @@
+true: package(core)
+true: bin_annot
+true: annot

@@ -1,0 +1,45 @@
+{
+	"name": "pyre-vscode-lsp-client",
+	"description": "VSCode client for Pyre",
+	"author": "Facebook",
+	"license": "MIT",
+	"version": "0.0.1",
+	"publisher": "facebook",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/facebookexperimental/pyre-check"
+	},
+	"engines": {
+		"vscode": "^1.16.0"
+	},
+	"categories": [
+		"Other"
+	],
+	"activationEvents": [
+		"onLanguage:python"
+	],
+	"main": "./out/src/extension",
+	"contributes": {
+		"configuration": {
+			"type": "object",
+			"title": "pyre client configuration",
+			"properties": {}
+		}
+	},
+	"scripts": {
+		"vscode:prepublish": "tsc -p tsconfig.json",
+		"compile": "tsc -p tsconfig.json",
+		"watch": "tsc -w -p tsconfig.json",
+		"update-vscode": "node ./node_modules/vscode/bin/install",
+		"postinstall": "node ./node_modules/vscode/bin/install"
+	},
+	"dependencies": {
+		"vscode": "^1.1.14",
+		"vscode-languageclient": "^3.5.0"
+	},
+	"devDependencies": {
+		"@types/mocha": "^2.2.48",
+		"@types/node": "^6.0.101",
+		"typescript": "~2.7.2"
+	}
+}
