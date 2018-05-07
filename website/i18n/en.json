@@ -3,12 +3,13 @@
   "localized-strings": {
     "next": "Next",
     "previous": "Previous",
-    "tagline": "A fast typechecker for Python",
+    "tagline": "A performant typechecker for Python",
     "documentation": "Pyre Documentation",
     "Documentation": "Documentation",
     "installation": "Installing Pyre",
     "Installation": "Installation",
-    "Getting Started": "Getting Started"
+    "Getting Started": "Getting Started",
+    "GitHub": "GitHub"
   },
   "pages-strings": {
     "Help Translate|recruit community translators for your project": "Help Translate",

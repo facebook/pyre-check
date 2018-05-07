@@ -42,7 +42,7 @@ class Footer extends React.Component {
           <a href="https://twitter.com/fbOpenSource" target="_blank">
             Twitter
           </a>
-          <a href="https://github.com/pyre-check" target="_blank">
+          <a href={this.props.config.repoUrl} target="_blank">
             Contribute to Pyre
           </a>
         </section>

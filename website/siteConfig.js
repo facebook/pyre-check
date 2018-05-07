@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-/* List of projects/orgs using your project for the users page */
+/* List of projects/orgs using Pyre for the users page */
 const users = [
   {
     caption: 'Instagram',
@@ -17,14 +17,17 @@ const users = [
 
 const siteConfig = {
   title: 'Pyre',
-  tagline: 'A fast typechecker for Python',
-  url: 'https://github.com/facebookexperimental/pyre-check',
-  baseUrl: '/pyre/' /* base url for your project */,
+  tagline: 'A performant typechecker for Python',
+  url: 'https://github.com/facebook/pyre-check',
+  baseUrl: '/pyre/',
   projectName: 'Pyre',
   headerLinks: [
-    {doc: 'installation', label: 'Getting Started'},
-    {doc: 'documentation', label: 'Documentation'},
+    { doc: 'installation', label: 'Getting Started' },
+    { doc: 'documentation', label: 'Documentation' },
+    { href: 'https://github.com/facebook/pyre-check', label: 'GitHub' },
   ],
+  disableHeaderTitle: true,
+  // TODO(T29078584): Add Algolia search
   users,
   headerIcon: 'img/pyre.png',
   favicon: 'img/favicon.ico',
@@ -32,22 +35,16 @@ const siteConfig = {
     primaryColor: '#2d2020',
     secondaryColor: '#aa9493',
   },
-  // This copyright info is used in /core/Footer.js and blog rss/atom feeds.
   copyright:
     'Copyright \u{00A9} ' +
     new Date().getFullYear() +
     ' Facebook',
-  // organizationName: 'deltice', // or set an env variable ORGANIZATION_NAME
-  // projectName: 'test-site', // or set an env variable PROJECT_NAME
   highlight: {
     // Highlight.js theme to use for syntax highlighting in code blocks
     theme: 'default',
   },
   scripts: ['https://buttons.github.io/buttons.js'],
-  // You may provide arbitrary config keys to be used as needed by your template.
-  repoUrl: 'https://github.com/facebook/test-site',
-  /* On page navigation for the current documentation page */
-  // onPageNav: 'separate',
+  repoUrl: 'https://github.com/facebook/pyre-check',
 };
 
 module.exports = siteConfig;
