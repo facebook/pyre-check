@@ -1,5 +1,18 @@
 /* your custom css */
 
+footer.nav-footer {
+  background: #2d2020;
+  line-height: 42px;
+  box-shadow: none;
+  padding-top: 1em;
+  padding-bottom: 0;
+}
+
+footer .sitemap {
+  margin: 0 auto;
+  max-width: 90%;
+}
+
 @media only screen and (min-device-width: 360px) and (max-device-width: 736px) {
 }
 
