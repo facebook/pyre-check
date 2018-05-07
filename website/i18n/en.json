@@ -5,11 +5,19 @@
     "previous": "Previous",
     "tagline": "A performant typechecker for Python",
     "documentation": "Pyre Documentation",
-    "Documentation": "Documentation",
+    "Overview": "Overview",
+    "error-suppression": "Error Suppression",
+    "Error Suppression": "Error Suppression",
+    "error-types": "Pyre Errors",
+    "Error Types": "Error Types",
+    "gradual-typing": "Gradual Typing",
+    "Gradual Typing": "Gradual Typing",
     "installation": "Installing Pyre",
     "Installation": "Installation",
     "Getting Started": "Getting Started",
-    "GitHub": "GitHub"
+    "Documentation": "Documentation",
+    "GitHub": "GitHub",
+    "Contents": "Contents"
   },
   "pages-strings": {
     "Help Translate|recruit community translators for your project": "Help Translate",

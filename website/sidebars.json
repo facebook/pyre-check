@@ -1,5 +1,10 @@
 {
-  "docs": {
-    "Installation": ["documentation"]
+  "documentation": {
+    "Contents": [
+      "documentation",
+      "gradual-typing",
+      "error-suppression",
+      "error-types"
+    ]
   }
 }
