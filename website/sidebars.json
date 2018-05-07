@@ -4,7 +4,8 @@
       "documentation",
       "gradual-typing",
       "error-suppression",
-      "error-types"
+      "error-types",
+      "lsp-integration"
     ]
   }
 }

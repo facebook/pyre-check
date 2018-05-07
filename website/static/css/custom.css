@@ -15,6 +15,10 @@
   max-width: 100%;
 }
 
+.mainContainer .wrapper .post h1 {
+  margin-bottom: 20px;
+}
+
 .mainContainer .wrapper p {
   max-width: 100%;
 }
@@ -29,6 +33,15 @@
 
 .mainContainer .wrapper .post {
   padding: 1em;
+}
+
+.docs-prevnext {
+  margin-top: 10px;
+  margin-bottom: 100px;
+}
+
+nav.toc .toggleNav ul li a {
+  color: #808080;
 }
 
 footer.nav-footer {
