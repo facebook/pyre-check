@@ -1,5 +1,14 @@
 .wrapper {
   max-width: 1200px;
+  min-height: 100%;
+}
+
+.navPusher {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
 }
 
 .sideNavVisible .navPusher .mainContainer {
@@ -12,6 +21,14 @@
 
 .docsNavContainer {
   margin: 65px 40px 0 0;
+}
+
+.docMainWrapper {
+  margin-bottom: 0;
+}
+
+.mainContainer .wrapper .post {
+  padding: 1em;
 }
 
 footer.nav-footer {
