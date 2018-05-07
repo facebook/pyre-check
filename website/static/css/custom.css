@@ -1,3 +1,14 @@
+.wrapper {
+  max-width: 1200px;
+}
+
+.sideNavVisible .navPusher .mainContainer {
+  max-width: 100%;
+}
+
+.mainContainer .wrapper p {
+  max-width: 100%;
+}
 
 footer.nav-footer {
   background: #2d2020;
