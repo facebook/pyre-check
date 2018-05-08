@@ -10,6 +10,7 @@ open Pyre
 
 open CommandWatchmanConstants
 
+module Time = Core_kernel.Time_ns.Span
 module Protocol = ServerProtocol
 module Socket = CommandSocket
 
@@ -143,27 +144,54 @@ let listen_for_changed_files
     out_channel
     [Yojson.to_string (subscription watchman_directory)];
   Out_channel.flush out_channel;
+  let watchman_socket = Unix.descr_of_in_channel in_channel in
   ignore
-    (In_channel.input_line in_channel >>= fun subscriber_response ->
-     Log.info "Watchman subscriber response: %s" subscriber_response;
-     (* Throw away the the first update that includes all the files *)
-     In_channel.input_line in_channel >>= fun _ ->
-     let rec loop symlinks =
-       try
-         In_channel.input_line in_channel
-         >>= process_response ~root:source_root ~watchman_directory ~symlinks
-         >>| (fun (symlinks, response) ->
-             Log.info "Writing response %s" (Protocol.Request.show response);
-             Socket.write server_socket response;
-             symlinks)
-         |> Option.value ~default:symlinks
-         |> loop
-       with
-       | End_of_file ->
-           Log.info "A socket was closed.";
-           stop_watchman (Some server_socket) configuration
-     in
-     loop symlinks)
+    begin
+      In_channel.input_line in_channel >>= fun subscriber_response ->
+      Log.info "Watchman subscriber response: %s" subscriber_response;
+      (* Throw away the the first update that includes all the files *)
+      In_channel.input_line in_channel >>= fun _ ->
+      let rec loop symlinks =
+        try
+          let ready =
+            Unix.select
+              ~read:[watchman_socket; server_socket]
+              ~write:[]
+              ~except:[]
+              ~timeout:(`After (Time.of_int_sec 5))
+              ()
+            |> fun { Unix.Select_fds.read; _ } -> read
+          in
+          let handle_socket symlinks socket =
+            let handle_watchman symlinks socket =
+              let in_channel = Unix.in_channel_of_descr socket in
+              In_channel.input_line in_channel
+              >>= process_response ~root:source_root ~watchman_directory ~symlinks
+              >>| (fun (symlinks, response) ->
+                  Log.info "Writing response %s" (Protocol.Request.show response);
+                  Socket.write server_socket response;
+                  symlinks)
+              |> Option.value ~default:symlinks
+            in
+
+            if socket = watchman_socket then
+              handle_watchman symlinks socket
+            else
+              begin
+                Socket.read server_socket |> ignore;
+                symlinks
+              end
+          in
+          List.fold ~init:symlinks ~f:handle_socket ready
+          |> loop
+        with
+        | End_of_file ->
+            Log.info "A socket was closed.";
+            stop_watchman (Some server_socket) configuration
+      in
+
+      loop symlinks
+    end
 
 
 (* Walk up from the project root to try and find a .watchmanconfig. *)
@@ -191,7 +219,9 @@ let initialize watchman_directory configuration =
   Socket.write server_socket (Protocol.Request.ClientConnectionRequest Protocol.FileNotifier);
   if Socket.read server_socket <> Protocol.ClientConnectionResponse Protocol.FileNotifier then
     failwith "Unexpected connection response from server";
-  Signal.Expert.handle Signal.int (fun _ -> stop_watchman (Some server_socket) configuration);
+  let stop _ = stop_watchman (Some server_socket) configuration in
+  Signal.Expert.handle Signal.int stop;
+  Signal.Expert.handle Signal.pipe stop;
   server_socket
 
 
