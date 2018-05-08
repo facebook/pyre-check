@@ -621,20 +621,28 @@ let stop source_root () =
       let timeout = 3.0 in
       let rec poll () =
         if Unix.time () -. start_time >=. timeout then
-          Log.warning "Timed out while polling for server to stop."
+          begin
+            Log.warning "Timed out while polling for server to stop.";
+            1
+          end
         else if Path.file_exists path then
           (Unix.nanosleep 0.1 |> ignore; poll ())
         else
-          Log.info "Server successfully stopped."
+          begin
+            Log.info "Server successfully stopped.";
+            0
+          end
       in
       poll ()
     in
     poll_for_deletion (ServerConfiguration.socket_path configuration)
+    |> exit
   with
   | NotRunning
   | Unix.Unix_error _
   | ServerConfiguration.ServerNotRunning ->
-      Log.warning "No servers running"
+      Log.warning "No servers running";
+      exit 1
 
 
 let stop_command =

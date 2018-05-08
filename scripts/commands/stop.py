@@ -6,9 +6,11 @@
 import logging
 
 from .command import (
+    ClientException,
     Command,
     State,
 )
+from .kill import Kill
 from .. import filesystem
 
 LOG = logging.getLogger(__name__)
@@ -24,5 +26,14 @@ class Stop(Command):
         if self._state() == State.DEAD:
             LOG.info('No server running')
         else:
-            self._call_client(command=self.NAME).check()
-            LOG.info('Stopped server at `%s`', self._source_directory)
+            try:
+                self._call_client(command=self.NAME).check()
+                LOG.info('Stopped server at `%s`', self._source_directory)
+            except ClientException:
+                LOG.info('Could not stop server, attempting to kill.')
+                arguments = self._arguments
+                arguments.with_fire = False
+                Kill(
+                    arguments,
+                    self._configuration,
+                    self._source_directory).run()

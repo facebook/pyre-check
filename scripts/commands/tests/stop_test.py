@@ -4,7 +4,11 @@
 # LICENSE file in the root directory of this source tree.
 
 import unittest
-from unittest.mock import patch
+from unittest.mock import (
+    call,
+    patch,
+    Mock,
+)
 
 from ... import commands  # noqa
 from .command_test import (
@@ -14,8 +18,9 @@ from .command_test import (
 
 
 class StopTest(unittest.TestCase):
+    @patch.object(commands.Kill, '_run')
     @patch.object(commands.Command, '_state')
-    def test_stop(self, commands_Command_state) -> None:
+    def test_stop(self, commands_Command_state, kill_run) -> None:
         arguments = mock_arguments()
         arguments.terminal = False
 
@@ -38,3 +43,20 @@ class StopTest(unittest.TestCase):
                 configuration,
                 source_directory='.').run()
             call_client.assert_not_called()
+
+        commands_Command_state.return_value = commands.command.State.RUNNING
+        with patch.object(commands.Command, '_call_client') as call_client:
+
+            def fail_on_stop(command, flags=None):
+                flags = flags or []
+                if command == commands.Stop.NAME:
+                    raise commands.ClientException
+                return Mock()
+
+            call_client.side_effect = fail_on_stop
+            commands.Stop(
+                arguments,
+                configuration,
+                source_directory='.').run()
+            call_client.assert_has_calls([call(command=commands.Stop.NAME)])
+            kill_run.assert_has_calls([call()])
