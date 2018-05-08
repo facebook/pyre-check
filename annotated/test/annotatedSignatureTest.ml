@@ -112,7 +112,7 @@ let test_select _ =
           in
           NotFound { rank = 0; callable; reason }
       | `NotFoundMismatchWithClosest (closest, actual, expected, name, position) ->
-           let reason =
+          let reason =
             { actual; expected; name = name >>| Identifier.create; position }
             |> Node.create_with_default_location
             |> fun mismatch -> Some (Mismatch mismatch)
