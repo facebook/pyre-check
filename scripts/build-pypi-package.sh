@@ -14,7 +14,7 @@ AUTHOR='Facebook'
 AUTHOR_EMAIL='pyre@fb.com'
 MAINTAINER='Facebook'
 MAINTAINER_EMAIL='pyre@fb.com'
-URL='https://github.com/facebookexperimental/pyre-check'
+URL='https://github.com/facebook/pyre-check'
 # https://www.python.org/dev/peps/pep-0008/#package-and-module-names
 MODULE_NAME="pyre_check"
 RUNTIME_DEPENDENCIES="'typeshed'"

@@ -8,10 +8,10 @@ TODO(T23492848): Add gif illustrating a pyre run & sandbox for casual testing li
 Also link to docusaurus site here with more detailed documentation.
 
 ## Installation
-See [INSTALL.md](https://github.com/facebookexperimental/pyre-check/blob/master/INSTALL.md) for details on installing packaged versions of Pyre.
+See [INSTALL.md](https://github.com/facebook/pyre-check/blob/master/INSTALL.md) for details on installing packaged versions of Pyre.
 
 ## Join the Pyre community
-See [CONTRIBUTING.md](https://github.com/facebookexperimental/pyre-check/blob/master/CONTRIBUTING.md) for how to help out.
+See [CONTRIBUTING.md](https://github.com/facebook/pyre-check/blob/master/CONTRIBUTING.md) for how to help out.
 
 ## License
 Pyre is licensed under the MIT license.

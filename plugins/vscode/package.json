@@ -7,7 +7,7 @@
 	"publisher": "facebook",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/facebookexperimental/pyre-check"
+		"url": "https://github.com/facebook/pyre-check"
 	},
 	"scripts": {
 		"postinstall": "cd client && npm install && cd ..",
