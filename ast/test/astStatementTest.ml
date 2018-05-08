@@ -507,37 +507,6 @@ let test_attributes _ =
       attribute ~target:"context" ~value:"value" ();
       attribute ~target:"setUp" ~number_of_defines:1 ();
       attribute ~target:"with_context" ~number_of_defines:1 ();
-    ];
-
-  (* Named tuple attributes. *)
-  assert_attributes
-    {|
-      class Foo(typing.NamedTuple('Foo', ['one', 'two'])):
-        attribute: int
-    |}
-    [
-      attribute ~target:"attribute" ~annotation:Type.integer ();
-      attribute ~target:"one" ();
-      attribute ~target:"two" ();
-    ];
-  assert_attributes
-    {|
-      class Foo(collections.namedtuple('Foo', ['one', 'two'])):
-        pass
-    |}
-    [
-      attribute ~target:"one" ();
-      attribute ~target:"two" ();
-    ];
-  assert_attributes
-    {|
-      class Foo(typing.NamedTuple('Foo', [('one', int), 'two'])):
-        attribute: int
-    |}
-    [
-      attribute ~target:"attribute" ~annotation:Type.integer ();
-      attribute ~target:"one" ~annotation:Type.integer ();
-      attribute ~target:"two" ();
     ]
 
 

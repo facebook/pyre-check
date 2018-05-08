@@ -4619,7 +4619,10 @@ let test_check_tuple _ =
       def b(d: T) -> None:
         a = d.a + d.d
     |}
-    ["Undefined attribute [16]: `T` has no attribute `d`."]
+    [
+      "Undefined attribute [16]: `typing.Any` has no attribute `__add__`.";
+      "Undefined attribute [16]: `T` has no attribute `d`.";
+    ]
 
 
 let test_check_meta _ =

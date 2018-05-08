@@ -1228,7 +1228,7 @@ let test_expand_named_tuples _ =
       T = typing.NamedTuple('T')
     |}
     {|
-      class T(typing.NamedTuple('T')):
+      class T(typing.NamedTuple):
         pass
     |};
   assert_expand
@@ -1236,41 +1236,48 @@ let test_expand_named_tuples _ =
       T = collections.namedtuple('T', ['a'])
     |}
     {|
-      class T(typing.NamedTuple('T', ['a'])):
-        pass
+      class T(typing.NamedTuple):
+        a: typing.Any
     |};
   assert_expand
     {|
       T = typing.NamedTuple('T', ['one', 'two'])
     |}
     {|
-      class T(typing.NamedTuple('T', ['one', 'two'])):
-        pass
+      class T(typing.NamedTuple):
+        one: typing.Any
+        two: typing.Any
     |};
   assert_expand
     {|
       T = typing.NamedTuple('T', [('one', int), ('two', str)])
     |}
     {|
-      class T(typing.NamedTuple('T', [('one', int), ('two', str)])):
-        pass
-    |};
-  assert_expand
-    {|
-      class Foo(collections.namedtuple('T', ['one', 'two'])):
-        pass
-    |}
-    {|
-      class Foo(typing.NamedTuple('T', ['one', 'two'])):
-        pass
+      class T(typing.NamedTuple):
+        one: int
+        two: str
     |};
   assert_expand
     {|
       T = collections.namedtuple('T', 'a b c')
     |}
     {|
-      class T(typing.NamedTuple('T', ['a', 'b', 'c'])):
-        pass
+      class T(typing.NamedTuple):
+        a: typing.Any
+        b: typing.Any
+        c: typing.Any
+    |};
+
+  assert_expand
+    {|
+      class Foo(Bar, collections.namedtuple('T', ['one', 'two'])):
+        three: int = 1
+    |}
+    {|
+      class Foo(Bar, typing.NamedTuple):
+        one: typing.Any
+        two: typing.Any
+        three: int = 1
     |};
 
   (* Don't transform non-toplevel statements. *)

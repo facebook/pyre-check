@@ -575,7 +575,7 @@ module Class = struct
   let attributes
       ?(include_generated_attributes = true)
       ?(in_test = false)
-      ({ Record.Class.body; bases; _ } as definition) =
+      ({ Record.Class.body; _ } as definition) =
     let explicitly_assigned_attributes =
       let assigned_attributes map { Node.location; value } =
         let open Expression in
@@ -685,56 +685,6 @@ module Class = struct
         constructors ~in_test definition
         |> List.map ~f:(Define.implicit_attributes ~definition)
         |> List.fold ~init:Expression.Access.Map.empty ~f:(Map.merge ~f:merge)
-      in
-      let named_tuple_attributes =
-        let open Expression in
-        let named_tuple_attributes sofar { Argument.value; _ } =
-          match Node.value value with
-          | Access [
-              Access.Identifier typing;
-              Access.Identifier named_tuple;
-              Access.Call {
-                Node.value = [
-                  _;
-                  { Argument.value = { Node.value = List attributes; _ }; _ }
-                ];
-                _;
-              };
-            ] when (Identifier.show typing = "typing" &&
-                    Identifier.show named_tuple = "NamedTuple") ||
-                   (Identifier.show typing = "collections" &&
-                    Identifier.show named_tuple = "namedtuple")->
-              let named_tuple_attributes sofar { Node.location; value } =
-                match value with
-                | String name ->
-                    let access = Access.create name in
-                    Map.set
-                      ~key:access
-                      ~data:(
-                        Attribute.create
-                          ~location
-                          ~target:({ Node.location; value = Access access})
-                          ())
-                      sofar
-                | Tuple [{ Node.location; value = String name}; annotation] ->
-                    let access = Access.create name in
-                    Map.set
-                      ~key:access
-                      ~data:(
-                        Attribute.create
-                          ~location
-                          ~target:({ Node.location; value = Access access})
-                          ~annotation
-                          ())
-                      sofar
-                | _ ->
-                    sofar
-              in
-              List.fold ~f:named_tuple_attributes ~init:sofar attributes
-          | _ ->
-              sofar
-        in
-        List.fold ~f:named_tuple_attributes ~init:Expression.Access.Map.empty bases
       in
       let property_attributes =
         let property_attributes map = function
@@ -852,7 +802,6 @@ module Class = struct
       (* Merge with decreasing priority. Explicit attributes override all. *)
       explicitly_assigned_attributes
       |> Map.merge ~f:merge implicitly_assigned_attributes
-      |> Map.merge ~f:merge named_tuple_attributes
       |> Map.merge ~f:merge property_attributes
       |> Map.merge ~f:merge callable_attributes
       |> Map.merge ~f:merge class_attributes

@@ -1316,96 +1316,114 @@ let expand_ternary_assign =
     |> snd
 
 
-let expand_named_tuples =
-  let create_tuple_argument arguments location =
-    let call = Access.call ~arguments ~name:"NamedTuple" ~location () in
-    Access (Access.Identifier (Identifier.create "typing") :: call)
-    |> Node.create ~location:location
-    |> (fun tuple -> { Argument.name = None; value = tuple })
-  in
-  let expand_named_tuples = function
+let expand_named_tuples ({ Source.statements; _ } as source) =
+  let tuple_attributes ~parent ~expression =
+    match expression with
     | {
       Node.location;
-      value = Assign {
+      value =
+        Access [
+          Access.Identifier module_name;
+          Access.Identifier named_tuple;
+          Access.Call { Node.value = arguments; _ };
+        ];
+    } when (Identifier.show module_name = "typing" &&
+            Identifier.show named_tuple = "NamedTuple") ||
+           (Identifier.show module_name = "collections" &&
+            Identifier.show named_tuple = "namedtuple") ->
+        let attributes =
+          match arguments with
+          | [_; { Argument.value = { Node.location; value = String serialized }; _ }] ->
+              let attribute name =
+                Access (Access.create name)
+                |> Node.create ~location
+              in
+              String.split serialized ~on:' '
+              |> List.map ~f:attribute
+          | [_; { Argument.value = { Node.value = List arguments; _ }; _ }] ->
+              let rec accessify ({ Node.value; _ } as expression) =
+                let value =
+                  match value with
+                  | String name -> Access (Access.create name)
+                  | Tuple [name; annotation] -> Tuple [accessify name; annotation]
+                  | _ -> value
+                in
+                { expression with Node.value }
+              in
+              List.map arguments ~f:accessify
+          | _ ->
+              []
+        in
+        let attribute ({ Node.location; value } as expression) =
+          let target, annotation =
+            match value with
+            | Tuple [target; annotation] ->
+                target, annotation
+            | _ ->
+                expression, { Node.location; value = Access (Access.create "typing.Any")}
+          in
+          Assign {
+            Assign.target;
+            annotation = Some annotation;
+            value = None;
+            compound = None;
+            parent = Some parent;
+          }
+          |> Node.create ~location
+        in
+        let attributes = List.map attributes ~f:attribute in
+        if List.is_empty attributes then
+          Some [Node.create ~location Pass]
+        else
+          Some attributes
+    | _ ->
+        None
+  in
+  let tuple_base ~location =
+    {
+      Argument.name = None;
+      value = Node.create ~location (Access (Access.create "typing.NamedTuple"));
+    }
+  in
+  let expand_named_tuples ({ Node.location; value } as statement) =
+    let value =
+      match value with
+      | Assign {
           Assign.target = {
             Node.value = Access name;
             _;
           };
-          value = Some {
-              Node.value =
-                Access [
-                  Access.Identifier module_name;
-                  Access.Identifier named_tuple;
-                  Access.Call { Node.value = arguments; _ };
-                ];
-              location = tuple_location;
-            };
+          value = Some expression;
           _;
-        };
-    } when
-        Identifier.show module_name = "typing" && Identifier.show named_tuple = "NamedTuple" ||
-        Identifier.show module_name = "collections" && Identifier.show named_tuple = "namedtuple"
-      ->
-        let arguments =
-          match arguments with
-          | [
-            name;
-            { Argument.value = { Node.value = String serialized; location }; _ } as argument;
-          ] ->
-              let value =
-                String.split ~on:' ' serialized
-                |> List.map ~f:(fun field -> Node.create ~location (String field))
-                |> fun tuple -> { Node.value = List tuple; location }
-              in
-              [name; { argument with Argument.value } ]
-          | _ ->
-              arguments
-        in
-        let definition =
-          {
-            Class.name;
-            bases = [create_tuple_argument arguments tuple_location];
-            body = [Node.create_with_default_location Pass];
-            decorators = [];
-            docstring = None;
+        } ->
+          tuple_attributes ~parent:name ~expression
+          >>| (fun body ->
+              Class {
+                Class.name;
+                bases = [tuple_base ~location];
+                body;
+                decorators = [];
+                docstring = None;
+              })
+          |> Option.value ~default:value
+      | Class ({ Class.name; bases; body; _; } as original) ->
+          let extract_named_tuples (bases, attributes_sofar) ({ Argument.value; _ } as base) =
+            tuple_attributes ~parent:name ~expression:value
+            >>| (fun attributes -> (tuple_base ~location) :: bases, attributes_sofar @ attributes)
+            |> Option.value ~default:(base :: bases, attributes_sofar)
+          in
+          let reversed_bases, attributes = List.fold bases ~init:([], []) ~f:extract_named_tuples in
+          Class {
+            original with
+            Class.bases = List.rev reversed_bases;
+            body = attributes @ body;
           }
-        in
-        { Node.location; value = Class definition }
-    | {
-      Node.location;
-      value = Class ({
-          Class.bases;
-          _;
-        } as original);
-    } ->
-        let replace_namedtuple base =
-          match base with
-          | { Argument.value =
-                {
-                  Node.value =
-                    Access [
-                      Access.Identifier module_name;
-                      Access.Identifier named_tuple;
-                      Access.Call { Node.value = arguments; _ };
-                    ];
-                  location = tuple_location;
-                };
-              _;
-            } when
-              Identifier.show module_name = "collections" &&
-              Identifier.show named_tuple = "namedtuple"
-            ->
-              (create_tuple_argument arguments tuple_location)
-          | _ ->
-              base
-        in
-        let bases = List.map ~f:replace_namedtuple bases in
-        { Node.location; value = Class { original with Class.bases }; }
-    | statement ->
-        statement
+      | _ ->
+          value
+    in
+    { statement with Node.value }
   in
-  fun ({ Source.statements; _ } as source) ->
-    { source with Source.statements = List.map ~f:expand_named_tuples statements }
+  { source with Source.statements = List.map ~f:expand_named_tuples statements }
 
 
 let simplify_access_chains source =
