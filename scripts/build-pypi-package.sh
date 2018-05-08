@@ -99,7 +99,9 @@ cp "${SCRIPTS_DIRECTORY}/../README.md" \
 # Optional bundling of typeshed.
 if [[ -n "${BUNDLE_TYPESHED}" ]]; then
   mkdir -p "${BUILD_ROOT}/typeshed/"
-  rsync -rvm --chmod="+w" --include="stdlib/***" --exclude="*" "${BUNDLE_TYPESHED}/" "${BUILD_ROOT}/typeshed/"
+  rsync --recursive --copy-links --prune-empty-dirs --verbose \
+        --chmod="+w" --include="stdlib/***" --exclude="*" \
+        "${BUNDLE_TYPESHED}/" "${BUILD_ROOT}/typeshed/"
 fi
 
 # Create setup.py file.
