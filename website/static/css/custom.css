@@ -35,6 +35,11 @@
   padding: 1em;
 }
 
+.container .gridBlock .blockContent p {
+  font-size: 30px;
+  line-height: 1em;
+}
+
 .docs-prevnext {
   margin-top: 10px;
   margin-bottom: 100px;

@@ -106,16 +106,10 @@ const Features = props => (
   <Block layout="fourColumn">
     {[
       {
-        content: 'This is the content of my feature',
-        image: imgUrl('pyre.svg'),
-        imageAlign: 'top',
-        title: 'Feature One',
-      },
-      {
-        content: 'The content of my second feature',
-        image: imgUrl('pyre.svg'),
-        imageAlign: 'top',
-        title: 'Feature Two',
+        content:
+          '<script src="https://asciinema.org/a/zRPwxHLzIh9wcY7B4xYmEbyog.js" id="asciicast-zRPwxHLzIh9wcY7B4xYmEbyog" async></script>',
+        imageAlign: 'bottom',
+        title: 'Pyre in Action',
       },
     ]}
   </Block>
@@ -125,8 +119,11 @@ const FeatureCallout = props => (
   <div
     className="productShowcaseSection paddingBottom"
     style={{textAlign: 'center'}}>
-    <h2>Feature Callout</h2>
-    <MarkdownBlock>These are features of this project</MarkdownBlock>
+    <h2>Title About Pyre</h2>
+    <MarkdownBlock>
+      Sentence or two about features, still in development maybe and asking for
+      contribution?
+    </MarkdownBlock>
   </div>
 );
 
