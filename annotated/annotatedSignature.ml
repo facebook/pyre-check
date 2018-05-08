@@ -415,15 +415,20 @@ let select ~arguments ~resolution ~callable:({ Type.Callable.overloads; _ } as c
           base_rank + (remaining_unmatched arguments parameters)
         in
 
-        (* Map unresolved constraints to `Bottom`. *)
+        (* Map unresolved and unbound constraints to `Bottom`. *)
         let constraints =
-          let variables =
+          let unbound_variables =
+            let is_unbound = function
+              | Type.Variable { Type.constraints = _ :: _; _ } -> false
+              | _ -> true
+            in
             Type.Callable {
               Type.Callable.kind = Anonymous;
               overloads = [overload];
               implicit = Function;
             }
             |> Type.variables
+            |> List.filter ~f:is_unbound
           in
           let remaining_to_bottom constraints variable =
             let update = function
@@ -432,7 +437,7 @@ let select ~arguments ~resolution ~callable:({ Type.Callable.overloads; _ } as c
             in
             Map.change constraints variable ~f:update
           in
-          List.fold ~f:remaining_to_bottom ~init:constraints variables
+          List.fold unbound_variables ~f:remaining_to_bottom ~init:constraints
         in
 
         if List.is_empty arguments && List.is_empty parameters then

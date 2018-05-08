@@ -290,6 +290,7 @@ let test_select _ =
         Type.list (Type.variable ~constraints:[Type.integer; Type.float] "_R"),
         None,
         1));
+  assert_select "[[], _R]" "()" (`Found "[[], _R]");
 
   assert_select "[[typing.Type[_T]], _T]" "(int)" (`Found "[[typing.Type[int]], int]");
   assert_select
