@@ -37,7 +37,7 @@ class KillTest(unittest.TestCase):
                 '/some/link/tree/.pyre/watchman/watchman.pid',
                 'r')
             os_kill.assert_has_calls(
-                [call(11, signal.SIGINT), call(11, signal.SIGINT)])
+                [call(11, signal.SIGTERM), call(11, signal.SIGTERM)])
 
     @patch('os.path.realpath')
     @patch('subprocess.run')

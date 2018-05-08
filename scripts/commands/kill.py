@@ -65,7 +65,7 @@ class Kill(Command):
             with open(path, "r") as file:
                 pid = int(file.read())
                 if pid > 0:
-                    os.kill(int(pid), signal.SIGINT)
+                    os.kill(int(pid), signal.SIGTERM)
                 os.remove(path)
         except (IOError, OSError) as error:
             LOG.error("Encountered error during kill: %s", str(error))
