@@ -47,9 +47,17 @@ while [[ $# -gt 0 ]]; do
     "--bundle-typeshed")
       shift 1
       if [[ -n "$1" && -d "$1" ]]; then
-        echo "Will bundle typeshed at location: ${1}"
+        echo "Selected typeshed location for bundling: ${1}"
         BUNDLE_TYPESHED="${1}"
         RUNTIME_DEPENDENCIES=""
+
+        # Attempt a basic validation of the provided directory.
+        if [[ ! -d "${BUNDLE_TYPESHED}/stdlib" ]]; then
+          echo
+          echo 'The provided typeshed directory is not in the expected format:'
+          echo '  it does not contain a "stdlib" subdirectory.'
+          die 'Invalid typeshed directory'
+        fi
       else
         die "Not a valid location to bundle typeshed from: '${1}'"
       fi
