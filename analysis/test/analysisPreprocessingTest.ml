@@ -226,12 +226,16 @@ let test_qualify _ =
   assert_qualify
     {|
       class Foo: pass
-      def foo(foo: Foo) -> Foo: pass
+      def foo(foo: Foo, *args, **kwargs) -> Foo:
+        foo, args, kwargs
     |}
     {|
       class qualifier.Foo: pass
-      def qualifier.foo($renamed_foo: qualifier.Foo) -> qualifier.Foo:
-        pass
+      def qualifier.foo(
+          $renamed_foo: qualifier.Foo,
+          *$renamed_args,
+          **$renamed_kwargs) -> qualifier.Foo:
+        $renamed_foo, $renamed_args, $renamed_kwargs
     |};
   assert_qualify
     {|

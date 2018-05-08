@@ -492,8 +492,12 @@ let qualify ({ Source.qualifier = global_qualifier; path; _ } as source) =
 
       let statement_preorder map ({ Node.value; _ } as statement) =
         let prepend_function_prefix access =
-          if Access.starts_with ~prefix:"*" access then
-            access
+          if Access.starts_with access ~prefix:"**" then
+            Access.remove_prefix access ~prefix:"**"
+            |> Access.add_prefix ~prefix:"**$renamed_"
+          else if Access.starts_with access ~prefix:"*" then
+            Access.remove_prefix access ~prefix:"*"
+            |> Access.add_prefix ~prefix:"*$renamed_"
           else
             Access.add_prefix ~prefix:"$renamed_" access
         in
@@ -674,8 +678,20 @@ let qualify ({ Source.qualifier = global_qualifier; path; _ } as source) =
 
           (* Initialize local scope with the parameters. *)
           let add_parameter map { Node.value = { Parameter.name; _ }; _ } =
-            let access = Access.create_from_identifiers [name] in
-            Map.set ~key:access ~data:(prepend_function_prefix access) map
+            let remove_stars access =
+              if Access.starts_with access ~prefix:"**" then
+                Access.remove_prefix access ~prefix:"**"
+              else if Access.starts_with access ~prefix:"*" then
+                Access.remove_prefix access ~prefix:"*"
+              else
+                access
+            in
+            let access =
+              Access.create_from_identifiers [name]
+              |> remove_stars
+            in
+            let replacement = prepend_function_prefix access in
+            Map.set ~key:access ~data:replacement map
           in
           let current_scope = List.fold ~init:parent_scope ~f:add_parameter parameters in
           let local_qualifier = parent_qualifier @ name in
