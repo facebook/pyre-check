@@ -649,7 +649,7 @@ let test_incremental_lookups _ =
     [
       "`int`";
       "`int`";
-      "`typing.Any`";
+      "`typing.Unbound`";
       "`unknown`";
     ]
     definitions

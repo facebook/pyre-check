@@ -188,7 +188,7 @@ let rec pp format annotation =
     |> String.substr_replace_all ~pattern:"`" ~with_:"" in
   match annotation with
   | Bottom ->
-      Format.fprintf format "`typing.Any`"
+      Format.fprintf format "`typing.Unbound`"
   | Callable { kind; overloads; _ } ->
       let kind =
         match kind with
