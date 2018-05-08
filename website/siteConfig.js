@@ -29,7 +29,7 @@ const siteConfig = {
   disableHeaderTitle: true,
   // TODO(T29078584): Add Algolia search
   users,
-  headerIcon: 'img/pyre.png',
+  headerIcon: 'img/integrated_logo_light.png',
   favicon: 'img/favicon.ico',
   colors: {
     primaryColor: '#2d2020',
