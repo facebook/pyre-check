@@ -148,7 +148,7 @@ let shared_memory_handler
           dependents;
         };
       } =
-    Log.info "Adding environment information to shared memory";
+    Log.info "Adding environment information to shared memory...";
     let timer = Timer.start () in
     let add_table f = Hashtbl.iteri ~f:(fun ~key ~data -> f key data) in
     let add_type_order { TypeOrder.edges; backedges; indices; annotations } =
@@ -178,7 +178,7 @@ let shared_memory_handler
 
     Protocols.add "Protocols" (Hash_set.to_list protocols);
     add_table Modules.add modules;
-    Statistics.performance ~configuration ~name:"Added environment to shared memory..." ~timer ()
+    Statistics.performance ~configuration ~name:"Added environment to shared memory" ~timer ()
   in
 
   Log.initialize ~verbose ~sections;
