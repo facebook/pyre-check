@@ -118,7 +118,7 @@ module InitializeResponse = struct
                   will_save_wait_until = None;
                   save = None;
                 };
-              hover_provider = Some true;
+              hover_provider = Some Experimental.type_hover_support_enabled;
               completion_provider = None;
               signature_help_provider = None;
               definition_provider = Some true;

@@ -119,20 +119,23 @@ let test_initialize_response _ =
     (InitializeResponse.default 1
      |> InitializeResponse.to_yojson
      |> Yojson.Safe.sort)
-    ({|
+    (
+      Format.sprintf
+     {|
       {
         "id": 1,
         "jsonrpc": "2.0",
         "result": {
           "capabilities": {
             "definitionProvider": true,
-            "hoverProvider": true,
+            "hoverProvider": %s,
             "rageProvider": true,
             "textDocumentSync": { "change": 0, "openClose": true }
           }
         }
       }
      |}
+     (Bool.to_string Experimental.type_hover_support_enabled)
      |> Yojson.Safe.from_string)
 
 
