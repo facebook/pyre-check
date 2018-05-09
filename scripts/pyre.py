@@ -291,4 +291,10 @@ def main() -> int:
 
 
 if __name__ == '__main__':
+    try:
+        os.getcwd()
+    except FileNotFoundError as error:
+        print("Pyre could not determine the current working directory. "
+              "Has it been removed?\nExiting.")
+        sys.exit(FAILURE)
     sys.exit(main())
