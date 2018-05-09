@@ -6,6 +6,7 @@
 import logging
 import os
 import shutil
+import subprocess
 import json
 
 from .. import (
@@ -31,6 +32,16 @@ class Initialize(Command):
                     configuration_path))
 
         configuration = {}
+
+        watchman_configuration_path = os.path.abspath(".watchmanconfig")
+        if (shutil.which("watchman") is not None and
+              log.get_yes_no_input("Initialize a watchman configuration?")):
+            try:
+                with open(watchman_configuration_path, "w+") as configuration_file:
+                    configuration_file.write("{}\n")
+                subprocess.check_call(["watchman", "watch-project", "."])
+            except (IsADirectoryError, subprocess.CalledProcessError):
+                LOG.warning("Unable to initialize watchman for the current directory.")
 
         binary_path = shutil.which(BINARY_NAME)
         if binary_path is None:
@@ -65,4 +76,4 @@ class Initialize(Command):
                 indent=2)
         LOG.info(
             "Successfully initialized pyre! " +
-            "You can view the configuration at {}".format(configuration_path))
+            "You can view the configuration at `{}`.".format(configuration_path))
