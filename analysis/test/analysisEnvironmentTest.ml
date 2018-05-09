@@ -220,6 +220,10 @@ let test_register_globals _ =
         qualifier.unannotated = 'string'
         qualifier.stub: int = ...
         class qualifier.Class: ...
+        if True:
+          qualifier.in_branch: int = 1
+        else:
+          qualifier.in_branch: int = 2
       |}
   in
   Environment.register_globals (module Handler) source;
@@ -239,7 +243,8 @@ let test_register_globals _ =
   assert_global "qualifier.annotated" (Some Type.integer);
   assert_global "qualifier.unannotated" (Some Type.string);
   assert_global "qualifier.stub" (Some Type.integer);
-  assert_global "qualifier.Class" (Some (Type.meta (Type.primitive "qualifier.Class")))
+  assert_global "qualifier.Class" (Some (Type.meta (Type.primitive "qualifier.Class")));
+  assert_global "qualifier.in_branch" (Some Type.integer)
 
 
 let test_connect_type_order _ =
