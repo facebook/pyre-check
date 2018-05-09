@@ -709,6 +709,42 @@ let test_replace_version_specific_code _ =
     |}
 
 
+let test_expand_type_checking_imports _ =
+  let assert_expanded source expected =
+    assert_source_equal
+      (parse expected)
+      (Preprocessing.expand_type_checking_imports (parse source))
+  in
+  assert_expanded
+    {|
+      if typing.TYPE_CHECKING:
+        pass
+    |}
+    {|
+      pass
+    |};
+  assert_expanded
+    {|
+      from typing import TYPE_CHECKING
+      if TYPE_CHECKING:
+        pass
+    |}
+    {|
+      from typing import TYPE_CHECKING
+      pass
+    |};
+  assert_expanded
+    {|
+      from whoops import TYPE_CHECKING
+      if TYPE_CHECKING:
+        pass
+    |}
+    {|
+      from whoops import TYPE_CHECKING
+      pass
+    |}
+
+
 let test_expand_optional_assigns _ =
   let assert_expand source expected =
     assert_source_equal
@@ -1581,6 +1617,7 @@ let () =
     "qualify">::test_qualify;
     "cleanup">::test_cleanup;
     "replace_version_specific_code">::test_replace_version_specific_code;
+    "expand_type_checking_imports">::test_expand_type_checking_imports;
     "expand_optional_assigns">::test_expand_optional_assigns;
     "expand_operators">::test_expand_operators;
     "expand_subscripts">::test_expand_subscripts;

@@ -866,6 +866,34 @@ let replace_version_specific_code source =
   |> snd
 
 
+let expand_type_checking_imports source =
+  let module Transform = Transform.MakeStatementTransformer(struct
+      include Transform.Identity
+      type t = unit
+
+      let statement_postorder _ ({ Node.value; _ } as statement) =
+        let is_type_checking { Node.value; _ } =
+          match value with
+          | Access [Access.Identifier typing; Access.Identifier type_checking]
+            when Identifier.show typing = "typing" &&
+                 Identifier.show type_checking = "TYPE_CHECKING" ->
+              true
+          | Access [Access.Identifier type_checking]
+            when Identifier.show type_checking = "TYPE_CHECKING" ->
+              true
+          | _ ->
+              false
+        in
+        match value with
+        | If { If.test; body; orelse = [] } when is_type_checking test ->
+            (), body
+        | _ ->
+            (), [statement]
+    end)
+  in
+  Transform.transform () source
+  |> snd
+
 (* TODO(T22862979) Our parser currently parses {""} as Dictionary(kwarg = "").
    The real solution is to fix parsing of singleton dictionaries. *)
 let fix_singleton_sets source =
