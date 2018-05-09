@@ -119,10 +119,19 @@ const FeatureCallout = props => (
   <div
     className="productShowcaseSection paddingBottom"
     style={{textAlign: 'center'}}>
-    <h2>Title About Pyre</h2>
+    <h2>About Pyre</h2>
     <MarkdownBlock>
-      Sentence or two about features, still in development maybe and asking for
-      contribution?
+      Pyre is a fast, scalable type checker for large python codebases,
+      designed to help improve code quality and development speed by flagging
+      type errors interactively in your terminal or favorite editor.
+      We follow the typing standards introduced in
+      [PEP484](https://www.python.org/dev/peps/pep-0484/) and
+      [PEP526](https://www.python.org/dev/peps/pep-0526/).
+    </MarkdownBlock>
+    <MarkdownBlock>
+      Pyre is under active development. We hope you'll join the community
+      and try it out on your own projects, leave us feedback,
+      and consider contributing!
     </MarkdownBlock>
   </div>
 );

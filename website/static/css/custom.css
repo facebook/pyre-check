@@ -40,6 +40,10 @@
   line-height: 1em;
 }
 
+.productShowcaseSection p {
+  max-width: 1000px;
+}
+
 .docs-prevnext {
   margin-top: 10px;
   margin-bottom: 100px;
