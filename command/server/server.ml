@@ -584,8 +584,11 @@ let start_command =
     run_start_command
 
 
-let stop source_root () =
+let run_stop graceful source_root () =
   let configuration = Configuration.create ~source_root:(Path.create_absolute source_root) () in
+  (* Force an immediate process exit from this function only if
+     performing a non-graceful shutdown. *)
+  let exit_strategy = if graceful then ignore else exit in
   try
     let in_channel, _ =
       match Socket.open_connection (ServerConfiguration.socket_path configuration) with
@@ -636,13 +639,17 @@ let stop source_root () =
       poll ()
     in
     poll_for_deletion (ServerConfiguration.socket_path configuration)
-    |> exit
+    |> exit_strategy
   with
   | NotRunning
   | Unix.Unix_error _
   | ServerConfiguration.ServerNotRunning ->
       Log.warning "No servers running";
-      exit 1
+      exit_strategy 1
+
+
+let stop ?(graceful=false) source_root () =
+  run_stop graceful source_root ()
 
 
 let stop_command =
@@ -650,5 +657,6 @@ let stop_command =
     ~summary:"Stop the server"
     Command.Spec.(
       empty
+      +> flag "-graceful" no_arg ~doc:"Perform a graceful exit"
       +> anon (maybe_with_default "." ("source-root" %: string)))
-    stop
+    run_stop

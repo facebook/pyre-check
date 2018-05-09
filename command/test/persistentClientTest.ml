@@ -25,7 +25,7 @@ let test_persistent_client_connect context =
 
   let tear_down client_socket _ =
     Unix.close client_socket;
-    Command.run ~argv:["_"] Server.stop_command;
+    Command.run ~argv:["_"; "-graceful"] Server.stop_command;
     CommandTest.clean_environment ()
   in
 

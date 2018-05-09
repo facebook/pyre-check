@@ -49,7 +49,7 @@ let test_watchman_exists context =
   in
 
   let tear_down (pid_path, lock_path, pid) _ =
-    Server.stop "." ();
+    Server.stop ~graceful:true "." ();
     Signal.send_i Signal.int (`Pid (Pid.of_int pid));
     Path.remove pid_path;
     Path.remove lock_path;
@@ -95,7 +95,7 @@ let test_watchman_client context =
       ]
   in
   let cleanup () =
-    Server.stop "." ();
+    Server.stop ~graceful:true "." ();
     CommandTest.clean_environment ()
   in
   CommandTest.protect
@@ -194,8 +194,8 @@ let test_different_root context =
   CommandTest.start_server () |> ignore;
 
   let cleanup () =
-    Command.run ~argv:["_"] Server.stop_command;
-    Server.stop "." ();
+    Command.run ~argv:["_"; "-graceful"] Server.stop_command;
+    Server.stop ~graceful:true "." ();
     CommandTest.clean_environment ()
   in
   CommandTest.protect

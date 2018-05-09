@@ -10,5 +10,5 @@ module Socket = CommandSocket
 val start: ServerConfiguration.t -> int
 val start_command: Command.t
 
-val stop: string -> unit -> unit
+val stop: ?graceful: bool -> string -> unit -> unit
 val stop_command: Command.t
