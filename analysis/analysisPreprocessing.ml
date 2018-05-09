@@ -15,7 +15,7 @@ open Statement
 exception PreprocessingError
 
 
-let expand_string_annotations =
+let expand_string_annotations source =
   let module Transform = Transform.MakeStatementTransformer(struct
       type t = unit
 
@@ -74,9 +74,8 @@ let expand_string_annotations =
         (), [statement]
     end)
   in
-  fun source ->
-    Transform.transform () source
-    |> snd
+  Transform.transform () source
+  |> snd
 
 
 type global_entities = {
@@ -759,7 +758,7 @@ let qualify ({ Source.qualifier = global_qualifier; path; _ } as source) =
   |> snd
 
 
-let cleanup =
+let cleanup source =
   let module Cleanup = Transform.MakeStatementTransformer(struct
       type t = unit
 
@@ -804,10 +803,10 @@ let cleanup =
         (), [statement]
     end)
   in
-  fun source -> Cleanup.transform () source |> snd
+  Cleanup.transform () source |> snd
 
 
-let replace_version_specific_code =
+let replace_version_specific_code source =
   let module Transform = Transform.MakeStatementTransformer(struct
       include Transform.Identity
       type t = unit
@@ -863,14 +862,13 @@ let replace_version_specific_code =
             (), [statement]
     end)
   in
-  fun source ->
-    Transform.transform () source
-    |> snd
+  Transform.transform () source
+  |> snd
 
 
 (* TODO(T22862979) Our parser currently parses {""} as Dictionary(kwarg = "").
    The real solution is to fix parsing of singleton dictionaries. *)
-let fix_singleton_sets =
+let fix_singleton_sets source =
   let module Transform = Transform.Make(struct
       include Transform.Identity
       type t = unit
@@ -897,15 +895,14 @@ let fix_singleton_sets =
             expression
     end)
   in
-  fun source ->
-    Transform.transform () source
-    |> snd
+  Transform.transform () source
+  |> snd
 
 
 (* TODO(T22866412) Find a more general way of dealing with this problem.
    This hack ensures that assertions from if tests get propagated even if
    there is no explicit else: in the code. *)
-let expand_optional_assigns =
+let expand_optional_assigns source =
   let module Transform = Transform.MakeStatementTransformer(struct
       type t = unit
 
@@ -920,12 +917,11 @@ let expand_optional_assigns =
             (), [{ Node.location; value }]
     end)
   in
-  fun source ->
-    Transform.transform () source
-    |> snd
+  Transform.transform () source
+  |> snd
 
 
-let expand_operators =
+let expand_operators source =
   let module Transform = Transform.Make(struct
       include Transform.Identity
       type t = unit
@@ -941,12 +937,11 @@ let expand_operators =
         { Node.location; value }
     end)
   in
-  fun source ->
-    Transform.transform () source
-    |> snd
+  Transform.transform () source
+  |> snd
 
 
-let expand_subscripts =
+let expand_subscripts source =
   let module Transform = Transform.Make(struct
       include Transform.Identity
       type t = unit
@@ -1012,15 +1007,14 @@ let expand_subscripts =
         { Node.location; value }
     end)
   in
-  fun source ->
-    Transform.transform () source
-    |> snd
+  Transform.transform () source
+  |> snd
 
 
 let return_access = Access.create "$return"
 
 
-let expand_returns =
+let expand_returns source =
   let module ExpandingTransform = Transform.MakeStatementTransformer(struct
       include Transform.Identity
       type t = unit
@@ -1107,12 +1101,11 @@ let expand_returns =
             state, [statement]
     end)
   in
-  fun source ->
-    ExpandingTransform.transform () source
-    |> snd
+  ExpandingTransform.transform () source
+  |> snd
 
 
-let expand_yield_from =
+let expand_yield_from source =
   let module NormalizingTransform = Transform.MakeStatementTransformer(struct
       type t = unit
 
@@ -1141,11 +1134,10 @@ let expand_yield_from =
             state, [statement]
     end)
   in
-  fun source ->
-    NormalizingTransform.transform () source
-    |> snd
+  NormalizingTransform.transform () source
+  |> snd
 
-let expand_for_loop =
+let expand_for_loop source =
   let module ExpandingTransform = Transform.MakeStatementTransformer(struct
       type t = unit
 
@@ -1201,12 +1193,11 @@ let expand_for_loop =
             state, [statement]
     end)
   in
-  fun source ->
-    ExpandingTransform.transform () source
-    |> snd
+  ExpandingTransform.transform () source
+  |> snd
 
 
-let expand_excepts =
+let expand_excepts source =
   let module ExpandingTransform = Transform.MakeStatementTransformer(struct
       type t = unit
 
@@ -1267,12 +1258,11 @@ let expand_excepts =
             state, [statement]
     end)
   in
-  fun source ->
-    ExpandingTransform.transform () source
-    |> snd
+  ExpandingTransform.transform () source
+  |> snd
 
 
-let expand_ternary_assign =
+let expand_ternary_assign source =
   let module ExpandingTransform = Transform.MakeStatementTransformer(struct
       type t = unit
 
@@ -1311,9 +1301,8 @@ let expand_ternary_assign =
             state, [statement]
     end)
   in
-  fun source ->
-    ExpandingTransform.transform () source
-    |> snd
+  ExpandingTransform.transform () source
+  |> snd
 
 
 let expand_named_tuples ({ Source.statements; _ } as source) =
@@ -1549,7 +1538,7 @@ let defines ?(include_stubs = false) ({ Source.statements; _ } as source) =
   toplevel :: (Collector.collect source)
 
 
-let classes =
+let classes source =
   let module Collector = Visit.StatementCollector(struct
       type t = Statement.Class.t Node.t
       let keep_recursing _ = Transform.Recurse
@@ -1561,10 +1550,10 @@ let classes =
             None
     end)
   in
-  fun source -> Collector.collect source
+  Collector.collect source
 
 
-let dequalify_map =
+let dequalify_map source =
   let module ImportDequalifier = Transform.MakeStatementTransformer(struct
       include Transform.Identity
       type t = Access.t Access.Map.t
@@ -1598,12 +1587,10 @@ let dequalify_map =
             map, [statement]
     end)
   in
-  fun source ->
-    (* Note that map keys are reversed accesses because it makes life much easier in dequalify *)
-    let map =
-      Map.set ~key:(List.rev source.Source.qualifier) ~data:[] Access.Map.empty
-    in
-    ImportDequalifier.transform map source |> fst
+  (* Note that map keys are reversed accesses because it makes life much easier in dequalify *)
+  let map = Map.set ~key:(List.rev source.Source.qualifier) ~data:[] Access.Map.empty in
+  ImportDequalifier.transform map source
+  |> fst
 
 
 let preprocess source =
