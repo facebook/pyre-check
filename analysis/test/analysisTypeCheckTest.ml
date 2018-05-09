@@ -854,6 +854,7 @@ let check_with_default_environment
     ?(strict = false)
     ?(declare = false)
     ?(infer = false)
+    ?(qualifier = [])
     ?mode_override
     source =
   let check_errors configuration environment ?mode_override source =
@@ -877,7 +878,7 @@ let check_with_default_environment
         ~number_of_lines:(-1)
         ()
     in
-    parse source
+    parse ~qualifier source
     |> (fun source -> { source with Source.metadata })
     |> Preprocessing.preprocess
   in
@@ -897,6 +898,7 @@ let assert_type_errors
     ?(declare = false)
     ?(infer = false)
     ?(show_error_traces = false)
+    ?(qualifier = [])
     source
     errors =
   Annotated.Class.AttributesCache.clear ();
@@ -921,6 +923,7 @@ let assert_type_errors
          ~debug
          ~declare
          ~infer
+         ~qualifier
          ?mode_override
          source)
   in
@@ -1281,7 +1284,7 @@ let test_coverage _ =
   in
   assert_coverage
     {| def foo(): pass |}
-    { Coverage.full = 0; partial = 0; untyped = 1; ignore = 0; crashes = 0 };
+    { Coverage.full = 0; partial = 0; untyped = 0; ignore = 0; crashes = 0 };
   assert_coverage
     {|
      def foo(y: int):
@@ -1290,7 +1293,7 @@ let test_coverage _ =
        else:
          x = z
     |}
-    { Coverage.full = 1; partial = 0; untyped = 2; ignore = 0; crashes = 0 };
+    { Coverage.full = 1; partial = 0; untyped = 1; ignore = 0; crashes = 0 };
   assert_coverage
     {|
      def foo(y: asdf):
@@ -1299,7 +1302,7 @@ let test_coverage _ =
       else:
         x = 1
     |}
-    { Coverage.full = 0; partial = 0; untyped = 1; ignore = 0; crashes = 1 };
+    { Coverage.full = 0; partial = 0; untyped = 0; ignore = 0; crashes = 1 };
 
   assert_coverage
     {|
@@ -1307,7 +1310,7 @@ let test_coverage _ =
         x = returns_undefined()
         return x
     |}
-    { Coverage.full = 0; partial = 0; untyped = 1; ignore = 0; crashes = 1 }
+    { Coverage.full = 0; partial = 0; untyped = 0; ignore = 0; crashes = 1 }
 
 
 let test_check _ =
@@ -4334,7 +4337,16 @@ let test_check_nested _ =
           return
         a = g()
     |}
-    []
+    [];
+
+  (* Nesting behaves differently for the toplevel function. *)
+  assert_type_errors
+    ~qualifier:(Access.create "shadowing")
+    {|
+      def shadowing(i: int) -> None: ...
+      shadowing('asdf')  # `shadowing` is not replaced with a dummy entry in the globals map.
+    |}
+    ["Incompatible parameter type [6]: Expected `int` but got `str`."]
 
 
 let test_check_invalid_constructor _ =

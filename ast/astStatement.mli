@@ -202,6 +202,7 @@ module Define : sig
   val is_generated_constructor: t -> bool
   val is_property_setter: t -> bool
   val is_untyped: t -> bool
+  val is_toplevel: t -> bool
 
   val self_identifier: t -> Identifier.t
 

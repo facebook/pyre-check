@@ -314,6 +314,10 @@ module Define = struct
     async
 
 
+  let is_toplevel { name; _ } =
+    Expression.Access.show name = "$toplevel"
+
+
   let create_generated_constructor { Record.Class.name; docstring; _ } =
     {
       name = Expression.Access.create "__init__";

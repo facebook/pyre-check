@@ -781,10 +781,13 @@ module State = struct
                 Resolution.set_local resolution ~access:[List.last_exn name] ~annotation
             | None ->
                 (* Add a dummy annotation for locally defined classes. *)
-                Resolution.set_local
+                if not (Define.is_toplevel define) then
+                  Resolution.set_local
+                    resolution
+                    ~access:[List.last_exn name]
+                    ~annotation:(Annotation.create Type.Object)
+                else
                   resolution
-                  ~access:[List.last_exn name]
-                  ~annotation:(Annotation.create Type.Object)
           end
 
       | Define { Define.name; _ } ->
@@ -797,7 +800,10 @@ module State = struct
             | None ->
                 Annotation.create Type.Object
           in
-          Resolution.set_local resolution ~access:[List.last_exn name] ~annotation
+          if not (Define.is_toplevel define) then
+            Resolution.set_local resolution ~access:[List.last_exn name] ~annotation
+          else
+            resolution
 
       | Global identifiers ->
           let access = Access.create_from_identifiers identifiers in
