@@ -107,7 +107,7 @@ const Features = props => (
     {[
       {
         content:
-          '<script src="https://asciinema.org/a/zRPwxHLzIh9wcY7B4xYmEbyog.js" id="asciicast-zRPwxHLzIh9wcY7B4xYmEbyog" async></script>',
+          '<script src="https://asciinema.org/a/u1v8WDqHIHhRD8Uk2hzrjNz14.js" id="asciicast-u1v8WDqHIHhRD8Uk2hzrjNz14" async></script>',
         imageAlign: 'bottom',
         title: 'Pyre in Action',
       },
