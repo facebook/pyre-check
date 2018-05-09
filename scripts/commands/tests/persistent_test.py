@@ -22,7 +22,7 @@ class PersistentTest(unittest.TestCase):
         arguments = mock_arguments()
         configuration = mock_configuration()
         configuration.get_version_hash.return_value = 'hash'
-        arguments.number_of_workers = 42
+        configuration.number_of_workers = 42
 
         # Check start without watchman.
         with patch.object(commands.Command, '_call_client') as call_client:

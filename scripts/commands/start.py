@@ -23,7 +23,7 @@ class Start(Command):
             source_directory)
         self._terminal = arguments.terminal
         self._no_watchman = arguments.no_watchman
-        self._number_of_workers = arguments.number_of_workers
+        self._number_of_workers = configuration.number_of_workers
 
     def _run(self) -> None:
         try:

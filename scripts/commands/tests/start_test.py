@@ -22,11 +22,11 @@ class StartTest(unittest.TestCase):
     def test_start(self, lock_file) -> None:
         arguments = mock_arguments()
         arguments.terminal = False
-        arguments.number_of_workers = 5
 
         configuration = mock_configuration()
         configuration.get_search_path.return_value = ['root']
         configuration.get_version_hash.return_value = 'hash'
+        configuration.number_of_workers = 5
 
         # Check start without watchman.
         with patch.object(commands.Command, '_call_client') as call_client:

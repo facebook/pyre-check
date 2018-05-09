@@ -11,7 +11,10 @@ from unittest.mock import (
     patch,
 )
 
-from .. import CONFIGURATION_FILE
+from .. import (
+    CONFIGURATION_FILE,
+    number_of_workers,
+)
 from ..configuration import Configuration  # noqa
 
 
@@ -54,7 +57,7 @@ class ConfigurationTest(unittest.TestCase):
         ]
         configuration = Configuration()
         self.assertEqual(configuration.get_search_path(), ['TYPESHED/'])
-        self.assertEqual(configuration.number_of_workers, None)
+        self.assertEqual(configuration.number_of_workers, number_of_workers())
 
         json_load.side_effect = [
             {

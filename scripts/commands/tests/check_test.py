@@ -19,10 +19,10 @@ class CheckTest(unittest.TestCase):
     def test_check(self, realpath, check_output) -> None:
         realpath.side_effect = lambda x: x
         arguments = mock_arguments()
-        arguments.number_of_workers = 5
 
         configuration = mock_configuration()
         configuration.get_search_path.return_value = ['stub', 'root']
+        configuration.number_of_workers = 5
 
         with patch.object(commands.Command, '_call_client') as call_client, \
                 patch('json.loads', return_value=[]):

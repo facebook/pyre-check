@@ -14,6 +14,7 @@ from . import (
     CONFIGURATION_FILE,
     EnvironmentException,
     find_typeshed,
+    number_of_workers,
 )
 
 from typing import (
@@ -233,6 +234,9 @@ class Configuration:
         if overriding_version_hash:
             self._version_hash = overriding_version_hash
             LOG.warning('Version hash overridden with `%s`', self._version_hash)
+
+        if not self.number_of_workers:
+            self.number_of_workers = number_of_workers()
 
         if not self._typeshed:
             LOG.info('No typeshed specified, looking for it')

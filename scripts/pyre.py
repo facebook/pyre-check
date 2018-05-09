@@ -20,7 +20,6 @@ from . import (
     JSON,
     log,
     log_statistics,
-    number_of_workers,
     resolve_source_directories,
     merge_source_directories,
     SUCCESS,
@@ -237,8 +236,6 @@ def main() -> int:
                 return SUCCESS
 
             configuration.validate()
-
-            arguments.number_of_workers = number_of_workers()
 
             if getattr(arguments, 'with_fire', False):
                 source_directories = ['.']
