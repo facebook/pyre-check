@@ -58,6 +58,10 @@ def run_fixme(arguments) -> None:
             for index, line in enumerate(lines):
                 number = index + 1
                 if number in codes:
+                    if list(codes[number]) == ['0']:
+                        # Skip unused ignores.
+                        continue
+
                     sorted_codes = sorted(list(codes[number]))
                     sorted_descriptions = sorted(list(descriptions[number]))
 
