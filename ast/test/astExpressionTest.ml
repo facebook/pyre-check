@@ -53,9 +53,9 @@ let test_normalize _ =
           right = +False;
         }))
     (+BooleanOperator {
-       BooleanOperator.operator = BooleanOperator.And;
-       left = +True;
-       right = +True;
+       BooleanOperator.operator = BooleanOperator.Or;
+       left = +False;
+       right = +False;
      });
 
   assert_expression_equal
@@ -66,12 +66,9 @@ let test_normalize _ =
           right = !"right";
         }))
     (+BooleanOperator {
-       BooleanOperator.operator = BooleanOperator.And;
-       left = +True;
-       right = +UnaryOperator {
-         UnaryOperator.operator = UnaryOperator.Not;
-         operand = !"right";
-       };
+       BooleanOperator.operator = BooleanOperator.Or;
+       left = +False;
+       right = !"right";
      });
 
   assert_expression_equal

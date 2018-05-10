@@ -602,25 +602,11 @@ let negate ({ Node.location; _ } as node) =
 let rec normalize { Node.location; value } =
   let normalized =
     match value with
-    | BooleanOperator {
-        BooleanOperator.operator = BooleanOperator.And;
-        left;
-        right;
-      } ->
+    | BooleanOperator { BooleanOperator.operator; left; right } ->
         BooleanOperator {
-          BooleanOperator.operator = BooleanOperator.And;
+          BooleanOperator.operator;
           left = normalize left;
           right = normalize right;
-        }
-    | BooleanOperator {
-        BooleanOperator.operator = BooleanOperator.Or;
-        left;
-        right;
-      } ->
-        BooleanOperator {
-          BooleanOperator.operator = BooleanOperator.And;
-          left = normalize (negate left);
-          right = normalize (negate right);
         }
     | UnaryOperator { UnaryOperator.operator = UnaryOperator.Not; operand = { Node.value; _ };
                     } ->
