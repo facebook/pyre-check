@@ -2581,7 +2581,6 @@ let test_check_method_parameters _ =
     |}
     [
       "Incompatible parameter type [6]: Expected `int` but got `str`.";
-      "Incompatible parameter type [6]: Expected `int` but got `str`.";
     ];
 
   assert_type_errors

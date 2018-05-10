@@ -1040,87 +1040,6 @@ let test_expand_returns _ =
     |}
 
 
-let test_simplify_access_chains _ =
-  let assert_expand source expected =
-    assert_source_equal
-      (parse expected)
-      (Preprocessing.simplify_access_chains (parse source))
-  in
-  assert_expand
-    {|
-      x = a.b
-    |}
-    {|
-      x = a.b
-    |};
-  assert_expand
-    {|
-      x = a.b[1][2]
-    |}
-    {|
-      x = a.b[1][2]
-    |};
-  assert_expand
-    {|
-      x = a.b().c().d()
-    |}
-    {|
-      $1 = a.b()
-      $2 = $1.c()
-      x = $2.d()
-    |};
-  assert_expand
-    {|
-      x = a.b.c.d().e()
-    |}
-    {|
-      $1 = a.b.c.d()
-      x = $1.e()
-    |};
-  assert_expand
-    {|
-      x = a.b().c().d()
-      foo = boo()
-      foo = boo()
-      y = x().y().z()
-    |}
-    {|
-      $1 = a.b()
-      $2 = $1.c()
-      x = $2.d()
-      foo = boo()
-      foo = boo()
-      $6 = x()
-      $7 = $6.y()
-      y = $7.z()
-    |};
-  assert_expand
-    {|
-      x = a().b(c().d())
-    |}
-    {|
-      $1 = a()
-      x = $1.b(c().d())
-    |};
-  assert_expand
-    {|
-      a.b().c()
-    |}
-    {|
-      $1 = a.b()
-      $1.c()
-    |};
-  assert_expand
-    {|
-      x = super()
-      x.foo('asdf')
-    |}
-    {|
-      x = super()
-      x.foo('asdf')
-    |}
-
-
 let test_expand_for _ =
   let assert_expand source expected =
     assert_source_equal
@@ -1623,7 +1542,6 @@ let () =
     "expand_subscripts">::test_expand_subscripts;
     "expand_returns">::test_expand_returns;
     "expand_for_loop">::test_expand_for;
-    "expand_multiple_calls">::test_simplify_access_chains;
     "expand_excepts">::test_expand_excepts;
     "expand_ternary_assigns">::test_expand_ternary;
     "expand_named_tuples">::test_expand_named_tuples;
