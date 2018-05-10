@@ -10,6 +10,7 @@ open Expression
 open Statement
 open Pyre
 
+module Annotation = AnalysisAnnotation
 module Resolution = AnalysisResolution
 module Type = AnalysisType
 
@@ -95,10 +96,11 @@ let select ~arguments ~resolution ~callable:({ Type.Callable.overloads; _ } as c
     let callable = { callable with Type.Callable.overloads = [overload] } in
     match parameters with
     | Defined parameters ->
-        let check_parameter
+        let rec check_parameter
+            ~resolution
             ~constraints
             ~reason
-            ~argument:{ Argument.name; value = { Node.location; _ } as expression }
+            ~argument:({ Argument.name; value = { Node.location; _ } as expression } as argument)
             ~parameter
             ~remaining_arguments =
           let sequence_parameter annotation =
@@ -155,70 +157,101 @@ let select ~arguments ~resolution ~callable:({ Type.Callable.overloads; _ } as c
             |> fun mismatch -> Some (Mismatch mismatch)
           in
 
-          let parameters_to_infer = Type.variables expected |> List.length in
-          if parameters_to_infer > 0 then
-            let updated_constraints =
-              let rec update expected constraints =
-                let update_constraints ~constraints ~variable ~resolved =
-                  let resolved =
-                    Map.find constraints variable
-                    >>| (fun existing -> Resolution.join resolution existing resolved)
-                    |> Option.value ~default:resolved
-                  in
-                  let in_constraints =
-                    match variable with
-                    | Type.Variable { Type.constraints; _ } when not (List.is_empty constraints) ->
-                        let in_constraint bound =
-                          Resolution.less_or_equal resolution ~left:resolved ~right:bound
-                        in
-                        List.exists ~f:in_constraint constraints
-                    | _ ->
-                        true
-                  in
-                  if in_constraints then
-                    Some (Map.set ~key:variable ~data:resolved constraints)
-                  else
-                    None
-                in
-                match expected with
-                | Type.Variable _ as variable ->
-                    update_constraints ~constraints ~variable ~resolved:actual
-                | Type.Parametric _ ->
-                    let primitive, parameters = Type.split expected in
-                    Resolution.class_definition resolution primitive
-                    >>| Class.create
-                    >>= fun target ->
-                    let primitive, _ = Type.split actual in
-                    Resolution.class_definition resolution primitive
-                    >>| Class.create
-                    >>| Class.constraints ~target ~parameters ~instantiated:actual ~resolution
-                    >>= fun inferred ->
-                    if Map.length inferred < parameters_to_infer then
-                      None
-                    else
-                      let update_constraints ~key ~data constraints =
-                        constraints
-                        >>= fun constraints ->
-                        update_constraints ~constraints ~variable:key ~resolved:data
+          match actual with
+          | Type.Union elements ->
+              let rec check_elements ~constraints = function
+                | element :: elements ->
+                    let constraints, reason =
+                      let access = Access.create "$argument" in
+                      let expression = { expression with Node.value = Access access } in
+                      let resolution =
+                        Resolution.set_local
+                          resolution
+                          ~access
+                          ~annotation:(Annotation.create element)
                       in
-                      Map.fold ~init:(Some constraints) ~f:update_constraints inferred
-                | Type.Union annotations ->
-                    List.fold
-                      ~init:(Some constraints)
-                      ~f:(fun constraints annotation -> constraints >>= update annotation)
-                      annotations
+                      check_parameter
+                        ~resolution
+                        ~constraints
+                        ~reason
+                        ~argument:{ argument with Argument.value = expression }
+                        ~parameter
+                        ~remaining_arguments
+                    in
+                    if Option.is_some reason then
+                      constraints, reason
+                    else
+                      check_elements ~constraints elements
                 | _ ->
-                    Some constraints
+                    constraints, reason
               in
-              update expected constraints
-            in
-            updated_constraints
-            >>| (fun constraints -> constraints, reason)
-            |> Option.value ~default:(constraints, mismatch)
-          else if Resolution.less_or_equal resolution ~left:actual ~right:expected then
-            constraints, reason
-          else
-            constraints, mismatch
+              check_elements ~constraints elements
+          | _ ->
+              let parameters_to_infer = Type.variables expected |> List.length in
+              if parameters_to_infer > 0 then
+                let updated_constraints =
+                  let rec update expected constraints =
+                    let update_constraints ~constraints ~variable ~resolved =
+                      let resolved =
+                        Map.find constraints variable
+                        >>| (fun existing -> Resolution.join resolution existing resolved)
+                        |> Option.value ~default:resolved
+                      in
+                      let in_constraints =
+                        match variable with
+                        | Type.Variable { Type.constraints; _ }
+                          when not (List.is_empty constraints) ->
+                            let in_constraint bound =
+                              Resolution.less_or_equal resolution ~left:resolved ~right:bound
+                            in
+                            List.exists ~f:in_constraint constraints
+                        | _ ->
+                            true
+                      in
+                      if in_constraints then
+                        Some (Map.set ~key:variable ~data:resolved constraints)
+                      else
+                        None
+                    in
+                    match expected with
+                    | Type.Variable _ as variable ->
+                        update_constraints ~constraints ~variable ~resolved:actual
+                    | Type.Parametric _ ->
+                        let primitive, parameters = Type.split expected in
+                        Resolution.class_definition resolution primitive
+                        >>| Class.create
+                        >>= fun target ->
+                        let primitive, _ = Type.split actual in
+                        Resolution.class_definition resolution primitive
+                        >>| Class.create
+                        >>| Class.constraints ~target ~parameters ~instantiated:actual ~resolution
+                        >>= fun inferred ->
+                        if Map.length inferred < parameters_to_infer then
+                          None
+                        else
+                          let update_constraints ~key ~data constraints =
+                            constraints
+                            >>= fun constraints ->
+                            update_constraints ~constraints ~variable:key ~resolved:data
+                          in
+                          Map.fold ~init:(Some constraints) ~f:update_constraints inferred
+                    | Type.Union annotations ->
+                        List.fold
+                          ~init:(Some constraints)
+                          ~f:(fun constraints annotation -> constraints >>= update annotation)
+                          annotations
+                    | _ ->
+                        Some constraints
+                  in
+                  update expected constraints
+                in
+                updated_constraints
+                >>| (fun constraints -> constraints, reason)
+                |> Option.value ~default:(constraints, mismatch)
+              else if Resolution.less_or_equal resolution ~left:actual ~right:expected then
+                constraints, reason
+              else
+                constraints, mismatch
         in
 
         let rec consume_anonymous ({ arguments; parameters; constraints; reason } as state) =
@@ -236,6 +269,7 @@ let select ~arguments ~resolution ~callable:({ Type.Callable.overloads; _ } as c
               begin
                 let constraints, reason =
                   check_parameter
+                    ~resolution
                     ~constraints
                     ~reason
                     ~argument
@@ -258,6 +292,7 @@ let select ~arguments ~resolution ~callable:({ Type.Callable.overloads; _ } as c
               begin
                 let constraints, reason =
                   check_parameter
+                    ~resolution
                     ~constraints
                     ~reason
                     ~argument
@@ -298,6 +333,7 @@ let select ~arguments ~resolution ~callable:({ Type.Callable.overloads; _ } as c
                     begin
                       let constraints, reason =
                         check_parameter
+                          ~resolution
                           ~constraints
                           ~reason
                           ~argument
@@ -321,6 +357,7 @@ let select ~arguments ~resolution ~callable:({ Type.Callable.overloads; _ } as c
               begin
                 let constraints, reason =
                   check_parameter
+                    ~resolution
                     ~constraints
                     ~reason
                     ~argument
@@ -357,6 +394,7 @@ let select ~arguments ~resolution ~callable:({ Type.Callable.overloads; _ } as c
               begin
                 let constraints, reason =
                   check_parameter
+                    ~resolution
                     ~constraints
                     ~reason
                     ~argument

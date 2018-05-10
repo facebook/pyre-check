@@ -40,6 +40,7 @@ let resolution =
       class dict(typing.Generic[_T, _S], typing.Mapping[_T, _S]): ...
 
       meta: typing.Type[typing.List[int]] = ...
+      union: typing.Union[int, str] = ...
     |}
   |> resolution
 
@@ -158,6 +159,9 @@ let test_select _ =
   assert_select "[[int], int]" "(*[1])" (`Found "[[int], int]");
   assert_select "[[str], int]" "(*[1])" (`NotFoundMismatch (Type.integer, Type.string, None, 1));
   assert_select "[[int, str], int]" "(*[1], 'asdf')" (`Found "[[int, str], int]");
+
+  assert_select "[[object], None]" "(union)" (`Found "[[object], None]");
+  assert_select "[[int], None]" "(union)" (`NotFoundMismatch (Type.string, Type.integer, None, 1));
 
   (* Traverse variable arguments. *)
   assert_select "[[Variable(variable)], int]" "()" (`Found "[[Variable(variable)], int]");
