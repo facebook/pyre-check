@@ -64,7 +64,7 @@ class Incremental(ErrorHandling):
         if self._state() == State.DEAD:
             LOG.warning("Server initializing...")
         else:
-            LOG.warning("Waiting for server...")
+            LOG.info("Waiting for server...")
 
         result = self._call_client(command=self.NAME, flags=flags)
 
