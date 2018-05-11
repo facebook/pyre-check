@@ -168,7 +168,9 @@ let parse_callable callable =
 let diff ~print format (left, right) =
   let escape string =
     String.substr_replace_all string ~pattern:"\"" ~with_:"\\\""
-    |> String.substr_replace_all ~pattern:"`" ~with_:"'" in
+    |> String.substr_replace_all ~pattern:"`" ~with_:"'"
+    |> String.substr_replace_all ~pattern:"$" ~with_:"?"
+  in
   let input =
     Format.sprintf
       "bash -c \"diff -u <(echo \\\"%s\\\") <(echo \\\"%s\\\")\""
