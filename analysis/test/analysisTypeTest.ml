@@ -308,6 +308,7 @@ let test_expression _ =
   in
 
   assert_expression (Type.Primitive ~~"foo") "foo";
+  assert_expression (Type.Primitive ~~"...") "...";
   assert_expression (Type.Primitive ~~"foo.bar") "foo.bar";
   assert_expression Type.Top "$unknown";
 
@@ -316,22 +317,26 @@ let test_expression _ =
         Type.name = ~~"foo.bar";
         parameters = [Type.Primitive ~~"baz"];
       })
-    "foo.bar[baz]";
+    "foo.bar.__getitem__(baz)";
 
   assert_expression
     (Type.Tuple (Type.Bounded [Type.integer; Type.string]))
-    "typing.Tuple[int, str]";
-  assert_expression (Type.Tuple (Type.Unbounded Type.integer)) "typing.Tuple[int, ...]";
+    "typing.Tuple.__getitem__((int, str))";
+  assert_expression
+    (Type.Tuple (Type.Unbounded Type.integer))
+    "typing.Tuple.__getitem__((int, ...))";
   assert_expression
     (Type.Parametric { Type.name = ~~"list"; parameters = [Type.integer] })
-    "typing.List[int]";
+    "typing.List.__getitem__(int)";
 
   (* Callables. *)
   let open Type.Callable in
-  assert_expression (Type.callable ~annotation:Type.integer ()) "typing.Callable[..., int]";
+  assert_expression
+    (Type.callable ~annotation:Type.integer ())
+    "typing.Callable.__getitem__((..., int))";
   assert_expression
     (Type.callable ~name:(Access.create "name") ~annotation:Type.integer ())
-    "typing.Callable[..., int]";
+    "typing.Callable.__getitem__((..., int))";
 
   assert_expression
     (Type.callable
@@ -343,7 +348,7 @@ let test_expression _ =
        ]
        ~annotation:Type.integer
        ())
-    "typing.Callable[..., int][..., str]";
+    "typing.Callable.__getitem__((..., int)).__getitem__((..., str))";
 
   assert_expression
     (Type.callable
@@ -353,7 +358,7 @@ let test_expression _ =
          ])
        ~annotation:Type.integer
        ())
-    "typing.Callable[[int, str], int]";
+    "typing.Callable.__getitem__(([int, str], int))";
   assert_expression
     (Type.callable
        ~parameters:(Type.Callable.Defined [
@@ -370,7 +375,7 @@ let test_expression _ =
          ])
        ~annotation:Type.integer
        ())
-    "typing.Callable[[Named(a, int), Named(b, str)], int]";
+    "typing.Callable.__getitem__(([Named(a, int), Named(b, str)], int))";
   assert_expression
     (Type.callable
        ~parameters:(Type.Callable.Defined [
@@ -382,7 +387,7 @@ let test_expression _ =
          ])
        ~annotation:Type.integer
        ())
-    "typing.Callable[[Named(a, int, default)], int]";
+    "typing.Callable.__getitem__(([Named(a, int, default)], int))";
   assert_expression
     (Type.callable
        ~parameters:(Defined [
@@ -400,7 +405,7 @@ let test_expression _ =
          ])
        ~annotation:Type.integer
        ())
-    "typing.Callable[[int, Variable(variable, int), Keywords(keywords, str)], int]"
+    "typing.Callable.__getitem__(([int, Variable(variable, int), Keywords(keywords, str)], int))"
 
 
 let test_union _ =
@@ -686,7 +691,9 @@ let test_class_name _ =
 
   assert_class_name (Type.primitive "qualified.primitive") "qualified.primitive";
   assert_class_name (Type.list Type.integer) "list";
-  assert_class_name (Type.union [Type.string; Type.integer]) "typing.Union[int, str]"; (* Ugh... *)
+  assert_class_name
+    (Type.union [Type.string; Type.integer])
+    "typing.Union.__getitem__((int, str))"; (* Ugh... *)
   assert_class_name (Type.variable "_T") "_T"
 
 

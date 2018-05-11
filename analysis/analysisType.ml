@@ -865,23 +865,48 @@ let create ~aliases { Node.value = expression; _ } =
 
 let rec expression annotation =
   let split name =
-    Identifier.show name
-    |> String.split ~on:'.'
-    |> List.map
-      ~f:Access.create
-    |> List.concat
+    match Identifier.show name with
+    | "..." ->
+        [Access.Identifier (Identifier.create "...")]
+    | name ->
+        String.split name ~on:'.'
+        |> List.map ~f:Access.create
+        |> List.concat
+  in
+
+  let get_item_call ?call_parameters parameters =
+    let parameter =
+      match parameters with
+      | _ when List.length parameters > 1 || Option.is_some call_parameters ->
+          let tuple =
+            let call_parameters =
+              call_parameters
+              >>| (fun call_parameters -> [call_parameters])
+              |> Option.value ~default:[]
+            in
+            List.map parameters ~f:expression
+            |> (fun elements -> Expression.Tuple (call_parameters @ elements))
+            |> Node.create_with_default_location
+          in
+          [{ Argument.name = None; value = tuple }]
+      | [parameter] ->
+          [{ Argument.name = None; value = expression parameter }]
+      | _ ->
+          []
+    in
+    [
+      Access.Identifier (Identifier.create "__getitem__");
+      Access.Call (Node.create_with_default_location parameter);
+    ]
   in
 
   let rec access annotation =
-    let index parameter =
-      Access.Index (Node.create_with_default_location (Access (access parameter)))
-    in
     match annotation with
     | Bottom -> Access.create "$bottom"
     | Callable { overloads; _ } ->
-        let subscripts =
-          let subscript { annotation; parameters } =
-            let parameters =
+        let get_item_calls =
+          let get_item_call { annotation; parameters } =
+            let call_parameters =
               match parameters with
               | Defined parameters ->
                   let parameter parameter =
@@ -931,46 +956,35 @@ let rec expression annotation =
                   in
                   List (List.map ~f:parameter parameters)
                   |> Node.create_with_default_location
-                  |> fun index -> Access.Index index
               | Undefined ->
                   Access (Access.create "...")
                   |> Node.create_with_default_location
-                  |> fun index -> Access.Index index
             in
-            Access.Subscript [parameters; index annotation]
+            get_item_call ~call_parameters [annotation]
           in
-          List.map ~f:subscript overloads;
+          List.concat_map overloads ~f:get_item_call;
         in
-        Access.create "typing.Callable" @ subscripts
+        Access.create "typing.Callable" @ get_item_calls
     | Object -> Access.create "object"
     | Optional Bottom -> split (Identifier.create "None")
     | Optional parameter ->
-        (Access.create "typing.Optional") @
-        [Access.Subscript [index parameter]]
+        (Access.create "typing.Optional") @ (get_item_call [parameter])
     | Parametric { name; parameters }
       when Identifier.show name = "typing.Optional" && parameters = [Bottom] ->
         split (Identifier.create "None")
     | Parametric { name; parameters } ->
-        let subscript = Access.Subscript (List.map ~f:index parameters) in
-        (split (reverse_substitute name)) @ [subscript]
+        (split (reverse_substitute name)) @ (get_item_call parameters)
     | Primitive name -> split name
     | Top -> Access.create "$unknown"
-    | Tuple tuple ->
-        let subscript =
-          match tuple with
-          | Bounded parameters -> List.map ~f:index parameters
-          | Unbounded parameter ->
-              let ellipses =
-                Access.Index
-                  (Node.create_with_default_location
-                     (Access [Access.Identifier (Identifier.create "...")]))
-              in
-              [index parameter; ellipses]
+    | Tuple elements ->
+        let parameters =
+          match elements with
+          | Bounded parameters -> parameters
+          | Unbounded parameter -> [parameter; Primitive (Identifier.create "...")]
         in
-        (Access.create "typing.Tuple") @ [Access.Subscript subscript]
+        (Access.create "typing.Tuple") @ (get_item_call parameters)
     | Union parameters ->
-        let subscript = Access.Subscript (List.map ~f:index parameters) in
-        (Access.create "typing.Union") @ [subscript]
+        (Access.create "typing.Union") @ (get_item_call parameters)
     | Variable { variable; _ } -> split variable
   in
   Node.create_with_default_location (Access (access annotation))
