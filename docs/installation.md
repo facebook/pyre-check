@@ -4,8 +4,25 @@ title: Installing Pyre
 sidebar_label: Installation
 ---
 
-The currently-recommended way to get the latest version of Pyre
-is to build it from source.
+You can install Pyre via pip or build it yourself from the source.
+
+# Pip Install
+
+You can install pyre by running:
+```
+pip install pyre-check
+```
+Please ensure you are using pip for python3. You can verify with `pip --version`.
+
+Once you have downloaded pyre, you can get started by running
+```
+pyre
+```
+in the root of the project you would like to type check, or
+```
+pyre --source-directory path/to/project/root
+```
+if you'd like to specify the path instead.
 
 # Building from Source
 
