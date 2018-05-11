@@ -947,7 +947,7 @@ and instantiate_parameters
   let generic_index = Handler.find (Handler.indices ()) Type.generic in
 
   (* If a node on the graph has Generic[_T1, _T2, ...] as a supertype and has
-     concrete parameters, all occurences of _T1, _T2, etc. in other supertypes
+     concrete parameters, all occurrences of _T1, _T2, etc. in other supertypes
      need to be replaced with the concrete parameter corresponding to the type
      variable. This function takes a target with concrete parameters and its supertypes,
      and instantiates the supertypes accordingly. *)

@@ -87,7 +87,7 @@ if [ ${OPAM_REPOSITORY: -7} == ".tar.gz" ]; then
   OPAM_REPOSITORY=$temporary_repository
 fi
 
-# Seting up OCaml environment.
+# Setting up OCaml environment.
 opam init --yes --compiler "$COMPILER" --root "$OPAM_ROOT" default "$OPAM_REPOSITORY" \
   && eval "$(opam config --root "$OPAM_ROOT" env)" \
   && opam update \

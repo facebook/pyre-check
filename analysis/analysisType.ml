@@ -1319,7 +1319,7 @@ let class_variable_value = function
   | _ -> None
 
 
-(* Angelic assumption: Any occurences of top indicate that we're dealing with Any instead of None.
+(* Angelic assumption: Any occurrences of top indicate that we're dealing with Any instead of None.
    See T22792667. *)
 let assume_any = function
   | Top -> Object
