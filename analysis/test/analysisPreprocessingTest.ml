@@ -14,6 +14,10 @@ open Statement
 open Test
 
 
+let parse =
+  parse ~expand_subscripts:false
+
+
 let test_expand_string_annotations _ =
   let assert_expand ?(qualifier = "qualifier") source expected =
     let parse =

@@ -434,15 +434,19 @@ module Define = struct
                 if List.for_all ~f:(Expression.equal annotation) annotations then
                   Some annotation
                 else
+                  let argument =
+                    {
+                      Argument.name = None;
+                      value = Node.create_with_default_location (Tuple (annotation :: annotations));
+                    }
+                  in
                   Some {
                     Node.location;
                     value = Access [
                         Access.Identifier (Identifier.create "typing");
                         Access.Identifier (Identifier.create "Union");
-                        Access.Subscript
-                          (List.map
-                             ~f:(fun index -> Access.Index index)
-                             (annotation :: annotations));
+                        Access.Identifier (Identifier.create "__getitem__");
+                        Access.Call (Node.create_with_default_location [argument]);
                       ];
                   }
           in
@@ -508,12 +512,19 @@ module Define = struct
           let open Expression in
           match return_annotation with
           | Some ({ Node.location; value = Access _ } as access) ->
+              let argument =
+                {
+                  Argument.name = None;
+                  value = access;
+                }
+              in
               Some {
                 Node.location;
                 value = Access [
                     Access.Identifier (Identifier.create "typing");
                     Access.Identifier (Identifier.create "ClassVar");
-                    Access.Subscript [Access.Index access];
+                    Access.Identifier (Identifier.create "__getitem__");
+                    Access.Call (Node.create_with_default_location [argument]);
                   ];
               }
           | _ ->
@@ -657,10 +668,15 @@ module Class = struct
               | Access ([_] as access) ->
                   let attribute =
                     let value =
-                      let subscript =
-                        Access.Subscript [ Access.Index { Node.value = Integer index; location } ]
+                      let get_item =
+                        let index = Node.create ~location (Integer index) in
+                        [
+                          Access.Identifier (Identifier.create "__getitem__");
+                          Access.Call
+                            (Node.create ~location [{ Argument.name = None; value = index }]);
+                        ]
                       in
-                      { value with Node.value = Access (values @ [subscript]) }
+                      { value with Node.value = Access (values @ get_item) }
                     in
                     Attribute.create ~primitive:true ~location ~target:access_node ~value ()
                   in
@@ -773,20 +789,29 @@ module Class = struct
               let open Expression in
               let annotation =
                 let meta_annotation =
+                  let argument =
+                    {
+                      Argument.name = None;
+                      value = Node.create_with_default_location (Access name);
+                    }
+                  in
                   Node.create
                     ~location
                     (Access [
                         Access.Identifier (Identifier.create "typing");
                         Access.Identifier (Identifier.create "Type");
-                        Access.Subscript [Access.Index (Node.create ~location (Access name))];
+                        Access.Identifier (Identifier.create "__getitem__");
+                        Access.Call (Node.create_with_default_location [argument]);
                       ])
                 in
+                let argument = { Argument.name = None; value = meta_annotation } in
                 Node.create
                   ~location
                   (Access [
                       Access.Identifier (Identifier.create "typing");
                       Access.Identifier (Identifier.create "ClassVar");
-                      Access.Subscript [Access.Index meta_annotation];
+                      Access.Identifier (Identifier.create "__getitem__");
+                      Access.Call (Node.create_with_default_location [argument]);
                     ])
               in
               Map.set

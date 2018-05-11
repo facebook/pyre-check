@@ -9,6 +9,8 @@ open Ast
 open Expression
 open Pyre
 
+module Preprocessing = AnalysisPreprocessing
+
 
 module Record = struct
   module Callable = struct
@@ -510,7 +512,6 @@ let primitive_substitution_map =
     "typing.AsyncIterable", parametric_anys "typing.AsyncIterable" 1;
     "typing.AsyncIterator", parametric_anys "typing.AsyncIterator" 1;
     "typing.Awaitable", parametric_anys "typing.Awaitable" 1;
-    "typing.Callable", callable ~annotation:Top ();
     "typing.ContextManager", parametric_anys "typing.ContextManager" 1;
     "typing.Coroutine", parametric_anys "typing.Coroutine" 3;
     "typing.DefaultDict", parametric_anys "collections.defaultdict" 2;
@@ -545,185 +546,41 @@ let parametric_substitution_map =
   |> Identifier.Map.of_alist_exn
 
 
-let create ~aliases { Node.value = expression; _ } =
+let rec create ~aliases { Node.value = expression; _ } =
   match Cache.find expression with
   | Some result ->
       result
   | _ ->
-      let rec create reversed_lead tail =
-        let name reversed_access =
-          let show = function
-            | Access.Identifier element ->
-                Identifier.show element
-            | Access.Call _ ->
-                "Callable"
-            | _ ->
-                "?" in
-          let name =
-            List.rev reversed_access
-            |> List.map ~f:show
-            |> String.concat ~sep:"."
-            |> Identifier.create
-          in
-          let argument =
-            match reversed_access with
-            | (Access.Call {
-                Node.value = [{ Argument.value = { Node.value = String argument; _ }; _ }];
-                _;
-              }) :: _ ->
-                Some (Access.create argument)
-            | _ ->
-                None
-          in
-          name, argument
-        in
-
+      let rec parse (reversed_lead: Access.t) (tail: Access.t): t  =
         let annotation =
           match tail with
-          | (Access.Identifier callable) :: (((Access.Call _) :: _) as tail)
-            when Identifier.show callable = "Callable" ->
-              create reversed_lead tail
-          | (Access.Identifier call_name)
+          | (Access.Identifier get_item)
             :: (Access.Call { Node.value = [{ Argument.value = argument; _ }]; _ })
             :: tail
-            when Identifier.show call_name = "__getitem__" ->
-              let subscript =
-                let arguments =
-                  match argument with
-                  | { Node.value = Expression.Tuple arguments; _ } -> arguments
-                  | _ -> [argument]
-                in
-                List.map ~f:(fun argument -> Access.Index argument) arguments
+            when Identifier.show get_item = "__getitem__" ->
+              ignore argument; ignore tail;
+              let parameters =
+                match Node.value argument with
+                | Expression.Tuple elements -> elements
+                | _ -> [argument]
               in
-              create reversed_lead ((Access.Subscript subscript) :: tail)
-          | (Access.Identifier _) :: (Access.Call _) :: _ ->
-              Top
+              let name =
+                List.rev reversed_lead
+                |> Access.show
+                |> Identifier.create
+              in
+              Parametric { name; parameters = List.map parameters ~f:(create ~aliases) }
           | (Access.Identifier _ as access) :: tail ->
-              create (access :: reversed_lead) tail
-          | (Access.Call _ as access) :: tail ->
-              create (access :: reversed_lead) tail
-          | (Access.Subscript subscript) :: tail ->
-              begin
-                let name, argument = name reversed_lead in
-                match Identifier.show name with
-                | "typing.Callable" ->
-                    let overloads =
-                      let subscripts =
-                        let extract_subscript element =
-                          match element with
-                          | Access.Subscript subscript -> Some subscript
-                          | _ -> None
-                        in
-                        subscript :: (List.filter_map ~f:extract_subscript tail)
-                      in
-                      let overload subscript =
-                        let extract_parameters parameters =
-                          let extract_parameter parameter =
-                            match Node.value parameter with
-                            | Access [
-                                Access.Identifier name;
-                                Access.Call { Node.value = arguments; _ };
-                              ] ->
-                                begin
-                                  let arguments =
-                                    List.map
-                                      ~f:(fun { Argument.value; _ } -> Node.value value)
-                                      arguments
-                                  in
-                                  match Identifier.show name, arguments with
-                                  | "Named", (Access name) :: (Access annotation) :: tail ->
-                                      let default =
-                                        match tail with
-                                        | [Access [Access.Identifier default]]
-                                          when Identifier.show default = "default" ->
-                                            true
-                                        | _ ->
-                                            false
-                                      in
-                                      Parameter.Named {
-                                        Parameter.name;
-                                        annotation = create [] annotation;
-                                        default;
-                                      }
-                                  | "Variable", (Access name) :: tail ->
-                                      let annotation =
-                                        match tail with
-                                        | [Access annotation] -> create [] annotation
-                                        | _ -> Top
-                                      in
-                                      Parameter.Variable {
-                                        Parameter.name;
-                                        annotation;
-                                        default = false;
-                                      }
-                                  | "Keywords", (Access name) :: tail ->
-                                      let annotation =
-                                        match tail with
-                                        | [Access annotation] -> create [] annotation
-                                        | _ -> Top
-                                      in
-                                      Parameter.Keywords {
-                                        Parameter.name;
-                                        annotation;
-                                        default = false;
-                                      }
-                                  | _ ->
-                                      Parameter.Anonymous Top
-                                end
-                            | Access access ->
-                                Parameter.Anonymous (create [] access)
-                            | _ ->
-                                Parameter.Anonymous Top
-                          in
-                          match parameters with
-                          | List parameters ->
-                              Defined (List.map ~f:extract_parameter parameters)
-                          | _ ->
-                              Undefined
-                        in
-                        match subscript with
-                        | [
-                          Access.Index { Node.value = parameters; _ };
-                          Access.Index { Node.value = Access access; _ };
-                        ] ->
-                            Some {
-                              annotation = create [] access;
-                              parameters = extract_parameters parameters;
-                            }
-                        | _ ->
-                            None
-                      in
-                      List.filter_map ~f:overload subscripts
-                    in
-                    if not (List.is_empty overloads) then
-                      let kind =
-                        match argument with
-                        | Some name -> Named name
-                        | None -> Anonymous
-                      in
-                      Callable { kind; overloads; implicit = Function }
-                    else
-                      Top
-                | _ ->
-                    let parameters =
-                      let parameter = function
-                        | Access.Index { Node.value = Access access; _ } ->
-                            create [] access
-                        | Access.Index { Node.value = String string; _ } ->
-                            create [] (Access.create string)
-                        | _ ->
-                            Top
-                      in
-                      List.map ~f:parameter subscript
-                    in
-                    Parametric { name; parameters }
-              end
+              parse (access :: reversed_lead) tail
           | [] ->
-              let name, _ = name reversed_lead in
-              if Identifier.show name = "None" then
+              let name =
+                List.rev reversed_lead
+                |> Access.show
+              in
+              if name = "None" then
                 none
               else
-                Primitive name
+                Primitive (Identifier.create name)
           | _ ->
               Top
         in
@@ -816,8 +673,104 @@ let create ~aliases { Node.value = expression; _ } =
         | _ ->
             resolved
       in
-
       let result =
+        let parse_callable ?modifiers ~(overloads: Access.t) () =
+          let kind =
+            match modifiers with
+            | Some ({ Argument.value = { Node.value = String name; _ }; _ } :: _) ->
+                Named (Access.create name)
+            | _ ->
+                Anonymous
+          in
+          let overloads =
+            let undefined = { annotation = Top; parameters = Undefined } in
+            if List.is_empty overloads then
+              [undefined]
+            else
+              let rec parse_overloads tail =
+                match tail with
+                | (Access.Identifier get_item) ::
+                  (Access.Call { Node.value = [{ Argument.value = argument; _ }]; _ }) ::
+                  tail
+                  when Identifier.show get_item = "__getitem__" ->
+                    let overload =
+                      match Node.value argument with
+                      | Expression.Tuple [parameters; annotation] ->
+                          let parameters =
+                            let extract_parameter parameter =
+                              match Node.value parameter with
+                              | Access [
+                                  Access.Identifier name;
+                                  Access.Call { Node.value = arguments; _ };
+                                ] ->
+                                  begin
+                                    let arguments =
+                                      List.map
+                                        arguments
+                                        ~f:(fun { Argument.value; _ } -> value)
+                                    in
+                                    match Identifier.show name, arguments with
+                                    | "Named",
+                                      { Node.value = Access name; _ } :: annotation :: tail ->
+                                        let default =
+                                          match tail with
+                                          | [{ Node.value = Access [Access.Identifier default]; _ }]
+                                            when Identifier.show default = "default" -> true
+                                          | _ -> false
+                                        in
+                                        Parameter.Named {
+                                          Parameter.name;
+                                          annotation = create ~aliases annotation;
+                                          default;
+                                        }
+                                    | "Variable", { Node.value = Access name; _ } :: tail ->
+                                        let annotation =
+                                          match tail with
+                                          | annotation :: _ -> create ~aliases annotation
+                                          | _ -> Top
+                                        in
+                                        Parameter.Variable {
+                                          Parameter.name;
+                                          annotation;
+                                          default = false;
+                                        }
+                                    | "Keywords", { Node.value = Access name; _ } :: tail ->
+                                        let annotation =
+                                          match tail with
+                                          | annotation :: _ -> create ~aliases annotation
+                                          | _ -> Top
+                                        in
+                                        Parameter.Keywords {
+                                          Parameter.name;
+                                          annotation;
+                                          default = false;
+                                        }
+                                    | _ ->
+                                        Parameter.Anonymous Top
+                                  end
+                              | _ ->
+                                  Parameter.Anonymous (create ~aliases parameter)
+                            in
+                            match Node.value parameters with
+                            | List parameters ->
+                                Defined (List.map ~f:extract_parameter parameters)
+                            | _ ->
+                                Undefined
+                          in
+                          { annotation = create ~aliases annotation; parameters }
+                      | _ ->
+                          undefined
+                    in
+                    overload :: (parse_overloads tail)
+                | [] ->
+                    []
+                | _ ->
+                    [undefined]
+              in
+              parse_overloads overloads
+          in
+          Callable { kind; overloads; implicit = Function }
+        in
         match expression with
         | Access [
             Access.Identifier typing;
@@ -827,12 +780,11 @@ let create ~aliases { Node.value = expression; _ } =
                 _;
               });
           ]
-          when Identifier.show typing = "typing" &&
-               Identifier.show typevar = "TypeVar" ->
+          when Identifier.show typing = "typing" && Identifier.show typevar = "TypeVar" ->
             let constraints =
               let get_constraint = function
                 | { Argument.value = { Node.value = Access access; _ }; Argument.name = None } ->
-                    Some (create [] access)
+                    Some (parse [] access)
                 | _ ->
                     None
               in
@@ -843,12 +795,30 @@ let create ~aliases { Node.value = expression; _ } =
               constraints;
             }
 
+        | Access
+            ((Access.Identifier typing)
+             :: (Access.Identifier callable)
+             :: (Access.Call { Node.value = modifiers; _ })
+             :: overloads)
+          when Identifier.show typing = "typing" && Identifier.show callable = "Callable" ->
+            parse_callable ~modifiers ~overloads ()
+        | Access ((Access.Identifier typing) :: (Access.Identifier callable) :: overloads)
+          when Identifier.show typing = "typing" && Identifier.show callable = "Callable" ->
+            parse_callable ~overloads ()
+
         | Access access ->
-            create [] access
+            parse [] access
+
         | String string ->
             let access =
               try
-                match ParserParser.parse [string] with
+                let parsed =
+                  ParserParser.parse [string]
+                  |> Source.create
+                  |> Preprocessing.preprocess
+                  |> Source.statements
+                in
+                match parsed with
                 | [{ Node.value = Statement.Expression { Node.value = Access access; _ }; _ }] ->
                     access
                 | _ ->
@@ -856,8 +826,9 @@ let create ~aliases { Node.value = expression; _ } =
               with _ ->
                 Access.create string
             in
-            create [] access
-        | _ -> Top
+            parse [] access
+        | _ ->
+            Top
       in
       Cache.set ~key:expression ~data:result;
       result

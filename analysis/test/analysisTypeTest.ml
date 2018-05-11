@@ -62,6 +62,7 @@ let test_create _ =
 
   assert_create "typing.Any" Type.Object;
   assert_create "typing.Optional[int]" (Type.optional Type.integer);
+  assert_create "typing.Optional.__getitem__(int)" (Type.optional Type.integer);
   assert_create "typing.Set[int]" (Type.set Type.integer);
 
   assert_create "typing.Union[int, str]" (Type.union [Type.integer; Type.string]);
@@ -274,7 +275,7 @@ let test_create _ =
         ];
         implicit = Type.Callable.Function;
       });
-  assert_create "typing.Callable[int]" Type.Top
+  assert_create "typing.Callable[int]" (Type.callable ~annotation:Type.Top ())
 
 
 let test_instantiate _ =
