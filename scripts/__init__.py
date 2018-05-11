@@ -118,7 +118,7 @@ def resolve_source_directories(arguments, configuration, prompt=True):
 
 def number_of_workers() -> int:
     try:
-        return multiprocessing.cpu_count() - 4
+        return max(multiprocessing.cpu_count() - 4, 1)
     except NotImplementedError:
         return 4
 
