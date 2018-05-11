@@ -35,7 +35,7 @@ class Initialize(Command):
 
         watchman_configuration_path = os.path.abspath(".watchmanconfig")
         if (shutil.which("watchman") is not None and
-              log.get_yes_no_input("Initialize a watchman configuration?")):
+              log.get_yes_no_input("Also initialize a watchman configuration?")):
             try:
                 with open(watchman_configuration_path, "w+") as configuration_file:
                     configuration_file.write("{}\n")
