@@ -1,23 +1,40 @@
 {
-	"name": "pyre-vscode",
-	"description": "VSCode integration for Pyre",
-	"author": "Facebook",
-	"license": "MIT",
-	"version": "0.0.1",
-	"publisher": "facebook",
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/facebook/pyre-check"
-	},
-	"scripts": {
-		"postinstall": "cd client && npm install && cd ..",
-		"compile": "tsc -p client/tsconfig.json",
-		"compile:client": "tsc -p client/tsconfig.json",
-		"watch:client": "tsc -w -p client/tsconfig.json"
-	},
-	"devDependencies": {
-		"@types/mocha": "^2.2.48",
-		"@types/node": "^6.0.101",
-		"typescript": "^2.7.2"
-	}
+  "name": "pyre-vscode",
+  "version": "0.0.1",
+  "publisher": "fb-pyre-check",
+  "engines": {
+    "vscode": "^1.15.0"
+  },
+  "license": "MIT",
+  "displayName": "pyre-vscode",
+  "description": "VSCode extension for Pyre-check",
+  "keywords": [
+    "python",
+    "pyre",
+    "typechecking"
+  ],
+  "main": "./out/main",
+  "activationEvents": [
+    "workspaceContains:.pyre_configuration"
+  ],
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "postinstall": "node ./node_modules/vscode/bin/install",
+    "test": "npm run compile && node ./node_modules/vscode/bin/test",
+    "lint": "tslint --force -p ."
+  },
+  "dependencies": {
+    "vscode-languageclient": "^3.5.0"
+  },
+  "devDependencies": {
+    "@types/mocha": "^2.2.44",
+    "@types/node": "^8.0.53",
+    "cson": "^4.1.0",
+    "tslint": "^5.8.0",
+    "tslint-microsoft-contrib": "^5.0.1",
+    "typescript": "^2.6.1",
+    "vscode": "^1.1.7"
+  }
 }

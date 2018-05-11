@@ -1,12 +1,11 @@
-# Pyre VSCode Client
+# Pyre Visual Studio Code Client
 
-Adapted from https://github.com/Microsoft/vscode-extension-samples/tree/master/lsp-multi-root-sample.
+This extension allows you to view pyre errors for any workspace containing a .pyre_configuration.
 
-## Compile and Run
+## Requirements
 
-- run `npm install` in this folder. This installs all necessary npm modules in both the client and server folder
-- open VS Code on this folder.
-- Press Ctrl+Shift+B to compile the client and server
-- Switch to the Debug viewlet
-- Select `Launch Client` from the drop down
+pyre must be installed for the extension to work. You can do so by running `pip install pyre-check`.
 
+## Issues
+
+You can file bugs, feature requests, etc. for pyre-check at the [pyre-check Github](https://github.com/facebook/pyre-check).
