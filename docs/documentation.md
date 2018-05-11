@@ -21,7 +21,7 @@ You can override that configuration locally to set up your own default target to
 
 Running
 ```
-pyre-init
+pyre init
 ```
 from your project root will set up your `.pyre_configuration`, but you may want to override
 the source-directories field in projects within that root, so you can easily run pyre on
