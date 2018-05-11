@@ -55,7 +55,7 @@ case "${REQUESTED_BUILD_TYPE}" in
   *)
     # This includes both the case in which the user made no specific
     # request, and invalid requests.
-    if [ -e ".facebook" ]; then
+    if [ -e "facebook" ]; then
       BUILD="facebook"
     else
       BUILD="external"
