@@ -9,12 +9,13 @@ set -e
 
 # global constants
 PACKAGE_NAME="pyre-check"
-PACKAGE_VERSION="0.0.4"
+PACKAGE_VERSION="0.0.5"
 AUTHOR='Facebook'
 AUTHOR_EMAIL='pyre@fb.com'
 MAINTAINER='Facebook'
 MAINTAINER_EMAIL='pyre@fb.com'
-URL='https://github.com/facebook/pyre-check'
+URL='https://pyre-check.org/'
+DOWNLOAD_URL='https://github.com/facebook/pyre-check'
 # https://www.python.org/dev/peps/pep-0008/#package-and-module-names
 MODULE_NAME="pyre_check"
 RUNTIME_DEPENDENCIES="'typeshed'"
@@ -137,6 +138,7 @@ setup(
     long_description_content_type='text/markdown',
 
     url='${URL}',
+    download_url='${DOWNLOAD_URL}',
     author='${AUTHOR}',
     author_email='${AUTHOR_EMAIL}',
     maintainer='${MAINTAINER}',
