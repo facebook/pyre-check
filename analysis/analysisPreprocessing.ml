@@ -755,54 +755,6 @@ let qualify ({ Source.qualifier = global_qualifier; path; _ } as source) =
   |> snd
 
 
-let cleanup source =
-  let module Cleanup = Transform.MakeStatementTransformer(struct
-      type t = unit
-
-      let statement_postorder _ ({ Node.location; value } as statement) =
-        let statement =
-          match value with
-          | Class ({ Class.body; _ } as definition) ->
-              let dequalify_attribute ({ Node.value; _ } as statement) =
-                let value =
-                  match value with
-                  | Assign ({
-                      Assign.target = ({ Node.value = Access access; _ } as target);
-                      _;
-                    } as assign)
-                    when List.length access > 0 ->
-                      let access =
-                        let last =
-                          List.rev access
-                          |> List.hd_exn
-                        in
-                        match last with
-                        | Access.Identifier name ->
-                            Access.Identifier (Identifier.remove_prefix ~prefix:"$renamed_" name)
-                        | last ->
-                            last
-                      in
-                      Assign {
-                        assign with Assign.target = { target with Node.value = Access [access]};
-                      }
-                  | _ ->
-                      value
-                in
-                { statement with Node.value }
-              in
-              {
-                Node.location;
-                value = Class { definition with Class.body = List.map ~f:dequalify_attribute body };
-              }
-          | _ ->
-              statement
-        in
-        (), [statement]
-    end)
-  in
-  Cleanup.transform () source |> snd
-
-
 let replace_version_specific_code source =
   let module Transform = Transform.MakeStatementTransformer(struct
       include Transform.Identity
@@ -1527,7 +1479,6 @@ let preprocess source =
   |> expand_string_annotations
   |> replace_version_specific_code
   |> qualify
-  |> cleanup
   |> fix_singleton_sets
   |> expand_optional_assigns
   |> expand_operators

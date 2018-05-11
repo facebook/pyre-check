@@ -546,44 +546,6 @@ let test_qualify _ =
     |}
 
 
-let test_cleanup _ =
-  let assert_cleanup ?(qualifier = "qualifier") source expected =
-    let parse =
-      parse ~qualifier:(Source.qualifier ~path:qualifier) in
-    assert_source_equal
-      (parse expected)
-      (Preprocessing.cleanup (parse source))
-  in
-
-  assert_cleanup
-    {|
-      class Foo:
-        attribute: int = 1
-    |}
-    {|
-      class Foo:
-        attribute: int = 1
-    |};
-  assert_cleanup
-    {|
-      class Foo:
-        Foo.attribute: int = 1
-    |}
-    {|
-      class Foo:
-        attribute: int = 1
-    |};
-  assert_cleanup
-    {|
-      class Foo:
-        $renamed_attribute: int = 1
-    |}
-    {|
-      class Foo:
-        attribute: int = 1
-    |}
-
-
 let test_replace_version_specific_code _ =
   let assert_preprocessed ?(path="stub.pyi") source expected =
     assert_source_equal
@@ -1534,7 +1496,6 @@ let () =
   "preprocessing">:::[
     "expand_string_annotations">::test_expand_string_annotations;
     "qualify">::test_qualify;
-    "cleanup">::test_cleanup;
     "replace_version_specific_code">::test_replace_version_specific_code;
     "expand_type_checking_imports">::test_expand_type_checking_imports;
     "expand_optional_assigns">::test_expand_optional_assigns;

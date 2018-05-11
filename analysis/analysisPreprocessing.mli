@@ -12,9 +12,6 @@ val expand_string_annotations: Source.t -> Source.t
 (* Resolve imports and fully qualify names. *)
 val qualify: Source.t -> Source.t
 
-(* Undo the damage done by qualifying... *)
-val cleanup: Source.t -> Source.t
-
 (* Resolves sys.version_info related checks at parse time. *)
 val replace_version_specific_code: Source.t -> Source.t
 
