@@ -81,7 +81,7 @@ module RageResponse : sig
     -> t
 end
 
-(** Convert json to string content and set the conent length headers.
+(** Convert json to string content and set the content length headers.
     cf. https://github.com/Microsoft/language-server-protocol/blob/master/protocol.md#base-protocol *)
 val to_message: Yojson.Safe.json -> string
 

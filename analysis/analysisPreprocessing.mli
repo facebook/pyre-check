@@ -31,7 +31,7 @@ val expand_subscripts: Source.t -> Source.t
 val return_access: Access.t
 val expand_returns: Source.t -> Source.t
 
-(* Tranforms for loops to handle variable typing inside *)
+(* Transforms for loops to handle variable typing inside *)
 val expand_for_loop: Source.t -> Source.t
 
 (* Transform `except (E1, ... En) as e` into `... e: typing.Union[E1, ..., En]`. *)
