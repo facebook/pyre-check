@@ -20,7 +20,8 @@ const siteConfig = {
   tagline: 'A performant typechecker for Python',
   url: 'https://github.com/facebook/pyre-check',
   baseUrl: '/pyre/',
-  projectName: 'Pyre',
+  organizationName: 'facebook',
+  projectName: 'pyre-check',
   headerLinks: [
     { doc: 'installation', label: 'Getting Started' },
     { doc: 'documentation', label: 'Documentation' },
