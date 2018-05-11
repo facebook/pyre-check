@@ -622,7 +622,7 @@ module ClientCapabilities = struct
 end
 
 
-(** Types for protocol messages. There are three kinds of mesages: A Request,
+(** Types for protocol messages. There are three kinds of messages: A Request,
     Response, and a Notification. *)
 
 

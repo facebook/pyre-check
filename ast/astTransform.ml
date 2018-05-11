@@ -363,7 +363,7 @@ module Make (Transformer : Transformer) = struct
                   |> List.concat;
               }
             in
-            (* Body needs to be evalutated first to update local scope *)
+            (* Body needs to be evaluated first to update local scope *)
             let body = transform_list body ~f:transform_statement |> List.concat in
             let handlers = transform_list handlers ~f:transform_handler in
             let orelse = transform_list orelse ~f:transform_statement |> List.concat in
