@@ -9,7 +9,7 @@ set -e
 
 # global constants
 PACKAGE_NAME="pyre-check"
-PACKAGE_VERSION="0.0.5"
+PACKAGE_VERSION="0.0.6"
 AUTHOR='Facebook'
 AUTHOR_EMAIL='pyre@fb.com'
 MAINTAINER='Facebook'
