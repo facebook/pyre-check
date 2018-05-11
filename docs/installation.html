@@ -1,0 +1,58 @@
+<html lang="en"><head><meta charset="utf-8"/><meta http-equiv="X-UA-Compatible" content="IE=edge"/><title>Installing Pyre · Pyre</title><meta name="viewport" content="width=device-width"/><meta name="generator" content="Docusaurus"/><meta property="og:title" content="Installing Pyre · Pyre"/><meta property="og:type" content="website"/><meta property="og:url" content="https://pyre-check.org/index.html"/><meta property="og:description" content="The currently-recommended way to get the latest version of Pyre"/><link rel="shortcut icon" href="/img/favicon.ico"/><link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css"/><script type="text/javascript" src="https://buttons.github.io/buttons.js"></script><link rel="stylesheet" href="/css/main.css"/></head><body class="sideNavVisible doc"><div class="fixedHeaderContainer"><div class="headerWrapper wrapper"><header><a href="/"><img class="logo" src="/img/integrated_logo_light.png"/></a><div class="navigationWrapper navigationSlider"><nav class="slidingNav"><ul class="nav-site nav-site-internal"><li class="siteNavItemActive"><a href="/docs/installation.html" target="_self">Getting Started</a></li><li class=""><a href="/docs/documentation.html" target="_self">Documentation</a></li><li class=""><a href="https://github.com/facebook/pyre-check" target="_self">GitHub</a></li></ul></nav></div></header></div></div><div class="navPusher"><div class="docMainWrapper wrapper"><div class="container mainContainer"><div class="wrapper"><div class="post"><header class="postHeader"><h1>Installing Pyre</h1></header><article><div><span><p>The currently-recommended way to get the latest version of Pyre
+is to build it from source.</p>
+<h1><a class="anchor" aria-hidden="true" id="building-from-source"></a><a href="#building-from-source" aria-hidden="true" class="hash-link" ><svg aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Building from Source</h1>
+<p>These instructions are known to work on Mac OS X (tested on High
+Sierra) and Linux (tested on Ubuntu 16.04 LTS and CentOS 7).</p>
+<h2><a class="anchor" aria-hidden="true" id="getting-the-source"></a><a href="#getting-the-source" aria-hidden="true" class="hash-link" ><svg aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Getting the source</h2>
+<p>This is the currently-recommended way of installing
+Pyre. First, clone the repo:</p>
+<pre><code class="hljs css bash">  $ git <span class="hljs-built_in">clone</span> https://github.com/facebook/pyre-check
+  $ <span class="hljs-built_in">cd</span> pyre-check
+</code></pre>
+<p>You can find the most recent tagged release by
+running <code>git tag -l</code>. We recommend using a tagged
+release unless you specifically need the latest
+hotness from master. If the latest release is v1.0.0:</p>
+<pre><code class="hljs css bash">  $ git checkout v1.0.0
+  You are <span class="hljs-keyword">in</span> a <span class="hljs-string">'detached HEAD'</span> state. You can look <span class="hljs-comment"># [...]</span>
+</code></pre>
+<h2><a class="anchor" aria-hidden="true" id="installing-opam"></a><a href="#installing-opam" aria-hidden="true" class="hash-link" ><svg aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Installing OPAM</h2>
+<p>The easiest way to acquire the correct version of OCaml and the
+related libraries is to use <a href="https://opam.ocaml.org/">OPAM</a>. Use your
+system's package manager to install it; then configure it to use
+the OCaml v4.06.0 toolchain (note that this may take a while):</p>
+<pre><code class="hljs css bash">  $ sudo apt install opam
+  $ opam init
+  $ opam switch 4.06.0 <span class="hljs-comment"># compiles the ocaml toolchain -&gt; long</span>
+  $ opam config env
+</code></pre>
+<p>At this point, you should be able to run the Pyre setup script,
+which builds the typechecker binary and runs the unit tests:</p>
+<pre><code class="hljs css bash">  $ ./scripts/setup.sh --<span class="hljs-built_in">local</span>
+</code></pre>
+<h2><a class="anchor" aria-hidden="true" id="getting-the-type-stubs-from-typeshed"></a><a href="#getting-the-type-stubs-from-typeshed" aria-hidden="true" class="hash-link" ><svg aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Getting the type stubs from Typeshed</h2>
+<p>To reliably type check calls to the Python standard library and Python
+builtins, stub annotations from the <a href="https://github.com/python/typeshed"><code>typeshed</code>
+project</a> are needed. These
+annotations are not distributed with this source code, and are
+downloaded separately.</p>
+<p>If you have installed this package through <code>pip</code>, then <code>typeshed</code> has
+been installed automatically as a dependency, and you do not need
+anything else.</p>
+<p>If you are installing this package from source, you can install the
+stubs through <code>pip</code>:</p>
+<pre><code class="hljs css bash">  $ pip install typeshed
+</code></pre>
+<p>This way, Pyre will be able to find the annotations automatically.</p>
+<p>Alternatively, for the latest version of <code>typeshed</code>, you can clone the
+Github repository:</p>
+<pre><code class="hljs css bash">  $ git <span class="hljs-built_in">clone</span> https://github.com/python/typeshed.git
+</code></pre>
+<p>In this case, the location of the downloaded stubs can be passed to
+Pyre via the <code>--typeshed</code> commandline parameter.
+Please pass in the location of the <code>stdlib</code> directory within <code>typeshed</code>,
+not the entire project root.</p>
+<p>If you install <code>typeshed</code> separately, there may be new features not yet
+recognized by Pyre, so this workflow is not officially supported.
+You are encouraged to open a pull request with a patch though! :)</p>
+</span></div></article></div><div class="docs-prevnext"></div></div></div></div><footer class="nav-footer" id="footer"><section class="sitemap"><a href="https://code.facebook.com/projects/" target="_blank" class="fbOpenSource"><img src="/img/oss_logo.png" alt="Facebook Open Source" width="170" height="45"/></a><a href="https://code.facebook.com/projects/" target="_blank">Open Source Projects</a><a href="https://github.com/facebook/" target="_blank">Github</a><a href="https://twitter.com/fbOpenSource" target="_blank">Twitter</a><a href="https://github.com/facebook/pyre-check" target="_blank">Contribute to Pyre</a></section></footer></div></body></html>
