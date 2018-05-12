@@ -37,14 +37,14 @@ let test_resolve_literal _ =
     in
     assert_equal ~printer:Type.show (Annotated.resolve_literal ~resolution expression) expected
   in
-  assert_resolve_literal "i" Type.Object;
+  assert_resolve_literal "i" Type.Top;
   assert_resolve_literal "await i" Type.Top;
   assert_resolve_literal "await awaitable" Type.Top;
   assert_resolve_literal "\"\"" Type.string;
   assert_resolve_literal "1" Type.integer;
-  assert_resolve_literal "1+1" Type.Object;
-  assert_resolve_literal "j" Type.Object;
-  assert_resolve_literal "foo()" Type.Object
+  assert_resolve_literal "1+1" Type.Top;
+  assert_resolve_literal "j" Type.Top;
+  assert_resolve_literal "foo()" Type.Top
 
 
 let () =

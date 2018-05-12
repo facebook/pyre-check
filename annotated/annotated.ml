@@ -285,8 +285,6 @@ let rec resolve_literal ~resolution expression =
 
   | Integer _ ->
       Type.integer
-  | Starred _ ->
-      Type.Object
 
   | String _ ->
       Type.string
@@ -298,7 +296,7 @@ let rec resolve_literal ~resolution expression =
       Type.tuple (List.map elements ~f:(resolve_literal ~resolution))
 
   | Expression.Yield _ ->
-      Type.yield Type.Object
+      Type.yield Type.Top
 
   | _ ->
-      Type.Object
+      Type.Top

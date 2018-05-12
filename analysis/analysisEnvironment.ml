@@ -559,7 +559,7 @@ let register_globals
           } ->
               begin
                 try
-                  match target.Node.value, (Resolution.resolve resolution value) with
+                  match target.Node.value, (Resolution.resolve_literal resolution value) with
                   | Access access, annotation ->
                       let global =
                         Annotation.create_immutable

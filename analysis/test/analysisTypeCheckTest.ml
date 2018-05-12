@@ -1823,7 +1823,7 @@ let test_check _ =
     [
       "Missing attribute annotation [4]: Attribute `a`" ^
       " of class `C` has type `int` but no type is specified.";
-      "Incompatible return type [7]: Expected `int` but got `typing.Any`."
+      "Incompatible return type [7]: Expected `int` but got `unknown`."
     ];
 
   assert_type_errors

@@ -452,11 +452,7 @@ let test_populate _ =
     (Annotation.create_immutable
        ~global:true
        ~original:(Some Type.Top)
-       (Type.callable
-          ~name:(Access.create "function")
-          ~parameters:(Type.Callable.Defined [])
-          ~annotation:Type.Top
-          ()));
+       Type.Top);
   assert_global
     "Class"
     (Annotation.create_immutable
