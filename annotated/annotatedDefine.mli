@@ -28,10 +28,6 @@ val define: t -> Define.t
 val parameter_annotations
   :  t
   -> resolution: Resolution.t
-  -> Type.t Identifier.Map.t
-val parameter_annotations_positional
-  :  t
-  -> resolution: Resolution.t
   -> Type.t Int.Map.t
 
 val parent_definition: t -> resolution: Resolution.t -> Class.t option

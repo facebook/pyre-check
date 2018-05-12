@@ -45,19 +45,6 @@ let define annotated = annotated
 
 
 let parameter_annotations { Define.parameters; _ } ~resolution =
-  let element { Node.value = { Parameter.name; annotation; _ }; _ } =
-    let annotation =
-      (annotation
-       >>| fun annotation -> Resolution.parse_annotation resolution annotation)
-      |> Option.value ~default:Type.Top
-    in
-    name, annotation
-  in
-  List.map ~f:element parameters
-  |> Identifier.Map.of_alist_exn
-
-
-let parameter_annotations_positional { Define.parameters; _ } ~resolution =
   let element index { Node.value = { Parameter.annotation; _ }; _ } =
     let annotation =
       (annotation

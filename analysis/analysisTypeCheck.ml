@@ -336,7 +336,7 @@ module State = struct
          in
 
          (* Check weakening of precondition. *)
-         let parameters = Method.parameter_annotations_positional definition ~resolution in
+         let parameters = Method.parameter_annotations definition ~resolution in
          let parameter ~key ~data errors =
            let expected = data in
            match Map.find parameters key with
@@ -380,7 +380,7 @@ module State = struct
          Map.fold
            ~init:errors
            ~f:parameter
-           (Method.parameter_annotations_positional overridden_method ~resolution))
+           (Method.parameter_annotations overridden_method ~resolution))
         |> Option.value ~default:errors
     in
 

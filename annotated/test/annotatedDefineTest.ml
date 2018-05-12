@@ -104,49 +104,9 @@ let test_method_definition _ =
   assert_is_none (parent_class_definition (populate "") "foo" None)
 
 
-let test_parameter_annotations _ =
-  let resolution =
-    populate {|
-      class foo():
-        def bar(): pass
-    |}
-    |> resolution
-  in
-  let define parameters =
-    {
-      Statement.Define.name = Access.create "";
-      parameters;
-      body = [+Pass];
-      decorators = [];
-      docstring = None;
-      return_annotation = None;
-      async = false;
-      generated = false;
-      parent = None;
-    }
-    |> Annotated.Define.create
-  in
-  let create_parameter ?annotation name = +{
-    Parameter.name = Identifier.create name;
-    value = None;
-    annotation;
-  }
-  in
-  let definition = define [
-      create_parameter ~annotation:(Type.expression Type.integer) "a";
-      create_parameter "b";
-    ]
-  in
-  let parameter_map = Annotated.Define.parameter_annotations definition ~resolution in
-  assert_equal (Map.find_exn parameter_map ~~"a") Type.integer;
-  assert_equal (Map.find_exn parameter_map ~~"b") Type.Top;
-  assert_equal (Map.find parameter_map ~~"c") None
-
-
 let () =
   "define">:::[
     "parent_definition">::test_parent_definition;
     "method_definition">::test_method_definition;
-    "parameter_annotations">::test_parameter_annotations;
   ]
   |> run_test_tt_main;
