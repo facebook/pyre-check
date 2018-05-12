@@ -1,6 +1,6 @@
 ---
 id: documentation
-title: Pyre Documentation
+title: Overview
 sidebar_label: Overview
 ---
 
