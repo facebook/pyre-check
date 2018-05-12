@@ -264,6 +264,67 @@ module Define = struct
     in
     List.exists ~f:(is_decorator (String.split ~on:'.' decorator)) decorators
 
+  let is_generator { body; _ } =
+    let rec statements_contain_yield statements = List.exists ~f:statement_contains_yield statements
+    and nodes_contain_yield nodes = List.exists ~f:node_contains_yield nodes
+    and node_contains_yield {Node.value; _} = statement_contains_yield value
+    and statement_contains_yield statement =
+      match statement with
+      | Assign {Assign.target; Assign.value; _} ->
+          expression_contains_yield target ||
+          (match value with None -> false | Some v -> expression_contains_yield v)
+      | Assert {Assert.test; Assert.message; _} ->
+          expression_contains_yield test ||
+          (match message with None -> false | Some m -> expression_contains_yield m)
+      | Break -> false
+      (* FIXME: yield can also be in the bases *)
+      | Class {Record.Class.decorators; _} -> List.exists ~f:expression_contains_yield decorators
+      | Continue -> false
+      | Define {Record.Define.decorators; _} -> List.exists ~f:expression_contains_yield decorators
+      | Delete e | Expression e -> expression_contains_yield e
+      | For {For.target; For.iterator; For.body; For.orelse; _} ->
+          expression_contains_yield target ||
+          expression_contains_yield iterator ||
+          nodes_contain_yield body ||
+          nodes_contain_yield orelse
+      | Global _ -> false
+      | If {If.test; If.body; If.orelse; _} ->
+          expression_contains_yield test ||
+          nodes_contain_yield body ||
+          nodes_contain_yield orelse
+      | Import _ | Nonlocal _ | Pass -> false
+      | Raise None | Return None -> false
+      | Raise (Some e) | Return (Some e) -> expression_contains_yield e
+      | Stub _ -> false
+      | Try {Try.body; Try.handlers; Try.orelse; Try.finally; _} ->
+          nodes_contain_yield body ||
+          List.exists ~f:handler_contains_yield handlers ||
+          nodes_contain_yield orelse ||
+          nodes_contain_yield finally
+      | While {While.test; While.body; While.orelse; _} ->
+          expression_contains_yield test ||
+          nodes_contain_yield body ||
+          nodes_contain_yield orelse
+      | With {Record.With.items; Record.With.body; _} ->
+          let item_contains_yield (a, b) =
+            expression_contains_yield a ||
+            (match b with None -> false | Some v -> expression_contains_yield v)
+          in
+          List.exists ~f:item_contains_yield items ||
+          nodes_contain_yield body
+      | Yield _ | YieldFrom _ -> true
+    and expression_contains_yield {Node.value; _} =
+      match value with
+      | AstExpression.Access _ -> false (* TODO *)
+      | AstExpression.Await e -> expression_contains_yield e
+      | AstExpression.Yield _ -> true
+      | _ -> false (* TODO *)
+    and handler_contains_yield {Try.kind; Try.handler_body; _} =
+        (match kind with None -> false | Some e -> expression_contains_yield e) ||
+        nodes_contain_yield handler_body
+    in
+    statements_contain_yield body
+
 
   let is_coroutine define =
     has_decorator define "asyncio.coroutines.coroutine"
