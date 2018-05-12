@@ -9,18 +9,18 @@ You can install Pyre via pip or build it yourself from the source.
 # Pip Install
 
 You can install pyre by running:
-```
-pip install pyre-check
+```bash
+$ pip install pyre-check
 ```
 Please ensure you are using pip for python3. You can verify with `pip --version`.
 
 Once you have downloaded pyre, you can get started by running
-```
-pyre
+```bash
+$ pyre
 ```
 in the root of the project you would like to type check, or
-```
-pyre --source-directory path/to/project/root
+```bash
+$ pyre --source-directory path/to/project/root
 ```
 if you'd like to specify the path instead.
 
@@ -35,8 +35,8 @@ This is the currently-recommended way of installing
 Pyre. First, clone the repo:
 
 ```bash
-  $ git clone https://github.com/facebook/pyre-check
-  $ cd pyre-check
+$ git clone https://github.com/facebook/pyre-check
+$ cd pyre-check
 ```
 
 You can find the most recent tagged release by
@@ -45,8 +45,8 @@ release unless you specifically need the latest
 hotness from master. If the latest release is v1.0.0:
 
 ```bash
-  $ git checkout v1.0.0
-  You are in a 'detached HEAD' state. You can look # [...]
+$ git checkout v1.0.0
+You are in a 'detached HEAD' state. You can look # [...]
 ```
 
 ## Installing OPAM
@@ -86,7 +86,7 @@ If you are installing this package from source, you can install the
 stubs through `pip`:
 
 ```bash
-  $ pip install typeshed
+$ pip install typeshed
 ```
 
 This way, Pyre will be able to find the annotations automatically.
@@ -95,7 +95,7 @@ Alternatively, for the latest version of `typeshed`, you can clone the
 Github repository:
 
 ```bash
-  $ git clone https://github.com/python/typeshed.git
+$ git clone https://github.com/python/typeshed.git
 ```
 
 In this case, the location of the downloaded stubs can be passed to
