@@ -1,7 +1,7 @@
 {
-  "documentation": {
+  "overview": {
     "Contents": [
-      "documentation",
+      "overview",
       "gradual-typing",
       "error-suppression",
       "error-types",

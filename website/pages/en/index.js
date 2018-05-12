@@ -83,7 +83,7 @@ class HomeSplash extends React.Component {
             <Button href={docUrl('installation.html', language)}>
               Install Pyre
             </Button>
-            <Button href={docUrl('documentation.html', language)}>
+            <Button href={docUrl('overview.html', language)}>
               Documentation
             </Button>
           </PromoSection>

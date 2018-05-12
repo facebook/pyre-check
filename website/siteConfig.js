@@ -24,7 +24,7 @@ const siteConfig = {
   projectName: 'pyre-check',
   headerLinks: [
     { doc: 'installation', label: 'Getting Started' },
-    { doc: 'documentation', label: 'Documentation' },
+    { doc: 'overview', label: 'Documentation' },
     { href: 'https://github.com/facebook/pyre-check', label: 'GitHub' },
   ],
   disableHeaderTitle: true,
