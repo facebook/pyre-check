@@ -18,6 +18,11 @@
 
 .mainContainer .wrapper .post h1 {
   margin-bottom: 20px;
+  font-size: 200%;
+}
+
+.mainContainer .wrapper .post h2 {
+  font-size: 150%;
 }
 
 .mainContainer .wrapper p {
