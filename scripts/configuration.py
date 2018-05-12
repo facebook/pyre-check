@@ -113,11 +113,17 @@ class Configuration:
             # Validate elements of the search path.
             if not self._typeshed:
                 raise InvalidConfiguration('`typeshed` location must be defined')
+
+            # Validate typeshed path
+            typeshed_subdirectories = os.listdir(self._typeshed)
+            if "stdlib" in typeshed_subdirectories:
+                self._typeshed = os.path.join(self._typeshed, 'stdlib/')
+                typeshed_subdirectories = os.listdir(self._typeshed)
             for typeshed_version_directory in os.listdir(self._typeshed):
                 if not typeshed_version_directory[0].isdigit():
-                    raise InvalidConfiguration('`typeshed` location must only contain '
-                    'directories starting with a version number. Perhaps you meant '
-                    '`{}`?'.format(os.path.join(self._typeshed, 'stdlib/')))
+                    raise InvalidConfiguration(
+                        '`typeshed` location must contain a stdlib directory which '
+                        'only contains subdirectories starting with a version number.')
             for path in self.get_search_path():
                 if not os.path.isdir(path):
                     raise InvalidConfiguration(
