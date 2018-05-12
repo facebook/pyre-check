@@ -598,6 +598,11 @@ let test_mismatch_with_any _ =
 
   assert_true
     (Type.mismatch_with_any
+       (Type.sequence Type.Object)
+       (Type.list Type.integer));
+
+  assert_true
+    (Type.mismatch_with_any
        (Type.iterable Type.string)
        (Type.parametric "typing.Optional" [Type.Object]));
 

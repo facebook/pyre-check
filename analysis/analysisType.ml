@@ -1155,7 +1155,9 @@ let rec mismatch_with_any left right =
       (Identifier.show left = "typing.Mapping" && Identifier.show right = "dict") ||
       (Identifier.show left = "typing.Iterable" && Identifier.show right = "list") ||
       (Identifier.show left = "typing.Iterable" && Identifier.show right = "typing.List") ||
-      (Identifier.show left = "typing.Iterable" && Identifier.show right = "set")
+      (Identifier.show left = "typing.Iterable" && Identifier.show right = "set") ||
+      (Identifier.show left = "typing.Sequence" && Identifier.show right = "typing.List") ||
+      (Identifier.show left = "typing.Sequence" && Identifier.show right = "list")
     in
     Identifier.equal left right ||
     symmetric left right ||
