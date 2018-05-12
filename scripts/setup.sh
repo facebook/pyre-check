@@ -90,6 +90,7 @@ fi
 # Setting up OCaml environment.
 opam init --yes --compiler "$COMPILER" --root "$OPAM_ROOT" default "$OPAM_REPOSITORY" \
   && eval "$(opam config --root "$OPAM_ROOT" env)" \
+  && opam update \
   && ocaml_succeeded=1
 test $ocaml_succeeded = 1 \
   || die 'Unable to setup OCaml environment'
