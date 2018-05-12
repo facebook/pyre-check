@@ -2,6 +2,8 @@
   "overview": {
     "Contents": [
       "overview",
+      "installation",
+      "guided-tour",
       "gradual-typing",
       "error-suppression",
       "error-types",
