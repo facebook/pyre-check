@@ -2164,7 +2164,14 @@ let test_check_comprehensions _ =
       def foo(a: typing.Dict[str, typing.Optional[int]]) -> typing.Dict[str, int]:
         return { x: int_to_int(y) for (x, y) in a.items() if y }
     |}
-    []
+    [];
+
+  assert_type_errors
+    {|
+      def foo(d: typing.Dict[str, int]) -> None:
+        { k: v for k, v in d }
+    |}
+    []  (* TODO(T29245932): we're still not catching this.  *)
 
 
 let test_check_optional _ =

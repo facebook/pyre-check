@@ -971,48 +971,31 @@ module State = struct
         check_expression ~resolution errors value
 
       and check_generator
-          ({ resolution; _ } as state)
+          state
           { Comprehension.target; iterator = { Node.location; _ } as iterator; conditions; _ } =
         (* TODO(T23723699): check async. *)
         (* Propagate the target type information. *)
-        let annotations =
-          let annotations = Resolution.annotations resolution in
-          let annotation =
-            let iterator_annotation = Annotated.resolve ~resolution iterator in
-            match Resolution.join resolution iterator_annotation (Type.iterable Type.Bottom) with
-            | Type.Parametric { Type.parameters = [parameter]; _ } ->
-                parameter
-            | _ ->
-                Type.Object
+        let iterator =
+          let value =
+            Access (Expression.access iterator @ [
+                Access.Identifier (Identifier.create "__iter__");
+                Access.Call (Node.create ~location []);
+                Access.Identifier (Identifier.create "__next__");
+                Access.Call (Node.create ~location []);
+              ])
+            |> Node.create ~location
           in
-          let rec add_annotations annotations { Node.value = target; _ } annotation =
-            match target, annotation with
-            | Access access, _ ->
-                Map.set annotations ~key:access ~data:(Annotation.create annotation)
-            | Tuple accesses, Type.Tuple (Type.Bounded parameters)
-              when List.length accesses = List.length parameters ->
-                List.fold2_exn ~init:annotations ~f:add_annotations accesses parameters
-            | Tuple accesses, Type.Tuple (Type.Unbounded parameter) ->
-                List.fold
-                  ~init:annotations
-                  ~f:(fun annotations access -> add_annotations annotations access parameter)
-                  accesses
-            | Tuple accesses, _ ->
-                List.fold
-                  ~init:annotations
-                  ~f:(fun annotations access -> add_annotations annotations access Type.Object)
-                  accesses
-            | _ ->
-                annotations
-          in
-          add_annotations annotations target annotation
+          Assign {
+            Assign.target;
+            annotation = None;
+            value = Some value;
+            compound = None;
+            parent = None;
+          }
+          |> Node.create ~location
         in
-        let resolution = Resolution.with_annotations resolution ~annotations in
-        let state =
-          forward
-            { state with resolution }
-            ~statement:(Node.create ~location (Statement.Expression iterator))
-        in
+        (* Assign iterator. *)
+        let state = forward state ~statement:iterator in
         (* Check conditions. *)
         List.map ~f:Statement.assume conditions
         |> List.fold ~init:state ~f:(fun state statement -> forward state ~statement)
