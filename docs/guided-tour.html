@@ -1,0 +1,52 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><meta http-equiv="X-UA-Compatible" content="IE=edge"/><title>Guided Tour · Pyre</title><meta name="viewport" content="width=device-width"/><meta name="generator" content="Docusaurus"/><meta property="og:title" content="Guided Tour · Pyre"/><meta property="og:type" content="website"/><meta property="og:url" content="https://pyre-check.org/index.html"/><meta property="og:description" content="# First Steps"/><meta name="twitter:card" content="summary"/><link rel="shortcut icon" href="/img/favicon.ico"/><link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css"/><script type="text/javascript" src="https://buttons.github.io/buttons.js"></script><link rel="stylesheet" href="/css/main.css"/></head><body class="sideNavVisible doc"><div class="fixedHeaderContainer"><div class="headerWrapper wrapper"><header><a href="/"><img class="logo" src="/img/integrated_logo_light.png" alt="Pyre"/></a><div class="navigationWrapper navigationSlider"><nav class="slidingNav"><ul class="nav-site nav-site-internal"><li class="siteNavGroupActive"><a href="/docs/installation.html" target="_self">Getting Started</a></li><li class="siteNavGroupActive"><a href="/docs/overview.html" target="_self">Documentation</a></li><li class=""><a href="https://github.com/facebook/pyre-check" target="_self">GitHub</a></li></ul></nav></div></header></div></div><div class="navPusher"><div class="docMainWrapper wrapper"><div class="container docsNavContainer" id="docsNav"><nav class="toc"><div class="toggleNav"><section class="navWrapper wrapper"><div class="navBreadcrumb wrapper"><div class="navToggle" id="navToggler"><i></i></div><h2><i>›</i><span>Contents</span></h2></div><div class="navGroups"><div class="navGroup navGroupActive"><h3>Contents</h3><ul><li class="navListItem"><a class="navItem" href="/docs/overview.html">Overview</a></li><li class="navListItem"><a class="navItem" href="/docs/installation.html">Installation</a></li><li class="navListItem navListItemActive"><a class="navItem navItemActive" href="/docs/guided-tour.html">Guided Tour</a></li><li class="navListItem"><a class="navItem" href="/docs/gradual-typing.html">Gradual Typing</a></li><li class="navListItem"><a class="navItem" href="/docs/error-suppression.html">Error Suppression</a></li><li class="navListItem"><a class="navItem" href="/docs/error-types.html">Error Types</a></li><li class="navListItem"><a class="navItem" href="/docs/lsp-integration.html">Editor Integration</a></li></ul></div></div></section></div><script>
+          var toggler = document.getElementById('navToggler');
+          var nav = document.getElementById('docsNav');
+          toggler.onclick = function() {
+            nav.classList.toggle('docsSliderActive');
+          };
+        </script></nav></div><div class="container mainContainer"><div class="wrapper"><div class="post"><header class="postHeader"><h1>Guided Tour</h1></header><article><div><span><h1><a class="anchor" aria-hidden="true" id="first-steps"></a><a href="#first-steps" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>First Steps</h1>
+<p>Assuming you have completed your setup (see <a href="/docs/installation.html">Installation</a>), you're now ready to
+use Pyre. The following will give a short overview of the basic workflows that we recommend.</p>
+<p>In the most basic case you have a <code>test</code> directory containing a <code>test.py</code> file.</p>
+<pre><code class="hljs css bash">$ cat <span class="hljs-built_in">test</span>/test.py
+def foo() -&gt; int
+  <span class="hljs-built_in">return</span> <span class="hljs-string">'string'</span>  <span class="hljs-comment"># whoops</span>
+</code></pre>
+<p>You can run pyre as follows</p>
+<pre><code class="hljs css bash">$ pyre --<span class="hljs-built_in">source</span>-directory <span class="hljs-built_in">test</span> check
+ ƛ Found 1 <span class="hljs-built_in">type</span> error!
+ <span class="hljs-built_in">test</span>/test.py:2:4 Incompatible <span class="hljs-built_in">return</span> <span class="hljs-built_in">type</span> [7]: Expected `int` but got `str`.
+</code></pre>
+<p>The default for <code>--source-directory</code> is the current directory. In most cases you will simply</p>
+<pre><code class="hljs css bash">$ <span class="hljs-built_in">cd</span> <span class="hljs-built_in">test</span>
+$ pyre check
+ ƛ Found 1 <span class="hljs-built_in">type</span> error!
+ test.py:2:4 Incompatible <span class="hljs-built_in">return</span> <span class="hljs-built_in">type</span> [7]: Expected `int` but got `str`.
+</code></pre>
+<p>Invoked with <code>check</code>, Pyre will do a complete pass over all the files in the provided directory.
+As your codebase grows, this will get slower and slower. Pyre supports incremental type checking
+which we'll cover in the next section.</p>
+<h1><a class="anchor" aria-hidden="true" id="running-a-server"></a><a href="#running-a-server" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Running a Server</h1>
+<p>Pyre's incremental mode depends on <a href="https://facebook.github.io/watchman/docs/install.html">Watchman</a>
+to get notifications about changes on the filesystem. Without watchman, or an editor supporting LSP,
+you cannot use Pyre's incremental mode.</p>
+<p>If you have <em>Watchman</em> installed and assuming the scenario from the previous section, you can start
+a server with</p>
+<pre><code class="hljs css bash">$ <span class="hljs-built_in">cd</span> <span class="hljs-built_in">test</span>
+$ pyre
+ ƛ Found 1 <span class="hljs-built_in">type</span> error!
+ test.py:2:4 Incompatible <span class="hljs-built_in">return</span> <span class="hljs-built_in">type</span> [7]: Expected `int` but got `str`.
+</code></pre>
+<p>The initial run will spawn the server. Subsequent calls to <code>pyre</code> will simply query the server for
+changes and will be much faster than the initial request. The server can be stopped with
+<code>pyre stop</code>.</p>
+<h1><a class="anchor" aria-hidden="true" id="configuring-your-setup"></a><a href="#configuring-your-setup" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Configuring your Setup</h1>
+<p>Pyre's configuration typically sits at the root of the repository in <code>.pyre_configuration</code>.
+You can override that configuration locally to set up your own default target to check.</p>
+<p>Running</p>
+<pre><code class="hljs css bash">$ pyre init
+</code></pre>
+<p>from your project root will set up your <code>.pyre_configuration</code>, but you may want to override
+the source-directories field in projects within that root, so you can easily run pyre on
+different sets of default paths.</p>
+</span></div></article></div><div class="docs-prevnext"><a class="docs-prev button" href="installation.html">← Installing Pyre</a><a class="docs-next button" href="gradual-typing.html">Gradual Typing →</a></div></div></div></div><footer class="nav-footer" id="footer"><section class="sitemap"><a href="https://code.facebook.com/projects/" target="_blank" class="fbOpenSource"><img src="/img/oss_logo.png" alt="Facebook Open Source" width="170" height="45"/></a><a href="https://code.facebook.com/projects/" target="_blank">Open Source Projects</a><a href="https://github.com/facebook/" target="_blank">Github</a><a href="https://twitter.com/fbOpenSource" target="_blank">Twitter</a><a href="https://github.com/facebook/pyre-check" target="_blank">Contribute to Pyre</a></section></footer></div></body></html>
