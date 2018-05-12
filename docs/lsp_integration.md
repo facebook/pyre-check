@@ -8,7 +8,7 @@ Pyre is integrated with VSCode and Nuclide which allows you to catch your errors
 
 ## VSCode
 
-![VSCode Integration](img/vscode-screenshot.png)
+![VSCode Integration](/img/vscode-screenshot.png)
 
 After running `pyre init` on the root of your repository, open the root in VSCode. Install the pyre-check extension from the extension marketplace, and pyre should start up automatically.
 
@@ -16,7 +16,7 @@ The extension's available [here](https://marketplace.visualstudio.com/items?item
 
 ## Nuclide
 
-![Nuclide Integration](img/nuclide-screenshot.png)
+![Nuclide Integration](/img/nuclide-screenshot.png)
 
 You can `apm install atom-ide-ui && apm install ide-pyre` in order to install pyre's Atom integration.
 
