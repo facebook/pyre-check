@@ -394,7 +394,7 @@ let collect_accesses_in_position statement { Location.line; column } =
   Collector.collect (Source.create [statement])
 
 
-let contains_yield statements =
+let contains_yield {Statement.Define.body; _} =
   let module YieldVisitor = struct
     type t = bool
 
@@ -412,4 +412,4 @@ let contains_yield statements =
       | (false, _) -> false
   end in
   let module YieldVisit = Make(YieldVisitor) in
-  YieldVisit.visit false (Source.create statements)
+  YieldVisit.visit false (Source.create body)

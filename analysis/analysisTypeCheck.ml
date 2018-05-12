@@ -1405,7 +1405,7 @@ module State = struct
           if not (Resolution.less_or_equal resolution ~left:actual ~right:expected) &&
              not (Define.is_abstract_method define) &&
              not (Define.is_overloaded_method define) &&
-             not (Type.is_none actual && Type.is_generator expected)
+             not (Type.is_none actual && Ast.Visit.contains_yield define)
           then
             let error =
               {

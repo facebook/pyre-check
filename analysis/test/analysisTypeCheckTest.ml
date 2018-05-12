@@ -4076,6 +4076,16 @@ let test_check_yield _ =
 
   assert_type_errors
     {|
+      def foo(i: int) -> typing.Iterable[int]:
+        if i > 2:
+          return
+        else:
+          yield i
+    |}
+    [];
+
+  assert_type_errors
+    {|
       def foo() -> typing.Generator[int, None, None]:
         yield 1.0
     |}
