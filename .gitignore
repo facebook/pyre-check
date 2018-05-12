@@ -1,4 +1,5 @@
 _.DS_Store
+yarn-error.log
 
 /_build
 /Makefile
@@ -9,6 +10,7 @@ _.DS_Store
 website/translated_docs
 website/build/
 website/yarn.lock
+website/yarn-error.log
 website/node_modules
 website/i18n/*
 !website/i18n/en.json
