@@ -256,13 +256,15 @@ def main() -> int:
     except (
         buck.BuckException,
         commands.ClientException,
-        EnvironmentException
     ) as error:
         LOG.error(str(error))
         arguments.command(
             arguments,
             configuration,
             source_directory).on_client_exception()
+        exit_code = FAILURE
+    except EnvironmentException as error:
+        LOG.error(str(error))
         exit_code = FAILURE
     except Exception as error:
         LOG.error(str(error))
