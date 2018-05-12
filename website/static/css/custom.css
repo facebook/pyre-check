@@ -29,6 +29,12 @@
   max-width: 100%;
 }
 
+.mainContainer .wrapper code {
+  font-family: monospace;
+  padding-left: 0.2em;
+  padding-right: 0.2em;
+}
+
 .docsNavContainer {
   margin: 65px 40px 0 0;
 }
