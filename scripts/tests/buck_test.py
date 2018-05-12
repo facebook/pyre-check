@@ -5,7 +5,7 @@ import glob
 import subprocess
 import unittest
 
-from tools.pyre.scripts import (
+from .. import (
     buck,
     log,
 )
