@@ -24,6 +24,13 @@ pyre --source-directory path/to/project/root
 ```
 if you'd like to specify the path instead.
 
+Alternatively, install pyre via
+[pipsi](https://github.com/mitsuhiko/pipsi) to have a single
+system-wide install instead of one per virtual env:
+```
+pipsi install pyre-check
+```
+
 # Building from Source
 
 These instructions are known to work on Mac OS X (tested on High
