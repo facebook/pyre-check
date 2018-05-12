@@ -15,6 +15,22 @@ module Parallel = Hack_parallel.Std
 module Protocol = ServerProtocol
 
 
+let files context =
+  let root = Path.create_absolute Filename.temp_dir_name in
+  let relative =
+    bracket_tmpfile ~suffix:".py" context
+    |> fst
+    |> Path.create_absolute
+    |> (fun path -> Path.get_relative_to_root ~root ~path)
+    |> (fun relative -> Option.value_exn relative)
+  in
+  let absolute =
+    Path.create_relative ~root ~relative
+    |> Path.show
+  in
+  root, relative, absolute
+
+
 let test_language_server_protocol_message_format _ =
   let module GenericNotification =
     NotificationMessage.Make(struct
@@ -242,11 +258,11 @@ let test_show_message_notification _ =
 
 
 let test_did_save_notification context =
-  let filename, _ = bracket_tmpfile ~suffix:".py" context in
-  let linkname = filename ^ "link" in
-  Unix.symlink ~src:filename ~dst:linkname;
+  let root, relative, absolute = files context in
+  let linkname = relative ^ "link" in
+  Unix.symlink ~src:absolute ~dst:((Path.absolute root) ^/ linkname);
   let message =
-    DidSaveTextDocument.create ~root:(Path.create_absolute "/tmp") filename None
+    DidSaveTextDocument.create ~root relative None
     |> Or_error.ok_exn
     |> DidSaveTextDocument.to_yojson
     |> Yojson.Safe.sort
@@ -258,13 +274,13 @@ let test_did_save_notification context =
       "method", `String "textDocument/didSave";
       "params", `Assoc [
         "text", `Null;
-        "textDocument", `Assoc ["uri", `String (Format.sprintf "file://%s" filename)];
+        "textDocument", `Assoc ["uri", `String (Format.sprintf "file://%s" absolute)];
       ];
     ]
     |> Yojson.Safe.pretty_to_string
   in
   let link_message =
-    DidSaveTextDocument.create ~root:(Path.create_absolute "/tmp") linkname None
+    DidSaveTextDocument.create ~root linkname None
     |> Or_error.ok_exn
     |> DidSaveTextDocument.to_yojson
     |> Yojson.Safe.sort
@@ -367,9 +383,9 @@ let test_language_server_hover_response _ =
 
 
 let test_request_parser context =
-  let filename, _ = bracket_tmpfile ~suffix:".py" context in
+  let root, relative, absolute = files context in
   let save_message =
-    DidSaveTextDocument.create ~root:(Path.create_absolute "/tmp") filename None
+    DidSaveTextDocument.create ~root relative None
     |> Or_error.ok_exn
     |> DidSaveTextDocument.to_yojson
     |> Yojson.Safe.sort
@@ -380,7 +396,7 @@ let test_request_parser context =
       method_ = "textDocument/didChange";
       parameters = Some {
           DidChangeTextDocumentParams.textDocument = {
-            VersionedTextDocumentIdentifier.uri = "file://" ^ (Filename.realpath filename);
+            VersionedTextDocumentIdentifier.uri = "file://" ^ absolute;
             version = 1;
           };
           contentChanges = [];
@@ -391,21 +407,22 @@ let test_request_parser context =
 
   assert_equal
     ~cmp:(Option.equal Protocol.Request.equal)
+    ~printer:(function | Some request -> Protocol.Request.show request | _ -> "None")
     (parse
-       ~root:(PyrePath.create_absolute "/tmp")
+       ~root:(PyrePath.create_absolute Filename.temp_dir_name)
        ~check_on_save:true
        save_message)
     (Some
        (Protocol.Request.TypeCheckRequest
           {
             Protocol.TypeCheckRequest.update_environment_with =
-              [File.create (Path.create_absolute filename)];
-            check = [File.create (Path.create_absolute filename)];
+              [File.create (Path.create_absolute absolute)];
+            check = [File.create (Path.create_absolute absolute)];
           }));
   assert_equal
     ~cmp:(Option.equal Protocol.Request.equal)
     (parse
-       ~root:(PyrePath.create_absolute "/tmp")
+       ~root:(PyrePath.create_absolute Filename.temp_dir_name)
        ~check_on_save:true
        change_message)
     None

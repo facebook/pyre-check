@@ -37,7 +37,7 @@ module AppendOperator : sig
   val (^|): t -> path -> t
 end
 
-val follow_symlinks: t -> t
+val real_path: t -> t
 
 val is_directory: t -> bool
 val file_exists: t -> bool

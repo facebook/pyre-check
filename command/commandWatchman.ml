@@ -63,14 +63,14 @@ let build_symlink_map ~root =
   let files = File.list ~filter:(fun file -> Filename.check_suffix file ".py") ~root in
   List.fold
     ~init:Path.Map.empty
-    ~f:(fun map path -> Map.set map ~key:(Path.follow_symlinks path) ~data:path)
+    ~f:(fun map path -> Map.set map ~key:(Path.real_path path) ~data:path)
     files
 
 
 let set_symlink ~root ~symlinks ~path =
   if not (Path.Map.mem symlinks path) &&
      Path.directory_contains ~directory:root path then
-    Map.set symlinks ~key:(Path.follow_symlinks path) ~data:path
+    Map.set symlinks ~key:(Path.real_path path) ~data:path
   else
     symlinks
 
