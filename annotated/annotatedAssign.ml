@@ -25,10 +25,10 @@ let create assign =
 let fold ~resolution ~initial ~f { Assign.target; value; _ } =
   value
   >>| (fun value ->
-      let rec fold_simple_assign accumulator { Node.location; value } value_annotation =
-        match value with
-        | Access access ->
-            f ~access:(Node.create ~location access) ~value_annotation accumulator
+      let rec fold_simple_assign accumulator target value_annotation =
+        match Node.value target with
+        | Access _ ->
+            f ~target ~value_annotation accumulator
         | Tuple targets ->
             (* Recursively break down tuples such as x, y = z : Tuple[int, string] *)
             let parameters =
@@ -38,12 +38,12 @@ let fold ~resolution ~initial ~f { Assign.target; value; _ } =
               | Type.Tuple (Type.Unbounded parameter) ->
                   List.map ~f:(fun _ -> parameter) targets
               | _ ->
-                  List.map ~f:(fun _ -> Type.Top) targets
+                  []
             in
             if List.length targets = List.length parameters then
               List.fold2_exn ~init:accumulator ~f:fold_simple_assign targets parameters
             else
-              accumulator
+              f ~target ~value_annotation accumulator
         | _ ->
             accumulator
       in

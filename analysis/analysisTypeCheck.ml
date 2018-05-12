@@ -553,27 +553,41 @@ module State = struct
           let open Annotated in
           let open Access.Element in
           let forward_annotations
-              ~access:{ Node.value = access; location }
+              ~target:({ Node.location; _ } as target)
               ~value_annotation
               resolution =
-            let annotation = Map.find (Resolution.annotations resolution) access in
-            let element =
-              Access.last_element ~resolution (Annotated.Access.create access)
+            let refine ~resolution ~target ~value_annotation =
+              let access = Expression.access target in
+              let annotation = Map.find (Resolution.annotations resolution) access in
+              let element =
+                Access.last_element ~resolution (Annotated.Access.create access)
+              in
+              let refined =
+                match annotation, element with
+                | Some annotation, _ when Annotation.is_immutable annotation ->
+                    Refinement.refine ~resolution annotation value_annotation
+                | _, Attribute { origin = Instance attribute; defined; _ }
+                  when defined ->
+                    Refinement.refine ~resolution (Attribute.annotation attribute) value_annotation
+                | _, _ ->
+                    Annotation.create value_annotation
+              in
+              lookup
+              >>| Lookup.update ~location ~annotation:(Annotation.annotation refined)
+              |> ignore;
+              Resolution.set_local resolution ~access ~annotation:refined
             in
-            let refined =
-              match annotation, element with
-              | Some annotation, _ when Annotation.is_immutable annotation ->
-                  Refinement.refine ~resolution annotation value_annotation
-              | _, Attribute { origin = Instance attribute; defined; _ }
-                when defined ->
-                  Refinement.refine ~resolution (Attribute.annotation attribute) value_annotation
-              | _, _ ->
-                  Annotation.create value_annotation
-            in
-            lookup
-            >>| Lookup.update ~location ~annotation:(Annotation.annotation refined)
-            |> ignore;
-            Resolution.set_local resolution ~access ~annotation:refined
+            match Node.value target with
+            | Tuple targets ->
+                let refine resolution target =
+                  refine
+                    ~resolution
+                    ~target
+                    ~value_annotation:Type.Top
+                in
+                List.fold targets ~init:resolution ~f:refine
+            | _ ->
+                refine ~resolution ~target ~value_annotation
           in
           Assign.create assign
           |> Assign.fold ~resolution ~f:forward_annotations ~initial:resolution
@@ -1187,12 +1201,12 @@ module State = struct
 
       match Node.value statement with
       | Assign ({
-          Assign.target;
-          annotation = explicit_annotation;
+          Assign.annotation = explicit_annotation;
           value = Some value;
           _;
         } as assign) ->
-          let check_assign ~access:{ Node.location; value = access } ~value_annotation errors =
+          let check_assign ~target:({ Node.location; _ } as target) ~value_annotation errors =
+            let access = Expression.access target in
             let add_incompatible_type_error ~expected ~parent ~name ~declare_location errors =
               if Resolution.less_or_equal resolution ~left:value_annotation ~right:expected then
                 errors
@@ -1309,21 +1323,28 @@ module State = struct
                     match explicit_annotation with
                     (* Explicit annotations override our existing knowledge of the target's type. *)
                     | Some annotation ->
-                        Some (
-                          Resolution.parse_annotation resolution annotation
-                          |> Annotation.create_immutable ~global:true),
+                        Resolution.parse_annotation resolution annotation
+                        |> Annotation.create_immutable ~global:true,
                         true
                     | None ->
-                        Resolution.get_local resolution ~access, false
+                        let resolved =
+                          let default =
+                            Resolution.resolve resolution target
+                            |> Annotation.create
+                          in
+                          Resolution.get_local resolution ~access
+                          |> Option.value ~default
+                        in
+                        resolved , false
                   in
                   match existing_annotation with
-                  | Some {
-                      Annotation.mutability = Annotation.Immutable {
-                          Annotation.scope = Annotation.Global;
-                          original = expected;
-                        };
-                      _;
-                    } ->
+                  | {
+                    Annotation.mutability = Annotation.Immutable {
+                        Annotation.scope = Annotation.Global;
+                        original = expected;
+                      };
+                    _;
+                  } ->
                       let errors =
                         add_incompatible_type_error
                           ~expected
@@ -1341,17 +1362,24 @@ module State = struct
                           ~declare_location:location
                           ~name
                           errors
-                  | Some {
-                      Annotation.mutability = Annotation.Immutable {
-                          Annotation.scope = Annotation.Local;
-                          original = expected;
-                        };
-                      _;
-                    } ->
+                  | {
+                    Annotation.mutability = Annotation.Immutable {
+                        Annotation.scope = Annotation.Local;
+                        original = expected;
+                      };
+                    _;
+                  } ->
                       add_incompatible_type_error
                         ~expected
                         ~parent:None
                         ~name
+                        ~declare_location:location
+                        errors
+                  | annotation when Type.is_tuple (Annotation.annotation annotation) ->
+                      add_incompatible_type_error
+                        ~expected:(Annotation.annotation annotation)
+                        ~parent:None
+                        ~name:(Expression.Access.create "left hand side")
                         ~declare_location:location
                         errors
                   | _ ->

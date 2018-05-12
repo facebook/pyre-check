@@ -26,15 +26,15 @@ let test_fold _ =
     |> resolution
   in
   let assert_fold source expected =
-    let assign =
-      match parse_single_statement source with
-      | { Node.value = Statement.Assign assign; _ } -> assign
-      | _ -> failwith "No Assign to parse"
-    in
-    let single_assignments ~access:{ Node.value = access; _ } ~value_annotation assignments =
-      (Expression.Access.show access, value_annotation) :: assignments
-    in
     let actual =
+      let assign =
+        match parse_single_statement source with
+        | { Node.value = Statement.Assign assign; _ } -> assign
+        | _ -> failwith "No Assign to parse"
+      in
+      let single_assignments ~target ~value_annotation assignments =
+        (Expression.show target, value_annotation) :: assignments
+      in
       Assign.create assign
       |> Assign.fold
         ~resolution
@@ -48,7 +48,7 @@ let test_fold _ =
   assert_fold "a = i" ["a", Type.integer];
   assert_fold "a, b = i, s" ["a", Type.integer; "b", Type.string];
   assert_fold "a, b = t" ["a", Type.integer; "b", Type.float];
-  assert_fold "a, b = unknown" ["a", Type.Top; "b", Type.Top]
+  assert_fold "a, b = unknown" ["(a, b)", Type.Top]
 
 
 let () =

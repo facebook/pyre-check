@@ -4,7 +4,6 @@
     LICENSE file in the root directory of this source tree. *)
 
 open Ast
-open Expression
 open Statement
 
 module Resolution = AnalysisResolution
@@ -20,7 +19,7 @@ val fold
   :  resolution: Resolution.t
   -> initial: 'accumulator
   -> f:
-       (access: Access.t Node.t
+       (target: Expression.t
         -> value_annotation: Type.t
         -> 'accumulator
         -> 'accumulator)

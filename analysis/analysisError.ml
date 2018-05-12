@@ -465,12 +465,19 @@ let description
         mismatch = { actual; expected };
         _;
       } ->
+        let message =
+          if Type.is_tuple expected && not (Type.is_tuple actual) then
+            Format.asprintf "Unable to unpack %a, expected a `Tuple`." Type.pp actual
+          else
+            Format.asprintf
+              "%s is declared to have type %a but is used as type %a."
+              (access_sanitized_show name)
+              Type.pp expected
+              Type.pp actual
+
+        in
         [
-          (Format.asprintf
-             "%s is declared to have type %a but is used as type %a."
-             (access_sanitized_show name)
-             Type.pp expected
-             Type.pp actual);
+          message;
           (Format.asprintf
              "%s incorrectly used on line %d."
              (access_sanitized_show name)

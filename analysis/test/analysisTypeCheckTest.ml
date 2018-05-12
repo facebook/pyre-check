@@ -1862,6 +1862,37 @@ let test_check _ =
     |}
     []
 
+
+let test_check_assign _ =
+  assert_type_errors
+    {|
+      def foo() -> None:
+        x = 1
+        x = 'string'  # Reassignment is okay.
+    |}
+    [];
+  assert_type_errors
+    {|
+      def foo() -> None:
+        x: int = 1
+        x = 'string'
+    |}
+    ["Incompatible variable type [9]: x is declared to have type `int` but is used as type `str`."];
+
+  assert_type_errors
+    {|
+      def foo(input: typing.Tuple[int, str]) -> None:
+        x = input
+    |}
+    [];
+  assert_type_errors
+    {|
+      def foo(input: int) -> None:
+        x, y = input
+    |}
+    ["Incompatible variable type [9]: Unable to unpack `int`, expected a `Tuple`."]
+
+
 let test_check_coverage _ =
   let preprocess source =
     trim_extra_indentation source
@@ -2055,11 +2086,10 @@ let test_check_comprehensions _ =
       def foo(d: typing.Dict[int, str]) -> typing.Dict[int, str]:
         return { k: v for k, v in d }
     |}
-    (* Ensure that we don't get undefined name errors for `k` and `v` even if the annotation isn't a
-        tuple. *)
     [
-      "Incompatible return type [7]: Expected `typing.Dict[int, str]` but got" ^
-      " `typing.Dict[typing.Any, typing.Any]`.";
+      "Incompatible return type [7]: Expected `typing.Dict[int, str]` but got " ^
+      "`typing.Dict[typing.Any, typing.Any]`.";
+      "Incompatible variable type [9]: Unable to unpack `int`, expected a `Tuple`.";
     ];
 
   assert_type_errors
@@ -2171,7 +2201,7 @@ let test_check_comprehensions _ =
       def foo(d: typing.Dict[str, int]) -> None:
         { k: v for k, v in d }
     |}
-    []  (* TODO(T29245932): we're still not catching this.  *)
+    ["Incompatible variable type [9]: Unable to unpack `str`, expected a `Tuple`."]
 
 
 let test_check_optional _ =
@@ -5317,6 +5347,7 @@ let () =
     "check_with_qualification">::test_check_with_qualification;
     "coverage">::test_coverage;
     "check">::test_check;
+    "check_assign">::test_check_assign;
     "check_coverage">::test_check_coverage;
     "check_comprehensions">::test_check_comprehensions;
     "check_optional">::test_check_optional;
