@@ -16,8 +16,11 @@
   max-width: 100%;
 }
 
+.mainContainer .wrapper .post header h1 {
+  margin-bottom: 1em;
+}
+
 .mainContainer .wrapper .post h1 {
-  margin-bottom: 20px;
   font-size: 200%;
 }
 
