@@ -36,9 +36,3 @@ val parameter_annotations_positional
 
 val parent_definition: t -> resolution: Resolution.t -> Class.t option
 val method_definition: t -> resolution: Resolution.t -> Method.t option
-
-val infer_argument_name
-  :  t
-  -> index: int
-  -> argument: Argument.t
-  -> Identifier.t option

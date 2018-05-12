@@ -143,64 +143,10 @@ let test_parameter_annotations _ =
   assert_equal (Map.find parameter_map ~~"c") None
 
 
-let test_infer_argument_name _ =
-  let create_parameter ?annotation name = +{
-    Parameter.name = ~~name;
-    value = None;
-    annotation;
-  }
-  in
-  let parameters = [
-    create_parameter ~annotation:(Type.expression Type.integer) "a";
-    create_parameter "b";
-    create_parameter ~annotation:(Type.expression Type.string) "*c";
-  ]
-  in
-  let create_integer name = {
-    Argument.name;
-    value = +(Integer 2);
-  }
-  in
-  let define parameters =
-    {
-      Statement.Define.name = Access.create "";
-      parameters;
-      body = [+Pass];
-      decorators = [];
-      docstring = None;
-      return_annotation = None;
-      async = false;
-      generated = false;
-      parent = None;
-    }
-    |> Annotated.Define.create
-  in
-  let infer_name = Annotated.Define.infer_argument_name (define parameters) in
-  let unnamed = create_integer None in
-  let named = create_integer (Some ~+(~~"z")) in
-  assert_equal (infer_name ~index:0 ~argument:unnamed) (Some ~~"a");
-  assert_equal (infer_name ~index:1 ~argument:unnamed) (Some ~~"b");
-  assert_equal (infer_name ~index:2 ~argument:(create_integer None)) (Some ~~"*c");
-  assert_equal (infer_name ~index:3 ~argument:(create_integer None)) (Some ~~"*c");
-
-  assert_equal (infer_name ~index:0 ~argument:named) (Some ~~"z");
-  assert_equal (infer_name ~index:1 ~argument:named) (Some ~~"z");
-  assert_equal (infer_name ~index:2 ~argument:named) (Some ~~"z");
-  assert_equal (infer_name ~index:3 ~argument:named) (Some ~~"z");
-
-  let parameters = [ create_parameter ~annotation:(Type.expression Type.integer) "a" ] in
-  let infer_name = Annotated.Define.infer_argument_name (define parameters) in
-  assert_equal (infer_name ~index:0 ~argument:unnamed) (Some ~~"a");
-  assert_equal (infer_name ~index:1 ~argument:unnamed) None;
-  assert_equal (infer_name ~index:0 ~argument:named) (Some ~~"z");
-  assert_equal (infer_name ~index:1 ~argument:named) (Some ~~"z")
-
-
 let () =
   "define">:::[
     "parent_definition">::test_parent_definition;
     "method_definition">::test_method_definition;
-    "infer_argument_name">::test_infer_argument_name;
     "parameter_annotations">::test_parameter_annotations;
   ]
   |> run_test_tt_main;

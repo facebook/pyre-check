@@ -86,27 +86,3 @@ let parent_definition { Define.parent; _ } ~resolution =
 let method_definition define ~resolution =
   parent_definition define ~resolution
   >>| fun parent -> Class.Method.create ~define ~parent
-
-
-(* Given a callee f and an its argument at index index, evaluates to the parameter name the
- *  argument corresponds to. *)
-let infer_argument_name { Define.parameters; _ } ~index ~argument =
-  let parameter_names = List.map ~f:Parameter.name parameters in
-  let star_index =
-    List.find_mapi
-      ~f:(fun index name ->
-          if String.prefix (Identifier.show name) 1 = "*" then
-            Some index
-          else
-            None)
-      parameter_names
-  in
-  match argument.Argument.name, star_index with
-  | None, None ->
-      List.nth parameter_names index
-  | None, Some star_index ->
-      if star_index <= index then
-        List.nth parameter_names star_index
-      else
-        List.nth parameter_names index
-  | Some { Node.value = name; _ }, _ -> Some name
