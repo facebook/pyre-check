@@ -3,6 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import atexit
 import logging
 import subprocess
 import os
@@ -36,6 +37,7 @@ class Incremental(ErrorHandling):
                 ['tail', '-f', stderr_file],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.DEVNULL) as stderr_tail:
+            atexit.register(stderr_tail.terminate)
             super(Incremental, self)._read_stderr(
                 stderr_tail.stdout,
                 source_directory)
