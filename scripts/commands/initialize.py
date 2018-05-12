@@ -67,7 +67,11 @@ class Initialize(Command):
                     "No typeshed directory found at {}.".format(typeshed))
         configuration["typeshed"] = typeshed
 
-        configuration["source_directories"] = ["."]
+        source_directory = log.get_optional_input(
+            "Which directory should pyre be initialized in?",
+            ".")
+
+        configuration["source_directories"] = [source_directory]
         with open(configuration_path, "w+") as configuration_file:
             json.dump(
                 configuration,

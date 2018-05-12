@@ -245,6 +245,13 @@ def get_yes_no_input(prompt: str) -> bool:
     return choice.lower() in ['', 'y', 'ye', 'yes']
 
 
+def get_optional_input(prompt: str, default: str) -> str:
+    result = get_input(prompt, suffix=' (Default: `{}`): '.format(default))
+    if result == "":
+        return default
+    return result
+
+
 def get_input(prompt: str, suffix: str='') -> str:
     LOG.log(PROMPT, prompt + suffix)
     return input().strip()
