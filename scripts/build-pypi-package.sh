@@ -109,7 +109,11 @@ fi
 cat > "${BUILD_ROOT}/setup.py" <<HEREDOC
 import glob
 import os
+import sys
 from setuptools import setup, find_packages
+
+if sys.version_info < (3, 5):
+    sys.exit('Error: ${PACKAGE_NAME} only runs on Python 3.5 and above.')
 
 def find_typeshed_files(base):
     if not os.path.isdir(base):
@@ -154,6 +158,7 @@ setup(
         'Operating System :: POSIX :: Linux',
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Topic :: Software Development',
     ],
@@ -161,7 +166,7 @@ setup(
 
     packages=find_packages(exclude=['tests']),
     data_files=[('bin', ['bin/pyre.bin'])] + find_typeshed_files("${BUILD_ROOT}/"),
-    python_requires='>=3',
+    python_requires='>=3.5',
     install_requires=[${RUNTIME_DEPENDENCIES}],
     entry_points={
         'console_scripts': [
