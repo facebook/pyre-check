@@ -10,7 +10,7 @@ open Test
 
 open Ast
 
-let assert_python_module_equal source expected =
+let assert_python_module_equal expected source =
   let actual = Codex.source_to_codex_representation "/tmp" (parse source) in
   assert_equal
     ~cmp:Codex.PythonModule.equal
@@ -62,7 +62,7 @@ let test_function _ =
         };
       }]
   in
-  assert_python_module_equal source expected_codex_representation
+  assert_python_module_equal expected_codex_representation source
 
 let test_variable _ =
   let source = "x = 1" in
@@ -76,7 +76,7 @@ let test_variable _ =
       };
     ]
   in
-  assert_python_module_equal source expected_codex_representation
+  assert_python_module_equal expected_codex_representation source
 
 
 let test_class _ =
@@ -119,7 +119,7 @@ let test_class _ =
           }];
       }];
   in
-  assert_python_module_equal source expected_codex_representation
+  assert_python_module_equal expected_codex_representation source
 
 
 let test_arguments _ =
@@ -151,7 +151,7 @@ let test_arguments _ =
       }
     ]
   in
-  assert_python_module_equal source expected_codex_representation
+  assert_python_module_equal expected_codex_representation source
 
 let test_source context =
   let directory = bracket_tmpdir context in
@@ -199,8 +199,8 @@ let test_source context =
   assert_equal
     ~cmp:Codex.PythonModule.equal
     ~printer:Codex.PythonModule.show
-    codex_representation
     expected_codex_representation
+    codex_representation
 
 
 let () =
