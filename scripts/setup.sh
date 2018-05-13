@@ -92,7 +92,7 @@ opam init --yes --compiler "$COMPILER" --root "$OPAM_ROOT" default "$OPAM_REPOSI
   && eval "$(opam config --root "$OPAM_ROOT" env)" \
   && opam update \
   && ocaml_succeeded=1
-test $ocaml_succeeded = 1 \
+test "$ocaml_succeeded" = 1 \
   || die 'Unable to setup OCaml environment'
 
 opam install --yes \
@@ -116,7 +116,7 @@ test "$opam_install_dependencies_succeeded" = 1 \
   && make remove \
   && make install) \
   && install_hack_parallel=1
-test $install_hack_parallel = 1 \
+test "$install_hack_parallel" = 1 \
   || die 'Could not install hack_parallel'
 
 # Build and run tests.
