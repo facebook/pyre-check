@@ -21,6 +21,8 @@
 }
 
 .mainContainer .wrapper .post h1 {
+  margin-top: 1em;
+  margin-bottom: 0.2em;
   font-size: 200%;
 }
 
@@ -28,8 +30,14 @@
   font-size: 150%;
 }
 
+.mainContainer .wrapper .post h3 {
+  text-transform: uppercase;
+  font-size: 100%;
+}
+
 .mainContainer .wrapper p {
   max-width: 100%;
+  padding-top: 0;
 }
 
 .mainContainer .wrapper code {
