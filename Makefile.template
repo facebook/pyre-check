@@ -33,6 +33,10 @@ test: hack_parallel development_tags
 	$(BUILD) -pkg oUnit -build-dir _build/test $(TESTS)
 	@$(MAKE) --keep-going $(RUN_TESTS)
 
+.PHONY: python_tests
+python_tests:
+	./run_python_tests.sh
+
 .PHONY: release
 release: hack_parallel release_tags
 	$(BUILD) -build-dir _build/all main.native
