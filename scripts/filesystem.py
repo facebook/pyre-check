@@ -31,8 +31,8 @@ class SharedSourceDirectory:
         self._isolate = isolate
 
     def get_root(self) -> str:
-        suffix = f"_{str(os.getpid())}" if self._isolate else ''
-        return f'.pyre/shared_source_directory{suffix}'
+        suffix = '_{}'.format(str(os.getpid())) if self._isolate else ''
+        return '.pyre/shared_source_directory{}'.format(suffix)
 
     def prepare(self) -> None:
         start = time()

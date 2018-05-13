@@ -48,8 +48,8 @@ class Result:
 
 
 class Command:
-    _buffer: List[str] = []
-    _call_client_terminated: bool = False
+    _buffer = []  # type: List[str]
+    _call_client_terminated = False  # type: bool
 
     def __init__(
             self,
@@ -197,7 +197,7 @@ class Command:
         return "server{}".format('' if len(source_directory) < 2 else 's')
 
     def _source_directory_string(self):
-        return f'`{self._source_directory}`'
+        return '`{}`'.format(self._source_directory)
 
     def on_client_exception(self) -> None:
         pass
