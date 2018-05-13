@@ -12,6 +12,18 @@ We actively welcome your pull requests.
 5. Make sure your code lints.
 6. If you haven't already, complete the Contributor License Agreement ("CLA").
 
+## Running tests
+
+Pyre runs two different test suites:
+
+* unit tests in OCaml cover the main binary (`pyre.bin`); these tests
+  are run via `make test` after the sources have been
+  configured. Please refer to the [Getting
+  Started](https://pyre-check.org/docs/installation.html) page for
+  more information on bootstrapping the process.
+
+* Python tests for the wrappers are run via `make python_tests`.
+
 ## Contributor License Agreement ("CLA")
 In order to accept your pull request, we need you to submit a CLA. You only need
 to do this once to work on any of Facebook's open source projects.
