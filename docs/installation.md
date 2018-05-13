@@ -7,7 +7,7 @@ sidebar_label: Installation
 You can install Pyre via `pip` or build it yourself from the source.
 
 # Pypi Package (recommended)
-You will need to have a working *Python 3.6* setup on your machine. Running
+You will need to have a working *Python (version 3.5 or later)* on your machine. Running
 
 ```bash
 $ pip install pyre-check
@@ -25,7 +25,7 @@ different architecture, feel free to reach out to us.
 # Building from Source
 
 These instructions are known to work on Mac OS X (tested on High
-Sierra) and Linux (tested on Ubuntu 16.04 LTS and CentOS 7).
+Sierra - OSX 10.13) and Linux (tested on Ubuntu 16.04 LTS and CentOS 7).
 
 ## Prerequisites
 ### Opam
@@ -72,4 +72,5 @@ Pyre with
 ```bash
 $ make
 $ make test
+$ make python_tests
 ```

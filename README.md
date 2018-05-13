@@ -6,8 +6,12 @@ To install Pyre on your system run `pip install pyre-check` and you should be go
 
 For more detailed documentation, see https://pyre-check.org.
 
+## Supported platforms
+* **Python**: you need *Python 3.5 or later* to run Pyre.
+* **Operating System**: a recent version of Linux (we tested on *Ubuntu 16.04 LTS* and *CentOS 7*); or *OSX 10.13* or newer. Windows is not supported.
+
 ## Installation
-See [INSTALL.md](https://github.com/facebook/pyre-check/blob/master/INSTALL.md) for details on installing packaged versions of Pyre.
+See [INSTALL.md](https://github.com/facebook/pyre-check/blob/master/INSTALL.md) for details on installing Pyre from a packaged version or from source.
 
 ## Join the Pyre community
 See [CONTRIBUTING.md](https://github.com/facebook/pyre-check/blob/master/CONTRIBUTING.md) for how to help out.
