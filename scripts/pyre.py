@@ -141,7 +141,9 @@ def main() -> int:
         help='Location of the typeshed stubs')
 
     # Subcommands.
-    parsed_commands = parser.add_subparsers()
+    parsed_commands = parser.add_subparsers(
+        metavar='{check, kill, incremental, initialize (init), '
+        'rage, restart, start, stop}')
 
     incremental = parsed_commands.add_parser(commands.Incremental.NAME)
     incremental.set_defaults(command=commands.incremental.Incremental)
