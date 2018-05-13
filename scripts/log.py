@@ -61,8 +61,8 @@ class TimedStreamHandler(logging.StreamHandler):
     THRESHOLD = 0.5
     LINE_BREAKING_LEVELS = ['ERROR', 'WARNING', 'SUCCESS']
 
-    _terminate: bool = False
-    _last_update: float = 0.0
+    _terminate = False  # type: bool
+    _last_update = 0.0  # type: float
 
     def __init__(self) -> None:
         super(TimedStreamHandler, self).__init__()
@@ -172,7 +172,7 @@ def initialize(arguments) -> None:
         stream_handler = TimedStreamHandler()
         arguments.timed_stream_handler = stream_handler
 
-    handlers: List[logging.Handler] = [stream_handler]
+    handlers = [stream_handler]  # type: List[logging.Handler]
 
     if not arguments.noninteractive:
         try:
@@ -204,12 +204,11 @@ def cleanup(arguments) -> None:
 class Buffer:
     THRESHOLD = 0.1
 
-    _flushed: bool
+    _flushed = False  # type: bool
 
     def __init__(self, section, data) -> None:
         self._section = section
         self._data = data
-        self._flushed = False
         self._lock = threading.RLock()
         thread = threading.Thread(target=self._thread)
         thread.daemon = True
