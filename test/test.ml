@@ -245,3 +245,14 @@ let mock_call_graph =
   let open Analysis in
   CallGraph.create ()
   |> CallGraph.handler
+
+
+(* Override `OUnit`s functions the return absolute paths. *)
+let bracket_tmpdir ?suffix context =
+  bracket_tmpdir ?suffix context
+  |> Filename.realpath
+
+
+let bracket_tmpfile ?suffix context =
+  bracket_tmpfile ?suffix context
+  |> (fun (filename, channel) -> Filename.realpath filename, channel)

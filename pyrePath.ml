@@ -112,19 +112,11 @@ let last path =
   |> List.last
   |> Option.value ~default:absolute
 
-let follow_symlinks path =
-  let rec follow_symlinks absolute =
-    let is_symlink =
-      Sys.file_exists absolute = `Yes &&
-      let { Unix.st_kind; _ } = Unix.lstat absolute in
-      st_kind = Unix.S_LNK
-    in
-    if is_symlink then
-      follow_symlinks (Unix.readlink absolute)
-    else
-      absolute
-  in
-  Absolute (follow_symlinks (absolute path))
+
+let real_path path =
+  match path with
+  | Absolute _ -> path
+  | Relative _ -> absolute path |> create_absolute
 
 
 let directory_contains ?(follow_symlinks = false) ~directory path =

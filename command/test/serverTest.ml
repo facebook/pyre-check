@@ -51,16 +51,24 @@ let test_language_server_protocol_json_format context =
     { type_error
       with location = { type_error.location with Location.path = filename }
     } in
+
+  let normalize string =
+    (* Working around OS inconsitencies. *)
+    string
+    |> String.split ~on:'\n'
+    |> String.concat
+    |> String.filter ~f:(fun character -> not (Char.is_whitespace character))
+  in
   let json_error =
     LanguageServer.Protocol.PublishDiagnostics.of_errors
-      ~root:(Path.create_absolute "/tmp")
+      ~root:(Path.create_absolute Filename.temp_dir_name)
       (File.Handle.create filename)
       [type_error]
     |> Or_error.ok_exn
     |> LanguageServer.Protocol.PublishDiagnostics.to_yojson
     |> Yojson.Safe.sort
     |> Yojson.Safe.to_string
-    |> Yojson.Safe.prettify
+    |> normalize
   in
   let json_error_expect =
     Format.sprintf
@@ -81,13 +89,14 @@ let test_language_server_protocol_json_format context =
                 "source": "Pyre"
               }
             ],
-            "uri": "file://%s"
+            "uri":
+              "file://%s"
           }
         }
      |}
       filename
     |> Test.trim_extra_indentation
-    |> String.strip
+    |> normalize
   in
   assert_equal
     ~printer:ident
@@ -447,11 +456,16 @@ let test_protocol_language_server_protocol _ =
 
 
 let test_did_save_with_content context =
-  let filename, _ = bracket_tmpfile ~suffix:".py" context in
-  let source_root = "/tmp" in
-  let filename =
-    String.chop_prefix ~prefix:(source_root ^ "/") filename
-    |> Option.value ~default:filename
+  let root, filename =
+    let root = Path.create_absolute Filename.temp_dir_name in
+    let filename =
+      bracket_tmpfile ~suffix:".py" context
+      |> fst
+      |> Path.create_absolute
+      |> (fun path -> Path.get_relative_to_root ~root ~path)
+      |> (fun relative -> Option.value_exn relative)
+    in
+    root, filename
   in
   let source =
     {|
@@ -466,16 +480,13 @@ let test_did_save_with_content context =
   in
   let errors = make_errors ~path:filename ~qualifier source in
   let request =
-    LanguageServer.Protocol.DidSaveTextDocument.create
-      ~root:(Path.create_absolute source_root)
-      (source_root ^/ filename)
-      (Some source)
+    LanguageServer.Protocol.DidSaveTextDocument.create ~root filename (Some source)
     |> Or_error.ok_exn
     |> LanguageServer.Protocol.DidSaveTextDocument.to_yojson
     |> Yojson.Safe.to_string
   in
   assert_request_gets_response
-    ~source_root:(Path.create_absolute source_root)
+    ~source_root:root
     source
     (Protocol.Request.LanguageServerProtocolRequest request)
     (Some (Protocol.TypeCheckResponse (associate_errors_and_filenames errors)))
