@@ -30,21 +30,33 @@ class FilesystemTest(unittest.TestCase):
             with open(os.path.join(root, name), "w+"):
                 pass
 
+        def create_symlink(target: str, source: str) -> None:
+            os.symlink(os.path.join(root, target), os.path.join(root, source))
+
         create_file("a.py")
         create_file("b.pyi")
         create_file("c.cpp")
+        create_symlink("a.py", "link1.py")
+        create_symlink("dangling.py", "link2.py")
+        create_symlink("c.cpp", "link3.py")
+        create_symlink("a.py", "link4.cpp")
         os.mkdir(os.path.join(root, "mypy"))
         os.mkdir(os.path.join(root, "scipyi"))
         os.mkdir(os.path.join(root, "spy.py"))
+        create_symlink("spy.py", "directory_symlink.py"),
         create_file("mypy/my.py")
         create_file("scipyi/sci.pyi")
+        create_symlink("mypy/my.py", "mypy/another.pyi")
+        create_symlink("scipyi/sci.pyi", "scipyi/another.py")
         actual_paths = sorted(
             os.path.relpath(path, root)
             for path in find(root, match=r".*\.(py|pyi)")
         )
         self.assertEqual(
             actual_paths,
-            ['a.py', 'b.pyi', 'mypy/my.py', 'scipyi/sci.pyi']
+            ['a.py', 'b.pyi', 'link1.py', 'link3.py',
+             'mypy/another.pyi', 'mypy/my.py',
+             'scipyi/another.py', 'scipyi/sci.pyi']
         )
 
     @patch('{}.is_empty'.format(filesystem_name))
