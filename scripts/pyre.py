@@ -82,14 +82,16 @@ def main() -> int:
         '--noninteractive',
         action='store_true',
         help='Disable interactive logging')
+    # Enable sectional logging.
     parser.add_argument(
         '--logging-sections',
-        help='Enable sectional logging')
+        help=argparse.SUPPRESS)
+    # Add given identifier to logged samples.
     parser.add_argument(
         '--log-identifier',
         action='store',
         default='',
-        help='Add given identifier to logged samples.')
+        help=argparse.SUPPRESS)
 
     parser.add_argument(
         '--version',
