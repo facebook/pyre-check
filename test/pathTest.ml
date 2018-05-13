@@ -122,7 +122,7 @@ let test_get_relative_to_root context =
 
 let test_append context =
   let path, root = root context in
-  assert_equal (root |> Path.append ~element:"durp" |> Path.show) (path ^/ "durp");
+  assert_equal ~printer:Fn.id (root |> Path.append ~element:"durp" |> Path.show) (path ^/ "durp");
   assert_equal
     (Path.create_relative ~root ~relative:"path"
      |> Path.append ~element:"durp"
@@ -177,12 +177,12 @@ let test_link context =
   Unix.symlink ~src:link ~dst:linklink;
   let link = Path.create_absolute link in
   let linklink = Path.create_absolute linklink in
-  assert_equal root (Path.follow_symlinks root);
-  assert_equal root (Path.follow_symlinks link);
-  assert_equal root (Path.follow_symlinks linklink);
+  assert_equal root (Path.real_path root);
+  assert_equal root (Path.real_path link);
+  assert_equal root (Path.real_path linklink);
   Unix.remove (Path.absolute link);
-  assert_equal link (Path.follow_symlinks link);
-  assert_equal link (Path.follow_symlinks linklink)
+  assert_equal link (Path.real_path link);
+  assert_equal link (Path.real_path linklink)
 
 
 let test_remove context =

@@ -49,7 +49,7 @@ module PublishDiagnostics = struct
         parameters = Some {
             PublishDiagnosticsParams.uri =
               Path.create_relative ~root ~relative:path
-              |> Path.follow_symlinks
+              |> Path.real_path
               |> Path.uri;
             diagnostics = List.map ~f:diagnostic_of_error errors;
           };
@@ -74,15 +74,16 @@ module DidSaveTextDocument = struct
             DidSaveTextDocumentParams.textDocument = {
               TextDocumentIdentifier.uri =
                 Path.create_relative ~root ~relative:path
-                |> Path.follow_symlinks
+                |> Path.real_path
                 |> Path.uri
             };
             text = content;
           }
       }
     with
-    | Unix.Unix_error _ -> Format.sprintf "Valid path does not exist for file %s." path
-                           |> Or_error.error_string
+    | Unix.Unix_error _ ->
+        Format.sprintf "Valid path does not exist for file %s." path
+        |> Or_error.error_string
 end
 
 
@@ -173,7 +174,7 @@ module TextDocumentDefinitionResponse = struct
            >>| (fun { Ast.Location.start; stop; path } -> {
                  Location.uri =
                    Path.create_relative ~root ~relative:path
-                   |> Path.follow_symlinks
+                   |> Path.real_path
                    |> Path.uri;
                  Location.range = Range.create ~start ~stop;
                })
