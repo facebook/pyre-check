@@ -1235,6 +1235,15 @@ let test_dictionary _ =
         });
     ];
   assert_parsed_equal
+    "{**[1]}"
+    [
+      +Expression
+        (+Dictionary {
+           Dictionary.entries = [];
+           keywords = Some (+Starred (Starred.Twice (+List [+Integer 1])));
+         });
+    ];
+  assert_parsed_equal
     "{ **durp, 1: 2}"
     [
       +Expression (+Dictionary {
@@ -1529,6 +1538,13 @@ let test_list _ =
 
 
 let test_set _ =
+  assert_parsed_equal
+    "{1}"
+    [+Expression (+Set [+Integer 1])];
+  assert_parsed_equal
+    "{*[1]}"
+    [+Expression (+Set [+Starred (Starred.Once (+List [+Integer 1]))])];
+
   assert_parsed_equal
     "{1,}"
     [+Expression (+Set [+Integer 1])];
