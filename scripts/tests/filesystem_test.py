@@ -15,7 +15,7 @@ from unittest.mock import (
 
 from ..filesystem import (  # noqa
     __name__ as filesystem_name,
-    find,
+    find_python_paths,
     remove_if_exists,
     SharedSourceDirectory,
     try_lock,
@@ -23,7 +23,7 @@ from ..filesystem import (  # noqa
 
 
 class FilesystemTest(unittest.TestCase):
-    def test_find(self):
+    def test_find_python_paths(self):
         root = tempfile.mkdtemp()
 
         def create_file(name: str) -> None:
@@ -50,7 +50,7 @@ class FilesystemTest(unittest.TestCase):
         create_symlink("scipyi/sci.pyi", "scipyi/another.py")
         actual_paths = sorted(
             os.path.relpath(path, root)
-            for path in find(root, match=r".*\.(py|pyi)")
+            for path in find_python_paths(root)
         )
         self.assertEqual(
             actual_paths,

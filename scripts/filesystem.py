@@ -85,7 +85,7 @@ class SharedSourceDirectory:
 
         all_paths = {}
         for source_directory in self._source_directories:
-            paths = find(root=source_directory, match=r".*\.(py|pyi)")
+            paths = find_python_paths(root=source_directory)
             for path in paths:
                 if not path:
                     continue
@@ -114,18 +114,20 @@ class SharedSourceDirectory:
                     LOG.error(str(error))
 
 
-def find(root: str, match: str) -> List[str]:
+def find_python_paths(root: str) -> List[str]:
     root = os.path.abspath(root)  # Return absolute paths.
     try:
         output = subprocess.check_output([
             "find",
             root,
-            "-regextype",
-            "posix-egrep",
-            "-regex",
-            match,
-            "-xtype",
-            "f",
+            # All files ending in .py or .pyi ...
+            '(', '-name', '*.py', '-or', '-name', '*.pyi', ')',
+            # ... and that are either regular files ...
+            '(', '-type', 'f', '-or',
+            # ... or symlinks pointing to existing files.
+            '(', '-type', 'l', '-exec', 'test', '-f', '{}', ';', ')', ')',
+            # Print all such files.
+            '-print',
         ])\
             .decode('utf-8')\
             .strip()
