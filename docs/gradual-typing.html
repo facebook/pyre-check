@@ -22,7 +22,7 @@ Strict mode can be enabled by annotating a file with <code># pyre-strict</code>.
   def foo() -&gt; int:
     return unannotated_library_function()  #<span class="hljs-built_in"> type </span>error: expected `int` but got `Any`
 </code></pre>
-<p>In case we the callee is not under our control we can either suppress the error
+<p>In case the callee is not under our control we can either suppress the error
 (<code># pyre-ignore</code>) or create stubs for the library function.
 Pyre uses <a href="https://github.com/python/typeshed">typeshed</a>, a collection of stubs
 for the standard library originally built to support MyPy.
