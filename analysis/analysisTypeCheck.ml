@@ -579,13 +579,17 @@ module State = struct
             in
             match Node.value target with
             | Tuple targets ->
-                let refine resolution target =
-                  refine
-                    ~resolution
-                    ~target
-                    ~value_annotation:Type.Top
+                let rec refine_tuple resolution target =
+                  match Node.value target with
+                  | Tuple targets ->
+                      List.fold targets ~init:resolution ~f:refine_tuple
+                  | _ ->
+                      refine
+                        ~resolution
+                        ~target
+                        ~value_annotation:Type.Top
                 in
-                List.fold targets ~init:resolution ~f:refine
+                List.fold targets ~init:resolution ~f:refine_tuple
             | _ ->
                 refine ~resolution ~target ~value_annotation
           in

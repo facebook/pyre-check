@@ -531,6 +531,10 @@ let test_forward _ =
     ["x", Type.integer; "y", Type.integer; "z", Type.Tuple (Type.Unbounded Type.integer)];
   assert_forward
     []
+    "(x, y), z = 1"
+    ["x", Type.Top; "y", Type.Top; "z", Type.Top];
+  assert_forward
+    []
     "x, y = return_tuple()"
     ["x", Type.integer; "y", Type.integer;];
   assert_forward [] "x = ()" ["x", Type.Tuple (Type.Unbounded Type.Object)];
@@ -1561,6 +1565,18 @@ let test_check _ =
           return a+b
     |}
     [];
+
+  assert_type_errors
+    {|
+    def foo() -> int:
+      (x, y), z = 0
+      return x + y + z
+  |}
+    [
+      (* There should be no name errors here. *)
+      "Incompatible variable type [9]: Unable to unpack `int`, expected a `Tuple`.";
+      "Incompatible return type [7]: Expected `int` but got `unknown`.";
+    ];
 
   assert_type_errors
     {|
