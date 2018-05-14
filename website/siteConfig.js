@@ -17,7 +17,7 @@ const users = [
 
 const siteConfig = {
   title: 'Pyre',
-  tagline: 'A performant typechecker for Python',
+  tagline: 'A performant type-checker for Python 3',
   url: 'https://pyre-check.org',
   baseUrl: '/',
   organizationName: 'facebook',

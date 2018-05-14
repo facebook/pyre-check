@@ -3,7 +3,7 @@
   "localized-strings": {
     "next": "Next",
     "previous": "Previous",
-    "tagline": "A performant typechecker for Python",
+    "tagline": "A performant type-checker for Python 3",
     "configuration": "Configuring Pyre",
     "Configuring Pyre": "Configuring Pyre",
     "error-suppression": "Error Suppression",
