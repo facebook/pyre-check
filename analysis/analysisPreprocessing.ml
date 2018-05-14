@@ -876,28 +876,6 @@ let fix_singleton_sets source =
   |> snd
 
 
-(* TODO(T22866412) Find a more general way of dealing with this problem.
-   This hack ensures that assertions from if tests get propagated even if
-   there is no explicit else: in the code. *)
-let expand_optional_assigns source =
-  let module Transform = Transform.MakeStatementTransformer(struct
-      type t = unit
-
-      let statement_postorder _ { Node.location; value } =
-        match value with
-        | If { If.test; body; orelse = [] } ->
-            (), [{
-                Node.location;
-                value = If { If.test; body; orelse = [{ Node.location; value = Pass }] };
-              }]
-        | _ ->
-            (), [{ Node.location; value }]
-    end)
-  in
-  Transform.transform () source
-  |> snd
-
-
 let expand_operators source =
   let module Transform = Transform.Make(struct
       include Transform.Identity
@@ -1480,7 +1458,6 @@ let preprocess source =
   |> replace_version_specific_code
   |> qualify
   |> fix_singleton_sets
-  |> expand_optional_assigns
   |> expand_operators
   |> expand_subscripts
   |> expand_returns

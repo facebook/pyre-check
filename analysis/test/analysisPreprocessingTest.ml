@@ -711,49 +711,6 @@ let test_expand_type_checking_imports _ =
     |}
 
 
-let test_expand_optional_assigns _ =
-  let assert_expand source expected =
-    assert_source_equal
-      (parse expected)
-      (Preprocessing.expand_optional_assigns (parse source))
-  in
-  assert_expand
-    {|
-      if x is None:
-        pass
-    |}
-    {|
-      if x is None:
-        pass
-      else:
-        pass
-    |};
-  assert_expand
-    {|
-      if x is None:
-        pass
-      else:
-        voodoo()
-    |}
-    {|
-      if x is None:
-        pass
-      else:
-        voodoo()
-    |};
-  assert_expand
-    {|
-      if x is None or a:
-        pass
-    |}
-    {|
-      if x is None or a:
-        pass
-      else:
-        pass
-    |}
-
-
 let test_expand_operators _ =
   let assert_expand source expected =
     assert_source_equal
@@ -1502,7 +1459,6 @@ let () =
     "qualify">::test_qualify;
     "replace_version_specific_code">::test_replace_version_specific_code;
     "expand_type_checking_imports">::test_expand_type_checking_imports;
-    "expand_optional_assigns">::test_expand_optional_assigns;
     "expand_operators">::test_expand_operators;
     "expand_subscripts">::test_expand_subscripts;
     "expand_returns">::test_expand_returns;

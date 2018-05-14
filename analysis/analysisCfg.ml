@@ -290,13 +290,11 @@ let create define =
         Node.connect_option body_node join;
 
         let orelse_statements =
-          if List.length orelse > 0 then
-            let test =
-              Expression.negate test
-              |> Expression.normalize in
-            (assume test) :: orelse;
-          else
-            []
+          let test =
+            Expression.negate test
+            |> Expression.normalize
+          in
+          (assume test) :: orelse
         in
         let orelse = create orelse_statements jumps split in
         Node.connect_option orelse join;
