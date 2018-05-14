@@ -43,10 +43,7 @@ def main() -> int:
                 '{} is not a readable directory'.format(directory))
         return directory
 
-    parser = argparse.ArgumentParser(
-        epilog='environment variables:  `PYRE_BINARY` overrides the pyre '
-        'client binary used.',
-        allow_abbrev=False)
+    parser = argparse.ArgumentParser(allow_abbrev=False)
 
     parser.add_argument(
         '-l',
@@ -126,7 +123,8 @@ def main() -> int:
         action='append',
         default=[],
         type=readable_directory,
-        help='Additional directories to search for module files')
+        help='Additional directories with modules and stubs '
+             'to include in type environment')
     parser.add_argument(
         '--preserve-pythonpath',
         action='store_true',
