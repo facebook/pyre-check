@@ -12,7 +12,7 @@ use Pyre. The following will give a short overview of the basic workflows that w
 In the most basic case you have a `test` directory containing a `test.py` file.
 ```bash
 $ cat test/test.py
-def foo() -> int
+def foo() -> int:
   return 'string'  # whoops
 ```
 
