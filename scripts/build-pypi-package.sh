@@ -35,7 +35,7 @@ trap error_trap ERR
 if [[ "${MACHTYPE}" = *apple* ]]; then
   READLINK=greadlink
   HAS_PIP_GREATER_THAN_1_5=no
-  WHEEL_DISTRIBUTION_PLATFORM=macosx_10_13_x86_64
+  WHEEL_DISTRIBUTION_PLATFORM=macosx_10_11_x86_64
 else
   READLINK=readlink
   HAS_PIP_GREATER_THAN_1_5=yes

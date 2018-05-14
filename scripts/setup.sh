@@ -13,6 +13,12 @@ die() {
   exit 1
 }
 
+# Compatibility settings with MacOS.
+if [[ "${MACHTYPE}" = *apple* ]]; then
+  export MACOSX_DEPLOYMENT_TARGET=10.11
+fi
+
+
 # Switch to pyre directory.
 cd "$(dirname "$0")/.."
 
