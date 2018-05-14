@@ -65,4 +65,11 @@ $ pyre init
 ```
 from your project root will set up your `.pyre_configuration`, but you may want to override
 the source-directories field in projects within that root, so you can easily run pyre on
-different sets of default paths.
+different sets of default paths. Once you have a configuration file, you can run pyre with
+no extra parameters:
+```bash
+$ pyre check
+```
+
+See [Configuring Pyre](configuration.md) for examples and
+additional configuration settings.

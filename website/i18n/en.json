@@ -4,6 +4,8 @@
     "next": "Next",
     "previous": "Previous",
     "tagline": "A performant typechecker for Python",
+    "configuration": "Configuring Pyre",
+    "Configuring Pyre": "Configuring Pyre",
     "error-suppression": "Error Suppression",
     "Error Suppression": "Error Suppression",
     "error-types": "Pyre Errors",
