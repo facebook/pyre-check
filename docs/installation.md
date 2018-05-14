@@ -18,14 +18,15 @@ to use Pyre.
 
 Note that
 - on *MacOS* you might have to invoke `pip36` explicitly to use a current version,
-- we currently only provide *linux/AMD64* and *OSX 10.13/AMD64* binaries. If you need support for a
+- we currently only provide *linux/AMD64* and *OSX/AMD64* binaries. If you need support for a
 different architecture, feel free to reach out to us.
 
 
 # Building from Source
 
 These instructions are known to work on Mac OS X (tested on High
-Sierra - OSX 10.13) and Linux (tested on Ubuntu 16.04 LTS and CentOS 7).
+Sierra - OSX 10.13 - even though binaries are compatible with versions
+as old as 10.11) and Linux (tested on Ubuntu 16.04 LTS and CentOS 7).
 
 ## Prerequisites
 ### Opam
