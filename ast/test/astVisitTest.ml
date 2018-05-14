@@ -41,7 +41,7 @@ let test_collect _ =
         Sexp.pp (sexp_of_list Expression.sexp_of_t expressions)
         Sexp.pp (sexp_of_list Statement.sexp_of_t statements)
     in
-    assert_equal ~cmp:equal ~printer collect expected in
+    assert_equal ~cmp:equal ~printer expected collect in
 
   assert_collect
     [+Expression (+Float 1.0); +Expression (+Float 2.0)]
@@ -132,9 +132,9 @@ let test_collect_accesses_in_position _ =
     let position = { Location.line; column } in
     assert_equal
       ~printer:(String.concat ~sep:", ")
+      expected_accesses
       (List.map ~f:Node.value (Visit.collect_accesses_in_position source position)
        |> List.map ~f:Access.show)
-      expected_accesses
   in
   assert_collected_accesses source 2 0 ["s"];
   assert_collected_accesses source 2 4 ["ham.egg.(...).bake"];
@@ -204,7 +204,7 @@ let test_statement_visitor _ =
   let assert_counts source expected_counts =
     let table = Visit.visit (String.Table.create ()) source in
     List.iter
-      ~f:(fun (key, expected_value) -> assert_equal (Hashtbl.find table key) (Some expected_value))
+      ~f:(fun (key, expected_value) -> assert_equal (Some expected_value) (Hashtbl.find table key))
       expected_counts
   in
   let source = parse {|
@@ -240,10 +240,10 @@ let test_statement_visitor_source _ =
   in
   let module Visit = Visit.MakeStatementVisitor(StatementVisitor) in
   let path = Visit.visit "" (parse ~path:"test.py" "a = 1") in
-  assert_equal path "test.py";
+  assert_equal "test.py" path;
 
   let path = Visit.visit "" (parse ~path:"test2.py" "b = 2") in
-  assert_equal path "test2.py";
+  assert_equal "test2.py" path;
   ()
 
 let () =

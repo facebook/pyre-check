@@ -90,7 +90,7 @@ let test_is_constructor _ =
         parent;
       }
     in
-    assert_equal (Define.is_constructor ~in_test define) expected
+    assert_equal expected (Define.is_constructor ~in_test define)
   in
   assert_is_constructor ~name:"__init__" ~parent:(Some "foo") true;
   assert_is_constructor ~in_test:true ~name:"setUp" ~parent:(Some "foo") true;
@@ -695,7 +695,7 @@ let test_pp _ =
     in
 
     assert_equal ~pp_diff
-      pretty_print_of_source pretty_print_expected
+      pretty_print_expected pretty_print_of_source
   in
 
   (* Test 1 : simple def *)
