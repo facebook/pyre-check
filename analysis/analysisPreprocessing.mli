@@ -17,8 +17,6 @@ val replace_version_specific_code: Source.t -> Source.t
 
 val expand_type_checking_imports: Source.t -> Source.t
 
-val expand_optional_assigns: Source.t -> Source.t
-
 val expand_operators: Source.t -> Source.t
 
 (* Transform subscript indexing into __getitem__ calls. *)

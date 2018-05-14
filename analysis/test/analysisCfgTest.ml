@@ -204,9 +204,10 @@ let test_if _ =
       node 2 Node.Error [] [3];
       node 3 Node.Final [1; 2] [];
       node 4 Node.Yield [] [];
-      node 5 (Node.If conditional) [0] [6; 7];
-      node 6 Node.Join [5; 7] [1];
+      node 5 (Node.If conditional) [0] [7; 8];
+      node 6 Node.Join [7; 8] [1];
       node 7 (Node.Block [assume (+True); !!"body"]) [5] [6];
+      node 8 (Node.Block [assume (+False)]) [5] [6];
     ];
 
   let conditional = {
@@ -549,14 +550,15 @@ let test_while _ =
       node 2 Node.Error [] [3];
       node 3 Node.Final [1; 2] [];
       node 4 Node.Yield [] [];
-      node 5 (Node.While loop) [0; 11] [6; 7; 12];
-      node 6 Node.Join [5; 10; 12] [1];
+      node 5 (Node.While loop) [0; 12] [6; 7; 13];
+      node 6 Node.Join [5; 10; 13] [1];
       node 7 (Node.Block [assume (+True)]) [5] [8];
-      node 8 (Node.If conditional) [7] [9; 10];
-      node 9 Node.Join [8] [11];
+      node 8 (Node.If conditional) [7] [10; 11];
+      node 9 Node.Join [11] [12];
       node 10 (Node.Block [assume (+True); +Break]) [8] [6];
-      node 11 (Node.Block [!!"body"]) [9] [5];
-      node 12 (Node.Block [!!"orelse"]) [5] [6];
+      node 11 (Node.Block [assume (+False)]) [8] [9];
+      node 12 (Node.Block [!!"body"]) [9] [5];
+      node 13 (Node.Block [!!"orelse"]) [5] [6];
     ];
 
   let conditional = {
@@ -577,14 +579,15 @@ let test_while _ =
       node 2 Node.Error [] [3];
       node 3 Node.Final [1; 2] [];
       node 4 Node.Yield [] [];
-      node 5 (Node.While loop) [0; 10; 11] [6; 7; 12];
-      node 6 Node.Join [5; 12] [1];
+      node 5 (Node.While loop) [0; 10; 12] [6; 7; 13];
+      node 6 Node.Join [5; 13] [1];
       node 7 (Node.Block [assume (+True)]) [5] [8];
-      node 8 (Node.If conditional) [7] [9; 10];
-      node 9 Node.Join [8] [11];
+      node 8 (Node.If conditional) [7] [10; 11];
+      node 9 Node.Join [11] [12];
       node 10 (Node.Block [assume (+True); +Continue]) [8] [5];
-      node 11 (Node.Block [assume (+False); !!"body"]) [9] [5];
-      node 12 (Node.Block [!!"orelse"]) [5] [6];
+      node 11 (Node.Block [assume (+False)]) [8] [9];
+      node 12 (Node.Block [assume (+False); !!"body"]) [9] [5];
+      node 13 (Node.Block [!!"orelse"]) [5] [6];
     ];
 
   (* Jumps are reset after the loop. *)
