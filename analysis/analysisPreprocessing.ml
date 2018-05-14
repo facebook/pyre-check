@@ -843,38 +843,6 @@ let expand_type_checking_imports source =
   Transform.transform () source
   |> snd
 
-(* TODO(T22862979) Our parser currently parses {""} as Dictionary(kwarg = "").
-   The real solution is to fix parsing of singleton dictionaries. *)
-let fix_singleton_sets source =
-  let module Transform = Transform.Make(struct
-      include Transform.Identity
-      type t = unit
-
-      let expression_postorder _ ({ Node.location; value } as expression) =
-        match value with
-        | Dictionary {
-            Dictionary.entries = [];
-            keywords = Some { Node.location = keyword_location; value = keyword }
-          }
-          ->
-            begin
-              match keyword with
-              | Starred _ ->
-                  expression
-              | _ ->
-                  {
-                    Node.location;
-                    value = Set [{ Node.location = keyword_location; value = keyword}];
-                  }
-            end
-
-        | _ ->
-            expression
-    end)
-  in
-  Transform.transform () source
-  |> snd
-
 
 (* TODO(T22866412) Find a more general way of dealing with this problem.
    This hack ensures that assertions from if tests get propagated even if
@@ -1479,7 +1447,6 @@ let preprocess source =
   |> expand_string_annotations
   |> replace_version_specific_code
   |> qualify
-  |> fix_singleton_sets
   |> expand_optional_assigns
   |> expand_operators
   |> expand_subscripts
