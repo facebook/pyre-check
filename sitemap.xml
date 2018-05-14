@@ -3,6 +3,7 @@
 <url> <loc>https://pyre-check.org/help.html</loc> <changefreq>weekly</changefreq> <priority>0.5</priority> <xhtml:link rel="alternate" hreflang="en" href="https://pyre-check.org/en/help.html" /> </url>
 <url> <loc>https://pyre-check.org/index.html</loc> <changefreq>weekly</changefreq> <priority>0.5</priority> <xhtml:link rel="alternate" hreflang="en" href="https://pyre-check.org/en/index.html" /> </url>
 <url> <loc>https://pyre-check.org/users.html</loc> <changefreq>weekly</changefreq> <priority>0.5</priority> <xhtml:link rel="alternate" hreflang="en" href="https://pyre-check.org/en/users.html" /> </url>
+<url> <loc>https://pyre-check.org/docs/configuration.html</loc> <changefreq>hourly</changefreq> <priority>1.0</priority> <xhtml:link rel="alternate" hreflang="en" href="https://pyre-check.org/docs/configuration.html" /> </url>
 <url> <loc>https://pyre-check.org/docs/error-suppression.html</loc> <changefreq>hourly</changefreq> <priority>1.0</priority> <xhtml:link rel="alternate" hreflang="en" href="https://pyre-check.org/docs/error-suppression.html" /> </url>
 <url> <loc>https://pyre-check.org/docs/error-types.html</loc> <changefreq>hourly</changefreq> <priority>1.0</priority> <xhtml:link rel="alternate" hreflang="en" href="https://pyre-check.org/docs/error-types.html" /> </url>
 <url> <loc>https://pyre-check.org/docs/gradual-typing.html</loc> <changefreq>hourly</changefreq> <priority>1.0</priority> <xhtml:link rel="alternate" hreflang="en" href="https://pyre-check.org/docs/gradual-typing.html" /> </url>
