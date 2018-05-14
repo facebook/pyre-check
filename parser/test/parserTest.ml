@@ -97,38 +97,42 @@ let test_lexer _ =
   assert_parsed_equal
     "1 +\\\n 2"
     [
-      +Expression (+BinaryOperator {
-          BinaryOperator.left = +Integer 1;
-          operator = BinaryOperator.Add;
-          right = +Integer 2;
-        });
+      +Expression
+        (+BinaryOperator {
+           BinaryOperator.left = +Integer 1;
+           operator = BinaryOperator.Add;
+           right = +Integer 2;
+         });
     ];
   assert_parsed_equal
     "1 + \\\n 2"
     [
-      +Expression (+BinaryOperator {
-          BinaryOperator.left = +Integer 1;
-          operator = BinaryOperator.Add;
-          right = +Integer 2;
-        });
+      +Expression
+        (+BinaryOperator {
+           BinaryOperator.left = +Integer 1;
+           operator = BinaryOperator.Add;
+           right = +Integer 2;
+         });
     ];
   assert_parsed_equal
     "(1 +\n 2)"
     [
-      +Expression (+BinaryOperator {
-          BinaryOperator.left = +Integer 1;
-          operator = BinaryOperator.Add;
-          right = +Integer 2;
-        });
+      +Expression
+        (+BinaryOperator {
+           BinaryOperator.left = +Integer 1;
+           operator = BinaryOperator.Add;
+           right = +Integer 2;
+         });
     ];
   assert_parsed_equal
     "(1 +\n 2)\n3"
     [
-      +Expression (+BinaryOperator {
-          BinaryOperator.left = +Integer 1;
-          operator = BinaryOperator.Add;
-          right = +Integer 2;
-        });
+      +Expression
+        (+BinaryOperator {
+           BinaryOperator.left = +Integer 1;
+           operator = BinaryOperator.Add;
+           right = +Integer 2;
+         });
       +Expression (+Integer 3)
     ]
 
@@ -218,155 +222,167 @@ let test_access _ =
   assert_parsed_equal
     "a[1]"
     [
-      +Expression (+Access [
-          Access.Identifier ~~"a";
-          Access.Subscript [Access.Index (+Integer 1)];
-        ])
+      +Expression
+        (+Access [
+           Access.Identifier ~~"a";
+           Access.Subscript [Access.Index (+Integer 1)];
+         ])
     ];
   assert_parsed_equal
     "a[1 < 2]"
     [
-      +Expression (+Access [
-          Access.Identifier ~~"a";
-          Access.Subscript [
-            Access.Index (+ComparisonOperator {
-                ComparisonOperator.left = +Integer 1;
-                right = [ComparisonOperator.LessThan, +Integer 2];
-              });
-          ];
-        ])
+      +Expression
+        (+Access [
+           Access.Identifier ~~"a";
+           Access.Subscript [
+             Access.Index (+ComparisonOperator {
+                 ComparisonOperator.left = +Integer 1;
+                 right = [ComparisonOperator.LessThan, +Integer 2];
+               });
+           ];
+         ])
     ];
   assert_parsed_equal
     "a[1].b"
     [
-      +Expression (+Access [
-          Access.Identifier ~~"a";
-          Access.Subscript [Access.Index (+Integer 1)];
-          Access.Identifier ~~"b";
-        ])
+      +Expression
+        (+Access [
+           Access.Identifier ~~"a";
+           Access.Subscript [Access.Index (+Integer 1)];
+           Access.Identifier ~~"b";
+         ])
     ];
   assert_parsed_equal
     "a[b]"
     [
-      +Expression (+Access [
-          Access.Identifier ~~"a";
-          Access.Subscript [Access.Index !"b"];
-        ])
+      +Expression
+        (+Access [
+           Access.Identifier ~~"a";
+           Access.Subscript [Access.Index !"b"];
+         ])
     ];
   assert_parsed_equal
     "a[:]"
     [
-      +Expression (+Access [
-          Access.Identifier ~~"a";
-          Access.Subscript [
-            Access.Slice {
-              Access.lower = None;
-              upper = None;
-              step = None;
-            };
-          ];
-        ]);
+      +Expression
+        (+Access [
+           Access.Identifier ~~"a";
+           Access.Subscript [
+             Access.Slice {
+               Access.lower = None;
+               upper = None;
+               step = None;
+             };
+           ];
+         ]);
     ];
   assert_parsed_equal
     "a[1:]"
     [
-      +Expression (+Access [
-          Access.Identifier ~~"a";
-          Access.Subscript [
-            Access.Slice {
-              Access.lower = Some (+Integer 1);
-              upper = None;
-              step = None;
-            };
-          ];
-        ]);
+      +Expression
+        (+Access [
+           Access.Identifier ~~"a";
+           Access.Subscript [
+             Access.Slice {
+               Access.lower = Some (+Integer 1);
+               upper = None;
+               step = None;
+             };
+           ];
+         ]);
     ];
   assert_parsed_equal
     "a[::2]"
     [
-      +Expression (+Access [
-          Access.Identifier ~~"a";
-          Access.Subscript [
-            Access.Slice {
-              Access.lower = None;
-              upper = None;
-              step = Some (+Integer 2);
-            };
-          ];
-        ]);
+      +Expression
+        (+Access [
+           Access.Identifier ~~"a";
+           Access.Subscript [
+             Access.Slice {
+               Access.lower = None;
+               upper = None;
+               step = Some (+Integer 2);
+             };
+           ];
+         ]);
     ];
   assert_parsed_equal
     "a[:1]"
     [
-      +Expression (+Access [
-          Access.Identifier ~~"a";
-          Access.Subscript [
-            Access.Slice {
-              Access.lower = None;
-              upper = Some (+Integer 1);
-              step = None;
-            };
-          ];
-        ]);
+      +Expression
+        (+Access [
+           Access.Identifier ~~"a";
+           Access.Subscript [
+             Access.Slice {
+               Access.lower = None;
+               upper = Some (+Integer 1);
+               step = None;
+             };
+           ];
+         ]);
     ];
   assert_parsed_equal
     "a[:1 if True else 2]"
     [
-      +Expression (+Access [
-          Access.Identifier ~~"a";
-          Access.Subscript [
-            Access.Slice {
-              Access.lower = None;
-              upper = Some
-                  (+Ternary {
-                     Ternary.target = +Integer 1;
-                     test = +True;
-                     alternative = +Integer 2;
-                   });
-              step = None;
-            };
-          ];
-        ]);
+      +Expression
+        (+Access [
+           Access.Identifier ~~"a";
+           Access.Subscript [
+             Access.Slice {
+               Access.lower = None;
+               upper = Some
+                   (+Ternary {
+                      Ternary.target = +Integer 1;
+                      test = +True;
+                      alternative = +Integer 2;
+                    });
+               step = None;
+             };
+           ];
+         ]);
     ];
   assert_parsed_equal
     "a[1:1]"
     [
-      +Expression (+Access [
-          Access.Identifier ~~"a";
-          Access.Subscript [
-            Access.Slice {
-              Access.lower = Some (+Integer 1);
-              upper = Some (+Integer 1);
-              step = None;
-            };
-          ];
-        ]);
+      +Expression
+        (+Access [
+           Access.Identifier ~~"a";
+           Access.Subscript [
+             Access.Slice {
+               Access.lower = Some (+Integer 1);
+               upper = Some (+Integer 1);
+               step = None;
+             };
+           ];
+         ]);
     ];
   assert_parsed_equal
     "a[1,2]"
     [
-      +Expression (+Access [
-          Access.Identifier ~~"a";
-          Access.Subscript [
-            Access.Index (+Integer 1);
-            Access.Index (+Integer 2);
-          ];
-        ]);
+      +Expression
+        (+Access [
+           Access.Identifier ~~"a";
+           Access.Subscript [
+             Access.Index (+Integer 1);
+             Access.Index (+Integer 2);
+           ];
+         ]);
     ];
   assert_parsed_equal
     "a[:1,2]"
     [
-      +Expression (+Access [
-          Access.Identifier ~~"a";
-          Access.Subscript [
-            Access.Slice {
-              Access.lower = None;
-              upper = Some (+Integer 1);
-              step = None;
-            };
-            Access.Index (+Integer 2);
-          ];
-        ]);
+      +Expression
+        (+Access [
+           Access.Identifier ~~"a";
+           Access.Subscript [
+             Access.Slice {
+               Access.lower = None;
+               upper = Some (+Integer 1);
+               step = None;
+             };
+             Access.Index (+Integer 2);
+           ];
+         ]);
     ]
 
 
@@ -485,17 +501,18 @@ let test_define _ =
   assert_parsed_equal
     "async def foo():\n  ..."
     [
-      +Stub (Stub.Define {
-          Define.name = Access.create "foo";
-          parameters = [];
-          body = [];
-          decorators = [];
-          docstring = None;
-          return_annotation = None;
-          async = true;
-          generated = false;
-          parent = None;
-        })
+      +Stub
+        (Stub.Define {
+            Define.name = Access.create "foo";
+            parameters = [];
+            body = [];
+            decorators = [];
+            docstring = None;
+            return_annotation = None;
+            async = true;
+            generated = false;
+            parent = None;
+          })
     ];
   assert_parsed_equal
     "@foo\nasync def foo():\n  1"
@@ -983,29 +1000,32 @@ let test_boolean_operator _ =
   assert_parsed_equal
     "True and False"
     [
-      +Expression (+BooleanOperator {
-          BooleanOperator.left = +True;
-          operator = BooleanOperator.And;
-          right = +False;
-        });
+      +Expression
+        (+BooleanOperator {
+           BooleanOperator.left = +True;
+           operator = BooleanOperator.And;
+           right = +False;
+         });
     ];
   assert_parsed_equal
     "1 and False"
     [
-      +Expression (+BooleanOperator {
-          BooleanOperator.left = +Integer 1;
-          operator = BooleanOperator.And;
-          right = +False;
-        });
+      +Expression
+        (+BooleanOperator {
+           BooleanOperator.left = +Integer 1;
+           operator = BooleanOperator.And;
+           right = +False;
+         });
     ];
   assert_parsed_equal
     "True or 1"
     [
-      +Expression (+BooleanOperator {
-          BooleanOperator.left = +True;
-          operator = BooleanOperator.Or;
-          right = +Integer 1;
-        });
+      +Expression
+        (+BooleanOperator {
+           BooleanOperator.left = +True;
+           operator = BooleanOperator.Or;
+           right = +Integer 1;
+         });
     ]
 
 
@@ -1013,51 +1033,56 @@ let test_binary_operator _ =
   assert_parsed_equal
     "1 + 2"
     [
-      +Expression (+BinaryOperator {
-          BinaryOperator.left = +Integer 1;
-          operator = BinaryOperator.Add;
-          right = +Integer 2;
-        });
+      +Expression
+        (+BinaryOperator {
+           BinaryOperator.left = +Integer 1;
+           operator = BinaryOperator.Add;
+           right = +Integer 2;
+         });
     ];
   assert_parsed_equal
     "1 ^ 2"
     [
-      +Expression (+BinaryOperator {
-          BinaryOperator.left = +Integer 1;
-          operator = BinaryOperator.BitXor;
-          right = +Integer 2;
-        });
+      +Expression
+        (+BinaryOperator {
+           BinaryOperator.left = +Integer 1;
+           operator = BinaryOperator.BitXor;
+           right = +Integer 2;
+         });
     ];
   assert_parsed_equal
     "1 // 2"
     [
-      +Expression (+BinaryOperator {
-          BinaryOperator.left = +Integer 1;
-          operator = BinaryOperator.FloorDivide;
-          right = +Integer 2;
-        });
+      +Expression
+        (+BinaryOperator {
+           BinaryOperator.left = +Integer 1;
+           operator = BinaryOperator.FloorDivide;
+           right = +Integer 2;
+         });
     ];
   assert_parsed_equal
     "1 - 2 + 3"
     [
-      +Expression (+BinaryOperator {
-          BinaryOperator.left = +BinaryOperator {
-            BinaryOperator.left = +Integer 1;
-            operator = BinaryOperator.Subtract;
-            right = +Integer 2;
-          };
-          operator = BinaryOperator.Add;
-          right = +Integer 3;
-        });
+      +Expression
+        (+BinaryOperator {
+           BinaryOperator.left = +BinaryOperator {
+             BinaryOperator.left = +Integer 1;
+             operator = BinaryOperator.Subtract;
+             right = +Integer 2;
+           };
+           operator = BinaryOperator.Add;
+           right = +Integer 3;
+         });
     ];
   assert_parsed_equal
     "a + b.c"
     [
-      +Expression (+BinaryOperator {
-          BinaryOperator.left = !"a";
-          operator = BinaryOperator.Add;
-          right = +Access (Access.create "b.c");
-        });
+      +Expression
+        (+BinaryOperator {
+           BinaryOperator.left = !"a";
+           operator = BinaryOperator.Add;
+           right = +Access (Access.create "b.c");
+         });
     ]
 
 
@@ -1065,26 +1090,29 @@ let test_unary_operator _ =
   assert_parsed_equal
     "not 1"
     [
-      +Expression (+UnaryOperator {
-          UnaryOperator.operator = UnaryOperator.Not;
-          operand = +Integer 1;
-        });
+      +Expression
+        (+UnaryOperator {
+           UnaryOperator.operator = UnaryOperator.Not;
+           operand = +Integer 1;
+         });
     ];
   assert_parsed_equal
     "~1"
     [
-      +Expression (+UnaryOperator {
-          UnaryOperator.operator = UnaryOperator.Invert;
-          operand = +Integer 1;
-        });
+      +Expression
+        (+UnaryOperator {
+           UnaryOperator.operator = UnaryOperator.Invert;
+           operand = +Integer 1;
+         });
     ];
   assert_parsed_equal
     "+1"
     [
-      +Expression (+UnaryOperator {
-          UnaryOperator.operator = UnaryOperator.Positive;
-          operand = +Integer 1;
-        });
+      +Expression
+        (+UnaryOperator {
+           UnaryOperator.operator = UnaryOperator.Positive;
+           operand = +Integer 1;
+         });
     ]
 
 
@@ -1095,70 +1123,74 @@ let test_lambda _ =
   assert_parsed_equal
     "lambda x,: x"
     [
-      +Expression (+Lambda {
-          Lambda.parameters = [
-            +{
-              Parameter.name = ~~"x";
-              value = None;
-              annotation = None;
-            };
-          ];
-          body = !"x";
-        });
+      +Expression
+        (+Lambda {
+           Lambda.parameters = [
+             +{
+               Parameter.name = ~~"x";
+               value = None;
+               annotation = None;
+             };
+           ];
+           body = !"x";
+         });
     ];
   assert_parsed_equal
     "lambda x: x is y"
     [
-      +Expression (+Lambda {
-          Lambda.parameters = [
-            +{
-              Parameter.name = ~~"x";
-              value = None;
-              annotation = None;
-            };
-          ];
-          body = +ComparisonOperator {
-            ComparisonOperator.left = !"x";
-            right = [ComparisonOperator.Is, !"y"];
-          };
-        });
+      +Expression
+        (+Lambda {
+           Lambda.parameters = [
+             +{
+               Parameter.name = ~~"x";
+               value = None;
+               annotation = None;
+             };
+           ];
+           body = +ComparisonOperator {
+             ComparisonOperator.left = !"x";
+             right = [ComparisonOperator.Is, !"y"];
+           };
+         });
     ];
   assert_parsed_equal
     "lambda x: x"
     [
-      +Expression (+Lambda {
-          Lambda.parameters = [
-            +{
-              Parameter.name = ~~"x";
-              value = None;
-              annotation = None;
-            };
-          ];
-          body = !"x";
-        });
+      +Expression
+        (+Lambda {
+           Lambda.parameters = [
+             +{
+               Parameter.name = ~~"x";
+               value = None;
+               annotation = None;
+             };
+           ];
+           body = !"x";
+         });
     ];
   assert_parsed_equal
     "lambda x = 1, y: x + 1"
     [
-      +Expression (+Lambda {
-          Lambda.parameters = [
-            +{
-              Parameter.name = ~~"x";
-              value = Some (+Integer 1);
-              annotation = None;
-            };
-            +{
-              Parameter.name = ~~"y";
-              value = None;
-              annotation = None;
-            };
-          ];
-          body = +BinaryOperator {
-            BinaryOperator.left = !"x";
-            operator = BinaryOperator.Add;
-            right = +Integer 1;
-          };
-        });
+      +Expression
+        (+Lambda {
+           Lambda.parameters = [
+             +{
+               Parameter.name = ~~"x";
+               value = Some (+Integer 1);
+               annotation = None;
+             };
+             +{
+               Parameter.name = ~~"y";
+               value = None;
+               annotation = None;
+             };
+           ];
+           body = +BinaryOperator {
+             BinaryOperator.left = !"x";
+             operator = BinaryOperator.Add;
+             right = +Integer 1;
+           };
+         });
     ]
 
 
@@ -1166,36 +1198,39 @@ let test_ternary _ =
   assert_parsed_equal
     "5 if 1 else 1"
     [
-      +Expression (+Ternary {
-          Ternary.target = +Integer 5;
-          test = +Integer 1;
-          alternative = +Integer 1;
-        });
+      +Expression
+        (+Ternary {
+           Ternary.target = +Integer 5;
+           test = +Integer 1;
+           alternative = +Integer 1;
+         });
     ];
   assert_parsed_equal
     "a in b if 1 else 1"
     [
-      +Expression (+Ternary {
-          Ternary.target = +ComparisonOperator {
-            ComparisonOperator.left = !"a";
-            right = [ComparisonOperator.In, !"b"];
-          };
-          test = +Integer 1;
-          alternative = +Integer 1;
-        });
+      +Expression
+        (+Ternary {
+           Ternary.target = +ComparisonOperator {
+             ComparisonOperator.left = !"a";
+             right = [ComparisonOperator.In, !"b"];
+           };
+           test = +Integer 1;
+           alternative = +Integer 1;
+         });
     ];
   assert_parsed_equal
     "1 if 2 else 3 if 4 else 5"
     [
-      +Expression (+Ternary {
-          Ternary.target = +Integer 1;
-          test =  +Integer 2;
-          alternative = +Ternary {
-            Ternary.target = +Integer 3;
-            test = +Integer 4;
-            alternative = +Integer 5;
-          }
-        });
+      +Expression
+        (+Ternary {
+           Ternary.target = +Integer 1;
+           test =  +Integer 2;
+           alternative = +Ternary {
+             Ternary.target = +Integer 3;
+             test = +Integer 4;
+             alternative = +Integer 5;
+           }
+         });
     ]
 
 
@@ -1206,33 +1241,36 @@ let test_dictionary _ =
   assert_parsed_equal
     "{1: 2}"
     [
-      +Expression (+Dictionary {
-          Dictionary.entries = [
-            { Dictionary.key = +Integer 1; value = +Integer 2 };
-          ];
-          keywords = None;
-        });
+      +Expression
+        (+Dictionary {
+           Dictionary.entries = [
+             { Dictionary.key = +Integer 1; value = +Integer 2 };
+           ];
+           keywords = None;
+         });
     ];
   assert_parsed_equal
     "{1: 2,}"
     [
-      +Expression (+Dictionary {
-          Dictionary.entries = [
-            { Dictionary.key = +Integer 1; value = +Integer 2 };
-          ];
-          keywords = None;
-        });
+      +Expression
+        (+Dictionary {
+           Dictionary.entries = [
+             { Dictionary.key = +Integer 1; value = +Integer 2 };
+           ];
+           keywords = None;
+         });
     ];
 
   assert_parsed_equal
     "{1: 2, **durp}"
     [
-      +Expression (+Dictionary {
-          Dictionary.entries = [
-            { Dictionary.key = +Integer 1; value = +Integer 2 };
-          ];
-          keywords = Some (+Starred (Starred.Twice !"durp"));
-        });
+      +Expression
+        (+Dictionary {
+           Dictionary.entries = [
+             { Dictionary.key = +Integer 1; value = +Integer 2 };
+           ];
+           keywords = Some (+Starred (Starred.Twice !"durp"));
+         });
     ];
   assert_parsed_equal
     "{**[1]}"
@@ -1246,129 +1284,145 @@ let test_dictionary _ =
   assert_parsed_equal
     "{ **durp, 1: 2}"
     [
-      +Expression (+Dictionary {
-          Dictionary.entries = [
-            { Dictionary.key = +Integer 1; value = +Integer 2 };
-          ];
-          keywords = Some (+Starred (Starred.Twice !"durp"));
-        });
+      +Expression
+        (+Dictionary {
+           Dictionary.entries = [
+             { Dictionary.key = +Integer 1; value = +Integer 2 };
+           ];
+           keywords = Some (+Starred (Starred.Twice !"durp"));
+         });
     ];
 
   assert_parsed_equal
     "{1: 1 < 2,}"
     [
-      +Expression (+Dictionary {
-          Dictionary.entries = [{
-              Dictionary.key = +Integer 1;
-              value = +ComparisonOperator {
-                ComparisonOperator.left = +Integer 1;
-                right = [ComparisonOperator.LessThan, +Integer 2];
-              };
-            }];
-          keywords = None;
-        });
+      +Expression
+        (+Dictionary {
+           Dictionary.entries = [{
+               Dictionary.key = +Integer 1;
+               value = +ComparisonOperator {
+                 ComparisonOperator.left = +Integer 1;
+                 right = [ComparisonOperator.LessThan, +Integer 2];
+               };
+             }];
+           keywords = None;
+         });
     ];
   assert_parsed_equal
     "{1: 2, 2: 3}"
     [
-      +Expression (+Dictionary {
-          Dictionary.entries = [
-            { Dictionary.key = +Integer 1; value = +Integer 2 };
-            { Dictionary.key = +Integer 2; value = +Integer 3 };
-          ];
-          keywords = None;
-        });
+      +Expression
+        (+Dictionary {
+           Dictionary.entries = [
+             { Dictionary.key = +Integer 1; value = +Integer 2 };
+             { Dictionary.key = +Integer 2; value = +Integer 3 };
+           ];
+           keywords = None;
+         });
     ];
   assert_parsed_equal
     "{\n\t1: 2,\n\t2: 3}"
     [
-      +Expression (+Dictionary {
-          Dictionary.entries = [
-            { Dictionary.key = +Integer 1; value = +Integer 2 };
-            { Dictionary.key = +Integer 2; value = +Integer 3 };
-          ];
-          keywords = None;
-        });
+      +Expression
+        (+Dictionary {
+           Dictionary.entries = [
+             { Dictionary.key = +Integer 1; value = +Integer 2 };
+             { Dictionary.key = +Integer 2; value = +Integer 3 };
+           ];
+           keywords = None;
+         });
     ];
 
   assert_parsed_equal
     "{a: b for a in []}"
     [
-      +Expression (+DictionaryComprehension {
-          Comprehension.element = {
-            Dictionary.key = !"a";
-            value = !"b";
-          };
-          generators = [{
-              Comprehension.target = !"a";
-              iterator = +List [];
-              conditions = [];
-              async = false;
-            }];
-        });
+      +Expression
+        (+DictionaryComprehension {
+           Comprehension.element = {
+             Dictionary.key = !"a";
+             value = !"b";
+           };
+           generators = [
+             {
+               Comprehension.target = !"a";
+               iterator = +List [];
+               conditions = [];
+               async = false;
+             };
+           ];
+         });
     ];
   assert_parsed_equal
     "{a if a else a: b for a in []}"
     [
-      +Expression (+DictionaryComprehension {
-          Comprehension.element = {
-            Dictionary.key = +Ternary {
-              Ternary.target = !"a";
-              test = !"a";
-              alternative = !"a";
-            };
-            value = !"b";
-          };
-          generators = [{
-              Comprehension.target = !"a";
-              iterator = +List [];
-              conditions = [];
-              async = false;
-            }];
-        });
+      +Expression
+        (+DictionaryComprehension {
+           Comprehension.element = {
+             Dictionary.key = +Ternary {
+               Ternary.target = !"a";
+               test = !"a";
+               alternative = !"a";
+             };
+             value = !"b";
+           };
+           generators = [
+             {
+               Comprehension.target = !"a";
+               iterator = +List [];
+               conditions = [];
+               async = false;
+             };
+           ];
+         });
     ];
   assert_parsed_equal
     "{a if a else a: b if b else b for a in []}"
     [
-      +Expression (+DictionaryComprehension {
-          Comprehension.element = {
-            Dictionary.key = +Ternary {
-              Ternary.target = !"a";
-              test = !"a";
-              alternative = !"a";
-            };
-            value = +Ternary {
-              Ternary.target = !"b";
-              test = !"b";
-              alternative = !"b";
-            };
-          };
-          generators = [{
-              Comprehension.target = !"a";
-              iterator = +List [];
-              conditions = [];
-              async = false;
-            }]
-        });
+      +Expression
+        (+DictionaryComprehension {
+           Comprehension.element = {
+             Dictionary.key = +Ternary {
+               Ternary.target = !"a";
+               test = !"a";
+               alternative = !"a";
+             };
+             value = +Ternary {
+               Ternary.target = !"b";
+               test = !"b";
+               alternative = !"b";
+             };
+           };
+           generators = [
+             {
+               Comprehension.target = !"a";
+               iterator = +List [];
+               conditions = [];
+               async = false;
+             };
+           ];
+         });
     ];
   assert_parsed_equal
     "{a: b for c, d in []}"
     [
-      +Expression (+DictionaryComprehension {
-          Comprehension.element = {
-            Dictionary.key = !"a";
-            value = !"b";
-          };
-          generators = [{
-              Comprehension.target = +Tuple [
-                !"c";
-                !"d";
-              ];
-              iterator = +List [];
-              conditions = [];
-              async = false;
-            }];
-        });
+      +Expression
+        (+DictionaryComprehension {
+           Comprehension.element = {
+             Dictionary.key = !"a";
+             value = !"b";
+           };
+           generators = [
+             {
+               Comprehension.target = +Tuple [
+                 !"c";
+                 !"d";
+               ];
+               iterator = +List [];
+               conditions = [];
+               async = false;
+             };
+           ];
+         });
     ]
 
 
@@ -1387,13 +1441,16 @@ let test_list _ =
     [+Expression (+List [+Integer 1; +Integer 2])];
   assert_parsed_equal
     "[1 if 2 else 3]"
-    [+Expression (+List [
-         +Ternary {
-           Ternary.target = +Integer 1;
-           test = +Integer 2;
-           alternative = +Integer 3;
-         };
-       ])];
+    [
+      +Expression
+        (+List [
+           +Ternary {
+             Ternary.target = +Integer 1;
+             test = +Integer 2;
+             alternative = +Integer 3;
+           };
+         ]);
+    ];
   assert_parsed_equal
     "[\n\t1,\n\t2\n]"
     [+Expression (+List [+Integer 1; +Integer 2])];
@@ -1401,139 +1458,163 @@ let test_list _ =
   assert_parsed_equal
     "[a for a in []]"
     [
-      +Expression (+ListComprehension {
-          Comprehension.element = !"a";
-          generators = [{
-              Comprehension.target = !"a";
-              iterator = +List [];
-              conditions = [];
-              async = false;
-            }];
-        });
+      +Expression
+        (+ListComprehension {
+           Comprehension.element = !"a";
+           generators = [
+             {
+               Comprehension.target = !"a";
+               iterator = +List [];
+               conditions = [];
+               async = false;
+             };
+           ];
+         });
     ];
   assert_parsed_equal
     "[a in b for a in []]"
     [
-      +Expression (+ListComprehension {
-          Comprehension.element = +ComparisonOperator {
-            ComparisonOperator.left = !"a";
-            right = [ComparisonOperator.In, !"b"];
-          };
-          generators = [{
-              Comprehension.target = !"a";
-              iterator = +List [];
-              conditions = [];
-              async = false;
-            }];
-        });
+      +Expression
+        (+ListComprehension {
+           Comprehension.element = +ComparisonOperator {
+             ComparisonOperator.left = !"a";
+             right = [ComparisonOperator.In, !"b"];
+           };
+           generators = [
+             {
+               Comprehension.target = !"a";
+               iterator = +List [];
+               conditions = [];
+               async = false;
+             };
+           ];
+         });
     ];
   assert_parsed_equal
     "[a for a in a for b in []]"
     [
-      +Expression (+ListComprehension {
-          Comprehension.element = !"a";
-          generators = [
-            {
-              Comprehension.target = !"a";
-              iterator = !"a";
-              conditions = [];
-              async = false;
-            };
-            {
-              Comprehension.target = !"b";
-              iterator = +List [];
-              conditions = [];
-              async = false;
-            };
-          ];
-        });
+      +Expression
+        (+ListComprehension {
+           Comprehension.element = !"a";
+           generators = [
+             {
+               Comprehension.target = !"a";
+               iterator = !"a";
+               conditions = [];
+               async = false;
+             };
+             {
+               Comprehension.target = !"b";
+               iterator = +List [];
+               conditions = [];
+               async = false;
+             };
+           ];
+         });
     ];
   assert_parsed_equal
     "[a for a in [] if b]"
     [
-      +Expression (+ListComprehension {
-          Comprehension.element = !"a";
-          generators = [{
-              Comprehension.target = !"a";
-              iterator = +List [];
-              conditions = [!"b"];
-              async = false;
-            }];
-        });
+      +Expression
+        (+ListComprehension {
+           Comprehension.element = !"a";
+           generators = [
+             {
+               Comprehension.target = !"a";
+               iterator = +List [];
+               conditions = [!"b"];
+               async = false;
+             };
+           ];
+         });
     ];
   assert_parsed_equal
     "[a for a in (c for c in []) if b]"
     [
-      +Expression (+ListComprehension {
-          Comprehension.element = !"a";
-          generators = [{
-              Comprehension.target = !"a";
-              iterator = +Generator {
-                Comprehension.element = !"c";
-                generators = [{
-                    Comprehension.target = !"c";
-                    iterator = +List [];
-                    conditions = [];
-                    async = false;
-                  }];
-              };
-              conditions = [!"b"];
-              async = false;
-            }];
-        });
+      +Expression
+        (+ListComprehension {
+           Comprehension.element = !"a";
+           generators = [
+             {
+               Comprehension.target = !"a";
+               iterator = +Generator {
+                 Comprehension.element = !"c";
+                 generators = [
+                   {
+                     Comprehension.target = !"c";
+                     iterator = +List [];
+                     conditions = [];
+                     async = false;
+                   };
+                 ];
+               };
+               conditions = [!"b"];
+               async = false;
+             };
+           ];
+         });
     ];
   assert_parsed_equal
     "[a for a in [] if 1 < 2]"
     [
-      +Expression (+ListComprehension {
-          Comprehension.element = !"a";
-          generators = [{
-              Comprehension.target = !"a";
-              iterator = +List [];
-              conditions = [
-                +ComparisonOperator {
-                  ComparisonOperator.left = +Integer 1;
-                  right = [ComparisonOperator.LessThan, +Integer 2];
-                };
-              ];
-              async = false;
-            }];
-        });
+      +Expression
+        (+ListComprehension {
+           Comprehension.element = !"a";
+           generators = [
+             {
+               Comprehension.target = !"a";
+               iterator = +List [];
+               conditions = [
+                 +ComparisonOperator {
+                   ComparisonOperator.left = +Integer 1;
+                   right = [ComparisonOperator.LessThan, +Integer 2];
+                 };
+               ];
+               async = false;
+             };
+           ];
+         });
     ];
   assert_parsed_equal
     "[a for a in [] if a is 1 or True]"
     [
-      +Expression (+ListComprehension {
-          Comprehension.element = !"a";
-          generators = [{
-              Comprehension.target = !"a";
-              iterator = +List [];
-              conditions = [
-                +BooleanOperator {
-                  BooleanOperator.left = +ComparisonOperator {
-                    ComparisonOperator.left = !"a";
-                    right = [ComparisonOperator.Is, +Integer 1];
-                  };
-                  operator = BooleanOperator.Or;
-                  right = +True;
-                };
-              ];
-              async = false;
-            }];
-        });
+      +Expression
+        (+ListComprehension {
+           Comprehension.element = !"a";
+           generators = [
+             {
+               Comprehension.target = !"a";
+               iterator = +List [];
+               conditions = [
+                 +BooleanOperator {
+                   BooleanOperator.left = +ComparisonOperator {
+                     ComparisonOperator.left = !"a";
+                     right = [ComparisonOperator.Is, +Integer 1];
+                   };
+                   operator = BooleanOperator.Or;
+                   right = +True;
+                 };
+               ];
+               async = false;
+             };
+           ];
+         });
     ];
   assert_parsed_equal
     "[a async for a in []]"
     [
-      +Expression (+ListComprehension {
-          Comprehension.element = !"a";
-          generators = [{
-              Comprehension.target = !"a";
-              iterator = +List [];
-              conditions = [];
-              async = true;
-            }];
-        });
+      +Expression
+        (+ListComprehension {
+           Comprehension.element = !"a";
+           generators = [
+             {
+               Comprehension.target = !"a";
+               iterator = +List [];
+               conditions = [];
+               async = true;
+             };
+           ];
+         });
     ]
 
 
@@ -1554,55 +1635,64 @@ let test_set _ =
   assert_parsed_equal
     "{1, 1 if 2 else 3}"
     [
-      +Expression (+Set
-                    [
-                      +Integer 1;
-                      +Ternary {
-                        Ternary.target = +Integer 1;
-                        test = +Integer 2;
-                        alternative = +Integer 3;
-                      };
-                    ]);
+      +Expression
+        (+Set [
+           +Integer 1;
+           +Ternary {
+             Ternary.target = +Integer 1;
+             test = +Integer 2;
+             alternative = +Integer 3;
+           };
+         ]);
     ];
 
   assert_parsed_equal
     "{a for a in []}"
     [
-      +Expression (+SetComprehension {
-          Comprehension.element = !"a";
-          generators = [{
-              Comprehension.target = !"a";
-              iterator = +List [];
-              conditions = [];
-              async = false;
-            }];
-        });
+      +Expression
+        (+SetComprehension {
+           Comprehension.element = !"a";
+           generators = [
+             {
+               Comprehension.target = !"a";
+               iterator = +List [];
+               conditions = [];
+               async = false;
+             };
+           ];
+         });
     ];
   assert_parsed_equal
     "{a for a in [] if b}"
     [
-      +Expression (+SetComprehension {
-          Comprehension.element = !"a";
-          generators = [{
-              Comprehension.target = !"a";
-              iterator = +List [];
-              conditions = [!"b"];
-              async = false;
-            }];
-        });
+      +Expression
+        (+SetComprehension {
+           Comprehension.element = !"a";
+           generators = [
+             {
+               Comprehension.target = !"a";
+               iterator = +List [];
+               conditions = [!"b"];
+               async = false;
+             };
+           ];
+         });
     ];
   assert_parsed_equal
     "{a for a in [] if b if c}"
     [
-      +Expression (+SetComprehension {
-          Comprehension.element = !"a";
-          generators = [{
-              Comprehension.target = !"a";
-              iterator = +List [];
-              conditions = [!"b"; !"c"];
-              async = false;
-            }];
-        });
+      +Expression
+        (+SetComprehension {
+           Comprehension.element = !"a";
+           generators = [
+             {
+               Comprehension.target = !"a";
+               iterator = +List [];
+               conditions = [!"b"; !"c"];
+               async = false;
+             };
+           ];
+         });
     ]
 
 
@@ -1610,18 +1700,21 @@ let test_generator _ =
   assert_parsed_equal
     "(a in b for a in [] if b)"
     [
-      +Expression (+Generator {
-          Comprehension.element = +ComparisonOperator {
-            ComparisonOperator.left = !"a";
-            right = [ComparisonOperator.In, !"b"];
-          };
-          generators = [{
-              Comprehension.target = !"a";
-              iterator = +List [];
-              conditions = [!"b"];
-              async = false;
-            }];
-        });
+      +Expression
+        (+Generator {
+           Comprehension.element = +ComparisonOperator {
+             ComparisonOperator.left = !"a";
+             right = [ComparisonOperator.In, !"b"];
+           };
+           generators = [
+             {
+               Comprehension.target = !"a";
+               iterator = +List [];
+               conditions = [!"b"];
+               async = false;
+             };
+           ];
+         });
     ]
 
 
@@ -1647,64 +1740,71 @@ let test_comparison _ =
   assert_parsed_equal
     "a.b < 2"
     [
-      +Expression (+ComparisonOperator {
-          ComparisonOperator.left = +(Access (Access.create "a.b"));
-          right = [ComparisonOperator.LessThan, +Integer 2];
-        });
+      +Expression
+        (+ComparisonOperator {
+           ComparisonOperator.left = +(Access (Access.create "a.b"));
+           right = [ComparisonOperator.LessThan, +Integer 2];
+         });
     ];
   assert_parsed_equal
     "1 in []"
     [
-      +Expression (+ComparisonOperator {
-          ComparisonOperator.left = +Integer 1;
-          right = [ComparisonOperator.In, +List []];
-        });
+      +Expression
+        (+ComparisonOperator {
+           ComparisonOperator.left = +Integer 1;
+           right = [ComparisonOperator.In, +List []];
+         });
     ];
   assert_parsed_equal
     "1 is 1"
     [
-      +Expression (+ComparisonOperator {
-          ComparisonOperator.left = +Integer 1;
-          right = [ComparisonOperator.Is, +Integer 1];
-        });
+      +Expression
+        (+ComparisonOperator {
+           ComparisonOperator.left = +Integer 1;
+           right = [ComparisonOperator.Is, +Integer 1];
+         });
     ];
   assert_parsed_equal
     "1 is not 1"
     [
-      +Expression (+ComparisonOperator {
-          ComparisonOperator.left = +Integer 1;
-          right = [ComparisonOperator.IsNot, +Integer 1];
-        });
+      +Expression
+        (+ComparisonOperator {
+           ComparisonOperator.left = +Integer 1;
+           right = [ComparisonOperator.IsNot, +Integer 1];
+         });
     ];
   assert_parsed_equal
     "1 == 1"
     [
-      +Expression (+ComparisonOperator {
-          ComparisonOperator.left = +Integer 1;
-          right = [ComparisonOperator.Equals, +Integer 1];
-        });
+      +Expression
+        (+ComparisonOperator {
+           ComparisonOperator.left = +Integer 1;
+           right = [ComparisonOperator.Equals, +Integer 1];
+         });
     ];
   assert_parsed_equal
     "1 < 1 < 2"
     [
-      +Expression (+ComparisonOperator {
-          ComparisonOperator.left = +Integer 1;
-          right = [
-            (ComparisonOperator.LessThan, +Integer 1);
-            (ComparisonOperator.LessThan, +Integer 2);
-          ]
-        });
+      +Expression
+        (+ComparisonOperator {
+           ComparisonOperator.left = +Integer 1;
+           right = [
+             ComparisonOperator.LessThan, +Integer 1;
+             ComparisonOperator.LessThan, +Integer 2;
+           ]
+         });
     ];
   assert_parsed_equal
     "1 < 1 is 2"
     [
-      +Expression (+ComparisonOperator {
-          ComparisonOperator.left = +Integer 1;
-          right = [
-            (ComparisonOperator.LessThan, +Integer 1);
-            (ComparisonOperator.Is, +Integer 2);
-          ];
-        });
+      +Expression
+        (+ComparisonOperator {
+           ComparisonOperator.left = +Integer 1;
+           right = [
+             ComparisonOperator.LessThan, +Integer 1;
+             ComparisonOperator.Is, +Integer 2;
+           ];
+         });
     ]
 
 
@@ -1729,12 +1829,14 @@ let test_call _ =
                  Argument.name = None;
                  value = +Generator {
                    Comprehension.element = !"a";
-                   generators = [{
+                   generators = [
+                     {
                        Comprehension.target = !"a";
                        iterator = +List [];
                        conditions = [];
                        async = false;
-                     }]
+                     };
+                   ];
                  };
                };
              ]);
@@ -1751,12 +1853,14 @@ let test_call _ =
                  Argument.name = None;
                  value = +Generator {
                    Comprehension.element = !"a";
-                   generators = [{
+                   generators = [
+                     {
                        Comprehension.target = !"a";
                        iterator = +List [];
                        conditions = [];
                        async = false;
-                     }]
+                     };
+                   ];
                  };
                }
              ]);
@@ -1915,38 +2019,42 @@ let test_string _ =
   assert_parsed_equal
     "'a' + 'b'"
     [
-      +Expression (+BinaryOperator {
-          BinaryOperator.left = +String "a";
-          operator = BinaryOperator.Add;
-          right = +String "b";
-        });
+      +Expression
+        (+BinaryOperator {
+           BinaryOperator.left = +String "a";
+           operator = BinaryOperator.Add;
+           right = +String "b";
+         });
     ];
   assert_parsed_equal
     "\"a\" + \"b\""
     [
-      +Expression (+BinaryOperator {
-          BinaryOperator.left = +String "a";
-          operator = BinaryOperator.Add;
-          right = +String "b";
-        });
+      +Expression
+        (+BinaryOperator {
+           BinaryOperator.left = +String "a";
+           operator = BinaryOperator.Add;
+           right = +String "b";
+         });
     ];
   assert_parsed_equal
     "'''a''' + '''b'''"
     [
-      +Expression (+BinaryOperator {
-          BinaryOperator.left = +String "a";
-          operator = BinaryOperator.Add;
-          right = +String "b";
-        });
+      +Expression
+        (+BinaryOperator {
+           BinaryOperator.left = +String "a";
+           operator = BinaryOperator.Add;
+           right = +String "b";
+         });
     ];
   assert_parsed_equal
     "\"\"\"a\"\"\" + \"\"\"b\"\"\""
     [
-      +Expression (+BinaryOperator {
-          BinaryOperator.left = +String "a";
-          operator = BinaryOperator.Add;
-          right = +String "b";
-        });
+      +Expression
+        (+BinaryOperator {
+           BinaryOperator.left = +String "a";
+           operator = BinaryOperator.Add;
+           right = +String "b";
+         });
     ]
 
 
@@ -3274,38 +3382,41 @@ let test_tuple _ =
   assert_parsed_equal
     "1, 1 + 1"
     [
-      +Expression (+Tuple [
-          +Integer 1;
-          +BinaryOperator {
-            BinaryOperator.left = +Integer 1;
-            operator = BinaryOperator.Add;
-            right = +Integer 1;
-          };
-        ]);
+      +Expression
+        (+Tuple [
+           +Integer 1;
+           +BinaryOperator {
+             BinaryOperator.left = +Integer 1;
+             operator = BinaryOperator.Add;
+             right = +Integer 1;
+           };
+         ]);
     ];
   assert_parsed_equal
     "1, 2 if 3 else 4"
     [
-      +Expression (+Tuple [
-          +Integer 1;
-          +Ternary {
-            Ternary.target = +Integer 2;
-            test = +Integer 3;
-            alternative = +Integer 4;
-          };
-        ]);
+      +Expression
+        (+Tuple [
+           +Integer 1;
+           +Ternary {
+             Ternary.target = +Integer 2;
+             test = +Integer 3;
+             alternative = +Integer 4;
+           };
+         ]);
     ];
   assert_parsed_equal
     "1 + 1, 1"
     [
-      +Expression (+Tuple [
-          +BinaryOperator {
-            BinaryOperator.left = +Integer 1;
-            operator = BinaryOperator.Add;
-            right = +Integer 1;
-          };
-          +Integer 1;
-        ]);
+      +Expression
+        (+Tuple [
+           +BinaryOperator {
+             BinaryOperator.left = +Integer 1;
+             operator = BinaryOperator.Add;
+             right = +Integer 1;
+           };
+           +Integer 1;
+         ]);
     ];
   assert_parsed_equal
     "(1, 2, 3)"
