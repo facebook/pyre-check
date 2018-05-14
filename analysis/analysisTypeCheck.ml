@@ -318,7 +318,8 @@ module State = struct
          let errors =
            let expected = Method.return_annotation overridden_method ~resolution in
            let actual = Method.return_annotation definition ~resolution in
-           if not (Resolution.less_or_equal resolution ~left:actual ~right:expected) then
+           if Type.is_resolved expected &&
+              not (Resolution.less_or_equal resolution ~left:actual ~right:expected) then
              let error =
                {
                  Error.location;

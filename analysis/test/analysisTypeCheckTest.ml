@@ -4944,6 +4944,7 @@ let test_check_behavioral_subtyping _ =
       "Inconsistent override [15]: `foo` overloads method defined in `Foo` inconsistently.";
       "Missing return annotation [3]: Returning `None` but no return type is specified."
     ];
+
   assert_type_errors
     {|
       T = typing.TypeVar("T", bound=int)
@@ -4956,6 +4957,21 @@ let test_check_behavioral_subtyping _ =
     |}
     (* TODO(T27409168): Error here. *)
     [];
+  assert_type_errors
+    {|
+      T = typing.TypeVar('T')
+      class Foo(typing.Generic[T]):
+        def foo(self) -> T:
+          return ""
+      class Bar(Foo[int]):
+        def foo(self) -> int:
+          return 1
+      class Bar(Foo[None]):
+        def foo(self) -> None:
+          pass
+    |}
+    ["Undefined type [11]: Type `T` is not defined."];
+
   assert_type_errors ~show_error_traces:true
     {|
       class Foo():
