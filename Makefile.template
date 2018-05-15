@@ -35,7 +35,7 @@ test: hack_parallel development_tags
 
 .PHONY: python_tests
 python_tests:
-	./run_python_tests.sh
+	./run-python-tests.sh
 
 .PHONY: release
 release: hack_parallel release_tags
