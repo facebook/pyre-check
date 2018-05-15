@@ -75,7 +75,8 @@ module DidSaveTextDocument = struct
               TextDocumentIdentifier.uri =
                 Path.create_relative ~root ~relative:path
                 |> Path.real_path
-                |> Path.uri
+                |> Path.uri;
+              version = None;
             };
             text = content;
           }

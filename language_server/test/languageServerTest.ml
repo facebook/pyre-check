@@ -137,7 +137,7 @@ let test_initialize_response _ =
      |> Yojson.Safe.sort)
     (
       Format.sprintf
-     {|
+        {|
       {
         "id": 1,
         "jsonrpc": "2.0",
@@ -155,8 +155,8 @@ let test_initialize_response _ =
         }
       }
      |}
-     (Bool.to_string Experimental.type_hover_support_enabled)
-     |> Yojson.Safe.from_string)
+        (Bool.to_string Experimental.type_hover_support_enabled)
+      |> Yojson.Safe.from_string)
 
 
 let test_language_server_protocol_read_message context =
@@ -277,7 +277,6 @@ let test_did_save_notification context =
       "jsonrpc", `String "2.0";
       "method", `String "textDocument/didSave";
       "params", `Assoc [
-        "text", `Null;
         "textDocument", `Assoc ["uri", `String (Format.sprintf "file://%s" absolute)];
       ];
     ]
@@ -346,6 +345,7 @@ let test_language_server_hover_request _ =
       parameters = Some {
           textDocument = {
             uri = "file:///some/uri.py";
+            version = None;
           };
           position = {
             line = 3;

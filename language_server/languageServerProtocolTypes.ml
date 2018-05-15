@@ -145,6 +145,7 @@ end
 module TextDocumentIdentifier = struct
   type t = {
     uri: DocumentUri.t;
+    version: int option [@default None];
   }
   [@@deriving yojson]
 end
@@ -190,7 +191,7 @@ end
 module DidSaveTextDocumentParams = struct
   type t = {
     textDocument: TextDocumentIdentifier.t;
-    text: string option;
+    text: string option [@default None];
   }
   [@@deriving yojson]
 end
