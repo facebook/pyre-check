@@ -701,6 +701,19 @@ let test_expand_type_checking_imports _ =
     |};
   assert_expanded
     {|
+      from typing import TYPE_CHECKING, TypeVar
+      if TYPE_CHECKING:
+        T = TypeVar('T')
+      else:
+        class T:
+          pass
+    |}
+    {|
+      from typing import TYPE_CHECKING, TypeVar
+      T = TypeVar('T')
+    |};
+  assert_expanded
+    {|
       from whoops import TYPE_CHECKING
       if TYPE_CHECKING:
         pass

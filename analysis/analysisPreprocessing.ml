@@ -834,7 +834,7 @@ let expand_type_checking_imports source =
               false
         in
         match value with
-        | If { If.test; body; orelse = [] } when is_type_checking test ->
+        | If { If.test; body; _ } when is_type_checking test ->
             (), body
         | _ ->
             (), [statement]
@@ -1424,6 +1424,7 @@ let preprocess source =
   source
   |> expand_string_annotations
   |> replace_version_specific_code
+  |> expand_type_checking_imports
   |> qualify
   |> expand_operators
   |> expand_subscripts
