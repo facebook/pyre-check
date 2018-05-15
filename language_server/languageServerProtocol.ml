@@ -117,7 +117,7 @@ module InitializeResponse = struct
                   change = Some (Kind.get_change Kind.None_);
                   will_save = None;
                   will_save_wait_until = None;
-                  save = None;
+                  save = Some { SaveOptions.include_text = Some false };
                 };
               hover_provider = Some Experimental.type_hover_support_enabled;
               completion_provider = None;

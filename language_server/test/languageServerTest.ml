@@ -146,7 +146,11 @@ let test_initialize_response _ =
             "definitionProvider": true,
             "hoverProvider": %s,
             "rageProvider": true,
-            "textDocumentSync": { "change": 0, "openClose": true }
+            "textDocumentSync": {
+              "change": 0,
+              "openClose": true,
+              "save": { "includeText": false }
+            }
           }
         }
       }
