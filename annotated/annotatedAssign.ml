@@ -37,6 +37,10 @@ let fold ~resolution ~initial ~f { Assign.target; value; _ } =
                   parameters
               | Type.Tuple (Type.Unbounded parameter) ->
                   List.map ~f:(fun _ -> parameter) targets
+              | Type.Parametric { Type.name; parameters = [parameter] }
+                when Identifier.equal name (Identifier.create "list") ->
+                  List.map ~f:(fun _ -> parameter) targets
+
               | _ ->
                   []
             in

@@ -534,6 +534,10 @@ let test_forward _ =
     "(x, y), z = 1"
     ["x", Type.Top; "y", Type.Top; "z", Type.Top];
   assert_forward
+    ["z", Type.list Type.integer]
+    "x, y = z"
+    ["x", Type.integer; "y", Type.integer; "z", Type.list Type.integer];
+  assert_forward
     []
     "x, y = return_tuple()"
     ["x", Type.integer; "y", Type.integer;];
@@ -1565,6 +1569,14 @@ let test_check _ =
           return a+b
     |}
     [];
+
+  assert_type_errors
+  {|
+    def derp() -> int:
+      a, b = [1,2,3]
+      return a + b
+  |}
+  [];
 
   assert_type_errors
     {|

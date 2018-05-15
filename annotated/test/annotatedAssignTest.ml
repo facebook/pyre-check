@@ -22,6 +22,7 @@ let test_fold _ =
       i = 1
       s = 'asdf'
       t = 1, 1.0
+      l: typing.List[int] = [1, 2]
     |}
     |> resolution
   in
@@ -48,6 +49,7 @@ let test_fold _ =
   assert_fold "a = i" ["a", Type.integer];
   assert_fold "a, b = i, s" ["a", Type.integer; "b", Type.string];
   assert_fold "a, b = t" ["a", Type.integer; "b", Type.float];
+  assert_fold "a, b = l" ["a", Type.integer; "b", Type.integer];
   assert_fold "a, b = unknown" ["(a, b)", Type.Top]
 
 
