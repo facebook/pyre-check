@@ -25,6 +25,8 @@ val create_toplevel: Statement.t list -> t
 
 val define: t -> Define.t
 
+val is_generator: t -> bool
+
 val parameter_annotations
   :  t
   -> resolution: Resolution.t

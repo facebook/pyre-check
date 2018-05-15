@@ -65,5 +65,3 @@ val collect_accesses_in_position
 val collect_accesses: Statement.t -> Expression.Access.t list
 
 val collect_accesses_with_location: Statement.t -> (Expression.Access.t Node.t) list
-
-val contains_yield: Statement.t Statement.Define.record -> bool

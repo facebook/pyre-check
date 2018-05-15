@@ -392,24 +392,3 @@ let collect_accesses_in_position statement { Location.line; column } =
         | _ -> None
     end) in
   Collector.collect (Source.create [statement])
-
-
-let contains_yield { Statement.Define.body; _ } =
-  let module YieldVisit = Make(struct
-      type t = bool
-
-      let expression result expression =
-        match result, expression with
-        | true, _ -> true
-        | false, { Node.value = Expression.Yield _; _ } -> true
-        | false, _ -> false
-
-      let statement result statement =
-        match result, statement with
-        | true, _ -> true
-        | false, { Node.value = Statement.Yield _; _ } -> true
-        | false, { Node.value = Statement.YieldFrom _; _ } -> true
-        | false, _ -> false
-    end)
-  in
-  YieldVisit.visit false (Source.create body)
