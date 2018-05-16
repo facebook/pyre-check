@@ -15,7 +15,7 @@ fi
 echo "  Using interpreter at $(which python3) with version: $(python3 --version)"
 
 echo '  Enumerating test files:'
-files=$(find scripts -name '*_test.py')
+files=$(find client -name '*_test.py')
 echo "${files}"
 if [[ -z "${files}" ]]; then
   echo 'No test files found, exiting.'

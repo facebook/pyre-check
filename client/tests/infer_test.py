@@ -51,28 +51,28 @@ class HelperTest(unittest.TestCase):
     def test__relativize_access(self) -> None:
         self.assertEqual(
             _relativize_access(
-                'tools.pyre.scripts.infer.Stub',
-                'tools/pyre/scripts/infer.py'),
+                'tools.pyre.client.infer.Stub',
+                'tools/pyre/client/infer.py'),
             ['Stub'])
         self.assertEqual(
             _relativize_access(
                 'function_name',
-                'tools/pyre/scripts/infer.py'),
+                'tools/pyre/client/infer.py'),
             ['function_name'])
         self.assertEqual(
             _relativize_access(
-                'tools.pyre.scripts.infer.toplevel_function',
-                'tools/pyre/scripts/infer.py'),
+                'tools.pyre.client.infer.toplevel_function',
+                'tools/pyre/client/infer.py'),
             ['toplevel_function'])
         self.assertEqual(
             _relativize_access(
-                'tools.pyre.scripts.infer.Class.function',
-                'tools/pyre/scripts/infer.py'),
+                'tools.pyre.client.infer.Class.function',
+                'tools/pyre/client/infer.py'),
             ['Class', 'function'])
         self.assertEqual(
             _relativize_access(
-                'tools.pyre.scripts.function',
-                'tools/pyre/scripts/__init__.py'),
+                'tools.pyre.client.function',
+                'tools/pyre/client/__init__.py'),
             ['function'])
 
 
