@@ -47,6 +47,13 @@ let plain_environment =
           ) -> None: ...
           def indices(self, len: int) -> Tuple[int, int, int]: ...
 
+        class typing.Iterable(typing.Generic[_T]):
+          def __iter__(self)->typing.Iterator[_T]: pass
+        class typing.Iterator(typing.Iterable[_T], typing.Generic[_T]):
+          def __next__(self) -> _T: ...
+        class typing.Generic(): pass
+        class typing.Sequence(typing.Generic[_T], typing.Iterable[_T]): pass
+
         class bool(): ...
         class bytes(): ...
         class float():
@@ -65,7 +72,7 @@ let plain_environment =
           def __str__(self) -> bool: ...
         class complex():
           def __radd__(self, other: int) -> int: ...
-        class str(typing.Sized):
+        class str(typing.Sized, typing.Sequence[str]):
           @overload
           def __init__(self, o: object = ...) -> None: ...
           @overload
@@ -80,6 +87,7 @@ let plain_environment =
           def __repr__(self) -> float: ...
           def __str__(self) -> str: ...
           def __getitem__(self, i: typing.Union[int, slice]) -> str: ...
+          def __iter__(self) -> Iterator[str]: ...
         class object():
           def __sizeof__(self) -> int: pass
 
@@ -102,18 +110,10 @@ let plain_environment =
         _S = typing.TypeVar('_S')
         _V = typing.TypeVar('_V')
 
-        class typing.Generic(): pass
-        class typing.Sequence(typing.Generic[_T]): pass
-
         class type:
           __name__: str = ...
 
         def isinstance(a, b) -> bool: ...
-
-        class typing.Iterable(typing.Generic[_T], typing.Sequence[_T]):
-          def __iter__(self)->typing.Iterator[_T]: pass
-        class typing.Iterator(typing.Iterable[_T], typing.Generic[_T]):
-          def __next__(self) -> _T: ...
 
         class tuple(typing.Sized):
           def __init__(self, a:typing.List[int]): ...
@@ -132,7 +132,7 @@ let plain_environment =
           def update(self, __m: typing.Dict[_T, int], **kwargs: _S): ...
           @overload
           def update(self, **kwargs: _S): ...
-        class list(typing.Iterable[_T], typing.Generic[_T]):
+        class list(typing.Sequence[_T], typing.Generic[_T]):
           def __add__(self, x: list[_T]) -> list[_T]: ...
           def __iter__(self) -> typing.Iterator[_T]: ...
           def append(self, element: _T) -> None: ...
@@ -1571,19 +1571,19 @@ let test_check _ =
     [];
 
   assert_type_errors
-  {|
-    def derp() -> int:
-      a, b = [1,2,3]
-      return a + b
-  |}
-  [];
+    {|
+      def derp() -> int:
+        a, b = [1,2,3]
+        return a + b
+    |}
+    [];
 
   assert_type_errors
     {|
-    def foo() -> int:
-      (x, y), z = 0
-      return x + y + z
-  |}
+      def foo() -> int:
+        (x, y), z = 0
+        return x + y + z
+    |}
     [
       (* There should be no name errors here. *)
       "Incompatible variable type [9]: Unable to unpack `int`, expected a `Tuple`.";
@@ -2074,12 +2074,20 @@ let test_check_comprehensions _ =
       return [a for a in input]
     |}
     [];
+
   assert_type_errors
     {|
     def foo(input: typing.List[str]) -> typing.List[str]:
       return [a for a in input if len(a) < 5]
     |}
     [];
+
+  assert_type_errors
+    {|
+    def foo(input: str) -> typing.List[int]:
+      return [a for a in input]
+    |}
+    ["Incompatible return type [7]: Expected `typing.List[int]` but got `typing.List[str]`."];
 
   assert_type_errors
     {|

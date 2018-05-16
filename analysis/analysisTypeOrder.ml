@@ -779,12 +779,20 @@ and join ((module Handler: Handler) as order) left right =
     | _, Type.Tuple _ ->
         Type.Object
 
-    | Type.Parametric _ , Type.Primitive _
-    | Type.Primitive _, Type.Parametric _ ->
-        if less_or_equal order ~left ~right then
-          right
-        else if less_or_equal order ~left:right ~right:left then
-          left
+    | Type.Parametric parametric, ((Type.Primitive _) as primitive)
+    | ((Type.Primitive _) as primitive), Type.Parametric parametric ->
+        let instantiated_parametric =
+          instantiate_parameters order
+            ~source:primitive
+            ~target:(Type.split (Type.Parametric parametric) |> fst)
+          >>| (fun instantiated ->
+              Type.Parametric { parametric with Type.parameters = instantiated })
+          |> Option.value ~default:(Type.Parametric parametric)
+        in
+        if less_or_equal order ~left:primitive ~right:instantiated_parametric then
+          instantiated_parametric
+        else if less_or_equal order ~left:instantiated_parametric ~right:primitive then
+          primitive
         else
           Type.Object
 

@@ -141,6 +141,13 @@ let default =
   connect order ~predecessor:!"list" ~successor:!"typing.Iterator" ~parameters:[variable];
   connect order ~predecessor:!"typing.Iterator" ~successor:Type.Top;
 
+  insert order !"typing.Iterable";
+  connect order
+    ~predecessor:!"typing.Iterator"
+    ~successor:!"typing.Iterable"
+    ~parameters:[variable];
+  connect order ~predecessor:!"typing.Iterable" ~successor:Type.Top;
+
   insert order !"tuple";
   connect order ~predecessor:Type.Bottom ~successor:!"tuple";
   connect order ~predecessor:!"tuple" ~successor:!"typing.Iterator" ~parameters:[variable];
@@ -148,7 +155,7 @@ let default =
 
   insert order !"str";
   connect order ~predecessor:Type.Bottom ~successor:!"str";
-  connect order ~predecessor:!"str" ~successor:!"typing.Iterator" ~parameters:[!"str"];
+  connect order ~predecessor:!"str" ~successor:!"typing.Iterable" ~parameters:[!"str"];
   connect order ~predecessor:!"str" ~successor:!"typing.Generic" ~parameters:[!"str"];
 
   insert order !"dict";
@@ -378,7 +385,7 @@ let test_less_or_equal _ =
     (less_or_equal
        default
        ~left:(Type.string)
-       ~right:(Type.iterator Type.string));
+       ~right:(Type.iterable Type.string));
 
   (* Mixed tuple and parametric types. *)
   assert_true
@@ -795,8 +802,11 @@ let test_instantiate_parameters _ =
        default
        ~source:(Type.dictionary ~key:Type.integer ~value:Type.string)
        ~target:(!"typing.Iterator"))
-    (Some [Type.integer])
+    (Some [Type.integer]);
 
+  assert_equal
+    (instantiate_parameters default ~source:(Type.string) ~target:!"typing.Iterable")
+    (Some [Type.string])
 
 let test_remove_extra_edges _ =
   (* 0 -> 1 -> 2 -> 3
