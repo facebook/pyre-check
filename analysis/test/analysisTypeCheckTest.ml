@@ -633,6 +633,11 @@ let test_forward _ =
     "y = await x"
     ["x", Type.awaitable Type.integer; "y", Type.integer];
 
+  assert_forward
+    ["x", Type.primitive "IsAwaitable"]
+    "y = await x"
+    ["x", Type.primitive "IsAwaitable"; "y", Type.integer];
+
   (* Lists of assignments. *)
   assert_forward
     ["x", Type.list Type.integer]
@@ -4897,6 +4902,14 @@ let test_check_async _ =
         return 0
     |}
     [];
+
+  assert_type_errors
+    {|
+      def bar(a: IsAwaitable) -> int:
+        return (await a)
+    |}
+    [];
+
   assert_type_errors
     {|
       def bar(a: int) -> None:

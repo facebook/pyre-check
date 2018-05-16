@@ -118,7 +118,8 @@ let rec resolve ~resolution expression =
       |> Annotation.annotation
 
   | Await expression ->
-      resolve ~resolution expression
+      let annotation = resolve ~resolution expression in
+      Resolution.join resolution annotation (Type.awaitable Type.Bottom)
       |> Type.awaitable_value
 
   | BinaryOperator _ ->

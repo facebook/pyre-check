@@ -529,8 +529,9 @@ module State = struct
       let annotation =
         Annotated.Callable.return_annotation ~define ~resolution
       in
-      if async && Type.is_awaitable annotation then
-        Type.awaitable_value annotation
+      if async then
+        Resolution.join resolution (Type.awaitable Type.Bottom) annotation
+        |> Type.awaitable_value
       else
         annotation
     in
