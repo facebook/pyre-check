@@ -28,7 +28,7 @@ let base_command_line_arguments =
     +> flag
       "-workers"
       (optional_with_default 4 int)
-      ~doc:"Number of workers to use in parallel processing."
+      ~doc:"WORKERS Number of workers to use in parallel processing."
     +> flag
       "-log-identifier"
       (optional_with_default "" string)
