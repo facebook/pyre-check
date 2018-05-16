@@ -1029,13 +1029,6 @@ let is_generator = function
       false
 
 
-let is_awaitable = function
-  | Parametric { name; parameters = [_] } when Identifier.show name = "typing.Awaitable" ->
-      true
-  | _ ->
-      false
-
-
 let is_generic = function
   | Parametric { name; _ } ->
       Identifier.show name = "typing.Generic"
