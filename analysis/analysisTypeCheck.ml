@@ -1069,23 +1069,8 @@ module State = struct
                   in
                   List.fold ~f:check_argument ~init:errors arguments
 
-              | Access.Expression expression -> check_expression ~resolution errors expression
-              | Access.Subscript subscripts ->
-                  let check_subscript errors = function
-                    | Access.Index expression ->
-                        check_expression ~resolution errors expression
-                    | Access.Slice { Access.lower; upper; step } ->
-                        let check_optional_expression expression errors =
-                          match expression with
-                          | Some expression -> check_expression ~resolution errors expression
-                          | None -> errors
-                        in
-                        check_optional_expression lower errors
-                        |> check_optional_expression upper
-                        |> check_optional_expression step
-                  in
-                  List.fold ~f:check_subscript ~init:errors subscripts
-
+              | Access.Expression expression ->
+                  check_expression ~resolution errors expression
             in
             List.fold ~f:check_single_access ~init:errors access
 

@@ -135,30 +135,33 @@ let qualify ({ Source.qualifier = global_qualifier; path; _ } as source) =
           | Access access ->
               let qualify_access access =
                 let qualify_subaccess = function
-                  | Access.Subscript elements ->
-                      let qualify_subscript = function
-                        | Access.Index index ->
-                            Access.Index (qualify_expression state index)
-                        | Access.Slice { Access.lower; upper; step } ->
-                            Access.Slice {
-                              Access.lower = lower >>| qualify_expression state;
-                              upper = upper >>| qualify_expression state;
-                              step = step >>| qualify_expression state;
-                            }
+                  | Access.Call ({ Node.value = arguments; _ } as call) ->
+                      let qualify_argument ({ Argument.value; _ } as argument) =
+                        { argument with Argument.value = qualify_expression state value }
                       in
-                      Access.Subscript (List.map ~f:qualify_subscript elements)
+                      Access.Call {
+                        call with
+                        Node.value = List.map arguments ~f:qualify_argument
+                      }
                   | access ->
                       (* Not sure if we want to qualify other accesses as well... *)
                       access
                 in
                 let lead, tail =
-                  List.partition_tf
+                  List.split_while
                     ~f:(function | Access.Identifier _ -> true | _ -> false)
                     access
                 in
                 let lead =
-                  Map.find variables lead
-                  |> Option.value ~default:lead
+                  match lead with
+                  | head :: tail ->
+                      let head =
+                        Map.find variables [head]
+                        |> Option.value ~default:[head]
+                      in
+                      head @ tail
+                  | _ ->
+                      lead
                 in
                 lead @ (List.map ~f:qualify_subaccess tail)
               in
@@ -844,76 +847,6 @@ let expand_type_checking_imports source =
   |> snd
 
 
-let expand_subscripts source =
-  let module Transform = Transform.Make(struct
-      include Transform.Identity
-      type t = unit
-
-      let expression_postorder _ { Node.location; value } =
-        let rec substitute_subscripts access_list =
-          let subscripts_to_argument subscripts =
-            let to_argument subscript =
-              let create_slice_call { Access.lower; upper; step } =
-                let get_slice_argument slice_index =
-                  match slice_index with
-                  | Some index -> index
-                  | None ->  { Node.value = Access (Access.create "None"); location }
-                in
-                Access [
-                  Access.Identifier (Identifier.create "slice");
-                  Access.Call {
-                    Node.value = [
-                      { Argument.name = None; value = (get_slice_argument lower) };
-                      { Argument.name = None; value = (get_slice_argument upper) };
-                      { Argument.name = None; value = (get_slice_argument step) };
-                    ];
-                    location;
-                  };
-                ]
-              in
-              match subscript with
-              | Access.Index subscript ->
-                  subscript
-              | Access.Slice subscript ->
-                  { Node.value = create_slice_call subscript; location }
-            in
-            match List.map ~f:to_argument subscripts with
-            | [argument] ->
-                argument
-            | ({ Node.location; _ } as argument) :: arguments ->
-                Node.create ~location (Expression.Tuple (argument :: arguments))
-            | _ ->
-                Node.create ~location (Expression.Tuple [])
-          in
-          match access_list with
-          | Access.Subscript subscript_list :: accesses ->
-              Access.Identifier (Identifier.create "__getitem__")
-              :: Access.Call {
-                Node.value = [{
-                    Argument.name = None;
-                    value = subscripts_to_argument subscript_list;
-                  }];
-                location;
-              }
-              :: (substitute_subscripts accesses)
-          | access :: accesses ->
-              access
-              :: (substitute_subscripts accesses)
-          | _ ->
-              access_list
-        in
-        let value =
-          match value with
-          | Access access -> Access (substitute_subscripts access)
-          | _ -> value
-        in
-        { Node.location; value }
-    end)
-  in
-  Transform.transform () source
-  |> snd
-
-
 let return_access = Access.create "$return"
 
 
@@ -1131,13 +1064,20 @@ let expand_excepts source =
                 | Some { Node.location; value = Tuple values; _ }, Some name ->
                     let assume =
                       let annotation: Expression.t =
-                        let subscript =
-                          let index value = Access.Index value in
-                          [Access.Subscript (List.map ~f:index values)]
+                        let get_item =
+                          let tuple =
+                            Tuple values
+                            |> Node.create ~location
+                          in
+                          Access.call
+                            ~arguments:[{ Argument.name = None; value = tuple }]
+                            ~location
+                            ~name:"__getitem__"
+                            ()
                         in
                         {
                           Node.location;
-                          value = Access ((Access.create "typing.Union") @ subscript);
+                          value = Access ((Access.create "typing.Union") @ get_item);
                         }
                       in
                       assume ~target:{ Node.location; value = Access name } ~annotation
@@ -1402,7 +1342,6 @@ let preprocess source =
   |> replace_version_specific_code
   |> expand_type_checking_imports
   |> qualify
-  |> expand_subscripts
   |> expand_returns
   |> expand_for_loop
   |> expand_yield_from

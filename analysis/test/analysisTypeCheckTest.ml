@@ -432,8 +432,7 @@ let test_widen _ =
 
 let assert_forward precondition statement postcondition =
   let parsed =
-    (parse statement
-     |> Preprocessing.expand_subscripts)
+    parse statement
     |> function
     | { Source.statements = statement::rest; _ } -> statement::rest
     | _ -> failwith "unable to parse test"

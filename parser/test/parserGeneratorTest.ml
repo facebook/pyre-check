@@ -16,7 +16,7 @@ open Test
 let assert_parsed_equal source statements =
   assert_source_equal
     (Source.create ~path:"test.py" statements)
-    (parse_untrimmed ~expand_subscripts:false source)
+    (parse_untrimmed source)
 
 
 let test_lexer _ =
@@ -225,7 +225,8 @@ let test_access _ =
       +Expression
         (+Access [
            Access.Identifier ~~"a";
-           Access.Subscript [Access.Index (+Integer 1)];
+           Access.Identifier ~~"__getitem__";
+           Access.Call (+[{ Argument.name = None; value = +Integer 1 }]);
          ])
     ];
   assert_parsed_equal
@@ -234,12 +235,18 @@ let test_access _ =
       +Expression
         (+Access [
            Access.Identifier ~~"a";
-           Access.Subscript [
-             Access.Index (+ComparisonOperator {
-                 ComparisonOperator.left = +Integer 1;
-                 right = [ComparisonOperator.LessThan, +Integer 2];
-               });
-           ];
+           Access.Identifier ~~"__getitem__";
+           Access.Call
+             (+[
+                {
+                  Argument.name = None;
+                  value =
+                    +ComparisonOperator {
+                      ComparisonOperator.left = +Integer 1;
+                      right = [ComparisonOperator.LessThan, +Integer 2];
+                    };
+                };
+              ]);
          ])
     ];
   assert_parsed_equal
@@ -248,7 +255,8 @@ let test_access _ =
       +Expression
         (+Access [
            Access.Identifier ~~"a";
-           Access.Subscript [Access.Index (+Integer 1)];
+           Access.Identifier ~~"__getitem__";
+           Access.Call (+[{ Argument.name = None; value = +Integer 1 }]);
            Access.Identifier ~~"b";
          ])
     ];
@@ -258,7 +266,8 @@ let test_access _ =
       +Expression
         (+Access [
            Access.Identifier ~~"a";
-           Access.Subscript [Access.Index !"b"];
+           Access.Identifier ~~"__getitem__";
+           Access.Call (+[{ Argument.name = None; value = +Access [Access.Identifier ~~"b"] }]);
          ])
     ];
   assert_parsed_equal
@@ -267,14 +276,22 @@ let test_access _ =
       +Expression
         (+Access [
            Access.Identifier ~~"a";
-           Access.Subscript [
-             Access.Slice {
-               Access.lower = None;
-               upper = None;
-               step = None;
-             };
-           ];
-         ]);
+           Access.Identifier ~~"__getitem__";
+           Access.Call
+             (+[
+                {
+                  Argument.name = None;
+                  value = +Access [
+                    Access.Identifier ~~"slice";
+                    Access.Call (+[
+                        { Argument.name = None; value = +Access [Access.Identifier ~~"None"] };
+                        { Argument.name = None; value = +Access [Access.Identifier ~~"None"] };
+                        { Argument.name = None; value = +Access [Access.Identifier ~~"None"] };
+                      ]);
+                  ];
+                };
+              ]);
+         ])
     ];
   assert_parsed_equal
     "a[1:]"
@@ -282,14 +299,22 @@ let test_access _ =
       +Expression
         (+Access [
            Access.Identifier ~~"a";
-           Access.Subscript [
-             Access.Slice {
-               Access.lower = Some (+Integer 1);
-               upper = None;
-               step = None;
-             };
-           ];
-         ]);
+           Access.Identifier ~~"__getitem__";
+           Access.Call
+             (+[
+                {
+                  Argument.name = None;
+                  value = +Access [
+                    Access.Identifier ~~"slice";
+                    Access.Call (+[
+                        { Argument.name = None; value = +Integer 1 };
+                        { Argument.name = None; value = +Access [Access.Identifier ~~"None"] };
+                        { Argument.name = None; value = +Access [Access.Identifier ~~"None"] };
+                      ]);
+                  ];
+                };
+              ]);
+         ])
     ];
   assert_parsed_equal
     "a[::2]"
@@ -297,13 +322,21 @@ let test_access _ =
       +Expression
         (+Access [
            Access.Identifier ~~"a";
-           Access.Subscript [
-             Access.Slice {
-               Access.lower = None;
-               upper = None;
-               step = Some (+Integer 2);
-             };
-           ];
+           Access.Identifier ~~"__getitem__";
+           Access.Call
+             (+[
+                {
+                  Argument.name = None;
+                  value = +Access [
+                    Access.Identifier ~~"slice";
+                    Access.Call (+[
+                        { Argument.name = None; value = +Access [Access.Identifier ~~"None"] };
+                        { Argument.name = None; value = +Access [Access.Identifier ~~"None"] };
+                        { Argument.name = None; value = +Integer 2 };
+                      ]);
+                  ];
+                };
+              ]);
          ]);
     ];
   assert_parsed_equal
@@ -312,13 +345,21 @@ let test_access _ =
       +Expression
         (+Access [
            Access.Identifier ~~"a";
-           Access.Subscript [
-             Access.Slice {
-               Access.lower = None;
-               upper = Some (+Integer 1);
-               step = None;
-             };
-           ];
+           Access.Identifier ~~"__getitem__";
+           Access.Call
+             (+[
+                {
+                  Argument.name = None;
+                  value = +Access [
+                    Access.Identifier ~~"slice";
+                    Access.Call (+[
+                        { Argument.name = None; value = +Access [Access.Identifier ~~"None"] };
+                        { Argument.name = None; value = +Integer 1 };
+                        { Argument.name = None; value = +Access [Access.Identifier ~~"None"] };
+                      ]);
+                  ];
+                };
+              ]);
          ]);
     ];
   assert_parsed_equal
@@ -327,18 +368,29 @@ let test_access _ =
       +Expression
         (+Access [
            Access.Identifier ~~"a";
-           Access.Subscript [
-             Access.Slice {
-               Access.lower = None;
-               upper = Some
-                   (+Ternary {
-                      Ternary.target = +Integer 1;
-                      test = +True;
-                      alternative = +Integer 2;
-                    });
-               step = None;
-             };
-           ];
+           Access.Identifier ~~"__getitem__";
+           Access.Call
+             (+[
+                {
+                  Argument.name = None;
+                  value = +Access [
+                    Access.Identifier ~~"slice";
+                    Access.Call (+[
+                        { Argument.name = None; value = +Access [Access.Identifier ~~"None"] };
+                        {
+                          Argument.name = None;
+                          value =
+                            +Ternary {
+                              Ternary.target = +Integer 1;
+                              test = +True;
+                              alternative = +Integer 2;
+                            };
+                        };
+                        { Argument.name = None; value = +Access [Access.Identifier ~~"None"] };
+                      ]);
+                  ];
+                };
+              ]);
          ]);
     ];
   assert_parsed_equal
@@ -347,13 +399,21 @@ let test_access _ =
       +Expression
         (+Access [
            Access.Identifier ~~"a";
-           Access.Subscript [
-             Access.Slice {
-               Access.lower = Some (+Integer 1);
-               upper = Some (+Integer 1);
-               step = None;
-             };
-           ];
+           Access.Identifier ~~"__getitem__";
+           Access.Call
+             (+[
+                {
+                  Argument.name = None;
+                  value = +Access [
+                    Access.Identifier ~~"slice";
+                    Access.Call (+[
+                        { Argument.name = None; value = +Integer 1 };
+                        { Argument.name = None; value = +Integer 1 };
+                        { Argument.name = None; value = +Access [Access.Identifier ~~"None"] };
+                      ]);
+                  ];
+                };
+              ]);
          ]);
     ];
   assert_parsed_equal
@@ -362,10 +422,8 @@ let test_access _ =
       +Expression
         (+Access [
            Access.Identifier ~~"a";
-           Access.Subscript [
-             Access.Index (+Integer 1);
-             Access.Index (+Integer 2);
-           ];
+           Access.Identifier ~~"__getitem__";
+           Access.Call (+[{ Argument.name = None; value = +Tuple [+Integer 1; +Integer 2] }]);
          ]);
     ];
   assert_parsed_equal
@@ -374,14 +432,26 @@ let test_access _ =
       +Expression
         (+Access [
            Access.Identifier ~~"a";
-           Access.Subscript [
-             Access.Slice {
-               Access.lower = None;
-               upper = Some (+Integer 1);
-               step = None;
-             };
-             Access.Index (+Integer 2);
-           ];
+           Access.Identifier ~~"__getitem__";
+           Access.Call
+             (+[
+                {
+                  Argument.name = None;
+                  value =
+                    +Tuple [
+                      +Access [
+                        Access.Identifier ~~"slice";
+                        Access.Call
+                          (+[
+                             { Argument.name = None; value = +Access [Access.Identifier ~~"None"] };
+                             { Argument.name = None; value = +Integer 1 };
+                             { Argument.name = None; value = +Access [Access.Identifier ~~"None"] };
+                           ])
+                      ];
+                      +Integer 2;
+                    ];
+                };
+              ]);
          ]);
     ]
 
@@ -784,7 +854,18 @@ let test_define _ =
             annotation = Some
                 (+Access [
                    Access.Identifier ~~"Tuple";
-                   Access.Subscript [Access.Index !"int"; Access.Index !"str"];
+                   Access.Identifier ~~"__getitem__";
+                   Access.Call
+                     (+[
+                        {
+                          Argument.name = None;
+                          value =
+                            +Tuple [
+                              +Access [Access.Identifier ~~"int"];
+                              +Access [Access.Identifier ~~"str"];
+                            ];
+                        };
+                      ]);
                  ]);
           };
         ];
@@ -3470,7 +3551,9 @@ let test_stubs _ =
             annotation = Some
                 (+Access [
                    Access.Identifier ~~"Tuple";
-                   Access.Subscript [Access.Index !"str"];
+                   Access.Identifier ~~"__getitem__";
+                   Access.Call
+                     (+[{ Argument.name = None; value = +Access [Access.Identifier ~~"str"] }]);
                  ]);
             value = None;
             parent = None;
@@ -3486,10 +3569,18 @@ let test_stubs _ =
             annotation = Some
                 (+Access [
                    Access.Identifier ~~"Tuple";
-                   Access.Subscript [
-                     Access.Index !"str";
-                     Access.Index !"...";
-                   ];
+                   Access.Identifier ~~"__getitem__";
+                   Access.Call
+                     (+[
+                        {
+                          Argument.name = None;
+                          value =
+                            +Tuple [
+                              +Access [Access.Identifier ~~"str"];
+                              +Access [Access.Identifier ~~"..."];
+                            ];
+                        };
+                      ]);
                  ]);
             value = None;
             parent = None;
@@ -3505,7 +3596,9 @@ let test_stubs _ =
             annotation = Some
                 (+Access [
                    Access.Identifier ~~"Optional";
-                   Access.Subscript [Access.Index !"int"];
+                   Access.Identifier ~~"__getitem__";
+                   Access.Call
+                     (+[{ Argument.name = None; value = +Access [Access.Identifier ~~"int"] }]);
                  ]);
             value = None;
             parent = None;

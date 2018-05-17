@@ -29,7 +29,6 @@ let parse_untrimmed
     ?(silent = false)
     ?(docstring = None)
     ?(ignore_lines = [])
-    ?(expand_subscripts = true)
     source =
   let buffer = Lexing.from_string (source ^ "\n") in
   buffer.Lexing.lex_curr_p <- {
@@ -57,10 +56,7 @@ let parse_untrimmed
         ~qualifier
         (ParserGenerator.parse (Lexer.read state) buffer)
     in
-    if expand_subscripts then
-      Preprocessing.expand_subscripts source
-    else
-      source
+    source
   with ParserGenerator.Error ->
     let location =
       Ast.Location.create
@@ -116,10 +112,9 @@ let parse
     ?(debug = true)
     ?(version = 3)
     ?(docstring = None)
-    ?(expand_subscripts = true)
     source =
   trim_extra_indentation source
-  |> parse_untrimmed ~path ~qualifier ~debug ~version ~docstring ~expand_subscripts
+  |> parse_untrimmed ~path ~qualifier ~debug ~version ~docstring
 
 
 let parse_single_statement source =

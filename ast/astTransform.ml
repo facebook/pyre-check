@@ -109,20 +109,6 @@ module Make (Transformer : Transformer) = struct
         match value with
         | Access access ->
             let transform_access access =
-              let transform_subscript subscript =
-                let transform_slice { Access.lower; upper; step } =
-                  {
-                    Access.lower = lower >>| transform_expression;
-                    upper = upper >>| transform_expression;
-                    step = step >>| transform_expression;
-                  }
-                in
-                match subscript with
-                | Access.Index index ->
-                    Access.Index (transform_expression index)
-                | Access.Slice slice ->
-                    Access.Slice (transform_slice slice)
-              in
               match access with
               | Access.Call { Node.value = arguments; location } ->
                   Access.Call
@@ -134,9 +120,6 @@ module Make (Transformer : Transformer) = struct
               | Access.Identifier _ -> access
               | Access.Expression expression ->
                   Access.Expression (transform_expression expression)
-              | Access.Subscript subscripts ->
-                  Access.Subscript
-                    (transform_list subscripts ~f:transform_subscript)
             in
             Access (transform_list access ~f:transform_access)
         | Await expression ->

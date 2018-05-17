@@ -59,18 +59,6 @@ module Make (Visitor: Visitor) = struct
         match value with
         | Access access ->
             let visit_access access =
-              let visit_subscript subscript =
-                let visit_slice { Access.lower; upper; step } =
-                  Option.iter ~f:visit_expression lower;
-                  Option.iter ~f:visit_expression upper;
-                  Option.iter ~f:visit_expression step
-                in
-                match subscript with
-                | Access.Index index ->
-                    visit_expression index
-                | Access.Slice slice ->
-                    visit_slice slice
-              in
               match access with
               | Access.Call { Node.value = arguments; _ } ->
                   List.iter arguments ~f:(visit_argument ~visit_expression);
@@ -78,8 +66,6 @@ module Make (Visitor: Visitor) = struct
                   ()
               | Access.Expression expression ->
                   visit_expression expression
-              | Access.Subscript subscripts ->
-                  List.iter subscripts ~f:visit_subscript
             in
             List.iter access ~f:visit_access
         | Await expression ->

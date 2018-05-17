@@ -34,23 +34,10 @@ module Record : sig
   end
 
   module Access : sig
-    type 'expression slice = {
-      lower: 'expression option;
-      upper: 'expression option;
-      step: 'expression option;
-    }
-    [@@deriving compare, eq, sexp, show, hash]
-
-    type 'expression subscript =
-      | Index of 'expression
-      | Slice of 'expression slice
-    [@@deriving compare, eq, sexp, show, hash]
-
     type 'expression access =
       | Call of (('expression Argument.record) list) Node.t
       | Expression of 'expression
       | Identifier of Identifier.t
-      | Subscript of ('expression subscript) list
     [@@deriving compare, eq, sexp, show, hash]
 
     type 'expression record = ('expression access) list

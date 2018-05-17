@@ -55,25 +55,10 @@ module Record = struct
   end
 
   module Access = struct
-    type 'expression slice = {
-      lower: 'expression option;
-      upper: 'expression option;
-      step: 'expression option;
-    }
-    [@@deriving compare, eq, sexp, show, hash]
-
-
-    type 'expression subscript =
-      | Index of 'expression
-      | Slice of 'expression slice
-    [@@deriving compare, eq, sexp, show, hash]
-
-
     type 'expression access =
       | Call of (('expression Argument.record) list) Node.t
       | Expression of 'expression
       | Identifier of Identifier.t
-      | Subscript of ('expression subscript) list
     [@@deriving compare, eq, sexp, show, hash]
 
 
@@ -575,60 +560,6 @@ module PrettyPrinter = struct
         Format.fprintf formatter "%a" pp_expression expression
 
 
-  and pp_slice formatter { Access.lower; upper; step } =
-    match lower,upper,step with
-    | Some lower,None,None ->
-        Format.fprintf formatter "%a" pp_expression_t lower
-    | Some lower,Some upper,None ->
-        Format.fprintf
-          formatter
-          "%a:%a"
-          pp_expression_t lower
-          pp_expression_t upper
-    | Some lower,Some upper,Some step ->
-        Format.fprintf formatter "%a:%a:%a"
-          pp_expression_t lower
-          pp_expression_t upper
-          pp_expression_t step
-    | Some lower, None, Some step ->
-        Format.fprintf
-          formatter
-          "%a::%a"
-          pp_expression_t lower
-          pp_expression_t step
-    | None,Some upper,None ->
-        Format.fprintf formatter ":%a" pp_expression_t upper
-    | None,None,Some step ->
-        Format.fprintf formatter "::%a" pp_expression_t step
-    | None,Some upper,Some step ->
-        Format.fprintf
-          formatter
-          ":%a:%a"
-          pp_expression_t upper
-          pp_expression_t step
-    | None,None,None -> ()
-
-
-  and pp_subscript formatter subscript =
-    match subscript with
-    | Access.Index index ->
-        Format.fprintf formatter "%a" pp_expression_t index
-    | Access.Slice slice ->
-        Format.fprintf formatter "%a" pp_slice slice
-
-
-  and pp_subscript_list formatter subscript_list =
-    match subscript_list with
-    | [] -> ()
-    | subscript :: [] -> Format.fprintf formatter "%a" pp_subscript subscript
-    | subscript :: subscript_list ->
-        Format.fprintf
-          formatter
-          "%a,%a"
-          pp_subscript subscript
-          pp_subscript_list subscript_list
-
-
   and pp_access formatter access =
     match access with
     | Access.Call { Node.value = arguments; _ } ->
@@ -640,20 +571,12 @@ module PrettyPrinter = struct
         Format.fprintf formatter "%a" pp_expression_t expression
     | Access.Identifier identifier ->
         Format.fprintf formatter "%s" @@ Identifier.show identifier
-    | Access.Subscript subscript_list ->
-        Format.fprintf formatter "%a" pp_subscript_list subscript_list
 
 
   and pp_access_list formatter access_list =
     match access_list with
     | [] -> ()
     | access :: [] -> Format.fprintf formatter "%a" pp_access access
-    | access :: ([ Access.Subscript _ ] as access_list) ->
-        Format.fprintf
-          formatter
-          "%a[%a]"
-          pp_access access
-          pp_access_list access_list
     | access :: access_list ->
         Format.fprintf
           formatter

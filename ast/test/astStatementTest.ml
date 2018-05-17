@@ -658,21 +658,6 @@ let test_pp _ =
   let to_lines = String.split_on_chars ~on:['\n'] in
 
   let test_equal pretty_print_expected source =
-    let pp_diff _ (got, want) =
-      let to_debug_char = function
-        | '\n' -> "\\n"
-        | '\t' -> "\\t"
-        | c -> Format.sprintf "%c" c
-      in
-      let print_verbose_chars =
-        String.iter ~f:(fun c -> Format.printf "%s," @@ to_debug_char c)
-      in
-      Format.printf "You wanted: @.";
-      print_verbose_chars want;
-      Format.printf "@.But it's: @.";
-      print_verbose_chars got;
-    in
-
     let pretty_print_expected =
       pretty_print_expected
       |> String.lstrip ~drop:((=) '\n')
@@ -692,8 +677,10 @@ let test_pp _ =
       |> String.rstrip ~drop:((=) '\n')
     in
 
-    assert_equal ~pp_diff
-      pretty_print_expected pretty_print_of_source
+    assert_equal
+      ~printer:Fn.id
+      pretty_print_expected
+      pretty_print_of_source
   in
 
   (* Test 1 : simple def *)
@@ -852,8 +839,8 @@ let test_pp _ =
         else:
           i = 2
         j = 2
-      i[j] = 3
-      i[j::1] = i[:j]
+      i.__getitem__.(j) = 3
+      i.__getitem__.(slice.(j,None,1)) = i.__getitem__.(slice.(None,j,None))
     |}
   in
 

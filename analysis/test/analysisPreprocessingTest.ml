@@ -14,10 +14,6 @@ open Statement
 open Test
 
 
-let parse =
-  parse ~expand_subscripts:false
-
-
 let test_expand_string_annotations _ =
   let assert_expand ?(qualifier = "qualifier") source expected =
     let parse =
@@ -724,94 +720,6 @@ let test_expand_type_checking_imports _ =
     |}
 
 
-let test_expand_subscripts _ =
-  let assert_expand source expected =
-    assert_source_equal
-      (parse expected)
-      (Preprocessing.expand_subscripts (parse source))
-  in
-
-  assert_expand
-    {|
-      def foo():
-        a[i]
-    |}
-    {|
-      def foo():
-        a.__getitem__(i)
-    |};
-
-  assert_expand
-    {|
-      def foo():
-        a[i][j]
-    |}
-    {|
-      def foo():
-        a.__getitem__(i).__getitem__(j)
-    |};
-
-  assert_expand
-    {|
-      def foo():
-        a[0:1]
-    |}
-    {|
-      def foo():
-        a.__getitem__(slice(0, 1, None))
-    |};
-
-  assert_expand
-    {|
-      def foo():
-        a[:1]
-    |}
-    {|
-      def foo():
-        a.__getitem__(slice(None, 1, None))
-    |};
-
-  assert_expand
-    {|
-      def foo():
-        a[::-1]
-    |}
-    {|
-      def foo():
-        a.__getitem__(slice(None, None, -1))
-    |};
-
-  assert_expand
-    {|
-      def foo(x: typing.List[int]):
-        y = x[0]
-    |}
-    {|
-      def foo(x: typing.List.__getitem__(int)):
-        y = x.__getitem__(0)
-    |};
-
-  assert_expand
-    {|
-      def foo(x: typing.List[int]):
-        pass
-    |}
-    {|
-      def foo(x: typing.List.__getitem__(int)):
-        pass
-    |};
-
-  assert_expand
-    {|
-      def foo(x: typing.Callable[[str], int]):
-        pass
-    |}
-    {|
-      def foo(x: typing.Callable.__getitem__(([str], int))):
-        pass
-    |}
-
-
 let test_expand_returns _ =
   let assert_expand source expected =
     assert_source_equal
@@ -1418,7 +1326,6 @@ let () =
     "qualify">::test_qualify;
     "replace_version_specific_code">::test_replace_version_specific_code;
     "expand_type_checking_imports">::test_expand_type_checking_imports;
-    "expand_subscripts">::test_expand_subscripts;
     "expand_returns">::test_expand_returns;
     "expand_for_loop">::test_expand_for;
     "expand_excepts">::test_expand_excepts;

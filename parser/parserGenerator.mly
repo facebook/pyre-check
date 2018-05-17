@@ -90,6 +90,42 @@
       value = Access access
     }
 
+  let slice ~lower ~upper ~step =
+    let location =
+      let expression =
+        match lower with
+        | Some lower -> Some lower
+        | None ->
+            begin
+              match upper with
+              | Some upper -> Some upper
+              | None ->
+                  begin
+                    match step with
+                    | Some step -> Some step
+                    | None -> None
+                  end
+            end
+      in
+      expression >>| Node.location |> Option.value ~default:Location.any
+    in
+    let arguments =
+      let argument argument =
+        let none =
+          Access [Access.Identifier (Identifier.create "None")]
+          |> Node.create ~location
+        in
+        Option.value argument ~default:none
+      in
+      [
+        { Argument.name = None; value = argument lower };
+        { Argument.name = None; value = argument upper };
+        { Argument.name = None; value = argument step };
+      ]
+    in
+    Access (Access.call ~arguments ~location ~name:"slice" ())
+    |> Node.create ~location
+
 %}
 
 (* The syntactic junkyard. *)
@@ -1199,10 +1235,19 @@ expression:
   | head = expression;
     LEFTBRACKET; subscripts = separated_nonempty_list(COMMA, subscript);
     RIGHTBRACKET {
-      {
-        Node.location = head.Node.location;
-        value = Access ((Expression.access head) @ [Access.Subscript subscripts]);
-      }
+      let location = Node.location head in
+      let get_item =
+        let arguments =
+          let value =
+            match subscripts with
+            | [subscript] -> subscript
+            | subscripts -> { Node.location; value = Tuple subscripts }
+          in
+          [{ Argument.name = None; value }]
+        in
+        Access.call ~arguments ~location ~name:"__getitem__" ()
+      in
+      { Node.location; value = Access ((Expression.access head) @ get_item) }
     }
 
   | start = AWAIT; expression = expression {
@@ -1412,12 +1457,12 @@ argument:
   ;
 
 subscript:
-  | index = test { Access.Index index }
+  | index = test { index }
   | lower = test?; COLON; upper = test? {
-      Access.Slice { Access.lower; upper; step = None }
+      slice ~lower ~upper ~step:None
     }
   | lower = test?; COLON; upper = test?; COLON; step = test? {
-      Access.Slice { Access.lower; upper; step }
+      slice ~lower ~upper ~step
     }
   ;
 
