@@ -1284,6 +1284,46 @@ let test_check_with_qualification _ =
   ()
 
 
+let test_check_imports _ =
+  assert_type_errors
+    {|
+      import durp
+    |}
+    ["Undefined import [21]: Could not find a module corresponding to import `durp`."];
+  assert_type_errors
+    {|
+      import typing
+    |}
+    [];
+  assert_type_errors
+    {|
+      import typing, durp
+    |}
+    ["Undefined import [21]: Could not find a module corresponding to import `durp`."];
+  assert_type_errors
+    {|
+      from typing import durp
+    |}
+    [];
+  assert_type_errors
+    {|
+      from durp import typing
+    |}
+    ["Undefined import [21]: Could not find a module corresponding to import `durp`."];
+  (* Ensure we don't double-error. *)
+  assert_type_errors
+    {|
+      a = durp.x
+    |}
+    ["Undefined name [18]: Global name `durp` is undefined."];
+  assert_type_errors
+    {|
+      import durp
+      a = durp.x
+    |}
+    ["Undefined import [21]: Could not find a module corresponding to import `durp`."]
+
+
 let test_coverage _ =
   let assert_coverage source expected =
     let { Result.coverage; _ } =
@@ -5441,6 +5481,7 @@ let () =
     "check_attributes">::test_check_attributes;
     "check_globals">::test_check_globals;
     "check_immutables">::test_check_immutables;
+    "check_imports">::test_check_imports;
     "check_named_arguments">::test_check_named_arguments;
     "check_enumerations">::test_check_enumerations;
     "check_missing_return">::test_check_missing_return;

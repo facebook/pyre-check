@@ -937,12 +937,7 @@ module State = struct
                 in
                 [error]
 
-            | Annotated.Access.Element.Attribute {
-                Annotated.Access.Element.attribute;
-                origin;
-                defined;
-              }
-              when not defined ->
+            | Attribute { attribute; origin; defined } when not defined ->
                 let open Annotated in
                 if Location.equal location Location.any then
                   begin
@@ -1534,6 +1529,35 @@ module State = struct
               }]
           else
             errors
+
+      | Import { Import.from; imports } ->
+          let imports =
+            match from with
+            | Some from -> [from]
+            | None -> List.map imports ~f:(fun { Import.name; _ } -> name)
+          in
+          let to_import_error import =
+            let add_import_error errors ~resolution:_ ~resolved:_ ~element =
+              let open Annotated.Access.Element in
+              match element with
+              | Attribute { origin = Module _; defined = false; _ } ->
+                  {
+                    Error.location;
+                    kind = Error.UndefinedImport import;
+                    define = define_node;
+                  } :: errors
+              | _ ->
+                  errors
+            in
+            Annotated.Access.fold
+              ~f:add_import_error
+              ~resolution
+              ~initial:[]
+              (Annotated.Access.create import)
+          in
+          List.concat_map ~f:to_import_error imports
+          |> add_errors errors
+
       | YieldFrom _ ->
           errors
 
@@ -1545,7 +1569,7 @@ module State = struct
           (* Check happens implicitly in the resulting control flow. *)
           errors
 
-      | Break | Continue | Global _ | Import _ | Nonlocal _ | Pass | Stub _ ->
+      | Break | Continue | Global _ | Nonlocal _ | Pass | Stub _ ->
           errors
     in
     let resolution = forward_annotations state statement in

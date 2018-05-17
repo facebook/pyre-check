@@ -133,6 +133,7 @@ type kind =
   | TooManyArguments of too_many_arguments
   | Top
   | UndefinedAttribute of undefined_attribute
+  | UndefinedImport of Access.t
   | UndefinedName of Access.t
   | UndefinedType of Type.t
   | UninitializedAttribute of initialization_mismatch

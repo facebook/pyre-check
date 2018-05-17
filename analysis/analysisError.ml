@@ -152,6 +152,7 @@ type kind =
   | TooManyArguments of too_many_arguments
   | Top
   | UndefinedAttribute of undefined_attribute
+  | UndefinedImport of Access.t
   | UndefinedName of Access.t
   | UndefinedType of Type.t
   | UninitializedAttribute of initialization_mismatch
@@ -212,6 +213,7 @@ let code { kind; _ } =
   | UndefinedName _ -> 18
   | TooManyArguments _ -> 19
   | MissingArgument _ -> 20
+  | UndefinedImport _ -> 21
 
 
 let name { kind; _ } =
@@ -233,6 +235,7 @@ let name { kind; _ } =
   | UndefinedAttribute _ -> "Undefined attribute"
   | UndefinedName _ -> "Undefined name"
   | UndefinedType _ -> "Undefined type"
+  | UndefinedImport _ -> "Undefined import"
   | UninitializedAttribute _ -> "Uninitialized attribute"
   | UnusedIgnore _ -> "Unused ignore"
 
@@ -561,6 +564,12 @@ let description
         @ detail
     | UndefinedName access ->
         [Format.asprintf "Global name `%s` is undefined." (access_sanitized_show access)]
+    | UndefinedImport access ->
+        [
+          Format.asprintf
+            "Could not find a module corresponding to import `%s`."
+            (access_sanitized_show access);
+        ]
     | UndefinedType annotation ->
         [
           Format.asprintf
@@ -643,6 +652,7 @@ let due_to_analysis_limitations { kind; _ } =
   | TooManyArguments _
   | UndefinedAttribute _
   | UndefinedName _
+  | UndefinedImport _
   | UnusedIgnore _ ->
       false
 
@@ -683,6 +693,7 @@ let due_to_mismatch_with_any { kind; _ } =
   | MissingArgument _
   | UndefinedAttribute _
   | UndefinedName _
+  | UndefinedImport _
   | UnusedIgnore _ ->
       false
 
@@ -743,6 +754,8 @@ let less_or_equal ~resolution left right =
         true
     | UndefinedType left, UndefinedType right ->
         Resolution.less_or_equal resolution ~left ~right
+    | UndefinedImport left, UndefinedImport right ->
+        Access.equal left right
     | UnusedIgnore left, UnusedIgnore right ->
         Set.is_subset (Int.Set.of_list left) ~of_:(Int.Set.of_list right)
     | _, Top -> true
@@ -853,6 +866,16 @@ let join ~resolution left right =
         UndefinedName left
     | UndefinedType left, UndefinedType right ->
         UndefinedType (Resolution.join resolution left right)
+    | UndefinedImport left, UndefinedImport right when Access.equal left right ->
+        UndefinedImport left
+
+    (* Join UndefinedImport/Name pairs into an undefined import, as the missing name is due to us
+       being unable to resolve the import. *)
+    | UndefinedImport left, UndefinedName right when Access.equal left right ->
+        UndefinedImport left
+    | UndefinedName left, UndefinedImport right when Access.equal left right ->
+        UndefinedImport right
+
     | UnusedIgnore left, UnusedIgnore right ->
         UnusedIgnore (Set.to_list (Set.union (Int.Set.of_list left) (Int.Set.of_list right)))
     | _ ->
@@ -890,6 +913,18 @@ let join_at_define ~resolution ~location errors =
 
 
 let join_at_source ~resolution errors =
+  let key error =
+    match error with
+    | { kind = MissingAttributeAnnotation { parent; missing_annotation = { name; _ }; _ }; _ } ->
+        Annotated.Class.show parent ^ Access.show name
+    | { kind = MissingGlobalAnnotation { name; _ }; _ } ->
+        Access.show name
+    | { kind = UndefinedImport name; _ }
+    | { kind = UndefinedName name; _ } ->
+        Format.asprintf "Unknown[%a]" Access.pp name
+    | _ ->
+        show error
+  in
   let joined_missing_annotations =
     let filter errors error =
       let filtered ~key =
@@ -907,10 +942,11 @@ let join_at_source ~resolution errors =
           errors
       in
       match error with
-      | { kind = MissingAttributeAnnotation { parent; missing_annotation = { name; _ }; _ }; _ } ->
-          filtered ~key:((Annotated.Class.show parent) ^ (Access.show name))
-      | { kind = MissingGlobalAnnotation { name; _ }; _ } ->
-          filtered ~key:(Access.show name)
+      | { kind = MissingAttributeAnnotation _; _ }
+      | { kind = MissingGlobalAnnotation _; _ }
+      | { kind = UndefinedImport _; _ }
+      | { kind = UndefinedName _; _ } ->
+          filtered ~key:(key error)
       | _ ->
           errors
     in
@@ -920,17 +956,24 @@ let join_at_source ~resolution errors =
     let joined ~key =
       match Map.find joined_missing_annotations key with
       | Some { kind; _ } ->
-          let new_error = { error with kind } in
-          Map.set ~key:(show new_error) ~data:new_error errors
+          begin
+            match error.kind, kind with
+            | UndefinedName _, UndefinedImport _ ->
+                (* Swallow up UndefinedName errors when the Import error already exists. *)
+                errors
+            | _ ->
+                let new_error = { error with kind } in
+                Map.set ~key:(show new_error) ~data:new_error errors
+          end
       | _ -> Map.set ~key:(show error) ~data:error errors
     in
     match error with
-    | { kind = MissingAttributeAnnotation { parent; missing_annotation = { name; _ } }; _ }
+    | { kind = MissingAttributeAnnotation _; _ }
+    | { kind = MissingGlobalAnnotation _; _ }
+    | { kind = UndefinedImport _; _ }
+    | { kind = UndefinedName _; _ }
       when not (due_to_analysis_limitations error) ->
-        joined ~key:((Annotated.Class.show parent) ^ (Access.show name))
-    | { kind = MissingGlobalAnnotation { name; _ }; _ }
-      when not (due_to_analysis_limitations error) ->
-        joined ~key:(Access.show name)
+        joined ~key:(key error)
     | _ ->
         Map.set ~key:(show error) ~data:error errors
   in
@@ -1017,6 +1060,7 @@ let suppress ~mode error =
       | MissingReturnAnnotation _
       | UndefinedAttribute _
       | UndefinedName _
+      | UndefinedImport _
       | MissingArgument _ ->
           false
       | IncompatibleAwaitableType _
@@ -1046,6 +1090,8 @@ let suppress ~mode error =
     | MissingGlobalAnnotation _
     | UndefinedType _ ->
         true
+    | UndefinedImport _ ->
+        false
     | _ ->
         due_to_analysis_limitations error ||
         due_to_mismatch_with_any error ||
@@ -1157,6 +1203,8 @@ let dequalify
         UndefinedName access
     | UndefinedType annotation ->
         UndefinedType (dequalify annotation)
+    | UndefinedImport access ->
+        UndefinedImport access
     | MissingArgument missing_argument ->
         MissingArgument missing_argument
     | UnusedIgnore codes ->
