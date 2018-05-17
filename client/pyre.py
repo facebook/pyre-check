@@ -56,6 +56,10 @@ def main() -> int:
         action='store_true',
         help=argparse.SUPPRESS)
     parser.add_argument(
+        '--sequential',
+        action='store_true',
+        help=argparse.SUPPRESS)
+    parser.add_argument(
         '--strict',
         action='store_true',
         help=argparse.SUPPRESS)

@@ -40,3 +40,32 @@ class CheckTest(unittest.TestCase):
                     '-search-path',
                     'stub,root',
                 ])
+
+    @patch('subprocess.check_output')
+    @patch('os.path.realpath')
+    def test_sequential_check(self, realpath, check_output) -> None:
+        realpath.side_effect = lambda x: x
+        arguments = mock_arguments()
+        arguments.sequential = True
+
+        configuration = mock_configuration()
+        configuration.get_search_path.return_value = ['stub', 'root']
+        configuration.number_of_workers = 5
+
+        with patch.object(commands.Command, '_call_client') as call_client, \
+                patch('json.loads', return_value=[]):
+            commands.Check(
+                arguments,
+                configuration,
+                source_directory='.').run()
+            call_client.assert_called_once_with(
+                command=commands.Check.NAME,
+                flags=[
+                    '-sequential',
+                    '-project-root',
+                    '.',
+                    '-workers',
+                    '5',
+                    '-search-path',
+                    'stub,root',
+                ])

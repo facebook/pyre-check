@@ -61,6 +61,7 @@ class Command:
 
         self._source_directory = source_directory
         self._debug = arguments.debug
+        self._sequential = arguments.sequential
         self._strict = arguments.strict
         self._show_error_traces = arguments.show_error_traces
         self._verbose = arguments.verbose
@@ -78,7 +79,9 @@ class Command:
     def _flags(self):
         flags = []
         if self._debug:
-            flags.extend(['-debug', '-sequential'])
+            flags.extend(['-debug'])
+        if self._sequential:
+            flags.extend(['-sequential'])
         if self._strict:
             flags.extend(['-strict'])
         if self._show_error_traces:
