@@ -228,6 +228,8 @@ class Buffer:
             LOG.info(message)
         elif self._section == 'WARNING':
             LOG.warning(message)
+        elif self._section == 'PROGRESS':
+            LOG.info(message)
         else:
             LOG.debug('[%s] %s', self._section, message)
 

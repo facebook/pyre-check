@@ -18,6 +18,7 @@ type section = [
   | `Fixpoint
   | `Info
   | `Parser
+  | `Progress
   | `Performance
   | `Protocols
   | `Server
@@ -37,6 +38,7 @@ let section_to_string = function
   | `Fixpoint -> "Fixpoint"
   | `Info -> "Info"
   | `Parser -> "Parser"
+  | `Progress -> "Progress"
   | `Performance -> "Performance"
   | `Protocols -> "Protocols"
   | `Server -> "Server"
@@ -49,6 +51,7 @@ let enabled =
     "Error";
     "Info";
     "Performance";
+    "Progress";
     "Warning";
   ]
 

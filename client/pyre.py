@@ -214,7 +214,8 @@ def main() -> int:
         start = time.time()
         exit_code = SUCCESS
 
-        if arguments.debug or not is_capable_terminal():
+        arguments.capable_terminal = is_capable_terminal()
+        if arguments.debug or not arguments.capable_terminal:
             arguments.noninteractive = True
 
         switch_root(arguments)

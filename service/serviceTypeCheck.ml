@@ -160,7 +160,7 @@ let analyze_sources_parallel
         result)
     ~reduce:(fun left right ->
         let number_files = left.number_files + right.number_files in
-        Log.info "Processed %d of %d sources" number_files (List.length handles);
+        Log.log ~section:`Progress "Processed %d of %d sources" number_files (List.length handles);
         {
           errors = List.append left.errors right.errors;
           lookups = Map.merge ~f:merge_lookups left.lookups right.lookups;

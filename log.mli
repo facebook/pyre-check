@@ -17,6 +17,7 @@ type section = [
   | `Info
   | `Parser
   | `Performance
+  | `Progress
   | `Protocols
   | `Server
   | `Warning

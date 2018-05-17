@@ -501,7 +501,8 @@ def main():
         exit_code = SUCCESS
         source_directories = []
 
-        if arguments.debug or not is_capable_terminal():
+        arguments.capable_terminal = is_capable_terminal()
+        if arguments.debug or not arguments.capable_terminal:
             arguments.noninteractive = True
 
         log.initialize(arguments)
