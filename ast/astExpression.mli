@@ -204,6 +204,8 @@ module Access : sig
   val create_from_identifiers: Identifier.t list -> t
   val create_from_expression: expression_t -> t
 
+  val show_sanitized: ?sanitized: bool -> t -> string
+
   val add_prefix: prefix: string -> t -> t
   val remove_prefix: prefix: string -> t -> t
   val starts_with: prefix: string -> t -> bool

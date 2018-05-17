@@ -256,10 +256,6 @@ let description
     in
     (string_of_int number) ^ suffix
   in
-  let renaming_pattern = Str.regexp "^\\$[a-zA-Z]*_" in
-  let access_sanitized_show name =
-    Str.global_replace renaming_pattern "" (Access.show name)
-  in
   let message kind =
     match kind with
     | IncompatibleAwaitableType actual ->
@@ -274,14 +270,14 @@ let description
         [
           Format.asprintf
             "Parameter `%s` has type %a but no type is specified."
-            (access_sanitized_show name)
+            (Access.show_sanitized name)
             Type.pp annotation
         ]
     | MissingParameterAnnotation { name; annotation; due_to_any = true } ->
         [
           Format.asprintf
             "Parameter `%s` has type %a but type `Any` is specified."
-            (access_sanitized_show name)
+            (Access.show_sanitized name)
             Type.pp annotation
         ]
     | MissingReturnAnnotation { annotation; evidence_locations; due_to_any } ->
@@ -408,7 +404,7 @@ let description
           let parameter =
             match name with
             | Some name ->
-                access_sanitized_show name
+                Access.show_sanitized name
                 |> Format.asprintf "parameter `%s`"
             | _ ->
                 "anonymous parameter"
@@ -474,7 +470,7 @@ let description
           else
             Format.asprintf
               "%s is declared to have type %a but is used as type %a."
-              (access_sanitized_show name)
+              (Access.show_sanitized name)
               Type.pp expected
               Type.pp actual
 
@@ -483,7 +479,7 @@ let description
           message;
           (Format.asprintf
              "%s incorrectly used on line %d."
-             (access_sanitized_show name)
+             (Access.show_sanitized name)
              (Location.line location))
         ]
     | InconsistentOverride { overridden_method; override; mismatch = { actual; expected } } ->
@@ -519,7 +515,7 @@ let description
           | _ ->
               "Anonymous call"
         in
-        [Format.asprintf "%s expects argument `%s`." callee (access_sanitized_show name)]
+        [Format.asprintf "%s expects argument `%s`." callee (Access.show_sanitized name)]
     | TooManyArguments { callee; expected; provided } ->
         let callee =
           match callee with
@@ -560,15 +556,15 @@ let description
           | _ ->
               []
         in
-        [Format.asprintf "%s has no attribute `%s`." target (access_sanitized_show attribute)]
+        [Format.asprintf "%s has no attribute `%s`." target (Access.show_sanitized attribute)]
         @ detail
     | UndefinedName access ->
-        [Format.asprintf "Global name `%s` is undefined." (access_sanitized_show access)]
+        [Format.asprintf "Global name `%s` is undefined." (Access.show_sanitized access)]
     | UndefinedImport access ->
         [
           Format.asprintf
             "Could not find a module corresponding to import `%s`."
-            (access_sanitized_show access);
+            (Access.show_sanitized access);
         ]
     | UndefinedType annotation ->
         [

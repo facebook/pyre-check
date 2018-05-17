@@ -5102,6 +5102,22 @@ let test_check_behavioral_subtyping _ =
       def foo(a: int) -> None: pass
     |}
     [];
+  assert_type_errors
+    {|
+    class Foo():
+      def foo(a: int) -> None: pass
+    class Bar(Foo):
+      def foo(b: int) -> None: pass
+    |}
+    ["Inconsistent override [14]: `foo` overloads method defined in `Foo` inconsistently."];
+  assert_type_errors
+    {|
+    class Foo():
+      def foo(a: int) -> None: pass
+    class Bar(Foo):
+      def foo(_a: int) -> None: pass
+    |}
+    [];
   assert_type_errors ~show_error_traces:true
     {|
       class Foo():

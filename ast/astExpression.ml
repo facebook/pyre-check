@@ -284,18 +284,22 @@ module Access = struct
   type t = expression_t Record.Access.record
   [@@deriving compare, eq, sexp, show, hash]
 
-
-  let rec show access =
+  let rec show_sanitized ?(sanitized = true) access =
     let identifier (element: expression_t Record.Access.access): string =
       match element with
       | Identifier identifier ->
-          Identifier.show identifier
+          if sanitized then
+            Identifier.show_sanitized identifier
+          else
+            Identifier.show identifier
       | Call _ ->
           Format.asprintf "(...)"
       | _ ->
           "?" in
     List.map ~f:identifier access
     |> String.concat ~sep:"."
+
+  let show access = show_sanitized ~sanitized:false access
 
 
   let pp format access =

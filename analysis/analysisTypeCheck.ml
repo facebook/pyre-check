@@ -338,7 +338,17 @@ module State = struct
          in
 
          (* Check weakening of precondition. *)
-         let parameters = Method.parameter_annotations definition ~resolution in
+         let parameters =
+           let remove_unused_parameter_denotation ~key ~data sofar =
+             Identifier.show_sanitized key
+             |> String.lstrip ~drop:(Char.equal '_')
+             |> Identifier.create
+             |> Identifier.add_prefix ~prefix:"$renamed_"
+             |> (fun key -> Identifier.Map.set sofar ~key ~data)
+           in
+           Method.parameter_annotations definition ~resolution
+           |> Map.fold ~init:Identifier.Map.empty ~f:remove_unused_parameter_denotation
+         in
          let parameter ~key ~data errors =
            let expected = data in
            match Map.find parameters key with

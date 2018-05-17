@@ -32,6 +32,10 @@ let pp format identifier =
 let create name = name
 let show name = name
 
+let show_sanitized name =
+  let renaming_pattern = Str.regexp "^\\$[a-zA-Z]*_" in
+  Str.global_replace renaming_pattern "" name
+
 
 let length =
   String.length

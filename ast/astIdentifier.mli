@@ -12,6 +12,7 @@ module Map : Map.S with type Key.t = t
 module Set: Set.S with type Elt.t = t
 
 val create: string -> t
+val show_sanitized: t -> string
 
 val length: t -> int
 val append: separator:string -> t -> t -> t
