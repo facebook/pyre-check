@@ -1,4 +1,6 @@
 _.DS_Store
+__pycache__
+/.pyre
 yarn-error.log
 
 /_build
