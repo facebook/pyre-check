@@ -80,7 +80,7 @@ echo "Using build root: ${BUILD_ROOT}"
 # Copy source files.
 mkdir "${MODULE_NAME}"
 # i.e. copy all *.py files from all directories, except "tests"
-rsync -avm --filter='- tests/' --filter='+ */' --filter='-! *.py' "${SCRIPTS_DIRECTORY}/" "${BUILD_ROOT}/${MODULE_NAME}"
+rsync -avm --filter='- tests/' --filter='+ */' --filter='-! *.py' "${SCRIPTS_DIRECTORY}/../client/" "${BUILD_ROOT}/${MODULE_NAME}"
 
 # Copy binary files.
 BINARY_FILE="${SCRIPTS_DIRECTORY}/../_build/all/main.native"
