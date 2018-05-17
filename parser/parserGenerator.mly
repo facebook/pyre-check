@@ -26,11 +26,6 @@
         { Node.location; value = Stub (Stub.Define decorated) }
     | _ -> raise (ParserError "Cannot decorate statement")
 
-  let extract_access access =
-    match access with
-    | { Node.value = Access access; _ } -> access
-    | _ -> [Access.Expression access]
-
   type entry =
     | Entry of Expression.t Dictionary.entry
     | Item of Expression.t
@@ -1187,7 +1182,7 @@ expression:
   | access = expression; DOT; expression = expression {
       {
         Node.location = { access.Node.location with Location.stop = Node.stop expression };
-        value = Access ((extract_access access) @ (extract_access expression));
+        value = Access ((Expression.access access) @ (Expression.access expression));
       }
     }
 
@@ -1196,7 +1191,7 @@ expression:
     RIGHTBRACKET {
       {
         Node.location = head.Node.location;
-        value = Access ((extract_access head) @ [Access.Subscript subscripts]);
+        value = Access ((Expression.access head) @ [Access.Subscript subscripts]);
       }
     }
 
