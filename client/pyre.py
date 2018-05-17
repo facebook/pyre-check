@@ -17,6 +17,7 @@ from . import (
     EnvironmentException,
     FAILURE,
     get_version,
+    is_capable_terminal,
     JSON,
     log,
     log_statistics,
@@ -213,7 +214,7 @@ def main() -> int:
         start = time.time()
         exit_code = SUCCESS
 
-        if arguments.debug or not os.isatty(sys.stderr.fileno()):
+        if arguments.debug or not is_capable_terminal():
             arguments.noninteractive = True
 
         switch_root(arguments)

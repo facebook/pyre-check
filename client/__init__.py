@@ -40,6 +40,17 @@ class EnvironmentException(Exception):
     pass
 
 
+def is_capable_terminal() -> bool:
+    '''
+    Determine whether we are connected to a capable terminal.
+    '''
+    if not os.isatty(sys.stderr.fileno()):
+        return False
+    terminal = os.getenv('TERM', 'dumb')
+    # Hardcoded list of non-capable terminals.
+    return terminal not in ['dumb', 'emacs']
+
+
 def get_version(configuration):
     override = os.getenv('PYRE_BINARY')
     if override:

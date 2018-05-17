@@ -23,6 +23,7 @@ from . import (
     EnvironmentException,
     FAILURE,
     get_version,
+    is_capable_terminal,
     JSON,
     log,
     log_statistics,
@@ -500,7 +501,7 @@ def main():
         exit_code = SUCCESS
         source_directories = []
 
-        if arguments.debug or not os.isatty(sys.stderr.fileno()):
+        if arguments.debug or not is_capable_terminal():
             arguments.noninteractive = True
 
         log.initialize(arguments)
