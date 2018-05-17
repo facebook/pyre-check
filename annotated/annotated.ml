@@ -122,9 +122,6 @@ let rec resolve ~resolution expression =
       Resolution.join resolution annotation (Type.awaitable Type.Bottom)
       |> Type.awaitable_value
 
-  | BinaryOperator _ ->
-      failwith "Binary Operator inference not supported"
-
   | BooleanOperator { BooleanOperator.left; right; operator } ->
       let left_type =
         match operator with

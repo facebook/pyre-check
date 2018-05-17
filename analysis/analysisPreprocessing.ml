@@ -844,26 +844,6 @@ let expand_type_checking_imports source =
   |> snd
 
 
-let expand_operators source =
-  let module Transform = Transform.Make(struct
-      include Transform.Identity
-      type t = unit
-
-      let expression_postorder _ { Node.location; value } =
-        let value =
-          match value with
-          | BinaryOperator operator ->
-              BinaryOperator.override operator
-              |> Node.value
-          | _ -> value
-        in
-        { Node.location; value }
-    end)
-  in
-  Transform.transform () source
-  |> snd
-
-
 let expand_subscripts source =
   let module Transform = Transform.Make(struct
       include Transform.Identity
@@ -1426,7 +1406,6 @@ let preprocess source =
   |> replace_version_specific_code
   |> expand_type_checking_imports
   |> qualify
-  |> expand_operators
   |> expand_subscripts
   |> expand_returns
   |> expand_for_loop

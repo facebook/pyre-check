@@ -968,9 +968,31 @@ atom:
   | left = expression;
     operator = binary_operator;
     right = expression; {
+      let location = Node.location left in
+      let access =
+        let name =
+          let open Statement.Assign in
+          match operator with
+          | Add -> "__add__"
+          | At -> "__matmul__"
+          | BitAnd -> "__and__"
+          | BitOr -> "__or__"
+          | BitXor -> "__xor__"
+          | Divide -> "__truediv__"
+          | FloorDivide -> "__floordiv__"
+          | LeftShift -> "__lshift__"
+          | Modulo -> "__mod__"
+          | Multiply -> "__mul__"
+          | Power -> "__pow__"
+          | RightShift -> "__rshift__"
+          | Subtract -> "__sub__"
+        in
+        let arguments = [{ Argument.name = None; value = right }] in
+        ((access left) @ (Access.call ~arguments ~location ~name ()))
+      in
       {
         Node.location = left.Node.location;
-        value = BinaryOperator { BinaryOperator.left; operator; right };
+        value = Access access
       }
     }
 
@@ -1311,35 +1333,35 @@ yield:
   ;
 
 %inline binary_operator:
-  | PLUS { BinaryOperator.Add }
-  | AT { BinaryOperator.At }
-  | AMPERSAND { BinaryOperator.BitAnd }
-  | BAR { BinaryOperator.BitOr }
-  | HAT { BinaryOperator.BitXor }
-  | SLASH; SLASH { BinaryOperator.FloorDivide }
-  | SLASH { BinaryOperator.Divide }
-  | LEFTANGLELEFTANGLE { BinaryOperator.LeftShift }
-  | PERCENT { BinaryOperator.Modulo }
-  | ASTERIKS; ASTERIKS { BinaryOperator.Power }
-  | ASTERIKS { BinaryOperator.Multiply }
-  | RIGHTANGLERIGHTANGLE { BinaryOperator.RightShift }
-  | MINUS { BinaryOperator.Subtract }
+  | PLUS { Statement.Assign.Add }
+  | AT { Statement.Assign.At }
+  | AMPERSAND { Statement.Assign.BitAnd }
+  | BAR { Statement.Assign.BitOr }
+  | HAT { Statement.Assign.BitXor }
+  | SLASH; SLASH { Statement.Assign.FloorDivide }
+  | SLASH { Statement.Assign.Divide }
+  | LEFTANGLELEFTANGLE { Statement.Assign.LeftShift }
+  | PERCENT { Statement.Assign.Modulo }
+  | ASTERIKS; ASTERIKS { Statement.Assign.Power }
+  | ASTERIKS { Statement.Assign.Multiply }
+  | RIGHTANGLERIGHTANGLE { Statement.Assign.RightShift }
+  | MINUS { Statement.Assign.Subtract }
   ;
 
 %inline compound_operator:
-  | PLUSEQUALS { BinaryOperator.Add }
-  | ATEQUALS { BinaryOperator.At }
-  | AMPERSANDEQUALS { BinaryOperator.BitAnd }
-  | BAREQUALS { BinaryOperator.BitOr }
-  | HATEQUALS { BinaryOperator.BitXor }
-  | SLASHSLASHEQUALS { BinaryOperator.FloorDivide }
-  | SLASHEQUALS { BinaryOperator.Divide }
-  | LEFTANGLELEFTANGLEEQUALS { BinaryOperator.LeftShift }
-  | PERCENTEQUALS { BinaryOperator.Modulo }
-  | ASTERIKSASTERIKSEQUALS { BinaryOperator.Power }
-  | ASTERIKSEQUALS { BinaryOperator.Multiply }
-  | RIGHTANGLERIGHTANGLEEQUALS { BinaryOperator.RightShift }
-  | MINUSEQUALS { BinaryOperator.Subtract }
+  | PLUSEQUALS { Statement.Assign.Add }
+  | ATEQUALS { Statement.Assign.At }
+  | AMPERSANDEQUALS { Statement.Assign.BitAnd }
+  | BAREQUALS { Statement.Assign.BitOr }
+  | HATEQUALS { Statement.Assign.BitXor }
+  | SLASHSLASHEQUALS { Statement.Assign.FloorDivide }
+  | SLASHEQUALS { Statement.Assign.Divide }
+  | LEFTANGLELEFTANGLEEQUALS { Statement.Assign.LeftShift }
+  | PERCENTEQUALS { Statement.Assign.Modulo }
+  | ASTERIKSASTERIKSEQUALS { Statement.Assign.Power }
+  | ASTERIKSEQUALS { Statement.Assign.Multiply }
+  | RIGHTANGLERIGHTANGLEEQUALS { Statement.Assign.RightShift }
+  | MINUSEQUALS { Statement.Assign.Subtract }
   ;
 
 %inline unary_operator:

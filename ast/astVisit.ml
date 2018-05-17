@@ -84,7 +84,6 @@ module Make (Visitor: Visitor) = struct
             List.iter access ~f:visit_access
         | Await expression ->
             visit_expression expression
-        | BinaryOperator { BinaryOperator.left; right; _ }
         | BooleanOperator { BooleanOperator.left; right; _ } ->
             visit_expression left;
             visit_expression right;

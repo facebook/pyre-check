@@ -57,33 +57,6 @@ module Record : sig
     [@@deriving compare, eq, sexp, show, hash]
   end
 
-  module BinaryOperator : sig
-    type operator =
-      | Add
-      | At
-      | BitAnd
-      | BitOr
-      | BitXor
-      | Divide
-      | FloorDivide
-      | LeftShift
-      | Modulo
-      | Multiply
-      | Power
-      | RightShift
-      | Subtract
-    [@@deriving compare, eq, sexp, show, hash]
-
-    type 'expression record = {
-      left: 'expression;
-      operator: operator;
-      right: 'expression;
-    }
-    [@@deriving compare, eq, sexp, show, hash]
-
-    val pp_binary_operator : Format.formatter -> operator -> unit
-  end
-
   module ComparisonOperator : sig
     type operator =
       | Equals
@@ -178,7 +151,6 @@ end
 type expression =
   | Access of t Record.Access.record
   | Await of t
-  | BinaryOperator of t Record.BinaryOperator.record
   | BooleanOperator of t BooleanOperator.t
   | Bytes of string
   | ComparisonOperator of t Record.ComparisonOperator.record
@@ -248,15 +220,6 @@ module Access : sig
 end
 
 val access: t -> Access.t
-
-module BinaryOperator : sig
-  include module type of struct include Record.BinaryOperator end
-
-  type t = expression_t Record.BinaryOperator.record
-  [@@deriving compare, eq, sexp, show, hash]
-
-  val override: t -> expression_t
-end
 
 module ComparisonOperator : sig
   include module type of struct include Record.ComparisonOperator end

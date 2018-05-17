@@ -724,60 +724,6 @@ let test_expand_type_checking_imports _ =
     |}
 
 
-let test_expand_operators _ =
-  let assert_expand source expected =
-    assert_source_equal
-      (parse expected)
-      (Preprocessing.expand_operators (parse source))
-  in
-
-  assert_expand
-    {|
-      a + b
-    |}
-    {|
-      a.__add__(b)
-    |};
-
-  assert_expand
-    {|
-      a + b + c
-    |}
-    {|
-      a.__add__(b).__add__(c)
-    |};
-
-  assert_expand
-    {|
-      def foo():
-        a * b
-    |}
-    {|
-      def foo():
-        a.__mul__(b)
-    |};
-
-  assert_expand
-    {|
-      def foo():
-        a * b.c
-    |}
-    {|
-      def foo():
-        a.__mul__(b.c)
-    |};
-
-  assert_expand
-    {|
-      def foo():
-        a * b[i]
-    |}
-    {|
-      def foo():
-        a.__mul__(b[i])
-    |}
-
-
 let test_expand_subscripts _ =
   let assert_expand source expected =
     assert_source_equal
@@ -1472,7 +1418,6 @@ let () =
     "qualify">::test_qualify;
     "replace_version_specific_code">::test_replace_version_specific_code;
     "expand_type_checking_imports">::test_expand_type_checking_imports;
-    "expand_operators">::test_expand_operators;
     "expand_subscripts">::test_expand_subscripts;
     "expand_returns">::test_expand_returns;
     "expand_for_loop">::test_expand_for;

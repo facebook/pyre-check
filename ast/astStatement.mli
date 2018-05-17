@@ -119,11 +119,27 @@ module Import : sig
 end
 
 module Assign : sig
+  type operator =
+    | Add
+    | At
+    | BitAnd
+    | BitOr
+    | BitXor
+    | Divide
+    | FloorDivide
+    | LeftShift
+    | Modulo
+    | Multiply
+    | Power
+    | RightShift
+    | Subtract
+  [@@deriving compare, eq, sexp, show, hash]
+
   type t = {
     target: Expression.t;
     annotation: Expression.t option;
     value: Expression.t option;
-    compound: Expression.BinaryOperator.operator option;
+    compound: operator option;
     parent: Expression.Access.t option;
   }
   [@@deriving compare, eq, sexp, show, hash]

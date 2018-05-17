@@ -98,41 +98,41 @@ let test_lexer _ =
     "1 +\\\n 2"
     [
       +Expression
-        (+BinaryOperator {
-           BinaryOperator.left = +Integer 1;
-           operator = BinaryOperator.Add;
-           right = +Integer 2;
-         });
+        (+Access [
+           Access.Expression (+Integer 1);
+           Access.Identifier ~~"__add__";
+           Access.Call (+[{ Argument.name = None; value = +Integer 2 }]);
+         ]);
     ];
   assert_parsed_equal
     "1 + \\\n 2"
     [
       +Expression
-        (+BinaryOperator {
-           BinaryOperator.left = +Integer 1;
-           operator = BinaryOperator.Add;
-           right = +Integer 2;
-         });
+        (+Access [
+           Access.Expression (+Integer 1);
+           Access.Identifier ~~"__add__";
+           Access.Call (+[{ Argument.name = None; value = +Integer 2 }]);
+         ]);
     ];
   assert_parsed_equal
     "(1 +\n 2)"
     [
       +Expression
-        (+BinaryOperator {
-           BinaryOperator.left = +Integer 1;
-           operator = BinaryOperator.Add;
-           right = +Integer 2;
-         });
+        (+Access [
+           Access.Expression (+Integer 1);
+           Access.Identifier ~~"__add__";
+           Access.Call (+[{ Argument.name = None; value = +Integer 2 }]);
+         ]);
     ];
   assert_parsed_equal
     "(1 +\n 2)\n3"
     [
       +Expression
-        (+BinaryOperator {
-           BinaryOperator.left = +Integer 1;
-           operator = BinaryOperator.Add;
-           right = +Integer 2;
-         });
+        (+Access [
+           Access.Expression (+Integer 1);
+           Access.Identifier ~~"__add__";
+           Access.Call (+[{ Argument.name = None; value = +Integer 2 }]);
+         ]);
       +Expression (+Integer 3)
     ]
 
@@ -1034,55 +1034,59 @@ let test_binary_operator _ =
     "1 + 2"
     [
       +Expression
-        (+BinaryOperator {
-           BinaryOperator.left = +Integer 1;
-           operator = BinaryOperator.Add;
-           right = +Integer 2;
-         });
+        (+Access [
+           Access.Expression (+Integer 1);
+           Access.Identifier ~~"__add__";
+           Access.Call (+[{ Argument.name = None; value = +Integer 2 }]);
+         ]);
     ];
   assert_parsed_equal
     "1 ^ 2"
     [
       +Expression
-        (+BinaryOperator {
-           BinaryOperator.left = +Integer 1;
-           operator = BinaryOperator.BitXor;
-           right = +Integer 2;
-         });
+        (+Access [
+           Access.Expression (+Integer 1);
+           Access.Identifier ~~"__xor__";
+           Access.Call (+[{ Argument.name = None; value = +Integer 2 }]);
+         ]);
     ];
   assert_parsed_equal
     "1 // 2"
     [
       +Expression
-        (+BinaryOperator {
-           BinaryOperator.left = +Integer 1;
-           operator = BinaryOperator.FloorDivide;
-           right = +Integer 2;
-         });
+        (+Access [
+           Access.Expression (+Integer 1);
+           Access.Identifier ~~"__floordiv__";
+           Access.Call (+[{ Argument.name = None; value = +Integer 2 }]);
+         ]);
     ];
   assert_parsed_equal
     "1 - 2 + 3"
     [
       +Expression
-        (+BinaryOperator {
-           BinaryOperator.left = +BinaryOperator {
-             BinaryOperator.left = +Integer 1;
-             operator = BinaryOperator.Subtract;
-             right = +Integer 2;
-           };
-           operator = BinaryOperator.Add;
-           right = +Integer 3;
-         });
+        (+Access [
+           Access.Expression (+Integer 1);
+           Access.Identifier ~~"__sub__";
+           Access.Call (+[{ Argument.name = None; value = +Integer 2 }]);
+           Access.Identifier ~~"__add__";
+           Access.Call (+[{ Argument.name = None; value = +Integer 3 }]);
+         ]);
     ];
   assert_parsed_equal
     "a + b.c"
     [
       +Expression
-        (+BinaryOperator {
-           BinaryOperator.left = !"a";
-           operator = BinaryOperator.Add;
-           right = +Access (Access.create "b.c");
-         });
+        (+Access [
+           Access.Identifier ~~"a";
+           Access.Identifier ~~"__add__";
+           Access.Call
+             (+[
+                {
+                  Argument.name = None;
+                  value = +Access [Access.Identifier ~~"b"; Access.Identifier ~~"c"];
+                };
+              ]);
+         ]);
     ]
 
 
@@ -1185,11 +1189,11 @@ let test_lambda _ =
                annotation = None;
              };
            ];
-           body = +BinaryOperator {
-             BinaryOperator.left = !"x";
-             operator = BinaryOperator.Add;
-             right = +Integer 1;
-           };
+           body = +Access [
+             Access.Identifier ~~"x";
+             Access.Identifier ~~"__add__";
+             Access.Call (+[{ Argument.name = None; value = +Integer 1 }]);
+           ];
          });
     ]
 
@@ -2020,41 +2024,41 @@ let test_string _ =
     "'a' + 'b'"
     [
       +Expression
-        (+BinaryOperator {
-           BinaryOperator.left = +String "a";
-           operator = BinaryOperator.Add;
-           right = +String "b";
-         });
+        (+Access [
+           Access.Expression (+String "a");
+           Access.Identifier ~~"__add__";
+           Access.Call (+[{ Argument.name = None; value = +String "b" }]);
+         ]);
     ];
   assert_parsed_equal
     "\"a\" + \"b\""
     [
       +Expression
-        (+BinaryOperator {
-           BinaryOperator.left = +String "a";
-           operator = BinaryOperator.Add;
-           right = +String "b";
-         });
+        (+Access [
+           Access.Expression (+String "a");
+           Access.Identifier ~~"__add__";
+           Access.Call (+[{ Argument.name = None; value = +String "b" }]);
+         ]);
     ];
   assert_parsed_equal
     "'''a''' + '''b'''"
     [
       +Expression
-        (+BinaryOperator {
-           BinaryOperator.left = +String "a";
-           operator = BinaryOperator.Add;
-           right = +String "b";
-         });
+        (+Access [
+           Access.Expression (+String "a");
+           Access.Identifier ~~"__add__";
+           Access.Call (+[{ Argument.name = None; value = +String "b" }]);
+         ]);
     ];
   assert_parsed_equal
     "\"\"\"a\"\"\" + \"\"\"b\"\"\""
     [
       +Expression
-        (+BinaryOperator {
-           BinaryOperator.left = +String "a";
-           operator = BinaryOperator.Add;
-           right = +String "b";
-         });
+        (+Access [
+           Access.Expression (+String "a");
+           Access.Identifier ~~"__add__";
+           Access.Call (+[{ Argument.name = None; value = +String "b" }]);
+         ]);
     ]
 
 
@@ -2461,7 +2465,7 @@ let test_assign _ =
         Assign.target = !"a";
         annotation = None;
         value = Some (+Integer 1);
-        compound = Some BinaryOperator.Add;
+        compound = Some Statement.Assign.Add;
         parent = None;
       };
     ];
@@ -2472,7 +2476,7 @@ let test_assign _ =
         Assign.target = +Access (Access.create "a.b");
         annotation = None;
         value = Some (+Integer 1);
-        compound = Some BinaryOperator.Add;
+        compound = Some Statement.Assign.Add;
         parent = None;
       };
     ];
@@ -3385,11 +3389,11 @@ let test_tuple _ =
       +Expression
         (+Tuple [
            +Integer 1;
-           +BinaryOperator {
-             BinaryOperator.left = +Integer 1;
-             operator = BinaryOperator.Add;
-             right = +Integer 1;
-           };
+           +Access [
+             Access.Expression (+Integer 1);
+             Access.Identifier ~~"__add__";
+             Access.Call (+[{ Argument.name = None; value = +Integer 1 }]);
+           ];
          ]);
     ];
   assert_parsed_equal
@@ -3410,11 +3414,11 @@ let test_tuple _ =
     [
       +Expression
         (+Tuple [
-           +BinaryOperator {
-             BinaryOperator.left = +Integer 1;
-             operator = BinaryOperator.Add;
-             right = +Integer 1;
-           };
+           +Access [
+             Access.Expression (+Integer 1);
+             Access.Identifier ~~"__add__";
+             Access.Call (+[{ Argument.name = None; value = +Integer 1 }]);
+           ];
            +Integer 1;
          ]);
     ];

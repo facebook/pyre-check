@@ -82,55 +82,6 @@ module Record = struct
   end
 
 
-  module BinaryOperator = struct
-    type operator =
-      | Add
-      | At
-      | BitAnd
-      | BitOr
-      | BitXor
-      | Divide
-      | FloorDivide
-      | LeftShift
-      | Modulo
-      | Multiply
-      | Power
-      | RightShift
-      | Subtract
-    [@@deriving compare, eq, sexp, show, hash]
-
-
-    type 'expression record = {
-      left: 'expression;
-      operator: operator;
-      right: 'expression;
-    }
-    [@@deriving compare, eq, sexp, show, hash]
-
-
-    let pp_binary_operator formatter operator =
-      Format.fprintf
-        formatter
-        "%s"
-        begin
-          match operator with
-          | Add -> "+"
-          | At -> "@"
-          | BitAnd -> "&"
-          | BitOr -> "|"
-          | BitXor -> "^"
-          | Divide -> "/"
-          | FloorDivide -> "//"
-          | LeftShift -> "<<"
-          | Modulo -> "%"
-          | Multiply -> "*"
-          | Power -> "**"
-          | RightShift -> ">>"
-          | Subtract -> "-"
-        end
-  end
-
-
   module ComparisonOperator = struct
     type operator =
       | Equals
@@ -280,7 +231,6 @@ end
 type expression =
   | Access of t Record.Access.record
   | Await of t
-  | BinaryOperator of t Record.BinaryOperator.record
   | BooleanOperator of t BooleanOperator.t
   | Bytes of string
   | ComparisonOperator of t Record.ComparisonOperator.record
@@ -491,41 +441,6 @@ end
 
 let access =
   Access.create_from_expression
-
-
-module BinaryOperator = struct
-  include Record.BinaryOperator
-
-
-  type t = expression_t Record.BinaryOperator.record
-  [@@deriving compare, eq, sexp, show, hash]
-
-
-  let override {
-      left = ({ Node.location; _ } as left);
-      operator;
-      right;
-    } =
-    let name =
-      match operator with
-      | Add -> "__add__"
-      | At -> "__matmul__"
-      | BitAnd -> "__and__"
-      | BitOr -> "__or__"
-      | BitXor -> "__xor__"
-      | Divide -> "__truediv__"
-      | FloorDivide -> "__floordiv__"
-      | LeftShift -> "__lshift__"
-      | Modulo -> "__mod__"
-      | Multiply -> "__mul__"
-      | Power -> "__pow__"
-      | RightShift -> "__rshift__"
-      | Subtract -> "__sub__"
-    in
-    let arguments = [{ Argument.name = None; value = right }] in
-    Access ((access left) @ (Access.call ~arguments ~location ~name ()))
-    |> Node.create ~location
-end
 
 
 module ComparisonOperator = struct
@@ -923,14 +838,6 @@ module PrettyPrinter = struct
           formatter
           "await %a"
           pp_expression_t expression
-
-    | BinaryOperator { BinaryOperator.left; operator; right } ->
-        Format.fprintf
-          formatter
-          "%a %a %a"
-          pp_expression_t left
-          BinaryOperator.pp_binary_operator operator
-          pp_expression_t right
 
     | BooleanOperator { BooleanOperator.left; operator; right } ->
         Format.fprintf

@@ -1101,10 +1101,6 @@ module State = struct
             else
               errors
 
-        | BinaryOperator { BinaryOperator.left; right; _ } ->
-            let errors = check_expression ~resolution errors left in
-            check_expression ~resolution errors right
-
         | BooleanOperator {
             BooleanOperator.left;
             operator;

@@ -135,11 +135,28 @@ end
 
 
 module Assign = struct
+  type operator =
+    | Add
+    | At
+    | BitAnd
+    | BitOr
+    | BitXor
+    | Divide
+    | FloorDivide
+    | LeftShift
+    | Modulo
+    | Multiply
+    | Power
+    | RightShift
+    | Subtract
+  [@@deriving compare, eq, sexp, show, hash]
+
+
   type t = {
     target: Expression.t;
     annotation: Expression.t option;
     value: Expression.t option;
-    compound: Expression.BinaryOperator.operator option;
+    compound: operator option;
     parent: Expression.Access.t option;
   }
   [@@deriving compare, eq, sexp, show, hash]
@@ -1037,7 +1054,27 @@ module PrettyPrinter = struct
 
 
   let pp_binary_operator_option formatter option =
-    pp_option formatter option Expression.BinaryOperator.pp_binary_operator
+    let pp_operator format operator =
+      let operator =
+        let open Assign in
+        match operator with
+        | Add -> "+"
+        | At -> "@"
+        | BitAnd -> "&"
+        | BitOr -> "|"
+        | BitXor -> "^"
+        | Divide -> "/"
+        | FloorDivide -> "//"
+        | LeftShift -> "<<"
+        | Modulo -> "%"
+        | Multiply -> "*"
+        | Power -> "**"
+        | RightShift -> ">>"
+        | Subtract -> "-"
+      in
+      Format.fprintf format "%s" operator
+    in
+    pp_option formatter option pp_operator
 
 
   let pp_async formatter =
