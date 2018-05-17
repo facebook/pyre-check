@@ -2200,7 +2200,6 @@ let test_class _ =
             Assign.target = !"attribute";
             annotation = Some !"int";
             value = Some (+Integer 1);
-            compound = None;
             parent = Some (Access.create "foo");
           };
         ];
@@ -2220,7 +2219,6 @@ let test_class _ =
             Assign.target = !"attribute";
             annotation = Some !"int";
             value = None;
-            compound = None;
             parent = Some (Access.create "foo");
           };
         ];
@@ -2274,7 +2272,6 @@ let test_class _ =
                 Assign.target = +Access (Access.create "self.bar");
                 annotation = None;
                 value = Some (+Integer 0);
-                compound = None;
                 parent = None;
               };
             ];
@@ -2372,7 +2369,6 @@ let test_assign _ =
         Assign.target = !"a";
         annotation = None;
         value = Some !"b";
-        compound = None;
         parent = None;
       };
     ];
@@ -2383,7 +2379,6 @@ let test_assign _ =
         Assign.target = !"a";
         annotation = None;
         value = Some (+Integer 1);
-        compound = None;
         parent = None;
       };
     ];
@@ -2394,7 +2389,6 @@ let test_assign _ =
         Assign.target = !"a";
         annotation = Some !"int";
         value = Some (+Integer 1);
-        compound = None;
         parent = None;
       };
     ];
@@ -2405,7 +2399,6 @@ let test_assign _ =
         Assign.target = (+Tuple [!"a"; !"b"]);
         annotation = None;
         value = Some (+Integer 1);
-        compound = None;
         parent = None;
       };
     ];
@@ -2423,7 +2416,6 @@ let test_assign _ =
               Access.Call (+[]);
             ]
           );
-        compound = None;
         parent = None;
       };
     ];
@@ -2434,14 +2426,12 @@ let test_assign _ =
         Assign.target = !"a";
         annotation = None;
         value = Some (+Integer 1);
-        compound = None;
         parent = None;
       };
       +Assign {
         Assign.target = !"b";
         annotation = None;
         value = Some (+Integer 1);
-        compound = None;
         parent = None;
       };
     ];
@@ -2453,7 +2443,6 @@ let test_assign _ =
         Assign.target = !"a";
         annotation = None;
         value = Some (+Expression.Yield (Some !"b"));
-        compound = None;
         parent = None;
       };
     ];
@@ -2464,8 +2453,13 @@ let test_assign _ =
       +Assign {
         Assign.target = !"a";
         annotation = None;
-        value = Some (+Integer 1);
-        compound = Some Statement.Assign.Add;
+        value =
+          Some
+            (+Access [
+               Access.Identifier ~~"a";
+               Access.Identifier ~~"__add__";
+               Access.Call (+[{ Argument.name = None; value = +Integer 1 }]);
+             ]);
         parent = None;
       };
     ];
@@ -2475,8 +2469,14 @@ let test_assign _ =
       +Assign {
         Assign.target = +Access (Access.create "a.b");
         annotation = None;
-        value = Some (+Integer 1);
-        compound = Some Statement.Assign.Add;
+        value =
+          Some
+            (+Access [
+               Access.Identifier ~~"a";
+               Access.Identifier ~~"b";
+               Access.Identifier ~~"__add__";
+               Access.Call (+[{ Argument.name = None; value = +Integer 1 }]);
+             ]);
         parent = None;
       };
     ];
@@ -2491,7 +2491,6 @@ let test_assign _ =
             test = !"b";
             alternative = !"c";
           };);
-        compound = None;
         parent = None;
       };
     ];
@@ -2506,7 +2505,6 @@ let test_assign _ =
             operator = BooleanOperator.Or;
             right = !"c";
           });
-        compound = None;
         parent = None;
       };
     ];
@@ -2525,7 +2523,6 @@ let test_assign _ =
               right = !"d";
             };
           });
-        compound = None;
         parent = None;
       };
     ]
@@ -3436,7 +3433,6 @@ let test_stubs _ =
             Assign.target = !"a";
             annotation = None;
             value = None;
-            compound = None;
             parent = None;
           });
     ];
@@ -3449,7 +3445,6 @@ let test_stubs _ =
             Assign.target = !"a";
             annotation = Some !"int";
             value = None;
-            compound = None;
             parent = None;
           });
     ];
@@ -3462,7 +3457,6 @@ let test_stubs _ =
             Assign.target = !"a";
             annotation = Some !"int";
             value = None;
-            compound = None;
             parent = None;
           });
     ];
@@ -3479,7 +3473,6 @@ let test_stubs _ =
                    Access.Subscript [Access.Index !"str"];
                  ]);
             value = None;
-            compound = None;
             parent = None;
           });
     ];
@@ -3499,7 +3492,6 @@ let test_stubs _ =
                    ];
                  ]);
             value = None;
-            compound = None;
             parent = None;
           });
     ];
@@ -3516,7 +3508,6 @@ let test_stubs _ =
                    Access.Subscript [Access.Index !"int"];
                  ]);
             value = None;
-            compound = None;
             parent = None;
           });
     ];
@@ -3533,7 +3524,6 @@ let test_stubs _ =
                 Assign.target = !"a";
                 annotation = Some !"int";
                 value = None;
-                compound = None;
                 parent = Some (Access.create "A");
               });
         ];

@@ -135,28 +135,10 @@ end
 
 
 module Assign = struct
-  type operator =
-    | Add
-    | At
-    | BitAnd
-    | BitOr
-    | BitXor
-    | Divide
-    | FloorDivide
-    | LeftShift
-    | Modulo
-    | Multiply
-    | Power
-    | RightShift
-    | Subtract
-  [@@deriving compare, eq, sexp, show, hash]
-
-
   type t = {
     target: Expression.t;
     annotation: Expression.t option;
     value: Expression.t option;
-    compound: operator option;
     parent: Expression.Access.t option;
   }
   [@@deriving compare, eq, sexp, show, hash]
@@ -966,7 +948,6 @@ module With = struct
            Assign.target;
            annotation = None;
            value = Some enter_call;
-           compound = None;
            parent = None;
          }
        in
@@ -1053,30 +1034,6 @@ module PrettyPrinter = struct
     pp_option_with_prefix formatter (prefix,option) Expression.pp
 
 
-  let pp_binary_operator_option formatter option =
-    let pp_operator format operator =
-      let operator =
-        let open Assign in
-        match operator with
-        | Add -> "+"
-        | At -> "@"
-        | BitAnd -> "&"
-        | BitOr -> "|"
-        | BitXor -> "^"
-        | Divide -> "/"
-        | FloorDivide -> "//"
-        | LeftShift -> "<<"
-        | Modulo -> "%"
-        | Multiply -> "*"
-        | Power -> "**"
-        | RightShift -> ">>"
-        | Subtract -> "-"
-      in
-      Format.fprintf format "%s" operator
-    in
-    pp_option formatter option pp_operator
-
-
   let pp_async formatter =
     function
     | true -> Format.fprintf formatter "async@;"
@@ -1098,13 +1055,12 @@ module PrettyPrinter = struct
           pp_statement_list statement_list
 
 
-  and pp_assign formatter { Assign.target; annotation; value; compound; parent } =
+  and pp_assign formatter { Assign.target; annotation; value; parent } =
     Format.fprintf
       formatter
-      "%a%a %a= %a%a"
+      "%a%a = %a%a"
       pp_access_list_option parent
       Expression.pp target
-      pp_binary_operator_option compound
       pp_expression_option ("", value)
       pp_expression_option (" # ", annotation)
 

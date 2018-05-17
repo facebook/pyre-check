@@ -49,6 +49,47 @@
     let position = Location.create ~start ~stop:start in
     { position with Location.stop = stop }
 
+  type binary_operator =
+    | Add
+    | At
+    | BitAnd
+    | BitOr
+    | BitXor
+    | Divide
+    | FloorDivide
+    | LeftShift
+    | Modulo
+    | Multiply
+    | Power
+    | RightShift
+    | Subtract
+
+  let binary_operator ~left:({ Node.location; _ } as left) ~operator ~right =
+    let access =
+      let name =
+        match operator with
+        | Add -> "__add__"
+        | At -> "__matmul__"
+        | BitAnd -> "__and__"
+        | BitOr -> "__or__"
+        | BitXor -> "__xor__"
+        | Divide -> "__truediv__"
+        | FloorDivide -> "__floordiv__"
+        | LeftShift -> "__lshift__"
+        | Modulo -> "__mod__"
+        | Multiply -> "__mul__"
+        | Power -> "__pow__"
+        | RightShift -> "__rshift__"
+        | Subtract -> "__sub__"
+      in
+      let arguments = [{ Argument.name = None; value = right }] in
+      ((access left) @ (Access.call ~arguments ~location ~name ()))
+    in
+    {
+      Node.location = left.Node.location;
+      value = Access access
+    }
+
 %}
 
 (* The syntactic junkyard. *)
@@ -213,6 +254,7 @@ small_statement:
   | target = test_list;
     compound = compound_operator;
     value = test_list {
+      let value = binary_operator ~left:target ~operator:compound ~right:value in
       [{
         Node.location = {
           target.Node.location with Location.stop =
@@ -222,7 +264,6 @@ small_statement:
           Assign.target;
           annotation = None;
           value = Some value;
-          compound = Some compound;
           parent = None;
         };
       }]
@@ -235,7 +276,6 @@ small_statement:
           Assign.target;
           annotation = Some annotation;
           value = None;
-          compound = None;
           parent = None;
         };
       }]
@@ -250,7 +290,6 @@ small_statement:
           Assign.target;
           annotation = Some annotation;
           value = Some value;
-          compound = None;
           parent = None;
         };
       }]
@@ -263,7 +302,6 @@ small_statement:
           Assign.target;
           annotation = None;
           value = Some value;
-          compound = None;
           parent = None;
         };
       } in
@@ -278,7 +316,6 @@ small_statement:
             Assign.target;
             annotation = None;
             value = None;
-            compound = None;
             parent = None;
           });
       } in
@@ -293,7 +330,6 @@ small_statement:
             Assign.target;
             annotation = Some annotation;
             value = None;
-            compound = None;
             parent = None;
           });
       } in
@@ -310,7 +346,6 @@ small_statement:
             Assign.target;
             annotation = Some annotation;
             value = None;
-            compound = None;
             parent = None;
           });
       }]
@@ -963,32 +998,7 @@ atom:
   | left = expression;
     operator = binary_operator;
     right = expression; {
-      let location = Node.location left in
-      let access =
-        let name =
-          let open Statement.Assign in
-          match operator with
-          | Add -> "__add__"
-          | At -> "__matmul__"
-          | BitAnd -> "__and__"
-          | BitOr -> "__or__"
-          | BitXor -> "__xor__"
-          | Divide -> "__truediv__"
-          | FloorDivide -> "__floordiv__"
-          | LeftShift -> "__lshift__"
-          | Modulo -> "__mod__"
-          | Multiply -> "__mul__"
-          | Power -> "__pow__"
-          | RightShift -> "__rshift__"
-          | Subtract -> "__sub__"
-        in
-        let arguments = [{ Argument.name = None; value = right }] in
-        ((access left) @ (Access.call ~arguments ~location ~name ()))
-      in
-      {
-        Node.location = left.Node.location;
-        value = Access access
-      }
+      binary_operator ~left ~operator ~right
     }
 
   | bytes = BYTES+ {
@@ -1328,35 +1338,35 @@ yield:
   ;
 
 %inline binary_operator:
-  | PLUS { Statement.Assign.Add }
-  | AT { Statement.Assign.At }
-  | AMPERSAND { Statement.Assign.BitAnd }
-  | BAR { Statement.Assign.BitOr }
-  | HAT { Statement.Assign.BitXor }
-  | SLASH; SLASH { Statement.Assign.FloorDivide }
-  | SLASH { Statement.Assign.Divide }
-  | LEFTANGLELEFTANGLE { Statement.Assign.LeftShift }
-  | PERCENT { Statement.Assign.Modulo }
-  | ASTERIKS; ASTERIKS { Statement.Assign.Power }
-  | ASTERIKS { Statement.Assign.Multiply }
-  | RIGHTANGLERIGHTANGLE { Statement.Assign.RightShift }
-  | MINUS { Statement.Assign.Subtract }
+  | PLUS { Add }
+  | AT { At }
+  | AMPERSAND { BitAnd }
+  | BAR { BitOr }
+  | HAT { BitXor }
+  | SLASH; SLASH { FloorDivide }
+  | SLASH { Divide }
+  | LEFTANGLELEFTANGLE { LeftShift }
+  | PERCENT { Modulo }
+  | ASTERIKS; ASTERIKS { Power }
+  | ASTERIKS { Multiply }
+  | RIGHTANGLERIGHTANGLE { RightShift }
+  | MINUS { Subtract }
   ;
 
 %inline compound_operator:
-  | PLUSEQUALS { Statement.Assign.Add }
-  | ATEQUALS { Statement.Assign.At }
-  | AMPERSANDEQUALS { Statement.Assign.BitAnd }
-  | BAREQUALS { Statement.Assign.BitOr }
-  | HATEQUALS { Statement.Assign.BitXor }
-  | SLASHSLASHEQUALS { Statement.Assign.FloorDivide }
-  | SLASHEQUALS { Statement.Assign.Divide }
-  | LEFTANGLELEFTANGLEEQUALS { Statement.Assign.LeftShift }
-  | PERCENTEQUALS { Statement.Assign.Modulo }
-  | ASTERIKSASTERIKSEQUALS { Statement.Assign.Power }
-  | ASTERIKSEQUALS { Statement.Assign.Multiply }
-  | RIGHTANGLERIGHTANGLEEQUALS { Statement.Assign.RightShift }
-  | MINUSEQUALS { Statement.Assign.Subtract }
+  | PLUSEQUALS { Add }
+  | ATEQUALS { At }
+  | AMPERSANDEQUALS { BitAnd }
+  | BAREQUALS { BitOr }
+  | HATEQUALS { BitXor }
+  | SLASHSLASHEQUALS { FloorDivide }
+  | SLASHEQUALS { Divide }
+  | LEFTANGLELEFTANGLEEQUALS { LeftShift }
+  | PERCENTEQUALS { Modulo }
+  | ASTERIKSASTERIKSEQUALS { Power }
+  | ASTERIKSEQUALS { Multiply }
+  | RIGHTANGLERIGHTANGLEEQUALS { RightShift }
+  | MINUSEQUALS { Subtract }
   ;
 
 %inline unary_operator:

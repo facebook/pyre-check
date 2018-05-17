@@ -405,7 +405,6 @@ let register_aliases (module Handler: Handler) sources =
       | Assign {
           Assign.target;
           annotation = None;
-          compound = None;
           value = Some value;
           _;
         } ->
@@ -552,7 +551,6 @@ let register_globals
             value = Assign {
                 Assign.target;
                 annotation = None;
-                compound = None;
                 value = Some value;
                 _;
               };
@@ -589,7 +587,6 @@ let register_globals
             value = Assign {
                 Assign.target = { Node.value = Access access; _ };
                 annotation = Some annotation;
-                compound = None;
                 _;
               };
           }
@@ -598,7 +595,6 @@ let register_globals
             value = Stub (Stub.Assign {
                 Assign.target = { Node.value = Access access; _ };
                 annotation = Some annotation;
-                compound = None;
                 _;
               });
           } ->

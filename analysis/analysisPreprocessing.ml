@@ -936,7 +936,6 @@ let expand_returns source =
                     Assign.target;
                     annotation = None;
                     value = Some value;
-                    compound = None;
                     parent = None;
                   };
               };
@@ -1084,7 +1083,6 @@ let expand_for_loop source =
                           Node.location;
                           value = Access value;
                         };
-                      compound = None;
                       parent = None;
                     }
                 }
@@ -1120,7 +1118,6 @@ let expand_excepts source =
                         Assign.target;
                         annotation = Some annotation;
                         value = None;
-                        compound = None;
                         parent = None;
                       }
                   }
@@ -1258,7 +1255,6 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
             Assign.target;
             annotation = Some annotation;
             value = None;
-            compound = None;
             parent = Some parent;
           }
           |> Node.create ~location

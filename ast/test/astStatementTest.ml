@@ -592,7 +592,6 @@ let test_preamble _ =
         Assign.target = !"name";
         annotation = None;
         value = Some (+Access (parse_single_access "item.__enter__()"));
-        compound = None;
         parent = None;
       };
     ];
@@ -604,7 +603,6 @@ let test_preamble _ =
         Assign.target = !"name";
         annotation = None;
         value = Some (+Await (+Access (parse_single_access "item.__aenter__()")));
-        compound = None;
         parent = None;
       };
     ]
@@ -772,8 +770,8 @@ let test_pp _ =
       class Foo(Bar):
         def baz(quux):
           for i in xrange(quux):
-            i += 1
-          i *= 2
+            i = 1
+          i = 2
     |}
   in
 
@@ -783,8 +781,8 @@ let test_pp _ =
       class Foo(Bar):
         def Foo.baz(quux):
           for i in xrange.(quux):
-            i += 1
-          i *= 2
+            i = 1
+          i = 2
 
     |}
   in
@@ -834,28 +832,28 @@ let test_pp _ =
   let source =
     {|
       while x:
-        i += 1
+        i = 1
         if i > 0:
-          i -= 1
+          i = 1
         else:
-          i -= 2
-        j += 2
-      i[j] += 3
-      i[j::1] += i[:j]
+          i = 2
+        j = 2
+      i[j] = 3
+      i[j::1] = i[:j]
     |}
   in
 
   let pretty_print_expect =
     {|
       while x:
-        i += 1
+        i = 1
         if i > 0:
-          i -= 1
+          i = 1
         else:
-          i -= 2
-        j += 2
-      i[j] += 3
-      i[j::1] += i[:j]
+          i = 2
+        j = 2
+      i[j] = 3
+      i[j::1] = i[:j]
     |}
   in
 

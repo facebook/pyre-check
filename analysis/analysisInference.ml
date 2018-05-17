@@ -221,21 +221,7 @@ module State = struct
 
     let resolution =
       match Node.value statement with
-      | Assign {
-          Assign.target;
-          value = Some ({ Node.value = Access value_access; _ } as value);
-          Assign.compound = Some _;
-          _ } ->
-          resolve_assign
-            (Annotated.resolve ~resolution target)
-            (Annotated.resolve ~resolution value)
-          >>| (fun refined ->
-              Resolution.set_local
-                resolution
-                ~access:value_access
-                ~annotation:(Annotation.create refined))
-          |> Option.value ~default:resolution
-      | Assign { Assign.target; value = Some value; Assign.compound = None; _ } -> (
+      | Assign { Assign.target; value = Some value; _ } -> (
           (* Get the annotations of the targets and set the 'value' to be the meet *)
           let rec propagate_assign resolution target_annotation value =
             match Node.value value with

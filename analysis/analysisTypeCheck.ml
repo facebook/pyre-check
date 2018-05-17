@@ -564,8 +564,6 @@ module State = struct
 
     let rec forward_annotations ({ resolution; _ } as state) statement =
       match Node.value statement with
-      | Assign { Assign.compound = Some _; _ } ->
-          resolution
       | Assign {
           Assign.target = { Node.value = Access access; _ };
           annotation = Some annotation;
@@ -1030,7 +1028,6 @@ module State = struct
             Assign.target;
             annotation = None;
             value = Some value;
-            compound = None;
             parent = None;
           }
           |> Node.create ~location

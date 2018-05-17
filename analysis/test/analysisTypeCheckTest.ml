@@ -1964,7 +1964,15 @@ let test_check_assign _ =
       def foo(input: int) -> None:
         x, y = input
     |}
-    ["Incompatible variable type [9]: Unable to unpack `int`, expected a `Tuple`."]
+    ["Incompatible variable type [9]: Unable to unpack `int`, expected a `Tuple`."];
+
+  assert_type_errors
+    {|
+      def foo() -> None:
+        x = 1
+        x += 'asdf'
+    |}
+    ["Incompatible parameter type [6]: Expected `int` but got `str`."]
 
 
 let test_check_coverage _ =

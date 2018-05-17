@@ -262,12 +262,11 @@ module Make (Transformer : Transformer) = struct
     let rec transform_statement statement =
       let transform_children value =
         match value with
-        | Assign { Assign.target; annotation; value; compound; parent } ->
+        | Assign { Assign.target; annotation; value; parent } ->
             Assign {
               Assign.target = transform_expression target;
               annotation = annotation >>| transform_expression;
               value = value >>| transform_expression;
-              compound;
               parent;
             }
         | Assert { Assert.test; message } ->
@@ -366,12 +365,11 @@ module Make (Transformer : Transformer) = struct
         | Stub stub ->
             let stub =
               match stub with
-              | Stub.Assign { Assign.target; annotation; value; compound; parent } ->
+              | Stub.Assign { Assign.target; annotation; value; parent } ->
                   Stub.Assign {
                     Assign.target = transform_expression target;
                     annotation = annotation >>| transform_expression;
                     value = value >>| transform_expression;
-                    compound;
                     parent;
                   }
               | Stub.Class { Class.name; bases; body; decorators; docstring; } ->
