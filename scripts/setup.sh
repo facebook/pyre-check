@@ -149,3 +149,4 @@ jobs="$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 1)"
 
 make --jobs "$jobs" || die 'Could not build pyre'
 make --jobs "$jobs" test || die 'Pyre tests failed'
+make python_tests || die 'Python tests for Pyre failed'
