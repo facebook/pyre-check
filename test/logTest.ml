@@ -40,8 +40,38 @@ let test_rotate _ =
   assert_equal (Sys.is_file actual_path) `No
 
 
+let assert_enabled section =
+  assert_bool
+    "Section should be enabled"
+    (Log.is_enabled section)
+
+
+let assert_disabled section =
+  assert_bool
+    "Section should be disabled"
+    (not (Log.is_enabled section))
+
+
+let test_initialize_default_off _ =
+  assert_disabled `Fixpoint;
+  Log.initialize ~verbose:false ~sections:["fixpoint"];
+  assert_enabled `Fixpoint;
+  Log.initialize ~verbose:false ~sections:["-fixpoint"];
+  assert_disabled `Fixpoint
+
+
+let test_initialize_default_on _ =
+  assert_enabled `Performance;
+  Log.initialize ~verbose:false ~sections:["-performance"];
+  assert_disabled `Performance;
+  Log.initialize ~verbose:false ~sections:["performance"];
+  assert_enabled `Performance
+
+
 let () =
   "log">:::[
     "rotate">::test_rotate;
+    "initialize_default_off">::test_initialize_default_off;
+    "initialize_default_on">::test_initialize_default_on;
   ]
   |> run_test_tt_main

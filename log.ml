@@ -61,8 +61,21 @@ let initialize ~verbose ~sections =
   if verbose then
     Hash_set.add enabled "Debug";
 
-  List.map ~f:(fun section -> String.lowercase section |> String.capitalize) sections
-  |> List.iter ~f:(fun section -> Hash_set.add enabled section)
+  let handle_section section =
+    let normalize section =
+      String.lowercase section
+      |> String.capitalize
+    in
+
+    match String.chop_prefix ~prefix:"-" section with
+    | Some section ->
+        normalize section
+        |> Hash_set.remove enabled
+    | None ->
+        normalize section
+        |> Hash_set.add enabled
+  in
+  List.iter ~f:handle_section sections
 
 
 let initialize_for_tests () =

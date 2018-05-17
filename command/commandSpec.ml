@@ -13,7 +13,8 @@ let base_command_line_arguments =
     +> flag
       "-logging-sections"
       (optional_with_default [] (Arg_type.comma_separated string))
-      ~doc:"SECTION1,... Comma-separated list of logging sections."
+      ~doc:"SECTION1,... Comma-separated list of logging \
+            sections. Prefix a section name with a dash to disable it."
     +> flag "-debug" no_arg ~doc:"Turn on debug mode"
     +> flag "-strict" no_arg ~doc:"Turn on strict mode"
     +> flag "-declare" no_arg ~doc:"Turn on declare mode"
