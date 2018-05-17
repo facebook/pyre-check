@@ -159,6 +159,7 @@ class TimedStreamHandler(logging.StreamHandler):
         sys.stderr.write(
             Format.WRAP_OVERFLOW +
             Format.SHOW_CURSOR)
+        sys.stderr.flush()
         self._terminate = True
 
 
@@ -196,8 +197,6 @@ def cleanup(arguments) -> None:
 
     output = stdout.getvalue()
     if output:
-        sys.stderr.write(Format.WRAP_OVERFLOW)
-        sys.stderr.flush()
         sys.stdout.write(output + '\n')
 
 
