@@ -12,9 +12,9 @@ open Expression
 open Test
 
 
-let define ?(body = []) () =
-  +{
-    Statement.Define.name = Access.create "foo";
+let define_value ?(body = []) ?(name = "foo") () =
+  {
+    Statement.Define.name = Access.create name;
     parameters = [];
     body;
     decorators = [];
@@ -24,6 +24,10 @@ let define ?(body = []) () =
     generated = false;
     parent = None;
   }
+
+
+let define ?(body = []) () =
+  +(define_value ~body ())
 
 
 let mock_define =
@@ -74,6 +78,14 @@ let undefined_attribute actual =
         Error.annotation = actual;
         class_attribute = false;
       };
+  }
+
+let inconsistent_override name override actual =
+  Error.InconsistentOverride {
+    Error.overridden_method =
+      Annotated.Class.Method.create ~define:(define_value ~name ()) ~parent:(mock_parent);
+    override;
+    mismatch = { Error.actual; expected = Type.integer };
   }
 
 
@@ -415,7 +427,13 @@ let test_filter _ =
   assert_unfiltered (incompatible_return_type Type.integer Type.float);
   assert_filtered
     ~define:(define ~body:[+Statement.Pass; +Statement.Return None] ())
-    (incompatible_return_type Type.integer Type.float)
+    (incompatible_return_type Type.integer Type.float);
+
+  (* Suppress parameter errors on override of dunder methods *)
+  assert_unfiltered (inconsistent_override "foo" Error.StrengthenedPrecondition Type.none);
+  assert_unfiltered (inconsistent_override "__foo__" Error.WeakenedPostcondition Type.none);
+  assert_unfiltered (inconsistent_override "__foo__" Error.StrengthenedPrecondition Type.Top);
+  assert_filtered (inconsistent_override "__foo__" Error.StrengthenedPrecondition Type.none)
 
 
 let test_suppress _ =

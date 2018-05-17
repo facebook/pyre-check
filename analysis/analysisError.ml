@@ -1039,9 +1039,27 @@ let filter ~configuration ~resolution errors =
       | _ ->
           false
     in
+
+    (* Ignore naming mismatches on parameters of dunder methods due to unofficial typeshed naming *)
+    let is_override_on_dunder_method { kind; _ } =
+      let get_name overridden = overridden |> Annotated.Class.Method.name |> Access.show in
+      match kind with
+      | InconsistentOverride { overridden_method; override; mismatch = { actual; _ } }
+        when String.is_prefix ~prefix:"__" (get_name overridden_method) &&
+             String.is_suffix ~suffix:"__" (get_name overridden_method) ->
+          begin
+            match override with
+            | StrengthenedPrecondition ->
+                Type.equal actual Type.none
+            | _ -> false
+          end
+      | _ -> false
+    in
+
     is_mock_error error ||
     is_callable_error error ||
-    is_unimplemented_return_error error
+    is_unimplemented_return_error error ||
+    is_override_on_dunder_method error
   in
   match configuration with
   | { Configuration.debug = true; _ } -> errors
