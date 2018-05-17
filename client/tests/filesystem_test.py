@@ -94,13 +94,13 @@ class FilesystemTest(unittest.TestCase):
         shared_source_directory._merge()
         root = shared_source_directory.get_root()
         os_makedirs.assert_has_calls(
-            [call(root), call(f"{root}/b")])
+            [call(root), call(root + "/b")])
         os_symlink.assert_has_calls(
             [
-                call(os.getcwd() + "/first/x.py", f"{root}/x.py"),
-                call(os.getcwd() + "/first/y.py", f"{root}/y.py"),
-                call(os.getcwd() + "/first/b/z.py", f"{root}/b/z.py"),
-                call(os.getcwd() + "/second/a.py", f"{root}/a.py"),
+                call(os.getcwd() + "/first/x.py", root + "/x.py"),
+                call(os.getcwd() + "/first/y.py", root + "/y.py"),
+                call(os.getcwd() + "/first/b/z.py", root + "/b/z.py"),
+                call(os.getcwd() + "/second/a.py", root + "/a.py"),
             ],
             any_order=True)
 
