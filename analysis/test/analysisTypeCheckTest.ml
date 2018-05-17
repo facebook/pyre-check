@@ -4990,7 +4990,10 @@ let test_check_behavioral_subtyping _ =
       class Bar(Foo):
         def foo() -> float: return 1.0
     |}
-    ["Inconsistent override [15]: `foo` overloads method defined in `Foo` inconsistently."];
+    [
+      "Inconsistent override [15]: `foo` overloads method defined in `Foo` inconsistently. " ^
+      "Returned type `float` is not a subtype of the overridden return `int`."
+    ];
   assert_type_errors
     {|
       class Foo():
@@ -5006,7 +5009,10 @@ let test_check_behavioral_subtyping _ =
       class Bar(Foo):
         def foo() -> None: pass
     |}
-    ["Inconsistent override [15]: `foo` overloads method defined in `Foo` inconsistently."];
+    [
+      "Inconsistent override [15]: `foo` overloads method defined in `Foo` inconsistently. " ^
+      "Returned type `None` is not a subtype of the overridden return `int`."
+    ];
   assert_type_errors
     {|
       class Foo():
@@ -5015,7 +5021,8 @@ let test_check_behavioral_subtyping _ =
         def foo(): pass
     |}
     [
-      "Inconsistent override [15]: `foo` overloads method defined in `Foo` inconsistently.";
+      "Inconsistent override [15]: `foo` overloads method defined in `Foo` inconsistently. " ^
+      "Returned type `unknown` is not a subtype of the overridden return `int`.";
       "Missing return annotation [3]: Returning `None` but no return type is specified."
     ];
 
@@ -5069,7 +5076,10 @@ let test_check_behavioral_subtyping _ =
       class Bar(Foo):
         def foo(a: int) -> None: pass
     |}
-    ["Inconsistent override [14]: `foo` overloads method defined in `Foo` inconsistently."];
+    [
+      "Inconsistent override [14]: `foo` overloads method defined in `Foo` inconsistently. " ^
+      "Parameter of type `int` is not a supertype of the overridden parameter `float`."
+    ];
   assert_type_errors
     {|
       class Foo():
@@ -5077,7 +5087,10 @@ let test_check_behavioral_subtyping _ =
       class Bar(Foo):
         def foo() -> None: pass
     |}
-    ["Inconsistent override [14]: `foo` overloads method defined in `Foo` inconsistently."];
+    [
+      "Inconsistent override [14]: `foo` overloads method defined in `Foo` inconsistently. " ^
+      "Parameter of type `None` is not a supertype of the overridden parameter `unknown`."
+    ];
   assert_type_errors
     {|
       class Foo():
@@ -5109,7 +5122,10 @@ let test_check_behavioral_subtyping _ =
     class Bar(Foo):
       def foo(b: int) -> None: pass
     |}
-    ["Inconsistent override [14]: `foo` overloads method defined in `Foo` inconsistently."];
+    [
+      "Inconsistent override [14]: `foo` overloads method defined in `Foo` inconsistently. " ^
+      "Parameter of type `None` is not a supertype of the overridden parameter `int`."
+    ];
   assert_type_errors
     {|
     class Foo():
