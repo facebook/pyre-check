@@ -24,6 +24,7 @@ module State : sig
     errors: Error.t Location.Map.t;
     define: Define.t Node.t;
     lookup: Lookup.t option;
+    bottom: bool;
   }
   [@@deriving eq, show]
 

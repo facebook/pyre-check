@@ -26,6 +26,7 @@ let plain_environment =
     (Environment.handler ~configuration environment)
     ~configuration
     [
+      Source.create ~qualifier:(Access.create "sys") [];
       Source.create ~qualifier:(Access.create "typing") [];
       Source.create ~qualifier:(Access.create "unittest.mock") [];
       parse ~qualifier:[] {|
@@ -170,6 +171,8 @@ let plain_environment =
           pass
 
         def sum(iterable: typing.Iterable[_T]) -> typing.Union[_T, int]: ...
+        def sys.exit(code: int) -> typing.NoReturn: ...
+
         def returns_undefined()->Undefined: ...
         class Spooky:
           def undefined(self)->Undefined: ...
@@ -5348,7 +5351,17 @@ let test_check_noreturn _ =
         # We implicitly return None, so have to accept this.
         return None
     |}
+    [];
+
+  assert_type_errors
+    {|
+      def no_return(input: typing.Optional[int]) -> int:
+        if input is None:
+          sys.exit(-1)
+        return input
+    |}
     []
+
 
 
 let test_check_contextmanager _ =

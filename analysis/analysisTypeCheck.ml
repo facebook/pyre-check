@@ -47,6 +47,7 @@ module State = struct
     errors: Error.t Location.Map.t;
     define: Define.t Node.t;
     lookup: Lookup.t option;
+    bottom: bool;
   }
 
 
@@ -107,7 +108,7 @@ module State = struct
       Environment.resolution environment ~annotations ()
       |> fun resolution -> Resolution.with_define resolution (Node.value define)
     in
-    { configuration; resolution; errors = Location.Map.empty; define; lookup }
+    { configuration; resolution; errors = Location.Map.empty; define; lookup; bottom = false }
 
 
   let errors
@@ -418,56 +419,66 @@ module State = struct
 
 
   let rec join ({ resolution; _ } as left) right =
-    let merge_errors ~key:_ = function
-      | `Both (left, right) ->
-          Some (Error.join ~resolution left right)
-      | `Left state
-      | `Right state ->
-          Some state
-    in
-    let merge_annotations ~key:_ = function
-      | `Both (left, right) ->
-          Some (Refinement.join ~resolution left right)
-      | `Left _
-      | `Right _ ->
-          Some (Annotation.create Type.Top)
-    in
-    let annotations =
-      Map.merge
-        ~f:merge_annotations
-        (Resolution.annotations left.resolution)
-        (Resolution.annotations right.resolution)
-    in
-    {
-      left with
-      errors = Map.merge ~f:merge_errors left.errors right.errors;
-      resolution = Resolution.with_annotations resolution ~annotations;
-    }
+    if left.bottom then
+      right
+    else if right.bottom then
+      left
+    else
+      let merge_errors ~key:_ = function
+        | `Both (left, right) ->
+            Some (Error.join ~resolution left right)
+        | `Left state
+        | `Right state ->
+            Some state
+      in
+      let merge_annotations ~key:_ = function
+        | `Both (left, right) ->
+            Some (Refinement.join ~resolution left right)
+        | `Left _
+        | `Right _ ->
+            Some (Annotation.create Type.Top)
+      in
+      let annotations =
+        Map.merge
+          ~f:merge_annotations
+          (Resolution.annotations left.resolution)
+          (Resolution.annotations right.resolution)
+      in
+      {
+        left with
+        errors = Map.merge ~f:merge_errors left.errors right.errors;
+        resolution = Resolution.with_annotations resolution ~annotations;
+      }
 
 
   and meet ({ resolution; _ } as left) right =
-    let merge meet ~key:_ = function
-      | `Both (left, right) ->
-          Some (meet left right)
-      | `Left _
-      | `Right _ ->
-          None
-    in
-    let annotations =
-      Map.merge
-        ~f:(merge (Refinement.meet ~resolution))
-        (Resolution.annotations left.resolution)
-        (Resolution.annotations right.resolution);
-    in
-    {
-      left with
-      errors =
+    if left.bottom then
+      left
+    else if right.bottom then
+      right
+    else
+      let merge meet ~key:_ = function
+        | `Both (left, right) ->
+            Some (meet left right)
+        | `Left _
+        | `Right _ ->
+            None
+      in
+      let annotations =
         Map.merge
-          ~f:(merge (Error.meet ~resolution))
-          left.errors
-          right.errors;
-      resolution = Resolution.with_annotations resolution ~annotations;
-    }
+          ~f:(merge (Refinement.meet ~resolution))
+          (Resolution.annotations left.resolution)
+          (Resolution.annotations right.resolution);
+      in
+      {
+        left with
+        errors =
+          Map.merge
+            ~f:(merge (Error.meet ~resolution))
+            left.errors
+            right.errors;
+        resolution = Resolution.with_annotations resolution ~annotations;
+      }
 
 
   and widening_threshold =
@@ -475,44 +486,49 @@ module State = struct
 
 
   and widen ~previous:({ resolution; _ } as previous) ~next ~iteration =
-    let widen_errors ~key:_ = function
-      | `Both (previous, next) ->
-          Some (Error.widen ~resolution ~previous ~next ~iteration)
-      | `Left state
-      | `Right state ->
-          Some state
-    in
-    let widen_annotations ~key = function
-      | `Both (previous, next) ->
-          Some (Refinement.widen ~resolution ~widening_threshold ~previous ~next ~iteration)
-      | `Left previous
-      | `Right previous when List.length key = 1 ->
-          let widened =
-            Refinement.widen
-              ~resolution
-              ~widening_threshold
-              ~previous
-              ~next:(Annotation.create Type.unbound)
-              ~iteration
-          in
-          Some widened
-      | `Left previous
-      | `Right previous ->
-          Some previous
-      | _ ->
-          None
-    in
-    let annotations =
-      Map.merge
-        ~f:widen_annotations
-        (Resolution.annotations previous.resolution)
-        (Resolution.annotations next.resolution)
-    in
-    {
-      previous with
-      errors = Map.merge ~f:widen_errors previous.errors next.errors;
-      resolution = Resolution.with_annotations resolution ~annotations;
-    }
+    if previous.bottom then
+      next
+    else if next.bottom then
+      previous
+    else
+      let widen_errors ~key:_ = function
+        | `Both (previous, next) ->
+            Some (Error.widen ~resolution ~previous ~next ~iteration)
+        | `Left state
+        | `Right state ->
+            Some state
+      in
+      let widen_annotations ~key = function
+        | `Both (previous, next) ->
+            Some (Refinement.widen ~resolution ~widening_threshold ~previous ~next ~iteration)
+        | `Left previous
+        | `Right previous when List.length key = 1 ->
+            let widened =
+              Refinement.widen
+                ~resolution
+                ~widening_threshold
+                ~previous
+                ~next:(Annotation.create Type.unbound)
+                ~iteration
+            in
+            Some widened
+        | `Left previous
+        | `Right previous ->
+            Some previous
+        | _ ->
+            None
+      in
+      let annotations =
+        Map.merge
+          ~f:widen_annotations
+          (Resolution.annotations previous.resolution)
+          (Resolution.annotations next.resolution)
+      in
+      {
+        previous with
+        errors = Map.merge ~f:widen_errors previous.errors next.errors;
+        resolution = Resolution.with_annotations resolution ~annotations;
+      }
 
 
   and forward
@@ -1574,7 +1590,19 @@ module State = struct
           errors
     in
     let resolution = forward_annotations state statement in
-    { state with resolution; errors; lookup }
+
+    let terminates_control_flow =
+      match statement with
+      | { Node.value = Expression expression; _ } ->
+          Resolution.resolve resolution expression
+          |> Type.is_noreturn
+      | _ ->
+          false
+    in
+    if terminates_control_flow then
+      { state with bottom = true }
+    else
+      { state with resolution; errors; lookup }
 
 
   let backward state ~statement:_ =
