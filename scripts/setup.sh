@@ -13,16 +13,17 @@ die() {
   exit 1
 }
 
+DEVELOPMENT_COMPILER="4.06.0"
+RELEASE_COMPILER="4.06.0+flambda"
+
 # Compatibility settings with MacOS.
 if [[ "${MACHTYPE}" = *apple* ]]; then
   export MACOSX_DEPLOYMENT_TARGET=10.11
 fi
 
-
 # Switch to pyre directory.
 cd "$(dirname "$0")/.."
 
-COMPILER="4.06.0"
 # Parse arguments.
 arguments=("$@")
 for index in "${!arguments[@]}";
@@ -41,8 +42,11 @@ do
     "--configure")
       CONFIGURE=1
       ;;
+    "--development")
+      COMPILER="${DEVELOPMENT_COMPILER}"
+      ;;
     "--release")
-      COMPILER="4.06.0+flambda"
+      COMPILER="${RELEASE_COMPILER}"
       ;;
     "--build-type")
       REQUESTED_BUILD_TYPE="${arguments[$index+1]}"
@@ -71,12 +75,27 @@ esac
 
 sed "s/%VERSION%/$BUILD/" Makefile.template > Makefile
 
-# Abort early on `--configure`.
-if [ -n "${CONFIGURE+x}" ]; then exit 0; fi
+# Perform only minimal initialization on `--configure`.
+if [[ -n "${CONFIGURE}" ]]; then
+  # Switch compilers, if requested.
+  if [[ -n "${COMPILER}" ]]; then
+    if [[ -z "${OPAM_ROOT}" ]]; then
+      echo "Warning: cannot switch compilers without a valid OPAM_ROOT."
+    else
+      # This requires a "eval `opam config env` --root ${OPAM_ROOT}"
+      # by the caller. opam will print a message with the
+      # instructions.
+      opam switch set "${COMPILER}" --root "${OPAM_ROOT}"
+    fi
+  fi
+
+  exit 0
+fi
 
 # Set default values.
 if [ -z "${OPAM_ROOT+x}" ]; then OPAM_ROOT="$(mktemp -d)"; fi
 if [ -z "${OPAM_REPOSITORY+x}" ]; then OPAM_REPOSITORY="https://opam.ocaml.org"; fi
+COMPILER="${COMPILER:-${DEVELOPMENT_COMPILER}}"
 
 # Extract packaged repository.
 if [ ${OPAM_REPOSITORY: -7} == ".tar.gz" ]; then
