@@ -1435,7 +1435,8 @@ module State = struct
              not (Define.is_abstract_method define) &&
              not (Define.is_overloaded_method define) &&
              not (Type.is_none actual &&
-                  (Annotated.Define.create define |> Annotated.Define.is_generator)) then
+                  (Annotated.Define.create define |> Annotated.Define.is_generator)) &&
+             not (Type.is_none actual && Type.is_noreturn expected) then
             let error =
               {
                 Error.location;

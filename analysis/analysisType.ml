@@ -1046,6 +1046,11 @@ let is_none = function
   | _ -> false
 
 
+let is_noreturn = function
+  | Primitive name -> Identifier.show name = "typing.NoReturn"
+  | _ -> false
+
+
 let is_optional = function
   | Optional _ -> true
   | _ -> false

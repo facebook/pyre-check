@@ -5335,6 +5335,22 @@ let test_check_unbound_variables _ =
     ["Incompatible return type [7]: Expected `int` but got `bool`."]
 
 
+let test_check_noreturn _ =
+  assert_type_errors
+    {|
+      def no_return() -> typing.NoReturn:
+        return 0
+    |}
+    ["Incompatible return type [7]: Expected `typing.NoReturn` but got `int`."];
+  assert_type_errors
+    {|
+      def no_return() -> typing.NoReturn:
+        # We implicitly return None, so have to accept this.
+        return None
+    |}
+    []
+
+
 let test_check_contextmanager _ =
   assert_type_errors
     {|
@@ -5504,6 +5520,7 @@ let () =
     "check_explicit_method_call">::test_check_explicit_method_call;
     "check_meta_annotations">::test_check_meta_annotations;
     "check_unbound_variables">::test_check_unbound_variables;
+    "check_noreturn">::test_check_noreturn;
     "check_contextmanager">::test_check_contextmanager;
     "check_callables">::test_check_callables;
   ]

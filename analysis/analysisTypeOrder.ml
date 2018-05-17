@@ -1305,6 +1305,7 @@ module Builder = struct
     insert_unconnected (Type.primitive "typing.TypeVar");
     insert_unconnected (Type.primitive "typing.Unbound");
     insert_unconnected (Type.primitive "typing.Union");
+    insert_unconnected (Type.primitive "typing.NoReturn");
 
     (* Ensure unittest.mock.Base is there because we check against it. *)
     insert_unconnected (Type.primitive "unittest.mock.Base");

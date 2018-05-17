@@ -912,6 +912,7 @@ module Builder = struct
       [
         "typing.Optional", [], [];
         "typing.Unbound", [], [];
+        "typing.NoReturn", [], [];
         "typing.Type",
         [
           {
