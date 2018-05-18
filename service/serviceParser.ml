@@ -168,10 +168,6 @@ let parse_sources_list
     else
       parse_source_job ~configuration ~files
   in
-  let paths =
-    let is_python path = String.suffix path 3 = ".py" in
-    File.list ~filter:is_python ~root:source_root
-  in
   let strict_coverage, declare_coverage =
     List.fold
       ~init:(0, 0)
@@ -194,8 +190,8 @@ let parse_sources_list
     ~coverage:[
       "strict_coverage", strict_coverage;
       "declare_coverage", declare_coverage;
-      "default_coverage", List.length paths - strict_coverage - declare_coverage;
-      "source_files", List.length paths;
+      "default_coverage", List.length files - strict_coverage - declare_coverage;
+      "source_files", List.length files;
     ]
     ~normals:[
       "file_name", path_to_files;
