@@ -604,7 +604,69 @@ let test_preamble _ =
   assert_preamble "for a in b: pass" "a = b.__iter__().__next__()";
   assert_preamble "for a, b in c: pass" "a, b = c.__iter__().__next__()";
   assert_preamble "for a in [1, 2, 3]: pass" "a = [1, 2, 3].__iter__().__next__()";
-  assert_preamble "async for a in b: pass" "a = b.__aiter__().__anext__()"
+  assert_preamble "async for a in b: pass" "a = b.__aiter__().__anext__()";
+
+  let assert_preamble block preambles =
+    let handlers =
+      match parse_single_statement block with
+      | { Node.value = Try { Try.handlers; _ }; _ } -> handlers
+      | _ -> failwith "Could not parse `try` statement."
+    in
+    let preambles =
+      let preamble source =
+        let { Source.statements = preamble; _ } = parse source in
+        preamble
+      in
+      List.map preambles ~f:preamble
+    in
+    let printer preambles =
+      List.map
+        preambles
+        ~f:(fun preamble -> List.map ~f:Statement.show preamble |> String.concat ~sep:", ")
+      |> String.concat ~sep:"\n"
+    in
+    assert_equal
+      ~cmp:(List.equal ~equal:(List.equal ~equal:Statement.equal))
+      ~printer
+      preambles
+      (List.map handlers ~f:Try.preamble)
+  in
+
+  assert_preamble "try: pass" [];
+  assert_preamble
+    {|
+      try:
+        pass
+      except Exception:
+        pass
+    |}
+    ["Exception"];
+  assert_preamble
+    {|
+      try:
+        pass
+      except Exception as error:
+        pass
+    |}
+    ["error: Exception"];
+  assert_preamble
+    {|
+      try:
+        pass
+      except IOError as error:
+        pass
+      except Exception as error:
+        pass
+    |}
+    ["error: IOError"; "error: Exception"];
+  assert_preamble
+    {|
+      try:
+        pass
+      except (IOError, ValueError) as error:
+        pass
+    |}
+    ["error: typing.Union[IOError, ValueError]"]
 
 
 let test_assume _ =

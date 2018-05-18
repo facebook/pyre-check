@@ -973,77 +973,6 @@ let expand_yield_from source =
   |> snd
 
 
-let expand_excepts source =
-  let module ExpandingTransform = Transform.MakeStatementTransformer(struct
-      type t = unit
-
-      let statement_postorder state statement =
-        match statement with
-        | {
-          Node.location;
-          value = Try ({ Try.handlers; _ } as except)
-        } ->
-            let handlers =
-              let transform_handler ({ Try.kind; name; handler_body } as handler) =
-                let name = name >>| fun name -> Access.create (Identifier.show name) in
-                let assume ~target ~annotation =
-                  {
-                    Node.location;
-                    value = Statement.Assign {
-                        Assign.target;
-                        annotation = Some annotation;
-                        value = None;
-                        parent = None;
-                      }
-                  }
-                in
-                match kind, name with
-                | Some ({ Node.location; value = Access _; _ } as annotation), Some name ->
-                    let assume =
-                      assume ~target:{ Node.location; value = Access name } ~annotation
-                    in
-                    { handler with Try.handler_body = assume :: handler_body }
-                | Some { Node.location; value = Tuple values; _ }, Some name ->
-                    let assume =
-                      let annotation: Expression.t =
-                        let get_item =
-                          let tuple =
-                            Tuple values
-                            |> Node.create ~location
-                          in
-                          Access.call
-                            ~arguments:[{ Argument.name = None; value = tuple }]
-                            ~location
-                            ~name:"__getitem__"
-                            ()
-                        in
-                        {
-                          Node.location;
-                          value = Access ((Access.create "typing.Union") @ get_item);
-                        }
-                      in
-                      assume ~target:{ Node.location; value = Access name } ~annotation
-                    in
-                    { handler with Try.handler_body = assume :: handler_body }
-                | _ ->
-                    let assume =
-                      kind
-                      >>| (fun kind -> [Node.create ~location (Statement.Expression kind)])
-                      |> Option.value ~default:[]
-                    in
-                    { handler with Try.handler_body = assume @ handler_body }
-              in
-              List.map ~f:transform_handler handlers
-            in
-            state, [{ Node.location; value = Try { except with Try.handlers }}]
-        | _ ->
-            state, [statement]
-    end)
-  in
-  ExpandingTransform.transform () source
-  |> snd
-
-
 let expand_ternary_assign source =
   let module ExpandingTransform = Transform.MakeStatementTransformer(struct
       type t = unit
@@ -1288,4 +1217,3 @@ let preprocess source =
   |> expand_yield_from
   |> expand_ternary_assign
   |> expand_named_tuples
-  |> expand_excepts

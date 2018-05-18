@@ -21,7 +21,7 @@ module Node = struct
     | For of For.t
     | If of Statement.t If.t
     | Join
-    | Try of Statement.t Try.t
+    | Try of Try.t
     | With of With.t
     | While of Statement.t While.t
     | Yield
@@ -316,7 +316,7 @@ let create define =
     } :: statements ->
         (* -> [split] -> [body] -> [orelse] -> [normal exit] ->
                  |                                    ^
-             [dispatch] -----> [handler] -------------|
+             [dispatch] -----> [preamble; handler] -------------|
                  |               ...
            [uncaught finally]
                  |
@@ -351,8 +351,8 @@ let create define =
         Node.connect_option body_orelse normal;
 
         (* Exception handling. *)
-        let handler handler =
-          create handler.Try.handler_body jumps dispatch
+        let handler ({ Try.handler_body; _ } as handler) =
+          create (Try.preamble handler @ handler_body) jumps dispatch
           |> (Fn.flip Node.connect_option) normal in
         List.iter handlers ~f:handler;
 

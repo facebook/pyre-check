@@ -20,7 +20,7 @@ module Node : sig
     | For of For.t
     | If of Statement.t If.t
     | Join
-    | Try of Statement.t Try.t
+    | Try of Try.t
     | With of With.t
     | While of Statement.t While.t
     | Yield

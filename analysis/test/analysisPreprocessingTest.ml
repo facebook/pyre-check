@@ -830,70 +830,6 @@ let test_expand_returns _ =
     |}
 
 
-let test_expand_excepts _ =
-  let assert_expand source expected =
-    assert_source_equal
-      (parse expected)
-      (Preprocessing.expand_excepts (parse source))
-  in
-  assert_expand
-    {|
-      try:
-        pass
-      except Exception:
-        pass
-    |}
-    {|
-      try:
-        pass
-      except Exception:
-        Exception
-        pass
-    |};
-  assert_expand
-    {|
-      try:
-        pass
-      except Exception as e:
-        pass
-    |}
-    {|
-      try:
-        pass
-      except Exception as e:
-        e: Exception
-        pass
-    |};
-  assert_expand
-    {|
-      try:
-        pass
-      except (E1, E2):
-        pass
-    |}
-    {|
-      try:
-        pass
-      except (E1, E2):
-        (E1, E2)
-        pass
-    |};
-  assert_expand
-    {|
-      try:
-        pass
-      except (E1, E2) as e:
-        pass
-    |}
-    {|
-      try:
-        pass
-      except (E1, E2) as e:
-        e: typing.Union[E1, E2]
-        pass
-    |}
-
-
 let test_expand_ternary _ =
   let assert_expand source expected =
     assert_source_equal
@@ -1278,7 +1214,6 @@ let () =
     "replace_version_specific_code">::test_replace_version_specific_code;
     "expand_type_checking_imports">::test_expand_type_checking_imports;
     "expand_returns">::test_expand_returns;
-    "expand_excepts">::test_expand_excepts;
     "expand_ternary_assigns">::test_expand_ternary;
     "expand_named_tuples">::test_expand_named_tuples;
     "defines">::test_defines;

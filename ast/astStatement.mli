@@ -58,6 +58,23 @@ module Record : sig
     }
     [@@deriving compare, eq, sexp, show, hash]
   end
+
+  module Try : sig
+    type 'statement handler = {
+      kind: Expression.t option;
+      name: Identifier.t option;
+      handler_body: 'statement list;
+    }
+    [@@deriving compare, eq, sexp, show, hash]
+
+    type 'statement record = {
+      body: 'statement list;
+      handlers: 'statement handler list;
+      orelse: 'statement list;
+      finally: 'statement list;
+    }
+    [@@deriving compare, eq, sexp, show, hash]
+  end
 end
 
 module While : sig
@@ -74,23 +91,6 @@ module If : sig
     test: Expression.t;
     body: 'statement list;
     orelse: 'statement list;
-  }
-  [@@deriving compare, eq, sexp, show, hash]
-end
-
-module Try : sig
-  type 'statement handler = {
-    kind: Expression.t option;
-    name: Identifier.t option;
-    handler_body: 'statement list;
-  }
-  [@@deriving compare, eq, sexp, show, hash]
-
-  type 'statement t = {
-    body: 'statement list;
-    handlers: 'statement handler list;
-    orelse: 'statement list;
-    finally: 'statement list;
   }
   [@@deriving compare, eq, sexp, show, hash]
 end
@@ -155,7 +155,7 @@ type statement =
   | Raise of Expression.t option
   | Return of Expression.t option
   | Stub of t Stub.t
-  | Try of t Try.t
+  | Try of t Record.Try.record
   | With of t Record.With.record
   | While of t While.t
   | Yield of Expression.t
@@ -250,6 +250,15 @@ module With : sig
   [@@deriving compare, eq, sexp, show, hash]
 
   val preamble: t -> statement_t list
+end
+
+module Try : sig
+  include module type of struct include Record.Try end
+
+  type t = statement_t Record.Try.record
+  [@@deriving compare, eq, sexp, show, hash]
+
+  val preamble: statement_t handler -> statement_t list
 end
 
 val assume: Expression.t -> t

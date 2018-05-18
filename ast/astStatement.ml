@@ -62,12 +62,31 @@ module Record = struct
     }
     [@@deriving compare, eq, sexp, show, hash]
   end
+
+  module Try = struct
+    type 'statement handler = {
+      kind: Expression.t option;
+      name: Identifier.t option;
+      handler_body: 'statement list;
+    }
+    [@@deriving compare, eq, sexp, show, hash]
+
+
+    type 'statement record = {
+      body: 'statement list;
+      handlers: 'statement handler list;
+      orelse: 'statement list;
+      finally: 'statement list;
+    }
+    [@@deriving compare, eq, sexp, show, hash]
+  end
 end
 
 
 (* Not sure why the OCaml compiler hates me... *)
 module RecordWith = Record.With
 module RecordFor = Record.For
+module RecordTry = Record.Try
 
 
 module While = struct
@@ -85,25 +104,6 @@ module If = struct
     test: Expression.t;
     body: 'statement list;
     orelse: 'statement list;
-  }
-  [@@deriving compare, eq, sexp, show, hash]
-end
-
-
-module Try = struct
-  type 'statement handler = {
-    kind: Expression.t option;
-    name: Identifier.t option;
-    handler_body: 'statement list;
-  }
-  [@@deriving compare, eq, sexp, show, hash]
-
-
-  type 'statement t = {
-    body: 'statement list;
-    handlers: 'statement handler list;
-    orelse: 'statement list;
-    finally: 'statement list;
   }
   [@@deriving compare, eq, sexp, show, hash]
 end
@@ -176,7 +176,7 @@ type statement =
   | Raise of Expression.t option
   | Return of Expression.t option
   | Stub of t Stub.t
-  | Try of t Try.t
+  | Try of t Record.Try.record
   | With of t Record.With.record
   | While of t While.t
   | Yield of Expression.t
@@ -461,7 +461,7 @@ module Define = struct
         | For { RecordFor.body; orelse; _ }
         | While { While.body; orelse; _ } ->
             (expand_statements body) @ (expand_statements orelse)
-        | Try { Try.body; orelse; finally; _ } ->
+        | Try { RecordTry.body; orelse; finally; _ } ->
             (expand_statements body) @ (expand_statements orelse) @ (expand_statements finally)
         | With { RecordWith.body; _ } ->
             expand_statements body
@@ -1006,6 +1006,62 @@ module With = struct
 end
 
 
+module Try = struct
+  include Record.Try
+
+
+  type t = statement_t Record.Try.record
+  [@@deriving compare, eq, sexp, show, hash]
+
+
+  let preamble { kind; name; _ } =
+    let open Expression in
+    let name =
+      name
+      >>| Identifier.show
+      >>| Access.create
+    in
+    let assume ~location ~target ~annotation =
+      {
+        Node.location;
+        value = Assign {
+            Assign.target;
+            annotation = Some annotation;
+            value = None;
+            parent = None;
+          }
+      }
+    in
+    match kind, name with
+    | Some ({ Node.location; value = Access _; _ } as annotation), Some name ->
+        [assume ~location ~target:{ Node.location; value = Access name } ~annotation]
+    | Some { Node.location; value = Tuple values; _ }, Some name ->
+        let annotation =
+          let get_item =
+            let tuple =
+              Tuple values
+              |> Node.create ~location
+            in
+            Access.call
+              ~arguments:[{ Argument.name = None; value = tuple }]
+              ~location
+              ~name:"__getitem__"
+              ()
+          in
+          {
+            Node.location;
+            value = Access ((Access.create "typing.Union") @ get_item);
+          }
+        in
+        [assume ~location ~target:{ Node.location; value = Access name } ~annotation]
+    | Some ({ Node.location; _ } as expression), _ ->
+        (* Insert raw `kind` so that we type check the expression. *)
+        [Node.create ~location (Expression expression)]
+    | _ ->
+        []
+end
+
+
 let extract_docstring statements =
   (* See PEP 257 for Docstring formatting. The main idea is that we want to get the shortest
    * indentation from line 2 onwards as the indentation of the docstring. *)
@@ -1250,7 +1306,7 @@ module PrettyPrinter = struct
     | Stub (Stub.Define define) ->
         Format.fprintf formatter "%a" pp_define define
 
-    | Try { Try.body; handlers; orelse; finally } ->
+    | Try { Record.Try.body; handlers; orelse; finally } ->
         let pp_try_block formatter body =
           Format.fprintf
             formatter
@@ -1261,7 +1317,7 @@ module PrettyPrinter = struct
           let pp_as formatter name =
             pp_option_with_prefix formatter (" as ", name) Identifier.pp
           in
-          let pp_handler formatter {Try.kind; Try.name; Try.handler_body } =
+          let pp_handler formatter { Record.Try.kind; name; handler_body } =
             Format.fprintf
               formatter
               "@[<v 2>except%a%a:@;%a@]"

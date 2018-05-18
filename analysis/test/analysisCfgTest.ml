@@ -303,15 +303,13 @@ let test_return _ =
 
 
 let test_try _ =
-  let handler name = {
-    Try.kind = None;
-    name = None;
-    handler_body = [!!name];
-  } in
+  let handler ?kind ?name body =
+    { Try.kind; name; handler_body = [!!body] }
+  in
 
   let block = {
     Try.body = [!!"body"];
-    handlers = [handler "handler"];
+    handlers = [handler ~kind:(+Integer 1) "handler"];
     orelse = [!!"orelse"];
     finally = [!!"finally"];
   } in
@@ -329,7 +327,7 @@ let test_try _ =
       node 8 (Node.Block [!!"finally"]) [6] [2]; (* uncaught *)
       node 9 (Node.Block [!!"finally"]) [] [1]; (* return *)
       node 10 (Node.Block [!!"body"; !!"orelse"]) [5] [7];
-      node 11 (Node.Block [!!"handler"]) [6] [7];
+      node 11 (Node.Block [+Expression (+Integer 1); !!"handler"]) [6] [7];
     ];
 
   let block = {
