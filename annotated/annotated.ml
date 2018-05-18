@@ -118,8 +118,8 @@ let rec resolve ~resolution expression =
       |> Annotation.annotation
 
   | Await expression ->
-      let annotation = resolve ~resolution expression in
-      Resolution.join resolution annotation (Type.awaitable Type.Bottom)
+      resolve ~resolution expression
+      |> Resolution.join resolution (Type.awaitable Type.Bottom)
       |> Type.awaitable_value
 
   | BooleanOperator { BooleanOperator.left; right; operator } ->

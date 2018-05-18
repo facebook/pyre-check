@@ -4953,6 +4953,16 @@ let test_check_async _ =
 
   assert_type_errors
     {|
+      T = typing.TypeVar("T")
+      class C(typing.Awaitable[T]): ...
+
+      def foo(c: C) -> int:
+        return (await c)
+    |}
+    ["Incompatible return type [7]: Expected `int` but got `unknown`."];
+
+  assert_type_errors
+    {|
       def bar(a: IsAwaitable) -> int:
         return (await a)
     |}

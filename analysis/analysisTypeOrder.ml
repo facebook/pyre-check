@@ -788,6 +788,7 @@ and join ((module Handler: Handler) as order) left right =
           >>| (fun instantiated ->
               Type.Parametric { parametric with Type.parameters = instantiated })
           |> Option.value ~default:(Type.Parametric parametric)
+          |> Type.instantiate_variables
         in
         if less_or_equal order ~left:primitive ~right:instantiated_parametric then
           instantiated_parametric

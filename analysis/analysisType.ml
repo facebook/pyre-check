@@ -1371,6 +1371,16 @@ let instantiate ?(widen = false) annotation ~constraints =
   instantiate annotation
 
 
+let instantiate_variables annotation =
+  let constraints =
+    variables annotation
+    |> List.fold
+      ~init:Map.empty
+      ~f:(fun constraints variable -> Map.set constraints ~key:variable ~data:Bottom)
+  in
+  instantiate annotation ~constraints:(Map.find constraints)
+
+
 let rec dequalify map annotation =
   let dequalify_identifier identifier =
     let rec fold accumulator access =
