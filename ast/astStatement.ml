@@ -187,7 +187,7 @@ and t = statement Node.t
 [@@deriving compare, eq, sexp, show, hash]
 
 
-type statement_node = t
+type statement_t = t
 [@@deriving compare, eq, sexp, show, hash]
 
 
@@ -195,7 +195,7 @@ module Attribute = struct
   type attribute = {
     target: Expression.t;
     annotation: Expression.t option;
-    defines: ((statement_node Record.Define.record) list) option;
+    defines: ((statement_t Record.Define.record) list) option;
     value: Expression.t option;
     async: bool;
     setter: bool;
@@ -225,7 +225,7 @@ module Define = struct
   include Record.Define
 
 
-  type t = statement_node Record.Define.record
+  type t = statement_t Record.Define.record
   [@@deriving compare, eq, sexp, show, hash]
 
 
@@ -572,7 +572,7 @@ module Class = struct
   include Record.Class
 
 
-  type t = statement_node Record.Class.record
+  type t = statement_t Record.Class.record
   [@@deriving compare, eq, sexp, show, hash]
 
 
@@ -917,7 +917,7 @@ module With = struct
   include Record.With
 
 
-  type t = statement_node Record.With.record
+  type t = statement_t Record.With.record
   [@@deriving compare, eq, sexp, show, hash]
 
 
@@ -1040,18 +1040,18 @@ module PrettyPrinter = struct
     | false -> ()
 
 
-  let rec pp_statement_node formatter { Node.value = statement ; _ } =
+  let rec pp_statement_t formatter { Node.value = statement ; _ } =
     Format.fprintf formatter "%a" pp_statement statement
 
 
   and pp_statement_list formatter =
     function
     | [] -> ()
-    | statement :: [] -> Format.fprintf formatter "%a" pp_statement_node statement
+    | statement :: [] -> Format.fprintf formatter "%a" pp_statement_t statement
     | statement :: statement_list ->
         Format.fprintf
           formatter "%a@;%a"
-          pp_statement_node statement
+          pp_statement_t statement
           pp_statement_list statement_list
 
 
@@ -1289,7 +1289,7 @@ module PrettyPrinter = struct
     | YieldFrom expression -> Format.fprintf formatter "%a" Expression.pp expression
 
 
-  let pp = pp_statement_node
+  let pp = pp_statement_t
 end
 
 

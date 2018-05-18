@@ -166,14 +166,14 @@ and t = statement Node.t
 [@@deriving compare, eq, sexp, show, hash]
 
 (* Oh ffs ohcaml... *)
-type statement_node = t
+type statement_t = t
 [@@deriving compare, eq, sexp, show, hash]
 
 module Attribute : sig
   type attribute = {
     target: Expression.t;
     annotation: Expression.t option;
-    defines: ((statement_node Record.Define.record) list) option;
+    defines: ((statement_t Record.Define.record) list) option;
     value: Expression.t option;
     async: bool;
     setter: bool;
@@ -188,7 +188,7 @@ end
 module Define : sig
   include module type of struct include Record.Define end
 
-  type t = statement_node Record.Define.record
+  type t = statement_t Record.Define.record
   [@@deriving compare, eq, sexp, show, hash]
 
   val is_method: t -> bool
@@ -205,14 +205,14 @@ module Define : sig
 
   val self_identifier: t -> Identifier.t
 
-  val create_generated_constructor: statement_node Record.Class.record -> t
-  val create_toplevel: statement_node list -> t
+  val create_generated_constructor: statement_t Record.Class.record -> t
+  val create_toplevel: statement_t list -> t
   val dump: t -> bool
   val dump_cfg: t -> bool
 
   val implicit_attributes
     :  t
-    -> definition: statement_node Record.Class.record
+    -> definition: statement_t Record.Class.record
     -> Attribute.t Expression.Access.Map.t
   val property_attribute: location: Location.t -> t -> Attribute.t option
 
@@ -222,7 +222,7 @@ end
 module Class : sig
   include module type of struct include Record.Class end
 
-  type t = statement_node Record.Class.record
+  type t = statement_t Record.Class.record
   [@@deriving compare, eq, sexp, show, hash]
 
   val constructors: ?in_test: bool -> t -> Define.t list
@@ -238,10 +238,10 @@ end
 module With : sig
   include module type of struct include Record.With end
 
-  type t = statement_node Record.With.record
+  type t = statement_t Record.With.record
   [@@deriving compare, eq, sexp, show, hash]
 
-  val preamble: t -> statement_node list
+  val preamble: t -> statement_t list
 end
 
 val assume: Expression.t -> t
