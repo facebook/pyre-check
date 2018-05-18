@@ -21,7 +21,7 @@ let subscription watchman_directory =
       `String "allof";
       `List [ `String "type"; `String "f" ];
       `List [ `String "not"; `String "empty" ];
-      `List [ `String "suffix"; `String "py" ];
+      `List [ `String "suffix"; `List [ `String "py"; `String "pyi" ]];
     ]
   in
   `List [
@@ -116,10 +116,13 @@ let process_response ~root ~watchman_directory ~symlinks serialized_response =
                 >>| File.create)
             paths
         in
+        let is_stub file = String.is_suffix ~suffix:"pyi" (File.path file |> Path.absolute) in
         Some
           (symlinks,
            Protocol.Request.TypeCheckRequest
-             (Protocol.TypeCheckRequest.create ~update_environment_with:files ~check:files ()))
+             (Protocol.TypeCheckRequest.create
+                ~update_environment_with:files
+                ~check:(List.filter ~f:(fun file -> not (is_stub file)) files) ()))
     end
   else
     None
