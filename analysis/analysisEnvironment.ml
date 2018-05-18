@@ -396,7 +396,7 @@ let register_class_definitions (module Handler: Handler) source =
   Visit.visit Type.Set.empty source
 
 
-let register_aliases (module Handler: Handler) annotation_map sources =
+let register_aliases (module Handler: Handler) sources =
   Type.Cache.disable ();
   let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
   let collect_aliases { Source.path; statements; qualifier; _ } =
@@ -418,23 +418,19 @@ let register_aliases (module Handler: Handler) annotation_map sources =
             aliases
       | Import { Import.from = Some from; imports = [{ Import.name; _ }]  }
         when Access.show name = "*" ->
-          let add_alias aliases annotation =
-            let value = Type.expression annotation in
-            let alias =
-              match Type.expression annotation with
-              | { Node.location; value = Access access } ->
-                  {
-                    Node.location;
-                    value = Access (qualifier @ (Access.drop_prefix access ~prefix:from));
-                  }
-              | expression ->
-                  expression
-            in
+          let exports =
+            match Handler.module_definition from >>| Module.wildcard_exports with
+            | Some exports ->
+                exports
+            | None ->
+                []
+          in
+          let add_alias aliases export =
+            let value = Node.create_with_default_location (Access (from @ export)) in
+            let alias = Node.create_with_default_location (Access (qualifier @ export)) in
             (path, alias, value) :: aliases
           in
-          Map.find annotation_map from
-          >>| Set.fold ~init:aliases ~f:add_alias
-          |> Option.value ~default:aliases
+          List.fold exports ~init:aliases ~f:add_alias
 
       | Import { Import.from = Some from; imports } ->
           let import_to_alias { Import.name; alias } =
@@ -809,17 +805,15 @@ let populate
 
   List.iter ~f:(register_module (module Handler)) sources;
 
-  let annotation_map =
+  let all_annotations =
     List.fold
-      ~init:Access.Map.empty
-      ~f:(fun annotations_map ({ Source.qualifier; _ } as source) ->
-          Map.set
-            annotations_map
-            ~key:qualifier
-            ~data:(register_class_definitions (module Handler) source))
+      ~init:Type.Set.empty
+      ~f:(fun annotations source ->
+          Set.union annotations (register_class_definitions (module Handler) source))
       sources
+    |> Set.to_list
   in
-  register_aliases (module Handler) annotation_map sources;
+  register_aliases (module Handler) sources;
 
   List.iter
     ~f:(register_dependencies ~source_root ~check_dependency_exists (module Handler))
@@ -827,13 +821,6 @@ let populate
   (* Build type order. *)
   List.iter ~f:(connect_type_order (module Handler)) sources;
 
-  let all_annotations =
-    Map.fold
-      annotation_map
-      ~init:Type.Set.empty
-      ~f:(fun ~key:_ ~data existing -> Set.union data existing)
-    |> Set.to_list
-  in
   TypeOrder.connect_annotations_to_top
     (module Handler.TypeOrderHandler)
     ~configuration

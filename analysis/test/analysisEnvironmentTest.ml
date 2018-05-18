@@ -144,12 +144,15 @@ let test_register_aliases _ =
          C = D
     |}
   in
+  Handler.register_module
+    ~qualifier:(Access.create "collections")
+    ~stub:false
+    ~statements:(Source.statements other);
   Environment.register_class_definitions (module Handler) typing |> ignore;
   Environment.register_class_definitions (module Handler) source |> ignore;
-  let other_annotations = Environment.register_class_definitions (module Handler) other in
+  Environment.register_class_definitions (module Handler) other |> ignore;
   Environment.register_aliases
     (module Handler)
-    (Access.Map.singleton (Access.create "collections") other_annotations)
     [typing; other; source];
 
   assert_equal (parse_annotation (module Handler) (!"C")) (Type.primitive "C");
@@ -271,7 +274,7 @@ let test_connect_type_order _ =
   in
   let order = (module Handler.TypeOrderHandler: TypeOrder.Handler) in
   Environment.register_class_definitions (module Handler) source |> ignore;
-  Environment.register_aliases (module Handler) Access.Map.empty [source];
+  Environment.register_aliases (module Handler) [source];
   Environment.connect_type_order (module Handler) source;
   assert_equal (parse_annotation (module Handler) (!"C")) (Type.primitive "C");
   assert_equal (parse_annotation (module Handler) (!"D")) (Type.primitive "D");

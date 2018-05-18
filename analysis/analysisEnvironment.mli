@@ -98,7 +98,6 @@ val register_class_definitions
 
 val register_aliases
   :  (module Handler)
-  -> Type.Set.t Access.Map.t
   -> Source.t list
   -> unit
 
