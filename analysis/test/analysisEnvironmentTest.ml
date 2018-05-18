@@ -121,11 +121,14 @@ let test_register_aliases _ =
       from typing import Iterator as Iterator
       from typing import Iterable
       from typing import Union
+      class Other:
+        pass
     |}
     |> Preprocessing.qualify
   in
   let source =
     parse {|
+       from collections import *
        class C:
          ...
        class D(C):
@@ -143,13 +146,17 @@ let test_register_aliases _ =
   in
   Environment.register_class_definitions (module Handler) typing |> ignore;
   Environment.register_class_definitions (module Handler) source |> ignore;
-  Environment.register_class_definitions (module Handler) other |> ignore;
-  Environment.register_aliases (module Handler) [typing; other; source];
+  let other_annotations = Environment.register_class_definitions (module Handler) other in
+  Environment.register_aliases
+    (module Handler)
+    (Access.Map.singleton (Access.create "collections") other_annotations)
+    [typing; other; source];
 
   assert_equal (parse_annotation (module Handler) (!"C")) (Type.primitive "C");
   assert_equal (parse_annotation (module Handler) (!"D")) (Type.primitive "D");
   assert_equal (parse_annotation (module Handler) (!"B")) (Type.primitive "D");
   assert_equal (parse_annotation (module Handler) (!"A")) (Type.primitive "D");
+  assert_equal (parse_annotation (module Handler) (!"Other")) (Type.primitive "collections.Other");
   assert_equal (parse_annotation (module Handler) (!"X")) (Type.none);
   assert_equal (Handler.function_definitions (access ["foo"])) None;
 
@@ -264,7 +271,7 @@ let test_connect_type_order _ =
   in
   let order = (module Handler.TypeOrderHandler: TypeOrder.Handler) in
   Environment.register_class_definitions (module Handler) source |> ignore;
-  Environment.register_aliases (module Handler) [source];
+  Environment.register_aliases (module Handler) Access.Map.empty [source];
   Environment.connect_type_order (module Handler) source;
   assert_equal (parse_annotation (module Handler) (!"C")) (Type.primitive "C");
   assert_equal (parse_annotation (module Handler) (!"D")) (Type.primitive "D");
