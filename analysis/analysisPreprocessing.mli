@@ -21,9 +21,6 @@ val expand_type_checking_imports: Source.t -> Source.t
 val return_access: Access.t
 val expand_returns: Source.t -> Source.t
 
-(* Transforms for loops to handle variable typing inside *)
-val expand_for_loop: Source.t -> Source.t
-
 (* Transform `except (E1, ... En) as e` into `... e: typing.Union[E1, ..., En]`. *)
 val expand_excepts: Source.t -> Source.t
 

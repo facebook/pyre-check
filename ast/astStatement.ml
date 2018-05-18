@@ -43,6 +43,17 @@ module Record = struct
     [@@deriving compare, eq, sexp, show, hash]
   end
 
+  module For = struct
+    type 'statement record = {
+      target: Expression.t;
+      iterator: Expression.t;
+      body: 'statement list;
+      orelse: 'statement list;
+      async: bool;
+    }
+    [@@deriving compare, eq, sexp, show, hash]
+  end
+
   module With = struct
     type 'statement record = {
       items: (Expression.t * Expression.t option) list;
@@ -56,18 +67,7 @@ end
 
 (* Not sure why the OCaml compiler hates me... *)
 module RecordWith = Record.With
-
-
-module For = struct
-  type 'statement t = {
-    target: Expression.t;
-    iterator: Expression.t;
-    body: 'statement list;
-    orelse: 'statement list;
-    async: bool;
-  }
-  [@@deriving compare, eq, sexp, show, hash]
-end
+module RecordFor = Record.For
 
 
 module While = struct
@@ -167,7 +167,7 @@ type statement =
   | Define of t Record.Define.record
   | Delete of Expression.t
   | Expression of Expression.t
-  | For of t For.t
+  | For of t Record.For.record
   | Global of Identifier.t list
   | If of t If.t
   | Import of Import.t
@@ -458,7 +458,7 @@ module Define = struct
       let expand_statement ({ Node.value; _ } as statement) =
         match value with
         | If { If.body; orelse; _ }
-        | For { For.body; orelse; _ }
+        | For { RecordFor.body; orelse; _ }
         | While { While.body; orelse; _ } ->
             (expand_statements body) @ (expand_statements orelse)
         | Try { Try.body; orelse; finally; _ } ->
@@ -910,6 +910,54 @@ module Class = struct
       List.fold ~init:([], stub) ~f:update body
     in
     { definition with Record.Class.body = undefined @ updated }
+end
+
+
+module For = struct
+  include Record.For
+
+
+  type t = statement_t Record.For.record
+  [@@deriving compare, eq, sexp, show, hash]
+
+
+  let preamble
+      {
+        target = { Node.location; _ } as target;
+        iterator = { Node.value; _ };
+        async;
+        _;
+      } =
+    let open Expression in
+    let value =
+      let next =
+        if async then
+          (Access.call ~name:"__aiter__" ~location ()) @
+          (Access.call ~name: "__anext__" ~location ())
+        else
+          (Access.call ~name:"__iter__" ~location ()) @
+          (Access.call ~name: "__next__" ~location ())
+      in
+      begin
+        match value with
+        | Access access ->
+            access @ next
+        | expression ->
+            [Access.Expression (Node.create_with_default_location expression)] @ next
+      end
+    in
+    {
+      Node.location;
+      value = Assign {
+          Assign.target;
+          annotation = None;
+          value = Some {
+              Node.location;
+              value = Access value;
+            };
+          parent = None;
+        }
+    }
 end
 
 

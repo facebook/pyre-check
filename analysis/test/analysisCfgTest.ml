@@ -170,7 +170,9 @@ let test_for _ =
       node 4 Node.Yield [] [];
       node 5 (Node.For loop) [0; 7] [6; 7; 8];
       node 6 Node.Join [5; 8] [1];
-      node 7 (Node.Block [!!"body"]) [5] [5];
+      node
+        7
+        (Node.Block [parse_single_statement "a = [].__iter__().__next__()"; !!"body"]) [5] [5];
       node 8 (Node.Block [!!"orelse"]) [5] [6];
     ]
 

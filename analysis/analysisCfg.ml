@@ -18,7 +18,7 @@ module Node = struct
     | Error
     | Normal
     | Final
-    | For of Statement.t For.t
+    | For of For.t
     | If of Statement.t If.t
     | Join
     | Try of Statement.t Try.t
@@ -257,7 +257,7 @@ let create define =
     | { Ast.Node.value = For ({ For.body; orelse; _ } as loop); _ } :: statements ->
         (*       ____________
                  v          |
-                 -> [split] -> [body]
+                 -> [split] -> [preamble; body]
                  | \_________
                  v          v
                  [orelse] -> [join] -> *)
@@ -265,7 +265,7 @@ let create define =
         let join = Node.empty graph Node.Join in
         let loop_jumps = { jumps with break = join; continue = split } in
         Node.connect predecessor split;
-        let body = create body loop_jumps split in
+        let body = create ((For.preamble loop) :: body) loop_jumps split in
         Node.connect_option body split;
         let orelse = create orelse jumps split in
         Node.connect_option orelse join;

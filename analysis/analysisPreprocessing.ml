@@ -972,64 +972,6 @@ let expand_yield_from source =
   NormalizingTransform.transform () source
   |> snd
 
-let expand_for_loop source =
-  let module ExpandingTransform = Transform.MakeStatementTransformer(struct
-      type t = unit
-
-      let statement_postorder state statement =
-        match statement with
-        | {
-          Node.location;
-          value = For ({
-              For.target;
-              iterator = { Node.value; _ };
-              body;
-              async;
-              _;
-            } as loop);
-        } ->
-            let body =
-              let assignment =
-                let value =
-                  let next =
-                    if async then
-                      (Access.call ~name:"__aiter__" ~location ()) @
-                      (Access.call ~name: "__anext__" ~location ())
-                    else
-                      (Access.call ~name:"__iter__" ~location ()) @
-                      (Access.call ~name: "__next__" ~location ())
-                  in
-                  begin
-                    match value with
-                    | Access access ->
-                        access @ next
-                    | expression ->
-                        [Access.Expression (Node.create_with_default_location expression)] @ next
-                  end
-                in
-                {
-                  Node.location;
-                  value = Assign {
-                      Assign.target;
-                      annotation = None;
-                      value = Some {
-                          Node.location;
-                          value = Access value;
-                        };
-                      parent = None;
-                    }
-                }
-              in
-              assignment :: body
-            in
-            state, [{ Node.location; value = For { loop with For.body } }]
-        | _ ->
-            state, [statement]
-    end)
-  in
-  ExpandingTransform.transform () source
-  |> snd
-
 
 let expand_excepts source =
   let module ExpandingTransform = Transform.MakeStatementTransformer(struct
@@ -1343,7 +1285,6 @@ let preprocess source =
   |> expand_type_checking_imports
   |> qualify
   |> expand_returns
-  |> expand_for_loop
   |> expand_yield_from
   |> expand_ternary_assign
   |> expand_named_tuples

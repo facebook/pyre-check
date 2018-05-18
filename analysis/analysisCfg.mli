@@ -17,7 +17,7 @@ module Node : sig
     | Error
     | Normal
     | Final
-    | For of Statement.t For.t
+    | For of For.t
     | If of Statement.t If.t
     | Join
     | Try of Statement.t Try.t

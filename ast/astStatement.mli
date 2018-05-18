@@ -39,6 +39,17 @@ module Record : sig
     [@@deriving compare, eq, sexp, show, hash]
   end
 
+  module For : sig
+    type 'statement record = {
+      target: Expression.t;
+      iterator: Expression.t;
+      body: 'statement list;
+      orelse: 'statement list;
+      async: bool;
+    }
+    [@@deriving compare, eq, sexp, show, hash]
+  end
+
   module With : sig
     type 'statement record = {
       items: (Expression.t * Expression.t option) list;
@@ -47,18 +58,6 @@ module Record : sig
     }
     [@@deriving compare, eq, sexp, show, hash]
   end
-end
-
-
-module For : sig
-  type 'statement t = {
-    target: Expression.t;
-    iterator: Expression.t;
-    body: 'statement list;
-    orelse: 'statement list;
-    async: bool;
-  }
-  [@@deriving compare, eq, sexp, show, hash]
 end
 
 module While : sig
@@ -147,7 +146,7 @@ type statement =
   | Define of t Record.Define.record
   | Delete of Expression.t
   | Expression of Expression.t
-  | For of t For.t
+  | For of t Record.For.record
   | Global of Identifier.t list
   | If of t If.t
   | Import of Import.t
@@ -233,6 +232,15 @@ module Class : sig
     -> Attribute.t Expression.Access.Map.t
 
   val update: t -> definition: t -> t
+end
+
+module For : sig
+  include module type of struct include Record.For end
+
+  type t = statement_t Record.For.record
+  [@@deriving compare, eq, sexp, show, hash]
+
+  val preamble: t -> statement_t
 end
 
 module With : sig

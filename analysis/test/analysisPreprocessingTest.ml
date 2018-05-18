@@ -830,55 +830,6 @@ let test_expand_returns _ =
     |}
 
 
-let test_expand_for _ =
-  let assert_expand source expected =
-    assert_source_equal
-      (parse expected)
-      (Preprocessing.expand_for_loop (parse source))
-  in
-
-  assert_expand
-    {|
-      for a in b:
-        c
-    |}
-    {|
-      for a in b:
-        a = b.__iter__().__next__()
-        c
-    |};
-  assert_expand
-    {|
-      for a, b in c:
-        d
-    |}
-    {|
-      for a, b in c:
-        a, b = c.__iter__().__next__()
-        d
-    |};
-  assert_expand
-    {|
-      for a in [1, 2, 3]:
-        c
-    |}
-    {|
-      for a in [1, 2, 3]:
-        a = [1, 2, 3].__iter__().__next__()
-        c
-    |};
-  assert_expand
-    {|
-      async for a in b:
-        c
-    |}
-    {|
-      async for a in b:
-        a = b.__aiter__().__anext__()
-        c
-    |}
-
-
 let test_expand_excepts _ =
   let assert_expand source expected =
     assert_source_equal
@@ -1327,7 +1278,6 @@ let () =
     "replace_version_specific_code">::test_replace_version_specific_code;
     "expand_type_checking_imports">::test_expand_type_checking_imports;
     "expand_returns">::test_expand_returns;
-    "expand_for_loop">::test_expand_for;
     "expand_excepts">::test_expand_excepts;
     "expand_ternary_assigns">::test_expand_ternary;
     "expand_named_tuples">::test_expand_named_tuples;

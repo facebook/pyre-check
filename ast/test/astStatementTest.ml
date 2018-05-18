@@ -568,14 +568,13 @@ let test_update _ =
 
 
 let test_preamble _ =
-  let assert_preamble ?(async = false) items preamble =
+  let assert_preamble block preamble =
     let block =
-      {
-        With.items = List.map ~f:(fun (item, alias) -> !item, alias >>| (!)) items;
-        body = [];
-        async;
-      }
+      match parse_single_statement block with
+      | { Node.value = With block; _ } -> block
+      | _ -> failwith "Could not parse `with` statement."
     in
+    let { Source.statements = preamble; _ } = parse preamble in
     assert_equal
       ~cmp:(List.equal ~equal:Statement.equal)
       ~printer:(fun statements -> List.map ~f:Statement.show statements |> String.concat ~sep:", ")
@@ -583,29 +582,29 @@ let test_preamble _ =
       (With.preamble block)
   in
 
-  assert_preamble ["item", None] [!!"item"];
-  assert_preamble ["item", None; "other", None] [!!"item"; !!"other"];
-  assert_preamble
-    ["item", Some "name"]
-    [
-      +Assign {
-        Assign.target = !"name";
-        annotation = None;
-        value = Some (+Access (parse_single_access "item.__enter__()"));
-        parent = None;
-      };
-    ];
-  assert_preamble
-    ~async:true
-    ["item", Some "name"]
-    [
-      +Assign {
-        Assign.target = !"name";
-        annotation = None;
-        value = Some (+Await (+Access (parse_single_access "item.__aenter__()")));
-        parent = None;
-      };
-    ]
+  assert_preamble "with item: pass" "item"  ;
+  assert_preamble "with item, other: pass" "item; other";
+  assert_preamble "with item as name: pass" "name = item.__enter__()";
+  assert_preamble "async with item as name: pass" "name = await item.__aenter__()";
+
+  let assert_preamble block preamble =
+    let block =
+      match parse_single_statement block with
+      | { Node.value = For block; _ } -> block
+      | _ -> failwith "Could not parse `for` statement."
+    in
+    let { Source.statements = preamble; _ } = parse preamble in
+    assert_equal
+      ~cmp:(List.equal ~equal:Statement.equal)
+      ~printer:(fun statements -> List.map ~f:Statement.show statements |> String.concat ~sep:", ")
+      preamble
+      [For.preamble block]
+  in
+
+  assert_preamble "for a in b: pass" "a = b.__iter__().__next__()";
+  assert_preamble "for a, b in c: pass" "a, b = c.__iter__().__next__()";
+  assert_preamble "for a in [1, 2, 3]: pass" "a = [1, 2, 3].__iter__().__next__()";
+  assert_preamble "async for a in b: pass" "a = b.__aiter__().__anext__()"
 
 
 let test_assume _ =
@@ -879,12 +878,9 @@ let () =
     "update">::test_update;
   ]
   |> run_test_tt_main;
-  "with">:::[
-    "preamble">::test_preamble;
-  ]
-  |> run_test_tt_main;
   "statement">:::[
     "assume">::test_assume;
+    "preamble">::test_preamble;
     "terminates">::test_terminates;
     "pp">::test_pp;
   ]
