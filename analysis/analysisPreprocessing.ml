@@ -940,39 +940,6 @@ let expand_returns source =
   |> snd
 
 
-let expand_yield_from source =
-  let module NormalizingTransform = Transform.MakeStatementTransformer(struct
-      type t = unit
-
-      let statement_postorder state statement =
-        match statement with
-        | { Node.location;
-            value = YieldFrom ({
-                location = expression_location;
-                Node.value = Expression.Yield (Some yield);
-              })
-          } ->
-            let add_call =
-              Access.Expression yield
-              :: (Access.call ~name:"__iter__" ~location:expression_location ())
-            in
-            state,
-            [{ Node.location;
-               value = YieldFrom {
-                   Node.location = expression_location;
-                   value =
-                     Expression.Yield (Some (Node.create_with_default_location (Access add_call)))
-                 }
-             }]
-
-        | _ ->
-            state, [statement]
-    end)
-  in
-  NormalizingTransform.transform () source
-  |> snd
-
-
 let expand_ternary_assign source =
   let module ExpandingTransform = Transform.MakeStatementTransformer(struct
       type t = unit
@@ -1214,6 +1181,5 @@ let preprocess source =
   |> expand_type_checking_imports
   |> qualify
   |> expand_returns
-  |> expand_yield_from
   |> expand_ternary_assign
   |> expand_named_tuples

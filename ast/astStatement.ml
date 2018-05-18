@@ -1389,8 +1389,8 @@ module PrettyPrinter = struct
           pp_statement_list body
           pp_statement_list orelse
 
-    | Yield expression -> Format.fprintf formatter "%a" Expression.pp expression
-    | YieldFrom expression -> Format.fprintf formatter "%a" Expression.pp expression
+    | Yield expression -> Format.fprintf formatter "yield %a" Expression.pp expression
+    | YieldFrom expression -> Format.fprintf formatter "yield from %a" Expression.pp expression
 
 
   let pp = pp_statement_t

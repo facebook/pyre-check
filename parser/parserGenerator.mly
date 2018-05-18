@@ -493,16 +493,25 @@ small_statement:
 
   | yield = yield {
       let has_from, yield = yield in
+      let location = Node.location yield in
       if has_from then
-        [{
-          Node.location = yield.Node.location;
-          value = Statement.YieldFrom yield;
-        }]
+        let yield =
+          match yield with
+          | { Node.value = Yield (Some yield); _ } ->
+              Access.Expression yield :: (Access.call ~name:"__iter__" ~location ())
+              |> (fun access -> Access access)
+              |> Node.create ~location
+          | _ ->
+              yield
+        in
+        [
+          {
+            Node.location;
+            value = Statement.YieldFrom { Node.location; value = Expression.Yield (Some yield) }
+          };
+        ]
       else
-        [{
-          Node.location = yield.Node.location;
-          value = Statement.Yield yield;
-        }]
+        [{ Node.location; value = Statement.Yield yield }]
     }
   ;
 
