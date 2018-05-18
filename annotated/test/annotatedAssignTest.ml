@@ -23,6 +23,9 @@ let test_fold _ =
       s = 'asdf'
       t = 1, 1.0
       l: typing.List[int] = [1, 2]
+      class Tuple(typing.NamedTuple):
+          x: int
+          y: str
     |}
     |> resolution
   in

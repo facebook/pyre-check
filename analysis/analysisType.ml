@@ -342,6 +342,10 @@ let none =
   Optional Bottom
 
 
+let named_tuple =
+  Primitive (Identifier.create "typing.NamedTuple")
+
+
 let generator ?(async=false) parameter =
   if async then
     Parametric {

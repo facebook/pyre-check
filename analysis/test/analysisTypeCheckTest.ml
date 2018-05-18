@@ -4769,7 +4769,17 @@ let test_check_tuple _ =
     [
       "Undefined attribute [16]: `typing.Any` has no attribute `__add__`.";
       "Undefined attribute [16]: `T` has no attribute `d`.";
-    ]
+    ];
+
+  assert_type_errors
+    {|
+      T = collections.namedtuple('T', 'a b c')
+      def foo(t: T) -> None:
+        x, y = t
+        x, y, z = t
+        x, y, z, other = t
+    |}
+    []
 
 
 let test_check_meta _ =

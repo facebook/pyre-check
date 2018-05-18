@@ -127,6 +127,7 @@ val string: t
 val tuple: t list -> t
 val unbound: t
 val union: t list -> t
+val named_tuple: t
 val none: t
 val yield: t -> t
 

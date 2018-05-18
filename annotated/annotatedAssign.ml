@@ -41,6 +41,16 @@ let fold ~resolution ~initial ~f { Assign.target; value; _ } =
                 when Identifier.equal name (Identifier.create "list") ->
                   List.map ~f:(fun _ -> parameter) targets
 
+              (* Suppress typing.NamedTuple unpacking errors for now. *)
+              | Type.Primitive _
+              | Type.Parametric _
+                when
+                  Resolution.less_or_equal
+                    resolution
+                    ~left:value_annotation
+                    ~right:Type.named_tuple ->
+                  List.map ~f:(fun _ -> Type.Object) targets
+
               | _ ->
                   []
             in

@@ -1298,6 +1298,7 @@ module Builder = struct
 
     (* Special forms *)
     insert_unconnected (Type.primitive "typing.Tuple");
+    insert_unconnected (Type.named_tuple);
     insert_unconnected Type.generic;
     insert_unconnected (Type.primitive "typing.Protocol");
     insert_unconnected (Type.primitive "typing.Callable");
