@@ -36,6 +36,9 @@ do
       fi
       OPAM_ROOT="$HOME/.opam/"
       ;;
+    "--temporary-root")
+      OPAM_ROOT="$(mktemp -d)"
+      ;;
     "--repository")
       OPAM_REPOSITORY="${arguments[$index+1]}"
       ;;
@@ -82,7 +85,7 @@ if [[ -n "${CONFIGURE}" ]]; then
     if [[ -z "${OPAM_ROOT}" ]]; then
       echo "Warning: cannot switch compilers without a valid OPAM_ROOT."
     else
-      # This requires a "eval `opam config env` --root ${OPAM_ROOT}"
+      # This requires a "eval `opam config env --root ${OPAM_ROOT}`"
       # by the caller. opam will print a message with the
       # instructions.
       opam switch set "${COMPILER}" --root "${OPAM_ROOT}"
