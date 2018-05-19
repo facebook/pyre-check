@@ -99,16 +99,21 @@ type initialization_mismatch = {
 [@@deriving compare, eq, show, sexp, hash]
 
 
+type precondition_mismatch =
+  | Found of mismatch
+  | NotFound of Access.t
+[@@deriving compare, eq, show, sexp, hash]
+
+
 type override =
-  | StrengthenedPrecondition
-  | WeakenedPostcondition
+  | StrengthenedPrecondition of precondition_mismatch
+  | WeakenedPostcondition of mismatch
 [@@deriving compare, eq, show, sexp, hash]
 
 
 type inconsistent_override = {
   overridden_method: Annotated.Method.t;
   override: override;
-  mismatch: mismatch;
 }
 [@@deriving compare, eq, show, sexp, hash]
 
@@ -205,8 +210,8 @@ let code { kind; _ } =
   | InconsistentOverride { override; _ } ->
       begin
         match override with
-        | StrengthenedPrecondition -> 14
-        | WeakenedPostcondition -> 15
+        | StrengthenedPrecondition _ -> 14
+        | WeakenedPostcondition _ -> 15
       end
   | UndefinedAttribute _ -> 16
   | IncompatibleConstructorAnnotation _ -> 17
@@ -482,22 +487,23 @@ let description
              (Access.show_sanitized name)
              (Location.line location))
         ]
-    | InconsistentOverride { overridden_method; override; mismatch = { actual; expected } } ->
+    | InconsistentOverride { overridden_method; override } ->
         let detail =
           match override with
-          | WeakenedPostcondition ->
+          | WeakenedPostcondition { actual; expected } ->
               Format.asprintf
                 "Returned type %a is not a subtype of the overridden return %a."
                 Type.pp actual
                 Type.pp expected
-          | StrengthenedPrecondition ->
-              if not (Type.equal actual Type.none) then
-                Format.asprintf
-                  "Parameter of type %a is not a supertype of the overridden parameter %a."
-                  Type.pp actual
-                  Type.pp expected
-              else
-                "Not all parameters are provided."
+          | StrengthenedPrecondition (Found { actual; expected }) ->
+              Format.asprintf
+                "Parameter of type %a is not a supertype of the overridden parameter %a."
+                Type.pp actual
+                Type.pp expected
+          | StrengthenedPrecondition (NotFound name) ->
+              Format.asprintf
+                "Could not find parameter `%s` in overriding signature."
+                (Access.show_sanitized name)
         in
         [
           Format.asprintf
@@ -632,7 +638,8 @@ let due_to_analysis_limitations { kind; _ } =
   | IncompatibleReturnType { actual; _ }
   | IncompatibleAttributeType { incompatible_type = { mismatch = { actual; _ }; _ }; _ }
   | IncompatibleVariableType { mismatch = { actual; _ }; _ }
-  | InconsistentOverride { mismatch = { actual; _ }; _ }
+  | InconsistentOverride { override = StrengthenedPrecondition (Found { actual; _ }); _ }
+  | InconsistentOverride { override = WeakenedPostcondition { actual; _ }; _ }
   | MissingAttributeAnnotation { missing_annotation = { annotation = actual; _ }; _ }
   | MissingGlobalAnnotation { annotation = actual; _ }
   | MissingParameterAnnotation { annotation = actual; _ }
@@ -644,6 +651,7 @@ let due_to_analysis_limitations { kind; _ } =
   | UndefinedType annotation ->
       Type.is_unknown annotation
   | IncompatibleConstructorAnnotation _
+  | InconsistentOverride { override = StrengthenedPrecondition (NotFound _); _ }
   | MissingArgument _
   | TooManyArguments _
   | UndefinedAttribute _
@@ -671,7 +679,8 @@ let due_to_mismatch_with_any { kind; _ } =
   | UndefinedAttribute { origin = Class { annotation = actual; _ }; _ }
   | IncompatibleAwaitableType actual ->
       Type.equal actual Type.Object
-  | InconsistentOverride { mismatch = { actual; expected }; _ }
+  | InconsistentOverride { override = StrengthenedPrecondition (Found { actual; expected }); _ }
+  | InconsistentOverride { override = WeakenedPostcondition { actual; expected }; _ }
   | IncompatibleParameterType { mismatch = { actual; expected }; _ }
   | IncompatibleReturnType { actual; expected }
   | IncompatibleAttributeType { incompatible_type = { mismatch = { actual; expected }; _ }; _ }
@@ -684,6 +693,7 @@ let due_to_mismatch_with_any { kind; _ } =
   | MissingParameterAnnotation _
   | MissingReturnAnnotation _
   | IncompatibleConstructorAnnotation _
+  | InconsistentOverride _
   | Top
   | UndefinedType _
   | MissingArgument _
@@ -730,7 +740,18 @@ let less_or_equal ~resolution left right =
     | IncompatibleVariableType left, IncompatibleVariableType right when left.name = right.name ->
         less_or_equal_mismatch left.mismatch right.mismatch
     | InconsistentOverride left, InconsistentOverride right ->
-        less_or_equal_mismatch left.mismatch right.mismatch
+        begin
+          match left.override, right.override with
+          | StrengthenedPrecondition (NotFound left_access),
+            StrengthenedPrecondition (NotFound right_access) ->
+              Access.equal left_access right_access
+          | StrengthenedPrecondition (Found left_mismatch),
+            StrengthenedPrecondition (Found right_mismatch)
+          | WeakenedPostcondition left_mismatch, WeakenedPostcondition right_mismatch ->
+              less_or_equal_mismatch left_mismatch right_mismatch
+          | _ ->
+              false
+        end
     | TooManyArguments left, TooManyArguments right ->
         equal_too_many_arguments left right
     | UninitializedAttribute left, UninitializedAttribute right when left.name = right.name ->
@@ -836,8 +857,26 @@ let join ~resolution left right =
         }
     | IncompatibleVariableType left, IncompatibleVariableType right when left.name = right.name ->
         IncompatibleVariableType { left with mismatch = join_mismatch left.mismatch right.mismatch }
-    | InconsistentOverride left, InconsistentOverride right ->
-        InconsistentOverride { left with mismatch = join_mismatch left.mismatch right.mismatch }
+    | InconsistentOverride ({ override = StrengthenedPrecondition left_issue; _ } as left),
+      InconsistentOverride ({ override = StrengthenedPrecondition right_issue; _ } as right) ->
+        begin
+          match left_issue, right_issue with
+          | Found left_mismatch, Found right_mismatch ->
+              InconsistentOverride {
+                left with
+                override =
+                  StrengthenedPrecondition (Found (join_mismatch left_mismatch right_mismatch))
+              }
+          | NotFound _, _ ->
+              InconsistentOverride left
+          | _, NotFound _ ->
+              InconsistentOverride right
+        end
+    | InconsistentOverride ({ override = WeakenedPostcondition left_mismatch; _ } as left),
+      InconsistentOverride { override = WeakenedPostcondition right_mismatch; _ } ->
+        InconsistentOverride {
+          left with override = WeakenedPostcondition (join_mismatch left_mismatch right_mismatch);
+        }
     | TooManyArguments left, TooManyArguments right when equal_too_many_arguments left right ->
         TooManyArguments left
     | UninitializedAttribute left, UninitializedAttribute right
@@ -1040,13 +1079,12 @@ let filter ~configuration ~resolution errors =
     let is_override_on_dunder_method { kind; _ } =
       let get_name overridden = overridden |> Annotated.Class.Method.name |> Access.show in
       match kind with
-      | InconsistentOverride { overridden_method; override; mismatch = { actual; _ } }
+      | InconsistentOverride { overridden_method; override }
         when String.is_prefix ~prefix:"__" (get_name overridden_method) &&
              String.is_suffix ~suffix:"__" (get_name overridden_method) ->
           begin
             match override with
-            | StrengthenedPrecondition ->
-                Type.equal actual Type.none
+            | StrengthenedPrecondition (NotFound _) -> true
             | _ -> false
           end
       | _ -> false
@@ -1187,10 +1225,35 @@ let dequalify
           incompatible_type with
           mismatch = { actual = dequalify actual; expected = dequalify expected };
         }
-    | InconsistentOverride ({ mismatch = { actual; expected }; _ } as inconsistent_override) ->
+    | InconsistentOverride
+        ({
+          override = StrengthenedPrecondition (Found { actual; expected });
+          _;
+        } as inconsistent_override) ->
         InconsistentOverride {
           inconsistent_override with
-          mismatch = { actual = dequalify actual; expected = dequalify expected };
+          override = StrengthenedPrecondition (Found {
+              actual = dequalify actual;
+              expected = dequalify expected;
+            });
+        }
+    | InconsistentOverride (
+        { override = StrengthenedPrecondition (NotFound access); _ } as inconsistent_override
+      ) ->
+        InconsistentOverride {
+          inconsistent_override with override = StrengthenedPrecondition (NotFound access);
+        }
+    | InconsistentOverride
+        ({
+          override = WeakenedPostcondition { actual; expected };
+          _;
+        } as inconsistent_override) ->
+        InconsistentOverride {
+          inconsistent_override with
+          override = WeakenedPostcondition {
+              actual = dequalify actual;
+              expected = dequalify expected
+            };
         }
     | UninitializedAttribute ({ mismatch = { actual; expected }; _ } as inconsistent_usage) ->
         UninitializedAttribute {

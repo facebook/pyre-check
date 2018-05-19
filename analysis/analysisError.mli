@@ -78,15 +78,19 @@ type incompatible_attribute_type = {
 }
 [@@deriving compare, eq, show, sexp, hash]
 
+type precondition_mismatch =
+  | Found of mismatch
+  | NotFound of Access.t
+[@@deriving compare, eq, show, sexp, hash]
+
 type override =
-  | StrengthenedPrecondition
-  | WeakenedPostcondition
+  | StrengthenedPrecondition of precondition_mismatch
+  | WeakenedPostcondition of mismatch
 [@@deriving compare, eq, show, sexp, hash]
 
 type inconsistent_override = {
   overridden_method: Annotated.Method.t;
   override: override;
-  mismatch: mismatch;
 }
 [@@deriving compare, eq, show, sexp, hash]
 

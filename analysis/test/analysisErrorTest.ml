@@ -80,14 +80,6 @@ let undefined_attribute actual =
       };
   }
 
-let inconsistent_override name override actual =
-  Error.InconsistentOverride {
-    Error.overridden_method =
-      Annotated.Class.Method.create ~define:(define_value ~name ()) ~parent:(mock_parent);
-    override;
-    mismatch = { Error.actual; expected = Type.integer };
-  }
-
 
 let configuration = Configuration.create ()
 
@@ -379,6 +371,7 @@ let test_join _ =
 
 
 let test_filter _ =
+  let open Error in
   let environment =
     Environment.handler ~configuration (Environment.Builder.create ~configuration ())
   in
@@ -399,14 +392,14 @@ let test_filter _ =
     let errors = [error ~define kind] in
     assert_equal
       []
-      (Error.filter ~configuration ~resolution errors)
+      (filter ~configuration ~resolution errors)
   in
   let assert_unfiltered ?(define = mock_define) kind =
     let errors = [error ~define kind] in
     assert_equal
-      ~cmp:(List.equal ~equal:Error.equal)
+      ~cmp:(List.equal ~equal)
       errors
-      (Error.filter ~configuration ~resolution errors)
+      (filter ~configuration ~resolution errors)
   in
   (* Suppress mock errors. *)
   assert_filtered (incompatible_return_type (Type.primitive "unittest.mock.Mock") Type.integer);
@@ -429,11 +422,30 @@ let test_filter _ =
     ~define:(define ~body:[+Statement.Pass; +Statement.Return None] ())
     (incompatible_return_type Type.integer Type.float);
 
+  let inconsistent_override name override =
+    InconsistentOverride {
+      overridden_method =
+        Annotated.Class.Method.create ~define:(define_value ~name ()) ~parent:(mock_parent);
+      override;
+    }
+  in
   (* Suppress parameter errors on override of dunder methods *)
-  assert_unfiltered (inconsistent_override "foo" Error.StrengthenedPrecondition Type.none);
-  assert_unfiltered (inconsistent_override "__foo__" Error.WeakenedPostcondition Type.none);
-  assert_unfiltered (inconsistent_override "__foo__" Error.StrengthenedPrecondition Type.Top);
-  assert_filtered (inconsistent_override "__foo__" Error.StrengthenedPrecondition Type.none)
+  assert_unfiltered
+    (inconsistent_override
+       "foo"
+       (StrengthenedPrecondition (NotFound (Access.create "x"))));
+  assert_unfiltered
+    (inconsistent_override
+       "__foo__"
+       (WeakenedPostcondition { actual = Type.Top; expected = Type.integer }));
+  assert_unfiltered
+    (inconsistent_override
+       "__foo__"
+       (StrengthenedPrecondition (Found { actual = Type.none; expected = Type.integer })));
+  assert_filtered
+    (inconsistent_override
+       "__foo__"
+       (StrengthenedPrecondition (NotFound (Access.create "x"))))
 
 
 let test_suppress _ =

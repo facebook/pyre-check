@@ -326,8 +326,7 @@ module State = struct
                  Error.location;
                  kind = Error.InconsistentOverride {
                      Error.overridden_method;
-                     override = Error.WeakenedPostcondition;
-                     mismatch = { Error.actual; expected };
+                     override = Error.WeakenedPostcondition { Error.actual; expected };
                    };
                  define = define_node;
                }
@@ -362,8 +361,9 @@ module State = struct
                          Error.location;
                          kind = Error.InconsistentOverride {
                              Error.overridden_method;
-                             override = Error.StrengthenedPrecondition;
-                             mismatch = { Error.actual; expected };
+                             override =
+                               Error.StrengthenedPrecondition
+                                 (Error.Found { Error.actual; expected });
                            };
                          define = define_node;
                        }
@@ -376,13 +376,13 @@ module State = struct
                    errors
                end
            | None ->
+               let parameter_name = Expression.Access.create_from_identifiers [key] in
                let error =
                  {
                    Error.location;
                    kind = Error.InconsistentOverride {
                        Error.overridden_method;
-                       override = Error.StrengthenedPrecondition;
-                       mismatch = { Error.actual = Type.none; expected };
+                       override = Error.StrengthenedPrecondition (Error.NotFound parameter_name);
                      };
                    define = define_node;
                  }

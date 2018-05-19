@@ -5116,7 +5116,7 @@ let test_check_behavioral_subtyping _ =
     |}
     [
       "Inconsistent override [14]: `foo` overloads method defined in `Foo` inconsistently. " ^
-      "Parameter of type `None` is not a supertype of the overridden parameter `unknown`."
+      "Could not find parameter `a` in overriding signature."
     ];
   assert_type_errors
     {|
@@ -5151,7 +5151,7 @@ let test_check_behavioral_subtyping _ =
     |}
     [
       "Inconsistent override [14]: `foo` overloads method defined in `Foo` inconsistently. " ^
-      "Parameter of type `None` is not a supertype of the overridden parameter `int`."
+      "Could not find parameter `a` in overriding signature."
     ];
   assert_type_errors
     {|
