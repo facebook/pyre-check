@@ -9,6 +9,7 @@ PKG ppx_compare
 PKG ppx_deriving.eq
 PKG ppx_deriving.show
 PKG ppx_deriving_yojson
+PKG ppx_hash
 PKG ppx_sexp_conv
 PKG hack_parallel
 PKG sexplib
