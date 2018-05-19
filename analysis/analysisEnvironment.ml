@@ -419,11 +419,9 @@ let register_aliases (module Handler: Handler) sources =
       | Import { Import.from = Some from; imports = [{ Import.name; _ }]  }
         when Access.show name = "*" ->
           let exports =
-            match Handler.module_definition from >>| Module.wildcard_exports with
-            | Some exports ->
-                exports
-            | None ->
-                []
+            Handler.module_definition from
+            >>| Module.wildcard_exports
+            |> Option.value ~default:[]
           in
           let add_alias aliases export =
             let value = Node.create_with_default_location (Access (from @ export)) in
