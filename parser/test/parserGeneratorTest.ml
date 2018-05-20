@@ -1811,13 +1811,13 @@ let test_yield _ =
     "yield 1"
     [+Statement.Yield (+Expression.Yield (Some (+Integer 1)))];
   assert_parsed_equal
-    "yield from 1"
+    "yield from a"
     [
       +Statement.YieldFrom
         (+Expression.Yield
           (Some
              (+Access [
-                Access.Expression (+Integer 1);
+                Access.Identifier ~~"a";
                 Access.Identifier ~~"__iter__";
                 Access.Call (+[]);
               ])));

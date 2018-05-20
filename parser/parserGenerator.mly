@@ -498,7 +498,7 @@ small_statement:
         let yield =
           match yield with
           | { Node.value = Yield (Some yield); _ } ->
-              Access.Expression yield :: (Access.call ~name:"__iter__" ~location ())
+              (Expression.access yield) @ (Access.call ~name:"__iter__" ~location ())
               |> (fun access -> Access access)
               |> Node.create ~location
           | _ ->

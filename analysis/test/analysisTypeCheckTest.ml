@@ -2020,7 +2020,7 @@ let test_check_coverage _ =
       "`typing.Generator[unknown, None, None]`.";
     ]
     "yield ERROR";
-  assert_covered
+  assert_not_covered
     ~additional_errors:[
       "Incompatible return type [7]: Expected `None` but got " ^
       "`typing.Generator[unknown, None, None]`.";
