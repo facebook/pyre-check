@@ -4342,6 +4342,32 @@ let test_check_ternary _ =
         a, b = ("hi", int_to_int(x) if x is not None else 1)
         return b
     |}
+    [];
+  assert_type_errors
+    {|
+      def f(s: str) -> None:
+        pass
+
+      def pick_alternative(s: typing.Optional[str]) -> None:
+        f("foo" if s is None else s)
+
+      def pick_alternative2(s: typing.Optional[str]) -> None:
+        f("foo" if not s else s)
+
+      def pick_alternative3(s: typing.Optional[str]) -> None:
+        x = "foo" if s is None else s
+        f(x)
+
+      def pick_target(s: typing.Optional[str]) -> None:
+        f(s if s is not None else "foo")
+
+      def pick_target2(s: typing.Optional[str]) -> None:
+        f(s if s else "foo")
+
+      def pick_target3(s: typing.Optional[str]) -> None:
+        x = s if s is not None else "foo"
+        f(x)
+    |}
     []
 
 

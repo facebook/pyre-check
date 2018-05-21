@@ -212,7 +212,40 @@ let rec resolve ~resolution expression =
   | String _ ->
       Type.string
 
-  | Ternary { Ternary.target; alternative; test; } ->
+  | Ternary ternary ->
+      let rec normalize ({ Ternary.target; alternative; test; } as ternary) =
+        let test = Expression.normalize test in
+        match Node.value test with
+        | Expression.UnaryOperator {
+            Expression.UnaryOperator.operator = Expression.UnaryOperator.Not;
+            operand;
+          } ->
+            {
+              Ternary.target = alternative;
+              alternative = target;
+              test = operand;
+            }
+        | Expression.ComparisonOperator {
+            Expression.ComparisonOperator.left;
+            right = [
+              Expression.ComparisonOperator.Is,
+              ({ Node.value = Access [Expression.Access.Identifier identifier]; _ } as access)
+            ];
+          } when Identifier.show identifier = "None" ->
+            {
+              Ternary.target = alternative;
+              alternative = target;
+              test = { test with Node.value = Expression.ComparisonOperator {
+                  Expression.ComparisonOperator.left;
+                  right = [
+                    Expression.ComparisonOperator.IsNot,
+                    access
+                  ];
+                }};
+            }
+        | _ ->
+            { ternary with Ternary.test }
+      in
       let deoptionalize key access resolution =
         let annotation =
           match resolve ~resolution access with
@@ -221,6 +254,8 @@ let rec resolve ~resolution expression =
         in
         Resolution.set_local resolution ~access:key ~annotation
       in
+
+      let { Ternary.target; alternative; test; } = normalize ternary in
       let updated_resolution =
         match Node.value test with
         | Expression.Access access ->

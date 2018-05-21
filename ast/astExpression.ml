@@ -512,8 +512,10 @@ let rec normalize { Node.location; value } =
           left = normalize left;
           right = normalize right;
         }
-    | UnaryOperator { UnaryOperator.operator = UnaryOperator.Not; operand = { Node.value; _ };
-                    } ->
+    | (UnaryOperator {
+        UnaryOperator.operator = UnaryOperator.Not;
+        operand = { Node.value; _ };
+      } as unary) ->
         begin
           match value with
           | ComparisonOperator {
@@ -542,10 +544,7 @@ let rec normalize { Node.location; value } =
                 right = normalize (negate right);
               }
           | _ ->
-              UnaryOperator {
-                UnaryOperator.operator = UnaryOperator.Not;
-                operand = { Node.location; value };
-              }
+              unary
         end
     | _ ->
         value

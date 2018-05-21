@@ -135,7 +135,18 @@ let test_normalize _ =
             operand = !"x";
           };
         }))
-    (!"x")
+    (!"x");
+
+  assert_expression_equal
+    (normalize
+       (+UnaryOperator {
+          UnaryOperator.operator = UnaryOperator.Not;
+          operand = !"x";
+        }))
+    (+UnaryOperator {
+       UnaryOperator.operator = UnaryOperator.Not;
+       operand = !"x";
+     })
 
 let test_pp _ =
   let simple_expression =
