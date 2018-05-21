@@ -8,7 +8,7 @@ import json
 import logging
 import os
 import shutil
-from typing import List, Optional
+from typing import List
 
 from . import (
     BINARY_NAME,

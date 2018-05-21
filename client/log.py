@@ -11,7 +11,7 @@ import re
 import sys
 import threading
 import time
-from typing import List
+from typing import List  # noqa
 
 
 LOG = logging.getLogger(__name__)

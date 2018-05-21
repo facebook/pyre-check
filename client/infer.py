@@ -15,7 +15,7 @@ import time
 import traceback
 from collections import defaultdict
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional, Union  # noqa
 
 from . import (
     FAILURE,
@@ -333,7 +333,7 @@ def filter_paths(arguments, stubs, type_directory):
     unused_annotates = [
         path
         for path in arguments.in_place
-        if all([not str(stub.path(Path(""))).startswith(str(path)) for stub in stubs])
+        if all(not str(stub.path(Path(""))).startswith(str(path)) for stub in stubs)
     ]
     for path in unused_annotates:
         LOG.log(log.SUCCESS, "No annotations for {}".format(path))
@@ -342,10 +342,8 @@ def filter_paths(arguments, stubs, type_directory):
         stub
         for stub in stubs
         if any(
-            [
-                str(stub.path(Path(""))).startswith(str(path))
-                for path in arguments.in_place
-            ]
+            str(stub.path(Path(""))).startswith(str(path))
+            for path in arguments.in_place
         )
     ]
 

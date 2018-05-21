@@ -5,7 +5,6 @@
 
 import logging
 
-from .. import filesystem
 from .command import ClientException, Command, State
 from .kill import Kill
 

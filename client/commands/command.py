@@ -10,7 +10,7 @@ import os
 import re
 import subprocess
 import threading
-from typing import List
+from typing import List  # noqa
 
 from .. import SUCCESS, TEXT, EnvironmentException, buck, log
 from ..error import Error

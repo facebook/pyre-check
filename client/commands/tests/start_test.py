@@ -4,7 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import unittest
-from unittest.mock import call, mock_open, patch
+from unittest.mock import call, patch
 
 from ... import commands
 from .command_test import mock_arguments, mock_configuration

@@ -10,7 +10,8 @@ max-line-length = 80
 # E722 is a duplicate of B001.
 # P207 is a duplicate of B003.
 # W503 talks about operator formatting which is too opinionated.
-ignore = E127, E128, E265, E266, E402, E501, E722, P207, W503
+# E203 conflicts with Black
+ignore = E127, E128, E265, E266, E402, E501, E722, P207, W503, E203
 max-complexity = 50
 exclude =
   .git,
