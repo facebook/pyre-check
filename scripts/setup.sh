@@ -76,6 +76,11 @@ case "${REQUESTED_BUILD_TYPE}" in
     ;;
 esac
 
+# Set default values.
+OPAM_ROOT="${OPAM_ROOT:-${HOME}/.opam/}"
+OPAM_REPOSITORY="${OPAM_REPOSITORY:-https://opam.ocaml.org}";
+
+# Always set the build type.
 sed "s/%VERSION%/$BUILD/" Makefile.template > Makefile
 
 # Perform only minimal initialization on `--configure`.
@@ -95,9 +100,7 @@ if [[ -n "${CONFIGURE}" ]]; then
   exit 0
 fi
 
-# Set default values.
-if [ -z "${OPAM_ROOT+x}" ]; then OPAM_ROOT="$(mktemp -d)"; fi
-if [ -z "${OPAM_REPOSITORY+x}" ]; then OPAM_REPOSITORY="https://opam.ocaml.org"; fi
+# Set default compiler. This must be done after --configure.
 COMPILER="${COMPILER:-${DEVELOPMENT_COMPILER}}"
 
 # Extract packaged repository.
