@@ -4,20 +4,15 @@
 # LICENSE file in the root directory of this source tree.
 
 import errno
-import json
 import fcntl
+import json
 import logging
 import os
 import shutil
 import subprocess
-
-
 from contextlib import contextmanager
 from time import time
-from typing import (
-    List,
-    Optional,
-)
+from typing import List, Optional
 
 from . import log
 
@@ -26,13 +21,14 @@ LOG = logging.getLogger(__name__)
 
 
 class SharedSourceDirectory:
+
     def __init__(self, source_directories, isolate: bool = False):
         self._source_directories = set(source_directories)
         self._isolate = isolate
 
     def get_root(self) -> str:
-        suffix = '_{}'.format(str(os.getpid())) if self._isolate else ''
-        return '.pyre/shared_source_directory{}'.format(suffix)
+        suffix = "_{}".format(str(os.getpid())) if self._isolate else ""
+        return ".pyre/shared_source_directory{}".format(suffix)
 
     def prepare(self) -> None:
         start = time()
@@ -44,32 +40,29 @@ class SharedSourceDirectory:
         except OSError:
             pass  # Swallow.
 
-        lock = os.path.join(root, '.pyre.lock')
+        lock = os.path.join(root, ".pyre.lock")
         with try_lock(lock):
             try:
-                with open(os.path.join(root, '.pyre.source_directories')) as file:
+                with open(os.path.join(root, ".pyre.source_directories")) as file:
                     tracked = set(json.load(file))
 
                 if self._source_directories.issubset(tracked):
                     # We might want to merge in additional files.
-                    LOG.info('Shared source directory is up to date')
+                    LOG.info("Shared source directory is up to date")
                     return
             except (OSError, json.JSONDecodeError):
                 pass
 
             # Clear the directory and merge in files.
-            LOG.info('Shared source directory is stale, updating...')
+            LOG.info("Shared source directory is stale, updating...")
             self._clear()
             self._merge()
 
             # Write out tracked targets.
-            with open(os.path.join(root, '.pyre.source_directories'), 'w') as file:
+            with open(os.path.join(root, ".pyre.source_directories"), "w") as file:
                 json.dump(list(self._source_directories), file)
 
-            LOG.log(
-                log.PERFORMANCE,
-                "Merged source directories in %fs",
-                time() - start)
+            LOG.log(log.PERFORMANCE, "Merged source directories in %fs", time() - start)
 
     def _clear(self):
         root = self.get_root()
@@ -117,25 +110,48 @@ class SharedSourceDirectory:
 def find_python_paths(root: str) -> List[str]:
     root = os.path.abspath(root)  # Return absolute paths.
     try:
-        output = subprocess.check_output([
-            "find",
-            root,
-            # All files ending in .py or .pyi ...
-            '(', '-name', '*.py', '-or', '-name', '*.pyi', ')',
-            # ... and that are either regular files ...
-            '(', '-type', 'f', '-or',
-            # ... or symlinks pointing to existing files.
-            '(', '-type', 'l', '-exec', 'test', '-f', '{}', ';', ')', ')',
-            # Print all such files.
-            '-print',
-        ])\
-            .decode('utf-8')\
+        output = (
+            subprocess.check_output(
+                [
+                    "find",
+                    root,
+                    # All files ending in .py or .pyi ...
+                    "(",
+                    "-name",
+                    "*.py",
+                    "-or",
+                    "-name",
+                    "*.pyi",
+                    ")",
+                    # ... and that are either regular files ...
+                    "(",
+                    "-type",
+                    "f",
+                    "-or",
+                    # ... or symlinks pointing to existing files.
+                    "(",
+                    "-type",
+                    "l",
+                    "-exec",
+                    "test",
+                    "-f",
+                    "{}",
+                    ";",
+                    ")",
+                    ")",
+                    # Print all such files.
+                    "-print",
+                ]
+            )
+            .decode("utf-8")
             .strip()
-        return output.split('\n')
+        )
+        return output.split("\n")
     except subprocess.CalledProcessError:
         LOG.error(
             "pyre was unable to locate a source directory. "
-            "Ensure that your project is built and re-run pyre.")
+            "Ensure that your project is built and re-run pyre."
+        )
         exit(1)
 
 

@@ -7,7 +7,7 @@ from .command import ErrorHandling
 
 
 class Check(ErrorHandling):
-    NAME = 'check'
+    NAME = "check"
 
     def __init__(self, arguments, configuration, source_directory) -> None:
         super(Check, self).__init__(arguments, configuration, source_directory)
@@ -16,14 +16,16 @@ class Check(ErrorHandling):
 
     def _flags(self):
         flags = super()._flags()
-        flags.extend([
-            '-workers',
-            str(self._number_of_workers),
-            '-search-path',
-            ','.join(self._configuration.get_search_path()),
-        ])
+        flags.extend(
+            [
+                "-workers",
+                str(self._number_of_workers),
+                "-search-path",
+                ",".join(self._configuration.get_search_path()),
+            ]
+        )
         if self._log_identifier:
-            flags.extend(['-log-identifier', self._log_identifier])
+            flags.extend(["-log-identifier", self._log_identifier])
         return flags
 
     def _run(self, retries: int = 1) -> None:

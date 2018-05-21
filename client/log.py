@@ -11,7 +11,6 @@ import re
 import sys
 import threading
 import time
-
 from typing import List
 
 
@@ -25,48 +24,48 @@ stdout = io.StringIO()
 
 
 class Color:
-    YELLOW = '\033[33m'
-    RED = '\033[31m'
+    YELLOW = "\033[33m"
+    RED = "\033[31m"
 
 
 class Format:
-    BOLD = '\033[1m'
+    BOLD = "\033[1m"
 
-    CLEAR_LINE = '\x1b[0G\x1b[K'
-    CLEAR = '\033[0m'
-    TRUNCATE_OVERFLOW = '\033[?7l'
-    WRAP_OVERFLOW = '\033[?7h'
-    NEWLINE = '\n'
+    CLEAR_LINE = "\x1b[0G\x1b[K"
+    CLEAR = "\033[0m"
+    TRUNCATE_OVERFLOW = "\033[?7l"
+    WRAP_OVERFLOW = "\033[?7h"
+    NEWLINE = "\n"
 
-    CURSOR_UP_LINE = '\x1b[1A'
-    HIDE_CURSOR = '\x1b[?25l'
-    SHOW_CURSOR = '\x1b[?25h'
+    CURSOR_UP_LINE = "\x1b[1A"
+    HIDE_CURSOR = "\x1b[?25l"
+    SHOW_CURSOR = "\x1b[?25h"
 
 
 class Character:
-    LAMBDA = 'ƛ'
+    LAMBDA = "ƛ"
 
 
 class SectionFormatter(logging.Formatter):
+
     def __init__(self) -> None:
-        super(SectionFormatter, self).__init__(
-            '%(asctime)s %(levelname)s %(message)s')
+        super(SectionFormatter, self).__init__("%(asctime)s %(levelname)s %(message)s")
 
     def format(self, record):
         formatted = super(SectionFormatter, self).format(record)
-        return re.sub(r'DEBUG \[(.*)\]', r'\1', formatted)
+        return re.sub(r"DEBUG \[(.*)\]", r"\1", formatted)
 
 
 class TimedStreamHandler(logging.StreamHandler):
     THRESHOLD = 0.5
-    LINE_BREAKING_LEVELS = ['ERROR', 'WARNING', 'SUCCESS']
+    LINE_BREAKING_LEVELS = ["ERROR", "WARNING", "SUCCESS"]
 
     _terminate = False  # type: bool
     _last_update = 0.0  # type: float
 
     def __init__(self) -> None:
         super(TimedStreamHandler, self).__init__()
-        self.setFormatter(logging.Formatter('%(message)s'))
+        self.setFormatter(logging.Formatter("%(message)s"))
         self.terminator = ""
         self.setLevel(logging.INFO)
 
@@ -76,11 +75,12 @@ class TimedStreamHandler(logging.StreamHandler):
 
         # Preamble preparing terminal.
         sys.stderr.write(
-            Format.NEWLINE +
-            Format.TRUNCATE_OVERFLOW +
-            Format.CLEAR_LINE +
-            Format.CURSOR_UP_LINE +
-            Format.HIDE_CURSOR)
+            Format.NEWLINE
+            + Format.TRUNCATE_OVERFLOW
+            + Format.CLEAR_LINE
+            + Format.CURSOR_UP_LINE
+            + Format.HIDE_CURSOR
+        )
 
         thread = threading.Thread(target=self._thread)
         thread.daemon = True
@@ -88,32 +88,35 @@ class TimedStreamHandler(logging.StreamHandler):
 
     def clear_lines(self):
         if self._active_lines == 0:
-            return ''
-        return Format.CLEAR_LINE + ''.join(
-            [Format.CURSOR_UP_LINE + Format.CLEAR_LINE
-                for n in range(self._active_lines - 1)])
+            return ""
+        return Format.CLEAR_LINE + "".join(
+            [
+                Format.CURSOR_UP_LINE + Format.CLEAR_LINE
+                for n in range(self._active_lines - 1)
+            ]
+        )
 
     def emit(self, record, age=None) -> None:
         self._last_record = record
-        suffix = ''
-        color = ''
-        active_lines = record.msg.count('\n') + 1
+        suffix = ""
+        color = ""
+        active_lines = record.msg.count("\n") + 1
         if record.levelname in self.LINE_BREAKING_LEVELS:
-            record.msg += '\n'
+            record.msg += "\n"
 
-        if record.levelname == 'ERROR':
+        if record.levelname == "ERROR":
             color = Color.RED
             self._record = None
             active_lines = 0
-        elif record.levelname == 'WARNING':
+        elif record.levelname == "WARNING":
             color = Color.YELLOW
             self._record = None
             active_lines = 0
-        elif record.levelname == 'PROMPT':
+        elif record.levelname == "PROMPT":
             color = Color.YELLOW
             self._record = None
             active_lines = 0
-        elif record.levelname == 'SUCCESS':
+        elif record.levelname == "SUCCESS":
             self._record = None
             active_lines = 0
         elif age:
@@ -121,24 +124,24 @@ class TimedStreamHandler(logging.StreamHandler):
                 color = Color.YELLOW
             if age > 30:
                 color = Color.RED
-            suffix = ' {}[{:.1f}s]{}'.format(
-                color if color else '',
-                age,
-                Format.CLEAR if color else '')
+            suffix = " {}[{:.1f}s]{}".format(
+                color if color else "", age, Format.CLEAR if color else ""
+            )
         else:
             self._record = record
             self._last_update = time.time()
 
         timed_record = copy.copy(record)
         timed_record.msg = (
-            '{clear_line}{color} {cursor}{clear} '
-            '{message}{suffix}').format(
-                clear_line=self.clear_lines(),
-                color=color,
-                cursor=Character.LAMBDA,
-                clear=Format.CLEAR,
-                message=record.msg,
-                suffix=suffix)
+            "{clear_line}{color} {cursor}{clear} " "{message}{suffix}"
+        ).format(
+            clear_line=self.clear_lines(),
+            color=color,
+            cursor=Character.LAMBDA,
+            clear=Format.CLEAR,
+            message=record.msg,
+            suffix=suffix,
+        )
         self._active_lines = active_lines
         super(TimedStreamHandler, self).emit(timed_record)
 
@@ -151,14 +154,14 @@ class TimedStreamHandler(logging.StreamHandler):
             time.sleep(0.1)
 
     def terminate(self) -> None:
-        if self._last_record and \
-                self._last_record.levelname not in self.LINE_BREAKING_LEVELS:
-            sys.stderr.write('\n')
+        if (
+            self._last_record
+            and self._last_record.levelname not in self.LINE_BREAKING_LEVELS
+        ):
+            sys.stderr.write("\n")
 
         # Reset terminal.
-        sys.stderr.write(
-            Format.WRAP_OVERFLOW +
-            Format.SHOW_CURSOR)
+        sys.stderr.write(Format.WRAP_OVERFLOW + Format.SHOW_CURSOR)
         sys.stderr.flush()
         self._terminate = True
 
@@ -177,17 +180,17 @@ def initialize(arguments) -> None:
 
     if not arguments.noninteractive:
         try:
-            os.mkdir('.pyre')
+            os.mkdir(".pyre")
         except FileExistsError:
             pass
 
-        file_handler = logging.FileHandler('.pyre/pyre.stderr')
+        file_handler = logging.FileHandler(".pyre/pyre.stderr")
         file_handler.setFormatter(SectionFormatter())
         file_handler.setLevel(logging.DEBUG)
         handlers.append(file_handler)
-    logging.addLevelName(PERFORMANCE, 'PERFORMANCE')
-    logging.addLevelName(PROMPT, 'PROMPT')
-    logging.addLevelName(SUCCESS, 'SUCCESS')
+    logging.addLevelName(PERFORMANCE, "PERFORMANCE")
+    logging.addLevelName(PROMPT, "PROMPT")
+    logging.addLevelName(SUCCESS, "SUCCESS")
     logging.basicConfig(level=logging.DEBUG, handlers=handlers)
 
 
@@ -197,7 +200,7 @@ def cleanup(arguments) -> None:
 
     output = stdout.getvalue()
     if output:
-        sys.stdout.write(output + '\n')
+        sys.stdout.write(output + "\n")
 
 
 class Buffer:
@@ -221,17 +224,17 @@ class Buffer:
             if self._flushed is True:
                 return
             self._flushed = True
-        message = '\n'.join(self._data)
-        if self._section == 'ERROR':
+        message = "\n".join(self._data)
+        if self._section == "ERROR":
             LOG.error(message)
-        elif self._section == 'INFO':
+        elif self._section == "INFO":
             LOG.info(message)
-        elif self._section == 'WARNING':
+        elif self._section == "WARNING":
             LOG.warning(message)
-        elif self._section == 'PROGRESS':
+        elif self._section == "PROGRESS":
             LOG.info(message)
         else:
-            LOG.debug('[%s] %s', self._section, message)
+            LOG.debug("[%s] %s", self._section, message)
 
     def _thread(self) -> None:
         time.sleep(self.THRESHOLD)
@@ -241,17 +244,17 @@ class Buffer:
 
 
 def get_yes_no_input(prompt: str) -> bool:
-    choice = get_input(prompt, suffix=' [Y/n] ')
-    return choice.lower() in ['', 'y', 'ye', 'yes']
+    choice = get_input(prompt, suffix=" [Y/n] ")
+    return choice.lower() in ["", "y", "ye", "yes"]
 
 
 def get_optional_input(prompt: str, default: str) -> str:
-    result = get_input(prompt, suffix=' (Default: `{}`): '.format(default))
+    result = get_input(prompt, suffix=" (Default: `{}`): ".format(default))
     if result == "":
         return default
     return result
 
 
-def get_input(prompt: str, suffix: str='') -> str:
+def get_input(prompt: str, suffix: str = "") -> str:
     LOG.log(PROMPT, prompt + suffix)
     return input().strip()

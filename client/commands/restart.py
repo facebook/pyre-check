@@ -11,32 +11,19 @@ from .stop import Stop
 
 
 class Restart(Command):
-    NAME = 'restart'
+    NAME = "restart"
 
     def __init__(
-            self,
-            arguments,
-            configuration,
-            source_directory,
-            blocking=True) -> None:
-        super(Restart, self).__init__(
-            arguments,
-            configuration,
-            source_directory)
+        self, arguments, configuration, source_directory, blocking=True
+    ) -> None:
+        super(Restart, self).__init__(arguments, configuration, source_directory)
         self._blocking = blocking
 
     def _run(self) -> None:
-        Stop(
-            self._arguments,
-            self._configuration,
-            self._source_directory).run()
+        Stop(self._arguments, self._configuration, self._source_directory).run()
         if self._blocking:
             Incremental(
-                self._arguments,
-                self._configuration,
-                self._source_directory).run()
+                self._arguments, self._configuration, self._source_directory
+            ).run()
         else:
-            Start(
-                self._arguments,
-                self._configuration,
-                self._source_directory).run()
+            Start(self._arguments, self._configuration, self._source_directory).run()

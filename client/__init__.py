@@ -5,19 +5,14 @@
 
 import json
 import logging
-import os
 import multiprocessing
+import os
 import shlex
 import subprocess
 import sys
 import traceback
-
-from typing import (
-    Any,
-    Dict,
-    Optional,
-)
 from argparse import Namespace
+from typing import Any, Dict, Optional
 
 from . import buck
 from .filesystem import SharedSourceDirectory
@@ -29,11 +24,11 @@ LOG = logging.getLogger(__name__)
 SUCCESS = 0
 FAILURE = 1
 
-TEXT = 'text'
-JSON = 'json'
+TEXT = "text"
+JSON = "json"
 
-CONFIGURATION_FILE = '.pyre_configuration'
-BINARY_NAME = 'pyre.bin'
+CONFIGURATION_FILE = ".pyre_configuration"
+BINARY_NAME = "pyre.bin"
 
 
 class EnvironmentException(Exception):
@@ -41,26 +36,26 @@ class EnvironmentException(Exception):
 
 
 def is_capable_terminal() -> bool:
-    '''
+    """
     Determine whether we are connected to a capable terminal.
-    '''
+    """
     if not os.isatty(sys.stderr.fileno()):
         return False
-    terminal = os.getenv('TERM', 'dumb')
+    terminal = os.getenv("TERM", "dumb")
     # Hardcoded list of non-capable terminals.
-    return terminal not in ['dumb', 'emacs']
+    return terminal not in ["dumb", "emacs"]
 
 
 def get_version(configuration):
-    override = os.getenv('PYRE_BINARY')
+    override = os.getenv("PYRE_BINARY")
     if override:
-        return 'override: {}'.format(override)
+        return "override: {}".format(override)
 
     configured = configuration.get_version_hash()
     if configured:
         return configured
 
-    return 'No version set'
+    return "No version set"
 
 
 def find_source_root(original_directory=None):
@@ -92,25 +87,21 @@ def resolve_source_directories(arguments, configuration, prompt=True):
         source_directories = set(configuration.source_directories)
         targets = set(configuration.targets)
     else:
-        LOG.warning(
-            'Setting up a .pyre_configuration file may reduce overhead.')
+        LOG.warning("Setting up a .pyre_configuration file may reduce overhead.")
 
     source_directories.update(
-        buck.generate_source_directories(
-            targets,
-            build=arguments.build,
-            prompt=prompt))
+        buck.generate_source_directories(targets, build=arguments.build, prompt=prompt)
+    )
 
     if len(source_directories) == 0:
-        raise EnvironmentException(
-            "No targets or link trees to analyze.")
+        raise EnvironmentException("No targets or link trees to analyze.")
 
     # Translate link trees if we switched directories earlier.
     current_directory = os.getcwd()
     if not arguments.original_directory.startswith(current_directory):
         return source_directories
 
-    translation = arguments.original_directory[len(current_directory) + 1:]
+    translation = arguments.original_directory[len(current_directory) + 1 :]
     if not translation:
         return source_directories
 
@@ -147,26 +138,27 @@ def merge_source_directories(source_directories, isolate=False):
 
 
 def log_statistics(
-        category: str,
-        arguments: Namespace,
-        # this is typed as a Any because configuration imports __init__
-        configuration: Any,
-        ints: Optional[Dict[str, int]] = None,
-        normals: Optional[Dict[str, str]] = None) -> None:
+    category: str,
+    arguments: Namespace,
+    # this is typed as a Any because configuration imports __init__
+    configuration: Any,
+    ints: Optional[Dict[str, int]] = None,
+    normals: Optional[Dict[str, str]] = None,
+) -> None:
     try:
         ints = ints or {}
         normals = normals or {}
         statistics = {
-            'int': ints,
-            'normal': {
+            "int": ints,
+            "normal": {
                 **normals,
-                'arguments': str(arguments),
-                'command_line': " ".join(sys.argv),
-                'host': os.getenv('HOSTNAME') or '',
-                'source_directory': str(arguments.source_directory or []),
-                'target': str(arguments.target or []),
-                'user': os.getenv('USER') or '',
-                'version': str(configuration.get_version_hash()),
+                "arguments": str(arguments),
+                "command_line": " ".join(sys.argv),
+                "host": os.getenv("HOSTNAME") or "",
+                "source_directory": str(arguments.source_directory or []),
+                "target": str(arguments.target or []),
+                "user": os.getenv("USER") or "",
+                "version": str(configuration.get_version_hash()),
             },
         }
         subprocess.run(
@@ -175,18 +167,19 @@ def log_statistics(
                 shlex.quote(category),
                 shlex.quote(json.dumps(statistics)),
             ),
-            shell=True)
+            shell=True,
+        )
     except Exception:
-        LOG.warning('Unable to log using `%s`', configuration.logger)
+        LOG.warning("Unable to log using `%s`", configuration.logger)
         LOG.info(traceback.format_exc())
 
 
 def _find_directory_upwards(base: str, target: str) -> Optional[str]:
-    '''
+    """
     Walk directories upwards from base, until the root directory is
     reached. At each step, check if the target directory exist, and return
     it if found. Return None is the search is unsuccessful.
-    '''
+    """
     while True:
         step = os.path.join(base, target)
         LOG.debug("Trying with: `%s`", step)
@@ -206,13 +199,15 @@ def find_typeshed() -> Optional[str]:
     # Prefer the typeshed we bundled ourselves (if any) to the one
     # from the environment.
     bundled_typeshed = _find_directory_upwards(
-        current_directory, "pyre_check/typeshed/stdlib/")
+        current_directory, "pyre_check/typeshed/stdlib/"
+    )
     if bundled_typeshed:
         return bundled_typeshed
 
     try:
         import typeshed
-        return os.path.join(typeshed.typeshed, 'stdlib/')
+
+        return os.path.join(typeshed.typeshed, "stdlib/")
     except ImportError:
         LOG.debug("`import typeshed` failed, attempting a manual lookup")
 

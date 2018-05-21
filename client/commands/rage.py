@@ -7,7 +7,7 @@ from .command import Command
 
 
 class Rage(Command):
-    NAME = 'rage'
+    NAME = "rage"
 
     def __init__(self, arguments, configuration, source_directory) -> None:
         super(Rage, self).__init__(arguments, configuration, source_directory)

@@ -14,13 +14,10 @@ LOG = logging.getLogger(__name__)
 
 
 class Start(Command):
-    NAME = 'start'
+    NAME = "start"
 
     def __init__(self, arguments, configuration, source_directory) -> None:
-        super(Start, self).__init__(
-            arguments,
-            configuration,
-            source_directory)
+        super(Start, self).__init__(arguments, configuration, source_directory)
         self._terminal = arguments.terminal
         self._no_watchman = arguments.no_watchman
         self._number_of_workers = configuration.number_of_workers
@@ -34,30 +31,31 @@ class Start(Command):
                 try:
                     with filesystem.try_lock(
                         os.path.join(
-                            self._source_directory,
-                            ".pyre",
-                            "server",
-                            "server.lock")):
+                            self._source_directory, ".pyre", "server", "server.lock"
+                        )
+                    ):
                         pass
                 except OSError:
                     LOG.warning(
-                        "Server at `%s` exists, skipping.",
-                        self._source_directory)
+                        "Server at `%s` exists, skipping.", self._source_directory
+                    )
                     return
 
                 flags = self._flags()
                 if not self._no_watchman:
-                    flags.append('-use-watchman')
+                    flags.append("-use-watchman")
                 if self._terminal:
-                    flags.append('-terminal')
-                flags.extend([
-                    '-workers',
-                    str(self._number_of_workers),
-                    '-search-path',
-                    ','.join(self._configuration.get_search_path()),
-                    '-version',
-                    str(self._configuration.get_version_hash()),
-                ])
+                    flags.append("-terminal")
+                flags.extend(
+                    [
+                        "-workers",
+                        str(self._number_of_workers),
+                        "-search-path",
+                        ",".join(self._configuration.get_search_path()),
+                        "-version",
+                        str(self._configuration.get_version_hash()),
+                    ]
+                )
                 self._call_client(command=self.NAME, flags=flags).check()
 
         except OSError:

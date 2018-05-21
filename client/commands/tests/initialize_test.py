@@ -5,35 +5,23 @@
 
 import os
 import unittest
-from unittest.mock import (
-    call,
-    patch,
-)
+from unittest.mock import call, patch
 
-from ... import (
-    commands,
-    log,
-)
+from ... import commands, log
 from ...commands import initialize
-from .command_test import (
-    mock_arguments,
-    mock_configuration,
-)
+from .command_test import mock_arguments, mock_configuration
 
 
 class InitializeTest(unittest.TestCase):
-    @patch.object(log, 'get_yes_no_input', return_value=True)
-    @patch.object(log, 'get_input', return_value='')
-    @patch('os.path.isfile')
-    @patch('subprocess.call')
-    @patch('builtins.open')
+
+    @patch.object(log, "get_yes_no_input", return_value=True)
+    @patch.object(log, "get_input", return_value="")
+    @patch("os.path.isfile")
+    @patch("subprocess.call")
+    @patch("builtins.open")
     def test_initialize(
-            self,
-            mock_open,
-            subprocess_call,
-            isfile,
-            _get_input,
-            get_yes_no_input):
+        self, mock_open, subprocess_call, isfile, _get_input, get_yes_no_input
+    ):
         get_yes_no_input.return_value = True
         arguments = mock_arguments()
         configuration = mock_configuration()
@@ -47,12 +35,7 @@ class InitializeTest(unittest.TestCase):
                 return True
 
         isfile.side_effect = exists
-        with patch.object(commands.Command, '_call_client'):
-            initialize.Initialize(
-                arguments,
-                configuration,
-                source_directory='.').run()
-            subprocess_call.assert_has_calls([
-                call(["watchman", "watch-project", "."]),
-            ])
+        with patch.object(commands.Command, "_call_client"):
+            initialize.Initialize(arguments, configuration, source_directory=".").run()
+            subprocess_call.assert_has_calls([call(["watchman", "watch-project", "."])])
             mock_open.assert_any_call(os.path.abspath(".watchmanconfig"), "w+")
