@@ -154,10 +154,8 @@ class TimedStreamHandler(logging.StreamHandler):
             time.sleep(0.1)
 
     def terminate(self) -> None:
-        if (
-            self._last_record
-            and self._last_record.levelname not in self.LINE_BREAKING_LEVELS
-        ):
+        last_record = self._last_record
+        if last_record and last_record.levelname not in self.LINE_BREAKING_LEVELS:
             sys.stderr.write("\n")
 
         # Reset terminal.

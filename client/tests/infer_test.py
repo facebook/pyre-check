@@ -77,10 +77,12 @@ class PyreTest(unittest.TestCase):
 
     def assert_imports(self, error_json, expected_imports) -> None:
         error = Error(**error_json)
+        stub = None
         if FunctionStub.is_instance(error.inference):
             stub = FunctionStub(error.inference)
         elif FieldStub.is_instance(error.inference):
             stub = FieldStub(error.inference)
+        assert stub is not None
         self.assertEqual(sorted(list(stub.get_typing_imports())), expected_imports)
 
     def test_get_typing_imports(self) -> None:

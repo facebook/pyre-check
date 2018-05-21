@@ -215,8 +215,9 @@ class Configuration:
 
     def _resolve_versioned_paths(self) -> None:
         version_hash = self.get_version_hash()
-        if version_hash and self._binary:
-            self._binary = self._binary.replace("%V", version_hash)
+        binary = self._binary
+        if version_hash and binary:
+            self._binary = binary.replace("%V", version_hash)
         if version_hash and self._typeshed:
             self._typeshed = self._typeshed.replace("%V", version_hash)
 

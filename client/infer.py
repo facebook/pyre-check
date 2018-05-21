@@ -210,8 +210,9 @@ class Stub:
         return self.stub.get_typing_imports()
 
     def join_with(self, other) -> None:
-        if not self.is_field() and not other.is_field():
-            self.stub.join_with(other.stub)
+        stub = self.stub
+        if not self.is_field() and not other.is_field() and stub:
+            stub.join_with(other.stub)
         else:
             raise Exception("Tried to join incompatible stubs")
 

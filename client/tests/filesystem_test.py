@@ -135,6 +135,7 @@ class FilesystemTest(unittest.TestCase):
     def test_try_lock(self, lock_file: unittest.mock.Mock) -> None:
         (_, path) = tempfile.mkstemp()
         lockfile_file_descriptor = None
+        # pyre-ignore: T29602753
         with try_lock(path) as file_descriptor:
             lockfile_file_descriptor = file_descriptor
         lock_file.assert_has_calls(

@@ -12,7 +12,7 @@ import shutil
 import subprocess
 from contextlib import contextmanager
 from time import time
-from typing import List, Optional
+from typing import Generator, List, Optional
 
 from . import log
 
@@ -174,7 +174,7 @@ def remove_if_exists(path: str) -> None:
 
 
 @contextmanager
-def try_lock(path: str) -> Optional[int]:
+def try_lock(path: str) -> Generator[Optional[int], None, None]:
     """Raises an OSError if the lock can't be acquired"""
     try:
         with open(path, "w+") as lockfile:
