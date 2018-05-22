@@ -154,6 +154,7 @@ type kind =
   | MissingGlobalAnnotation of missing_annotation
   | MissingParameterAnnotation of missing_parameter
   | MissingReturnAnnotation of missing_return
+  | RevealedType of Type.t * Ast.Expression.t
   | TooManyArguments of too_many_arguments
   | Top
   | UndefinedAttribute of undefined_attribute
@@ -194,6 +195,7 @@ let key { location; _ } =
 
 let code { kind; _ } =
   match kind with
+  | RevealedType _ -> -1
   | UnusedIgnore _ -> 0
   | Top -> 1
   | MissingParameterAnnotation _ -> 2
@@ -235,6 +237,7 @@ let name { kind; _ } =
   | MissingGlobalAnnotation _ -> "Missing global annotation"
   | MissingParameterAnnotation _ -> "Missing parameter annotation"
   | MissingReturnAnnotation _ -> "Missing return annotation"
+  | RevealedType _ -> "Revealed type"
   | TooManyArguments _ -> "Too many arguments"
   | Top -> "Undefined error"
   | UndefinedAttribute _ -> "Undefined attribute"
@@ -538,6 +541,20 @@ let description
             provided
             (if provided > 1 then "were" else "was");
         ]
+    | RevealedType (annotation, expression) ->
+        let show_sanitized { Node.location; value } =
+          match value with
+          | Access access ->
+              Access.show_sanitized access
+          | _ ->
+              Expression.show { Node.location; value }
+        in
+        [
+          Format.asprintf
+            "Revealed type for `%s` is %s."
+            (show_sanitized expression)
+            (Type.show annotation);
+        ]
     | UndefinedAttribute { attribute; origin } ->
         let target =
           match origin with
@@ -654,6 +671,7 @@ let due_to_analysis_limitations { kind; _ } =
   | InconsistentOverride { override = StrengthenedPrecondition (NotFound _); _ }
   | MissingArgument _
   | TooManyArguments _
+  | RevealedType _
   | UndefinedAttribute _
   | UndefinedName _
   | UndefinedImport _
@@ -692,6 +710,7 @@ let due_to_mismatch_with_any { kind; _ } =
   | MissingGlobalAnnotation _
   | MissingParameterAnnotation _
   | MissingReturnAnnotation _
+  | RevealedType _
   | IncompatibleConstructorAnnotation _
   | InconsistentOverride _
   | Top
@@ -1113,6 +1132,7 @@ let suppress ~mode error =
       | UndefinedAttribute _
       | UndefinedName _
       | UndefinedImport _
+      | RevealedType _
       | MissingArgument _ ->
           false
       | IncompatibleAwaitableType _
@@ -1202,6 +1222,8 @@ let dequalify
         MissingGlobalAnnotation {
           immutable_type with  annotation = dequalify annotation;
         }
+    | RevealedType (annotation, expression) ->
+        RevealedType (dequalify annotation, expression)
     | IncompatibleParameterType ({ mismatch = { actual; expected }; _ } as parameter) ->
         IncompatibleParameterType {
           parameter with

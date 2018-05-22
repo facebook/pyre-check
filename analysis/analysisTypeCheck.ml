@@ -1043,6 +1043,24 @@ module State = struct
         match value with
         | Access access ->
             let errors = check_access ~resolution errors (Node.create ~location access) in
+            (* Special case reveal_type(). *)
+            let errors = match access with
+              | [
+                Expression.Access.Identifier reveal_type;
+                Expression.Access.Call {
+                  Node.location;
+                  value = [{ Expression.Argument.value; _ }] };
+              ] when reveal_type = Identifier.create "reveal_type" ->
+                  let annotation = Annotated.resolve ~resolution value in
+                  [{
+                    Error.location;
+                    kind = Error.RevealedType (annotation, value);
+                    define = define_node;
+                  }]
+                  |> add_errors errors
+              | _ ->
+                  errors
+            in
             let check_single_access errors access =
               match access with
               | Access.Identifier _ ->

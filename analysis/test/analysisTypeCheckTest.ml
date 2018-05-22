@@ -1028,6 +1028,18 @@ let test_show_error_traces _ =
 
   assert_type_errors ~show_error_traces:true
     {|
+      def foo() -> None:
+        a = 1
+        b = 2
+        reveal_type(a + b)
+    |}
+    [
+      "Undefined name [18]: Global name `reveal_type` is undefined.";
+      "Revealed type [-1]: Revealed type for `a.__add__.(...)` is `int`.";
+    ];
+
+  assert_type_errors ~show_error_traces:true
+    {|
     class Foo:
       attribute: int
       def __init__(self) -> None:
@@ -1323,6 +1335,47 @@ let test_check_imports _ =
       a = durp.x
     |}
     ["Undefined import [21]: Could not find a module corresponding to import `durp`."]
+
+
+let test_reveal_type _ =
+  assert_type_errors
+    {|
+      def foo(x: str) -> None:
+        reveal_type(x)
+    |}
+    [
+      "Undefined name [18]: Global name `reveal_type` is undefined.";
+      "Revealed type [-1]: Revealed type for `x` is `str`.";
+    ];
+
+  assert_type_errors
+    {|
+      def foo(x) -> None:
+        reveal_type(x)
+    |}
+    [
+      "Undefined name [18]: Global name `reveal_type` is undefined.";
+      "Revealed type [-1]: Revealed type for `x` is `typing.Unbound`.";
+    ];
+  assert_type_errors
+    {|
+      def foo(x: int, y: int) -> None:
+        reveal_type(x + y)
+    |}
+    [
+      "Undefined name [18]: Global name `reveal_type` is undefined.";
+      "Revealed type [-1]: Revealed type for `x.__add__.(...)` is `int`.";
+    ];
+  assert_type_errors
+    {|
+      def foo(x: int) -> None:
+
+        reveal_type(int_to_str(x))
+    |}
+    [
+      "Undefined name [18]: Global name `reveal_type` is undefined.";
+      "Revealed type [-1]: Revealed type for `int_to_str.(...)` is `str`.";
+    ]
 
 
 let test_coverage _ =
@@ -5581,6 +5634,7 @@ let () =
     "forward_assert_optionals">::test_forward_assert_optionals;
     "forward_assert_isinstance">::test_forward_assert_isinstance;
     "fixpoint_forward">::test_fixpoint_forward;
+    "reveal_type">::test_reveal_type;
     "check_error_traces">::test_show_error_traces;
     "check_with_qualification">::test_check_with_qualification;
     "coverage">::test_coverage;

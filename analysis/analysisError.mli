@@ -134,6 +134,7 @@ type kind =
   | MissingGlobalAnnotation of missing_annotation
   | MissingParameterAnnotation of missing_parameter
   | MissingReturnAnnotation of missing_return
+  | RevealedType of Type.t * Expression.t
   | TooManyArguments of too_many_arguments
   | Top
   | UndefinedAttribute of undefined_attribute
