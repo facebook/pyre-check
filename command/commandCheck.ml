@@ -91,7 +91,7 @@ let check
   let sources = Service.Parser.parse_sources scheduler ~configuration in
 
   (* Build environment. *)
-  ServiceIgnore.register ~configuration scheduler sources;
+  Service.Ignore.register ~configuration scheduler sources;
   let environment =
     let handler =
       if Scheduler.is_parallel scheduler then

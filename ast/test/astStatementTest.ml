@@ -10,6 +10,7 @@ open Ast
 open Analysis
 open Expression
 open Pyre
+open PyreParser
 open Statement
 
 open Test
@@ -732,7 +733,7 @@ let test_pp _ =
 
     let pretty_print_of_source =
       to_lines source
-      |> ParserParser.parse
+      |> Parser.parse
       |> List.map ~f:Statement.show
       |> String.concat ~sep:"\n"
       |> String.rstrip ~drop:((=) '\n')

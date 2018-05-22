@@ -8,6 +8,7 @@ open Core
 open Ast
 open Expression
 open Pyre
+open PyreParser
 
 module Preprocessing = AnalysisPreprocessing
 
@@ -817,7 +818,7 @@ let rec create ~aliases { Node.value = expression; _ } =
             let access =
               try
                 let parsed =
-                  ParserParser.parse [string]
+                  Parser.parse [string]
                   |> Source.create
                   |> Preprocessing.preprocess
                   |> Source.statements

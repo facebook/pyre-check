@@ -9,6 +9,7 @@ open OUnit2
 open Analysis
 open Ast
 open Pyre
+open PyreParser
 open Test
 
 module Parallel = Hack_parallel.Std
@@ -595,7 +596,7 @@ let test_incremental_lookups _ =
     Ast.Source.create
       ~path
       ~qualifier:(Source.qualifier ~path)
-      (ParserParser.parse ~path (String.split_lines (content ^ "\n")))
+      (Parser.parse ~path (String.split_lines (content ^ "\n")))
     |> Analysis.Preprocessing.preprocess
   in
   let source =
@@ -672,7 +673,7 @@ let test_incremental_repopulate _ =
     Ast.Source.create
       ~path:"test.py"
       ~qualifier:(Source.qualifier ~path:"test.py")
-      (ParserParser.parse ~path:"test.py" (String.split_lines (content ^ "\n")))
+      (Parser.parse ~path:"test.py" (String.split_lines (content ^ "\n")))
     |> Analysis.Preprocessing.preprocess
   in
   let source =

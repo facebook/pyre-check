@@ -7,6 +7,7 @@ open Core
 
 open Ast
 open Pyre
+open PyreParser
 open ServerProtocol
 
 
@@ -16,7 +17,7 @@ module Socket = CommandSocket
 let parse_query ~root query =
   let query =
     try
-      ParserParser.parse [query]
+      Parser.parse [query]
     with _ ->
       []
   in
