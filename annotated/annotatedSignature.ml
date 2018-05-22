@@ -213,10 +213,12 @@ let select ~arguments ~resolution ~callable:({ Type.Callable.overloads; _ } as c
                       else
                         None
                     in
-                    match expected with
-                    | Type.Variable _ as variable ->
+                    match actual, expected with
+                    | Type.Bottom, _ ->
+                        Some constraints
+                    | _, (Type.Variable _ as variable) ->
                         update_constraints ~constraints ~variable ~resolved:actual
-                    | Type.Parametric _ ->
+                    | _, Type.Parametric _ ->
                         let primitive, parameters = Type.split expected in
                         Resolution.class_definition resolution primitive
                         >>| Class.create
@@ -235,7 +237,7 @@ let select ~arguments ~resolution ~callable:({ Type.Callable.overloads; _ } as c
                             update_constraints ~constraints ~variable:key ~resolved:data
                           in
                           Map.fold ~init:(Some constraints) ~f:update_constraints inferred
-                    | Type.Union annotations ->
+                    | _, Type.Union annotations ->
                         List.fold
                           ~init:(Some constraints)
                           ~f:(fun constraints annotation -> constraints >>= update annotation)
@@ -247,7 +249,8 @@ let select ~arguments ~resolution ~callable:({ Type.Callable.overloads; _ } as c
                 in
                 updated_constraints
                 >>| (fun constraints -> constraints, reason)
-                |> Option.value ~default:(constraints, mismatch)
+                |> Option.value
+                  ~default:(constraints, mismatch)
               else if Resolution.less_or_equal resolution ~left:actual ~right:expected then
                 constraints, reason
               else

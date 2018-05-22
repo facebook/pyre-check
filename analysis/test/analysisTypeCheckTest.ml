@@ -104,6 +104,7 @@ let plain_environment =
         def return_tuple() -> typing.Tuple[int, int]: ...
         def unknown_to_int(i) -> int: ...
         def star_int_to_int( *args, x: int) -> int: ...
+        def takes_iterable(x: typing.Iterable[_T]) -> None: ...
 
         def typing.TypeVar(name, bound=None, *args): ...
         _T = typing.TypeVar('_T')
@@ -2468,14 +2469,14 @@ let test_check_function_parameters _ =
 
   assert_type_errors
     {|
-      def foo(x: typing.Union[Attributes, OtherAttributes])->int:
+      def foo(x: typing.Union[Attributes, OtherAttributes]) -> int:
         return x.int_attribute
     |}
     [];
 
   assert_type_errors
     {|
-      def foo(x: typing.Union[Attributes, OtherAttributes])->int:
+      def foo(x: typing.Union[Attributes, OtherAttributes]) -> int:
         return x.str_attribute
     |}
     [
@@ -2485,13 +2486,19 @@ let test_check_function_parameters _ =
 
   assert_type_errors
     {|
-      def foo(x: typing.Union[OtherAttributes, Attributes])->int:
+      def foo(x: typing.Union[OtherAttributes, Attributes]) -> int:
         return x.str_attribute
     |}
     [
       "Incompatible return type [7]: Expected `int` but got `unknown`.";
       "Undefined attribute [16]: `Attributes` has no attribute `str_attribute`.";
-    ]
+    ];
+  assert_type_errors
+    {|
+      def foo(x) -> None:
+        takes_iterable(x)
+    |}
+    []
 
 
 let test_check_function_parameters_with_backups _ =
