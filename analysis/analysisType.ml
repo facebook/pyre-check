@@ -451,8 +451,8 @@ let tuple parameters: t =
   | _ -> Tuple (Bounded parameters)
 
 
-let unbound =
-  primitive "typing.Unbound"
+let undeclared =
+  primitive "typing.Undeclared"
 
 let union parameters =
   let parameters =

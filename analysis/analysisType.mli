@@ -125,7 +125,7 @@ val sequence: t -> t
 val set: t -> t
 val string: t
 val tuple: t list -> t
-val unbound: t
+val undeclared: t
 val union: t list -> t
 val named_tuple: t
 val none: t

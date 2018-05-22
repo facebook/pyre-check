@@ -518,7 +518,7 @@ module State = struct
                 ~resolution
                 ~widening_threshold
                 ~previous
-                ~next:(Annotation.create Type.unbound)
+                ~next:(Annotation.create Type.undeclared)
                 ~iteration
             in
             Some widened

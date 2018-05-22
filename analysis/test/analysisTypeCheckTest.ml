@@ -3771,7 +3771,9 @@ let test_check_immutables _ =
         constant: str
       return constant
     |}
-    ["Incompatible return type [7]: Expected `str` but got `typing.Union[str, typing.Unbound]`."];
+    [
+      "Incompatible return type [7]: Expected `str` but got `typing.Union[str, typing.Undeclared]`."
+    ];
 
   assert_type_errors
     {|
@@ -5398,7 +5400,9 @@ let test_check_unbound_variables _ =
           other = 1
         return result
     |}
-    ["Incompatible return type [7]: Expected `int` but got `typing.Union[int, typing.Unbound]`."];
+    [
+      "Incompatible return type [7]: Expected `int` but got `typing.Union[int, typing.Undeclared]`."
+    ];
   assert_type_errors
     {|
       def foo() -> int:

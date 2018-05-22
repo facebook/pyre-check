@@ -1305,7 +1305,7 @@ module Builder = struct
     insert_unconnected (Type.primitive "typing.FrozenSet");
     insert_unconnected (Type.primitive "typing.Optional");
     insert_unconnected (Type.primitive "typing.TypeVar");
-    insert_unconnected (Type.primitive "typing.Unbound");
+    insert_unconnected (Type.primitive "typing.Undeclared");
     insert_unconnected (Type.primitive "typing.Union");
     insert_unconnected (Type.primitive "typing.NoReturn");
 

@@ -902,8 +902,8 @@ module Builder = struct
     Hashtbl.set globals ~key:(Access.create "__file__") ~data:string;
 
 
-    (* Add classes for `typing.Optional` and `typing.Unbound` that are currently not encoded in the
-       stubs. *)
+    (* Add classes for `typing.Optional` and `typing.Undeclared` that are currently not encoded
+       in the stubs. *)
     let add_special_class ~name ~bases ~body =
       let definition =
         {
@@ -923,7 +923,7 @@ module Builder = struct
       ~f:(fun (name, bases, body) -> add_special_class ~name ~bases ~body)
       [
         "typing.Optional", [], [];
-        "typing.Unbound", [], [];
+        "typing.Undeclared", [], [];
         "typing.NoReturn", [], [];
         "typing.Type",
         [
