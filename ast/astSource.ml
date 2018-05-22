@@ -214,3 +214,40 @@ let qualifier ~path =
   |> List.rev_map
     ~f:Access.create
   |> List.concat
+
+
+let expand_relative_import { qualifier; path; _ } ~from =
+  (* Expand relative imports according to PEP 328 *)
+  let dots, postfix =
+    let is_dot = function
+      | Access.Identifier identifier when Identifier.show identifier = "" -> true
+      | _ -> false
+    in
+    List.split_while ~f:is_dot from
+  in
+  let prefix =
+    if not (List.is_empty dots) then
+      let drop =
+        let drop =
+          if List.length dots = 2 && List.length postfix = 0 then
+            (* Special case for single `.` in from clause. *)
+            1
+          else
+            List.length dots
+        in
+        let is_initializer_module =
+          String.is_suffix path ~suffix:"/__init__.py" ||
+          String.is_suffix path ~suffix:"/__init__.pyi"
+        in
+        if is_initializer_module then
+          drop - 1
+        else
+          drop
+      in
+      List.rev qualifier
+      |> (fun reversed -> List.drop reversed drop)
+      |> List.rev
+    else
+      []
+  in
+  prefix @ postfix

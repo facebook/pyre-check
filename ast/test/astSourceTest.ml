@@ -7,7 +7,10 @@ open Core
 open OUnit2
 
 open Ast
+open Expression
+open Statement
 open Source.Ignore
+open Test
 
 
 let test_parse _ =
@@ -149,6 +152,34 @@ let test_qualifier _ =
     (qualifier ["module"])
 
 
+let test_expand_relative_import _ =
+  let assert_export ~path ~from ~expected =
+    let source = Source.create ~path ~qualifier:(Source.qualifier ~path) [] in
+    let from =
+      match parse_single_statement ("from " ^ from ^ " import something") with
+      | { Node.value = Import { Import.from = Some from; _ }; _ } -> from
+      | _ -> failwith "Could not parse import"
+    in
+    assert_equal
+      ~cmp:Access.equal
+      ~printer:Access.show
+      (parse_single_access expected)
+      (Source.expand_relative_import source ~from)
+  in
+
+  assert_export ~path:"module/qualifier.py" ~from:"." ~expected:"module";
+  assert_export
+    ~path:"module/submodule/qualifier.py"
+    ~from:".other"
+    ~expected:"module.submodule.other";
+  assert_export
+    ~path:"module/submodule/qualifier.py"
+    ~from:"..other"
+    ~expected:"module.other";
+  (* `__init__` modules are special. *)
+  assert_export ~path:"module/__init__.py" ~from:"." ~expected:"module"
+
+
 let () =
   "metadata">:::[
     "parse">::test_parse;
@@ -156,5 +187,6 @@ let () =
   |> run_test_tt_main;
   "source">:::[
     "qualifier">::test_qualifier;
+    "expand_relative_import">::test_expand_relative_import;
   ]
   |> run_test_tt_main

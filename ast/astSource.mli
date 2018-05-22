@@ -68,6 +68,7 @@ val create
 
 val ignore_lines: t -> Ignore.t list
 
-val qualifier: path:string -> Access.t
-
 val statements: t -> Statement.t list
+
+val qualifier: path:string -> Access.t
+val expand_relative_import: t -> from: Access.t -> Access.t
