@@ -80,8 +80,8 @@ let test_parse_stubs_modules_list _ =
   assert_stub_matches_name (get_handle_at 3) [~~"d"; ~~"f"];
   assert_module_matches_name (get_handle_at 4) [~~"moda"; ~~"f"];
   assert_module_matches_name (get_handle_at 5) [~~"dir"; ~~"modb"; ~~"f"];
-  assert_module_matches_name (get_handle_at 6) [~~"modc"; ~~"f"];
-  assert_module_matches_name (get_handle_at 7) [~~"modd"; ~~"f"]
+  assert_module_matches_name (get_handle_at 6) [~~"2"; ~~"modc"; ~~"f"];
+  assert_module_matches_name (get_handle_at 7) [~~"2and3"; ~~"modd"; ~~"f"]
 
 
 let test_parse_stubs context =

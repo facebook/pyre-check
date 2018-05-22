@@ -46,19 +46,18 @@ let parse_parallel ~scheduler ~job ~files =
     files
 
 
-(** Adds the preprocessing for stubs *)
-let parse_stub_job ~configuration:{ Configuration.verbose; sections; _ } ~files =
+let parse_job ~configuration:{ Configuration.verbose; sections; _ } ~files =
   Log.initialize ~verbose ~sections;
-  let parse_stub handles file =
+  let parse handles file =
     (file
      |> parse_path_to_source
      >>= fun source ->
      Path.relative (File.path file)
      >>| fun relative ->
-     let preprocess source =
-       let source =
-         (* Drop version from qualifier. *)
-         let qualifier =
+     let preprocess_qualifier ({ Source.path; qualifier; _ } as source) =
+       let qualifier =
+         if String.is_suffix ~suffix:".pyi" path then
+           (* Drop version from qualifier. *)
            let is_digit qualifier =
              try
                qualifier
@@ -68,35 +67,39 @@ let parse_stub_job ~configuration:{ Configuration.verbose; sections; _ } ~files 
              with _ ->
                false
            in
-           match source.Source.qualifier with
-           | minor :: major :: tail
-             when is_digit (Expression.Access.show [minor]) &&
-                  is_digit (Expression.Access.show [major]) ->
-               tail
-           | major :: tail when is_digit (String.prefix (Expression.Access.show [major]) 1) ->
-               tail
-           | qualifier ->
-               qualifier
-         in
-         { source with Source.qualifier }
+           begin
+             match source.Source.qualifier with
+             | minor :: major :: tail
+               when is_digit (Expression.Access.show [minor]) &&
+                    is_digit (Expression.Access.show [major]) ->
+                 tail
+             | major :: tail when is_digit (String.prefix (Expression.Access.show [major]) 1) ->
+                 tail
+             | qualifier ->
+                 qualifier
+           end
+         else
+           qualifier
        in
-       Analysis.Preprocessing.preprocess source
+       { source with Source.qualifier }
      in
      let handle = File.Handle.create relative in
-     preprocess source
+     source
+     |> preprocess_qualifier
+     |> Analysis.Preprocessing.preprocess
      |> AstSharedMemory.add_source handle;
      handle :: handles)
     |> Option.value ~default:handles
   in
-  List.fold ~init:[] ~f:parse_stub files
+  List.fold ~init:[] ~f:parse files
 
 
 let parse_stubs_list ~configuration ~scheduler ~files =
   let handles =
     if Scheduler.is_parallel scheduler then
-      parse_parallel ~scheduler ~job:(parse_stub_job ~configuration) ~files
+      parse_parallel ~scheduler ~job:(parse_job ~configuration) ~files
     else
-      parse_stub_job ~configuration ~files
+      parse_job ~configuration ~files
   in
   handles
 
@@ -140,23 +143,6 @@ let parse_stubs
   handles
 
 
-(** Adds the preprocessing for sources *)
-let parse_source_job ~configuration:{ Configuration.verbose; sections; _ } ~files =
-  Log.initialize ~verbose ~sections;
-  let parse_source handles file =
-    (parse_path_to_source file
-     >>= fun source ->
-     File.path file |> Path.relative
-     >>| (fun relative ->
-         let handle = File.Handle.create relative in
-         Analysis.Preprocessing.preprocess source
-         |> AstSharedMemory.add_source handle;
-         handle :: handles))
-    |> Option.value ~default:handles
-  in
-  List.fold ~init:[] ~f:parse_source files
-
-
 let parse_sources_list
     ~configuration:({ Configuration.source_root; project_root; _ } as configuration)
     ~scheduler
@@ -164,9 +150,9 @@ let parse_sources_list
   AstSharedMemory.remove_paths (List.filter_map ~f:(File.handle ~root:source_root) files);
   let sources =
     if Scheduler.is_parallel scheduler then
-      parse_parallel ~scheduler ~job:(parse_source_job ~configuration) ~files
+      parse_parallel ~scheduler ~job:(parse_job ~configuration) ~files
     else
-      parse_source_job ~configuration ~files
+      parse_job ~configuration ~files
   in
   let strict_coverage, declare_coverage =
     List.fold
