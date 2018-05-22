@@ -52,7 +52,7 @@ class PersistentTest(unittest.TestCase):
                     )
                 ]
             )
-            run_null_server.assert_called_once()
+            run_null_server.assert_has_calls([call(timeout=300)])
 
         # Check null server initialize output
         command = commands.Persistent(arguments, configuration, source_directory=".")
