@@ -460,6 +460,12 @@ let test_exists _ =
   assert_false (top_exists Type.Object)
 
 
+let test_is_iterator _ =
+  assert_true (Type.is_iterator (Type.iterator Type.string));
+  assert_false (Type.is_iterator Type.string);
+  assert_false (Type.is_iterator (Type.primitive "typing.Iterator"))
+
+
 let test_is_generator _ =
   assert_true (Type.is_generator (Type.generator Type.string));
   assert_false (Type.is_generator Type.string);
@@ -835,6 +841,7 @@ let () =
     "is_none">::test_is_none;
     "is_unknown">::test_is_unknown;
     "is_resolved">::test_is_resolved;
+    "is_iterator">::test_is_iterator;
     "mismatch_with_any">::test_mismatch_with_any;
     "class_name">::test_class_name;
     "optional_value">::test_optional_value;

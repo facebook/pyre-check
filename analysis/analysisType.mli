@@ -149,6 +149,7 @@ val is_generic: t -> bool
 val is_meta: t -> bool
 val is_none: t -> bool
 val is_noreturn: t -> bool
+val is_iterator: t -> bool
 val is_optional: t -> bool
 val is_optional_primitive: t -> bool
 val is_primitive: t -> bool

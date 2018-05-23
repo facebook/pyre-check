@@ -50,6 +50,13 @@ let test_apply_decorators _ =
   let assert_apply_decorators define expected_return_annotation =
     let resolution =
       populate {|
+        _T = typing.TypeVar("T")
+        _T2 = typing.TypeVar("T2")
+        _T3 = typing.TypeVar("T3")
+        class typing.Iterator(typing.Generic[_T]):
+          pass
+        class typing.Generator(typing.Iterator[_T], typing.Generic[_T, _T2, _T3]):
+          pass
         class contextlib.GeneratorContextManager(contextlib.ContextManager[_T], typing.Generic[_T]):
           pass
       |}
@@ -85,6 +92,14 @@ let test_apply_decorators _ =
     (create_define
        ~decorators:[!"contextlib.contextmanager"]
        ~return_annotation:(Some (+String "typing.Iterator[str]")))
+    (Type.Parametric {
+        Type.name = ~~"contextlib.GeneratorContextManager";
+        parameters = [Type.string];
+      });
+  assert_apply_decorators
+    (create_define
+       ~decorators:[!"contextlib.contextmanager"]
+       ~return_annotation:(Some (+String "typing.Generator[str, None, None]")))
     (Type.Parametric {
         Type.name = ~~"contextlib.GeneratorContextManager";
         parameters = [Type.string];

@@ -1024,6 +1024,13 @@ let is_callable = function
   | _ -> false
 
 
+let is_iterator = function
+  | Parametric { name; _ } ->
+      String.equal (Identifier.show name) "typing.Iterator"
+  | _ ->
+      false
+
+
 let is_generator = function
   | Parametric { name; _ } ->
       List.mem

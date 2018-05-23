@@ -5554,6 +5554,18 @@ let test_check_contextmanager _ =
 
   assert_type_errors
     {|
+      @contextlib.contextmanager
+      def f() -> typing.Generator[int, None, None]:
+        yield 1
+
+      def g() -> int:
+        with f() as number:
+          return number
+    |}
+    [];
+
+  assert_type_errors
+    {|
       class C:
         @contextlib.contextmanager
         def f(self) -> typing.Iterator[int]:

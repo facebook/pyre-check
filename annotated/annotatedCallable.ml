@@ -12,6 +12,7 @@ open Statement
 
 module Resolution = AnalysisResolution
 module Type = AnalysisType
+module TypeOrder = AnalysisTypeOrder
 
 
 let return_annotation ~define:({ Define.return_annotation; async; _ } as define) ~resolution =
@@ -39,21 +40,31 @@ let return_annotation ~define:({ Define.return_annotation; async; _ } as define)
 
 let apply_decorators ~define ~resolution =
   let return_annotation = return_annotation ~define ~resolution in
-  match Define.has_decorator define "contextlib.contextmanager", return_annotation with
-  | true, AnalysisType.Parametric { AnalysisType.name; parameters = [single_parameter] }
-    when Identifier.show name = "typing.Iterator" ->
-      {
-        define with
-        Define.return_annotation =
-          Some
-            (AnalysisType.Parametric {
-                AnalysisType.name = Identifier.create "contextlib.GeneratorContextManager";
-                parameters = [single_parameter];
-              }
-             |> Type.expression);
-      }
-  | _ ->
-      define
+  if Define.has_decorator define "contextlib.contextmanager" then
+    let joined =
+      try
+        Resolution.join resolution return_annotation (Type.iterator Type.Bottom)
+      with
+        TypeOrder.Untracked _ ->
+          (* Apply_decorators gets called when building the environment,
+             which is unsound and can raise. *)
+          Type.Object
+    in
+      if Type.is_iterator joined then
+          {
+            define with
+            Define.return_annotation =
+              Some
+                (AnalysisType.Parametric {
+                    AnalysisType.name = Identifier.create "contextlib.GeneratorContextManager";
+                    parameters = [Type.single_parameter joined];
+                  }
+                 |> Type.expression);
+          }
+      else
+        define
+  else
+    define
 
 
 let create defines ~resolution =
