@@ -16,12 +16,13 @@ module Statement = AstStatement
 type t = {
   aliased_exports: (Access.t * Access.t) list;
   empty_stub: bool;
+  path: string option;
   wildcard_exports: Access.t list;
 }
 [@@deriving compare, eq, sexp]
 
 
-let pp format { aliased_exports; empty_stub; wildcard_exports } =
+let pp format { aliased_exports; empty_stub; path; wildcard_exports } =
   let aliased_exports =
     List.map aliased_exports
       ~f:(fun (source, target) -> Format.asprintf "%a -> %a" Access.pp source Access.pp target)
@@ -32,7 +33,8 @@ let pp format { aliased_exports; empty_stub; wildcard_exports } =
     |> String.concat ~sep:", "
   in
   Format.fprintf format
-    "[%s, empty_stub = %b, __all__ = [%s]]"
+    "%s: [%s, empty_stub = %b, __all__ = [%s]]"
+    (Option.value ~default:"unknown path" path)
     aliased_exports
     empty_stub
     wildcard_exports
@@ -46,11 +48,15 @@ let empty_stub { empty_stub; _ } =
   empty_stub
 
 
+let path { path; _ } =
+  path
+
+
 let wildcard_exports { wildcard_exports; _ } =  (* Rename to wildcard_exports *)
   wildcard_exports
 
 
-let create ~qualifier ~stub ~statements =
+let create ~qualifier ?path ~stub statements =
   let aliased_exports =
     let aliased_exports { Node.value; _ } =
       let open Statement in
@@ -143,6 +149,7 @@ let create ~qualifier ~stub ~statements =
   {
     aliased_exports;
     empty_stub = stub && List.is_empty statements;
+    path;
     wildcard_exports = (Option.value dunder_all ~default:toplevel_public);
   }
 

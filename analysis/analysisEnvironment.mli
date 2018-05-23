@@ -50,7 +50,13 @@ module type Handler = sig
   val class_definition: Type.t -> (Class.t Node.t) option
   val protocols: unit -> Type.t list
 
-  val register_module: qualifier: Access.t -> stub: bool -> statements: Statement.t list -> unit
+  val register_module
+    :  qualifier: Access.t
+    -> path: string option
+    -> stub: bool
+    -> statements: Statement.t list
+    -> unit
+
   val is_module: Access.t -> bool
   val module_definition: Access.t -> Module.t option
 

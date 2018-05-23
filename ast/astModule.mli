@@ -11,9 +11,11 @@ module Access = Expression.Access
 type t
 [@@deriving compare, eq, sexp, show]
 
-val create: qualifier: Access.t -> stub: bool -> statements: Statement.t list -> t
+val create: qualifier: Access.t -> ?path: string -> stub: bool -> Statement.t list -> t
 
 val empty_stub: t -> bool
+
+val path: t -> string option
 
 val wildcard_exports: t -> Access.t list
 

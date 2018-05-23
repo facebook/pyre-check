@@ -48,7 +48,13 @@ module type Handler = sig
   val class_definition: Type.t -> (Class.t Node.t) option
   val protocols: unit -> Type.t list
 
-  val register_module: qualifier: Access.t -> stub: bool -> statements: Statement.t list -> unit
+  val register_module
+    :  qualifier: Access.t
+    -> path: string option
+    -> stub: bool
+    -> statements: Statement.t list
+    -> unit
+
   val is_module: Access.t -> bool
   val module_definition: Access.t -> Module.t option
 
@@ -285,14 +291,14 @@ let handler
     let protocols () =
       Hash_set.to_list protocols
 
-    let register_module ~qualifier ~stub ~statements =
+    let register_module ~qualifier ~path ~stub ~statements =
       let is_registered_empty_stub =
         Hashtbl.find modules qualifier
         >>| Module.empty_stub
         |> Option.value ~default:false
       in
       if not is_registered_empty_stub then
-        Hashtbl.set ~key:qualifier ~data:(Module.create ~qualifier ~stub ~statements) modules
+        Hashtbl.set ~key:qualifier ~data:(Module.create ~qualifier ?path ~stub statements) modules
 
     let is_module access =
       Hashtbl.mem modules access
@@ -360,10 +366,14 @@ let register_module (module Handler: Handler) { Source.qualifier; path; statemen
     | (_ :: tail) as reversed ->
         let qualifier = List.rev reversed in
         if not (Handler.is_module qualifier) then
-          Handler.register_module ~qualifier ~stub:false ~statements:[];
+          Handler.register_module ~path:None ~qualifier ~stub:false ~statements:[];
         register_submodules tail
   in
-  Handler.register_module ~qualifier ~stub:(String.is_suffix path ~suffix:".pyi") ~statements;
+  Handler.register_module
+    ~qualifier
+    ~path:(Some path)
+    ~stub:(String.is_suffix path ~suffix:".pyi")
+    ~statements;
   if List.length qualifier > 1 then
     register_submodules (List.rev qualifier |> List.tl_exn)
 

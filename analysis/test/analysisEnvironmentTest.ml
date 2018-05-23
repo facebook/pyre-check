@@ -146,6 +146,7 @@ let test_register_aliases _ =
   in
   Handler.register_module
     ~qualifier:(Access.create "collections")
+    ~path:None
     ~stub:false
     ~statements:(Source.statements other);
   Environment.register_class_definitions (module Handler) typing |> ignore;

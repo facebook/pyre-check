@@ -195,7 +195,7 @@ let shared_memory_handler
         Protocols.get "Protocols"
         |> Option.value ~default:[]
 
-      let register_module ~qualifier ~stub ~statements =
+      let register_module ~qualifier ~path ~stub ~statements =
         let is_registered_empty_stub =
           Modules.get qualifier
           >>| Ast.Module.empty_stub
@@ -204,7 +204,7 @@ let shared_memory_handler
         if not is_registered_empty_stub then
           begin
             Modules.remove_batch (Modules.KeySet.singleton qualifier);
-            Modules.add qualifier (Ast.Module.create ~qualifier ~stub ~statements)
+            Modules.add qualifier (Ast.Module.create ~qualifier ?path ~stub statements)
           end
 
       let is_module access =

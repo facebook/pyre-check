@@ -14,16 +14,27 @@ open Test
 
 
 let test_empty_stub _ =
-  assert_true (Module.create ~qualifier:[] ~stub:true ~statements:[] |> Module.empty_stub);
-  assert_false (Module.create ~qualifier:[] ~stub:false ~statements:[] |> Module.empty_stub);
-  assert_false (Module.create ~qualifier:[] ~stub:true ~statements:[+Pass] |> Module.empty_stub)
+  assert_true (Module.create ~qualifier:[] ~stub:true [] |> Module.empty_stub);
+  assert_false (Module.create ~qualifier:[] ~stub:false [] |> Module.empty_stub);
+  assert_false (Module.create ~qualifier:[] ~stub:true [+Pass] |> Module.empty_stub)
+
+
+let test_path _ =
+  assert_equal
+    (Module.create ~qualifier:[] ~stub:true []
+     |> Module.path)
+    None;
+  assert_equal
+    (Module.create ~qualifier:[] ~path:"voodoo.py" ~stub:false []
+     |> Module.path)
+    (Some "voodoo.py")
 
 
 let test_aliased_export _ =
   let assert_aliased_exports ?(qualifier = []) source aliased_exports =
     let module_definition =
       let { Source.statements; _ } = parse source in
-      Module.create ~qualifier ~stub:false ~statements
+      Module.create ~qualifier ~stub:false statements
     in
     let assert_aliased_export (source, expected_target) =
       let actual_target =
@@ -100,7 +111,7 @@ let test_aliased_export _ =
 let test_wildcard_exports _ =
   let module_from_source ~source ~qualifier =
     let { Source.statements; _ } = parse source in
-    Module.create ~qualifier ~stub:false ~statements
+    Module.create ~qualifier ~stub:false statements
   in
   let assert_wildcard_exports ?(qualifier = []) source expected =
     assert_equal
