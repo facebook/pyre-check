@@ -47,7 +47,6 @@ module Request : sig
     | ClientConnectionRequest of client
     | ClientExitRequest of client
     | RageRequest of int
-    | ReinitializeStateRequest
     | DisplayTypeErrors of File.t list
     | FlushTypeErrorsRequest
     | TypeCheckRequest of TypeCheckRequest.t

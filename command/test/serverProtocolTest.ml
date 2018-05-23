@@ -17,7 +17,6 @@ let test_flatten _ =
     [
       TypeCheckRequest
         (TypeCheckRequest.create ~update_environment_with:[mock "a.py"] ~check:[mock "a.py"] ());
-      ReinitializeStateRequest;
       TypeCheckRequest
         (TypeCheckRequest.create
            ~update_environment_with:[mock "a.py"; mock "b.py"]
@@ -32,7 +31,6 @@ let test_flatten _ =
   match flatten requests with
   | [
     TypeCheckRequest { TypeCheckRequest.update_environment_with; check };
-    ReinitializeStateRequest;
     RageRequest 1234;
     LanguageServerProtocolRequest "{}";
   ] ->

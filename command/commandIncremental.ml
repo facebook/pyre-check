@@ -10,7 +10,6 @@ module Socket = CommandSocket
 
 
 let run
-    recheck_all
     verbose
     version
     sections
@@ -58,12 +57,9 @@ let run
         raise ServerConfiguration.ServerNotRunning
     in
 
-    if recheck_all then
-      Socket.write socket ServerProtocol.Request.ReinitializeStateRequest
-    else
-      Socket.write
-        socket
-        ServerProtocol.Request.FlushTypeErrorsRequest;
+    Socket.write
+      socket
+      ServerProtocol.Request.FlushTypeErrorsRequest;
 
     let response_json =
       match Socket.read socket with
@@ -95,6 +91,5 @@ let command =
               Starts a daemon server in the current directory if it does not exist."
     Command.Spec.(
       empty
-      +> flag "-recheck-all" no_arg ~doc:"Recheck the entire project on the server"
       ++ CommandSpec.base_command_line_arguments)
     run

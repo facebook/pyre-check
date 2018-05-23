@@ -5,7 +5,6 @@
 
 val run
   :  bool
-  -> bool
   -> string option
   -> string list
   -> bool

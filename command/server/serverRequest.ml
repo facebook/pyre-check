@@ -361,15 +361,6 @@ let rec process_request
              (LanguageServer.Protocol.RageResponse.create ~items ~id
               |> LanguageServer.Protocol.RageResponse.to_yojson
               |> Yojson.Safe.to_string))
-    | ReinitializeStateRequest ->
-        let state =
-          ServerOperations.initialize
-            ~old_state:state
-            state.lock
-            state.connections
-            server_configuration
-        in
-        flush_type_errors state
 
     | GetDefinitionRequest { DefinitionRequest.path; position; _ } ->
         state, Some (GetDefinitionResponse (

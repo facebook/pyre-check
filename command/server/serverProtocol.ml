@@ -51,7 +51,6 @@ module Request = struct
     | ClientConnectionRequest of client
     | ClientExitRequest of client
     | RageRequest of int
-    | ReinitializeStateRequest
     | DisplayTypeErrors of File.t list
     | FlushTypeErrorsRequest
     | TypeCheckRequest of TypeCheckRequest.t
@@ -112,7 +111,6 @@ module Request = struct
     | ClientConnectionRequest _ -> "ClientConnection"
     | ClientExitRequest _ -> "ClientExit"
     | RageRequest _ -> "Rage"
-    | ReinitializeStateRequest -> "ReinitializeState"
     | DisplayTypeErrors _ -> "DisplayTypeErrors"
     | FlushTypeErrorsRequest -> "FlushTypeErrors"
     | TypeCheckRequest { TypeCheckRequest.check = []; update_environment_with = [] } -> "TypeCheck"
