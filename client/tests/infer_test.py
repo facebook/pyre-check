@@ -530,7 +530,14 @@ class InferTest(unittest.TestCase):
             Infer(arguments, configuration, source_directory=".").run()
             call_client.assert_called_once_with(
                 command=commands.Check.NAME,
-                flags=["-show-error-traces", "-project-root", ".", "-infer"],
+                flags=[
+                    "-show-error-traces",
+                    "-project-root",
+                    ".",
+                    "-infer",
+                    "-search-path",
+                    "",
+                ],
             )
 
         with patch.object(commands.Command, "_call_client") as call_client:
@@ -543,6 +550,8 @@ class InferTest(unittest.TestCase):
                     "-project-root",
                     ".",
                     "-infer",
+                    "-search-path",
+                    "",
                     "-recursive-infer",
                 ],
             )

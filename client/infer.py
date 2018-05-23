@@ -404,7 +404,9 @@ class Infer(commands.command.ErrorHandling):
 
     def run(self) -> None:
         flags = self._flags()
-        flags.extend(["-infer"])
+        flags.extend(
+            ["-infer", "-search-path", ",".join(self._configuration.get_search_path())]
+        )
         if self._recursive:
             flags.append("-recursive-infer")
 
