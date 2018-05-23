@@ -101,7 +101,7 @@ cp "${SCRIPTS_DIRECTORY}/../README.md" \
 if [[ -n "${BUNDLE_TYPESHED}" ]]; then
   mkdir -p "${BUILD_ROOT}/typeshed/"
   rsync --recursive --copy-links --prune-empty-dirs --verbose \
-        --chmod="+w" --include="stdlib/***" --exclude="*" \
+        --chmod="+w" --include="stdlib/***" --include="third_party/***" --exclude="*" \
         "${BUNDLE_TYPESHED}/" "${BUILD_ROOT}/typeshed/"
 fi
 
