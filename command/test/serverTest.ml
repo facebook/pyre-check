@@ -391,10 +391,22 @@ let test_incremental_typecheck _ =
       ~in_dir:(Path.current_working_directory () |> Path.absolute)
       "test" ".py"
   in
+  let stub_path, _ =
+    Filename.open_temp_file
+      ~in_dir:(Path.current_working_directory () |> Path.absolute)
+      "stub" ".py"
+  in
+  Out_channel.write_all (stub_path ^ "i") ~data:"";
+
   let relative_path =
     Path.create_relative ~root:(Path.current_working_directory ()) ~relative:path
     |> Path.relative
     |> Option.value ~default:path
+  in
+  let relative_stub_path =
+    Path.create_relative ~root:(Path.current_working_directory ()) ~relative:stub_path
+    |> Path.relative
+    |> Option.value ~default:stub_path
   in
   let source =
     {|
@@ -433,6 +445,22 @@ let test_incremental_typecheck _ =
           ~check:[file ~content:(Some "def foo() -> int: return 1") path]
           ()))
   in
+  let request_stub_update =
+    let stub_file = file ~content:(Some "") (stub_path ^ "i") in
+    (Protocol.Request.TypeCheckRequest
+       (Protocol.TypeCheckRequest.create
+          ~update_environment_with:[stub_file]
+          ~check:[]
+          ()))
+  in
+  let request_with_conflicting_stub =
+    Protocol.Request.TypeCheckRequest
+      (Protocol.TypeCheckRequest.create
+         ~update_environment_with:[]
+         ~check:[file ~content:(Some "def foo() -> int: return \"\"") stub_path]
+         ())
+  in
+
   let request_update_and_check =
     let file = file ~content:(Some "def foo() -> int: return 1") path in
     (Protocol.Request.TypeCheckRequest
@@ -446,10 +474,22 @@ let test_incremental_typecheck _ =
     source
     request_only_check
     (Some (Protocol.TypeCheckResponse errors));
-  assert_request_gets_response    ~path
+  assert_request_gets_response
+    ~path
     source
     request_update_and_check
     (Some (Protocol.TypeCheckResponse [File.Handle.create relative_path, []]));
+  assert_request_gets_response
+    ~path
+    source
+    request_stub_update
+    (Some (Protocol.TypeCheckResponse []));
+  assert_request_gets_response
+    ~path
+    source
+    request_with_conflicting_stub
+    (Some (Protocol.TypeCheckResponse [File.Handle.create relative_stub_path, []]));
+
   let state = mock_server_state (File.Handle.Table.create ()) in
   assert_request_gets_response
     ~path

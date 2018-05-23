@@ -86,6 +86,7 @@ let rec process_request
           previous_use_ratio
           (Scheduler.Memory.heap_use_ratio ())
       end;
+    let (module Handler: Environment.Handler) = state.environment in
     let deferred_requests =
       if not (List.is_empty update_environment_with) then
         let files =
@@ -106,7 +107,6 @@ let rec process_request
               ~section:`Server
               "Handling type check request for files %a"
               Sexp.pp (sexp_of_list sexp_of_string paths);
-            let (module Handler: Environment.Handler) = state.environment in
             Dependencies.of_list ~get_dependencies:(Handler.dependencies) ~paths
             |> (fun dependency_set -> Set.diff dependency_set (String.Set.of_list check_paths))
             |> Set.to_list
@@ -148,6 +148,17 @@ let rec process_request
         (List.filter_map ~f:(File.handle ~root:source_root) update_environment_with);
       let stubs, sources = List.partition_tf ~f:is_stub update_environment_with in
       let stubs = Service.Parser.parse_stubs_list ~configuration ~scheduler ~files:stubs in
+      let sources =
+        let keep file =
+          (File.handle ~root:source_root file
+           >>= fun path -> Some (Ast.Source.qualifier ~path:(File.Handle.show path))
+           >>= Handler.module_definition
+           >>= Ast.Module.path
+           >>| (fun existing_path -> File.Handle.show path = existing_path))
+          |> Option.value ~default:true
+        in
+        List.filter ~f:keep sources
+      in
       let sources, _ = Service.Parser.parse_sources_list ~configuration ~scheduler ~files:sources in
       stubs @ sources
     in
