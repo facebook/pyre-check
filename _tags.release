@@ -1,19 +1,4 @@
-# Command files use @key attribute in ppx_deriving_yojson which conflicts with
-# JS ppx ppx_sexp_conv and ppx_compare.
-<command/*>: package(
-  sedlex,
-  core,
-  sexplib,
-  yojson,
-  ppxlib,
-  ppx_deriving.eq,
-  ppx_deriving.show,
-  ppx_deriving_yojson,
-  str,
-  hack_parallel
-  )
-# Everything except command files
-not <command/*>: package(
+<**/*>: package(
   sedlex,
   core,
   sexplib,
