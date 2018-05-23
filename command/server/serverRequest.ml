@@ -144,13 +144,11 @@ let rec process_request
         |> Path.absolute
         |> String.is_suffix ~suffix:".pyi"
       in
+      Service.AstSharedMemory.remove_paths
+        (List.filter_map ~f:(File.handle ~root:source_root) update_environment_with);
       let stubs, sources = List.partition_tf ~f:is_stub update_environment_with in
-      let stubs =
-        Service.Parser.parse_stubs_list ~configuration ~scheduler ~files:stubs
-      in
-      let sources, _ =
-        Service.Parser.parse_sources_list ~configuration ~scheduler ~files:sources
-      in
+      let stubs = Service.Parser.parse_stubs_list ~configuration ~scheduler ~files:stubs in
+      let sources, _ = Service.Parser.parse_sources_list ~configuration ~scheduler ~files:sources in
       stubs @ sources
     in
     let new_source_handles = List.filter_map ~f:(File.handle ~root:source_root) check in

@@ -158,7 +158,6 @@ let parse_sources_list
     ~configuration:({ Configuration.source_root; project_root; _ } as configuration)
     ~scheduler
     ~files =
-  AstSharedMemory.remove_paths (List.filter_map ~f:(File.handle ~root:source_root) files);
   let sources =
     if Scheduler.is_parallel scheduler then
       parse_parallel ~scheduler ~job:(parse_job ~configuration) ~files

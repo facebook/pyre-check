@@ -146,10 +146,8 @@ let test_parse_sources_list _ =
 
 let test_parse_sources_coverage _ =
   let (_, (strict_coverage, declare_coverage)) =
-    Service.Parser.parse_sources_list
-      ~configuration:(Configuration.create ~source_root:(Path.current_working_directory ()) ())
-      ~scheduler:(Scheduler.mock ())
-      ~files:[
+    let files =
+      [
         File.create
           ~content:(Some "#pyre-strict\ndef foo()->int:\n    return 1\n")
           (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:"a.py");
@@ -160,6 +158,25 @@ let test_parse_sources_coverage _ =
           ~content:(Some "#pyre-do-not-check\ndef foo()->int:\n    return 1\n")
           (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:"c.py");
       ]
+    in
+    AstSharedMemory.remove_paths
+      (List.filter_map ~f:(File.handle ~root:(Path.current_working_directory ())) files);
+
+    Service.Parser.parse_sources_list
+      ~configuration:(Configuration.create ~source_root:(Path.current_working_directory ()) ())
+      ~scheduler:(Scheduler.mock ())
+      ~files:
+        [
+          File.create
+            ~content:(Some "#pyre-strict\ndef foo()->int:\n    return 1\n")
+            (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:"a.py");
+          File.create
+            ~content:(Some "#pyre-strict\ndef foo()->int:\n    return 1\n")
+            (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:"b.py");
+          File.create
+            ~content:(Some "#pyre-do-not-check\ndef foo()->int:\n    return 1\n")
+            (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:"c.py");
+        ]
   in
   assert_equal strict_coverage 2;
 
