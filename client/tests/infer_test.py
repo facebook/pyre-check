@@ -564,4 +564,4 @@ class InferTest(unittest.TestCase):
         with patch.object(sys, "argv", ["infer", "--target", "."]), patch.object(
             Infer, "run"
         ):
-            self.assertEqual(main(), 1)
+            self.assertEqual(main(), 2)

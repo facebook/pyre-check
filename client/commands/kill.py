@@ -9,7 +9,7 @@ import signal
 import subprocess
 import traceback
 
-from .. import BINARY_NAME
+from .. import BINARY_NAME, SUCCESS
 from ..filesystem import remove_if_exists
 from .command import Command, State
 
@@ -24,10 +24,10 @@ class Kill(Command):
         super(Kill, self).__init__(arguments, configuration, source_directory)
         self.with_fire = arguments.with_fire
 
-    def _run(self) -> None:
+    def _run(self) -> int:
         if self.with_fire:
             self._kill_all_processes()
-            return
+            return SUCCESS
 
         state = self._state()
         if state == State.RUNNING:
@@ -47,6 +47,8 @@ class Kill(Command):
             LOG.info("Terminated server at `%s`", self._source_directory)
         else:
             LOG.warning("No server running")
+
+        return SUCCESS
 
     def _kill(self, path) -> None:
         if not os.path.exists(path):

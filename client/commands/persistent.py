@@ -11,8 +11,8 @@ import sys
 import time
 from typing import Optional
 
-from .. import EnvironmentException, log_statistics
-from .command import ClientException, Command
+from .. import EnvironmentException, log_statistics, SUCCESS
+from .command import Command, ClientException
 from .restart import Restart
 
 
@@ -22,7 +22,7 @@ class Persistent(Command):
     def __init__(self, arguments, configuration, source_directory) -> None:
         super(Persistent, self).__init__(arguments, configuration, source_directory)
 
-    def _run(self) -> None:
+    def _run(self) -> int:
         arguments = self._arguments
         log_identifier = self._source_directory
 
@@ -44,6 +44,8 @@ class Persistent(Command):
             self._call_client(
                 command=self.NAME, capture_output=False, flags=flags
             ).check()
+
+        return SUCCESS
 
     def on_client_exception(self) -> None:
         self._run_null_server(timeout=300)
