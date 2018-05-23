@@ -677,23 +677,36 @@ let register_dependencies
         | { Node.value = Import { Import.from; imports }; _ } ->
             let imports =
               let path_of_import access =
-                let show_identifier = function
-                  | Expression.Access.Identifier identifier ->
-                      Identifier.show identifier
-                  | access -> Expression.Access.show_access Expression.pp access
+                let path =
+                  let path =
+                    Handler.module_definition access
+                    >>= Module.path
+                    >>| fun relative ->
+                    Path.create_relative ~root:source_root ~relative
+                  in
+                  match path with
+                  | Some path ->
+                      path
+                  | None ->
+                      let show_identifier = function
+                        | Expression.Access.Identifier identifier ->
+                            Identifier.show identifier
+                        | access -> Expression.Access.show_access Expression.pp access
+                      in
+                      Format.sprintf "%s.py"
+                        (access
+                         |> List.map ~f:show_identifier
+                         |> List.fold ~init:(Path.absolute source_root) ~f:(^/))
+                      |> (fun relative -> Path.create_relative ~root:source_root ~relative)
                 in
-                let relative =
-                  Format.sprintf "%s.py"
-                    (access
-                     |> List.map ~f:show_identifier
-                     |> List.fold ~init:(Path.absolute source_root) ~f:(^/))
-                in
-                if (not check_dependency_exists) || Sys.is_file relative = `Yes then
-                  Path.create_relative ~root:source_root ~relative
-                  |> Path.relative
+                if Path.file_exists path || not check_dependency_exists then
+                  Path.relative path
                 else
                   begin
-                    Log.log ~section:`Dependencies "Import path %s not found in %s" relative path;
+                    Log.log
+                      ~section:`Dependencies
+                        "Import path not found in %s"
+                        (Path.absolute path);
                     None
                   end
               in

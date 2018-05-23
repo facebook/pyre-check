@@ -530,8 +530,8 @@ let test_incremental_dependencies _ =
     ~configuration
     environment_handler
     [
-      parse ~path:"a.py" a_source;
-      parse ~path:"b.py" b_source;
+      parse ~path:"a.py" ~qualifier:(Expression.Access.create "a") a_source;
+      parse ~path:"b.py" ~qualifier:(Expression.Access.create "b") b_source;
     ];
   let expected_errors = [
     File.Handle.create "b.py", [];

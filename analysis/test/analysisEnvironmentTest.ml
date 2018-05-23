@@ -980,12 +980,16 @@ let test_import_dependencies context =
       |}
     in
     let environment =
-      populate
+      populate_with_sources
         ~source_root:(Path.current_working_directory ())
         ~check_dependency_exists:true
-        source
+        [
+          parse ~path:"test.py" ~qualifier:(Access.create "test") source;
+          parse ~path:"a.py" ~qualifier:(Access.create "a") "";
+          parse ~path:"subdirectory/b.py" ~qualifier:(Access.create "subdirectory.b") "";
+        ]
     in
-    assert_equal
+    assert_equal ~printer:(fun lo -> lo >>| List.to_string ~f:ident |> Option.value ~default:"nun")
       (Environment.dependencies environment "subdirectory/b.py")
       (Some ["test.py"]);
     assert_equal
