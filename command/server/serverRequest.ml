@@ -137,17 +137,23 @@ let rec process_request
         state.scheduler
         ~is_parallel:(List.length check > 5)
     in
-    let repopulate_handles, new_source_handles =
-      if not (List.is_empty update_environment_with) then
-        List.filter_map ~f:(File.handle ~root:source_root) update_environment_with,
-        Service.Parser.parse_sources_list
-          ~configuration
-          ~scheduler
-          ~files:check
-        |> fst
-      else
-        [], List.filter_map ~f:(File.handle ~root:source_root) check
+    let repopulate_handles =
+      let is_stub file =
+        file
+        |> File.path
+        |> Path.absolute
+        |> String.is_suffix ~suffix:".pyi"
+      in
+      let stubs, sources = List.partition_tf ~f:is_stub update_environment_with in
+      let stubs =
+        Service.Parser.parse_stubs_list ~configuration ~scheduler ~files:stubs
+      in
+      let sources, _ =
+        Service.Parser.parse_sources_list ~configuration ~scheduler ~files:sources
+      in
+      stubs @ sources
     in
+    let new_source_handles = List.filter_map ~f:(File.handle ~root:source_root) check in
     Annotated.Class.AttributesCache.clear ();
     Service.Environment.repopulate
       state.environment

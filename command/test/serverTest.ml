@@ -425,6 +425,31 @@ let test_incremental_typecheck _ =
     source
     request_with_content
     (Some (Protocol.TypeCheckResponse errors));
+  (* Assert that only files getting used to update the environment get parsed. *)
+  let request_only_check =
+    (Protocol.Request.TypeCheckRequest
+       (Protocol.TypeCheckRequest.create
+          ~update_environment_with:[]
+          ~check:[file ~content:(Some "def foo() -> int: return 1") path]
+          ()))
+  in
+  let request_update_and_check =
+    let file = file ~content:(Some "def foo() -> int: return 1") path in
+    (Protocol.Request.TypeCheckRequest
+       (Protocol.TypeCheckRequest.create
+          ~update_environment_with:[file]
+          ~check:[file]
+          ()))
+  in
+  assert_request_gets_response
+    ~path
+    source
+    request_only_check
+    (Some (Protocol.TypeCheckResponse errors));
+  assert_request_gets_response    ~path
+    source
+    request_update_and_check
+    (Some (Protocol.TypeCheckResponse [File.Handle.create relative_path, []]));
   let state = mock_server_state (File.Handle.Table.create ()) in
   assert_request_gets_response
     ~path
