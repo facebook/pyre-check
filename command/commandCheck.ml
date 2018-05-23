@@ -5,6 +5,7 @@
 
 open Core
 
+open Ast
 open Analysis
 open Configuration
 open Pyre
@@ -88,7 +89,27 @@ let check
 
   (* Parsing. *)
   let stubs = Service.Parser.parse_stubs scheduler ~configuration in
-  let sources = Service.Parser.parse_sources scheduler ~configuration in
+  let known_stubs =
+    List.fold
+      stubs
+      ~init:Expression.Access.Set.empty
+      ~f:(fun known_stubs handle ->
+          match Service.AstSharedMemory.get_source handle with
+          | Some { Ast.Source.qualifier; _ } ->
+              Set.add known_stubs qualifier
+          | _ ->
+              known_stubs)
+  in
+  let sources =
+    let filter path =
+      match Path.get_relative_to_root ~root:source_root ~path:(Path.create_absolute path) with
+      | Some path ->
+          not (Set.mem known_stubs (Source.qualifier ~path))
+      | _ ->
+          true
+    in
+    Service.Parser.parse_sources ~filter scheduler ~configuration
+  in
 
   (* Build environment. *)
   Service.Ignore.register ~configuration scheduler sources;

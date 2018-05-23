@@ -182,10 +182,66 @@ let test_parse_sources_coverage _ =
 
   assert_equal declare_coverage 1
 
+
+let test_parse_sources context =
+  let stub_handles, source_handles =
+    let source_root = Path.create_absolute (bracket_tmpdir context) in
+    let stub_root = Path.create_absolute (bracket_tmpdir context) in
+
+    let write_file root relative =
+      File.create ~content:(Some "def foo() -> int: ...") (Path.create_relative ~root ~relative)
+      |> File.write
+    in
+    write_file source_root "a.pyi";
+    write_file source_root "a.py";
+
+    write_file stub_root "b.pyi";
+    write_file source_root "b.py";
+
+    write_file source_root "c.py";
+
+    let configuration = Configuration.create ~source_root ~stub_roots:[stub_root] () in
+    let scheduler = Scheduler.mock () in
+    let stub_handles =
+      Service.Parser.parse_stubs scheduler ~configuration
+      |> List.map ~f:File.Handle.show
+      |> List.sort ~compare:String.compare
+    in
+    let open Expression in
+    let filter path =
+      match Path.get_relative_to_root ~root:source_root ~path:(Path.create_absolute path) with
+      | Some path ->
+          Set.mem
+            (Access.Set.of_list [Access.create "a"; Access.create "b"])
+            (Source.qualifier ~path)
+          |> not
+      | _ ->
+          true
+    in
+    let source_handles =
+      Service.Parser.parse_sources scheduler ~filter ~configuration
+      |> List.map ~f:File.Handle.show
+      |> List.sort ~compare:String.compare
+    in
+    stub_handles, source_handles
+  in
+  assert_equal
+    ~cmp:(List.equal ~equal:String.equal)
+    ~printer:(String.concat ~sep:", ")
+    ["a.pyi"; "b.pyi"]
+    stub_handles;
+  assert_equal
+    ~cmp:(List.equal ~equal:String.equal)
+    ~printer:(String.concat ~sep:", ")
+    ["c.py"]
+    source_handles
+
+
 let () =
   "parser">:::[
     "parse_stubs_modules_list">::test_parse_stubs_modules_list;
     "parse_stubs">::test_parse_stubs;
+    "parse_sources">::test_parse_sources;
     "parse_sources_list">::test_parse_sources_list;
     "parse_sources_coverage">::test_parse_sources_coverage;
   ]

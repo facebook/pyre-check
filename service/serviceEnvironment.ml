@@ -18,7 +18,7 @@ open ServiceIgnoreSharedMemory
 
 
 let build
-    handler
+    ((module Handler: Handler) as handler)
     ~configuration:({ Configuration.source_root; _ } as configuration)
     ~stubs
     ~sources =
@@ -36,12 +36,21 @@ let build
   in
   let timer = Timer.start () in
   let stubs = get_sources stubs in
-
   Environment.populate ~configuration ~source_root handler stubs;
   Statistics.performance ~name:"stub environment built" ~timer ~configuration ();
 
   let timer = Timer.start () in
-  let sources = get_sources sources in
+  let sources =
+    (* If a stub matching a path's qualifier already exists, we shouldn't override. *)
+    let should_keep { Ast.Source.path; qualifier; _ } =
+      Handler.module_definition qualifier
+      >>= Ast.Module.path
+      |> Option.value ~default:path
+      |> String.equal path
+    in
+    let sources = get_sources sources in
+    List.filter ~f:should_keep sources
+  in
   Environment.populate ~configuration ~source_root handler sources;
   Statistics.performance ~name:"full environment built" ~timer ~configuration ();
 

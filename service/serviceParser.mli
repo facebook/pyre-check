@@ -12,7 +12,11 @@ val parse_stubs_list
   -> files: File.t list
   -> File.Handle.t list
 
-val parse_sources: ServiceScheduler.t -> configuration: Configuration.t -> File.Handle.t list
+val parse_sources
+  :  ?filter: (string -> bool)
+  -> ServiceScheduler.t
+  -> configuration: Configuration.t
+  -> File.Handle.t list
 
 val parse_sources_list
   :  configuration: Configuration.t

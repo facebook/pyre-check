@@ -200,15 +200,16 @@ let parse_sources_list
   (sources, (strict_coverage, declare_coverage))
 
 
-let parse_sources scheduler ~configuration:({ Configuration.source_root; _ } as configuration) =
+let parse_sources
+    ?(filter = fun _ -> true)
+    scheduler
+    ~configuration:({ Configuration.source_root; _ } as configuration) =
   let timer = Timer.start () in
   let paths =
-    let is_python path = String.suffix path 3 = ".py" in
-    let has_stub path =
-      Sys.is_file ((Path.absolute path) ^ "i") = `Yes
+    let filter path =
+      String.suffix path 3 = ".py" && filter path
     in
-    File.list ~filter:is_python ~root:source_root
-    |> List.filter ~f:(fun path -> not (has_stub path))
+    File.list ~filter ~root:source_root
   in
   Log.info "Parsing %d sources in `%a`..." (List.length paths) Path.pp source_root;
   let (handles, _) =
