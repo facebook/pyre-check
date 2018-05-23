@@ -69,6 +69,11 @@ def main() -> int:
     parser.add_argument(
         "--noninteractive", action="store_true", help="Disable interactive logging"
     )
+    parser.add_argument(
+        "--show-parse-errors",
+        action="store_true",
+        help="Display detailed information about parse errors",
+    )
     # Enable sectional logging.
     parser.add_argument("--logging-sections", help=argparse.SUPPRESS)
     # Add given identifier to logged samples.

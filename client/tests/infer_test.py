@@ -504,6 +504,7 @@ def mock_arguments():
     arguments.sequential = False
     arguments.show_error_traces = False
     arguments.verbose = False
+    arguments.show_parse_errors = False
     arguments.logging_sections = None
     arguments.current_directory = "."
 

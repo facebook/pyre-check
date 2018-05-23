@@ -56,6 +56,7 @@ class Command:
         self._strict = arguments.strict
         self._show_error_traces = arguments.show_error_traces
         self._verbose = arguments.verbose
+        self._show_parse_errors = arguments.show_parse_errors
         self._logging_sections = arguments.logging_sections
         self._capable_terminal = arguments.capable_terminal
 
@@ -80,6 +81,11 @@ class Command:
             flags.append("-show-error-traces")
         if self._verbose:
             flags.append("-verbose")
+        if self._show_parse_errors:
+            if self._logging_sections:
+                self._logging_sections = self._logging_sections + ",parser"
+            else:
+                self._logging_sections = "parser"
         if not self._capable_terminal:
             # Disable progress reporting for non-capable terminals.
             # This helps in reducing clutter.

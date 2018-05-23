@@ -104,6 +104,18 @@ let parse_stubs_list ~configuration ~scheduler ~files =
   handles
 
 
+let log_parse_errors_count ~not_parsed ~description =
+  if not_parsed > 0 then
+    begin
+      Log.warning "Could not parse %d %s%s due to syntax errors!"
+        not_parsed
+        description
+        (if not_parsed > 1 then "s" else "");
+      if not (Log.is_enabled `Parser) then
+        Log.warning "You can use --show-parse-errors for more details."
+    end
+
+
 let parse_stubs
     scheduler
     ~configuration:({ Configuration.source_root; stub_roots; _ } as configuration) =
@@ -138,8 +150,7 @@ let parse_stubs
   let handles = parse_stubs_list ~configuration ~scheduler ~files:(List.map ~f:File.create paths) in
   Statistics.performance ~name:"stubs parsed" ~timer ~configuration ();
   let not_parsed = (List.length paths) - (List.length handles) in
-  if not_parsed > 0 then
-    Log.debug "Unable to parse %d stubs or external sources" not_parsed;
+  log_parse_errors_count ~not_parsed ~description:"external file";
   handles
 
 
@@ -186,8 +197,7 @@ let parse_sources_list
     ();
 
   let not_parsed = (List.length files) - (List.length sources) in
-  if not_parsed > 0 then
-    Log.info "Unable to parse %d paths" not_parsed;
+  log_parse_errors_count ~not_parsed ~description:"file";
   (sources, (strict_coverage, declare_coverage))
 
 

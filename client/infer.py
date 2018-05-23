@@ -435,6 +435,11 @@ def main():
     parser.add_argument(
         "--noninteractive", action="store_true", help="Disable interactive logging"
     )
+    parser.add_argument(
+        "--show-parse-errors",
+        action="store_true",
+        help="Display detailed information about parse errors",
+    )
 
     parser.add_argument("--logging-sections", help="Enable sectional logging")
 
