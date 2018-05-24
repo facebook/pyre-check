@@ -92,6 +92,9 @@ source-directory:
 ```
 
 ## Positional Arguments
+If [Watchman](https://facebook.github.io/watchman/docs/install.html) is
+installed, running `pyre` with no positional arguments defaults to incremental,
+otherwise defaults to check.
 
 `check`: Run Pyre.
 

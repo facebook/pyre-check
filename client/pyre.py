@@ -6,6 +6,7 @@
 import argparse
 import logging
 import os
+import shutil
 import sys
 import time
 import traceback
@@ -192,7 +193,17 @@ def main() -> int:
     arguments = parser.parse_args()
 
     if not hasattr(arguments, "command"):
-        arguments.command = commands.Incremental
+        if shutil.which("watchman"):
+            arguments.command = commands.Incremental
+        else:
+            watchman_link = "https://facebook.github.io/watchman/docs/install.html"
+            LOG.warning(
+                "No watchman binary found. \n"
+                "To enable pyre incremental, "
+                "you can install watchman: {}".format(watchman_link)
+            )
+            LOG.warning("Defaulting to non-incremental check.")
+            arguments.command = commands.Check
 
     configuration = None
     try:

@@ -76,6 +76,11 @@
   margin-bottom: 100px;
 }
 
+code {
+  box-shadow: none;
+  padding: 0;
+}
+
 nav.toc .toggleNav ul li a {
   color: #808080;
 }
