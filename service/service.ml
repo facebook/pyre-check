@@ -7,6 +7,7 @@
 module Analysis = ServiceAnalysis
 module AstSharedMemory = ServiceAstSharedMemory
 module CallGraph = ServiceCallGraph
+module Coverage = ServiceCoverage
 module Environment = ServiceEnvironment
 module Ignore = ServiceIgnore
 module Parser = ServiceParser

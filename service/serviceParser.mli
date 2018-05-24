@@ -4,13 +4,9 @@
     LICENSE file in the root directory of this source tree. *)
 
 
-val parse_stubs: ServiceScheduler.t -> configuration: Configuration.t -> File.Handle.t list
+val find_sources: ?filter: (string -> bool) -> Configuration.t -> Pyre.Path.t list
 
-val parse_stubs_list
-  :  configuration: Configuration.t
-  -> scheduler: ServiceScheduler.t
-  -> files: File.t list
-  -> File.Handle.t list
+val parse_stubs: ServiceScheduler.t -> configuration: Configuration.t -> File.Handle.t list
 
 val parse_sources
   :  ?filter: (string -> bool)
@@ -22,4 +18,4 @@ val parse_sources_list
   :  configuration: Configuration.t
   -> scheduler: ServiceScheduler.t
   -> files: File.t list
-  -> File.Handle.t list * (int * int)
+  -> File.Handle.t list

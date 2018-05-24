@@ -108,9 +108,31 @@ let check
       | _ ->
           true
     in
-    Service.Parser.parse_sources ~filter scheduler ~configuration
-  in
+    let sources = Service.Parser.parse_sources ~filter scheduler ~configuration in
+    let number_of_files = List.length (Service.Parser.find_sources ~filter configuration) in
+    let { Service.Coverage.strict_coverage; declare_coverage; default_coverage; source_files } =
+      Service.Coverage.coverage ~sources ~number_of_files
+    in
+    let path_to_files =
+      Path.get_relative_to_root ~root:project_root ~path:source_root
+      |> Option.value ~default:(Path.absolute source_root)
+    in
 
+    Statistics.coverage
+      ~coverage:[
+        "strict_coverage", strict_coverage;
+        "declare_coverage", declare_coverage;
+        "default_coverage", default_coverage;
+        "source_files", source_files;
+      ]
+      ~normals:[
+        "file_name", path_to_files;
+      ]
+      ~configuration
+      ();
+
+    sources
+  in
   (* Build environment. *)
   Service.Ignore.register ~configuration scheduler sources;
   let environment =

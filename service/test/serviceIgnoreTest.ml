@@ -46,7 +46,7 @@ let assert_errors
     Configuration.create ~source_root:root ~project_root:(Path.create_absolute "/") ()
   in
   let scheduler = Scheduler.mock () in
-  let (handles, _) =
+  let handles =
     Service.Parser.parse_sources_list
       ~configuration
       ~scheduler

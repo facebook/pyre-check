@@ -47,7 +47,7 @@ let type_check_sources_list_test context =
     in
     let configuration = Configuration.create () in
     let scheduler = Scheduler.mock () in
-    let sources, _ =
+    let sources =
       Service.Parser.parse_sources_list
         ~configuration
         ~scheduler

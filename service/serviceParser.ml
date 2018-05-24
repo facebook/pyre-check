@@ -94,7 +94,7 @@ let parse_job ~configuration:{ Configuration.verbose; sections; _ } ~files =
   List.fold ~init:[] ~f:parse files
 
 
-let parse_stubs_list ~configuration ~scheduler ~files =
+let parse_sources_list ~configuration ~scheduler ~files =
   let handles =
     if Scheduler.is_parallel scheduler then
       parse_parallel ~scheduler ~job:(parse_job ~configuration) ~files
@@ -147,57 +147,18 @@ let parse_stubs
   in
 
   Log.info "Parsing %d stubs and external sources..." (List.length paths);
-  let handles = parse_stubs_list ~configuration ~scheduler ~files:(List.map ~f:File.create paths) in
+  let handles =
+    parse_sources_list ~configuration ~scheduler ~files:(List.map ~f:File.create paths)
+  in
   Statistics.performance ~name:"stubs parsed" ~timer ~configuration ();
   let not_parsed = (List.length paths) - (List.length handles) in
   log_parse_errors_count ~not_parsed ~description:"external file";
   handles
 
 
-let parse_sources_list
-    ~configuration:({ Configuration.source_root; project_root; _ } as configuration)
-    ~scheduler
-    ~files =
-  let sources =
-    if Scheduler.is_parallel scheduler then
-      parse_parallel ~scheduler ~job:(parse_job ~configuration) ~files
-    else
-      parse_job ~configuration ~files
-  in
-  let strict_coverage, declare_coverage =
-    List.fold
-      ~init:(0, 0)
-      ~f:(fun (prev_strict, prev_declare) handle ->
-          match AstSharedMemory.get_source handle with
-          | Some { Source.metadata = { Source.Metadata.strict; declare; _ }; _ } ->
-              (
-                prev_strict + (if strict then 1 else 0),
-                prev_declare + (if declare then 1 else 0)
-              )
-          | None -> (prev_strict, prev_declare)
-        )
-      sources
-  in
-  let path_to_files =
-    Path.get_relative_to_root ~root:project_root ~path:source_root
-    |> Option.value ~default:(Path.absolute source_root)
-  in
-  Statistics.coverage
-    ~coverage:[
-      "strict_coverage", strict_coverage;
-      "declare_coverage", declare_coverage;
-      "default_coverage", List.length files - strict_coverage - declare_coverage;
-      "source_files", List.length files;
-    ]
-    ~normals:[
-      "file_name", path_to_files;
-    ]
-    ~configuration
-    ();
-
-  let not_parsed = (List.length files) - (List.length sources) in
-  log_parse_errors_count ~not_parsed ~description:"file";
-  (sources, (strict_coverage, declare_coverage))
+let find_sources ?(filter = fun _ -> true) { Configuration.source_root; _ } =
+  let filter path = String.is_suffix ~suffix:".py" path && filter path in
+  File.list ~filter ~root:source_root
 
 
 let parse_sources
@@ -205,15 +166,13 @@ let parse_sources
     scheduler
     ~configuration:({ Configuration.source_root; _ } as configuration) =
   let timer = Timer.start () in
-  let paths =
-    let filter path =
-      String.suffix path 3 = ".py" && filter path
-    in
-    File.list ~filter ~root:source_root
-  in
+  let paths = find_sources configuration ~filter in
   Log.info "Parsing %d sources in `%a`..." (List.length paths) Path.pp source_root;
-  let (handles, _) =
+  let handles =
     parse_sources_list ~configuration ~scheduler ~files:(List.map ~f:File.create paths)
   in
+  let not_parsed = (List.length paths) - (List.length handles) in
+  log_parse_errors_count ~not_parsed ~description:"file";
+
   Statistics.performance ~name:"sources parsed" ~timer ~configuration ();
   handles

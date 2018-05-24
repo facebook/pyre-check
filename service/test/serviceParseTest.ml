@@ -36,7 +36,7 @@ let test_parse_stubs_modules_list _ =
     ]
   in
   let handles =
-    Service.Parser.parse_stubs_list
+    Service.Parser.parse_sources_list
       ~configuration:(Configuration.create ())
       ~scheduler:(Scheduler.mock ())
       ~files
@@ -119,7 +119,7 @@ let test_parse_sources_list _ =
       ~content:(Some "def foo()->int:\n    return 1\n")
       (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:"a.py")
   in
-  let (handles, _) =
+  let handles =
     Service.Parser.parse_sources_list
       ~configuration:(Configuration.create ~source_root:(Path.current_working_directory ()) ())
       ~scheduler:(Scheduler.mock ())
@@ -142,45 +142,6 @@ let test_parse_sources_list _ =
         assert_equal name (Expression.Access.create_from_identifiers [~~"a"; ~~"foo"])
     | _ -> assert_unreached ()
   end
-
-
-let test_parse_sources_coverage _ =
-  let (_, (strict_coverage, declare_coverage)) =
-    let files =
-      [
-        File.create
-          ~content:(Some "#pyre-strict\ndef foo()->int:\n    return 1\n")
-          (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:"a.py");
-        File.create
-          ~content:(Some "#pyre-strict\ndef foo()->int:\n    return 1\n")
-          (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:"b.py");
-        File.create
-          ~content:(Some "#pyre-do-not-check\ndef foo()->int:\n    return 1\n")
-          (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:"c.py");
-      ]
-    in
-    AstSharedMemory.remove_paths
-      (List.filter_map ~f:(File.handle ~root:(Path.current_working_directory ())) files);
-
-    Service.Parser.parse_sources_list
-      ~configuration:(Configuration.create ~source_root:(Path.current_working_directory ()) ())
-      ~scheduler:(Scheduler.mock ())
-      ~files:
-        [
-          File.create
-            ~content:(Some "#pyre-strict\ndef foo()->int:\n    return 1\n")
-            (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:"a.py");
-          File.create
-            ~content:(Some "#pyre-strict\ndef foo()->int:\n    return 1\n")
-            (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:"b.py");
-          File.create
-            ~content:(Some "#pyre-do-not-check\ndef foo()->int:\n    return 1\n")
-            (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:"c.py");
-        ]
-  in
-  assert_equal strict_coverage 2;
-
-  assert_equal declare_coverage 1
 
 
 let test_parse_sources context =
@@ -243,6 +204,5 @@ let () =
     "parse_stubs">::test_parse_stubs;
     "parse_sources">::test_parse_sources;
     "parse_sources_list">::test_parse_sources_list;
-    "parse_sources_coverage">::test_parse_sources_coverage;
   ]
   |> run_test_tt_main
