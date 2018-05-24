@@ -59,7 +59,7 @@ class PersistentTest(unittest.TestCase):
         self.assertEqual(
             command._initialize_response(5),
             "Content-Length: 59\r\n\r\n"
-            '{"jsonrpc": "2.0", "id": 5, "result": {"capabilities": {}}}\r\n',
+            '{"id": 5, "jsonrpc": "2.0", "result": {"capabilities": {}}}\r\n',
         )
 
     @patch("select.select")
@@ -92,7 +92,7 @@ class PersistentTest(unittest.TestCase):
         commands.Persistent(
             mock_arguments(), mock_configuration(), source_directory="."
         )._run_null_server(timeout=0)
-        json = '{"jsonrpc": "2.0", "id": 0, "result": {"capabilities": {}}}'
+        json = '{"id": 0, "jsonrpc": "2.0", "result": {"capabilities": {}}}'
         self.assertEqual(
             stdout.getvalue(), "Content-Length: 59\r\n\r\n{}\r\n".format(json)
         )
