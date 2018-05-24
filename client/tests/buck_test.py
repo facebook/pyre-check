@@ -3,7 +3,7 @@
 import glob
 import subprocess
 import unittest
-from collections import namedtuple, OrderedDict
+from collections import OrderedDict, namedtuple
 from unittest.mock import call, patch
 
 from .. import buck, log
@@ -53,12 +53,14 @@ class BuckTest(unittest.TestCase):
 
         with patch.object(glob, "glob", return_value=["new_tree"]) as glob_glob:
             found_trees = buck._find_source_directories(
-                OrderedDict([
-                    ("//path/targets:name", None),
-                    ("//path/targets:namelibrary", None),
-                    ("//path/targets:another", "buck-out/path/another"),
-                    ("//path/...", None),
-                ])
+                OrderedDict(
+                    [
+                        ("//path/targets:name", None),
+                        ("//path/targets:namelibrary", None),
+                        ("//path/targets:another", "buck-out/path/another"),
+                        ("//path/...", None),
+                    ]
+                )
             )
             self.assertEqual(
                 found_trees,
@@ -67,12 +69,14 @@ class BuckTest(unittest.TestCase):
 
         with patch.object(glob, "glob", return_value=[]) as glob_glob:
             found_trees = buck._find_source_directories(
-                OrderedDict([
-                    ("//path/targets:name", None),
-                    ("//path/targets:namelibrary", None),
-                    ("//path/targets:another", "buck-out/path/another"),
-                    ("//path/...", None),
-                ])
+                OrderedDict(
+                    [
+                        ("//path/targets:name", None),
+                        ("//path/targets:namelibrary", None),
+                        ("//path/targets:another", "buck-out/path/another"),
+                        ("//path/...", None),
+                    ]
+                )
             )
             self.assertEqual(
                 found_trees,
@@ -89,12 +93,14 @@ class BuckTest(unittest.TestCase):
 
         with patch.object(glob, "glob", return_value=[]) as glob_glob:
             found_trees = buck._find_source_directories(
-                OrderedDict([
-                    ("//path/targets:name", None),
-                    ("//path/targets:namelibrary", ""),
-                    ("//path/targets:another", ""),
-                    ("//path/...", None),
-                ])
+                OrderedDict(
+                    [
+                        ("//path/targets:name", None),
+                        ("//path/targets:namelibrary", ""),
+                        ("//path/targets:another", ""),
+                        ("//path/...", None),
+                    ]
+                )
             )
             self.assertEqual(
                 found_trees, BuckOut([], ["//path/targets:name", "//path/..."])
