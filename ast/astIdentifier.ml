@@ -37,6 +37,11 @@ let show_sanitized name =
   Str.global_replace renaming_pattern "" name
 
 
+let remove_leading_underscores name =
+  let renaming_pattern = Str.regexp "\\(\\$[a-zA-Z]*_\\)_+" in
+  Str.global_replace renaming_pattern "\\1" name
+
+
 let length =
   String.length
 

@@ -13,6 +13,7 @@ module Set: Set.S with type Elt.t = t
 
 val create: string -> t
 val show_sanitized: t -> string
+val remove_leading_underscores: t -> t
 
 val length: t -> int
 val append: separator:string -> t -> t -> t

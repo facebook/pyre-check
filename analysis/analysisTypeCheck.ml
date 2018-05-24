@@ -339,11 +339,7 @@ module State = struct
          (* Check weakening of precondition. *)
          let parameters =
            let remove_unused_parameter_denotation ~key ~data sofar =
-             Identifier.show_sanitized key
-             |> String.lstrip ~drop:(Char.equal '_')
-             |> Identifier.create
-             |> Identifier.add_prefix ~prefix:"$renamed_"
-             |> (fun key -> Identifier.Map.set sofar ~key ~data)
+             Identifier.Map.set sofar ~key:(Identifier.remove_leading_underscores key) ~data
            in
            Method.parameter_annotations definition ~resolution
            |> Map.fold ~init:Identifier.Map.empty ~f:remove_unused_parameter_denotation

@@ -5109,6 +5109,7 @@ let test_check_behavioral_subtyping _ =
       "Inconsistent override [15]: `foo` overloads method defined in `Foo` inconsistently. " ^
       "Returned type `float` is not a subtype of the overridden return `int`."
     ];
+
   assert_type_errors
     {|
       class Foo():
@@ -5291,6 +5292,16 @@ let test_check_behavioral_subtyping _ =
         def __eq__(self, o: object) -> bool: ...
       class Bar(Foo):
         def __eq__(self, other) -> bool: ...
+    |}
+    [];
+
+  (* Ensure that our preprocessing doesn't clobber starred argument names. *)
+  assert_type_errors
+    {|
+      class Foo():
+        def foo( **kwargs) -> int: ...
+      class Bar(Foo):
+        def foo( **kwargs) -> int: ...
     |}
     [];
 
