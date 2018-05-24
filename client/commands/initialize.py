@@ -9,7 +9,14 @@ import os
 import shutil
 import subprocess
 
-from .. import BINARY_NAME, CONFIGURATION_FILE, EnvironmentException, find_typeshed, log
+from .. import (
+    BINARY_NAME,
+    CONFIGURATION_FILE,
+    EnvironmentException,
+    find_typeshed,
+    log,
+    SUCCESS,
+)
 from .command import Command
 
 
@@ -19,7 +26,7 @@ LOG = logging.getLogger(__name__)
 class Initialize(Command):
     NAME = "initialize"
 
-    def _run(self) -> None:
+    def _run(self) -> int:
         configuration_path = os.path.join(os.getcwd(), CONFIGURATION_FILE)
         if os.path.isfile(configuration_path):
             raise EnvironmentException(
@@ -78,3 +85,5 @@ class Initialize(Command):
             "Successfully initialized pyre! "
             + "You can view the configuration at `{}`.".format(configuration_path)
         )
+
+        return SUCCESS

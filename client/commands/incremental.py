@@ -8,7 +8,7 @@ import logging
 import os
 import subprocess
 
-from .command import ClientException, ErrorHandling, State, log
+from .command import ClientException, ErrorHandling, log, State, SUCCESS
 from .start import Start
 from .stop import Stop
 
@@ -32,7 +32,7 @@ class Incremental(ErrorHandling):
             atexit.register(stderr_tail.terminate)
             super(Incremental, self)._read_stderr(stderr_tail.stdout, source_directory)
 
-    def _run(self) -> None:
+    def _run(self) -> int:
         if self._state() == State.DEAD:
             LOG.warning(
                 "Server not running at `%s`. Starting...", self._source_directory
@@ -71,3 +71,5 @@ class Incremental(ErrorHandling):
                 self.run()
             else:
                 exit(-1)
+
+        return SUCCESS

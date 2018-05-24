@@ -7,7 +7,7 @@ import logging
 
 from .command import ClientException, Command, State
 from .kill import Kill
-
+from .. import SUCCESS
 
 LOG = logging.getLogger(__name__)
 
@@ -18,7 +18,7 @@ class Stop(Command):
     def __init__(self, arguments, configuration, source_directory) -> None:
         super(Stop, self).__init__(arguments, configuration, source_directory)
 
-    def _run(self) -> None:
+    def _run(self) -> int:
         if self._state() == State.DEAD:
             LOG.info("No server running")
         else:
@@ -30,3 +30,5 @@ class Stop(Command):
                 arguments = self._arguments
                 arguments.with_fire = False
                 Kill(arguments, self._configuration, self._source_directory).run()
+
+        return SUCCESS

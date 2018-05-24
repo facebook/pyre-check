@@ -245,7 +245,7 @@ def main() -> int:
             )
             source_directory = merge_source_directories(source_directories, isolate)
 
-        arguments.command(arguments, configuration, source_directory).run()
+        exit_code = arguments.command(arguments, configuration, source_directory).run()
     except (buck.BuckException, commands.ClientException) as error:
         LOG.error(str(error))
         arguments.command(
