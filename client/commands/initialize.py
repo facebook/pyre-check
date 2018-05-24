@@ -12,10 +12,10 @@ import subprocess
 from .. import (
     BINARY_NAME,
     CONFIGURATION_FILE,
+    SUCCESS,
     EnvironmentException,
     find_typeshed,
     log,
-    SUCCESS,
 )
 from .command import Command
 

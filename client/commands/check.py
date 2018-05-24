@@ -3,8 +3,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from .command import ErrorHandling
 from .. import FOUND_ERRORS, SUCCESS
+from .command import ErrorHandling
 
 
 class Check(ErrorHandling):

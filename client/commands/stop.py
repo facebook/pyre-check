@@ -5,9 +5,10 @@
 
 import logging
 
+from .. import SUCCESS
 from .command import ClientException, Command, State
 from .kill import Kill
-from .. import SUCCESS
+
 
 LOG = logging.getLogger(__name__)
 

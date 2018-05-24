@@ -11,8 +11,8 @@ import sys
 import time
 from typing import Optional
 
-from .. import EnvironmentException, log_statistics, SUCCESS
-from .command import Command, ClientException
+from .. import SUCCESS, EnvironmentException, log_statistics
+from .command import ClientException, Command
 from .restart import Restart
 
 

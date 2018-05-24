@@ -6,8 +6,7 @@
 import logging
 import os
 
-from .. import FAILURE, filesystem, SUCCESS
-
+from .. import FAILURE, SUCCESS, filesystem
 from .command import Command
 
 

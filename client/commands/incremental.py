@@ -8,7 +8,7 @@ import logging
 import os
 import subprocess
 
-from .command import ClientException, ErrorHandling, log, State, SUCCESS
+from .command import SUCCESS, ClientException, ErrorHandling, State, log
 from .start import Start
 from .stop import Stop
 

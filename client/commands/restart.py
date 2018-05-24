@@ -4,12 +4,11 @@
 # LICENSE file in the root directory of this source tree.
 
 
+from .. import SUCCESS
 from .command import Command
 from .incremental import Incremental
 from .start import Start
 from .stop import Stop
-
-from .. import SUCCESS
 
 
 class Restart(Command):
