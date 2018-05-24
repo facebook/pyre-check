@@ -25,7 +25,7 @@ class PyreTest(unittest.TestCase):
     def test_persistent_integration(self, run_null_server, validate, read) -> None:
         validate.side_effect = commands.ClientException
         with patch.object(sys, "argv", ["pyre", "persistent"]):
-            self.assertEqual(pyre.main(), 1)
+            self.assertEqual(pyre.main(), 2)
             run_null_server.assert_called_once()
 
     @patch.object(configuration.Configuration, "_read")
@@ -34,19 +34,19 @@ class PyreTest(unittest.TestCase):
     def test_buck_build_prompting(
         self, generate_source_directories, validate, read
     ) -> None:
-        with patch.object(commands.Check, "run"):
+        with patch.object(commands.Check, "run", return_value=0):
             with patch.object(sys, "argv", ["pyre", "check"]):
                 self.assertEqual(pyre.main(), 0)
                 generate_source_directories.assert_called_with(
                     set(), build=False, prompt=False
                 )
-        with patch.object(commands.Incremental, "run"):
+        with patch.object(commands.Incremental, "run", return_value=0):
             with patch.object(sys, "argv", ["pyre"]):
                 self.assertEqual(pyre.main(), 0)
                 generate_source_directories.assert_called_with(
                     set(), build=False, prompt=False
                 )
-        with patch.object(commands.Persistent, "run"):
+        with patch.object(commands.Persistent, "run", return_value=0):
             with patch.object(sys, "argv", ["pyre", "persistent"]):
                 self.assertEqual(pyre.main(), 0)
                 generate_source_directories.assert_called_with(

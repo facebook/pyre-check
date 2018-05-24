@@ -4,6 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 from .command import ErrorHandling
+from .. import FOUND_ERRORS, SUCCESS
 
 
 class Check(ErrorHandling):
@@ -28,7 +29,9 @@ class Check(ErrorHandling):
             flags.extend(["-log-identifier", self._log_identifier])
         return flags
 
-    def _run(self, retries: int = 1) -> None:
+    def _run(self, retries: int = 1) -> int:
         result = self._call_client(command=self.NAME, flags=self._flags())
         errors = self._get_errors(result)
         self._print(errors)
+
+        return FOUND_ERRORS if errors else SUCCESS

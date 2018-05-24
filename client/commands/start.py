@@ -6,7 +6,8 @@
 import logging
 import os
 
-from .. import filesystem
+from .. import FAILURE, filesystem, SUCCESS
+
 from .command import Command
 
 
@@ -22,7 +23,7 @@ class Start(Command):
         self._no_watchman = arguments.no_watchman
         self._number_of_workers = configuration.number_of_workers
 
-    def _run(self) -> None:
+    def _run(self) -> int:
         try:
             with filesystem.try_lock(".pyre/client.lock"):
                 # This unsafe call is OK due to the client lock always
@@ -39,7 +40,7 @@ class Start(Command):
                     LOG.warning(
                         "Server at `%s` exists, skipping.", self._source_directory
                     )
-                    return
+                    return FAILURE
 
                 flags = self._flags()
                 if not self._no_watchman:
@@ -58,5 +59,8 @@ class Start(Command):
                 )
                 self._call_client(command=self.NAME, flags=flags).check()
 
+            return SUCCESS
+
         except OSError:
             LOG.warning("Server is already running")
+            return FAILURE

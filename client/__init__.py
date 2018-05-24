@@ -22,7 +22,8 @@ LOG = logging.getLogger(__name__)
 
 
 SUCCESS = 0
-FAILURE = 1
+FOUND_ERRORS = 1
+FAILURE = 2
 
 TEXT = "text"
 JSON = "json"

@@ -9,6 +9,8 @@ from .incremental import Incremental
 from .start import Start
 from .stop import Stop
 
+from .. import SUCCESS
+
 
 class Restart(Command):
     NAME = "restart"
@@ -19,7 +21,7 @@ class Restart(Command):
         super(Restart, self).__init__(arguments, configuration, source_directory)
         self._blocking = blocking
 
-    def _run(self) -> None:
+    def _run(self) -> int:
         Stop(self._arguments, self._configuration, self._source_directory).run()
         if self._blocking:
             Incremental(
@@ -27,3 +29,5 @@ class Restart(Command):
             ).run()
         else:
             Start(self._arguments, self._configuration, self._source_directory).run()
+
+        return SUCCESS

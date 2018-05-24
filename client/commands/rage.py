@@ -5,6 +5,8 @@
 
 from .command import Command
 
+from .. import SUCCESS
+
 
 class Rage(Command):
     NAME = "rage"
@@ -13,5 +15,6 @@ class Rage(Command):
         super(Rage, self).__init__(arguments, configuration, source_directory)
         self._arguments.command = self.NAME
 
-    def _run(self) -> None:
+    def _run(self) -> int:
         self._call_client(command=self.NAME, capture_output=False).check()
+        return SUCCESS
