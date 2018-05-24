@@ -324,7 +324,7 @@ let rec process_request
                      | Ok (_, annotation) -> Type.show annotation
                      | Error error -> error)
                     relative_path
-                    (AstLocation.show_position position)
+                    (Ast.Location.show_position position)
                 in
                 Some
                   (state,
