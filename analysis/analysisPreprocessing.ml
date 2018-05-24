@@ -166,6 +166,8 @@ let qualify ({ Source.qualifier = global_qualifier; path; _ } as source) =
                 lead @ (List.map ~f:qualify_subaccess tail)
               in
               Access (qualify_access access)
+          | Tuple expressions ->
+              Tuple (List.map ~f:(qualify_expression state) expressions)
           | _ ->
               value
         in

@@ -470,6 +470,19 @@ let test_qualify _ =
         return a.B
     |};
 
+  (* Qualify multiple type variables. *)
+  assert_qualify
+    {|
+     _T = typing.TypeVar("_T")
+     _T2 = typing.TypeVar("_T2")
+     class C(typing.Generic[_T, _T2]): ...
+    |}
+    {|
+     qualifier._T = typing.TypeVar("_T")
+     qualifier._T2 = typing.TypeVar("_T2")
+     class qualifier.C(typing.Generic.__getitem__((qualifier._T, qualifier. _T2))): ...
+    |};
+
   (* Do not rename type annotations. *)
   assert_qualify
     {|
