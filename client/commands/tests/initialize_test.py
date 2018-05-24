@@ -4,6 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import os
+import shutil
 import unittest
 from unittest.mock import call, patch
 
@@ -16,11 +17,12 @@ class InitializeTest(unittest.TestCase):
 
     @patch.object(log, "get_yes_no_input", return_value=True)
     @patch.object(log, "get_input", return_value="")
+    @patch("shutil.which")
     @patch("os.path.isfile")
     @patch("subprocess.call")
     @patch("builtins.open")
     def test_initialize(
-        self, mock_open, subprocess_call, isfile, _get_input, get_yes_no_input
+        self, mock_open, subprocess_call, isfile, which, _get_input, get_yes_no_input
     ):
         get_yes_no_input.return_value = True
         arguments = mock_arguments()
@@ -35,6 +37,8 @@ class InitializeTest(unittest.TestCase):
                 return True
 
         isfile.side_effect = exists
+        # One for shutil.which("watchman"), another for shutil.which(BINARY_NAME).
+        which.side_effect = [True, True]
         with patch.object(commands.Command, "_call_client"):
             initialize.Initialize(arguments, configuration, source_directory=".").run()
             subprocess_call.assert_has_calls([call(["watchman", "watch-project", "."])])

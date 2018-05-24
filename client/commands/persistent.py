@@ -52,7 +52,8 @@ class Persistent(Command):
 
     def _initialize_response(self, request_id: int) -> str:
         response = json.dumps(
-            {"jsonrpc": "2.0", "id": request_id, "result": {"capabilities": {}}}
+            {"jsonrpc": "2.0", "id": request_id, "result": {"capabilities": {}}},
+            sort_keys=True,
         )
         return "Content-Length: {}\r\n\r\n{}\r\n".format(len(response), response)
 

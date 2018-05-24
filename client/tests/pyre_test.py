@@ -5,7 +5,7 @@
 
 import sys
 import unittest
-from unittest.mock import patch
+from unittest.mock import call, patch
 
 from .. import buck, commands, configuration, pyre
 
@@ -26,7 +26,7 @@ class PyreTest(unittest.TestCase):
         validate.side_effect = commands.ClientException
         with patch.object(sys, "argv", ["pyre", "persistent"]):
             self.assertEqual(pyre.main(), 2)
-            run_null_server.assert_called_once()
+            run_null_server.assert_has_calls([call(timeout=300)])
 
     @patch.object(configuration.Configuration, "_read")
     @patch.object(configuration.Configuration, "validate")
