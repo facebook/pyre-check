@@ -3,6 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import shutil
 import sys
 import unittest
 from unittest.mock import call, patch
@@ -42,10 +43,12 @@ class PyreTest(unittest.TestCase):
                 )
         with patch.object(commands.Incremental, "run", return_value=0):
             with patch.object(sys, "argv", ["pyre"]):
-                self.assertEqual(pyre.main(), 0)
-                generate_source_directories.assert_called_with(
-                    set(), build=False, prompt=False
-                )
+                # One for shutil.which("watchman"), another for shutil.which(BINARY_NAME).
+                with patch.object(shutil, "which", side_effect=[True, True]):
+                    self.assertEqual(pyre.main(), 0)
+                    generate_source_directories.assert_called_with(
+                        set(), build=False, prompt=False
+                    )
         with patch.object(commands.Persistent, "run", return_value=0):
             with patch.object(sys, "argv", ["pyre", "persistent"]):
                 self.assertEqual(pyre.main(), 0)
