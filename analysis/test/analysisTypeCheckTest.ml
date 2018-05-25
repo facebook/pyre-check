@@ -5645,6 +5645,46 @@ let test_check_callables _ =
     ["Incompatible parameter type [6]: Expected `str` but got `int`."]
 
 
+let test_check_assert_functions _ =
+  assert_type_errors
+    {|
+      class One:
+          a: int
+
+      # The actual content of this function does not really matter.
+      def pyretestassert(x) -> None:
+          pass
+
+      def f(o: typing.Optional[One]) -> int:
+          assert o
+          return o.a
+
+      def f2(o: typing.Optional[One]) -> int:
+          pyretestassert(o)
+          return o.a
+    |}
+    [];
+  assert_type_errors
+    ~qualifier:(Access.create "foo")
+    {|
+      class One:
+          a: int
+
+      # The actual content of this function does not really matter.
+      def pyretestassert(x) -> None:
+          pass
+
+      def f(o: typing.Optional[One]) -> int:
+          assert o
+          return o.a
+
+      def f2(o: typing.Optional[One]) -> int:
+          pyretestassert(o)
+          return o.a
+    |}
+    []
+
+
 let () =
   "type">:::[
     "initial">::test_initial;
@@ -5707,5 +5747,6 @@ let () =
     "check_noreturn">::test_check_noreturn;
     "check_contextmanager">::test_check_contextmanager;
     "check_callables">::test_check_callables;
+    "check_assert_functions">::test_check_assert_functions;
   ]
   |> run_test_tt_main

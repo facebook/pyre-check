@@ -25,3 +25,11 @@ let enumeration_classes =
     "enum.Enum";
     "enum.IntEnum";
   ]
+
+
+let assert_functions =
+  String.Set.of_list [
+    (* We need a way to test this feature, right? *)
+    "pyretestassert";
+    "foo.pyretestassert";
+  ]

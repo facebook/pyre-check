@@ -558,6 +558,12 @@ module State = struct
         annotation
     in
 
+    let is_assert_function access =
+      List.take_while access ~f:(function | Access.Identifier _ -> true | _ -> false)
+      |> Access.show
+      |> Set.mem Recognized.assert_functions
+    in
+
     let rec asserted state resolution expression =
       match Node.value expression with
       | Access [
@@ -812,6 +818,20 @@ module State = struct
 
       | Assert { Assert.test; _ } ->
           asserted state resolution test
+      | Expression { Node.value = Access access; _; } when is_assert_function access ->
+          let find_assert_test access =
+            match access with
+            | Expression.Record.Access.Call {
+                Node.value = [{ Argument.value = test ; _ }];
+                _;
+              } -> Some test
+            | _ -> None
+          in
+          List.find_map access ~f:find_assert_test
+          |> Option.value_map
+            ~f:(asserted state resolution)
+            (* Test not found - fallback to default behavior. *)
+            ~default:resolution
 
       | Stub (Stub.Class { Class.name; _ })
       | Class { Class.name; _ } ->
