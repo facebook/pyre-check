@@ -558,7 +558,199 @@ module State = struct
         annotation
     in
 
-    let rec forward_annotations ({ resolution; _ } as state) statement =
+    let rec asserted state resolution expression =
+      match Node.value expression with
+      | Access [
+          Access.Identifier name;
+          Access.Call {
+            Node.value = [
+              { Argument.name = None; value = { Node.value = Access access; _ } };
+              { Argument.name = None; value = annotation };
+            ];
+            _;
+          }
+        ] when Identifier.show name = "isinstance" ->
+          let annotation =
+            match annotation with
+            | { Node.value = Tuple elements; _ } ->
+                Type.Union (List.map ~f:(Resolution.parse_annotation resolution) elements)
+            | _ ->
+                Resolution.parse_annotation resolution annotation
+          in
+          let updated_annotation =
+            match Resolution.get_local resolution ~access with
+            | Some existing_annotation when
+                Refinement.less_or_equal
+                  ~resolution
+                  existing_annotation
+                  (Annotation.create annotation) ->
+                existing_annotation
+            | _ ->
+                Annotation.create annotation
+          in
+          Resolution.set_local resolution ~access ~annotation:updated_annotation
+      | UnaryOperator {
+          UnaryOperator.operator = UnaryOperator.Not;
+          operand = {
+            Node.value =
+              Access [
+                Access.Identifier name;
+                Access.Call {
+                  Node.value = [
+                    { Argument.name = None; value = { Node.value = Access access; _ } };
+                    { Argument.name = None; value = annotation };
+                  ];
+                  _;
+                };
+              ];
+            _;
+          };
+        } when Identifier.show name = "isinstance" ->
+          begin
+            match Resolution.get_local resolution ~access with
+            | Some { Annotation.annotation = Type.Union parameters; _ } ->
+                let parameters = Type.Set.of_list parameters in
+                let constraints =
+                  begin
+                    match annotation with
+                    | { Node.value = Tuple elements; _ } ->
+                        List.map
+                          ~f:(Resolution.parse_annotation resolution)
+                          elements
+                    | _ ->
+                        [Resolution.parse_annotation resolution annotation]
+                  end
+                  |> Type.Set.of_list
+                in
+                let constrained =
+                  Set.diff parameters constraints
+                  |> Set.to_list
+                  |> Type.union
+                in
+                Resolution.set_local
+                  resolution
+                  ~access
+                  ~annotation:(Annotation.create constrained)
+            | _ ->
+                resolution
+          end
+
+      | Access access ->
+          let open Annotated in
+          let open Access.Element in
+          let element = Access.last_element ~resolution (Access.create access) in
+          begin
+            match Resolution.get_local resolution ~access, element with
+            | Some { Annotation.annotation = Type.Optional parameter; _ }, _ ->
+                Resolution.set_local
+                  resolution
+                  ~access
+                  ~annotation:(Annotation.create parameter)
+            | _, Attribute { origin = Instance attribute; defined; _ }
+              when defined ->
+                begin
+                  match Attribute.annotation attribute with
+                  | {
+                    Annotation.annotation = Type.Optional parameter;
+                    mutability = Annotation.Mutable
+                  }
+                  | {
+                    Annotation.annotation = _;
+                    mutability = Annotation.Immutable {
+                        Annotation.original = Type.Optional parameter;
+                        _;
+                      };
+                  } ->
+                      let refined =
+                        Refinement.refine
+                          ~resolution
+                          (Attribute.annotation attribute)
+                          parameter
+                      in
+                      Resolution.set_local resolution ~access ~annotation:refined
+                  | _ ->
+                      resolution
+                end
+            | _ ->
+                resolution
+          end
+
+      | BooleanOperator { BooleanOperator.left; operator; right } ->
+          let { resolution; _ } =
+            let update state expression =
+              forward_annotations
+                state
+                (Statement.assume expression)
+              |> Resolution.annotations
+            in
+            match operator with
+            | BooleanOperator.And ->
+                let resolution = forward_annotations state (Statement.assume left) in
+                let left = update state left in
+                let right = update { state with resolution } right in
+                let merge ~key:_ = function
+                  | `Both (left, right) -> Some (Refinement.meet ~resolution left right)
+                  | `Left left -> Some left
+                  | `Right right -> Some right
+                in
+                let annotations = Map.merge ~f:merge left right in
+                let resolution = Resolution.with_annotations resolution ~annotations in
+                { state with resolution }
+            | BooleanOperator.Or ->
+                let negated_left =
+                  update state (Expression.normalize (Expression.negate left))
+                in
+                let resolution =
+                  Resolution.with_annotations resolution ~annotations:negated_left
+                in
+                let left = update state left in
+                let right =
+                  update { state with resolution } right
+                in
+                join
+                  {
+                    state with
+                    resolution = Resolution.with_annotations resolution ~annotations:left;
+                  }
+                  {
+                    state with
+                    resolution = Resolution.with_annotations resolution ~annotations:right;
+                  }
+          in
+          resolution
+      | ComparisonOperator {
+          ComparisonOperator.left;
+          right = [
+            ComparisonOperator.IsNot,
+            { Node.value = Access [Access.Identifier identifier; ]; _ }
+          ];
+        } when Identifier.show identifier = "None" ->
+          asserted state resolution left
+      | ComparisonOperator {
+          ComparisonOperator.left = { Node.value = Access access; _ };
+          right = [
+            ComparisonOperator.Is,
+            { Node.value = Access [Access.Identifier identifier; ]; _ }
+          ];
+        } when Identifier.show identifier = "None" ->
+          let open Annotated in
+          let open Access.Element in
+          let element = Access.last_element ~resolution (Access.create access) in
+          let refined =
+            match element with
+            | Attribute { origin = Instance attribute; defined; _ } when defined ->
+                Refinement.refine
+                  ~resolution
+                  (Attribute.annotation attribute)
+                  (Type.Optional Type.Bottom)
+            | _ ->
+                Annotation.create (Type.Optional Type.Bottom)
+          in
+          Resolution.set_local resolution ~access ~annotation:refined
+      | _ ->
+          resolution
+
+    and forward_annotations ({ resolution; _ } as state) statement =
       match Node.value statement with
       | Assign {
           Assign.target = { Node.value = Access access; _ };
@@ -619,199 +811,7 @@ module State = struct
           |> Assign.fold ~resolution ~f:forward_annotations ~initial:resolution
 
       | Assert { Assert.test; _ } ->
-          let rec asserted resolution expression =
-            match Node.value expression with
-            | Access [
-                Access.Identifier name;
-                Access.Call {
-                  Node.value = [
-                    { Argument.name = None; value = { Node.value = Access access; _ } };
-                    { Argument.name = None; value = annotation };
-                  ];
-                  _;
-                }
-              ] when Identifier.show name = "isinstance" ->
-                let annotation =
-                  match annotation with
-                  | { Node.value = Tuple elements; _ } ->
-                      Type.Union (List.map ~f:(Resolution.parse_annotation resolution) elements)
-                  | _ ->
-                      Resolution.parse_annotation resolution annotation
-                in
-                let updated_annotation =
-                  match Resolution.get_local resolution ~access with
-                  | Some existing_annotation when
-                      Refinement.less_or_equal
-                        ~resolution
-                        existing_annotation
-                        (Annotation.create annotation) ->
-                      existing_annotation
-                  | _ ->
-                      Annotation.create annotation
-                in
-                Resolution.set_local resolution ~access ~annotation:updated_annotation
-            | UnaryOperator {
-                UnaryOperator.operator = UnaryOperator.Not;
-                operand = {
-                  Node.value =
-                    Access [
-                      Access.Identifier name;
-                      Access.Call {
-                        Node.value = [
-                          { Argument.name = None; value = { Node.value = Access access; _ } };
-                          { Argument.name = None; value = annotation };
-                        ];
-                        _;
-                      };
-                    ];
-                  _;
-                };
-              } when Identifier.show name = "isinstance" ->
-                begin
-                  match Resolution.get_local resolution ~access with
-                  | Some { Annotation.annotation = Type.Union parameters; _ } ->
-                      let parameters = Type.Set.of_list parameters in
-                      let constraints =
-                        begin
-                          match annotation with
-                          | { Node.value = Tuple elements; _ } ->
-                              List.map
-                                ~f:(Resolution.parse_annotation resolution)
-                                elements
-                          | _ ->
-                              [Resolution.parse_annotation resolution annotation]
-                        end
-                        |> Type.Set.of_list
-                      in
-                      let constrained =
-                        Set.diff parameters constraints
-                        |> Set.to_list
-                        |> Type.union
-                      in
-                      Resolution.set_local
-                        resolution
-                        ~access
-                        ~annotation:(Annotation.create constrained)
-                  | _ ->
-                      resolution
-                end
-
-            | Access access ->
-                let open Annotated in
-                let open Access.Element in
-                let element = Access.last_element ~resolution (Access.create access) in
-                begin
-                  match Resolution.get_local resolution ~access, element with
-                  | Some { Annotation.annotation = Type.Optional parameter; _ }, _ ->
-                      Resolution.set_local
-                        resolution
-                        ~access
-                        ~annotation:(Annotation.create parameter)
-                  | _, Attribute { origin = Instance attribute; defined; _ }
-                    when defined ->
-                      begin
-                        match Attribute.annotation attribute with
-                        | {
-                          Annotation.annotation = Type.Optional parameter;
-                          mutability = Annotation.Mutable
-                        }
-                        | {
-                          Annotation.annotation = _;
-                          mutability = Annotation.Immutable {
-                              Annotation.original = Type.Optional parameter;
-                              _;
-                            };
-                        } ->
-                            let refined =
-                              Refinement.refine
-                                ~resolution
-                                (Attribute.annotation attribute)
-                                parameter
-                            in
-                            Resolution.set_local resolution ~access ~annotation:refined
-                        | _ ->
-                            resolution
-                      end
-                  | _ ->
-                      resolution
-                end
-
-            | BooleanOperator { BooleanOperator.left; operator; right } ->
-                let { resolution; _ } =
-                  let update state expression =
-                    forward_annotations
-                      state
-                      (Statement.assume expression)
-                    |> Resolution.annotations
-                  in
-                  match operator with
-                  | BooleanOperator.And ->
-                      let resolution = forward_annotations state (Statement.assume left) in
-                      let left = update state left in
-                      let right = update { state with resolution } right in
-                      let merge ~key:_ = function
-                        | `Both (left, right) -> Some (Refinement.meet ~resolution left right)
-                        | `Left left -> Some left
-                        | `Right right -> Some right
-                      in
-                      let annotations = Map.merge ~f:merge left right in
-                      let resolution = Resolution.with_annotations resolution ~annotations in
-                      { state with resolution }
-                  | BooleanOperator.Or ->
-                      let negated_left =
-                        update state (Expression.normalize (Expression.negate left))
-                      in
-                      let resolution =
-                        Resolution.with_annotations resolution ~annotations:negated_left
-                      in
-                      let left = update state left in
-                      let right =
-                        update { state with resolution } right
-                      in
-                      join
-                        {
-                          state with
-                          resolution = Resolution.with_annotations resolution ~annotations:left;
-                        }
-                        {
-                          state with
-                          resolution = Resolution.with_annotations resolution ~annotations:right;
-                        }
-                in
-                resolution
-            | ComparisonOperator {
-                ComparisonOperator.left;
-                right = [
-                  ComparisonOperator.IsNot,
-                  { Node.value = Access [Access.Identifier identifier; ]; _ }
-                ];
-              } when Identifier.show identifier = "None" ->
-                asserted resolution left
-            | ComparisonOperator {
-                ComparisonOperator.left = { Node.value = Access access; _ };
-                right = [
-                  ComparisonOperator.Is,
-                  { Node.value = Access [Access.Identifier identifier; ]; _ }
-                ];
-              } when Identifier.show identifier = "None" ->
-                let open Annotated in
-                let open Access.Element in
-                let element = Access.last_element ~resolution (Access.create access) in
-                let refined =
-                  match element with
-                  | Attribute { origin = Instance attribute; defined; _ } when defined ->
-                      Refinement.refine
-                        ~resolution
-                        (Attribute.annotation attribute)
-                        (Type.Optional Type.Bottom)
-                  | _ ->
-                      Annotation.create (Type.Optional Type.Bottom)
-                in
-                Resolution.set_local resolution ~access ~annotation:refined
-            | _ ->
-                resolution
-          in
-          asserted resolution test
+          asserted state resolution test
 
       | Stub (Stub.Class { Class.name; _ })
       | Class { Class.name; _ } ->
