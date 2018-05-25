@@ -103,6 +103,20 @@ fi
 # Set default compiler. This must be done after --configure.
 COMPILER="${COMPILER:-${DEVELOPMENT_COMPILER}}"
 
+# Error checking.
+# This check is borrowed from ocamlbuild's Makefile, printing it here
+# for better user visibility.
+if [[ "${CHECK_IF_PREINSTALLED}" != 'false' ]] && which ocamlc &>/dev/null; then
+  test_ocamlbuild_location="$(ocamlc -where)/ocamlbuild"
+  if [[ -d "${test_ocamlbuild_location}" ]]; then
+    set +x
+    echo "OCamlbuild will refuse to install since it is already present at ${test_ocamlbuild_location}."
+    echo 'If you want to bypass this safety check, run:'
+    echo '  CHECK_IF_PREINSTALLED=false ./scripts/setup.sh'
+    exit 1
+  fi
+fi
+
 # Extract packaged repository.
 if [ ${OPAM_REPOSITORY: -7} == ".tar.gz" ]; then
   temporary_repository="$(mktemp -d)"
