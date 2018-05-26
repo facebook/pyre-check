@@ -47,7 +47,7 @@ def is_capable_terminal() -> bool:
     return terminal not in ["dumb", "emacs"]
 
 
-def get_version(configuration):
+def get_binary_version(configuration) -> str:
     override = os.getenv("PYRE_BINARY")
     if override:
         return "override: {}".format(override)

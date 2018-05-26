@@ -24,7 +24,7 @@ from . import (
     EnvironmentException,
     buck,
     commands,
-    get_version,
+    get_binary_version,
     is_capable_terminal,
     log,
     log_statistics,
@@ -429,6 +429,7 @@ def main():
         "client binary used."
     )
 
+    parser.add_argument("--version", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--debug", action="store_true", help="Run in debug mode")
     parser.add_argument("--sequential", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--strict", action="store_true", help=argparse.SUPPRESS)
@@ -446,7 +447,9 @@ def main():
     parser.add_argument("--logging-sections", help="Enable sectional logging")
 
     parser.add_argument(
-        "--version", action="store_true", help="Print the pyre version to be used"
+        "--binary-version",
+        action="store_true",
+        help="Print the pyre.bin version to be used",
     )
 
     parser.add_argument(
@@ -514,8 +517,8 @@ def main():
 
         configuration = Configuration(original_directory=arguments.original_directory)
 
-        if arguments.version:
-            sys.stdout.write(get_version(configuration) + "\n")
+        if arguments.version or arguments.binary_version:
+            sys.stdout.write(get_binary_version(configuration) + "\n")
             return SUCCESS
 
         configuration.validate()

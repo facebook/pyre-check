@@ -19,7 +19,7 @@ from . import (
     EnvironmentException,
     buck,
     commands,
-    get_version,
+    get_binary_version,
     is_capable_terminal,
     log,
     log_statistics,
@@ -52,6 +52,7 @@ def main() -> int:
         "-l", "--local-configuration", type=str, help="Use a local configuration"
     )
 
+    parser.add_argument("--version", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--debug", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--sequential", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--strict", action="store_true", help=argparse.SUPPRESS)
@@ -83,7 +84,9 @@ def main() -> int:
     )
 
     parser.add_argument(
-        "--version", action="store_true", help="Print the pyre version to be used"
+        "--binary-version",
+        action="store_true",
+        help="Print the pyre.bin version to be used",
     )
 
     # Link tree determination.
@@ -236,8 +239,8 @@ def main() -> int:
                 )
                 return SUCCESS
 
-            if arguments.version:
-                log.stdout.write(get_version(configuration))
+            if arguments.version or arguments.binary_version:
+                log.stdout.write(get_binary_version(configuration))
                 return SUCCESS
 
             configuration.validate()
