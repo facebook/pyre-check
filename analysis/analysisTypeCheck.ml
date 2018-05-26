@@ -1059,7 +1059,7 @@ module State = struct
         match value with
         | Access access ->
             let errors = check_access ~resolution errors (Node.create ~location access) in
-            (* Special case reveal_type(). *)
+            (* Special case reveal_type() and cast(). *)
             let errors = match access with
               | [
                 Expression.Access.Identifier reveal_type;
@@ -1074,6 +1074,29 @@ module State = struct
                     define = define_node;
                   }]
                   |> add_errors errors
+              | [
+                Expression.Access.Identifier typing;
+                Expression.Access.Identifier cast;
+                Expression.Access.Call {
+                  Node.value = [
+                    { Expression.Argument.value = cast_annotation; _ };
+                    { Expression.Argument.value; _ };
+                  ];
+                  _;
+                }
+              ] when Identifier.equal typing (Identifier.create "typing") &&
+                     Identifier.equal cast (Identifier.create "cast") ->
+                  let cast_annotation = Annotated.resolve ~resolution cast_annotation in
+                  let actual_annotation = Annotated.resolve ~resolution value in
+                  if Type.is_meta cast_annotation &&
+                     Type.equal (Type.single_parameter cast_annotation) actual_annotation then
+                    add_errors errors [{
+                        Error.location;
+                        kind = Error.RedundantCast actual_annotation;
+                        define = define_node;
+                      }]
+                  else
+                    errors
               | _ ->
                   errors
             in

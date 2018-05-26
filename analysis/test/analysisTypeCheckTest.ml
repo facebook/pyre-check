@@ -4978,6 +4978,26 @@ let test_check_meta _ =
     []
 
 
+let test_check_redundant_cast _ =
+  assert_type_errors
+    {|
+      def foo(x: int) -> None:
+        typing.cast(int, x)
+    |}
+    ["Redundant cast [22]: The value being cast is already of type `int`."];
+  assert_type_errors
+    {|
+      def foo(x: str) -> None:
+        typing.cast(int, x)
+    |}
+    [];
+  assert_type_errors
+    {|
+      def foo(x) -> None:
+        typing.cast(int, x)
+    |}
+    []
+
 let test_check_assert _ =
   assert_type_errors
     {|
@@ -5735,6 +5755,7 @@ let () =
     "check_toplevel">::test_check_toplevel;
     "check_tuple">::test_check_tuple;
     "check_meta">::test_check_meta;
+    "check_redundant_cast">::test_check_redundant_cast;
     "check_assert">::test_check_assert;
     "check_excepts">::test_check_excepts;
     "check_async">::test_check_async;

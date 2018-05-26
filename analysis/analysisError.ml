@@ -154,6 +154,7 @@ type kind =
   | MissingGlobalAnnotation of missing_annotation
   | MissingParameterAnnotation of missing_parameter
   | MissingReturnAnnotation of missing_return
+  | RedundantCast of Type.t
   | RevealedType of Type.t * Ast.Expression.t
   | TooManyArguments of too_many_arguments
   | Top
@@ -221,6 +222,7 @@ let code { kind; _ } =
   | TooManyArguments _ -> 19
   | MissingArgument _ -> 20
   | UndefinedImport _ -> 21
+  | RedundantCast _ -> 22
 
 
 let name { kind; _ } =
@@ -238,6 +240,7 @@ let name { kind; _ } =
   | MissingParameterAnnotation _ -> "Missing parameter annotation"
   | MissingReturnAnnotation _ -> "Missing return annotation"
   | RevealedType _ -> "Revealed type"
+  | RedundantCast _ -> "Redundant cast"
   | TooManyArguments _ -> "Too many arguments"
   | Top -> "Undefined error"
   | UndefinedAttribute _ -> "Undefined attribute"
@@ -541,6 +544,12 @@ let description
             provided
             (if provided > 1 then "were" else "was");
         ]
+    | RedundantCast annotation ->
+        [
+          Format.asprintf
+            "The value being cast is already of type %a."
+            Type.pp annotation;
+        ]
     | RevealedType (annotation, expression) ->
         let show_sanitized { Node.location; value } =
           match value with
@@ -661,6 +670,7 @@ let due_to_analysis_limitations { kind; _ } =
   | MissingGlobalAnnotation { annotation = actual; _ }
   | MissingParameterAnnotation { annotation = actual; _ }
   | MissingReturnAnnotation { annotation = actual; _ }
+  | RedundantCast actual
   | UninitializedAttribute { mismatch = {actual; _ }; _ }->
       Type.is_unknown actual
   | Top -> true
@@ -710,6 +720,7 @@ let due_to_mismatch_with_any { kind; _ } =
   | MissingGlobalAnnotation _
   | MissingParameterAnnotation _
   | MissingReturnAnnotation _
+  | RedundantCast _
   | RevealedType _
   | IncompatibleConstructorAnnotation _
   | InconsistentOverride _
@@ -745,6 +756,8 @@ let less_or_equal ~resolution left right =
     | MissingGlobalAnnotation left, MissingGlobalAnnotation right
       when left.name = right.name && left.due_to_any = right.due_to_any ->
         Resolution.less_or_equal resolution ~left:left.annotation ~right:right.annotation
+    | RedundantCast left, RedundantCast right ->
+        Resolution.less_or_equal resolution ~left ~right
     | IncompatibleParameterType left, IncompatibleParameterType right
       when Option.equal Access.equal left.name right.name ->
         less_or_equal_mismatch left.mismatch right.mismatch
@@ -850,6 +863,8 @@ let join ~resolution left right =
         }
     | MissingGlobalAnnotation left, MissingGlobalAnnotation right when left.name = right.name ->
         MissingGlobalAnnotation (join_missing_annotation left right)
+    | RedundantCast left, RedundantCast right ->
+        RedundantCast (Resolution.join resolution left right)
     | IncompatibleParameterType left, IncompatibleParameterType right
       when Option.equal Access.equal left.name right.name &&
            left.position = right.position &&
@@ -1132,6 +1147,7 @@ let suppress ~mode error =
       | UndefinedAttribute _
       | UndefinedName _
       | UndefinedImport _
+      | RedundantCast _
       | RevealedType _
       | MissingArgument _ ->
           false
@@ -1226,6 +1242,8 @@ let dequalify
         MissingGlobalAnnotation {
           immutable_type with  annotation = dequalify annotation;
         }
+    | RedundantCast annotation ->
+        RedundantCast (dequalify annotation)
     | RevealedType (annotation, expression) ->
         RevealedType (dequalify annotation, expression)
     | IncompatibleParameterType ({ mismatch = { actual; expected }; _ } as parameter) ->
