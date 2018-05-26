@@ -1164,6 +1164,10 @@ let suppress ~mode error =
         true
     | UndefinedImport _ ->
         false
+    | UndefinedName name when Access.show name = "reveal_type" ->
+        true
+    | RevealedType _ ->
+        false
     | _ ->
         due_to_analysis_limitations error ||
         due_to_mismatch_with_any error ||

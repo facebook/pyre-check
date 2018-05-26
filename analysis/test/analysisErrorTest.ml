@@ -12,18 +12,22 @@ open Expression
 open Test
 
 
-let define_value ?(body = []) ?(name = "foo") () =
+let define_value ?(return_annotation = Some !"int") ?(body = []) ?(name = "foo") () =
   {
     Statement.Define.name = Access.create name;
     parameters = [];
     body;
     decorators = [];
     docstring = None;
-    return_annotation = Some !"int";
+    return_annotation;
     async = false;
     generated = false;
     parent = None;
   }
+
+
+let untyped_define =
+  +(define_value ~return_annotation:None ~body:[] ())
 
 
 let define ?(body = []) () =
@@ -54,6 +58,12 @@ let create_mock_location path =
 
 let error ?(define = mock_define) kind =
   { Error.location = Location.any; kind; define }
+
+
+let revealed_type access annotation =
+  Error.RevealedType
+    (annotation,
+     Node.create_with_default_location (Access (Expression.Access.create access)))
 
 
 let missing_return annotation =
@@ -472,7 +482,10 @@ let test_suppress _ =
 
   assert_suppressed Source.Default (missing_return Type.integer);
   assert_not_suppressed Source.Default (incompatible_return_type Type.integer Type.float);
-  assert_suppressed Source.Default (incompatible_return_type Type.integer Type.Object)
+  assert_suppressed Source.Default (incompatible_return_type Type.integer Type.Object);
+  assert_not_suppressed Source.Default (revealed_type "a" Type.integer);
+  assert_not_suppressed ~define:untyped_define Source.Default (revealed_type "a" Type.integer);
+  assert_suppressed Source.Default (Error.UndefinedName (Access.create "reveal_type"))
 
 
 let () =
