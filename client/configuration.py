@@ -174,8 +174,6 @@ class Configuration:
                     self.source_directories = configuration.get(
                         "source_directories", []
                     )
-                if not self.source_directories:
-                    self.source_directories = configuration.get("link_trees", [])
                 if self.source_directories:
                     LOG.debug(
                         "Found source directories `%s`",
