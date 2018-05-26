@@ -28,7 +28,7 @@ let check
     {
       start_time = _;
       verbose;
-      version = _;
+      expected_version = _;
       sections;
       debug;
       infer;
@@ -196,6 +196,7 @@ let check
 let run_check
     verbose
     version
+    expected_version
     sections
     debug
     strict
@@ -211,10 +212,18 @@ let run_check
     stub_roots
     source_root
     () =
+  (* T29256759: backward compatibility code. Prefer the new option. *)
+  let expected_version =
+    Option.merge
+      expected_version
+      version
+      ~f:(fun expected _ -> expected)
+  in
+
   let configuration =
     Configuration.create
       ~verbose
-      ?version
+      ?expected_version
       ~sections
       ~debug
       ~strict

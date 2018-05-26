@@ -248,7 +248,7 @@ let computation_thread request_queue configuration state =
 
 let request_handler_thread
     ({
-      configuration = ({ version; source_root; _ } as configuration);
+      configuration = ({ expected_version; source_root; _ } as configuration);
       use_watchman;
       _;
     } as server_configuration,
@@ -362,7 +362,9 @@ let request_handler_thread
             Log.log ~section:`Server "New client connection";
             Unix.accept server_socket
           in
-          Socket.write new_socket (Handshake.ServerConnected (Option.value ~default:"-1" version));
+          Socket.write
+            new_socket
+            (Handshake.ServerConnected (Option.value ~default:"-1" expected_version));
           try
             Socket.read new_socket
             |> fun Handshake.ClientConnected ->
@@ -520,6 +522,7 @@ let run_start_command
     use_watchman
     verbose
     version
+    expected_version
     sections
     debug
     strict
@@ -535,10 +538,18 @@ let run_start_command
     stub_roots
     source_root
     () =
+  (* T29256759: backward compatibility code. Prefer the new option. *)
+  let expected_version =
+    Option.merge
+      expected_version
+      version
+      ~f:(fun expected _ -> expected)
+  in
+
   let configuration =
     Configuration.create
       ~verbose
-      ?version
+      ?expected_version
       ~sections
       ~debug
       ~infer

@@ -12,9 +12,21 @@ module Time = Core_kernel.Time_ns.Span
 module Protocol = ServerProtocol
 module Socket = CommandSocket
 
-let run_command version log_identifier source_root () =
+let run_command version expected_version log_identifier source_root () =
+  (* T29256759: backward compatibility code. Prefer the new option. *)
+  let expected_version =
+    Option.merge
+      expected_version
+      version
+      ~f:(fun expected _ -> expected)
+  in
   let source_root = Path.create_absolute source_root in
-  let configuration = Configuration.create ~source_root ~log_identifier ?version () in
+  let configuration = Configuration.create
+      ~source_root
+      ~log_identifier
+      ?expected_version
+      ()
+  in
   let connect_to_server () =
     let server_socket =
       try
@@ -24,12 +36,12 @@ let run_command version log_identifier source_root () =
       with
       | ServerOperations.ConnectionFailure ->
           exit 1
-      | ServerOperations.VersionMismatch { ServerOperations.server_version; client_version } ->
+      | ServerOperations.VersionMismatch { ServerOperations.server_version; expected_version } ->
           Log.error
             "Exiting due to version mismatch. \
              The server version is %s, but the client was called with %s"
             server_version
-            client_version;
+            expected_version;
           exit 1
     in
     Socket.write server_socket (Protocol.Request.ClientConnectionRequest Protocol.Persistent);
@@ -150,7 +162,15 @@ let command =
     ~summary:"Opens a persistent connection to the server (IDE integration)"
     Command.Spec.(
       empty
-      +> flag "-version" (optional string) ~doc:"VERSION Pyre version"
+      +> flag
+        "-version"
+        (optional string)
+        ~doc:"VERSION [deprecated] When connecting to a server, \
+              this is version we are expecting to connect to."
+      +> flag
+        "-expected-binary-version"
+        (optional string)
+        ~doc:"VERSION When connecting to a server, this is version we are expecting to connect to."
       +> flag
         "-log-identifier"
         (optional_with_default "" string)

@@ -7,7 +7,7 @@ open Core
 
 type version_mismatch = {
   server_version: string;
-  client_version: string;
+  expected_version: string;
 }
 [@@deriving show]
 

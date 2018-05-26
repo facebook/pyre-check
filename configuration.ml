@@ -21,7 +21,7 @@ type t = {
   project_root: Path.t;
   stub_roots: Path.t list;
   verbose: bool;
-  version: string option;
+  expected_version: string option;
   strict: bool;
   declare: bool;
   show_error_traces: bool;
@@ -42,7 +42,7 @@ let create
     ?(project_root = Path.create_absolute "/")
     ?(stub_roots = [])
     ?(verbose = false)
-    ?version
+    ?expected_version
     ?(strict = false)
     ?(declare = false)
     ?(debug = false)
@@ -62,7 +62,7 @@ let create
     project_root;
     stub_roots;
     verbose;
-    version;
+    expected_version;
     strict;
     declare;
     show_error_traces;

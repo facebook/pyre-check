@@ -9,7 +9,15 @@ let base_command_line_arguments =
   Command.Spec.(
     empty
     +> flag "-verbose" no_arg ~doc:"Turn on verbose logging"
-    +> flag "-version" (optional string) ~doc:"VERSION Pyre version"
+    +> flag
+      "-version"
+      (optional string)
+      ~doc:"VERSION [deprecated] When connecting to a server, \
+            this is version we are expecting to connect to."
+    +> flag
+      "-expected-binary-version"
+      (optional string)
+      ~doc:"VERSION When connecting to a server, this is version we are expecting to connect to."
     +> flag
       "-logging-sections"
       (optional_with_default [] (Arg_type.comma_separated string))

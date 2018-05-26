@@ -19,7 +19,7 @@ type t = {
   project_root: Path.t;
   stub_roots: Path.t list;
   verbose: bool;
-  version: string option;
+  expected_version: string option;
   strict: bool;
   declare: bool;
   show_error_traces: bool;
@@ -39,7 +39,7 @@ val create
   -> ?project_root:Path.t
   -> ?stub_roots: Path.t list
   -> ?verbose:bool
-  -> ?version:string
+  -> ?expected_version:string
   -> ?strict:bool
   -> ?declare:bool
   -> ?debug:bool

@@ -360,9 +360,9 @@ let test_query _ =
 
 
 let test_connect _ =
-  CommandTest.start_server ~version:"A" () |> ignore;
+  CommandTest.start_server ~expected_version:"A" () |> ignore;
   let { ServerConfiguration.configuration; lock_path; _ } =
-    CommandTest.mock_server_configuration ~version:"B" ()
+    CommandTest.mock_server_configuration ~expected_version:"B" ()
   in
   (* This sleep ensures that the server doesn't receive an EPIPE while the Hack_parallel library is
    * iniitializing the daemon in the hack_parallel/utils/handle.ml. In that codepath, an external
@@ -379,7 +379,7 @@ let test_connect _ =
         assert_raises
           (ServerOperations.VersionMismatch {
               ServerOperations.server_version = "A";
-              client_version = "B";
+              expected_version = "B";
             })
           (fun () -> ServerOperations.connect ~retries:1 ~configuration))
     ~finally:cleanup

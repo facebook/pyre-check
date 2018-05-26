@@ -5,7 +5,6 @@
 
 open Core
 
-open Configuration
 open Pyre
 open ServerConfiguration
 open ServerState
@@ -16,7 +15,7 @@ module WatchmanConstants = CommandWatchmanConstants
 
 type version_mismatch = {
   server_version: string;
-  client_version: string;
+  expected_version: string;
 }
 [@@deriving show]
 
@@ -104,7 +103,7 @@ let stop_server ~reason ({ configuration; _ } as server_configuration) socket =
   exit 0
 
 
-let connect ~retries ~configuration:({ version; _ } as configuration) =
+let connect ~retries ~configuration:({ Configuration.expected_version; _ } as configuration) =
   let rec connect attempt =
     if attempt >= retries then begin
       Log.error "Could not connect to server after %d retries" attempt;
@@ -148,11 +147,11 @@ let connect ~retries ~configuration:({ version; _ } as configuration) =
   Socket.read socket
   |> fun (Handshake.ServerConnected server_version) ->
   Socket.write socket Handshake.ClientConnected;
-  match version with
+  match expected_version with
   | Some version when version = server_version ->
       socket
   | None ->
       socket
-  | Some client_version ->
+  | Some expected_version ->
       Unix.close socket;
-      raise (VersionMismatch { server_version; client_version })
+      raise (VersionMismatch { server_version; expected_version })

@@ -12,6 +12,7 @@ module Socket = CommandSocket
 let run
     verbose
     version
+    expected_version
     sections
     debug
     strict
@@ -29,10 +30,17 @@ let run
     () =
   try
     Log.initialize ~verbose ~sections;
+    (* T29256759: backward compatibility code. Prefer the new option. *)
+    let expected_version =
+      Option.merge
+        expected_version
+        version
+        ~f:(fun expected _ -> expected)
+    in
     let configuration =
       Configuration.create
         ~verbose
-        ?version
+        ?expected_version
         ~sections
         ~debug
         ~strict
