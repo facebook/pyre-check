@@ -377,7 +377,20 @@ let test_join _ =
            annotation = Type.float;
            evidence_locations = [create_mock_location "derp.py"; create_mock_location "durp.py"];
            due_to_any = false;
-         }))
+         }));
+
+  let a = Node.create_with_default_location (Expression.Access (Access.create "a")) in
+  let b = Node.create_with_default_location (Expression.Access (Access.create "b")) in
+  assert_join
+    (error (Error.RevealedType (Type.integer, a)))
+    (error (Error.RevealedType (Type.float, a)))
+    (error (Error.RevealedType (Type.float, a)));
+
+  assert_join
+    (error (Error.RevealedType (Type.integer, a)))
+    (error (Error.RevealedType (Type.float, b)))
+    (error (Error.Top))
+
 
 
 let test_filter _ =

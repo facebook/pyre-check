@@ -758,6 +758,9 @@ let less_or_equal ~resolution left right =
         Resolution.less_or_equal resolution ~left:left.annotation ~right:right.annotation
     | RedundantCast left, RedundantCast right ->
         Resolution.less_or_equal resolution ~left ~right
+    | RevealedType (left, left_expression), RevealedType (right, right_expression) ->
+        Expression.equal left_expression right_expression &&
+        Resolution.less_or_equal resolution ~left ~right
     | IncompatibleParameterType left, IncompatibleParameterType right
       when Option.equal Access.equal left.name right.name ->
         less_or_equal_mismatch left.mismatch right.mismatch
@@ -865,6 +868,10 @@ let join ~resolution left right =
         MissingGlobalAnnotation (join_missing_annotation left right)
     | RedundantCast left, RedundantCast right ->
         RedundantCast (Resolution.join resolution left right)
+    | RevealedType (left_annotation, left_expression),
+      RevealedType (right_annotation, right_expression)
+      when Expression.equal left_expression right_expression ->
+        RevealedType (Resolution.join resolution left_annotation right_annotation, left_expression)
     | IncompatibleParameterType left, IncompatibleParameterType right
       when Option.equal Access.equal left.name right.name &&
            left.position = right.position &&
