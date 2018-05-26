@@ -38,8 +38,8 @@ provides typed stubs for library functions.</p>
 <pre><code class="hljs css bash">$ pyre --<span class="hljs-built_in">help</span>
 usage: pyre     [-h] [-l LOCAL_CONFIGURATION] [--show-error-traces]
                 [--output {text,json}] [--verbose] [--noninteractive]
-                [--version] [--build] [--target TARGET]
-                [--<span class="hljs-built_in">source</span>-directory SOURCE_DIRECTORY]
+                [--show-parse-errors] [--binary-version] [--build]
+                [--target TARGET] [--<span class="hljs-built_in">source</span>-directory SOURCE_DIRECTORY]
                 [--search-path SEARCH_PATH] [--preserve-pythonpath]
                 [--typeshed TYPESHED]
                 {check, <span class="hljs-built_in">kill</span>, incremental, initialize init, rage, restart,
@@ -56,7 +56,8 @@ optional arguments:
   --output {text,json}  How to format output
   --verbose             Enable verbose logging
   --noninteractive      Disable interactive logging
-  --version             Print the pyre version to be used
+  --show-parse-errors   Display detailed information about parse errors
+  --binary-version      Print the pyre.bin version to be used
   --search-path SEARCH_PATH
                         Additional directories with modules and stubs to
                         include <span class="hljs-keyword">in</span> <span class="hljs-built_in">type</span> environment
