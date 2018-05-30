@@ -87,7 +87,7 @@ let test_parse_stubs_modules_list _ =
 let test_parse_stubs context =
   let handles =
     let source_root = Path.create_absolute (bracket_tmpdir context) in
-    let stub_root = Path.create_absolute (bracket_tmpdir context) in
+    let module_root = Path.create_absolute (bracket_tmpdir context) in
 
     let write_file root relative =
       File.create ~content:(Some "def foo() -> int: ...") (Path.create_relative ~root ~relative)
@@ -95,14 +95,14 @@ let test_parse_stubs context =
     in
     write_file source_root "a.pyi";
     write_file source_root "d.py";
-    write_file stub_root "b.pyi";
-    write_file stub_root "c.py";
+    write_file module_root "b.pyi";
+    write_file module_root "c.py";
     write_file source_root "ttypes.py";
     write_file source_root "ttypes.pyi";
 
     Service.Parser.parse_stubs
       (Scheduler.mock ())
-      ~configuration:(Configuration.create ~source_root ~stub_roots:[stub_root] ())
+      ~configuration:(Configuration.create ~source_root ~search_path:[module_root] ())
     |> List.map ~f:File.Handle.show
     |> List.sort ~compare:String.compare
   in
@@ -147,7 +147,7 @@ let test_parse_sources_list _ =
 let test_parse_sources context =
   let stub_handles, source_handles =
     let source_root = Path.create_absolute (bracket_tmpdir context) in
-    let stub_root = Path.create_absolute (bracket_tmpdir context) in
+    let module_root = Path.create_absolute (bracket_tmpdir context) in
 
     let write_file root relative =
       File.create ~content:(Some "def foo() -> int: ...") (Path.create_relative ~root ~relative)
@@ -156,12 +156,12 @@ let test_parse_sources context =
     write_file source_root "a.pyi";
     write_file source_root "a.py";
 
-    write_file stub_root "b.pyi";
+    write_file module_root "b.pyi";
     write_file source_root "b.py";
 
     write_file source_root "c.py";
 
-    let configuration = Configuration.create ~source_root ~stub_roots:[stub_root] () in
+    let configuration = Configuration.create ~source_root ~search_path:[module_root] () in
     let scheduler = Scheduler.mock () in
     let stub_handles =
       Service.Parser.parse_stubs scheduler ~configuration

@@ -118,7 +118,7 @@ let log_parse_errors_count ~not_parsed ~description =
 
 let parse_stubs
     scheduler
-    ~configuration:({ Configuration.source_root; stub_roots; _ } as configuration) =
+    ~configuration:({ Configuration.source_root; search_path; _ } as configuration) =
   let timer = Timer.start () in
 
   let paths =
@@ -134,14 +134,14 @@ let parse_stubs
         in
         File.list ~filter:is_stub ~root
       in
-      List.concat_map ~f:stubs (source_root :: stub_roots)
+      List.concat_map ~f:stubs (source_root :: search_path)
     in
     let modules =
       let modules root =
         Log.info "Finding external sources in `%a`..." Path.pp root;
         File.list ~filter:(String.is_suffix ~suffix:".py") ~root
       in
-      List.concat_map ~f:modules stub_roots
+      List.concat_map ~f:modules search_path
     in
     stubs @ modules
   in

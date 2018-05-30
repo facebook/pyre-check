@@ -308,6 +308,5 @@ let command =
         "-project-root"
         (optional string)
         ~doc:"ROOT Only follow sources under this root directory."
-        ~aliases:["-type-check-root"]
       +> anon (maybe_with_default "." ("source-root" %: string)))
     run

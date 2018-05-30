@@ -46,7 +46,6 @@ let base_command_line_arguments =
       "-project-root"
       (optional_with_default "/" string)
       ~doc:"ROOT Only check sources under this root directory."
-      ~aliases:["-type-check-root"]
     +> flag
       "-search-path"
       (optional_with_default [] (Arg_type.comma_separated string))

@@ -19,7 +19,7 @@ type t = {
   sections: string list;
   debug: bool;
   project_root: Path.t;
-  stub_roots: Path.t list;
+  search_path: Path.t list;
   verbose: bool;
   expected_version: string option;
   strict: bool;
@@ -40,7 +40,7 @@ let create
     ?(source_root = Path.current_working_directory ())
     ?(sections = [])
     ?(project_root = Path.create_absolute "/")
-    ?(stub_roots = [])
+    ?(search_path = [])
     ?(verbose = false)
     ?expected_version
     ?(strict = false)
@@ -60,7 +60,7 @@ let create
     sections;
     debug;
     project_root;
-    stub_roots;
+    search_path;
     verbose;
     expected_version;
     strict;

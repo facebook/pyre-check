@@ -535,7 +535,7 @@ let run_start_command
     number_of_workers
     log_identifier
     project_root
-    stub_roots
+    search_path
     source_root
     () =
   (* T29256759: backward compatibility code. Prefer the new option. *)
@@ -562,7 +562,7 @@ let run_start_command
       ~parallel:(not sequential)
       ~number_of_workers
       ~project_root:(Path.create_absolute project_root)
-      ~stub_roots:(List.map ~f:Path.create_absolute stub_roots)
+      ~search_path:(List.map ~f:Path.create_absolute search_path)
       ~source_root:(Path.create_absolute source_root)
       ()
   in

@@ -25,7 +25,7 @@ let run
     number_of_workers
     log_identifier
     project_root
-    stub_roots
+    search_path
     source_root
     () =
   try
@@ -52,7 +52,7 @@ let run
         ~analyze
         ~parallel:(not sequential)
         ~number_of_workers
-        ~stub_roots:(List.map ~f:Path.create_absolute stub_roots)
+        ~search_path:(List.map ~f:Path.create_absolute search_path)
         ~project_root:(Path.create_absolute project_root)
         ~source_root:(Path.create_absolute source_root)
         ()

@@ -41,7 +41,7 @@ let check
       parallel;
       number_of_workers;
       project_root;
-      stub_roots;
+      search_path;
       source_root;
     }
     original_scheduler
@@ -53,10 +53,10 @@ let check
   if not (Path.is_directory project_root) then
     raise (Invalid_argument (Format.asprintf "`%a` is not a directory" Path.pp project_root));
   List.iter
-    ~f:(fun stub_root ->
-        if not (Path.is_directory stub_root) then
-          raise (Invalid_argument (Format.asprintf "`%a` is not a directory" Path.pp stub_root)))
-    stub_roots;
+    ~f:(fun path ->
+        if not (Path.is_directory path) then
+          raise (Invalid_argument (Format.asprintf "`%a` is not a directory" Path.pp path)))
+    search_path;
 
   let bucket_multiplier =
     try Int.of_string (Sys.getenv "BUCKET_MULTIPLIER" |> (fun value -> Option.value_exn value))
@@ -75,7 +75,7 @@ let check
       ~project_root
       ~parallel
       ~number_of_workers
-      ~stub_roots
+      ~search_path
       ~infer
       ~recursive_infer
       ~analyze
@@ -209,7 +209,7 @@ let run_check
     number_of_workers
     log_identifier
     project_root
-    stub_roots
+    search_path
     source_root
     () =
   (* T29256759: backward compatibility code. Prefer the new option. *)
@@ -236,7 +236,7 @@ let run_check
       ~project_root:(Path.create_absolute project_root)
       ~parallel:(not sequential)
       ~number_of_workers
-      ~stub_roots:(List.map ~f:Path.create_absolute stub_roots)
+      ~search_path:(List.map ~f:Path.create_absolute search_path)
       ~source_root:(Path.create_absolute source_root)
       ()
   in
