@@ -12,7 +12,6 @@ from ..configuration import Configuration  # noqa
 
 
 class ConfigurationTest(unittest.TestCase):
-
     @patch("builtins.open")
     @patch("json.load")
     @patch.object(os, "getenv", return_value=None)

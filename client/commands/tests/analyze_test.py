@@ -11,7 +11,6 @@ from .command_test import mock_arguments, mock_configuration
 
 
 class AnalyzeTest(unittest.TestCase):
-
     @patch("subprocess.check_output")
     @patch("os.path.realpath")
     def test_analyze(self, realpath, check_output) -> None:

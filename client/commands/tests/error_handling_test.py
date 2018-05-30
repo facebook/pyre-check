@@ -14,7 +14,6 @@ from .command_test import mock_arguments, mock_configuration
 
 
 class ErrorHandlingTest(unittest.TestCase):
-
     @patch.object(Error, "__init__", return_value=None)
     @patch.object(Error, "__hash__", return_value=0)
     @patch.object(os.path, "realpath", side_effect=lambda path: path)

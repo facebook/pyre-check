@@ -12,7 +12,6 @@ from .. import buck, commands, configuration, pyre
 
 
 class PyreTest(unittest.TestCase):
-
     @patch.object(configuration.Configuration, "validate")
     @patch.object(configuration.Configuration, "disabled", return_value=True)
     def test_disabled(self, disabled, validate) -> None:

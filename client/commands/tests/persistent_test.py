@@ -13,7 +13,6 @@ from .command_test import mock_arguments, mock_configuration
 
 
 class PersistentTest(unittest.TestCase):
-
     @patch.object(commands.Persistent, "_run_null_server", return_value=None)
     def test_persistent(self, run_null_server) -> None:
         arguments = mock_arguments()

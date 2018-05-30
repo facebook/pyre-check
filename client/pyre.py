@@ -34,7 +34,6 @@ LOG = logging.getLogger(__name__)
 
 
 def main() -> int:
-
     def readable_directory(directory: str) -> str:
         if not os.path.isdir(directory):
             raise argparse.ArgumentTypeError(

@@ -36,7 +36,6 @@ def mock_configuration():
 
 
 class CommandTest(unittest.TestCase):
-
     def test_relative_path(self) -> None:
         arguments = mock_arguments()
         configuration = mock_configuration()

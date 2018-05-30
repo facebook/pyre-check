@@ -19,7 +19,6 @@ from ..filesystem import (  # noqa
 
 
 class FilesystemTest(unittest.TestCase):
-
     def test_find_python_paths(self):
         root = tempfile.mkdtemp()
 

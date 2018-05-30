@@ -12,7 +12,6 @@ from .command_test import mock_arguments, mock_configuration
 
 
 class IncrementalTest(unittest.TestCase):
-
     @patch.object(commands.Command, "_state")
     @patch.object(incremental, "Start")
     @patch.object(incremental, "Stop")

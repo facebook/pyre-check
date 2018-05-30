@@ -11,7 +11,6 @@ from .command_test import mock_arguments, mock_configuration
 
 
 class StopTest(unittest.TestCase):
-
     @patch.object(commands.Kill, "_run")
     @patch.object(commands.Command, "_state")
     def test_stop(self, commands_Command_state, kill_run) -> None:

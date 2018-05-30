@@ -11,7 +11,6 @@ from .. import upgrade
 
 
 class PostprocessTest(unittest.TestCase):
-
     @patch("json.load")
     @patch.object(pathlib.Path, "read_text")
     def test_fixme(self, path_read_text, json_load) -> None:

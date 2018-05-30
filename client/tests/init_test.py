@@ -10,7 +10,6 @@ from .. import EnvironmentException, buck, find_source_root, resolve_source_dire
 
 
 class InitTest(unittest.TestCase):
-
     @patch("os.path.isfile")
     def test_find_configuration(self, os_mock_isfile) -> None:
         os_mock_isfile.side_effect = [False, False, False, True]

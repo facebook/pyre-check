@@ -11,7 +11,6 @@ from .command_test import mock_arguments, mock_configuration
 
 
 class StartTest(unittest.TestCase):
-
     @patch("fcntl.lockf")
     def test_start(self, lock_file) -> None:
         arguments = mock_arguments()

@@ -47,7 +47,6 @@ class Character:
 
 
 class SectionFormatter(logging.Formatter):
-
     def __init__(self) -> None:
         super(SectionFormatter, self).__init__("%(asctime)s %(levelname)s %(message)s")
 

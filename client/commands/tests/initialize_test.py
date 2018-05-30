@@ -14,7 +14,6 @@ from .command_test import mock_arguments, mock_configuration
 
 
 class InitializeTest(unittest.TestCase):
-
     @patch.object(log, "get_yes_no_input", return_value=True)
     @patch.object(log, "get_input", return_value="")
     @patch("shutil.which")

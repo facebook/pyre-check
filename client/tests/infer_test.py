@@ -34,7 +34,6 @@ def build_json(inference):
 
 
 class HelperTest(unittest.TestCase):
-
     def test_dequalify(self) -> None:
         self.assertEqual(dequalify("typing.List"), "List")
         self.assertEqual(
@@ -74,7 +73,6 @@ class HelperTest(unittest.TestCase):
 
 
 class PyreTest(unittest.TestCase):
-
     def assert_imports(self, error_json, expected_imports) -> None:
         error = Error(**error_json)
         stub = None
@@ -517,7 +515,6 @@ def mock_configuration():
 
 
 class InferTest(unittest.TestCase):
-
     @patch("json.loads", return_value=[])
     def test_infer(self, json_loads) -> None:
         arguments = mock_arguments()

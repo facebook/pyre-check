@@ -21,7 +21,6 @@ LOG = logging.getLogger(__name__)
 
 
 class SharedSourceDirectory:
-
     def __init__(self, source_directories, isolate: bool = False):
         self._source_directories = set(source_directories)
         self._isolate = isolate

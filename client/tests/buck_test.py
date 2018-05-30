@@ -13,7 +13,6 @@ BuckOut = namedtuple("BuckOut", "source_directories targets_not_found")
 
 
 class BuckTest(unittest.TestCase):
-
     def test_presumed_target_root(self) -> None:
         self.assertEqual(
             buck.presumed_target_root("//path/directory/..."), "path/directory"

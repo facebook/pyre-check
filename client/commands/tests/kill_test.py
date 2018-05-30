@@ -12,7 +12,6 @@ from .command_test import mock_arguments, mock_configuration
 
 
 class KillTest(unittest.TestCase):
-
     @patch("os.kill")
     @patch("os.path.exists")
     def test_kill(self, os_path_exists, os_kill) -> None:

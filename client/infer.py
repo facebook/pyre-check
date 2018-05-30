@@ -60,7 +60,6 @@ def _relativize_access(access, path):
 
 
 class FunctionStub:
-
     def __init__(self, stub) -> None:
         self.name = stub.get("function_name")
         self.actual = stub.get("annotation")
@@ -145,7 +144,6 @@ class FunctionStub:
 
 
 class FieldStub:
-
     def __init__(self, stub) -> None:
         self.name = stub.get("field_name")
         self.actual = stub.get("annotation")
@@ -236,7 +234,6 @@ def join_stubs(stubs):
 
 
 class StubFile:
-
     def __init__(self, errors, full_only: bool = False) -> None:
         stubs = [Stub(error) for error in errors if Stub(error).stub]
         stubs = join_stubs(stubs)
@@ -394,7 +391,6 @@ def file_exists(path):
 
 
 class Infer(commands.command.ErrorHandling):
-
     def __init__(self, arguments, configuration, source_directory) -> None:
         arguments.show_error_traces = True
         arguments.output = JSON

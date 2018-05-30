@@ -29,7 +29,6 @@ class State(enum.IntEnum):
 
 
 class Result:
-
     def __init__(self, code, output) -> None:
         self.code = code
         self.output = output
@@ -204,7 +203,6 @@ class Command:
 
 
 class ErrorHandling(Command):
-
     def __init__(self, arguments, configuration, source_directory) -> None:
         super(ErrorHandling, self).__init__(arguments, configuration, source_directory)
         self._verbose = arguments.verbose

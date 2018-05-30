@@ -10,7 +10,6 @@ from IPython.core.magic import Magics, line_cell_magic, line_magic, magics_class
 
 
 class HistoryContext:
-
     def __init__(self):
         self.history = []
         self.history_start = 1
