@@ -29,7 +29,7 @@ class Persistent(Command):
         flags = [
             "-log-identifier",
             '"{}"'.format(log_identifier),
-            "-version",
+            "-expected-binary-version",
             str(self._configuration.get_version_hash()),
         ]
         try:

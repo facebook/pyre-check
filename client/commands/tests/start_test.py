@@ -34,7 +34,7 @@ class StartTest(unittest.TestCase):
                     "5",
                     "-search-path",
                     "root",
-                    "-version",
+                    "-expected-binary-version",
                     "hash",
                 ],
             )
@@ -55,7 +55,7 @@ class StartTest(unittest.TestCase):
                             "5",
                             "-search-path",
                             "root",
-                            "-version",
+                            "-expected-binary-version",
                             "hash",
                         ],
                     )
@@ -77,7 +77,7 @@ class StartTest(unittest.TestCase):
                     "5",
                     "-search-path",
                     "root",
-                    "-version",
+                    "-expected-binary-version",
                     "hash",
                 ],
             )

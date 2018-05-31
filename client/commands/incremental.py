@@ -47,7 +47,7 @@ class Incremental(ErrorHandling):
             [
                 "-search-path",
                 ",".join(self._configuration.get_search_path()),
-                "-version",
+                "-expected-binary-version",
                 str(self._configuration.get_version_hash()),
             ]
         )

@@ -26,7 +26,7 @@ class PersistentTest(unittest.TestCase):
             commands.Persistent(arguments, configuration, source_directory=".").run()
             call_client.assert_called_once_with(
                 command=commands.Persistent.NAME,
-                flags=["-log-identifier", '"."', "-version", "hash"],
+                flags=["-log-identifier", '"."', "-expected-binary-version", "hash"],
                 capture_output=False,
             )
 
@@ -46,7 +46,12 @@ class PersistentTest(unittest.TestCase):
                 [
                     call(
                         command=commands.Persistent.NAME,
-                        flags=["-log-identifier", '"."', "-version", "hash"],
+                        flags=[
+                            "-log-identifier",
+                            '"."',
+                            "-expected-binary-version",
+                            "hash",
+                        ],
                         capture_output=False,
                     )
                 ]

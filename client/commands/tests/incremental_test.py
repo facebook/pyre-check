@@ -42,7 +42,7 @@ class IncrementalTest(unittest.TestCase):
                     ".",
                     "-search-path",
                     "stub,root",
-                    "-version",
+                    "-expected-binary-version",
                     "hash",
                 ],
             )
@@ -62,7 +62,7 @@ class IncrementalTest(unittest.TestCase):
                             ".",
                             "-search-path",
                             "stub,root",
-                            "-version",
+                            "-expected-binary-version",
                             "hash",
                         ],
                     )
