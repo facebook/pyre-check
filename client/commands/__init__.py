@@ -9,6 +9,7 @@ from .incremental import Incremental as Incremental  # noqa
 from .initialize import Initialize as Initialize  # noqa
 from .kill import Kill as Kill  # noqa
 from .persistent import Persistent as Persistent  # noqa
+from .query import Query as Query  # noqa
 from .rage import Rage as Rage  # noqa
 from .restart import Restart as Restart  # noqa
 from .start import Start  # noqa

@@ -135,7 +135,7 @@ def main() -> int:
     # Subcommands.
     parsed_commands = parser.add_subparsers(
         metavar="{check, kill, incremental, initialize (init), "
-        "rage, restart, start, stop}"
+        "query, rage, restart, start, stop}"
     )
 
     incremental = parsed_commands.add_parser(commands.Incremental.NAME)
@@ -191,6 +191,10 @@ def main() -> int:
 
     initialize = parsed_commands.add_parser(commands.Initialize.NAME, aliases=["init"])
     initialize.set_defaults(command=commands.Initialize)
+
+    query = parsed_commands.add_parser(commands.Query.NAME)
+    query.add_argument("query", help="The query for the server.")
+    query.set_defaults(command=commands.Query)
 
     arguments = parser.parse_args()
 
