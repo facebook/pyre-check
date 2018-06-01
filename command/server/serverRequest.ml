@@ -144,8 +144,15 @@ let rec process_request
         |> Path.absolute
         |> String.is_suffix ~suffix:".pyi"
       in
-      Service.AstSharedMemory.remove_paths
-        (List.filter_map ~f:(File.handle ~root:source_root) update_environment_with);
+      let () =
+        (* Clean up all data related to updated files. *)
+        let handles =
+          List.filter_map ~f:(File.handle ~root:source_root) update_environment_with
+        in
+        Service.AstSharedMemory.remove_paths handles;
+        let (module Handler: Analysis.Environment.Handler) = state.environment in
+        List.iter ~f:Handler.purge handles
+      in
       let stubs, sources = List.partition_tf ~f:is_stub update_environment_with in
       let stubs = Service.Parser.parse_sources_list ~configuration ~scheduler ~files:stubs in
       let sources =
@@ -164,11 +171,23 @@ let rec process_request
     in
     let new_source_handles = List.filter_map ~f:(File.handle ~root:source_root) check in
     Annotated.Class.AttributesCache.clear ();
-    Service.Environment.repopulate
-      state.environment
-      ~configuration
-      ~handles:repopulate_handles;
-
+    let () =
+      Log.log
+        ~section:`Debug
+        "Repopulating the environment with %s"
+        (List.to_string ~f:File.Handle.show repopulate_handles);
+      let repopulate_path handle =
+        match Service.AstSharedMemory.get_source handle with
+        | Some source -> [source]
+        | None -> []
+      in
+      List.concat_map ~f:repopulate_path repopulate_handles
+      |> Analysis.Environment.populate
+        state.environment
+        ~configuration
+        ~check_integrity:false
+        ~source_root
+    in
     Service.Ignore.register ~configuration scheduler repopulate_handles;
 
     let new_errors, lookups =

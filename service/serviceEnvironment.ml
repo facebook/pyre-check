@@ -474,7 +474,9 @@ let shared_memory_handler
 
         DependencyHandler.get_dependent_keys ~path |> purge_dependents;
 
-        DependencyHandler.clear_all_keys ~path
+        DependencyHandler.clear_all_keys ~path;
+
+        Modules.remove_batch (Modules.KeySet.singleton (Ast.Source.qualifier ~path))
 
       let mode path = ErrorModes.get path
     end: Environment.Handler)
@@ -500,25 +502,3 @@ let shared_memory_handler
   infer_protocols ~scheduler ~handler:shared_handler ~configuration;
 
   shared_handler
-
-
-let repopulate
-    (module Handler: Environment.Handler)
-    ~configuration:({ Configuration.source_root; _ } as configuration)
-    ~handles =
-  Log.log
-    ~section:`Debug
-    "Repopulating the environment with %s"
-    (List.to_string ~f:File.Handle.show handles);
-  let repopulate_path handle =
-    Handler.purge handle;
-    match AstSharedMemory.get_source handle with
-    | Some source -> [source]
-    | None -> []
-  in
-  List.concat_map ~f:repopulate_path handles
-  |> Environment.populate
-    ~configuration
-    ~check_integrity:false
-    ~source_root
-    (module Handler: Environment.Handler)

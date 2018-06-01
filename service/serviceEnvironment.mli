@@ -19,9 +19,3 @@ val shared_memory_handler
   -> stubs: File.Handle.t list
   -> sources: File.Handle.t list
   -> (module Environment.Handler)
-
-val repopulate
-  :  (module Environment.Handler)
-  -> configuration: Configuration.t
-  -> handles: File.Handle.t list
-  -> unit
