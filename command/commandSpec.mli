@@ -20,6 +20,7 @@ val base_command_line_arguments
      -> string
      -> string
      -> string list
+     -> string option
      -> string
      -> unit
      -> unit,

@@ -26,6 +26,7 @@ let run
     log_identifier
     project_root
     search_path
+    typeshed
     source_root
     () =
   try
@@ -53,6 +54,7 @@ let run
         ~parallel:(not sequential)
         ~number_of_workers
         ~search_path:(List.map ~f:Path.create_absolute search_path)
+        ?typeshed:(typeshed >>| Path.create_absolute)
         ~project_root:(Path.create_absolute project_root)
         ~source_root:(Path.create_absolute source_root)
         ()

@@ -18,6 +18,7 @@ type t = {
   debug: bool;
   project_root: Path.t;
   search_path: Path.t list;
+  typeshed: Path.t option;
   verbose: bool;
   expected_version: string option;
   strict: bool;
@@ -38,6 +39,7 @@ val create
   -> ?sections:string list
   -> ?project_root:Path.t
   -> ?search_path: Path.t list
+  -> ?typeshed: Path.t
   -> ?verbose:bool
   -> ?expected_version:string
   -> ?strict:bool

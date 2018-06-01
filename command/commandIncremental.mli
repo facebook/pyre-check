@@ -20,6 +20,7 @@ val run
   -> string
   -> string
   -> string list
+  -> string option
   -> string
   -> unit
   -> unit

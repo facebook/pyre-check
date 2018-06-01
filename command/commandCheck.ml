@@ -42,21 +42,21 @@ let check
       number_of_workers;
       project_root;
       search_path;
+      typeshed;
       source_root;
     }
     original_scheduler
     () =
   Log.initialize ~verbose ~sections;
 
-  if not (Path.is_directory source_root) then
-    raise (Invalid_argument (Format.asprintf "`%a` is not a directory" Path.pp source_root));
-  if not (Path.is_directory project_root) then
-    raise (Invalid_argument (Format.asprintf "`%a` is not a directory" Path.pp project_root));
-  List.iter
-    ~f:(fun path ->
-        if not (Path.is_directory path) then
-          raise (Invalid_argument (Format.asprintf "`%a` is not a directory" Path.pp path)))
-    search_path;
+  let check_directory_exists directory =
+    if not (Path.is_directory directory) then
+      raise (Invalid_argument (Format.asprintf "`%a` is not a directory" Path.pp directory));
+  in
+  check_directory_exists source_root;
+  check_directory_exists project_root;
+  List.iter ~f:check_directory_exists search_path;
+  Option.iter typeshed ~f:check_directory_exists;
 
   let bucket_multiplier =
     try Int.of_string (Sys.getenv "BUCKET_MULTIPLIER" |> (fun value -> Option.value_exn value))
@@ -76,6 +76,7 @@ let check
       ~parallel
       ~number_of_workers
       ~search_path
+      ?typeshed
       ~infer
       ~recursive_infer
       ~analyze
@@ -210,6 +211,7 @@ let run_check
     log_identifier
     project_root
     search_path
+    typeshed
     source_root
     () =
   (* T29256759: backward compatibility code. Prefer the new option. *)
@@ -237,6 +239,7 @@ let run_check
       ~parallel:(not sequential)
       ~number_of_workers
       ~search_path:(List.map ~f:Path.create_absolute search_path)
+      ?typeshed:(typeshed >>| Path.create_absolute)
       ~source_root:(Path.create_absolute source_root)
       ()
   in

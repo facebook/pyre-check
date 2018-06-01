@@ -20,6 +20,7 @@ type t = {
   debug: bool;
   project_root: Path.t;
   search_path: Path.t list;
+  typeshed: Path.t option;
   verbose: bool;
   expected_version: string option;
   strict: bool;
@@ -41,6 +42,7 @@ let create
     ?(sections = [])
     ?(project_root = Path.create_absolute "/")
     ?(search_path = [])
+    ?typeshed
     ?(verbose = false)
     ?expected_version
     ?(strict = false)
@@ -61,6 +63,7 @@ let create
     debug;
     project_root;
     search_path;
+    typeshed;
     verbose;
     expected_version;
     strict;

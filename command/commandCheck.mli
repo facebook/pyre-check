@@ -36,6 +36,7 @@ val run_check
   -> string
   -> string
   -> string list
+  -> string option
   -> string
   -> unit
   -> unit

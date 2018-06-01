@@ -118,11 +118,35 @@ let log_parse_errors_count ~not_parsed ~description =
 
 let parse_stubs
     scheduler
-    ~configuration:({ Configuration.source_root; search_path; _ } as configuration) =
+    ~configuration:({ Configuration.source_root; typeshed; search_path; _ } as configuration) =
   let timer = Timer.start () in
 
   let paths =
     let stubs =
+      let typeshed_directories =
+        let list_subdirectories typeshed_path =
+          let root = Path.absolute typeshed_path in
+          if Core.Sys.is_directory root = `Yes then
+            match Core.Sys.ls_dir root with
+            | entries ->
+                let select_directories sofar path =
+                  if Core.Sys.is_directory (root ^/ path) = `Yes then
+                    (Path.create_relative ~root:typeshed_path ~relative:path) :: sofar
+                  else
+                    sofar
+                in
+                List.fold ~init:[] ~f:select_directories entries
+            | exception Sys_error _ ->
+                Log.error "Could not list typeshed directory: `%s`" root;
+                []
+          else
+            begin
+              Log.info "Not a typeshed directory: `%s`" root;
+              []
+            end
+        in
+        Option.value_map ~default:[] ~f:(fun path -> list_subdirectories path) typeshed
+      in
       let stubs root =
         Log.info "Finding type stubs in `%a`..." Path.pp root;
         let is_stub path =
@@ -134,7 +158,7 @@ let parse_stubs
         in
         File.list ~filter:is_stub ~root
       in
-      List.concat_map ~f:stubs (source_root :: search_path)
+      List.concat_map ~f:stubs (source_root :: (typeshed_directories @ search_path))
     in
     let modules =
       let modules root =

@@ -536,6 +536,7 @@ let run_start_command
     log_identifier
     project_root
     search_path
+    typeshed
     source_root
     () =
   (* T29256759: backward compatibility code. Prefer the new option. *)
@@ -563,6 +564,7 @@ let run_start_command
       ~number_of_workers
       ~project_root:(Path.create_absolute project_root)
       ~search_path:(List.map ~f:Path.create_absolute search_path)
+      ?typeshed:(typeshed >>| Path.create_absolute)
       ~source_root:(Path.create_absolute source_root)
       ()
   in

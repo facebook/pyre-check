@@ -49,5 +49,9 @@ let base_command_line_arguments =
     +> flag
       "-search-path"
       (optional_with_default [] (Arg_type.comma_separated string))
-      ~doc:"DIRECTORY1,... Directories containing stubs and external modules to include"
+      ~doc:"DIRECTORY1,... Directories containing external modules to include."
+    +> flag
+      "-typeshed"
+      (optional string)
+      ~doc:"DIRECTORY Typeshed root directory."
     +> anon (maybe_with_default "." ("source-root" %: string)))
