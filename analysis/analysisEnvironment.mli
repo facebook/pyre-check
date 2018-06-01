@@ -44,7 +44,7 @@ module type Handler = sig
     -> definition: (Class.t Node.t) option
     -> (Type.t * Type.t list)
   val register_alias: path: string -> key: Type.t -> data: Type.t -> unit
-  val purge: File.Handle.t -> unit
+  val purge: File.Handle.t list -> unit
 
   val function_definitions: Access.t -> (Define.t Node.t) list option
   val class_definition: Type.t -> (Class.t Node.t) option

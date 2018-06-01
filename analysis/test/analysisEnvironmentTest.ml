@@ -1042,7 +1042,7 @@ let test_purge _ =
   assert_is_some (Handler.aliases (Type.primitive "_T"));
   assert_equal (Handler.dependencies "a.py") (Some ["test.py"]);
 
-  Handler.purge (File.Handle.create "test.py");
+  Handler.purge [File.Handle.create "test.py"];
 
   assert_is_none (Handler.class_definition (Type.primitive "baz.baz"));
   assert_is_none (Handler.function_definitions (Access.create "foo"));

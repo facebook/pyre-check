@@ -42,7 +42,7 @@ module type Handler = sig
     -> definition: (Class.t Node.t) option
     -> (Type.t * Type.t list)
   val register_alias: path: string -> key: Type.t -> data: Type.t -> unit
-  val purge: File.Handle.t -> unit
+  val purge: File.Handle.t list -> unit
 
   val function_definitions: Access.t -> (Define.t Node.t) list option
   val class_definition: Type.t -> (Class.t Node.t) option
@@ -251,8 +251,8 @@ let handler
       Hashtbl.set ~key ~data aliases
 
 
-    let purge handle =
-      let path = File.Handle.show handle in
+    let purge handles =
+      let paths = List.map ~f:File.Handle.show handles in
 
       let purge_table_given_keys table keys =
         List.iter ~f:(fun key -> Hashtbl.remove table key) keys
@@ -263,7 +263,9 @@ let handler
        * purging a.py, we need to take care not to remove the c -> b dependent relationship. *)
       let purge_dependents keys =
         let remove_path dependents =
-          List.filter ~f:(fun dependent -> not (String.equal dependent path)) dependents
+          List.filter
+            ~f:(fun dependent -> not (List.mem paths dependent ~equal:String.equal))
+            dependents
         in
         let dependents = dependencies.Dependencies.dependents in
         List.iter
@@ -274,13 +276,19 @@ let handler
               |> ignore)
           keys
       in
-      DependencyHandler.get_function_keys ~path |> purge_table_given_keys function_definitions;
-      DependencyHandler.get_class_keys ~path |> purge_table_given_keys class_definitions;
-      DependencyHandler.get_alias_keys ~path |> purge_table_given_keys aliases;
-      DependencyHandler.get_global_keys ~path |> purge_table_given_keys globals;
-      DependencyHandler.get_dependent_keys ~path |> purge_dependents;
-      DependencyHandler.clear_keys_batch [path];
-      Hashtbl.remove modules (Source.qualifier ~path)
+      List.concat_map ~f:(fun path -> DependencyHandler.get_function_keys ~path) paths
+      |> purge_table_given_keys function_definitions;
+      List.concat_map ~f:(fun path -> DependencyHandler.get_class_keys ~path) paths
+      |> purge_table_given_keys class_definitions;
+      List.concat_map ~f:(fun path -> DependencyHandler.get_alias_keys ~path) paths
+      |> purge_table_given_keys aliases;
+      List.concat_map ~f:(fun path -> DependencyHandler.get_global_keys ~path) paths
+      |> purge_table_given_keys globals;
+      List.concat_map ~f:(fun path -> DependencyHandler.get_dependent_keys ~path) paths
+      |> purge_dependents;
+      DependencyHandler.clear_keys_batch paths;
+      List.map ~f:(fun path -> Source.qualifier ~path) paths
+      |> List.iter ~f:(Hashtbl.remove modules)
 
 
     let function_definitions =

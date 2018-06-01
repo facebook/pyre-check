@@ -444,18 +444,20 @@ let shared_memory_handler
         Aliases.remove_batch (Aliases.KeySet.singleton key);
         Aliases.add key data
 
-      let purge handle =
-        let path = File.Handle.show handle in
+      let purge handles =
+        let paths = List.map ~f:File.Handle.show handles in
         let purge_dependents keys =
           let remove_path dependents =
-            List.filter ~f:(fun dependent -> not (String.equal dependent path)) dependents
+            List.filter
+              ~f:(fun dependent -> not (List.mem paths dependent ~equal:String.equal))
+              dependents
           in
           List.iter
             ~f:(fun key -> Dependents.get key >>| remove_path >>| Dependents.add key |> ignore)
             keys;
-          DependentKeys.remove_batch (DependentKeys.KeySet.singleton path)
+          DependentKeys.remove_batch (DependentKeys.KeySet.of_list paths)
         in
-        DependencyHandler.get_function_keys ~path
+        List.concat_map ~f:(fun path -> DependencyHandler.get_function_keys ~path) paths
         |> fun keys ->
         begin
           FunctionDefinitions.remove_batch (FunctionDefinitions.KeySet.of_list keys);
@@ -463,20 +465,22 @@ let shared_memory_handler
           Globals.remove_batch (Globals.KeySet.of_list keys);
         end;
 
-        DependencyHandler.get_class_keys ~path
+        List.concat_map ~f:(fun path -> DependencyHandler.get_class_keys ~path) paths
         |> fun keys -> ClassDefinitions.remove_batch (ClassDefinitions.KeySet.of_list keys);
 
-        DependencyHandler.get_alias_keys ~path
+        List.concat_map ~f:(fun path -> DependencyHandler.get_alias_keys ~path) paths
         |> fun keys -> Aliases.remove_batch (Aliases.KeySet.of_list keys);
 
-        DependencyHandler.get_global_keys ~path
+        List.concat_map ~f:(fun path -> DependencyHandler.get_global_keys ~path) paths
         |> fun keys -> Globals.remove_batch (Globals.KeySet.of_list keys);
 
-        DependencyHandler.get_dependent_keys ~path |> purge_dependents;
+        List.concat_map ~f:(fun path -> DependencyHandler.get_dependent_keys ~path) paths
+        |> purge_dependents;
 
-        DependencyHandler.clear_keys_batch [path];
-
-        Modules.remove_batch (Modules.KeySet.singleton (Ast.Source.qualifier ~path))
+        DependencyHandler.clear_keys_batch paths;
+          List.map ~f:(fun path -> Ast.Source.qualifier ~path) paths
+          |> Modules.KeySet.of_list
+          |> Modules.remove_batch
 
       let mode path = ErrorModes.get path
     end: Environment.Handler)

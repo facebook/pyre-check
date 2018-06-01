@@ -151,7 +151,7 @@ let rec process_request
         in
         Service.AstSharedMemory.remove_paths handles;
         let (module Handler: Analysis.Environment.Handler) = state.environment in
-        List.iter ~f:Handler.purge handles
+        Handler.purge handles
       in
       let stubs, sources = List.partition_tf ~f:is_stub update_environment_with in
       let stubs = Service.Parser.parse_sources_list ~configuration ~scheduler ~files:stubs in
