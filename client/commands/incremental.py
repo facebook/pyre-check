@@ -7,8 +7,10 @@ import atexit
 import logging
 import os
 import subprocess
+import sys
 
-from .command import SUCCESS, ClientException, ErrorHandling, State, log
+from .. import FAILURE, SUCCESS
+from .command import ClientException, ErrorHandling, State
 from .start import Start
 from .stop import Stop
 
@@ -64,12 +66,8 @@ class Incremental(ErrorHandling):
             errors = self._get_errors(result)
             self._print(errors)
         except ClientException as exception:
-            LOG.error("%s", str(exception))
-            if log.get_yes_no_input("Restart the server?"):
-                arguments = self._arguments
-                Stop(arguments, self._configuration, self._source_directory).run()
-                self.run()
-            else:
-                exit(-1)
+            LOG.error("Error while waiting for server.")
+            LOG.error("Re-run `%s` in order to restart the server.", " ".join(sys.argv))
+            return FAILURE
 
         return SUCCESS
