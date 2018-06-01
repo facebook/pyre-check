@@ -42,7 +42,7 @@ module type Handler = sig
   val get_global_keys: path: string -> Access.t list
   val get_dependent_keys: path: string -> string list
 
-  val clear_all_keys: path: string -> unit
+  val clear_keys_batch: string list -> unit
 end
 
 
@@ -144,12 +144,12 @@ let handler {
       |> Option.value ~default:[]
 
 
-    let clear_all_keys ~path =
-      Hashtbl.remove function_keys path;
-      Hashtbl.remove class_keys path;
-      Hashtbl.remove alias_keys path;
-      Hashtbl.remove global_keys path;
-      Hashtbl.remove dependent_keys path
+    let clear_keys_batch paths =
+      List.iter ~f:(Hashtbl.remove function_keys) paths;
+      List.iter ~f:(Hashtbl.remove class_keys) paths;
+      List.iter ~f:(Hashtbl.remove alias_keys) paths;
+      List.iter ~f:(Hashtbl.remove global_keys) paths;
+      List.iter ~f:(Hashtbl.remove dependent_keys) paths
   end: Handler)
 
 

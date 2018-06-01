@@ -279,7 +279,7 @@ let handler
       DependencyHandler.get_alias_keys ~path |> purge_table_given_keys aliases;
       DependencyHandler.get_global_keys ~path |> purge_table_given_keys globals;
       DependencyHandler.get_dependent_keys ~path |> purge_dependents;
-      DependencyHandler.clear_all_keys ~path;
+      DependencyHandler.clear_keys_batch [path];
       Hashtbl.remove modules (Source.qualifier ~path)
 
 

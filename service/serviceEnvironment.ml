@@ -267,12 +267,12 @@ let shared_memory_handler
         let get_global_keys ~path = GlobalKeys.get path |> Option.value ~default:[]
         let get_dependent_keys ~path = DependentKeys.get path |> Option.value ~default:[]
 
-        let clear_all_keys ~path =
-          FunctionKeys.remove_batch (FunctionKeys.KeySet.singleton path);
-          ClassKeys.remove_batch (ClassKeys.KeySet.singleton path);
-          AliasKeys.remove_batch (AliasKeys.KeySet.singleton path);
-          GlobalKeys.remove_batch (GlobalKeys.KeySet.singleton path);
-          DependentKeys.remove_batch (DependentKeys.KeySet.singleton path)
+        let clear_keys_batch paths =
+          FunctionKeys.remove_batch (FunctionKeys.KeySet.of_list paths);
+          ClassKeys.remove_batch (ClassKeys.KeySet.of_list paths);
+          AliasKeys.remove_batch (AliasKeys.KeySet.of_list paths);
+          GlobalKeys.remove_batch (GlobalKeys.KeySet.of_list paths);
+          DependentKeys.remove_batch (DependentKeys.KeySet.of_list paths)
 
         let dependents = Dependents.get
       end: Dependencies.Handler)
@@ -474,7 +474,7 @@ let shared_memory_handler
 
         DependencyHandler.get_dependent_keys ~path |> purge_dependents;
 
-        DependencyHandler.clear_all_keys ~path;
+        DependencyHandler.clear_keys_batch [path];
 
         Modules.remove_batch (Modules.KeySet.singleton (Ast.Source.qualifier ~path))
 

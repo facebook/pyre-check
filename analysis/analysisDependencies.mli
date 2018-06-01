@@ -41,7 +41,7 @@ module type Handler = sig
   val get_global_keys: path: string -> Access.t list
   val get_dependent_keys: path: string -> string list
 
-  val clear_all_keys: path: string -> unit
+  val clear_keys_batch: string list -> unit
 
 end
 
