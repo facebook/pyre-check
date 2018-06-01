@@ -54,8 +54,6 @@ class InitTest(unittest.TestCase):
             )
             self.assertEqual(source_directories, {"arguments_target"})
 
-        return
-
         # Configuration is picked up when no arguments provided.
         with patch.object(
             buck, "generate_source_directories", return_value=[]
@@ -70,7 +68,4 @@ class InitTest(unittest.TestCase):
             buck_source_directories.assert_called_with(
                 {"configuration_target"}, build=True, prompt=True
             )
-            self.assertEqual(
-                source_directories,
-                {"configuration_target", "configuration_source_directory"},
-            )
+            self.assertEqual(source_directories, {"configuration_source_directory"})
