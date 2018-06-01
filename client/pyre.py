@@ -193,7 +193,15 @@ def main() -> int:
     initialize.set_defaults(command=commands.Initialize)
 
     query = parsed_commands.add_parser(commands.Query.NAME)
-    query.add_argument("query", help="The query for the server.")
+    query_message = """One of:
+    `help`,
+    `typecheckPath(file1, file2, ..., fileN)`,
+    `less_or_equal(left, right)`,
+    `meet(left, right)`,
+    `join(left, right)`,
+    `superclasses(type)`
+    """
+    query.add_argument("query", help=query_message)
     query.set_defaults(command=commands.Query)
 
     arguments = parser.parse_args()
