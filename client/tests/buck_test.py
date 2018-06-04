@@ -108,10 +108,21 @@ class BuckTest(unittest.TestCase):
     def test_normalize(self) -> None:
         with patch.object(subprocess, "check_output") as buck_targets:
             buck._normalize(["target_path"])
-            buck_targets.assert_called_once_with(
-                ["buck", "targets", "target_path", "--show-output"],
-                stderr=subprocess.DEVNULL,
-                timeout=200,
+            buck_targets.assert_has_calls(
+                [
+                    call(
+                        [
+                            "buck",
+                            "targets",
+                            "target_path",
+                            "--type",
+                            "python_binary",
+                            "python_test",
+                        ],
+                        stderr=subprocess.DEVNULL,
+                        timeout=200,
+                    )
+                ]
             )
 
     def test_build_targets(self) -> None:

@@ -70,8 +70,20 @@ def _normalize(targets: List[str]) -> List[str]:
         "`, `".join(targets),
     )
     try:
-        command = ["buck", "targets"] + targets
-        command.append("--show-output")
+        # TODO(T30027478): Merge these commands.
+        command = (
+            ["buck", "targets"] + targets + ["--type", "python_binary", "python_test"]
+        )
+        targets = (
+            subprocess.check_output(command, stderr=subprocess.DEVNULL, timeout=200)
+            .decode()
+            .strip()
+            .split("\n")
+        )
+        LOG.info("Found %d buck targets.", len(targets))
+        command = ["buck", "targets", "--show-output"] + targets
+        # buck targets --show-output displays a line for each parsed target, even if no
+        # corresponding directory is found in the filter.
         targets_to_destinations = (
             subprocess.check_output(command, stderr=subprocess.DEVNULL, timeout=200)
             .decode()
