@@ -19,3 +19,8 @@ val parse_sources_list
   -> scheduler: ServiceScheduler.t
   -> files: File.t list
   -> File.Handle.t list
+
+val parse_all
+  :  ServiceScheduler.t
+  -> configuration: Configuration.t
+  -> File.Handle.t list * File.Handle.t list

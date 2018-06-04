@@ -175,11 +175,13 @@ let test_link context =
   let linklink = link ^ "-link" in
   Unix.symlink ~src:path ~dst:link;
   Unix.symlink ~src:link ~dst:linklink;
+  let symbolic = Path.create_absolute ~follow_symbolic_links:false link in
   let link = Path.create_absolute link in
   let linklink = Path.create_absolute linklink in
   assert_equal root (Path.real_path root);
   assert_equal root (Path.real_path link);
   assert_equal root (Path.real_path linklink);
+  assert_equal (path ^ "-link") (Path.absolute symbolic);
   Unix.remove (Path.absolute link);
   assert_equal link (Path.real_path link);
   assert_equal link (Path.real_path linklink)

@@ -148,6 +148,7 @@ let test_parse_sources context =
   let stub_handles, source_handles =
     let source_root = Path.create_absolute (bracket_tmpdir context) in
     let module_root = Path.create_absolute (bracket_tmpdir context) in
+    let link_root = Path.create_absolute (bracket_tmpdir context) in
 
     let write_file root relative =
       File.create ~content:(Some "def foo() -> int: ...") (Path.create_relative ~root ~relative)
@@ -161,26 +162,26 @@ let test_parse_sources context =
 
     write_file source_root "c.py";
 
+    write_file link_root "link.py";
+    write_file link_root "seemingly_unrelated.pyi";
+
+    Unix.symlink
+      ~src:((Path.absolute link_root) ^/ "link.py")
+      ~dst:((Path.absolute source_root) ^/ "d.py");
+    Unix.symlink
+      ~src:((Path.absolute link_root) ^/ "seemingly_unrelated.pyi")
+      ~dst:((Path.absolute source_root) ^/ "d.pyi");
+
     let configuration = Configuration.create ~source_root ~search_path:[module_root] () in
     let scheduler = Scheduler.mock () in
+    let stub_handles, source_handles = Service.Parser.parse_all scheduler ~configuration in
     let stub_handles =
-      Service.Parser.parse_stubs scheduler ~configuration
+      stub_handles
       |> List.map ~f:File.Handle.show
       |> List.sort ~compare:String.compare
     in
-    let open Expression in
-    let filter path =
-      match Path.get_relative_to_root ~root:source_root ~path:(Path.create_absolute path) with
-      | Some path ->
-          Set.mem
-            (Access.Set.of_list [Access.create "a"; Access.create "b"])
-            (Source.qualifier ~path)
-          |> not
-      | _ ->
-          true
-    in
     let source_handles =
-      Service.Parser.parse_sources scheduler ~filter ~configuration
+      source_handles
       |> List.map ~f:File.Handle.show
       |> List.sort ~compare:String.compare
     in
@@ -189,7 +190,7 @@ let test_parse_sources context =
   assert_equal
     ~cmp:(List.equal ~equal:String.equal)
     ~printer:(String.concat ~sep:", ")
-    ["a.pyi"; "b.pyi"]
+    ["a.pyi"; "b.pyi"; "d.pyi"]
     stub_handles;
   assert_equal
     ~cmp:(List.equal ~equal:String.equal)

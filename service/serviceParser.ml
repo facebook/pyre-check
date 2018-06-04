@@ -200,3 +200,36 @@ let parse_sources
 
   Statistics.performance ~name:"sources parsed" ~timer ~configuration ();
   handles
+
+
+let parse_all scheduler ~configuration:({ Configuration.source_root; _ } as configuration) =
+  let stubs = parse_stubs scheduler ~configuration in
+  let known_stubs =
+    List.fold
+      stubs
+      ~init:Expression.Access.Set.empty
+      ~f:(fun known_stubs handle ->
+          match AstSharedMemory.get_source handle with
+          | Some { Ast.Source.qualifier; _ } ->
+              Set.add known_stubs qualifier
+          | _ ->
+              known_stubs)
+  in
+  let sources =
+    let filter path =
+      let relative =
+        Path.get_relative_to_root
+          ~root:source_root
+          (* We don't follow symbolic links here, as the path
+             to the link relative to the source root (not project root) matters.. *)
+          ~path:(Path.create_absolute ~follow_symbolic_links:false path)
+      in
+      match relative with
+      | Some path ->
+          not (Set.mem known_stubs (Source.qualifier ~path))
+      | _ ->
+          true
+    in
+    parse_sources ~filter scheduler ~configuration
+  in
+  stubs, sources

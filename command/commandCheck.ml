@@ -5,7 +5,6 @@
 
 open Core
 
-open Ast
 open Analysis
 open Configuration
 open Pyre
@@ -87,30 +86,11 @@ let check
     | None -> Scheduler.create ~configuration ~bucket_multiplier ()
     | Some scheduler -> scheduler
   in
-
   (* Parsing. *)
-  let stubs = Service.Parser.parse_stubs scheduler ~configuration in
-  let known_stubs =
-    List.fold
-      stubs
-      ~init:Expression.Access.Set.empty
-      ~f:(fun known_stubs handle ->
-          match Service.AstSharedMemory.get_source handle with
-          | Some { Ast.Source.qualifier; _ } ->
-              Set.add known_stubs qualifier
-          | _ ->
-              known_stubs)
-  in
-  let sources =
-    let filter path =
-      match Path.get_relative_to_root ~root:source_root ~path:(Path.create_absolute path) with
-      | Some path ->
-          not (Set.mem known_stubs (Source.qualifier ~path))
-      | _ ->
-          true
-    in
-    let sources = Service.Parser.parse_sources ~filter scheduler ~configuration in
-    let number_of_files = List.length (Service.Parser.find_sources ~filter configuration) in
+  let stubs, sources = Service.Parser.parse_all scheduler ~configuration in
+  (* Coverage. *)
+  let () =
+    let number_of_files = List.length sources in
     let { Service.Coverage.strict_coverage; declare_coverage; default_coverage; source_files } =
       Service.Coverage.coverage ~sources ~number_of_files
     in
@@ -130,9 +110,7 @@ let check
         "file_name", path_to_files;
       ]
       ~configuration
-      ();
-
-    sources
+      ()
   in
   (* Build environment. *)
   Service.Ignore.register ~configuration scheduler sources;

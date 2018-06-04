@@ -24,7 +24,7 @@ val relative: t -> path option
 val uri: t -> path
 val last: t -> path
 
-val create_absolute: path -> t
+val create_absolute: ?follow_symbolic_links: bool -> path -> t
 val create_relative: root: t -> relative: path -> t
 val get_relative_to_root: root: t -> path: t -> path option
 val from_uri: path -> t option

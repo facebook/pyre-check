@@ -52,8 +52,11 @@ let pp format path =
   Format.fprintf format "%s" (absolute path)
 
 
-let create_absolute path =
-  Absolute (Filename.realpath path)
+let create_absolute ?(follow_symbolic_links = true) path =
+  if follow_symbolic_links then
+    Absolute (Filename.realpath path)
+  else
+    Absolute path
 
 
 let create_relative ~root ~relative =
