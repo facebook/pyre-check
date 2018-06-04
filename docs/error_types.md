@@ -61,3 +61,16 @@ Pyre has various ways of inferring what is an attribute of an object:
 Pyre does one level of inlining to infer implicit parameters
 We suggest you do not heavily rely on this feature as it is not sound and makes our code brittle.
 Support for this is temporary.
+
+## Pyre Errors [18/21]: Undefined Name, Undefined Import
+
+Error 18 ("Undefined name") is raised when your code tries to access a variable or function that Pyre could not resolve.
+This is usually caused by failing to import the proper module.
+
+```
+  # 'import some_module' is missing
+  some_module.some_func()
+```
+
+Pyre will raise error 21 instead ("Undefined import") when the import statement is present, but the module to be imported could not be found in the search path.
+If the module provides stub files, please provide their location via the `--search-path` commandline parameter.
