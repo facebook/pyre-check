@@ -235,10 +235,11 @@ def main() -> int:
         log.initialize(arguments)
 
         source_directories = []
+        shared_source_directory = None
 
         if arguments.command in [commands.Initialize]:
             configuration = None
-            source_directory = None
+            source_directory_path = None
         else:
             configuration = Configuration(
                 original_directory=arguments.original_directory,
@@ -267,13 +268,21 @@ def main() -> int:
                     arguments, configuration, prompt=prompt
                 )
 
-            isolate = (
-                arguments.command in [commands.Check]
-                and not arguments.use_global_shared_source_directory
-            )
-            source_directory = merge_source_directories(source_directories, isolate)
+            if len(source_directories) == 1:
+                source_directory_path = source_directories.pop()
+            else:
+                isolate = (
+                    arguments.command in [commands.Check]
+                    and not arguments.use_global_shared_source_directory
+                )
+                shared_source_directory = merge_source_directories(
+                    source_directories, isolate
+                )
+                source_directory_path = shared_source_directory.get_root()
 
-        exit_code = arguments.command(arguments, configuration, source_directory).run()
+        exit_code = arguments.command(
+            arguments, configuration, source_directory_path
+        ).run()
     except (buck.BuckException, commands.ClientException) as error:
         LOG.error(str(error))
         arguments.command(
@@ -293,6 +302,8 @@ def main() -> int:
         exit_code = SUCCESS
     finally:
         log.cleanup(arguments)
+        if shared_source_directory:
+            shared_source_directory.remove()
         if configuration and configuration.logger:
             log_statistics(
                 "perfpipe_pyre_usage",

@@ -130,12 +130,9 @@ def merge_source_directories(source_directories, isolate=False):
     if len(source_directories) == 0:
         raise EnvironmentException("No source directory found.")
 
-    if len(source_directories) == 1:
-        return source_directories.pop()
-
-    filesystem = SharedSourceDirectory(source_directories, isolate)
-    filesystem.prepare()
-    return filesystem.get_root()
+    shared_source_directory = SharedSourceDirectory(source_directories, isolate)
+    shared_source_directory.prepare()
+    return shared_source_directory
 
 
 def log_statistics(

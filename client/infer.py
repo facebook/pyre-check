@@ -504,6 +504,7 @@ def main():
     try:
         exit_code = SUCCESS
         source_directories = []
+        shared_source_directory = None
 
         arguments.capable_terminal = is_capable_terminal()
         if arguments.debug or not arguments.capable_terminal:
@@ -523,8 +524,12 @@ def main():
         source_directories = resolve_source_directories(
             arguments, configuration, prompt=False
         )
-        source_directory = merge_source_directories(source_directories)
-        Infer(arguments, configuration, source_directory).run()
+        if len(source_directories) == 1:
+            source_directory_path = source_directories.pop()
+        else:
+            shared_source_directory = merge_source_directories(source_directories)
+            source_directory_path = shared_source_directory.get_root()
+        Infer(arguments, configuration, source_directory_path).run()
     except (
         buck.BuckException,
         commands.ClientException,
@@ -541,11 +546,8 @@ def main():
         LOG.info(traceback.format_exc())
         exit_code = FAILURE
     finally:
-        if len(source_directories) > 1:
-            try:
-                shutil.rmtree(source_directory)
-            except OSError:
-                pass
+        if shared_source_directory:
+            shared_source_directory.remove()
         log.cleanup(arguments)
         if configuration and configuration.logger:
             log_statistics(

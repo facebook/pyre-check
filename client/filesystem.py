@@ -63,6 +63,13 @@ class SharedSourceDirectory:
 
             LOG.log(log.PERFORMANCE, "Merged source directories in %fs", time() - start)
 
+    def cleanup(self):
+        try:
+            if self._isolate:
+                shutil.rmtree(self.get_root())
+        except Exception:
+            pass
+
     def _clear(self):
         root = self.get_root()
         for path in os.listdir(root):

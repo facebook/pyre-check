@@ -212,3 +212,13 @@ class FilesystemTest(unittest.TestCase):
         with self.assertRaises(OSError):
             with try_lock(path):
                 pass
+
+    @patch("shutil.rmtree")
+    def test_cleanup(self, rmtree):
+        shared_source_directory = SharedSourceDirectory(["first", "second"])
+        shared_source_directory.cleanup()
+        rmtree.assert_not_called()
+
+        shared_source_directory = SharedSourceDirectory(["first", "second"], True)
+        shared_source_directory.cleanup()
+        rmtree.assert_called()
