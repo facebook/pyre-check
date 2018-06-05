@@ -797,10 +797,8 @@ let register_functions
   let module Visit = Visit.MakeStatementVisitor(struct
       type t = ((Type.Callable.t Node.t) list) Access.Map.t
 
-      let statement_keep_recursing { Node.value; _ } =
-        match value with
-        | Define _ -> Transform.Stop
-        | _ -> Transform.Recurse
+      let statement_keep_recursing _ =
+        Transform.Recurse
 
       let statement _ callables statement =
         let register_define

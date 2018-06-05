@@ -34,7 +34,7 @@ let create name = name
 let show name = name
 
 
-let sanitize name =
+let sanitized name =
   let stars, name =
     if String.is_prefix name ~prefix:"**" then
       "**", String.drop_prefix name 2
@@ -49,12 +49,12 @@ let sanitize name =
 
 
 let pp_sanitized format name =
-  sanitize name
+  sanitized name
   |> Format.fprintf format "%s"
 
 
 let show_sanitized name =
-  sanitize name
+  sanitized name
 
 
 let remove_leading_underscores name =

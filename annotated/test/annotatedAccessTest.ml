@@ -41,18 +41,20 @@ let test_fold _ =
   let resolution =
     populate_with_sources [
       parse
-        ~qualifier:(Access.create "builtins")
+        ~qualifier:[]
         {|
           integer: int = 1
           string: str = 'string'
 
           class Class:
-            Class.attribute: int = 1
-            def Class.method(self) -> int: ...
+            attribute: int = 1
+            def method(self) -> int: ...
           instance: Class
 
-          def function() -> str: ...
-        |};
+          def function() -> str:
+            def nested() -> str: ...
+        |}
+      |> Preprocessing.preprocess;
       parse
         ~qualifier:(Access.create "os")
         {|
@@ -140,7 +142,22 @@ let test_fold _ =
       { annotation = parse_annotation "typing.Callable('function')[[], str]"; element = Value };
       { annotation = Type.string; element = Signature };
     ];
-  (* TODO(T29105314): handle nested calls. *)
+  assert_fold
+    "function.nested()"
+    [
+      { annotation = parse_annotation "typing.Callable('function')[[], str]"; element = Value };
+      {
+        annotation = parse_annotation "typing.Callable('function.nested')[[], str]";
+        element = Value;
+      };
+      { annotation = Type.string; element = Signature };
+    ];
+  assert_fold
+    "function.unknown_nested()"
+    [
+      { annotation = parse_annotation "typing.Callable('function')[[], str]"; element = Value };
+      { annotation = Type.Top; element = Value };
+    ];
 
   assert_fold "os.sep" [{ annotation = Type.string; element = Value }];
 

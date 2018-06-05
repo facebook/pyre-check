@@ -191,6 +191,7 @@ module Access : sig
   val create_from_identifiers: Identifier.t list -> t
   val create_from_expression: expression_t -> t
 
+  val sanitized: t -> t
   val pp_sanitized: Format.formatter -> t -> unit
   val show_sanitized: t -> string
 

@@ -21,9 +21,16 @@ module Record = struct
         annotation: 'annotation;
         default: bool;
       }
+      [@@deriving compare, sexp, show, hash]
 
 
-      and 'annotation t =
+      let equal_named equal_annotation left right =
+        left.default = right.default &&
+        Access.equal (Access.sanitized left.name) (Access.sanitized right.name) &&
+        equal_annotation left.annotation right.annotation
+
+
+      type 'annotation t =
         | Anonymous of 'annotation
         | Named of 'annotation named
         | Variable of 'annotation named

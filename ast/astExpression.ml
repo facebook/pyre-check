@@ -289,17 +289,24 @@ module Access = struct
     Format.asprintf "%a" pp access
 
 
+  let sanitized access =
+    let sanitized element =
+      match element with
+      | Identifier identifier -> Identifier (Identifier.sanitized identifier)
+      | _ -> element
+    in
+    List.map access ~f:sanitized
+
+
   let pp_sanitized format access =
     let identifier (element: expression_t Record.Access.access): string =
       match element with
-      | Identifier identifier ->
-          Identifier.show_sanitized identifier
-      | Call _ ->
-          Format.asprintf "(...)"
-      | _ ->
-          "?"
+      | Identifier identifier -> Identifier.show identifier
+      | Call _ -> Format.asprintf "(...)"
+      | _ -> "?"
     in
-    List.map ~f:identifier access
+    sanitized access
+    |> List.map ~f:identifier
     |> String.concat ~sep:"."
     |> Format.fprintf format "%s"
 
@@ -328,7 +335,7 @@ module Access = struct
   let delocalize_qualified access =
     List.rev access
     |> (function
-        | (Identifier identifier) :: tail -> (Identifier (Identifier.sanitize identifier)) :: tail
+        | (Identifier identifier) :: tail -> (Identifier (Identifier.sanitized identifier)) :: tail
         | access -> access)
     |> List.rev
 

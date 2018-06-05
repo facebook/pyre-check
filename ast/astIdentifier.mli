@@ -13,7 +13,7 @@ module Set: Set.S with type Elt.t = t
 
 val create: string -> t
 
-val sanitize: t -> t
+val sanitized: t -> t
 val pp_sanitized: Format.formatter -> t -> unit
 val show_sanitized: t -> string
 

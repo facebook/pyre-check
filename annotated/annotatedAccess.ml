@@ -392,6 +392,13 @@ let fold ~resolution ~initial ~f access =
               >>| (fun callable -> resolve_callable ~implicit_annotation ~callable ~arguments)
               |> Option.value ~default:(State.abort state ())
 
+          | Some resolved, Access.Identifier _
+            when Type.is_callable (Annotation.annotation resolved) ->
+              (* Nested function. *)
+              Resolution.get_local resolution ~access:lead
+              >>| (fun resolved -> State.step state ~resolved ())
+              |> Option.value ~default:(State.abort state ())
+
           | Some resolved, Access.Identifier _ ->
               (* Attribute access. *)
               let target =
