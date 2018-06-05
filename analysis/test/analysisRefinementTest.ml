@@ -8,15 +8,17 @@ open OUnit2
 
 open Analysis
 open Annotation
+open Ast
 open Refinement
 open Test
 
 
 let resolution =
   let configuration = Configuration.create () in
+  let toplevel = Statement.Define.create_toplevel ~qualifier:[] ~statements:[] in
   Environment.Builder.create ~configuration ()
   |> Environment.handler ~configuration
-  |> fun handler -> Environment.resolution handler ()
+  |> fun handler -> Environment.resolution handler ~define:toplevel ()
 
 
 let test_refine _ =

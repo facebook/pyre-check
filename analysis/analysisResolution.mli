@@ -25,7 +25,8 @@ val create
   -> parse_annotation: (Expression.t -> Type.t)
   -> global: (Access.t -> global option)
   -> module_definition: (Access.t -> Module.t option)
-  -> class_definition:(Type.t -> (Class.t Node.t) option)
+  -> class_definition: (Type.t -> (Class.t Node.t) option)
+  -> define: Define.t
   -> t
 
 val set_local: t -> access: Access.t -> annotation: Annotation.t -> t
@@ -35,8 +36,7 @@ val get_local_callable: t -> access: Access.t -> Type.Callable.t option
 val annotations: t -> Annotation.t Access.Map.t
 val with_annotations: t -> annotations: Annotation.t Access.Map.t -> t
 
-val with_define: t -> define: Statement.Define.t -> t
-val define: t -> Statement.Define.t option
+val define: t -> Statement.Define.t
 val order: t -> (module TypeOrder.Handler)
 
 val resolve: t -> Expression.t -> Type.t

@@ -21,7 +21,6 @@ type global = Annotation.t Node.t
 
 type t = {
   annotations: Annotation.t Access.Map.t;
-  define: Statement.Define.t option;  (* TODO(T29953465): make this non-optional. *)
   order: (module TypeOrder.Handler);
 
   resolve: resolution: t -> Expression.t -> Type.t;
@@ -29,10 +28,10 @@ type t = {
   parse_annotation: Expression.t -> Type.t;
 
   global: Access.t -> global option;
-
   module_definition: Access.t -> Module.t option;
-
   class_definition: Type.t -> (Class.t Node.t) option;
+
+  define: Statement.Define.t;
 }
 
 
@@ -44,10 +43,11 @@ let create
     ~parse_annotation
     ~global
     ~module_definition
-    ~class_definition =
+    ~class_definition
+    ~define =
   {
     annotations;
-    define = None;
+    define;
     order;
     resolve;
     resolve_literal;
@@ -79,7 +79,7 @@ let get_local { annotations; define; global; _ } ~access =
             List.rev access
       in
       match define with
-      | Some ({ Define.name; _ } as define) when not (Define.is_toplevel define) ->
+      | { Define.name; _ } as define when not (Define.is_toplevel define) ->
           let rec find_global reversed_qualifier =
             (* Walk up the defines namespace to find the global definition. *)
             match reversed_qualifier with
@@ -106,10 +106,6 @@ let get_local_callable resolution ~access =
   >>= function
   | Type.Callable callable -> Some callable
   | _ -> None
-
-
-let with_define resolution ~define =
-  { resolution with define = Some define }
 
 
 let with_annotations resolution ~annotations =
@@ -140,15 +136,13 @@ let parse_annotation { parse_annotation; define; _ } expression =
   let delocalized =
     (* TODO(T29884749): we should recursively explore the parent here to get to the top-level. *)
     match define with
-    | Some { Define.name = scope; parent = None; _ }
-    | Some { Define.parent = Some scope; _ } ->
+    | { Define.name = scope; parent = None; _ }
+    | { Define.parent = Some scope; _ } ->
         List.rev scope
         |> List.tl
         >>| List.rev
         >>| (fun qualifier -> Expression.delocalize expression ~qualifier)
         |> Option.value ~default:expression
-    | _ ->
-        expression
   in
   parse_annotation delocalized
 

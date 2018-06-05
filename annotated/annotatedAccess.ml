@@ -119,8 +119,8 @@ let fold ~resolution ~initial ~f access =
     | (Access.Identifier name) :: (Access.Call _) :: tail
       when Identifier.show name = "super" ->
         (Resolution.define resolution
-         >>| Define.create
-         >>= Define.parent_definition ~resolution
+         |> Define.create
+         |> Define.parent_definition ~resolution
          >>| Class.immediate_superclasses ~resolution
          >>| function
          | Some superclass ->

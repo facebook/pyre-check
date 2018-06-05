@@ -54,7 +54,10 @@ let populate ?source_root ?(check_dependency_exists = false) source =
 
 
 let resolution environment =
-  Environment.resolution environment ()
+  Environment.resolution
+    environment
+    ~define:(Define.create_toplevel ~qualifier:[] ~statements:[])
+    ()
 
 
 let global environment =

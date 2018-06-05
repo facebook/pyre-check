@@ -331,9 +331,14 @@ module SingleSourceResult = struct
 end
 
 
-let infer configuration environment _ ?mode_override ({ Source.path; _ } as source) =
+let infer configuration environment _ ?mode_override ({ Source.path; qualifier; _ } as source) =
   Log.debug "Checking %s..." path;
-  let resolution = Environment.resolution environment () in
+  let resolution =
+    Environment.resolution
+      environment
+      ~define:(Define.create_toplevel ~qualifier ~statements:[])
+      ()
+  in
 
   let dequalify_map = Preprocessing.dequalify_map source in
 

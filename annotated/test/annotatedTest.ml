@@ -41,7 +41,10 @@ let populate source =
 
 
 let resolution environment =
-  Environment.resolution environment ()
+  Environment.resolution
+    environment
+    ~define:(Define.create_toplevel ~qualifier:[] ~statements:[])
+    ()
 
 
 let value option =

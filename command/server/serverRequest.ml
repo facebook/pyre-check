@@ -251,7 +251,12 @@ let rec process_request
         state,
         (Some (TypeQueryResponse response))
     | Superclasses annotation ->
-        let resolution = Environment.resolution state.environment () in
+        let resolution =
+          Environment.resolution
+            state.environment
+            ~define:(Ast.Statement.Define.create_toplevel ~qualifier:[] ~statements:[])
+            ()
+        in
         let response =
           Handler.class_definition annotation
           >>| Annotated.Class.create

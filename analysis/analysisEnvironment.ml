@@ -345,10 +345,7 @@ let handler
   end: Handler)
 
 
-let resolution
-    (module Handler: Handler)
-    ?(annotations = Access.Map.empty)
-    () =
+let resolution (module Handler: Handler) ?(annotations = Access.Map.empty) ~define () =
   let parse_annotation = Type.create ~aliases:Handler.aliases in
 
   let class_definition annotation =
@@ -370,6 +367,7 @@ let resolution
     ~global:Handler.globals
     ~module_definition:Handler.module_definition
     ~class_definition
+    ~define
 
 
 let dependencies (module Handler: Handler) =
@@ -568,7 +566,13 @@ let register_aliases (module Handler: Handler) sources =
 let register_globals
     (module Handler: Handler)
     ({ Source.path; qualifier; statements; _ } as source) =
-  let resolution = resolution (module Handler: Handler) ~annotations:Access.Map.empty () in
+  let resolution =
+    resolution
+      (module Handler: Handler)
+      ~annotations:Access.Map.empty
+      ~define:(Define.create_toplevel ~qualifier ~statements:[])
+      ()
+  in
 
   let qualified_access access =
     let access =
@@ -783,8 +787,11 @@ let register_functions
     (module Handler: Handler)
     ({ Source.path; qualifier; _ } as source) =
   let resolution =
-    resolution (module Handler: Handler) ~annotations:Access.Map.empty ()
-    |> Resolution.with_define ~define:(Define.create_toplevel ~qualifier ~statements:[])
+    resolution
+      (module Handler: Handler)
+      ~annotations:Access.Map.empty
+      ~define:(Define.create_toplevel ~qualifier ~statements:[])
+      ()
   in
 
   let module Visit = Visit.MakeStatementVisitor(struct
@@ -909,7 +916,13 @@ let populate
 
 let infer_implementations (module Handler: Handler) ~protocol =
   let module Edge = TypeOrder.Edge in
-  let resolution = resolution (module Handler) () in
+  let resolution =
+    resolution
+      (module Handler: Handler)
+      ~annotations:Access.Map.empty
+      ~define:(Define.create_toplevel ~qualifier:[] ~statements:[])
+      ()
+  in
 
   Resolution.class_definition resolution protocol
   >>| (fun protocol_definition ->

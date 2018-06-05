@@ -107,8 +107,11 @@ module State = struct
       () =
     let annotations = Access.Map.of_alist_exn annotations in
     let resolution =
-      Environment.resolution environment ~annotations ()
-      |> Resolution.with_define ~define:(Node.value define)
+      Environment.resolution
+        environment
+        ~annotations
+        ~define:(Node.value define)
+        ()
     in
     { configuration; resolution; errors = Location.Map.empty; define; lookup; bottom = false }
 
@@ -1701,11 +1704,16 @@ let check
     environment
     call_graph
     ?mode_override
-    ({ Source.path; _ } as source) =
+    ({ Source.path; qualifier; _ } as source) =
   Log.debug "Checking %s..." path;
   ignore call_graph; (* TODO(T28536531): actually build this. *)
 
-  let resolution = Environment.resolution environment () in
+  let resolution =
+    Environment.resolution
+      environment
+      ~define:(Define.create_toplevel ~qualifier ~statements:[])
+      ()
+  in
   let lookup = Lookup.create () in
 
   let check ({ Node.location; value = { Define.name; parent; _ } as define } as define_node) =
