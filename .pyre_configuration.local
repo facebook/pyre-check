@@ -1,0 +1,4 @@
+{
+  "targets": ["//tools/pyre/..."],
+  "continuous": true
+}
