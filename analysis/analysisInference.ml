@@ -32,7 +32,6 @@ module State = struct
 
   let initial_backward
       ?(configuration = Configuration.create ())
-      ~environment
       define
       ~forward:{ resolution; errors; _ } =
     let expected_return =
@@ -40,12 +39,12 @@ module State = struct
       |> Annotation.create
     in
     let backward_initial_state =
-      create
-        ~configuration
-        ~environment
-        ~annotations:[Preprocessing.return_access, expected_return]
-        ~define
-        ()
+      let resolution =
+        Resolution.with_annotations
+          resolution
+          ~annotations:(Access.Map.of_alist_exn [Preprocessing.return_access, expected_return])
+      in
+      create ~configuration ~resolution ~define ()
     in
     let combine_annotations left right =
       let add_annotation ~key ~data map =
@@ -368,14 +367,14 @@ let infer configuration environment _ ?mode_override ({ Source.path; qualifier; 
         State.initial
           ~configuration
           ~lookup
-          environment
+          ~resolution
           { Node.location; value = define }
       in
       let exit =
         backward_fixpoint
           cfg
           ~initial_forward
-          ~initialize_backward:(State.initial_backward ~configuration ~environment define_node)
+          ~initialize_backward:(State.initial_backward ~configuration define_node)
         |> Fixpoint.entry
         >>| print_state "Entry"
         >>| State.check_entry

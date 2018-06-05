@@ -22,7 +22,6 @@ module State : sig
 
   val initial_backward
     :  ?configuration: Configuration.t
-    -> environment: (module Environment.Handler)
     -> Statement.Define.t Node.t
     -> forward:t
     -> t

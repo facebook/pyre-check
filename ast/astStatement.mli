@@ -191,7 +191,12 @@ module Define : sig
   type t = statement_t Record.Define.record
   [@@deriving compare, eq, sexp, show, hash]
 
+  val create_toplevel: qualifier: Access.t -> statements: statement_t list -> t
+  val create_class_toplevel: qualifier: Access.t -> statements: statement_t list -> t
+  val create_generated_constructor: statement_t Record.Class.record -> t
+
   val unqualified_name: t -> Access.t
+  val self_identifier: t -> Identifier.t
 
   val is_method: t -> bool
   val is_coroutine: t -> bool
@@ -203,12 +208,10 @@ module Define : sig
   val is_generated_constructor: t -> bool
   val is_property_setter: t -> bool
   val is_untyped: t -> bool
+
   val is_toplevel: t -> bool
+  val is_class_toplevel: t -> bool
 
-  val self_identifier: t -> Identifier.t
-
-  val create_generated_constructor: statement_t Record.Class.record -> t
-  val create_toplevel: qualifier: Access.t -> statements: statement_t list -> t
   val dump: t -> bool
   val dump_cfg: t -> bool
 

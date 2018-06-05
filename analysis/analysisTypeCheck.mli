@@ -17,20 +17,48 @@ module Resolution = AnalysisResolution
 
 
 module State : sig
-  type t = {
+  (* Keep track of nested functions to analyze and their initial states. *)
+  type nested_define = {
+    nested: Define.t;
+    initial: t;
+  }
+
+  (* `configuration` provides access to global options.
+
+     `resolution` provides access to the local and global type environment.
+
+     `errors` is a map from locations to errors. We assume there can be only
+     one error per location.
+
+     `define` is the function we're currently checking.
+
+     `lookup` keeps track of symbols and their types to later expose them to IDEs.
+
+     `nested_defines` keeps track of entry points and states for nested function definitions.
+
+     `bottom` indicates whether the state is reachable.
+
+     The order is defined by values of the map, i.e.
+     left <= right <=>
+        keys(left) \subset \keys(right) \and
+        \forall key \in keys(left): left(key) <= right(key)
+
+     The join takes the union of keys and does an element-wise join on the
+     values. *)
+  and t = {
     configuration: Configuration.t;
     resolution: Resolution.t;
     errors: Error.t Location.Map.t;
     define: Define.t Node.t;
     lookup: Lookup.t option;
+    nested_defines: nested_define Location.Map.t;
     bottom: bool;
   }
   [@@deriving eq, show]
 
   val create
     :  ?configuration: Configuration.t
-    -> environment: (module Environment.Handler)
-    -> annotations: (Access.t * Annotation.t) list
+    -> resolution: Resolution.t
     -> define: Statement.Define.t Node.t
     -> ?lookup: Lookup.t
     -> unit
@@ -42,8 +70,8 @@ module State : sig
   val initial
     :  ?configuration: Configuration.t
     -> ?lookup: Lookup.t
-    -> (module Environment.Handler)
-    -> Statement.Define.t Node.t
+    -> resolution: Resolution.t
+    -> Define.t Node.t
     -> t
 
   include AnalysisFixpoint.State with type t := t

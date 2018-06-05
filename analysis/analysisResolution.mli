@@ -36,6 +36,8 @@ val annotations: t -> Annotation.t Access.Map.t
 val with_annotations: t -> annotations: Annotation.t Access.Map.t -> t
 
 val define: t -> Statement.Define.t
+val with_define: t -> define: Define.t -> t
+
 val order: t -> (module TypeOrder.Handler)
 
 val resolve: t -> Expression.t -> Type.t

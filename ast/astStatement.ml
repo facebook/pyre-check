@@ -244,6 +244,48 @@ module Define = struct
   [@@deriving compare, eq, sexp, show, hash]
 
 
+  let create_toplevel ~qualifier ~statements =
+    {
+      name = qualifier @ (Access.create "$toplevel");
+      parameters = [];
+      body = statements;
+      decorators = [];
+      docstring = None;
+      return_annotation = None;
+      async = false;
+      generated = false;
+      parent = None;
+    }
+
+
+  let create_class_toplevel ~qualifier ~statements =
+    {
+      name = qualifier @ (Access.create "$class_toplevel");
+      parameters = [];
+      body = statements;
+      decorators = [];
+      docstring = None;
+      return_annotation = None;
+      async = false;
+      generated = false;
+      parent = None;
+    }
+
+
+  let create_generated_constructor { Record.Class.name; docstring; _ } =
+    {
+      name = name @ (Access.create "__init__");
+      parameters = [Parameter.create ~name:(Identifier.create "self") ()];
+      body = [Node.create_with_default_location Pass];
+      decorators = [];
+      return_annotation = None;
+      async = false;
+      generated = true;
+      parent = Some name;
+      docstring;
+    }
+
+
   let unqualified_name { name; parent; _ } =
     match parent with
     | Some parent ->
@@ -258,18 +300,10 @@ module Define = struct
         name
 
 
-  let create_toplevel ~qualifier ~statements =
-    {
-      name = qualifier @ (Access.create "$toplevel");
-      parameters = [];
-      body = statements;
-      decorators = [];
-      docstring = None;
-      return_annotation = None;
-      async = false;
-      generated = false;
-      parent = None;
-    }
+  let self_identifier { parameters; _ } =
+    match parameters with
+    | { Node.value = { Parameter.name; _ }; _ } :: _ -> name
+    | _ -> Identifier.create "self"
 
 
   let is_method { parent; _ } =
@@ -353,24 +387,15 @@ module Define = struct
 
   let is_toplevel { name; _ } =
     match List.last name with
-    | Some (Access.Identifier toplevel) when Identifier.show toplevel = "$toplevel" ->
-        true
-    | _ ->
-        false
+    | Some (Access.Identifier toplevel) when Identifier.show toplevel = "$toplevel" -> true
+    | _ -> false
 
 
-  let create_generated_constructor { Record.Class.name; docstring; _ } =
-    {
-      name = name @ (Access.create "__init__");
-      parameters = [Parameter.create ~name:(Identifier.create "self") ()];
-      body = [Node.create_with_default_location Pass];
-      decorators = [];
-      return_annotation = None;
-      async = false;
-      generated = true;
-      parent = Some name;
-      docstring;
-    }
+  let is_class_toplevel { name; _ } =
+    match List.last name with
+    | Some (Access.Identifier toplevel) when Identifier.show toplevel = "$class_toplevel" -> true
+    | _ -> false
+
 
   let contains_call { body; _ } name =
     let matches = function
@@ -397,12 +422,6 @@ module Define = struct
 
   let dump_cfg define =
     contains_call define "pyre_dump_cfg"
-
-
-  let self_identifier { parameters; _ } =
-    match parameters with
-    | { Node.value = { Parameter.name; _ }; _ } :: _ -> name
-    | _ -> Identifier.create "self"
 
 
   let implicit_attributes

@@ -107,16 +107,20 @@ let get_local_callable resolution ~access =
   | _ -> None
 
 
-let with_annotations resolution ~annotations =
-  { resolution with annotations }
-
-
 let annotations { annotations; _ } =
   annotations
 
 
+let with_annotations resolution ~annotations =
+  { resolution with annotations }
+
+
 let define { define; _ } =
   define
+
+
+let with_define resolution ~define =
+  { resolution with define }
 
 
 let order { order; _ } =

@@ -23,29 +23,29 @@ let plain_environment =
   TypeCheckTest.plain_environment
 
 
-let environment =
-  TypeCheckTest.environment
-
-
 let create
     ?(define = TypeCheckTest.empty_define)
     ?(expected_return = Type.Top)
     ?(immutables = [])
     annotations =
-  let annotations =
-    let immutables = String.Map.of_alist_exn immutables in
-    let annotify (name, annotation) =
-      let annotation =
-        let create annotation =
-          match Map.find immutables name with
-          | Some global -> Annotation.create_immutable ~global annotation
-          | _ -> Annotation.create annotation
+  let resolution =
+    let annotations =
+      let immutables = String.Map.of_alist_exn immutables in
+      let annotify (name, annotation) =
+        let annotation =
+          let create annotation =
+            match Map.find immutables name with
+            | Some global -> Annotation.create_immutable ~global annotation
+            | _ -> Annotation.create annotation
+          in
+          create annotation
         in
-        create annotation
+        Access.create name, annotation
       in
-      Access.create name, annotation
+      List.map ~f:annotify annotations
+      |> Access.Map.of_alist_exn
     in
-    List.map ~f:annotify annotations
+    Resolution.with_annotations TypeCheckTest.resolution ~annotations
   in
   let define =
     +{
@@ -53,7 +53,7 @@ let create
       Define.return_annotation = Some (Type.expression expected_return);
     }
   in
-  State.create ~environment ~annotations ~define ()
+  State.create ~resolution ~define ()
 
 
 let assert_backward precondition statement postcondition =
@@ -169,8 +169,8 @@ let test_fixpoint_backward _ =
       expected
       (Inference.backward_fixpoint
          (Cfg.create define)
-         ~initial_forward:(State.initial environment define_node)
-         ~initialize_backward:(Inference.State.initial_backward ~environment define_node))
+         ~initial_forward:(State.initial ~resolution:TypeCheckTest.resolution define_node)
+         ~initialize_backward:(Inference.State.initial_backward define_node))
   in
   assert_fixpoint_backward
     {| def foo(): pass |}

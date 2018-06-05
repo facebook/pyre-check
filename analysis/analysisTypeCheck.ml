@@ -26,29 +26,28 @@ module Coverage = AnalysisCoverage
 
 
 module State = struct
-  (* `environment` provides access to the global type environment.
+  type nested_define = {
+    nested: Define.t;
+    initial: t;
+  }
 
-     `errors` is a map from locations to errors. We assume there can be only
-     one error per location.
-
-     `annotations` is a map from accesses to annotations. The map itself does not have a bottom or
-     top element.
-
-     The order is defined by values of the map, i.e.
-     left <= right <=>
-        keys(left) \subset \keys(right) \and
-        \forall key \in keys(left): left(key) <= right(key)
-
-     The join takes the union of keys and does an element-wise join on the
-     values. *)
-  type t = {
+  and t = {
     configuration: Configuration.t;
     resolution: Resolution.t;
     errors: Error.t Location.Map.t;
     define: Define.t Node.t;
     lookup: Lookup.t option;
+    nested_defines: nested_define Location.Map.t;
     bottom: bool;
   }
+
+
+  let pp_nested_define format { nested = { Define.name; _ }; _ } =
+    Format.fprintf format "%a" Access.pp name
+
+
+  let show_nested_define nested =
+    Format.asprintf "%a" pp_nested_define nested
 
 
   let pp
@@ -57,11 +56,21 @@ module State = struct
         resolution;
         errors;
         define = { Node.value = define; _ };
+        nested_defines;
         bottom;
         _;
       } =
-    let expected =
-      Annotated.Callable.return_annotation ~define ~resolution
+    let expected = Annotated.Callable.return_annotation ~define ~resolution in
+    let nested_defines =
+      let nested_define_to_string nested_define =
+        Format.asprintf
+          "    %a"
+          pp_nested_define
+          nested_define
+      in
+      Map.data nested_defines
+      |> List.map ~f:nested_define_to_string
+      |> String.concat ~sep:"\n"
     in
     let annotations =
       let annotation_to_string (name, annotation) =
@@ -87,9 +96,10 @@ module State = struct
     in
     Format.fprintf
       format
-      "  Bottom: %b\n  Expected return: %a\n  Types:\n%s\n  Errors:\n%s\n"
+      "  Bottom: %b\n  Expected return: %a\n  Nested defines:\n%s\n  Types:\n%s\n  Errors:\n%s\n"
       bottom
       Type.pp expected
+      nested_defines
       annotations
       errors
 
@@ -98,22 +108,29 @@ module State = struct
     Format.asprintf "%a" pp state
 
 
-  let create
-      ?(configuration = Configuration.create ())
-      ~environment
-      ~annotations
-      ~define
-      ?lookup
-      () =
-    let annotations = Access.Map.of_alist_exn annotations in
-    let resolution =
-      Environment.resolution
-        environment
-        ~annotations
-        ~define:(Node.value define)
-        ()
-    in
-    { configuration; resolution; errors = Location.Map.empty; define; lookup; bottom = false }
+  let equal_nested_define left right =
+    (* Ignore initial state. *)
+    Define.equal left.nested right.nested
+
+
+  and equal left right =
+    (* Ignore errors in unit tests. *)
+    Map.equal
+      Annotation.equal
+      (Resolution.annotations left.resolution)
+      (Resolution.annotations right.resolution)
+
+
+  let create ?(configuration = Configuration.create ()) ~resolution ~define ?lookup () =
+    {
+      configuration;
+      resolution;
+      errors = Location.Map.empty;
+      define;
+      lookup;
+      nested_defines = Location.Map.empty;
+      bottom = false;
+    }
 
 
   let errors
@@ -212,16 +229,22 @@ module State = struct
     |> Coverage.aggregate
 
 
+  let nested_defines { nested_defines; _ } =
+    Map.to_alist nested_defines
+    |> List.map ~f:(fun (location, { nested; initial }) -> Node.create ~location nested, initial)
+
+
   let initial
       ?(configuration = Configuration.create ())
       ?lookup
-      environment
+      ~resolution
       ({
         Node.location;
         value = ({ Define.parent; parameters; _ } as define);
       } as define_node) =
+    let resolution = Resolution.with_define resolution ~define in
     let { resolution; errors; _ } as initial =
-      create ~configuration ~environment ~annotations:[] ~define:define_node ?lookup ()
+      create ~configuration ~resolution ~define:define_node ?lookup ()
     in
     (* Check parameters. *)
     let annotations, errors =
@@ -430,14 +453,6 @@ module State = struct
         (Resolution.annotations left.resolution)
 
 
-  let equal left right =
-    (* Ignore errors in unit tests. *)
-    Map.equal
-      Annotation.equal
-      (Resolution.annotations left.resolution)
-      (Resolution.annotations right.resolution)
-
-
   let rec join ({ resolution; _ } as left) right =
     if left.bottom then
       right
@@ -559,6 +574,7 @@ module State = struct
         errors;
         define = ({ Node.value = { Define.async; _ } as define; _ } as define_node);
         lookup;
+        nested_defines;
         _;
       } as state)
       ~statement:({ Node.location; _ } as statement) =
@@ -1661,10 +1677,43 @@ module State = struct
       | _ ->
           false
     in
-    if terminates_control_flow then
-      { state with bottom = true }
-    else
-      { state with resolution; errors; lookup }
+
+    let state = { state with resolution; errors; lookup; bottom = terminates_control_flow } in
+
+    let nested_defines =
+      let schedule ~define =
+        let update = function
+          | Some ({ initial; _ } as nested) ->
+              Some { nested with initial = join initial state }
+          | None ->
+              let ({ resolution = initial_resolution; _ } as initial) =
+                initial
+                  ~configuration
+                  ?lookup
+                  ~resolution
+                  (Node.create define ~location)
+              in
+              let resolution =
+                let update ~key ~data initial_resolution =
+                  Resolution.set_local initial_resolution ~access:key ~annotation:data
+                in
+                Resolution.annotations resolution
+                |> Map.fold ~init:initial_resolution ~f:update
+              in
+              Some { nested = define; initial = { initial with resolution } }
+        in
+        Map.change ~f:update nested_defines location
+      in
+      match Node.value statement with
+      | Class { Class.name; body; _ } ->
+          schedule ~define:(Define.create_class_toplevel ~qualifier:name ~statements:body)
+      | Define define ->
+          schedule ~define
+      | _ ->
+          nested_defines
+    in
+
+    { state with nested_defines }
 
 
   let backward state ~statement:_ =
@@ -1705,7 +1754,7 @@ let check
     environment
     call_graph
     ?mode_override
-    ({ Source.path; qualifier; _ } as source) =
+    ({ Source.path; qualifier; statements; _ } as source) =
   Log.debug "Checking %s..." path;
   ignore call_graph; (* TODO(T28536531): actually build this. *)
 
@@ -1717,7 +1766,10 @@ let check
   in
   let lookup = Lookup.create () in
 
-  let check ({ Node.location; value = { Define.name; parent; _ } as define } as define_node) =
+  let check
+      ~define:({ Node.location; value = { Define.name; parent; _ } as define } as define_node)
+      ~initial
+      ~queue =
     Log.log ~section:`Check "Checking %a" Access.pp name;
     let dump = Define.dump define in
 
@@ -1762,18 +1814,20 @@ let check
     try
       let exit =
         let cfg = Cfg.create define in
-        let initial =
-          State.initial
-            ~configuration
-            ~lookup
-            environment
-            { Node.location; value = define }
-        in
         Fixpoint.forward ~cfg ~initial
         |> dump_cfg cfg
         |> Fixpoint.exit
       in
       if dump then exit >>| Log.dump "Exit state:\n%a" State.pp |> ignore;
+
+      let () =
+        (* Schedule nested functions for analysis. *)
+        if Define.is_toplevel define || Define.is_class_toplevel define then
+          exit
+          >>| State.nested_defines
+          >>| List.iter ~f:(Queue.enqueue queue)
+          |> ignore
+      in
 
       let errors =
         exit
@@ -1785,7 +1839,7 @@ let check
         >>| State.coverage
         |> Option.value ~default:(Coverage.create ())
       in
-      { SingleSourceResult.errors; coverage }
+      { SingleSourceResult.errors; coverage }, queue
     with
     | TypeOrder.Untracked annotation ->
         Statistics.event
@@ -1809,12 +1863,37 @@ let check
             else
               [];
           coverage = Coverage.create ~crashes:1 ();
-        }
+        },
+        queue
   in
 
   let results =
-    Preprocessing.defines source
-    |> List.map ~f:check
+    let queue =
+      let queue = Queue.create () in
+      let toplevel =
+        let location =
+          {
+            Location.path;
+            start = { Location.line = 0; column = 0 };
+            stop = { Location.line = 0; column = 0 };
+          }
+        in
+        Define.create_toplevel ~qualifier ~statements
+        |> Node.create ~location
+      in
+      let initial = State.initial ~configuration ~lookup ~resolution toplevel in
+      Queue.enqueue queue (toplevel, initial);
+      queue
+    in
+    let rec results ~queue =
+      match Queue.dequeue queue with
+      | Some (define, initial) ->
+          let result, queue = check ~define ~initial ~queue in
+          result :: results ~queue
+      | _ ->
+          []
+    in
+    results ~queue
   in
 
   let errors =

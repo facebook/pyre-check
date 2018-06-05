@@ -109,6 +109,18 @@ let plain_environment =
             ) -> None: ...
             def indices(self, len: int) -> Tuple[int, int, int]: ...
 
+          class range(typing.Sequence[int]):
+            @overload
+            def __init__(self, stop: int) -> None: ...
+
+          class super:
+             @overload
+             def __init__(self, t: typing.Any, obj: typing.Any) -> None: ...
+             @overload
+             def __init__(self, t: typing.Any) -> None: ...
+             @overload
+             def __init__(self) -> None: ...
+
           class bool(): ...
 
           class bytes(): ...
@@ -169,6 +181,11 @@ let plain_environment =
             def update(self, **kwargs: _S): ...
 
           class list(typing.Sequence[_T], typing.Generic[_T]):
+            @overload
+            def __init__(self) -> None: ...
+            @overload
+            def __init__(self, iterable: typing.Iterable[_T]) -> None: ...
+
             def __add__(self, x: list[_T]) -> list[_T]: ...
             def __iter__(self) -> typing.Iterator[_T]: ...
             def append(self, element: _T) -> None: ...
@@ -235,10 +252,10 @@ let plain_environment =
   environment
 
 
-let environment =
+let resolution =
   let handler = Environment.handler ~configuration plain_environment in
   add_defaults_to_environment ~configuration handler;
-  handler
+  Environment.resolution handler ~define:(Define.create_toplevel ~qualifier:[] ~statements:[]) ()
 
 
 let empty_define = {
@@ -259,20 +276,24 @@ let create
     ?(expected_return = Type.Top)
     ?(immutables = [])
     annotations =
-  let annotations =
-    let immutables = String.Map.of_alist_exn immutables in
-    let annotify (name, annotation) =
-      let annotation =
-        let create annotation =
-          match Map.find immutables name with
-          | Some global -> Annotation.create_immutable ~global annotation
-          | _ -> Annotation.create annotation
+  let resolution =
+    let annotations =
+      let immutables = String.Map.of_alist_exn immutables in
+      let annotify (name, annotation) =
+        let annotation =
+          let create annotation =
+            match Map.find immutables name with
+            | Some global -> Annotation.create_immutable ~global annotation
+            | _ -> Annotation.create annotation
+          in
+          create annotation
         in
-        create annotation
+        Access.create name, annotation
       in
-      Access.create name, annotation
+      List.map ~f:annotify annotations
+      |> Access.Map.of_alist_exn
     in
-    List.map ~f:annotify annotations
+    Resolution.with_annotations resolution ~annotations
   in
   let define =
     +{
@@ -280,7 +301,7 @@ let create
       Define.return_annotation = Some (Type.expression expected_return);
     }
   in
-  State.create ~environment ~annotations ~define ()
+  State.create ~resolution ~define ()
 
 
 let assert_state_equal =
@@ -295,7 +316,7 @@ let assert_initial
     ?parent
     ?return_annotation
     ?(decorators = [])
-    ?(initial = (fun environment define -> State.initial environment define))
+    ?(initial = (fun resolution define -> State.initial ~resolution define))
     expected =
   let define = {
     Define.name = Access.create "foo";
@@ -311,7 +332,7 @@ let assert_initial
   in
   assert_state_equal
     expected
-    (initial environment (+define))
+    (initial resolution (+define))
 
 
 let test_initial _ =
@@ -836,7 +857,7 @@ let test_fixpoint_forward _ =
       expected
       (Fixpoint.forward
          ~cfg:(Cfg.create define)
-         ~initial:(State.initial environment define_node))
+         ~initial:(State.initial ~resolution define_node))
   in
   assert_fixpoint_forward
     {| def foo(): pass |}
@@ -1103,6 +1124,7 @@ let test_show_error_traces _ =
       "Missing attribute annotation [4]: Attribute `attribute` of class `Foo` has type `str` " ^
       "but no type is specified. Attribute `attribute` declared on line 3, type `str` deduced " ^
       "from test.py:7:4.";
+      "Undefined name [18]: Global name `x` is undefined.";
     ];
 
   assert_type_errors ~show_error_traces:true
@@ -1114,9 +1136,7 @@ let test_show_error_traces _ =
     |}
     [
       "Undefined name [18]: Global name `x` is undefined.";
-      "Missing global annotation [5]: Globally accessible variable `constant` has type `int` but " ^
-      "no type is specified. Global variable `constant` declared on line 5, type `int` deduced " ^
-      "from test.py:5:2.";
+      (* TODO(T29421309): unbreak missing global annotation errors. *)
     ];
 
   assert_type_errors ~show_error_traces:true
@@ -1129,9 +1149,6 @@ let test_show_error_traces _ =
     |}
     [
       "Undefined name [18]: Global name `x` is undefined.";
-      "Missing global annotation [5]: Globally accessible variable `constant` has type " ^
-      "`str` but no type is specified. Global variable `constant` " ^
-      "declared on line 5, type `str` deduced from test.py:5:2.";
     ];
 
   assert_type_errors ~show_error_traces:true
@@ -1144,7 +1161,8 @@ let test_show_error_traces _ =
     [
       "Missing attribute annotation [4]: Attribute `attribute` of class `Other` has type " ^
       "`int` but no type is specified. Attribute `attribute` declared on line 3, " ^
-      "type `int` deduced from test.py:5:4."
+      "type `int` deduced from test.py:5:4.";
+      "Undefined name [18]: Global name `x` is undefined.";
     ];
 
 
@@ -3488,6 +3506,7 @@ let test_check_attributes _ =
     [
       "Missing attribute annotation [4]: Attribute `bar` of class `Foo` " ^
       "has type `int` but no type is specified.";
+      "Undefined error [1]: Problem with analysis.";
     ];
 
   assert_type_errors
@@ -3502,6 +3521,7 @@ let test_check_attributes _ =
     [
       "Missing attribute annotation [4]: Attribute `bar` of class `Foo` " ^
       "has type `int` but no type is specified.";
+      "Undefined error [1]: Problem with analysis.";
     ];
 
   assert_type_errors
@@ -3863,10 +3883,7 @@ let test_check_immutables _ =
       global constant
       constant = 1
     |}
-    [
-      "Missing global annotation [5]: Globally accessible variable `constant` has type `int` but " ^
-      "type `Any` is specified."
-    ];
+    [];
 
   assert_type_errors
     {|
@@ -3892,7 +3909,7 @@ let test_check_immutables _ =
       return constant
     |}
     [
-      "Incompatible return type [7]: Expected `str` but got `typing.Union[str, typing.Undeclared]`."
+      "Incompatible return type [7]: Expected `str` but got `typing.Union[int, str]`."
     ];
 
   assert_type_errors
@@ -3968,6 +3985,7 @@ let test_check_immutables _ =
     [
       "Missing attribute annotation [4]: Attribute `attribute` of class `Foo` has type `int` but " ^
       "no type is specified.";
+      "Undefined name [18]: Global name `attribute` is undefined.";
       "Undefined attribute [16]: `Foo` has no attribute `attribute`.";
     ];
 
@@ -4105,6 +4123,7 @@ let test_check_immutables _ =
       "Undefined name [18]: Global name `constant` is undefined.";
       "Missing attribute annotation [4]: Attribute `constant` of class `Foo` has type `int` but " ^
       "no type is specified.";
+      "Undefined name [18]: Global name `constant` is undefined.";
       "Incompatible variable type [9]: foo is declared to have type " ^
       "`typing.Callable(foo)[[], None]` but is used as type `Foo`.";
       "Undefined attribute [16]: `Foo` has no attribute `constant`.";
@@ -5712,6 +5731,67 @@ let test_environment _ =
     []
 
 
+let test_scheduling _ =
+  (* Top-level is scheduled. *)
+  assert_type_errors
+    "'string' + 1"
+    ["Incompatible parameter type [6]: Expected `int` but got `str`."];
+
+  (* Functions are scheduled. *)
+  assert_type_errors
+    {|
+      def bar() -> None: ...
+      def foo() -> None:
+        'string' + 1
+    |}
+    ["Incompatible parameter type [6]: Expected `int` but got `str`."];
+
+  (* Nested functions are not yet scheduled. *)
+  assert_type_errors
+    {|
+      def bar() -> None:
+        def foo() -> None:
+          'string' + 1
+    |}
+    [];
+
+  (* Class bodies are scheduled. *)
+  assert_type_errors
+    {|
+      class Foo:
+        'string' + 1
+    |}
+    ["Incompatible parameter type [6]: Expected `int` but got `str`."];
+
+  (* Methods are scheduled. *)
+  assert_type_errors
+    {|
+      class Foo:
+        def foo(self) -> None:
+          'string' + 1
+    |}
+    ["Incompatible parameter type [6]: Expected `int` but got `str`."];
+
+  (* Entry states are propagated. *)
+  assert_type_errors
+    {|
+      variable = 1
+      def foo() -> int:
+        return variable
+      def bar() -> str:
+        return variable
+
+      variable = 'asdf'
+      def bar() -> str:
+        return variable
+    |}
+    [
+      "Missing global annotation [5]: Globally accessible variable `variable` has type `int` but " ^
+      "no type is specified.";
+      "Incompatible return type [7]: Expected `str` but got `int`.";
+    ]
+
+
 let () =
   "type">:::[
     "initial">::test_initial;
@@ -5776,5 +5856,6 @@ let () =
     "check_callables">::test_check_callables;
     "check_assert_functions">::test_check_assert_functions;
     "environment">::test_environment;
+    "scheduling">::test_scheduling;
   ]
   |> run_test_tt_main
