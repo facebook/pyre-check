@@ -4157,72 +4157,6 @@ let test_check_named_arguments _ =
     ]
 
 
-let test_check_enumerations _ =
-  assert_type_errors
-    {|
-      class enum.Enum: ...
-      class Color(enum.Enum):
-        RED = 0
-      def foo() -> int:
-        return Color.RED
-    |}
-    ["Incompatible return type [7]: Expected `int` but got `Color`."];
-
-  assert_type_errors
-    {|
-      class enum.Enum: ...
-      class Color(enum.Enum):
-        def __init__(self, value): ...
-        RED = 0
-      def foo(whatever) -> Color:
-        return Color(whatever)
-      def foo(number: int) -> Color:
-        return Color(number)
-    |}
-    [];
-
-  assert_type_errors
-    {|
-      class util.enum.IntEnum(enum.Enum, int): ...
-      class Color(util.enum.IntEnum):
-        RED = 0
-      def foo() -> int:
-        return Color.RED
-    |}
-    [];
-
-  assert_type_errors
-    {|
-      class enum.Enum: ...
-      class Color(enum.Enum):
-        RED: int = 0
-      def foo() -> Color:
-        return Color.RED
-    |}
-    [];
-
-  assert_type_errors
-    {|
-      class enum.Enum: ...
-      class Color(enum.Enum):
-        RED, BLUE = list(range(2))
-      def foo() -> Color:
-        return Color.RED
-    |}
-    [];
-
-  assert_type_errors
-    {|
-      class enum.Enum: ...
-      class Color(enum.Enum):
-        @property
-        def property(self) -> str: ...
-      def foo(color: Color) -> str:
-        return color.property
-    |}
-    []
-
-
 let test_check_missing_return _ =
   assert_type_errors
     {|
@@ -5816,7 +5750,6 @@ let () =
     "check_immutables">::test_check_immutables;
     "check_imports">::test_check_imports;
     "check_named_arguments">::test_check_named_arguments;
-    "check_enumerations">::test_check_enumerations;
     "check_missing_return">::test_check_missing_return;
     "check_yield">::test_check_yield;
     "check_ternary">::test_check_ternary;
