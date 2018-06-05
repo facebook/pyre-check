@@ -62,15 +62,5 @@ let remove_leading_underscores name =
   Str.global_replace renaming_pattern "\\1" name
 
 
-let length =
-  String.length
-
-let append ~separator identifier other =
-  identifier ^ separator ^ other
-
-let add_prefix ~prefix identifier =
-  prefix ^ identifier
-
-let remove_prefix ~prefix identifier =
-  String.chop_prefix ~prefix identifier
-  |> Option.value ~default:identifier
+let map identifier ~f =
+  f identifier

@@ -904,17 +904,15 @@ simple_access:
         | { Node.location; value = Access [Access.Identifier identifier] } ->
             (location, identifier)
         | { Node.location; value = Starred (Starred.Once expression) } ->
-           (location,
-             Identifier.append
-              ~separator:""
-              (Identifier.create "*")
-              (identifier expression |> snd))
+            location,
+            identifier expression
+            |> snd
+            |> Identifier.map ~f:(fun identifier -> "*" ^ identifier)
         | { Node.location; value = Starred (Starred.Twice expression) } ->
-           (location,
-            Identifier.append
-              ~separator:""
-              (Identifier.create "**")
-              (identifier expression |> snd))
+            location,
+            identifier expression
+            |> snd
+            |> Identifier.map ~f:(fun identifier -> "**" ^ identifier)
         | _ ->
             raise (ParserError "Unexpected parameters") in
       identifier expression

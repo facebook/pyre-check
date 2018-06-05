@@ -19,8 +19,4 @@ val show_sanitized: t -> string
 
 val remove_leading_underscores: t -> t
 
-val length: t -> int
-val append: separator:string -> t -> t -> t
-
-val add_prefix: prefix: string -> t -> t
-val remove_prefix: prefix: string -> t -> t
+val map: t -> f: (string -> string) -> t

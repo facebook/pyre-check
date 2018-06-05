@@ -327,7 +327,7 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
             {
               parameter with
               Node.value = {
-                Parameter.name = Identifier.add_prefix renamed ~prefix:stars;
+                Parameter.name = Identifier.map renamed ~f:(fun identifier -> stars ^ identifier);
                 value = value >>| qualify_expression ~scope;
                 annotation = annotation >>| qualify_expression ~scope;
               };

@@ -312,26 +312,6 @@ module Access = struct
     Format.fprintf format "%s" (show access)
 
 
-  let add_prefix ~prefix access =
-    match access with
-    | (Identifier head) :: tail ->
-        Identifier (Identifier.add_prefix ~prefix head) :: tail
-    | _ ->
-        access
-
-
-  let remove_prefix ~prefix access =
-    match access with
-    | (Identifier head) :: tail ->
-        Identifier (Identifier.remove_prefix ~prefix head) :: tail
-    | _ ->
-        access
-
-
-  let starts_with ~prefix access =
-    String.is_prefix ~prefix (show access)
-
-
   let delocalize access ~qualifier =
     match access with
     | (Identifier identifier) :: tail
