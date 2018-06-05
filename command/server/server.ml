@@ -340,9 +340,9 @@ let request_handler_thread
     let { socket = server_socket; persistent_clients; file_notifiers } = get_readable_sockets () in
     if not (PyrePath.is_directory source_root) then
       begin
-        Log.error "Stopping server due to missing project root.";
+        Log.error "Stopping server due to missing source root.";
         ServerOperations.stop_server
-          ~reason:"missing project root"
+          ~reason:"missing source root"
           server_configuration
           !(connections).socket
       end;

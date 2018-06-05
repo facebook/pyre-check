@@ -145,7 +145,7 @@ being type-checked. Can also be set in `.pyre_configuration` or often lives in t
 reason and relevant source code locations (for example, what line a type conflicting
   type was specified on).
 
-`--source-directory SOURCE_DIRECTORY`: Provide a path to the project root to check. Can also
+`--source-directory SOURCE_DIRECTORY`: Provide a path to the source root to check. Can also
 be specified in `.pyre_configuration`.
 
 `--typeshed TYPESHED`: Path to the [Typeshed](https://github.com/python/typeshed) standard library,
