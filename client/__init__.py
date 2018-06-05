@@ -102,17 +102,17 @@ def resolve_source_directories(arguments, configuration, prompt=True):
     if not arguments.original_directory.startswith(current_directory):
         return source_directories
 
-    translation = arguments.original_directory[len(current_directory) + 1 :]
+    translation = os.path.relpath(arguments.original_directory, current_directory)
     if not translation:
         return source_directories
 
     def _translate(path):
-        if os.path.exists(path):
+        if os.path.isabs(path):
             return path
 
         translated = os.path.join(translation, path)
         if os.path.exists(translated):
-            return translated
+            return os.path.realpath(translated)
 
         return path
 

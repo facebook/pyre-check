@@ -19,7 +19,10 @@ class InitTest(unittest.TestCase):
         os_mock_isfile.side_effect = [False, False]
         self.assertEqual(find_source_root("/a/b"), "/a/b")
 
-    def test_resolve_source_directories(self) -> None:
+    @patch("os.path.realpath", side_effect=lambda path: "realpath({})".format(path))
+    @patch("os.getcwd", return_value="/")
+    @patch("os.path.exists", return_value=True)
+    def test_resolve_source_directories(self, realpath, cwd, exists) -> None:
         arguments = MagicMock()
         arguments.source_directory = []
         arguments.original_directory = "/root"
@@ -39,7 +42,9 @@ class InitTest(unittest.TestCase):
 
             source_directories = resolve_source_directories(arguments, configuration)
             buck_source_directories.assert_called_with(set(), build=False, prompt=True)
-            self.assertEqual(source_directories, {"arguments_source_directory"})
+            self.assertEqual(
+                source_directories, {"realpath(root/arguments_source_directory)"}
+            )
 
         with patch.object(
             buck, "generate_source_directories", return_value=["arguments_target"]
@@ -52,7 +57,7 @@ class InitTest(unittest.TestCase):
             buck_source_directories.assert_called_with(
                 {"arguments_target"}, build=False, prompt=True
             )
-            self.assertEqual(source_directories, {"arguments_target"})
+            self.assertEqual(source_directories, {"realpath(root/arguments_target)"})
 
         # Configuration is picked up when no arguments provided.
         with patch.object(
@@ -68,4 +73,16 @@ class InitTest(unittest.TestCase):
             buck_source_directories.assert_called_with(
                 {"configuration_target"}, build=True, prompt=True
             )
-            self.assertEqual(source_directories, {"configuration_source_directory"})
+            self.assertEqual(
+                source_directories, {"realpath(root/configuration_source_directory)"}
+            )
+
+        # Files are translated relative to project root
+        with patch.object(
+            buck, "generate_source_directories", return_value=[]
+        ) as buck_source_directories:
+            arguments.source_directory = []
+            arguments.target = []
+            configuration.source_directories = ["."]
+            source_directories = resolve_source_directories(arguments, configuration)
+            self.assertEqual(source_directories, {"realpath(root/.)"})
