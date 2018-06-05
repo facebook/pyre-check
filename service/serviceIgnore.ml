@@ -135,7 +135,7 @@ let postprocess handles errors =
         kind = Error.UnusedIgnore (Ignore.codes unused_ignore);
         define = {
           Node.location = Ignore.location unused_ignore;
-          value = Statement.Define.create_toplevel []
+          value = Statement.Define.create_toplevel ~qualifier:[] ~statements:[];
         };
       }
     in

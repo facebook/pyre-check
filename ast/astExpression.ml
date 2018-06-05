@@ -269,22 +269,43 @@ module Access = struct
   type t = expression_t Record.Access.record
   [@@deriving compare, eq, sexp, show, hash]
 
-  let rec show_sanitized ?(sanitized = true) access =
+
+  let pp format access =
     let identifier (element: expression_t Record.Access.access): string =
       match element with
       | Identifier identifier ->
-          if sanitized then
-            Identifier.show_sanitized identifier
-          else
-            Identifier.show identifier
+          Identifier.show identifier
       | Call _ ->
           Format.asprintf "(...)"
       | _ ->
-          "?" in
+          "?"
+    in
     List.map ~f:identifier access
     |> String.concat ~sep:"."
+    |> Format.fprintf format "%s"
 
-  let show access = show_sanitized ~sanitized:false access
+
+  let show access =
+    Format.asprintf "%a" pp access
+
+
+  let pp_sanitized format access =
+    let identifier (element: expression_t Record.Access.access): string =
+      match element with
+      | Identifier identifier ->
+          Identifier.show_sanitized identifier
+      | Call _ ->
+          Format.asprintf "(...)"
+      | _ ->
+          "?"
+    in
+    List.map ~f:identifier access
+    |> String.concat ~sep:"."
+    |> Format.fprintf format "%s"
+
+
+  let show_sanitized access =
+    Format.asprintf "%a" pp_sanitized access
 
 
   let pp format access =
@@ -309,6 +330,27 @@ module Access = struct
 
   let starts_with ~prefix access =
     String.is_prefix ~prefix (show access)
+
+
+  let delocalize access ~qualifier =
+    match access with
+    | (Identifier identifier) :: tail
+      when Identifier.show identifier |> String.is_prefix ~prefix:"$local_"->
+        let identifier =
+          Identifier.show_sanitized identifier
+          |> Identifier.create
+        in
+        qualifier @ [Identifier identifier] @ tail
+    | _ ->
+        access
+
+
+  let delocalize_qualified access =
+    List.rev access
+    |> (function
+        | (Identifier identifier) :: tail -> (Identifier (Identifier.sanitize identifier)) :: tail
+        | access -> access)
+    |> List.rev
 
 
   let rec is_strict_prefix ~prefix access =
@@ -430,6 +472,25 @@ end
 
 let access =
   Access.create_from_expression
+
+
+let delocalize ({ Node.value; _ } as expression) ~qualifier =
+  let value =
+    match value with
+    | Access access -> Access (Access.delocalize access ~qualifier)
+    | _ -> value
+  in
+  { expression with Node.value }
+
+
+let delocalize_qualified ({ Node.value; _ } as expression) =
+  let value =
+    match value with
+    | Access access -> Access (Access.delocalize_qualified access)
+    | _ -> value
+  in
+  { expression with Node.value }
+
 
 
 module ComparisonOperator = struct
@@ -856,12 +917,9 @@ module PrettyPrinter = struct
     | Yield yield ->
         match yield with
         | Some yield ->
-            Format.fprintf
-              formatter
-              "yield %a"
-              pp_expression_t yield
+            Format.fprintf formatter "%a" pp_expression_t yield
         | None ->
-            Format.fprintf formatter "%s" "yield"
+            Format.fprintf formatter "None"
 
   let pp = pp_expression_t
 end

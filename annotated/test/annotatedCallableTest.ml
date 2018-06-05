@@ -149,16 +149,16 @@ let test_create _ =
 
   assert_callable
     ~parent:"module.Foo"
-    "def foo(a: int, b) -> str: ..."
+    "def module.Foo.foo(a: int, b) -> str: ..."
     "typing.Callable('module.Foo.foo')[[Named(a, int), Named(b, $unknown)], str]";
 
   assert_callable
     ~parent:"module.Foo"
     {|
       @overload
-      def foo(a: int) -> int: ...
+      def module.Foo.foo(a: int) -> int: ...
       @overload
-      def foo(a: str) -> str: ...
+      def module.Foo.foo(a: str) -> str: ...
     |}
     (* Note that the overload order is reversed from the declaration - shouldn't matter. *)
     "typing.Callable('module.Foo.foo')[[Named(a, str)], str][[Named(a, int)], int]";

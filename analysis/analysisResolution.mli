@@ -35,7 +35,7 @@ val get_local_callable: t -> access: Access.t -> Type.Callable.t option
 val annotations: t -> Annotation.t Access.Map.t
 val with_annotations: t -> annotations: Annotation.t Access.Map.t -> t
 
-val with_define: t -> Statement.Define.t -> t
+val with_define: t -> define: Statement.Define.t -> t
 val define: t -> Statement.Define.t option
 val order: t -> (module TypeOrder.Handler)
 

@@ -33,6 +33,7 @@ let test_create _ =
 
   assert_create "foo" (Type.Primitive ~~"foo");
   assert_create "foo.bar" (Type.Primitive ~~"foo.bar");
+  assert_create "foo.$local_0_bar" (Type.Primitive ~~"foo.bar");
 
   assert_create "object" Type.Object;
   assert_create "$unknown" Type.Top;
@@ -75,23 +76,13 @@ let test_create _ =
     "typing.Dict[str, typing.Any]"
     (Type.dictionary ~key:Type.string ~value:Type.Object);
 
-  (* Renaming numbers (PEP 3141). *)
-  assert_create "numbers.Number" Type.complex;
-  assert_create "numbers.Complex" Type.complex;
-  assert_create "numbers.Real" Type.float;
-  assert_create "numbers.Integral" Type.integer;
-
   (* Check variables. *)
   assert_create "typing.TypeVar('_T')" (Type.variable "_T");
   assert_create "typing.TypeVar('_T', covariant=True)" (Type.variable "_T");
+  assert_create "typing.TypeVar('_T', int)" (Type.variable ~constraints:[Type.integer] "_T");
+  assert_create "typing.TypeVar('_T', name=int)" (Type.variable "_T");
   assert_create
-    "typing.TypeVar('_T', numbers.Integral)"
-    (Type.variable ~constraints:[Type.integer] "_T");
-  assert_create
-    "typing.TypeVar('_T', name=numbers.Integral)"
-    (Type.variable "_T");
-  assert_create
-    "typing.TypeVar('_T', numbers.Integral, name=numbers.Real)"
+    "typing.TypeVar('_T', int, name=float)"
     (Type.variable ~constraints:[Type.integer] "_T");
 
   (* Check that type aliases are resolved. *)

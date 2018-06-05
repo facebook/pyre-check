@@ -14,16 +14,16 @@ open Pyre
 
 
 let test_parse_stubs_modules_list _ =
-  let root = Path.current_working_directory () in
-  let create_stub_with_relative relative =
-    let content = Some "def f()->int: ...\n" in
-    File.create ~content (Path.create_relative ~root ~relative)
-  in
-  let create_module_with_relative relative =
-    let content = Some "def f()->int:\n    return 1\n" in
-    File.create ~content (Path.create_relative ~root ~relative)
-  in
   let files =
+    let root = Path.current_working_directory () in
+    let create_stub_with_relative relative =
+      let content = Some "def f()->int: ...\n" in
+      File.create ~content (Path.create_relative ~root ~relative)
+    in
+    let create_module_with_relative relative =
+      let content = Some "def f()->int:\n    return 1\n" in
+      File.create ~content (Path.create_relative ~root ~relative)
+    in
     [
       create_stub_with_relative "a.pyi";
       create_stub_with_relative "dir/b.pyi";
@@ -46,42 +46,46 @@ let test_parse_stubs_modules_list _ =
     File.handle (List.nth_exn files position)
     |> Option.value ~default:(File.Handle.create "")
   in
-  let assert_stub_matches_name handle define_name =
-    let source = AstSharedMemory.get_source handle in
-    assert_is_some source;
-    let { Source.statements; _ } = Option.value_exn source in
-    begin
-      match statements with
-      | [{
-          Node.value = Statement.Stub (Statement.Stub.Define { Statement.Define.name; _ });
+  let assert_stub_matches_name ~handle define =
+    let name =
+      match AstSharedMemory.get_source (get_handle_at handle) with
+      | Some {
+          Source.statements = [
+            {
+              Node.value = Statement.Stub (Statement.Stub.Define { Statement.Define.name; _ });
+              _;
+            };
+          ];
           _;
-        }] ->
-          assert_equal name (Expression.Access.create_from_identifiers define_name)
-      | _ -> assert_unreached ()
-    end
+        } -> name
+      | _ -> failwith "Could not get source."
+    in
+    assert_equal ~printer:Expression.Access.show (Expression.Access.create define) name
   in
-  let assert_module_matches_name handle define_name =
-    let source = AstSharedMemory.get_source handle in
-    assert_is_some source;
-    let { Source.statements; _ } = Option.value_exn source in
-    begin
-      match statements with
-      | [{
-          Node.value = Statement.Define { Statement.Define.name; _ };
+  let assert_module_matches_name ~handle define =
+    let name =
+      match AstSharedMemory.get_source (get_handle_at handle) with
+      | Some {
+          Source.statements = [
+            {
+              Node.value = Statement.Define { Statement.Define.name; _ };
+              _;
+            };
+          ];
           _;
-        }] ->
-          assert_equal name (Expression.Access.create_from_identifiers define_name)
-      | _ -> assert_unreached ()
-    end
+        } -> name
+      | _ -> failwith "Could not get source."
+    in
+    assert_equal ~printer:Expression.Access.show (Expression.Access.create define) name
   in
-  assert_stub_matches_name (get_handle_at 0) [~~"a"; ~~"f"];
-  assert_stub_matches_name (get_handle_at 1) [~~"dir"; ~~"b"; ~~"f"];
-  assert_stub_matches_name (get_handle_at 2) [~~"c"; ~~"f"];
-  assert_stub_matches_name (get_handle_at 3) [~~"d"; ~~"f"];
-  assert_module_matches_name (get_handle_at 4) [~~"moda"; ~~"f"];
-  assert_module_matches_name (get_handle_at 5) [~~"dir"; ~~"modb"; ~~"f"];
-  assert_module_matches_name (get_handle_at 6) [~~"2"; ~~"modc"; ~~"f"];
-  assert_module_matches_name (get_handle_at 7) [~~"2and3"; ~~"modd"; ~~"f"]
+  assert_stub_matches_name ~handle:0 "a.f";
+  assert_stub_matches_name ~handle:1 "dir.b.f";
+  assert_stub_matches_name ~handle:2 "c.f";
+  assert_stub_matches_name ~handle:3 "d.f";
+  assert_module_matches_name ~handle:4 "moda.f";
+  assert_module_matches_name ~handle:5 "dir.modb.f";
+  assert_module_matches_name ~handle:6 "2.modc.f";
+  assert_module_matches_name ~handle:7 "2and3.modd.f"
 
 
 let test_parse_stubs context =

@@ -203,8 +203,10 @@ module Attribute = struct
   }
   [@@deriving compare, eq, sexp, show, hash]
 
+
   type t = attribute Node.t
   [@@deriving compare, eq, sexp, show, hash]
+
 
   let create
       ~location
@@ -218,6 +220,18 @@ module Attribute = struct
       () =
     { target; annotation; defines; value; async; setter; primitive }
     |> Node.create ~location
+
+
+  let target ~parent target =
+    let open Expression in
+    let access = Expression.access target in
+    match List.rev access with
+    | (Access.Call _) :: ((Access.Identifier _) as access) :: class_name
+    | ((Access.Identifier _) as access) :: class_name
+      when Access.equal parent (List.rev class_name) ->
+        Some { target with Node.value = Access [access] }
+    | _ ->
+        None
 end
 
 
@@ -229,9 +243,23 @@ module Define = struct
   [@@deriving compare, eq, sexp, show, hash]
 
 
-  let create_toplevel statements =
+  let unqualified_name { name; parent; _ } =
+    match parent with
+    | Some parent ->
+        let is_qualified =
+          List.is_prefix
+            name
+            ~prefix:parent
+            ~equal:(Expression.Access.equal_access Expression.equal)
+        in
+        if is_qualified then List.drop name (List.length parent) else name
+    | _ ->
+        name
+
+
+  let create_toplevel ~qualifier ~statements =
     {
-      name = Expression.Access.create "$toplevel";
+      name = qualifier @ (Expression.Access.create "$toplevel");
       parameters = [];
       body = statements;
       decorators = [];
@@ -243,8 +271,8 @@ module Define = struct
     }
 
 
-  let is_method { name; parent; _ } =
-    Option.is_some parent && List.length name = 1
+  let is_method { parent; _ } =
+    Option.is_some parent
 
 
   let has_decorator { decorators; _ } decorator =
@@ -289,7 +317,11 @@ module Define = struct
 
 
   let is_constructor ?(in_test = false) { name; parent; _ } =
-    let name = Expression.Access.show name in
+    let name =
+      match List.last name with
+      | Some (Expression.Access.Identifier name) -> Identifier.show name
+      | _ -> "$unknown"
+    in
     if Option.is_none parent then
       false
     else
@@ -302,7 +334,12 @@ module Define = struct
 
 
   let is_property_setter ({ name; _ } as define) =
-    has_decorator define ((Expression.Access.show name) ^ ".setter")
+    let last =
+      List.last name
+      >>| (fun last -> [last])
+      |> Option.value ~default:[]
+    in
+    has_decorator define ((Expression.Access.show last) ^ ".setter")
 
 
   let is_untyped { return_annotation; _ } =
@@ -314,12 +351,16 @@ module Define = struct
 
 
   let is_toplevel { name; _ } =
-    Expression.Access.show name = "$toplevel"
+    match List.last name with
+    | Some (Expression.Access.Identifier toplevel) when Identifier.show toplevel = "$toplevel" ->
+        true
+    | _ ->
+        false
 
 
   let create_generated_constructor { Record.Class.name; docstring; _ } =
     {
-      name = Expression.Access.create "__init__";
+      name = name @ (Expression.Access.create "__init__");
       parameters = [Parameter.create ~name:(Identifier.create "self") ()];
       body = [Node.create_with_default_location Pass];
       decorators = [];
@@ -469,15 +510,15 @@ module Define = struct
             Node.value =
               Expression.Access [
                 Expression.Access.Identifier self;
-                Expression.Access.Identifier name;
+                (Expression.Access.Identifier _) as name;
                 Expression.Access.Call _;
               ];
             _;
           } when Identifier.equal self (self_identifier define) ->
             (* Look for method in class definition. *)
             let inline = function
-              | { Node.value = Define { name = callee; body; _ }; _ }
-                when Expression.Access.show callee = Identifier.show name ->
+              | { Node.value = Define { name = callee; body; parent = Some parent; _ }; _ }
+                when Expression.Access.equal callee (parent @ [name]) ->
                   Some body
               | _ ->
                   None
@@ -494,14 +535,13 @@ module Define = struct
     |> Map.map ~f:merge_attributes
 
 
-  let property_attribute ~location ({ name; return_annotation; parameters; _ } as define) =
-    let attribute annotation =
-      Attribute.create
-        ~location
-        ~target:(Node.create ~location (Expression.Access name))
-        ?annotation
-        ~async:(is_async define)
-        ()
+  let property_attribute ~location ({ name; return_annotation; parameters; parent; _ } as define) =
+    let open Expression in
+    let attribute ?(setter = false) annotation =
+      parent
+      >>= (fun parent -> Attribute.target ~parent (Node.create ~location (Access name)))
+      >>| fun target ->
+      Attribute.create ~location ~setter ~target ?annotation ~async:(is_async define) ()
     in
     match String.Set.find ~f:(has_decorator define) Recognized.property_decorators with
     | Some "util.classproperty"
@@ -529,21 +569,14 @@ module Define = struct
           | _ ->
               None
         in
-        Some (attribute return_annotation)
+        attribute return_annotation
     | Some _ ->
-        Some (attribute return_annotation)
+        attribute return_annotation
     | None ->
         begin
           match is_property_setter define, parameters with
           | true, _ :: { Node.value = { Parameter.annotation; _ }; _ } :: _ ->
-              (Some
-                 (Attribute.create
-                    ~location
-                    ~target:(Node.create ~location (Expression.Access name))
-                    ?annotation
-                    ~setter:true
-                    ~async:(is_async define)
-                    ()))
+              attribute ~setter:true annotation
           | _ ->
               None
         end
@@ -589,35 +622,11 @@ module Class = struct
   let attributes
       ?(include_generated_attributes = true)
       ?(in_test = false)
-      ({ Record.Class.body; _ } as definition) =
+      ({ Record.Class.name; body; _ } as definition) =
     let explicitly_assigned_attributes =
       let assigned_attributes map { Node.location; value } =
         let open Expression in
         match value with
-        | Assign {
-            Assign.target = { Node.value = Access ([_] as access); _ } as target;
-            annotation;
-            value;
-            _;
-          }
-        | Stub
-            (Stub.Assign
-               {
-                 Assign.target = { Node.value = Access ([_] as access); _ } as target;
-                 annotation;
-                 value;
-                 _;
-               }) ->
-            let attribute =
-              Attribute.create
-                ~primitive:true
-                ~location
-                ~target
-                ?annotation
-                ?value
-                ()
-            in
-            Map.set ~key:access ~data:attribute map
         (* Handle multiple assignments on same line *)
         | Assign {
             Assign.target = { Node.value = Tuple targets; _ };
@@ -631,20 +640,20 @@ module Class = struct
                  value = Some { Node.value = Tuple values; _ };
                  _;
                }) ->
-            let add_attribute map access_node value =
-              match Node.value access_node with
-              | Access ([_] as access) ->
+            let add_attribute map target value =
+              Attribute.target ~parent:name target
+              >>| (fun target ->
+                  let access = Expression.access target in
                   let attribute =
                     Attribute.create
                       ~primitive:true
                       ~location
-                      ~target:access_node
+                      ~target
                       ~value
                       ()
                   in
-                  Map.set ~key:access ~data:attribute map
-              | _ ->
-                  map
+                  Map.set map ~key:access ~data:attribute)
+              |> Option.value ~default:map
             in
             if List.length targets = List.length values then
               List.fold2_exn ~init:map ~f:add_attribute targets values
@@ -662,28 +671,49 @@ module Class = struct
                  value = Some ({ Node.value = Access values; location } as value);
                  _;
                }) ->
-            let add_attribute index map access_node =
-              match Node.value access_node with
-              | Access ([_] as access) ->
-                  let attribute =
-                    let value =
-                      let get_item =
-                        let index = Node.create ~location (Integer index) in
-                        [
-                          Access.Identifier (Identifier.create "__getitem__");
-                          Access.Call
-                            (Node.create ~location [{ Argument.name = None; value = index }]);
-                        ]
-                      in
-                      { value with Node.value = Access (values @ get_item) }
+            let add_attribute index map target =
+              Attribute.target ~parent:name target
+              >>| (fun target ->
+                  let access = Expression.access target in
+                  let value =
+                    let get_item =
+                      let index = Node.create ~location (Integer index) in
+                      [
+                        Access.Identifier (Identifier.create "__getitem__");
+                        Access.Call
+                          (Node.create ~location [{ Argument.name = None; value = index }]);
+                      ]
                     in
-                    Attribute.create ~primitive:true ~location ~target:access_node ~value ()
+                    { value with Node.value = Access (values @ get_item) }
                   in
-                  Map.set ~key:access ~data:attribute map
-              | _ ->
-                  map
+                  let attribute =
+                    Attribute.create
+                      ~primitive:true
+                      ~location
+                      ~target
+                      ~value
+                      ()
+                  in
+                  Map.set map ~key:access ~data:attribute)
+              |> Option.value ~default:map
             in
             List.foldi ~init:map ~f:add_attribute targets
+        | Assign { Assign.target; annotation; value; _ }
+        | Stub (Stub.Assign { Assign.target; annotation; value; _ }) ->
+            Attribute.target ~parent:name target
+            >>| (fun target ->
+                let access = Expression.access target in
+                let attribute =
+                  Attribute.create
+                    ~primitive:true
+                    ~location
+                    ~target
+                    ?annotation
+                    ?value
+                    ()
+                in
+                Map.set map ~key:access ~data:attribute)
+            |> Option.value ~default:map
         | _ ->
             map
       in
@@ -714,8 +744,7 @@ module Class = struct
                 | Some ({
                     Node.value =
                       ({
-                        Attribute.target =
-                          { Node.value = Expression.Access ([_] as access); _ };
+                        Attribute.target = { Node.value = Expression.Access ([_] as access); _ };
                         setter = new_setter;
                         annotation = new_annotation;
                         _;
@@ -757,24 +786,28 @@ module Class = struct
       let callable_attributes =
         let callable_attributes map { Node.location; value } =
           match value with
-          | Stub (Stub.Define ({ Define.name; _ } as define))
-          | Define ({ Define.name; _ } as define) ->
-              let attribute =
-                match Map.find map name with
-                | Some { Node.value = { Attribute.defines = Some defines; _ }; _ } ->
-                    Attribute.create
-                      ~location
-                      ~target:(Node.create ~location (Expression.Access name))
-                      ~defines:({ define with Define.body = [] } :: defines)
-                      ()
-                | _ ->
-                    Attribute.create
-                      ~location
-                      ~target:(Node.create ~location (Expression.Access name))
-                      ~defines:[{ define with Define.body = [] }]
-                      ()
-              in
-              Map.set map ~key:name ~data:attribute
+          | Stub (Stub.Define ({ Define.name = target; _ } as define))
+          | Define ({ Define.name = target; _ } as define) ->
+              Attribute.target ~parent:name (Node.create ~location (Expression.Access target))
+              >>| (fun target ->
+                  let name = Expression.access target in
+                  let attribute =
+                    match Map.find map name with
+                    | Some { Node.value = { Attribute.defines = Some defines; _ }; _ } ->
+                        Attribute.create
+                          ~location
+                          ~target
+                          ~defines:({ define with Define.body = [] } :: defines)
+                          ()
+                    | _ ->
+                        Attribute.create
+                          ~location
+                          ~target
+                          ~defines:[{ define with Define.body = [] }]
+                          ()
+                  in
+                  Map.set map ~key:name ~data:attribute)
+              |> Option.value ~default:map
           | _ ->
               map
         in
@@ -1099,7 +1132,7 @@ module PrettyPrinter = struct
     | Some access_list ->
         Format.fprintf
           formatter
-          "@[%a.@]"
+          "@[%a@]"
           Expression.pp_expression_access_list access_list
 
 
@@ -1189,7 +1222,7 @@ module PrettyPrinter = struct
     in
     Format.fprintf
       formatter
-      "%a@[<v 2>%adef %a%a(%a)%s:@;%a@]@."
+      "%a@[<v 2>%adef %a#%a(%a)%s:@;%a@]@."
       pp_decorators decorators
       pp_async async
       pp_access_list_option parent
@@ -1259,7 +1292,7 @@ module PrettyPrinter = struct
         in
         let pp_import formatter { Import.name; alias } =
           let pp_alias_option formatter access_list =
-            pp_option_with_prefix formatter ("as ", access_list) pp_access_list
+            pp_option_with_prefix formatter (" as ", access_list) pp_access_list
           in
           Format.fprintf
             formatter

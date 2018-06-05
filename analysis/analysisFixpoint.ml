@@ -86,7 +86,21 @@ module Make (State: State) = struct
                     ~next:postcondition
                     ~iteration
                 in
-                if not (State.less_or_equal ~left:widened ~right:successor_precondition) then
+
+                let converged =
+                  State.less_or_equal
+                    ~left:widened
+                    ~right:successor_precondition
+                in
+                Log.log
+                  ~section:`Fixpoint
+                  "\n%a\n  { <= (result %b) (iteration = %d) }\n\n%a"
+                  State.pp widened
+                  converged
+                  iteration
+                  State.pp successor_precondition;
+
+                if not converged then
                   begin
                     Hashtbl.set fixpoint ~key:successor_id ~data:widened;
                     Hashtbl.set iterations ~key:successor_id ~data:(iteration + 1);

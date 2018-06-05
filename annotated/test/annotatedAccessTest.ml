@@ -42,14 +42,14 @@ let test_fold _ =
   let resolution =
     populate_with_sources [
       parse
-        ~qualifier:(Expression.Access.create "buitins")
+        ~qualifier:(Expression.Access.create "builtins")
         {|
           integer: int = 1
           string: str = 'string'
 
           class Class:
-            attribute: int = 1
-            def method(self) -> int: ...
+            Class.attribute: int = 1
+            def Class.method(self) -> int: ...
           instance: Class
 
           def function() -> str: ...
@@ -57,7 +57,7 @@ let test_fold _ =
       parse
         ~qualifier:(Expression.Access.create "os")
         {|
-          os.sep: str = '/'
+          sep: str = '/'
         |};
       parse
         ~qualifier:(Expression.Access.create "empty.stub")
@@ -141,6 +141,7 @@ let test_fold _ =
       { annotation = parse_annotation "typing.Callable('function')[[], str]"; element = Value };
       { annotation = Type.string; element = Signature };
     ];
+  (* TODO(T29105314): handle nested calls. *)
 
   assert_fold "os.sep" [{ annotation = Type.string; element = Value }];
 
@@ -170,7 +171,7 @@ let test_module_exports _ =
           ~qualifier:(Expression.Access.create "implementing")
           {|
             def implementing.function() -> int: ...
-            implementing.constant: int = 1
+            constant: int = 1
           |};
         parse
           ~qualifier:(Expression.Access.create "exporting")
@@ -229,7 +230,7 @@ let test_module_exports _ =
         parse
           ~qualifier:(Expression.Access.create "loop.b")
           {|
-            loop.b.b: int = 1
+            b: int = 1
           |};
         parse
           ~qualifier:(Expression.Access.create "loop.a")
@@ -244,7 +245,7 @@ let test_module_exports _ =
         parse
           ~qualifier:(Expression.Access.create "no_loop.b")
           {|
-            no_loop.b.b: int = 1
+            b: int = 1
           |};
         parse
           ~qualifier:(Expression.Access.create "no_loop.a")
@@ -273,24 +274,27 @@ let test_object_callables _ =
             _V = typing.TypeVar('_V')
             _T = typing.TypeVar('_T')
 
-            class module.Call(typing.Generic[_K, _V]):
+            class Call(typing.Generic[_K, _V]):
+              attribute: _K
               generic_callable: typing.Callable[[_K], _V]
               def __call__(self) -> _V: ...
 
-            class module.Submodule(module.Call[_T, _T], typing.Generic[_T]):
+            class Submodule(Call[_T, _T], typing.Generic[_T]):
               pass
 
-            module.call: module.Call[int, str] = ...
-            module.meta: typing.Type[module.Call[int, str]] = ...
-            module.callable: typing.Callable[..., int][..., str] = ...
-            module.submodule: module.Submodule[int] = ...
-          |};
+            call: Call[int, str] = ...
+            meta: typing.Type[Call[int, str]] = ...
+            callable: typing.Callable[..., int][..., str] = ...
+            submodule: Submodule[int] = ...
+          |}
+        |> Preprocessing.qualify;
       ]
       access
       (Type.create ~aliases:(fun _ -> None) (parse_single_expression annotation))
   in
 
   assert_resolved "module.call" "module.Call[int, str]";
+  assert_resolved "module.call.attribute" "int";
   assert_resolved "module.call.generic_callable" "typing.Callable[[int], str]";
   assert_resolved "module.call()" "$bottom";
   assert_resolved "module.callable()" "int";

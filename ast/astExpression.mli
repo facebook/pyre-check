@@ -191,11 +191,16 @@ module Access : sig
   val create_from_identifiers: Identifier.t list -> t
   val create_from_expression: expression_t -> t
 
-  val show_sanitized: ?sanitized: bool -> t -> string
+  (* TODO(T29105314): figure out which of these we can remove. *)
+  val pp_sanitized: Format.formatter -> t -> unit
+  val show_sanitized: t -> string
 
   val add_prefix: prefix: string -> t -> t
   val remove_prefix: prefix: string -> t -> t
   val starts_with: prefix: string -> t -> bool
+
+  val delocalize: t -> qualifier: t -> t
+  val delocalize_qualified: t -> t
 
   val is_strict_prefix: prefix: t -> t -> bool
   val drop_prefix: t -> prefix: t -> t
@@ -209,6 +214,9 @@ module Access : sig
 end
 
 val access: t -> Access.t
+val delocalize: t -> qualifier: Access.t -> t
+val delocalize_qualified: t -> t
+
 
 module ComparisonOperator : sig
   include module type of struct include Record.ComparisonOperator end

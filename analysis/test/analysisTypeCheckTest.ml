@@ -27,164 +27,209 @@ let plain_environment =
     ~configuration
     [
       Source.create ~qualifier:(Access.create "sys") [];
-      Source.create ~qualifier:(Access.create "typing") [];
-      Source.create ~qualifier:(Access.create "unittest.mock") [];
-      parse ~qualifier:[] {|
-        class typing.Sized: ...
-        def len(o: typing.Sized) -> int: ...
+      parse
+        ~qualifier:(Access.create "hashlib")
+        ~path:"hashlib.pyi"
+        {|
+          _DataType = typing.Union[int, str]
+          class _Hash:
+            digest_size: int
+          def md5(input: _DataType) -> _Hash: ...
+        |}
+      |> Preprocessing.qualify;
+      parse
+        ~qualifier:(Access.create "typing")
+        {|
+          class _SpecialForm: ...
 
-        typing.List = typing.TypeAlias(object)
+          TypeVar = object()
+          List = TypeAlias(object)
+          Type: _SpecialForm = ...
 
-        def not_annotated(input = ...): ...
-        class slice:
-          @overload
-          def __init__(self, stop: typing.Optional[int]) -> None: ...
-          @overload
-          def __init__(
-            self,
-            start: typing.Optional[int],
-            stop: typing.Optional[int],
-            step: typing.Optional[int] = ...
-          ) -> None: ...
-          def indices(self, len: int) -> Tuple[int, int, int]: ...
+          class Sized: ...
 
-        class typing.Iterable(typing.Generic[_T]):
-          def __iter__(self)->typing.Iterator[_T]: pass
-        class typing.Iterator(typing.Iterable[_T], typing.Generic[_T]):
-          def __next__(self) -> _T: ...
-        class typing.Generic(): pass
-        class typing.Sequence(typing.Generic[_T], typing.Iterable[_T]): pass
+          _T = TypeVar('_T')
+          _T_co = TypeVar('_T_co')
+          _S = TypeVar('_S')
+          _V = TypeVar('_V')
+          _KT = TypeVar('_KT')
+          _VT_co = TypeVar('_VT_co')
 
-        class bool(): ...
-        class bytes(): ...
-        class float():
-          def __add__(self, other) -> float: ...
-          def __radd__(self, other: float) -> float: ...
-          def __neg__(self) -> float: ...
-          def __abs__(self) -> float: ...
-        class int(float):
-          def __init__(self, value) -> None: ...
-          def __lt__(self, other) -> int: ...
-          def __ne__(self, other) -> bool: ...
-          def __add__(self, other: int) -> int: ...
-          def __mod__(self, other) -> int: ...
-          def __radd__(self, other: int) -> int: ...
-          def __neg__(self) -> int: ...
-          def __str__(self) -> bool: ...
-        class complex():
-          def __radd__(self, other: int) -> int: ...
-        class str(typing.Sized, typing.Sequence[str]):
-          @overload
-          def __init__(self, o: object = ...) -> None: ...
-          @overload
-          def __init__(self, o: bytes, encoding: str = ..., errors: str = ...) -> None: ...
-          def lower(self) -> str: pass
-          def upper(self) -> str: ...
-          def substr(self, index: int) -> str: pass
-          def __lt__(self, other) -> float: ...
-          def __ne__(self, other) -> int: ...
-          def __add__(self, other: str) -> str: ...
-          def __pos__(self) -> float: ...
-          def __repr__(self) -> float: ...
-          def __str__(self) -> str: ...
-          def __getitem__(self, i: typing.Union[int, slice]) -> str: ...
-          def __iter__(self) -> Iterator[str]: ...
-        class object():
-          def __sizeof__(self) -> int: pass
+          class Generic(): pass
 
-        def to_int(x: typing.Any) -> int: ...
-        def int_to_str(i: int) -> str: ...
-        def str_to_int(i: str) -> int: ...
-        def optional_str_to_int(i: typing.Optional[str]) -> int: ...
-        def int_to_bool(i: int) -> bool: ...
-        def int_to_int(i: int) -> int: pass
-        def str_float_to_int(i: str, f: float) -> int: ...
-        def str_float_tuple_to_int(t: typing.Tuple[str, float]) -> int: ...
-        def nested_tuple_to_int(t: typing.Tuple[typing.Tuple[str, float], float]) -> int: ...
-        def return_tuple() -> typing.Tuple[int, int]: ...
-        def unknown_to_int(i) -> int: ...
-        def star_int_to_int( *args, x: int) -> int: ...
-        def takes_iterable(x: typing.Iterable[_T]) -> None: ...
+          class Iterable(Generic[_T]):
+            def __iter__(self) -> Iterator[_T]: pass
+          class Iterator(Iterable[_T], Generic[_T]):
+            def __next__(self) -> _T: ...
+          if sys.version_info >= (3, 6):
+            class Collection(Iterable[_T_co]): ...
+            _Collection = Collection
+          else:
+            class _Collection(Iterable[_T_co]): ...
+          class Sequence(_Collection[_T], Iterable[_T]): pass
 
-        def typing.TypeVar(name, bound=None, *args): ...
-        _T = typing.TypeVar('_T')
-        _T_co = typing.TypeVar('_T_co')
-        _S = typing.TypeVar('_S')
-        _V = typing.TypeVar('_V')
-
-        class type:
-          __name__: str = ...
-
-        def isinstance(a, b) -> bool: ...
-
-        class tuple(typing.Sized):
-          def __init__(self, a:typing.List[int]): ...
-          def tuple_method(self, a: int): ...
-        class dict(typing.Generic[_T, _S], typing.Iterable[_T]):
-          def add_key(self, key: _T) -> None: pass
-          def add_value(self, value: _S) -> None: pass
-          def add_both(self, key: _T, value: _S) -> None: pass
-          def items(self) -> typing.Iterable[typing.Tuple[_T, _S]]: pass
-          def __getitem__(self, k: _T) -> _S: ...
-          @overload
-          def get(self, k: _T) -> typing.Optional[_S]: ...
-          @overload
-          def get(self, k: _T, default: _S) -> _S: ...
-          @overload
-          def update(self, __m: typing.Dict[_T, int], **kwargs: _S): ...
-          @overload
-          def update(self, **kwargs: _S): ...
-        class list(typing.Sequence[_T], typing.Generic[_T]):
-          def __add__(self, x: list[_T]) -> list[_T]: ...
-          def __iter__(self) -> typing.Iterator[_T]: ...
-          def append(self, element: _T) -> None: ...
-          @overload
-          def __getitem__(self, i: int) -> _T: ...
-          @overload
-          def __getitem__(self, s: slice) -> typing.List[_T]: ...
-        class set(typing.Iterable[_T], typing.Generic[_T]): pass
-        class typing.Generator(typing.Generic[_T, _S, _V], typing.Iterator[_T]):
-          pass
-        class typing.Mapping(_Collection[_KT], Generic[_KT, _VT_co]):
-          pass
-
-        class A: ...
-        class B(A): ...
-        class C(A): ...
-        class D(B,C): ...
-        class obj():
-          @staticmethod
-          def static_int_to_str(i: int) -> str: ...
-
-        def identity(x: _T) -> _T: ...
-        _VR = typing.TypeVar("_VR", str, int)
-        def variable_restricted_identity(x: _VR) -> _VR: pass
-
-        def typing.cast(tp: typing.Type[_T], o) -> _T: ...
-
-        class typing.Awaitable: pass
-        class typing.AsyncGenerator: pass
-        class IsAwaitable(typing.Awaitable[int]): pass
-        class contextlib.ContextManager(typing.Generic[_T_co]):
-          def __enter__(self) -> _T_co:
+          class Generator(Generic[_T, _S, _V], Iterator[_T]):
             pass
-        class contextlib.GeneratorContextManager(contextlib.ContextManager[_T], typing.Generic[_T]):
-          pass
+          class Mapping(_Collection[_KT], Generic[_KT, _VT_co]):
+            pass
 
-        def sum(iterable: typing.Iterable[_T]) -> typing.Union[_T, int]: ...
-        def sys.exit(code: int) -> typing.NoReturn: ...
+          class Awaitable: pass
+          class AsyncGenerator: pass
 
-        def returns_undefined()->Undefined: ...
-        class Spooky:
-          def undefined(self)->Undefined: ...
+          def cast(tp: Type[_T], o) -> _T: ...
+        |}
+      |> Preprocessing.qualify;
+      Source.create ~qualifier:(Access.create "unittest.mock") [];
+      parse
+        ~qualifier:[]
+        {|
+          import typing
 
-        class Attributes:
-          int_attribute: int
+          _T = typing.TypeVar('_T')
+          _T_co = typing.TypeVar('_T_co')
+          _S = typing.TypeVar('_S')
 
-        class OtherAttributes:
-          int_attribute: int
-          str_attribute: str
-      |}
+
+          def not_annotated(input = ...): ...
+
+          class type:
+            __name__: str = ...
+          class object():
+            def __sizeof__(self) -> int: pass
+
+          class slice:
+            @overload
+            def __init__(self, stop: typing.Optional[int]) -> None: ...
+            @overload
+            def __init__(
+              self,
+              start: typing.Optional[int],
+              stop: typing.Optional[int],
+              step: typing.Optional[int] = ...
+            ) -> None: ...
+            def indices(self, len: int) -> Tuple[int, int, int]: ...
+
+          class bool(): ...
+
+          class bytes(): ...
+
+          class float():
+            def __add__(self, other) -> float: ...
+            def __radd__(self, other: float) -> float: ...
+            def __neg__(self) -> float: ...
+            def __abs__(self) -> float: ...
+
+          class int(float):
+            def __init__(self, value) -> None: ...
+            def __lt__(self, other) -> int: ...
+            def __ne__(self, other) -> bool: ...
+            def __add__(self, other: int) -> int: ...
+            def __mod__(self, other) -> int: ...
+            def __radd__(self, other: int) -> int: ...
+            def __neg__(self) -> int: ...
+            def __str__(self) -> bool: ...
+
+          class complex():
+            def __radd__(self, other: int) -> int: ...
+
+          class str(typing.Sized, typing.Sequence[str]):
+            @overload
+            def __init__(self, o: object = ...) -> None: ...
+            @overload
+            def __init__(self, o: bytes, encoding: str = ..., errors: str = ...) -> None: ...
+            def lower(self) -> str: pass
+            def upper(self) -> str: ...
+            def substr(self, index: int) -> str: pass
+            def __lt__(self, other) -> float: ...
+            def __ne__(self, other) -> int: ...
+            def __add__(self, other: str) -> str: ...
+            def __pos__(self) -> float: ...
+            def __repr__(self) -> float: ...
+            def __str__(self) -> str: ...
+            def __getitem__(self, i: typing.Union[int, slice]) -> str: ...
+            def __iter__(self) -> Iterator[str]: ...
+
+          class tuple(typing.Sized):
+            def __init__(self, a:typing.List[int]): ...
+            def tuple_method(self, a: int): ...
+
+          class dict(typing.Generic[_T, _S], typing.Iterable[_T]):
+            def add_key(self, key: _T) -> None: pass
+            def add_value(self, value: _S) -> None: pass
+            def add_both(self, key: _T, value: _S) -> None: pass
+            def items(self) -> typing.Iterable[typing.Tuple[_T, _S]]: pass
+            def __getitem__(self, k: _T) -> _S: ...
+            @overload
+            def get(self, k: _T) -> typing.Optional[_S]: ...
+            @overload
+            def get(self, k: _T, default: _S) -> _S: ...
+            @overload
+            def update(self, __m: typing.Dict[_T, int], **kwargs: _S): ...
+            @overload
+            def update(self, **kwargs: _S): ...
+
+          class list(typing.Sequence[_T], typing.Generic[_T]):
+            def __add__(self, x: list[_T]) -> list[_T]: ...
+            def __iter__(self) -> typing.Iterator[_T]: ...
+            def append(self, element: _T) -> None: ...
+            @overload
+            def __getitem__(self, i: int) -> _T: ...
+            @overload
+            def __getitem__(self, s: slice) -> typing.List[_T]: ...
+
+          class set(typing.Iterable[_T], typing.Generic[_T]): pass
+
+          def len(o: typing.Sized) -> int: ...
+          def isinstance(a, b) -> bool: ...
+          def sum(iterable: typing.Iterable[_T]) -> typing.Union[_T, int]: ...
+
+          class IsAwaitable(typing.Awaitable[int]): pass
+          class contextlib.ContextManager(typing.Generic[_T_co]):
+            def __enter__(self) -> _T_co:
+              pass
+          class contextlib.GeneratorContextManager(
+              contextlib.ContextManager[_T],
+              typing.Generic[_T]):
+            pass
+          def sys.exit(code: int) -> typing.NoReturn: ...
+
+          def to_int(x: typing.Any) -> int: ...
+          def int_to_str(i: int) -> str: ...
+          def str_to_int(i: str) -> int: ...
+          def optional_str_to_int(i: typing.Optional[str]) -> int: ...
+          def int_to_bool(i: int) -> bool: ...
+          def int_to_int(i: int) -> int: pass
+          def str_float_to_int(i: str, f: float) -> int: ...
+          def str_float_tuple_to_int(t: typing.Tuple[str, float]) -> int: ...
+          def nested_tuple_to_int(t: typing.Tuple[typing.Tuple[str, float], float]) -> int: ...
+          def return_tuple() -> typing.Tuple[int, int]: ...
+          def unknown_to_int(i) -> int: ...
+          def star_int_to_int( *args, x: int) -> int: ...
+          def takes_iterable(x: typing.Iterable[_T]) -> None: ...
+
+          class A: ...
+          class B(A): ...
+          class C(A): ...
+          class D(B,C): ...
+          class obj():
+            @staticmethod
+            def static_int_to_str(i: int) -> str: ...
+
+          def identity(x: _T) -> _T: ...
+          _VR = typing.TypeVar("_VR", str, int)
+          def variable_restricted_identity(x: _VR) -> _VR: pass
+
+          def returns_undefined()->Undefined: ...
+          class Spooky:
+            def undefined(self)->Undefined: ...
+
+          class Attributes:
+            int_attribute: int
+
+          class OtherAttributes:
+            int_attribute: int
+            str_attribute: str
+        |}
       |> Preprocessing.qualify;
     ];
   environment
@@ -808,8 +853,8 @@ let test_fixpoint_forward _ =
     |}
     (Int.Table.of_alist_exn [
         0, create [];
-        1, create ["$renamed_x", Type.Top];
-        3, create ["$renamed_x", Type.Top];
+        1, create ["$local_0_x", Type.Top];
+        3, create ["$local_0_x", Type.Top];
         5, create [];
       ]);
   assert_fixpoint_forward
@@ -818,16 +863,16 @@ let test_fixpoint_forward _ =
        x = y
     |}
     (Int.Table.of_alist_exn [
-        0, create ~immutables:["$renamed_y", false] ["$renamed_y", Type.integer];
-        1, create ~immutables:["$renamed_y", false] [
-          "$renamed_x", Type.integer;
-          "$renamed_y", Type.integer;
+        0, create ~immutables:["$parameter_y", false] ["$parameter_y", Type.integer];
+        1, create ~immutables:["$parameter_y", false] [
+          "$local_0_x", Type.integer;
+          "$parameter_y", Type.integer;
         ];
-        3, create ~immutables:["$renamed_y", false] [
-          "$renamed_x", Type.integer;
-          "$renamed_y", Type.integer;
+        3, create ~immutables:["$parameter_y", false] [
+          "$local_0_x", Type.integer;
+          "$parameter_y", Type.integer;
         ];
-        5, create ~immutables:["$renamed_y", false] ["$renamed_y", Type.integer];
+        5, create ~immutables:["$parameter_y", false] ["$parameter_y", Type.integer];
       ]);
   assert_fixpoint_forward
     {|
@@ -838,25 +883,25 @@ let test_fixpoint_forward _ =
          x = z
     |}
     (Int.Table.of_alist_exn [
-        0, create ~immutables:["$renamed_y", false] ["$renamed_y", Type.integer]; (* Entry *)
-        1, create ~immutables:["$renamed_y", false] [
-          "$renamed_x", Type.Top;
-          "$renamed_y", Type.integer;
+        0, create ~immutables:["$parameter_y", false] ["$parameter_y", Type.integer]; (* Entry *)
+        1, create ~immutables:["$parameter_y", false] [
+          "$local_0_x", Type.Top;
+          "$parameter_y", Type.integer;
         ]; (* Exit *)
-        3, create ~immutables:["$renamed_y", false] [
-          "$renamed_x", Type.Top;
-          "$renamed_y", Type.integer;
+        3, create ~immutables:["$parameter_y", false] [
+          "$local_0_x", Type.Top;
+          "$parameter_y", Type.integer;
         ]; (* Final *)
-        5, create ~immutables:["$renamed_y", false] ["$renamed_y", Type.integer]; (* If *)
-        6, create ~immutables:["$renamed_y", false] [
-          "$renamed_x", Type.Top;
-          "$renamed_y", Type.integer;
+        5, create ~immutables:["$parameter_y", false] ["$parameter_y", Type.integer]; (* If *)
+        6, create ~immutables:["$parameter_y", false] [
+          "$local_0_x", Type.Top;
+          "$parameter_y", Type.integer;
         ]; (* Join *)
-        7, create ~immutables:["$renamed_y", false] ["$renamed_y", Type.integer]; (* Body *)
-        8, create ~immutables:["$renamed_y", false] ["$renamed_y", Type.integer]; (* Orelse *)
-        9, create ~immutables:["$renamed_y", false] [
-          "$renamed_x", Type.Top;
-          "$renamed_y", Type.integer;
+        7, create ~immutables:["$parameter_y", false] ["$parameter_y", Type.integer]; (* Body *)
+        8, create ~immutables:["$parameter_y", false] ["$parameter_y", Type.integer]; (* Orelse *)
+        9, create ~immutables:["$parameter_y", false] [
+          "$local_0_x", Type.Top;
+          "$parameter_y", Type.integer;
         ]; (* Return *)
       ]);
   ()
@@ -941,16 +986,9 @@ let assert_type_errors
          ?mode_override
          source)
   in
-  let description_list_to_string descriptions =
-    Format.asprintf "%a" Sexp.pp (sexp_of_list sexp_of_string descriptions)
-  in
   assert_equal
     ~cmp:(List.equal ~equal:String.equal)
-    ~printer:description_list_to_string
-    ~pp_diff:
-      (diff
-         ~print:(fun format errors ->
-             Format.fprintf format "%s" (description_list_to_string errors)))
+    ~printer:(String.concat ~sep:"\n")
     errors
     descriptions
 
@@ -1075,10 +1113,10 @@ let test_show_error_traces _ =
       constant = 1
     |}
     [
-      "Missing global annotation [5]: Globally accessible variable `constant` has type `int` but " ^
-      "no type is specified. Global variable `constant` declared on line 2, type `int` deduced " ^
-      "from test.py:5:2.";
       "Undefined name [18]: Global name `x` is undefined.";
+      "Missing global annotation [5]: Globally accessible variable `constant` has type `int` but " ^
+      "no type is specified. Global variable `constant` declared on line 5, type `int` deduced " ^
+      "from test.py:5:2.";
     ];
 
   assert_type_errors ~show_error_traces:true
@@ -1090,11 +1128,10 @@ let test_show_error_traces _ =
       constant = 1
     |}
     [
-      "Missing global annotation [5]: Globally accessible variable `constant` has type " ^
-      "`typing.Union[int, str]` but no type is specified. Global variable `constant` " ^
-      "declared on line 2, type `typing.Union[int, str]` deduced from test.py:5:2, " ^
-      "test.py:6:2.";
       "Undefined name [18]: Global name `x` is undefined.";
+      "Missing global annotation [5]: Globally accessible variable `constant` has type " ^
+      "`str` but no type is specified. Global variable `constant` " ^
+      "declared on line 5, type `str` deduced from test.py:5:2.";
     ];
 
   assert_type_errors ~show_error_traces:true
@@ -1212,7 +1249,10 @@ let test_check_with_qualification _ =
           global_number="a" # type: str
           return len(global_number)
     |}
-    [];
+    [
+      "Incompatible variable type [9]: global_number is declared to have type `int` but is used " ^
+      "as type `str`.";
+    ];
 
   assert_type_errors
     {|
@@ -1229,7 +1269,10 @@ let test_check_with_qualification _ =
               global global_number
               return global_number
     |}
-    [];
+    [
+      "Incompatible variable type [9]: global_number is declared to have type `int` but is used " ^
+      "as type `str`.";
+    ];
 
   assert_type_errors
     {|
@@ -1293,8 +1336,7 @@ let test_check_with_qualification _ =
               global_number="a"
           return transitive
     |}
-    [];
-  ()
+    []
 
 
 let test_check_imports _ =
@@ -1538,10 +1580,10 @@ let test_check _ =
 
   assert_type_errors
     {|
-    def f(l: typing.List[int]) -> int:
-      [a, b] = l
-      return a + b
-  |}
+      def f(l: typing.List[int]) -> int:
+        [a, b] = l
+        return a + b
+    |}
     [];
 
   assert_type_errors
@@ -2141,7 +2183,7 @@ let test_check_coverage _ =
   assert_not_covered {|f"format{ERROR}"|};
 
   (* Generator. *)
-  assert_covered "(ERROR for i in list)";
+  assert_covered "(ERROR for i in list())";
 
   (* Lambdas. *)
   assert_covered "lambda x: ERROR";
@@ -3324,7 +3366,11 @@ let test_check_attributes _ =
         bar = 'foo'
         return bar
     |}
-    ["Incompatible return type [7]: Expected `int` but got `str`."];
+    [
+      "Incompatible variable type [9]: bar is declared to have type `int` but is used as type " ^
+      "`str`.";
+      "Incompatible return type [7]: Expected `int` but got `str`.";
+    ];
 
   assert_type_errors
     {|
@@ -3430,7 +3476,7 @@ let test_check_attributes _ =
     |}
     [
       "Missing attribute annotation [4]: Attribute `bar` of class `Foo` " ^
-      "has type `int` but no type is specified."
+      "has type `int` but no type is specified.";
     ];
 
   assert_type_errors
@@ -3444,7 +3490,7 @@ let test_check_attributes _ =
     |}
     [
       "Missing attribute annotation [4]: Attribute `bar` of class `Foo` " ^
-      "has type `int` but no type is specified."
+      "has type `int` but no type is specified.";
     ];
 
   assert_type_errors
@@ -3686,8 +3732,8 @@ let test_check_attributes _ =
         foo.x = "string"
     |}
     [
-      "Incompatible attribute type [8]: Attribute `x` declared in class `Foo`" ^
-      " has type `typing.Optional[int]` but is used as type `str`.";
+      "Incompatible attribute type [8]: Attribute `x` declared in class `Foo` " ^
+      "has type `typing.Optional[int]` but is used as type `str`.";
     ]
 
 
@@ -3732,7 +3778,10 @@ let test_check_immutables _ =
     def foo() -> None:
       constant = "hi"
     |}
-    [];
+    [
+      "Incompatible variable type [9]: constant is declared to have type `int` but is used as " ^
+      "type `str`.";
+    ];
 
   assert_type_errors
     {|
@@ -3755,22 +3804,22 @@ let test_check_immutables _ =
 
   assert_type_errors
     {|
-    constant: typing.Optional[int]
-    def foo() -> int:
-      if constant is not None:
-        return constant
-      return 0
-  |}
+      constant: typing.Optional[int]
+      def foo() -> int:
+        if constant is not None:
+          return constant
+        return 0
+    |}
     [];
 
   assert_type_errors
     {|
-    constant: typing.Optional[str]
-    def foo() -> int:
-      if constant is not None:
-        return constant
-      return 0
-  |}
+      constant: typing.Optional[str]
+      def foo() -> int:
+        if constant is not None:
+          return constant
+        return 0
+    |}
     ["Incompatible return type [7]: Expected `int` but got `str`."];
 
   assert_type_errors
@@ -4045,6 +4094,8 @@ let test_check_immutables _ =
       "Undefined name [18]: Global name `constant` is undefined.";
       "Missing attribute annotation [4]: Attribute `constant` of class `Foo` has type `int` but " ^
       "no type is specified.";
+      "Incompatible variable type [9]: foo is declared to have type " ^
+      "`typing.Callable(foo)[[], None]` but is used as type `Foo`.";
       "Undefined attribute [16]: `Foo` has no attribute `constant`.";
       "Missing global annotation [5]: Globally accessible variable `constant` has type `str` but " ^
       "no type is specified.";
@@ -4873,15 +4924,10 @@ let test_check_tuple _ =
 let test_check_meta _ =
   assert_type_errors
     {|
-      class float():
-        ...
       def foo(input) -> typing.List[int]:
-        return typing.cast(typing.List[float], a)
+        return typing.cast(typing.List[float], input)
     |}
-    [
-      "Incompatible return type [7]: Expected `typing.List[int]` but got `typing.List[float]`.";
-      "Undefined name [18]: Global name `a` is undefined.";
-    ];
+    ["Incompatible return type [7]: Expected `typing.List[int]` but got `typing.List[float]`."];
   assert_type_errors
     {|
       def foo(input) -> typing.List[int]:
@@ -5126,7 +5172,7 @@ let test_check_behavioral_subtyping _ =
         def foo() -> float: return 1.0
     |}
     [
-      "Inconsistent override [15]: `foo` overloads method defined in `Foo` inconsistently. " ^
+      "Inconsistent override [15]: `Bar.foo` overloads method defined in `Foo` inconsistently. " ^
       "Returned type `float` is not a subtype of the overridden return `int`."
     ];
 
@@ -5146,7 +5192,7 @@ let test_check_behavioral_subtyping _ =
         def foo() -> None: pass
     |}
     [
-      "Inconsistent override [15]: `foo` overloads method defined in `Foo` inconsistently. " ^
+      "Inconsistent override [15]: `Bar.foo` overloads method defined in `Foo` inconsistently. " ^
       "Returned type `None` is not a subtype of the overridden return `int`."
     ];
   assert_type_errors
@@ -5157,7 +5203,7 @@ let test_check_behavioral_subtyping _ =
         def foo(): pass
     |}
     [
-      "Inconsistent override [15]: `foo` overloads method defined in `Foo` inconsistently. " ^
+      "Inconsistent override [15]: `Bar.foo` overloads method defined in `Foo` inconsistently. " ^
       "Returned type `unknown` is not a subtype of the overridden return `int`.";
       "Missing return annotation [3]: Returning `None` but no return type is specified."
     ];
@@ -5199,7 +5245,7 @@ let test_check_behavioral_subtyping _ =
           return 1
     |}
     [
-      "Inconsistent override [15]: `bar` overloads method defined in `Foo` " ^
+      "Inconsistent override [15]: `Bar.bar` overloads method defined in `Foo` " ^
       "inconsistently. Returned type `typing.Union[int, str]` is not a subtype " ^
       "of the overridden return `int`."
     ];
@@ -5213,7 +5259,7 @@ let test_check_behavioral_subtyping _ =
         def foo(a: int) -> None: pass
     |}
     [
-      "Inconsistent override [14]: `foo` overloads method defined in `Foo` inconsistently. " ^
+      "Inconsistent override [14]: `Bar.foo` overloads method defined in `Foo` inconsistently. " ^
       "Parameter of type `int` is not a supertype of the overridden parameter `float`."
     ];
   assert_type_errors
@@ -5224,7 +5270,7 @@ let test_check_behavioral_subtyping _ =
         def foo() -> None: pass
     |}
     [
-      "Inconsistent override [14]: `foo` overloads method defined in `Foo` inconsistently. " ^
+      "Inconsistent override [14]: `Bar.foo` overloads method defined in `Foo` inconsistently. " ^
       "Could not find parameter `a` in overriding signature."
     ];
   assert_type_errors
@@ -5259,7 +5305,7 @@ let test_check_behavioral_subtyping _ =
       def foo(b: int) -> None: pass
     |}
     [
-      "Inconsistent override [14]: `foo` overloads method defined in `Foo` inconsistently. " ^
+      "Inconsistent override [14]: `Bar.foo` overloads method defined in `Foo` inconsistently. " ^
       "Could not find parameter `a` in overriding signature."
     ];
   assert_type_errors
@@ -5280,7 +5326,7 @@ let test_check_behavioral_subtyping _ =
           pass
     |}
     [
-      "Inconsistent override [14]: `bar` overloads method defined in `Foo` " ^
+      "Inconsistent override [14]: `Bar.bar` overloads method defined in `Foo` " ^
       "inconsistently. Parameter of type `int` is not a " ^
       "supertype of the overridden parameter `typing.Union[int, str]`."
     ];
@@ -5644,7 +5690,7 @@ let test_check_callables _ =
     |}
     [
       "Incompatible return type [7]: Expected `None` but got " ^
-      "`typing.Callable(Foo.bar)[[Named($renamed_self, unknown), Named($renamed_x, int)], str]`.";
+      "`typing.Callable(Foo.bar)[[Named(self, unknown), Named(x, int)], str]`.";
     ];
 
   assert_type_errors
@@ -5701,6 +5747,22 @@ let test_check_assert_functions _ =
       def f2(o: typing.Optional[One]) -> int:
           pyretestassert(o)
           return o.a
+    |}
+    []
+
+
+let test_environment _ =
+  (* Type aliases in signatures are resolved. *)
+  assert_type_errors
+    "hashlib.md5(1.0)"
+    ["Incompatible parameter type [6]: Expected `typing.Union[int, str]` but got `float`."];
+
+  (* Type aliases in the class hierarchy are resolved. I.e. we follow the conditional `Collection`
+     indirection in typeshed. *)
+  assert_type_errors
+    {|
+      def foo(input: typing.Sequence[int]) -> typing.Iterable[int]:
+        return input
     |}
     []
 
@@ -5769,5 +5831,6 @@ let () =
     "check_contextmanager">::test_check_contextmanager;
     "check_callables">::test_check_callables;
     "check_assert_functions">::test_check_assert_functions;
+    "environment">::test_environment;
   ]
   |> run_test_tt_main

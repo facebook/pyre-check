@@ -19,3 +19,5 @@ val location: 'node_type t -> Location.t
 
 val start: 'node_type t -> Location.position
 val stop: 'node_type t -> Location.position
+
+val map: 'node_type t -> f: ('node_type -> 'new_node_type) -> 'new_node_type t

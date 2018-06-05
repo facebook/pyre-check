@@ -113,20 +113,14 @@ end
     `annotations`, the `resolved` type of the expression so far, as well as the kind of `element`
     we're currently folding over. *)
 let fold ~resolution ~initial ~f access =
-  let define = match Resolution.define resolution with
-    | Some define -> define
-    | None ->
-        Define.create_toplevel []
-        |> Define.define
-  in
-
   (* Resolve `super()` calls. *)
   let access, resolution =
     match access with
     | (Access.Identifier name) :: (Access.Call _) :: tail
       when Identifier.show name = "super" ->
-        (Define.create define
-         |> Define.parent_definition ~resolution
+        (Resolution.define resolution
+         >>| Define.create
+         >>= Define.parent_definition ~resolution
          >>| Class.immediate_superclasses ~resolution
          >>| function
          | Some superclass ->

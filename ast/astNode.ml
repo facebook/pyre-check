@@ -44,3 +44,7 @@ let value { value; _ } =
 
 let location { location; _ } =
   location
+
+
+let map { location; value } ~f =
+  { location; value = f value }

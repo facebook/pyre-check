@@ -130,7 +130,8 @@ module Method = struct
       annotation
 
 
-  let overloads { define = { Define.name; _ }; parent } ~resolution =
+  let overloads { define; parent } ~resolution =
+    (* TODO(T29839823): this should just be looking up attributes. *)
     let find_overloads sofar annotation =
       match sofar with
       | Some _ -> sofar
@@ -139,10 +140,14 @@ module Method = struct
           >>= (fun ({ Node.value = { Class.body; _ }; _ } as parent) ->
               let find_override { Node.value = statement; _ } =
                 match statement with
-                | Statement.Stub (Stub.Define ({ Define.name = other; _ } as define))
-                | Statement.Define ({ Define.name = other; _ } as define)
-                  when Access.equal name other ->
-                    Some define
+                | Statement.Stub (Stub.Define other)
+                | Statement.Define other ->
+                    let name_matches =
+                      Access.equal
+                        (Define.unqualified_name define)
+                        (Define.unqualified_name other)
+                    in
+                    if name_matches then Some other else None
                 | _ ->
                     None
               in
@@ -166,7 +171,7 @@ module Method = struct
         { Node.value = { Parameter.annotation = protocol_annotation; _ }; _ } =
       Option.equal Expression.equal annotation protocol_annotation
     in
-    Access.equal define.name protocol.name &&
+    Access.equal (Define.unqualified_name define) (Define.unqualified_name protocol) &&
     Option.equal Expression.equal define.return_annotation protocol.return_annotation &&
     List.equal ~equal:parameter_equal define.parameters protocol.parameters
 end
@@ -780,10 +785,15 @@ let attribute
 let fallback_attribute ~resolution ~access definition =
   let fallback_attribute definition =
     let fallback_attribute { Node.location; value } =
+      let is_fallback access =
+        match List.last access with
+        | Some (Access.Identifier name) when Identifier.show name = "__getattr__" -> true
+        | _ -> false
+      in
       match value with
       | Stub (Stub.Define { Define.name; return_annotation; _ })
       | Define { Define.name; return_annotation; _ }
-        when Access.show name = "__getattr__" ->
+        when is_fallback name ->
           Some
             (Attribute.create
                ~resolution

@@ -297,14 +297,14 @@ let test_register_functions _ =
        def function_with_arguments(i: int) -> None: ...
 
        class Class:
-         def method(self, i: int) -> int: ...
-         class Nested:
-           def nested_class_method(self) -> str: ...
+         def Class.method(self, i: int) -> int: ...
+         class Class.Nested:
+           def Class.Nested.nested_class_method(self) -> str: ...
 
        class ClassWithOverloadedConstructor:
          @overload
-         def __init__(self, s: str) -> None: ...
-         def __init__(self, i: int) -> None: ...
+         def ClassWithOverloadedConstructor.__init__(self, s: str) -> None: ...
+         def ClassWithOverloadedConstructor.__init__(self, i: int) -> None: ...
 
        @overload
        def overloaded(i: int) -> None: ...
@@ -313,7 +313,7 @@ let test_register_functions _ =
          pass
 
        def wrapper() -> None:
-         def nested_in_function() -> None:
+         def wrapper.nested_in_function() -> None:
            pass
     |}
   in
@@ -352,8 +352,8 @@ let test_register_functions _ =
     "Class.method"
     (Some "typing.Callable('Class.method')[[Named(self, $unknown), Named(i, int)], int]");
   assert_global
-    "Nested.nested_class_method"
-    (Some "typing.Callable('Nested.nested_class_method')[[Named(self, $unknown)], str]");
+    "Class.Nested.nested_class_method"
+    (Some "typing.Callable('Class.Nested.nested_class_method')[[Named(self, $unknown)], str]");
 
   assert_global
     "overloaded"

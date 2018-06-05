@@ -29,12 +29,32 @@ module Set = Set.Make(struct
 let pp format identifier =
   Format.fprintf format "`%a`" String.pp identifier
 
+
 let create name = name
 let show name = name
 
-let show_sanitized name =
-  let renaming_pattern = Str.regexp "^\\$[a-zA-Z]*_" in
+
+let sanitize name =
+  let stars, name =
+    if String.is_prefix name ~prefix:"**" then
+      "**", String.drop_prefix name 2
+    else if String.is_prefix name ~prefix:"*" then
+      "*", String.drop_prefix name 1
+    else
+      "", name
+  in
+  let renaming_pattern = Str.regexp "^\\$[a-zA-Z]*_\\([0-9]+_\\)?" in
   Str.global_replace renaming_pattern "" name
+  |> Format.asprintf "%s%s" stars
+
+
+let pp_sanitized format name =
+  sanitize name
+  |> Format.fprintf format "%s"
+
+
+let show_sanitized name =
+  sanitize name
 
 
 let remove_leading_underscores name =

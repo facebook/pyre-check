@@ -98,7 +98,7 @@ let connect_definition
     (* Handle definition. *)
     begin
       match definition with
-      | Some ({ Node.value = { Class.bases; _ } as definition; _ } as definition_node) ->
+      | Some ({ Node.value = { Class.name; bases; _ } as definition; _ } as definition_node) ->
           add_class_key ~path primitive;
           let annotated = Annotated.Class.create definition_node in
 
@@ -110,13 +110,21 @@ let connect_definition
           add_class_definition ~primitive ~definition:definition_node;
           if List.length definition.Class.bases > 0 then
             begin
-              let register_supertype name =
+              let register_supertype base =
                 let qualified_name =
-                  match name.Argument.value.Node.value with
+                  let qualifier =
+                    List.rev name
+                    |> List.tl
+                    >>| List.rev
+                    |> Option.value ~default:[]
+                  in
+                  let value = Expression.delocalize base.Argument.value ~qualifier in
+                  match Node.value value with
                   | Access access ->
                       let primitive, _ =
-                        Type.create ~aliases name.Argument.value
-                        |> Type.split in
+                        Type.create ~aliases value
+                        |> Type.split
+                      in
                       if not (TypeOrder.contains order primitive) &&
                          not (Type.equal primitive Type.Top) then
                         begin
@@ -421,18 +429,26 @@ let register_aliases (module Handler: Handler) sources =
   let collect_aliases { Source.path; statements; qualifier; _ } =
     let visit_statement aliases { Node.value; _ } =
       match value with
-      | Assign {
-          Assign.target;
-          annotation = None;
-          value = Some value;
-          _;
-        } ->
+      | Assign { Assign.target; annotation = None; value = Some value; _ } ->
+          (* TODO(T29105314): there's a lot of redundancy here with dequalification. *)
+          let target =
+            let access =
+              let access =
+                Expression.access target
+                |> Access.delocalize_qualified
+              in
+              qualifier @ access
+            in
+            { target with Node.value = Access access }
+          in
+          let value = Expression.delocalize ~qualifier value in
+
           let value_annotation = Type.create ~aliases:Handler.aliases value in
           let target_annotation = Type.create ~aliases:Handler.aliases target in
           if not (Type.equal target_annotation Type.Top ||
                   Type.equal value_annotation Type.Top ||
                   Type.equal value_annotation target_annotation) then
-            (path, target, value) :: aliases
+            (path, qualifier, target, value) :: aliases
           else
             aliases
       | Import { Import.from = Some from; imports = [{ Import.name; _ }]  }
@@ -445,7 +461,7 @@ let register_aliases (module Handler: Handler) sources =
           let add_alias aliases export =
             let value = Node.create_with_default_location (Access (from @ export)) in
             let alias = Node.create_with_default_location (Access (qualifier @ export)) in
-            (path, alias, value) :: aliases
+            (path, qualifier, alias, value) :: aliases
           in
           List.fold exports ~init:aliases ~f:add_alias
 
@@ -460,6 +476,7 @@ let register_aliases (module Handler: Handler) sources =
             in
             [
               path,
+              qualifier,
               qualified_name,
               Node.create_with_default_location (Access (from @ name));
             ]
@@ -474,9 +491,22 @@ let register_aliases (module Handler: Handler) sources =
     if List.is_empty unresolved then
       ()
     else
-      let register_alias (any_changed, unresolved) (path, target, value) =
+      let register_alias (any_changed, unresolved) (path, qualifier, target, value) =
         let target_annotation = Type.create ~aliases:Handler.aliases target in
-        let value_annotation = Type.create ~aliases:Handler.aliases value in
+        let value_annotation =
+          Expression.delocalize ~qualifier value
+          |> Type.create ~aliases:Handler.aliases
+          |> function
+          | Type.Variable ({ Type.variable = name; _ } as variable) ->
+              let name =
+                qualifier @ [Access.Identifier name]
+                |> Access.show
+                |> Identifier.create
+              in
+              Type.Variable { variable with Type.variable = name }
+          | annotation ->
+              annotation
+        in
         let rec annotation_in_order annotation =
           match annotation with
           | Type.Primitive _
@@ -515,13 +545,13 @@ let register_aliases (module Handler: Handler) sources =
             (true, unresolved)
           end
         else
-          (any_changed, (path, target, value) :: unresolved)
+          (any_changed, (path, qualifier, target, value) :: unresolved)
       in
       let (any_changed, unresolved) = List.fold ~init:(false, []) ~f:register_alias unresolved in
       if any_changed then
         resolve_aliases unresolved
       else
-        let show_unresolved (path, target, value) =
+        let show_unresolved (path, _, target, value) =
           Log.debug
             "Unresolved alias %s:%a <- %a"
             path
@@ -537,8 +567,17 @@ let register_aliases (module Handler: Handler) sources =
 
 let register_globals
     (module Handler: Handler)
-    ({ Source.path; statements; _ } as source) =
+    ({ Source.path; qualifier; statements; _ } as source) =
   let resolution = resolution (module Handler: Handler) ~annotations:Access.Map.empty () in
+
+  let qualified_access access =
+    let access =
+      match access with
+      | (Access.Identifier builtins) :: tail when Identifier.show builtins = "builtins" -> tail
+      | _ -> access
+    in
+    Access.delocalize_qualified access
+  in
 
   (* Register meta annotations for classes. *)
   let module Visit = Visit.MakeStatementVisitor(struct
@@ -562,7 +601,7 @@ let register_globals
                 (Type.meta primitive)
               |> Node.create ~location
             in
-            Handler.register_global ~path ~access:name ~global
+            Handler.register_global ~path ~access:(qualified_access name) ~global
         | _ ->
             ()
     end)
@@ -642,7 +681,9 @@ let register_globals
               None
         in
         global
-        >>| (fun (access, global) -> Handler.register_global ~path ~access ~global)
+        >>| (fun (access, global) ->
+            let access = qualified_access (qualifier @ access) in
+            Handler.register_global ~path ~access ~global)
         |> ignore
   in
   List.iter ~f:visit statements
@@ -714,8 +755,8 @@ let register_dependencies
                   begin
                     Log.log
                       ~section:`Dependencies
-                        "Import path not found in %s"
-                        (Path.absolute path);
+                      "Import path not found in %s"
+                      (Path.absolute path);
                     None
                   end
               in
@@ -740,8 +781,11 @@ let register_dependencies
 
 let register_functions
     (module Handler: Handler)
-    ({ Source.path; _ } as source) =
-  let resolution = resolution (module Handler: Handler) ~annotations:Access.Map.empty () in
+    ({ Source.path; qualifier; _ } as source) =
+  let resolution =
+    resolution (module Handler: Handler) ~annotations:Access.Map.empty ()
+    |> Resolution.with_define ~define:(Define.create_toplevel ~qualifier ~statements:[])
+  in
 
   let module Visit = Visit.MakeStatementVisitor(struct
       type t = ((Type.Callable.t Node.t) list) Access.Map.t
@@ -755,12 +799,7 @@ let register_functions
         let register_define
             ~location
             callables
-            ({ Define.name; parent; _ } as define) =
-          let name =
-            parent
-            >>| (fun parent -> parent @ name)
-            |> Option.value ~default:name
-          in
+            ({ Define.name; _ } as define) =
           Handler.register_definition ~path ~name_override:name (Node.create ~location define);
 
           (* Register callable global. *)
@@ -969,7 +1008,7 @@ module Builder = struct
         [],
         [
           Define {
-            Define.name = Access.create "__getitem__";
+            Define.name = Access.create "typing.Generic.__getitem__";
             parameters = [
               { Parameter.name = Identifier.create "*args"; value = None; annotation = None}
               |> Node.create_with_default_location;

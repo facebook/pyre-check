@@ -75,689 +75,580 @@ let expand_string_annotations source =
   |> snd
 
 
-type global_entities = {
-  variables: Access.t Access.Map.t;
-  methods: Access.t Access.Map.t;
+type alias = {
+  access: Access.t;
+  is_forward_reference: bool;
 }
 
 
-type define_qualifier_state = {
-  local_qualifier: Access.t;
-  current_scope: Access.t Access.Map.t;
-  globals: Access.t Access.Map.t;
+type scope = {
+  qualifier: Access.t;
+  aliases: alias Access.Map.t;
+  immutables: Access.Set.t;
+  locals: Access.Set.t;
+  use_forward_references: bool;
+  skip: Location.Set.t;
 }
 
 
-let qualify ({ Source.qualifier = global_qualifier; path; _ } as source) =
-  let rename_named_arguments access =
-    let rename = function
-      | Access.Call { Node.location; value = arguments } ->
-          let rename_argument { Argument.name; value } =
-            {
-              Argument.name = name >>| (fun ({ Node.value; _ } as node) ->
-                  { node with Node.value = Identifier.add_prefix ~prefix:"$renamed_" value });
-              value;
-            }
-          in
-          Access.Call { Node.value = (List.map ~f:rename_argument arguments); location }
-      | access ->
-          access
-    in
-    List.map ~f:rename access
-  in
-
-  let module QualifyToplevelStatements = Transform.Make(struct
-      include Transform.Identity
-      type t = global_entities
-
-      let expression_postorder { variables; _ } expression =
-        match expression with
-        | { Node.location; value = Access access } ->
-            let access = rename_named_arguments access in
-            Map.find variables access
-            >>| (fun replacement -> { Node.location; value = Access replacement })
-            |> Option.value ~default:(Node.create ~location (Access access))
-        | _ ->
-            expression
-
-      let statement_keep_recursing _ { Node.value; _ } =
-        (* We are qualifying only top-level statements only, hence do not recurse into children
-           nodes. Top-level expressions are the exception, variables therein need to be fully
-           qualified. *)
-        match value with
-        | Expression _ -> Transform.Recurse
-        | If _ -> Transform.Recurse
-        | _ -> Transform.Stop
-
-      let rec qualify_expression ({ variables; _ } as state) ({ Node.value; _ } as expression) =
-        let value =
+let qualify ({ Source.qualifier; statements; _ } as source) =
+  let rec qualify_statements ?(qualify_assigns = false) ~scope statements =
+    let scope =
+      let rec explore_scope ~scope statements =
+        let global_alias access = { access; is_forward_reference = true } in
+        let explore_scope
+            ({ qualifier; aliases; immutables; skip; _ } as scope)
+            { Node.location; value } =
           match value with
-          | Access access ->
-              let qualify_access access =
-                let qualify_subaccess = function
-                  | Access.Call ({ Node.value = arguments; _ } as call) ->
-                      let qualify_argument ({ Argument.value; _ } as argument) =
-                        { argument with Argument.value = qualify_expression state value }
-                      in
-                      Access.Call {
-                        call with
-                        Node.value = List.map arguments ~f:qualify_argument
-                      }
-                  | access ->
-                      (* Not sure if we want to qualify other accesses as well... *)
-                      access
+          | Assign { Assign.target; annotation = Some annotation; _ }
+          | Stub (Stub.Assign { Assign.target; annotation = Some annotation; _ })
+            when Expression.show annotation = "_SpecialForm" ->
+              let name = Expression.access target in
+              {
+                scope with
+                aliases = Map.set aliases ~key:name ~data:(global_alias (qualifier @ name));
+                skip = Set.add skip location;
+              }
+          | Assign {
+              Assign.target;
+              value = Some { Node.value = Access (typing :: type_alias :: _); _ };
+              _;
+            }
+            when Access.show [typing] = "TypeAlias" ||
+                 Access.show [typing; type_alias] = "typing.TypeAlias" ||
+                 Access.show [typing] = "TypeVar" ||
+                 Access.show [typing; type_alias] = "typing.TypeVar" ->
+              let name = Expression.access target in
+              {
+                scope with
+                aliases = Map.set aliases ~key:name ~data:(global_alias (qualifier @ name));
+                skip = Set.add skip location;
+              }
+          | Class { Class.name; _ }
+          | Stub (Stub.Class { Class.name; _ }) ->
+              {
+                scope with
+                aliases = Map.set aliases ~key:name ~data:(global_alias (qualifier @ name));
+              }
+          | Define { Define.name; _ }
+          | Stub (Stub.Define { Define.name; _ }) ->
+              {
+                scope with
+                aliases = Map.set aliases ~key:name ~data:(global_alias (qualifier @ name));
+              }
+          | If { If.body; orelse; _ } ->
+              let scope = explore_scope ~scope body in
+              explore_scope ~scope orelse
+          | For { For.body; orelse; _ } ->
+              let scope = explore_scope ~scope body in
+              explore_scope ~scope orelse
+          | Global identifiers ->
+              let immutables =
+                let register_global immutables identifier =
+                  Set.add immutables [Access.Identifier identifier]
                 in
-                let lead, tail =
-                  List.split_while
-                    ~f:(function | Access.Identifier _ -> true | _ -> false)
-                    access
-                in
-                let lead =
-                  match lead with
-                  | head :: tail ->
-                      let head =
-                        Map.find variables [head]
-                        |> Option.value ~default:[head]
-                      in
-                      head @ tail
-                  | _ ->
-                      lead
-                in
-                lead @ (List.map ~f:qualify_subaccess tail)
+                List.fold identifiers ~init:immutables ~f:register_global
               in
-              Access (qualify_access access)
-          | Tuple expressions ->
-              Tuple (List.map ~f:(qualify_expression state) expressions)
+              { scope with immutables }
+          | Try { Try.body; handlers; orelse; finally } ->
+              let scope = explore_scope ~scope body in
+              let scope =
+                let explore_handler scope { Try.handler_body; _ } =
+                  explore_scope ~scope handler_body
+                in
+                List.fold handlers ~init:scope ~f:explore_handler
+              in
+              let scope = explore_scope ~scope orelse in
+              explore_scope ~scope finally
+          | With { With.body; _ } ->
+              explore_scope ~scope body
+          | While { While.body; orelse; _ } ->
+              let scope = explore_scope ~scope body in
+              explore_scope ~scope orelse
           | _ ->
-              value
+              scope
         in
-        { expression with Node.value }
+        List.fold statements ~init:scope ~f:explore_scope
+      in
+      explore_scope ~scope statements
+    in
+    let scope, reversed_statements =
+      let qualify (scope, statements) statement =
+        let scope, statement = qualify_statement ~qualify_assign:qualify_assigns ~scope statement in
+        scope, statement :: statements
+      in
+      List.fold statements ~init:(scope, []) ~f:qualify
+    in
+    scope, List.rev reversed_statements
 
-      let statement_postorder state ({ Node.value; _ } as statement) =
-        let rec qualify_class qualifier ({ Class.name; bases; body; _ } as definition) =
-          let qualified_name = qualifier @ name in
-          let parent = Some qualified_name in
-          let qualify_bases ({ Argument.value; _ } as argument) =
-            { argument with Argument.value = qualify_expression state value }
-          in
-          let qualify_statement ({ Node.value; _ } as statement) =
-            let value =
-              match value with
-              | Assign assign ->
-                  Assign { assign with Assign.parent }
-              | Define define ->
-                  Define (qualify_define state ~parent [] define)
-              | Stub (Stub.Define define) ->
-                  Stub (Stub.Define (qualify_define state ~parent [] define))
-              | Class define ->
-                  Class (qualify_class qualified_name define)
-              | Stub (Stub.Class define) ->
-                  Stub (Stub.Class (qualify_class qualified_name define))
-              | _ ->
-                  value
+  and qualify_statement
+      ~qualify_assign
+      ~scope:({ qualifier; aliases; skip; _ } as scope)
+      ({ Node.location; value } as statement) =
+    let scope, value =
+      let local_alias access = { access; is_forward_reference = false } in
+
+      let qualify_assign { Assign.target; annotation; value; parent } =
+        let target_scope, target =
+          if not (Set.mem skip location) then
+            let rec qualify_target ~scope:({ aliases; immutables; locals; _ } as scope) target =
+              let scope, value =
+                match Node.value target with
+                | Tuple elements ->
+                    let scope, reversed_elements =
+                      let qualify_tuple_target (scope, reversed_elements) element =
+                        let scope, element = qualify_target ~scope element in
+                        scope, element :: reversed_elements
+                      in
+                      List.fold elements ~init:(scope, []) ~f:qualify_tuple_target
+                    in
+                    scope, Tuple (List.rev reversed_elements)
+                | Access ([_] as access) when qualify_assign ->
+                    (* Qualify field assignments in class body. *)
+                    scope, Access (qualifier @ (qualify_access ~scope access))
+                | Access ([Access.Identifier name] as access) ->
+                    (* Incrementally number local variables to avoid shadowing. *)
+                    let scope =
+                      let qualified =
+                        Identifier.show name
+                        |> String.is_prefix ~prefix:"$"
+                      in
+                      if not qualified &&
+                         not (Set.mem locals access) &&
+                         not (Set.mem immutables access) then
+                        let alias =
+                          let aliases =
+                            Map.data aliases
+                            |> List.map ~f:(fun { access; _ } -> access)
+                            |> Access.Set.of_list
+                          in
+                          let rec new_alias ~count =
+                            let alias =
+                              Identifier.show name
+                              |> Format.asprintf "$local_%d_%s" count
+                              |> Identifier.create
+                              |> fun identifier -> [Access.Identifier identifier]
+                            in
+                            if not (Set.mem aliases alias) then
+                              alias
+                            else
+                              new_alias ~count:(count + 1)
+                          in
+                          new_alias ~count:0
+                        in
+                        {
+                          scope with
+                          aliases = Map.set aliases ~key:access ~data:(local_alias alias);
+                          locals = Set.add locals access
+                        }
+                      else
+                        scope
+                    in
+                    scope, Access (qualify_access ~scope access)
+                | Access access ->
+                    let access =
+                      let qualified = qualify_access ~scope access in
+                      if qualify_assign then qualifier @ qualified else qualified
+                    in
+                    scope, Access access
+                | target ->
+                    scope, target
+              in
+              scope, { target with Node.value }
             in
-            { statement with Node.value }
+            qualify_target ~scope target
+          else
+            scope, target
+        in
+        target_scope,
+        {
+          Assign.target;
+          annotation = annotation >>| qualify_expression ~scope;
+          value = value >>| qualify_expression ~scope;
+          parent = parent >>| fun access -> qualify_access ~scope access;
+        }
+      in
+      let qualify_class ({ Class.name; bases; body; decorators; _ } as definition) =
+        let qualify_base ({ Argument.value; _ } as argument) =
+          { argument with Argument.value = qualify_expression ~scope value }
+        in
+        {
+          definition with
+          Class.name = qualify_access ~scope name;
+          bases = List.map bases ~f:qualify_base;
+          body =
+            qualify_statements
+              ~qualify_assigns:true
+              ~scope:{ scope with qualifier = qualifier @ name }
+              body
+            |> snd;
+          decorators = List.map decorators ~f:(qualify_expression ~scope);
+        }
+      in
+      let qualify_define
+          ({
+            Define.name;
+            parameters;
+            body;
+            decorators;
+            return_annotation;
+            parent;
+            _;
+          } as define) =
+        let renamed_scope, reversed_parameters =
+          (* Rename parameters to prevent aliasing. *)
+          let rename_parameter
+              (({ aliases; immutables; _ } as scope), reversed_parameters)
+              ({ Node.value = { Parameter.name; value; annotation }; _ } as parameter) =
+            let stars, name =
+              let name = Identifier.show name in
+              if String.is_prefix name ~prefix:"**" then
+                "**", String.drop_prefix name 2
+              else if String.is_prefix name ~prefix:"*" then
+                "*", String.drop_prefix name 1
+              else
+                "", name
+            in
+            let renamed =
+              Format.asprintf "$parameter_%s" name
+              |> Identifier.create
+            in
+            let name = Identifier.create name in
+            let access = [Access.Identifier name] in
+            {
+              scope with
+              aliases =
+                Map.set
+                  aliases
+                  ~key:access
+                  ~data:{ access = [Access.Identifier renamed]; is_forward_reference = false };
+              immutables = Set.add immutables access;
+            },
+            {
+              parameter with
+              Node.value = {
+                Parameter.name = Identifier.add_prefix renamed ~prefix:stars;
+                value = value >>| qualify_expression ~scope;
+                annotation = annotation >>| qualify_expression ~scope;
+              };
+            } :: reversed_parameters
           in
-          {
-            definition with
-            Class.name = qualified_name;
-            bases = List.map ~f:qualify_bases bases;
-            body = List.map ~f:qualify_statement body;
+          List.fold
+            parameters
+            ~init:({ scope with locals = Access.Set.empty }, [])
+            ~f:rename_parameter
+        in
+        {
+          define with
+          Define.name = qualify_access ~scope name;
+          parameters = List.rev reversed_parameters;
+          body =
+            qualify_statements
+              ~scope:{ renamed_scope with qualifier = qualifier @ name }
+              body
+            |> snd;
+          decorators =
+            List.map
+              decorators
+              ~f:(qualify_expression
+                    ~scope:{ scope with use_forward_references = Option.is_none parent });
+          return_annotation = return_annotation >>| qualify_expression ~scope;
+          parent = parent >>| fun access -> qualify_access ~scope access;
+        }
+      in
+
+      let join_scopes left right =
+        let merge ~key:_ = function
+          | `Both (left, _) -> Some left
+          | `Left left -> Some left
+          | `Right right -> Some right
+        in
+        {
+          left with
+          aliases = Map.merge left.aliases right.aliases ~f:merge;
+          locals = Set.union left.locals right.locals;
+        }
+      in
+
+      match value with
+      | Assign assign ->
+          let scope, assign = qualify_assign assign in
+          scope, Assign assign
+      | Assert { Assert.test; message } ->
+          scope,
+          Assert {
+            Assert.test = qualify_expression ~scope test;
+            message;
           }
-
-        and qualify_define
-            state
-            ?(parent=None)
-            qualifier
-            ({ Define.name; body; parameters; return_annotation; _ } as define) =
-          let qualified_name = qualifier @ name in
-          let rec qualify_in_define ({ Node.value; _ } as statement) =
-            let qualify_statements = List.map ~f:qualify_in_define in
-            let value =
-              match value with
-              | Define define ->
-                  Define (qualify_define state ~parent qualified_name define)
-              | Stub (Stub.Define define) ->
-                  Stub (Stub.Define (qualify_define state ~parent qualified_name define))
-              | Class define ->
-                  Class (qualify_class qualified_name define)
-              | Stub (Stub.Class define) ->
-                  Stub (Stub.Class (qualify_class qualified_name define))
-              | For ({ For.body; orelse; _ } as loop) ->
-                  For {
-                    loop with
-                    For.body = qualify_statements body;
-                    orelse = qualify_statements orelse;
-                  }
-              | While ({ While.body; While.orelse; _ } as loop) ->
-                  While {
-                    loop with
-                    While.body = qualify_statements body;
-                    orelse = qualify_statements orelse;
-                  }
-              | If ({ If.body; If.orelse; _ } as statement) ->
-                  If {
-                    statement with
-                    If.body = qualify_statements body;
-                    orelse = qualify_statements orelse;
-                  }
-              | With ({ With.body; _ } as statement) ->
-                  With {
-                    statement with
-                    With.body = qualify_statements body;
-                  }
-              | Try { Try.body; orelse; finally; handlers } ->
-                  let qualify_handler ({ Try.handler_body; _ } as handler) =
-                    { handler with Try.handler_body = qualify_statements handler_body }
-                  in
-                  Try {
-                    Try.body = qualify_statements body;
-                    orelse = qualify_statements orelse;
-                    finally = qualify_statements finally;
-                    handlers = List.map ~f:qualify_handler handlers;
-                  }
-              | _ ->
-                  value
-            in
-            { statement with Node.value }
+      | Class definition ->
+          scope,
+          Class (qualify_class definition)
+      | Define define ->
+          scope,
+          Define (qualify_define define)
+      | Delete expression ->
+          scope,
+          Delete (qualify_expression ~scope expression)
+      | Expression expression ->
+          scope,
+          Expression (qualify_expression ~scope expression)
+      | For ({ For.target; iterator; body; orelse; _ } as block) ->
+          let body_scope, body = qualify_statements ~scope body in
+          let orelse_scope, orelse = qualify_statements ~scope orelse in
+          join_scopes body_scope orelse_scope,
+          For {
+            block with
+            For.target = qualify_expression ~scope target;
+            iterator = qualify_expression ~scope iterator;
+            body;
+            orelse;
+          }
+      | Global identifiers ->
+          scope,
+          Global identifiers
+      | If { If.test; body; orelse } ->
+          let body_scope, body = qualify_statements ~scope body in
+          let orelse_scope, orelse = qualify_statements ~scope orelse in
+          join_scopes body_scope orelse_scope,
+          If { If.test = qualify_expression ~scope test; body; orelse }
+      | Import { Import.from = Some from; imports }
+        when Access.show from <> "builtins" ->
+          let import aliases { Import.name; alias } =
+            let from = Source.expand_relative_import source ~from in
+            match alias with
+            | Some alias ->
+                (* Add `alias -> from.name`. *)
+                Map.set aliases ~key:alias ~data:(local_alias (from @ name))
+            | None ->
+                (* Add `name -> from.name`. *)
+                Map.set aliases ~key:name ~data:(local_alias (from @ name))
           in
+          { scope with aliases = List.fold imports ~init:aliases ~f:import },
+          value
+      | Import { Import.from = None; imports } ->
+          let import aliases { Import.name; alias } =
+            match alias with
+            | Some alias ->
+                (* Add `alias -> from.name`. *)
+                Map.set aliases ~key:alias ~data:(local_alias name)
+            | None ->
+                aliases
+          in
+          { scope with aliases = List.fold imports ~init:aliases ~f:import },
+          value
+      | Nonlocal identifiers  ->
+          scope,
+          Nonlocal identifiers
+      | Raise expression ->
+          scope,
+          Raise (expression >>| qualify_expression ~scope)
+      | Return expression ->
+          scope,
+          Return (expression >>| qualify_expression ~scope)
+      | Stub (Stub.Assign assign) ->
+          let scope, assign = qualify_assign assign in
+          scope, Stub (Stub.Assign assign)
+      | Stub (Stub.Class definition) ->
+          scope,
+          Stub (Stub.Class (qualify_class definition))
+      | Stub (Stub.Define define) ->
+          scope,
+          Stub (Stub.Define (qualify_define define))
+      | Try { Try.body; handlers; orelse; finally } ->
+          let body_scope, body = qualify_statements ~scope body in
+          let handler_scopes, handlers =
+            let qualify_handler { Try.kind; name; handler_body } =
+              let scope, handler_body = qualify_statements ~scope handler_body in
+              scope, { Try.kind = kind >>| qualify_expression ~scope; name; handler_body }
+            in
+            List.map handlers ~f:qualify_handler
+            |> List.unzip
+          in
+          let orelse_scope, orelse = qualify_statements ~scope:body_scope orelse in
+          let finally_scope, finally = qualify_statements ~scope finally in
+          let scope =
+            List.fold handler_scopes ~init:body_scope ~f:join_scopes
+            |> join_scopes orelse_scope
+            |> join_scopes finally_scope
+          in
+          scope,
+          Try { Try.body; handlers; orelse; finally }
+      | With ({ With.items; body; _ } as block) ->
+          let qualify_item (name, alias) =
+            qualify_expression ~scope name,
+            alias >>| qualify_expression ~scope
+          in
+          let scope, body = qualify_statements ~scope body in
+          scope,
+          With { block with With.items = List.map items ~f:qualify_item; body }
+      | While { While.test; body; orelse } ->
+          let body_scope, body = qualify_statements ~scope body in
+          let orelse_scope, orelse = qualify_statements ~scope orelse in
+          join_scopes body_scope orelse_scope,
+          While { While.test = qualify_expression ~scope test; body; orelse }
+      | Statement.Yield expression ->
+          scope,
+          Statement.Yield (qualify_expression ~scope expression)
+      | Statement.YieldFrom expression ->
+          scope,
+          Statement.YieldFrom (qualify_expression ~scope expression)
+      | Break | Continue | Import _ | Pass ->
+          scope,
+          value
+    in
+    scope, { statement with Node.value }
+
+  and qualify_expression ~scope ({ Node.value; _ } as expression) =
+    let value =
+      let qualify_entry { Dictionary.key; value } =
+        {
+          Dictionary.key = qualify_expression ~scope key;
+          value = qualify_expression ~scope value;
+        }
+      in
+      let qualify_generator ({ Comprehension.target; iterator; conditions; _ } as generator) =
+        {
+          generator with
+          Comprehension.target = qualify_expression ~scope target;
+          iterator = qualify_expression ~scope iterator;
+          conditions = List.map conditions ~f:(qualify_expression ~scope);
+        }
+      in
+      match value with
+      | Access access ->
+          Access (qualify_access ~scope access)
+      | Await expression ->
+          Await (qualify_expression ~scope expression)
+      | BooleanOperator { BooleanOperator.left; operator; right } ->
+          BooleanOperator {
+            BooleanOperator.left = qualify_expression ~scope left;
+            operator;
+            right = qualify_expression ~scope right;
+          }
+      | ComparisonOperator { ComparisonOperator.left; right } ->
+          let qualify_operand (operator, operand) =
+            operator, qualify_expression ~scope operand
+          in
+          ComparisonOperator {
+            ComparisonOperator.left = qualify_expression ~scope left;
+            right = List.map right ~f:qualify_operand;
+          }
+      | Dictionary { Dictionary.entries; keywords } ->
+          Dictionary {
+            Dictionary.entries = List.map entries ~f:qualify_entry;
+            keywords = keywords >>| qualify_expression ~scope
+          }
+      | DictionaryComprehension { Comprehension.element; generators } ->
+          DictionaryComprehension {
+            Comprehension.element = qualify_entry element;
+            generators = List.map generators ~f:qualify_generator;
+          }
+      | Generator { Comprehension.element; generators } ->
+          Generator {
+            Comprehension.element = qualify_expression ~scope element;
+            generators = List.map generators ~f:qualify_generator;
+          }
+      | Lambda { Lambda.parameters; body } ->
           let qualify_parameter
               ({ Node.value = { Parameter.name; value; annotation }; _ } as parameter) =
             {
               parameter with
               Node.value = {
                 Parameter.name;
-                value = value >>| qualify_expression state;
-                annotation = annotation >>| qualify_expression state;
-              }
+                value = value >>| qualify_expression ~scope;
+                annotation = annotation >>| qualify_expression ~scope;
+              };
             }
           in
-          {
-            define with
-            Define.name = qualified_name;
-            body = List.map ~f:qualify_in_define body;
-            parent;
-            parameters = List.map ~f:qualify_parameter parameters;
-            return_annotation = return_annotation >>| qualify_expression state
+          Lambda {
+            Lambda.parameters = List.map parameters ~f:qualify_parameter;
+            body = qualify_expression ~scope body;
           }
+      | List elements ->
+          List (List.map elements ~f:(qualify_expression ~scope))
+      | ListComprehension { Comprehension.element; generators } ->
+          ListComprehension {
+            Comprehension.element = qualify_expression ~scope element;
+            generators = List.map generators ~f:qualify_generator;
+          }
+      | Set elements ->
+          Set (List.map elements ~f:(qualify_expression ~scope))
+      | SetComprehension { Comprehension.element; generators } ->
+          SetComprehension {
+            Comprehension.element = qualify_expression ~scope element;
+            generators = List.map generators ~f:qualify_generator;
+          }
+      | Starred (Starred.Once expression) ->
+          Starred (Starred.Once (qualify_expression ~scope expression))
+      | Starred (Starred.Twice expression) ->
+          Starred (Starred.Twice (qualify_expression ~scope expression))
+      | Ternary { Ternary.target; test; alternative } ->
+          Ternary {
+            Ternary.target = qualify_expression ~scope target;
+            test = qualify_expression ~scope test;
+            alternative = qualify_expression ~scope alternative;
+          }
+      | Tuple elements ->
+          Tuple (List.map elements ~f:(qualify_expression ~scope))
+      | UnaryOperator { UnaryOperator.operator; operand } ->
+          UnaryOperator {
+            UnaryOperator.operator;
+            operand = qualify_expression ~scope operand;
+          }
+      | Yield (Some expression) ->
+          Yield (Some (qualify_expression ~scope expression))
+      | Yield None ->
+          Yield None
+      | Bytes _ | Complex _ | False | Float _ | Format _ | Integer _ | String _ | True ->
+          value
+    in
+    { expression with Node.value }
+
+  and qualify_access ~scope:({ aliases; use_forward_references; _ } as scope) access =
+    match access with
+    | head :: tail ->
+        let head =
+          match Map.find aliases [head] with
+          | Some { access; is_forward_reference = true } when use_forward_references -> access
+          | Some { access; is_forward_reference = false } -> access
+          | _ -> [head]
         in
-
-        let rec qualify_toplevel_statement
-            ({ variables; methods } as state)
-            ({ Node.value; _ } as statement) =
-          let state, value =
-            match value with
-            (* Add `name -> qualifier.name` for classes. *)
-            | Class definition ->
-                let qualified = qualify_class global_qualifier definition in
-                {
-                  state with
-                  methods = Map.set methods ~key:definition.Class.name ~data:qualified.Class.name;
-                },
-                Class qualified
-            | Stub (Stub.Class definition) ->
-                let qualified = qualify_class global_qualifier definition in
-                {
-                  state with
-                  methods = Map.set methods ~key:definition.Class.name ~data:qualified.Class.name;
-                },
-                Stub (Stub.Class qualified)
-
-            (* Add `name -> qualifier.name` for functions, not methods. *)
-            | Define definition when not (Define.is_method definition) ->
-                let qualified = qualify_define state global_qualifier definition in
-                {
-                  state with
-                  methods = Map.set methods ~key:definition.Define.name ~data:qualified.Define.name;
-                },
-                Define qualified
-            | Stub (Stub.Define definition) when not (Define.is_method definition) ->
-                let qualified = qualify_define state global_qualifier definition in
-                {
-                  state with
-                  methods = Map.set methods ~key:definition.Define.name ~data:qualified.Define.name;
-                },
-                Stub (Stub.Define qualified)
-
-            (* Qualify globals *)
-            | Assign (
-                {
-                  Assign.target = ({ Node.value = Access access; _ } as access_node);
-                  value;
-                  annotation;
-                  _;
-                } as assign) ->
-                let qualified = global_qualifier @ access in
-                let qualified_access = { access_node with Node.value = Access qualified } in
-                (* All assigned targets are variables by default,
-                   unless we have already classified their values as methods. *)
-                let annotation =
-                  match annotation with
-                  | Some { Node.value = Access access; location } when List.length access = 1 ->
-                      begin
-                        match Map.find variables access with
-                        | Some replacement ->
-                            Some { Node.value = Access replacement; location }
-                        | _ ->
-                            annotation
-                      end
-                  | _ ->
-                      annotation
-                in
-                let state =
-                  match value with
-                  | Some { Node.value = Access value_access; _ }
-                    when Map.mem methods value_access ->
-                      { state with methods = Map.set methods ~key:access ~data:qualified }
-                  | _ ->
-                      { state with variables = Map.set variables ~key:access ~data:qualified }
-                in
-                state,
-                Assign {
-                  assign with
-                  Assign.target = qualified_access;
-                  value = value >>| qualify_expression state;
-                  annotation;
-                }
-            | Stub (
-                Stub.Assign ({
-                    Assign.target = ({ Node.value = Access access; _ } as access_node);
-                    _;
-                  } as assign)) ->
-                let qualified = global_qualifier @ access in
-                let qualified_access = { access_node with Node.value = Access qualified } in
-                { state with variables = Map.set variables ~key:access ~data:qualified },
-                Stub (Stub.Assign { assign with Assign.target = qualified_access })
-
-            | _ ->
-                state, value
-          in
-          state,
-          { statement with Node.value }
-        in
-        let state, statement = qualify_toplevel_statement state { statement with Node.value } in
-        state, [statement]
-
-    end)
-  in
-
-  let module OrderDependent = Transform.Make(struct
-      (* Keeps track of transformations we need to make. E.g. `import a as b` will result in a
-         transformation rule from `b` to `a`. *)
-      include Transform.Identity
-      type t = Access.t * (Access.t Access.Map.t) * (Access.t Access.Map.t)
-
-      let expression_postorder (qualifier, variables, methods) expression =
-        match expression with
-        | { Node.value = Access (head :: tail); _ }
-          when Access.equal qualifier [head] && Map.mem variables tail ->
-            (* Duct tape fix: don't double qualify global constants. *)
-            expression
-        | { Node.location; value = Access (head :: tail) } ->
-            begin
-              match Map.find methods [head] with
-              | Some replacement ->
-                  {
-                    Node.location;
-                    value = Access (replacement @ tail);
-                  }
-              | None ->
-                  expression
-            end
-        | { Node.location; value = String value } ->
-            begin
-              match Map.find methods (Access.create value) with
-              | Some replacement ->
-                  {
-                    Node.location;
-                    value = String (Access.show replacement);
-                  }
-              | None ->
-                  expression
-            end
-        | _ ->
-            expression
-
-      let statement_postorder
-          ((qualifier, variables, map) as state) ({ Node.location; value } as statement) =
-        match value with
-        | Import { Import.from = None; imports } ->
-            let add_import map { Import.name; alias } =
-              match alias with
-              | Some alias ->
-                  (* Add `alias -> name`. *)
-                  Map.set map ~key:alias ~data:name
-              | None ->
-                  map
-            in
-            (qualifier, variables, List.fold_left imports ~f:add_import ~init:map),
-            [statement]
-        | Import ({ Import.from = Some from; imports } as import)
-          when Access.show from <> "builtins" ->
-            (* Expand relative imports according to PEP 328 *)
-            let from =
-              let dots, postfix =
-                let is_dot = function
-                  | Access.Identifier identifier when Identifier.show identifier = "" -> true
-                  | _ -> false
-                in
-                List.split_while ~f:is_dot from
-              in
-              let prefix =
-                if not (List.is_empty dots) then
-                  let drop =
-                    let drop =
-                      if List.length dots = 2 && List.length postfix = 0 then
-                        (* Special case for single `.` in from clause. *)
-                        1
-                      else
-                        List.length dots
-                    in
-                    let is_initializer_module =
-                      String.is_suffix path ~suffix:"/__init__.py" ||
-                      String.is_suffix path ~suffix:"/__init__.pyi"
-                    in
-                    if is_initializer_module then
-                      drop - 1
-                    else
-                      drop
+        let qualify_element = function
+          | Access.Call ({ Node.value = arguments ; _ } as call) ->
+              let qualify_argument { Argument.name; value } =
+                let name =
+                  let rename identifier =
+                    Identifier.show identifier
+                    |> Format.asprintf "$parameter_%s"
+                    |> Identifier.create
                   in
-                  List.rev qualifier
-                  |> (fun reversed -> List.drop reversed drop)
-                  |> List.rev
-                else
-                  []
+                  name
+                  >>| Node.map ~f:rename
+                in
+                { Argument.name; value = qualify_expression ~scope value }
               in
-              prefix @ postfix
-            in
-            let add_import map { Import.name; alias } =
-              match alias with
-              | Some alias ->
-                  (* Add `alias -> from.name`. *)
-                  Map.set map ~key:alias ~data:(from @ name)
-              | None ->
-                  (* Add `name -> from.name`. *)
-                  Map.set map ~key:name ~data:(from @ name)
-            in
-            (qualifier, variables, List.fold_left imports ~f:add_import ~init:map),
-            [{ Node.location; value = Import { import with Import.from = Some from }}]
-        | _ ->
-            state, [statement]
-    end)
-  in
-
-  let module QualifyDefines = Transform.Make(struct
-      include Transform.Identity
-      type t = Access.t Access.Map.t
-
-
-      let statement_preorder map ({ Node.value; _ } as statement) =
-        let prepend_function_prefix access =
-          if Access.starts_with access ~prefix:"**" then
-            Access.remove_prefix access ~prefix:"**"
-            |> Access.add_prefix ~prefix:"**$renamed_"
-          else if Access.starts_with access ~prefix:"*" then
-            Access.remove_prefix access ~prefix:"*"
-            |> Access.add_prefix ~prefix:"*$renamed_"
-          else
-            Access.add_prefix ~prefix:"$renamed_" access
+              Access.Call { call with Node.value = List.map arguments ~f:qualify_argument }
+          | Access.Expression expression ->
+              Access.Expression (qualify_expression ~scope expression)
+          | element ->
+              element
         in
-        (* Handle qualification of variables in one specific method. *)
-        let rec qualify_define
-            ~parent_scope
-            ~globals
-            ~parent_qualifier
-            ({ Define.name; parameters; body; _ } as define) =
-          let module DefineQualifier = Transform.Make(struct
-              include Transform.Identity
-              type t = define_qualifier_state
-
-              let expression_preorder ({ current_scope; _ } as state) { Node.location; value } =
-                let current_scope, value =
-                  match value with
-                  | Lambda { Lambda.parameters; body } ->
-                      let add_parameter
-                          (current_scope, parameters)
-                          { Node.location; value = { Parameter.name; _ } as parameter } =
-                        let access = Access.create_from_identifiers [name] in
-                        let renamed = Access.add_prefix ~prefix:"$renamed_" access in
-                        Map.set current_scope ~key:access ~data:renamed,
-                        {
-                          Node.location;
-                          value = {
-                            parameter with
-                            Parameter.name = Identifier.create (Access.show renamed);
-                          };
-                        } :: parameters
-                      in
-                      let (current_scope, reversed_parameters) =
-                        List.fold ~f:add_parameter ~init:(current_scope, []) parameters
-                      in
-                      current_scope,
-                      (Lambda { Lambda.parameters = List.rev reversed_parameters; body })
-                  | _ ->
-                      current_scope, value
-                in
-                { state with current_scope }, { Node.location; value }
-
-              let expression_postorder
-                  { current_scope; globals; _ }
-                  ({ Node.value; _ } as expression) =
-                let value =
-                  match value with
-                  | Access access ->
-                      Access (rename_named_arguments access)
-                  | _ ->
-                      value
-                in
-                match value with
-                (* Weak globals. *)
-                | Access (head :: tail) ->
-                    begin
-                      match Map.find current_scope [head] with
-                      | Some rewrite ->
-                          { expression with Node.value = Access (rewrite @ tail) }
-                      | None ->
-                          match Map.find globals [head] with
-                          | Some global_access ->
-                              (* This is a valid global access. *)
-                              { expression with Node.value = Access (global_access @ tail) }
-                          | None ->
-                              (* Invalid global access. *)
-                              { expression with Node.value }
-                    end
-                | _ ->
-                    { expression with Node.value }
-
-              let statement_preorder
-                  ({ local_qualifier; current_scope; globals } as state)
-                  ({ Node.value; _ } as statement) =
-                let search_in_scope { current_scope; globals; _ } access =
-                  match Map.find current_scope access with
-                  | Some replacement ->
-                      Some replacement
-                  | None ->
-                      Map.find globals access
-                in
-                let rec qualify_target
-                    ({ current_scope; _ } as state)
-                    ({ Node.value; _ } as target) =
-                  let state, value =
-                    match value with
-                    | Access access when List.length access = 1 ->
-                        begin
-                          match Map.find current_scope access with
-                          | Some replacement ->
-                              state,
-                              Access replacement
-                          | None ->
-                              let replacement = prepend_function_prefix access in
-                              {
-                                state with
-                                current_scope =
-                                  Map.set current_scope ~key:access ~data:replacement;
-                              },
-                              Access replacement
-                        end
-                    | Tuple elements ->
-                        let state, elements =
-                          let element (state, reversed_elements) element =
-                            let state, element = qualify_target state element in
-                            state, element :: reversed_elements
-                          in
-                          List.fold ~init:(state, []) ~f:element elements
-                          |> fun (state, reversed_elements) -> state, List.rev reversed_elements
-                        in
-                        state,
-                        Tuple elements
-                    | _ ->
-                        state,
-                        value
-                  in
-                  state, { target with Node.value }
-                in
-                let qualify_assign state ({ Assign.target; annotation; _ } as assign) =
-                  let annotation =
-                    match annotation with
-                    | Some { Node.value = Access access; location } when List.length access = 1 ->
-                        begin
-                          match search_in_scope state access with
-                          | Some replacement ->
-                              Some { Node.value = Access replacement; location }
-                          | _ ->
-                              annotation
-                        end
-                    | _ ->
-                        annotation
-                  in
-                  let state, target = qualify_target state target in
-                  state, { assign with Assign.target; annotation }
-                in
-                match value with
-                (* Locals. *)
-                | Assign assign ->
-                    let state, assign = qualify_assign state assign in
-                    state, { statement with Node.value = Assign assign }
-                | Stub (Stub.Assign assign) ->
-                    let state, assign = qualify_assign state assign in
-                    state, { statement with Node.value = Stub (Stub.Assign assign) }
-
-                (* Strong globals. *)
-                | Global identifiers ->
-                    let access = Access.create_from_identifiers identifiers in
-                    let qualified_access = global_qualifier @ access in
-                    {
-                      state with
-                      current_scope = Map.set current_scope ~key:access ~data:qualified_access;
-                    },
-                    statement
-
-                | For ({ For.target; _ } as for_loop) ->
-                    let state, target = qualify_target state target in
-                    state, { statement with Node.value = For { for_loop with For.target } }
-
-                | Define define ->
-                    (* Open a new recursion tree with its own state, that will not be propagated
-                       further. *)
-                    let define =
-                      qualify_define
-                        ~parent_scope:current_scope
-                        ~globals
-                        ~parent_qualifier:local_qualifier
-                        define
-                    in
-                    state, { statement with Node.value = Define define }
-                | _ ->
-                    state, statement
-
-              let statement_keep_recursing _ { Node.value; _ } =
-                match value with
-                | Define _ -> Transform.Stop
-                | _ -> Transform.Recurse
-            end)
-          in
-
-          (* Initialize local scope with the parameters. *)
-          let add_parameter map { Node.value = { Parameter.name; _ }; _ } =
-            let remove_stars access =
-              if Access.starts_with access ~prefix:"**" then
-                Access.remove_prefix access ~prefix:"**"
-              else if Access.starts_with access ~prefix:"*" then
-                Access.remove_prefix access ~prefix:"*"
-              else
-                access
-            in
-            let access =
-              Access.create_from_identifiers [name]
-              |> remove_stars
-            in
-            let replacement = prepend_function_prefix access in
-            Map.set ~key:access ~data:replacement map
-          in
-          let current_scope = List.fold ~init:parent_scope ~f:add_parameter parameters in
-          let local_qualifier = parent_qualifier @ name in
-
-          let source =
-            Source.create body
-            |> DefineQualifier.transform {local_qualifier; current_scope; globals}
-            |> snd  (* Discard the generated state, it is not useful. *)
-          in
-          let parameters =
-            let rewrite ({ Node.value = { Parameter.name; _ } as parameter; location }) =
-              let name =
-                Access.create_from_identifiers [name]
-                |> prepend_function_prefix
-                |> Access.show
-                |> Identifier.create
-              in
-              Node.create ~location { parameter with Parameter.name }
-            in
-            List.map ~f:rewrite parameters
-          in
-          { define with Define.body = Source.statements source; parameters }
-        in
-
-        match value with
-        | Define define ->
-            let define =
-              qualify_define
-                ~parent_scope:Access.Map.empty
-                ~globals:map
-                ~parent_qualifier:global_qualifier
-                define
-            in
-            map, { statement with Node.value = Define define }
-
-        | Stub (Stub.Define define) ->
-            let define =
-              qualify_define
-                ~parent_scope:Access.Map.empty
-                ~globals:map
-                ~parent_qualifier:global_qualifier
-                define
-            in
-            map, { statement with Node.value = Stub (Stub.Define define) }
-
-        | _ ->
-            map, statement
-
-      let statement_keep_recursing _ { Node.value; _ } =
-        match value with
-        | Define _ -> Transform.Stop
-        | _ -> Transform.Recurse
-    end)
+        List.map (head @ tail) ~f:qualify_element
+    | _ ->
+        access
   in
 
-
-  let { variables = global_variables; methods = global_methods }, source =
-    QualifyToplevelStatements.transform
-      { variables = Access.Map.empty; methods = Access.Map.empty }
-      source
+  let scope =
+    {
+      qualifier;
+      aliases = Access.Map.empty;
+      locals = Access.Set.empty;
+      immutables = Access.Set.empty;
+      use_forward_references = true;
+      skip = Location.Set.empty;
+    }
   in
-  QualifyDefines.transform global_variables source
-  |> snd  (* Discard the generated state, it is not useful. *)
-  |> OrderDependent.transform (global_qualifier, global_variables, global_methods)
-  |> snd
+  { source with Source.statements = qualify_statements ~scope statements |> snd }
 
 
 let replace_version_specific_code source =
@@ -985,7 +876,7 @@ let expand_ternary_assign source =
   |> snd
 
 
-let expand_named_tuples ({ Source.statements; _ } as source) =
+let expand_named_tuples ({ Source.qualifier; statements; _ } as source) =
   let tuple_attributes ~parent ~expression =
     match expression with
     | {
@@ -1004,7 +895,7 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
           match arguments with
           | [_; { Argument.value = { Node.location; value = String serialized }; _ }] ->
               let attribute name =
-                Access (Access.create name)
+                Access (parent @ Access.create name)
                 |> Node.create ~location
               in
               String.split serialized ~on:' '
@@ -1013,7 +904,7 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
               let rec accessify ({ Node.value; _ } as expression) =
                 let value =
                   match value with
-                  | String name -> Access (Access.create name)
+                  | String name -> Access (parent @ Access.create name)
                   | Tuple [name; annotation] -> Tuple [accessify name; annotation]
                   | _ -> value
                 in
@@ -1064,6 +955,7 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
           value = Some expression;
           _;
         } ->
+          let name = Expression.Access.delocalize name ~qualifier in
           tuple_attributes ~parent:name ~expression
           >>| (fun body ->
               Class {
@@ -1094,9 +986,9 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
   { source with Source.statements = List.map ~f:expand_named_tuples statements }
 
 
-let defines ?(include_stubs = false) ({ Source.statements; _ } as source) =
+let defines ?(include_stubs = false) ({ Source.qualifier; statements; _ } as source) =
   let toplevel =
-    Node.create_with_default_location (Statement.Define.create_toplevel statements)
+    Node.create_with_default_location (Statement.Define.create_toplevel ~qualifier ~statements)
   in
   let module Collector = Visit.StatementCollector(struct
       type t = Define.t Node.t

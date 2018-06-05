@@ -68,7 +68,7 @@ let apply_decorators ~define ~resolution =
 
 
 let create defines ~resolution =
-  let ({ Define.name; parent; _ } as define) = List.hd_exn defines in
+  let ({ Define.name; _ } as define) = List.hd_exn defines in
   let open Type.Callable in
   let parameter { Node.value = { Ast.Parameter.name; annotation; value }; _ } =
     let name = Identifier.show name in
@@ -88,7 +88,6 @@ let create defines ~resolution =
     else
       Parameter.Named { Parameter.name = access; annotation; default = Option.is_some value }
   in
-  let name = parent >>| (fun parent -> parent @ name) |> Option.value ~default:name in
   let implicit =
     if Define.is_class_method define then
       Type.Callable.Class

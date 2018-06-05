@@ -27,21 +27,8 @@ let create definition =
   definition
 
 
-let create_toplevel statements =
-  {
-    Define.name = Expression.Access.create "$toplevel";
-    parameters = [];
-    body = statements;
-    decorators = [];
-    docstring = None;
-    return_annotation = Some (Type.expression Type.none);
-    async = false;
-    generated = false;
-    parent = None;
-  }
-
-
-let define annotated = annotated
+let define annotated =
+  annotated
 
 
 let is_generator { Define.body; _ } =

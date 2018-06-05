@@ -211,18 +211,18 @@ let rec pp format annotation =
                   | Parameter.Named { Parameter.name; annotation; default } ->
                       Format.asprintf
                         "Named(%a, %s%s)"
-                        Access.pp name
+                        Access.pp_sanitized name
                         (without_backtick [annotation])
                         (if default then ", default" else "")
                   | Parameter.Variable { Parameter.name; annotation; _ } ->
                       Format.asprintf
                         "Variable(%a, %s)"
-                        Access.pp name
+                        Access.pp_sanitized name
                         (without_backtick [annotation])
                   | Parameter.Keywords { Parameter.name; annotation; _ } ->
                       Format.asprintf
                         "Keywords(%a, %s)"
-                        Access.pp name
+                        Access.pp_sanitized name
                         (without_backtick [annotation])
                 in
                 List.map ~f:parameter parameters
@@ -494,7 +494,6 @@ let yield parameter =
 
 
 let primitive_substitution_map =
-  let complex = Primitive (Identifier.create "complex") in
   let parametric_anys name number_of_anys =
     let rec parameters sofar remaining =
       match remaining with
@@ -507,10 +506,6 @@ let primitive_substitution_map =
     "object", Object;
     "typing.Any", Object;
     "None", none;
-    "numbers.Number", complex;
-    "numbers.Complex", complex;
-    "numbers.Real", Primitive (Identifier.create "float");
-    "numbers.Integral", Primitive (Identifier.create "int");
     "$bottom", Bottom;
     "$unknown", Top;
     "typing.AsyncGenerator", parametric_anys "typing.AsyncGenerator" 2;
@@ -579,7 +574,19 @@ let rec create ~aliases { Node.value = expression; _ } =
               parse (access :: reversed_lead) tail
           | [] ->
               let name =
-                List.rev reversed_lead
+                let sanitized =
+                  (* TODO: Access.sanitize *)
+                  match reversed_lead with
+                  | (Access.Identifier name) :: tail ->
+                      let name =
+                        Identifier.show_sanitized name
+                        |> Identifier.create
+                      in
+                      (Access.Identifier name) :: tail
+                  | _ ->
+                      reversed_lead
+                in
+                List.rev sanitized
                 |> Access.show
               in
               if name = "None" then
@@ -942,7 +949,8 @@ let rec expression annotation =
         in
         Access.create "typing.Callable" @ get_item_calls
     | Object -> Access.create "object"
-    | Optional Bottom -> split (Identifier.create "None")
+    | Optional Bottom ->
+        split (Identifier.create "None")
     | Optional parameter ->
         (Access.create "typing.Optional") @ (get_item_call [parameter])
     | Parametric { name; parameters }
@@ -950,7 +958,8 @@ let rec expression annotation =
         split (Identifier.create "None")
     | Parametric { name; parameters } ->
         (split (reverse_substitute name)) @ (get_item_call parameters)
-    | Primitive name -> split name
+    | Primitive name ->
+        split name
     | Top -> Access.create "$unknown"
     | Tuple elements ->
         let parameters =

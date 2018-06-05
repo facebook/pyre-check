@@ -386,12 +386,12 @@ let description
           if due_to_any then
             [
               Format.asprintf
-                "Globally accessible variable `%a` has type %a but type `Any` is specified."
-                Access.pp name
+                "Globally accessible variable `%s` has type %a but type `Any` is specified."
+                (Access.show_sanitized name)
                 Type.pp annotation;
               Format.asprintf
-                "Global variable `%a` declared on line %d, type %a deduced from %s."
-                Access.pp name
+                "Global variable `%s` declared on line %d, type %a deduced from %s."
+                (Access.show_sanitized name)
                 (Location.line location)
                 Type.pp annotation
                 evidence_string
@@ -399,12 +399,12 @@ let description
           else
             [
               Format.asprintf
-                "Globally accessible variable `%a` has type %a but no type is specified."
-                Access.pp name
+                "Globally accessible variable `%s` has type %a but no type is specified."
+                (Access.show_sanitized name)
                 Type.pp annotation;
               Format.asprintf
-                "Global variable `%a` declared on line %d, type %a deduced from %s."
-                Access.pp name
+                "Global variable `%s` declared on line %d, type %a deduced from %s."
+                (Access.show_sanitized name)
                 (Location.line location)
                 Type.pp annotation
                 evidence_string

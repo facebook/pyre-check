@@ -17,8 +17,7 @@ open Test
 
 
 let test_is_method _ =
-  let define name parent =
-    let parent = if parent = "" then None else (Some (Access.create parent)) in
+  let define ~name ~parent =
     {
       Define.name = Access.create name;
       parameters = [];
@@ -28,11 +27,11 @@ let test_is_method _ =
       return_annotation = None;
       async = false;
       generated = false;
-      parent;
-    } in
-  assert_true (Define.is_method (define "foo" "path.source"));
-  assert_false (Define.is_method (define "foo" ""));
-  assert_false (Define.is_method (define "foo.bar" "path.source"))
+      parent = parent >>| Access.create;
+    }
+  in
+  assert_true (Define.is_method (define ~name:"path.source.foo" ~parent:(Some "path.source")));
+  assert_false (Define.is_method (define ~name:"foo" ~parent:None))
 
 
 let test_decorator _ =
@@ -93,11 +92,11 @@ let test_is_constructor _ =
     in
     assert_equal expected (Define.is_constructor ~in_test define)
   in
-  assert_is_constructor ~name:"__init__" ~parent:(Some "foo") true;
-  assert_is_constructor ~in_test:true ~name:"setUp" ~parent:(Some "foo") true;
-  assert_is_constructor ~in_test:true ~name:"with_context" ~parent:(Some "foo") true;
+  assert_is_constructor ~name:"Foo.__init__" ~parent:(Some "Foo") true;
+  assert_is_constructor ~in_test:true ~name:"Foo.setUp" ~parent:(Some "Foo") true;
+  assert_is_constructor ~in_test:true ~name:"Foo.with_context" ~parent:(Some "Foo") true;
   assert_is_constructor ~name:"__init__" false;
-  assert_is_constructor ~name:"bar" ~parent:(Some "foo") false
+  assert_is_constructor ~name:"Foo.bar" ~parent:(Some "Foo") false
 
 
 let test_dump _ =
@@ -279,16 +278,34 @@ let test_attributes _ =
       >>| fun (target, annotation, value, setter) ->
       create_attribute ~setter ~target ~annotation ~value ()
     in
+    let define =
+      let define = parse_single_define source in
+      { define with Define.parent = Some (Access.create "Parent") }
+    in
     assert_equal
       ~cmp:(Option.equal Attribute.equal)
       expected
-      (parse_single_define source |> Define.property_attribute ~location:Location.any)
+      (Define.property_attribute define ~location:Location.any)
   in
-  assert_property_attribute "def foo(): pass" None;
-  assert_property_attribute "@property\ndef foo(): pass" (Some ("foo", None, None, false));
-  assert_property_attribute "@__property__\ndef foo(): pass" (Some ("foo", None, None, false));
+  assert_property_attribute "def Parent.foo(): pass" None;
+  assert_property_attribute "@property\ndef Parent.foo(): pass" (Some ("foo", None, None, false));
   assert_property_attribute
-    "@abc.abstractproperty\ndef foo() -> int: pass"
+    {|
+      @foo.setter
+      def Parent.foo(self, value: int) -> None: pass
+    |}
+    (Some ("foo", Some (Type.expression Type.integer), None, true));
+  assert_property_attribute
+    {|
+      @__property__
+      def Parent.foo(): pass
+    |}
+    (Some ("foo", None, None, false));
+  assert_property_attribute
+    {|
+      @abc.abstractproperty
+      def Parent.foo() -> int: pass
+    |}
     (Some ("foo", Some (Type.expression Type.integer), None, false));
 
   (* Test class attributes. *)
@@ -359,7 +376,7 @@ let test_attributes _ =
   assert_attributes
     {|
       class Foo:
-        attribute: int = value
+        Foo.attribute: int = value
     |}
     [
       attribute ~target:"attribute" ~annotation:Type.integer ~value:"value" ();
@@ -367,12 +384,12 @@ let test_attributes _ =
   assert_attributes
     {|
       class Foo:
-        def __init__(self):
+        def Foo.__init__(self):
           self.implicit = implicit
           self.whatever()['asdf'] = 5
           if True:
             self.ignored = ignored
-        attribute: int = value
+        Foo.attribute: int = value
         whatever()['asdf'] = 5
     |}
     [
@@ -385,8 +402,8 @@ let test_attributes _ =
     {|
       class Foo:
         @overload
-        def f(self, x: int) -> int: ...
-        def f(self, x: str) -> str: ...
+        def Foo.f(self, x: int) -> int: ...
+        def Foo.f(self, x: str) -> str: ...
     |}
     [
       attribute ~target:"f" ~number_of_defines:2 ();
@@ -394,9 +411,9 @@ let test_attributes _ =
   assert_attributes
     {|
       class Foo:
-        def __init__(self):
+        def Foo.__init__(self):
           self.attribute = value  # Prioritize explicit declaration
-        attribute: int = value
+        Foo.attribute: int = value
     |}
     [
       attribute ~target:"__init__" ~number_of_defines:1 ();
@@ -405,11 +422,11 @@ let test_attributes _ =
   assert_attributes
     {|
       class Foo:
-        def __init__(self):
+        def Foo.__init__(self):
           self.init()
-        def init(self):
+        def Foo.init(self):
           self.attribute: int = value
-        def not_inlined(self):
+        def Foo.not_inlined(self):
           self.other: int = 1
     |}
     [
@@ -422,7 +439,7 @@ let test_attributes _ =
     {|
       class Foo:
         @property
-        def property(self) -> int:
+        def Foo.property(self) -> int:
           pass
     |}
     [attribute ~target:"property" ~annotation:Type.integer ()];
@@ -430,7 +447,7 @@ let test_attributes _ =
     {|
       class Foo:
         @property
-        def property(self) -> int: ...
+        def Foo.property(self) -> int: ...
     |}
     [attribute ~target:"property" ~annotation:Type.integer ()];
   assert_attributes
@@ -449,16 +466,16 @@ let test_attributes _ =
     {|
       class Foo:
         @property.setter
-        def property(self, value: str) -> None: ...
+        def Foo.property(self, value: str) -> None: ...
     |}
     [attribute ~target:"property" ~annotation:Type.string ~setter:true ()];
   assert_attributes
     {|
       class Foo:
         @property
-        def x(self) -> int: ...
+        def Foo.x(self) -> int: ...
         @x.setter
-        def x(self, value:str) -> None: ...
+        def Foo.x(self, value:str) -> None: ...
     |}
     [attribute ~target:"x" ~annotation:Type.string ~value:"int" ~setter:true ()];
 
@@ -466,20 +483,20 @@ let test_attributes _ =
   assert_attributes
     {|
       class Foo:
-        a, b = list(range(2))
-    |}
-    [
-      "a", None, Some (parse_single_expression "list(range(2))[0]"), false, 0;
-      "b", None, Some (parse_single_expression "list(range(2))[1]"), false, 0;
-    ];
-  assert_attributes
-    {|
-      class Foo:
-        a, b = 1, 2
+        Foo.a, Foo.b = 1, 2
      |}
     [
       "a", None, Some (parse_single_expression "1"), false, 0;
       "b", None, Some (parse_single_expression "2"), false, 0;
+    ];
+  assert_attributes
+    {|
+      class Foo:
+        Foo.a, Foo.b = list(range(2))
+    |}
+    [
+      "a", None, Some (parse_single_expression "list(range(2))[0]"), false, 0;
+      "b", None, Some (parse_single_expression "list(range(2))[1]"), false, 0;
     ];
 
   (* Implicit attributes in tests. *)
@@ -487,7 +504,7 @@ let test_attributes _ =
     ~in_test:true
     {|
       class Test:
-        def setUp(self):
+        def Test.setUp(self):
           self.attribute = value
     |}
     [
@@ -498,9 +515,9 @@ let test_attributes _ =
     ~in_test:true
     {|
       class Test:
-        def setUp(self):
+        def Test.setUp(self):
           self.attribute = value
-        def with_context(self):
+        def Test.with_context(self):
           self.context = value
     |}
     [
@@ -755,7 +772,7 @@ let test_pp _ =
 
   let pretty_print_expect =
     {|
-      def foo(bar):
+      def #foo(bar):
         x = "hello world"
     |}
   in
@@ -775,7 +792,7 @@ let test_pp _ =
   let pretty_print_expect =
     {|
       @(decorator1, decorator2)
-      def foo(bar):
+      def #foo(bar):
         x = "hello world"
     |}
   in
@@ -800,11 +817,11 @@ let test_pp _ =
   let pretty_print_expect =
     {|
       @(decorator1, decorator2)
-      def foo(bar):
+      def #foo(bar):
         x = "hello world"
 
       @(decorator3)
-      def foo(baz):
+      def #foo(baz):
         x = "hello squirrel"
         y = 5
     |}
@@ -828,7 +845,7 @@ let test_pp _ =
     {|
       @(class_decorator)
       class Foo(Bar):
-        def Foo.baz(quux):
+        def Foo#baz(quux):
           for i in xrange.(quux):
             i = 1
           i = 2
@@ -919,7 +936,7 @@ let test_pp _ =
   let pretty_print_expect =
     {|
       @(some.decorator.("with_a_string"))
-      def decorator_test():
+      def #decorator_test():
         return 5
     |}
   in

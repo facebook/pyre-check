@@ -48,514 +48,400 @@ let test_expand_string_annotations _ =
 
 let test_qualify _ =
   let assert_qualify ?(path = "qualifier.py") source expected =
-    ignore path;
     let parse = parse ~qualifier:(Source.qualifier ~path) ~path in
     assert_source_equal (parse expected) (Preprocessing.qualify (parse source))
   in
 
-  assert_qualify
-    {|
-      import a as b
-      b.c
-    |}
-    {|
-      import a as b
-      a.c
-    |};
+  (* Base cases for aliasing. *)
+  assert_qualify "from a import b; b" "from a import b; a.b";
+  assert_qualify "from a import b; b.c" "from a import b; a.b.c";
+  assert_qualify "from a import b; b()" "from a import b; a.b()";
+  assert_qualify "from a import b as c; c" "from a import b as c; a.b";
+  assert_qualify "from builtins import b; b" "from builtins import b; b";
 
-  assert_qualify
-    {|
-      from a import b
-      b.c
-    |}
-    {|
-      from a import b
-      a.b.c
-    |};
-  assert_qualify
-    {|
-      from builtins import b
-      b.c
-    |}
-    {|
-      from builtins import b
-      b.c
-    |};
+  assert_qualify "b; import a as b; b" "b; import a as b; a";
 
-  assert_qualify
-    {|
-      from a import b
-      b()
-    |}
-    {|
-      from a import b
-      a.b()
-    |};
-  assert_qualify
-    {|
-      from a import b
-      b().derp
-    |}
-    {|
-      from a import b
-      a.b().derp
-    |};
+  (* Qualification in different places. *)
+  let assert_qualify_statement actual expected =
+    let import = "import a as b;" in
+    assert_qualify (import ^ actual) (import ^ expected)
+  in
+  assert_qualify_statement "call(b)" "call(a)";
+  assert_qualify_statement "await b" "await a";
+  assert_qualify_statement "(await b).c" "(await a).c";
+  assert_qualify_statement "b or True" "a or True";
+  assert_qualify_statement "True and b" "True and a";
+  assert_qualify_statement "1 < b <= b" "1 < a <= a";
+  assert_qualify_statement "{ b: b }" "{ a: a }";
+  assert_qualify_statement "{ b: b for b in b if b }" "{ a: a for a in a if a }";
+  (* TODO(T29105314): rename lambda parameters. *)
+  assert_qualify_statement "lambda b: b" "lambda b: a";
+  assert_qualify_statement "[b, b]" "[a, a]";
+  (* TODO(T29105314): rename comprehension iterators. *)
+  assert_qualify_statement "[b for b in b]" "[a for a in a]";
+  assert_qualify_statement "{b, b}" "{a, a}";
+  assert_qualify_statement "{b for b in b}" "{a for a in a}";
+  assert_qualify_statement "*b" "*a";
+  assert_qualify_statement "**b" "**a";
+  assert_qualify_statement "b if b else b" "a if a else a";
+  assert_qualify_statement "(b, b)" "(a, a)";
+  assert_qualify_statement "-b" "-a";
 
-  assert_qualify
-    {|
-      from a import b as c
-      c.c
-    |}
-    {|
-      from a import b as c
-      a.b.c
-    |};
+  assert_qualify_statement "assert b" "assert a";
+  assert_qualify_statement "del b" "del a";
+  (* TODO(T29105314): rename iterators. *)
+  assert_qualify_statement "\nfor b in b:\n\tb\nelse:\n\tb" "\nfor a in a:\n\ta\nelse:\n\ta";
+  assert_qualify_statement "\nif b:\n\tb\nelse:\n\tb" "\nif a:\n\ta\nelse:\n\ta";
+  assert_qualify_statement "raise b" "raise a";
+  assert_qualify_statement "return b" "return a";
+  (* TODO(T29105314): rename `except` aliases. *)
+  assert_qualify_statement
+    "\ntry:\n\tb\nexcept b as b:\n\tb\nelse:\n\tb\nfinally:\n\tb"
+    "\ntry:\n\ta\nexcept a as b:\n\ta\nelse:\n\ta\nfinally:\n\ta";
+  (* TODO(T29105314): rename `with` aliases. *)
+  assert_qualify_statement "\nwith b as b: b" "\nwith a as a: a";
+  assert_qualify_statement "\nwhile b: b" "\nwhile a: a";
+  assert_qualify_statement "yield b" "yield a";
+  assert_qualify_statement "yield from b" "yield from a";
 
-  assert_qualify
-    {|
-      b.b
-      import a as b
-      a.b
-    |}
-    {|
-      b.b
-      import a as b
-      a.b
-    |};
 
+  (* Always pick conditional imports. *)
   assert_qualify
     {|
-      b.b
+      b
       if True:
         import a as b
-      b.b
+      b
     |}
     {|
-      b.b
+      b
       if True:
         import a as b
-      a.b
+      a
     |};
-
-  (* The import is never reached yet we still pick it up. Don't want to do
-     analysis on this though. Not yet at least... *)
   assert_qualify
     {|
-      b.b
+      b
       if False:
         import a as b
-      b.b
+      b
     |}
     {|
-      b.b
+      b
       if False:
         import a as b
-      a.b
+      a
     |};
 
+  (* Qualify assignments. *)
   assert_qualify
     {|
       from typing import List
-      LI = List[int]
-      b: LI = []
+      from module import constant
+      a: List[int] = constant
     |}
     {|
       from typing import List
-      qualifier.LI = typing.List[int]
-      qualifier.b: qualifier.LI = []
+      from module import constant
+      $local_0_a: typing.List[int] = module.constant
     |};
 
+  (* Qualify classes. *)
   assert_qualify
     {|
       from typing import List
-      LI = List[int]
-      def f() -> int:
-        b: LI = []
+      class Class():
+        attribute: List[int] = 1
+        first, second = 1, 2
+        def method(self: Class):
+          self.attribute = 1
+          self.attribute
     |}
     {|
       from typing import List
-      qualifier.LI = typing.List[int]
-      def qualifier.f() -> int:
-        $renamed_b: qualifier.LI = []
+      class qualifier.Class():
+        qualifier.Class.attribute: typing.List[int] = 1
+        qualifier.Class.first, qualifier.Class.second = 1, 2
+        def qualifier.Class.method($parameter_self: qualifier.Class):
+          $parameter_self.attribute = 1
+          $parameter_self.attribute
     |};
-
-
-  assert_qualify
-    ~path:"module/qualifier.py"
-    "from . import something"
-    "from module import something";
-  assert_qualify
-    ~path:"module/submodule/qualifier.py"
-    "from .other import something"
-    "from module.submodule.other import something";
-  assert_qualify
-    ~path:"module/submodule/qualifier.py"
-    "from ..other import something"
-    "from module.other import something";
-  (* `__init__` modules are special. *)
-  assert_qualify
-    ~path:"module/__init__.py"
-    "from . import something"
-    "from module import something";
-
+  assert_qualify "class Class: ..." "class qualifier.Class: ...";
   assert_qualify
     {|
-      class Foo: pass
-      f = Foo()
-      class Bar: ...
+      from decorators import transform
+      @transform
+      class Class(): pass
     |}
     {|
-      class qualifier.Foo: pass
-      qualifier.f = qualifier.Foo()
-      class qualifier.Bar: ...
+      from decorators import transform
+      @decorators.transform
+      class qualifier.Class(): pass
     |};
-
   assert_qualify
     {|
-      def bar():
-        return foo()
+      class Class():
+        class Nested():
+          def method(self): pass
+    |}
+    {|
+      class qualifier.Class():
+        class qualifier.Class.Nested():
+          def qualifier.Class.Nested.method($parameter_self): pass
+    |};
+  assert_qualify
+    {|
+      class Class():
+        @classmethod
+        def classmethod(): pass
+    |}
+    {|
+      class qualifier.Class():
+        @classmethod
+        def qualifier.Class.classmethod(): pass
+    |};
+
+  (* Treat special forms, type variables, and type aliases like class definitions. *)
+  assert_qualify
+    ~path:"typing.pyi"
+    {|
+      Type: _SpecialForm = ...
+      def foo(l: Type[int]): ...
+    |}
+    {|
+      Type: _SpecialForm = ...
+      def typing.foo($parameter_l: typing.Type[int]): ...
+    |};
+  assert_qualify
+    ~path:"typing.pyi"
+    {|
+      def TypeVar(): ...
+      T = TypeVar('T')
+      def foo(t: T): ...
+    |}
+    {|
+      def typing.TypeVar(): ...
+      T = typing.TypeVar('T')
+      def typing.foo($parameter_t: typing.T): ...
+    |};
+  assert_qualify
+    ~path:"typing.pyi"
+    {|
+      List = typing.TypeAlias(object)
+      def foo(l: List[int]): ...
+    |}
+    {|
+      List = typing.TypeAlias(object)
+      def typing.foo($parameter_l: typing.List[int]): ...
+    |};
+
+  (* Type aliases are not qualified. *)
+  (* TODO(T29105314): we should qualify aliases where there can only be annotations. *)
+  assert_qualify
+    {|
+      Int = int
+      def foo(i: Int) -> Int:
+        variable = Int
+    |}
+    {|
+      $local_0_Int = int
+      def qualifier.foo($parameter_i: $local_0_Int) -> $local_0_Int:
+        $local_0_variable = $local_0_Int
+    |};
+
+  (* Qualify functions. *)
+  assert_qualify
+    {|
       def foo(): pass
-      def baz(): ...
+      foo()
     |}
     {|
-      def qualifier.bar():
-        return qualifier.foo()
       def qualifier.foo(): pass
-      def qualifier.baz(): ...
+      qualifier.foo()
+    |};
+  assert_qualify "def foo(): ..." "def qualifier.foo(): ...";
+  assert_qualify
+    {|
+      foo()
+      def foo(): pass
+    |}
+    {|
+      qualifier.foo()
+      def qualifier.foo(): pass
     |};
   assert_qualify
     {|
-      class Foo: pass
-      def foo(foo: Foo, *args, **kwargs) -> Foo:
-        foo, args, kwargs
+      from decorators import memoize
+      @memoize
+      def foo(): pass
     |}
     {|
-      class qualifier.Foo: pass
-      def qualifier.foo(
-          $renamed_foo: qualifier.Foo,
-          *$renamed_args,
-          **$renamed_kwargs) -> qualifier.Foo:
-        $renamed_foo, $renamed_args, $renamed_kwargs
+      from decorators import memoize
+      @decorators.memoize
+      def qualifier.foo(): pass
     |};
   assert_qualify
     {|
-      class Foo: pass
-      def foo(foo: Foo) -> 'Foo': pass
+      @foo.setter
+      def foo(): pass
     |}
     {|
-      class qualifier.Foo: pass
-      def qualifier.foo($renamed_foo: qualifier.Foo) -> 'qualifier.Foo':
-        pass
+      @qualifier.foo.setter
+      def qualifier.foo(): pass
     |};
   assert_qualify
-    ~path:"signal.py"
     {|
-      CONSTANT: int = 1
-      def signal(): pass
+      from typing import List
+      def foo() -> List[int]: pass
     |}
     {|
-      signal.CONSTANT: int = 1
-      def signal.signal(): pass
+      from typing import List
+      def qualifier.foo() -> typing.List[int]: pass
     |};
 
+  (* SSA-lite. *)
   assert_qualify
     {|
-      class Foo:
-        def foo(): pass
-      def bar():
-        f = Foo()
-        f.foo()
+      constant = 1
+      constant = constant
     |}
     {|
-      class qualifier.Foo:
-        def foo(): pass
-      def qualifier.bar():
-        $renamed_f = qualifier.Foo()
-        $renamed_f.foo()
+      $local_0_constant = 1
+      $local_0_constant = $local_0_constant
     |};
   assert_qualify
     {|
-      def bar(): ...
-      def foo() -> None:
-        a, b = bar()
-        return a + b
+      constant: int = 1
+      def foo():
+        constant = 2
+        constant = 3
     |}
     {|
-      def qualifier.bar(): ...
-      def qualifier.foo() -> None:
-        $renamed_a, $renamed_b = qualifier.bar()
-        return $renamed_a + $renamed_b
+      $local_0_constant: int = 1
+      def qualifier.foo():
+        $local_1_constant = 2
+        $local_1_constant = 3
     |};
-
   assert_qualify
     {|
-      argument = None
-      def foo() -> None:
-        y = lambda argument: argument.attribute
-        x = argument or 0
+      def foo():
+        foo()
+        foo = 1
+        foo()
     |}
     {|
-      qualifier.argument = None
-      def qualifier.foo() -> None:
-        $renamed_y = lambda $renamed_argument: $renamed_argument.attribute
-        $renamed_x = qualifier.argument or 0
+      def qualifier.foo():
+        qualifier.foo()
+        $local_0_foo = 1
+        $local_0_foo()
     |};
-
+  assert_qualify
+    {|
+      constant: int = 1
+      constant = 2
+    |}
+    {|
+      $local_0_constant: int = 1
+      $local_0_constant = 2
+    |};
   assert_qualify
     {|
       constant = 1
       def foo():
-        nonconstant = constant
+        constant = 2
+        global constant
     |}
     {|
-      qualifier.constant = 1
+      $local_0_constant = 1
       def qualifier.foo():
-        $renamed_nonconstant = qualifier.constant
-    |};
-
-  assert_qualify
-    {|
-      constant = ...
-      def foo():
-        nonconstant = constant
-    |}
-    {|
-      qualifier.constant = ...
-      def qualifier.foo():
-        $renamed_nonconstant = qualifier.constant
-    |};
-
-  assert_qualify
-    {|
-      class Foo:
-        class Foo2:
-          def foo(): pass
-      def bar():
-        f = Foo.Foo2()
-        f.foo()
-    |}
-    {|
-      class qualifier.Foo:
-        class qualifier.Foo.Foo2:
-          def foo(): pass
-      def qualifier.bar():
-        $renamed_f = qualifier.Foo.Foo2()
-        $renamed_f.foo()
-    |};
-
-  assert_qualify
-    {|
-      def hello():
-        class Foo2:
-          def foo(): pass
-        pass
-    |}
-    {|
-      def qualifier.hello():
-        class qualifier.hello.Foo2:
-          def foo(): pass
-        pass
-    |};
-
-  assert_qualify
-    {|
-      def hello():
-        def foo(): pass
-        pass
-    |}
-    {|
-      def qualifier.hello():
-        def qualifier.hello.foo(): pass
-        pass
-    |};
-
-  assert_qualify
-    {|
-      list = []
-      def hello():
-        for i in list:
-          a = i
-          def foo():
-            pass
-    |}
-    {|
-      qualifier.list = []
-      def qualifier.hello():
-        for $renamed_i in qualifier.list:
-          $renamed_a = $renamed_i
-          def qualifier.hello.foo():
-            pass
-    |};
-
-  assert_qualify
-    {|
-      def hello():
-        if True:
-          def foo():
-            pass
-    |}
-    {|
-      def qualifier.hello():
-        if True:
-          def qualifier.hello.foo():
-            pass
-    |};
-
-  (* Do not rewrite declarations. *)
-  assert_qualify
-    {|
-      import a as b
-      def foo(a: A):
-        a.attribute = 1
-    |}
-    {|
-      import a as b
-      def qualifier.foo($renamed_a: A):
-        $renamed_a.attribute = 1
-    |};
-
-  assert_qualify
-    {|
-      from a import B
-      def foo(B)->None:
-        B.c = 3
-    |}
-    {|
-      from a import B
-      def qualifier.foo($renamed_B)->None:
-        $renamed_B.c = 3
-    |};
-
-  assert_qualify
-    {|
-      class Foo:
-         a: typing.ClassVar[int]
-      def f() -> int:
-        return Foo.a
-    |}
-    {|
-      class qualifier.Foo:
-        a: typing.ClassVar[int]
-      def qualifier.f() -> int:
-        return qualifier.Foo.a
-    |};
-
-  assert_qualify
-    {|
-      class Foo:
-         a: typing.ClassVar[int]
-      def f() -> int:
-        Foo.a = 3
-        return Foo.a
-    |}
-    {|
-      class qualifier.Foo:
-        a: typing.ClassVar[int]
-      def qualifier.f() -> int:
-        qualifier.Foo.a = 3
-        return qualifier.Foo.a
-    |};
-
-  assert_qualify
-    {|
-      from a import B
-      def f() -> B:
-        a = None
-        return B
-    |}
-    {|
-      from a import B
-      def qualifier.f() -> a.B:
-        $renamed_a = None
-        return a.B
-    |};
-
-  (* Qualify multiple type variables. *)
-  assert_qualify
-    {|
-     _T = typing.TypeVar("_T")
-     _T2 = typing.TypeVar("_T2")
-     class C(typing.Generic[_T, _T2]): ...
-    |}
-    {|
-     qualifier._T = typing.TypeVar("_T")
-     qualifier._T2 = typing.TypeVar("_T2")
-     class qualifier.C(typing.Generic.__getitem__((qualifier._T, qualifier. _T2))): ...
-    |};
-
-  (* Do not rename type annotations. *)
-  assert_qualify
-    {|
-      from a import b
-      def foo(a: a.b):
-        a = 5
-    |}
-    {|
-      from a import b
-      def qualifier.foo($renamed_a: a.b):
-        $renamed_a = 5
-    |};
-
-  assert_qualify
-    {|
-      import a
-      def foo(a: a):
-        a = 5
-    |}
-    {|
-      import a
-      def qualifier.foo($renamed_a: a):
-        $renamed_a = 5
-    |};
-
-  (* Qualify type annotations. *)
-  assert_qualify
-    {|
-      _Q = typing.TypeVar('_Q')
-      def identity(input: _Q) -> _Q:
-        def nested(input: _Q) -> _Q: ...
-    |}
-    {|
-      qualifier._Q = typing.TypeVar('_Q')
-      def qualifier.identity($renamed_input: qualifier._Q) -> qualifier._Q:
-        def qualifier.identity.nested(input: qualifier._Q) -> qualifier._Q: ...
-    |};
-  assert_qualify
-    ~path:"typing.py"
-    {|
-      Any = object()
-      TypeVar = object()
-      Type: _SpecialForm = ...
-      _T = TypeVar('_T')
-      def cast(target: Type[_T], value: Any) -> _T: ...
-    |}
-    {|
-      typing.Any = object()
-      typing.TypeVar = object()
-      typing.Type: _SpecialForm = ...
-      typing._T = typing.TypeVar('_T')
-      def typing.cast(
-          $renamed_target: typing.Type[typing._T],
-          $renamed_value: typing.Any) -> typing._T: ...
+        $local_0_constant = 2
+        global constant
     |};
   assert_qualify
     {|
-      def foo() -> typing.Optional[int]:
-        try:
-          x = 1
-        except:
-          return None
-        else:
-          return x
+      def foo(parameter):
+        parameter = 1
     |}
     {|
-      def qualifier.foo() -> typing.Optional[int]:
-        try:
-          $renamed_x = 1
-        except:
-          return None
-        else:
-          return $renamed_x
+      def qualifier.foo($parameter_parameter):
+        $parameter_parameter = 1
+    |};
+  assert_qualify
+    {|
+      flag = False
+      if flag:
+        variable = 1
+      else:
+        other = 1
+      result = variable
+    |}
+    {|
+      $local_0_flag = False
+      if $local_0_flag:
+        $local_0_variable = 1
+      else:
+        $local_0_other = 1
+      $local_0_result = $local_0_variable
+    |};
+  assert_qualify
+    {|
+      flag = False
+      if flag:
+        variable = 1
+      else:
+        variable = 2
+      result = variable
+    |}
+    {|
+      $local_0_flag = False
+      if $local_0_flag:
+        $local_0_variable = 1
+      else:
+        $local_0_variable = 2
+      $local_0_result = $local_0_variable
+    |};
+  assert_qualify
+    {|
+      variable = None
+      if variable is None:
+        variable = 1
+      return variable
+    |}
+    {|
+      $local_0_variable = None
+      if $local_0_variable is None:
+        $local_0_variable = 1
+      return $local_0_variable
+    |};
+  assert_qualify
+    {|
+      variable = 0
+      with item:
+        variable = 1
+      result = variable
+    |}
+    {|
+      $local_0_variable = 0
+      with item:
+        $local_0_variable = 1
+      $local_0_result = $local_0_variable
+    |};
+  assert_qualify
+    {|
+      try:
+        variable = 1
+      except:
+        return None
+      else:
+        return variable
+    |}
+    {|
+      try:
+        $local_0_variable = 1
+      except:
+        return None
+      else:
+        return $local_0_variable
     |}
 
 
@@ -863,17 +749,20 @@ let test_expand_ternary _ =
 
 
 let test_expand_named_tuples _ =
-  let assert_expand source expected =
+  let assert_expand ?(qualifier = "qualifier") source expected =
+    let parse =
+      parse ~qualifier:(Source.qualifier ~path:qualifier)
+    in
     assert_source_equal
       (parse expected)
       (Preprocessing.expand_named_tuples (parse source))
   in
   assert_expand
     {|
-      T = typing.NamedTuple('T')
+      $local_0_T = typing.NamedTuple('T')
     |}
     {|
-      class T(typing.NamedTuple):
+      class qualifier.T(typing.NamedTuple):
         pass
     |};
   assert_expand
@@ -882,7 +771,7 @@ let test_expand_named_tuples _ =
     |}
     {|
       class T(typing.NamedTuple):
-        a: typing.Any
+        T.a: typing.Any
     |};
   assert_expand
     {|
@@ -890,8 +779,8 @@ let test_expand_named_tuples _ =
     |}
     {|
       class T(typing.NamedTuple):
-        one: typing.Any
-        two: typing.Any
+        T.one: typing.Any
+        T.two: typing.Any
     |};
   assert_expand
     {|
@@ -899,8 +788,8 @@ let test_expand_named_tuples _ =
     |}
     {|
       class T(typing.NamedTuple):
-        one: int
-        two: str
+        T.one: int
+        T.two: str
     |};
   assert_expand
     {|
@@ -908,21 +797,21 @@ let test_expand_named_tuples _ =
     |}
     {|
       class T(typing.NamedTuple):
-        a: typing.Any
-        b: typing.Any
-        c: typing.Any
+        T.a: typing.Any
+        T.b: typing.Any
+        T.c: typing.Any
     |};
 
   assert_expand
     {|
       class Foo(Bar, collections.namedtuple('T', ['one', 'two'])):
-        three: int = 1
+        Foo.three: int = 1
     |}
     {|
       class Foo(Bar, typing.NamedTuple):
-        one: typing.Any
-        two: typing.Any
-        three: int = 1
+        Foo.one: typing.Any
+        Foo.two: typing.Any
+        Foo.three: int = 1
     |};
 
   (* Don't transform non-toplevel statements. *)
@@ -1095,131 +984,6 @@ let test_classes _ =
     [class_define; inner]
 
 
-let test_preprocess _ =
-  let assert_preprocess ?(qualifier = "qualifier") source expected =
-    let parse = parse ~qualifier:(Source.qualifier ~path:qualifier) in
-    assert_source_equal
-      (parse expected)
-      (Preprocessing.preprocess (parse source))
-  in
-
-  assert_preprocess
-    {|
-      a = 1
-    |}
-    {|
-      qualifier.a = 1
-    |};
-  assert_preprocess
-    {|
-      if sys.version_info > (3, 0):
-        a = 1
-    |}
-    {|
-      qualifier.a = 1
-    |};
-
-  (* String annotations get qualified. *)
-  assert_preprocess
-    {|
-      class Foo: ...
-      def foo(f: 'Foo') -> 'Foo': ...
-      def bar(f: 'List[Foo]') -> 'Foo':
-        pass
-    |}
-    {|
-      class qualifier.Foo: ...
-      def qualifier.foo($renamed_f: qualifier.Foo) -> qualifier.Foo: ...
-      def qualifier.bar($renamed_f: List.__getitem__(qualifier.Foo)) -> qualifier.Foo:
-        pass
-        return
-    |};
-
-  assert_preprocess
-    {|
-    class Foo:
-      def foo(f: 'Foo') -> 'Foo': ...
-  |}
-    {|
-    class qualifier.Foo:
-      def foo($renamed_f: qualifier.Foo) -> qualifier.Foo: ...
-  |};
-
-  assert_preprocess
-    {|
-      a = 1
-      def access() -> int:
-         return a
-      def assign() -> None:
-         a = 2
-      def globalvar() -> None:
-         global a
-         a = 3
-         return a
-    |}
-    {|
-      qualifier.a = 1
-      def qualifier.access() -> int:
-         $return = qualifier.a
-         return $return
-      def qualifier.assign() -> None:
-         $renamed_a = 2
-         return
-      def qualifier.globalvar() -> None:
-         global a
-         qualifier.a = 3
-         $return = qualifier.a
-         return $return
-    |};
-
-  assert_preprocess
-    {|
-      a = 1
-      def indirect_access_1() -> int:
-         access(a)
-         return a
-      def indirect_access_2() -> int:
-         b = a
-         return a
-      def indirect_access_3() -> int:
-         b = access(a)
-         return a
-    |}
-    {|
-      qualifier.a = 1
-      def qualifier.indirect_access_1() -> int:
-         access(qualifier.a)
-         $return = qualifier.a
-         return $return
-      def qualifier.indirect_access_2() -> int:
-         $renamed_b = qualifier.a
-         $return = qualifier.a
-         return $return
-      def qualifier.indirect_access_3() -> int:
-         $renamed_b = access(qualifier.a)
-         $return = qualifier.a
-         return $return
-    |};
-
-  assert_preprocess
-    {|
-      a = 1
-      def access_with_parameter(a: int) -> int:
-         return a
-      def assign_with_parameter() -> None:
-         a = 2
-    |}
-    {|
-      qualifier.a = 1
-      def qualifier.access_with_parameter($renamed_a: int) -> int:
-         $return = $renamed_a
-         return $return
-      def qualifier.assign_with_parameter() -> None:
-         $renamed_a = 2
-         return
-    |}
-
-
 let () =
   "preprocessing">:::[
     "expand_string_annotations">::test_expand_string_annotations;
@@ -1231,6 +995,5 @@ let () =
     "expand_named_tuples">::test_expand_named_tuples;
     "defines">::test_defines;
     "classes">::test_classes;
-    "preprocess">::test_preprocess;
   ]
   |> run_test_tt_main

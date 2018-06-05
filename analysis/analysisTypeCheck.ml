@@ -57,6 +57,7 @@ module State = struct
         resolution;
         errors;
         define = { Node.value = define; _ };
+        bottom;
         _;
       } =
     let expected =
@@ -86,7 +87,8 @@ module State = struct
     in
     Format.fprintf
       format
-      "  Expected return: %a\n  Types:\n%s\n  Errors:\n%s\n"
+      "  Bottom: %b\n  Expected return: %a\n  Types:\n%s\n  Errors:\n%s\n"
+      bottom
       Type.pp expected
       annotations
       errors
@@ -106,7 +108,7 @@ module State = struct
     let annotations = Access.Map.of_alist_exn annotations in
     let resolution =
       Environment.resolution environment ~annotations ()
-      |> fun resolution -> Resolution.with_define resolution (Node.value define)
+      |> Resolution.with_define ~define:(Node.value define)
     in
     { configuration; resolution; errors = Location.Map.empty; define; lookup; bottom = false }
 
@@ -372,7 +374,11 @@ module State = struct
                    errors
                end
            | None ->
-               let parameter_name = Expression.Access.create_from_identifiers [key] in
+               let parameter_name =
+                 Identifier.show_sanitized key
+                 |> Identifier.create
+                 |> fun name -> [Expression.Access.Identifier name]
+               in
                let error =
                  {
                    Error.location;
@@ -397,23 +403,28 @@ module State = struct
 
 
   let less_or_equal ~left:({ resolution; _ } as left) ~right =
-    let entry_less_or_equal other less_or_equal ~key ~data sofar =
-      sofar && match Map.find other key with
-      | Some other ->
-          less_or_equal data other
-      | _ ->
-          false
-    in
-    Map.fold
-      ~init:true
-      ~f:(entry_less_or_equal right.errors (Error.less_or_equal ~resolution))
-      left.errors &&
-    Map.fold
-      ~init:true
-      ~f:(entry_less_or_equal
-            (Resolution.annotations right.resolution)
-            (Refinement.less_or_equal ~resolution))
-      (Resolution.annotations left.resolution)
+    if left.bottom then
+      true
+    else if right.bottom then
+      false
+    else
+      let entry_less_or_equal other less_or_equal ~key ~data sofar =
+        sofar && match Map.find other key with
+        | Some other ->
+            less_or_equal data other
+        | _ ->
+            false
+      in
+      Map.fold
+        ~init:true
+        ~f:(entry_less_or_equal right.errors (Error.less_or_equal ~resolution))
+        left.errors &&
+      Map.fold
+        ~init:true
+        ~f:(entry_less_or_equal
+              (Resolution.annotations right.resolution)
+              (Refinement.less_or_equal ~resolution))
+        (Resolution.annotations left.resolution)
 
 
   let equal left right =
@@ -504,7 +515,8 @@ module State = struct
         | `Right state ->
             Some state
       in
-      let widen_annotations ~key = function
+      let widen_annotations ~key annotation =
+        match annotation with
         | `Both (previous, next) ->
             Some (Refinement.widen ~resolution ~widening_threshold ~previous ~next ~iteration)
         | `Left previous
@@ -854,7 +866,8 @@ module State = struct
           (* Don't propagate accesses in nested functions, they're analyzed separately.
              Add a dummy annotation for the last element of the name, as adding the full name causes
              module lookup issues. *)
-          let annotation = match Resolution.get_local resolution ~access:name with
+          let annotation =
+            match Resolution.get_local resolution ~access:name with
             | Some annotation ->
                 annotation
             | None ->

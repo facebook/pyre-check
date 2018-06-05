@@ -21,7 +21,7 @@ type global = Annotation.t Node.t
 
 type t = {
   annotations: Annotation.t Access.Map.t;
-  define: Statement.Define.t option;
+  define: Statement.Define.t option;  (* TODO(T29953465): make this non-optional. *)
   order: (module TypeOrder.Handler);
 
   resolve: resolution: t -> Expression.t -> Type.t;
@@ -62,13 +62,42 @@ let set_local ({ annotations; _ } as resolution) ~access ~annotation =
   { resolution with annotations = Map.set annotations ~key:access ~data:annotation }
 
 
-let get_local { annotations; global; _ } ~access =
+let get_local { annotations; define; global; _ } ~access =
   match Map.find annotations access with
   | Some resolved ->
       Some resolved
   | None ->
-      global access
-      >>| Node.value
+      let access =
+        match List.rev access with
+        | (Access.Identifier name) :: tail ->
+            let name =
+              Identifier.show_sanitized name
+              |> Identifier.create
+            in
+            List.rev ((Access.Identifier name) :: tail)
+        | _ ->
+            List.rev access
+      in
+      match define with
+      | Some ({ Define.name; _ } as define) when not (Define.is_toplevel define) ->
+          let rec find_global reversed_qualifier =
+            (* Walk up the defines namespace to find the global definition. *)
+            match reversed_qualifier with
+            | _ :: reversed_qualifier ->
+                begin
+                  let access = (List.rev reversed_qualifier) @ access in
+                  match global access with
+                  | Some { Node.value; _ } -> Some value
+                  | None -> find_global reversed_qualifier
+                end
+            | [] ->
+                None
+          in
+          find_global (List.rev name)
+      | _ ->
+          match global access with
+          | Some { Node.value; _ } -> Some value
+          | None -> None
 
 
 let get_local_callable resolution ~access =
@@ -79,7 +108,7 @@ let get_local_callable resolution ~access =
   | _ -> None
 
 
-let with_define resolution define =
+let with_define resolution ~define =
   { resolution with define = Some define }
 
 
@@ -107,8 +136,21 @@ let resolve_literal ({ resolve_literal; _  } as resolution) =
   resolve_literal ~resolution
 
 
-let parse_annotation { parse_annotation; _ } =
-  parse_annotation
+let parse_annotation { parse_annotation; define; _ } expression =
+  let delocalized =
+    (* TODO(T29884749): we should recursively explore the parent here to get to the top-level. *)
+    match define with
+    | Some { Define.name = scope; parent = None; _ }
+    | Some { Define.parent = Some scope; _ } ->
+        List.rev scope
+        |> List.tl
+        >>| List.rev
+        >>| (fun qualifier -> Expression.delocalize expression ~qualifier)
+        |> Option.value ~default:expression
+    | _ ->
+        expression
+  in
+  parse_annotation delocalized
 
 
 let global { global; _ } =

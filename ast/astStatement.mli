@@ -190,6 +190,8 @@ module Define : sig
   type t = statement_t Record.Define.record
   [@@deriving compare, eq, sexp, show, hash]
 
+  val unqualified_name: t -> Expression.Access.t
+
   val is_method: t -> bool
   val is_coroutine: t -> bool
   val is_abstract_method: t -> bool
@@ -205,7 +207,7 @@ module Define : sig
   val self_identifier: t -> Identifier.t
 
   val create_generated_constructor: statement_t Record.Class.record -> t
-  val create_toplevel: statement_t list -> t
+  val create_toplevel: qualifier: Expression.Access.t -> statements: statement_t list -> t
   val dump: t -> bool
   val dump_cfg: t -> bool
 
