@@ -5,6 +5,7 @@
 
 open Core
 
+open Ast
 open Analysis
 
 open ServerState
@@ -30,7 +31,7 @@ let rec process_request
   let timer = Timer.start () in
   let build_file_to_error_map ?(checked_files = None) error_list =
     let initial_files = Option.value ~default:(Hashtbl.keys state.errors) checked_files in
-    let error_file { Error.location = { Ast.Location.path; _ }; _ } =
+    let error_file { Error.location = { Location.path; _ }; _ } =
       File.Handle.create path
     in
     List.fold
@@ -158,9 +159,9 @@ let rec process_request
       let sources =
         let keep file =
           (File.handle ~root:source_root file
-           >>= fun path -> Some (Ast.Source.qualifier ~path:(File.Handle.show path))
+           >>= fun path -> Some (Source.qualifier ~path:(File.Handle.show path))
            >>= Handler.module_definition
-           >>= Ast.Module.path
+           >>= Module.path
            >>| (fun existing_path -> File.Handle.show path = existing_path))
           |> Option.value ~default:true
         in
@@ -210,7 +211,7 @@ let rec process_request
     List.iter
       new_errors
       ~f:(fun error ->
-          let { Ast.Location.path; _ } = Error.location error in
+          let { Location.path; _ } = Error.location error in
           Hashtbl.add_multi
             state.errors
             ~key:(File.Handle.create path)
@@ -254,7 +255,7 @@ let rec process_request
         let resolution =
           Environment.resolution
             state.environment
-            ~define:(Ast.Statement.Define.create_toplevel ~qualifier:[] ~statements:[])
+            ~define:(Statement.Define.create_toplevel ~qualifier:[] ~statements:[])
             ()
         in
         let response =
@@ -348,7 +349,7 @@ let rec process_request
                      | Ok (_, annotation) -> Type.show annotation
                      | Error error -> error)
                     relative_path
-                    (Ast.Location.show_position position)
+                    (Location.show_position position)
                 in
                 Some
                   (state,
