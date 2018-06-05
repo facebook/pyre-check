@@ -15,6 +15,7 @@ TESTS = $(foreach include, \
 
 .PHONY: all
 all: hack_parallel development_tags
+	./scripts/generate-version-number.sh development
 	$(BUILD) -build-dir _build/all main.native
 
 .PHONY: byte
@@ -39,6 +40,7 @@ python_tests:
 
 .PHONY: release
 release: hack_parallel release_tags
+	./scripts/generate-version-number.sh
 	$(BUILD) -build-dir _build/all main.native
 
 .PHONY: clean

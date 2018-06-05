@@ -29,3 +29,5 @@ let () =
     ~summary:"Analyze Python files"
     commands
   |> Command.run
+    ~build_info:(Version.build_info ())
+    ~version:(Version.version ())

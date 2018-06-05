@@ -8,6 +8,7 @@ yarn-error.log
 /_tags
 /hack_parallel/_build
 /scripts/dist
+version.ml
 
 website/translated_docs
 website/build/
