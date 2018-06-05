@@ -3270,6 +3270,17 @@ let test_check_attributes _ =
     ["Undefined attribute [16]: Optional type has no attribute `bar`."];
 
   assert_type_errors
+    ~strict:true
+    {|
+      a = str
+      b = 1
+    |}
+    [
+      "Missing global annotation [5]: " ^
+      "Globally accessible variable `b` has type `int` but no type is specified.";
+    ];
+
+  assert_type_errors
     ~show_error_traces:true
     {|
       class Bar:
