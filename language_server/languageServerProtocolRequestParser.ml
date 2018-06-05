@@ -6,9 +6,9 @@
 open Core
 
 
+open Pyre
 open ServerProtocol
 open Request
-open Pyre
 
 
 let parse ~root ~check_on_save request =

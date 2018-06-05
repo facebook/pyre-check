@@ -13,9 +13,8 @@ open Statement
 open Test
 open AnnotatedTest
 
-module Access = Annotated.Access
-module Class = Annotated.Class
 module Attribute = Annotated.Attribute
+module Class = Annotated.Class
 
 
 type attribute = {
@@ -42,7 +41,7 @@ let test_fold _ =
   let resolution =
     populate_with_sources [
       parse
-        ~qualifier:(Expression.Access.create "builtins")
+        ~qualifier:(Access.create "builtins")
         {|
           integer: int = 1
           string: str = 'string'
@@ -55,12 +54,12 @@ let test_fold _ =
           def function() -> str: ...
         |};
       parse
-        ~qualifier:(Expression.Access.create "os")
+        ~qualifier:(Access.create "os")
         {|
           sep: str = '/'
         |};
       parse
-        ~qualifier:(Expression.Access.create "empty.stub")
+        ~qualifier:(Access.create "empty.stub")
         ~path:"empty/stub.pyi"
         "";
     ]
@@ -75,13 +74,13 @@ let test_fold _ =
     let steps =
       let steps steps ~resolution:_ ~resolved ~element =
         let step =
-          let open Access in
+          let module Element = Annotated.Access.Element in
           let stripped element: stripped =
             match element with
             | Element.Attribute { Element.origin = Element.Module []; _ } ->
                 Unknown
             | Element.Attribute { Element.attribute; defined; _ } ->
-                Attribute { name = Expression.Access.show attribute; defined }
+                Attribute { name = Access.show attribute; defined }
             | Element.Signature _ ->
                 Signature
             | Element.Value ->
@@ -92,8 +91,8 @@ let test_fold _ =
         step :: steps
       in
       parse_single_access access
-      |> Access.create
-      |> Access.fold ~resolution ~initial:[] ~f:steps
+      |> Annotated.Access.create
+      |> Annotated.Access.fold ~resolution ~initial:[] ~f:steps
       |> List.rev
     in
     assert_equal
@@ -154,11 +153,12 @@ let assert_resolved sources access expected =
     |> resolution
   in
   let resolved =
-    Access.fold
+    parse_single_access access
+    |> Annotated.Access.create
+    |> Annotated.Access.fold
       ~resolution
       ~initial:Type.Top
       ~f:(fun _ ~resolution:_ ~resolved ~element:_ -> Annotation.annotation resolved)
-      (Access.create (parse_single_access access))
   in
   assert_equal ~printer:Type.show ~cmp:Type.equal expected resolved
 
@@ -168,37 +168,37 @@ let test_module_exports _ =
     assert_resolved
       [
         parse
-          ~qualifier:(Expression.Access.create "implementing")
+          ~qualifier:(Access.create "implementing")
           {|
             def implementing.function() -> int: ...
             constant: int = 1
           |};
         parse
-          ~qualifier:(Expression.Access.create "exporting")
+          ~qualifier:(Access.create "exporting")
           {|
             from implementing import function, constant
             from implementing import function as aliased
             from indirect import cyclic
           |};
         parse
-          ~qualifier:(Expression.Access.create "indirect")
+          ~qualifier:(Access.create "indirect")
           {|
             from exporting import constant, cyclic
           |};
         parse
-          ~qualifier:(Expression.Access.create "wildcard")
+          ~qualifier:(Access.create "wildcard")
           {|
             from exporting import *
           |};
         parse
-          ~qualifier:(Expression.Access.create "exporting_wildcard_default")
+          ~qualifier:(Access.create "exporting_wildcard_default")
           {|
             from implementing import function, constant
             from implementing import function as aliased
             __all__ = ["constant"]
           |};
         parse
-          ~qualifier:(Expression.Access.create "wildcard_default")
+          ~qualifier:(Access.create "wildcard_default")
           {|
             from exporting_wildcard_default import *
           |};
@@ -228,32 +228,32 @@ let test_module_exports _ =
     assert_resolved
       [
         parse
-          ~qualifier:(Expression.Access.create "loop.b")
+          ~qualifier:(Access.create "loop.b")
           {|
             b: int = 1
           |};
         parse
-          ~qualifier:(Expression.Access.create "loop.a")
+          ~qualifier:(Access.create "loop.a")
           {|
             from loop.b import b
           |};
         parse
-          ~qualifier:(Expression.Access.create "loop")
+          ~qualifier:(Access.create "loop")
           {|
             from loop.a import b
           |};
         parse
-          ~qualifier:(Expression.Access.create "no_loop.b")
+          ~qualifier:(Access.create "no_loop.b")
           {|
             b: int = 1
           |};
         parse
-          ~qualifier:(Expression.Access.create "no_loop.a")
+          ~qualifier:(Access.create "no_loop.a")
           {|
             from no_loop.b import b as c
           |};
         parse
-          ~qualifier:(Expression.Access.create "no_loop")
+          ~qualifier:(Access.create "no_loop")
           {|
             from no_loop.a import c
           |};
@@ -268,7 +268,7 @@ let test_object_callables _ =
     assert_resolved
       [
         parse
-          ~qualifier:(Expression.Access.create "module")
+          ~qualifier:(Access.create "module")
           {|
             _K = typing.TypeVar('_K')
             _V = typing.TypeVar('_V')

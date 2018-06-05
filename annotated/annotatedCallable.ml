@@ -6,7 +6,6 @@
 open Core
 
 open Ast
-open Expression
 open Pyre
 open Statement
 
@@ -50,19 +49,19 @@ let apply_decorators ~define ~resolution =
              which is unsound and can raise. *)
           Type.Object
     in
-      if Type.is_iterator joined then
-          {
-            define with
-            Define.return_annotation =
-              Some
-                (AnalysisType.Parametric {
-                    AnalysisType.name = Identifier.create "contextlib.GeneratorContextManager";
-                    parameters = [Type.single_parameter joined];
-                  }
-                 |> Type.expression);
-          }
-      else
-        define
+    if Type.is_iterator joined then
+      {
+        define with
+        Define.return_annotation =
+          Some
+            (Type.Parametric {
+                Type.name = Identifier.create "contextlib.GeneratorContextManager";
+                parameters = [Type.single_parameter joined];
+              }
+             |> Type.expression);
+      }
+    else
+      define
   else
     define
 

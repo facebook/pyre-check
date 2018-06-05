@@ -4,6 +4,8 @@
     LICENSE file in the root directory of this source tree. *)
 
 open Core
+
+open Ast
 open Pyre
 
 module Cfg = AnalysisCfg
@@ -16,8 +18,8 @@ module type State = sig
   val meet: t -> t -> t
   val widening_threshold: int
   val widen: previous: t -> next: t -> iteration: int -> t
-  val forward: t -> statement: Ast.Statement.t -> t
-  val backward: t -> statement: Ast.Statement.t -> t
+  val forward: t -> statement: Statement.t -> t
+  val backward: t -> statement: Statement.t -> t
 end
 
 module type Fixpoint = sig
@@ -128,7 +130,7 @@ module Make (State: State) = struct
           ~section:`Fixpoint
           "\n%a\n  {  %a  }\n\n%a"
           State.pp before
-          Ast.Statement.pp statement
+          Statement.pp statement
           State.pp after;
         after
       in

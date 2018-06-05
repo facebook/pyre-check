@@ -955,7 +955,7 @@ let expand_named_tuples ({ Source.qualifier; statements; _ } as source) =
           value = Some expression;
           _;
         } ->
-          let name = Expression.Access.delocalize name ~qualifier in
+          let name = Access.delocalize name ~qualifier in
           tuple_attributes ~parent:name ~expression
           >>| (fun body ->
               Class {

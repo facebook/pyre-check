@@ -192,8 +192,8 @@ let generics { Node.value = { Class.bases; _ }; _ } ~resolution =
   in
   let find_single_type_variable { Argument.value; _ } =
     match Resolution.parse_annotation resolution value with
-    | Type.Parametric { Type.parameters = [AnalysisType.Variable variable]; _ } ->
-        Some [AnalysisType.Variable variable]
+    | Type.Parametric { Type.parameters = [Type.Variable variable]; _ } ->
+        Some [Type.Variable variable]
     | _ ->
         None
   in
@@ -219,8 +219,8 @@ let inferred_generic_base { Node.value = { Class.bases; _ }; _ } ~aliases =
       |> Type.split
     in
     match parameters with
-    | [AnalysisType.Variable variable] ->
-        Some (AnalysisType.Variable variable)
+    | [Type.Variable variable] ->
+        Some (Type.Variable variable)
     | _ ->
         None
   in
@@ -514,7 +514,7 @@ module Attribute = struct
 
   let access { Node.value = { name; _ }; _ } =
     match name with
-    | Expression.Access access -> access
+    | Access access -> access
     | _ -> []
 
 
@@ -566,7 +566,7 @@ module AttributesCache = struct
     transitive: bool;
     class_attributes: bool;
     include_generated_attributes: bool;
-    name: Expression.Access.t;
+    name: Access.t;
   }
   [@@deriving compare, sexp, hash]
 
@@ -752,7 +752,7 @@ let attribute
       {
         Node.location;
         value = {
-          Statement.Attribute.target = Node.create_with_default_location (Expression.Access name);
+          Statement.Attribute.target = Node.create_with_default_location (Access name);
           annotation = None;
           defines = None;
           value = None;
@@ -801,7 +801,7 @@ let fallback_attribute ~resolution ~access definition =
                {
                  Node.location;
                  value = {
-                   Statement.Attribute.target = Node.create ~location (Expression.Access access);
+                   Statement.Attribute.target = Node.create ~location (Access access);
                    annotation = return_annotation;
                    defines = None;
                    value = None;

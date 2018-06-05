@@ -4,7 +4,6 @@
     LICENSE file in the root directory of this source tree. *)
 
 open Ast
-open Expression
 open Pyre
 open Statement
 

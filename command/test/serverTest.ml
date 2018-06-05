@@ -8,6 +8,7 @@ open OUnit2
 
 open Analysis
 open Ast
+open Expression
 open Pyre
 open PyreParser
 open Test
@@ -193,7 +194,7 @@ let environment () =
 
 
 let associate_errors_and_filenames error_list =
-  let error_file ({ Error.location = { Ast.Location.path; _ }; _ } as error) =
+  let error_file ({ Error.location = { Location.path; _ }; _ } as error) =
     File.Handle.create path, error
   in
   List.map ~f:error_file error_list
@@ -251,7 +252,7 @@ let assert_request_gets_response
     List.iter
       (make_errors ~path source)
       ~f:(fun error ->
-          let { Ast.Location.path; _ } = Error.location error in
+          let { Location.path; _ } = Error.location error in
           Hashtbl.add_multi errors ~key:(File.Handle.create path) ~data:error);
     errors
   in
@@ -542,7 +543,7 @@ let test_did_save_with_content context =
   in
   let qualifier =
     String.chop_suffix_exn ~suffix:".py" filename
-    |> Expression.Access.create
+    |> Access.create
   in
   let errors = make_errors ~path:filename ~qualifier source in
   let request =
@@ -595,8 +596,8 @@ let test_incremental_dependencies _ =
     ~configuration
     environment_handler
     [
-      parse ~path:"a.py" ~qualifier:(Expression.Access.create "a") a_source;
-      parse ~path:"b.py" ~qualifier:(Expression.Access.create "b") b_source;
+      parse ~path:"a.py" ~qualifier:(Access.create "a") a_source;
+      parse ~path:"b.py" ~qualifier:(Access.create "b") b_source;
     ];
   let expected_errors = [
     File.Handle.create "b.py", [];
@@ -658,7 +659,7 @@ let test_incremental_lookups _ =
     |> Option.value ~default:path
   in
   let parse content =
-    Ast.Source.create
+    Source.create
       ~path
       ~qualifier:(Source.qualifier ~path)
       (Parser.parse ~path (String.split_lines (content ^ "\n")))
@@ -707,7 +708,7 @@ let test_incremental_lookups _ =
       (Protocol.Request.GetDefinitionRequest {
           Protocol.DefinitionRequest.id = 1;
           path = relative_path;
-          position = { Ast.Location.line = 5; column = 4 };
+          position = { Location.line = 5; column = 4 };
         })
   in
   Scheduler.destroy initial_state.State.scheduler;
@@ -735,7 +736,7 @@ let test_incremental_lookups _ =
 
 let test_incremental_repopulate _ =
   let parse content =
-    Ast.Source.create
+    Source.create
       ~path:"test.py"
       ~qualifier:(Source.qualifier ~path:"test.py")
       (Parser.parse ~path:"test.py" (String.split_lines (content ^ "\n")))
@@ -761,14 +762,14 @@ let test_incremental_repopulate _ =
       errors
   in
   let get_annotation access_name =
-    match Handler.function_definitions (Ast.Expression.Access.create access_name) with
-    | Some [ { Ast.Node.value = { Ast.Statement.Define.return_annotation; _ }; _ } ] ->
+    match Handler.function_definitions (Access.create access_name) with
+    | Some [ { Node.value = { Statement.Define.return_annotation; _ }; _ } ] ->
         return_annotation
     | _ -> None
   in
   begin
     match (get_annotation "test.foo") with
-    | Some expression -> assert_equal (Ast.Expression.show expression) "int"
+    | Some expression -> assert_equal (Expression.show expression) "int"
     | None -> assert_unreached ()
   end;
   let source =
@@ -792,7 +793,7 @@ let test_incremental_repopulate _ =
   in
   Sys.remove "test.py";
   begin match (get_annotation "test.foo") with
-    | Some expression -> assert_equal (Ast.Expression.show expression) "str"
+    | Some expression -> assert_equal (Expression.show expression) "str"
     | None -> assert_unreached ()
   end;
   Scheduler.destroy initial_state.State.scheduler;
@@ -922,7 +923,7 @@ let test_incremental_attribute_caching context =
           ~printer:Analysis.Error.show_kind
           kind
           (Analysis.Error.UndefinedAttribute {
-              Analysis.Error.attribute = Ast.Expression.Access.create "a";
+              Analysis.Error.attribute = Expression.Access.create "a";
               origin = Analysis.Error.Class {
                   Analysis.Error.annotation = Type.primitive "C";
                   class_attribute = false;

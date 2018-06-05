@@ -5,6 +5,7 @@
 
 open Core
 
+open Ast
 open Pyre
 open ServerConfiguration
 open ServerState
@@ -46,7 +47,7 @@ let initialize
     List.iter
       initial_errors
       ~f:(fun error ->
-          let { Ast.Location.path; _ } = Error.location error in
+          let { Location.path; _ } = Error.location error in
           Hashtbl.add_multi
             errors
             ~key:(File.Handle.create path)

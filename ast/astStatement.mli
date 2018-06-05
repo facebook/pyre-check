@@ -9,13 +9,14 @@ module Identifier = AstIdentifier
 module Location = AstLocation
 module Node = AstNode
 
+module Access = Expression.Access
 module Argument = Expression.Argument
 
 
 module Record : sig
   module Define : sig
     type 'statement record = {
-      name: Expression.Access.t;
+      name: Access.t;
       parameters: (Expression.t Parameter.t) list;
       body: 'statement list;
       decorators: Expression.t list;
@@ -23,14 +24,14 @@ module Record : sig
       return_annotation: Expression.t option;
       async: bool;
       generated: bool;
-      parent: Expression.Access.t option;
+      parent: Access.t option;
     }
     [@@deriving compare, eq, sexp, show, hash]
   end
 
   module Class : sig
     type 'statement record = {
-      name: Expression.Access.t;
+      name: Access.t;
       bases: Argument.t list;
       body: 'statement list;
       decorators: Expression.t list;
@@ -105,13 +106,13 @@ end
 
 module Import : sig
   type import = {
-    name: Expression.Access.t;
-    alias: Expression.Access.t option;
+    name: Access.t;
+    alias: Access.t option;
   }
   [@@deriving compare, eq, sexp, show, hash]
 
   type t = {
-    from: Expression.Access.t option;
+    from: Access.t option;
     imports: import list;
   }
   [@@deriving compare, eq, sexp, show, hash]
@@ -122,7 +123,7 @@ module Assign : sig
     target: Expression.t;
     annotation: Expression.t option;
     value: Expression.t option;
-    parent: Expression.Access.t option;
+    parent: Access.t option;
   }
   [@@deriving compare, eq, sexp, show, hash]
 
@@ -190,7 +191,7 @@ module Define : sig
   type t = statement_t Record.Define.record
   [@@deriving compare, eq, sexp, show, hash]
 
-  val unqualified_name: t -> Expression.Access.t
+  val unqualified_name: t -> Access.t
 
   val is_method: t -> bool
   val is_coroutine: t -> bool
@@ -207,14 +208,14 @@ module Define : sig
   val self_identifier: t -> Identifier.t
 
   val create_generated_constructor: statement_t Record.Class.record -> t
-  val create_toplevel: qualifier: Expression.Access.t -> statements: statement_t list -> t
+  val create_toplevel: qualifier: Access.t -> statements: statement_t list -> t
   val dump: t -> bool
   val dump_cfg: t -> bool
 
   val implicit_attributes
     :  t
     -> definition: statement_t Record.Class.record
-    -> Attribute.t Expression.Access.Map.t
+    -> Attribute.t Access.Map.t
   val property_attribute: location: Location.t -> t -> Attribute.t option
 
   val has_decorator: t -> string -> bool
@@ -231,7 +232,7 @@ module Class : sig
     :  ?include_generated_attributes: bool
     -> ?in_test: bool
     -> t
-    -> Attribute.t Expression.Access.Map.t
+    -> Attribute.t Access.Map.t
 
   val update: t -> definition: t -> t
 end

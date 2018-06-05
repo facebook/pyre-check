@@ -5,6 +5,7 @@
 
 open Core
 
+open Ast
 open Analysis
 
 
@@ -12,7 +13,7 @@ module DefinitionRequest = struct
   type t = {
     id: int;
     path: string;
-    position: Ast.Location.position;
+    position: Location.position;
   }
   [@@deriving eq, show]
 end
@@ -130,6 +131,6 @@ type response =
   | TypeCheckResponse of (File.Handle.t * (Error.t list)) list
   | TypeQueryResponse of string
   | StopResponse
-  | GetDefinitionResponse of Ast.Location.t option
-  | HoverResponse of Ast.Location.t option
+  | GetDefinitionResponse of Location.t option
+  | HoverResponse of Location.t option
 [@@deriving eq, show]

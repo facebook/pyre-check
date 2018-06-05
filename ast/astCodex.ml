@@ -267,7 +267,7 @@ let rec source_statement_codex_representation
       _;
     } -> (
       match assign_value with
-      | Expression.Access access -> [
+      | Access access -> [
           CodexNode.VariableNode {
             CodexNode.Variable.name = access_with_parent access parent;
             default = Option.map ~f:Expression.show value;

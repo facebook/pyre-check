@@ -13,13 +13,14 @@ module Identifier = AstIdentifier
 module Location = AstLocation
 module Node = AstNode
 
+module Access = Expression.Access
 module Argument = Expression.Argument
 
 
 module Record = struct
   module Define = struct
     type 'statement record = {
-      name: Expression.Access.t;
+      name: Access.t;
       parameters: (Expression.t Parameter.t) list;
       body: 'statement list;
       decorators: Expression.t list;
@@ -27,14 +28,14 @@ module Record = struct
       return_annotation: Expression.t option;
       async: bool;
       generated: bool;
-      parent: Expression.Access.t option; (* The class owning the method. *)
+      parent: Access.t option; (* The class owning the method. *)
     }
     [@@deriving compare, eq, sexp, show, hash]
   end
 
   module Class = struct
     type 'statement record = {
-      name: Expression.Access.t;
+      name: Access.t;
       bases: Argument.t list;
       body: 'statement list;
       decorators: Expression.t list;
@@ -120,14 +121,14 @@ end
 
 module Import = struct
   type import = {
-    name: Expression.Access.t;
-    alias: Expression.Access.t option;
+    name: Access.t;
+    alias: Access.t option;
   }
   [@@deriving compare, eq, sexp, show, hash]
 
 
   type t = {
-    from: Expression.Access.t option;
+    from: Access.t option;
     imports: import list;
   }
   [@@deriving compare, eq, sexp, show, hash]
@@ -139,7 +140,7 @@ module Assign = struct
     target: Expression.t;
     annotation: Expression.t option;
     value: Expression.t option;
-    parent: Expression.Access.t option;
+    parent: Access.t option;
   }
   [@@deriving compare, eq, sexp, show, hash]
 
@@ -250,7 +251,7 @@ module Define = struct
           List.is_prefix
             name
             ~prefix:parent
-            ~equal:(Expression.Access.equal_access Expression.equal)
+            ~equal:(Access.equal_access Expression.equal)
         in
         if is_qualified then List.drop name (List.length parent) else name
     | _ ->
@@ -259,7 +260,7 @@ module Define = struct
 
   let create_toplevel ~qualifier ~statements =
     {
-      name = qualifier @ (Expression.Access.create "$toplevel");
+      name = qualifier @ (Access.create "$toplevel");
       parameters = [];
       body = statements;
       decorators = [];
@@ -319,7 +320,7 @@ module Define = struct
   let is_constructor ?(in_test = false) { name; parent; _ } =
     let name =
       match List.last name with
-      | Some (Expression.Access.Identifier name) -> Identifier.show name
+      | Some (Access.Identifier name) -> Identifier.show name
       | _ -> "$unknown"
     in
     if Option.is_none parent then
@@ -339,7 +340,7 @@ module Define = struct
       >>| (fun last -> [last])
       |> Option.value ~default:[]
     in
-    has_decorator define ((Expression.Access.show last) ^ ".setter")
+    has_decorator define ((Access.show last) ^ ".setter")
 
 
   let is_untyped { return_annotation; _ } =
@@ -352,7 +353,7 @@ module Define = struct
 
   let is_toplevel { name; _ } =
     match List.last name with
-    | Some (Expression.Access.Identifier toplevel) when Identifier.show toplevel = "$toplevel" ->
+    | Some (Access.Identifier toplevel) when Identifier.show toplevel = "$toplevel" ->
         true
     | _ ->
         false
@@ -360,7 +361,7 @@ module Define = struct
 
   let create_generated_constructor { Record.Class.name; docstring; _ } =
     {
-      name = name @ (Expression.Access.create "__init__");
+      name = name @ (Access.create "__init__");
       parameters = [Parameter.create ~name:(Identifier.create "self") ()];
       body = [Node.create_with_default_location Pass];
       decorators = [];
@@ -376,8 +377,8 @@ module Define = struct
       | {
         Node.value = Expression {
             Node.value = Expression.Access [
-                Expression.Access.Identifier identifier;
-                Expression.Access.Call _;
+                Access.Identifier identifier;
+                Access.Call _;
               ];
             _;
           };
@@ -508,17 +509,17 @@ module Define = struct
             expand_statements body
         | Expression {
             Node.value =
-              Expression.Access [
-                Expression.Access.Identifier self;
-                (Expression.Access.Identifier _) as name;
-                Expression.Access.Call _;
+              Access [
+                Access.Identifier self;
+                (Access.Identifier _) as name;
+                Access.Call _;
               ];
             _;
           } when Identifier.equal self (self_identifier define) ->
             (* Look for method in class definition. *)
             let inline = function
               | { Node.value = Define { name = callee; body; parent = Some parent; _ }; _ }
-                when Expression.Access.equal callee (parent @ [name]) ->
+                when Access.equal callee (parent @ [name]) ->
                   Some body
               | _ ->
                   None
@@ -531,7 +532,7 @@ module Define = struct
       List.concat_map ~f:expand_statement body
     in
     expand_statements body
-    |> List.fold ~init:Expression.Access.Map.empty ~f:attribute
+    |> List.fold ~init:Access.Map.empty ~f:attribute
     |> Map.map ~f:merge_attributes
 
 
@@ -717,7 +718,7 @@ module Class = struct
         | _ ->
             map
       in
-      List.fold ~init:Expression.Access.Map.empty ~f:assigned_attributes body
+      List.fold ~init:Access.Map.empty ~f:assigned_attributes body
     in
 
     if not include_generated_attributes then
@@ -733,7 +734,7 @@ module Class = struct
       let implicitly_assigned_attributes =
         constructors ~in_test definition
         |> List.map ~f:(Define.implicit_attributes ~definition)
-        |> List.fold ~init:Expression.Access.Map.empty ~f:(Map.merge ~f:merge)
+        |> List.fold ~init:Access.Map.empty ~f:(Map.merge ~f:merge)
       in
       let property_attributes =
         let property_attributes map = function
@@ -781,7 +782,7 @@ module Class = struct
           | _ ->
               map
         in
-        List.fold ~init:Expression.Access.Map.empty ~f:property_attributes body
+        List.fold ~init:Access.Map.empty ~f:property_attributes body
       in
       let callable_attributes =
         let callable_attributes map { Node.location; value } =
@@ -811,7 +812,7 @@ module Class = struct
           | _ ->
               map
         in
-        List.fold ~init:Expression.Access.Map.empty ~f:callable_attributes body
+        List.fold ~init:Access.Map.empty ~f:callable_attributes body
       in
       let class_attributes =
         let callable_attributes map { Node.location; value } =
@@ -858,7 +859,7 @@ module Class = struct
           | _ ->
               map
         in
-        List.fold ~init:Expression.Access.Map.empty ~f:callable_attributes body
+        List.fold ~init:Access.Map.empty ~f:callable_attributes body
       in
       (* Merge with decreasing priority. Explicit attributes override all. *)
       explicitly_assigned_attributes
@@ -915,7 +916,7 @@ module Class = struct
                       _;
                     };
                   _;
-                } when Expression.Access.equal name stub_name &&
+                } when Access.equal name stub_name &&
                        List.length parameters = List.length stub_parameters ->
                     true
                 | _ ->

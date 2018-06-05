@@ -7,7 +7,6 @@ open Core
 open OUnit2
 
 open Ast
-open Expression
 open Statement
 
 open Test
@@ -116,9 +115,9 @@ let test_wildcard_exports _ =
   let assert_wildcard_exports ?(qualifier = []) source expected =
     assert_equal
       ~printer:(fun expression_list ->
-          List.map ~f:(Expression.Access.show) expression_list
+          List.map ~f:(Access.show) expression_list
           |> String.concat ~sep:", ")
-      (List.map ~f:(Expression.Access.create) expected)
+      (List.map ~f:(Access.create) expected)
       (module_from_source ~source ~qualifier |> Module.wildcard_exports)
   in
   let assert_in_wildcard_exports ?(qualifier = []) source access expected_bool =
@@ -126,12 +125,12 @@ let test_wildcard_exports _ =
       assert_true
         (Module.in_wildcard_exports
            (module_from_source ~source ~qualifier)
-           (Expression.Access.create access))
+           (Access.create access))
     else
       assert_false
         (Module.in_wildcard_exports
            (module_from_source ~source ~qualifier)
-           (Expression.Access.create access))
+           (Access.create access))
   in
   assert_wildcard_exports
     {|

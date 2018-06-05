@@ -207,11 +207,7 @@ let test_pp _ =
 
 
 let test_drop_prefix _ =
-  let assert_access_equal =
-    assert_equal
-      ~printer:(Expression.Access.show)
-      ~pp_diff:(diff ~print:Expression.Access.pp)
-  in
+  let assert_access_equal = assert_equal ~printer:(Access.show) ~pp_diff:(diff ~print:Access.pp) in
 
   assert_access_equal
     (Access.drop_prefix ~prefix:(Access.create "a.b") (Access.create "a.b.c"))

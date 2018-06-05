@@ -25,7 +25,8 @@ let populate ?source_root source =
   |> Environment.handler ~configuration
 
 
-let access names = List.map ~f:Expression.Access.create names |> List.concat
+let access names =
+  List.map ~f:Expression.Access.create names |> List.concat
 
 
 let primitive name = Type.Primitive ~~name

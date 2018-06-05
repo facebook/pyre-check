@@ -6,6 +6,7 @@
 open Core
 
 open Analysis
+open Ast
 open Environment
 open Pyre
 
@@ -42,9 +43,9 @@ let build
   let timer = Timer.start () in
   let sources =
     (* If a stub matching a path's qualifier already exists, we shouldn't override. *)
-    let should_keep { Ast.Source.path; qualifier; _ } =
+    let should_keep { Source.path; qualifier; _ } =
       Handler.module_definition qualifier
-      >>= Ast.Module.path
+      >>= Module.path
       |> Option.value ~default:path
       |> String.equal path
     in
@@ -94,7 +95,7 @@ let infer_protocols
       | Some protocol_definition ->
           let protocol_definition = Annotated.Class.create protocol_definition in
           let whitelisted = ["typing.Hashable"] in
-          let name = Annotated.Class.name protocol_definition |> Ast.Expression.Access.show in
+          let name = Annotated.Class.name protocol_definition |> Expression.Access.show in
           List.is_empty (Annotated.Class.methods protocol_definition) ||
           List.mem ~equal:String.equal whitelisted name
       | _ ->
@@ -207,13 +208,13 @@ let shared_memory_handler
       let register_module ~qualifier ~path ~stub ~statements =
         let is_registered_empty_stub =
           Modules.get qualifier
-          >>| Ast.Module.empty_stub
+          >>| Module.empty_stub
           |> Option.value ~default:false
         in
         if not is_registered_empty_stub then
           begin
             Modules.remove_batch (Modules.KeySet.singleton qualifier);
-            Modules.add qualifier (Ast.Module.create ~qualifier ?path ~stub statements)
+            Modules.add qualifier (Module.create ~qualifier ?path ~stub statements)
           end
 
       let is_module access =
@@ -373,12 +374,12 @@ let shared_memory_handler
       let register_definition
           ~path
           ?name_override
-          ({ Ast.Node.location; value = { Ast.Statement.Define.name; _ }; _ } as definition) =
+          ({ Node.location; value = { Statement.Define.name; _ }; _ } as definition) =
         let name = Option.value ~default:name name_override in
         DependencyHandler.add_function_key ~path name;
         let annotation =
           Annotation.create_immutable ~global:true Type.Top
-          |> Ast.Node.create ~location
+          |> Node.create ~location
         in
         Globals.remove_batch (Globals.KeySet.singleton name);
         Globals.add name annotation;
@@ -415,7 +416,6 @@ let shared_memory_handler
       let connect_definition =
         let add_class_definition ~primitive ~definition =
           let definition =
-            let open Ast in
             match ClassDefinitions.get primitive with
             | Some { Node.location; value = preexisting } ->
                 {

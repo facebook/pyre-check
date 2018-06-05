@@ -10,6 +10,9 @@ module Location = AstLocation
 module Node = AstNode
 module Transform = AstTransform
 
+open Expression
+
+
 module type Visitor = sig
   type t
   val expression: t -> Expression.t -> t
@@ -57,11 +60,8 @@ module StatementCollector (Predicate: StatementPredicate) : sig
   val collect: Source.t -> Predicate.t list
 end
 
-val collect_accesses_in_position
-  :  Statement.t
-  -> Location.position
-  -> (Expression.Access.t Node.t) list
+val collect_accesses_in_position :  Statement.t -> Location.position -> (Access.t Node.t) list
 
-val collect_accesses: Statement.t -> Expression.Access.t list
+val collect_accesses: Statement.t -> Access.t list
 
-val collect_accesses_with_location: Statement.t -> (Expression.Access.t Node.t) list
+val collect_accesses_with_location: Statement.t -> (Access.t Node.t) list

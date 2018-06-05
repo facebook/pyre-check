@@ -743,9 +743,9 @@ let register_dependencies
                       path
                   | None ->
                       let show_identifier = function
-                        | Expression.Access.Identifier identifier ->
+                        | Access.Identifier identifier ->
                             Identifier.show identifier
-                        | access -> Expression.Access.show_access Expression.pp access
+                        | access -> Access.show_access Expression.pp access
                       in
                       Format.sprintf "%s.py"
                         (access

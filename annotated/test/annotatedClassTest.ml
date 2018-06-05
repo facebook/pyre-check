@@ -65,7 +65,7 @@ let test_generics _ =
 
 let test_superclasses _ =
   let assert_superclasses result expected =
-    let equal left right = Expression.Access.equal (Class.name left) (Class.name right) in
+    let equal left right = Access.equal (Class.name left) (Class.name right) in
     assert_equal
       ~printer:(fun classes -> Format.asprintf "%a" Sexp.pp (sexp_of_list Class.sexp_of_t classes))
       ~cmp:(List.equal ~equal) result expected
@@ -82,7 +82,7 @@ let test_superclasses _ =
     |} in
   let (!) name =
     {
-      Statement.Class.name = Expression.Access.create name;
+      Statement.Class.name = Access.create name;
       bases = [];
       body = [+Pass];
       decorators = [];
@@ -124,7 +124,7 @@ let test_constructors _ =
         let defines =
           let define { parameters; annotation } =
             {
-              Define.name = name @ (Expression.Access.create "__init__");
+              Define.name = name @ (Access.create "__init__");
               parameters;
               body = [+Pass];
               decorators = [];
@@ -243,7 +243,7 @@ let test_methods _ =
         let actuals =
           let method_name { Define.name; _ } =
             List.tl_exn name
-            |> Expression.Access.show
+            |> Access.show
           in
           Node.create_with_default_location definition
           |> Class.create
@@ -270,7 +270,7 @@ let test_is_protocol _ =
   let assert_is_protocol bases expected =
     let is_protocol =
       {
-        Statement.Class.name = Expression.Access.create "Derp";
+        Statement.Class.name = Access.create "Derp";
         bases;
         body = [];
         decorators = [];
@@ -461,7 +461,7 @@ let test_class_attributes _ =
   in
   assert_equal
     (Attribute.name attribute)
-    (Expression.Access (Expression.Access.create "first"));
+    (Expression.Access (Access.create "first"));
   assert_equal
     (Attribute.annotation attribute)
     (Annotation.create_immutable ~global:true (Type.Primitive ~~"int"));
@@ -484,7 +484,7 @@ let test_class_attributes _ =
         string_names
         attribute =
       match Attribute.name attribute with
-      | Expression.Access access -> string_names ^ (Expression.Access.show access)
+      | Expression.Access access -> string_names ^ (Access.show access)
       | _ -> string_names
     in
     let resolution, parent = setup source in
@@ -575,7 +575,7 @@ let test_class_attributes _ =
   in
   let create_expected_attribute name callable =
     {
-      Class.Attribute.name = Expression.Access (Expression.Access.create name);
+      Class.Attribute.name = Expression.Access (Access.create name);
       parent = Class.create (+parent);
       annotation = (Annotation.create_immutable ~global:true (parse_callable callable));
       value = None;
@@ -587,7 +587,7 @@ let test_class_attributes _ =
   assert_attribute
     ~parent
     ~parent_instantiated_type:(Type.primitive "Attributes")
-    ~attribute_name:(Expression.Access.create "bar")
+    ~attribute_name:(Access.create "bar")
     ~expected_attribute:(
       create_expected_attribute
         "bar"
@@ -595,7 +595,7 @@ let test_class_attributes _ =
   assert_attribute
     ~parent
     ~parent_instantiated_type:(Type.primitive "Attributes")
-    ~attribute_name:(Expression.Access.create "baz")
+    ~attribute_name:(Access.create "baz")
     ~expected_attribute:(
       create_expected_attribute
         "baz"
@@ -669,7 +669,7 @@ let test_constraints _ =
       let { Source.statements; _ } = parse source in
       let target = function
         | { Node.location; value = Statement.Class ({ Statement.Class.name; _ } as definition) }
-          when Expression.Access.show name = target ->
+          when Access.show name = target ->
             Some (Class.create { Node.location; value = definition })
         | _ ->
             None
@@ -839,7 +839,7 @@ let test_inferred_generic_base _ =
       let { Source.statements; _ } = parse source in
       let target = function
         | { Node.location; value = Statement.Class ({ Statement.Class.name; _ } as definition) }
-          when Expression.Access.show name = target ->
+          when Access.show name = target ->
             Some (Class.create { Node.location; value = definition })
         | _ ->
             None
@@ -926,16 +926,16 @@ let test_method_overloads _ =
   let overloads = Method.overloads ~resolution foo in
   assert_is_some overloads;
   assert_equal
-    ~cmp:Expression.Access.equal
+    ~cmp:Access.equal
     (Method.parent (Option.value_exn overloads) |> Class.name)
-    (Expression.Access.create "Foo")
+    (Access.create "Foo")
 
 
 let test_method_implements _ =
   let definition ?(parameters = []) ?return_annotation name =
     Method.create
       ~define:{
-        Statement.Define.name = Expression.Access.create name;
+        Statement.Define.name = Access.create name;
         parameters;
         body = [+Pass];
         decorators = [];
@@ -943,17 +943,18 @@ let test_method_implements _ =
         return_annotation;
         async = false;
         generated = false;
-        parent = Some (Expression.Access.create "Parent");
+        parent = Some (Access.create "Parent");
       }
-      ~parent:(Class.create
-                 (Node.create_with_default_location
-                    {
-                      Statement.Class.name = Expression.Access.create "Parent";
-                      bases = [];
-                      body = [+Pass];
-                      decorators = [];
-                      docstring = None;
-                    }))
+      ~parent:
+        (Class.create
+           (Node.create_with_default_location
+              {
+                Statement.Class.name = Access.create "Parent";
+                bases = [];
+                body = [+Pass];
+                decorators = [];
+                docstring = None;
+              }))
   in
 
   assert_true

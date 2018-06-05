@@ -59,17 +59,18 @@ let parse_untrimmed
     source
   with ParserGenerator.Error ->
     let location =
-      Ast.Location.create
+      Location.create
         ~start:buffer.Lexing.lex_curr_p
         ~stop:buffer.Lexing.lex_curr_p
     in
-    let line = location.Ast.Location.start.Ast.Location.line - 1
-    and column = location.Ast.Location.start.Ast.Location.column in
+    let line = location.Location.start.Location.line - 1
+    and column = location.Location.start.Location.column in
 
     let header =
       Format.asprintf
         "\nCould not parse test at %a"
-        Ast.Location.pp location in
+        Location.pp location
+    in
     let indicator =
       if column > 0 then (String.make (column - 1) ' ') ^ "^" else "^" in
     let error =

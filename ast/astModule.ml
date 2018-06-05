@@ -7,10 +7,9 @@ open Core
 
 open Pyre
 
-module Expression = AstExpression
-module Access = Expression.Access
-module Node = AstNode
 module Statement = AstStatement
+
+open Statement
 
 
 type t = {
@@ -59,7 +58,6 @@ let wildcard_exports { wildcard_exports; _ } =  (* Rename to wildcard_exports *)
 let create ~qualifier ?path ~stub statements =
   let aliased_exports =
     let aliased_exports { Node.value; _ } =
-      let open Statement in
       match value with
       | Import { Import.from = Some from; imports } ->
           let from =
@@ -105,7 +103,6 @@ let create ~qualifier ?path ~stub statements =
     |> fst
   in
   let toplevel_public, dunder_all =
-    let open Statement in
     let gather_toplevel (public_values, dunder_all) { Node.value; _ } =
       let filter_private =
         let is_public name =
@@ -125,7 +122,7 @@ let create ~qualifier ?path ~stub statements =
         }
         when Access.show target = "__all__" ->
           let to_access = function
-            | { Node.value = Expression.String name; _ } -> Some (Expression.Access.create name)
+            | { Node.value = Expression.String name; _ } -> Some (Access.create name)
             | _ -> None
           in
           public_values, Some (List.filter_map ~f:to_access names)

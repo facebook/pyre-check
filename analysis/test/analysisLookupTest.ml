@@ -87,7 +87,7 @@ let test_lookup_call_arguments _ =
       annotation
       (Lookup.get_annotation lookup ~position
        >>| (fun (location, annotation) ->
-           Format.asprintf "%s/%a" (AstLocation.to_string location) Type.pp annotation))
+           Format.asprintf "%s/%a" (Location.to_string location) Type.pp annotation))
   in
   let source =
     {|
@@ -116,47 +116,47 @@ let test_lookup_call_arguments _ =
     ]
     (Hashtbl.to_alist lookup
      |> List.map ~f:(fun (key, data) ->
-         Format.asprintf "%s/%a" (AstLocation.to_string key) Type.pp data)
+         Format.asprintf "%s/%a" (Location.to_string key) Type.pp data)
      |> List.sort ~compare:String.compare);
   assert_annotation
     ~lookup
-    ~position:{ Ast.Location.line = 2; column = 4 }
+    ~position:{ Location.line = 2; column = 4 }
     ~annotation:(Some "test.py:2:4-2:6/`int`");
   assert_annotation
     ~lookup
-    ~position:{ Ast.Location.line = 3; column = 3 }
+    ~position:{ Location.line = 3; column = 3 }
     ~annotation:None;
   assert_annotation
     ~lookup
-    ~position:{ Ast.Location.line = 3; column = 4 }
+    ~position:{ Location.line = 3; column = 4 }
     ~annotation:(Some "test.py:3:4-3:20/`str`");
   assert_annotation
     ~lookup
-    ~position:{ Ast.Location.line = 3; column = 11 }
+    ~position:{ Location.line = 3; column = 11 }
     ~annotation:(Some "test.py:3:4-3:20/`str`");
   assert_annotation
     ~lookup
-    ~position:{ Ast.Location.line = 3; column = 19 }
+    ~position:{ Location.line = 3; column = 19 }
     ~annotation:(Some "test.py:3:4-3:20/`str`");
   assert_annotation
     ~lookup
-    ~position:{ Ast.Location.line = 4; column = 3 }
+    ~position:{ Location.line = 4; column = 3 }
     ~annotation:None;
   assert_annotation
     ~lookup
-    ~position:{ Ast.Location.line = 4; column = 4 }
+    ~position:{ Location.line = 4; column = 4 }
     ~annotation:(Some "test.py:4:4-5:14/`str`");
   assert_annotation
     ~lookup
-    ~position:{ Ast.Location.line = 4; column = 13 }
+    ~position:{ Location.line = 4; column = 13 }
     ~annotation:(Some "test.py:4:4-5:14/`str`");
   assert_annotation
     ~lookup
-    ~position:{ Ast.Location.line = 5; column = 3 }
+    ~position:{ Location.line = 5; column = 3 }
     ~annotation:(Some "test.py:4:4-5:14/`str`");
   assert_annotation
     ~lookup
-    ~position:{ Ast.Location.line = 5; column = 13 }
+    ~position:{ Location.line = 5; column = 13 }
     ~annotation:(Some "test.py:4:4-5:14/`str`")
 
 

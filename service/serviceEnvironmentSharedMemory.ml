@@ -6,7 +6,6 @@
 open Core
 open Analysis
 open Ast
-open Expression
 open Statement
 
 module SharedMemory = Hack_parallel.Std.SharedMem
@@ -76,7 +75,7 @@ module ProtocolValue = struct
 end
 
 module ModuleValue = struct
-  type t = Ast.Module.t
+  type t = Module.t
   let prefix = Prefix.make ()
   let description = "Modules"
 end

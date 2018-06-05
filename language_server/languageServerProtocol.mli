@@ -5,9 +5,8 @@
 
 open Core
 
-open Analysis
-
 open Pyre
+open Analysis
 
 
 module InitializeRequest : module type of LanguageServerProtocolTypes.InitializeRequest

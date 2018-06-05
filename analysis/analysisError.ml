@@ -155,7 +155,7 @@ type kind =
   | MissingParameterAnnotation of missing_parameter
   | MissingReturnAnnotation of missing_return
   | RedundantCast of Type.t
-  | RevealedType of Type.t * Ast.Expression.t
+  | RevealedType of Type.t * Expression.t
   | TooManyArguments of too_many_arguments
   | Top
   | UndefinedAttribute of undefined_attribute
@@ -694,7 +694,7 @@ let due_to_unsupported_calls { kind; _ } =
   | MissingArgument { callee = Some name; _ }
   | TooManyArguments { callee = Some name; _ } ->
       List.last name
-      >>| (fun name -> Expression.Access.show [name])
+      >>| (fun name -> Access.show [name])
       (* TODO(T28686494): unbreak `dict.update`call resolution. *)
       >>| List.mem ~equal:String.equal ["__init__"; "__str__"; "update"]
       |> Option.value ~default:false

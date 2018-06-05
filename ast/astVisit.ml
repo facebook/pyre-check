@@ -12,8 +12,10 @@ module Transform = AstTransform
 module Source = AstSource
 module Location = AstLocation
 module Node = AstNode
+
 open Expression
 open Statement
+
 
 module type Visitor = sig
   type t
@@ -333,7 +335,7 @@ end
 let collect_accesses statement =
   let open Expression in
   let module Collector = ExpressionCollector(struct
-      type t = Expression.Access.t
+      type t = Access.t
       let predicate = function
         | { Node.value = Access access; _ } ->
             Some access

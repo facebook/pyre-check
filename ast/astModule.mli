@@ -4,8 +4,8 @@
     LICENSE file in the root directory of this source tree. *)
 
 module Statement = AstStatement
-module Expression = AstExpression
-module Access = Expression.Access
+
+open Statement
 
 
 type t

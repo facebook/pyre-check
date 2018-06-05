@@ -6,6 +6,7 @@
 open Core
 
 open Ast
+open Expression
 open Pyre
 open PyreParser
 
@@ -70,10 +71,10 @@ let parse_job ~configuration:{ Configuration.verbose; sections; _ } ~files =
            begin
              match source.Source.qualifier with
              | minor :: major :: tail
-               when is_digit (Expression.Access.show [minor]) &&
-                    is_digit (Expression.Access.show [major]) ->
+               when is_digit (Access.show [minor]) &&
+                    is_digit (Access.show [major]) ->
                  tail
-             | major :: tail when is_digit (String.prefix (Expression.Access.show [major]) 1) ->
+             | major :: tail when is_digit (String.prefix (Access.show [major]) 1) ->
                  tail
              | qualifier ->
                  qualifier

@@ -6,7 +6,6 @@
 open Core
 
 open Ast
-open Expression
 open Statement
 
 module Annotation = AnalysisAnnotation

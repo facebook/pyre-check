@@ -5,9 +5,9 @@
 
 open Core
 
+open Pyre
 open Analysis
 open LanguageServerProtocolTypes
-open Pyre
 
 
 module Range = struct
