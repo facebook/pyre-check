@@ -121,6 +121,12 @@ type missing_argument = {
 }
 [@@deriving compare, eq, sexp, show, hash]
 
+type revealed_type = {
+  expression: Expression.t;
+  annotation: Type.t;
+}
+[@@deriving compare, eq, sexp, show, hash]
+
 type kind =
   | IncompatibleAwaitableType of Type.t
   | IncompatibleParameterType of parameter_mismatch
@@ -135,7 +141,7 @@ type kind =
   | MissingParameterAnnotation of missing_parameter
   | MissingReturnAnnotation of missing_return
   | RedundantCast of Type.t
-  | RevealedType of Type.t * Expression.t
+  | RevealedType of revealed_type
   | TooManyArguments of too_many_arguments
   | Top
   | UndefinedAttribute of undefined_attribute

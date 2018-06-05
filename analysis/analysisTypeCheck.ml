@@ -1086,7 +1086,7 @@ module State = struct
                   let annotation = Annotated.resolve ~resolution value in
                   [{
                     Error.location;
-                    kind = Error.RevealedType (annotation, value);
+                    kind = Error.RevealedType { Error.expression = value; annotation };
                     define = define_node;
                   }]
                   |> add_errors errors

@@ -61,9 +61,10 @@ let error ?(define = mock_define) kind =
 
 
 let revealed_type access annotation =
-  Error.RevealedType
-    (annotation,
-     Node.create_with_default_location (Access (Access.create access)))
+  Error.RevealedType {
+    Error.expression = Node.create_with_default_location (Access (Access.create access));
+    annotation;
+  }
 
 
 let missing_return annotation =
@@ -384,16 +385,13 @@ let test_join _ =
            due_to_any = false;
          }));
 
-  let a = Node.create_with_default_location (Access (Access.create "a")) in
-  let b = Node.create_with_default_location (Access (Access.create "b")) in
   assert_join
-    (error (Error.RevealedType (Type.integer, a)))
-    (error (Error.RevealedType (Type.float, a)))
-    (error (Error.RevealedType (Type.float, a)));
-
+    (error (revealed_type "a" Type.integer))
+    (error (revealed_type "a" Type.float))
+    (error (revealed_type "a" Type.float));
   assert_join
-    (error (Error.RevealedType (Type.integer, a)))
-    (error (Error.RevealedType (Type.float, b)))
+    (error (revealed_type "a" Type.integer))
+    (error (revealed_type "b" Type.float))
     (error (Error.Top))
 
 

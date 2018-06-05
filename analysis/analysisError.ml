@@ -141,6 +141,13 @@ type missing_argument = {
 [@@deriving compare, eq, sexp, show, hash]
 
 
+type revealed_type = {
+  expression: Expression.t;
+  annotation: Type.t;
+}
+[@@deriving compare, eq, sexp, show, hash]
+
+
 type kind =
   | IncompatibleAwaitableType of Type.t
   | IncompatibleParameterType of parameter_mismatch
@@ -155,7 +162,7 @@ type kind =
   | MissingParameterAnnotation of missing_parameter
   | MissingReturnAnnotation of missing_return
   | RedundantCast of Type.t
-  | RevealedType of Type.t * Expression.t
+  | RevealedType of revealed_type
   | TooManyArguments of too_many_arguments
   | Top
   | UndefinedAttribute of undefined_attribute
@@ -550,7 +557,7 @@ let description
             "The value being cast is already of type %a."
             Type.pp annotation;
         ]
-    | RevealedType (annotation, expression) ->
+    | RevealedType { expression; annotation } ->
         let show_sanitized { Node.location; value } =
           match value with
           | Access access ->
@@ -758,9 +765,9 @@ let less_or_equal ~resolution left right =
         Resolution.less_or_equal resolution ~left:left.annotation ~right:right.annotation
     | RedundantCast left, RedundantCast right ->
         Resolution.less_or_equal resolution ~left ~right
-    | RevealedType (left, left_expression), RevealedType (right, right_expression) ->
-        Expression.equal left_expression right_expression &&
-        Resolution.less_or_equal resolution ~left ~right
+    | RevealedType left, RevealedType right ->
+        Expression.equal left.expression right.expression &&
+        Resolution.less_or_equal resolution ~left:left.annotation ~right:right.annotation
     | IncompatibleParameterType left, IncompatibleParameterType right
       when Option.equal Access.equal left.name right.name ->
         less_or_equal_mismatch left.mismatch right.mismatch
@@ -868,10 +875,12 @@ let join ~resolution left right =
         MissingGlobalAnnotation (join_missing_annotation left right)
     | RedundantCast left, RedundantCast right ->
         RedundantCast (Resolution.join resolution left right)
-    | RevealedType (left_annotation, left_expression),
-      RevealedType (right_annotation, right_expression)
-      when Expression.equal left_expression right_expression ->
-        RevealedType (Resolution.join resolution left_annotation right_annotation, left_expression)
+    | RevealedType left, RevealedType right
+      when Expression.equal left.expression right.expression ->
+        RevealedType {
+          left with
+          annotation = Resolution.join resolution left.annotation right.annotation;
+        }
     | IncompatibleParameterType left, IncompatibleParameterType right
       when Option.equal Access.equal left.name right.name &&
            left.position = right.position &&
@@ -1251,8 +1260,8 @@ let dequalify
         }
     | RedundantCast annotation ->
         RedundantCast (dequalify annotation)
-    | RevealedType (annotation, expression) ->
-        RevealedType (dequalify annotation, expression)
+    | RevealedType { expression; annotation } ->
+        RevealedType { expression; annotation = dequalify annotation }
     | IncompatibleParameterType ({ mismatch = { actual; expected }; _ } as parameter) ->
         IncompatibleParameterType {
           parameter with
