@@ -398,7 +398,7 @@ class Infer(commands.command.ErrorHandling):
         self._recursive = arguments.recursive
         self._print_errors = arguments.print_only
 
-    def run(self) -> None:
+    def run(self) -> int:
         flags = self._flags()
         flags.extend(
             ["-infer", "-search-path", ",".join(self._configuration.get_search_path())]
@@ -417,6 +417,7 @@ class Infer(commands.command.ErrorHandling):
             if self._arguments.in_place is not None:
                 LOG.info("Annotating files")
                 annotate_paths(self._arguments, stubs, type_directory)
+        return SUCCESS
 
 
 def main():
