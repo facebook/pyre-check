@@ -108,75 +108,111 @@ let test_register_class_definitions _ =
 
 
 let test_register_aliases _ =
-  let environment = Environment.Builder.create ~configuration () in
-  let (module Handler: Environment.Handler) = Environment.handler ~configuration environment in
-  let typing =
-    parse ~qualifier:(Access.create "typing") {|
-      class Iterator:
-        ...
-      class Iterable:
-        ...
-    |}
-    |> Preprocessing.qualify
+  let assert_resolved sources aliases =
+    let (module Handler: Environment.Handler) =
+      let environment = Environment.Builder.create ~configuration () in
+      let (module Handler: Environment.Handler) = Environment.handler ~configuration environment in
+      let sources = List.map sources ~f:Preprocessing.preprocess in
+      let register ({ Source.qualifier; statements; _ } as source) =
+        Handler.register_module ~qualifier ~path:None ~stub:false ~statements;
+        Environment.register_class_definitions (module Handler) source |> ignore;
+      in
+      List.iter sources ~f:register;
+      Environment.register_aliases (module Handler) sources;
+      (module Handler)
+    in
+    let assert_alias (alias, target) =
+      let parse_annotation source =
+        parse_single_expression source
+        |> parse_annotation (module Handler)
+      in
+      assert_equal
+        ~printer:Type.show
+        (parse_annotation alias)
+        (parse_annotation target)
+    in
+    List.iter aliases ~f:assert_alias
   in
-  let other =
-    parse ~qualifier:(Access.create "collections") {|
-      from typing import Iterator as Iterator
-      from typing import Iterable
-      from typing import Union
-      class Other:
-        pass
-    |}
-    |> Preprocessing.qualify
-  in
-  let source =
-    parse {|
-       from collections import *
-       class C:
-         ...
-       class D(C):
-         pass
-       B = D
-       A = B
-       X = None
-       def foo()->A:
-         return D()
-       def boo()->X:
-         return
-       if __name__ == '__main__':
-         C = D
-    |}
-  in
-  Handler.register_module
-    ~qualifier:(Access.create "collections")
-    ~path:None
-    ~stub:false
-    ~statements:(Source.statements other);
-  Environment.register_class_definitions (module Handler) typing |> ignore;
-  Environment.register_class_definitions (module Handler) source |> ignore;
-  Environment.register_class_definitions (module Handler) other |> ignore;
-  Environment.register_aliases
-    (module Handler)
-    [typing; other; source];
 
-  assert_equal (parse_annotation (module Handler) (!"C")) (Type.primitive "C");
-  assert_equal (parse_annotation (module Handler) (!"D")) (Type.primitive "D");
-  assert_equal (parse_annotation (module Handler) (!"B")) (Type.primitive "D");
-  assert_equal (parse_annotation (module Handler) (!"A")) (Type.primitive "D");
-  assert_equal (parse_annotation (module Handler) (!"Other")) (Type.primitive "collections.Other");
-  assert_equal (parse_annotation (module Handler) (!"X")) (Type.none);
-  assert_equal (Handler.function_definitions (access ["foo"])) None;
+  assert_resolved
+    [
+      parse
+        {|
+          class C: ...
+          class D(C): pass
+          B = D
+          A = B
+        |};
+    ]
+    [
+      "C", "C";
+      "D", "D";
+      "B", "D";
+      "A", "D";
+    ];
+  assert_resolved
+    [
+      parse
+        ~qualifier:(Access.create "qualifier")
+        {|
+          class C: ...
+          class D(C): pass
+          B = D
+          A = B
+        |};
+    ]
+    [
+      "qualifier.C", "qualifier.C";
+      "qualifier.D", "qualifier.D";
+      "qualifier.B", "qualifier.D";
+      "qualifier.A", "qualifier.D";
+    ];
 
-  let order = (module Handler.TypeOrderHandler: TypeOrder.Handler) in
-  assert_true (TypeOrder.contains order (Type.primitive "typing.Iterator"));
-  assert_true (TypeOrder.contains order (Type.primitive "typing.Iterable"));
-  assert_true (TypeOrder.contains order (Type.primitive "typing.Union"));
-  assert_equal
-    (parse_annotation (module Handler) (!"collections.Iterator"))
-    (Type.parametric "typing.Iterator" [Type.Object]);
-  assert_equal
-    (parse_annotation (module Handler) (!"collections.Iterable"))
-    (Type.parametric "typing.Iterable" [Type.Object])
+  assert_resolved
+    [
+      parse ~qualifier:(Access.create "collections") "class Collection: ...";
+      parse "from collections import *";
+    ]
+    ["Collection", "collections.Collection"];
+
+  assert_resolved [parse "X = None"] ["X", "None"];
+
+  assert_resolved
+    [
+      parse
+        ~qualifier:(Access.create "typing")
+        {|
+          class Iterator: ...
+          class Iterable: ...
+        |};
+      parse
+        ~qualifier:(Access.create "collections")
+        {|
+          from typing import Iterator as TypingIterator
+          from typing import Iterable
+        |};
+    ]
+    [
+      "collections.TypingIterator", "typing.Iterator[typing.Any]";
+      "collections.Iterable", "typing.Iterable[typing.Any]";
+    ];
+
+  assert_resolved
+    [
+      parse
+        ~qualifier:(Access.create "asyncio.tasks")
+        {|
+           from typing import Awaitable, TypeVar, Generic
+           _T = typing.TypeVar('_T')
+           class Future(Generic[_T]): ...
+           _FutureT = Union[Future[_T], Awaitable[_T]]
+        |};
+    ]
+    [
+      "asyncio.tasks.Future[int]", "asyncio.tasks.Future[int]";
+      (* TODO(T30095392): this should resolve to the union. *)
+      "asyncio.tasks._Future[int]", "asyncio.tasks._Future[int]";
+    ]
 
 
 let test_connect_definition _ =
