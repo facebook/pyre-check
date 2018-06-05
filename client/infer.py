@@ -547,7 +547,7 @@ def main():
         exit_code = FAILURE
     finally:
         if shared_source_directory:
-            shared_source_directory.remove()
+            shared_source_directory.cleanup()
         log.cleanup(arguments)
         if configuration and configuration.logger:
             log_statistics(

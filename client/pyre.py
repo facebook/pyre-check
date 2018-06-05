@@ -303,7 +303,7 @@ def main() -> int:
     finally:
         log.cleanup(arguments)
         if shared_source_directory:
-            shared_source_directory.remove()
+            shared_source_directory.cleanup()
         if configuration and configuration.logger:
             log_statistics(
                 "perfpipe_pyre_usage",
