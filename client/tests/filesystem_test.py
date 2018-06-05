@@ -52,13 +52,57 @@ class FilesystemTest(unittest.TestCase):
             [
                 "a.py",
                 "b.pyi",
+                "directory_symlink.py",
                 "link1.py",
+                "link2.py",
                 "link3.py",
                 "mypy/another.pyi",
                 "mypy/my.py",
                 "scipyi/another.py",
                 "scipyi/sci.pyi",
             ],
+        )
+
+    def test_merge_source_directory(self):
+        root = tempfile.mkdtemp()
+
+        def create_file(name: str) -> None:
+            with open(os.path.join(root, name), "w+"):
+                pass
+
+        def create_symlink(target: str, source: str) -> None:
+            os.symlink(os.path.join(root, target), os.path.join(root, source))
+
+        create_file("a.py")
+        create_file("b.pyi")
+        create_file("c.cpp")
+        create_symlink("a.py", "link1.py")
+        create_symlink("dangling.py", "link2.py")
+        create_symlink("c.cpp", "link3.py")
+        create_symlink("a.py", "link4.cpp")
+        os.mkdir(os.path.join(root, "mypy"))
+        os.mkdir(os.path.join(root, "scipyi"))
+        os.mkdir(os.path.join(root, "spy.py"))
+        create_symlink("spy.py", "directory_symlink.py"),
+        create_file("mypy/my.py")
+        create_file("scipyi/sci.pyi")
+        create_symlink("mypy/my.py", "mypy/another.pyi")
+        create_symlink("scipyi/sci.pyi", "scipyi/another.py")
+        shared_source_directory = SharedSourceDirectory([root])
+        all_paths = {}
+        shared_source_directory._merge_source_directory(root, all_paths)
+        self.assertEqual(
+            all_paths,
+            {
+                "a.py": os.path.join(root, "a.py"),
+                "b.pyi": os.path.join(root, "b.pyi"),
+                "link1.py": os.path.join(root, "a.py"),
+                "link3.py": os.path.join(root, "c.cpp"),
+                "mypy/another.pyi": os.path.join(root, "mypy/my.py"),
+                "mypy/my.py": os.path.join(root, "mypy/my.py"),
+                "scipyi/another.py": os.path.join(root, "scipyi/sci.pyi"),
+                "scipyi/sci.pyi": os.path.join(root, "scipyi/sci.pyi"),
+            },
         )
 
     @patch("{}.is_empty".format(filesystem_name))
@@ -78,31 +122,46 @@ class FilesystemTest(unittest.TestCase):
     ) -> None:
         is_empty.return_value = False
         os_path_exists.return_value = False
+        root = tempfile.mkdtemp()
+        os.mkdir(os.path.join(root, "first"))
+        os.mkdir(os.path.join(root, "first", "b"))
+        os.mkdir(os.path.join(root, "second"))
+
+        def create_file(name: str) -> None:
+            with open(name, "w+"):
+                pass
+
+        create_file(os.path.join(root, "first", "x.py"))
+        create_file(os.path.join(root, "first", "y.py"))
+        create_file(os.path.join(root, "first", "b", "z.py"))
+        create_file(os.path.join(root, "second", "a.py"))
 
         def side_effect(path):
             if path[1].endswith("first"):
                 serialized = "\n".join(
                     [
-                        os.path.join(os.getcwd(), path)
+                        os.path.join(root, path)
                         for path in ["first/x.py", "first/y.py", "first/b/z.py"]
                     ]
                 )
             else:
-                serialized = os.path.join(os.getcwd(), "second/a.py")
+                serialized = os.path.join(root, "second/a.py")
             return bytes(serialized, "utf-8")
 
         check_output.side_effect = side_effect
         os_path_realpath.side_effect = lambda x: x
-        shared_source_directory = SharedSourceDirectory(["first", "second"])
+        shared_source_directory = SharedSourceDirectory(
+            [os.path.join(root, "first"), os.path.join(root, "second")]
+        )
         shared_source_directory._merge()
-        root = shared_source_directory.get_root()
-        os_makedirs.assert_has_calls([call(root), call(root + "/b")])
+        shared_root = shared_source_directory.get_root()
+        os_makedirs.assert_has_calls([call(shared_root), call(shared_root + "/b")])
         os_symlink.assert_has_calls(
             [
-                call(os.getcwd() + "/first/x.py", root + "/x.py"),
-                call(os.getcwd() + "/first/y.py", root + "/y.py"),
-                call(os.getcwd() + "/first/b/z.py", root + "/b/z.py"),
-                call(os.getcwd() + "/second/a.py", root + "/a.py"),
+                call(root + "/first/x.py", shared_root + "/x.py"),
+                call(root + "/first/y.py", shared_root + "/y.py"),
+                call(root + "/first/b/z.py", shared_root + "/b/z.py"),
+                call(root + "/second/a.py", shared_root + "/a.py"),
             ],
             any_order=True,
         )

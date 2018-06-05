@@ -12,7 +12,7 @@ import shutil
 import subprocess
 from contextlib import contextmanager
 from time import time
-from typing import Generator, List, Optional
+from typing import Dict, Generator, List, Optional
 
 from . import log
 
@@ -77,18 +77,7 @@ class SharedSourceDirectory:
 
         all_paths = {}
         for source_directory in self._source_directories:
-            paths = find_python_paths(root=source_directory)
-            for path in paths:
-                if not path:
-                    continue
-                if is_empty(path):
-                    # don't symlink empty __init__ files which might
-                    # override legitimate ones
-                    continue
-
-                relative = os.path.relpath(path, source_directory)
-                all_paths[relative] = os.path.join(path)
-
+            self._merge_source_directory(source_directory, all_paths)
         for relative, original in all_paths.items():
             merged = os.path.join(root, relative)
             directory = os.path.dirname(merged)
@@ -104,6 +93,30 @@ class SharedSourceDirectory:
                     os.symlink(original, merged)
                 else:
                     LOG.error(str(error))
+
+    # Exposed for testing.
+    def _merge_source_directory(
+        self, source_directory: str, all_paths: Dict[str, str]
+    ) -> None:
+        paths = find_python_paths(root=source_directory)
+        for path in paths:
+            relative = os.path.relpath(path, source_directory)
+            if not path:
+                continue
+            # don't bother stat'ing paths that are already in the source directory.
+            if relative in all_paths:
+                continue
+            try:
+                absolute = os.path.realpath(path)
+                # Don't merge symlinked directories.
+                if not os.path.isfile(absolute):
+                    continue
+                if relative.endswith("__init__.py") and is_empty(absolute):
+                    # Don't let empty __init__.py files override legitimate files.
+                    continue
+                all_paths[relative] = absolute
+            except FileNotFoundError:
+                continue
 
 
 def find_python_paths(root: str) -> List[str]:
@@ -127,16 +140,9 @@ def find_python_paths(root: str) -> List[str]:
                     "-type",
                     "f",
                     "-or",
-                    # ... or symlinks pointing to existing files.
-                    "(",
+                    # ... or symlinks.
                     "-type",
                     "l",
-                    "-exec",
-                    "test",
-                    "-f",
-                    "{}",
-                    ";",
-                    ")",
                     ")",
                     # Print all such files.
                     "-print",
