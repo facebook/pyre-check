@@ -9,7 +9,7 @@ set -e
 
 # global constants
 PACKAGE_NAME="pyre-check"
-PACKAGE_VERSION="0.0.8"
+PACKAGE_VERSION=
 AUTHOR='Facebook'
 AUTHOR_EMAIL='pyre@fb.com'
 MAINTAINER='Facebook'
@@ -22,7 +22,7 @@ RUNTIME_DEPENDENCIES="'typeshed'"
 
 # helpers
 die() {
-  printf '\n%s: %s, exiting.\n' "$(basename "$0")" "$*" >&2
+  printf '\n%s: %s; exiting.\n' "$(basename "$0")" "$*" >&2
   exit 1
 }
 error_trap () {
@@ -63,12 +63,25 @@ while [[ $# -gt 0 ]]; do
         die "Not a valid location to bundle typeshed from: '${1}'"
       fi
       ;;
+    "--version")
+      shift 1
+      if [[ -z "${1}" ]]; then
+        die 'Version number is missing from commandline'
+      fi
+      if ! [[ "${1}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+        die "Version number '${1}' is not in the expected format"
+      fi
+      PACKAGE_VERSION="${1}"
+      ;;
     *)
       echo "Unrecognized parameter: ${1}"
       ;;
   esac
   shift
 done
+
+# Check preconditions.
+[[ -z "${PACKAGE_VERSION}" ]] && die 'Package version not provided, please use --version'
 
 # Create build tree.
 SCRIPTS_DIRECTORY="$(dirname "$("${READLINK}" -f "$0")")"
