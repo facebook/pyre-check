@@ -94,6 +94,8 @@ echo "Using build root: ${BUILD_ROOT}"
 mkdir "${MODULE_NAME}"
 # i.e. copy all *.py files from all directories, except "tests"
 rsync -avm --filter='- tests/' --filter='+ */' --filter='-! *.py' "${SCRIPTS_DIRECTORY}/../client/" "${BUILD_ROOT}/${MODULE_NAME}"
+# Patch version number.
+sed -i -e "/__version__/s/= \".*\"/= \"${PACKAGE_VERSION}\"/" "${BUILD_ROOT}/${MODULE_NAME}/version.py"
 
 # Copy binary files.
 BINARY_FILE="${SCRIPTS_DIRECTORY}/../_build/all/main.native"

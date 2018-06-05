@@ -28,6 +28,7 @@ from . import (
     switch_root,
 )
 from .configuration import Configuration
+from .version import __version__
 
 
 LOG = logging.getLogger(__name__)
@@ -51,7 +52,9 @@ def main() -> int:
         "-l", "--local-configuration", type=str, help="Use a local configuration"
     )
 
-    parser.add_argument("--version", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument(
+        "--version", action="version", version="%(prog)s version " + __version__
+    )
     parser.add_argument("--debug", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--sequential", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--strict", action="store_true", help=argparse.SUPPRESS)
@@ -250,7 +253,7 @@ def main() -> int:
                 )
                 return SUCCESS
 
-            if arguments.version or arguments.binary_version:
+            if arguments.binary_version:
                 log.stdout.write(get_binary_version(configuration))
                 return SUCCESS
 
