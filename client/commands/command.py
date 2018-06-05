@@ -4,6 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import enum
+import fnmatch
 import json
 import logging
 import os
@@ -262,9 +263,7 @@ class ErrorHandling(Command):
                     # Relativize path.
                     error["path"] = self._relative_path(path)
             for do_not_check_path in self._do_not_check_paths:
-                if path.startswith(
-                    os.path.join(self._current_directory, do_not_check_path)
-                ):
+                if fnmatch.fnmatch(path, (do_not_check_path + "*")):
                     do_not_check = True
             errors.add(Error(do_not_check, external, **error))
 

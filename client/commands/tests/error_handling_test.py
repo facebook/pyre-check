@@ -85,3 +85,17 @@ class ErrorHandlingTest(unittest.TestCase):
             handler._get_errors(result)
             handler._get_errors(result, True)
             create_error.assert_has_calls([call(False, False), call(False, True)])
+            create_error.reset_mock()
+
+        arguments.original_directory = "/"  # called from
+        arguments.current_directory = "/"  # project root
+        error_dictionary = {"path": "b/c"}
+        error.__getitem__.side_effect = error_dictionary.__getitem__
+        configuration.do_not_check = ["*/b"]
+        handler = commands.ErrorHandling(
+            arguments, configuration, source_directory="/a"
+        )
+        with patch.object(json, "loads", return_value=[error]):
+            handler._get_errors(result)
+            create_error.assert_has_calls([call(True, False)])
+            create_error.reset_mock()
