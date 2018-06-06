@@ -544,13 +544,28 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
           scope,
           Try { Try.body; handlers; orelse; finally }
       | With ({ With.items; body; _ } as block) ->
-          let qualify_item (name, alias) =
-            qualify_expression ~scope name,
-            alias >>| qualify_expression ~scope
+          let scope, items =
+            let qualify_item (scope, reversed_items) (name, alias) =
+              let scope, item =
+                let renamed_scope, alias =
+                  match alias with
+                  | Some alias ->
+                      let scope, alias = qualify_target ~scope alias in
+                      scope, Some alias
+                  | _ ->
+                      scope, alias
+                in
+                renamed_scope,
+                (qualify_expression ~scope name, alias)
+              in
+              scope, item :: reversed_items
+            in
+            let scope, reversed_items = List.fold items ~init:(scope, []) ~f:qualify_item in
+            scope, List.rev reversed_items
           in
           let scope, body = qualify_statements ~scope body in
           scope,
-          With { block with With.items = List.map items ~f:qualify_item; body }
+          With { block with With.items; body }
       | While { While.test; body; orelse } ->
           let body_scope, body = qualify_statements ~scope body in
           let orelse_scope, orelse = qualify_statements ~scope orelse in

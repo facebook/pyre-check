@@ -139,8 +139,7 @@ let test_qualify _ =
   assert_qualify_statement
     "\ntry:\n\tb\nexcept b as b:\n\tb\nelse:\n\tb\nfinally:\n\tb"
     "\ntry:\n\ta\nexcept a as b:\n\ta\nelse:\n\ta\nfinally:\n\ta";
-  (* TODO(T29105314): rename `with` aliases. *)
-  assert_qualify_statement "\nwith b as b: b" "\nwith a as a: a";
+  assert_qualify_statement "\nwith b as b: b" "\nwith a as $target_b: $target_b";
   assert_qualify_statement "\nwhile b: b" "\nwhile a: a";
   assert_qualify_statement "yield b" "yield a";
   assert_qualify_statement "yield from b" "yield from a";
