@@ -240,6 +240,52 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
     in
     scope, List.rev reversed_statements
 
+  and qualify_parameters ~scope parameters =
+    (* Rename parameters to prevent aliasing. *)
+    let rename_parameter
+        (({ aliases; immutables; _ } as scope), reversed_parameters)
+        ({ Node.value = { Parameter.name; value; annotation }; _ } as parameter) =
+      let stars, name =
+        let name = Identifier.show name in
+        if String.is_prefix name ~prefix:"**" then
+          "**", String.drop_prefix name 2
+        else if String.is_prefix name ~prefix:"*" then
+          "*", String.drop_prefix name 1
+        else
+          "", name
+      in
+      let renamed =
+        Format.asprintf "$parameter_%s" name
+        |> Identifier.create
+      in
+      let name = Identifier.create name in
+      let access = [Access.Identifier name] in
+      {
+        scope with
+        aliases =
+          Map.set
+            aliases
+            ~key:access
+            ~data:{ access = [Access.Identifier renamed]; is_forward_reference = false };
+        immutables = Set.add immutables access;
+      },
+      {
+        parameter with
+        Node.value = {
+          Parameter.name = Identifier.map renamed ~f:(fun identifier -> stars ^ identifier);
+          value = value >>| qualify_expression ~scope;
+          annotation = annotation >>| qualify_expression ~scope;
+        };
+      } :: reversed_parameters
+    in
+    let scope, parameters =
+      List.fold
+        parameters
+        ~init:({ scope with locals = Access.Set.empty }, [])
+        ~f:rename_parameter
+    in
+    scope, List.rev parameters
+
   and qualify_statement
       ~qualify_assign
       ~scope:({ qualifier; aliases; skip; _ } as scope)
@@ -354,53 +400,11 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
             parent;
             _;
           } as define) =
-        let renamed_scope, reversed_parameters =
-          (* Rename parameters to prevent aliasing. *)
-          let rename_parameter
-              (({ aliases; immutables; _ } as scope), reversed_parameters)
-              ({ Node.value = { Parameter.name; value; annotation }; _ } as parameter) =
-            let stars, name =
-              let name = Identifier.show name in
-              if String.is_prefix name ~prefix:"**" then
-                "**", String.drop_prefix name 2
-              else if String.is_prefix name ~prefix:"*" then
-                "*", String.drop_prefix name 1
-              else
-                "", name
-            in
-            let renamed =
-              Format.asprintf "$parameter_%s" name
-              |> Identifier.create
-            in
-            let name = Identifier.create name in
-            let access = [Access.Identifier name] in
-            {
-              scope with
-              aliases =
-                Map.set
-                  aliases
-                  ~key:access
-                  ~data:{ access = [Access.Identifier renamed]; is_forward_reference = false };
-              immutables = Set.add immutables access;
-            },
-            {
-              parameter with
-              Node.value = {
-                Parameter.name = Identifier.map renamed ~f:(fun identifier -> stars ^ identifier);
-                value = value >>| qualify_expression ~scope;
-                annotation = annotation >>| qualify_expression ~scope;
-              };
-            } :: reversed_parameters
-          in
-          List.fold
-            parameters
-            ~init:({ scope with locals = Access.Set.empty }, [])
-            ~f:rename_parameter
-        in
+        let renamed_scope, parameters = qualify_parameters ~scope parameters in
         {
           define with
           Define.name = qualify_access ~scope name;
-          parameters = List.rev reversed_parameters;
+          parameters;
           body =
             qualify_statements
               ~scope:{ renamed_scope with qualifier = qualifier @ name }
@@ -613,19 +617,9 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
             generators = List.map generators ~f:qualify_generator;
           }
       | Lambda { Lambda.parameters; body } ->
-          let qualify_parameter
-              ({ Node.value = { Parameter.name; value; annotation }; _ } as parameter) =
-            {
-              parameter with
-              Node.value = {
-                Parameter.name;
-                value = value >>| qualify_expression ~scope;
-                annotation = annotation >>| qualify_expression ~scope;
-              };
-            }
-          in
+          let scope, parameters = qualify_parameters ~scope parameters in
           Lambda {
-            Lambda.parameters = List.map parameters ~f:qualify_parameter;
+            Lambda.parameters;
             body = qualify_expression ~scope body;
           }
       | List elements ->

@@ -110,8 +110,8 @@ let test_qualify _ =
   assert_qualify_statement "1 < b <= b" "1 < a <= a";
   assert_qualify_statement "{ b: b }" "{ a: a }";
   assert_qualify_statement "{ b: b for b in b if b }" "{ a: a for a in a if a }";
-  (* TODO(T29105314): rename lambda parameters. *)
-  assert_qualify_statement "lambda b: b" "lambda b: a";
+  assert_qualify_statement "lambda b: b" "lambda $parameter_b: $parameter_b";
+  assert_qualify_statement "lambda a: a + b" "lambda $parameter_a: $parameter_a + a";
   assert_qualify_statement "[b, b]" "[a, a]";
   (* TODO(T29105314): rename comprehension iterators. *)
   assert_qualify_statement "[b for b in b]" "[a for a in a]";
