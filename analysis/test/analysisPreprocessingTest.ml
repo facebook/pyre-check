@@ -135,10 +135,9 @@ let test_qualify _ =
   assert_qualify_statement "\nif b:\n\tb\nelse:\n\tb" "\nif a:\n\ta\nelse:\n\ta";
   assert_qualify_statement "raise b" "raise a";
   assert_qualify_statement "return b" "return a";
-  (* TODO(T29105314): rename `except` aliases. *)
   assert_qualify_statement
     "\ntry:\n\tb\nexcept b as b:\n\tb\nelse:\n\tb\nfinally:\n\tb"
-    "\ntry:\n\ta\nexcept a as b:\n\ta\nelse:\n\ta\nfinally:\n\ta";
+    "\ntry:\n\ta\nexcept a as $target_b:\n\t$target_b\nelse:\n\ta\nfinally:\n\ta";
   assert_qualify_statement "\nwith b as b: b" "\nwith a as $target_b: $target_b";
   assert_qualify_statement "\nwhile b: b" "\nwhile a: a";
   assert_qualify_statement "yield b" "yield a";

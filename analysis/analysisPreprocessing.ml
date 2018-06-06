@@ -528,8 +528,17 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
           let body_scope, body = qualify_statements ~scope body in
           let handler_scopes, handlers =
             let qualify_handler { Try.kind; name; handler_body } =
-              let scope, handler_body = qualify_statements ~scope handler_body in
-              scope, { Try.kind = kind >>| qualify_expression ~scope; name; handler_body }
+              let renamed_scope, name =
+                match name with
+                | Some name ->
+                    let scope, _, renamed = prefix_identifier ~scope ~prefix:"target" name in
+                    scope, Some renamed
+                | _ ->
+                    scope, name
+              in
+              let kind = kind >>| qualify_expression ~scope in
+              let scope, handler_body = qualify_statements ~scope:renamed_scope handler_body in
+              scope, { Try.kind; name; handler_body }
             in
             List.map handlers ~f:qualify_handler
             |> List.unzip
