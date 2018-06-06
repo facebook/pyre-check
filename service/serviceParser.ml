@@ -221,8 +221,8 @@ let parse_all scheduler ~configuration:({ Configuration.source_root; _ } as conf
       let relative =
         Path.get_relative_to_root
           ~root:source_root
-          (* We don't follow symbolic links here, as the path
-             to the link relative to the source root (not project root) matters.. *)
+          (* We want to filter based on the path of the symlink instead of the path the
+             symlink points to. *)
           ~path:(Path.create_absolute ~follow_symbolic_links:false path)
       in
       match relative with

@@ -1453,7 +1453,7 @@ module State = struct
                           ~declare_location:location
                           errors
                       in
-                      (* Don't error on type aliases. *)
+                      (* Don't error when encountering an explicit annotation or a type alias. *)
                       if is_explicit || Type.is_meta value_annotation then
                         errors
                       else
