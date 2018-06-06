@@ -41,6 +41,14 @@ let test_fold _ =
   let resolution =
     populate_with_sources [
       parse
+        ~qualifier:(Access.create "empty.stub")
+        ~path:"empty/stub.pyi"
+        "";
+      parse
+        ~qualifier:(Access.create "empty.stub.submodule")
+        ~path:"empty/stub/submodule.py"
+        "class Suppressed: ...";
+      parse
         ~qualifier:[]
         {|
           integer: int = 1
@@ -53,6 +61,8 @@ let test_fold _ =
 
           def function() -> str:
             def nested() -> str: ...
+
+          suppressed: empty.stub.submodule.Suppressed = ...
         |}
       |> Preprocessing.preprocess;
       parse
@@ -60,10 +70,6 @@ let test_fold _ =
         {|
           sep: str = '/'
         |};
-      parse
-        ~qualifier:(Access.create "empty.stub")
-        ~path:"empty/stub.pyi"
-        "";
     ]
     |> resolution
   in
@@ -161,7 +167,8 @@ let test_fold _ =
 
   assert_fold "os.sep" [{ annotation = Type.string; element = Value }];
 
-  assert_fold "empty.stub.unknown" [{ annotation = Type.Top; element = Value }]
+  assert_fold "empty.stub.unknown" [{ annotation = Type.Top; element = Value }];
+  assert_fold "suppressed.attribute" [{ annotation = Type.Top; element = Value }]
 
 
 let assert_resolved sources access expected =

@@ -431,7 +431,26 @@ let fold ~resolution ~initial ~f access =
                 match Resolution.get_local resolution ~access:lead with
                 | Some resolved ->
                     (* Locally known variable (either local or global). *)
-                    State.step state ~resolved ()
+                    let suppressed =
+                      let rec suppressed lead = function
+                        | head :: tail ->
+                            begin
+                              let lead = lead @ [head] in
+                              match Resolution.module_definition resolution lead with
+                              | Some definition when Module.empty_stub definition -> true
+                              | _ -> suppressed lead tail
+                            end
+                        | [] ->
+                            false
+                      in
+                      Annotation.annotation resolved
+                      |> Type.class_name
+                      |> suppressed []
+                    in
+                    if not suppressed then
+                      State.step state ~resolved ()
+                    else
+                      State.abort state ()
                 | None ->
                     begin
                       match Resolution.module_definition resolution lead with
