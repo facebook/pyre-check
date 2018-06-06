@@ -82,7 +82,7 @@ let expand_format_string source =
 
       let expression_postorder _ expression =
         match expression with
-        | { Node.location; value = FormatString {FormatString.value; _ } } ->
+        | { Node.location; value = FormatString { FormatString.value; _ } } ->
             let rec get_matches regexp input_string start_position =
               try
                 let match_start_position = Str.search_forward regexp input_string start_position in
@@ -90,14 +90,40 @@ let expand_format_string source =
                 match_string :: get_matches regexp input_string (match_start_position + 1)
               with Not_found -> []
             in
-            let _ = get_matches (Str.regexp "{[^{^}]*}") value 0
+            let parse input_string =
+              try
+                let buffer =
+                  (String.length input_string) - 1
+                  |> String.slice input_string 1
+                  |> fun processed_input -> Lexing.from_string (processed_input ^ "\n")
+                in
+                let state = Lexer.State.initial () in
+                match ParserGenerator.parse (Lexer.read state) buffer with
+                | [{ Node.value = Expression expression; _ }] ->
+                    [expression]
+                | _ ->
+                    raise ParserGenerator.Error
+              with
+              | ParserGenerator.Error
+              | Failure _ ->
+                  begin
+                    Log.debug
+                      "Pyre could not parse format string `%s` at %a"
+                      input_string
+                      Location.pp
+                      location;
+                    []
+                  end
+            in
+            let expression_list =
+              get_matches (Str.regexp "{[^{^}]*}") value 0
+              |> List.concat_map ~f:parse
             in
             {
               Node.location;
               value = FormatString {
                   FormatString.value;
-                  (* TODO(T29598455): parse the expression strings to expressions *)
-                  FormatString.expression_list = [];
+                  expression_list;
                 };
             }
         | _ ->
@@ -111,12 +137,6 @@ let expand_format_string source =
 type alias = {
   access: Access.t;
   is_forward_reference: bool;
-}
-
-
-type global_entities = {
-  variables: Access.t Access.Map.t;
-  methods: Access.t Access.Map.t;
 }
 
 
@@ -582,6 +602,11 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
             Comprehension.element = qualify_entry element;
             generators = List.map generators ~f:qualify_generator;
           }
+      | FormatString { FormatString.value; expression_list } ->
+          FormatString {
+            FormatString.value;
+            expression_list = List.map expression_list ~f:(qualify_expression ~scope)
+          }
       | Generator { Comprehension.element; generators } ->
           Generator {
             Comprehension.element = qualify_expression ~scope element;
@@ -638,7 +663,7 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
           Yield (Some (qualify_expression ~scope expression))
       | Yield None ->
           Yield None
-      | Bytes _ | Complex _ | False | Float _ | Format _ | Integer _ | String _ | True ->
+      | Bytes _ | Complex _ | False | Float _ | Integer _ | String _ | True ->
           value
     in
     { expression with Node.value }

@@ -2197,8 +2197,8 @@ let test_check_coverage _ =
   assert_covered "{ i: ERROR for i in dict() }";
   assert_covered "{ i: 1 for i in ERROR }";
 
-  (* TODO(T26146217): we're not handling format strings yet. *)
-  assert_not_covered {|f"format{ERROR}"|};
+  (* Format string. *)
+  assert_covered {|f"format{ERROR}"|};
 
   (* Generator. *)
   assert_covered "(ERROR for i in list())";
@@ -5792,6 +5792,44 @@ let test_scheduling _ =
     ]
 
 
+let test_format_string _ =
+  assert_type_errors
+    {|
+      def foo() -> None:
+        f'foo{1}'
+    |}
+    [];
+  assert_type_errors
+    {|
+      def foo() -> None:
+        f'foo{1 + "x"}'
+    |}
+    ["Incompatible parameter type [6]: Expected `int` but got `str`."];
+  assert_type_errors
+    {|
+      global_number: int = 1
+      def foo() -> None:
+        f'foo{global_number + "x"}'
+    |}
+    ["Incompatible parameter type [6]: Expected `int` but got `str`."];
+  assert_type_errors
+    {|
+      global_number: int = 1
+      def foo() -> None:
+        f'foo{global_number + 2}'
+    |}
+    [];
+  assert_type_errors
+    {|
+      def boo() -> int:
+        return 1
+
+      def foo() -> None:
+        f'{boo() + "x"}'
+    |}
+    ["Incompatible parameter type [6]: Expected `int` but got `str`."]
+
+
 let () =
   "type">:::[
     "initial">::test_initial;
@@ -5857,5 +5895,6 @@ let () =
     "check_assert_functions">::test_check_assert_functions;
     "environment">::test_environment;
     "scheduling">::test_scheduling;
+    "check_format_string">::test_format_string;
   ]
   |> run_test_tt_main

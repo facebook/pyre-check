@@ -162,8 +162,11 @@ module Make (Transformer : Transformer) = struct
             value
         | Float _ ->
             value
-        | FormatString _ ->
-            value
+        | FormatString { FormatString.value; expression_list } ->
+            FormatString {
+              FormatString.value;
+              expression_list = transform_list expression_list ~f:transform_expression;
+            }
         | Generator { Comprehension.element; generators } ->
             Generator {
               Comprehension.element = transform_expression element;

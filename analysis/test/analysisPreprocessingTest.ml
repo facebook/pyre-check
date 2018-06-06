@@ -46,6 +46,42 @@ let test_expand_string_annotations _ =
     |}
 
 
+let test_expand_format_string _ =
+  let assert_ast_equal source expected_value expected_expression_list =
+    assert_source_equal
+      (Preprocessing.expand_format_string (parse_untrimmed source))
+      (Source.create ~path:"test.py"
+         [
+           +Expression
+             (+FormatString {
+                FormatString.value = expected_value;
+                expression_list = expected_expression_list;
+              });
+         ];)
+  in
+
+  assert_ast_equal "f'foo'" "foo" [];
+
+  assert_ast_equal "f'{1}'" "{1}" [+Integer 1];
+
+  assert_ast_equal "f'foo{1}'" "foo{1}" [+Integer 1];
+
+  assert_ast_equal "f'foo{1}{2}foo'" "foo{1}{2}foo" [+Integer 1; +Integer 2];
+
+  assert_ast_equal "f'foo{{1}}'" "foo{{1}}" [+Integer 1];
+
+  assert_ast_equal
+    "f'foo{1+2}'"
+    "foo{1+2}"
+    [
+      +Access [
+        Access.Expression (+Integer 1);
+        Access.Identifier ~~"__add__";
+        Access.Call (+[{ Argument.name = None; value = +Integer 2 }]);
+      ]
+    ]
+
+
 let test_qualify _ =
   let assert_qualify ?(path = "qualifier.py") source expected =
     let parse = parse ~qualifier:(Source.qualifier ~path) ~path in
@@ -987,6 +1023,7 @@ let test_classes _ =
 let () =
   "preprocessing">:::[
     "expand_string_annotations">::test_expand_string_annotations;
+    "expand_format_string">::test_expand_format_string;
     "qualify">::test_qualify;
     "replace_version_specific_code">::test_replace_version_specific_code;
     "expand_type_checking_imports">::test_expand_type_checking_imports;

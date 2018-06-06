@@ -1233,6 +1233,12 @@ module State = struct
             let { resolution; errors; _ } = List.fold ~f:check_generator ~init:state generators in
             check_entry ~resolution errors element
 
+        | FormatString { FormatString.expression_list; _ } ->
+            List.fold
+              ~f:(check_expression ~resolution)
+              ~init:errors
+              expression_list
+
         | Lambda { Lambda.body; parameters } ->
             let resolution =
               let add_parameter resolution { Node.value = { Parameter.name; _ }; _ } =
@@ -1287,10 +1293,6 @@ module State = struct
               | None -> errors
               | Some expression -> check_expression ~resolution errors expression
             end
-
-        (* TODO(T29598455): type check the expression_list *)
-        | FormatString { FormatString.value = _; expression_list = _ } ->
-            errors
 
         (* Trivial base cases *)
         | String _ | Complex _ | Bytes _ | Float _ | Integer _ | False | True ->
