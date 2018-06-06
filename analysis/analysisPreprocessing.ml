@@ -151,7 +151,60 @@ type scope = {
 
 
 let qualify ({ Source.qualifier; statements; _ } as source) =
-  let rec qualify_statements ?(qualify_assigns = false) ~scope statements =
+  let prefix_identifier ~scope:({ aliases; immutables; _ } as scope) ~prefix name =
+    let stars, name =
+      let name = Identifier.show name in
+      if String.is_prefix name ~prefix:"**" then
+        "**", String.drop_prefix name 2
+      else if String.is_prefix name ~prefix:"*" then
+        "*", String.drop_prefix name 1
+      else
+        "", name
+    in
+    let renamed =
+      Format.asprintf "$%s_%s" prefix name
+      |> Identifier.create
+    in
+    let name = Identifier.create name in
+    let access = [Access.Identifier name] in
+    {
+      scope with
+      aliases =
+        Map.set
+          aliases
+          ~key:access
+          ~data:{ access = [Access.Identifier renamed]; is_forward_reference = false };
+      immutables = Set.add immutables access;
+    },
+    stars,
+    renamed
+  in
+
+  let rec qualify_parameters ~scope parameters =
+    (* Rename parameters to prevent aliasing. *)
+    let rename_parameter
+        (scope, reversed_parameters)
+        ({ Node.value = { Parameter.name; value; annotation }; _ } as parameter) =
+      let scope, stars, renamed = prefix_identifier ~scope ~prefix:"parameter" name in
+      scope,
+      {
+        parameter with
+        Node.value = {
+          Parameter.name = Identifier.map renamed ~f:(fun identifier -> stars ^ identifier);
+          value = value >>| qualify_expression ~scope;
+          annotation = annotation >>| qualify_expression ~scope;
+        };
+      } :: reversed_parameters
+    in
+    let scope, parameters =
+      List.fold
+        parameters
+        ~init:({ scope with locals = Access.Set.empty }, [])
+        ~f:rename_parameter
+    in
+    scope, List.rev parameters
+
+  and qualify_statements ?(qualify_assigns = false) ~scope statements =
     let scope =
       let rec explore_scope ~scope statements =
         let global_alias access = { access; is_forward_reference = true } in
@@ -239,58 +292,6 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
       List.fold statements ~init:(scope, []) ~f:qualify
     in
     scope, List.rev reversed_statements
-
-  and prefix_identifier ~scope:({ aliases; immutables; _ } as scope) ~prefix name =
-    let stars, name =
-      let name = Identifier.show name in
-      if String.is_prefix name ~prefix:"**" then
-        "**", String.drop_prefix name 2
-      else if String.is_prefix name ~prefix:"*" then
-        "*", String.drop_prefix name 1
-      else
-        "", name
-    in
-    let renamed =
-      Format.asprintf "$%s_%s" prefix name
-      |> Identifier.create
-    in
-    let name = Identifier.create name in
-    let access = [Access.Identifier name] in
-    {
-      scope with
-      aliases =
-        Map.set
-          aliases
-          ~key:access
-          ~data:{ access = [Access.Identifier renamed]; is_forward_reference = false };
-      immutables = Set.add immutables access;
-    },
-    stars,
-    renamed
-
-  and qualify_parameters ~scope parameters =
-    (* Rename parameters to prevent aliasing. *)
-    let rename_parameter
-        (scope, reversed_parameters)
-        ({ Node.value = { Parameter.name; value; annotation }; _ } as parameter) =
-      let scope, stars, renamed = prefix_identifier ~scope ~prefix:"parameter" name in
-      scope,
-      {
-        parameter with
-        Node.value = {
-          Parameter.name = Identifier.map renamed ~f:(fun identifier -> stars ^ identifier);
-          value = value >>| qualify_expression ~scope;
-          annotation = annotation >>| qualify_expression ~scope;
-        };
-      } :: reversed_parameters
-    in
-    let scope, parameters =
-      List.fold
-        parameters
-        ~init:({ scope with locals = Access.Set.empty }, [])
-        ~f:rename_parameter
-    in
-    scope, List.rev parameters
 
   and qualify_statement
       ~qualify_assign
@@ -592,6 +593,53 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
     in
     scope, { statement with Node.value }
 
+  and qualify_target ~scope target =
+    let rec renamed_scope scope target =
+      match target with
+      | { Node.value = Tuple elements; _ } ->
+          List.fold elements ~init:scope ~f:renamed_scope
+      | { Node.value = Access [Access.Identifier name]; _ } ->
+          let scope, _, _ = prefix_identifier ~scope ~prefix:"target" name in
+          scope
+      | _ ->
+          scope
+    in
+    let scope = renamed_scope scope target in
+    scope, qualify_expression ~scope target
+
+  and qualify_access ~scope:({ aliases; use_forward_references; _ } as scope) access =
+    match access with
+    | head :: tail ->
+        let head =
+          match Map.find aliases [head] with
+          | Some { access; is_forward_reference = true } when use_forward_references -> access
+          | Some { access; is_forward_reference = false } -> access
+          | _ -> [head]
+        in
+        let qualify_element = function
+          | Access.Call ({ Node.value = arguments ; _ } as call) ->
+              let qualify_argument { Argument.name; value } =
+                let name =
+                  let rename identifier =
+                    Identifier.show identifier
+                    |> Format.asprintf "$parameter_%s"
+                    |> Identifier.create
+                  in
+                  name
+                  >>| Node.map ~f:rename
+                in
+                { Argument.name; value = qualify_expression ~scope value }
+              in
+              Access.Call { call with Node.value = List.map arguments ~f:qualify_argument }
+          | Access.Expression expression ->
+              Access.Expression (qualify_expression ~scope expression)
+          | element ->
+              element
+        in
+        List.map (head @ tail) ~f:qualify_element
+    | _ ->
+        access
+
   and qualify_expression ~scope ({ Node.value; _ } as expression) =
     let value =
       let qualify_entry ~scope { Dictionary.key; value } =
@@ -709,53 +757,6 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
           value
     in
     { expression with Node.value }
-
-  and qualify_target ~scope target =
-    let rec renamed_scope scope target =
-      match target with
-      | { Node.value = Tuple elements; _ } ->
-          List.fold elements ~init:scope ~f:renamed_scope
-      | { Node.value = Access [Access.Identifier name]; _ } ->
-          let scope, _, _ = prefix_identifier ~scope ~prefix:"target" name in
-          scope
-      | _ ->
-          scope
-    in
-    let scope = renamed_scope scope target in
-    scope, qualify_expression ~scope target
-
-  and qualify_access ~scope:({ aliases; use_forward_references; _ } as scope) access =
-    match access with
-    | head :: tail ->
-        let head =
-          match Map.find aliases [head] with
-          | Some { access; is_forward_reference = true } when use_forward_references -> access
-          | Some { access; is_forward_reference = false } -> access
-          | _ -> [head]
-        in
-        let qualify_element = function
-          | Access.Call ({ Node.value = arguments ; _ } as call) ->
-              let qualify_argument { Argument.name; value } =
-                let name =
-                  let rename identifier =
-                    Identifier.show identifier
-                    |> Format.asprintf "$parameter_%s"
-                    |> Identifier.create
-                  in
-                  name
-                  >>| Node.map ~f:rename
-                in
-                { Argument.name; value = qualify_expression ~scope value }
-              in
-              Access.Call { call with Node.value = List.map arguments ~f:qualify_argument }
-          | Access.Expression expression ->
-              Access.Expression (qualify_expression ~scope expression)
-          | element ->
-              element
-        in
-        List.map (head @ tail) ~f:qualify_element
-    | _ ->
-        access
   in
 
   let scope =
