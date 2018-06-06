@@ -585,6 +585,9 @@ module ClientCapabilities = struct
       action_required: DynamicRegistration.t option
           [@key "actionRequired"]
           [@default None];
+      status: DynamicRegistration.t option
+          [@key "status"]
+          [@default None];
     }
     [@@deriving of_yojson]
   end

@@ -70,7 +70,8 @@ let test_initialize_request_parses _ =
     match request with
     | Ok _ ->
         ()
-    | _ ->
+    | Error location ->
+        Log.error "Parse error at location: %s" location;
         Test.assert_unreached ()
   in
   assert_parses {|
@@ -126,6 +127,60 @@ let test_initialize_request_parses _ =
          { "uri": "file:///Users/sinancepel/test", "name": "test" }
        ]
      }
+  }
+  |};
+  assert_parses {|
+  {
+    "jsonrpc": "2.0",
+    "id": 0,
+    "method": "initialize",
+    "params": {
+      "processId": 2160986,
+      "rootPath": "/repo/path",
+      "rootUri": "file:///repo/path",
+      "capabilities": {
+        "workspace": {
+          "applyEdit": true,
+          "workspaceEdit": { "documentChanges": true },
+          "didChangeConfiguration": { "dynamicRegistration": false },
+          "didChangeWatchedFiles": { "dynamicRegistration": true },
+          "symbol": { "dynamicRegistration": false },
+          "executeCommand": { "dynamicRegistration": false }
+        },
+        "textDocument": {
+          "synchronization": {
+            "dynamicRegistration": false,
+            "willSave": false,
+            "willSaveWaitUntil": false,
+            "didSave": true
+          },
+          "completion": {
+            "dynamicRegistration": false,
+            "completionItem": { "snippetSupport": true }
+          },
+          "hover": { "dynamicRegistration": false },
+          "signatureHelp": { "dynamicRegistration": false },
+          "references": { "dynamicRegistration": false },
+          "documentHighlight": { "dynamicRegistration": false },
+          "documentSymbol": { "dynamicRegistration": false },
+          "formatting": { "dynamicRegistration": false },
+          "rangeFormatting": { "dynamicRegistration": false },
+          "onTypeFormatting": { "dynamicRegistration": false },
+          "definition": { "dynamicRegistration": false },
+          "codeAction": { "dynamicRegistration": false },
+          "codeLens": { "dynamicRegistration": false },
+          "documentLink": { "dynamicRegistration": false },
+          "rename": { "dynamicRegistration": false }
+        },
+        "window": {
+          "status": { "dynamicRegistration": false },
+          "progress": { "dynamicRegistration": false },
+          "actionRequired": { "dynamicRegistration": false }
+        }
+      },
+      "initializationOptions": {},
+      "trace": "verbose"
+    }
   }
   |}
 
