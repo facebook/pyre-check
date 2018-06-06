@@ -6,7 +6,6 @@
 # LICENSE file in the root directory of this source tree.
 
 set -e
-set -x
 
 # Compatibility settings with MacOS.
 if [[ "${MACHTYPE}" = *apple* ]]; then
@@ -24,13 +23,16 @@ if [[ "${1}" == 'development' ]]; then
 else
   BUILD_INFO="$(uname -s -m) @ $(date)"
 fi
+echo "Build info: ${BUILD_INFO}"
 
 # Gather version information.
 VERSION=""
 if HG_VERSION="$(hg log -r . -T '{node}')"; then
   VERSION="${HG_VERSION}"
+  echo "HG revision: ${VERSION}"
 elif GIT_VERSION="$(git rev-parse HEAD)"; then
   VERSION="${GIT_VERSION}"
+  echo "Git commit: ${VERSION}"
 else
   echo 'Cannot determine version information'
   exit 1
