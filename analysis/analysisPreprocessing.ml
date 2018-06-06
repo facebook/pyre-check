@@ -240,35 +240,41 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
     in
     scope, List.rev reversed_statements
 
+  and prefix_identifier ~scope:({ aliases; immutables; _ } as scope) ~prefix name =
+    let stars, name =
+      let name = Identifier.show name in
+      if String.is_prefix name ~prefix:"**" then
+        "**", String.drop_prefix name 2
+      else if String.is_prefix name ~prefix:"*" then
+        "*", String.drop_prefix name 1
+      else
+        "", name
+    in
+    let renamed =
+      Format.asprintf "$%s_%s" prefix name
+      |> Identifier.create
+    in
+    let name = Identifier.create name in
+    let access = [Access.Identifier name] in
+    {
+      scope with
+      aliases =
+        Map.set
+          aliases
+          ~key:access
+          ~data:{ access = [Access.Identifier renamed]; is_forward_reference = false };
+      immutables = Set.add immutables access;
+    },
+    stars,
+    renamed
+
   and qualify_parameters ~scope parameters =
     (* Rename parameters to prevent aliasing. *)
     let rename_parameter
-        (({ aliases; immutables; _ } as scope), reversed_parameters)
+        (scope, reversed_parameters)
         ({ Node.value = { Parameter.name; value; annotation }; _ } as parameter) =
-      let stars, name =
-        let name = Identifier.show name in
-        if String.is_prefix name ~prefix:"**" then
-          "**", String.drop_prefix name 2
-        else if String.is_prefix name ~prefix:"*" then
-          "*", String.drop_prefix name 1
-        else
-          "", name
-      in
-      let renamed =
-        Format.asprintf "$parameter_%s" name
-        |> Identifier.create
-      in
-      let name = Identifier.create name in
-      let access = [Access.Identifier name] in
-      {
-        scope with
-        aliases =
-          Map.set
-            aliases
-            ~key:access
-            ~data:{ access = [Access.Identifier renamed]; is_forward_reference = false };
-        immutables = Set.add immutables access;
-      },
+      let scope, stars, renamed = prefix_identifier ~scope ~prefix:"parameter" name in
+      scope,
       {
         parameter with
         Node.value = {
@@ -563,19 +569,44 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
 
   and qualify_expression ~scope ({ Node.value; _ } as expression) =
     let value =
-      let qualify_entry { Dictionary.key; value } =
+      let qualify_entry ~scope { Dictionary.key; value } =
         {
           Dictionary.key = qualify_expression ~scope key;
           value = qualify_expression ~scope value;
         }
       in
-      let qualify_generator ({ Comprehension.target; iterator; conditions; _ } as generator) =
-        {
-          generator with
-          Comprehension.target = qualify_expression ~scope target;
-          iterator = qualify_expression ~scope iterator;
-          conditions = List.map conditions ~f:(qualify_expression ~scope);
-        }
+      let qualify_generators ~scope generators =
+        let qualify_generator
+            (scope, reversed_generators)
+            ({ Comprehension.target; iterator; conditions; _ } as generator) =
+          let renamed_scope =
+            let rec renamed_scope scope target =
+              match target with
+              | { Node.value = Tuple elements; _ } ->
+                  List.fold elements ~init:scope ~f:renamed_scope
+              | { Node.value = Access [Access.Identifier name]; _ } ->
+                  let scope, _, _ = prefix_identifier ~scope ~prefix:"target" name in
+                  scope
+              | _ ->
+                  scope
+            in
+            renamed_scope scope target
+          in
+          renamed_scope,
+          {
+            generator with
+            Comprehension.target = qualify_expression ~scope:renamed_scope target;
+            iterator = qualify_expression ~scope iterator;
+            conditions = List.map conditions ~f:(qualify_expression ~scope:renamed_scope);
+          } :: reversed_generators
+        in
+        let scope, reversed_generators =
+          List.fold
+            generators
+            ~init:(scope, [])
+            ~f:qualify_generator
+        in
+        scope, List.rev reversed_generators
       in
       match value with
       | Access access ->
@@ -598,13 +629,14 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
           }
       | Dictionary { Dictionary.entries; keywords } ->
           Dictionary {
-            Dictionary.entries = List.map entries ~f:qualify_entry;
+            Dictionary.entries = List.map entries ~f:(qualify_entry ~scope);
             keywords = keywords >>| qualify_expression ~scope
           }
       | DictionaryComprehension { Comprehension.element; generators } ->
+          let scope, generators = qualify_generators ~scope generators in
           DictionaryComprehension {
-            Comprehension.element = qualify_entry element;
-            generators = List.map generators ~f:qualify_generator;
+            Comprehension.element = qualify_entry ~scope element;
+            generators;
           }
       | FormatString { FormatString.value; expression_list } ->
           FormatString {
@@ -612,9 +644,10 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
             expression_list = List.map expression_list ~f:(qualify_expression ~scope)
           }
       | Generator { Comprehension.element; generators } ->
+          let scope, generators = qualify_generators ~scope generators in
           Generator {
             Comprehension.element = qualify_expression ~scope element;
-            generators = List.map generators ~f:qualify_generator;
+            generators;
           }
       | Lambda { Lambda.parameters; body } ->
           let scope, parameters = qualify_parameters ~scope parameters in
@@ -625,16 +658,18 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
       | List elements ->
           List (List.map elements ~f:(qualify_expression ~scope))
       | ListComprehension { Comprehension.element; generators } ->
+          let scope, generators = qualify_generators ~scope generators in
           ListComprehension {
             Comprehension.element = qualify_expression ~scope element;
-            generators = List.map generators ~f:qualify_generator;
+            generators;
           }
       | Set elements ->
           Set (List.map elements ~f:(qualify_expression ~scope))
       | SetComprehension { Comprehension.element; generators } ->
+          let scope, generators = qualify_generators ~scope generators in
           SetComprehension {
             Comprehension.element = qualify_expression ~scope element;
-            generators = List.map generators ~f:qualify_generator;
+            generators;
           }
       | Starred (Starred.Once expression) ->
           Starred (Starred.Once (qualify_expression ~scope expression))

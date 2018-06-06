@@ -109,14 +109,18 @@ let test_qualify _ =
   assert_qualify_statement "True and b" "True and a";
   assert_qualify_statement "1 < b <= b" "1 < a <= a";
   assert_qualify_statement "{ b: b }" "{ a: a }";
-  assert_qualify_statement "{ b: b for b in b if b }" "{ a: a for a in a if a }";
+  assert_qualify_statement
+    "{ a: b for a, b in b }"
+    "{ $target_a: $target_b for $target_a, $target_b in a }";
+  assert_qualify_statement
+    "{ b: b for b in b if b }"
+    "{ $target_b: $target_b for $target_b in a if $target_b }";
   assert_qualify_statement "lambda b: b" "lambda $parameter_b: $parameter_b";
   assert_qualify_statement "lambda a: a + b" "lambda $parameter_a: $parameter_a + a";
   assert_qualify_statement "[b, b]" "[a, a]";
-  (* TODO(T29105314): rename comprehension iterators. *)
-  assert_qualify_statement "[b for b in b]" "[a for a in a]";
+  assert_qualify_statement "[b for b in b]" "[$target_b for $target_b in a]";
   assert_qualify_statement "{b, b}" "{a, a}";
-  assert_qualify_statement "{b for b in b}" "{a for a in a}";
+  assert_qualify_statement "{b for b in b}" "{$target_b for $target_b in a}";
   assert_qualify_statement "*b" "*a";
   assert_qualify_statement "**b" "**a";
   assert_qualify_statement "b if b else b" "a if a else a";
