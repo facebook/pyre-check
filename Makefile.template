@@ -13,6 +13,8 @@ TESTS = $(foreach include, \
 	 $(INCLUDES), \
 	 $(filter $(FILTER), $(patsubst %.ml, %.native, $(wildcard $(include)/test/*Test.ml))))
 
+export OCAMLFIND_IGNORE_DUPS_IN=$(dir $(OCAML_TOPLEVEL_PATH))ocaml/compiler-libs
+
 .PHONY: all
 all: hack_parallel development_tags
 	./scripts/generate-version-number.sh development
