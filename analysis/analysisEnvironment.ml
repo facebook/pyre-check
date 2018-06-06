@@ -492,8 +492,7 @@ let register_aliases (module Handler: Handler) sources =
       let register_alias (any_changed, unresolved) (path, qualifier, target, value) =
         let target_annotation = Type.create ~aliases:Handler.aliases target in
         let value_annotation =
-          Expression.delocalize ~qualifier value
-          |> Type.create ~aliases:Handler.aliases
+          Type.create ~aliases:Handler.aliases value
           |> function
           | Type.Variable ({ Type.variable = name; _ } as variable) ->
               let name =
