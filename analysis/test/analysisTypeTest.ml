@@ -31,9 +31,9 @@ let test_create _ =
       (Type.create ~aliases (parse_single_expression source))
   in
 
-  assert_create "foo" (Type.Primitive ~~"foo");
-  assert_create "foo.bar" (Type.Primitive ~~"foo.bar");
-  assert_create "foo.$local_0_bar" (Type.Primitive ~~"foo.bar");
+  assert_create "foo" (Type.primitive "foo");
+  assert_create "foo.bar" (Type.primitive "foo.bar");
+  assert_create "foo.$local_0_bar" (Type.primitive "foo.bar");
 
   assert_create "object" Type.Object;
   assert_create "$unknown" Type.Top;
@@ -87,10 +87,7 @@ let test_create _ =
 
   (* Check that type aliases are resolved. *)
   let aliases =
-    Type.Table.of_alist_exn [
-      Type.Primitive ~~"_T",
-      variable ~~"_T";
-    ]
+    Type.Table.of_alist_exn [Type.primitive "_T", variable ~~"_T"]
     |> Type.Table.find
   in
   assert_create ~aliases "_T" (Type.variable "_T");
@@ -105,12 +102,9 @@ let test_create _ =
 
   (* Recursive aliasing. *)
   let aliases = function
-    | Type.Primitive name when Identifier.show name = "A" ->
-        Some (Type.Primitive ~~"B")
-    | Type.Primitive name when Identifier.show name = "B" ->
-        Some (Type.Primitive ~~"C")
-    | _ ->
-        None
+    | Type.Primitive name when Identifier.show name = "A" -> Some (Type.primitive "B")
+    | Type.Primitive name when Identifier.show name = "B" -> Some (Type.primitive "C")
+    | _ -> None
   in
   assert_create ~aliases "A" (Type.primitive "C");
 
@@ -132,12 +126,9 @@ let test_create _ =
 
   (* Nested aliasing. *)
   let aliases = function
-    | Type.Primitive name when Identifier.show name = "A" ->
-        Some (Type.list (Type.Primitive ~~"B"))
-    | Type.Primitive name when Identifier.show name = "B" ->
-        Some (Type.Primitive ~~"C")
-    | _ ->
-        None
+    | Type.Primitive name when Identifier.show name = "A" -> Some (Type.list (Type.primitive "B"))
+    | Type.Primitive name when Identifier.show name = "B" -> Some (Type.primitive "C")
+    | _ -> None
   in
   assert_create ~aliases "A" (Type.list (Type.primitive "C"));
 
@@ -279,7 +270,7 @@ let test_instantiate _ =
       (Type.instantiate ~constraints:(Map.find map) generic)
   in
 
-  assert_instantiate [] ~generic:(Type.Primitive ~~"foo") ~expected:(Type.Primitive ~~"foo");
+  assert_instantiate [] ~generic:(Type.primitive "foo") ~expected:(Type.primitive "foo");
   (* Union[_T, _VT] + (_T = int, _VT = None) -> Optional[int] *)
   assert_instantiate
     [
@@ -299,15 +290,15 @@ let test_expression _ =
       (parse_single_expression expression)
   in
 
-  assert_expression (Type.Primitive ~~"foo") "foo";
-  assert_expression (Type.Primitive ~~"...") "...";
-  assert_expression (Type.Primitive ~~"foo.bar") "foo.bar";
+  assert_expression (Type.primitive "foo") "foo";
+  assert_expression (Type.primitive "...") "...";
+  assert_expression (Type.primitive "foo.bar") "foo.bar";
   assert_expression Type.Top "$unknown";
 
   assert_expression
     (Type.Parametric {
         Type.name = ~~"foo.bar";
-        parameters = [Type.Primitive ~~"baz"];
+        parameters = [Type.primitive "baz"];
       })
     "foo.bar.__getitem__(baz)";
 
@@ -489,9 +480,9 @@ let test_is_meta _ =
 
 
 let test_is_none _ =
-  assert_false (Type.is_none (Type.Primitive ~~"None"));
+  assert_false (Type.is_none (Type.primitive "None"));
   assert_false (Type.is_none Type.integer);
-  assert_false (Type.is_none (Type.Primitive ~~"foo"));
+  assert_false (Type.is_none (Type.primitive "foo"));
   assert_true (Type.is_none (Type.Optional Type.Bottom))
 
 
@@ -760,7 +751,7 @@ let test_dequalify _ =
          source)
       expected
   in
-  let create name = Type.Primitive ~~name in
+  let create name = Type.primitive name in
   assert_dequalify
     (Type.optional (Type.string))
     (Type.parametric "Optional" [Type.string]);
