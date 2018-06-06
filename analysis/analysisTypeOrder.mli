@@ -118,6 +118,7 @@ val instantiate_parameters
   -> Type.t List.t Option.t
 
 val add_backedges: (module Handler) -> bottom: Type.t -> unit
+val deduplicate: (module Handler) -> annotations:Type.t list -> unit
 val remove_extra_edges: (module Handler) -> bottom: Type.t -> top: Type.t -> Type.t list -> unit
 val connect_annotations_to_top
   :  (module Handler)

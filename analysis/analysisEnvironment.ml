@@ -894,6 +894,7 @@ let populate
     sources;
   (* Build type order. *)
   List.iter ~f:(connect_type_order (module Handler)) sources;
+  TypeOrder.deduplicate (module Handler.TypeOrderHandler) ~annotations:all_annotations;
 
   TypeOrder.connect_annotations_to_top
     (module Handler.TypeOrderHandler)

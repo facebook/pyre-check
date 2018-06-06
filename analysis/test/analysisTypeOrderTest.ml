@@ -808,6 +808,35 @@ let test_instantiate_parameters _ =
     (instantiate_parameters default ~source:(Type.string) ~target:!"typing.Iterable")
     (Some [Type.string])
 
+
+let test_deduplicate _ =
+  let (module Handler: TypeOrder.Handler) =
+    let order =
+      Builder.create ()
+      |> TypeOrder.handler
+    in
+    insert order Type.Bottom;
+    insert order Type.Top;
+    insert order !"0";
+    insert order !"1";
+    connect order ~parameters:[Type.Top; Type.Top] ~predecessor:!"0" ~successor:!"1";
+    connect order ~parameters:[Type.Top] ~predecessor:!"0" ~successor:!"1";
+    deduplicate order ~annotations:[!"0"; !"1"];
+    order
+  in
+  let index_of annotation =
+    Handler.find_unsafe (Handler.indices ()) annotation
+  in
+  let assert_targets edges from target parameters =
+    assert_equal
+      ~printer:(List.to_string ~f:Target.show)
+      (Handler.find_unsafe edges (index_of !from))
+      [{ Target.target = index_of !target; parameters }]
+  in
+  assert_targets (Handler.edges ()) "0" "1" [Type.Top];
+  assert_targets (Handler.backedges ()) "1" "0" [Type.Top]
+
+
 let test_remove_extra_edges _ =
   (* 0 -> 1 -> 2 -> 3
      |----^         ^
@@ -1024,6 +1053,7 @@ let () =
     "greatest_lower_bound">::test_greatest_lower_bound;
     "instantiate_parameters">::test_instantiate_parameters;
     "add_backedges">::test_add_backedges;
+    "deduplicate">::test_deduplicate;
     "remove_extra_edges">::test_remove_extra_edges;
     "connect_annotations_to_top">::test_connect_annotations_to_top;
     "check_integrity">::test_check_integrity;

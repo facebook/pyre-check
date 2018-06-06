@@ -218,15 +218,13 @@ let connect
         (* Add edges. *)
         let successors =
           Handler.find edges predecessor
-          >>| List.filter ~f:(fun { Target.target; _ } -> target <> successor)
           |> Option.value ~default:[]
         in
         let target = { Target.target = successor; parameters} in
-        if not (List.mem ~equal:Target.equal successors target) then
-          Handler.set
-            edges
-            ~key:predecessor
-            ~data:(target :: successors)
+        Handler.set
+          edges
+          ~key:predecessor
+          ~data:(target :: successors)
       in
       connect ~edges ~predecessor ~successor;
       if add_backedge then
@@ -1054,6 +1052,36 @@ let add_backedges (module Handler: Handler) ~bottom =
   List.iter ~f:clear_backedge edge_keys;
   List.iter ~f:add_backedges edge_keys;
   List.iter ~f:add_bottom edge_keys
+
+
+let deduplicate (module Handler: Handler) ~annotations =
+  let edges = Handler.edges () in
+  let backedges = Handler.backedges () in
+  let deduplicate_annotation index =
+    let deduplicate_edges edges =
+      let keep_first (visited, edges) ({ Target.target; _ } as edge) =
+        if Set.mem visited target then
+          visited, edges
+        else
+          Set.add visited target, edge :: edges
+      in
+      let deduplicate found =
+        List.fold ~f:keep_first ~init:(Int.Set.empty, []) found
+        |> snd
+        |> List.rev
+      in
+      match Handler.find edges index with
+      | Some found ->
+          Handler.set edges ~key:index ~data:(deduplicate found)
+      | None ->
+          ()
+    in
+    deduplicate_edges edges;
+    deduplicate_edges backedges
+  in
+  annotations
+  |> List.map ~f:(Handler.find_unsafe (Handler.indices ()))
+  |> List.iter ~f:deduplicate_annotation
 
 
 let remove_extra_edges (module Handler: Handler) ~bottom ~top annotations =
