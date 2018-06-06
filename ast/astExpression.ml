@@ -212,6 +212,14 @@ module Starred = struct
   [@@deriving compare, eq, sexp, show, hash]
 end
 
+module FormatString = struct
+  type 'expression t = {
+    value: string;
+    expression_list: 'expression list;
+  }
+  [@@deriving compare, eq, sexp, show, hash]
+end
+
 
 type expression =
   | Access of t Record.Access.record
@@ -224,7 +232,7 @@ type expression =
   | DictionaryComprehension of ((t Dictionary.entry), t) Comprehension.t
   | False
   | Float of float
-  | Format of string
+  | FormatString of t FormatString.t
   | Generator of (t, t) Comprehension.t
   | Integer of int
   | Lambda of t Lambda.t
@@ -822,9 +830,15 @@ module PrettyPrinter = struct
           pp_expression_t right
 
     | Bytes string
-    | String string
-    | Format string ->
+    | String string ->
         Format.fprintf formatter "%S" string
+
+    | FormatString { FormatString.value; expression_list } ->
+        Format.fprintf
+          formatter
+          "%s: %a"
+          value
+          pp_expression_list expression_list
 
     | ComparisonOperator { ComparisonOperator.left; right } ->
         Format.fprintf

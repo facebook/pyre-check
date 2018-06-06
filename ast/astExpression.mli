@@ -135,6 +135,14 @@ module Starred : sig
   [@@deriving compare, eq, sexp, show, hash]
 end
 
+module FormatString : sig
+  type 'expression t = {
+    value: string;
+    expression_list: 'expression list;
+  }
+  [@@deriving compare, eq, sexp, show, hash]
+end
+
 type expression =
   | Access of t Record.Access.record
   | Await of t
@@ -146,7 +154,7 @@ type expression =
   | DictionaryComprehension of ((t Dictionary.entry), t) Comprehension.t
   | False
   | Float of float
-  | Format of string
+  | FormatString of t FormatString.t
   | Generator of (t, t) Comprehension.t
   | Integer of int
   | Lambda of t Lambda.t

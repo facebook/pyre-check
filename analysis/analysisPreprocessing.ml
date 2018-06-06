@@ -75,9 +75,48 @@ let expand_string_annotations source =
   |> snd
 
 
+let expand_format_string source =
+  let module Transform = Transform.Make(struct
+      include Transform.Identity
+      type t = unit
+
+      let expression_postorder _ expression =
+        match expression with
+        | { Node.location; value = FormatString {FormatString.value; _ } } ->
+            let rec get_matches regexp input_string start_position =
+              try
+                let match_start_position = Str.search_forward regexp input_string start_position in
+                let match_string = Str.matched_string input_string in
+                match_string :: get_matches regexp input_string (match_start_position + 1)
+              with Not_found -> []
+            in
+            let _ = get_matches (Str.regexp "{[^{^}]*}") value 0
+            in
+            {
+              Node.location;
+              value = FormatString {
+                  FormatString.value;
+                  (* TODO(T29598455): parse the expression strings to expressions *)
+                  FormatString.expression_list = [];
+                };
+            }
+        | _ ->
+            expression
+    end)
+  in
+  Transform.transform () source
+  |> snd
+
+
 type alias = {
   access: Access.t;
   is_forward_reference: bool;
+}
+
+
+type global_entities = {
+  variables: Access.t Access.Map.t;
+  methods: Access.t Access.Map.t;
 }
 
 
@@ -1071,6 +1110,7 @@ let dequalify_map source =
 let preprocess source =
   source
   |> expand_string_annotations
+  |> expand_format_string
   |> replace_version_specific_code
   |> expand_type_checking_imports
   |> qualify

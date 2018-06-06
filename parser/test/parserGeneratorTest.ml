@@ -2094,12 +2094,46 @@ let test_string _ =
   assert_parsed_equal "u'foo'" [+Expression (+String "foo")];
   assert_parsed_equal "ub'foo'" [+Expression (+Bytes "foo")];
   assert_parsed_equal "bR'foo'" [+Expression (+Bytes "foo")];
-  assert_parsed_equal "f'foo'" [+Expression (+Format "foo")];
-  assert_parsed_equal "F'foo'" [+Expression (+Format "foo")];
-
   assert_parsed_equal "'foo' 'bar'" [+Expression (+String "foobar")];
-  assert_parsed_equal "f'foo' f'bar'" [+Expression (+Format "foobar")];
-  assert_parsed_equal "f'foo' 'bar'" [+Expression (+Format "foobar")];
+  assert_parsed_equal
+    "f'foo'"
+    [
+      +Expression
+        (+FormatString {
+           FormatString.value = "foo";
+           expression_list = [];
+         });
+    ];
+  assert_parsed_equal
+    "F'foo'"
+    [
+      +Expression
+        (+FormatString {
+           FormatString.value = "foo";
+           expression_list = [];
+         });
+    ];
+
+  assert_parsed_equal
+    "f'foo' f'bar'"
+    [
+      +Expression
+        (+FormatString {
+           FormatString.value = "foobar";
+           expression_list = [];
+         });
+    ];
+  assert_parsed_equal
+    "f'foo' 'bar'"
+    [
+      +Expression
+        (+FormatString {
+           FormatString.value = "foobar";
+           expression_list = [];
+         });
+    ];
+
+  (* TODO(T29598455): Should return a FormatString intead of a String *)
   assert_parsed_equal "'foo' f'bar'" [+Expression (+String "foobar")];
 
   assert_parsed_equal "\"'\"" [+Expression (+String "'")];

@@ -1059,7 +1059,10 @@ atom:
       let (_, stop) = last in
       {
         Node.location = Location.create ~start ~stop;
-        value = Format ((snd format) ^ String.concat (List.map mixed_string ~f:snd));
+        value = FormatString {
+          FormatString.value = (snd format) ^ String.concat (List.map mixed_string ~f:snd);
+          expression_list = [];
+        }
       }
     }
 

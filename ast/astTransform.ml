@@ -162,7 +162,7 @@ module Make (Transformer : Transformer) = struct
             value
         | Float _ ->
             value
-        | Format _ ->
+        | FormatString _ ->
             value
         | Generator { Comprehension.element; generators } ->
             Generator {

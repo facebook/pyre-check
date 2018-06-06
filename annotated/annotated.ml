@@ -177,7 +177,7 @@ let rec resolve ~resolution expression =
   | Float _ ->
       Type.float
 
-  | Format _ ->
+  | FormatString _ ->
       Type.string
 
   | Integer _ ->
@@ -313,7 +313,7 @@ let rec resolve_literal ~resolution expression =
   | Float _ ->
       Type.float
 
-  | Format _ ->
+  | FormatString _ ->
       Type.string
 
   | Integer _ ->

@@ -118,7 +118,7 @@ module Make (Visitor: Visitor) = struct
             visit_expression operand
         | Expression.Yield expression ->
             Option.iter ~f:visit_expression expression
-        | Bytes _ | Complex _ | String _ | Integer _ | True | False | Float _ | Format _ ->
+        | Bytes _ | Complex _ | String _ | Integer _ | True | False | Float _ | FormatString _ ->
             ()
 
       in

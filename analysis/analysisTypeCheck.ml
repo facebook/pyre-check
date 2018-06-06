@@ -1288,8 +1288,12 @@ module State = struct
               | Some expression -> check_expression ~resolution errors expression
             end
 
+        (* TODO(T29598455): type check the expression_list *)
+        | FormatString { FormatString.value = _; expression_list = _ } ->
+            errors
+
         (* Trivial base cases *)
-        | String _ | Complex _ | Bytes _ | Float _ | Format _ | Integer _ | False | True ->
+        | String _ | Complex _ | Bytes _ | Float _ | Integer _ | False | True ->
             errors
       in
 
