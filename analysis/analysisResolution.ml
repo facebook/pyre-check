@@ -67,13 +67,13 @@ let get_local { annotations; define; global; _ } ~access =
       Some resolved
   | None ->
       let access =
-        match List.rev access with
-        | (Access.Identifier name) :: tail ->
+        match access with
+        | [Access.Identifier name] ->
             let name =
               Identifier.show_sanitized name
               |> Identifier.create
             in
-            List.rev (Access.Identifier name :: tail)
+            [Access.Identifier name]
         | _ ->
             access
       in
