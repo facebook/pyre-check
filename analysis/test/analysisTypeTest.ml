@@ -14,14 +14,6 @@ open Pyre
 open Test
 
 
-let identifier name =
-  Access.Identifier ~~name
-
-
-let variable name =
-  Type.Variable { Type.variable = name; constraints = [] }
-
-
 let test_create _ =
   let assert_create ?(aliases = (fun _ -> None)) source annotation =
     assert_equal
@@ -87,7 +79,7 @@ let test_create _ =
 
   (* Check that type aliases are resolved. *)
   let aliases =
-    Type.Table.of_alist_exn [Type.primitive "_T", variable ~~"_T"]
+    Type.Table.of_alist_exn [Type.primitive "_T", Type.variable "_T"]
     |> Type.Table.find
   in
   assert_create ~aliases "_T" (Type.variable "_T");
@@ -521,7 +513,7 @@ let test_is_unknown _ =
   assert_true (Type.is_unknown (Type.Union [Type.integer; Type.Top]));
   assert_false (Type.is_unknown (Type.Union [Type.integer; Type.string]));
 
-  assert_false (Type.is_unknown (variable ~~"derp"));
+  assert_false (Type.is_unknown (Type.variable "derp"));
 
   assert_true (Type.is_unknown (Type.Tuple (Type.Bounded [Type.integer; Type.Top])));
   assert_false (Type.is_unknown (Type.Tuple (Type.Bounded [Type.integer; Type.string])));
@@ -530,8 +522,8 @@ let test_is_unknown _ =
 
 
 let test_is_resolved _ =
-  assert_false (Type.is_resolved (variable ~~"_T"));
-  assert_false (Type.is_resolved (Type.union [Type.integer; variable ~~"_T"]));
+  assert_false (Type.is_resolved (Type.variable "_T"));
+  assert_false (Type.is_resolved (Type.union [Type.integer; Type.variable "_T"]));
 
   assert_true (Type.is_resolved Type.integer);
   assert_true (Type.is_resolved (Type.union [Type.integer; Type.string]))
