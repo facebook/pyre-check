@@ -129,8 +129,9 @@ let test_qualify _ =
 
   assert_qualify_statement "assert b" "assert a";
   assert_qualify_statement "del b" "del a";
-  (* TODO(T29105314): rename iterators. *)
-  assert_qualify_statement "\nfor b in b:\n\tb\nelse:\n\tb" "\nfor a in a:\n\ta\nelse:\n\ta";
+  assert_qualify_statement
+    "\nfor b in b:\n\tb\nelse:\n\tb"
+    "\nfor $target_b in a:\n\t$target_b\nelse:\n\t$target_b";
   assert_qualify_statement "\nif b:\n\tb\nelse:\n\tb" "\nif a:\n\ta\nelse:\n\ta";
   assert_qualify_statement "raise b" "raise a";
   assert_qualify_statement "return b" "return a";

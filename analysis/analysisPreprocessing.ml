@@ -462,12 +462,13 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
           scope,
           Expression (qualify_expression ~scope expression)
       | For ({ For.target; iterator; body; orelse; _ } as block) ->
-          let body_scope, body = qualify_statements ~scope body in
-          let orelse_scope, orelse = qualify_statements ~scope orelse in
+          let renamed_scope, target = qualify_target ~scope target in
+          let body_scope, body = qualify_statements ~scope:renamed_scope body in
+          let orelse_scope, orelse = qualify_statements ~scope:renamed_scope orelse in
           join_scopes body_scope orelse_scope,
           For {
             block with
-            For.target = qualify_expression ~scope target;
+            For.target;
             iterator = qualify_expression ~scope iterator;
             body;
             orelse;
@@ -579,23 +580,11 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
         let qualify_generator
             (scope, reversed_generators)
             ({ Comprehension.target; iterator; conditions; _ } as generator) =
-          let renamed_scope =
-            let rec renamed_scope scope target =
-              match target with
-              | { Node.value = Tuple elements; _ } ->
-                  List.fold elements ~init:scope ~f:renamed_scope
-              | { Node.value = Access [Access.Identifier name]; _ } ->
-                  let scope, _, _ = prefix_identifier ~scope ~prefix:"target" name in
-                  scope
-              | _ ->
-                  scope
-            in
-            renamed_scope scope target
-          in
+          let renamed_scope, target = qualify_target ~scope target in
           renamed_scope,
           {
             generator with
-            Comprehension.target = qualify_expression ~scope:renamed_scope target;
+            Comprehension.target;
             iterator = qualify_expression ~scope iterator;
             conditions = List.map conditions ~f:(qualify_expression ~scope:renamed_scope);
           } :: reversed_generators
@@ -696,6 +685,20 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
           value
     in
     { expression with Node.value }
+
+  and qualify_target ~scope target =
+    let rec renamed_scope scope target =
+      match target with
+      | { Node.value = Tuple elements; _ } ->
+          List.fold elements ~init:scope ~f:renamed_scope
+      | { Node.value = Access [Access.Identifier name]; _ } ->
+          let scope, _, _ = prefix_identifier ~scope ~prefix:"target" name in
+          scope
+      | _ ->
+          scope
+    in
+    let scope = renamed_scope scope target in
+    scope, qualify_expression ~scope target
 
   and qualify_access ~scope:({ aliases; use_forward_references; _ } as scope) access =
     match access with
