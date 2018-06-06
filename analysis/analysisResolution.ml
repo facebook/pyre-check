@@ -73,9 +73,9 @@ let get_local { annotations; define; global; _ } ~access =
               Identifier.show_sanitized name
               |> Identifier.create
             in
-            List.rev ((Access.Identifier name) :: tail)
+            List.rev (Access.Identifier name :: tail)
         | _ ->
-            List.rev access
+            access
       in
       match define with
       | { Define.name; _ } as define when not (Define.is_toplevel define) ->
@@ -84,7 +84,7 @@ let get_local { annotations; define; global; _ } ~access =
             match reversed_qualifier with
             | _ :: reversed_qualifier ->
                 begin
-                  let access = (List.rev reversed_qualifier) @ access in
+                  let access = List.rev_append reversed_qualifier access in
                   match global access with
                   | Some { Node.value; _ } -> Some value
                   | None -> find_global reversed_qualifier
