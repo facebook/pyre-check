@@ -26,6 +26,7 @@ class InitTest(unittest.TestCase):
         arguments = MagicMock()
         arguments.source_directory = []
         arguments.original_directory = "/root"
+        arguments.use_buck_cache = False
         arguments.build = False
         configuration = MagicMock()
         configuration.source_directories = []
@@ -41,7 +42,9 @@ class InitTest(unittest.TestCase):
             configuration.source_directories = ["configuration_source_directory"]
 
             source_directories = resolve_source_directories(arguments, configuration)
-            buck_source_directories.assert_called_with(set(), build=False, prompt=True)
+            buck_source_directories.assert_called_with(
+                set(), build=False, prompt=True, use_cache=False
+            )
             self.assertEqual(
                 source_directories, {"realpath(root/arguments_source_directory)"}
             )
@@ -55,7 +58,7 @@ class InitTest(unittest.TestCase):
 
             source_directories = resolve_source_directories(arguments, configuration)
             buck_source_directories.assert_called_with(
-                {"arguments_target"}, build=False, prompt=True
+                {"arguments_target"}, build=False, prompt=True, use_cache=False
             )
             self.assertEqual(source_directories, {"realpath(root/arguments_target)"})
 
@@ -71,7 +74,7 @@ class InitTest(unittest.TestCase):
 
             source_directories = resolve_source_directories(arguments, configuration)
             buck_source_directories.assert_called_with(
-                {"configuration_target"}, build=True, prompt=True
+                {"configuration_target"}, build=True, prompt=True, use_cache=False
             )
             self.assertEqual(
                 source_directories, {"realpath(root/configuration_source_directory)"}

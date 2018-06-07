@@ -1,10 +1,11 @@
 # Copyright 2004-present Facebook.  All rights reserved.
 
 import glob
+import json
 import subprocess
 import unittest
 from collections import OrderedDict, namedtuple
-from unittest.mock import call, patch
+from unittest.mock import call, mock_open, patch
 
 from .. import buck, log
 
@@ -105,25 +106,44 @@ class BuckTest(unittest.TestCase):
                 found_trees, BuckOut([], ["//path/targets:name", "//path/..."])
             )
 
-    def test_normalize(self) -> None:
-        with patch.object(subprocess, "check_output") as buck_targets:
-            buck._normalize(["target_path"])
-            buck_targets.assert_has_calls(
-                [
-                    call(
+    @patch("%s.open" % buck.__name__, new_callable=mock_open, read_data="")
+    def test_normalize(self, mock_open) -> None:
+        with patch.object(json, "load", return_value={"target_path": ["a", "b"]}):
+            with patch.object(json, "dump") as json_dump:
+                with patch.object(subprocess, "check_output") as buck_targets:
+                    buck_targets.return_value = "a\nb".encode("utf-8")
+                    buck._normalize(["target_path"], use_cache=False)
+                    buck._normalize(["target_path"], use_cache=True)
+                    buck_targets.assert_has_calls(
                         [
-                            "buck",
-                            "targets",
-                            "target_path",
-                            "--type",
-                            "python_binary",
-                            "python_test",
-                        ],
-                        stderr=subprocess.DEVNULL,
-                        timeout=200,
+                            call(
+                                [
+                                    "buck",
+                                    "targets",
+                                    "target_path",
+                                    "--type",
+                                    "python_binary",
+                                    "python_test",
+                                ],
+                                stderr=subprocess.DEVNULL,
+                                timeout=200,
+                            ),
+                            call(
+                                ["buck", "targets", "--show-output", "a", "b"],
+                                stderr=-3,
+                                timeout=200,
+                            ),
+                        ]
                     )
-                ]
-            )
+
+                    class Wildcard:
+                        def __eq__(self, other):
+                            return True
+
+                    # Ignore the stream being written to.
+                    json_dump.assert_has_calls(
+                        [call({"target_path": ["a", "b"]}, Wildcard())]
+                    )
 
     def test_build_targets(self) -> None:
         with patch.object(subprocess, "check_output") as buck_build:

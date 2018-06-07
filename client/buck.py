@@ -1,18 +1,19 @@
 # Copyright 2004-present Facebook.  All rights reserved.
 
 import glob
+import json
 import logging
 import os
 import subprocess
 import sys
 from collections import namedtuple
-from typing import List
+from typing import Dict, List
 
 from . import log
 
 
 LOG = logging.getLogger(__name__)
-
+CACHE_PATH = ".pyre/buckcache.json"
 
 BuckOut = namedtuple("BuckOut", "source_directories targets_not_found")
 
@@ -63,12 +64,26 @@ def _find_source_directories(targets_map):
     return BuckOut(source_directories, targets_not_found)
 
 
-def _normalize(targets: List[str]) -> List[str]:
+def _normalize(targets: List[str], use_cache: bool = False) -> List[str]:
     LOG.info(
         "Normalizing target%s `%s`",
         "s:" if len(targets) > 1 else "",
         "`, `".join(targets),
     )
+    cache: Dict[str, List[str]] = {}
+    serialized_targets = ",".join(targets)
+    try:
+        with open(CACHE_PATH) as cache_file:
+            cache = json.load(cache_file)
+            if use_cache:
+                return cache[serialized_targets]
+            else:
+                LOG.info("Skipping cache.")
+    except (IOError, json.JSONDecodeError):
+        pass
+    except KeyError:
+        # Cache miss, shell out to buck.
+        pass
     try:
         # TODO(T30027478): Merge these commands.
         command = (
@@ -90,6 +105,13 @@ def _normalize(targets: List[str]) -> List[str]:
             .strip()
             .split("\n")
         )
+        cache[serialized_targets] = targets_to_destinations
+        try:
+            with open(CACHE_PATH, "w+") as cache_file:
+                json.dump(cache, cache_file)
+        except IOError:
+            # Don't block returning the mapping on successfully writing to the cache.
+            pass
         return targets_to_destinations
     except subprocess.TimeoutExpired:
         raise BuckException(
@@ -118,13 +140,13 @@ def _build_targets(targets: List[str]) -> None:
         )
 
 
-def generate_source_directories(original_targets, build, prompt=True):
+def generate_source_directories(original_targets, build, prompt=True, use_cache=False):
     buck_out = _find_source_directories({target: None for target in original_targets})
     source_directories = buck_out.source_directories
 
     full_targets_map = {}
     if buck_out.targets_not_found:
-        targets_to_destinations = _normalize(buck_out.targets_not_found)
+        targets_to_destinations = _normalize(buck_out.targets_not_found, use_cache)
 
         for original_target in buck_out.targets_not_found:
             normalized_targets_map = {}
