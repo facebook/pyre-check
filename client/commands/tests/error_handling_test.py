@@ -21,6 +21,7 @@ class ErrorHandlingTest(unittest.TestCase):
         arguments = mock_arguments()
         arguments.original_directory = "/test"  # called from
         arguments.current_directory = "/"  # project root
+        arguments.local_configuration = None
         configuration = mock_configuration()
         result = MagicMock()
         error = MagicMock()

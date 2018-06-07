@@ -19,6 +19,7 @@ class KillTest(unittest.TestCase):
 
         arguments = mock_arguments()
         arguments.with_fire = False
+        arguments.local_configuration = None
         configuration = mock_configuration()
 
         with patch("builtins.open", mock_open(read_data="11")) as open:

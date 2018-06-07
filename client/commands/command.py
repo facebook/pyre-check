@@ -62,6 +62,10 @@ class Command:
 
         self._original_directory = arguments.original_directory
         self._current_directory = arguments.current_directory
+        if arguments.local_configuration:
+            self._source_root = os.path.dirname(arguments.local_configuration)
+        else:
+            self._source_root = arguments.original_directory
 
     def _run(self) -> int:
         pass
