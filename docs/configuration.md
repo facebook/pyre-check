@@ -5,7 +5,7 @@ sidebar_label: Configuring Pyre
 ---
 
 # Persistent Configuration
-
+The recommended way to use Pyre is with a configuration file set.
 You can generate an initial configuration in the root of your project with
 ```bash
 $ pyre init
@@ -45,6 +45,22 @@ build up the typing environment but will *not* check files found in the search p
 provides typed stubs for library functions.
 
 `workers`: Number of workers to spawn for multiprocessing.
+
+
+# Local Configuration
+If you have sub-projects within your project root that you would like to run Pyre on, you
+can create a `.pyre_configuration.local` at the root of your subproject and override any
+of the fields set in `.pyre_configuration` above.
+
+When calling Pyre, the nearest local configuration at or above the current directory will be used.
+You can use the `--local-configuration` (or `-l`) flag to invoke Pyre on a project that includes a
+local configuration, while outside its source directory. It works like `make -C`:
+```
+$ ls project
+  .pyre_configuration.local   project_file.py   ...
+$ pyre -l project
+  Checking...
+```
 
 
 # Command Line Arguments and Flags
