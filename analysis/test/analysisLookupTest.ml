@@ -80,15 +80,16 @@ let test_lookup_across_files _ =
   assert_is_some lookup
 
 
+let assert_annotation ~lookup ~position ~annotation =
+  assert_equal
+    ~printer:(Option.value ~default:"(none)")
+    annotation
+    (Lookup.get_annotation lookup ~position
+     >>| (fun (location, annotation) ->
+         Format.asprintf "%s/%a" (Location.to_string location) Type.pp annotation))
+
+
 let test_lookup_call_arguments _ =
-  let assert_annotation ~lookup ~position ~annotation =
-    assert_equal
-      ~printer:(Option.value ~default:"(none)")
-      annotation
-      (Lookup.get_annotation lookup ~position
-       >>| (fun (location, annotation) ->
-           Format.asprintf "%s/%a" (Location.to_string location) Type.pp annotation))
-  in
   let source =
     {|
       foo(12,
@@ -160,10 +161,52 @@ let test_lookup_call_arguments _ =
     ~annotation:(Some "test.py:4:4-5:14/`str`")
 
 
+let test_lookup_pick_narrowest _ =
+  let source =
+    {|
+      def foo(flag: bool, testme: Optional[int]) -> None:
+          if flag and (not testme):
+              pass
+    |}
+  in
+  let lookup =
+    let configuration = Configuration.create ~debug:true ~infer:false () in
+    let environment = environment source |> Environment.handler ~configuration in
+    let parsed = parse source in
+    match TypeCheck.check configuration environment mock_call_graph parsed with
+    | { TypeCheck.Result.lookup = Some lookup; _ } -> lookup
+    | _ -> failwith "Did not generate lookup table."
+  in
+
+  assert_equal
+    ~printer:(String.concat ~sep:", ")
+    [
+      "test.py:3:17-3:27/`Optional[int]`";
+      "test.py:3:21-3:27/`Optional[int]`";
+    ]
+    (Hashtbl.to_alist lookup
+     |> List.map ~f:(fun (key, data) ->
+         Format.asprintf "%s/%a" (Location.to_string key) Type.pp data)
+     |> List.sort ~compare:String.compare);
+  assert_annotation
+    ~lookup
+    ~position:{ Location.line = 3; column = 16 }
+    ~annotation:None;
+  assert_annotation
+    ~lookup
+    ~position:{ Location.line = 3; column = 17 }
+    ~annotation:(Some "test.py:3:17-3:27/`Optional[int]`");
+  assert_annotation
+    ~lookup
+    ~position:{ Location.line = 3; column = 21 }
+    ~annotation:(Some "test.py:3:21-3:27/`Optional[int]`")
+
+
 let () =
   "lookup">:::[
     "lookup">::test_lookup;
     "lookup_across_files">::test_lookup_across_files;
     "lookup_call_arguments">::test_lookup_call_arguments;
+    "lookup_pick_narrowest">::test_lookup_pick_narrowest;
   ]
   |> run_test_tt_main

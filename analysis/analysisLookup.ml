@@ -5,7 +5,6 @@
 
 open Core
 
-open Pyre
 open Ast
 
 module Type = AnalysisType
@@ -35,15 +34,21 @@ let get_annotation lookup ~position =
     start_ok && stop_ok
   in
   let get_best_location position =
+    let weight
+        {
+          Location.start = { Location.column = start_column; line = start_line };
+          stop = { Location.column = stop_column; line = stop_line };
+          _;
+        } =
+      (stop_line - start_line) * 1000 + stop_column - start_column
+    in
+
     Hashtbl.to_alist lookup
     |> List.filter ~f:(fun (key, _) -> location_contains_position key position)
-    |> List.hd
-    >>| fst
+    |> List.min_elt ~compare:(fun (location_left, _) (location_right, _) ->
+        (weight location_left) - (weight location_right))
   in
   get_best_location position
-  >>= (fun location ->
-      Hashtbl.find lookup location
-      >>| fun annotation -> (location, annotation))
 
 
 let get_definition _lookup _position =
