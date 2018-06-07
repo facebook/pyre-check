@@ -426,8 +426,12 @@ def main():
         "client binary used."
     )
 
+    parser.add_argument(
+        "-l", "--local-configuration", type=str, help="Use a local configuration"
+    )
+
     parser.add_argument("--version", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--debug", action="store_true", help="Run in debug mode")
+    parser.add_argument("--debug", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--sequential", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--strict", action="store_true", help=argparse.SUPPRESS)
 
@@ -513,7 +517,10 @@ def main():
         log.initialize(arguments)
         switch_root(arguments)
 
-        configuration = Configuration(original_directory=arguments.original_directory)
+        configuration = Configuration(
+            original_directory=arguments.original_directory,
+            local_configuration=arguments.local_configuration,
+        )
 
         if arguments.version or arguments.binary_version:
             sys.stdout.write(get_binary_version(configuration) + "\n")
