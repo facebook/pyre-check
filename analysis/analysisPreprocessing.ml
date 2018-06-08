@@ -61,6 +61,8 @@ let expand_string_annotations source =
                 parsed
                 >>| (fun parsed -> Access parsed)
                 |> Option.value ~default:(Access (Access.create "$unparsed_annotation"))
+            | Tuple elements ->
+                Tuple (List.map elements ~f:transform_expression)
             | _ ->
                 value
           in

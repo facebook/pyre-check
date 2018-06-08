@@ -28,6 +28,7 @@ let test_expand_string_annotations _ =
       class Foo:
         attribute: 'Foo'
         class_attribute: typing.ClassVar['Foo']
+        tuple: typing.Tuple['int', 'str']
       constant: 'Foo' = ...
       def foo(f: 'Foo') -> 'Foo': ...
     |}
@@ -35,6 +36,7 @@ let test_expand_string_annotations _ =
       class Foo:
         attribute: Foo
         class_attribute: typing.ClassVar[Foo]
+        tuple: typing.Tuple[int, str]
       constant: Foo = ...
       def foo(f: Foo) -> Foo: ...
     |};
