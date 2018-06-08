@@ -870,8 +870,8 @@ module State = struct
       | Class { Class.name; _ } ->
           begin
             match Resolution.get_local resolution ~access:name with
-            | Some annotation ->
-                Resolution.set_local resolution ~access:[List.last_exn name] ~annotation
+            | Some _ ->
+                resolution
             | None ->
                 (* Add a dummy annotation for locally defined classes. *)
                 if not (Define.is_toplevel define) then
@@ -887,18 +887,16 @@ module State = struct
           (* Don't propagate accesses in nested functions, they're analyzed separately.
              Add a dummy annotation for the last element of the name, as adding the full name causes
              module lookup issues. *)
-          let annotation =
+          begin
             match Resolution.get_local resolution ~access:name with
-            | Some annotation ->
-                annotation
+            | Some _ ->
+                resolution
             | None ->
-                Annotation.create Type.Object
-          in
-          if not (Define.is_toplevel define) then
-            Resolution.set_local resolution ~access:[List.last_exn name] ~annotation
-          else
-            resolution
-
+                Resolution.set_local
+                  resolution
+                  ~access:name
+                  ~annotation:(Annotation.create Type.Object)
+          end
       | Global identifiers ->
           let access = Access.create_from_identifiers identifiers in
           let annotation =
