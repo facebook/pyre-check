@@ -240,6 +240,46 @@ let test_qualify _ =
         def qualifier.Class.classmethod(): pass
     |};
 
+  assert_qualify
+    {|
+      class C:
+        INDENT = 1
+        INDENT, other = 2, 3
+    |}
+    {|
+      class qualifier.C:
+         qualifier.C.INDENT = 1
+         qualifier.C.INDENT, qualifier.C.other = (2, 3)
+    |};
+
+  assert_qualify
+    {|
+      local = 0
+      class C:
+        def __init__(self):
+          self.local = 1
+    |}
+    {|
+      $local_0_local = 0
+      class qualifier.C:
+        def qualifier.C.__init__($parameter_self):
+          $parameter_self.local = 1
+    |};
+
+  assert_qualify
+    {|
+      INDENT = 0
+      class C:
+        INDENT = 1
+        INDENT, other = 2, 3
+    |}
+    {|
+      $local_0_INDENT = 0
+      class qualifier.C:
+         qualifier.C.INDENT = 1
+         qualifier.C.INDENT, qualifier.C.other = (2, 3)
+    |};
+
   (* Treat special forms, type variables, and type aliases like class definitions. *)
   assert_qualify
     ~path:"typing.pyi"

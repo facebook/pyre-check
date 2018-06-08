@@ -317,7 +317,14 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
                     scope, Tuple (List.rev reversed_elements)
                 | Access ([_] as access) when qualify_assign ->
                     (* Qualify field assignments in class body. *)
-                    scope, Access (qualifier @ (qualify_access ~scope access))
+                    let access =
+                      match qualify_access ~scope access with
+                      | [Access.Identifier name] ->
+                          [Access.Identifier (Identifier.sanitized name)]
+                      | qualified ->
+                          qualified
+                    in
+                    scope, Access (qualifier @ access)
                 | Access ([Access.Identifier name] as access) ->
                     (* Incrementally number local variables to avoid shadowing. *)
                     let scope =
@@ -359,8 +366,17 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
                     scope, Access (qualify_access ~scope access)
                 | Access access ->
                     let access =
-                      let qualified = qualify_access ~scope access in
-                      if qualify_assign then qualifier @ qualified else qualified
+                      let qualified =
+                        match qualify_access ~scope access with
+                        | [Access.Identifier name] ->
+                            [Access.Identifier (Identifier.sanitized name)]
+                        | qualified ->
+                            qualified
+                      in
+                      if qualify_assign then
+                        qualifier @ qualified
+                      else
+                        qualified
                     in
                     scope, Access access
                 | target ->
