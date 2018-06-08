@@ -300,7 +300,14 @@ class StubFile:
 
 
 def generate_stub_files(arguments, errors):
-    errors = [error for error in errors if error.inference and not error.is_external()]
+    errors = [
+        error
+        for error in errors
+        if error.inference
+        and not (
+            error.is_external_to_project_root() or error.is_external_to_source_root()
+        )
+    ]
     files = defaultdict(list)
     errors.sort(key=lambda error: error.line)
 
@@ -407,7 +414,7 @@ class Infer(commands.command.ErrorHandling):
             flags.append("-recursive-infer")
 
         result = self._call_client(command=commands.Check.NAME, flags=flags)
-        errors = self._get_errors(result, exclude_dependencies=True)
+        errors = self._get_errors(result)
         if self._print_errors:
             self._print(errors)
         else:

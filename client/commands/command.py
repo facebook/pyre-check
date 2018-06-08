@@ -13,7 +13,7 @@ import subprocess
 import threading
 from typing import List  # noqa
 
-from .. import SUCCESS, TEXT, EnvironmentException, buck, log
+from .. import SUCCESS, TEXT, EnvironmentException, log
 from ..error import Error
 
 
@@ -63,7 +63,11 @@ class Command:
         self._original_directory = arguments.original_directory
         self._current_directory = arguments.current_directory
         if arguments.local_configuration:
-            self._source_root = os.path.dirname(arguments.local_configuration)
+            self._source_root = (
+                arguments.local_configuration
+                if os.path.isdir(arguments.local_configuration)
+                else os.path.dirname(arguments.local_configuration)
+            )
         else:
             self._source_root = arguments.original_directory
 
@@ -212,10 +216,6 @@ class ErrorHandling(Command):
         super(ErrorHandling, self).__init__(arguments, configuration, source_directory)
         self._verbose = arguments.verbose
         self._output = arguments.output
-        self._local_paths = {
-            buck.presumed_target_root(target)
-            for target in configuration.targets + (arguments.target or [])
-        }
         self._do_not_check_paths = configuration.do_not_check
 
     def _print(self, errors):
@@ -224,7 +224,13 @@ class ErrorHandling(Command):
             for error in errors
             if (
                 not error.is_do_not_check()
-                and (self._verbose or not error.is_external())
+                and (
+                    self._verbose
+                    or not (
+                        error.is_external_to_project_root()
+                        or error.is_external_to_source_root()
+                    )
+                )
             )
         ]
         errors = sorted(
@@ -242,7 +248,7 @@ class ErrorHandling(Command):
         else:
             log.stdout.write(json.dumps([error.__dict__ for error in errors]))
 
-    def _get_errors(self, result, exclude_dependencies: bool = False):
+    def _get_errors(self, result):
         result.check()
 
         errors = set()
@@ -252,23 +258,32 @@ class ErrorHandling(Command):
             raise ClientException("Invalid output: `{}`.".format(result.output))
 
         for error in results:
-            path = os.path.realpath(os.path.join(self._source_directory, error["path"]))
+            full_path = os.path.realpath(
+                os.path.join(self._source_directory, error["path"])
+            )
+            # Relativize path to user's cwd.
+            relative_path = self._relative_path(full_path)
+            error["path"] = relative_path
             do_not_check = False
-            external = True
-            internal_paths = [self._current_directory]
-            if exclude_dependencies and len(self._local_paths) > 0:
-                internal_paths = [
-                    os.path.join(self._original_directory, path)
-                    for path in self._local_paths
-                ]
-            for internal_path in internal_paths:
-                if path.startswith(internal_path):
-                    external = False
-                    # Relativize path.
-                    error["path"] = self._relative_path(path)
+            external_to_project_root = True
+            external_to_source_root = True
+            if full_path.startswith(self._current_directory):
+                external_to_project_root = False
+            if full_path.startswith(
+                os.path.join(self._current_directory, self._source_root)
+            ):
+                external_to_source_root = False
             for do_not_check_path in self._do_not_check_paths:
-                if fnmatch.fnmatch(path, (do_not_check_path + "*")):
+                if fnmatch.fnmatch(relative_path, (do_not_check_path + "*")):
                     do_not_check = True
-            errors.add(Error(do_not_check, external, **error))
+                    break
+            errors.add(
+                Error(
+                    do_not_check,
+                    external_to_project_root,
+                    external_to_source_root,
+                    **error,
+                )
+            )
 
         return errors

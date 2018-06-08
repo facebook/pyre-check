@@ -17,7 +17,8 @@ class ErrorHandlingTest(unittest.TestCase):
     @patch.object(Error, "__init__", return_value=None)
     @patch.object(Error, "__hash__", return_value=0)
     @patch.object(os.path, "realpath", side_effect=lambda path: path)
-    def test_get_errors(self, realpath, error_hash, create_error) -> None:
+    @patch.object(os.path, "isdir", side_effect=lambda path: True)
+    def test_get_errors(self, isdir, realpath, error_hash, create_error) -> None:
         arguments = mock_arguments()
         arguments.original_directory = "/test"  # called from
         arguments.current_directory = "/"  # project root
@@ -33,17 +34,7 @@ class ErrorHandlingTest(unittest.TestCase):
         )
         with patch.object(json, "loads", return_value=[error]):
             handler._get_errors(result)
-            handler._get_errors(result, True)
-            create_error.assert_has_calls([call(False, False), call(False, False)])
-            create_error.reset_mock()
-
-        handler = commands.ErrorHandling(
-            arguments, configuration, source_directory="/test/h/i"
-        )
-        with patch.object(json, "loads", return_value=[error]):
-            handler._get_errors(result)
-            handler._get_errors(result, True)
-            create_error.assert_has_calls([call(False, False), call(False, False)])
+            create_error.assert_has_calls([call(False, False, False)])
             create_error.reset_mock()
 
         arguments.target = ["//f/g:target"]
@@ -53,27 +44,17 @@ class ErrorHandlingTest(unittest.TestCase):
         )
         with patch.object(json, "loads", return_value=[error]):
             handler._get_errors(result)
-            handler._get_errors(result, True)
-            create_error.assert_has_calls([call(False, False), call(False, False)])
-            create_error.reset_mock()
-
-        handler = commands.ErrorHandling(
-            arguments, configuration, source_directory="/test/h/i"
-        )
-        with patch.object(json, "loads", return_value=[error]):
-            handler._get_errors(result)
-            handler._get_errors(result, True)
-            create_error.assert_has_calls([call(False, False), call(False, True)])
+            create_error.assert_has_calls([call(False, False, False)])
             create_error.reset_mock()
 
         arguments.target = []
-        configuration.do_not_check = ["/test/auto/gen"]
+        configuration.do_not_check = ["auto/gen"]
         handler = commands.ErrorHandling(
             arguments, configuration, source_directory="/test/auto/gen"
         )
         with patch.object(json, "loads", return_value=[error]):
             handler._get_errors(result)
-            create_error.assert_has_calls([call(True, False)])
+            create_error.assert_has_calls([call(True, False, False)])
             create_error.reset_mock()
 
         arguments.original_directory = "/f/g/target"
@@ -84,12 +65,25 @@ class ErrorHandlingTest(unittest.TestCase):
         )
         with patch.object(json, "loads", return_value=[error]):
             handler._get_errors(result)
-            handler._get_errors(result, True)
-            create_error.assert_has_calls([call(False, False), call(False, True)])
+            create_error.assert_has_calls([call(False, False, True)])
             create_error.reset_mock()
 
+        # Called from root with local configuration command line argument
         arguments.original_directory = "/"  # called from
         arguments.current_directory = "/"  # project root
+        arguments.local_configuration = "/test"
+        handler = commands.ErrorHandling(
+            arguments, configuration, source_directory="/shared"
+        )
+        with patch.object(json, "loads", return_value=[error]):
+            handler._get_errors(result)
+            create_error.assert_has_calls([call(False, False, True)])
+            create_error.reset_mock()
+
+        # Test wildcard in do not check
+        arguments.original_directory = "/"  # called from
+        arguments.current_directory = "/"  # project root
+        arguments.local_configuration = None
         error_dictionary = {"path": "b/c"}
         error.__getitem__.side_effect = error_dictionary.__getitem__
         configuration.do_not_check = ["*/b"]
@@ -98,5 +92,5 @@ class ErrorHandlingTest(unittest.TestCase):
         )
         with patch.object(json, "loads", return_value=[error]):
             handler._get_errors(result)
-            create_error.assert_has_calls([call(True, False)])
+            create_error.assert_has_calls([call(True, False, False)])
             create_error.reset_mock()
