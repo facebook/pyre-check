@@ -7,6 +7,7 @@ open Core
 
 open Ast
 open Pyre
+open Expression
 open Statement
 
 module Annotation = AnalysisAnnotation
@@ -135,19 +136,27 @@ let resolve_literal ({ resolve_literal; _  } as resolution) =
   resolve_literal ~resolution
 
 
-let parse_annotation { parse_annotation; define; _ } expression =
-  let delocalized =
-    (* TODO(T29884749): we should recursively explore the parent here to get to the top-level. *)
-    match define with
-    | { Define.name = scope; parent = None; _ }
-    | { Define.parent = Some scope; _ } ->
-        List.rev scope
-        |> List.tl
-        >>| List.rev
-        >>| (fun qualifier -> Expression.delocalize expression ~qualifier)
-        |> Option.value ~default:expression
+let parse_annotation { parse_annotation; define; _ } ({ Node.value; _ } as expression) =
+  let expression =
+    let is_local_access =
+      match value with
+      | Access [Access.Identifier name]
+        when Identifier.show name |> String.is_prefix ~prefix:"$local_" -> true
+      | _ -> false
+    in
+    if is_local_access then
+      match define with
+      | { Define.name = scope; parent = None; _ }
+      | { Define.parent = Some scope; _ } ->
+          List.rev scope
+          |> List.tl
+          >>| List.rev
+          >>| (fun qualifier -> Expression.delocalize expression ~qualifier)
+          |> Option.value ~default:expression
+    else
+      expression
   in
-  parse_annotation delocalized
+  parse_annotation expression
 
 
 let global { global; _ } =
