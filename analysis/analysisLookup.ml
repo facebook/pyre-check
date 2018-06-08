@@ -18,7 +18,9 @@ let create () =
 
 
 let update lookup ~location ~annotation =
-  Hashtbl.set lookup ~key:location ~data:annotation
+  (* Do not register `unknown` annotations, as they are not useful. *)
+  if not (Type.is_unknown annotation) then
+    Hashtbl.set lookup ~key:location ~data:annotation
 
 
 let get_annotation lookup ~position =

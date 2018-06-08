@@ -110,7 +110,6 @@ let test_lookup_call_arguments _ =
   assert_equal
     ~printer:(String.concat ~sep:", ")
     [
-      "test.py:2:0-2:3/`unknown`";
       "test.py:2:4-2:6/`int`";
       "test.py:3:4-3:20/`str`";
       "test.py:4:4-5:14/`str`";

@@ -715,20 +715,18 @@ let test_incremental_lookups _ =
   CommandTest.clean_environment ();
   assert_is_some response;
   assert_true (Hashtbl.mem state.State.lookups relative_path);
-  let definition_map = Hashtbl.find_exn state.State.lookups relative_path in
   let definitions =
-    Hashtbl.data definition_map
+    Hashtbl.find_exn state.State.lookups relative_path
+    |> Hashtbl.data
     |> List.map ~f:Type.show
     |> List.sort ~compare:String.compare
   in
-  assert_equal ~printer:Int.to_string 4 (Hashtbl.length definition_map);
   assert_equal
     ~printer:(String.concat ~sep:", ")
     [
       "`int`";
       "`int`";
       "`typing.Unbound`";
-      "`unknown`";
     ]
     definitions
 
