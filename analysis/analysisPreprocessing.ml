@@ -16,10 +16,27 @@ let expand_string_annotations source =
   let module Transform = Transform.MakeStatementTransformer(struct
       type t = unit
 
-      let statement_postorder _ ({ Node.location; value } as statement) =
-        let transform ({ Define.parameters; return_annotation; _ } as define) =
-          let access = function
-            | { Node.location; value = String string } ->
+      let statement_postorder _ ({ Node.value; _ } as statement) =
+        let rec transform_expression ({ Node.location; value } as expression) =
+          let value =
+            match value with
+            | Access access ->
+                let transform_element = function
+                  | Access.Call ({ Node.value = arguments ; _ } as call) ->
+                      let transform_argument ({ Argument.value; _ } as argument) =
+                        { argument with Argument.value = transform_expression value }
+                      in
+                      Access.Call {
+                        call with
+                        Node.value = List.map arguments ~f:transform_argument;
+                      }
+                  | Access.Expression expression ->
+                      Access.Expression (transform_expression expression)
+                  | element ->
+                      element
+                in
+                Access (List.map access ~f:transform_element)
+            | String string ->
                 let parsed =
                   try
                     let buffer = Lexing.from_string (string ^ "\n") in
@@ -41,32 +58,43 @@ let expand_string_annotations source =
                         None
                       end
                 in
-                parsed >>| (fun parsed -> { Node.location; value = Access parsed })
-            | expression ->
-                Some expression
+                parsed
+                >>| (fun parsed -> Access parsed)
+                |> Option.value ~default:(Access (Access.create "$unparsed_annotation"))
+            | _ ->
+                value
           in
+          { expression with Node.value }
+        in
+        let transform_assign ~assign:({ Assign.annotation; _ } as assign) =
+          { assign with Assign.annotation = annotation >>| transform_expression }
+        in
+        let transform_define ~define:({ Define.parameters; return_annotation; _ } as define) =
           let parameter ({ Node.value = ({ Parameter.annotation; _ } as parameter); _ } as node) =
             {
               node with
-              Node.value = { parameter with Parameter.annotation = annotation >>= access };
+              Node.value = {
+                parameter with
+                Parameter.annotation = annotation >>| transform_expression;
+              };
             }
           in
           {
             define with
             Define.parameters = List.map ~f:parameter parameters;
-            return_annotation = return_annotation >>= access;
+            return_annotation = return_annotation >>| transform_expression;
           }
         in
         let statement =
-          match value with
-          | Define define ->
-              Define (transform define)
-              |> Node.create ~location
-          | Stub (Stub.Define define) ->
-              Stub (Stub.Define (transform define))
-              |> Node.create ~location
-          | _ ->
-              statement
+          let value =
+            match value with
+            | Assign assign -> Assign (transform_assign ~assign)
+            | Stub (Stub.Assign assign) -> Stub (Stub.Assign (transform_assign ~assign))
+            | Define define -> Define (transform_define ~define)
+            | Stub (Stub.Define define) -> Stub (Stub.Define (transform_define ~define))
+            | _ -> value
+          in
+          { statement with Node.value }
         in
         (), [statement]
     end)
