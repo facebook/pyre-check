@@ -104,6 +104,7 @@ let test_qualify _ =
     assert_qualify (import ^ actual) (import ^ expected)
   in
   assert_qualify_statement "call(b)" "call(a)";
+  assert_qualify_statement "List[b]" "List[a]";
   assert_qualify_statement "await b" "await a";
   assert_qualify_statement "(await b).c" "(await a).c";
   assert_qualify_statement "b or True" "a or True";
