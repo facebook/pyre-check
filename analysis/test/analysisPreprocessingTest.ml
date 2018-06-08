@@ -315,16 +315,17 @@ let test_qualify _ =
     |};
 
   (* Type aliases are not qualified. *)
-  (* TODO(T29105314): we should qualify aliases where there can only be annotations. *)
   assert_qualify
     {|
       Int = int
+      constant: Int = ...
       def foo(i: Int) -> Int:
         variable = Int
     |}
     {|
       $local_0_Int = int
-      def qualifier.foo($parameter_i: $local_0_Int) -> $local_0_Int:
+      $local_0_constant: qualifier.Int = ...
+      def qualifier.foo($parameter_i: qualifier.Int) -> qualifier.Int:
         $local_0_variable = $local_0_Int
     |};
 

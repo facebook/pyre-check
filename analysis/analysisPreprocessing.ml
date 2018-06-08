@@ -192,7 +192,10 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
         Node.value = {
           Parameter.name = Identifier.map renamed ~f:(fun identifier -> stars ^ identifier);
           value = value >>| qualify_expression ~scope;
-          annotation = annotation >>| qualify_expression ~scope;
+          annotation =
+            annotation
+            >>| qualify_expression ~scope
+            >>| Expression.delocalize ~qualifier;
         };
       } :: reversed_parameters
     in
@@ -391,7 +394,10 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
         target_scope,
         {
           Assign.target;
-          annotation = annotation >>| qualify_expression ~scope;
+          annotation =
+            annotation
+            >>| qualify_expression ~scope
+            >>| Expression.delocalize ~qualifier;
           value = value >>| qualify_expression ~scope;
           parent = parent >>| fun access -> qualify_access ~scope access;
         }
@@ -438,7 +444,10 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
               decorators
               ~f:(qualify_expression
                     ~scope:{ scope with use_forward_references = Option.is_none parent });
-          return_annotation = return_annotation >>| qualify_expression ~scope;
+          return_annotation =
+            return_annotation
+            >>| qualify_expression ~scope
+            >>| Expression.delocalize ~qualifier;
           parent = parent >>| fun access -> qualify_access ~scope access;
         }
       in
