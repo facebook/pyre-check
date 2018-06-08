@@ -469,11 +469,30 @@ let access =
   Access.create_from_expression
 
 
-let delocalize ({ Node.value; _ } as expression) ~qualifier =
+let rec delocalize ({ Node.value; _ } as expression) ~qualifier =
   let value =
     match value with
-    | Access access -> Access (Access.delocalize access ~qualifier)
-    | _ -> value
+    | Access access ->
+        let access =
+          let delocalize_element = function
+            | Access.Call ({ Node.value = arguments; _ } as call) ->
+                let delocalize_argument ({ Argument.value; _ } as argument) =
+                  { argument with Argument.value = delocalize value ~qualifier }
+                in
+                Access.Call { call with Node.value = List.map arguments ~f:delocalize_argument }
+            | Access.Expression expression ->
+                Access.Expression (delocalize expression ~qualifier)
+            | element ->
+                element
+          in
+          Access.delocalize access ~qualifier
+          |> List.map ~f:delocalize_element
+        in
+        Access access
+    | Tuple elements ->
+        Tuple (List.map elements ~f:(delocalize ~qualifier))
+    | _ ->
+        value
   in
   { expression with Node.value }
 

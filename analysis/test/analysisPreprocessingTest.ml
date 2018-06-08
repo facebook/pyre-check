@@ -329,12 +329,14 @@ let test_qualify _ =
       constant: Int = ...
       def foo(i: Int) -> Int:
         variable = Int
+      def foo(i: typing.Tuple[Int, str]): ...
     |}
     {|
       $local_0_Int = int
       $local_0_constant: qualifier.Int = ...
       def qualifier.foo($parameter_i: qualifier.Int) -> qualifier.Int:
         $local_0_variable = $local_0_Int
+      def qualifier.foo($parameter_i: typing.Tuple[qualifier.Int, str]): ...
     |};
 
   (* Qualify functions. *)
