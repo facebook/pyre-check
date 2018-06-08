@@ -453,7 +453,7 @@ module State = struct
         (Resolution.annotations left.resolution)
 
 
-  let rec join ({ resolution; _ } as left) right =
+  let join ({ resolution; _ } as left) right =
     if left.bottom then
       right
     else if right.bottom then
@@ -486,7 +486,10 @@ module State = struct
       }
 
 
-  and meet ({ resolution; _ } as left) right =
+  let widening_threshold = 10
+
+
+  let rec meet ({ resolution; _ } as left) right =
     if left.bottom then
       left
     else if right.bottom then
@@ -516,11 +519,7 @@ module State = struct
       }
 
 
-  and widening_threshold =
-    10
-
-
-  and widen ~previous:({ resolution; _ } as previous) ~next ~iteration =
+  let widen ~previous:({ resolution; _ } as previous) ~next ~iteration =
     if previous.bottom then
       next
     else if next.bottom then
@@ -567,7 +566,7 @@ module State = struct
       }
 
 
-  and forward
+  let rec forward
       ({
         configuration;
         resolution;
