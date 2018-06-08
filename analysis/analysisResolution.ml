@@ -62,11 +62,11 @@ let set_local ({ annotations; _ } as resolution) ~access ~annotation =
   { resolution with annotations = Map.set annotations ~key:access ~data:annotation }
 
 
-let get_local { annotations; define; global; _ } ~access =
+let get_local { annotations; global; _ } ~access =
   match Map.find annotations access with
-  | Some resolved ->
-      Some resolved
-  | None ->
+  | Some result ->
+      Some result
+  | _ ->
       let access =
         match access with
         | [Access.Identifier name] ->
@@ -76,28 +76,10 @@ let get_local { annotations; define; global; _ } ~access =
             in
             [Access.Identifier name]
         | _ ->
-            access
+          access
       in
-      match define with
-      | { Define.name; _ } as define when not (Define.is_toplevel define) ->
-          let rec find_global reversed_qualifier =
-            (* Walk up the defines namespace to find the global definition. *)
-            match reversed_qualifier with
-            | _ :: reversed_qualifier ->
-                begin
-                  let access = List.rev_append reversed_qualifier access in
-                  match global access with
-                  | Some { Node.value; _ } -> Some value
-                  | None -> find_global reversed_qualifier
-                end
-            | [] ->
-                None
-          in
-          find_global (List.rev name)
-      | _ ->
-          match global access with
-          | Some { Node.value; _ } -> Some value
-          | None -> None
+      global access
+      >>| Node.value
 
 
 let get_local_callable resolution ~access =
