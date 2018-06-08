@@ -230,8 +230,11 @@ module State = struct
 
 
   let nested_defines { nested_defines; _ } =
+    let process_define (location, { nested; initial = { resolution; _ } }) =
+      Node.create ~location nested, resolution
+    in
     Map.to_alist nested_defines
-    |> List.map ~f:(fun (location, { nested; initial }) -> Node.create ~location nested, initial)
+    |> List.map ~f:process_define
 
 
   let initial
@@ -1886,13 +1889,13 @@ let check
         Define.create_toplevel ~qualifier ~statements
         |> Node.create ~location
       in
-      let initial = State.initial ~configuration ~lookup ~resolution toplevel in
-      Queue.enqueue queue (toplevel, initial);
+      Queue.enqueue queue (toplevel, resolution);
       queue
     in
     let rec results ~queue =
       match Queue.dequeue queue with
-      | Some (define, initial) ->
+      | Some (define, resolution) ->
+          let initial = State.initial ~configuration ~lookup ~resolution define in
           let result, queue = check ~define ~initial ~queue in
           result :: results ~queue
       | _ ->
