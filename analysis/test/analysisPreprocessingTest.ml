@@ -90,6 +90,7 @@ let test_qualify _ =
 
   (* Base cases for aliasing. *)
   assert_qualify "from a import b; b" "from a import b; a.b";
+  assert_qualify "from a import b, c; b, c" "from a import b, c; a.b, a.c";
   assert_qualify "from a import b; b.c" "from a import b; a.b.c";
   assert_qualify "from a import b; b()" "from a import b; a.b()";
   assert_qualify "from a import b as c; c" "from a import b as c; a.b";
