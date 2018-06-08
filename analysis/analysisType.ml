@@ -623,16 +623,29 @@ let rec create ~aliases { Node.value = expression; _ } =
                         Tuple (Bounded (List.map ~f:(resolve visited) elements))
                     | Tuple (Unbounded annotation) ->
                         Tuple (Unbounded (resolve visited annotation))
-                    | Parametric { parameters; name } ->
-                        let name =
+                    | Parametric { name; parameters } ->
+                        begin
+                          let parametric name =
+                            Parametric {
+                              name;
+                              parameters = List.map ~f:(resolve visited) parameters;
+                            }
+                          in
                           match aliases (Primitive name) with
-                          | Some (Primitive name) -> name
-                          | _ -> name
-                        in
-                        Parametric {
-                          parameters = List.map ~f:(resolve visited) parameters;
-                          name;
-                        }
+                          | Some (Primitive name) ->
+                              parametric name
+                          | Some (Parametric { name; _ }) ->
+                              (* Ignore parameters for now. *)
+                              parametric name
+                          | Some (Union elements) ->
+                              let replace_parameters = function
+                                | Parametric parametric -> Parametric { parametric with parameters }
+                                | annotation -> annotation
+                              in
+                              Union (List.map elements ~f:replace_parameters)
+                          | _ ->
+                              parametric name
+                        end
                     | Variable ({ constraints; _ } as variable) ->
                         Variable {
                           variable with

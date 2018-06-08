@@ -78,12 +78,29 @@ let test_create _ =
     (Type.variable ~constraints:[Type.integer] "_T");
 
   (* Check that type aliases are resolved. *)
-  let aliases =
-    Type.Table.of_alist_exn [Type.primitive "_T", Type.variable "_T"]
-    |> Type.Table.find
+  let assert_alias source resolved =
+    let aliases =
+      Type.Table.of_alist_exn [
+        Type.primitive "Alias", Type.primitive "Aliased";
+        Type.primitive "_Future",
+        Type.union [
+          Type.parametric "Future" [Type.integer; Type.variable "_T"];
+          Type.awaitable (Type.variable "_T");
+        ];
+      ]
+      |> Type.Table.find
+    in
+    assert_create ~aliases source resolved
   in
-  assert_create ~aliases "_T" (Type.variable "_T");
-  assert_create ~aliases "foo[_T]" (Type.parametric "foo" [Type.variable "_T"]);
+  assert_alias "Alias" (Type.primitive "Aliased");
+  assert_alias "Aliased" (Type.primitive "Aliased");
+  assert_alias "typing.Optional[Alias]" (Type.optional (Type.primitive "Aliased"));
+  assert_alias "Parametric[Alias]" (Type.parametric "Parametric" [Type.primitive "Aliased"]);
+  assert_alias "Alias[int]" (Type.parametric "Aliased" [Type.integer]);
+  (* TODO(T30095392): we're blindly stripping away the first type parameter of `Future`. *)
+  assert_alias
+    "_Future[int]"
+    (Type.union [Type.parametric "Future" [Type.integer]; Type.awaitable Type.integer]);
 
   (* String literals. *)
   assert_create "'foo'" (Type.primitive "foo");

@@ -202,16 +202,17 @@ let test_register_aliases _ =
       parse
         ~qualifier:(Access.create "asyncio.tasks")
         {|
-           from typing import Awaitable, TypeVar, Generic
+           from typing import TypeVar, Generic, Union
            _T = typing.TypeVar('_T')
            class Future(Generic[_T]): ...
+           class Awaitable(Generic[_T]): ...
            _FutureT = Union[Future[_T], Awaitable[_T]]
         |};
     ]
     [
       "asyncio.tasks.Future[int]", "asyncio.tasks.Future[int]";
-      (* TODO(T30095392): this should resolve to the union. *)
-      "asyncio.tasks._Future[int]", "asyncio.tasks._Future[int]";
+      "asyncio.tasks._FutureT[int]",
+      "typing.Union[asyncio.tasks.Future[int], asyncio.tasks.Awaitable[int]]";
     ]
 
 
