@@ -351,6 +351,7 @@ let test_qualify _ =
       def qualifier.foo(): pass
       qualifier.foo()
     |};
+
   assert_qualify "def foo(): ..." "def qualifier.foo(): ...";
   assert_qualify
     {|
@@ -389,6 +390,23 @@ let test_qualify _ =
     {|
       from typing import List
       def qualifier.foo() -> typing.List[int]: pass
+    |};
+
+  (* Nested defines. *)
+  assert_qualify
+    {|
+      def foo():
+        def nestedA():
+          nestedB()
+        def nestedB():
+          nestedA()
+    |}
+    {|
+      def qualifier.foo():
+        def qualifier.foo.nestedA():
+          qualifier.foo.nestedB()
+        def qualifier.foo.nestedB():
+          qualifier.foo.nestedA()
     |};
 
   (* SSA-lite. *)
