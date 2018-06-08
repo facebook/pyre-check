@@ -103,43 +103,40 @@ let select ~arguments ~resolution ~callable:({ Type.Callable.overloads; _ } as c
             ~argument:({ Argument.name; value = { Node.location; _ } as expression } as argument)
             ~parameter
             ~remaining_arguments =
-          let sequence_parameter annotation =
-            let sequence = Type.parametric "typing.Sequence" [Type.Object] in
-            if Resolution.less_or_equal resolution ~left:annotation ~right:sequence then
-              (* Try to extract first parameter. *)
-              Type.parameters annotation
-              |> List.hd
-              |> Option.value ~default:Type.Top
-            else
-              annotation
-          in
-          let mapping_value_parameter annotation =
-            let mapping = Type.parametric "typing.Mapping" [Type.string; Type.Object] in
-            if Resolution.less_or_equal resolution ~left:annotation ~right:mapping then
-              (* Try to extract second parameter. *)
-              Type.parameters annotation
-              |> (fun parameters -> List.nth parameters 1)
-              |> Option.value ~default:Type.Top
-            else
-              annotation
-          in
-
           let expected =
             match parameter with
             | Parameter.Anonymous annotation
-            | Parameter.Named { Parameter.annotation; _ } ->
-                annotation
-            | Parameter.Variable { Parameter.annotation; _ } ->
-                sequence_parameter annotation
+            | Parameter.Named { Parameter.annotation; _ }
+            | Parameter.Variable { Parameter.annotation; _ }
             | Parameter.Keywords { Parameter.annotation; _ } ->
-                mapping_value_parameter annotation
+                annotation
           in
           let actual =
             match Node.value expression with
             | Starred (Starred.Once expression) ->
+                let sequence_parameter annotation =
+                  let sequence = Type.parametric "typing.Sequence" [Type.Object] in
+                  if Resolution.less_or_equal resolution ~left:annotation ~right:sequence then
+                    (* Try to extract first parameter. *)
+                    Type.parameters annotation
+                    |> List.hd
+                    |> Option.value ~default:Type.Top
+                  else
+                    annotation
+                in
                 Resolution.resolve resolution expression
                 |> sequence_parameter
             | Starred (Starred.Twice expression) ->
+                let mapping_value_parameter annotation =
+                  let mapping = Type.parametric "typing.Mapping" [Type.string; Type.Object] in
+                  if Resolution.less_or_equal resolution ~left:annotation ~right:mapping then
+                    (* Try to extract second parameter. *)
+                    Type.parameters annotation
+                    |> (fun parameters -> List.nth parameters 1)
+                    |> Option.value ~default:Type.Top
+                  else
+                    annotation
+                in
                 Resolution.resolve resolution expression
                 |> mapping_value_parameter
             | _ ->

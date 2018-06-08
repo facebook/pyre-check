@@ -170,31 +170,27 @@ let test_select _ =
     "(1, 2)"
     (`Found "[[Variable(variable, int)], int]");
   assert_select
-    "[[Variable(variable, typing.List[int])], int]"
-    "(1, 2)"
-    (`Found "[[Variable(variable, typing.List[int])], int]");
-  assert_select
-    "[[Variable(variable, typing.List[str])], int]"
+    "[[Variable(variable, str)], int]"
     "(1, 2)"
     (`NotFoundMismatch (Type.integer, Type.string, None, 1));
   assert_select
-    "[[Variable(variable, typing.List[str])], int]"
+    "[[Variable(variable, str)], int]"
     "('string', 2)"
     (`NotFoundMismatch (Type.integer, Type.string, None, 2));
   assert_select
-    "[[Variable(variable, typing.List[int])], int]"
+    "[[Variable(variable, int)], int]"
     "(*[1, 2], 3)"
-    (`Found "[[Variable(variable, typing.List[int])], int]");
+    (`Found "[[Variable(variable, int)], int]");
   assert_select
-    "[[Variable(variable, typing.List[int]), Named(a, str)], int]"
+    "[[Variable(variable, int), Named(a, str)], int]"
     "(*[1, 2], a='string')"
-    (`Found "[[Variable(variable, typing.List[int]), Named(a, str)], int]");
+    (`Found "[[Variable(variable, int), Named(a, str)], int]");
   assert_select
-    "[[Variable(variable, typing.List[int]), Named(a, str)], int]"
+    "[[Variable(variable, int), Named(a, str)], int]"
     "(*[1, 2], *[3, 4], a='string')"
-    (`Found "[[Variable(variable, typing.List[int]), Named(a, str)], int]");
+    (`Found "[[Variable(variable, int), Named(a, str)], int]");
   assert_select
-    "[[Variable(variable, typing.List[int])], int]"
+    "[[Variable(variable, int)], int]"
     "(*['string'])"
     (`NotFoundMismatch (Type.string, Type.integer, None, 1));
 
@@ -245,11 +241,11 @@ let test_select _ =
     "(a=1, b=2)"
     (`Found "[[Keywords(keywords, int)], int]");
   assert_select
-    "[[Keywords(keywords, typing.Dict[str, str])], int]"
+    "[[Keywords(keywords, str)], int]"
     "(a=1, b=2)"
     (`NotFoundMismatch (Type.integer, Type.string, Some "a", 1));
   assert_select
-    "[[Keywords(keywords, typing.Dict[str, str])], int]"
+    "[[Keywords(keywords, str)], int]"
     "(a='string', b=2)"
     (`NotFoundMismatch (Type.integer, Type.string, Some "b", 2));
 
@@ -304,6 +300,15 @@ let test_select _ =
     "[[typing.Type[_T]], _T]"
     "(typing.List[str])"
     (`Found "[[typing.Type[typing.List[str]]], typing.List[str]]");
+
+  assert_select
+    "[[Variable(variable, _T)], int]"
+    "(1, 2)"
+    (`Found "[[Variable(variable, int)], int]");
+  assert_select
+    "[[Keywords(keywords, _T)], int]"
+    "(a=1, b=2)"
+    (`Found "[[Keywords(keywords, int)], int]");
 
   (* Ranking. *)
   assert_select

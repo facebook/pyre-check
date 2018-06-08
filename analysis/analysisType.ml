@@ -1375,11 +1375,19 @@ let instantiate ?(widen = false) annotation ~constraints =
                             Parameter.Anonymous (instantiate annotation)
                         | Parameter.Named ({ Parameter.annotation; _ } as named) ->
                             Parameter.Named {
-                              named with Parameter.annotation = instantiate annotation;
+                              named with
+                              Parameter.annotation = instantiate annotation;
                             }
-                        | Parameter.Variable _
-                        | Parameter.Keywords _ ->
-                            parameter
+                        | Parameter.Variable ({ Parameter.annotation; _ } as named) ->
+                            Parameter.Variable {
+                              named with
+                              Parameter.annotation = instantiate annotation;
+                            }
+                        | Parameter.Keywords ({ Parameter.annotation; _ } as named) ->
+                            Parameter.Keywords {
+                              named with
+                              Parameter.annotation = instantiate annotation;
+                            }
                       in
                       Defined (List.map ~f:parameter parameters)
                   | Undefined ->
