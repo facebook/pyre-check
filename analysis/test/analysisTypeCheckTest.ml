@@ -3567,8 +3567,8 @@ let test_check_attributes _ =
     |}
     [
       "Incompatible attribute type [8]: Attribute `bar` declared in class `Foo` has type " ^
-      "`typing.Generic[_T]` but is used as type `int`.";
-      "Incompatible return type [7]: Expected `int` but got `typing.Generic[_T]`.";
+      "`typing.Generic[Variable[_T]]` but is used as type `int`.";
+      "Incompatible return type [7]: Expected `int` but got `typing.Generic[Variable[_T]]`.";
     ];
 
   (* Static attributes are properly resolved. *)
@@ -5197,7 +5197,7 @@ let test_check_behavioral_subtyping _ =
         def foo(self) -> None:
           pass
     |}
-    ["Undefined type [11]: Type `T` is not defined."];
+    ["Undefined type [11]: Type `Variable[T]` is not defined."];
 
   assert_type_errors ~show_error_traces:true
     {|

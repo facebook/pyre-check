@@ -109,7 +109,7 @@ let test_register_class_definitions _ =
 
 let test_register_aliases _ =
   let assert_resolved sources aliases =
-    let (module Handler: Environment.Handler) =
+    let (module Handler) =
       let environment = Environment.Builder.create ~configuration () in
       let (module Handler: Environment.Handler) = Environment.handler ~configuration environment in
       let sources = List.map sources ~f:Preprocessing.preprocess in
@@ -119,19 +119,19 @@ let test_register_aliases _ =
       in
       List.iter sources ~f:register;
       Environment.register_aliases (module Handler) sources;
-      (module Handler)
+      (module Handler: Environment.Handler)
+  in
+  let assert_alias (alias, target) =
+    let parse_annotation handler source =
+      parse_single_expression source
+      |> parse_annotation handler
     in
-    let assert_alias (alias, target) =
-      let parse_annotation source =
-        parse_single_expression source
-        |> parse_annotation (module Handler)
-      in
-      assert_equal
-        ~printer:Type.show
-        (parse_annotation alias)
-        (parse_annotation target)
-    in
-    List.iter aliases ~f:assert_alias
+    assert_equal
+      ~printer:(fun string -> string)
+      (Type.show (parse_annotation (module Handler) alias))
+      (Format.sprintf "`%s`" target)
+  in
+  List.iter aliases ~f:assert_alias
   in
 
   assert_resolved
@@ -212,7 +212,22 @@ let test_register_aliases _ =
     [
       "asyncio.tasks.Future[int]", "asyncio.tasks.Future[int]";
       "asyncio.tasks._FutureT[int]",
-      "typing.Union[asyncio.tasks.Future[int], asyncio.tasks.Awaitable[int]]";
+      "typing.Union[asyncio.tasks.Awaitable[int], asyncio.tasks.Future[int]]";
+    ];
+
+  assert_resolved
+    [
+      parse
+        ~qualifier:(Access.create "a")
+        {|
+          import typing
+          _T = typing.TypeVar("_T")
+          _T2 = typing.TypeVar("UnrelatedName")
+        |}
+    ]
+    [
+      "a._T", "Variable[a._T]";
+      "a._T2", "Variable[a._T2]";
     ]
 
 

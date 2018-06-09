@@ -277,11 +277,16 @@ let rec pp format annotation =
         (without_backtick parameters)
   | Variable { variable; constraints } ->
       if constraints = [] then
-        Format.fprintf format "%a" Identifier.pp variable
+        Format.fprintf
+          format
+          "`Variable[%s]`"
+          (Identifier.show variable
+           |> String.substr_replace_all ~pattern:"`" ~with_:"")
+
       else
         Format.fprintf
           format
-          "%a <: [%a]"
+          "`Variable[%a <: [%a]]`"
           Identifier.pp
           variable
           (Format.pp_print_list ~pp_sep:(fun format () -> Format.fprintf format ", ") pp)

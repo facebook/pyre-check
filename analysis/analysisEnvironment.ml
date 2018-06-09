@@ -428,7 +428,6 @@ let register_aliases (module Handler: Handler) sources =
     let visit_statement aliases { Node.value; _ } =
       match value with
       | Assign { Assign.target; annotation = None; value = Some value; _ } ->
-          (* TODO(T29105314): there's a lot of redundancy here with dequalification. *)
           let target =
             let access =
               let access =
@@ -446,7 +445,7 @@ let register_aliases (module Handler: Handler) sources =
           if not (Type.equal target_annotation Type.Top ||
                   Type.equal value_annotation Type.Top ||
                   Type.equal value_annotation target_annotation) then
-            (path, qualifier, target, value) :: aliases
+            (path, target, value) :: aliases
           else
             aliases
       | Import { Import.from = Some from; imports = [{ Import.name; _ }]  }
@@ -459,7 +458,7 @@ let register_aliases (module Handler: Handler) sources =
           let add_alias aliases export =
             let value = Node.create_with_default_location (Access (from @ export)) in
             let alias = Node.create_with_default_location (Access (qualifier @ export)) in
-            (path, qualifier, alias, value) :: aliases
+            (path, alias, value) :: aliases
           in
           List.fold exports ~init:aliases ~f:add_alias
 
@@ -474,7 +473,6 @@ let register_aliases (module Handler: Handler) sources =
             in
             [
               path,
-              qualifier,
               qualified_name,
               Node.create_with_default_location (Access (from @ name));
             ]
@@ -489,15 +487,14 @@ let register_aliases (module Handler: Handler) sources =
     if List.is_empty unresolved then
       ()
     else
-      let register_alias (any_changed, unresolved) (path, qualifier, target, value) =
+      let register_alias (any_changed, unresolved) (path, target, value) =
         let target_annotation = Type.create ~aliases:Handler.aliases target in
         let value_annotation =
           Type.create ~aliases:Handler.aliases value
           |> function
-          | Type.Variable ({ Type.variable = name; _ } as variable) ->
+          | Type.Variable variable ->
               let name =
-                qualifier @ [Access.Identifier name]
-                |> Access.show
+                Expression.show target
                 |> Identifier.create
               in
               Type.Variable { variable with Type.variable = name }
@@ -542,13 +539,13 @@ let register_aliases (module Handler: Handler) sources =
             (true, unresolved)
           end
         else
-          (any_changed, (path, qualifier, target, value) :: unresolved)
+          (any_changed, (path, target, value) :: unresolved)
       in
       let (any_changed, unresolved) = List.fold ~init:(false, []) ~f:register_alias unresolved in
       if any_changed then
         resolve_aliases unresolved
       else
-        let show_unresolved (path, _, target, value) =
+        let show_unresolved (path, target, value) =
           Log.debug
             "Unresolved alias %s:%a <- %a"
             path
