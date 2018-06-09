@@ -26,9 +26,14 @@ module Coverage = AnalysisCoverage
 
 
 module State = struct
+  type nested_define_state = {
+    nested_resolution: Resolution.t;
+    nested_bottom: bool;
+  }
+
   type nested_define = {
     nested: Define.t;
-    initial: t;
+    initial: nested_define_state;
   }
 
   and t = {
@@ -230,8 +235,8 @@ module State = struct
 
 
   let nested_defines { nested_defines; _ } =
-    let process_define (location, { nested; initial = { resolution; _ } }) =
-      Node.create ~location nested, resolution
+    let process_define (location, { nested; initial = { nested_resolution; _ } }) =
+      Node.create ~location nested, nested_resolution
     in
     Map.to_alist nested_defines
     |> List.map ~f:process_define
@@ -456,6 +461,23 @@ module State = struct
         (Resolution.annotations left.resolution)
 
 
+  let join_resolutions left_resolution right_resolution =
+       let merge_annotations ~key:_ = function
+        | `Both (left, right) ->
+            Some (Refinement.join ~resolution:left_resolution left right)
+        | `Left _
+        | `Right _ ->
+            Some (Annotation.create Type.Top)
+      in
+      let annotations =
+        Map.merge
+          ~f:merge_annotations
+          (Resolution.annotations left_resolution)
+          (Resolution.annotations right_resolution)
+      in
+      Resolution.with_annotations left_resolution ~annotations
+
+
   let join ({ resolution; _ } as left) right =
     if left.bottom then
       right
@@ -469,23 +491,10 @@ module State = struct
         | `Right state ->
             Some state
       in
-      let merge_annotations ~key:_ = function
-        | `Both (left, right) ->
-            Some (Refinement.join ~resolution left right)
-        | `Left _
-        | `Right _ ->
-            Some (Annotation.create Type.Top)
-      in
-      let annotations =
-        Map.merge
-          ~f:merge_annotations
-          (Resolution.annotations left.resolution)
-          (Resolution.annotations right.resolution)
-      in
       {
         left with
         errors = Map.merge ~f:merge_errors left.errors right.errors;
-        resolution = Resolution.with_annotations resolution ~annotations;
+        resolution = join_resolutions left.resolution right.resolution;
       }
 
 
@@ -1689,10 +1698,21 @@ module State = struct
     let nested_defines =
       let schedule ~define =
         let update = function
-          | Some ({ initial; _ } as nested) ->
-              Some { nested with initial = join initial state }
+          | Some ({ initial = { nested_resolution; nested_bottom }; _ } as nested) ->
+              let resolution, bottom =
+                if nested_bottom then
+                  state.resolution, state.bottom
+                else if state.bottom then
+                  nested_resolution, nested_bottom
+                else
+                  join_resolutions nested_resolution state.resolution, false
+              in
+              Some {
+                nested with
+                initial = { nested_resolution = resolution; nested_bottom = bottom };
+              }
           | None ->
-              let ({ resolution = initial_resolution; _ } as initial) =
+              let ({ resolution = initial_resolution; _ }) =
                 initial
                   ~configuration
                   ?lookup
@@ -1706,7 +1726,10 @@ module State = struct
                 Resolution.annotations resolution
                 |> Map.fold ~init:initial_resolution ~f:update
               in
-              Some { nested = define; initial = { initial with resolution } }
+              Some {
+                nested = define;
+                initial = { nested_resolution = resolution; nested_bottom = false };
+              }
         in
         Map.change ~f:update nested_defines location
       in

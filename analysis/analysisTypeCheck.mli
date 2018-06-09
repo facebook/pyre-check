@@ -18,10 +18,7 @@ module Resolution = AnalysisResolution
 
 module State : sig
   (* Keep track of nested functions to analyze and their initial states. *)
-  type nested_define = {
-    nested: Define.t;
-    initial: t;
-  }
+  type nested_define
 
   (* `configuration` provides access to global options.
 
