@@ -34,6 +34,9 @@ let create name = name
 let show name = name
 
 
+let sanitization_pattern = Str.regexp "^\\$[a-zA-Z]*_\\([0-9]+_\\)?"
+
+
 let sanitized name =
   let stars, name =
     if String.is_prefix name ~prefix:"**" then
@@ -43,8 +46,7 @@ let sanitized name =
     else
       "", name
   in
-  let renaming_pattern = Str.regexp "^\\$[a-zA-Z]*_\\([0-9]+_\\)?" in
-  Str.global_replace renaming_pattern "" name
+  Str.global_replace sanitization_pattern "" name
   |> Format.asprintf "%s%s" stars
 
 
