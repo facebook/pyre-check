@@ -13,18 +13,17 @@ open Inference
 
 open Test
 
-module TypeCheckTest = AnalysisTypeCheckTest
-
+module TestSetup = AnalysisTestSetup
 
 let configuration = Configuration.create ~infer:true ()
 
 
 let plain_environment =
-  TypeCheckTest.plain_environment
+  TestSetup.plain_environment
 
 
 let create
-    ?(define = TypeCheckTest.empty_define)
+    ?(define = TestSetup.empty_define)
     ?(expected_return = Type.Top)
     ?(immutables = [])
     annotations =
@@ -45,7 +44,7 @@ let create
       List.map ~f:annotify annotations
       |> Access.Map.of_alist_exn
     in
-    Resolution.with_annotations TypeCheckTest.resolution ~annotations
+    Resolution.with_annotations TestSetup.resolution ~annotations
   in
   let define =
     +{
@@ -173,7 +172,7 @@ let test_fixpoint_backward _ =
          ~initial_forward:
            (State.initial
               ~call_graph:(CallGraph.stub ())
-              ~resolution:TypeCheckTest.resolution define_node)
+              ~resolution:TestSetup.resolution define_node)
          ~initialize_backward:(Inference.State.initial_backward define_node))
   in
   assert_fixpoint_backward
@@ -305,7 +304,7 @@ let test_fixpoint_backward _ =
 
 
 let test_check_missing_parameter _ =
-  let assert_type_errors = AnalysisTypeCheckTest.assert_type_errors in
+  let assert_type_errors = TestSetup.assert_type_errors in
   assert_type_errors
     ~infer:true
     {|

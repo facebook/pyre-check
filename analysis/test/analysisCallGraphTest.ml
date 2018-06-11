@@ -15,8 +15,9 @@ open Pyre
 open Test
 
 module Parallel = Hack_parallel.Std
+module TestSetup = AnalysisTestSetup
 
-let plain_environment = AnalysisTypeCheckTest.plain_environment
+let plain_environment = TestSetup.plain_environment
 
 let test_create _ =
   let call_graph = CallGraph.create () in
