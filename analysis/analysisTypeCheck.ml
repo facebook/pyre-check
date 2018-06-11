@@ -322,10 +322,10 @@ module State = struct
                 | _, Some annotation ->
                     let annotation =
                       match Resolution.parse_annotation resolution annotation with
-                      | Type.Variable { Type.constraints; _ }
-                        when not (List.is_empty constraints) ->
+                      | Type.Variable { Type.constraints = Type.Explicit constraints; _ } ->
                           Type.union constraints
-                      | annotation -> annotation
+                      | annotation ->
+                          annotation
                     in
                     Annotation.create_immutable ~global:false annotation,
                     errors

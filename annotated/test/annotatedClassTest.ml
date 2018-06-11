@@ -39,28 +39,28 @@ let test_generics _ =
       _T = typing.TypeVar('_T')
       class Foo(typing.Generic[_T]): pass
     |}
-    [variable "_T"];
+    [Type.variable "_T"];
   assert_generics
     {|
       _T = typing.TypeVar('_T')
       _S = typing.TypeVar('_S')
       class Foo(typing.Generic[_T, _S]): pass
     |}
-    [variable "_T"; variable "_S"];
+    [Type.variable "_T"; Type.variable "_S"];
 
   assert_generics
     {|
       _T = typing.TypeVar('_T')
       class Foo(typing.Protocol[_T]): pass
     |}
-    [variable "_T"];
+    [Type.variable "_T"];
 
   assert_generics
     {|
       _T = typing.TypeVar('_T')
       class Foo(typing.Iterable[_T]): pass
     |}
-    [variable "_T"]
+    [Type.variable "_T"]
 
 
 let test_superclasses _ =
@@ -229,7 +229,7 @@ let test_constructors _ =
           Some
             (Type.Parametric {
                 Type.name = ~~"Foo";
-                parameters = [variable "_K"; variable "_V"];
+                parameters = [Type.variable "_K"; Type.variable "_V"];
               });
       };
     ]
@@ -718,7 +718,7 @@ let test_constraints _ =
       class Foo(typing.Generic[_K, _V]):
         pass
     |}
-    [variable "_K", Type.integer; variable "_V", Type.float];
+    [Type.variable "_K", Type.integer; Type.variable "_V", Type.float];
   assert_constraints
     ~target:"Foo"
     ~instantiated:(Type.parametric "Foo" [Type.integer; Type.float])
@@ -728,7 +728,7 @@ let test_constraints _ =
       class Foo(typing.Generic[_K, _V]):
         pass
     |}
-    [variable "_K", Type.integer; variable "_V", Type.float];
+    [Type.variable "_K", Type.integer; Type.variable "_V", Type.float];
 
   assert_constraints
     ~target:"Foo"
@@ -751,7 +751,7 @@ let test_constraints _ =
       class Foo(Bar[int]):
         pass
     |}
-    [variable "_T", Type.integer];
+    [Type.variable "_T", Type.integer];
 
   assert_constraints
     ~target:"Bar"
@@ -764,7 +764,7 @@ let test_constraints _ =
       class Foo(typing.Generic[_K], Bar[_K]):
         pass
     |}
-    [variable "_V", Type.integer];
+    [Type.variable "_V", Type.integer];
 
   assert_constraints
     ~target:"Bar"
@@ -780,7 +780,7 @@ let test_constraints _ =
       class Foo(typing.Generic[_K, _V], Bar[_K], Baz[_V]):
         pass
     |}
-    [variable "_T", Type.integer];
+    [Type.variable "_T", Type.integer];
   assert_constraints
     ~target:"Baz"
     ~instantiated:(Type.parametric "Foo" [Type.integer; Type.float])
@@ -795,7 +795,7 @@ let test_constraints _ =
       class Foo(typing.Generic[_K, _V], Bar[_K], Baz[_V]):
         pass
     |}
-    [variable "_T", Type.float];
+    [Type.variable "_T", Type.float];
 
   assert_constraints
     ~target:"Iterator"
@@ -805,7 +805,7 @@ let test_constraints _ =
       class Iterator(typing.Protocol[_T]):
         pass
     |}
-    [variable "_T", Type.integer];
+    [Type.variable "_T", Type.integer];
 
   assert_constraints
     ~target:"Iterator"
@@ -817,12 +817,12 @@ let test_constraints _ =
       class Iterable(Iterator[_T]):
         pass
     |}
-    [variable "_T", Type.integer];
+    [Type.variable "_T", Type.integer];
 
   assert_constraints
     ~target:"Iterator"
     ~instantiated:(Type.parametric "Iterable" [Type.parametric "Iterable" [Type.integer]])
-    ~parameters:[Type.parametric "Iterable" [variable "_T"]]
+    ~parameters:[Type.parametric "Iterable" [Type.variable "_T"]]
     {|
       _T = typing.TypeVar('_T')
       class Iterator(typing.Protocol[_T]):
@@ -830,7 +830,7 @@ let test_constraints _ =
       class Iterable(Iterator[_T]):
         pass
     |}
-    [variable "_T", Type.integer]
+    [Type.variable "_T", Type.integer]
 
 
 let test_inferred_generic_base _ =
@@ -855,7 +855,7 @@ let test_inferred_generic_base _ =
   let aliases = function
     | Type.Primitive identifier ->
         if Identifier.show identifier = "_T" then
-          Some (Type.Variable {Type.variable = identifier; constraints = [] })
+          Some (Type.variable "_T")
         else
           None
     | _ -> None
@@ -880,10 +880,7 @@ let test_inferred_generic_base _ =
      |}
     [{
       Argument.name = None;
-      value = Type.expression
-          (Type.parametric
-             "typing.Generic"
-             [Type.Variable { Type.variable = Identifier.create "_T"; constraints = [] }])
+      value = Type.expression (Type.parametric "typing.Generic" [Type.variable "_T"]);
     }];
   assert_inferred_generic
     ~target:"List"

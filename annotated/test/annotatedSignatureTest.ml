@@ -279,14 +279,15 @@ let test_select _ =
     "[[_R], _R]"
     "('string')"
     (`NotFoundMismatch
-       (Type.string, Type.variable ~constraints:[Type.integer; Type.float] "_R", None, 1));
+       (Type.string,
+        Type.variable ~constraints:(Type.Explicit [Type.integer; Type.float]) "_R", None, 1));
   assert_select "[[typing.List[_R]], _R]" "([1])" (`Found "[[typing.List[int]], int]");
   assert_select
     "[[typing.List[_R]], _R]"
     "(['string'])"
     (`NotFoundMismatch
        (Type.list Type.string,
-        Type.list (Type.variable ~constraints:[Type.integer; Type.float] "_R"),
+        Type.list (Type.variable ~constraints:(Type.Explicit [Type.integer; Type.float]) "_R"),
         None,
         1));
   assert_select "[[], _R]" "()" (`Found "[[], _R]");

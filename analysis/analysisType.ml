@@ -91,9 +91,15 @@ and tuple =
   | Unbounded of t
 
 
+and constraints =
+  | Bound of t
+  | Explicit of t list
+  | Unconstrained
+
+
 and variable = {
   variable: Identifier.t;
-  constraints: t list;
+  constraints: constraints;
 }
 
 
@@ -276,21 +282,23 @@ let rec pp format annotation =
         "`typing.Union[%s]`"
         (without_backtick parameters)
   | Variable { variable; constraints } ->
-      if constraints = [] then
-        Format.fprintf
-          format
-          "`Variable[%s]`"
-          (Identifier.show variable
-           |> String.substr_replace_all ~pattern:"`" ~with_:"")
-
-      else
-        Format.fprintf
-          format
-          "`Variable[%a <: [%a]]`"
-          Identifier.pp
-          variable
-          (Format.pp_print_list ~pp_sep:(fun format () -> Format.fprintf format ", ") pp)
-          constraints
+      let constraints =
+        match constraints with
+        | Bound bound ->
+            Format.asprintf " [bound = %a]" pp bound
+        | Explicit constraints ->
+            Format.asprintf
+              " <: [%a]"
+              (Format.pp_print_list ~pp_sep:(fun format () -> Format.fprintf format ", ") pp)
+              constraints
+        | Unconstrained ->
+            ""
+      in
+      Format.fprintf
+        format
+        "`Variable[%s%s]`"
+        (Identifier.show variable |> String.substr_replace_all ~pattern:"`" ~with_:"")
+        constraints
 
 
 and show annotation =
@@ -312,7 +320,7 @@ let parametric name parameters =
   Parametric { name = Identifier.create name; parameters }
 
 
-let variable ?(constraints = []) name =
+let variable ?(constraints = Unconstrained) name =
   Variable { variable = Identifier.create name; constraints }
 
 
@@ -652,10 +660,16 @@ let rec create ~aliases { Node.value = expression; _ } =
                               parametric name
                         end
                     | Variable ({ constraints; _ } as variable) ->
-                        Variable {
-                          variable with
-                          constraints = List.map ~f:(resolve visited) constraints;
-                        }
+                        let constraints =
+                          match constraints with
+                          | Bound bound ->
+                              Bound (resolve visited bound)
+                          | Explicit constraints ->
+                              Explicit (List.map constraints ~f:(resolve visited))
+                          | Unconstrained ->
+                              Unconstrained
+                        in
+                        Variable { variable with constraints }
                     | Union elements ->
                         Union (List.map ~f:(resolve visited) elements)
                     | Bottom
@@ -819,13 +833,33 @@ let rec create ~aliases { Node.value = expression; _ } =
           ]
           when Identifier.show typing = "typing" && Identifier.show typevar = "TypeVar" ->
             let constraints =
-              let get_constraint = function
-                | { Argument.value = { Node.value = Access access; _ }; Argument.name = None } ->
-                    Some (parse [] access)
-                | _ ->
-                    None
+              let explicits =
+                let explicit = function
+                  | { Argument.value = { Node.value = Access access; _ }; Argument.name = None } ->
+                      Some (parse [] access)
+                  | _ ->
+                      None
+                in
+                List.filter_map ~f:explicit arguments
               in
-              List.filter_map ~f:get_constraint arguments
+              let bound =
+                let bound = function
+                  | {
+                    Argument.value = { Node.value = Access access; _ };
+                    Argument.name = Some { Node.value = bound; _ };
+                  } when Identifier.show bound = "$parameter_bound" ->
+                      Some (parse [] access)
+                  | _ ->
+                      None
+                in
+                List.find_map ~f:bound arguments
+              in
+              if not (List.is_empty explicits) then
+                Explicit explicits
+              else if Option.is_some bound then
+                Bound (Option.value_exn bound)
+              else
+                Unconstrained
             in
             Variable {
               variable = Identifier.create name;
@@ -1036,7 +1070,14 @@ let rec exists annotation ~predicate =
     | Tuple (Unbounded annotation) ->
         exists ~predicate annotation
 
-    | Variable { constraints = parameters; _ }
+    | Variable { constraints; _ } ->
+        begin
+          match constraints with
+          | Bound bound -> exists ~predicate bound
+          | Explicit constraints -> List.exists constraints ~f:(exists ~predicate)
+          | Unconstrained -> false
+        end
+
     | Parametric { parameters; _ }
     | Tuple (Bounded parameters)
     | Union parameters ->
@@ -1132,7 +1173,7 @@ let is_unknown annotation =
 let is_not_instantiated annotation =
   let predicate = function
     | Bottom -> true
-    | Variable { constraints; _ } when constraints = [] -> true
+    | Variable { constraints = Unconstrained; _ } -> true
     | _ -> false
   in
   exists annotation ~predicate
@@ -1472,10 +1513,13 @@ let rec dequalify map annotation =
       }
   | Primitive name -> Primitive (dequalify_identifier name)
   | Variable { variable = name; constraints } ->
-      Variable {
-        variable = dequalify_identifier name;
-        constraints = List.map ~f:(dequalify map) constraints;
-      }
+      let constraints =
+        match constraints with
+        | Bound bound -> Bound (dequalify map bound)
+        | Explicit constraints -> Explicit (List.map constraints ~f:(dequalify map))
+        | Unconstrained -> Unconstrained
+      in
+      Variable { variable = dequalify_identifier name; constraints }
   | _ -> annotation
 
 

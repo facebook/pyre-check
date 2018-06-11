@@ -116,11 +116,11 @@ let disconnected_order =
 
 let default =
   let order = Builder.default ~configuration () |> TypeOrder.handler in
-  let variable = Type.Variable { Type.variable = ~~"_T"; constraints = [] } in
+  let variable = Type.variable "_T" in
   insert order variable;
   connect order ~predecessor:Type.Bottom ~successor:variable;
   connect order ~predecessor:variable ~successor:Type.Top;
-  let other_variable = Type.Variable { Type.variable = ~~"_T2"; constraints = [] } in
+  let other_variable = Type.variable "_T2" in
   insert order other_variable;
   connect order ~predecessor:Type.Bottom ~successor:other_variable;
   connect order ~predecessor:other_variable ~successor:Type.Top;
@@ -255,7 +255,6 @@ let test_successors _ =
                     \                            /
                       --------------------------                    *)
   let order =
-    let variable name = Type.Variable { Type.variable = name; constraints = [] } in
     let order = Builder.create () |> TypeOrder.handler in
     insert order Type.Bottom;
     insert order Type.Object;
@@ -268,17 +267,17 @@ let test_successors _ =
       order
       ~predecessor:!"typing.Iterator"
       ~successor:!"typing.Iterable"
-      ~parameters:[variable ~~"_T"];
+      ~parameters:[Type.variable "_T"];
     connect
       order
       ~predecessor:!"typing.Iterator"
       ~successor:!"typing.Generic"
-      ~parameters:[variable ~~"_T"];
+      ~parameters:[Type.variable "_T"];
     connect
       order
       ~predecessor:!"typing.Iterable"
       ~successor:!"typing.Generic"
-      ~parameters:[variable ~~"_T"];
+      ~parameters:[Type.variable "_T"];
     connect order ~predecessor:!"typing.Generic" ~successor:Type.Object;
     order in
 
@@ -434,7 +433,6 @@ let test_less_or_equal _ =
        ~right:(Type.Union [Type.integer; Type.Optional Type.string]));
 
   let order =
-    let variable name = Type.Variable { Type.variable = name; constraints = [] } in
     let order = Builder.create () |> TypeOrder.handler in
     let add_simple annotation =
       insert order annotation;
@@ -445,9 +443,9 @@ let test_less_or_equal _ =
     insert order Type.Bottom;
     insert order Type.Object;
     insert order Type.Top;
-    add_simple (variable ~~"_1");
-    add_simple (variable ~~"_2");
-    add_simple (variable ~~"_T");
+    add_simple (Type.variable "_1");
+    add_simple (Type.variable "_2");
+    add_simple (Type.variable "_T");
     add_simple (Type.string);
     add_simple (Type.integer);
     add_simple (Type.float);
@@ -462,22 +460,22 @@ let test_less_or_equal _ =
       order
       ~predecessor:!"A"
       ~successor:!"B"
-      ~parameters:[Type.tuple [variable ~~"_1"; variable ~~"_2"]];
+      ~parameters:[Type.tuple [Type.variable "_1"; Type.variable "_2"]];
     connect
       order
       ~predecessor:!"A"
       ~successor:!"typing.Generic"
-      ~parameters:[variable ~~"_1"; variable ~~"_2"];
+      ~parameters:[Type.variable "_1"; Type.variable "_2"];
     connect
       order
       ~predecessor:!"B"
       ~successor:!"typing.Generic"
-      ~parameters:[variable ~~"_T"];
+      ~parameters:[Type.variable "_T"];
     connect
       order
       ~predecessor:!"B"
       ~successor:!"C"
-      ~parameters:[Type.union [variable ~~"_T"; Type.float]];
+      ~parameters:[Type.union [Type.variable "_T"; Type.float]];
     connect order ~predecessor:!"typing.Generic" ~successor:Type.Object;
     order
   in

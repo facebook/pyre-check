@@ -196,8 +196,7 @@ let select ~arguments ~resolution ~callable:({ Type.Callable.overloads; _ } as c
                       in
                       let in_constraints =
                         match variable with
-                        | Type.Variable { Type.constraints; _ }
-                          when not (List.is_empty constraints) ->
+                        | Type.Variable { Type.constraints = Type.Explicit constraints; _ } ->
                             let in_constraint bound =
                               Resolution.less_or_equal resolution ~left:resolved ~right:bound
                             in
@@ -457,7 +456,7 @@ let select ~arguments ~resolution ~callable:({ Type.Callable.overloads; _ } as c
         let constraints =
           let unbound_variables =
             let is_unbound = function
-              | Type.Variable { Type.constraints = _ :: _; _ } -> false
+              | Type.Variable { Type.constraints = Type.Explicit _; _ } -> false
               | _ -> true
             in
             Type.Callable {

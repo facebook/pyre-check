@@ -26,10 +26,6 @@ let value option =
   Option.value_exn option
 
 
-let variable name =
-  Type.Variable { Type.variable = name; constraints = [] }
-
-
 let configuration = Configuration.create ~infer:true ()
 
 
@@ -453,7 +449,7 @@ let test_populate _ =
       S2 = S
     |}
   in
-  assert_equal (parse_annotation environment !"_T") (variable ~~"_T");
+  assert_equal (parse_annotation environment !"_T") (Type.variable "_T");
   assert_equal (parse_annotation environment !"S") Type.string;
   assert_equal (parse_annotation environment !"S2") Type.string;
 

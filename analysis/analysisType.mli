@@ -62,9 +62,14 @@ and tuple =
   | Bounded of t list
   | Unbounded of t
 
+and constraints =
+  | Bound of t
+  | Explicit of t list
+  | Unconstrained
+
 and variable = {
   variable: Identifier.t;
-  constraints: t list;
+  constraints: constraints;
 }
 
 and t =
@@ -97,7 +102,7 @@ val serialize: t -> string
 
 val primitive: string -> t
 val parametric: string -> t list -> t
-val variable: ?constraints: t list -> string -> t
+val variable: ?constraints: constraints -> string -> t
 
 val awaitable: t -> t
 val bool: t

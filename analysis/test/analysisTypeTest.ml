@@ -71,11 +71,16 @@ let test_create _ =
   (* Check variables. *)
   assert_create "typing.TypeVar('_T')" (Type.variable "_T");
   assert_create "typing.TypeVar('_T', covariant=True)" (Type.variable "_T");
-  assert_create "typing.TypeVar('_T', int)" (Type.variable ~constraints:[Type.integer] "_T");
+  assert_create
+    "typing.TypeVar('_T', int)"
+    (Type.variable ~constraints:(Type.Explicit [Type.integer]) "_T");
   assert_create "typing.TypeVar('_T', name=int)" (Type.variable "_T");
   assert_create
+    "typing.TypeVar('_T', $parameter_bound=int)"
+    (Type.variable ~constraints:(Type.Bound Type.integer) "_T");
+  assert_create
     "typing.TypeVar('_T', int, name=float)"
-    (Type.variable ~constraints:[Type.integer] "_T");
+    (Type.variable ~constraints:(Type.Explicit [Type.integer]) "_T");
 
   (* Check that type aliases are resolved. *)
   let assert_alias source resolved =
@@ -436,8 +441,8 @@ let test_exists _ =
   assert_true (top_exists (Type.Tuple (Type.Unbounded Type.Top)));
   assert_false (top_exists (Type.Tuple (Type.Unbounded Type.integer)));
 
-  assert_true (top_exists (Type.Variable { Type.variable = ~~"T"; constraints = [Type.Top] }));
-  assert_false (top_exists (Type.Variable { Type.variable = ~~"T"; constraints = [Type.integer] }));
+  assert_true (top_exists (Type.variable ~constraints:(Type.Explicit [Type.Top]) "T"));
+  assert_false (top_exists (Type.variable ~constraints:(Type.Explicit [Type.integer]) "T"));
   assert_true (top_exists (Type.parametric "parametric" [Type.integer; Type.Top]));
   assert_false (top_exists (Type.parametric "parametric" [Type.integer; Type.string]));
   assert_true (top_exists (Type.tuple [Type.Top; Type.string]));
@@ -476,9 +481,7 @@ let test_is_not_instantiated _ =
   assert_true (Type.is_not_instantiated (Type.dictionary ~key:Type.Bottom ~value:Type.Bottom));
   assert_true (Type.is_not_instantiated (Type.Optional Type.Bottom));
   assert_false (Type.is_not_instantiated Type.Top);
-  assert_true
-    (Type.is_not_instantiated
-       (Type.Variable { Type.variable = Identifier.create "_T"; constraints = [] }))
+  assert_true (Type.is_not_instantiated (Type.variable "_T"))
 
 
 let test_is_meta _ =

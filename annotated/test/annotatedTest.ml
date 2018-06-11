@@ -49,7 +49,3 @@ let resolution environment =
 
 let value option =
   Option.value_exn option
-
-
-let variable name =
-  Type.Variable { Type.variable = Identifier.create name; constraints = [] }
