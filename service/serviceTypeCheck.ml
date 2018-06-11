@@ -53,7 +53,6 @@ let analyze_source
         TypeCheck.Result.errors = [];
         lookup = None;
         coverage = Coverage.create ();
-        call_graph;
       }
     end
   else

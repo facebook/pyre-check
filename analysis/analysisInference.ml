@@ -573,7 +573,6 @@ let infer configuration environment _ ?mode_override ({ Source.path; qualifier; 
         TypeCheck.Result.errors;
         lookup = Some lookup;
         coverage = Coverage.create ();
-        call_graph = CallGraph.stub ();
       }
   in
 
@@ -600,5 +599,4 @@ let infer configuration environment _ ?mode_override ({ Source.path; qualifier; 
       TypeCheck.Result.errors;
       lookup = Some lookup;
       coverage;
-      call_graph = CallGraph.stub ()
     }

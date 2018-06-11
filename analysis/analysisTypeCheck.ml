@@ -1794,7 +1794,6 @@ module Result = struct
     errors: Error.t list;
     lookup: Lookup.t option;
     coverage: Coverage.t;
-    call_graph: (module CallGraph.Handler);
   }
 end
 
@@ -2001,4 +2000,4 @@ let check
   in
   Coverage.log coverage ~configuration ~total_errors:(List.length errors) ~path;
 
-  { Result.errors; lookup = Some lookup; coverage; call_graph }
+  { Result.errors; lookup = Some lookup; coverage }

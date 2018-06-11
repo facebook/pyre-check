@@ -86,7 +86,6 @@ module Result : sig
     errors: Error.t list;
     lookup: Lookup.t option;
     coverage: Coverage.t;
-    call_graph: (module CallGraph.Handler);
   }
 end
 
