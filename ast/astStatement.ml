@@ -200,6 +200,7 @@ module Attribute = struct
     value: Expression.t option;
     async: bool;
     setter: bool;
+    property: bool;
     primitive: bool;
   }
   [@@deriving compare, eq, sexp, show, hash]
@@ -214,12 +215,13 @@ module Attribute = struct
       ?(async = false)
       ?(setter = false)
       ?(primitive = false)
+      ?(property = false)
       ?value
       ?annotation
       ?defines
       ~target
       () =
-    { target; annotation; defines; value; async; setter; primitive }
+    { target; annotation; defines; value; async; setter; property; primitive }
     |> Node.create ~location
 
 
@@ -561,7 +563,14 @@ module Define = struct
       parent
       >>= (fun parent -> Attribute.target ~parent (Node.create ~location (Access name)))
       >>| fun target ->
-      Attribute.create ~location ~setter ~target ?annotation ~async:(is_async define) ()
+      Attribute.create
+        ~location
+        ~setter
+        ~target
+        ~property:true
+        ?annotation
+        ~async:(is_async define)
+        ()
     in
     match String.Set.find ~f:(has_decorator define) Recognized.property_decorators with
     | Some "util.classproperty"

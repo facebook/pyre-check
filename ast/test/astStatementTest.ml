@@ -149,6 +149,7 @@ let test_constructor _ =
 let test_attributes _ =
   let create_attribute
       ?(primitive = false)
+      ?(property = false)
       ?(setter = false)
       ~target
       ~annotation
@@ -163,6 +164,7 @@ let test_attributes _ =
       value;
       async = false;
       setter;
+      property;
       primitive;
     }
     |> Node.create_with_default_location
@@ -276,7 +278,7 @@ let test_attributes _ =
     let expected =
       expected
       >>| fun (target, annotation, value, setter) ->
-      create_attribute ~setter ~target ~annotation ~value ()
+      create_attribute ~setter ~target ~annotation ~value ~property:true ()
     in
     let define =
       let define = parse_single_define source in

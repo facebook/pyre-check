@@ -3359,7 +3359,7 @@ let test_check_attributes _ =
       "`int` but is used as type `unknown`.";
     ];
 
-  (* Check attribute type resolution. *)
+  (* Check attribute type variable resolution. *)
   assert_type_errors
     {|
       _VALUE = typing.TypeVar('_VALUE')
@@ -3381,6 +3381,16 @@ let test_check_attributes _ =
 
       def bar(wrapper: WrapperSubclass) -> int:
         return wrapper.value
+    |}
+    [];
+  assert_type_errors
+    {|
+      _T = typing.TypeVar('_T')
+      class Class:
+        @property
+        def property(self: _T) -> typing.Sequence[_T]: ...
+      def foo(c: Class) -> typing.Sequence[Class]:
+        return c.property
     |}
     [];
 

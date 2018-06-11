@@ -177,6 +177,7 @@ module Attribute : sig
     value: Expression.t option;
     async: bool;
     setter: bool;
+    property: bool;
     primitive: bool;
   }
   [@@deriving compare, eq, sexp, show, hash]

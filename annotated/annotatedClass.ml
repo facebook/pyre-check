@@ -438,6 +438,7 @@ module Attribute = struct
           value;
           async;
           setter;
+          property;
           primitive;
         };
       } =
@@ -502,6 +503,29 @@ module Attribute = struct
       | _ ->
           Annotation.create Type.Top
     in
+
+    (* Special case properties with type variables. *)
+    let annotation =
+      let variables =
+        Annotation.annotation annotation
+        |> Type.variables
+      in
+      if property && not (List.is_empty variables) then
+        let constraints =
+          let parent_annotation = class_annotation parent ~resolution in
+          List.fold
+            variables
+            ~init:Type.Map.empty
+            ~f:(fun map variable -> Map.set map ~key:variable ~data:parent_annotation)
+          |> Map.find
+        in
+        Annotation.annotation annotation
+        |> Type.instantiate ~constraints
+        |> Annotation.create_immutable ~global:true ~original:(Some Type.Top)
+      else
+        annotation
+    in
+
     {
       Node.location;
       value = { name = target; parent; annotation; value; defined; class_attribute; async };
@@ -758,6 +782,7 @@ let attribute
           value = None;
           async = false;
           setter = false;
+          property = false;
           primitive = true;
         }
       }
@@ -807,6 +832,7 @@ let fallback_attribute ~resolution ~access definition =
                    value = None;
                    async = false;
                    setter = false;
+                   property = false;
                    primitive = true;
                  };
                })

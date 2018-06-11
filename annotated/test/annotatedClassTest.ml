@@ -401,6 +401,7 @@ let test_class_attributes _ =
       ?defines
       ?(async = false)
       ?(setter = false)
+      ?(property = false)
       ?(primitive = false)
       name =
     +{
@@ -410,6 +411,7 @@ let test_class_attributes _ =
       value;
       async;
       setter;
+      property;
       primitive;
     }
   in
