@@ -880,12 +880,49 @@ module Class = struct
         in
         List.fold ~init:Access.Map.empty ~f:callable_attributes body
       in
+      let slots_attributes =
+        let slots_attributes map { Node.value; _ } =
+          let open Expression in
+          let is_slots access =
+            match List.last access with
+            | Some (Access.Identifier identifier)
+              when (Identifier.show identifier) = "__slots__" ->
+                true
+            | _ ->
+                false
+          in
+          match value with
+          | Assign {
+              Assign.target = { Node.value = Access access; _ };
+              value = Some { Node.value = List attributes; location };
+              _;
+            } when is_slots access ->
+              let add_attribute map { Node.value; _ } =
+                match value with
+                | String attribute_name ->
+                    let access = Access.create attribute_name in
+                    Attribute.create
+                      ~location
+                      ~target:
+                        (Node.create ~location (Expression.Access access))
+                      ()
+                    |> fun attribute -> Map.set map ~key:access ~data:attribute
+                | _ ->
+                    map
+              in
+              List.fold ~init:map ~f:add_attribute attributes
+          | _ ->
+              map
+        in
+        List.fold ~init:Access.Map.empty ~f:slots_attributes body
+      in
       (* Merge with decreasing priority. Explicit attributes override all. *)
       explicitly_assigned_attributes
       |> Map.merge ~f:merge implicitly_assigned_attributes
       |> Map.merge ~f:merge property_attributes
       |> Map.merge ~f:merge callable_attributes
       |> Map.merge ~f:merge class_attributes
+      |> Map.merge ~f:merge slots_attributes
 
 
   let update

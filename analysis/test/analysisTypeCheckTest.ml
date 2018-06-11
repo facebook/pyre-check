@@ -4133,6 +4133,42 @@ let test_check_immutables _ =
       "Undefined attribute [16]: `Foo` has no attribute `constant`.";
       "Missing global annotation [5]: Globally accessible variable `constant` has type `str` but " ^
       "no type is specified.";
+    ];
+
+  assert_type_errors
+    {|
+      class Foo():
+        __slots__: typing.List[str] = ['name']
+        def foo(self) -> str:
+          return self.name
+    |}
+    [
+      "Incompatible return type [7]: Expected `str` but got `unknown`.";
+    ];
+
+  assert_type_errors
+    {|
+      class Foo():
+        __slots__: typing.List[str] = ['name', 'attribute']
+        def foo(self) -> str:
+          return self.name + self.attribute + self.constant
+    |}
+    [
+      "Incompatible return type [7]: Expected `str` but got `unknown`.";
+      "Undefined attribute [16]: `Foo` has no attribute `constant`.";
+    ];
+
+  assert_type_errors
+    {|
+      class Foo():
+        __slots__: typing.List[str] = ['name']
+        def foo(self) -> str:
+          return self.name
+        def __init__(self) -> None:
+          self.name: int = 1
+    |}
+    [
+      "Incompatible return type [7]: Expected `str` but got `int`.";
     ]
 
 

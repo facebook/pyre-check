@@ -525,6 +525,25 @@ let test_attributes _ =
       attribute ~target:"context" ~value:"value" ();
       attribute ~target:"setUp" ~number_of_defines:1 ();
       attribute ~target:"with_context" ~number_of_defines:1 ();
+    ];
+
+  (* __slot__ attributes *)
+  assert_attributes
+    {|
+      class Foo:
+        __slots__ = ['attribute']
+    |}
+    [
+      attribute ~target:"attribute" ();
+    ];
+  assert_attributes
+    {|
+      class Foo:
+        __slots__ = ['name', 'identifier']
+    |}
+    [
+      attribute ~target:"identifier" ();
+      attribute ~target:"name" ();
     ]
 
 
