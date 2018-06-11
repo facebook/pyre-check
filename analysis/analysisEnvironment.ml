@@ -872,6 +872,12 @@ let populate
     ~path:"builtins.py"
     ~key:(Type.primitive "None")
     ~data:(Type.Optional Type.Bottom);
+  (* This is broken in typeshed:
+     https://github.com/python/typeshed/pull/991#issuecomment-288160993 *)
+  Handler.register_alias
+    ~path:"builtins.py"
+    ~key:(Type.primitive "PathLike")
+    ~data:(Type.primitive "_PathLike");
 
   List.iter ~f:(register_module (module Handler)) sources;
 
