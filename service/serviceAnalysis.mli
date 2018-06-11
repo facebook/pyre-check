@@ -10,6 +10,6 @@ val analyze
   :  scheduler: ServiceScheduler.t
   -> configuration: Configuration.t
   -> environment: (module Environment.Handler)
-  -> call_graph: (module CallGraph.Handler)
+  -> call_graph: (module CallGraph.Handler) option
   -> handles: File.Handle.t list
   -> unit

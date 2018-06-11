@@ -64,7 +64,7 @@ let initialize
   {
     deferred_requests = [];
     environment;
-    call_graph = Analysis.CallGraph.create () |> Analysis.CallGraph.handler;
+    call_graph = None;
     initial_errors = Error.Hash_set.of_list initial_errors;
     errors;
     handles;

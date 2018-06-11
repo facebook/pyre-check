@@ -124,7 +124,7 @@ let check
     handler scheduler ~configuration ~stubs ~sources
   in
 
-  let call_graph = Service.CallGraph.shared_memory_handler () in
+  let call_graph = Some (Service.CallGraph.shared_memory_handler ()) in
 
   let errors, lookups, { TypeCheck.Coverage.full; partial; untyped; ignore; crashes } =
     Service.TypeCheck.analyze_sources scheduler configuration environment call_graph sources

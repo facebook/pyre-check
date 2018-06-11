@@ -64,7 +64,7 @@ let assert_call_graph source ~expected =
     [source];
   let environment = Environment.handler ~configuration plain_environment in
   let call_graph = Service.CallGraph.shared_memory_handler () in
-  check configuration environment call_graph source |> ignore;
+  check configuration environment (Some call_graph) source |> ignore;
   let { Source.path; _ } = source in
   let module CallGraph = (val call_graph: CallGraph.Handler) in
   let build_output caller result callee =

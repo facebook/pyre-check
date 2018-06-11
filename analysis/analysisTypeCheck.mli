@@ -50,7 +50,7 @@ module State : sig
     errors: Error.t Location.Map.t;
     define: Define.t Node.t;
     lookup: Lookup.t option;
-    call_graph: (module CallGraph.Handler);
+    call_graph: (module CallGraph.Handler) option;
     nested_defines: nested_define Location.Map.t;
     bottom: bool;
   }
@@ -61,7 +61,7 @@ module State : sig
     -> resolution: Resolution.t
     -> define: Statement.Define.t Node.t
     -> ?lookup: Lookup.t
-    -> call_graph: (module CallGraph.Handler)
+    -> ?call_graph: (module CallGraph.Handler)
     -> unit
     -> t
 
@@ -71,7 +71,7 @@ module State : sig
   val initial
     :  ?configuration: Configuration.t
     -> ?lookup: Lookup.t
-    -> call_graph: (module CallGraph.Handler)
+    -> ?call_graph: (module CallGraph.Handler)
     -> resolution: Resolution.t
     -> Define.t Node.t
     -> t
@@ -92,7 +92,7 @@ end
 val check
   :  Configuration.t
   -> (module Environment.Handler)
-  -> (module CallGraph.Handler)
+  -> (module CallGraph.Handler) option
   -> ?mode_override: Source.mode
   -> Source.t
   -> Result.t

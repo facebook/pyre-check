@@ -41,7 +41,7 @@ val backward_fixpoint
 val infer
   :  Configuration.t
   -> (module Environment.Handler)
-  -> (module CallGraph.Handler)
+  -> (module CallGraph.Handler) option
   -> ?mode_override: Source.mode
   -> Source.t
   -> Result.t

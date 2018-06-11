@@ -238,9 +238,7 @@ let mock_path path =
 
 
 let mock_call_graph =
-  let open Analysis in
-  CallGraph.create ()
-  |> CallGraph.handler
+  None
 
 
 (* Override `OUnit`s functions the return absolute paths. *)

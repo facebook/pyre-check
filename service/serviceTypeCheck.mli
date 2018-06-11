@@ -12,6 +12,6 @@ val analyze_sources
   : ServiceScheduler.t
   -> Configuration.t
   -> (module Environment.Handler)
-  -> (module CallGraph.Handler)
+  -> (module CallGraph.Handler) option
   -> File.Handle.t list
   -> Error.t list * (Lookup.t String.Map.t) * TypeCheck.Coverage.t
