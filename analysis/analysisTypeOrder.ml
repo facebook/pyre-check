@@ -494,6 +494,11 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
       let left = Type.Parametric { Type.name; parameters = [] } in
       less_or_equal order ~left ~right
 
+  | Type.Variable { Type.constraints = Type.Bound left; _ }, right ->
+      less_or_equal order ~left ~right
+  | _, Type.Variable { Type.constraints = Type.Bound _; _ } ->
+      false
+
   | _ ->
       raise_if_untracked order left;
       raise_if_untracked order right;
@@ -816,6 +821,11 @@ and join ((module Handler: Handler) as order) left right =
     | _, Type.Callable _ ->
         Type.Object
 
+    | Type.Variable { Type.constraints = Type.Bound left; _ }, right ->
+        join order left right
+    | left, Type.Variable { Type.constraints = Type.Bound right; _ } ->
+        join order left right
+
     | _ ->
         match List.hd (least_upper_bound order left right) with
         | Some joined ->
@@ -933,6 +943,17 @@ and meet order left right =
     | Type.Callable _, _
     | _, Type.Callable _ ->
         Type.Bottom
+
+    | Type.Variable ({ Type.constraints = Type.Bound left; _ } as variable), right ->
+        Type.Variable {
+          variable with
+          Type.constraints = Type.Bound (meet order left right);
+        }
+    | left, Type.Variable ({ Type.constraints = Type.Bound right; _ } as variable) ->
+        Type.Variable {
+          variable with
+          Type.constraints = Type.Bound (meet order left right);
+        }
 
     | _ ->
         match List.hd (greatest_lower_bound order left right) with

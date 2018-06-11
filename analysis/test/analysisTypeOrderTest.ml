@@ -216,7 +216,27 @@ let test_default _ =
   assert_equal (meet order Type.float Type.integer) Type.integer;
   assert_equal (meet order Type.integer Type.float) Type.integer;
   assert_equal (meet order Type.integer Type.complex) Type.integer;
-  assert_equal (meet order Type.float Type.complex) Type.float
+  assert_equal (meet order Type.float Type.complex) Type.float;
+
+  (* Bound variables. *)
+  assert_false
+    (less_or_equal
+       order
+       ~left:Type.integer
+       ~right:(Type.variable ~constraints:(Type.Bound Type.float) "T"));
+  assert_false
+    (less_or_equal
+       order
+       ~left:Type.float
+       ~right:(Type.variable ~constraints:(Type.Bound Type.integer) "T"));
+  assert_equal
+    (join order Type.integer (Type.variable ~constraints:(Type.Bound Type.float) "T")) Type.float;
+  assert_equal
+    (meet
+       order
+       Type.integer
+       (Type.variable ~constraints:(Type.Bound Type.float) "T"))
+    (Type.variable ~constraints:(Type.Bound Type.integer) "T")
 
 
 let test_successors_fold _ =

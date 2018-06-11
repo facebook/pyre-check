@@ -285,7 +285,7 @@ let rec pp format annotation =
       let constraints =
         match constraints with
         | Bound bound ->
-            Format.asprintf " [bound = %a]" pp bound
+            Format.asprintf " (bound to %a)" pp bound
         | Explicit constraints ->
             Format.asprintf
               " <: [%a]"

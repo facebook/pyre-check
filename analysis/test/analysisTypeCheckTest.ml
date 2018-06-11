@@ -4345,6 +4345,23 @@ let test_check_variable_restrictions _ =
     ]
 
 
+let test_check_variable_bindings _ =
+  assert_type_errors
+    {|
+      T = typing.TypeVar('T', bound=int)
+      def foo(t: T) -> None:
+        str_to_int(t)
+    |}
+    ["Incompatible parameter type [6]: Expected `str` but got `Variable[T (bound to `int`)]`."];
+  assert_type_errors
+    {|
+      T = typing.TypeVar('T', bound=int)
+      def foo() -> T:
+        return 1.0
+    |}
+    ["Incompatible return type [7]: Expected `Variable[T (bound to `int`)]` but got `float`."]
+
+
 let test_check_refinement _ =
   assert_type_errors
     {|
@@ -4894,8 +4911,11 @@ let test_check_behavioral_subtyping _ =
         def foo(self, x: str) -> str:
           return x
     |}
-    (* TODO(T27409168): Error here. *)
-    [];
+    [
+      "Inconsistent override [14]: `Bar.foo` overloads method defined in `Foo` inconsistently. " ^
+      "Parameter of type `str` is not a supertype of the overridden parameter " ^
+      "`Variable[T (bound to `int`)]`.";
+    ];
   assert_type_errors
     {|
       T = typing.TypeVar('T')
@@ -5587,6 +5607,7 @@ let () =
     "check_return_joining">::test_check_return_joining;
     "check_nested">::test_check_nested;
     "check_variable_restrictions">::test_check_variable_restrictions;
+    "check_variable_bindings">::test_check_variable_bindings;
     "check_refinement">::test_check_refinement;
     "check_toplevel">::test_check_toplevel;
     "check_tuple">::test_check_tuple;
