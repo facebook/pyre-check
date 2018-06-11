@@ -53,6 +53,7 @@ let analyze_source
         TypeCheck.Result.errors = [];
         lookup = None;
         coverage = Coverage.create ();
+        call_graph;
       }
     end
   else
@@ -132,6 +133,7 @@ let analyze_sources_parallel
                     TypeCheck.Result.errors = new_errors;
                     lookup;
                     coverage;
+                    _;
                   } =
                     analyze_source configuration environment call_graph source
                   in
@@ -200,7 +202,7 @@ let analyze_sources
         configuration
         (current_errors, lookups, total_coverage)
         ({ Source.path; _ } as source) =
-      let { TypeCheck.Result.errors; lookup; coverage } =
+      let { TypeCheck.Result.errors; lookup; coverage; _ } =
         analyze_source configuration environment call_graph source
       in
       let lookups =

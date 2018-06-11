@@ -42,6 +42,7 @@ module State = struct
     errors: Error.t Location.Map.t;
     define: Define.t Node.t;
     lookup: Lookup.t option;
+    call_graph: (module CallGraph.Handler);
     nested_defines: nested_define Location.Map.t;
     bottom: bool;
   }
@@ -126,11 +127,18 @@ module State = struct
       (Resolution.annotations right.resolution)
 
 
-  let create ?(configuration = Configuration.create ()) ~resolution ~define ?lookup () =
+  let create
+      ?(configuration = Configuration.create ())
+      ~resolution
+      ~define
+      ?lookup
+      ~call_graph
+      () =
     {
       configuration;
       resolution;
       errors = Location.Map.empty;
+      call_graph;
       define;
       lookup;
       nested_defines = Location.Map.empty;
@@ -245,6 +253,7 @@ module State = struct
   let initial
       ?(configuration = Configuration.create ())
       ?lookup
+      ~call_graph
       ~resolution
       ({
         Node.location;
@@ -252,7 +261,7 @@ module State = struct
       } as define_node) =
     let resolution = Resolution.with_define resolution ~define in
     let { resolution; errors; _ } as initial =
-      create ~configuration ~resolution ~define:define_node ?lookup ()
+      create ~configuration ~resolution ~define:define_node ?lookup ~call_graph ()
     in
     (* Check parameters. *)
     let annotations, errors =
@@ -433,7 +442,7 @@ module State = struct
     in
 
     let resolution = Resolution.with_annotations resolution ~annotations in
-    { initial with resolution; errors }
+    { initial with resolution; errors; call_graph }
 
 
   let less_or_equal ~left:({ resolution; _ } as left) ~right =
@@ -585,6 +594,7 @@ module State = struct
         errors;
         define = ({ Node.value = { Define.async; _ } as define; _ } as define_node);
         lookup;
+        call_graph;
         nested_defines;
         _;
       } as state)
@@ -1716,6 +1726,7 @@ module State = struct
                 initial
                   ~configuration
                   ?lookup
+                  ~call_graph
                   ~resolution
                   (Node.create define ~location)
               in
@@ -1742,7 +1753,32 @@ module State = struct
           nested_defines
     in
 
-    { state with nested_defines }
+  (* store call graph edges *)
+  let () =
+    let module CallGraph = (val state.call_graph: CallGraph.Handler) in
+    let open Type.Callable in
+    let caller = define.Define.name in
+    let path = location.Location.path in
+    CallGraph.register_caller ~path ~caller;
+    let walk_access state { Node.value = access; _ } =
+      let add_call_edge () ~resolution:_ ~resolved ~element:_ =
+        match Annotation.annotation resolved with
+        | Annotation.Type.Callable { kind = Named callee; _ } ->
+            CallGraph.register_call_edge ~caller ~callee
+        | _ ->
+            ()
+      in
+      Annotated.Access.create access
+      |> Annotated.Access.fold
+        ~resolution
+        ~initial:state
+        ~f:add_call_edge
+    in
+    Visit.collect_accesses_with_location statement
+    |> List.fold ~init:() ~f:walk_access
+  in
+
+  { state with nested_defines }
 
 
   let backward state ~statement:_ =
@@ -1758,6 +1794,7 @@ module Result = struct
     errors: Error.t list;
     lookup: Lookup.t option;
     coverage: Coverage.t;
+    call_graph: (module CallGraph.Handler);
   }
 end
 
@@ -1785,7 +1822,6 @@ let check
     ?mode_override
     ({ Source.path; qualifier; statements; _ } as source) =
   Log.debug "Checking %s..." path;
-  ignore call_graph; (* TODO(T28536531): actually build this. *)
 
   let resolution =
     Environment.resolution
@@ -1916,7 +1952,14 @@ let check
     let rec results ~queue =
       match Queue.dequeue queue with
       | Some (define, resolution) ->
-          let initial = State.initial ~configuration ~lookup ~resolution define in
+          let initial =
+            State.initial
+              ~configuration
+              ~lookup
+              ~call_graph
+              ~resolution
+              define
+          in
           let result, queue = check ~define ~initial ~queue in
           result :: results ~queue
       | _ ->
@@ -1958,4 +2001,4 @@ let check
   in
   Coverage.log coverage ~configuration ~total_errors:(List.length errors) ~path;
 
-  { Result.errors; lookup = Some lookup; coverage }
+  { Result.errors; lookup = Some lookup; coverage; call_graph }

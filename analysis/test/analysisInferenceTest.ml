@@ -53,7 +53,8 @@ let create
       Define.return_annotation = Some (Type.expression expected_return);
     }
   in
-  State.create ~resolution ~define ()
+  let call_graph = CallGraph.stub () in
+  State.create ~call_graph ~resolution ~define ()
 
 
 let assert_backward precondition statement postcondition =
@@ -169,7 +170,10 @@ let test_fixpoint_backward _ =
       expected
       (Inference.backward_fixpoint
          (Cfg.create define)
-         ~initial_forward:(State.initial ~resolution:TypeCheckTest.resolution define_node)
+         ~initial_forward:
+           (State.initial
+              ~call_graph:(CallGraph.stub ())
+              ~resolution:TypeCheckTest.resolution define_node)
          ~initialize_backward:(Inference.State.initial_backward define_node))
   in
   assert_fixpoint_backward

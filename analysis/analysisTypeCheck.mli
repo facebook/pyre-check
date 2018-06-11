@@ -31,6 +31,8 @@ module State : sig
 
      `lookup` keeps track of symbols and their types to later expose them to IDEs.
 
+     `call_graph` is an interface that builds a call graph in memory during type checking.
+
      `nested_defines` keeps track of entry points and states for nested function definitions.
 
      `bottom` indicates whether the state is reachable.
@@ -48,6 +50,7 @@ module State : sig
     errors: Error.t Location.Map.t;
     define: Define.t Node.t;
     lookup: Lookup.t option;
+    call_graph: (module CallGraph.Handler);
     nested_defines: nested_define Location.Map.t;
     bottom: bool;
   }
@@ -58,6 +61,7 @@ module State : sig
     -> resolution: Resolution.t
     -> define: Statement.Define.t Node.t
     -> ?lookup: Lookup.t
+    -> call_graph: (module CallGraph.Handler)
     -> unit
     -> t
 
@@ -67,6 +71,7 @@ module State : sig
   val initial
     :  ?configuration: Configuration.t
     -> ?lookup: Lookup.t
+    -> call_graph: (module CallGraph.Handler)
     -> resolution: Resolution.t
     -> Define.t Node.t
     -> t
@@ -81,6 +86,7 @@ module Result : sig
     errors: Error.t list;
     lookup: Lookup.t option;
     coverage: Coverage.t;
+    call_graph: (module CallGraph.Handler);
   }
 end
 

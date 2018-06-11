@@ -124,12 +124,7 @@ let check
     handler scheduler ~configuration ~stubs ~sources
   in
 
-  let call_graph =
-    if Scheduler.is_parallel scheduler then
-      Service.CallGraph.shared_memory_handler ()
-    else
-      Service.CallGraph.in_process_handler ()
-  in
+  let call_graph = Service.CallGraph.shared_memory_handler () in
 
   let errors, lookups, { TypeCheck.Coverage.full; partial; untyped; ignore; crashes } =
     Service.TypeCheck.analyze_sources scheduler configuration environment call_graph sources

@@ -44,7 +44,8 @@ module State = struct
           resolution
           ~annotations:(Access.Map.of_alist_exn [Preprocessing.return_access, expected_return])
       in
-      create ~configuration ~resolution ~define ()
+      let call_graph = CallGraph.stub () in
+      create ~call_graph ~configuration ~resolution ~define ()
     in
     let combine_annotations left right =
       let add_annotation ~key ~data map =
@@ -363,8 +364,10 @@ let infer configuration environment _ ?mode_override ({ Source.path; qualifier; 
 
     try
       let cfg = Cfg.create define in
+      let call_graph = CallGraph.stub () in
       let initial_forward =
         State.initial
+          ~call_graph
           ~configuration
           ~lookup
           ~resolution
@@ -570,6 +573,7 @@ let infer configuration environment _ ?mode_override ({ Source.path; qualifier; 
         TypeCheck.Result.errors;
         lookup = Some lookup;
         coverage = Coverage.create ();
+        call_graph = CallGraph.stub ();
       }
   in
 
@@ -592,4 +596,9 @@ let infer configuration environment _ ?mode_override ({ Source.path; qualifier; 
     in
     Coverage.log coverage ~configuration ~total_errors:(List.length errors) ~path;
 
-    { TypeCheck.Result.errors; lookup = Some lookup; coverage }
+    {
+      TypeCheck.Result.errors;
+      lookup = Some lookup;
+      coverage;
+      call_graph = CallGraph.stub ()
+    }
