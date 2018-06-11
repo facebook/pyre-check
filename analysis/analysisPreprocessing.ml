@@ -860,6 +860,11 @@ let replace_version_specific_code source =
       include Transform.Identity
       type t = unit
 
+      type operator =
+        | Equality of Expression.t * Expression.t
+        | Comparison of Expression.t * Expression.t
+        | Neither
+
       let statement_postorder _ ({ Node.location; value } as statement) =
         match value with
         | If { If.test; body; orelse } ->
@@ -877,33 +882,47 @@ let replace_version_specific_code source =
                     match operator with
                     | Expression.ComparisonOperator.LessThan
                     | Expression.ComparisonOperator.LessThanOrEquals ->
-                        Some (left, right)
+                        Comparison (left, right)
 
                     | Expression.ComparisonOperator.GreaterThan
                     | Expression.ComparisonOperator.GreaterThanOrEquals ->
-                        Some (right, left)
+                        Comparison (right, left)
 
+                    | Expression.ComparisonOperator.Equals ->
+                        Equality (left, right)
                     | _ ->
-                        None
+                        Neither
                   end
-              | _ -> None
+              | _ ->
+                  Neither
             in
             begin
               match extract_single_comparison test with
-              | Some (left, { Node.value = Expression.Tuple ({ Node.value = major; _ } :: _); _ })
+              | Comparison
+                  (left, { Node.value = Expression.Tuple ({ Node.value = major; _ } :: _); _ })
                 when Expression.show left = "sys.version_info" && major = Expression.Integer 3 ->
                   (),
                   if List.is_empty orelse then
                     [Node.create ~location Statement.Pass]
                   else
                     orelse
-              | Some ({ Node.value = Expression.Tuple ({ Node.value = major; _ } :: _); _ }, right)
+              | Comparison
+                  ({ Node.value = Expression.Tuple ({ Node.value = major; _ } :: _); _ }, right)
                 when Expression.show right = "sys.version_info" && major = Expression.Integer 3 ->
                   (),
                   if List.is_empty body then
                     [Node.create ~location Statement.Pass]
                   else
                     body
+              | Equality (left, right)
+                when String.is_prefix ~prefix:"sys.version_info" (Expression.show left) ||
+                     String.is_prefix ~prefix:"sys.version_info" (Expression.show right) ->
+                  (* Never pin our stubs to a python version. *)
+                  (),
+                  if List.is_empty orelse then
+                    [Node.create ~location Statement.Pass]
+                  else
+                    orelse
               | _ ->
                   (), [statement]
             end
