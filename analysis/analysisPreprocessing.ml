@@ -17,14 +17,23 @@ let expand_string_annotations source =
       type t = unit
 
       let statement_postorder _ ({ Node.value; _ } as statement) =
-        let rec transform_expression ({ Node.location; value } as expression) =
+        let rec transform_expression
+            ?(is_type_variable = false)
+            ({ Node.location; value } as expression) =
           let value =
             match value with
             | Access access ->
                 let transform_element = function
                   | Access.Call ({ Node.value = arguments ; _ } as call) ->
-                      let transform_argument ({ Argument.value; _ } as argument) =
-                        { argument with Argument.value = transform_expression value }
+                      let transform_argument ({ Argument.value; name } as argument) =
+                        match name with
+                        | Some { Node.value = name; _ }
+                          when Identifier.show name = "bound" || not is_type_variable ->
+                            { argument with Argument.value = transform_expression value }
+                        | None when not is_type_variable ->
+                            { argument with Argument.value = transform_expression value }
+                        | _ ->
+                            argument
                       in
                       Access.Call {
                         call with
@@ -68,8 +77,27 @@ let expand_string_annotations source =
           in
           { expression with Node.value }
         in
-        let transform_assign ~assign:({ Assign.annotation; _ } as assign) =
-          { assign with Assign.annotation = annotation >>| transform_expression }
+        let transform_assign ~assign:({ Assign.annotation; value; _ } as assign) =
+          let value =
+            match value with
+            | Some ({ Node.value = Access access; _ } as expression) ->
+                let is_type_variable =
+                  let name = Access.show access in
+                  String.is_prefix name ~prefix:"typing.TypeVar.(" ||
+                  String.is_prefix name ~prefix:"TypeVar.("
+                in
+                if is_type_variable then
+                  Some (transform_expression ~is_type_variable expression)
+                else
+                  value
+            | _ ->
+                value
+          in
+          {
+            assign with
+            Assign.annotation = annotation >>| transform_expression;
+            value;
+          }
         in
         let transform_define ~define:({ Define.parameters; return_annotation; _ } as define) =
           let parameter ({ Node.value = ({ Parameter.annotation; _ } as parameter); _ } as node) =
