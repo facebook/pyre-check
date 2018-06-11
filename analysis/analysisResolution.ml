@@ -76,7 +76,7 @@ let get_local { annotations; global; _ } ~access =
             in
             [Access.Identifier name]
         | _ ->
-          access
+            access
       in
       global access
       >>| Node.value

@@ -471,20 +471,20 @@ module State = struct
 
 
   let join_resolutions left_resolution right_resolution =
-       let merge_annotations ~key:_ = function
-        | `Both (left, right) ->
-            Some (Refinement.join ~resolution:left_resolution left right)
-        | `Left _
-        | `Right _ ->
-            Some (Annotation.create Type.Top)
-      in
-      let annotations =
-        Map.merge
-          ~f:merge_annotations
-          (Resolution.annotations left_resolution)
-          (Resolution.annotations right_resolution)
-      in
-      Resolution.with_annotations left_resolution ~annotations
+    let merge_annotations ~key:_ = function
+      | `Both (left, right) ->
+          Some (Refinement.join ~resolution:left_resolution left right)
+      | `Left _
+      | `Right _ ->
+          Some (Annotation.create Type.Top)
+    in
+    let annotations =
+      Map.merge
+        ~f:merge_annotations
+        (Resolution.annotations left_resolution)
+        (Resolution.annotations right_resolution)
+    in
+    Resolution.with_annotations left_resolution ~annotations
 
 
   let join ({ resolution; _ } as left) right =
@@ -1753,32 +1753,32 @@ module State = struct
           nested_defines
     in
 
-  (* store call graph edges *)
-  let () =
-    let module CallGraph = (val state.call_graph: CallGraph.Handler) in
-    let open Type.Callable in
-    let caller = define.Define.name in
-    let path = location.Location.path in
-    CallGraph.register_caller ~path ~caller;
-    let walk_access state { Node.value = access; _ } =
-      let add_call_edge () ~resolution:_ ~resolved ~element:_ =
-        match Annotation.annotation resolved with
-        | Annotation.Type.Callable { kind = Named callee; _ } ->
-            CallGraph.register_call_edge ~caller ~callee
-        | _ ->
-            ()
+    (* store call graph edges *)
+    let () =
+      let module CallGraph = (val state.call_graph: CallGraph.Handler) in
+      let open Type.Callable in
+      let caller = define.Define.name in
+      let path = location.Location.path in
+      CallGraph.register_caller ~path ~caller;
+      let walk_access state { Node.value = access; _ } =
+        let add_call_edge () ~resolution:_ ~resolved ~element:_ =
+          match Annotation.annotation resolved with
+          | Annotation.Type.Callable { kind = Named callee; _ } ->
+              CallGraph.register_call_edge ~caller ~callee
+          | _ ->
+              ()
+        in
+        Annotated.Access.create access
+        |> Annotated.Access.fold
+          ~resolution
+          ~initial:state
+          ~f:add_call_edge
       in
-      Annotated.Access.create access
-      |> Annotated.Access.fold
-        ~resolution
-        ~initial:state
-        ~f:add_call_edge
+      Visit.collect_accesses_with_location statement
+      |> List.fold ~init:() ~f:walk_access
     in
-    Visit.collect_accesses_with_location statement
-    |> List.fold ~init:() ~f:walk_access
-  in
 
-  { state with nested_defines }
+    { state with nested_defines }
 
 
   let backward state ~statement:_ =

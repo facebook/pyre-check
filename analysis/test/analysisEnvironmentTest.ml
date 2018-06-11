@@ -120,18 +120,18 @@ let test_register_aliases _ =
       List.iter sources ~f:register;
       Environment.register_aliases (module Handler) sources;
       (module Handler: Environment.Handler)
-  in
-  let assert_alias (alias, target) =
-    let parse_annotation handler source =
-      parse_single_expression source
-      |> parse_annotation handler
     in
-    assert_equal
-      ~printer:(fun string -> string)
-      (Type.show (parse_annotation (module Handler) alias))
-      (Format.sprintf "`%s`" target)
-  in
-  List.iter aliases ~f:assert_alias
+    let assert_alias (alias, target) =
+      let parse_annotation handler source =
+        parse_single_expression source
+        |> parse_annotation handler
+      in
+      assert_equal
+        ~printer:(fun string -> string)
+        (Type.show (parse_annotation (module Handler) alias))
+        (Format.sprintf "`%s`" target)
+    in
+    List.iter aliases ~f:assert_alias
   in
 
   assert_resolved
