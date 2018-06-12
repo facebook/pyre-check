@@ -201,11 +201,51 @@ let test_lookup_pick_narrowest _ =
     ~annotation:(Some "test.py:3:21-3:27/`Optional[int]`")
 
 
+let test_lookup_class_attributes _ =
+  let source =
+    {|
+      class Foo():
+          b: bool
+    |}
+  in
+  let lookup =
+    let configuration = Configuration.create ~debug:true ~infer:false () in
+    let environment = environment source |> Environment.handler ~configuration in
+    let parsed = parse source in
+    match TypeCheck.check configuration environment mock_call_graph parsed with
+    | { TypeCheck.Result.lookup = Some lookup; _ } -> lookup
+    | _ -> failwith "Did not generate lookup table."
+  in
+
+  assert_equal
+    ~printer:(String.concat ~sep:", ")
+    [
+      "test.py:3:4-3:5/`bool`";
+    ]
+    (Hashtbl.to_alist lookup
+     |> List.map ~f:(fun (key, data) ->
+         Format.asprintf "%s/%a" (Location.to_string key) Type.pp data)
+     |> List.sort ~compare:String.compare);
+  assert_annotation
+    ~lookup
+    ~position:{ Location.line = 3; column = 3 }
+    ~annotation:None;
+  assert_annotation
+    ~lookup
+    ~position:{ Location.line = 3; column = 4 }
+    ~annotation:(Some "test.py:3:4-3:5/`bool`");
+  assert_annotation
+    ~lookup
+    ~position:{ Location.line = 3; column = 6 }
+    ~annotation:None
+
+
 let () =
   "lookup">:::[
     "lookup">::test_lookup;
     "lookup_across_files">::test_lookup_across_files;
     "lookup_call_arguments">::test_lookup_call_arguments;
     "lookup_pick_narrowest">::test_lookup_pick_narrowest;
+    "lookup_class_attributes">::test_lookup_class_attributes;
   ]
   |> run_test_tt_main
