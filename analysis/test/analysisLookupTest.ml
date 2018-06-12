@@ -16,12 +16,23 @@ open Test
 let configuration = Configuration.create ()
 
 
-let environment source =
+let generate_lookup source =
+  let parsed =
+    parse
+      ~qualifier:(Source.qualifier ~path:"test.py")
+      ~path:"test.py" source
+    |> Preprocessing.qualify
+  in
+  let configuration = Configuration.create ~debug:true ~infer:false () in
   let environment = Environment.Builder.create ~configuration () in
   Environment.populate
     ~configuration
-    (Environment.handler ~configuration environment) [parse source];
-  environment
+    (Environment.handler ~configuration environment)
+    [parsed];
+  let environment = Environment.handler ~configuration environment in
+  match TypeCheck.check configuration environment mock_call_graph parsed with
+  | { TypeCheck.Result.lookup = Some lookup; _ } -> lookup
+  | _ -> failwith "Did not generate lookup table."
 
 
 let test_lookup _ =
@@ -33,18 +44,7 @@ let test_lookup _ =
           return foo(x)
     |}
   in
-  let environment = environment source in
-  let parsed = parse source in
-  let configuration = (Configuration.create ~debug:true ~infer:false ()) in
-  let environment = (Environment.handler ~configuration environment) in
-  let { TypeCheck.Result.lookup; _ } =
-    TypeCheck.check
-      configuration
-      environment
-      mock_call_graph
-      parsed
-  in
-  assert_is_some lookup
+  generate_lookup source |> ignore
 
 
 let test_lookup_across_files _ =
@@ -99,14 +99,7 @@ let test_lookup_call_arguments _ =
           "nextline")
     |}
   in
-  let lookup =
-    let configuration = Configuration.create ~debug:true ~infer:false () in
-    let environment = environment source |> Environment.handler ~configuration in
-    let parsed = parse source in
-    match TypeCheck.check configuration environment mock_call_graph parsed with
-    | { TypeCheck.Result.lookup = Some lookup; _ } -> lookup
-    | _ -> failwith "Did not generate lookup table."
-  in
+  let lookup = generate_lookup source in
 
   assert_equal
     ~printer:(String.concat ~sep:", ")
@@ -169,14 +162,7 @@ let test_lookup_pick_narrowest _ =
               pass
     |}
   in
-  let lookup =
-    let configuration = Configuration.create ~debug:true ~infer:false () in
-    let environment = environment source |> Environment.handler ~configuration in
-    let parsed = parse source in
-    match TypeCheck.check configuration environment mock_call_graph parsed with
-    | { TypeCheck.Result.lookup = Some lookup; _ } -> lookup
-    | _ -> failwith "Did not generate lookup table."
-  in
+  let lookup = generate_lookup source in
 
   assert_equal
     ~printer:(String.concat ~sep:", ")
@@ -210,14 +196,7 @@ let test_lookup_class_attributes _ =
           b: bool
     |}
   in
-  let lookup =
-    let configuration = Configuration.create ~debug:true ~infer:false () in
-    let environment = environment source |> Environment.handler ~configuration in
-    let parsed = parse source in
-    match TypeCheck.check configuration environment mock_call_graph parsed with
-    | { TypeCheck.Result.lookup = Some lookup; _ } -> lookup
-    | _ -> failwith "Did not generate lookup table."
-  in
+  let lookup = generate_lookup source in
 
   assert_equal
     ~printer:(String.concat ~sep:", ")
@@ -255,18 +234,7 @@ let test_lookup_identifier_accesses _ =
           return a.x
     |}
   in
-  let lookup =
-    let parsed = parse ~qualifier:(Source.qualifier ~path:"test.py") ~path:"test.py" source |> Preprocessing.qualify in
-    let configuration = Configuration.create ~debug:true ~infer:false () in
-    let environment = Environment.Builder.create ~configuration () in
-    Environment.populate
-      ~configuration
-      (Environment.handler ~configuration environment) [parsed];
-    let environment = Environment.handler ~configuration environment in
-    match TypeCheck.check configuration environment mock_call_graph parsed with
-    | { TypeCheck.Result.lookup = Some lookup; _ } -> lookup
-    | _ -> failwith "Did not generate lookup table."
-  in
+  let lookup = generate_lookup source in
 
   assert_equal
     ~printer:(String.concat ~sep:", ")
