@@ -379,6 +379,15 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
             right_parameters)
       |> Option.value ~default:false
 
+  | Type.Variable { Type.constraints = Type.Bound left; _ }, right ->
+      less_or_equal order ~left ~right
+  | _, Type.Variable { Type.constraints = Type.Bound _; _ } ->
+      false
+  | Type.Variable { Type.constraints = Type.Explicit left; _ }, right ->
+      less_or_equal order ~left:(Type.union left) ~right
+  | left, Type.Variable { Type.constraints = Type.Explicit right; _ } ->
+      less_or_equal order ~left ~right:(Type.union right)
+
   (* \forall i \in Union[...]. A_i <= B -> Union[...] <= B. *)
   | Type.Union left, right ->
       List.fold
@@ -493,11 +502,6 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
   | Type.Primitive name, Type.Parametric _ ->
       let left = Type.Parametric { Type.name; parameters = [] } in
       less_or_equal order ~left ~right
-
-  | Type.Variable { Type.constraints = Type.Bound left; _ }, right ->
-      less_or_equal order ~left ~right
-  | _, Type.Variable { Type.constraints = Type.Bound _; _ } ->
-      false
 
   | _ ->
       raise_if_untracked order left;
@@ -695,6 +699,15 @@ and join ((module Handler: Handler) as order) left right =
     | other, Type.Bottom ->
         other
 
+    | Type.Variable { Type.constraints = Type.Bound left; _ }, right ->
+        join order left right
+    | left, Type.Variable { Type.constraints = Type.Bound right; _ } ->
+        join order left right
+    | Type.Variable { Type.constraints = Type.Explicit left; _ }, right ->
+        join order (Type.union left) right
+    | left, Type.Variable { Type.constraints = Type.Explicit right; _ } ->
+        join order left (Type.union right)
+
     (* n: A_n = B_n -> Union[A_i] <= Union[B_i]. *)
     | (Type.Union left), (Type.Union right) ->
         Type.union (left @ right)
@@ -821,11 +834,6 @@ and join ((module Handler: Handler) as order) left right =
     | _, Type.Callable _ ->
         Type.Object
 
-    | Type.Variable { Type.constraints = Type.Bound left; _ }, right ->
-        join order left right
-    | left, Type.Variable { Type.constraints = Type.Bound right; _ } ->
-        join order left right
-
     | _ ->
         match List.hd (least_upper_bound order left right) with
         | Some joined ->
@@ -850,6 +858,21 @@ and meet order left right =
     | Type.Bottom, _
     | _, Type.Bottom ->
         Type.Bottom
+
+    | Type.Variable ({ Type.constraints = Type.Bound left; _ } as variable), right ->
+        Type.Variable {
+          variable with
+          Type.constraints = Type.Bound (meet order left right);
+        }
+    | left, Type.Variable ({ Type.constraints = Type.Bound right; _ } as variable) ->
+        Type.Variable {
+          variable with
+          Type.constraints = Type.Bound (meet order left right);
+        }
+    | Type.Variable { Type.constraints = Type.Explicit left; _ }, right ->
+        meet order (Type.union left) right
+    | left, Type.Variable { Type.constraints = Type.Explicit right; _ } ->
+        meet order left (Type.union right)
 
     | (Type.Union left), (Type.Union right) ->
         let union =
@@ -943,17 +966,6 @@ and meet order left right =
     | Type.Callable _, _
     | _, Type.Callable _ ->
         Type.Bottom
-
-    | Type.Variable ({ Type.constraints = Type.Bound left; _ } as variable), right ->
-        Type.Variable {
-          variable with
-          Type.constraints = Type.Bound (meet order left right);
-        }
-    | left, Type.Variable ({ Type.constraints = Type.Bound right; _ } as variable) ->
-        Type.Variable {
-          variable with
-          Type.constraints = Type.Bound (meet order left right);
-        }
 
     | _ ->
         match List.hd (greatest_lower_bound order left right) with

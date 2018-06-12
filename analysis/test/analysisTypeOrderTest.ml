@@ -216,27 +216,7 @@ let test_default _ =
   assert_equal (meet order Type.float Type.integer) Type.integer;
   assert_equal (meet order Type.integer Type.float) Type.integer;
   assert_equal (meet order Type.integer Type.complex) Type.integer;
-  assert_equal (meet order Type.float Type.complex) Type.float;
-
-  (* Bound variables. *)
-  assert_false
-    (less_or_equal
-       order
-       ~left:Type.integer
-       ~right:(Type.variable ~constraints:(Type.Bound Type.float) "T"));
-  assert_false
-    (less_or_equal
-       order
-       ~left:Type.float
-       ~right:(Type.variable ~constraints:(Type.Bound Type.integer) "T"));
-  assert_equal
-    (join order Type.integer (Type.variable ~constraints:(Type.Bound Type.float) "T")) Type.float;
-  assert_equal
-    (meet
-       order
-       Type.integer
-       (Type.variable ~constraints:(Type.Bound Type.float) "T"))
-    (Type.variable ~constraints:(Type.Bound Type.integer) "T")
+  assert_equal (meet order Type.float Type.complex) Type.float
 
 
 let test_successors_fold _ =
@@ -542,7 +522,35 @@ let test_less_or_equal _ =
        ~right:(Type.Parametric {
            Type.name = Identifier.create "C";
            parameters = [Type.union [Type.tuple [Type.integer; Type.string]; Type.float]]
-         }))
+         }));
+
+  (* Variables. *)
+  assert_true
+    (less_or_equal
+       order
+       ~left:Type.integer
+       ~right:(Type.variable ~constraints:(Type.Explicit [Type.float; Type.integer]) "T"));
+  assert_true
+    (less_or_equal
+       order
+       ~left:(Type.variable ~constraints:(Type.Explicit [Type.float; Type.string]) "T")
+       ~right:(Type.union [Type.float; Type.string]));
+  assert_false
+    (less_or_equal
+       order
+       ~left:(Type.variable ~constraints:(Type.Explicit [Type.float; Type.string]) "T")
+       ~right:(Type.union [Type.float]));
+
+  assert_false
+    (less_or_equal
+       order
+       ~left:Type.integer
+       ~right:(Type.variable ~constraints:(Type.Bound Type.float) "T"));
+  assert_false
+    (less_or_equal
+       order
+       ~left:Type.float
+       ~right:(Type.variable ~constraints:(Type.Bound Type.integer) "T"))
 
 
 let test_join _ =
@@ -703,7 +711,18 @@ let test_join _ =
   assert_join
     "typing.Callable[..., int]"
     "typing.Callable[..., $bottom]"
-    "typing.Callable[..., int]"
+    "typing.Callable[..., int]";
+
+  (* Variables. *)
+  assert_equal
+    (join order Type.integer (Type.variable ~constraints:(Type.Bound Type.float) "T"))
+    (Type.union [Type.float; Type.integer]);
+  assert_equal
+    (join
+       order
+       Type.string
+       (Type.variable ~constraints:(Type.Explicit [Type.float; Type.integer]) "T"))
+    (Type.union [Type.float; Type.integer; Type.string])
 
 
 let test_meet _ =
@@ -772,7 +791,21 @@ let test_meet _ =
        default
        (Type.dictionary ~key:Type.string ~value:Type.string)
        (Type.dictionary ~key:Type.string ~value:(Type.list Type.string)))
-    (Type.dictionary ~key:Type.string ~value:Type.Bottom)
+    (Type.dictionary ~key:Type.string ~value:Type.Bottom);
+
+  (* Variables. *)
+  assert_equal
+    (meet
+       default
+       Type.integer
+       (Type.variable ~constraints:(Type.Bound Type.float) "T"))
+    (Type.variable ~constraints:(Type.Bound Type.integer) "T");
+  assert_equal
+    (meet
+       default
+       Type.string
+       (Type.variable ~constraints:(Type.Explicit [Type.float; Type.string]) "T"))
+    Type.string
 
 
 let test_least_upper_bound _ =
