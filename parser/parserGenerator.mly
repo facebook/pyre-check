@@ -478,7 +478,7 @@ small_statement:
       in
       [{
         Node.location;
-        value = Return test;
+        value = Return { Return.expression = test; is_implicit = false };
       }]
     }
 

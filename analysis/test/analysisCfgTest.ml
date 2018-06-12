@@ -278,7 +278,7 @@ let test_raise _ =
 
 
 let test_return _ =
-  let return = +Return None in
+  let return = +Return { Return.expression = None; is_implicit = false } in
   assert_cfg
     [return]
     [
@@ -400,7 +400,7 @@ let test_try _ =
       node 12 (Node.Block [!!"handler 2"]) [6] [7];
     ];
 
-  let return = +Return None in
+  let return = +Return { Return.expression = None; is_implicit = false } in
   let block = {
     Try.body = [!!"body"; return; !!"unreached"];
     handlers = [handler "handler"];
@@ -474,7 +474,7 @@ let test_try _ =
     Try.body = [!!"body"];
     handlers = [];
     orelse = [];
-    finally = [+Return None];
+    finally = [+Return { Return.expression = None; is_implicit = false }];
   } in
   assert_cfg
     [+Try block]
@@ -486,9 +486,21 @@ let test_try _ =
       node 4 Node.Yield [] [];
       node 5 (Node.Try block) [0] [6; 10];
       node 6 Node.Dispatch [5] [8];
-      node 7 (Node.Block [+Return None]) [10] [1]; (* finally *)
-      node 8 (Node.Block [+Return None]) [6] [1; 2]; (* uncaught *)
-      node 9 (Node.Block [+Return None]) [] [1]; (* return *)
+      node
+        7
+        (Node.Block [+Return { Return.expression = None; is_implicit = false }])
+        [10]
+        [1]; (* finally *)
+      node
+        8
+        (Node.Block [+Return { Return.expression = None; is_implicit = false }])
+        [6]
+        [1; 2]; (* uncaught *)
+      node
+        9
+        (Node.Block [+Return { Return.expression = None; is_implicit = false }])
+        []
+        [1]; (* return *)
       node 10 (Node.Block [!!"body"]) [5] [7];
     ]
 

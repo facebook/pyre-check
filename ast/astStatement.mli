@@ -138,6 +138,14 @@ module Stub : sig
   [@@deriving compare, eq, sexp, show, hash]
 end
 
+module Return : sig
+  type t = {
+    is_implicit: bool;
+    expression: Expression.t option;
+  }
+  [@@deriving compare, eq, sexp, show, hash]
+end
+
 type statement =
   | Assign of Assign.t
   | Assert of Assert.t
@@ -154,7 +162,7 @@ type statement =
   | Nonlocal of Identifier.t list
   | Pass
   | Raise of Expression.t option
-  | Return of Expression.t option
+  | Return of Return.t
   | Stub of t Stub.t
   | Try of t Record.Try.record
   | With of t Record.With.record

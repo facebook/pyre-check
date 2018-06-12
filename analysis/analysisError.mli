@@ -36,6 +36,12 @@ type mismatch = {
 }
 [@@deriving compare, eq, show, hash]
 
+type return_mismatch = {
+  mismatch: mismatch;
+  is_implicit: bool;
+}
+[@@deriving compare, eq, show, hash]
+
 type missing_parameter = {
   name: Access.t;
   annotation: Type.t;
@@ -131,7 +137,7 @@ type kind =
   | IncompatibleAwaitableType of Type.t
   | IncompatibleParameterType of parameter_mismatch
   | IncompatibleConstructorAnnotation of Type.t
-  | IncompatibleReturnType of mismatch
+  | IncompatibleReturnType of return_mismatch
   | IncompatibleAttributeType of incompatible_attribute_type
   | IncompatibleVariableType of incompatible_type
   | InconsistentOverride of inconsistent_override

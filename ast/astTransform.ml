@@ -330,8 +330,10 @@ module Make (Transformer : Transformer) = struct
             value
         | Raise expression ->
             Raise (expression >>| transform_expression)
-        | Return expression ->
-            Return (expression >>| transform_expression)
+        | Return ({ Return.expression; _ } as return) ->
+            Return {
+              return with Return.expression = expression >>| transform_expression
+            }
         | Try { Try.body; handlers; orelse; finally } ->
             let transform_handler { Try.kind; name; handler_body } =
               {

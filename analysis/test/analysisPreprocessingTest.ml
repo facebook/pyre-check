@@ -764,7 +764,24 @@ let test_expand_returns _ =
       (parse expected)
       (Preprocessing.expand_returns (parse source))
   in
-
+  let assert_expand_implicit_returns source expected_body =
+    assert_source_equal
+      (Preprocessing.expand_returns (parse source))
+      (Source.create ~path:"test.py"
+         [
+           +Define {
+             Define.name = Access.create "foo";
+             parameters = [];
+             body = expected_body;
+             decorators = [];
+             docstring = None;
+             return_annotation = None;
+             async = false;
+             generated = false;
+             parent = None;
+           };
+         ];)
+  in
   assert_expand
     "return None"
     {|
@@ -788,16 +805,18 @@ let test_expand_returns _ =
         $return = None
         return $return
     |};
-  assert_expand
+  assert_expand_implicit_returns
     {|
       def foo():
         pass
     |}
-    {|
-      def foo():
-        pass
-        return
-    |};
+    [
+      +Pass;
+      +Return {
+        Return.expression = None;
+        is_implicit = true
+      }
+    ];
 
   assert_expand
     {|
@@ -809,7 +828,7 @@ let test_expand_returns _ =
         yield None
     |};
 
-  assert_expand
+  assert_expand_implicit_returns
     {|
       def foo():
         try:
@@ -817,14 +836,18 @@ let test_expand_returns _ =
         finally:
           pass
     |}
-    {|
-      def foo():
-        try:
-          pass
-        finally:
-          pass
-        return
-    |};
+    [
+      +Try {
+        Try.body = [+Pass];
+        handlers = [];
+        orelse = [];
+        finally = [+Pass];
+      };
+      +Return {
+        Return.expression = None;
+        is_implicit = true
+      }
+    ];
   assert_expand
     {|
       def foo():
@@ -843,18 +866,23 @@ let test_expand_returns _ =
     |};
 
   (* Lol termination analysis. *)
-  assert_expand
+  assert_expand_implicit_returns
     {|
       def foo():
         while derp:
           pass
     |}
-    {|
-      def foo():
-        while derp:
-          pass
-        return
-    |};
+    [
+      +While {
+        While.test = !"derp";
+        body = [+Pass];
+        orelse = [];
+      };
+      +Return {
+        Return.expression = None;
+        is_implicit = true
+      }
+    ];
   assert_expand
     {|
       def foo():

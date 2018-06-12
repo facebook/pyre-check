@@ -929,7 +929,11 @@ let test_define _ =
       +Define {
         Define.name = Access.create "foo";
         parameters = [];
-        body = [+Return (Some (+Integer 4))];
+        body = [
+          +Return {
+            Return.expression = Some (+Integer 4);
+            is_implicit = false;
+          }];
         decorators = [];
         docstring = None;
         return_annotation = Some (+String "int");
@@ -948,7 +952,11 @@ let test_define _ =
       +Define {
         Define.name = Access.create "foo";
         parameters = [];
-        body = [+Return (Some (+Integer 4))];
+        body = [
+          +Return {
+            Return.expression = Some (+Integer 4);
+            is_implicit = false;
+          }];
         decorators = [];
         docstring = None;
         return_annotation = Some (+String "int");
@@ -968,7 +976,11 @@ let test_define _ =
       +Define {
         Define.name = Access.create "foo";
         parameters = [];
-        body = [+Return (Some (+Integer 4))];
+        body = [
+          +Return {
+            Return.expression = Some (+Integer 4);
+            is_implicit = false;
+          }];
         decorators = [];
         docstring = None;
         return_annotation = Some (+String "str");
@@ -994,7 +1006,11 @@ let test_define _ =
             annotation = None;
           };
         ];
-        body = [+Return (Some (+Integer 4))];
+        body = [
+          +Return {
+            Return.expression = Some (+Integer 4);
+            is_implicit = false;
+          }];
         decorators = [];
         docstring = None;
         return_annotation = Some (+String "str");
@@ -1019,7 +1035,11 @@ let test_define _ =
             annotation = None;
           };
         ];
-        body = [+Return (Some (+Integer 4))];
+        body = [
+          +Return {
+            Return.expression = Some (+Integer 4);
+            is_implicit = false;
+          }];
         decorators = [];
         docstring = None;
         return_annotation = Some (+String "str");
@@ -1044,7 +1064,11 @@ let test_define _ =
             annotation = None;
           };
         ];
-        body = [+Return (Some (+Integer 4))];
+        body = [
+          +Return {
+            Return.expression = Some (+Integer 4);
+            is_implicit = false;
+          }];
         decorators = [];
         docstring = None;
         return_annotation = Some (+String "str");
@@ -1064,7 +1088,11 @@ let test_define _ =
       +Define {
         Define.name = Access.create "foo";
         parameters = [];
-        body = [+Return (Some (+Integer 4))];
+        body = [
+          +Return {
+            Return.expression = Some (+Integer 4);
+            is_implicit = false;
+          }];
         decorators = [];
         docstring = None;
         return_annotation = Some (+String "List[str]");
@@ -2474,8 +2502,20 @@ let test_class _ =
 
 
 let test_return _ =
-  assert_parsed_equal "return" [+Return None];
-  assert_parsed_equal "return 1" [+Return (Some (+Integer 1))]
+  assert_parsed_equal
+    "return"
+    [
+      +Return {
+        Return.expression = None;
+        is_implicit = false;
+      }];
+  assert_parsed_equal
+    "return 1"
+    [
+      +Return {
+        Return.expression = Some (+Integer 1);
+        is_implicit = false;
+      }]
 
 
 let test_delete _ =

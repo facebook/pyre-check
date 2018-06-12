@@ -1543,10 +1543,10 @@ module State = struct
       | Raise _ ->
           errors
 
-      | Return return ->
+      | Return { Return.expression; is_implicit } ->
           let actual =
             Option.value_map
-              return
+              expression
               ~default:Type.none
               ~f:(Annotated.resolve ~resolution)
           in
@@ -1560,8 +1560,8 @@ module State = struct
               {
                 Error.location;
                 kind = Error.IncompatibleReturnType {
-                    Error.expected;
-                    actual
+                    Error.mismatch = { Error.expected; actual };
+                    is_implicit;
                   };
                 define = define_node;
               }
@@ -1599,7 +1599,10 @@ module State = struct
               [
                 {
                   Error.location;
-                  kind = Error.IncompatibleReturnType { Error.expected; actual };
+                  kind = Error.IncompatibleReturnType {
+                      Error.mismatch = { Error.expected; actual };
+                      is_implicit = false;
+                    };
                   define = define_node;
                 };
               ]
@@ -1633,7 +1636,10 @@ module State = struct
               [
                 {
                   Error.location;
-                  kind = Error.IncompatibleReturnType { Error.expected; actual };
+                  kind = Error.IncompatibleReturnType {
+                      Error.mismatch = { Error.expected; actual };
+                      is_implicit = false;
+                    };
                   define = define_node;
                 };
               ]

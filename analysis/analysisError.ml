@@ -43,6 +43,13 @@ type mismatch = {
 [@@deriving compare, eq, show, sexp, hash]
 
 
+type return_mismatch = {
+  mismatch: mismatch;
+  is_implicit: bool;
+}
+[@@deriving compare, eq, show, sexp, hash]
+
+
 type missing_parameter = {
   name: Access.t;
   annotation: Type.t;
@@ -152,7 +159,7 @@ type kind =
   | IncompatibleAwaitableType of Type.t
   | IncompatibleParameterType of parameter_mismatch
   | IncompatibleConstructorAnnotation of Type.t
-  | IncompatibleReturnType of mismatch
+  | IncompatibleReturnType of return_mismatch
   | IncompatibleAttributeType of incompatible_attribute_type
   | IncompatibleVariableType of incompatible_type
   | InconsistentOverride of inconsistent_override
@@ -444,12 +451,20 @@ let description
             Type.pp
             annotation;
         ]
-    | IncompatibleReturnType { actual; expected } ->
+    | IncompatibleReturnType { mismatch = { actual; expected}; is_implicit } ->
+        let message =
+          if is_implicit then
+            Format.asprintf
+              "Expected %a but got implicit return value of `None`."
+              Type.pp expected
+          else
+            Format.asprintf
+              "Expected %a but got %a."
+              Type.pp expected
+              Type.pp actual
+        in
         [
-          (Format.asprintf
-             "Expected %a but got %a."
-             Type.pp expected
-             Type.pp actual);
+          message;
           (Format.asprintf
              "Type %a expected on line %d, specified on line %d."
              Type.pp expected
@@ -668,7 +683,7 @@ let due_to_analysis_limitations { kind; _ } =
   match kind with
   | IncompatibleAwaitableType actual
   | IncompatibleParameterType { mismatch = { actual; _ }; _ }
-  | IncompatibleReturnType { actual; _ }
+  | IncompatibleReturnType { mismatch = { actual; _ }; _ }
   | IncompatibleAttributeType { incompatible_type = { mismatch = { actual; _ }; _ }; _ }
   | IncompatibleVariableType { mismatch = { actual; _ }; _ }
   | InconsistentOverride { override = StrengthenedPrecondition (Found { actual; _ }); _ }
@@ -717,7 +732,7 @@ let due_to_mismatch_with_any { kind; _ } =
   | InconsistentOverride { override = StrengthenedPrecondition (Found { actual; expected }); _ }
   | InconsistentOverride { override = WeakenedPostcondition { actual; expected }; _ }
   | IncompatibleParameterType { mismatch = { actual; expected }; _ }
-  | IncompatibleReturnType { actual; expected }
+  | IncompatibleReturnType { mismatch = { actual; expected }; _ }
   | IncompatibleAttributeType { incompatible_type = { mismatch = { actual; expected }; _ }; _ }
   | IncompatibleVariableType { mismatch = { actual; expected }; _ }
   | UninitializedAttribute { mismatch = { actual; expected }; _ } ->
@@ -774,7 +789,7 @@ let less_or_equal ~resolution left right =
     | IncompatibleConstructorAnnotation left, IncompatibleConstructorAnnotation right ->
         Resolution.less_or_equal resolution ~left ~right
     | IncompatibleReturnType left, IncompatibleReturnType right ->
-        less_or_equal_mismatch left right
+        less_or_equal_mismatch left.mismatch right.mismatch
     | IncompatibleAttributeType left, IncompatibleAttributeType right
       when Annotated.Class.name_equal left.parent right.parent &&
            left.incompatible_type.name = right.incompatible_type.name ->
@@ -891,7 +906,10 @@ let join ~resolution left right =
     | IncompatibleConstructorAnnotation left, IncompatibleConstructorAnnotation right ->
         IncompatibleConstructorAnnotation (Resolution.join resolution left right)
     | IncompatibleReturnType left, IncompatibleReturnType right ->
-        IncompatibleReturnType (join_mismatch left right)
+        IncompatibleReturnType {
+          mismatch = join_mismatch left.mismatch right.mismatch;
+          is_implicit = left.is_implicit && right.is_implicit;
+        }
     | IncompatibleAttributeType left, IncompatibleAttributeType right
       when Annotated.Class.name_equal left.parent right.parent &&
            left.incompatible_type.name = right.incompatible_type.name ->
@@ -1073,7 +1091,7 @@ let filter ~configuration ~resolution errors =
       | IncompatibleAttributeType { incompatible_type = { mismatch = { actual; _ }; _ }; _ }
       | IncompatibleAwaitableType actual
       | IncompatibleParameterType { mismatch = { actual; _ }; _ }
-      | IncompatibleReturnType { actual; _ }
+      | IncompatibleReturnType { mismatch = { actual; _ }; _ }
       | IncompatibleVariableType { mismatch = { actual; _ }; _ }
       | UndefinedAttribute { origin = Class { annotation = actual; _ }; _ } ->
           let is_subclass_of_mock annotation =
@@ -1097,7 +1115,7 @@ let filter ~configuration ~resolution errors =
       | IncompatibleAttributeType {
           incompatible_type = { mismatch = { actual; expected }; _ }; _ }
       | IncompatibleParameterType { mismatch = { actual; expected }; _ }
-      | IncompatibleReturnType { actual; expected }
+      | IncompatibleReturnType { mismatch = { actual; expected }; _ }
       | IncompatibleVariableType { mismatch = { actual; expected }; _ } ->
           Type.contains_callable actual || Type.contains_callable expected
       | IncompatibleAwaitableType actual ->
@@ -1110,7 +1128,8 @@ let filter ~configuration ~resolution errors =
       match error with
       | { kind = IncompatibleReturnType _; define = { Node.value = { Define.body; _ }; _ }; _ } ->
           let rec check_statements = function
-            | [{ Node.value = Statement.Pass; _ }; { Node.value = Statement.Return None; _ }] ->
+            | [{ Node.value = Statement.Pass; _ };
+               { Node.value = Statement.Return { Return.expression = None; _ }; _ }] ->
                 true
             | {
               Node.value = Statement.Expression { Node.value = Expression.String _; _ };
@@ -1267,8 +1286,11 @@ let dequalify
           parameter with
           mismatch = { actual = dequalify actual; expected = dequalify expected };
         }
-    | IncompatibleReturnType { actual; expected }  ->
-        IncompatibleReturnType { actual = dequalify actual; expected = dequalify expected }
+    | IncompatibleReturnType ({ mismatch = { actual; expected }; _ } as return)  ->
+        IncompatibleReturnType {
+          return with
+          mismatch = { actual = dequalify actual; expected = dequalify expected }
+        }
     | IncompatibleAttributeType {
         parent;
         incompatible_type = { mismatch = { actual; expected }; _ } as incompatible_type;

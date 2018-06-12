@@ -1487,7 +1487,20 @@ let test_check _ =
           return 1
     |}
     [
-      "Incompatible return type [7]: Expected `int` but got `None`.";
+      "Incompatible return type [7]: Expected `int` but got implicit return value of `None`.";
+      "Undefined name [18]: Global name `condition` is undefined.";
+    ];
+
+  assert_type_errors
+    {|
+      def foo() -> int:
+        if condition:
+          return 1
+        else:
+          x = 1
+    |}
+    [
+      "Incompatible return type [7]: Expected `int` but got implicit return value of `None`.";
       "Undefined name [18]: Global name `condition` is undefined.";
     ];
 

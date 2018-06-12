@@ -9,6 +9,7 @@ open OUnit2
 open Ast
 open Analysis
 open Expression
+open Statement
 open Test
 
 
@@ -77,8 +78,8 @@ let missing_return annotation =
 
 let incompatible_return_type actual expected =
   Error.IncompatibleReturnType {
-    Error.actual;
-    expected;
+    Error.mismatch = { Error.actual; expected };
+    is_implicit = false;
   }
 
 
@@ -270,22 +271,31 @@ let test_due_to_analysis_limitations _ =
     (Error.due_to_analysis_limitations
        (error
           (Error.IncompatibleReturnType {
-              Error.actual = Type.Top;
-              expected = Type.Top;
+              Error.mismatch = {
+                Error.actual = Type.Top;
+                expected = Type.Top;
+              };
+              is_implicit = false;
             })));
   assert_true
     (Error.due_to_analysis_limitations
        (error
           (Error.IncompatibleReturnType {
-              Error.actual = Type.Top;
-              expected = Type.string;
+              Error.mismatch = {
+                Error.actual = Type.Top;
+                expected = Type.string;
+              };
+              is_implicit = false;
             })));
   assert_false
     (Error.due_to_analysis_limitations
        (error
           (Error.IncompatibleReturnType {
-              Error.actual = Type.string;
-              expected = Type.Top;
+              Error.mismatch = {
+                Error.actual = Type.string;
+                expected = Type.Top;
+              };
+              is_implicit = false;
             })));
 
   (* UndefinedType. *)
@@ -450,7 +460,8 @@ let test_filter _ =
   (* Suppress return errors in unimplemented defines. *)
   assert_unfiltered (incompatible_return_type Type.integer Type.float);
   assert_filtered
-    ~define:(define ~body:[+Statement.Pass; +Statement.Return None] ())
+    ~define:(define ~body:[+Statement.Pass;
+                           +Statement.Return { Return.expression = None; is_implicit = false }] ())
     (incompatible_return_type Type.integer Type.float);
 
   let inconsistent_override name override =

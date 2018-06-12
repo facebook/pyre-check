@@ -596,9 +596,9 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
       | Raise expression ->
           scope,
           Raise (expression >>| qualify_expression ~scope)
-      | Return expression ->
+      | Return ({ Return.expression; _ } as return) ->
           scope,
-          Return (expression >>| qualify_expression ~scope)
+          Return { return with Return.expression = expression >>| qualify_expression ~scope }
       | Stub (Stub.Assign assign) ->
           let scope, assign = qualify_assign assign in
           scope, Stub (Stub.Assign assign)
@@ -975,7 +975,7 @@ let expand_returns source =
         match statement with
         (* Expand returns to make them more amenable for analyses. E.g:
            `return x` -> `$return = x; return $return` *)
-        | { Node.location; value = Return (Some value) } ->
+        | { Node.location; value = Return ({ Return.expression = Some value; _ } as return) } ->
             let target = { Node.location; value = Access return_access } in
             state,
             [
@@ -988,7 +988,7 @@ let expand_returns source =
                     parent = None;
                   };
               };
-              { Node.location; value = Return (Some target) };
+              { Node.location; value = Return { return with Return.expression = Some target } };
             ]
 
         (* Insert implicit return statements at the end of function bodies. *)
@@ -1040,7 +1040,7 @@ let expand_returns source =
                       define with
                       Define.body = define.Define.body @ [{
                           Node.location = statement.Node.location;
-                          value = Return None;
+                          value = Return { Return.expression = None; is_implicit = true };
                         }];
                     }
                 | _ ->

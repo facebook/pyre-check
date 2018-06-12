@@ -159,6 +159,15 @@ module Stub = struct
 end
 
 
+module Return = struct
+  type t = {
+    is_implicit: bool;
+    expression: Expression.t option;
+  }
+  [@@deriving compare, eq, sexp, show, hash]
+end
+
+
 type statement =
   | Assign of Assign.t
   | Assert of Assert.t
@@ -175,7 +184,7 @@ type statement =
   | Nonlocal of Identifier.t list
   | Pass
   | Raise of Expression.t option
-  | Return of Expression.t option
+  | Return of Return.t
   | Stub of t Stub.t
   | Try of t Record.Try.record
   | With of t Record.With.record
@@ -1387,7 +1396,7 @@ module PrettyPrinter = struct
           "raise %a"
           pp_expression_option ("", expression)
 
-    | Return expression ->
+    | Return { Return.expression; _ } ->
         Format.fprintf
           formatter
           "return %a"
