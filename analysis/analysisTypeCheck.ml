@@ -1180,6 +1180,13 @@ module State = struct
             let check_single_access errors access =
               match access with
               | Access.Identifier _ ->
+                  Resolution.get_local resolution ~access:[access]
+                  >>| Annotation.annotation
+                  |> Option.iter ~f:(function annotation ->
+                      lookup
+                      (* T30344109: this location is imprecise. *)
+                      >>| Lookup.update ~location ~annotation
+                      |> ignore);
                   errors
 
               | Access.Call { Node.value = arguments; _ } ->
