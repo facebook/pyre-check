@@ -118,13 +118,35 @@ let resolve_literal ({ resolve_literal; _  } as resolution) =
   resolve_literal ~resolution
 
 
-let parse_annotation { parse_annotation; define; _ } ({ Node.value; _ } as expression) =
+let parse_annotation
+    { parse_annotation; define; module_definition; _ }
+    ({ Node.value; _ } as expression) =
   let expression =
     let is_local_access =
       match value with
       | Access [Access.Identifier name]
         when Identifier.show name |> String.is_prefix ~prefix:"$local_" -> true
       | _ -> false
+    in
+    let is_empty_stub =
+      match Node.value expression with
+      | Access access ->
+          let rec is_empty_stub ~lead ~tail =
+            match tail with
+            | head :: tail ->
+                begin
+                  let lead = lead @ [head] in
+                  match module_definition lead with
+                  | Some definition when Module.empty_stub definition -> true
+                  | Some _ -> is_empty_stub ~lead ~tail
+                  | _ -> false
+                end
+            | _ ->
+                false
+          in
+          is_empty_stub ~lead:[] ~tail:access
+      | _ ->
+          false
     in
     if is_local_access then
       match define with
@@ -135,6 +157,8 @@ let parse_annotation { parse_annotation; define; _ } ({ Node.value; _ } as expre
           >>| List.rev
           >>| (fun qualifier -> Expression.delocalize expression ~qualifier)
           |> Option.value ~default:expression
+    else if is_empty_stub then
+      { expression with Node.value = Access (Access.create "typing.Any") }
     else
       expression
   in

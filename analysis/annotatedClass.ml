@@ -351,6 +351,8 @@ let constructors ({ Node.value = { Class.name; body; _ }; _ } as definition) ~re
         parsed
       else
         match parsed with
+        | Type.Object ->
+            Type.Object
         | Type.Primitive name ->
             Type.Parametric {
               Type.name;

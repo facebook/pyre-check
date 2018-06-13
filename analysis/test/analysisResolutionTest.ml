@@ -57,9 +57,18 @@ let test_parse_annotation _ =
       (parse_single_expression expression |> Resolution.parse_annotation resolution)
   in
 
-  let resolution = resolution ~sources:[] () in
+  let resolution =
+    resolution
+      ~sources:[
+        parse ~qualifier:(Access.create "empty") ~path:"empty.pyi" "class Empty: ...";
+        parse ~qualifier:(Access.create "empty.stub") ~path:"empty/stub.pyi" "";
+      ]
+      ()
+  in
   assert_parse_annotation ~resolution ~expression:"int" ~expected:"int";
-  assert_parse_annotation ~resolution ~expression:"$local_0_int" ~expected:"int"
+  assert_parse_annotation ~resolution ~expression:"$local_0_int" ~expected:"int";
+  assert_parse_annotation ~resolution ~expression:"empty.stub.Annotation" ~expected:"typing.Any"
+
 
 
 
