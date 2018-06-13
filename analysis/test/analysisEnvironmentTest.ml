@@ -224,6 +224,23 @@ let test_register_aliases _ =
     [
       "a._T", "Variable[a._T]";
       "a._T2", "Variable[a._T2]";
+    ];
+
+  (* Type variable aliases in classes. *)
+  assert_resolved
+    [
+      parse
+        ~qualifier:(Access.create "qualifier")
+        {|
+          class Class:
+            T = typing.TypeVar('T')
+            Int = int
+        |}
+      |> Preprocessing.preprocess
+    ]
+    [
+      "qualifier.Class.T", "Variable[qualifier.Class.T]";
+      "qualifier.Class.Int", "qualifier.Class.Int";
     ]
 
 

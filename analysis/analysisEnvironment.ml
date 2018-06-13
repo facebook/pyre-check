@@ -425,7 +425,7 @@ let register_aliases (module Handler: Handler) sources =
   Type.Cache.disable ();
   let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
   let collect_aliases { Source.path; statements; qualifier; _ } =
-    let visit_statement aliases { Node.value; _ } =
+    let rec visit_statement ~qualifier ?(filter_type_variables = false) aliases { Node.value; _ } =
       match value with
       | Assign { Assign.target; annotation = None; value = Some value; _ } ->
           let target =
@@ -444,10 +444,16 @@ let register_aliases (module Handler: Handler) sources =
           let target_annotation = Type.create ~aliases:Handler.aliases target in
           if not (Type.equal target_annotation Type.Top ||
                   Type.equal value_annotation Type.Top ||
-                  Type.equal value_annotation target_annotation) then
+                  Type.equal value_annotation target_annotation ||
+                  (filter_type_variables && Type.is_resolved value_annotation)) then
             (path, target, value) :: aliases
           else
             aliases
+      | Class { Class.name; body; _ } ->
+          List.fold
+            body
+            ~init:aliases
+            ~f:(visit_statement ~qualifier:name ~filter_type_variables:true)
       | Import { Import.from = Some from; imports = [{ Import.name; _ }]  }
         when Access.show name = "*" ->
           let exports =
@@ -461,7 +467,6 @@ let register_aliases (module Handler: Handler) sources =
             (path, alias, value) :: aliases
           in
           List.fold exports ~init:aliases ~f:add_alias
-
       | Import { Import.from = Some from; imports } ->
           let import_to_alias { Import.name; alias } =
             let qualified_name =
@@ -481,7 +486,7 @@ let register_aliases (module Handler: Handler) sources =
       | _ ->
           aliases
     in
-    List.fold ~init:[] ~f:visit_statement statements
+    List.fold ~init:[] ~f:(visit_statement ~qualifier) statements
   in
   let rec resolve_aliases unresolved =
     if List.is_empty unresolved then
