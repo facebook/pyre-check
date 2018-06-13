@@ -68,6 +68,7 @@ NATIVE_C_FILES=\
   $(sort $(wildcard hack_parallel/third-party/lz4/*.c))
 
 NATIVE_LIBRARIES=\
+  hp\
   pthread\
   $(RT)
 
@@ -84,8 +85,7 @@ NATIVE_OBJECT_FILES=$(patsubst %.c,%.o,$(NATIVE_C_FILES))
 BUILT_OBJECT_FILES=$(addprefix _build/,$(NATIVE_OBJECT_FILES))
 NATIVE_LIB_OPTS=$(foreach lib, $(NATIVE_LIBRARIES),-cclib -l -cclib $(lib))
 
-BYTECODE_LINKER_FLAGS=$(NATIVE_OBJECT_FILES) $(NATIVE_LIB_OPTS)
-LINKER_FLAGS=$(BYTECODE_LINKER_FLAGS)
+LINKER_FLAGS=$(NATIVE_LIB_OPTS)
 
 INCLUDE_OPTS=$(foreach dir,$(MODULES),-I $(dir))
 
@@ -102,7 +102,7 @@ EXTRA_INCLUDE_OPTS=$(foreach dir, $(ALL_INCLUDE_PATHS),-ccopt -I -ccopt $(dir))
 	cp $(subst _build/,,$@) $@
 
 .PHONY: all
-all: $(BUILT_OBJECT_FILES)
+all: libhp.a
 	ocamlbuild \
 		-tag -custom \
 		-use-ocamlfind \
@@ -150,3 +150,7 @@ $(BUILT_C_FILES): _build/%.c: %.c
 
 $(BUILT_OBJECT_FILES): %.o: %.c $(ALL_HEADER_FILES)
 	cd $(dir $@) && ocamlopt $(EXTRA_INCLUDE_OPTS) $(CC_OPTS) -c $(notdir $<)
+
+libhp.a: $(BUILT_OBJECT_FILES)
+	ar -cvq libhp.a $(BUILT_OBJECT_FILES)
+	mv libhp.a _build

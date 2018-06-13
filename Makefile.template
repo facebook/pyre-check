@@ -52,24 +52,6 @@ clean:
 .PHONY: hack_parallel
 hack_parallel:
 	@if [ ! -d hack_parallel/_build ]; then echo 'Hack_parallel is not installed...'; make -C hack_parallel; make install -C hack_parallel; fi
-	@mkdir -p _build/hack_parallel/heap
-	@mkdir -p _build/hack_parallel/utils
-	@mkdir -p _build/hack_parallel/third-party/lz4
-	@cp hack_parallel/_build/hack_parallel/heap/hh_shared.o _build/hack_parallel/heap/hh_shared.o
-	@cp hack_parallel/_build/hack_parallel/utils/files.o _build/hack_parallel/utils/files.o
-	@cp hack_parallel/_build/hack_parallel/utils/handle_stubs.o _build/hack_parallel/utils/handle_stubs.o
-	@cp hack_parallel/_build/hack_parallel/utils/nproc.o _build/hack_parallel/utils/nproc.o
-	@cp hack_parallel/_build/hack_parallel/utils/realpath.o _build/hack_parallel/utils/realpath.o
-	@cp hack_parallel/_build/hack_parallel/utils/sysinfo.o _build/hack_parallel/utils/sysinfo.o
-	@cp hack_parallel/_build/hack_parallel/utils/priorities.o _build/hack_parallel/utils/priorities.o
-	@cp hack_parallel/_build/hack_parallel/third-party/lz4/lz4.o _build/hack_parallel/third-party/lz4/lz4.o
-	@cp hack_parallel/_build/hack_parallel/third-party/lz4/lz4frame.o _build/hack_parallel/third-party/lz4/lz4frame.o
-	@cp hack_parallel/_build/hack_parallel/third-party/lz4/lz4hc.o _build/hack_parallel/third-party/lz4/lz4hc.o
-	@cp hack_parallel/_build/hack_parallel/third-party/lz4/xxhash.o _build/hack_parallel/third-party/lz4/xxhash.o
-	@mkdir -p _build/all
-	@cp -r _build/hack_parallel _build/all/
-	@mkdir -p _build/test
-	@cp -r _build/hack_parallel _build/test/
 
 .PHONY: development_tags
 development_tags:
