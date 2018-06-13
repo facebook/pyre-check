@@ -3,10 +3,11 @@ __pycache__
 /.pyre
 yarn-error.log
 
-/_build
+_build
+.merlin
+/pyrelib.install
 /Makefile
 /_tags
-/hack_parallel/_build
 /scripts/dist
 version.ml
 
