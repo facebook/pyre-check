@@ -6,13 +6,13 @@
 open Core
 open OUnit2
 
+open PyreCommand
 open LanguageServer.Types
 open LanguageServer.Protocol
 open LanguageServer.RequestParser
 open Pyre
 
 module Parallel = Hack_parallel.Std
-module Protocol = ServerProtocol
 
 
 let files context =

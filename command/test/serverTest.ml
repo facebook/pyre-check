@@ -10,12 +10,11 @@ open Analysis
 open Ast
 open Expression
 open Pyre
+open PyreCommand
 open PyreParser
 open Test
 
 module Parallel = Hack_parallel.Std
-module Protocol = ServerProtocol
-module State = ServerState
 module Scheduler = Service.Scheduler
 
 
@@ -262,7 +261,7 @@ let assert_request_gets_response
     | None -> mock_server_state ~initial_errors errors
   in
   let _, response =
-    ServerRequest.process_request
+    Request.process_request
       mock_client_socket
       mock_server_state
       (CommandTest.mock_server_configuration ~source_root ())
@@ -509,7 +508,7 @@ let test_incremental_typecheck _ =
 let test_protocol_language_server_protocol _ =
   let server_state = mock_server_state (File.Handle.Table.create ()) in
   let _, response =
-    ServerRequest.process_request
+    Request.process_request
       mock_client_socket
       server_state
       (CommandTest.mock_server_configuration ())
@@ -562,9 +561,9 @@ let test_did_save_with_content context =
 let test_protocol_persistent _ =
   let server_state = mock_server_state (File.Handle.Table.create ()) in
   assert_raises
-    ServerRequest.InvalidRequest
+    Request.InvalidRequest
     (fun () ->
-       ServerRequest.process_request
+       Request.process_request
          mock_client_socket
          server_state
          (CommandTest.mock_server_configuration ())
@@ -605,7 +604,7 @@ let test_incremental_dependencies _ =
   in
   let initial_state =
     mock_server_state ~initial_environment:environment (File.Handle.Table.create ()) in
-  let state, response = ServerRequest.process_request
+  let state, response = Request.process_request
       mock_client_socket
       initial_state
       (CommandTest.mock_server_configuration ())
@@ -615,7 +614,7 @@ let test_incremental_dependencies _ =
             ~check:[file "b.py"]
             ()))
   in
-  let second_state, second_response = ServerRequest.process_request
+  let second_state, second_response = Request.process_request
       mock_client_socket
       initial_state
       (CommandTest.mock_server_configuration ())
@@ -694,14 +693,14 @@ let test_incremental_lookups _ =
       errors
   in
   let state, _ =
-    ServerRequest.process_request
+    Request.process_request
       mock_client_socket
       initial_state
       (CommandTest.mock_server_configuration ())
       request
   in
   let _, response =
-    ServerRequest.process_request
+    Request.process_request
       mock_client_socket
       state
       (CommandTest.mock_server_configuration ())
@@ -779,7 +778,7 @@ let test_incremental_repopulate _ =
   in
   Out_channel.write_all ~data:source "test.py";
   let _, _ =
-    ServerRequest.process_request
+    Request.process_request
       mock_client_socket
       initial_state
       (CommandTest.mock_server_configuration ())
@@ -836,7 +835,7 @@ let test_language_scheduler_definition context =
 let test_incremental_attribute_caching context =
   let server_lock = Mutex.create () in
   let connections = ref {
-      ServerState.socket = Unix.stdout;
+      State.socket = Unix.stdout;
       persistent_clients = Unix.File_descr.Table.create ();
       file_notifiers = [];
     }
@@ -852,7 +851,7 @@ let test_incremental_attribute_caching context =
   in
   add_defaults_to_environment ~configuration environment;
   let old_state = {
-    ServerState.deferred_requests = [];
+    State.deferred_requests = [];
     environment;
     call_graph = mock_call_graph;
     initial_errors = Error.Hash_set.create ();
@@ -897,23 +896,23 @@ let test_incremental_attribute_caching context =
     ServerOperations.initialize ~old_state server_lock connections server_configuration
   in
   let request_typecheck state =
-    ServerRequest.process_request
+    Request.process_request
       Unix.stdout
       state
       server_configuration
-      (ServerProtocol.Request.TypeCheckRequest
+      (Protocol.Request.TypeCheckRequest
          (Protocol.TypeCheckRequest.create
             ~update_environment_with:[File.create source_path]
             ~check:[File.create source_path]
             ()))
     |> fst
   in
-  let get_errors { ServerState.errors; _ } = Hashtbl.to_alist errors in
+  let get_errors { State.errors; _ } = Hashtbl.to_alist errors in
   let state = request_typecheck initial_state in
   assert_equal (get_errors state) [];
 
   write_to_file ~content:content_without_annotation;
-  let state = request_typecheck { state with ServerState.environment } in
+  let state = request_typecheck { state with State.environment } in
   begin
     match get_errors state with
     | [_, [{ Analysis.Error.kind; _ }]] ->
@@ -932,7 +931,7 @@ let test_incremental_attribute_caching context =
   end;
 
   write_to_file ~content:content_with_annotation;
-  let state = request_typecheck { state with ServerState.environment } in
+  let state = request_typecheck { state with State.environment } in
   assert_equal (get_errors state) []
 
 

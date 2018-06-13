@@ -1,0 +1,347 @@
+(jbuild_version 1)
+
+
+(library
+ ((name analysisTestSetup)
+  (public_name pyrelib.testSetup)
+  (modules (analysisTestSetup))
+  (libraries 
+   (oUnit
+    pyrelib.test
+    pyrelib.ast
+    pyrelib.analysis))))
+
+
+(library
+ ((name annotatedTest)
+  (public_name pyrelib.annotatedTest)
+  (modules (annotatedTest))
+  (libraries 
+   (oUnit
+    pyrelib.test
+    pyrelib.ast
+    pyrelib.analysis))))
+
+
+(executable
+ ((name analysisCallGraphTest)
+  (modules (analysisCallGraphTest))
+  (libraries 
+   (oUnit 
+    pyrelib.service
+    pyrelib.test 
+    pyrelib.testSetup
+    pyrelib.analysis))))
+
+
+(executable
+ ((name analysisCfgTest)
+  (modules (analysisCfgTest))
+  (libraries 
+   (oUnit 
+    pyrelib.test 
+    pyrelib.analysis))))
+
+
+(executable
+ ((name analysisDependentTest)
+  (modules (analysisDependentTest))
+  (libraries 
+   (oUnit 
+    pyrelib.test 
+    pyrelib.analysis))))
+
+
+(executable
+ ((name analysisEnvironmentTest)
+  (modules (analysisEnvironmentTest))
+  (libraries 
+   (oUnit 
+    pyrelib.test 
+    pyrelib.analysis))))
+
+
+(executable
+ ((name analysisErrorTest)
+  (modules (analysisErrorTest))
+  (libraries 
+   (oUnit 
+    pyrelib.test 
+    pyrelib.analysis))))
+
+
+(executable
+ ((name analysisFixpointTest)
+  (modules (analysisFixpointTest))
+  (preprocess
+   (pps
+    (ppx_deriving.eq
+     ppx_deriving.show)))
+  (libraries 
+   (oUnit 
+    ppxlib
+    ppx_deriving
+    pyrelib.test 
+    pyrelib.analysis))))
+
+
+(executable
+ ((name analysisInferenceTest)
+  (modules (analysisInferenceTest))
+  (libraries 
+   (oUnit 
+    pyrelib.test 
+    pyrelib.testSetup
+    pyrelib.analysis))))
+
+
+(executable
+ ((name analysisLookupTest)
+  (modules (analysisLookupTest))
+  (libraries 
+   (oUnit 
+    pyrelib.test 
+    pyrelib.analysis))))
+
+
+(executable
+ ((name analysisPreprocessingTest)
+  (modules (analysisPreprocessingTest))
+  (libraries 
+   (oUnit 
+    pyrelib.test 
+    pyrelib.analysis))))
+
+
+(executable
+ ((name analysisRefinementTest)
+  (modules (analysisRefinementTest))
+  (libraries 
+   (oUnit 
+    pyrelib.test 
+    pyrelib.analysis))))
+
+
+(executable
+ ((name analysisTypeCheckTest)
+  (modules (analysisTypeCheckTest))
+  (libraries 
+   (oUnit 
+    pyrelib.test 
+    pyrelib.testSetup
+    pyrelib.analysis))))
+
+
+(executable
+ ((name analysisTypeOrderTest)
+  (modules (analysisTypeOrderTest))
+  (libraries 
+   (oUnit 
+    pyrelib.test 
+    pyrelib.analysis))))
+
+
+(executable
+ ((name analysisTypeTest)
+  (modules (analysisTypeTest))
+  (libraries 
+   (oUnit 
+    pyrelib.test 
+    pyrelib.analysis))))
+
+
+(executable
+ ((name annotatedAccessTest)
+  (modules (annotatedAccessTest))
+  (preprocess
+   (pps
+    (ppx_deriving.eq
+     ppx_deriving.show
+     ppx_compare)))
+  (libraries 
+   (oUnit 
+    ppxlib
+    ppx_deriving
+    pyrelib.test 
+    pyrelib.annotatedTest
+    pyrelib.analysis))))
+
+
+(executable
+ ((name annotatedAssignTest)
+  (modules (annotatedAssignTest))
+  (libraries 
+   (oUnit 
+    pyrelib.test 
+    pyrelib.annotatedTest
+    pyrelib.analysis))))
+
+
+(executable
+ ((name annotatedCallableTest)
+  (modules (annotatedCallableTest))
+  (libraries 
+   (oUnit 
+    pyrelib.test 
+    pyrelib.annotatedTest
+    pyrelib.analysis))))
+
+
+(executable
+ ((name annotatedClassTest)
+  (modules (annotatedClassTest))
+  (libraries 
+   (oUnit 
+    pyrelib.test 
+    pyrelib.annotatedTest
+    pyrelib.analysis))))
+
+
+(executable
+ ((name annotatedDefineTest)
+  (modules (annotatedDefineTest))
+  (libraries 
+   (oUnit 
+    pyrelib.test 
+    pyrelib.annotatedTest
+    pyrelib.analysis))))
+
+
+(executable
+ ((name annotatedResolveTest)
+  (modules (annotatedResolveTest))
+  (libraries 
+   (oUnit 
+    pyrelib.test 
+    pyrelib.annotatedTest
+    pyrelib.analysis))))
+
+
+(executable
+ ((name annotatedSignatureTest)
+  (modules (annotatedSignatureTest))
+  (libraries 
+   (oUnit 
+    pyrelib.test 
+    pyrelib.annotatedTest
+    pyrelib.analysis))))
+
+
+(alias
+ ((name runtest)
+  (deps (analysisCallGraphTest.exe))
+  (action (run ${<} -runner sequential))))
+
+
+(alias
+ ((name runtest)
+  (deps (analysisCfgTest.exe))
+  (action (run ${<} -runner sequential))))
+
+
+(alias
+ ((name runtest)
+  (deps (analysisDependentTest.exe))
+  (action (run ${<} -runner sequential))))
+
+
+(alias
+ ((name runtest)
+  (deps (analysisEnvironmentTest.exe))
+  (action (run ${<} -runner sequential))))
+
+
+(alias
+ ((name runtest)
+  (deps (analysisErrorTest.exe))
+  (action (run ${<} -runner sequential))))
+
+
+(alias
+ ((name runtest)
+  (deps (analysisFixpointTest.exe))
+  (action (run ${<} -runner sequential))))
+
+
+(alias
+ ((name runtest)
+  (deps (analysisInferenceTest.exe))
+  (action (run ${<} -runner sequential))))
+
+
+(alias
+ ((name runtest)
+  (deps (analysisLookupTest.exe))
+  (action (run ${<} -runner sequential))))
+
+
+(alias
+ ((name runtest)
+  (deps (analysisPreprocessingTest.exe))
+  (action (run ${<} -runner sequential))))
+
+
+(alias
+ ((name runtest)
+  (deps (analysisRefinementTest.exe))
+  (action (run ${<} -runner sequential))))
+
+
+(alias
+ ((name runtest)
+  (deps (analysisTypeCheckTest.exe))
+  (action (run ${<} -runner sequential))))
+
+
+(alias
+ ((name runtest)
+  (deps (analysisTypeOrderTest.exe))
+  (action (run ${<} -runner sequential))))
+
+
+(alias
+ ((name runtest)
+  (deps (analysisTypeTest.exe))
+  (action (run ${<} -runner sequential))))
+
+
+(alias
+ ((name runtest)
+  (deps (annotatedAccessTest.exe))
+  (action (run ${<} -runner sequential))))
+
+
+(alias
+ ((name runtest)
+  (deps (annotatedAssignTest.exe))
+  (action (run ${<} -runner sequential))))
+
+
+(alias
+ ((name runtest)
+  (deps (annotatedCallableTest.exe))
+  (action (run ${<} -runner sequential))))
+
+
+(alias
+ ((name runtest)
+  (deps (annotatedClassTest.exe))
+  (action (run ${<} -runner sequential))))
+
+
+(alias
+ ((name runtest)
+  (deps (annotatedDefineTest.exe))
+  (action (run ${<} -runner sequential))))
+
+
+(alias
+ ((name runtest)
+  (deps (annotatedResolveTest.exe))
+  (action (run ${<} -runner sequential))))
+
+
+(alias
+ ((name runtest)
+  (deps (annotatedSignatureTest.exe))
+  (action (run ${<} -runner sequential))))

@@ -6,11 +6,10 @@
 open Core
 open OUnit2
 
+open PyreCommand
 open ServerConfiguration
 
 module Parallel = Hack_parallel.Std
-module Protocol = ServerProtocol
-module Socket = CommandSocket
 
 
 let test_persistent_client_connect context =

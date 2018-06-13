@@ -1,0 +1,121 @@
+(jbuild_version 1)
+
+
+(executable
+ ((name astCodexTest)
+  (modules (astCodexTest))
+  (libraries
+   (oUnit
+    pyrelib.test
+    pyrelib.ast))))
+
+
+(executable
+ ((name astExpressionTest)
+  (modules (astExpressionTest))
+  (libraries
+   (oUnit
+    pyrelib.test
+    pyrelib.ast))))
+
+
+(executable
+ ((name astIdentifierTest)
+  (modules (astIdentifierTest))
+  (libraries
+   (oUnit
+    pyrelib.test
+    pyrelib.ast))))
+
+
+(executable
+ ((name astModuleTest)
+  (modules (astModuleTest))
+  (libraries
+   (oUnit
+    pyrelib.test
+    pyrelib.ast))))
+
+
+(executable
+ ((name astSourceTest)
+  (modules (astSourceTest))
+  (libraries
+   (oUnit
+    pyrelib.test
+    pyrelib.ast))))
+
+
+(executable
+ ((name astStatementTest)
+  (modules (astStatementTest))
+  (libraries
+   (oUnit
+    pyrelib.test
+    pyrelib.ast))))
+
+
+(executable
+ ((name astTransformTest)
+  (modules (astTransformTest))
+  (libraries
+   (oUnit
+    pyrelib.test
+    pyrelib.ast))))
+
+
+(executable
+ ((name astVisitTest)
+  (modules (astVisitTest))
+  (libraries
+   (oUnit
+    pyrelib.test
+    pyrelib.ast))))
+
+
+(alias
+ ((name runtest)
+  (deps (astCodexTest.exe))
+  (action (run ${<} -runner sequential))))
+
+
+(alias
+ ((name runtest)
+  (deps (astExpressionTest.exe))
+  (action (run ${<} -runner sequential))))
+
+
+(alias
+ ((name runtest)
+  (deps (astIdentifierTest.exe))
+  (action (run ${<} -runner sequential))))
+
+
+(alias
+ ((name runtest)
+  (deps (astModuleTest.exe))
+  (action (run ${<} -runner sequential))))
+
+
+(alias
+ ((name runtest)
+  (deps (astSourceTest.exe))
+  (action (run ${<} -runner sequential))))
+
+
+(alias
+ ((name runtest)
+  (deps (astStatementTest.exe))
+  (action (run ${<} -runner sequential))))
+
+
+(alias
+ ((name runtest)
+  (deps (astTransformTest.exe))
+  (action (run ${<} -runner sequential))))
+
+
+(alias
+ ((name runtest)
+  (deps (astVisitTest.exe))
+  (action (run ${<} -runner sequential))))

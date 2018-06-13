@@ -68,3 +68,7 @@ remove_hack_parallel:
 .PHONY: jbuilder
 jbuilder:
 	@jbuilder build @install -j 20
+
+.PHONY: jtest
+jtest:
+	@jbuilder runtest -j 20

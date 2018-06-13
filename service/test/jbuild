@@ -1,0 +1,74 @@
+(jbuild_version 1)
+
+
+(executable
+ ((name serviceCallGraphTest)
+  (modules (serviceCallGraphTest))
+  (libraries
+   (oUnit
+    pyrelib.service))))
+
+
+(executable
+ ((name serviceCoverageTest)
+  (modules (serviceCoverageTest))
+  (libraries
+   (oUnit
+    pyrelib.service))))
+
+
+(executable
+ ((name serviceIgnoreTest)
+  (modules (serviceIgnoreTest))
+  (libraries
+   (oUnit
+    pyrelib.test
+    pyrelib.service))))
+
+
+(executable
+ ((name serviceParseTest)
+  (modules (serviceParseTest))
+  (libraries
+   (oUnit
+    pyrelib.test
+    pyrelib.service))))
+
+
+(executable
+ ((name serviceTypeCheckTest)
+  (modules (serviceTypeCheckTest))
+  (libraries
+   (oUnit
+    pyrelib.test
+    pyrelib.service))))
+
+
+(alias
+ ((name runtest)
+  (deps (serviceCallGraphTest.exe))
+  (action (run ${<} -runner sequential))))
+
+
+(alias
+ ((name runtest)
+  (deps (serviceCoverageTest.exe))
+  (action (run ${<} -runner sequential))))
+
+
+(alias
+ ((name runtest)
+  (deps (serviceIgnoreTest.exe))
+  (action (run ${<} -runner sequential))))
+
+
+(alias
+ ((name runtest)
+  (deps (serviceParseTest.exe))
+  (action (run ${<} -runner sequential))))
+
+
+(alias
+ ((name runtest)
+  (deps (serviceTypeCheckTest.exe))
+  (action (run ${<} -runner sequential))))

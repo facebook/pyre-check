@@ -6,7 +6,8 @@
 open OUnit2
 
 open Analysis
-open ServerProtocol
+open PyreCommand
+open Protocol
 open Pyre
 
 let fake_root = Path.create_absolute "/tmp"
@@ -14,7 +15,7 @@ let fake_root = Path.create_absolute "/tmp"
 
 let assert_parses serialized query =
   assert_equal
-    (CommandQuery.parse_query ~root:fake_root serialized)
+    (Query.parse_query ~root:fake_root serialized)
     query
 
 

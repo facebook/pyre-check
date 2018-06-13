@@ -1,0 +1,130 @@
+(jbuild_version 1)
+
+
+(library
+ ((name commandTest)
+  (public_name pyrelib.commandTest)
+  (modules (commandTest))
+  (libraries
+   (oUnit
+    pyrelib.pyreCommand
+    pyrelib.test
+    pyrelib.ast
+    pyrelib.analysis))))
+
+
+(executable
+ ((name codexGeneratorTest)
+  (modules (codexGeneratorTest))
+  (libraries
+   (oUnit
+    pyrelib.test
+    pyrelib.commandTest
+    pyrelib.pyreCommand
+    pyrelib.ast))))
+
+
+(executable
+ ((name languageServerTest)
+  (modules (languageServerTest))
+  (libraries
+   (oUnit
+    pyrelib.test
+    pyrelib.commandTest
+    pyrelib.pyreCommand
+    pyrelib.ast))))
+
+
+(executable
+ ((name persistentClientTest)
+  (modules (persistentClientTest))
+  (libraries
+   (oUnit
+    pyrelib.test
+    pyrelib.commandTest
+    pyrelib.pyreCommand
+    pyrelib.ast))))
+
+
+(executable
+ ((name queryTest)
+  (modules (queryTest))
+  (libraries
+   (oUnit
+    pyrelib.test
+    pyrelib.pyreCommand
+    pyrelib.ast))))
+
+
+(executable
+ ((name serverProtocolTest)
+  (modules (serverProtocolTest))
+  (libraries
+   (oUnit
+    pyrelib.test
+    pyrelib.pyreCommand
+    pyrelib.ast))))
+
+
+(executable
+ ((name serverTest)
+  (modules (serverTest))
+  (libraries
+   (oUnit
+    pyrelib.test
+    pyrelib.commandTest
+    pyrelib.pyreCommand
+    pyrelib.ast))))
+
+
+(executable
+ ((name watchmanTest)
+  (modules (watchmanTest))
+  (libraries
+   (oUnit
+    pyrelib.test
+    pyrelib.commandTest
+    pyrelib.pyreCommand
+    pyrelib.ast))))
+
+
+(alias
+ ((name runtest)
+  (deps (codexGeneratorTest.exe))
+  (action (run ${<} -runner sequential))))
+
+
+(alias
+ ((name runtest)
+  (deps (languageServerTest.exe))
+  (action (run ${<} -runner sequential))))
+
+
+(alias
+ ((name runtest)
+  (deps (persistentClientTest.exe))
+  (action (run ${<} -runner sequential))))
+
+
+(alias
+ ((name runtest)
+  (deps (queryTest.exe))
+  (action (run ${<} -runner sequential))))
+
+
+(alias
+ ((name runtest)
+  (deps (serverProtocolTest.exe))
+  (action (run ${<} -runner sequential))))
+
+
+(alias
+ ((name runtest)
+  (deps (serverTest.exe))
+  (action (run ${<} -runner sequential))))
+
+
+(alias
+ ((name runtest)
+  (deps (watchmanTest.exe))
+  (action (run ${<} -runner sequential))))

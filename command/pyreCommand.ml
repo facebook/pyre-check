@@ -11,4 +11,13 @@ module Persistent = CommandPersistent
 module Query = CommandQuery
 module Rage = CommandRage
 module Watchman = CommandWatchman
+
+(** Server modules exposed by command *)
+module LanguageServer = LanguageServer
+module Protocol = ServerProtocol
+module Request = ServerRequest
 module Server = Server
+module ServerConfiguration = ServerConfiguration
+module ServerOperations = ServerOperations
+module Socket = CommandSocket
+module State = ServerState

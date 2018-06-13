@@ -7,11 +7,11 @@ open Core
 open OUnit2
 
 open Analysis
+open PyreCommand
 open Pyre
 open Test
 
 module Parallel = Hack_parallel.Std
-module Socket = CommandSocket
 
 
 let clean_environment () =

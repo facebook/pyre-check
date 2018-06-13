@@ -1117,7 +1117,7 @@ let test_reveal_type _ =
 let test_coverage _ =
   let assert_coverage source expected =
     let { Result.coverage; _ } =
-      AnalysisTypeCheck.check
+      TypeCheck.check
         configuration
         (Environment.handler ~configuration plain_environment)
         mock_call_graph
