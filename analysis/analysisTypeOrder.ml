@@ -855,6 +855,10 @@ and meet order left right =
     | other, Type.Top ->
         other
 
+    | Type.Object, other
+    | other, Type.Object when not (Type.equal other Type.Top)->
+        other
+
     | Type.Bottom, _
     | _, Type.Bottom ->
         Type.Bottom

@@ -726,72 +726,49 @@ let test_join _ =
 
 
 let test_meet _ =
-  (* Primitive types. *)
-  assert_equal (meet default !"list" !"typing.Sized") !"list";
-  assert_equal (meet default !"typing.Sized" !"list") !"list";
-  assert_equal
-    (meet default (Type.list Type.integer) !"typing.Sized")
-    (Type.list Type.integer);
-
-  let compare_with_union left right =
-    match left, right with
-    | Type.Union left, Type.Union right ->
-        Type.Set.equal (Type.Set.of_list left) (Type.Set.of_list right)
-    | _ -> Type.equal left right
+  let assert_meet ?(order = default) ?(aliases = (fun _ -> None)) left right expected =
+    let parse_annotation source =
+      let integer = try Int.of_string source |> ignore; true with _ -> false in
+      if integer then
+        Type.Primitive ~~source
+      else
+        parse_single_expression source
+        |> Type.create ~aliases
+    in
+    assert_equal
+      ~printer:Type.show
+      ~cmp:Type.equal
+      (parse_annotation expected)
+      (meet order (parse_annotation left) (parse_annotation right))
   in
-  assert_equal
-    ~cmp:compare_with_union
-    (meet
-       default
-       (Type.Union [Type.integer; Type.string])
-       (Type.Union [Type.integer; Type.bytes]))
-    Type.integer;
-  assert_equal
-    ~cmp:compare_with_union
-    (meet
-       default
-       (Type.Union [Type.integer; Type.string])
-       (Type.Union [Type.string; Type.integer]))
-    (Type.Union [Type.integer; Type.string]);
-  assert_equal
-    ~cmp:compare_with_union
-    ~printer:Type.show
-    (meet
-       default
-       (Type.Union [Type.integer; Type.string])
-       (Type.Union [Type.integer; Type.Optional Type.string]))
-    (Type.integer);
-  assert_equal
-    ~cmp:compare_with_union
-    ~printer:Type.show
-    (meet
-       default
-       (Type.Union [Type.integer; Type.Optional Type.string])
-       (Type.Optional Type.string))
-    (Type.Optional Type.string);
+
+  (* Special elements. *)
+  assert_meet "typing.List[float]" "typing.Any" "typing.List[float]";
+
+  (* Primitive types. *)
+  assert_meet "list" "typing.Sized" "list";
+  assert_meet "typing.Sized" "list" "list";
+  assert_meet "typing.List[int]" "typing.Sized" "typing.List[int]";
+
+  (* Unions. *)
+  assert_meet "typing.Union[int, str]" "typing.Union[int, bytes]" "int";
+  assert_meet "typing.Union[int, str]" "typing.Union[str, int]" "typing.Union[int, str]";
+  assert_meet "typing.Union[int, str]" "typing.Union[int, typing.Optional[str]]" "int";
+  assert_meet
+    "typing.Union[int, typing.Optional[str]]"
+    "typing.Optional[str]"
+    "typing.Optional[str]";
 
   (* Parametric types. *)
-  assert_equal
-    (meet default (Type.list Type.integer) (Type.iterator Type.integer))
-    (Type.list Type.integer);
-  assert_equal
-    (meet default (Type.list Type.float) (Type.iterator Type.integer))
-    (Type.list Type.integer);
-  assert_equal
-    ~printer:Type.show
-    (meet default (Type.list Type.float) (Type.parametric "float" [Type.integer]))
-    Type.Bottom;
+  assert_meet "typing.List[int]" "typing.Iterator[int]" "typing.List[int]";
+  assert_meet "typing.List[float]" "typing.Iterator[int]" "typing.List[int]";
+  assert_meet "typing.List[float]" "float[int]" "$bottom";
+  assert_meet
+    "typing.Dict[str, str]"
+    "typing.Dict[str, typing.List[str]]"
+    "typing.Dict[str, $bottom]";
 
-  assert_equal
-    (meet disconnected_order !"A" !"B")
-    Type.Bottom;
-
-  assert_equal
-    (meet
-       default
-       (Type.dictionary ~key:Type.string ~value:Type.string)
-       (Type.dictionary ~key:Type.string ~value:(Type.list Type.string)))
-    (Type.dictionary ~key:Type.string ~value:Type.Bottom);
+  assert_meet ~order:disconnected_order "A" "B" "$bottom";
 
   (* Variables. *)
   assert_equal
