@@ -11,3 +11,4 @@ module Persistent = CommandPersistent
 module Query = CommandQuery
 module Rage = CommandRage
 module Watchman = CommandWatchman
+module Server = Server

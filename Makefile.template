@@ -64,3 +64,7 @@ release_tags:
 .PHONY: remove_hack_parallel
 remove_hack_parallel:
 	@make -C hack_parallel clean && make -C hack_parallel remove
+
+.PHONY: jbuilder
+jbuilder:
+	@jbuilder build @install -j 20
