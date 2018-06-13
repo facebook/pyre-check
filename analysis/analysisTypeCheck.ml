@@ -1268,12 +1268,7 @@ module State = struct
             List.fold ~f:accumulate ~init:errors right
 
         | Dictionary { Dictionary.entries; keywords } ->
-            let errors =
-              List.fold
-                ~f:(check_entry ~resolution)
-                ~init:errors
-                entries
-            in
+            let errors = List.fold ~f:(check_entry ~resolution) ~init:errors entries in
             begin
               match keywords with
               | None -> errors
@@ -1286,10 +1281,7 @@ module State = struct
             check_entry ~resolution errors element
 
         | FormatString { FormatString.expression_list; _ } ->
-            List.fold
-              ~f:(check_expression ~resolution)
-              ~init:errors
-              expression_list
+            List.fold ~f:(check_expression ~resolution) ~init:errors expression_list
 
         | Lambda { Lambda.body; parameters } ->
             let resolution =
@@ -1308,10 +1300,7 @@ module State = struct
         | List list
         | Set list
         | Tuple list ->
-            List.fold
-              ~f:(check_expression ~resolution)
-              ~init:errors
-              list
+            List.fold ~f:(check_expression ~resolution) ~init:errors list
 
         | Generator { Comprehension.element; generators }
         | ListComprehension { Comprehension.element; generators }
