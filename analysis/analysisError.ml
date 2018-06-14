@@ -1479,4 +1479,5 @@ let to_json ~detailed ({ kind; define = { Node.value = define; _ }; location; _ 
       "name", `String (name error);
       "description", `String (description error ~detailed);
       "inference", `Assoc inference_information;
+      "define", `String (Access.show define.Define.name);
     ])
