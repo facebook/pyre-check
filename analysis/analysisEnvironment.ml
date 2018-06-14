@@ -16,6 +16,7 @@ module Resolution = AnalysisResolution
 module Type = AnalysisType
 module TypeOrder = AnalysisTypeOrder
 
+
 type t = {
   function_definitions: ((Define.t Node.t) list) Access.Table.t;
   class_definitions: (Class.t Node.t) Type.Table.t;
@@ -26,6 +27,7 @@ type t = {
   globals: Resolution.global Access.Table.t;
   dependencies: Dependencies.t;
 }
+
 
 module type Handler = sig
   val register_definition
@@ -69,6 +71,7 @@ module type Handler = sig
 
   module TypeOrderHandler: TypeOrder.Handler
 end
+
 
 let connect_definition
     ~order
