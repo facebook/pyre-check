@@ -15,11 +15,8 @@ open Test
 
 module TestSetup = AnalysisTestSetup
 
+
 let configuration = Configuration.create ~infer:true ()
-
-
-let plain_environment =
-  TestSetup.plain_environment
 
 
 let create
@@ -44,7 +41,7 @@ let create
       List.map ~f:annotify annotations
       |> Access.Map.of_alist_exn
     in
-    Resolution.with_annotations TestSetup.resolution ~annotations
+    Resolution.with_annotations (TestSetup.resolution ()) ~annotations
   in
   let define =
     +{
@@ -172,7 +169,8 @@ let test_fixpoint_backward _ =
          ~initial_forward:
            (State.initial
               ~call_graph:(CallGraph.stub ())
-              ~resolution:TestSetup.resolution define_node)
+              ~resolution:(TestSetup.resolution ())
+              define_node)
          ~initialize_backward:(Inference.State.initial_backward define_node))
   in
   assert_fixpoint_backward
@@ -376,10 +374,8 @@ let assert_infer
   let source =
     parse source
     |> Preprocessing.preprocess in
-  let environment =
-    Environment.Builder.copy plain_environment in
-  Environment.populate ~configuration (Environment.handler ~configuration environment) [source];
-  let environment_handler = Environment.handler ~configuration environment in
+  let environment = TestSetup.environment () in
+  Environment.populate ~configuration environment [source];
   let to_string json =
     Yojson.Safe.sort json
     |> Yojson.Safe.to_string
@@ -396,7 +392,7 @@ let assert_infer
        ~f:fields_of_error
        (check_errors
           ~mode_override:Source.Infer
-          (Configuration.create ~debug ~infer ~recursive_infer ()) environment_handler source)
+          (Configuration.create ~debug ~infer ~recursive_infer ()) environment source)
      |> List.concat
      |> List.map ~f:to_string)
 

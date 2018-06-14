@@ -21,16 +21,12 @@ module TestSetup = AnalysisTestSetup
 
 let assert_type_errors = TestSetup.assert_type_errors
 
-let configuration = TestSetup.configuration
 
-let plain_environment = TestSetup.plain_environment
+let resolution = TestSetup.resolution ()
 
-let resolution = TestSetup.resolution
-
-let empty_define = TestSetup.empty_define
 
 let create
-    ?(define = empty_define)
+    ?(define = TestSetup.empty_define)
     ?(expected_return = Type.Top)
     ?(immutables = [])
     annotations =
@@ -1117,9 +1113,10 @@ let test_reveal_type _ =
 let test_coverage _ =
   let assert_coverage source expected =
     let { Result.coverage; _ } =
-      TypeCheck.check
-        configuration
-        (Environment.handler ~configuration plain_environment)
+      let environment = TestSetup.environment () in
+      AnalysisTypeCheck.check
+        TestSetup.configuration
+        environment
         mock_call_graph
         (parse source)
     in

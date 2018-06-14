@@ -17,7 +17,6 @@ open Test
 module Parallel = Hack_parallel.Std
 module TestSetup = AnalysisTestSetup
 
-let plain_environment = TestSetup.plain_environment
 
 let test_create _ =
   let call_graph = CallGraph.create () in
@@ -58,11 +57,8 @@ let assert_call_graph source ~expected =
   let configuration =
     Configuration.create ~debug:true ~strict:false ~declare:false ~infer:false ()
   in
-  Environment.populate
-    ~configuration
-    (Environment.handler ~configuration plain_environment)
-    [source];
-  let environment = Environment.handler ~configuration plain_environment in
+  let environment = TestSetup.environment ~configuration () in
+  Environment.populate ~configuration environment [source];
   let call_graph = Service.CallGraph.shared_memory_handler () in
   check configuration environment (Some call_graph) source |> ignore;
   let { Source.path; _ } = source in

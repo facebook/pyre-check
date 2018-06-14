@@ -12,12 +12,7 @@ open Pyre
 open Statement
 open Test
 
-
-let resolution ?(define = Define.create_toplevel ~qualifier:[] ~statements:[]) ~sources () =
-  let configuration = Configuration.create () in
-  let environment = Environment.Builder.create ~configuration () in
-  Environment.populate (Environment.handler ~configuration environment) ~configuration sources;
-  Environment.resolution (Environment.handler ~configuration environment) ~define ()
+module TestSetup = AnalysisTestSetup
 
 
 let test_set_local _ =
@@ -28,7 +23,7 @@ let test_set_local _ =
       (Resolution.get_local resolution ~access:(Access.create access) >>| Annotation.annotation)
   in
 
-  let resolution = resolution ~sources:[] () in
+  let resolution = TestSetup.resolution ~sources:[] () in
   assert_local ~resolution ~access:"local" ~expected:None;
 
   let resolution =
@@ -58,7 +53,7 @@ let test_parse_annotation _ =
   in
 
   let resolution =
-    resolution
+    TestSetup.resolution
       ~sources:[
         parse ~qualifier:(Access.create "empty") ~path:"empty.pyi" "class Empty: ...";
         parse ~qualifier:(Access.create "empty.stub") ~path:"empty/stub.pyi" "";
