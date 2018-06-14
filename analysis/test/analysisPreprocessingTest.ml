@@ -51,15 +51,6 @@ let test_expand_string_annotations _ =
     {|
       class Foo: ...
       def foo(f: Foo[K, V]): ...
-    |};
-
-  (* Special case bound argument of type variables. *)
-  assert_expand
-    {|
-      T = TypeVar('T', bound='int')
-    |}
-    {|
-      T = TypeVar('T', bound=int)
     |}
 
 
