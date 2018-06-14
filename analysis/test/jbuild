@@ -123,6 +123,15 @@
 
 
 (executable
+ ((name analysisResolutionTest)
+  (modules (analysisResolutionTest))
+  (libraries 
+   (oUnit 
+    pyrelib.test 
+    pyrelib.analysis))))
+
+
+(executable
  ((name analysisTypeCheckTest)
   (modules (analysisTypeCheckTest))
   (libraries 
@@ -284,6 +293,12 @@
 (alias
  ((name runtest)
   (deps (analysisRefinementTest.exe))
+  (action (run ${<} -runner sequential))))
+
+
+(alias
+ ((name runtest)
+  (deps (analysisResolutionTest.exe))
   (action (run ${<} -runner sequential))))
 
 
