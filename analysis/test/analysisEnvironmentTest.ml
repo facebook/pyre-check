@@ -223,7 +223,7 @@ let test_register_aliases _ =
     ]
     [
       "a._T", "Variable[a._T]";
-      "a._T2", "Variable[a._T2]";
+      "a._T2", "Variable[UnrelatedName]";
     ];
 
   (* Type variable aliases in classes. *)

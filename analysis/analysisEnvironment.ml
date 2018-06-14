@@ -497,18 +497,7 @@ let register_aliases (module Handler: Handler) sources =
     else
       let register_alias (any_changed, unresolved) (path, target, value) =
         let target_annotation = Type.create ~aliases:Handler.aliases target in
-        let value_annotation =
-          Type.create ~aliases:Handler.aliases value
-          |> function
-          | Type.Variable variable ->
-              let name =
-                Expression.show target
-                |> Identifier.create
-              in
-              Type.Variable { variable with Type.variable = name }
-          | annotation ->
-              annotation
-        in
+        let value_annotation = Type.create ~aliases:Handler.aliases value in
         let rec annotation_in_order annotation =
           match annotation with
           | Type.Primitive _
