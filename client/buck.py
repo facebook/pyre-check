@@ -70,7 +70,7 @@ def _normalize(targets: List[str], use_cache: bool = False) -> List[str]:
         "s:" if len(targets) > 1 else "",
         "`, `".join(targets),
     )
-    cache: Dict[str, List[str]] = {}
+    cache = {} # type: Dict[str, List[str]]
     serialized_targets = ",".join(targets)
     try:
         with open(CACHE_PATH) as cache_file:
