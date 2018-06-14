@@ -190,16 +190,14 @@ let test_initialize_response _ =
     (InitializeResponse.default 1
      |> InitializeResponse.to_yojson
      |> Yojson.Safe.sort)
-    (
-      Format.sprintf
-        {|
+    ({|
       {
         "id": 1,
         "jsonrpc": "2.0",
         "result": {
           "capabilities": {
             "definitionProvider": true,
-            "hoverProvider": %s,
+            "hoverProvider": true,
             "rageProvider": true,
             "textDocumentSync": {
               "change": 0,
@@ -210,8 +208,7 @@ let test_initialize_response _ =
         }
       }
      |}
-        (Bool.to_string Experimental.type_hover_support_enabled)
-      |> Yojson.Safe.from_string)
+     |> Yojson.Safe.from_string)
 
 
 let test_language_server_protocol_read_message context =

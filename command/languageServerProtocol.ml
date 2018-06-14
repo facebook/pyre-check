@@ -120,7 +120,7 @@ module InitializeResponse = struct
                   will_save_wait_until = None;
                   save = Some { SaveOptions.include_text = Some false };
                 };
-              hover_provider = Some Experimental.type_hover_support_enabled;
+              hover_provider = Some true;
               completion_provider = None;
               signature_help_provider = None;
               definition_provider = Some true;
