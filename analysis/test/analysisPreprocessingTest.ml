@@ -319,7 +319,7 @@ let test_qualify _ =
     |}
     {|
       def typing.TypeVar(): ...
-      T = typing.TypeVar('T')
+      T = typing.TypeVar('typing.T')
       def typing.foo($parameter_t: typing.T): ...
     |};
   assert_qualify
@@ -348,6 +348,19 @@ let test_qualify _ =
       def qualifier.foo($parameter_i: qualifier.Int) -> qualifier.Int:
         $local_0_variable = $local_0_Int
       def qualifier.foo($parameter_i: typing.Tuple[qualifier.Int, str]): ...
+    |};
+
+  (* Qualify strings. *)
+  assert_qualify
+    {|
+      from typing import List
+      T = 'List'
+      def foo() -> 'List[int]': ...
+    |}
+    {|
+      from typing import List
+      $local_0_T = 'typing.List'
+      def qualifier.foo() -> 'typing.List.__getitem__.(int)': ...
     |};
 
   (* Qualify functions. *)

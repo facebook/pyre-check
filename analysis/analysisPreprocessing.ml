@@ -723,7 +723,7 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
     | _ ->
         access
 
-  and qualify_expression ~scope ({ Node.value; _ } as expression) =
+  and qualify_expression ~scope ({ Node.location; value } as expression) =
     let value =
       let qualify_entry ~scope { Dictionary.key; value } =
         {
@@ -819,6 +819,30 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
           Starred (Starred.Once (qualify_expression ~scope expression))
       | Starred (Starred.Twice expression) ->
           Starred (Starred.Twice (qualify_expression ~scope expression))
+      | String string ->
+          begin
+            try
+              let buffer = Lexing.from_string (string ^ "\n") in
+              let state = Lexer.State.initial () in
+              match ParserGenerator.parse (Lexer.read state) buffer with
+              | [{ Node.value = Expression expression; _ }] ->
+                  qualify_expression ~scope expression
+                  |> Expression.show
+                  |> fun string -> String string
+              | _ ->
+                  raise ParserGenerator.Error
+            with
+            | ParserGenerator.Error
+            | Failure _ ->
+                begin
+                  Log.debug
+                    "Invalid string annotation `%s` at %a"
+                    string
+                    Location.pp
+                    location;
+                  String string
+                end
+          end
       | Ternary { Ternary.target; test; alternative } ->
           Ternary {
             Ternary.target = qualify_expression ~scope target;
@@ -836,7 +860,7 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
           Yield (Some (qualify_expression ~scope expression))
       | Yield None ->
           Yield None
-      | Bytes _ | Complex _ | False | Float _ | Integer _ | String _ | True ->
+      | Bytes _ | Complex _ | False | Float _ | Integer _ | True ->
           value
     in
     { expression with Node.value }
