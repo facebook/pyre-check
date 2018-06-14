@@ -651,6 +651,12 @@ module PrettyPrinter = struct
     match access_list with
     | [] -> ()
     | access :: [] -> Format.fprintf formatter "%a" pp_access access
+    | access :: (((Access.Call _) :: _) as access_list) ->
+        Format.fprintf
+          formatter
+          "%a%a"
+          pp_access access
+          pp_access_list access_list
     | access :: access_list ->
         Format.fprintf
           formatter

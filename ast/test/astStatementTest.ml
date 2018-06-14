@@ -867,7 +867,7 @@ let test_pp _ =
       @(class_decorator)
       class Foo(Bar):
         def Foo#baz(quux):
-          for i in xrange.(quux):
+          for i in xrange(quux):
             i = 1
           i = 2
 
@@ -898,7 +898,7 @@ let test_pp _ =
   let pretty_print_expect =
     {|
       try:
-        raise Exception.("whoops")
+        raise Exception("whoops")
       except SomeError as `e`:
         pass
       except (AnotherError, YetAnotherError):
@@ -939,8 +939,8 @@ let test_pp _ =
         else:
           i = 2
         j = 2
-      i.__getitem__.(j) = 3
-      i.__getitem__.(slice.(j,None,1)) = i.__getitem__.(slice.(None,j,None))
+      i.__getitem__(j) = 3
+      i.__getitem__(slice(j,None,1)) = i.__getitem__(slice(None,j,None))
     |}
   in
 
@@ -956,7 +956,7 @@ let test_pp _ =
 
   let pretty_print_expect =
     {|
-      @(some.decorator.("with_a_string"))
+      @(some.decorator("with_a_string"))
       def #decorator_test():
         return 5
     |}
