@@ -19,6 +19,7 @@ type t = {
   log_path: Path.t;
   daemonize: bool;
   use_watchman: bool;
+  watchman_creation_timeout: float;
   (* Analysis configuration *)
   configuration: Configuration.t;
 }
@@ -74,5 +75,6 @@ let create
     log_path;
     daemonize;
     use_watchman;
+    watchman_creation_timeout = 5.0 (* Seconds. *);
     configuration;
   }

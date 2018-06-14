@@ -24,13 +24,24 @@ exception AlreadyRunning
 exception NotRunning
 open State
 
+
 let register_signal_handlers server_configuration socket =
   Signal.Expert.handle
     Signal.int
     (fun _ -> ServerOperations.stop_server ~reason:"interrupt" server_configuration socket);
   Signal.Expert.handle
     Signal.pipe
-    (fun _ -> ())
+    (fun _ -> ());
+  let rec wait_on_all_children () =
+    match Unix.wait_nohang `Any with
+    | None ->
+        ()
+    | Some _ ->
+        wait_on_all_children ()
+  in
+  Signal.Expert.handle
+    Signal.chld
+    (fun _ -> wait_on_all_children ())
 
 
 let spawn_watchman_client { configuration = { sections; source_root; _ }; _ } =
@@ -250,6 +261,7 @@ let request_handler_thread
     ({
       configuration = ({ expected_version; source_root; _ } as configuration);
       use_watchman;
+      watchman_creation_timeout;
       _;
     } as server_configuration,
       lock,
@@ -309,7 +321,7 @@ let request_handler_thread
               let persistent_clients = !(connections).persistent_clients in
               Hashtbl.remove persistent_clients socket)
   in
-  let handle_readable_file_notifier socket =
+  let handle_readable_file_notifier last_watchman_created socket =
     try
       Log.log ~section:`Server "A file notifier is readable.";
       let request = Socket.read socket in
@@ -332,10 +344,18 @@ let request_handler_thread
                         [file_notifier_socket])
                   !(connections).file_notifiers
               in
-              if List.is_empty file_notifiers && use_watchman then
-                spawn_watchman_client server_configuration;
+              let exceeds_timeout () =
+                let current_time = Unix.time () in
+                current_time -. (!last_watchman_created) >= watchman_creation_timeout
+              in
+              if List.is_empty file_notifiers && use_watchman && (exceeds_timeout ()) then
+                begin
+                  last_watchman_created := Unix.time ();
+                  spawn_watchman_client server_configuration
+                end;
               connections := { !connections with file_notifiers });
   in
+  let last_watchman_created = ref 0.0 in
   let rec loop () =
     let { socket = server_socket; persistent_clients; file_notifiers } = get_readable_sockets () in
     if not (PyrePath.is_directory source_root) then
@@ -377,7 +397,7 @@ let request_handler_thread
       else if Mutex.critical_section lock ~f:(fun () -> Hashtbl.mem persistent_clients socket) then
         handle_readable_persistent socket
       else
-        handle_readable_file_notifier socket
+        handle_readable_file_notifier last_watchman_created socket
     in
     List.iter ~f:handle_socket readable;
     loop ()
