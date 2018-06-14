@@ -335,31 +335,22 @@ let rec process_request
                   |> Option.value ~default:path
                 in
 
-                let open Result in
-                let annotation =
+                let open LanguageServer.Protocol in
+                let result =
                   Hashtbl.find state.lookups relative_path
-                  |> Result.of_option ~error:"(none - file miss)"
-                  >>= (fun lookup ->
-                      Lookup.get_annotation lookup ~position
-                      |> Result.of_option ~error:"(none - location miss)")
-                in
-                let contents =
-                  Format.asprintf "- annotation:%s\n- path:%s\n- position:%s\n"
-                    (match annotation with
-                     | Ok (_, annotation) -> Type.show annotation
-                     | Error error -> error)
-                    relative_path
-                    (Location.show_position position)
+                  >>= Lookup.get_annotation ~position
+                  >>| (fun (location, annotation) ->
+                      {
+                        HoverResponse.location;
+                        contents = Type.show annotation;
+                      })
                 in
                 Some
                   (state,
                    Some
                      (LanguageServerProtocolResponse
-                        (LanguageServer.Protocol.HoverResponse.create
-                           ~contents
-                           ~id
-                           ~location:(Result.ok annotation |> Option.map ~f:fst)
-                         |> LanguageServer.Protocol.HoverResponse.to_yojson
+                        (HoverResponse.create ~id ~result
+                         |> HoverResponse.to_yojson
                          |> Yojson.Safe.to_string)))
             | RageRequest id ->
                 let items = Rage.get_logs configuration in

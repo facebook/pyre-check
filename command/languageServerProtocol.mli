@@ -67,7 +67,12 @@ module HoverResponse : sig
   type t
   [@@deriving to_yojson]
 
-  val create: contents: string -> id: int -> location: Ast.Location.t option -> t
+  type hover_result = {
+    location: Ast.Location.t;
+    contents: string;
+  }
+
+  val create: id: int -> result: hover_result option -> t
 end
 
 module RageResponse : sig

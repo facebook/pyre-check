@@ -188,16 +188,22 @@ end
 module HoverResponse = struct
   include LanguageServerProtocolTypes.HoverResponse
 
-  let create ~contents ~id ~location =
+  type hover_result = {
+    location: Ast.Location.t;
+    contents: string;
+  }
+
+  let create ~id ~result =
     {
       jsonrpc = "2.0";
       id;
       result =
-        Some {
-          HoverResult.contents;
-          range = location
-            >>| (fun { Ast.Location.start; stop; _ } -> Range.create ~start ~stop)
-        };
+        result
+        >>| (fun { location = { Ast.Location.start; stop; _ }; contents } ->
+            {
+              HoverResult.contents;
+              range = Some (Range.create ~start ~stop);
+            });
       error = None;
     }
 end

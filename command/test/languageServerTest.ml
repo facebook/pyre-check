@@ -420,9 +420,12 @@ let test_language_server_hover_request _ =
 let test_language_server_hover_response _ =
   let message =
     HoverResponse.create
-      ~contents:"Hover response contents"
       ~id:1
-      ~location:None
+      ~result:(
+        Some {
+          HoverResponse.location = Ast.Location.any;
+          contents = "Hover response contents"
+        })
     |> HoverResponse.to_yojson
     |> Yojson.Safe.sort
     |> Yojson.Safe.pretty_to_string
@@ -433,7 +436,16 @@ let test_language_server_hover_response _ =
       "jsonrpc", `String "2.0";
       "result", `Assoc [
         "contents", `String "Hover response contents";
-        "range", `Null;
+        "range", `Assoc [
+          "end", `Assoc [
+            "character", `Int (-1);
+            "line", `Int (-2);
+          ];
+          "start", `Assoc [
+            "character", `Int (-1);
+            "line", `Int (-2);
+          ];
+        ];
       ];
     ]
     |> Yojson.Safe.pretty_to_string
