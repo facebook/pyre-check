@@ -4,6 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import os
+import sys
 import unittest
 from unittest.mock import call, patch
 
@@ -206,6 +207,11 @@ class ConfigurationTest(unittest.TestCase):
     @patch("os.path.isdir")
     def test_empty_configuration(self, os_path_isdir) -> None:
         os_path_isdir.return_value = False
+        # If typeshed is importable, find_typeshed() will behave
+        # differently because its 'import typeshed' will
+        # succeed. Hence, poison the module cache as described here:
+        # https://docs.python.org/3.6/reference/import.html#the-module-cache
+        sys.modules["typeshed"] = None
 
         with patch.object(Configuration, "_read"):
             # __init__.py is in the parent directory.
