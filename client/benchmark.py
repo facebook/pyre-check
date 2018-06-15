@@ -43,11 +43,14 @@ def _compare_parallel_check(arguments, configuration):
             "`{}` is not a valid source directory.".format(arguments.source_directory)
         )
     flags = [
-        "-search-path",
-        ",".join(configuration.get_search_path()),
+        "-typeshed",
+        str(configuration.get_typeshed()),
         "-project-root",
         arguments.current_directory,
     ]
+    search_path = configuration.get_search_path()
+    if search_path:
+        flags.extend(["-search-path", ",".join(search_path)])
     client_command = [configuration.get_binary(), "check"]
     client_command.extend(flags)
     client_command.append(arguments.source_directory)

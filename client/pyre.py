@@ -17,6 +17,7 @@ from . import (
     SUCCESS,
     TEXT,
     EnvironmentException,
+    assert_readable_directory,
     buck,
     commands,
     get_binary_version,
@@ -36,14 +37,7 @@ LOG = logging.getLogger(__name__)
 
 def main() -> int:
     def readable_directory(directory: str) -> str:
-        if not os.path.isdir(directory):
-            raise argparse.ArgumentTypeError(
-                "{} is not a valid directory".format(directory)
-            )
-        if not os.access(directory, os.R_OK):
-            raise argparse.ArgumentTypeError(
-                "{} is not a readable directory".format(directory)
-            )
+        assert_readable_directory(directory)
         return directory
 
     parser = argparse.ArgumentParser(allow_abbrev=False)

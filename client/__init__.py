@@ -3,6 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import argparse
 import json
 import logging
 import multiprocessing
@@ -34,6 +35,17 @@ BINARY_NAME = "pyre.bin"
 
 class EnvironmentException(Exception):
     pass
+
+
+def assert_readable_directory(directory: str) -> None:
+    if not os.path.isdir(directory):
+        raise argparse.ArgumentTypeError(
+            "{} is not a valid directory".format(directory)
+        )
+    if not os.access(directory, os.R_OK):
+        raise argparse.ArgumentTypeError(
+            "{} is not a readable directory".format(directory)
+        )
 
 
 def is_capable_terminal() -> bool:
@@ -201,7 +213,7 @@ def find_typeshed() -> Optional[str]:
     # Prefer the typeshed we bundled ourselves (if any) to the one
     # from the environment.
     bundled_typeshed = _find_directory_upwards(
-        current_directory, "pyre_check/typeshed/stdlib/"
+        current_directory, "pyre_check/typeshed/"
     )
     if bundled_typeshed:
         return bundled_typeshed
@@ -209,9 +221,9 @@ def find_typeshed() -> Optional[str]:
     try:
         import typeshed
 
-        return os.path.join(typeshed.typeshed, "stdlib/")
+        return typeshed.typeshed
     except ImportError:
         LOG.debug("`import typeshed` failed, attempting a manual lookup")
 
     # This is a terrible, terrible hack.
-    return _find_directory_upwards(current_directory, "typeshed/stdlib/")
+    return _find_directory_upwards(current_directory, "typeshed/")

@@ -17,7 +17,8 @@ class StartTest(unittest.TestCase):
         arguments.terminal = False
 
         configuration = mock_configuration()
-        configuration.get_search_path.return_value = ["root"]
+        configuration.get_typeshed.return_value = "stub"
+        configuration.get_search_path.return_value = ["path1", "path2"]
         configuration.get_version_hash.return_value = "hash"
         configuration.number_of_workers = 5
 
@@ -32,10 +33,12 @@ class StartTest(unittest.TestCase):
                     ".",
                     "-workers",
                     "5",
-                    "-search-path",
-                    "root",
+                    "-typeshed",
+                    "stub",
                     "-expected-binary-version",
                     "hash",
+                    "-search-path",
+                    "path1,path2",
                 ],
             )
 
@@ -53,10 +56,12 @@ class StartTest(unittest.TestCase):
                             "-use-watchman",
                             "-workers",
                             "5",
-                            "-search-path",
-                            "root",
+                            "-typeshed",
+                            "stub",
                             "-expected-binary-version",
                             "hash",
+                            "-search-path",
+                            "path1,path2",
                         ],
                     )
                 ]
@@ -75,9 +80,11 @@ class StartTest(unittest.TestCase):
                     "-terminal",
                     "-workers",
                     "5",
-                    "-search-path",
-                    "root",
+                    "-typeshed",
+                    "stub",
                     "-expected-binary-version",
                     "hash",
+                    "-search-path",
+                    "path1,path2",
                 ],
             )

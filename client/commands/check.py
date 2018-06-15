@@ -21,10 +21,13 @@ class Check(ErrorHandling):
             [
                 "-workers",
                 str(self._number_of_workers),
-                "-search-path",
-                ",".join(self._configuration.get_search_path()),
+                "-typeshed",
+                str(self._configuration.get_typeshed()),
             ]
         )
+        search_path = self._configuration.get_search_path()
+        if search_path:
+            flags.extend(["-search-path", ",".join(search_path)])
         if self._log_identifier:
             flags.extend(["-log-identifier", self._log_identifier])
         return flags

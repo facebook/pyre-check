@@ -512,6 +512,8 @@ def mock_arguments():
 
 def mock_configuration():
     configuration = MagicMock()
+    configuration.get_search_path = MagicMock()
+    configuration.get_typeshed = MagicMock()
     return configuration
 
 
@@ -523,6 +525,8 @@ class InferTest(unittest.TestCase):
         arguments.strict = False
 
         configuration = mock_configuration()
+        configuration.get_typeshed.return_value = "stub"
+        configuration.get_search_path.return_value = ["path1", "path2"]
 
         with patch.object(commands.Command, "_call_client") as call_client:
             Infer(arguments, configuration, source_directory=".").run()
@@ -533,8 +537,10 @@ class InferTest(unittest.TestCase):
                     "-project-root",
                     ".",
                     "-infer",
+                    "-typeshed",
+                    "stub",
                     "-search-path",
-                    "",
+                    "path1,path2",
                 ],
             )
 
@@ -548,8 +554,10 @@ class InferTest(unittest.TestCase):
                     "-project-root",
                     ".",
                     "-infer",
+                    "-typeshed",
+                    "stub",
                     "-search-path",
-                    "",
+                    "path1,path2",
                     "-recursive-infer",
                 ],
             )

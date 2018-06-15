@@ -50,12 +50,15 @@ class Start(Command):
                     [
                         "-workers",
                         str(self._number_of_workers),
-                        "-search-path",
-                        ",".join(self._configuration.get_search_path()),
+                        "-typeshed",
+                        str(self._configuration.get_typeshed()),
                         "-expected-binary-version",
                         str(self._configuration.get_version_hash()),
                     ]
                 )
+                search_path = self._configuration.get_search_path()
+                if search_path:
+                    flags.extend(["-search-path", ",".join(search_path)])
                 self._call_client(command=self.NAME, flags=flags).check()
 
             return SUCCESS

@@ -47,12 +47,16 @@ class Incremental(ErrorHandling):
         flags = self._flags()
         flags.extend(
             [
-                "-search-path",
-                ",".join(self._configuration.get_search_path()),
+                "-typeshed",
+                str(self._configuration.get_typeshed()),
                 "-expected-binary-version",
                 str(self._configuration.get_version_hash()),
             ]
         )
+
+        search_path = self._configuration.get_search_path()
+        if search_path:
+            flags.extend(["-search-path", ",".join(search_path)])
 
         if self._state() == State.DEAD:
             LOG.warning("Server initializing...")

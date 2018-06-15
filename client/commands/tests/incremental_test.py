@@ -26,7 +26,8 @@ class IncrementalTest(unittest.TestCase):
         arguments = mock_arguments()
 
         configuration = mock_configuration()
-        configuration.get_search_path.return_value = ["stub", "root"]
+        configuration.get_typeshed.return_value = "stub"
+        configuration.get_search_path.return_value = ["path1", "path2"]
         configuration.get_version_hash.return_value = "hash"
 
         with patch.object(commands.Command, "_call_client") as call_client, patch(
@@ -40,10 +41,12 @@ class IncrementalTest(unittest.TestCase):
                 flags=[
                     "-project-root",
                     ".",
-                    "-search-path",
-                    "stub,root",
+                    "-typeshed",
+                    "stub",
                     "-expected-binary-version",
                     "hash",
+                    "-search-path",
+                    "path1,path2",
                 ],
             )
 
@@ -60,10 +63,12 @@ class IncrementalTest(unittest.TestCase):
                         flags=[
                             "-project-root",
                             ".",
-                            "-search-path",
-                            "stub,root",
+                            "-typeshed",
+                            "stub",
                             "-expected-binary-version",
                             "hash",
+                            "-search-path",
+                            "path1,path2",
                         ],
                     )
                 ],

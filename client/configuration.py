@@ -14,6 +14,7 @@ from . import (
     BINARY_NAME,
     CONFIGURATION_FILE,
     EnvironmentException,
+    assert_readable_directory,
     find_typeshed,
     number_of_workers,
 )
@@ -116,26 +117,39 @@ class Configuration:
             if self.number_of_workers < 1:
                 raise InvalidConfiguration("Number of workers must be greater than 0")
 
-            # Validate elements of the search path.
+            # Validate typeshed path and sub-elements.
             if not self._typeshed:
                 raise InvalidConfiguration("`typeshed` location must be defined")
+            assert_readable_directory(self._typeshed)
 
-            # Validate typeshed path
             typeshed_subdirectories = os.listdir(self._typeshed)
-            if "stdlib" in typeshed_subdirectories:
-                self._typeshed = os.path.join(self._typeshed, "stdlib/")
-                typeshed_subdirectories = os.listdir(self._typeshed)
-            for typeshed_version_directory in os.listdir(self._typeshed):
-                if not typeshed_version_directory[0].isdigit():
-                    raise InvalidConfiguration(
-                        "`typeshed` location must contain a stdlib directory which "
-                        "only contains subdirectories starting with a version number."
+            if "stdlib" not in typeshed_subdirectories:
+                raise InvalidConfiguration(
+                    "`typeshed` location must contain a stdlib directory."
+                )
+
+            for typeshed_subdirectory_name in typeshed_subdirectories:
+                typeshed_subdirectory = os.path.join(
+                    self._typeshed, typeshed_subdirectory_name
+                )
+                assert_readable_directory(typeshed_subdirectory)
+                for typeshed_version_directory_name in os.listdir(
+                    typeshed_subdirectory
+                ):
+                    if not typeshed_version_directory_name[0].isdigit():
+                        raise InvalidConfiguration(
+                            "Directories inside `typeshed` must only contain "
+                            "second-level subdirectories starting with "
+                            "a version number."
+                        )
+                    typeshed_version_directory = os.path.join(
+                        typeshed_subdirectory, typeshed_version_directory_name
                     )
+                    assert_readable_directory(typeshed_version_directory)
+
+            # Validate elements of the search path.
             for path in self.get_search_path():
-                if not os.path.isdir(path):
-                    raise InvalidConfiguration(
-                        "`{}` is not a valid directory".format(path)
-                    )
+                assert_readable_directory(path)
         except InvalidConfiguration as error:
             raise EnvironmentException("Invalid configuration: {}.".format(str(error)))
 
@@ -143,22 +157,22 @@ class Configuration:
         return self._version_hash
 
     @functools.lru_cache(1)
-    def get_binary(self):
+    def get_binary(self) -> str:
         if not self._binary:
             raise InvalidConfiguration("Configuration was not validated")
 
         return self._binary
 
     @functools.lru_cache(1)
-    def get_search_path(self) -> List[str]:
+    def get_typeshed(self) -> str:
         if not self._typeshed:
             raise InvalidConfiguration("Configuration was not validated")
 
-        if self._typeshed in self._search_directories:
-            # Avoid redundant lookups.
-            return self._search_directories
-        else:
-            return self._search_directories + [self._typeshed]
+        return self._typeshed
+
+    @functools.lru_cache(1)
+    def get_search_path(self) -> List[str]:
+        return self._search_directories
 
     def disabled(self) -> bool:
         return self._disabled

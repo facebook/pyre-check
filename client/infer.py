@@ -407,9 +407,10 @@ class Infer(commands.command.ErrorHandling):
 
     def run(self) -> int:
         flags = self._flags()
-        flags.extend(
-            ["-infer", "-search-path", ",".join(self._configuration.get_search_path())]
-        )
+        flags.extend(["-infer", "-typeshed", str(self._configuration.get_typeshed())])
+        search_path = self._configuration.get_search_path()
+        if search_path:
+            flags.extend(["-search-path", ",".join(search_path)])
         if self._recursive:
             flags.append("-recursive-infer")
 

@@ -18,7 +18,8 @@ class CheckTest(unittest.TestCase):
         arguments = mock_arguments()
 
         configuration = mock_configuration()
-        configuration.get_search_path.return_value = ["stub", "root"]
+        configuration.get_typeshed.return_value = "stub"
+        configuration.get_search_path.return_value = ["path1", "path2"]
         configuration.number_of_workers = 5
 
         with patch.object(commands.Command, "_call_client") as call_client, patch(
@@ -32,8 +33,10 @@ class CheckTest(unittest.TestCase):
                     ".",
                     "-workers",
                     "5",
+                    "-typeshed",
+                    "stub",
                     "-search-path",
-                    "stub,root",
+                    "path1,path2",
                 ],
             )
 
@@ -45,7 +48,8 @@ class CheckTest(unittest.TestCase):
         arguments.sequential = True
 
         configuration = mock_configuration()
-        configuration.get_search_path.return_value = ["stub", "root"]
+        configuration.get_typeshed.return_value = "stub"
+        configuration.get_search_path.return_value = ["path1", "path2"]
         configuration.number_of_workers = 5
 
         with patch.object(commands.Command, "_call_client") as call_client, patch(
@@ -60,8 +64,10 @@ class CheckTest(unittest.TestCase):
                     ".",
                     "-workers",
                     "5",
+                    "-typeshed",
+                    "stub",
                     "-search-path",
-                    "stub,root",
+                    "path1,path2",
                 ],
             )
 
@@ -73,7 +79,8 @@ class CheckTest(unittest.TestCase):
         arguments.capable_terminal = False
 
         configuration = mock_configuration()
-        configuration.get_search_path.return_value = ["stub", "root"]
+        configuration.get_typeshed.return_value = "stub"
+        configuration.get_search_path.return_value = ["path1", "path2"]
         configuration.number_of_workers = 5
 
         with patch.object(commands.Command, "_call_client") as call_client, patch(
@@ -92,8 +99,10 @@ class CheckTest(unittest.TestCase):
                     ".",
                     "-workers",
                     "5",
+                    "-typeshed",
+                    "stub",
                     "-search-path",
-                    "stub,root",
+                    "path1,path2",
                 ],
             )
 
@@ -105,7 +114,8 @@ class CheckTest(unittest.TestCase):
         arguments.show_parse_errors = True
 
         configuration = mock_configuration()
-        configuration.get_search_path.return_value = ["stub", "root"]
+        configuration.get_typeshed.return_value = "stub"
+        configuration.get_search_path.return_value = ["path1", "path2"]
         configuration.number_of_workers = 5
 
         with patch.object(commands.Command, "_call_client") as call_client, patch(
@@ -121,7 +131,9 @@ class CheckTest(unittest.TestCase):
                     ".",
                     "-workers",
                     "5",
+                    "-typeshed",
+                    "stub",
                     "-search-path",
-                    "stub,root",
+                    "path1,path2",
                 ],
             )
