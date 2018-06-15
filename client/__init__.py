@@ -39,13 +39,9 @@ class EnvironmentException(Exception):
 
 def assert_readable_directory(directory: str) -> None:
     if not os.path.isdir(directory):
-        raise argparse.ArgumentTypeError(
-            "{} is not a valid directory".format(directory)
-        )
+        raise EnvironmentException("{} is not a valid directory.".format(directory))
     if not os.access(directory, os.R_OK):
-        raise argparse.ArgumentTypeError(
-            "{} is not a readable directory".format(directory)
-        )
+        raise EnvironmentException("{} is not a readable directory.".format(directory))
 
 
 def is_capable_terminal() -> bool:

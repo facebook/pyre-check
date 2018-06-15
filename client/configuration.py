@@ -108,24 +108,32 @@ class Configuration:
                 )
 
             if not self._binary:
-                raise InvalidConfiguration("`binary` location must be defined")
+                raise InvalidConfiguration("`binary` location must be defined.")
             if not os.path.exists(self.get_binary()):
                 raise InvalidConfiguration(
-                    "Binary at `{}` does not exist".format(self._binary)
+                    "Binary at `{}` does not exist.".format(self._binary)
                 )
 
             if self.number_of_workers < 1:
-                raise InvalidConfiguration("Number of workers must be greater than 0")
+                raise InvalidConfiguration("Number of workers must be greater than 0.")
 
             # Validate typeshed path and sub-elements.
             if not self._typeshed:
-                raise InvalidConfiguration("`typeshed` location must be defined")
+                raise InvalidConfiguration("`typeshed` location must be defined.")
             assert_readable_directory(self._typeshed)
+
+            # A courtesy warning since we have changed default behaviour.
+            if self._typeshed_has_obsolete_value():
+                LOG.warning(
+                    "It appears that `{}` points at a `stdlib` directory. "
+                    "Please note that the `typeshed` configuration must point at "
+                    "the root of the `typeshed` directory.".format(self._typeshed)
+                )
 
             typeshed_subdirectories = os.listdir(self._typeshed)
             if "stdlib" not in typeshed_subdirectories:
                 raise InvalidConfiguration(
-                    "`typeshed` location must contain a stdlib directory."
+                    "`typeshed` location must contain a `stdlib` directory."
                 )
 
             for typeshed_subdirectory_name in typeshed_subdirectories:
@@ -151,7 +159,7 @@ class Configuration:
             for path in self.get_search_path():
                 assert_readable_directory(path)
         except InvalidConfiguration as error:
-            raise EnvironmentException("Invalid configuration: {}.".format(str(error)))
+            raise EnvironmentException("Invalid configuration: {}".format(str(error)))
 
     def get_version_hash(self):
         return self._version_hash
@@ -281,3 +289,13 @@ class Configuration:
                 LOG.warning("Could not find a suitable typeshed")
             else:
                 LOG.info("Found: `%s`", self._typeshed)
+
+    def _typeshed_has_obsolete_value(self) -> bool:
+        (head, tail) = os.path.split(self._typeshed)
+        if tail == "stdlib":
+            return True
+        if tail != "":
+            return False
+        # If `path` ends in a slash, tail will be empty.
+        (head, tail) = os.path.split(head)
+        return tail == "stdlib"
