@@ -8,8 +8,8 @@ We actively welcome your pull requests.
 1. Fork the repo and create your branch from `master`.
 2. If you've added code that should be tested, add tests.
 3. If you've changed APIs, update the documentation.
-4. Ensure the test suite passes.
-5. Make sure your code lints.
+4. Ensure the test suite passes (please see [the following section](#running-tests)).
+5. Make sure your code lints (please see [the following section](#coding-style)).
 6. If you haven't already, complete the Contributor License Agreement ("CLA").
 
 ## Running tests
@@ -46,8 +46,13 @@ We value consistent code. Please follow the style of the surrounding code. Usefu
 * prefer snake_case over camelCase for variables and function names, and prefer CamelCase over Snake_case for modules and classes.
 
 ### Python
-- 80 character line length limit
-- PEP8
+<p>
+  <a href="https://github.com/ambv/black"><img alt="Code style: black" src="https://img.shields.io/badge/code%20style-black-000000.svg"></a>
+</p>
+
+We use the `Black` code formatter for all Python files.
+You can install the latest release via `pip install black`, and you run it over the client files as `black pyre-check/client`.
+More information are available at: https://github.com/ambv/black
 
 ### OCaml
 - we don't use type annotations outside of interface files unless necessary
