@@ -20,7 +20,7 @@
  ((name timer)
   (modules (timer))
   (public_name pyrelib.timer)
-  (libraries 
+  (libraries
    (core))))
 
 
@@ -28,7 +28,7 @@
  ((name log)
   (public_name pyrelib.log)
   (modules log)
-  (libraries 
+  (libraries
    (core))))
 
 
@@ -36,7 +36,7 @@
  ((name recognized)
   (modules (recognized))
   (public_name pyrelib.recognized)
-  (libraries 
+  (libraries
    (core))))
 
 
@@ -44,9 +44,11 @@
  ((name statistics)
   (modules (statistics))
   (public_name pyrelib.statistics)
-  (libraries 
+  (preprocess (pps (ppx_deriving_yojson)))
+  (libraries
    (pyrelib.configuration
-    pyrelib.timer))))
+    pyrelib.timer
+    yojson))))
 
 
 (library
@@ -60,11 +62,11 @@
      ppx_hash
      ppx_compare
      ppx_sexp_conv)))
-  (libraries 
-   (core 
-    sexplib 
-    ppxlib 
-    ppx_deriving 
+  (libraries
+   (core
+    sexplib
+    ppxlib
+    ppx_deriving
     pyrelib.log))))
 
 
@@ -79,13 +81,13 @@
      ppx_hash
      ppx_compare
      ppx_sexp_conv)))
-  (libraries 
-   (core 
-    sexplib 
-    ppxlib 
-    ppx_deriving 
-    hack_parallel 
-    pyrelib.pyre 
+  (libraries
+   (core
+    sexplib
+    ppxlib
+    ppx_deriving
+    hack_parallel
+    pyrelib.pyre
     pyrelib.path))))
 
 
@@ -100,12 +102,12 @@
      ppx_hash
      ppx_compare
      ppx_sexp_conv)))
-  (libraries 
-   (core 
-    sexplib 
-    ppxlib 
-    ppx_deriving 
-    hack_parallel 
+  (libraries
+   (core
+    sexplib
+    ppxlib
+    ppx_deriving
+    hack_parallel
     pyrelib.path))))
 
 
@@ -116,10 +118,10 @@
   (preprocess
    (pps
     (ppx_deriving.show)))
-  (libraries 
-   (core 
-    ppx_deriving 
-    pyrelib.pyre 
+  (libraries
+   (core
+    ppx_deriving
+    pyrelib.pyre
     pyrelib.path))))
 
 
@@ -127,7 +129,7 @@
  ((name pyrelib)
   (public_name pyrelib)
   (modules ())
-  (libraries 
+  (libraries
    (pyrelib.pyreParser
     pyrelib.analysis
     pyrelib.ast
