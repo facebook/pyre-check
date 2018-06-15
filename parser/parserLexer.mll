@@ -11,6 +11,7 @@
   open Core
   open Lexing
   open ParserGenerator
+  open Pyre
 
   module State = struct
     type t = {
@@ -70,16 +71,60 @@
       Int.max_value
 
   let parse_signature_comment comment =
-    let strip_quotes string =
-      let quote char = char = '\'' || char = '"' in
+    let strip character string =
       string
-      |> String.lstrip ~drop:quote
-      |> String.rstrip ~drop:quote
+      |> String.lstrip ~drop:character
+      |> String.rstrip ~drop:character
     in
-    comment
-    |> Str.split (Str.regexp "-> *")
-    |> fun elements -> List.nth_exn elements 1
-    |> strip_quotes
+    let return_annotation =
+      let quote char = char = '\'' || char = '"' in
+      comment
+      |> Str.split (Str.regexp "-> *")
+      |> fun elements -> List.nth_exn elements 1
+      |> strip quote
+    in
+    let parameter_annotations =
+      let space char = char = ' ' || char = ',' in
+      let split_annotations annotations_string =
+        let rec split ~sofar ~next ~open_brackets characters =
+          let reverse_stringify character_list =
+            character_list
+            |> List.rev
+            |> String.of_char_list
+          in
+          if open_brackets < 0 then
+            []
+          else
+            match characters with
+            | '[' :: remaining ->
+                split ~sofar ~next:('[' :: next) ~open_brackets:(open_brackets + 1) remaining
+            | ']' :: remaining ->
+                split ~sofar ~next:(']' :: next) ~open_brackets:(open_brackets - 1) remaining
+            | ',' :: remaining when open_brackets = 0 ->
+                split ~sofar:((reverse_stringify next) :: sofar) ~next:[] ~open_brackets remaining
+            | character :: remaining ->
+                split ~sofar ~next:(character :: next) ~open_brackets remaining
+            | [] ->
+                (reverse_stringify next) :: sofar
+        in
+        List.rev (split ~sofar:[] ~next:[] ~open_brackets:0 (String.to_list annotations_string))
+      in
+      let is_not_empty annotation_string =
+        Str.string_match (Str.regexp "\\.*") annotation_string 0
+        |> ignore;
+        not (Str.match_end () = String.length annotation_string)
+      in
+      comment
+      |> Str.split (Str.regexp ") *->")
+      |> fun elements -> List.nth elements 0
+      >>| Str.split (Str.regexp ": *(")
+      >>= (fun elements -> List.nth elements 1)
+      >>| split_annotations
+      >>| List.map ~f:(strip space)
+      >>| List.filter ~f:is_not_empty
+      |> Option.value ~default:[]
+    in
+    (parameter_annotations, return_annotation)
 }
 
 let empty = ""

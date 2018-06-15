@@ -147,7 +147,7 @@
 %token <Lexing.position> RIGHTPARENS
 %token <Lexing.position> TILDE
 %token STUB
-%token <string> SIGNATURE_COMMENT
+%token <string list * string> SIGNATURE_COMMENT
 %token AMPERSAND
 %token AMPERSANDEQUALS
 %token AND
@@ -617,12 +617,40 @@ compound_statement:
             | Some return_annotation -> Some return_annotation
             | None ->
               signature_comment
-              >>= (fun signature_comment ->
+              >>= (fun (_, return_annotation) ->
                   Some {
                     Node.location;
-                    value = String signature_comment
+                    value = String return_annotation
                   }
                 )
+          in
+          let parameters =
+            match signature_comment with
+            | Some (parameter_annotations, _)
+              when not (List.is_empty parameter_annotations) ->
+                let add_annotation
+                  ({ Node.value = parameter; _ } as parameter_node)
+                  annotation =
+                    {
+                      parameter_node with
+                      Node.value = {
+                        parameter with
+                          Parameter.annotation = Some {
+                            Node.location = Location.any;
+                            value = String annotation;
+                          }
+                      }
+                    }
+                in
+                if List.length parameters = List.length parameter_annotations then
+                  List.map2_exn
+                    ~f:add_annotation
+                    parameters
+                    parameter_annotations
+                else
+                  parameters
+            | _ ->
+                parameters
           in
           {
             Node.location;

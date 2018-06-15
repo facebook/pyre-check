@@ -2297,7 +2297,45 @@ let test_check_function_parameters _ =
       def foo(x) -> None:
         takes_iterable(x)
     |}
-    []
+    [];
+  assert_type_errors
+    {|
+      def foo(a):  # type: (typing.Optional[int]) -> None
+        pass
+      foo(None)
+    |}
+    [];
+  assert_type_errors
+    {|
+      def foo(a):  # type: (typing.Optional[int]) -> None
+        pass
+      foo("hello")
+    |}
+    ["Incompatible parameter type [6]: Expected `typing.Optional[int]` but got `str`."];
+  assert_type_errors
+    {|
+      def foo(a):
+        # type: (typing.Optional[int]) -> None
+        pass
+      foo("hello")
+    |}
+    ["Incompatible parameter type [6]: Expected `typing.Optional[int]` but got `str`."];
+  assert_type_errors
+    {|
+      def foo(a, b):
+        # type: (typing.Optional[int], str) -> None
+        pass
+      foo(1, "hello")
+    |}
+    [];
+  assert_type_errors
+    {|
+      def foo(a, b):
+        # type: (typing.Optional[int], str) -> None
+        pass
+      foo(1, 1)
+    |}
+    ["Incompatible parameter type [6]: Expected `str` but got `int`."]
 
 
 let test_check_function_parameters_with_backups _ =

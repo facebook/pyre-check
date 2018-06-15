@@ -1003,7 +1003,7 @@ let test_define _ =
           +{
             Parameter.name = ~~"a";
             value = None;
-            annotation = None;
+            annotation = Some (+String "str");
           };
         ];
         body = [
@@ -1032,6 +1032,36 @@ let test_define _ =
           +{
             Parameter.name = ~~"a";
             value = None;
+            annotation = Some (+String "str");
+          };
+        ];
+        body = [
+          +Return {
+            Return.expression = Some (+Integer 4);
+            is_implicit = false;
+          }];
+        decorators = [];
+        docstring = None;
+        return_annotation = Some (+String "str");
+        async = false;
+        generated = false;
+        parent = None;
+      };
+    ];
+
+  (* Don't use string annotations if list length does not match signature *)
+  assert_parsed_equal
+    (trim_extra_indentation {|
+      def foo(a): # type: (str, str) -> str
+        return 4
+    |})
+    [
+      +Define {
+        Define.name = Access.create "foo";
+        parameters = [
+          +{
+            Parameter.name = ~~"a";
+            value = None;
             annotation = None;
           };
         ];
@@ -1051,7 +1081,7 @@ let test_define _ =
 
   assert_parsed_equal
     (trim_extra_indentation {|
-      def foo(a): # type: (typing.Union[typing.List[int], str], str) -> str
+      def foo(a, b): # type: (typing.Union[typing.List[int], str], str) -> str
         return 4
     |})
     [
@@ -1061,7 +1091,46 @@ let test_define _ =
           +{
             Parameter.name = ~~"a";
             value = None;
-            annotation = None;
+            annotation = Some (+String "typing.Union[typing.List[int], str]");
+          };
+          +{
+            Parameter.name = ~~"b";
+            value = None;
+            annotation = Some (+String "str");
+          };
+        ];
+        body = [
+          +Return {
+            Return.expression = Some (+Integer 4);
+            is_implicit = false;
+          }];
+        decorators = [];
+        docstring = None;
+        return_annotation = Some (+String "str");
+        async = false;
+        generated = false;
+        parent = None;
+      };
+    ];
+
+  assert_parsed_equal
+    (trim_extra_indentation {|
+      def foo(a, b): # type: (typing.Union[typing.List[int], str], typing.List[str]) -> str
+        return 4
+    |})
+    [
+      +Define {
+        Define.name = Access.create "foo";
+        parameters = [
+          +{
+            Parameter.name = ~~"a";
+            value = None;
+            annotation = Some (+String "typing.Union[typing.List[int], str]");
+          };
+          +{
+            Parameter.name = ~~"b";
+            value = None;
+            annotation = Some (+String "typing.List[str]");
           };
         ];
         body = [
