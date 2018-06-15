@@ -128,6 +128,7 @@
   (libraries 
    (oUnit 
     pyrelib.test 
+    pyrelib.testSetup
     pyrelib.analysis))))
 
 

@@ -1114,7 +1114,7 @@ let test_coverage _ =
   let assert_coverage source expected =
     let { Result.coverage; _ } =
       let environment = TestSetup.environment () in
-      AnalysisTypeCheck.check
+      Analysis.TypeCheck.check
         TestSetup.configuration
         environment
         mock_call_graph
