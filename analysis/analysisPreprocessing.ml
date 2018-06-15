@@ -47,6 +47,7 @@ let expand_string_annotations source =
                     | _ ->
                         raise ParserGenerator.Error
                   with
+                  | Pyre.ParserError _
                   | ParserGenerator.Error
                   | Failure _ ->
                       begin
@@ -134,6 +135,7 @@ let expand_format_string source =
                 | _ ->
                     raise ParserGenerator.Error
               with
+              | Pyre.ParserError _
               | ParserGenerator.Error
               | Failure _ ->
                   begin
@@ -804,6 +806,7 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
               | _ ->
                   raise ParserGenerator.Error
             with
+            | Pyre.ParserError _
             | ParserGenerator.Error
             | Failure _ ->
                 begin
