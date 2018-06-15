@@ -3,6 +3,7 @@
     This source code is licensed under the MIT license found in the
     LICENSE file in the root directory of this source tree. *)
 
+open Pyre
 
 let disable () = ()
 
@@ -28,12 +29,14 @@ let performance
     ?(flush = false)
     ?(randomly_log_every = 1)
     ?(section = `Performance)
-    ~name:_
-    ~timer:_
+    ~name
+    ~timer
     ~configuration:_
     ?(integers = [])
     ?(normals = [])
     () =
+  let seconds = Timer.stop timer in
+  Log.log ~section "%s: %fs" (String.capitalize name) seconds;
   ignore flush;
   ignore randomly_log_every;
   ignore integers;
