@@ -82,6 +82,7 @@ OPAM_REPOSITORY="${OPAM_REPOSITORY:-https://opam.ocaml.org}";
 
 # Always set the build type.
 sed "s/%VERSION%/$BUILD/" Makefile.template > Makefile
+sed "s/%VERSION%/$BUILD/" jbuild.in > jbuild
 
 # Perform only minimal initialization on `--configure`.
 if [[ -n "${CONFIGURE}" ]]; then

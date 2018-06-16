@@ -1,7 +1,7 @@
 (jbuild_version 1)
 
-; TODO: T30404496
-(copy_files# external/*.ml{,i})
+
+(copy_files# %VERSION%/*.ml{,i})
 
 
 (library
