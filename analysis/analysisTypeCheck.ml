@@ -901,9 +901,7 @@ module State = struct
             | _ -> None
           in
           List.find_map access ~f:find_assert_test
-          >>| (fun assertion ->
-              let { resolution; _ } = forward state ~statement:(Statement.assume assertion) in
-              resolution)
+          >>| (fun assertion -> forward_annotations state (Statement.assume assertion))
           |> Option.value ~default:resolution
 
       | Stub (Stub.Class { Class.name; _ })
