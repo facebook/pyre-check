@@ -5,6 +5,7 @@
 
 import enum
 import fnmatch
+import functools
 import json
 import logging
 import os
@@ -217,6 +218,7 @@ class ErrorHandling(Command):
         self._verbose = arguments.verbose
         self._output = arguments.output
         self._do_not_check_paths = configuration.do_not_check
+        self._discovered_source_directories = [self._source_root]
 
     def _print(self, errors):
         errors = [
@@ -248,6 +250,26 @@ class ErrorHandling(Command):
         else:
             log.stdout.write(json.dumps([error.__dict__ for error in errors]))
 
+    @functools.lru_cache(maxsize=128)
+    def _is_under_push_blocking_configuration(self, path: str) -> bool:
+        for source_path in self._discovered_source_directories:
+            if path.startswith(os.path.join(self._current_directory, source_path)):
+                return True
+        configuration_file = os.path.join(path, ".pyre_configuration.local")
+        if os.path.isfile(configuration_file):
+            with open(configuration_file) as file:
+                configuration = json.loads(file.read())
+                return bool(configuration["push_blocking"])
+        else:
+            directory_path = os.path.dirname(path)
+            under_configuration = (
+                directory_path != path
+                and self._is_under_push_blocking_configuration(directory_path)
+            )
+            if under_configuration:
+                self._discovered_source_directories += directory_path
+            return under_configuration
+
     def _get_errors(self, result):
         result.check()
 
@@ -269,10 +291,9 @@ class ErrorHandling(Command):
             external_to_source_root = True
             if full_path.startswith(self._current_directory):
                 external_to_project_root = False
-            if full_path.startswith(
-                os.path.join(self._current_directory, self._source_root)
-            ):
-                external_to_source_root = False
+            external_to_source_root = not (
+                self._is_under_push_blocking_configuration(full_path)
+            )
             for do_not_check_path in self._do_not_check_paths:
                 if fnmatch.fnmatch(relative_path, (do_not_check_path + "*")):
                     do_not_check = True
