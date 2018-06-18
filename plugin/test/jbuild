@@ -1,0 +1,15 @@
+(jbuild_version 1)
+
+(executable
+ ((name pluginNamedTuplesTest)
+  (modules (pluginNamedTuplesTest))
+  (libraries
+   (oUnit
+    pyrelib.test
+    pyrelib.plugin
+    pyrelib.ast))))
+
+(alias
+ ((name runtest)
+  (deps (pluginNamedTuplesTest.exe))
+  (action (run ${<} -runner sequential))))

@@ -919,84 +919,6 @@ let test_expand_ternary _ =
     |}
 
 
-let test_expand_named_tuples _ =
-  let assert_expand ?(qualifier = "qualifier") source expected =
-    let parse =
-      parse ~qualifier:(Source.qualifier ~path:qualifier)
-    in
-    assert_source_equal
-      (parse expected)
-      (Preprocessing.expand_named_tuples (parse source))
-  in
-  assert_expand
-    {|
-      $local_0_T = typing.NamedTuple('T')
-    |}
-    {|
-      class qualifier.T(typing.NamedTuple):
-        pass
-    |};
-  assert_expand
-    {|
-      T = collections.namedtuple('T', ['a'])
-    |}
-    {|
-      class T(typing.NamedTuple):
-        T.a: typing.Any
-    |};
-  assert_expand
-    {|
-      T = typing.NamedTuple('T', ['one', 'two'])
-    |}
-    {|
-      class T(typing.NamedTuple):
-        T.one: typing.Any
-        T.two: typing.Any
-    |};
-  assert_expand
-    {|
-      T = typing.NamedTuple('T', [('one', int), ('two', str)])
-    |}
-    {|
-      class T(typing.NamedTuple):
-        T.one: int
-        T.two: str
-    |};
-  assert_expand
-    {|
-      T = collections.namedtuple('T', 'a b c')
-    |}
-    {|
-      class T(typing.NamedTuple):
-        T.a: typing.Any
-        T.b: typing.Any
-        T.c: typing.Any
-    |};
-
-  assert_expand
-    {|
-      class Foo(Bar, collections.namedtuple('T', ['one', 'two'])):
-        Foo.three: int = 1
-    |}
-    {|
-      class Foo(Bar, typing.NamedTuple):
-        Foo.one: typing.Any
-        Foo.two: typing.Any
-        Foo.three: int = 1
-    |};
-
-  (* Don't transform non-toplevel statements. *)
-  assert_expand
-    {|
-      def foo():
-        T = typing.NamedTuple('T')
-    |}
-    {|
-      def foo():
-        T = typing.NamedTuple('T')
-    |}
-
-
 let test_defines _ =
   let assert_defines statements defines =
     assert_equal
@@ -1164,7 +1086,6 @@ let () =
     "expand_type_checking_imports">::test_expand_type_checking_imports;
     "expand_returns">::test_expand_returns;
     "expand_ternary_assigns">::test_expand_ternary;
-    "expand_named_tuples">::test_expand_named_tuples;
     "defines">::test_defines;
     "classes">::test_classes;
   ]

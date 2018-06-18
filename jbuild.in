@@ -131,6 +131,7 @@
   (modules ())
   (libraries
    (pyrelib.pyreParser
+    pyrelib.plugin
     pyrelib.analysis
     pyrelib.ast
     pyrelib.service

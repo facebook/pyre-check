@@ -5,18 +5,19 @@
  ((name analysisTestSetup)
   (public_name pyrelib.testSetup)
   (modules (analysisTestSetup))
-  (libraries 
+  (libraries
    (oUnit
     pyrelib.test
     pyrelib.ast
-    pyrelib.analysis))))
+    pyrelib.analysis
+    pyrelib.plugin))))
 
 
 (library
  ((name annotatedTest)
   (public_name pyrelib.annotatedTest)
   (modules (annotatedTest))
-  (libraries 
+  (libraries
    (oUnit
     pyrelib.test
     pyrelib.ast
@@ -26,10 +27,10 @@
 (executable
  ((name analysisCallGraphTest)
   (modules (analysisCallGraphTest))
-  (libraries 
-   (oUnit 
+  (libraries
+   (oUnit
     pyrelib.service
-    pyrelib.test 
+    pyrelib.test
     pyrelib.testSetup
     pyrelib.analysis))))
 
@@ -37,36 +38,36 @@
 (executable
  ((name analysisCfgTest)
   (modules (analysisCfgTest))
-  (libraries 
-   (oUnit 
-    pyrelib.test 
+  (libraries
+   (oUnit
+    pyrelib.test
     pyrelib.analysis))))
 
 
 (executable
  ((name analysisDependentTest)
   (modules (analysisDependentTest))
-  (libraries 
-   (oUnit 
-    pyrelib.test 
+  (libraries
+   (oUnit
+    pyrelib.test
     pyrelib.analysis))))
 
 
 (executable
  ((name analysisEnvironmentTest)
   (modules (analysisEnvironmentTest))
-  (libraries 
-   (oUnit 
-    pyrelib.test 
+  (libraries
+   (oUnit
+    pyrelib.test
     pyrelib.analysis))))
 
 
 (executable
  ((name analysisErrorTest)
   (modules (analysisErrorTest))
-  (libraries 
-   (oUnit 
-    pyrelib.test 
+  (libraries
+   (oUnit
+    pyrelib.test
     pyrelib.analysis))))
 
 
@@ -77,20 +78,20 @@
    (pps
     (ppx_deriving.eq
      ppx_deriving.show)))
-  (libraries 
-   (oUnit 
+  (libraries
+   (oUnit
     ppxlib
     ppx_deriving
-    pyrelib.test 
+    pyrelib.test
     pyrelib.analysis))))
 
 
 (executable
  ((name analysisInferenceTest)
   (modules (analysisInferenceTest))
-  (libraries 
-   (oUnit 
-    pyrelib.test 
+  (libraries
+   (oUnit
+    pyrelib.test
     pyrelib.testSetup
     pyrelib.analysis))))
 
@@ -98,36 +99,36 @@
 (executable
  ((name analysisLookupTest)
   (modules (analysisLookupTest))
-  (libraries 
-   (oUnit 
-    pyrelib.test 
+  (libraries
+   (oUnit
+    pyrelib.test
     pyrelib.analysis))))
 
 
 (executable
  ((name analysisPreprocessingTest)
   (modules (analysisPreprocessingTest))
-  (libraries 
-   (oUnit 
-    pyrelib.test 
+  (libraries
+   (oUnit
+    pyrelib.test
     pyrelib.analysis))))
 
 
 (executable
  ((name analysisRefinementTest)
   (modules (analysisRefinementTest))
-  (libraries 
-   (oUnit 
-    pyrelib.test 
+  (libraries
+   (oUnit
+    pyrelib.test
     pyrelib.analysis))))
 
 
 (executable
  ((name analysisResolutionTest)
   (modules (analysisResolutionTest))
-  (libraries 
-   (oUnit 
-    pyrelib.test 
+  (libraries
+   (oUnit
+    pyrelib.test
     pyrelib.testSetup
     pyrelib.analysis))))
 
@@ -135,9 +136,9 @@
 (executable
  ((name analysisTypeCheckTest)
   (modules (analysisTypeCheckTest))
-  (libraries 
-   (oUnit 
-    pyrelib.test 
+  (libraries
+   (oUnit
+    pyrelib.test
     pyrelib.testSetup
     pyrelib.analysis))))
 
@@ -145,18 +146,18 @@
 (executable
  ((name analysisTypeOrderTest)
   (modules (analysisTypeOrderTest))
-  (libraries 
-   (oUnit 
-    pyrelib.test 
+  (libraries
+   (oUnit
+    pyrelib.test
     pyrelib.analysis))))
 
 
 (executable
  ((name analysisTypeTest)
   (modules (analysisTypeTest))
-  (libraries 
-   (oUnit 
-    pyrelib.test 
+  (libraries
+   (oUnit
+    pyrelib.test
     pyrelib.analysis))))
 
 
@@ -168,11 +169,11 @@
     (ppx_deriving.eq
      ppx_deriving.show
      ppx_compare)))
-  (libraries 
-   (oUnit 
+  (libraries
+   (oUnit
     ppxlib
     ppx_deriving
-    pyrelib.test 
+    pyrelib.test
     pyrelib.annotatedTest
     pyrelib.analysis))))
 
@@ -180,9 +181,9 @@
 (executable
  ((name annotatedAssignTest)
   (modules (annotatedAssignTest))
-  (libraries 
-   (oUnit 
-    pyrelib.test 
+  (libraries
+   (oUnit
+    pyrelib.test
     pyrelib.annotatedTest
     pyrelib.analysis))))
 
@@ -190,9 +191,9 @@
 (executable
  ((name annotatedCallableTest)
   (modules (annotatedCallableTest))
-  (libraries 
-   (oUnit 
-    pyrelib.test 
+  (libraries
+   (oUnit
+    pyrelib.test
     pyrelib.annotatedTest
     pyrelib.analysis))))
 
@@ -200,9 +201,9 @@
 (executable
  ((name annotatedClassTest)
   (modules (annotatedClassTest))
-  (libraries 
-   (oUnit 
-    pyrelib.test 
+  (libraries
+   (oUnit
+    pyrelib.test
     pyrelib.annotatedTest
     pyrelib.analysis))))
 
@@ -210,9 +211,9 @@
 (executable
  ((name annotatedDefineTest)
   (modules (annotatedDefineTest))
-  (libraries 
-   (oUnit 
-    pyrelib.test 
+  (libraries
+   (oUnit
+    pyrelib.test
     pyrelib.annotatedTest
     pyrelib.analysis))))
 
@@ -220,9 +221,9 @@
 (executable
  ((name annotatedResolveTest)
   (modules (annotatedResolveTest))
-  (libraries 
-   (oUnit 
-    pyrelib.test 
+  (libraries
+   (oUnit
+    pyrelib.test
     pyrelib.annotatedTest
     pyrelib.analysis))))
 
@@ -230,9 +231,9 @@
 (executable
  ((name annotatedSignatureTest)
   (modules (annotatedSignatureTest))
-  (libraries 
-   (oUnit 
-    pyrelib.test 
+  (libraries
+   (oUnit
+    pyrelib.test
     pyrelib.annotatedTest
     pyrelib.analysis))))
 

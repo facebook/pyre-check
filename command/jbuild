@@ -21,6 +21,7 @@
     ppx_deriving_yojson.runtime
     hack_parallel
     pyrelib.service
+    pyrelib.plugin
     pyrelib.ast
     pyrelib.analysis
     pyrelib.experimental))))

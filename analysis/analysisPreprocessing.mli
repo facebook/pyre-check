@@ -26,9 +26,6 @@ val expand_returns: Source.t -> Source.t
 (* Transforms assignments to ternaries to handle tests *)
 val expand_ternary_assign: Source.t -> Source.t
 
-(* Transforms named tuple assignments into class definitions. *)
-val expand_named_tuples: Source.t -> Source.t
-
 (* List of function definitions in a source. *)
 val defines
   :  ?include_stubs: bool

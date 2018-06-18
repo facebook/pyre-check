@@ -321,6 +321,7 @@ let assert_type_errors
         parse ~qualifier source
         |> (fun source -> { source with Source.metadata })
         |> Preprocessing.preprocess
+        |> Plugin.apply_to_ast
       in
       let environment =
         let environment = environment ~configuration () in
