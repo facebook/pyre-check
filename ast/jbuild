@@ -3,6 +3,7 @@
 (library
  ((name ast)
   (public_name pyrelib.ast)
+  (flags (-w -3))
   (preprocess
    (pps
     (ppx_deriving.eq

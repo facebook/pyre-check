@@ -3,6 +3,7 @@
 (library
  ((name analysis)
   (public_name pyrelib.analysis)
+  (flags (-w -57-3))
   (preprocess
    (pps
     (ppx_deriving.eq

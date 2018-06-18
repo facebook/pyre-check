@@ -36,7 +36,7 @@ let performance
     ?(normals = [])
     () =
   let seconds = Timer.stop timer in
-  Log.log ~section "%s: %fs" (String.capitalize name) seconds;
+  Log.log ~section "%s: %fs" (String.capitalize_ascii name) seconds;
   ignore flush;
   ignore randomly_log_every;
   ignore integers;
