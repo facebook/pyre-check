@@ -260,6 +260,7 @@ let rec process_request
         in
         let response =
           Handler.class_definition annotation
+          >>| (fun { Analysis.Environment.class_definition; _ } -> class_definition)
           >>| Annotated.Class.create
           >>| Annotated.Class.superclasses ~resolution
           >>| List.map ~f:(Annotated.Class.annotation ~resolution)

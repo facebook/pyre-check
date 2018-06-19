@@ -13,9 +13,16 @@ module Resolution = AnalysisResolution
 module Type = AnalysisType
 module TypeOrder = AnalysisTypeOrder
 
+
+type class_representation = {
+  class_definition: Class.t Node.t;
+  attributes: AnnotatedClass.Attribute.t list;
+  methods: Type.t list;
+}
+
 type t = {
   function_definitions: ((Define.t Node.t) list) Access.Table.t;
-  class_definitions: (Class.t Node.t) Type.Table.t;
+  class_definitions: class_representation Type.Table.t;
   protocols: Type.Hash_set.t;
   modules: Module.t Access.Table.t;
   order: TypeOrder.t;
@@ -46,7 +53,7 @@ module type Handler = sig
   val purge: File.Handle.t list -> unit
 
   val function_definitions: Access.t -> (Define.t Node.t) list option
-  val class_definition: Type.t -> (Class.t Node.t) option
+  val class_definition: Type.t -> class_representation option
   val protocols: unit -> Type.t list
 
   val register_module

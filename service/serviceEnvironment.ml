@@ -92,7 +92,7 @@ let infer_protocols
     (* Skip useless protocols for better performance. *)
     let skip_protocol protocol =
       match Handler.class_definition protocol with
-      | Some protocol_definition ->
+      | Some { class_definition = protocol_definition; _ } ->
           let protocol_definition = Annotated.Class.create protocol_definition in
           let whitelisted = ["typing.Hashable"] in
           let name = Annotated.Class.name protocol_definition |> Expression.Access.show in
@@ -417,13 +417,21 @@ let shared_memory_handler
         let add_class_definition ~primitive ~definition =
           let definition =
             match ClassDefinitions.get primitive with
-            | Some { Node.location; value = preexisting } ->
+            | Some {
+                class_definition = { Node.location; value = preexisting };
+                methods;
+                attributes;
+              } ->
                 {
-                  Node.location;
-                  value = Statement.Class.update preexisting ~definition:(Node.value definition);
+                  class_definition = {
+                    Node.location;
+                    value = Statement.Class.update preexisting ~definition:(Node.value definition);
+                  };
+                  methods;
+                  attributes
                 }
             | _ ->
-                definition
+                { class_definition = definition; methods = []; attributes = [] }
           in
           ClassDefinitions.remove_batch (ClassDefinitions.KeySet.singleton primitive);
           ClassDefinitions.add primitive definition

@@ -87,7 +87,7 @@ module DependentKeyValue = struct
 end
 
 module ClassValue = struct
-  type t = Class.t Node.t
+  type t = Analysis.Environment.class_representation
   let prefix = Prefix.make ()
   let description = "Class"
 end

@@ -17,9 +17,15 @@ module Type = AnalysisType
 module TypeOrder = AnalysisTypeOrder
 
 
+type class_representation = {
+  class_definition: Class.t Node.t;
+  attributes: AnnotatedClass.Attribute.t list;
+  methods: Type.t list;
+}
+
 type t = {
   function_definitions: ((Define.t Node.t) list) Access.Table.t;
-  class_definitions: (Class.t Node.t) Type.Table.t;
+  class_definitions: class_representation Type.Table.t;
   protocols: Type.Hash_set.t;
   modules: Module.t Access.Table.t;
   order: TypeOrder.t;
@@ -27,7 +33,6 @@ type t = {
   globals: Resolution.global Access.Table.t;
   dependencies: Dependencies.t;
 }
-
 
 module type Handler = sig
   val register_definition
@@ -47,7 +52,7 @@ module type Handler = sig
   val purge: File.Handle.t list -> unit
 
   val function_definitions: Access.t -> (Define.t Node.t) list option
-  val class_definition: Type.t -> (Class.t Node.t) option
+  val class_definition: Type.t -> class_representation option
   val protocols: unit -> Type.t list
 
   val register_module
@@ -238,13 +243,21 @@ let handler
       let add_class_definition ~primitive ~definition =
         let definition =
           match Hashtbl.find class_definitions primitive with
-          | Some { Node.location; value = preexisting } ->
+          | Some {
+              class_definition = { Node.location; value = preexisting };
+              methods;
+              attributes;
+            } ->
               {
-                Node.location;
-                value = Class.update preexisting ~definition:(Node.value definition);
+                class_definition = {
+                  Node.location;
+                  value = Class.update preexisting ~definition:(Node.value definition);
+                };
+                methods;
+                attributes;
               }
           | _ ->
-              definition
+              { class_definition = definition; methods = []; attributes = [] }
         in
         Hashtbl.set class_definitions ~key:primitive ~data:definition
       in
@@ -353,7 +366,11 @@ let resolution (module Handler: Handler) ?(annotations = Access.Map.empty) ~defi
 
   let class_definition annotation =
     let primitive, _ = Type.split annotation in
-    Handler.class_definition primitive
+    match Handler.class_definition primitive with
+    | Some { class_definition; _ } ->
+        Some class_definition
+    | None ->
+        None
   in
 
   let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
@@ -930,6 +947,7 @@ let infer_implementations (module Handler: Handler) ~protocol =
       let implementations =
         let implements annotation =
           Handler.class_definition annotation
+          >>| (fun { class_definition; _ } -> class_definition)
           >>| Class.create
           >>| (fun definition ->
               not (Class.is_protocol definition) &&
@@ -998,7 +1016,11 @@ module Builder = struct
       in
       Hashtbl.set
         ~key:(Type.primitive name)
-        ~data:(Node.create_with_default_location definition)
+        ~data:{
+          class_definition = Node.create_with_default_location definition;
+          methods = [];
+          attributes = [];
+        }
         class_definitions;
     in
     List.iter
