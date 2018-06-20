@@ -1950,14 +1950,11 @@ let check
           ();
         {
           SingleSourceResult.errors =
-            if configuration.debug then
-              [{
-                Error.location;
-                kind = Error.UndefinedType annotation;
-                define = define_node;
-              }]
-            else
-              [];
+            [{
+              Error.location;
+              kind = Error.UndefinedType annotation;
+              define = define_node;
+            }];
           coverage = Coverage.create ~crashes:1 ();
         },
         queue

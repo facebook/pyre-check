@@ -1201,6 +1201,8 @@ let suppress ~mode error =
       match kind with
       | MissingParameterAnnotation { due_to_any; _ } ->
           due_to_any
+      | UndefinedType _ ->
+          true
       | _ ->
           false
   in
