@@ -57,29 +57,31 @@ let parse_untrimmed
         (ParserGenerator.parse (Lexer.read state) buffer)
     in
     source
-  with ParserGenerator.Error ->
-    let location =
-      Location.create
-        ~start:buffer.Lexing.lex_curr_p
-        ~stop:buffer.Lexing.lex_curr_p
-    in
-    let line = location.Location.start.Location.line - 1
-    and column = location.Location.start.Location.column in
+  with
+  | Pyre.ParserError _
+  | ParserGenerator.Error ->
+      let location =
+        Location.create
+          ~start:buffer.Lexing.lex_curr_p
+          ~stop:buffer.Lexing.lex_curr_p
+      in
+      let line = location.Location.start.Location.line - 1
+      and column = location.Location.start.Location.column in
 
-    let header =
-      Format.asprintf
-        "\nCould not parse test at %a"
-        Location.pp location
-    in
-    let indicator =
-      if column > 0 then (String.make (column - 1) ' ') ^ "^" else "^" in
-    let error =
-      match List.nth (String.split source ~on:'\n') line with
-      | Some line -> Format.asprintf "%s:\n  %s\n  %s" header line indicator
-      | None -> header ^ "." in
-    if not silent then
-      Printf.printf "%s" error;
-    failwith "Could not parse test"
+      let header =
+        Format.asprintf
+          "\nCould not parse test at %a"
+          Location.pp location
+      in
+      let indicator =
+        if column > 0 then (String.make (column - 1) ' ') ^ "^" else "^" in
+      let error =
+        match List.nth (String.split source ~on:'\n') line with
+        | Some line -> Format.asprintf "%s:\n  %s\n  %s" header line indicator
+        | None -> header ^ "." in
+      if not silent then
+        Printf.printf "%s" error;
+      failwith "Could not parse test"
 
 
 let trim_extra_indentation source =
