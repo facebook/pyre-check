@@ -38,6 +38,15 @@
 
 
 (executable
+ ((name astNodeTest)
+  (modules (astNodeTest))
+  (libraries
+   (oUnit
+    pyrelib.test
+    pyrelib.ast))))
+
+
+(executable
  ((name astSourceTest)
   (modules (astSourceTest))
   (libraries
@@ -94,6 +103,12 @@
 (alias
  ((name runtest)
   (deps (astModuleTest.exe))
+  (action (run ${<} -runner sequential))))
+
+
+(alias
+ ((name runtest)
+  (deps (astNodeTest.exe))
   (action (run ${<} -runner sequential))))
 
 

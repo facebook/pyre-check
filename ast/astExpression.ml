@@ -393,7 +393,7 @@ module Access = struct
   include Hashable.Make(struct
       type nonrec t = t
       let compare = compare
-      let hash = Hashtbl.hash
+      let hash = hash
       let hash_fold_t = hash_fold_t
       let sexp_of_t = sexp_of_t
       let t_of_sexp = t_of_sexp

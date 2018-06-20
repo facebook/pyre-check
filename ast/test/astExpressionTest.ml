@@ -6,6 +6,7 @@
 open OUnit2
 
 open Ast
+open Core
 open Expression
 
 open Test
@@ -218,11 +219,76 @@ let test_drop_prefix _ =
     (Access.create "a.b.c")
 
 
+let test_equality _ =
+  let compare_two_locations left right =
+    let full_printer ({ Node.location; _ } as expression) =
+      Format.asprintf "%s/%a" (Location.to_string location) Expression.pp expression
+    in
+    let value = String "some_string" in
+    let expression_left = Node.create ~location:left value in
+    let expression_right = Node.create ~location:right value in
+    assert_equal
+      ~cmp:Expression.equal
+      ~printer:full_printer
+      expression_left
+      expression_right;
+    assert_equal
+      ~printer:Int.to_string
+      (Expression.hash expression_left)
+      (Expression.hash expression_right);
+
+    let access_left = Expression.access expression_left in
+    let access_right = Expression.access expression_right in
+    assert_equal
+      ~cmp:Access.equal
+      access_left
+      access_right;
+    assert_equal
+      ~printer:Int.to_string
+      (Access.hash access_left)
+      (Access.hash access_right);
+
+    let set = Access.Set.add Access.Set.empty access_left in
+    assert_bool
+      "Element should appear in the set"
+      (Access.Set.mem set access_right);
+
+    let map = Access.Map.add_exn Access.Map.empty ~key:access_left ~data:1 in
+    assert_bool
+      "Element should appear in the map"
+      (Access.Map.mem map access_right);
+
+    let table = Access.Table.create () in
+    Hashtbl.set table ~key:access_left ~data:1;
+    assert_bool
+      "Element should appear in the table"
+      (Hashtbl.mem table access_right)
+  in
+  let location_1 =
+    {
+      Location.path = "some_path";
+      Location.start = { Location.line = 1; column = 1 };
+      Location.stop = { Location.line = 2; column = 5 };
+    }
+  in
+  let location_2 =
+    {
+      Location.path = "some_other_path";
+      Location.start = { Location.line = 12; column = 3 };
+      Location.stop = { Location.line = 12; column = 7 };
+    }
+  in
+  compare_two_locations Location.any location_1;
+  compare_two_locations Location.any location_2;
+  compare_two_locations location_1 location_2
+
+
 let () =
   "expression">:::[
     "negate">::test_negate;
     "normalize">::test_normalize;
     "pp">::test_pp;
     "drop_prefix">::test_drop_prefix;
+    "equality">::test_equality;
   ]
   |> run_test_tt_main
