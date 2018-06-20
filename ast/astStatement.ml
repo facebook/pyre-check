@@ -657,87 +657,24 @@ module Class = struct
     List.filter_map ~f:constructor body
 
 
-  let attributes
-      ?(include_generated_attributes = true)
-      ?(in_test = false)
-      ({ Record.Class.name; body; _ } as definition) =
-    let explicitly_assigned_attributes =
-      let assigned_attributes map { Node.location; value } =
-        let open Expression in
-        match value with
-        (* Handle multiple assignments on same line *)
-        | Assign {
-            Assign.target = { Node.value = Tuple targets; _ };
-            value = Some { Node.value = Tuple values; _ };
-            _;
-          }
-        | Stub
-            (Stub.Assign
-               {
-                 Assign.target = { Node.value = Tuple targets; _ };
-                 value = Some { Node.value = Tuple values; _ };
-                 _;
-               }) ->
-            let add_attribute map target value =
-              Attribute.target ~parent:name target
-              >>| (fun target ->
-                  let access = Expression.access target in
-                  let attribute =
-                    Attribute.create
-                      ~primitive:true
-                      ~location
-                      ~target
-                      ~value
-                      ()
-                  in
-                  Map.set map ~key:access ~data:attribute)
-              |> Option.value ~default:map
-            in
-            if List.length targets = List.length values then
-              List.fold2_exn ~init:map ~f:add_attribute targets values
-            else
-              map
-        | Assign {
-            Assign.target = { Node.value = Tuple targets; _ };
-            value = Some ({ Node.value = Access values; location } as value);
-            _;
-          }
-        | Stub
-            (Stub.Assign
-               {
-                 Assign.target = { Node.value = Tuple targets; _ };
-                 value = Some ({ Node.value = Access values; location } as value);
-                 _;
-               }) ->
-            let add_attribute index map target =
-              Attribute.target ~parent:name target
-              >>| (fun target ->
-                  let access = Expression.access target in
-                  let value =
-                    let get_item =
-                      let index = Node.create ~location (Integer index) in
-                      [
-                        Access.Identifier (Identifier.create "__getitem__");
-                        Access.Call
-                          (Node.create ~location [{ Argument.name = None; value = index }]);
-                      ]
-                    in
-                    { value with Node.value = Access (values @ get_item) }
-                  in
-                  let attribute =
-                    Attribute.create
-                      ~primitive:true
-                      ~location
-                      ~target
-                      ~value
-                      ()
-                  in
-                  Map.set map ~key:access ~data:attribute)
-              |> Option.value ~default:map
-            in
-            List.foldi ~init:map ~f:add_attribute targets
-        | Assign { Assign.target; annotation; value; _ }
-        | Stub (Stub.Assign { Assign.target; annotation; value; _ }) ->
+  let explicitly_assigned_attributes { Record.Class.name; body; _ } =
+    let assigned_attributes map { Node.location; value } =
+      let open Expression in
+      match value with
+      (* Handle multiple assignments on same line *)
+      | Assign {
+          Assign.target = { Node.value = Tuple targets; _ };
+          value = Some { Node.value = Tuple values; _ };
+          _;
+        }
+      | Stub
+          (Stub.Assign
+             {
+               Assign.target = { Node.value = Tuple targets; _ };
+               value = Some { Node.value = Tuple values; _ };
+               _;
+             }) ->
+          let add_attribute map target value =
             Attribute.target ~parent:name target
             >>| (fun target ->
                 let access = Expression.access target in
@@ -746,29 +683,85 @@ module Class = struct
                     ~primitive:true
                     ~location
                     ~target
-                    ?annotation
-                    ?value
+                    ~value
                     ()
                 in
                 Map.set map ~key:access ~data:attribute)
             |> Option.value ~default:map
-        | _ ->
+          in
+          if List.length targets = List.length values then
+            List.fold2_exn ~init:map ~f:add_attribute targets values
+          else
             map
-      in
-      List.fold ~init:Access.Map.empty ~f:assigned_attributes body
+      | Assign {
+          Assign.target = { Node.value = Tuple targets; _ };
+          value = Some ({ Node.value = Access values; location } as value);
+          _;
+        }
+      | Stub
+          (Stub.Assign
+             {
+               Assign.target = { Node.value = Tuple targets; _ };
+               value = Some ({ Node.value = Access values; location } as value);
+               _;
+             }) ->
+          let add_attribute index map target =
+            Attribute.target ~parent:name target
+            >>| (fun target ->
+                let access = Expression.access target in
+                let value =
+                  let get_item =
+                    let index = Node.create ~location (Integer index) in
+                    [
+                      Access.Identifier (Identifier.create "__getitem__");
+                      Access.Call
+                        (Node.create ~location [{ Argument.name = None; value = index }]);
+                    ]
+                  in
+                  { value with Node.value = Access (values @ get_item) }
+                in
+                let attribute =
+                  Attribute.create
+                    ~primitive:true
+                    ~location
+                    ~target
+                    ~value
+                    ()
+                in
+                Map.set map ~key:access ~data:attribute)
+            |> Option.value ~default:map
+          in
+          List.foldi ~init:map ~f:add_attribute targets
+      | Assign { Assign.target; annotation; value; _ }
+      | Stub (Stub.Assign { Assign.target; annotation; value; _ }) ->
+          Attribute.target ~parent:name target
+          >>| (fun target ->
+              let access = Expression.access target in
+              let attribute =
+                Attribute.create
+                  ~primitive:true
+                  ~location
+                  ~target
+                  ?annotation
+                  ?value
+                  ()
+              in
+              Map.set map ~key:access ~data:attribute)
+          |> Option.value ~default:map
+      | _ ->
+          map
     in
+    List.fold ~init:Access.Map.empty ~f:assigned_attributes body
 
-    if not include_generated_attributes then
-      explicitly_assigned_attributes
-    else
-      let merge ~key:_ = function
-        | `Both (_, right) ->
-            Some right
-        | `Left value
-        | `Right value ->
-            Some value
-      in
-      let implicitly_assigned_attributes =
+  let implicit_attributes ?(in_test = false) ({ Record.Class.name; body; _ } as definition) =
+    let merge ~key:_ = function
+      | `Both (_, right) ->
+          Some right
+      | `Left value
+      | `Right value ->
+          Some value
+    in
+    let implicitly_assigned_attributes =
         constructors ~in_test definition
         |> List.map ~f:(Define.implicit_attributes ~definition)
         |> List.fold ~init:Access.Map.empty ~f:(Map.merge ~f:merge)
@@ -934,13 +927,32 @@ module Class = struct
         in
         List.fold ~init:Access.Map.empty ~f:slots_attributes body
       in
-      (* Merge with decreasing priority. Explicit attributes override all. *)
-      explicitly_assigned_attributes
-      |> Map.merge ~f:merge implicitly_assigned_attributes
+      implicitly_assigned_attributes
       |> Map.merge ~f:merge property_attributes
       |> Map.merge ~f:merge callable_attributes
       |> Map.merge ~f:merge class_attributes
       |> Map.merge ~f:merge slots_attributes
+
+
+  let attributes
+      ?(include_generated_attributes = true)
+      ?(in_test = false)
+      definition =
+
+    let explicit_attributes = explicitly_assigned_attributes definition in
+    if not include_generated_attributes then
+      explicit_attributes
+    else
+      let merge ~key:_ = function
+        | `Both (_, right) ->
+            Some right
+        | `Left value
+        | `Right value ->
+            Some value
+      in
+      (* Merge with decreasing priority. Explicit attributes override all. *)
+      explicit_attributes
+      |> Map.merge ~f:merge (implicit_attributes ~in_test definition)
 
 
   let update
