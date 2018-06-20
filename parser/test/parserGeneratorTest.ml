@@ -1169,6 +1169,49 @@ let test_define _ =
         generated = false;
         parent = None;
       };
+    ];
+
+  assert_parsed_equal
+    (trim_extra_indentation {|
+      def foo(
+        self,
+        a,  # type: bool
+        b,  # type: bool
+      ):  # type: (...) -> int
+        return 4
+    |})
+    [
+      +Define {
+        Define.name = Access.create "foo";
+        parameters = [
+          +{
+            Parameter.name = ~~"self";
+            value = None;
+            annotation = None;
+          };
+          +{
+            Parameter.name = ~~"a";
+            value = None;
+            annotation = None;
+          };
+          +{
+            Parameter.name = ~~"b";
+            value = None;
+            annotation = None;
+          };
+        ];
+        body = [
+          +Return {
+            Return.expression = Some (+Integer 4);
+            is_implicit = false;
+          }];
+        decorators = [];
+        docstring = None;
+        return_annotation = Some (+String "int");
+        async = false;
+        generated = false;
+        parent = None;
+      };
     ]
 
 
