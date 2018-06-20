@@ -9,7 +9,7 @@ open Ast
 open Core
 
 
-type test_node = string AstNode.t
+type test_node = string Ast.Node.t
 [@@deriving compare, eq, sexp, show, hash]
 
 

@@ -40,8 +40,18 @@
 (executable
  ((name astNodeTest)
   (modules (astNodeTest))
+  (preprocess
+   (pps
+    (ppx_deriving.eq
+     ppx_deriving.show
+     ppx_hash
+     ppx_compare
+     ppx_sexp_conv)))
   (libraries
    (oUnit
+    sexplib
+    ppxlib
+    ppx_deriving
     pyrelib.test
     pyrelib.ast))))
 
