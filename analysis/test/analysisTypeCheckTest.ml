@@ -5505,6 +5505,25 @@ let test_check_assert_functions _ =
     []
 
 
+let test_check_undefined_type _ =
+  (* Ensure other errors are not missed when undefined type is thrown. *)
+  assert_type_errors
+    {|
+        class Bar:
+            async def undefined(self, x: Derp) -> Derp:
+                return x
+        class Foo(Bar):
+            def error(self) -> int:
+                return None
+            async def undefined(self, x: Herp) -> Herp:
+                return x
+      |}
+    [
+      "Incompatible return type [7]: Expected `int` but got `None`.";
+      "Undefined type [11]: Type `Herp` is not defined."
+    ]
+
+
 let test_environment _ =
   (* Type aliases in signatures are resolved. *)
   assert_type_errors
@@ -5684,6 +5703,7 @@ let () =
     "check_contextmanager">::test_check_contextmanager;
     "check_callables">::test_check_callables;
     "check_assert_functions">::test_check_assert_functions;
+    "check_undefined_type">::test_check_undefined_type;
     "environment">::test_environment;
     "scheduling">::test_scheduling;
     "check_format_string">::test_format_string;

@@ -265,180 +265,203 @@ module State = struct
     in
     (* Check parameters. *)
     let annotations, errors =
-      let parameter
-          index
-          (annotations, errors)
-          { Node.location; value = { Parameter.name; value; annotation }} =
-        let access =
-          name
-          |> Identifier.show
-          |> String.filter ~f:(fun character -> character <> '*')
-          |> Identifier.create
-          |> fun name -> [Access.Identifier name]
-        in
-        let { Annotation.annotation; mutability }, errors =
-          match index, parent with
-          | 0, Some parent
-            when Define.is_method define &&
-                 not (Define.is_static_method define) ->
-              let annotation =
+      try
+        let parameter
+            index
+            (annotations, errors)
+            { Node.location; value = { Parameter.name; value; annotation }} =
+          let access =
+            name
+            |> Identifier.show
+            |> String.filter ~f:(fun character -> character <> '*')
+            |> Identifier.create
+            |> fun name -> [Access.Identifier name]
+          in
+          let { Annotation.annotation; mutability }, errors =
+            match index, parent with
+            | 0, Some parent
+              when Define.is_method define &&
+                   not (Define.is_static_method define) ->
                 let annotation =
-                  Resolution.parse_annotation
-                    resolution
-                    (Node.create_with_default_location (Access parent))
+                  let annotation =
+                    Resolution.parse_annotation
+                      resolution
+                      (Node.create_with_default_location (Access parent))
+                  in
+                  if Define.is_class_method define then
+                    (* First parameter of a method is a class object. *)
+                    Type.meta annotation
+                  else
+                    (* First parameter of a method is the callee object. *)
+                    annotation
                 in
-                if Define.is_class_method define then
-                  (* First parameter of a method is a class object. *)
-                  Type.meta annotation
-                else
-                  (* First parameter of a method is the callee object. *)
-                  annotation
-              in
-              Annotation.create annotation, errors
-          | _ ->
-              let add_missing_parameter_error value ~due_to_any =
-                let annotation = Annotated.resolve ~resolution value in
-                let error =
-                  {
-                    Error.location;
-                    kind = Error.MissingParameterAnnotation {
-                        Error.name = access;
-                        annotation;
-                        due_to_any;
-                      };
-                    define = define_node;
-                  }
+                Annotation.create annotation, errors
+            | _ ->
+                let add_missing_parameter_error value ~due_to_any =
+                  let annotation = Annotated.resolve ~resolution value in
+                  let error =
+                    {
+                      Error.location;
+                      kind = Error.MissingParameterAnnotation {
+                          Error.name = access;
+                          annotation;
+                          due_to_any;
+                        };
+                      define = define_node;
+                    }
+                  in
+                  Annotation.create annotation,
+                  Map.set ~key:location ~data:error errors
                 in
-                Annotation.create annotation,
-                Map.set ~key:location ~data:error errors
-              in
-              begin
-                match value, annotation with
-                | Some value, Some annotation when
-                    Type.equal (Resolution.parse_annotation resolution annotation) Type.Object ->
-                    add_missing_parameter_error value ~due_to_any:true
-                | Some value, None ->
-                    add_missing_parameter_error value ~due_to_any:false
-                | _, Some annotation ->
-                    let annotation =
-                      match Resolution.parse_annotation resolution annotation with
-                      | Type.Variable { Type.constraints = Type.Explicit constraints; _ } ->
-                          Type.union constraints
-                      | annotation ->
-                          annotation
-                    in
-                    Annotation.create_immutable ~global:false annotation,
-                    errors
-                | _ ->
-                    Annotation.create Type.Bottom,
-                    errors
-              end
+                begin
+                  match value, annotation with
+                  | Some value, Some annotation when
+                      Type.equal (Resolution.parse_annotation resolution annotation) Type.Object ->
+                      add_missing_parameter_error value ~due_to_any:true
+                  | Some value, None ->
+                      add_missing_parameter_error value ~due_to_any:false
+                  | _, Some annotation ->
+                      let annotation =
+                        match Resolution.parse_annotation resolution annotation with
+                        | Type.Variable { Type.constraints = Type.Explicit constraints; _ } ->
+                            Type.union constraints
+                        | annotation ->
+                            annotation
+                      in
+                      Annotation.create_immutable ~global:false annotation,
+                      errors
+                  | _ ->
+                      Annotation.create Type.Bottom,
+                      errors
+                end
+          in
+          let annotation =
+            if String.is_prefix ~prefix:"**" (Identifier.show name) then
+              Type.dictionary ~key:Type.string ~value:annotation
+            else if String.is_prefix ~prefix:"*" (Identifier.show name) then
+              Type.sequence annotation
+            else
+              annotation
+          in
+          Map.set annotations ~key:access ~data:{ Annotation.annotation; mutability },
+          errors
         in
-        let annotation =
-          if String.is_prefix ~prefix:"**" (Identifier.show name) then
-            Type.dictionary ~key:Type.string ~value:annotation
-          else if String.is_prefix ~prefix:"*" (Identifier.show name) then
-            Type.sequence annotation
-          else
-            annotation
-        in
-        Map.set annotations ~key:access ~data:{ Annotation.annotation; mutability },
-        errors
-      in
-      List.foldi ~init:((Resolution.annotations resolution), errors) ~f:parameter parameters
+        List.foldi ~init:((Resolution.annotations resolution), errors) ~f:parameter parameters
+      with
+      | TypeOrder.Untracked annotation ->
+          let untracked_error =
+            {
+              Error.location;
+              kind = Error.UndefinedType annotation;
+              define = define_node;
+            }
+          in
+          Resolution.annotations resolution,
+          Map.set ~key:location ~data:untracked_error errors
     in
 
     (* Check behavioral subtyping. *)
     let errors =
-      if Define.is_constructor define ||
-         Define.is_class_method define ||
-         Define.is_static_method define then
-        errors
-      else
-        let open Annotated in
-        (Define.create define
-         |> Define.method_definition ~resolution
-         >>= fun definition -> Method.overloads definition ~resolution
-         >>| fun overridden_method ->
-         (* Check strengthening of postcondition. *)
-         let errors =
-           let expected = Method.return_annotation overridden_method ~resolution in
-           let actual = Method.return_annotation definition ~resolution in
-           if Type.is_resolved expected &&
-              not (Resolution.less_or_equal resolution ~left:actual ~right:expected) then
-             let error =
-               {
-                 Error.location;
-                 kind = Error.InconsistentOverride {
-                     Error.overridden_method;
-                     override = Error.WeakenedPostcondition { Error.actual; expected };
-                   };
-                 define = define_node;
-               }
-             in
-             Map.set ~key:location ~data:error errors
-           else
-             errors
-         in
-
-         (* Check weakening of precondition. *)
-         let parameters =
-           let remove_unused_parameter_denotation ~key ~data sofar =
-             Identifier.Map.set sofar ~key:(Identifier.remove_leading_underscores key) ~data
-           in
-           Method.parameter_annotations definition ~resolution
-           |> Map.fold ~init:Identifier.Map.empty ~f:remove_unused_parameter_denotation
-         in
-         let parameter ~key ~data errors =
-           let expected = data in
-           match Map.find parameters key with
-           | Some actual ->
-               begin
-                 try
-                   if not (Type.equal Type.Top expected) &&
-                      not (Resolution.less_or_equal resolution ~left:expected ~right:actual) then
-                     let error =
-                       {
-                         Error.location;
-                         kind = Error.InconsistentOverride {
-                             Error.overridden_method;
-                             override =
-                               Error.StrengthenedPrecondition
-                                 (Error.Found { Error.actual; expected });
-                           };
-                         define = define_node;
-                       }
-                     in
-                     Map.set ~key:location ~data:error errors
-                   else
-                     errors
-                 with TypeOrder.Untracked _ ->
-                   (* TODO(T27409168): Error here. *)
-                   errors
-               end
-           | None ->
-               let parameter_name =
-                 Identifier.show_sanitized key
-                 |> Identifier.create
-                 |> fun name -> [Expression.Access.Identifier name]
-               in
+      try
+        if Define.is_constructor define ||
+           Define.is_class_method define ||
+           Define.is_static_method define then
+          errors
+        else
+          let open Annotated in
+          (Define.create define
+           |> Define.method_definition ~resolution
+           >>= fun definition -> Method.overloads definition ~resolution
+           >>| fun overridden_method ->
+           (* Check strengthening of postcondition. *)
+           let errors =
+             let expected = Method.return_annotation overridden_method ~resolution in
+             let actual = Method.return_annotation definition ~resolution in
+             if Type.is_resolved expected &&
+                not (Resolution.less_or_equal resolution ~left:actual ~right:expected) then
                let error =
                  {
                    Error.location;
                    kind = Error.InconsistentOverride {
                        Error.overridden_method;
-                       override = Error.StrengthenedPrecondition (Error.NotFound parameter_name);
+                       override = Error.WeakenedPostcondition { Error.actual; expected };
                      };
                    define = define_node;
                  }
                in
                Map.set ~key:location ~data:error errors
-         in
-         Map.fold
-           ~init:errors
-           ~f:parameter
-           (Method.parameter_annotations overridden_method ~resolution))
-        |> Option.value ~default:errors
+             else
+               errors
+           in
+
+           (* Check weakening of precondition. *)
+           let parameters =
+             let remove_unused_parameter_denotation ~key ~data sofar =
+               Identifier.Map.set sofar ~key:(Identifier.remove_leading_underscores key) ~data
+             in
+             Method.parameter_annotations definition ~resolution
+             |> Map.fold ~init:Identifier.Map.empty ~f:remove_unused_parameter_denotation
+           in
+           let parameter ~key ~data errors =
+             let expected = data in
+             match Map.find parameters key with
+             | Some actual ->
+                 begin
+                   try
+                     if not (Type.equal Type.Top expected) &&
+                        not (Resolution.less_or_equal resolution ~left:expected ~right:actual) then
+                       let error =
+                         {
+                           Error.location;
+                           kind = Error.InconsistentOverride {
+                               Error.overridden_method;
+                               override =
+                                 Error.StrengthenedPrecondition
+                                   (Error.Found { Error.actual; expected });
+                             };
+                           define = define_node;
+                         }
+                       in
+                       Map.set ~key:location ~data:error errors
+                     else
+                       errors
+                   with TypeOrder.Untracked _ ->
+                     (* TODO(T27409168): Error here. *)
+                     errors
+                 end
+             | None ->
+                 let parameter_name =
+                   Identifier.show_sanitized key
+                   |> Identifier.create
+                   |> fun name -> [Expression.Access.Identifier name]
+                 in
+                 let error =
+                   {
+                     Error.location;
+                     kind = Error.InconsistentOverride {
+                         Error.overridden_method;
+                         override = Error.StrengthenedPrecondition (Error.NotFound parameter_name);
+                       };
+                     define = define_node;
+                   }
+                 in
+                 Map.set ~key:location ~data:error errors
+           in
+           Map.fold
+             ~init:errors
+             ~f:parameter
+             (Method.parameter_annotations overridden_method ~resolution))
+          |> Option.value ~default:errors
+      with
+      | TypeOrder.Untracked annotation ->
+          let untracked_error =
+            {
+              Error.location;
+              kind = Error.UndefinedType annotation;
+              define = define_node;
+            }
+          in
+          Map.set ~key:location ~data:untracked_error errors
     in
 
     let resolution = Resolution.with_annotations resolution ~annotations in
