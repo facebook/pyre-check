@@ -61,7 +61,7 @@ let test_parse_stubs_modules_list _ =
         } -> name
       | _ -> failwith "Could not get source."
     in
-    assert_equal ~printer:Access.show (Access.create define) name
+    assert_equal ~cmp:Access.equal ~printer:Access.show (Access.create define) name
   in
   let assert_module_matches_name ~handle define =
     let name =
@@ -77,7 +77,7 @@ let test_parse_stubs_modules_list _ =
         } -> name
       | _ -> failwith "Could not get source."
     in
-    assert_equal ~printer:Access.show (Access.create define) name
+    assert_equal ~cmp:Access.equal ~printer:Access.show (Access.create define) name
   in
   assert_stub_matches_name ~handle:0 "a.f";
   assert_stub_matches_name ~handle:1 "dir.b.f";
@@ -144,7 +144,11 @@ let test_parse_sources_list _ =
   begin
     match statements with
     | [{ Node.value = Statement.Define { Statement.Define.name; _ }; _ }] ->
-        assert_equal name (Access.create_from_identifiers [~~"a"; ~~"foo"])
+        assert_equal
+          ~cmp:Access.equal
+          ~printer:Access.show
+          name
+          (Access.create_from_identifiers [~~"a"; ~~"foo"])
     | _ -> assert_unreached ()
   end
 

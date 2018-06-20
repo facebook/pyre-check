@@ -44,7 +44,7 @@ let test_parent_definition _ =
     parent_class_definition environment "bar" (Some "foo")
     |> value
   in
-  assert_equal (Class.name parent) (Access.create "foo");
+  assert_equal ~cmp:Access.equal ~printer:Access.show (Class.name parent) (Access.create "foo");
 
   let environment =
     populate {|
@@ -72,7 +72,7 @@ let test_parent_definition _ =
         |> (fun resolution -> Resolution.parse_annotation resolution value)
     | _ -> Type.Top
   in
-  assert_equal (Class.name parent) (Access.create "foo");
+  assert_equal ~cmp:Access.equal ~printer:Access.show (Class.name parent) (Access.create "foo");
   assert_equal base_type (Type.Primitive ~~"superfoo")
 
 

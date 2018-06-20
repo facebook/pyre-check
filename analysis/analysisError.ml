@@ -776,7 +776,7 @@ let less_or_equal ~resolution left right =
     | MissingAttributeAnnotation { missing_annotation = left; _ },
       MissingAttributeAnnotation { missing_annotation = right; _ }
     | MissingGlobalAnnotation left, MissingGlobalAnnotation right
-      when left.name = right.name && left.due_to_any = right.due_to_any ->
+      when (Access.equal left.name right.name) && left.due_to_any = right.due_to_any ->
         Resolution.less_or_equal resolution ~left:left.annotation ~right:right.annotation
     | RedundantCast left, RedundantCast right ->
         Resolution.less_or_equal resolution ~left ~right
@@ -877,7 +877,7 @@ let join ~resolution left right =
           due_to_any = left.due_to_any && right.due_to_any;
         }
     | MissingAttributeAnnotation left, MissingAttributeAnnotation right
-      when left.missing_annotation.name = right.missing_annotation.name &&
+      when (Access.equal left.missing_annotation.name right.missing_annotation.name) &&
            Annotated.Class.name_equal left.parent right.parent ->
         MissingAttributeAnnotation {
           parent = left.parent;
@@ -886,7 +886,8 @@ let join ~resolution left right =
               left.missing_annotation
               right.missing_annotation;
         }
-    | MissingGlobalAnnotation left, MissingGlobalAnnotation right when left.name = right.name ->
+    | MissingGlobalAnnotation left, MissingGlobalAnnotation right
+      when Access.equal left.name right.name ->
         MissingGlobalAnnotation (join_missing_annotation left right)
     | RedundantCast left, RedundantCast right ->
         RedundantCast (Resolution.join resolution left right)

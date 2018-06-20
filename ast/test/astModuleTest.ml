@@ -114,6 +114,7 @@ let test_wildcard_exports _ =
   in
   let assert_wildcard_exports ?(qualifier = []) source expected =
     assert_equal
+      ~cmp:(List.equal ~equal:Access.equal)
       ~printer:(fun expression_list ->
           List.map ~f:(Access.show) expression_list
           |> String.concat ~sep:", ")

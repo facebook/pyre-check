@@ -917,6 +917,7 @@ let test_incremental_attribute_caching context =
     match get_errors state with
     | [_, [{ Analysis.Error.kind; _ }]] ->
         assert_equal
+          ~cmp:Analysis.Error.equal_kind
           ~printer:Analysis.Error.show_kind
           kind
           (Analysis.Error.UndefinedAttribute {
