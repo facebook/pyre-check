@@ -129,24 +129,8 @@ let parse_annotation
       | _ -> false
     in
     let is_empty_stub =
-      match Node.value expression with
-      | Access access ->
-          let rec is_empty_stub ~lead ~tail =
-            match tail with
-            | head :: tail ->
-                begin
-                  let lead = lead @ [head] in
-                  match module_definition lead with
-                  | Some definition when Module.empty_stub definition -> true
-                  | Some _ -> is_empty_stub ~lead ~tail
-                  | _ -> false
-                end
-            | _ ->
-                false
-          in
-          is_empty_stub ~lead:[] ~tail:access
-      | _ ->
-          false
+      Expression.access expression
+      |> fun access -> Module.from_empty_stub ~access ~module_definition
     in
     if is_local_access then
       match define with

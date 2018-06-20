@@ -47,6 +47,23 @@ let empty_stub { empty_stub; _ } =
   empty_stub
 
 
+let from_empty_stub ~access ~module_definition =
+  let rec is_empty_stub ~lead ~tail =
+    match tail with
+    | head :: tail ->
+        begin
+          let lead = lead @ [head] in
+          match module_definition lead with
+          | Some definition when empty_stub definition -> true
+          | Some _ -> is_empty_stub ~lead ~tail
+          | _ -> false
+        end
+    | _ ->
+        false
+  in
+  is_empty_stub ~lead:[] ~tail:access
+
+
 let path { path; _ } =
   path
 
