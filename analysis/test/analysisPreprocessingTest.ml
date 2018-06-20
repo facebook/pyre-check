@@ -345,13 +345,15 @@ let test_qualify _ =
       Int = int
       class Class:
         def __init__(self, i: Int) -> None:
-          pass
+          self._attribute: Int = 0
+          self._attribute: typing.Dict[Int, str] = {}
     |}
     {|
       $local_0_Int = int
       class qualifier.Class:
         def qualifier.Class.__init__($parameter_self, $parameter_i: qualifier.Int) -> None:
-          pass
+          $parameter_self._attribute: qualifier.Int = 0
+          $parameter_self._attribute: typing.Dict[qualifier.Int, str] = {}
     |};
 
   (* Qualify strings. *)

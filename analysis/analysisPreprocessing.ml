@@ -180,6 +180,7 @@ type scope = {
   locals: Access.Set.t;
   use_forward_references: bool;
   skip: Location.Set.t;
+  in_annotation: bool;
 }
 
 
@@ -213,23 +214,7 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
     renamed
   in
 
-  let rec qualify_annotation ~scope:({ qualifier; aliases; _ } as scope) annotation =
-    let qualifier =
-      match annotation with
-      | Some { Node.value = Access access; _ } ->
-          begin
-            match Map.find aliases access with
-            | Some { qualifier; _ } -> qualifier
-            | _ -> qualifier
-          end
-      | _ ->
-          qualifier
-    in
-    annotation
-    >>| qualify_expression ~scope
-    >>| Expression.delocalize ~qualifier
-
-  and qualify_parameters ~scope parameters =
+  let rec qualify_parameters ~scope parameters =
     (* Rename parameters to prevent aliasing. *)
     let rename_parameter
         (scope, reversed_parameters)
@@ -241,7 +226,7 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
         Node.value = {
           Parameter.name = Identifier.map renamed ~f:(fun identifier -> stars ^ identifier);
           value = value >>| qualify_expression ~scope;
-          annotation = qualify_annotation ~scope annotation;
+          annotation = annotation >>| qualify_expression ~scope:{ scope with in_annotation = true};
         };
       } :: reversed_parameters
     in
@@ -450,7 +435,7 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
         target_scope,
         {
           Assign.target;
-          annotation = qualify_annotation ~scope annotation;
+          annotation = annotation >>| qualify_expression ~scope:{ scope with in_annotation = true };
           value = value >>| qualify_expression ~scope;
           parent = parent >>| fun access -> qualify_access ~scope access;
         }
@@ -497,7 +482,9 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
               decorators
               ~f:(qualify_expression
                     ~scope:{ scope with use_forward_references = Option.is_none parent });
-          return_annotation = qualify_annotation ~scope return_annotation;
+          return_annotation =
+            return_annotation
+            >>| qualify_expression ~scope:{ scope with in_annotation = true };
           parent = parent >>| fun access -> qualify_access ~scope access;
         }
       in
@@ -717,148 +704,161 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
     | _ ->
         access
 
-  and qualify_expression ~scope ({ Node.location; value } as expression) =
-    let value =
-      let qualify_entry ~scope { Dictionary.key; value } =
-        {
-          Dictionary.key = qualify_expression ~scope key;
-          value = qualify_expression ~scope value;
-        }
-      in
-      let qualify_generators ~scope generators =
-        let qualify_generator
-            (scope, reversed_generators)
-            ({ Comprehension.target; iterator; conditions; _ } as generator) =
-          let renamed_scope, target = qualify_target ~scope target in
-          renamed_scope,
+  and qualify_expression
+      ~scope:({ qualifier; aliases; in_annotation; _ } as scope)
+      ({ Node.location; value } as expression) =
+    let qualified =
+      let value =
+        let qualify_entry ~scope { Dictionary.key; value } =
           {
-            generator with
-            Comprehension.target;
-            iterator = qualify_expression ~scope iterator;
-            conditions = List.map conditions ~f:(qualify_expression ~scope:renamed_scope);
-          } :: reversed_generators
-        in
-        let scope, reversed_generators =
-          List.fold
-            generators
-            ~init:(scope, [])
-            ~f:qualify_generator
-        in
-        scope, List.rev reversed_generators
-      in
-      match value with
-      | Access access ->
-          Access (qualify_access ~scope access)
-      | Await expression ->
-          Await (qualify_expression ~scope expression)
-      | BooleanOperator { BooleanOperator.left; operator; right } ->
-          BooleanOperator {
-            BooleanOperator.left = qualify_expression ~scope left;
-            operator;
-            right = qualify_expression ~scope right;
+            Dictionary.key = qualify_expression ~scope key;
+            value = qualify_expression ~scope value;
           }
-      | ComparisonOperator { ComparisonOperator.left; right } ->
-          let qualify_operand (operator, operand) =
-            operator, qualify_expression ~scope operand
+        in
+        let qualify_generators ~scope generators =
+          let qualify_generator
+              (scope, reversed_generators)
+              ({ Comprehension.target; iterator; conditions; _ } as generator) =
+            let renamed_scope, target = qualify_target ~scope target in
+            renamed_scope,
+            {
+              generator with
+              Comprehension.target;
+              iterator = qualify_expression ~scope iterator;
+              conditions = List.map conditions ~f:(qualify_expression ~scope:renamed_scope);
+            } :: reversed_generators
           in
-          ComparisonOperator {
-            ComparisonOperator.left = qualify_expression ~scope left;
-            right = List.map right ~f:qualify_operand;
-          }
-      | Dictionary { Dictionary.entries; keywords } ->
-          Dictionary {
-            Dictionary.entries = List.map entries ~f:(qualify_entry ~scope);
-            keywords = keywords >>| qualify_expression ~scope
-          }
-      | DictionaryComprehension { Comprehension.element; generators } ->
-          let scope, generators = qualify_generators ~scope generators in
-          DictionaryComprehension {
-            Comprehension.element = qualify_entry ~scope element;
-            generators;
-          }
-      | FormatString { FormatString.value; expression_list } ->
-          FormatString {
-            FormatString.value;
-            expression_list = List.map expression_list ~f:(qualify_expression ~scope)
-          }
-      | Generator { Comprehension.element; generators } ->
-          let scope, generators = qualify_generators ~scope generators in
-          Generator {
-            Comprehension.element = qualify_expression ~scope element;
-            generators;
-          }
-      | Lambda { Lambda.parameters; body } ->
-          let scope, parameters = qualify_parameters ~scope parameters in
-          Lambda {
-            Lambda.parameters;
-            body = qualify_expression ~scope body;
-          }
-      | List elements ->
-          List (List.map elements ~f:(qualify_expression ~scope))
-      | ListComprehension { Comprehension.element; generators } ->
-          let scope, generators = qualify_generators ~scope generators in
-          ListComprehension {
-            Comprehension.element = qualify_expression ~scope element;
-            generators;
-          }
-      | Set elements ->
-          Set (List.map elements ~f:(qualify_expression ~scope))
-      | SetComprehension { Comprehension.element; generators } ->
-          let scope, generators = qualify_generators ~scope generators in
-          SetComprehension {
-            Comprehension.element = qualify_expression ~scope element;
-            generators;
-          }
-      | Starred (Starred.Once expression) ->
-          Starred (Starred.Once (qualify_expression ~scope expression))
-      | Starred (Starred.Twice expression) ->
-          Starred (Starred.Twice (qualify_expression ~scope expression))
-      | String string ->
-          begin
-            try
-              let buffer = Lexing.from_string (string ^ "\n") in
-              let state = Lexer.State.initial () in
-              match ParserGenerator.parse (Lexer.read state) buffer with
-              | [{ Node.value = Expression expression; _ }] ->
-                  qualify_expression ~scope expression
-                  |> Expression.show
-                  |> fun string -> String string
-              | _ ->
-                  raise ParserGenerator.Error
-            with
-            | Pyre.ParserError _
-            | ParserGenerator.Error
-            | Failure _ ->
-                begin
-                  Log.debug
-                    "Invalid string annotation `%s` at %a"
-                    string
-                    Location.pp
-                    location;
-                  String string
-                end
-          end
-      | Ternary { Ternary.target; test; alternative } ->
-          Ternary {
-            Ternary.target = qualify_expression ~scope target;
-            test = qualify_expression ~scope test;
-            alternative = qualify_expression ~scope alternative;
-          }
-      | Tuple elements ->
-          Tuple (List.map elements ~f:(qualify_expression ~scope))
-      | UnaryOperator { UnaryOperator.operator; operand } ->
-          UnaryOperator {
-            UnaryOperator.operator;
-            operand = qualify_expression ~scope operand;
-          }
-      | Yield (Some expression) ->
-          Yield (Some (qualify_expression ~scope expression))
-      | Yield None ->
-          Yield None
-      | Bytes _ | Complex _ | False | Float _ | Integer _ | True ->
-          value
+          let scope, reversed_generators =
+            List.fold
+              generators
+              ~init:(scope, [])
+              ~f:qualify_generator
+          in
+          scope, List.rev reversed_generators
+        in
+        match value with
+        | Access access ->
+            Access (qualify_access ~scope access)
+        | Await expression ->
+            Await (qualify_expression ~scope expression)
+        | BooleanOperator { BooleanOperator.left; operator; right } ->
+            BooleanOperator {
+              BooleanOperator.left = qualify_expression ~scope left;
+              operator;
+              right = qualify_expression ~scope right;
+            }
+        | ComparisonOperator { ComparisonOperator.left; right } ->
+            let qualify_operand (operator, operand) =
+              operator, qualify_expression ~scope operand
+            in
+            ComparisonOperator {
+              ComparisonOperator.left = qualify_expression ~scope left;
+              right = List.map right ~f:qualify_operand;
+            }
+        | Dictionary { Dictionary.entries; keywords } ->
+            Dictionary {
+              Dictionary.entries = List.map entries ~f:(qualify_entry ~scope);
+              keywords = keywords >>| qualify_expression ~scope
+            }
+        | DictionaryComprehension { Comprehension.element; generators } ->
+            let scope, generators = qualify_generators ~scope generators in
+            DictionaryComprehension {
+              Comprehension.element = qualify_entry ~scope element;
+              generators;
+            }
+        | FormatString { FormatString.value; expression_list } ->
+            FormatString {
+              FormatString.value;
+              expression_list = List.map expression_list ~f:(qualify_expression ~scope)
+            }
+        | Generator { Comprehension.element; generators } ->
+            let scope, generators = qualify_generators ~scope generators in
+            Generator {
+              Comprehension.element = qualify_expression ~scope element;
+              generators;
+            }
+        | Lambda { Lambda.parameters; body } ->
+            let scope, parameters = qualify_parameters ~scope parameters in
+            Lambda {
+              Lambda.parameters;
+              body = qualify_expression ~scope body;
+            }
+        | List elements ->
+            List (List.map elements ~f:(qualify_expression ~scope))
+        | ListComprehension { Comprehension.element; generators } ->
+            let scope, generators = qualify_generators ~scope generators in
+            ListComprehension {
+              Comprehension.element = qualify_expression ~scope element;
+              generators;
+            }
+        | Set elements ->
+            Set (List.map elements ~f:(qualify_expression ~scope))
+        | SetComprehension { Comprehension.element; generators } ->
+            let scope, generators = qualify_generators ~scope generators in
+            SetComprehension {
+              Comprehension.element = qualify_expression ~scope element;
+              generators;
+            }
+        | Starred (Starred.Once expression) ->
+            Starred (Starred.Once (qualify_expression ~scope expression))
+        | Starred (Starred.Twice expression) ->
+            Starred (Starred.Twice (qualify_expression ~scope expression))
+        | String string ->
+            begin
+              try
+                let buffer = Lexing.from_string (string ^ "\n") in
+                let state = Lexer.State.initial () in
+                match ParserGenerator.parse (Lexer.read state) buffer with
+                | [{ Node.value = Expression expression; _ }] ->
+                    qualify_expression ~scope expression
+                    |> Expression.show
+                    |> fun string -> String string
+                | _ ->
+                    raise ParserGenerator.Error
+              with
+              | ParserGenerator.Error
+              | Failure _ ->
+                  begin
+                    Log.debug
+                      "Invalid string annotation `%s` at %a"
+                      string
+                      Location.pp
+                      location;
+                    String string
+                  end
+            end
+        | Ternary { Ternary.target; test; alternative } ->
+            Ternary {
+              Ternary.target = qualify_expression ~scope target;
+              test = qualify_expression ~scope test;
+              alternative = qualify_expression ~scope alternative;
+            }
+        | Tuple elements ->
+            Tuple (List.map elements ~f:(qualify_expression ~scope))
+        | UnaryOperator { UnaryOperator.operator; operand } ->
+            UnaryOperator {
+              UnaryOperator.operator;
+              operand = qualify_expression ~scope operand;
+            }
+        | Yield (Some expression) ->
+            Yield (Some (qualify_expression ~scope expression))
+        | Yield None ->
+            Yield None
+        | Bytes _ | Complex _ | False | Float _ | Integer _ | True ->
+            value
+      in
+      { expression with Node.value }
     in
-    { expression with Node.value }
+    if in_annotation then
+      let qualifier =
+        Expression.access expression
+        |> Map.find aliases
+        >>| (fun { qualifier; _ } -> qualifier)
+        |> Option.value ~default:qualifier
+      in
+      Expression.delocalize qualified ~qualifier
+    else
+      qualified
   in
 
   let scope =
@@ -869,6 +869,7 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
       immutables = Access.Set.empty;
       use_forward_references = true;
       skip = Location.Set.empty;
+      in_annotation = false;
     }
   in
   { source with Source.statements = qualify_statements ~scope statements |> snd }
