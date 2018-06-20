@@ -486,9 +486,9 @@ let shared_memory_handler
         |> purge_dependents;
 
         DependencyHandler.clear_keys_batch paths;
-          List.map ~f:(fun path -> Ast.Source.qualifier ~path) paths
-          |> Modules.KeySet.of_list
-          |> Modules.remove_batch
+        List.map ~f:(fun path -> Ast.Source.qualifier ~path) paths
+        |> Modules.KeySet.of_list
+        |> Modules.remove_batch
 
       let mode path = ErrorModes.get path
     end: Environment.Handler)

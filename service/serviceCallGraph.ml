@@ -15,7 +15,7 @@ module SharedMemory = Hack_parallel.Std.SharedMem
 
 let in_process_handler () =
   CallGraph.create ()
-    |> CallGraph.handler
+  |> CallGraph.handler
 
 
 module AccessKey = struct

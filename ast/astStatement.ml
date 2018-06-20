@@ -762,176 +762,176 @@ module Class = struct
           Some value
     in
     let implicitly_assigned_attributes =
-        constructors ~in_test definition
-        |> List.map ~f:(Define.implicit_attributes ~definition)
-        |> List.fold ~init:Access.Map.empty ~f:(Map.merge ~f:merge)
-      in
-      let property_attributes =
-        let property_attributes map = function
-          | { Node.location; value = Stub (Stub.Define define) }
-          | { Node.location; value = Define define } ->
-              begin
-                match Define.property_attribute ~location define with
-                | Some ({
-                    Node.value =
-                      ({
-                        Attribute.target = { Node.value = Expression.Access ([_] as access); _ };
-                        setter = new_setter;
-                        annotation = new_annotation;
-                        _;
-                      } as attribute);
-                    _;
-                  } as attribute_node) ->
-                    let merged_attribute =
-                      match Map.find map access, new_setter with
-                      | Some { Node.value = { Attribute.setter = true; annotation; _ }; _ },
-                        false ->
-                          {
-                            attribute with
-                            Attribute.annotation;
-                            value = new_annotation;
-                            setter = true
-                          }
-                          |> (fun edited -> { attribute_node with Node.value = edited })
-                      | Some { Node.value = { Attribute.setter = false; annotation; _ }; _ },
-                        true ->
-                          {
-                            attribute with
-                            Attribute.annotation = new_annotation;
-                            value = annotation;
-                            setter = true
-                          }
-                          |> (fun edited -> { attribute_node with Node.value = edited })
-                      | _ ->
-                          attribute_node
-                    in
-                    Map.set ~key:access ~data:merged_attribute map
-                | _ ->
-                    map
-              end
-          | _ ->
-              map
-        in
-        List.fold ~init:Access.Map.empty ~f:property_attributes body
-      in
-      let callable_attributes =
-        let callable_attributes map { Node.location; value } =
-          match value with
-          | Stub (Stub.Define ({ Define.name = target; _ } as define))
-          | Define ({ Define.name = target; _ } as define) ->
-              Attribute.target ~parent:name (Node.create ~location (Expression.Access target))
-              >>| (fun target ->
-                  let name = Expression.access target in
-                  let attribute =
-                    match Map.find map name with
-                    | Some { Node.value = { Attribute.defines = Some defines; _ }; _ } ->
-                        Attribute.create
-                          ~location
-                          ~target
-                          ~defines:({ define with Define.body = [] } :: defines)
-                          ()
+      constructors ~in_test definition
+      |> List.map ~f:(Define.implicit_attributes ~definition)
+      |> List.fold ~init:Access.Map.empty ~f:(Map.merge ~f:merge)
+    in
+    let property_attributes =
+      let property_attributes map = function
+        | { Node.location; value = Stub (Stub.Define define) }
+        | { Node.location; value = Define define } ->
+            begin
+              match Define.property_attribute ~location define with
+              | Some ({
+                  Node.value =
+                    ({
+                      Attribute.target = { Node.value = Expression.Access ([_] as access); _ };
+                      setter = new_setter;
+                      annotation = new_annotation;
+                      _;
+                    } as attribute);
+                  _;
+                } as attribute_node) ->
+                  let merged_attribute =
+                    match Map.find map access, new_setter with
+                    | Some { Node.value = { Attribute.setter = true; annotation; _ }; _ },
+                      false ->
+                        {
+                          attribute with
+                          Attribute.annotation;
+                          value = new_annotation;
+                          setter = true
+                        }
+                        |> (fun edited -> { attribute_node with Node.value = edited })
+                    | Some { Node.value = { Attribute.setter = false; annotation; _ }; _ },
+                      true ->
+                        {
+                          attribute with
+                          Attribute.annotation = new_annotation;
+                          value = annotation;
+                          setter = true
+                        }
+                        |> (fun edited -> { attribute_node with Node.value = edited })
                     | _ ->
-                        Attribute.create
-                          ~location
-                          ~target
-                          ~defines:[{ define with Define.body = [] }]
-                          ()
+                        attribute_node
                   in
-                  Map.set map ~key:name ~data:attribute)
-              |> Option.value ~default:map
-          | _ ->
-              map
-        in
-        List.fold ~init:Access.Map.empty ~f:callable_attributes body
+                  Map.set ~key:access ~data:merged_attribute map
+              | _ ->
+                  map
+            end
+        | _ ->
+            map
       in
-      let class_attributes =
-        let callable_attributes map { Node.location; value } =
-          match value with
-          | Stub (Stub.Class { Record.Class.name; _ })
-          | Class { Record.Class.name; _ } when not (List.is_empty name) ->
-              let open Expression in
-              let annotation =
-                let meta_annotation =
-                  let argument =
-                    {
-                      Argument.name = None;
-                      value = Node.create_with_default_location (Access name);
-                    }
-                  in
-                  Node.create
-                    ~location
-                    (Access [
-                        Access.Identifier (Identifier.create "typing");
-                        Access.Identifier (Identifier.create "Type");
-                        Access.Identifier (Identifier.create "__getitem__");
-                        Access.Call (Node.create_with_default_location [argument]);
-                      ])
+      List.fold ~init:Access.Map.empty ~f:property_attributes body
+    in
+    let callable_attributes =
+      let callable_attributes map { Node.location; value } =
+        match value with
+        | Stub (Stub.Define ({ Define.name = target; _ } as define))
+        | Define ({ Define.name = target; _ } as define) ->
+            Attribute.target ~parent:name (Node.create ~location (Expression.Access target))
+            >>| (fun target ->
+                let name = Expression.access target in
+                let attribute =
+                  match Map.find map name with
+                  | Some { Node.value = { Attribute.defines = Some defines; _ }; _ } ->
+                      Attribute.create
+                        ~location
+                        ~target
+                        ~defines:({ define with Define.body = [] } :: defines)
+                        ()
+                  | _ ->
+                      Attribute.create
+                        ~location
+                        ~target
+                        ~defines:[{ define with Define.body = [] }]
+                        ()
                 in
-                let argument = { Argument.name = None; value = meta_annotation } in
+                Map.set map ~key:name ~data:attribute)
+            |> Option.value ~default:map
+        | _ ->
+            map
+      in
+      List.fold ~init:Access.Map.empty ~f:callable_attributes body
+    in
+    let class_attributes =
+      let callable_attributes map { Node.location; value } =
+        match value with
+        | Stub (Stub.Class { Record.Class.name; _ })
+        | Class { Record.Class.name; _ } when not (List.is_empty name) ->
+            let open Expression in
+            let annotation =
+              let meta_annotation =
+                let argument =
+                  {
+                    Argument.name = None;
+                    value = Node.create_with_default_location (Access name);
+                  }
+                in
                 Node.create
                   ~location
                   (Access [
                       Access.Identifier (Identifier.create "typing");
-                      Access.Identifier (Identifier.create "ClassVar");
+                      Access.Identifier (Identifier.create "Type");
                       Access.Identifier (Identifier.create "__getitem__");
                       Access.Call (Node.create_with_default_location [argument]);
                     ])
               in
-              Map.set
-                ~key:name
-                ~data:(
+              let argument = { Argument.name = None; value = meta_annotation } in
+              Node.create
+                ~location
+                (Access [
+                    Access.Identifier (Identifier.create "typing");
+                    Access.Identifier (Identifier.create "ClassVar");
+                    Access.Identifier (Identifier.create "__getitem__");
+                    Access.Call (Node.create_with_default_location [argument]);
+                  ])
+            in
+            Map.set
+              ~key:name
+              ~data:(
+                Attribute.create
+                  ~location
+                  ~target:(Node.create ~location (Expression.Access [List.last_exn name]))
+                  ~annotation
+                  ())
+              map
+        | _ ->
+            map
+      in
+      List.fold ~init:Access.Map.empty ~f:callable_attributes body
+    in
+    let slots_attributes =
+      let slots_attributes map { Node.value; _ } =
+        let open Expression in
+        let is_slots access =
+          match List.last access with
+          | Some (Access.Identifier identifier)
+            when (Identifier.show identifier) = "__slots__" ->
+              true
+          | _ ->
+              false
+        in
+        match value with
+        | Assign {
+            Assign.target = { Node.value = Access access; _ };
+            value = Some { Node.value = List attributes; location };
+            _;
+          } when is_slots access ->
+            let add_attribute map { Node.value; _ } =
+              match value with
+              | String attribute_name ->
+                  let access = Access.create attribute_name in
                   Attribute.create
                     ~location
-                    ~target:(Node.create ~location (Expression.Access [List.last_exn name]))
-                    ~annotation
-                    ())
-                map
-          | _ ->
-              map
-        in
-        List.fold ~init:Access.Map.empty ~f:callable_attributes body
+                    ~target:
+                      (Node.create ~location (Expression.Access access))
+                    ()
+                  |> fun attribute -> Map.set map ~key:access ~data:attribute
+              | _ ->
+                  map
+            in
+            List.fold ~init:map ~f:add_attribute attributes
+        | _ ->
+            map
       in
-      let slots_attributes =
-        let slots_attributes map { Node.value; _ } =
-          let open Expression in
-          let is_slots access =
-            match List.last access with
-            | Some (Access.Identifier identifier)
-              when (Identifier.show identifier) = "__slots__" ->
-                true
-            | _ ->
-                false
-          in
-          match value with
-          | Assign {
-              Assign.target = { Node.value = Access access; _ };
-              value = Some { Node.value = List attributes; location };
-              _;
-            } when is_slots access ->
-              let add_attribute map { Node.value; _ } =
-                match value with
-                | String attribute_name ->
-                    let access = Access.create attribute_name in
-                    Attribute.create
-                      ~location
-                      ~target:
-                        (Node.create ~location (Expression.Access access))
-                      ()
-                    |> fun attribute -> Map.set map ~key:access ~data:attribute
-                | _ ->
-                    map
-              in
-              List.fold ~init:map ~f:add_attribute attributes
-          | _ ->
-              map
-        in
-        List.fold ~init:Access.Map.empty ~f:slots_attributes body
-      in
-      implicitly_assigned_attributes
-      |> Map.merge ~f:merge property_attributes
-      |> Map.merge ~f:merge callable_attributes
-      |> Map.merge ~f:merge class_attributes
-      |> Map.merge ~f:merge slots_attributes
+      List.fold ~init:Access.Map.empty ~f:slots_attributes body
+    in
+    implicitly_assigned_attributes
+    |> Map.merge ~f:merge property_attributes
+    |> Map.merge ~f:merge callable_attributes
+    |> Map.merge ~f:merge class_attributes
+    |> Map.merge ~f:merge slots_attributes
 
 
   let attributes
