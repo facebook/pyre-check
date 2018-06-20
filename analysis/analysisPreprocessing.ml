@@ -168,6 +168,7 @@ let expand_format_string source =
 
 type alias = {
   access: Access.t;
+  qualifier: Access.t;
   is_forward_reference: bool;
 }
 
@@ -205,14 +206,30 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
         Map.set
           aliases
           ~key:access
-          ~data:{ access = [Access.Identifier renamed]; is_forward_reference = false };
+          ~data:{ access = [Access.Identifier renamed]; qualifier; is_forward_reference = false };
       immutables = Set.add immutables access;
     },
     stars,
     renamed
   in
 
-  let rec qualify_parameters ~scope parameters =
+  let rec qualify_annotation ~scope:({ qualifier; aliases; _ } as scope) annotation =
+    let qualifier =
+      match annotation with
+      | Some { Node.value = Access access; _ } ->
+          begin
+            match Map.find aliases access with
+            | Some { qualifier; _ } -> qualifier
+            | _ -> qualifier
+          end
+      | _ ->
+          qualifier
+    in
+    annotation
+    >>| qualify_expression ~scope
+    >>| Expression.delocalize ~qualifier
+
+  and qualify_parameters ~scope parameters =
     (* Rename parameters to prevent aliasing. *)
     let rename_parameter
         (scope, reversed_parameters)
@@ -224,10 +241,7 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
         Node.value = {
           Parameter.name = Identifier.map renamed ~f:(fun identifier -> stars ^ identifier);
           value = value >>| qualify_expression ~scope;
-          annotation =
-            annotation
-            >>| qualify_expression ~scope
-            >>| Expression.delocalize ~qualifier;
+          annotation = qualify_annotation ~scope annotation;
         };
       } :: reversed_parameters
     in
@@ -242,7 +256,13 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
   and qualify_statements ?(qualify_assigns = false) ~scope statements =
     let scope =
       let rec explore_scope ~scope statements =
-        let global_alias access = { access; is_forward_reference = true } in
+        let global_alias ~qualifier ~name =
+          {
+            access = qualifier @ name;
+            qualifier;
+            is_forward_reference = true;
+          }
+        in
         let explore_scope
             ({ qualifier; aliases; immutables; skip; _ } as scope)
             { Node.location; value } =
@@ -253,7 +273,7 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
               let name = Expression.access target in
               {
                 scope with
-                aliases = Map.set aliases ~key:name ~data:(global_alias (qualifier @ name));
+                aliases = Map.set aliases ~key:name ~data:(global_alias ~qualifier ~name);
                 skip = Set.add skip location;
               }
           | Assign {
@@ -268,20 +288,20 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
               let name = Expression.access target in
               {
                 scope with
-                aliases = Map.set aliases ~key:name ~data:(global_alias (qualifier @ name));
+                aliases = Map.set aliases ~key:name ~data:(global_alias ~qualifier ~name);
                 skip = Set.add skip location;
               }
           | Class { Class.name; _ }
           | Stub (Stub.Class { Class.name; _ }) ->
               {
                 scope with
-                aliases = Map.set aliases ~key:name ~data:(global_alias (qualifier @ name));
+                aliases = Map.set aliases ~key:name ~data:(global_alias ~qualifier ~name);
               }
           | Define { Define.name; _ }
           | Stub (Stub.Define { Define.name; _ }) ->
               {
                 scope with
-                aliases = Map.set aliases ~key:name ~data:(global_alias (qualifier @ name));
+                aliases = Map.set aliases ~key:name ~data:(global_alias ~qualifier ~name);
               }
           | If { If.body; orelse; _ } ->
               let scope = explore_scope ~scope body in
@@ -333,7 +353,7 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
       ~scope:({ qualifier; aliases; skip; _ } as scope)
       ({ Node.location; value } as statement) =
     let scope, value =
-      let local_alias access = { access; is_forward_reference = false } in
+      let local_alias ~qualifier ~access = { access; qualifier; is_forward_reference = false } in
 
       let qualify_assign { Assign.target; annotation; value; parent } =
         let target_scope, target =
@@ -392,8 +412,12 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
                         in
                         {
                           scope with
-                          aliases = Map.set aliases ~key:access ~data:(local_alias alias);
-                          locals = Set.add locals access
+                          aliases =
+                            Map.set
+                              aliases
+                              ~key:access
+                              ~data:(local_alias ~qualifier ~access:alias);
+                          locals = Set.add locals access;
                         }
                       else
                         scope
@@ -426,10 +450,7 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
         target_scope,
         {
           Assign.target;
-          annotation =
-            annotation
-            >>| qualify_expression ~scope
-            >>| Expression.delocalize ~qualifier;
+          annotation = qualify_annotation ~scope annotation;
           value = value >>| qualify_expression ~scope;
           parent = parent >>| fun access -> qualify_access ~scope access;
         }
@@ -476,10 +497,7 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
               decorators
               ~f:(qualify_expression
                     ~scope:{ scope with use_forward_references = Option.is_none parent });
-          return_annotation =
-            return_annotation
-            >>| qualify_expression ~scope
-            >>| Expression.delocalize ~qualifier;
+          return_annotation = qualify_annotation ~scope return_annotation;
           parent = parent >>| fun access -> qualify_access ~scope access;
         }
       in
@@ -546,10 +564,10 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
             match alias with
             | Some alias ->
                 (* Add `alias -> from.name`. *)
-                Map.set aliases ~key:alias ~data:(local_alias (from @ name))
+                Map.set aliases ~key:alias ~data:(local_alias ~qualifier ~access:(from @ name))
             | None ->
                 (* Add `name -> from.name`. *)
-                Map.set aliases ~key:name ~data:(local_alias (from @ name))
+                Map.set aliases ~key:name ~data:(local_alias ~qualifier ~access:(from @ name))
           in
           { scope with aliases = List.fold imports ~init:aliases ~f:import },
           value
@@ -558,7 +576,7 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
             match alias with
             | Some alias ->
                 (* Add `alias -> from.name`. *)
-                Map.set aliases ~key:alias ~data:(local_alias name)
+                Map.set aliases ~key:alias ~data:(local_alias ~qualifier ~access:name)
             | None ->
                 aliases
           in
@@ -669,9 +687,11 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
     | head :: tail ->
         let head =
           match Map.find aliases [head] with
-          | Some { access; is_forward_reference = true } when use_forward_references -> access
-          | Some { access; is_forward_reference = false } -> access
-          | _ -> [head]
+          | Some { access; is_forward_reference; _ }
+            when (not is_forward_reference) || use_forward_references ->
+              access
+          | _ ->
+              [head]
         in
         let qualify_element = function
           | Access.Call ({ Node.value = arguments ; _ } as call) ->

@@ -324,7 +324,7 @@ let test_qualify _ =
       def typing.foo($parameter_l: typing.List[int]): ...
     |};
 
-  (* Type aliases are not qualified. *)
+  (* Type aliases are not qualified except in annotation positions. *)
   assert_qualify
     {|
       Int = int
@@ -339,6 +339,19 @@ let test_qualify _ =
       def qualifier.foo($parameter_i: qualifier.Int) -> qualifier.Int:
         $local_0_variable = $local_0_Int
       def qualifier.foo($parameter_i: typing.Tuple[qualifier.Int, str]): ...
+    |};
+  assert_qualify
+    {|
+      Int = int
+      class Class:
+        def __init__(self, i: Int) -> None:
+          pass
+    |}
+    {|
+      $local_0_Int = int
+      class qualifier.Class:
+        def qualifier.Class.__init__($parameter_self, $parameter_i: qualifier.Int) -> None:
+          pass
     |};
 
   (* Qualify strings. *)
