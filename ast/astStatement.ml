@@ -324,7 +324,7 @@ module Define = struct
   let has_decorator { decorators; _ } decorator =
     let open Expression in
     let rec is_decorator expected actual =
-      match expected, actual with
+      match expected, Expression.delocalize ~qualifier:[] actual with
       | (expected_decorator :: expected_decorators),
         { Node.location; value = Access ((Access.Identifier identifier) :: identifiers) }
         when Identifier.show identifier = expected_decorator ->

@@ -3499,7 +3499,22 @@ let test_check_attributes _ =
     [
       "Incompatible attribute type [8]: Attribute `x` declared in class `Foo` " ^
       "has type `typing.Optional[int]` but is used as type `str`.";
-    ]
+    ];
+
+  assert_type_errors
+    {|
+      __property__ = ...
+      x: Optional[int]
+      class Foo:
+        @__property__
+        def x(self) -> int: ...
+        @x.setter
+        def x(self, value: typing.Optional[int]) -> None: ...
+      def bar() -> int:
+        foo = Foo()
+        return foo.x
+    |}
+    []
 
 
 let test_check_globals _ =
