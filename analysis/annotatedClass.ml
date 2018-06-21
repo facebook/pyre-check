@@ -385,7 +385,8 @@ let methods ({ Node.value = { Class.body; _ }; _ } as definition) =
 let is_protocol { Node.value = { Class.bases; _ }; _ } =
   let is_protocol { Argument.name; value } =
     match name, Expression.show value with
-    | None , "typing.Protocol" ->
+    | None, "typing.Protocol"
+    | None, "typing_extensions.Protocol" ->
         true
     | _ ->
         false

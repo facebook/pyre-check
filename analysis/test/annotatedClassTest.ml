@@ -286,6 +286,7 @@ let test_is_protocol _ =
   assert_is_protocol [] false;
   assert_is_protocol [{ Argument.name = None; value = !"derp" }] false;
   assert_is_protocol [{ Argument.name = None; value = !"typing.Protocol" }] true;
+  assert_is_protocol [{ Argument.name = None; value = !"typing_extensions.Protocol" }] true;
   assert_is_protocol
     [{ Argument.name = Some ~+(~~"metaclass"); value = !"abc.ABCMeta"; }]
     false
