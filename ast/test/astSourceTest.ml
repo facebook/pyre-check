@@ -15,6 +15,15 @@ open Test
 let test_parse _ =
   let test_path = "test.py" in
 
+  let assert_mode line expected_mode =
+    let { Source.Metadata.local_mode; _ } = Source.Metadata.parse test_path [line] in
+    assert_equal local_mode expected_mode
+  in
+  assert_mode " # pyre-placeholder-stub" Source.PlaceholderStub;
+  assert_mode " # pyre-do-not-check" Source.Declare;
+  assert_mode " # pyre-strict" Source.Strict;
+  assert_mode " # pyre-durp" Source.Default;
+
   let assert_ignore lines expected_ignore_lines =
     let { Source.Metadata.ignore_lines; _ } = Source.Metadata.parse test_path lines in
     assert_equal

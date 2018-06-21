@@ -15,6 +15,7 @@ type mode =
   | Declare
   | Strict
   | Infer
+  | PlaceholderStub
 [@@deriving compare, eq, show, sexp, hash]
 
 
