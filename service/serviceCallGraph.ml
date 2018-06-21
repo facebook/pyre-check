@@ -3,8 +3,6 @@
     This source code is licensed under the MIT license found in the
     LICENSE file in the root directory of this source tree. *)
 
-open Core
-
 open Ast
 open Expression
 
@@ -25,10 +23,10 @@ module AccessValue = struct
 end
 
 
-module StringKey = struct
-  type t = string
-  let to_string = ident
-  let compare = String.compare
+module HandleKey = struct
+  type t = File.Handle.t
+  let to_string = File.Handle.show
+  let compare = File.Handle.compare
 end
 
 
@@ -40,9 +38,10 @@ end
 
 module Overrides = SharedMemory.WithCache (AccessKey) (AccessValue)
 
-module CallerKeys = SharedMemory.WithCache (StringKey) (AccessKeyValue)
+module CallerKeys = SharedMemory.WithCache (HandleKey) (AccessKeyValue)
 
 module CallEdges = SharedMemory.WithCache (AccessKey) (AccessValue)
+
 
 let add_callers ~path =
   CallerKeys.add path
