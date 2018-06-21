@@ -21,3 +21,4 @@ module Type = AnalysisType
 module TypeCheck = AnalysisTypeCheck
 module TypeOrder = AnalysisTypeOrder
 module Inference = AnalysisInference
+module TypeResolutionSharedMemory = AnalysisTypeResolutionSharedMemory

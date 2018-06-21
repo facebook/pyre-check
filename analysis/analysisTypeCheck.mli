@@ -3,6 +3,8 @@
     This source code is licensed under the MIT license found in the
     LICENSE file in the root directory of this source tree. *)
 
+open Core
+
 open Ast
 open Statement
 
@@ -53,6 +55,7 @@ module State : sig
     call_graph: (module CallGraph.Handler) option;
     nested_defines: nested_define Location.Map.t;
     bottom: bool;
+    resolution_fixpoint: (Annotation.t Access.Map.t) Int.Map.t
   }
   [@@deriving eq, show]
 
@@ -62,6 +65,7 @@ module State : sig
     -> define: Statement.Define.t Node.t
     -> ?lookup: Lookup.t
     -> ?call_graph: (module CallGraph.Handler)
+    -> ?resolution_fixpoint: (Annotation.t Access.Map.t) Int.Map.t
     -> unit
     -> t
 

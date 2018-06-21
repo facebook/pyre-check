@@ -15,7 +15,8 @@ open PyreParser
 let () =
   Log.initialize_for_tests ();
   Statistics.disable ();
-  Type.Cache.disable ()
+  Type.Cache.disable ();
+  Service.Scheduler.mock () |> ignore
 
 
 let parse_untrimmed

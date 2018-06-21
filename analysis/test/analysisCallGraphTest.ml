@@ -30,7 +30,7 @@ let test_create _ =
   assert_equal 2 (Access.Table.length overloads)
 
 
-let parse_source source =
+let parse_source ?(qualifier=[]) source =
   let source =
     let metadata =
       Source.Metadata.create
@@ -43,24 +43,26 @@ let parse_source source =
         ~number_of_lines:(-1)
         ()
     in
-    parse ~qualifier:[] source
+    parse ~qualifier source
     |> (fun source -> { source with Source.metadata })
     |> Preprocessing.preprocess
   in
   source
 
 
-let assert_call_graph source ~expected =
-  Parallel.Daemon.check_entry_point ();
-  Service.Scheduler.mock () |> ignore;
-  let source = parse_source source in
+let check_source ?call_graph source =
   let configuration =
     Configuration.create ~debug:true ~strict:false ~declare:false ~infer:false ()
   in
   let environment = TestSetup.environment ~configuration () in
   Environment.populate ~configuration environment [source];
+  check configuration environment call_graph source |> ignore
+
+
+let assert_call_graph source ~expected =
+  let source = parse_source source in
   let call_graph = Service.CallGraph.shared_memory_handler () in
-  check configuration environment (Some call_graph) source |> ignore;
+  check_source ~call_graph source;
   let { Source.path; _ } = source in
   let module CallGraph = (val call_graph: CallGraph.Handler) in
   let build_output caller result callee =
@@ -81,6 +83,7 @@ let assert_call_graph source ~expected =
   in
   let expected = expected ^ "\n" in
   assert_equal ~printer:ident result expected
+
 
 let test_construction _ =
   assert_call_graph
@@ -114,9 +117,120 @@ let test_construction _ =
        Foo.bar -> Foo.quux"
 
 
+let test_type_collection _ =
+  let open TypeResolutionSharedMemory in
+  let open TypeAnnotationsValue in
+  let (!) = Access.show in
+  let assert_type_collection source ~qualifier ~expected =
+    let source = parse_source ~qualifier source in
+    let configuration =
+      Configuration.create
+        ~debug:true
+        ~strict:false
+        ~declare:false
+        ~infer:false
+        ()
+    in
+    let environment = TestSetup.environment ~configuration () in
+    Environment.populate ~configuration environment [source];
+    check configuration environment None source |> ignore;
+    let defines =
+      Preprocessing.defines source
+      |> List.map ~f:(fun define -> define.Node.value)
+    in
+    let Define.{ name; body = statements; _ } as define = List.nth_exn defines 1 in
+    let lookup =
+      let build_lookup lookup { key; annotations } =
+        Int.Map.set lookup ~key ~data:annotations in
+      TypeResolutionSharedMemory.get name
+      |> (fun value -> Option.value_exn value)
+      |> List.fold ~init:Int.Map.empty ~f:build_lookup
+    in
+    let test_expect (node_id, statement_index, test_access, expected_type) =
+      let key = [%hash: int * int] (node_id, statement_index) in
+      let test_access = Access.create test_access in
+      let annotations =
+        Int.Map.find_exn lookup key
+        |> Access.Map.of_alist_exn
+      in
+      let resolution = Environment.resolution environment ~annotations ~define () in
+      let statement = List.nth_exn statements statement_index in
+      Visit.collect_accesses_with_location statement
+      |> List.hd_exn
+      |> fun { Node.value = access; _ } ->
+      if String.equal !access !test_access then
+        let open Annotated in
+        let open Access.Element in
+        let last_element =
+          Annotated.Access.create access
+          |>  Annotated.Access.last_element ~resolution
+        in
+        match last_element with
+        | Signature {
+            signature =
+              Signature.Found {
+                Signature.callable = {
+                  Type.Callable.kind = Type.Callable.Named callable_type;
+                  _;
+                };
+                _;
+              };
+            _;
+          } ->
+            assert_equal ~printer:ident !callable_type expected_type
+        | _ ->
+            assert false
+    in
+    List.iter expected ~f:test_expect
+
+  in
+  assert_type_collection
+    {|
+        class A:
+          def foo(self) -> int:
+            return 1
+
+        class B:
+          def foo(self) -> int:
+            return 2
+
+        class X:
+          def caller(self):
+            a = A()
+            a.foo()
+            a = B()
+            a.foo()
+        |}
+    ~qualifier:(Access.create "test1")
+    ~expected:
+      [
+        (5, 1, "$local_0_a.foo.(...)", "test1.A.foo");
+        (5, 3, "$local_0_a.foo.(...)", "test1.B.foo")
+      ];
+
+  assert_type_collection
+    {|
+       class A:
+         def foo(self) -> int:
+           return 1
+
+       class B:
+         def foo(self) -> A:
+           return A()
+
+       class X:
+         def caller(self):
+           a = B().foo().foo()
+    |}
+    ~qualifier:(Access.create "test2")
+    ~expected:[(5, 0, "$local_0_a.foo.(...).foo.(...)", "test2.A.foo")]
+
+
 let () =
+  Parallel.Daemon.check_entry_point ();
   "callGraph">:::[
     "create">::test_create;
+    "type_collection">::test_type_collection;
     "build">::test_construction;
   ]
   |> run_test_tt_main

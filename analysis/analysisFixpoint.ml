@@ -18,7 +18,7 @@ module type State = sig
   val meet: t -> t -> t
   val widening_threshold: int
   val widen: previous: t -> next: t -> iteration: int -> t
-  val forward: t -> statement: Statement.t -> t
+  val forward: ?key:int -> t -> statement: Statement.t -> t
   val backward: t -> statement: Statement.t -> t
 end
 
@@ -75,7 +75,7 @@ module Make (State: State) = struct
 
           (* Transfer state. *)
           let precondition = Hashtbl.find_exn fixpoint current_id in
-          let postcondition = transition precondition (Cfg.Node.statements current) in
+          let postcondition = transition current_id precondition (Cfg.Node.statements current) in
 
           (* Update successors. *)
           let update_successor successor_id =
@@ -123,9 +123,14 @@ module Make (State: State) = struct
     fixpoint
 
   let forward ~cfg ~initial =
-    let transition init statements =
-      let forward before statement =
-        let after = State.forward before ~statement in
+    let transition node_id init statements =
+      let forward statement_index before statement =
+        let after =
+          State.forward
+            ~key:([%hash: int * int] (node_id, statement_index))
+            before
+            ~statement
+        in
         Log.log
           ~section:`Fixpoint
           "\n%a\n  {  %a  }\n\n%a"
@@ -134,7 +139,7 @@ module Make (State: State) = struct
           State.pp after;
         after
       in
-      List.fold_left ~f:forward ~init statements
+      List.foldi ~f:forward ~init statements
     in
     compute_fixpoint
       cfg
@@ -144,7 +149,7 @@ module Make (State: State) = struct
       ~transition
 
   let backward ~cfg ~initial =
-    let transition init statements =
+    let transition _ init statements =
       List.fold_right ~f:(fun statement -> State.backward ~statement) ~init statements
     in
     compute_fixpoint

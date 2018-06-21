@@ -264,7 +264,7 @@ let assert_forward precondition statement postcondition =
   assert_state_equal
     (create postcondition)
     (List.fold
-       ~f:(fun state statement -> State.forward state ~statement)
+       ~f:(fun state statement -> State.forward ~key:0 state ~statement)
        ~init:(create precondition)
        parsed)
 
@@ -505,7 +505,7 @@ let test_forward_immutables _ =
     assert_state_equal
       (create postcondition ~immutables:post_immutables)
       (List.fold
-         ~f:(fun state statement -> State.forward state ~statement)
+         ~f:(fun state statement -> State.forward ~key:0 state ~statement)
          ~init:(create precondition ~immutables:pre_immutables)
          parsed)
   in

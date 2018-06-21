@@ -18,7 +18,7 @@ module type State = sig
   val meet: t -> t -> t
   val widening_threshold: int
   val widen: previous: t -> next: t -> iteration: int -> t
-  val forward: t -> statement: Statement.t -> t
+  val forward: ?key:int -> t -> statement: Statement.t -> t
   val backward: t -> statement: Statement.t -> t
 end
 

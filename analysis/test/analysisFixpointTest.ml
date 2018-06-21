@@ -27,7 +27,7 @@ end = struct
   let equal =
     Int.(=)
 
-  let forward state ~statement =
+  let forward ?key:_ state ~statement =
     match statement with
     | { Node.value = Pass; _ } ->
         state + 1

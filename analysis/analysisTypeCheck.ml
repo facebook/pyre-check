@@ -45,6 +45,7 @@ module State = struct
     call_graph: (module CallGraph.Handler) option;
     nested_defines: nested_define Location.Map.t;
     bottom: bool;
+    resolution_fixpoint: (Annotation.t Access.Map.t) Int.Map.t;
   }
 
 
@@ -133,6 +134,7 @@ module State = struct
       ~define
       ?lookup
       ?call_graph
+      ?(resolution_fixpoint = Int.Map.empty)
       () =
     {
       configuration;
@@ -143,6 +145,7 @@ module State = struct
       lookup;
       nested_defines = Location.Map.empty;
       bottom = false;
+      resolution_fixpoint;
     }
 
 
@@ -611,6 +614,7 @@ module State = struct
 
 
   let rec forward
+      ?key
       ({
         configuration;
         resolution;
@@ -622,6 +626,18 @@ module State = struct
         _;
       } as state)
       ~statement:({ Node.location; _ } as statement) =
+
+    let state =
+      let resolution_fixpoint =
+        match key with
+        | Some key ->
+            Int.Map.set state.resolution_fixpoint ~key ~data:(Resolution.annotations state.resolution)
+        | None ->
+            state.resolution_fixpoint
+      in
+      { state with resolution_fixpoint }
+    in
+
     let expected =
       let annotation =
         Annotated.Callable.return_annotation ~define ~resolution
@@ -1938,6 +1954,25 @@ let check
         |> Fixpoint.exit
       in
       if dump then exit >>| Log.dump "Exit state:\n%a" State.pp |> ignore;
+
+
+      let () =
+        (* Write fixpoint type resolutions to shared memory *)
+        let open AnalysisTypeResolutionSharedMemory in
+        let dump_resolutions { State.resolution_fixpoint; _ } =
+          let serialize ~key ~data:annotations accumulator =
+            TypeAnnotationsValue.{
+              key;
+              annotations = Access.Map.to_alist annotations
+            } :: accumulator
+          in
+          Int.Map.fold resolution_fixpoint ~init:[] ~f:serialize
+          |> AnalysisTypeResolutionSharedMemory.add name
+        in
+        exit
+        >>| dump_resolutions
+        |> ignore
+      in
 
       let () =
         (* Schedule nested functions for analysis. *)

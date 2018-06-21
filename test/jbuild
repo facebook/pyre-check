@@ -7,6 +7,7 @@
   (modules (test))
   (libraries
    (oUnit
+    pyrelib.service
     pyrelib.analysis))))
 
 

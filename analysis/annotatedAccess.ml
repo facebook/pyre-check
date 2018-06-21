@@ -34,22 +34,26 @@ module Element = struct
   type origin =
     | Instance of Attribute.t
     | Module of Access.t
+  [@@deriving show]
 
   type attribute = {
     attribute: Access.t;
     origin: origin;
     defined: bool;
   }
+  [@@deriving show]
 
   type signature = {
     signature: Signature.t;
     arguments: Argument.t list;
   }
+  [@@deriving show]
 
   type t =
     | Signature of signature
     | Attribute of attribute
     | Value
+  [@@deriving show]
 end
 
 
