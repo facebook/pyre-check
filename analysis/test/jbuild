@@ -59,6 +59,8 @@
   (libraries
    (oUnit
     pyrelib.test
+    pyrelib.testSetup
+    pyrelib.service
     pyrelib.analysis))))
 
 

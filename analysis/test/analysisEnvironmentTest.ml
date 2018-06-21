@@ -1207,7 +1207,7 @@ let test_infer_protocols _ =
         def foo() -> str:
           pass
     |}
-  ["A", "P"];
+    ["A", "P"];
   assert_protocols
     {|
       class P(typing.Protocol):
