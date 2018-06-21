@@ -48,18 +48,13 @@ module Metadata = struct
       String.is_prefix ~prefix:"#!" line &&
       String.is_substring ~substring:"python2" line
     in
-    let is_debug line =
+    let is_pyre_comment comment_substring line =
       String.is_prefix ~prefix:"#" line &&
-      String.is_substring ~substring:"pyre-debug" line
+      String.is_substring ~substring:comment_substring line
     in
-    let is_strict line =
-      String.is_prefix ~prefix:"#" line &&
-      String.is_substring ~substring:"pyre-strict" line
-    in
-    let is_declare line =
-      String.is_prefix ~prefix:"#" line &&
-      String.is_substring ~substring:"pyre-do-not-check" line
-    in
+    let is_debug = is_pyre_comment "pyre-debug" in
+    let is_strict = is_pyre_comment "pyre-strict" in
+    let is_declare = is_pyre_comment "pyre-do-not-check" in
     let parse_ignore index line ignored_lines =
       let create_ignore ~index ~line ~kind =
         let codes =
