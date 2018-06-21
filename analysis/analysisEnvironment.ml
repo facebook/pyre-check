@@ -895,7 +895,6 @@ let populate
     (module Handler: Handler)
     ~configuration
     ?(source_root = Path.current_working_directory ())
-    ?(check_integrity = true)
     ?(check_dependency_exists = true)
     sources =
   (* Yikes... *)
@@ -943,8 +942,6 @@ let populate
     ~bottom:Type.Bottom
     ~top:Type.Object
     all_annotations;
-  if check_integrity then
-    TypeOrder.check_integrity (module Handler.TypeOrderHandler);
 
   List.iter ~f:(register_functions (module Handler)) sources;
   List.iter ~f:(register_globals (module Handler)) sources
@@ -1015,7 +1012,6 @@ let infer_implementations (module Handler: Handler) ~implementing_classes ~proto
         (List.map ~f:Type.show implementations |> String.concat ~sep:", ");
       edges)
   |> Option.value ~default:Edge.Set.empty
-
 
 
 let infer_protocol_edges ~handler:((module Handler: Handler) as handler) =

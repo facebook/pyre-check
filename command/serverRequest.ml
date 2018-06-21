@@ -186,7 +186,6 @@ let rec process_request
       |> Analysis.Environment.populate
         state.environment
         ~configuration
-        ~check_integrity:false
         ~source_root
     in
     Service.Ignore.register ~configuration scheduler repopulate_handles;

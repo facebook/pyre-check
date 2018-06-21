@@ -147,7 +147,6 @@ val populate
   :  (module Handler)
   -> configuration: Configuration.t
   -> ?source_root: Path.t
-  -> ?check_integrity: bool
   -> ?check_dependency_exists: bool
   -> Source.t list
   -> unit

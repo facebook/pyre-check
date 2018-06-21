@@ -72,10 +72,11 @@ let build
 
 let in_process_handler ~configuration ~stubs ~sources =
   let environment = Environment.Builder.create ~configuration () in
-  let handler = Environment.handler ~configuration environment in
+  let ((module Handler: Handler) as handler) = Environment.handler ~configuration environment in
   build handler ~configuration ~stubs ~sources;
   Log.log ~section:`Environment "%a" Environment.Builder.pp environment;
   infer_protocols ~handler ~configuration;
+  TypeOrder.check_integrity (module Handler.TypeOrderHandler);
   handler
 
 
@@ -140,7 +141,7 @@ let shared_memory_handler
 
   Log.initialize ~verbose ~sections;
   let environment = Environment.Builder.create ~configuration () in
-  let shared_handler =
+  let ((module Handler: Handler) as shared_handler) =
     (module struct
       let function_definitions =
         FunctionDefinitions.get
@@ -459,5 +460,6 @@ let shared_memory_handler
   Statistics.event ~name:"shared memory size" ~integers:["size", heap_size] ~configuration ();
 
   infer_protocols ~handler:shared_handler ~configuration;
+  TypeOrder.check_integrity (module Handler.TypeOrderHandler);
 
   shared_handler
