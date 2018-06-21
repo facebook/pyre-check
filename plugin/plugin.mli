@@ -6,6 +6,7 @@
 open Ast
 
 module NamedTuples = PluginNamedTuples
+module NewType = PluginNewType
 
 
 val apply_to_ast: Source.t -> Source.t

@@ -3,11 +3,8 @@
     This source code is licensed under the MIT license found in the
     LICENSE file in the root directory of this source tree. *)
 
-module NamedTuples = PluginNamedTuples
-module NewType = PluginNewType
+open Ast
 
 
-let apply_to_ast source =
-  source
-  |> NamedTuples.transform_ast
-  |> NewType.transform_ast
+(* `typing.NewType` expansion according to PEP484. *)
+val transform_ast: Source.t -> Source.t
