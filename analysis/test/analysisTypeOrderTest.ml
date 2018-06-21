@@ -550,7 +550,18 @@ let test_less_or_equal _ =
     (less_or_equal
        order
        ~left:Type.float
-       ~right:(Type.variable ~constraints:(Type.Bound Type.integer) "T"))
+       ~right:(Type.variable ~constraints:(Type.Bound Type.integer) "T"));
+
+  assert_true
+    (less_or_equal
+       order
+       ~left:(Type.union [Type.string; Type.integer])
+       ~right:(Type.variable ~constraints:(Type.Explicit [Type.string; Type.integer]) "T"));
+  assert_false
+    (less_or_equal
+       order
+       ~left:Type.integer
+       ~right:(Type.variable ~constraints:(Type.Explicit [Type.string]) "T"))
 
 
 let test_join _ =

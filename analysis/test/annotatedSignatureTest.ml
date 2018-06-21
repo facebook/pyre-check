@@ -30,6 +30,7 @@ let resolution =
       _T = typing.TypeVar('_T')
       _S = typing.TypeVar('_S')
       _R = typing.TypeVar('_R', int, float)
+      _U = typing.TypeVar('_U', int, str)
       class typing.Generic: ...
       class typing.Type(typing.Generic[_T]): ...
 
@@ -311,6 +312,8 @@ let test_select _ =
     "[[Keywords(keywords, _T)], int]"
     "(a=1, b=2)"
     (`Found "[[Keywords(keywords, int)], int]");
+
+  assert_select "[[_U], None]" "(union)" (`Found "[[_U], None]");
 
   (* Ranking. *)
   assert_select

@@ -13,6 +13,7 @@ open Pyre
 module Annotation = AnalysisAnnotation
 module Resolution = AnalysisResolution
 module Type = AnalysisType
+module TypeOrder = AnalysisTypeOrder
 
 module Class = AnnotatedClass
 
@@ -154,8 +155,15 @@ let select ~arguments ~resolution ~callable:({ Type.Callable.overloads; _ } as c
             |> fun mismatch -> Some (Mismatch mismatch)
           in
 
+          let less_or_equal =
+            try
+              Resolution.less_or_equal resolution ~left:actual ~right:expected
+            with TypeOrder.Untracked _ ->
+              false
+          in
           match actual with
-          | Type.Union elements ->
+          | Type.Union elements
+            when not less_or_equal ->
               let rec check_elements ~constraints = function
                 | element :: elements ->
                     let constraints, reason =
@@ -206,6 +214,8 @@ let select ~arguments ~resolution ~callable:({ Type.Callable.overloads; _ } as c
                       in
                       if in_constraints then
                         Some (Map.set ~key:variable ~data:resolved constraints)
+                      else if less_or_equal then
+                        Some constraints
                       else
                         None
                     in
@@ -224,7 +234,7 @@ let select ~arguments ~resolution ~callable:({ Type.Callable.overloads; _ } as c
                         >>| Class.create
                         >>| Class.constraints ~target ~parameters ~instantiated:actual ~resolution
                         >>= fun inferred ->
-                        if Map.length inferred < parameters_to_infer then
+                        if Map.length inferred < parameters_to_infer && not less_or_equal then
                           None
                         else
                           let update_constraints ~key ~data constraints =
@@ -245,9 +255,8 @@ let select ~arguments ~resolution ~callable:({ Type.Callable.overloads; _ } as c
                 in
                 updated_constraints
                 >>| (fun constraints -> constraints, reason)
-                |> Option.value
-                  ~default:(constraints, mismatch)
-              else if Resolution.less_or_equal resolution ~left:actual ~right:expected then
+                |> Option.value ~default:(constraints, mismatch)
+              else if less_or_equal then
                 constraints, reason
               else
                 constraints, mismatch
