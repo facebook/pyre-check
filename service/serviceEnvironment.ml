@@ -10,7 +10,6 @@ open Ast
 open Environment
 open Pyre
 
-module Scheduler = ServiceScheduler
 module AstSharedMemory = ServiceAstSharedMemory
 module EnvironmentSharedMemory = ServiceEnvironmentSharedMemory
 
@@ -71,70 +70,18 @@ let build
     end
 
 
-let infer_protocols
-    ~scheduler
-    ~handler:((module Handler: Environment.Handler) as handler)
-    ~configuration:({ Configuration.sections; verbose; _ } as configuration) =
-  let module Edge = TypeOrder.Edge in
-  Log.info "Inferring protocol implementations...";
-  let timer = Timer.start () in
-
-  let map _ protocols =
-    List.fold
-      ~init:Edge.Set.empty
-      ~f:(fun edges protocol ->
-          Log.initialize ~verbose ~sections;
-          Environment.infer_implementations handler ~protocol
-          |> Set.union edges)
-      protocols
-  in
-  let protocols =
-    (* Skip useless protocols for better performance. *)
-    let skip_protocol protocol =
-      match Handler.class_definition protocol with
-      | Some { class_definition = protocol_definition; _ } ->
-          let protocol_definition = Annotated.Class.create protocol_definition in
-          let whitelisted = ["typing.Hashable"] in
-          let name = Annotated.Class.name protocol_definition |> Expression.Access.show in
-          List.is_empty (Annotated.Class.methods protocol_definition) ||
-          List.mem ~equal:String.equal whitelisted name
-      | _ ->
-          true
-    in
-    List.filter ~f:(fun protocol -> not (skip_protocol protocol)) (Handler.protocols ())
-  in
-  Scheduler.map_reduce
-    scheduler
-    ~init:Edge.Set.empty
-    ~map
-    ~reduce:Set.union
-    protocols
-  |> Set.iter ~f:(fun { Edge.source; target } ->
-      TypeOrder.connect
-        (module Handler.TypeOrderHandler)
-        ~configuration
-        ~add_backedge:true
-        ~predecessor:source
-        ~successor:target);
-
-  TypeOrder.check_integrity (module Handler.TypeOrderHandler);
-
-  Statistics.performance ~name:"inferred protocol implementations" ~timer ~configuration ()
-
-
-let in_process_handler scheduler ~configuration ~stubs ~sources =
+let in_process_handler ~configuration ~stubs ~sources =
   let environment = Environment.Builder.create ~configuration () in
   let handler = Environment.handler ~configuration environment in
   build handler ~configuration ~stubs ~sources;
   Log.log ~section:`Environment "%a" Environment.Builder.pp environment;
-  infer_protocols ~scheduler ~handler ~configuration;
+  infer_protocols ~handler ~configuration;
   handler
 
 
 (** First dumps environment to shared memory, then exposes through
     Environment_handler *)
 let shared_memory_handler
-    scheduler
     ~configuration:({ Configuration.sections; verbose; infer; _ } as configuration)
     ~stubs
     ~sources =
@@ -511,6 +458,6 @@ let shared_memory_handler
   in
   Statistics.event ~name:"shared memory size" ~integers:["size", heap_size] ~configuration ();
 
-  infer_protocols ~scheduler ~handler:shared_handler ~configuration;
+  infer_protocols ~handler:shared_handler ~configuration;
 
   shared_handler

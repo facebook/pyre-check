@@ -950,7 +950,7 @@ let populate
   List.iter ~f:(register_globals (module Handler)) sources
 
 
-let infer_implementations (module Handler: Handler) ~protocol =
+let infer_implementations (module Handler: Handler) ~implementing_classes ~protocol =
   let module Edge = TypeOrder.Edge in
   let resolution =
     resolution
@@ -959,13 +959,32 @@ let infer_implementations (module Handler: Handler) ~protocol =
       ~define:(Define.create_toplevel ~qualifier:[] ~statements:[])
       ()
   in
+  let open Annotated in
 
   Resolution.class_definition resolution protocol
   >>| (fun protocol_definition ->
-      let open Annotated in
       let protocol_definition = Class.create protocol_definition in
-      (* Get all implementing classes. *)
       let implementations =
+        let classes_to_analyze =
+          (* Get all implementing classes. *)
+          let names =
+            Class.methods protocol_definition
+            |> List.map ~f:Class.Method.name
+            |> List.map ~f:(fun access -> [List.last_exn access])
+          in
+          if List.is_empty names then
+            let annotations = Handler.TypeOrderHandler.annotations () in
+            Handler.TypeOrderHandler.keys ()
+            |> List.map ~f:(Handler.TypeOrderHandler.find_unsafe annotations)
+          else
+            let get_implementing_methods method_name =
+              implementing_classes ~method_name
+              |> Option.value ~default:[]
+              |> List.map ~f:(fun class_name -> Type.primitive (Statement.Access.show class_name))
+            in
+            List.concat_map ~f:get_implementing_methods names
+            |> List.dedup_and_sort ~compare:Type.compare
+        in
         let implements annotation =
           Handler.class_definition annotation
           >>| (fun { class_definition; _ } -> class_definition)
@@ -975,7 +994,7 @@ let infer_implementations (module Handler: Handler) ~protocol =
               Class.implements ~protocol:protocol_definition definition)
           |> Option.value ~default:false
         in
-        TypeOrder.greatest (module Handler.TypeOrderHandler) ~matches:implements
+        List.filter ~f:implements classes_to_analyze
       in
 
       (* Get edges to protocol. *)
@@ -996,6 +1015,100 @@ let infer_implementations (module Handler: Handler) ~protocol =
         (List.map ~f:Type.show implementations |> String.concat ~sep:", ");
       edges)
   |> Option.value ~default:Edge.Set.empty
+
+
+
+let infer_protocol_edges ~handler:((module Handler: Handler) as handler) =
+  let module Edge = TypeOrder.Edge in
+  Log.info "Inferring protocol implementations...";
+  let protocols =
+    (* Skip useless protocols for better performance. *)
+    let skip_protocol protocol =
+      match Handler.class_definition protocol with
+      | Some { class_definition = protocol_definition; _ } ->
+          let protocol_definition = Annotated.Class.create protocol_definition in
+          let whitelisted = ["typing.Hashable"] in
+          let name = Annotated.Class.name protocol_definition |> Expression.Access.show in
+          List.is_empty (Annotated.Class.methods protocol_definition) ||
+          List.mem ~equal:String.equal whitelisted name
+      | _ ->
+          true
+    in
+    List.filter ~f:(fun protocol -> not (skip_protocol protocol)) (Handler.protocols ())
+  in
+  let implementing_classes =
+    let methods_to_implementing_classes =
+      let open Statement in
+      let protocol_methods =
+        let names_of_methods protocol =
+          Handler.class_definition protocol
+          >>| (fun { class_definition; _ } -> class_definition)
+          >>| Annotated.Class.create
+          >>| Annotated.Class.methods
+          >>| List.map ~f:Annotated.Class.Method.name
+          >>| List.map ~f:(fun name -> [List.last_exn name])
+          |> Option.value ~default:[]
+        in
+        List.concat_map ~f:names_of_methods protocols
+        |> Access.Set.of_list
+      in
+      let annotations = Handler.TypeOrderHandler.annotations () in
+      let add_type_methods methods_to_implementing_classes index =
+        let class_definition =
+          Handler.TypeOrderHandler.find_unsafe annotations index
+          |> Handler.class_definition
+        in
+        match class_definition with
+        | None ->
+            methods_to_implementing_classes
+        | Some { class_definition = { Node.value = { Class.name = class_name; body; _ }; _ }; _ } ->
+            (* TODO(T30499509): Rely on existing class defines instead of repeating work. *)
+            let add_method methods_to_implementing_classes { Node.value = statement; _ } =
+              match statement with
+              | Stub (Stub.Define { Define.name; _ })
+              | Define { Define.name;  _ } ->
+                  let method_name = [List.last_exn name] in
+                  if Set.mem protocol_methods method_name then
+                    let classes =
+                      match Map.find methods_to_implementing_classes method_name with
+                      | Some classes -> class_name :: classes
+                      | None -> [class_name]
+                    in
+                    Map.set methods_to_implementing_classes ~key:method_name ~data:classes
+                  else
+                    methods_to_implementing_classes
+              | _ ->
+                  methods_to_implementing_classes
+            in
+            List.fold body ~f:add_method ~init:methods_to_implementing_classes
+      in
+      List.fold (Handler.TypeOrderHandler.keys ()) ~f:add_type_methods ~init:Access.Map.empty
+    in
+    fun ~method_name -> Map.find methods_to_implementing_classes method_name
+  in
+  let add_protocol_edges edges protocol =
+    infer_implementations handler ~implementing_classes ~protocol
+    |> Set.union edges
+  in
+  List.fold ~init:TypeOrder.Edge.Set.empty ~f:add_protocol_edges protocols
+
+
+let infer_protocols
+    ~handler:((module Handler: Handler) as handler)
+    ~configuration =
+  let timer = Timer.start () in
+  infer_protocol_edges ~handler
+  |> Set.iter ~f:(fun { TypeOrder.Edge.source; target } ->
+      TypeOrder.connect
+        (module Handler.TypeOrderHandler)
+        ~configuration
+        ~add_backedge:true
+        ~predecessor:source
+        ~successor:target);
+
+  TypeOrder.check_integrity (module Handler.TypeOrderHandler);
+
+  Statistics.performance ~name:"inferred protocol implementations" ~timer ~configuration ()
 
 
 module Builder = struct

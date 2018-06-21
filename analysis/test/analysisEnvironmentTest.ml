@@ -14,6 +14,8 @@ open Statement
 
 open Test
 
+module TestSetup = AnalysisTestSetup
+
 
 let access names =
   List.map
@@ -620,15 +622,39 @@ let test_infer_protocols _ =
       |}
     in
 
-    assert_equal
+    let methods_to_implementing_classes =
+      let add key values map =
+        Map.set
+          map
+          ~key:(Access.create key)
+          ~data:(List.map ~f:Access.create values)
+      in
+      Access.Map.empty
+      |> add "__hash__" ["object"; "SuperObject"]
+      |> add "len" ["Sized"; "Supersized"; "Set"; "AlmostSet"]
+      |> add "empty" ["Sized"; "Supersized"; "List"; "Set"; "AlmostSet"]
+    in
+    let implementing_classes ~method_name =
+      Map.find methods_to_implementing_classes method_name
+    in
+    (* We infer implementations for protocols based on the type order. *)
+    let empty_edges =
+      Environment.infer_implementations
+        environment
+        ~implementing_classes
+        ~protocol:(Type.primitive "Empty")
+    in
+    assert_equal 9 (Set.length empty_edges);
+    Environment.infer_implementations
+      environment
+      ~implementing_classes
+      ~protocol:(Type.primitive "Sized")
+    |> Set.union
       (Environment.infer_implementations
          environment
-         ~protocol:(Type.primitive "Empty")
-       |> Set.length)
-      0;
-    Environment.infer_implementations environment ~protocol:(Type.primitive "Sized")
-    |> Set.union
-      (Environment.infer_implementations environment ~protocol:(Type.primitive "SuperObject"))
+         ~implementing_classes
+         ~protocol:(Type.primitive "SuperObject"))
+    |> Set.union empty_edges
   in
   let assert_edge_inferred source target =
     assert_true (Set.mem edges { TypeOrder.Edge.source; target })
@@ -637,12 +663,14 @@ let test_infer_protocols _ =
     assert_false (Set.mem edges { TypeOrder.Edge.source; target })
   in
 
-  assert_equal (Set.length edges) 1;
+  assert_equal (Set.length edges) 10;
 
   assert_edge_not_inferred (Type.primitive "List") (Type.primitive "Sized");
   assert_edge_inferred (Type.primitive "Set") (Type.primitive "Sized");
   assert_edge_not_inferred (Type.primitive "AlmostSet") (Type.primitive "Sized");
-  assert_edge_not_inferred (Type.Object) (Type.primitive "SuperObject")
+  assert_edge_not_inferred (Type.Object) (Type.primitive "SuperObject");
+  assert_edge_inferred (Type.primitive "List") (Type.primitive "Empty");
+  assert_edge_not_inferred (Type.Object) (Type.primitive "Empty")
 
 
 let test_less_or_equal _ =
@@ -1132,6 +1160,86 @@ let test_purge _ =
   assert_equal (Handler.dependencies "a.py") (Some [])
 
 
+let test_infer_protocols _ =
+  let open Analysis in
+  Service.Scheduler.mock () |> ignore;
+  let configuration = Configuration.create () in
+  let type_sources = TestSetup.typeshed_stubs in
+  let assert_protocols source expected_edges =
+    let expected_edges =
+      let to_edge (source, target) =
+        {
+          TypeOrder.Edge.source = Type.primitive source;
+          target = Type.primitive target
+        }
+      in
+      List.map ~f:to_edge expected_edges
+    in
+    let open TypeOrder in
+    let source =
+      Test.parse source
+      |> Preprocessing.preprocess
+    in
+    let environment = Environment.Builder.create ~configuration () in
+    Environment.populate
+      (Environment.handler ~configuration environment)
+      ~configuration
+      (source :: type_sources);
+    let handler = Environment.handler environment ~configuration in
+    let edges = Environment.infer_protocol_edges ~handler in
+    let expected_edges = Edge.Set.of_list expected_edges in
+    assert_equal
+      ~cmp:Edge.Set.equal
+      ~printer:(fun set -> Sexp.to_string (Edge.Set.sexp_of_t set))
+      expected_edges
+      edges
+  in
+  assert_protocols
+    {|
+      class P(typing.Protocol):
+        def foo() -> int:
+          pass
+
+      class A:
+        def foo() -> int:
+          pass
+      class B:
+        def foo() -> str:
+          pass
+    |}
+  ["A", "P"];
+  assert_protocols
+    {|
+      class P(typing.Protocol):
+        def foo() -> int:
+          pass
+        def bar() -> str:
+          pass
+
+      class A:
+        def foo() -> int:
+          pass
+        def bar() -> str:
+          pass
+      class B:
+        def foo() -> str:
+          pass
+        def bar() -> str:
+          pass
+      class C:
+        def bar() -> str:
+          pass
+        def foo() -> int:
+          pass
+      class D:
+        def bar() -> int:
+          pass
+        def foo() -> str:
+          pass
+    |}
+    ["A", "P"]
+
+
 let () =
   "environment">:::[
     "register_class_definitions">::test_register_class_definitions;
@@ -1151,5 +1259,6 @@ let () =
     "import_dependencies">::test_import_dependencies;
     "register_dependencies">::test_register_dependencies;
     "purge">::test_purge;
+    "infer_protocols">::test_infer_protocols;
   ]
   |> run_test_tt_main

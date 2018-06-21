@@ -133,6 +133,16 @@ val register_functions
   -> Source.t
   -> unit
 
+(* Exposed for testing. *)
+val infer_implementations
+  :  (module Handler)
+  -> implementing_classes: (method_name: Access.t -> (Ast.Statement.Access.t list) option)
+  -> protocol: Type.t
+  -> TypeOrder.Edge.Set.t
+(* Exposed for testing. *)
+val infer_protocol_edges: handler: (module Handler) -> TypeOrder.Edge.Set.t
+val infer_protocols: handler: (module Handler) -> configuration: Configuration.t -> unit
+
 val populate
   :  (module Handler)
   -> configuration: Configuration.t
@@ -141,8 +151,6 @@ val populate
   -> ?check_dependency_exists: bool
   -> Source.t list
   -> unit
-
-val infer_implementations: (module Handler) -> protocol: Type.t -> TypeOrder.Edge.Set.t
 
 module Builder : sig
   val create: configuration: Configuration.t -> unit -> t

@@ -54,7 +54,7 @@ let type_check_sources_list_test context =
         ~files
     in
     let environment =
-      Service.Environment.in_process_handler scheduler ~configuration ~stubs:[] ~sources
+      Service.Environment.in_process_handler ~configuration ~stubs:[] ~sources
     in
     add_defaults_to_environment ~configuration environment;
 

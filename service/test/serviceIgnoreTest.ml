@@ -53,7 +53,7 @@ let assert_errors
       ~files:(create_files ~root input_source)
   in
   let environment =
-    Service.Environment.in_process_handler scheduler ~configuration ~stubs:[] ~sources:handles
+    Service.Environment.in_process_handler ~configuration ~stubs:[] ~sources:handles
   in
   add_defaults_to_environment ~configuration environment;
   Service.Ignore.register ~configuration scheduler handles;

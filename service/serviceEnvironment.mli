@@ -7,15 +7,13 @@ open Analysis
 
 
 val in_process_handler
-  :  ServiceScheduler.t
-  -> configuration: Configuration.t
+  :  configuration: Configuration.t
   -> stubs: File.Handle.t list
   -> sources: File.Handle.t list
   -> (module Environment.Handler)
 
 val shared_memory_handler
-  :  ServiceScheduler.t
-  -> configuration: Configuration.t
+  :  configuration: Configuration.t
   -> stubs: File.Handle.t list
   -> sources: File.Handle.t list
   -> (module Environment.Handler)

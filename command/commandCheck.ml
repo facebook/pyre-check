@@ -125,7 +125,7 @@ let check
       else
         Service.Environment.in_process_handler
     in
-    handler scheduler ~configuration ~stubs ~sources
+    handler ~configuration ~stubs ~sources
   in
 
   let call_graph = Some (Service.CallGraph.shared_memory_handler ()) in
