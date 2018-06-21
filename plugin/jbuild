@@ -7,5 +7,4 @@
    (core
     pyrelib.ast
     pyrelib.pyre
-    pyrelib.analysis
-    pyrelib.service))))
+    pyrelib.analysis))))

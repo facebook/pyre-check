@@ -9,7 +9,6 @@ open Ast
 open Expression
 open Pyre
 open Statement
-open Service
 
 
 let transform_ast ({ Source.qualifier; statements; _ } as source) =
@@ -120,14 +119,3 @@ let transform_ast ({ Source.qualifier; statements; _ } as source) =
     { statement with Node.value }
   in
   { source with Source.statements = List.map ~f:expand_named_tuples statements }
-
-let apply sources =
-  let update_ast_in_memory path =
-    match AstSharedMemory.get_source path with
-    | Some handle ->
-        let transformed_ast = transform_ast handle in
-        AstSharedMemory.remove_paths [path];
-        AstSharedMemory.add_source path transformed_ast
-    | None -> ()
-  in
-  List.iter ~f:update_ast_in_memory sources

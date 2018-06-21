@@ -6,6 +6,4 @@
 module NamedTuples = PluginNamedTuples
 
 
-let apply = NamedTuples.apply
-
 let apply_to_ast = NamedTuples.transform_ast

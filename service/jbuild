@@ -18,4 +18,5 @@
     pyrelib.ast
     pyrelib.analysis
     pyrelib.path
+    pyrelib.plugin
     hack_parallel))))

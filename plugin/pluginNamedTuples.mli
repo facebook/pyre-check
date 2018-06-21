@@ -3,12 +3,7 @@
     This source code is licensed under the MIT license found in the
     LICENSE file in the root directory of this source tree. *)
 
-open Core
-
 open Ast
-
 
 (* Transforms named tuple assignments into class definitions. *)
 val transform_ast: Source.t -> Source.t
-
-val apply: File.Handle.t List.t -> unit

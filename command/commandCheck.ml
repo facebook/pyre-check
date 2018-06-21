@@ -113,9 +113,6 @@ let check
       ()
   in
 
-  (* Run plugins. *)
-  let () = Plugin.apply sources in
-
   (* Build environment. *)
   Service.Ignore.register ~configuration scheduler sources;
   let environment =

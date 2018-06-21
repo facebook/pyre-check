@@ -88,6 +88,7 @@ let parse_job ~configuration:{ Configuration.verbose; sections; _ } ~files =
      source
      |> preprocess_qualifier
      |> Analysis.Preprocessing.preprocess
+     |> Plugin.apply_to_ast
      |> AstSharedMemory.add_source handle;
      handle :: handles)
     |> Option.value ~default:handles
