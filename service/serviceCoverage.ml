@@ -25,10 +25,10 @@ let coverage ~number_of_files ~sources =
       ~init:(0, 0)
       ~f:(fun (prev_strict, prev_declare) handle ->
           match AstSharedMemory.get_source handle with
-          | Some { Source.metadata = { Source.Metadata.strict; declare; _ }; _ } ->
+          | Some { Source.metadata = { Source.Metadata.local_mode; _ }; _ } ->
               (
-                prev_strict + (if strict then 1 else 0),
-                prev_declare + (if declare then 1 else 0)
+                prev_strict + (if local_mode = Source.Strict then 1 else 0),
+                prev_declare + (if local_mode = Source.Declare then 1 else 0)
               )
           | None -> (prev_strict, prev_declare)
         )
