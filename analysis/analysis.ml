@@ -6,7 +6,6 @@
 
 module Annotated = Annotated
 module Annotation = AnalysisAnnotation
-module CallGraph = AnalysisCallGraph
 module Cfg = AnalysisCfg
 module Coverage = AnalysisCoverage
 module Dependencies = AnalysisDependencies

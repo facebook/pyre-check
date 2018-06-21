@@ -2,14 +2,6 @@
 
 
 (executable
- ((name serviceCallGraphTest)
-  (modules (serviceCallGraphTest))
-  (libraries
-   (oUnit
-    pyrelib.service))))
-
-
-(executable
  ((name serviceCoverageTest)
   (modules (serviceCoverageTest))
   (libraries
@@ -42,12 +34,6 @@
    (oUnit
     pyrelib.test
     pyrelib.service))))
-
-
-(alias
- ((name runtest)
-  (deps (serviceCallGraphTest.exe))
-  (action (run ${<} -runner sequential))))
 
 
 (alias

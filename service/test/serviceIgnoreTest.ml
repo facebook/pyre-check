@@ -62,7 +62,6 @@ let assert_errors
       scheduler
       configuration
       environment
-      mock_call_graph
       handles
     |> fun (errors, _, _) ->
     List.map ~f:(fun error -> Error.description error ~detailed:show_error_traces) errors

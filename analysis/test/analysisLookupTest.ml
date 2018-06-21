@@ -30,7 +30,7 @@ let generate_lookup source =
     (Environment.handler ~configuration environment)
     [parsed];
   let environment = Environment.handler ~configuration environment in
-  match TypeCheck.check configuration environment mock_call_graph parsed with
+  match TypeCheck.check configuration environment parsed with
   | { TypeCheck.Result.lookup = Some lookup; _ } -> lookup
   | _ -> failwith "Did not generate lookup table."
 
@@ -75,7 +75,6 @@ let test_lookup_across_files _ =
     TypeCheck.check
       configuration
       environment
-      mock_call_graph
       parsed
   in
   assert_is_some lookup

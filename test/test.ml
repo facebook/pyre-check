@@ -240,10 +240,6 @@ let mock_path path =
   Path.create_relative ~root:(Path.current_working_directory ()) ~relative:path
 
 
-let mock_call_graph =
-  None
-
-
 (* Override `OUnit`s functions the return absolute paths. *)
 let bracket_tmpdir ?suffix context =
   bracket_tmpdir ?suffix context

@@ -5,17 +5,10 @@
 
 open Core
 
-open Analysis
 open Ast
 open Expression
-open Pyre
 
 module SharedMemory = Hack_parallel.Std.SharedMem
-
-
-let in_process_handler () =
-  CallGraph.create ()
-  |> CallGraph.handler
 
 
 module AccessKey = struct
@@ -51,35 +44,21 @@ module CallerKeys = SharedMemory.WithCache (StringKey) (AccessKeyValue)
 
 module CallEdges = SharedMemory.WithCache (AccessKey) (AccessValue)
 
-let shared_memory_handler () =
-  (* Creates handler for shared memory storage. *)
-  (module struct
-    let register_overload ~access ~overload =
-      Overrides.remove_batch (Overrides.KeySet.singleton access);
-      Overrides.add access [overload]
+let add_callers ~path =
+  CallerKeys.add path
 
-    let register_caller ~path ~caller =
-      let callers =
-        CallerKeys.get path
-        >>| (fun callers -> Set.add (Access.Set.of_list callers) caller)
-        |> Option.value ~default:(Set.add Access.Set.empty caller)
-      in
-      Access.Set.to_list callers
-      |> CallerKeys.add path
 
-    let register_call_edge ~caller ~callee =
-      let callees =
-        CallEdges.get caller
-        >>| (fun callees -> Set.add (Access.Set.of_list callees) callee)
-        |> Option.value ~default:(Set.add Access.Set.empty callee)
-      in
-      Access.Set.to_list callees
-      |> CallEdges.add caller
+let get_callers ~path =
+  CallerKeys.get path
 
-    let callers ~path =
-      CallerKeys.get path
 
-    let callees ~caller =
-      CallEdges.get caller
+let add_call_edges ~caller ~callees =
+  CallEdges.add caller callees
 
-  end: CallGraph.Handler)
+
+let get_call_edges ~caller =
+  CallEdges.get caller
+
+
+let get_overrides =
+  Overrides.get

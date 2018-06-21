@@ -14,7 +14,6 @@ module Error = AnalysisError
 module Lookup = AnalysisLookup
 module Coverage = AnalysisCoverage
 module Cfg = AnalysisCfg
-module CallGraph = AnalysisCallGraph
 module Resolution = AnalysisResolution
 
 
@@ -33,8 +32,6 @@ module State : sig
 
      `lookup` keeps track of symbols and their types to later expose them to IDEs.
 
-     `call_graph` is an interface that builds a call graph in memory during type checking.
-
      `nested_defines` keeps track of entry points and states for nested function definitions.
 
      `bottom` indicates whether the state is reachable.
@@ -52,7 +49,6 @@ module State : sig
     errors: Error.t Location.Map.t;
     define: Define.t Node.t;
     lookup: Lookup.t option;
-    call_graph: (module CallGraph.Handler) option;
     nested_defines: nested_define Location.Map.t;
     bottom: bool;
     resolution_fixpoint: (Annotation.t Access.Map.t) Int.Map.t
@@ -64,7 +60,6 @@ module State : sig
     -> resolution: Resolution.t
     -> define: Statement.Define.t Node.t
     -> ?lookup: Lookup.t
-    -> ?call_graph: (module CallGraph.Handler)
     -> ?resolution_fixpoint: (Annotation.t Access.Map.t) Int.Map.t
     -> unit
     -> t
@@ -75,7 +70,6 @@ module State : sig
   val initial
     :  ?configuration: Configuration.t
     -> ?lookup: Lookup.t
-    -> ?call_graph: (module CallGraph.Handler)
     -> resolution: Resolution.t
     -> Define.t Node.t
     -> t
@@ -96,7 +90,6 @@ end
 val check
   :  Configuration.t
   -> (module Environment.Handler)
-  -> (module CallGraph.Handler) option
   -> ?mode_override: Source.mode
   -> Source.t
   -> Result.t

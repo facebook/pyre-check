@@ -70,7 +70,6 @@ let type_check_sources_list_test context =
           scheduler
           configuration
           environment
-          mock_call_graph
           sources
       in
       assert_equal (List.length errors) expected_error_count

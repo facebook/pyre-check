@@ -300,9 +300,9 @@ let assert_type_errors
       let check_errors configuration environment ?mode_override source =
         let { Result.errors; _ } =
           if infer then
-            Inference.infer configuration environment mock_call_graph ?mode_override source
+            Inference.infer configuration environment ?mode_override source
           else
-            check configuration environment mock_call_graph ?mode_override source
+            check configuration environment ?mode_override source
         in
         errors
       in

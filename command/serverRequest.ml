@@ -196,7 +196,6 @@ let rec process_request
           scheduler
           configuration
           state.environment
-          state.call_graph
           new_source_handles
       in
       errors, lookups

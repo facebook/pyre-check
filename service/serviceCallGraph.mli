@@ -3,9 +3,15 @@
     This source code is licensed under the MIT license found in the
     LICENSE file in the root directory of this source tree. *)
 
-open Analysis
+open Ast
+open Expression
 
+val add_callers: path:string -> Access.t list -> unit
 
-val in_process_handler: unit -> (module CallGraph.Handler)
+val get_callers: path:string -> Access.t list option
 
-val shared_memory_handler: unit -> (module CallGraph.Handler)
+val add_call_edges: caller: Access.t -> callees: Access.t list -> unit
+
+val get_call_edges: caller: Access.t -> Access.t list option
+
+val get_overrides: Access.t -> Access.t list option

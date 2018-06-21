@@ -13,7 +13,6 @@ open Statement
 
 module Annotation = AnalysisAnnotation
 module Cfg = AnalysisCfg
-module CallGraph = AnalysisCallGraph
 module Environment = AnalysisEnvironment
 module Error = AnalysisError
 module Lookup = AnalysisLookup
@@ -42,10 +41,9 @@ module State = struct
     errors: Error.t Location.Map.t;
     define: Define.t Node.t;
     lookup: Lookup.t option;
-    call_graph: (module CallGraph.Handler) option;
     nested_defines: nested_define Location.Map.t;
     bottom: bool;
-    resolution_fixpoint: (Annotation.t Access.Map.t) Int.Map.t;
+    resolution_fixpoint: (Annotation.t Access.Map.t) Int.Map.t
   }
 
 
@@ -133,14 +131,12 @@ module State = struct
       ~resolution
       ~define
       ?lookup
-      ?call_graph
       ?(resolution_fixpoint = Int.Map.empty)
       () =
     {
       configuration;
       resolution;
       errors = Location.Map.empty;
-      call_graph;
       define;
       lookup;
       nested_defines = Location.Map.empty;
@@ -256,7 +252,6 @@ module State = struct
   let initial
       ?(configuration = Configuration.create ())
       ?lookup
-      ?call_graph
       ~resolution
       ({
         Node.location;
@@ -264,7 +259,7 @@ module State = struct
       } as define_node) =
     let resolution = Resolution.with_define resolution ~define in
     let { resolution; errors; _ } as initial =
-      create ~configuration ~resolution ~define:define_node ?lookup ?call_graph ()
+      create ~configuration ~resolution ~define:define_node ?lookup ()
     in
     (* Check parameters. *)
     let annotations, errors =
@@ -468,7 +463,7 @@ module State = struct
     in
 
     let resolution = Resolution.with_annotations resolution ~annotations in
-    { initial with resolution; errors; call_graph }
+    { initial with resolution; errors; }
 
 
   let less_or_equal ~left:({ resolution; _ } as left) ~right =
@@ -621,7 +616,6 @@ module State = struct
         errors;
         define = ({ Node.value = { Define.async; _ } as define; _ } as define_node);
         lookup;
-        call_graph;
         nested_defines;
         _;
       } as state)
@@ -1793,7 +1787,6 @@ module State = struct
                 initial
                   ~configuration
                   ?lookup
-                  ?call_graph
                   ~resolution
                   (Node.create define ~location)
               in
@@ -1818,35 +1811,6 @@ module State = struct
           schedule ~define
       | _ ->
           nested_defines
-    in
-
-    (* store call graph edges *)
-    let () =
-      let build_call_graph (module CallGraph: CallGraph.Handler) =
-        let open Type.Callable in
-        let caller = define.Define.name in
-        let path = location.Location.path in
-        CallGraph.register_caller ~path ~caller;
-        let walk_access state { Node.value = access; _ } =
-          let add_call_edge () ~resolution:_ ~resolved ~element:_ =
-            match Annotation.annotation resolved with
-            | Annotation.Type.Callable { kind = Named callee; _ } ->
-                CallGraph.register_call_edge ~caller ~callee
-            | _ ->
-                ()
-          in
-          Annotated.Access.create access
-          |> Annotated.Access.fold
-            ~resolution
-            ~initial:state
-            ~f:add_call_edge
-        in
-        Visit.collect_accesses_with_location statement
-        |> List.fold ~init:() ~f:walk_access
-      in
-      state.call_graph
-      >>| build_call_graph
-      |> ignore
     in
 
     { state with nested_defines }
@@ -1888,7 +1852,6 @@ end
 let check
     configuration
     environment
-    call_graph
     ?mode_override
     ({ Source.path; qualifier; statements; _ } as source) =
   Log.debug "Checking %s..." path;
@@ -1954,7 +1917,6 @@ let check
         |> Fixpoint.exit
       in
       if dump then exit >>| Log.dump "Exit state:\n%a" State.pp |> ignore;
-
 
       let () =
         (* Write fixpoint type resolutions to shared memory *)
@@ -2040,7 +2002,6 @@ let check
       | Some (define, resolution) ->
           let initial =
             State.initial
-              ?call_graph
               ~configuration
               ~lookup
               ~resolution

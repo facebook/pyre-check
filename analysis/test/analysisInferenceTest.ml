@@ -49,8 +49,7 @@ let create
       Define.return_annotation = Some (Type.expression expected_return);
     }
   in
-  let call_graph = CallGraph.stub () in
-  State.create ~call_graph ~resolution ~define ()
+  State.create ~resolution ~define ()
 
 
 let assert_backward precondition statement postcondition =
@@ -168,7 +167,6 @@ let test_fixpoint_backward _ =
          (Cfg.create define)
          ~initial_forward:
            (State.initial
-              ~call_graph:(CallGraph.stub ())
               ~resolution:(TestSetup.resolution ())
               define_node)
          ~initialize_backward:(Inference.State.initial_backward define_node))
@@ -350,7 +348,6 @@ let assert_infer
       Inference.infer
         configuration
         environment
-        mock_call_graph
         ?mode_override
         source
     in

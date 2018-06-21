@@ -25,7 +25,6 @@ type analysis_results = {
 let analyze_source
     ({ Configuration.verbose; sections; infer; _ } as configuration)
     environment
-    call_graph
     ({ Source.path; metadata; _ } as source) =
   (* Re-initialize log for subprocesses. *)
   Log.initialize ~verbose ~sections;
@@ -61,7 +60,7 @@ let analyze_source
       Log.log ~section:`Check "Checking `%s`..." path;
       let errors =
         let check = if infer then Inference.infer else TypeCheck.check in
-        check configuration environment call_graph source
+        check configuration environment source
       in
       Statistics.performance
         ~flush:false
@@ -81,7 +80,6 @@ let analyze_sources_parallel
     scheduler
     ({Configuration.source_root; project_root = directory; _ } as configuration)
     environment
-    call_graph
     handles =
   let merge_lookups ~key:_ = function
     | `Both (lookup, _) -> Some lookup
@@ -134,7 +132,7 @@ let analyze_sources_parallel
                     coverage;
                     _;
                   } =
-                    analyze_source configuration environment call_graph source
+                    analyze_source configuration environment source
                   in
                   {
                     errors = List.append new_errors errors;
@@ -176,14 +174,13 @@ let analyze_sources
     scheduler
     ({Configuration.source_root; project_root = directory; _ } as configuration)
     environment
-    call_graph
     handles =
   Log.info "Checking...";
 
   Annotated.Class.AttributesCache.clear ();
 
   if Scheduler.is_parallel scheduler then
-    analyze_sources_parallel scheduler configuration environment call_graph handles
+    analyze_sources_parallel scheduler configuration environment handles
   else
     let sources =
       let source handle =
@@ -202,7 +199,7 @@ let analyze_sources
         (current_errors, lookups, total_coverage)
         ({ Source.path; _ } as source) =
       let { TypeCheck.Result.errors; lookup; coverage; _ } =
-        analyze_source configuration environment call_graph source
+        analyze_source configuration environment source
       in
       let lookups =
         lookup

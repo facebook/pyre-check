@@ -209,7 +209,7 @@ let make_errors ?(path = "test.py") ?(qualifier = []) source =
   let environment_handler = Environment.handler ~configuration (environment ()) in
   add_defaults_to_environment ~configuration environment_handler;
   Environment.populate ~configuration (environment_handler) [source];
-  (TypeCheck.check configuration environment_handler mock_call_graph source).TypeCheck.Result.errors
+  (TypeCheck.check configuration environment_handler source).TypeCheck.Result.errors
 
 let mock_server_state
     ?(initial_errors = Error.Hash_set.create ())
@@ -220,7 +220,6 @@ let mock_server_state
   {
     State.deferred_requests = [];
     environment;
-    call_graph = mock_call_graph;
     initial_errors;
     errors;
     handles = File.Handle.Set.empty;
@@ -853,7 +852,6 @@ let test_incremental_attribute_caching context =
   let old_state = {
     State.deferred_requests = [];
     environment;
-    call_graph = mock_call_graph;
     initial_errors = Error.Hash_set.create ();
     errors = File.Handle.Table.create ();
     handles = File.Handle.Set.empty;

@@ -17,18 +17,6 @@ module Parallel = Hack_parallel.Std
 module TestSetup = AnalysisTestSetup
 
 
-let test_create _ =
-  let call_graph = CallGraph.create () in
-  let (module Handler: CallGraph.Handler) = CallGraph.handler call_graph in
-
-  Handler.register_overload ~access:(Access.create "one") ~overload:(Access.create "one");
-  Handler.register_overload ~access:(Access.create "one") ~overload:(Access.create "two");
-  Handler.register_overload ~access:(Access.create "two") ~overload:(Access.create "three");
-
-  let overloads = call_graph.CallGraph.overloads in
-  assert_equal 2 (Access.Table.length overloads)
-
-
 let parse_source ?(qualifier=[]) source =
   let source =
     let metadata =
@@ -49,7 +37,7 @@ let parse_source ?(qualifier=[]) source =
   source
 
 
-let check_source ?call_graph source =
+let check_source source =
   let configuration =
     Configuration.create
       ~debug:true
@@ -60,7 +48,7 @@ let check_source ?call_graph source =
   in
   let environment = TestSetup.environment ~configuration () in
   Environment.populate ~configuration environment [source];
-  check configuration environment call_graph source |> ignore
+  check configuration environment source |> ignore
 
 
 let assert_call_graph source ~expected =
@@ -70,7 +58,7 @@ let assert_call_graph source ~expected =
   in
   let environment = TestSetup.environment ~configuration () in
   Environment.populate ~configuration environment [source];
-  check configuration environment None source |> ignore;
+  check configuration environment source |> ignore;
   let make_resolution define annotations =
     Environment.resolution
       environment
@@ -187,7 +175,7 @@ let test_type_collection _ =
     in
     let environment = TestSetup.environment ~configuration () in
     Environment.populate ~configuration environment [source];
-    check configuration environment None source |> ignore;
+    check configuration environment source |> ignore;
     let defines =
       Preprocessing.defines source
       |> List.map ~f:(fun define -> define.Node.value)
@@ -283,7 +271,6 @@ let test_type_collection _ =
 let () =
   Parallel.Daemon.check_entry_point ();
   "callGraph">:::[
-    "create">::test_create;
     "type_collection">::test_type_collection;
     "build">::test_construction;
   ]

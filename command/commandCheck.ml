@@ -125,10 +125,8 @@ let check
     handler ~configuration ~stubs ~sources
   in
 
-  let call_graph = Some (Service.CallGraph.shared_memory_handler ()) in
-
   let errors, lookups, { TypeCheck.Coverage.full; partial; untyped; ignore; crashes } =
-    Service.TypeCheck.analyze_sources scheduler configuration environment call_graph sources
+    Service.TypeCheck.analyze_sources scheduler configuration environment sources
   in
   (* Log coverage results *)
   let path_to_files =
@@ -155,7 +153,6 @@ let check
       ~scheduler
       ~configuration
       ~environment
-      ~call_graph
       ~handles:sources;
 
   (* Only destroy the scheduler if the check command created it. *)

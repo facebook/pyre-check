@@ -24,7 +24,6 @@ type connections = {
 type t = {
   deferred_requests: ServerProtocol.Request.t list;
   environment: (module Analysis.Environment.Handler);
-  call_graph: (module Analysis.CallGraph.Handler) option;
   initial_errors: Analysis.Error.Hash_set.t;
   errors: (Error.t list) File.Handle.Table.t;
   handles: File.Handle.Set.t;

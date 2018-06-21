@@ -13,7 +13,6 @@ open Statement
 
 module Annotation = AnalysisAnnotation
 module Cfg = AnalysisCfg
-module CallGraph = AnalysisCallGraph
 module Environment = AnalysisEnvironment
 module Error = AnalysisError
 module Lookup = AnalysisLookup
@@ -44,8 +43,7 @@ module State = struct
           resolution
           ~annotations:(Access.Map.of_alist_exn [Preprocessing.return_access, expected_return])
       in
-      let call_graph = CallGraph.stub () in
-      create ~call_graph ~configuration ~resolution ~define ()
+      create ~configuration ~resolution ~define ()
     in
     let combine_annotations left right =
       let add_annotation ~key ~data map =
@@ -331,7 +329,7 @@ module SingleSourceResult = struct
 end
 
 
-let infer configuration environment _ ?mode_override ({ Source.path; qualifier; _ } as source) =
+let infer configuration environment ?mode_override ({ Source.path; qualifier; _ } as source) =
   Log.debug "Checking %s..." path;
   let resolution =
     Environment.resolution
@@ -364,10 +362,8 @@ let infer configuration environment _ ?mode_override ({ Source.path; qualifier; 
 
     try
       let cfg = Cfg.create define in
-      let call_graph = CallGraph.stub () in
       let initial_forward =
         State.initial
-          ~call_graph
           ~configuration
           ~lookup
           ~resolution

@@ -6,5 +6,5 @@
 open Pyre
 
 
-let analyze ~scheduler:_ ~configuration:_ ~environment:_ ~call_graph:_ ~handles:_ =
+let analyze ~scheduler:_ ~configuration:_ ~environment:_ ~handles:_ =
   Log.print "Analysis";

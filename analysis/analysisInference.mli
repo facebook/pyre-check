@@ -11,7 +11,6 @@ module Error = AnalysisError
 module Lookup = AnalysisLookup
 module Coverage = AnalysisCoverage
 module Cfg = AnalysisCfg
-module CallGraph = AnalysisCallGraph
 module TypeCheck = AnalysisTypeCheck
 
 open TypeCheck
@@ -41,7 +40,6 @@ val backward_fixpoint
 val infer
   :  Configuration.t
   -> (module Environment.Handler)
-  -> (module CallGraph.Handler) option
   -> ?mode_override: Source.mode
   -> Source.t
   -> Result.t

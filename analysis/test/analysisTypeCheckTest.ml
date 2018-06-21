@@ -55,8 +55,7 @@ let create
       Define.return_annotation = Some (Type.expression expected_return);
     }
   in
-  let call_graph = CallGraph.stub () in
-  State.create ~call_graph ~resolution ~define ()
+  State.create ~resolution ~define ()
 
 
 let assert_state_equal =
@@ -72,8 +71,7 @@ let assert_initial
     ?return_annotation
     ?(decorators = [])
     ?(initial = (fun resolution define ->
-        let call_graph = CallGraph.stub () in
-        State.initial ~call_graph ~resolution define))
+        State.initial ~resolution define))
     expected =
   let define = {
     Define.name = Access.create "foo";
@@ -606,7 +604,6 @@ let fixpoint_parse source =
 
 let test_fixpoint_forward _ =
   let assert_fixpoint_forward source expected =
-    let call_graph = CallGraph.stub () in
     let { Node.value = define; _ } as define_node = fixpoint_parse source in
     assert_equal
       ~cmp:Fixpoint.equal
@@ -615,7 +612,7 @@ let test_fixpoint_forward _ =
       expected
       (Fixpoint.forward
          ~cfg:(Cfg.create define)
-         ~initial:(State.initial ~call_graph ~resolution define_node))
+         ~initial:(State.initial ~resolution define_node))
   in
   assert_fixpoint_forward
     {| def foo(): pass |}
@@ -1117,7 +1114,6 @@ let test_coverage _ =
       Analysis.TypeCheck.check
         TestSetup.configuration
         environment
-        mock_call_graph
         (parse source)
     in
     assert_equal ~printer:Coverage.show expected coverage
