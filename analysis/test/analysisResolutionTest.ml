@@ -62,7 +62,11 @@ let test_parse_annotation _ =
   in
   assert_parse_annotation ~resolution ~expression:"int" ~expected:"int";
   assert_parse_annotation ~resolution ~expression:"$local_0_int" ~expected:"int";
-  assert_parse_annotation ~resolution ~expression:"empty.stub.Annotation" ~expected:"typing.Any"
+  assert_parse_annotation ~resolution ~expression:"empty.stub.Annotation" ~expected:"typing.Any";
+  assert_parse_annotation
+    ~resolution
+    ~expression:"typing.Dict[str, empty.stub.Annotation]"
+    ~expected:"typing.Any"
 
 
 

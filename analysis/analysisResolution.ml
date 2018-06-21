@@ -128,10 +128,6 @@ let parse_annotation
         when Identifier.show name |> String.is_prefix ~prefix:"$local_" -> true
       | _ -> false
     in
-    let is_empty_stub =
-      Expression.access expression
-      |> fun access -> Module.from_empty_stub ~access ~module_definition
-    in
     if is_local_access then
       match define with
       | { Define.name = scope; parent = None; _ }
@@ -141,12 +137,25 @@ let parse_annotation
           >>| List.rev
           >>| (fun qualifier -> Expression.delocalize expression ~qualifier)
           |> Option.value ~default:expression
-    else if is_empty_stub then
-      { expression with Node.value = Access (Access.create "typing.Any") }
     else
       expression
   in
-  parse_annotation expression
+  let parsed = parse_annotation expression in
+  let originates_from_empty_stub =
+    let is_empty_stub = function
+      | Type.Primitive name ->
+          Identifier.show name
+          |> Access.create
+          |> fun access -> Module.from_empty_stub ~access ~module_definition
+      | _ ->
+          false
+    in
+    Type.exists parsed ~predicate:is_empty_stub
+  in
+  if originates_from_empty_stub then
+    Type.Object
+  else
+    parsed
 
 
 let global { global; _ } =
