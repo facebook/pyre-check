@@ -10,7 +10,6 @@ open Analysis
 open Ast
 open Statement
 open TypeCheck
-open Pyre
 
 open Test
 
@@ -52,7 +51,12 @@ let parse_source ?(qualifier=[]) source =
 
 let check_source ?call_graph source =
   let configuration =
-    Configuration.create ~debug:true ~strict:false ~declare:false ~infer:false ()
+    Configuration.create
+      ~debug:true
+      ~strict:false
+      ~declare:false
+      ~infer:false
+      ()
   in
   let environment = TestSetup.environment ~configuration () in
   Environment.populate ~configuration environment [source];
@@ -61,25 +65,75 @@ let check_source ?call_graph source =
 
 let assert_call_graph source ~expected =
   let source = parse_source source in
-  let call_graph = Service.CallGraph.shared_memory_handler () in
-  check_source ~call_graph source;
-  let { Source.path; _ } = source in
-  let module CallGraph = (val call_graph: CallGraph.Handler) in
-  let build_output caller result callee =
-    Format.sprintf
-      "%s -> %s\n%s"
-      (Access.show caller)
-      (Access.show callee)
-      result
+  let configuration =
+    Configuration.create ~debug:true ~strict:false ~declare:false ~infer:false ()
   in
-  let walk_callers result caller =
-    CallGraph.callees ~caller
-    >>| List.fold ~init:result ~f:(build_output caller)
-    |> Option.value ~default:result
+  let environment = TestSetup.environment ~configuration () in
+  Environment.populate ~configuration environment [source];
+  check configuration environment None source |> ignore;
+  let make_resolution define annotations =
+    Environment.resolution
+      environment
+      ~annotations
+      ~define
+      ()
+  in
+  let call_graph =
+    let open TypeResolutionSharedMemory.TypeAnnotationsValue in
+    let fold_defines
+        call_graph
+        { Node.value = ({ Define.name = caller; _ } as define); _ } =
+      let cfg = Cfg.create define in
+      let annotation_lookup =
+        let fold_annotations map { key; annotations } =
+          Int.Map.set map ~key ~data:annotations
+        in
+        TypeResolutionSharedMemory.get caller
+        |> (fun value -> Option.value_exn value)
+        |> List.fold ~init:Int.Map.empty ~f:fold_annotations
+      in
+      let fold_cfg ~key:node_id ~data:node call_graph =
+        let statements = Cfg.Node.statements node in
+        let fold_statements statement_index call_graph statement =
+          let annotations =
+            Int.Map.find_exn
+              annotation_lookup
+              ([%hash: int * int] (node_id, statement_index))
+            |> Access.Map.of_alist_exn
+          in
+          let resolution = make_resolution define annotations in
+          let fold_accesses call_graph { Node.value = access; _ } =
+            let add_call_edge call_graph ~resolution:_ ~resolved ~element:_ =
+              let open Annotation.Type in
+              let open Record.Callable in
+              match Annotation.annotation resolved with
+              | Callable { kind = Callable.Named callee; _ } ->
+                  Access.Map.set call_graph ~key:caller ~data:callee
+              | _ ->
+                  call_graph
+            in
+            Annotated.Access.create access
+            |> Annotated.Access.fold ~resolution ~initial:call_graph ~f:add_call_edge
+          in
+          Visit.collect_accesses_with_location statement
+          |> List.fold ~init:call_graph ~f:fold_accesses
+        in
+        List.foldi statements ~init:call_graph ~f:fold_statements
+      in
+      Hashtbl.fold cfg ~init:call_graph ~f:fold_cfg
+    in
+    Preprocessing.defines source
+    |> List.fold ~init:Access.Map.empty ~f:fold_defines
   in
   let result =
-    Option.value_exn (CallGraph.callers ~path)
-    |> List.fold ~init:"" ~f:walk_callers
+    let fold_call_graph ~key:caller ~data:callee result =
+      Format.sprintf
+        "%s -> %s\n%s"
+        (Access.show caller)
+        (Access.show callee)
+        result
+    in
+    Access.Map.fold call_graph ~init:"" ~f:fold_call_graph
   in
   let expected = expected ^ "\n" in
   assert_equal ~printer:ident result expected

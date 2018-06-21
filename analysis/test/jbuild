@@ -33,6 +33,7 @@
   (libraries 
    (oUnit 
     ppxlib
+    ppx_hash
     ppx_deriving
     pyrelib.service
     pyrelib.test
