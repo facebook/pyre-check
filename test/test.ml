@@ -202,7 +202,7 @@ let add_defaults_to_environment ~configuration environment_handler =
       class unittest.mock.NonCallableMock: ...
     |};
   in
-  Environment.populate ~configuration environment_handler [source]
+  Service.Environment.populate ~configuration environment_handler [source]
 
 
 (* Expression helpers. *)

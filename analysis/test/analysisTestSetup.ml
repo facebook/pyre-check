@@ -246,7 +246,10 @@ let typeshed_stubs = (* Yo dawg... *)
 
 let environment ?(sources = typeshed_stubs) ?(configuration = configuration) () =
   let environment = Environment.Builder.create ~configuration () in
-  Environment.populate (Environment.handler ~configuration environment) ~configuration sources;
+  Service.Environment.populate
+    (Environment.handler ~configuration environment)
+    ~configuration
+    sources;
   Environment.handler ~configuration environment
 
 
@@ -325,7 +328,7 @@ let assert_type_errors
       in
       let environment =
         let environment = environment ~configuration () in
-        Environment.populate ~configuration environment [source];
+        Service.Environment.populate ~configuration environment [source];
         environment
       in
       let configuration = Configuration.create ~debug ~strict ~declare ~infer () in

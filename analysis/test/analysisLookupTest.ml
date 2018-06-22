@@ -25,7 +25,7 @@ let generate_lookup source =
   in
   let configuration = Configuration.create ~debug:true ~infer:false () in
   let environment = Environment.Builder.create ~configuration () in
-  Environment.populate
+  Service.Environment.populate
     ~configuration
     (Environment.handler ~configuration environment)
     [parsed];
@@ -62,7 +62,7 @@ let test_lookup_across_files _ =
     |}
   in
   let environment = Environment.Builder.create ~configuration () in
-  Environment.populate
+  Service.Environment.populate
     ~configuration
     (Environment.handler ~configuration environment) [
     parse ~qualifier:(Source.qualifier ~path:"use.py") ~path:"use.py" use_source;

@@ -51,7 +51,7 @@ let start_server ?(source_root = Path.current_working_directory ()) ?expected_ve
 let environment () =
   let configuration = Configuration.create () in
   let environment = Environment.Builder.create ~configuration () in
-  Environment.populate
+  Service.Environment.populate
     ~configuration
     (Environment.handler ~configuration environment)
     [
@@ -66,7 +66,7 @@ let make_errors source =
   let configuration = Configuration.create () in
   let source = Preprocessing.preprocess (parse source) in
   let environment_handler = Environment.handler ~configuration (environment ()) in
-  Environment.populate ~configuration environment_handler [source];
+  Service.Environment.populate ~configuration environment_handler [source];
   let configuration = mock_analysis_configuration () in
   (TypeCheck.check configuration environment_handler source).TypeCheck.Result.errors
 

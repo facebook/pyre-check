@@ -17,6 +17,62 @@ open EnvironmentSharedMemory
 open ServiceIgnoreSharedMemory
 
 
+let populate
+    (module Handler: Handler)
+    ~configuration
+    ?(source_root = Path.current_working_directory ())
+    ?(check_dependency_exists = true)
+    sources =
+  (* Yikes... *)
+  Handler.register_alias
+    ~path:"typing.py"
+    ~key:(Type.primitive "typing.DefaultDict")
+    ~data:(Type.primitive "collections.defaultdict");
+  Handler.register_alias
+    ~path:"builtins.py"
+    ~key:(Type.primitive "None")
+    ~data:(Type.Optional Type.Bottom);
+  (* This is broken in typeshed:
+     https://github.com/python/typeshed/pull/991#issuecomment-288160993 *)
+  Handler.register_alias
+    ~path:"builtins.py"
+    ~key:(Type.primitive "PathLike")
+    ~data:(Type.primitive "_PathLike");
+
+  List.iter ~f:(register_module (module Handler)) sources;
+
+  let all_annotations =
+    List.fold
+      ~init:Type.Set.empty
+      ~f:(fun annotations source ->
+          Set.union annotations (register_class_definitions (module Handler) source))
+      sources
+    |> Set.to_list
+  in
+  register_aliases (module Handler) sources;
+
+  List.iter
+    ~f:(register_dependencies ~source_root ~check_dependency_exists (module Handler))
+    sources;
+  (* Build type order. *)
+  List.iter ~f:(connect_type_order (module Handler)) sources;
+  TypeOrder.deduplicate (module Handler.TypeOrderHandler) ~annotations:all_annotations;
+
+  TypeOrder.connect_annotations_to_top
+    (module Handler.TypeOrderHandler)
+    ~configuration
+    ~top:Type.Object
+    all_annotations;
+  TypeOrder.remove_extra_edges
+    (module Handler.TypeOrderHandler)
+    ~bottom:Type.Bottom
+    ~top:Type.Object
+    all_annotations;
+
+  List.iter ~f:(register_functions (module Handler)) sources;
+  List.iter ~f:(register_globals (module Handler)) sources
+
+
 let build
     ((module Handler: Handler) as handler)
     ~configuration:({ Configuration.source_root; _ } as configuration)
@@ -36,7 +92,7 @@ let build
   in
   let timer = Timer.start () in
   let stubs = get_sources stubs in
-  Environment.populate ~configuration ~source_root handler stubs;
+  populate ~configuration ~source_root handler stubs;
   Statistics.performance ~name:"stub environment built" ~timer ~configuration ();
 
   let timer = Timer.start () in
@@ -51,7 +107,7 @@ let build
     let sources = get_sources sources in
     List.filter ~f:should_keep sources
   in
-  Environment.populate ~configuration ~source_root handler sources;
+  populate ~configuration ~source_root handler sources;
   Statistics.performance ~name:"full environment built" ~timer ~configuration ();
 
   if Log.is_enabled `Dotty then

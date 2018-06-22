@@ -183,7 +183,7 @@ let rec process_request
         | None -> []
       in
       List.concat_map ~f:repopulate_path repopulate_handles
-      |> Analysis.Environment.populate
+      |> Service.Environment.populate
         state.environment
         ~configuration
         ~source_root

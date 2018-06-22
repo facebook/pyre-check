@@ -33,7 +33,7 @@ let configuration = Configuration.create ~infer:true ()
 
 let plain_populate ?source_root ?(check_dependency_exists = false) sources =
   let environment = Environment.Builder.create ~configuration () in
-  Environment.populate
+  Service.Environment.populate
     ~configuration
     ?source_root
     ~check_dependency_exists
@@ -266,7 +266,7 @@ let test_register_aliases _ =
         ~path:"stubbed.pyi"
         "";
       parse
-       ~qualifier:(Access.create "qualifier")
+        ~qualifier:(Access.create "qualifier")
         {|
           class str: ...
           T = stubbed.Something
@@ -1159,7 +1159,7 @@ let test_purge _ =
       def foo(): pass
     |}
   in
-  Environment.populate
+  Service.Environment.populate
     ~configuration
     ~check_dependency_exists:false
     handler
@@ -1198,7 +1198,7 @@ let test_infer_protocols _ =
       |> Preprocessing.preprocess
     in
     let environment = Environment.Builder.create ~configuration () in
-    Environment.populate
+    Service.Environment.populate
       (Environment.handler ~configuration environment)
       ~configuration
       (source :: type_sources);

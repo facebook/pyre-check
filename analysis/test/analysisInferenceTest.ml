@@ -372,7 +372,7 @@ let assert_infer
     parse source
     |> Preprocessing.preprocess in
   let environment = TestSetup.environment () in
-  Environment.populate ~configuration environment [source];
+  Service.Environment.populate ~configuration environment [source];
   let to_string json =
     Yojson.Safe.sort json
     |> Yojson.Safe.to_string

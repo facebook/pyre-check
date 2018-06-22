@@ -105,6 +105,11 @@ val connect_definition
        -> definition: (Class.t Node.t) option
        -> (Type.t * Type.t list))
 
+val register_module
+  :  (module Handler)
+  -> Source.t
+  -> unit
+
 val register_class_definitions
   :  (module Handler)
   -> Source.t
@@ -143,14 +148,6 @@ val infer_implementations
 (* Exposed for testing. *)
 val infer_protocol_edges: handler: (module Handler) -> TypeOrder.Edge.Set.t
 val infer_protocols: handler: (module Handler) -> configuration: Configuration.t -> unit
-
-val populate
-  :  (module Handler)
-  -> configuration: Configuration.t
-  -> ?source_root: Path.t
-  -> ?check_dependency_exists: bool
-  -> Source.t list
-  -> unit
 
 module Builder : sig
   val create: configuration: Configuration.t -> unit -> t

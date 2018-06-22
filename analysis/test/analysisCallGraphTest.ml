@@ -47,7 +47,7 @@ let check_source source =
       ()
   in
   let environment = TestSetup.environment ~configuration () in
-  Environment.populate ~configuration environment [source];
+  Service.Environment.populate ~configuration environment [source];
   check configuration environment source |> ignore
 
 
@@ -57,7 +57,7 @@ let assert_call_graph source ~expected =
     Configuration.create ~debug:true ~strict:false ~declare:false ~infer:false ()
   in
   let environment = TestSetup.environment ~configuration () in
-  Environment.populate ~configuration environment [source];
+  Service.Environment.populate ~configuration environment [source];
   check configuration environment source |> ignore;
   let call_graph = Service.Analysis.call_graph_of_source environment source in
   let result =
@@ -122,7 +122,7 @@ let test_type_collection _ =
         ()
     in
     let environment = TestSetup.environment ~configuration () in
-    Environment.populate ~configuration environment [source];
+    Service.Environment.populate ~configuration environment [source];
     check configuration environment source |> ignore;
     let defines =
       Preprocessing.defines source
@@ -225,7 +225,7 @@ let test_method_overrides _ =
       Configuration.create ~debug:true ~strict:false ~declare:false ~infer:false ()
     in
     let environment = TestSetup.environment ~configuration () in
-    Environment.populate ~configuration environment [source];
+    Service.Environment.populate ~configuration environment [source];
     let overrides_map = Service.Analysis.overrides_of_source environment source in
     let expected_overrides = Access.Map.of_alist_exn expected in
     let equal_elements = List.equal ~equal:Access.equal in

@@ -16,7 +16,7 @@ let configuration = Configuration.create ()
 
 let populate ?source_root source =
   let environment = Environment.Builder.create ~configuration () in
-  Environment.populate
+  Service.Environment.populate
     ~configuration
     ?source_root
     (Environment.handler ~configuration environment)
@@ -40,7 +40,7 @@ let test_index _ =
       def foo(): pass
     |}
   in
-  Environment.populate
+  Service.Environment.populate
     ~configuration
     (Environment.handler ~configuration environment)
     [parse ~path:"test.py" source];

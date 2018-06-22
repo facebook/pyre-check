@@ -176,7 +176,7 @@ let configuration = Configuration.create ~infer:true ()
 
 let environment () =
   let environment = Environment.Builder.create ~configuration () in
-  Environment.populate
+  Service.Environment.populate
     ~configuration
     (Environment.handler ~configuration environment)
     [
@@ -208,7 +208,7 @@ let make_errors ?(path = "test.py") ?(qualifier = []) source =
   let source = Preprocessing.preprocess (parse ~path ~qualifier source) in
   let environment_handler = Environment.handler ~configuration (environment ()) in
   add_defaults_to_environment ~configuration environment_handler;
-  Environment.populate ~configuration (environment_handler) [source];
+  Service.Environment.populate ~configuration (environment_handler) [source];
   (TypeCheck.check configuration environment_handler source).TypeCheck.Result.errors
 
 let mock_server_state
@@ -590,7 +590,7 @@ let test_incremental_dependencies _ =
   let environment = Environment.Builder.create ~configuration () in
   let environment_handler = Environment.handler ~configuration environment in
   add_defaults_to_environment ~configuration environment_handler;
-  Environment.populate
+  Service.Environment.populate
     ~configuration
     environment_handler
     [
@@ -677,7 +677,7 @@ let test_incremental_lookups _ =
   let (module Handler: Environment.Handler) = Environment.handler ~configuration environment in
   let environment_handler = Environment.handler ~configuration environment in
   add_defaults_to_environment ~configuration environment_handler;
-  Environment.populate ~configuration environment_handler [parse source];
+  Service.Environment.populate ~configuration environment_handler [parse source];
   let request =
     Protocol.Request.TypeCheckRequest
       (Protocol.TypeCheckRequest.create
@@ -750,7 +750,7 @@ let test_incremental_repopulate _ =
   let environment_handler = Environment.handler ~configuration environment in
   Out_channel.write_all ~data:source "test.py";
   add_defaults_to_environment ~configuration environment_handler;
-  Environment.populate ~configuration environment_handler [parse source];
+  Service.Environment.populate ~configuration environment_handler [parse source];
   let errors = File.Handle.Table.create () in
   let initial_state =
     mock_server_state
