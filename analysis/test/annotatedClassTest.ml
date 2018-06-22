@@ -922,8 +922,8 @@ let test_method_overloads _ =
     |> value
   in
 
-  assert_is_none (Method.overloads ~resolution baz);
-  let overloads = Method.overloads ~resolution foo in
+  assert_is_none (Method.overrides ~resolution baz);
+  let overloads = Method.overrides ~resolution foo in
   assert_is_some overloads;
   assert_equal
     ~cmp:Access.equal

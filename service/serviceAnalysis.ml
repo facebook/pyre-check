@@ -79,7 +79,7 @@ let overrides_of_source environment source =
   let define = Statement.Define.create_toplevel ~qualifier:[] ~statements:[] in
   let resolution = Environment.resolution environment ~define () in
   let filter_overrides child_method =
-    Method.overloads child_method ~resolution
+    Method.overrides child_method ~resolution
     >>| fun ancestor_method -> (Method.name ancestor_method, Method.name child_method)
   in
   let record_overrides map (ancestor_method, child_method) =
