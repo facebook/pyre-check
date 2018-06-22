@@ -5,9 +5,11 @@
 
 module NamedTuples = PluginNamedTuples
 module NewType = PluginNewType
+module DataClass = PluginDataClass
 
 
 let apply_to_ast source =
   source
   |> NamedTuples.transform_ast
   |> NewType.transform_ast
+  |> DataClass.transform_ast

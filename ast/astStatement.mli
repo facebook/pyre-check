@@ -247,6 +247,8 @@ module Class : sig
     -> Attribute.t Access.Map.t
 
   val update: t -> definition: t -> t
+
+  val has_decorator: t -> string -> bool
 end
 
 module For : sig

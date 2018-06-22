@@ -9,7 +9,21 @@
     pyrelib.plugin
     pyrelib.ast))))
 
+(executable
+ ((name pluginDataClassTest)
+  (modules (pluginDataClassTest))
+  (libraries
+   (oUnit
+    pyrelib.test
+    pyrelib.plugin
+    pyrelib.ast))))
+
 (alias
  ((name runtest)
   (deps (pluginNamedTuplesTest.exe))
+  (action (run ${<} -runner sequential))))
+
+(alias
+ ((name runtest)
+  (deps (pluginDataClassTest.exe))
   (action (run ${<} -runner sequential))))
