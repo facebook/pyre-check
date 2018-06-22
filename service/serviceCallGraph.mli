@@ -12,4 +12,5 @@ val get_callers: path:File.Handle.t -> Access.t list option
 val add_call_edges: caller: Access.t -> callees: Access.t list -> unit
 val get_call_edges: caller: Access.t -> Access.t list option
 
-val get_overrides: Access.t -> Access.t list option
+val add_overrides: ancestor:Access.t -> children: Access.t list -> unit
+val get_overrides: ancestor:Access.t -> Access.t list option

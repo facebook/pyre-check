@@ -59,5 +59,9 @@ let get_call_edges ~caller =
   CallEdges.get caller
 
 
-let get_overrides =
-  Overrides.get
+let add_overrides ~ancestor ~children =
+  Overrides.add ancestor children
+
+
+let get_overrides ~ancestor =
+  Overrides.get ancestor

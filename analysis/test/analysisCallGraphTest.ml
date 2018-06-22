@@ -216,10 +216,48 @@ let test_type_collection _ =
     ~expected:[(5, 0, "$local_0_a.foo.(...).foo.(...)", "test2.A.foo")]
 
 
+
+let test_method_overrides _ =
+  let (!) = Access.create in
+  let assert_method_overrides source ~expected =
+    let source = parse_source source in
+    let configuration =
+      Configuration.create ~debug:true ~strict:false ~declare:false ~infer:false ()
+    in
+    let environment = TestSetup.environment ~configuration () in
+    Environment.populate ~configuration environment [source];
+    let overrides_map = Service.Analysis.overrides_of_source environment source in
+    let expected_overrides = Access.Map.of_alist_exn expected in
+    let equal_elements = List.equal ~equal:Access.equal in
+    assert_equal
+      ~cmp:(Access.Map.equal equal_elements)
+      overrides_map
+      expected_overrides
+  in
+  assert_method_overrides
+    {|
+      class Foo:
+        def foo(): pass
+      class Bar(Foo):
+        def foo(): pass
+      class Baz(Bar):
+        def foo(): pass
+        def baz(): pass
+      class Quux(Foo):
+        def foo(): pass
+    |}
+    ~expected:
+      [
+        !"Bar.foo", [!"Baz.foo"];
+        !"Foo.foo", [!"Bar.foo"; !"Quux.foo"]
+      ]
+
+
 let () =
   Parallel.Daemon.check_entry_point ();
   "callGraph">:::[
     "type_collection">::test_type_collection;
     "build">::test_construction;
+    "overrides">::test_method_overrides;
   ]
   |> run_test_tt_main

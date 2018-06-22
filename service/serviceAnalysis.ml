@@ -74,6 +74,27 @@ let call_graph_of_source environment source =
   |> List.fold ~init:Access.Map.empty ~f:fold_defines
 
 
+let overrides_of_source environment source =
+  let open Annotated in
+  let define = Statement.Define.create_toplevel ~qualifier:[] ~statements:[] in
+  let resolution = Environment.resolution environment ~define () in
+  let filter_overrides child_method =
+    Method.overloads child_method ~resolution
+    >>| fun ancestor_method -> (Method.name ancestor_method, Method.name child_method)
+  in
+  let record_overrides map (ancestor_method, child_method) =
+    let update_children = function
+      | Some children -> child_method :: children
+      | None -> [child_method]
+    in
+    Statement.Access.Map.update map ancestor_method ~f:update_children
+  in
+  Preprocessing.classes source
+  |> List.concat_map ~f:(Fn.compose Class.methods Class.create)
+  |> List.filter_map ~f:filter_overrides
+  |> List.fold ~init:Statement.Access.Map.empty ~f:record_overrides
+
+
 let analyze ~scheduler:_ ~configuration:_ ~environment ~handles =
   Log.print "Analysis";
   let record_call_graph path =
@@ -89,4 +110,18 @@ let analyze ~scheduler:_ ~configuration:_ ~environment ~handles =
     >>| record_call_graph
     |> ignore
   in
-  List.iter handles ~f:record_call_graph
+  List.iter handles ~f:record_call_graph;
+
+  let record_overrides handle =
+    let record_overrides overrides_map =
+      let record_override_edge ~key:ancestor ~data:children =
+        CallGraph.add_overrides ~ancestor ~children
+      in
+      Access.Map.iteri overrides_map ~f:record_override_edge
+    in
+    AstSharedMemory.get_source handle
+    >>| overrides_of_source environment
+    >>| record_overrides
+    |> ignore
+  in
+  List.iter handles ~f:record_overrides

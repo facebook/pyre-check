@@ -11,7 +11,12 @@ open Expression
 val call_graph_of_source:
   (module Environment.Handler)
   -> Source.t
-  -> Access.t list Access.Map.t
+  -> (Access.t list) Access.Map.t
+
+val overrides_of_source:
+  (module Environment.Handler)
+  -> Source.t
+  -> (Access.t list) Access.Map.t
 
 val analyze
   :  scheduler: ServiceScheduler.t
