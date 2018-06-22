@@ -57,6 +57,7 @@ module type Handler = sig
 
   val register_module
     :  qualifier: Access.t
+    -> local_mode: Source.mode
     -> path: string option
     -> stub: bool
     -> statements: Statement.t list
@@ -324,14 +325,17 @@ let handler
     let protocols () =
       Hash_set.to_list protocols
 
-    let register_module ~qualifier ~path ~stub ~statements =
+    let register_module ~qualifier ~local_mode ~path ~stub ~statements =
       let is_registered_empty_stub =
         Hashtbl.find modules qualifier
         >>| Module.empty_stub
         |> Option.value ~default:false
       in
       if not is_registered_empty_stub then
-        Hashtbl.set ~key:qualifier ~data:(Module.create ~qualifier ?path ~stub statements) modules
+        Hashtbl.set
+          ~key:qualifier
+          ~data:(Module.create ~qualifier ~local_mode ?path ~stub statements)
+          modules
 
     let is_module access =
       Hashtbl.mem modules access
@@ -394,18 +398,21 @@ let dependencies (module Handler: Handler) =
   Handler.dependencies
 
 
-let register_module (module Handler: Handler) { Source.qualifier; path; statements; _ } =
+let register_module
+    (module Handler: Handler)
+    { Source.qualifier; path; statements; metadata = { Source.Metadata.local_mode; _ }; _ } =
   let rec register_submodules = function
     | [] ->
         ()
     | (_ :: tail) as reversed ->
         let qualifier = List.rev reversed in
         if not (Handler.is_module qualifier) then
-          Handler.register_module ~path:None ~qualifier ~stub:false ~statements:[];
+          Handler.register_module ~path:None ~qualifier ~local_mode ~stub:false ~statements:[];
         register_submodules tail
   in
   Handler.register_module
     ~qualifier
+    ~local_mode
     ~path:(Some path)
     ~stub:(String.is_suffix path ~suffix:".pyi")
     ~statements;

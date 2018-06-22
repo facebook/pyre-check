@@ -42,6 +42,7 @@ let test_fold _ =
     populate_with_sources [
       parse
         ~qualifier:(Access.create "empty.stub")
+        ~local_mode:Source.PlaceholderStub
         ~path:"empty/stub.pyi"
         "";
       parse

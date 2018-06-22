@@ -8,6 +8,7 @@ open Core
 open Pyre
 
 module Statement = AstStatement
+module Source = AstSource
 
 open Statement
 
@@ -72,7 +73,7 @@ let wildcard_exports { wildcard_exports; _ } =  (* Rename to wildcard_exports *)
   wildcard_exports
 
 
-let create ~qualifier ?path ~stub statements =
+let create ~qualifier ~local_mode ?path ~stub statements =
   let aliased_exports =
     let aliased_exports { Node.value; _ } =
       match value with
@@ -162,7 +163,7 @@ let create ~qualifier ?path ~stub statements =
   in
   {
     aliased_exports;
-    empty_stub = stub && List.is_empty statements;
+    empty_stub = stub && Source.equal_mode local_mode Source.PlaceholderStub;
     path;
     wildcard_exports = (Option.value dunder_all ~default:toplevel_public);
   }

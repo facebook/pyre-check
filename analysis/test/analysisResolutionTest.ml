@@ -56,7 +56,11 @@ let test_parse_annotation _ =
     TestSetup.resolution
       ~sources:[
         parse ~qualifier:(Access.create "empty") ~path:"empty.pyi" "class Empty: ...";
-        parse ~qualifier:(Access.create "empty.stub") ~path:"empty/stub.pyi" "";
+        parse
+          ~qualifier:(Access.create "empty.stub")
+          ~local_mode:Source.PlaceholderStub
+          ~path:"empty/stub.pyi"
+          "";
       ]
       ()
   in

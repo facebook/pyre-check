@@ -58,6 +58,7 @@ module type Handler = sig
 
   val register_module
     :  qualifier: Access.t
+    -> local_mode: Source.mode
     -> path: string option
     -> stub: bool
     -> statements: Statement.t list

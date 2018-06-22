@@ -111,9 +111,21 @@ let test_register_aliases _ =
       let environment = Environment.Builder.create ~configuration () in
       let (module Handler: Environment.Handler) = Environment.handler ~configuration environment in
       let sources = List.map sources ~f:Preprocessing.preprocess in
-      let register ({ Source.path; qualifier; statements; _ } as source) =
+      let register
+          ({
+            Source.path;
+            qualifier;
+            statements;
+            metadata = { Source.Metadata.local_mode; _ };
+            _;
+          } as source) =
         let stub = String.is_suffix path ~suffix:".pyi" in
-        Handler.register_module ~qualifier ~path:(Some path) ~stub ~statements;
+        Handler.register_module
+          ~qualifier
+          ~local_mode
+          ~path:(Some path)
+          ~stub
+          ~statements;
         Environment.register_class_definitions (module Handler) source |> ignore;
       in
       List.iter sources ~f:register;
@@ -248,16 +260,21 @@ let test_register_aliases _ =
   (* Stub-suppressed aliases show up as `Any`. *)
   assert_resolved
     [
-      parse ~qualifier:(Access.create "stubbed") ~path:"stubbed.pyi" "";
       parse
-        ~qualifier:(Access.create "qualifier")
+        ~qualifier:(Access.create "stubbed")
+        ~local_mode:Source.PlaceholderStub
+        ~path:"stubbed.pyi"
+        "";
+      parse
+       ~qualifier:(Access.create "qualifier")
         {|
           class str: ...
           T = stubbed.Something
           Q = typing.Union[stubbed.Something, str]
         |};
     ]
-    ["qualifier.T", "typing.Any"; "qualifier.Q", "typing.Any"]
+    ["qualifier.T", "typing.Any"; "qualifier.Q", "typing.Any"];
+  ()
 
 
 let test_connect_definition _ =

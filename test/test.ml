@@ -116,10 +116,17 @@ let parse
     ?(debug = true)
     ?(version = 3)
     ?(docstring = None)
+    ?local_mode
     source =
-  trim_extra_indentation source
-  |> parse_untrimmed ~path ~qualifier ~debug ~version ~docstring
-
+  let ({ Source.metadata; _ } as source) =
+    trim_extra_indentation source
+    |> parse_untrimmed ~path ~qualifier ~debug ~version ~docstring
+  in
+  match local_mode with
+  | Some local_mode ->
+      { source with Source.metadata = { metadata with Source.Metadata.local_mode } }
+  | _ ->
+      source
 
 let parse_single_statement source =
   match parse source with

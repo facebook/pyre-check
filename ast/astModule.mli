@@ -4,6 +4,7 @@
     LICENSE file in the root directory of this source tree. *)
 
 module Statement = AstStatement
+module Source = AstSource
 
 open Statement
 
@@ -11,7 +12,13 @@ open Statement
 type t
 [@@deriving compare, eq, sexp, show]
 
-val create: qualifier: Access.t -> ?path: string -> stub: bool -> Statement.t list -> t
+val create
+  :  qualifier: Access.t
+  -> local_mode: Source.mode
+  -> ?path: string
+  -> stub: bool
+  -> Statement.t list
+  -> t
 
 val empty_stub: t -> bool
 val from_empty_stub: access: Access.t -> module_definition: (Access.t -> t option) -> bool
