@@ -259,7 +259,7 @@ class ErrorHandling(Command):
         if os.path.isfile(configuration_file):
             with open(configuration_file) as file:
                 configuration = json.loads(file.read())
-                return bool(configuration["push_blocking"])
+                return bool(configuration.get("push_blocking", False))
         else:
             directory_path = os.path.dirname(path)
             under_configuration = (

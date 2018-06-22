@@ -116,3 +116,24 @@ class ErrorHandlingTest(unittest.TestCase):
             "builtins.open", mock_open(read_data=local_configuration), create=True
         ):
             self.assertTrue(handler._is_under_push_blocking_configuration("/x/y/z"))
+
+    @patch.object(Error, "__init__", return_value=None)
+    @patch.object(Error, "__hash__", return_value=0)
+    @patch.object(os.path, "isfile", side_effect=lambda path: True)
+    @patch.object(builtins, "open")
+    def test_is_push_blocking_implicit(
+        self, open, isfile, error_hash, create_error
+    ) -> None:
+        arguments = mock_arguments()
+        arguments.original_directory = "/a"  # called from
+        arguments.current_directory = "/"  # project root
+        arguments.local_configuration = None
+        configuration = mock_configuration()
+        handler = commands.ErrorHandling(
+            arguments, configuration, source_directory="/a/b/c"
+        )
+        local_configuration = '{"targets": ["//project/..."], "continuous": true}'
+        with patch(
+            "builtins.open", mock_open(read_data=local_configuration), create=True
+        ):
+            self.assertFalse(handler._is_under_push_blocking_configuration("/x/y/z"))
