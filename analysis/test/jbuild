@@ -25,6 +25,17 @@
 
 
 (executable
+ ((name abstractDomainTest)
+  (modules (abstractDomainTest))
+  (libraries
+   (oUnit
+    pyrelib.service
+    pyrelib.test
+    pyrelib.testSetup
+    pyrelib.analysis))))
+
+
+(executable
  ((name analysisCallGraphTest)
   (modules (analysisCallGraphTest))
   (preprocess
@@ -244,6 +255,12 @@
     pyrelib.test
     pyrelib.annotatedTest
     pyrelib.analysis))))
+
+
+(alias
+ ((name runtest)
+  (deps (abstractDomainTest.exe))
+  (action (run ${<} -runner sequential))))
 
 
 (alias

@@ -4,6 +4,10 @@
     LICENSE file in the root directory of this source tree. *)
 
 
+module AbstractDomain = AbstractDomain
+module AbstractSetDomain = AbstractSetDomain
+module AbstractMapDomain = AbstractMapDomain
+module AbstractPairDomain = AbstractPairDomain
 module Annotated = Annotated
 module Annotation = AnalysisAnnotation
 module Cfg = AnalysisCfg

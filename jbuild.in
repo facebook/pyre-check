@@ -138,6 +138,7 @@
     pyrelib.pyreCommand
     pyrelib.configuration
     pyrelib.pyre
+    pyrelib.taint
     pyrelib.timer
     pyrelib.path
     pyrelib.file
