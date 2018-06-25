@@ -25,7 +25,7 @@ let call_graph_of_source environment source =
   let fold_defines
       call_graph
       { Node.value = ({ Define.name = caller; _ } as define); _ } =
-    let open TypeResolutionSharedMemory.TypeAnnotationsValue in
+    let open TypeResolutionSharedMemory in
     let cfg = Cfg.create define in
     let annotation_lookup =
       let option_exn option = Option.value_exn option in

@@ -1923,7 +1923,7 @@ let check
         let open AnalysisTypeResolutionSharedMemory in
         let dump_resolutions { State.resolution_fixpoint; _ } =
           let serialize ~key ~data:annotations accumulator =
-            TypeAnnotationsValue.{
+            {
               key;
               annotations = Access.Map.to_alist annotations
             } :: accumulator

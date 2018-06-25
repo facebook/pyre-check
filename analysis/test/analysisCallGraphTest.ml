@@ -109,7 +109,6 @@ let test_construction _ =
 
 let test_type_collection _ =
   let open TypeResolutionSharedMemory in
-  let open TypeAnnotationsValue in
   let (!) = Access.show in
   let assert_type_collection source ~qualifier ~expected =
     let source = parse_source ~qualifier source in
