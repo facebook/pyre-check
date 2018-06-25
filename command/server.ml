@@ -541,7 +541,6 @@ let run_start_command
     terminal
     use_watchman
     verbose
-    version
     expected_version
     sections
     debug
@@ -559,14 +558,6 @@ let run_start_command
     typeshed
     source_root
     () =
-  (* T29256759: backward compatibility code. Prefer the new option. *)
-  let expected_version =
-    Option.merge
-      expected_version
-      version
-      ~f:(fun expected _ -> expected)
-  in
-
   let configuration =
     Configuration.create
       ~verbose

@@ -12,14 +12,7 @@ module Time = Core_kernel.Time_ns.Span
 module Protocol = ServerProtocol
 module Socket = CommandSocket
 
-let run_command version expected_version log_identifier source_root () =
-  (* T29256759: backward compatibility code. Prefer the new option. *)
-  let expected_version =
-    Option.merge
-      expected_version
-      version
-      ~f:(fun expected _ -> expected)
-  in
+let run_command expected_version log_identifier source_root () =
   let source_root = Path.create_absolute source_root in
   let configuration = Configuration.create
       ~source_root
@@ -162,11 +155,6 @@ let command =
     ~summary:"Opens a persistent connection to the server (IDE integration)"
     Command.Spec.(
       empty
-      +> flag
-        "-version"
-        (optional string)
-        ~doc:"VERSION [deprecated] When connecting to a server, \
-              this is version we are expecting to connect to."
       +> flag
         "-expected-binary-version"
         (optional string)

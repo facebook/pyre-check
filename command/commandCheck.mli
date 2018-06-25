@@ -22,7 +22,6 @@ val check: Configuration.t -> Scheduler.t option -> unit -> result
 val run_check
   : bool
   -> string option
-  -> string option
   -> string list
   -> bool
   -> bool
