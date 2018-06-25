@@ -25,8 +25,8 @@ let parse_query ~root query =
   | [{
       Node.value = Statement.Expression {
           Node.value = Expression.Access [
-              Expression.Access.Identifier name;
-              Expression.Access.Call { Node.value = arguments; _ };
+              { Node.value = Expression.Access.Identifier name; _ };
+              { Node.value = Expression.Access.Call arguments; _ };
             ];
           _;
         };

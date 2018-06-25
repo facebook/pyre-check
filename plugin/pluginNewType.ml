@@ -19,16 +19,17 @@ let transform_ast ({ Source.statements; _ } as source) =
             Some {
               Node.value =
                 Access [
-                  Access.Identifier typing;
-                  Access.Identifier new_type;
-                  Access.Call {
-                    Node.value = [
-                      { Argument.value = { Node.value = String name; _ }; _ };
-                      {
-                        Argument.value = ({ Node.value = Access _; _ } as base);
-                        _;
-                      } as base_argument;
-                    ];
+                  { Node.value = Access.Identifier typing; _ };
+                  { Node.value = Access.Identifier new_type; _ };
+                  {
+                    Node.value =
+                      Access.Call [
+                        { Argument.value = { Node.value = String name; _ }; _ };
+                        {
+                          Argument.value = ({ Node.value = Access _; _ } as base);
+                          _;
+                        } as base_argument;
+                      ];
                     _;
                   };
                 ];
@@ -39,7 +40,9 @@ let transform_ast ({ Source.statements; _ } as source) =
           let name = Access.create name in
           let constructor =
             Define {
-              Define.name = [Access.Identifier (Identifier.create "__init__")];
+              Define.name = [
+                Access.identifier ~location (Identifier.create "__init__")
+              ];
               parameters = [
                 Parameter.create ~location ~name:(Identifier.create "self") ();
                 Parameter.create ~location ~annotation:base ~name:(Identifier.create "input") ();

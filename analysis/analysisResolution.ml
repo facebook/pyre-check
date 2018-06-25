@@ -70,7 +70,7 @@ let get_local { annotations; global; define = { Define.name; _ }; _ } ~access =
       begin
         let access, is_local =
           match access with
-          | [Access.Identifier name] ->
+          | [({ Node.value = Access.Identifier name; _ } as node)] ->
               let is_local =
                 Identifier.show name
                 |> String.is_prefix ~prefix:"$local_"
@@ -79,7 +79,7 @@ let get_local { annotations; global; define = { Define.name; _ }; _ } ~access =
                 Identifier.show_sanitized name
                 |> Identifier.create
               in
-              [Access.Identifier name], is_local
+              [{ node with Node.value = Access.Identifier name }], is_local
           | _ ->
               access, false
         in
@@ -147,7 +147,7 @@ let parse_annotation
   let expression =
     let is_local_access =
       match value with
-      | Access [Access.Identifier name]
+      | Access [{ Node.value = Access.Identifier name; _ }]
         when Identifier.show name |> String.is_prefix ~prefix:"$local_" -> true
       | _ -> false
     in

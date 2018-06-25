@@ -112,7 +112,7 @@
     let arguments =
       let argument argument =
         let none =
-          Access [Access.Identifier (Identifier.create "None")]
+          Access [Access.identifier ~location (Identifier.create "None")]
           |> Node.create ~location
         in
         Option.value argument ~default:none
@@ -878,8 +878,11 @@ simple_access:
         let (stop, _) = List.last_exn identifiers in
         { start with Location.stop = stop.Location.stop } in
       let identifiers =
-        List.map ~f:snd identifiers
-        |> List.map ~f:(fun identifier -> Access.Identifier identifier) in
+        List.map
+          ~f:(fun (location, identifier) ->
+            Node.create ~location (Access.Identifier identifier))
+          identifiers
+      in
       location, identifiers
     }
   ;
@@ -929,7 +932,7 @@ simple_access:
   | expression = expression {
       let rec identifier expression =
         match expression with
-        | { Node.location; value = Access [Access.Identifier identifier] } ->
+        | { Node.location; value = Access [{ Node.value = Access.Identifier identifier; _ }] } ->
             (location, identifier)
         | { Node.location; value = Starred (Starred.Once expression) } ->
             location,
@@ -1041,7 +1044,7 @@ import:
       {(fst name) with Location.stop = (fst alias).Location.stop},
       {
         Import.name = snd name;
-        alias = Some [Access.Identifier (snd alias)];
+        alias = Some [Access.identifier ~location:(fst alias) (snd alias)];
       }
     }
   ;
@@ -1062,7 +1065,8 @@ atom:
   | identifier = identifier {
       {
         Node.location = fst identifier;
-        value = Access [Access.Identifier (snd identifier)];
+        value =
+          Access [Access.identifier ~location:(fst identifier) (snd identifier)];
       }
     }
 
@@ -1104,7 +1108,7 @@ atom:
         value =
           Access
             (Expression.access name @
-             [Access.Call (Node.create ~location:call_location arguments)]);
+             [Node.create ~location:call_location (Access.Call arguments)]);
       }
     }
 

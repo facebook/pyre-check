@@ -35,12 +35,15 @@ module Record : sig
 
   module Access : sig
     type 'expression access =
-      | Call of (('expression Argument.record) list) Node.t
+      | Call of ('expression Argument.record) list
       | Expression of 'expression
       | Identifier of Identifier.t
     [@@deriving compare, eq, sexp, show, hash]
 
-    type 'expression record = ('expression access) list
+    type 'expression access_node = ('expression access) Node.t
+    [@@deriving compare, eq, sexp, show, hash]
+
+    type 'expression record = ('expression access_node) list
     [@@deriving compare, eq, sexp, show, hash]
   end
 
@@ -195,9 +198,10 @@ module Access : sig
 
   include Hashable with type t := t
 
-  val create: string -> t
-  val create_from_identifiers: Identifier.t list -> t
+  val create: ?location: Location.t -> string -> t
+  val create_from_identifiers: ?location: Location.t -> Identifier.t list -> t
   val create_from_expression: expression_t -> t
+  val identifier: ?location: Location.t -> Identifier.t -> expression_t access_node
 
   val sanitized: t -> t
   val pp_sanitized: Format.formatter -> t -> unit

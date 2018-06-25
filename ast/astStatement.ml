@@ -238,8 +238,10 @@ module Attribute = struct
     let open Expression in
     let access = Expression.access target in
     match List.rev access with
-    | (Access.Call _) :: ((Access.Identifier _) as access) :: class_name
-    | ((Access.Identifier _) as access) :: class_name
+    | { Node.value = Access.Call _ ; _ } ::
+      ({ Node.value = Access.Identifier _; _ } as access) ::
+      class_name
+    | ({ Node.value = Access.Identifier _; _ } as access) :: class_name
       when Access.equal parent (List.rev class_name) ->
         Some { target with Node.value = Access [access] }
     | _ ->
@@ -252,7 +254,10 @@ let has_decorator ~decorators decorator =
   let rec is_decorator expected actual =
     match expected, Expression.delocalize ~qualifier:[] actual with
     | (expected_decorator :: expected_decorators),
-      { Node.location; value = Access ((Access.Identifier identifier) :: identifiers) }
+      {
+        Node.location;
+        value = Access ({ Node.value = Access.Identifier identifier; _ } :: identifiers);
+      }
       when Identifier.show identifier = expected_decorator ->
         if List.is_empty expected_decorators && List.is_empty identifiers then
           true
@@ -321,7 +326,7 @@ module Define = struct
           List.is_prefix
             name
             ~prefix:parent
-            ~equal:(Access.equal_access Expression.equal)
+            ~equal:(Node.equal (Access.equal_access Expression.equal))
         in
         if is_qualified then List.drop name (List.length parent) else name
     | _ ->
@@ -369,7 +374,7 @@ module Define = struct
   let is_constructor ?(in_test = false) { name; parent; _ } =
     let name =
       match List.last name with
-      | Some (Access.Identifier name) -> Identifier.show name
+      | Some { Node.value = Access.Identifier name; _ } -> Identifier.show name
       | _ -> "$unknown"
     in
     if Option.is_none parent then
@@ -402,13 +407,15 @@ module Define = struct
 
   let is_toplevel { name; _ } =
     match List.last name with
-    | Some (Access.Identifier toplevel) when Identifier.show toplevel = "$toplevel" -> true
+    | Some { Node.value = Access.Identifier toplevel; _ }
+      when Identifier.show toplevel = "$toplevel" -> true
     | _ -> false
 
 
   let is_class_toplevel { name; _ } =
     match List.last name with
-    | Some (Access.Identifier toplevel) when Identifier.show toplevel = "$class_toplevel" -> true
+    | Some { Node.value = Access.Identifier toplevel; _ }
+      when Identifier.show toplevel = "$class_toplevel" -> true
     | _ -> false
 
 
@@ -417,8 +424,8 @@ module Define = struct
       | {
         Node.value = Expression {
             Node.value = Expression.Access [
-                Access.Identifier identifier;
-                Access.Call _;
+                { Node.value = Access.Identifier identifier; _ };
+                { Node.value = Access.Call _; _ };
               ];
             _;
           };
@@ -465,7 +472,7 @@ module Define = struct
           let attribute map target =
             match target with
             | ({
-                Node.value = Access ((Access.Identifier self) :: ([_] as access));
+                Node.value = Access ({ Node.value = Access.Identifier self; _ } :: ([_] as access));
                 _;
               } as target) when Identifier.equal self (self_identifier define) ->
                 let attribute =
@@ -517,12 +524,11 @@ module Define = struct
                   in
                   Some {
                     Node.location;
-                    value = Access [
-                        Access.Identifier (Identifier.create "typing");
-                        Access.Identifier (Identifier.create "Union");
-                        Access.Identifier (Identifier.create "__getitem__");
-                        Access.Call (Node.create_with_default_location [argument]);
-                      ];
+                    value = Access ([
+                        Access.identifier ~location (Identifier.create "typing");
+                        Access.identifier ~location (Identifier.create "Union");
+                      ] @ Access.call ~arguments:[argument] ~location ~name:"__getitem__" ()
+                      );
                   }
           in
           { Node.location; value = { attribute with Attribute.annotation }}
@@ -544,9 +550,9 @@ module Define = struct
         | Expression {
             Node.value =
               Access [
-                Access.Identifier self;
-                (Access.Identifier _) as name;
-                Access.Call _;
+                { Node.value = Access.Identifier self; _ };
+                ({ Node.value = Access.Identifier _; _ } as name);
+                { Node.value = Access.Call _; _ };
               ];
             _;
           } when Identifier.equal self (self_identifier define) ->
@@ -601,12 +607,11 @@ module Define = struct
               in
               Some {
                 Node.location;
-                value = Access [
-                    Access.Identifier (Identifier.create "typing");
-                    Access.Identifier (Identifier.create "ClassVar");
-                    Access.Identifier (Identifier.create "__getitem__");
-                    Access.Call (Node.create_with_default_location [argument]);
-                  ];
+                value = Access ([
+                    Access.identifier ~location (Identifier.create "typing");
+                    Access.identifier ~location (Identifier.create "ClassVar");
+                  ] @ Access.call ~arguments:[argument] ~location ~name:"__getitem__" ()
+                  );
               }
           | _ ->
               None
@@ -717,9 +722,9 @@ module Class = struct
                   let get_item =
                     let index = Node.create ~location (Integer index) in
                     [
-                      Access.Identifier (Identifier.create "__getitem__");
-                      Access.Call
-                        (Node.create ~location [{ Argument.name = None; value = index }]);
+                      Access.identifier ~location (Identifier.create "__getitem__");
+                      Access.Call [{ Argument.name = None; value = index }]
+                      |> Node.create ~location;
                     ]
                   in
                   { value with Node.value = Access (values @ get_item) }
@@ -864,22 +869,22 @@ module Class = struct
                 in
                 Node.create
                   ~location
-                  (Access [
-                      Access.Identifier (Identifier.create "typing");
-                      Access.Identifier (Identifier.create "Type");
-                      Access.Identifier (Identifier.create "__getitem__");
-                      Access.Call (Node.create_with_default_location [argument]);
-                    ])
+                  (Access ([
+                       Access.identifier ~location (Identifier.create "typing");
+                       Access.identifier ~location (Identifier.create "Type");
+                     ] @ Access.call ~arguments:[argument] ~location ~name:"__getitem__" ()
+                     )
+                  )
               in
               let argument = { Argument.name = None; value = meta_annotation } in
               Node.create
                 ~location
-                (Access [
-                    Access.Identifier (Identifier.create "typing");
-                    Access.Identifier (Identifier.create "ClassVar");
-                    Access.Identifier (Identifier.create "__getitem__");
-                    Access.Call (Node.create_with_default_location [argument]);
-                  ])
+                (Access ([
+                     Access.identifier ~location (Identifier.create "typing");
+                     Access.identifier ~location (Identifier.create "ClassVar");
+                   ] @ Access.call ~arguments:[argument] ~location ~name:"__getitem__" ()
+                   )
+                )
             in
             Map.set
               ~key:name
@@ -900,7 +905,7 @@ module Class = struct
         let open Expression in
         let is_slots access =
           match List.last access with
-          | Some (Access.Identifier identifier)
+          | Some { Node.value = Access.Identifier identifier; _ }
             when (Identifier.show identifier) = "__slots__" ->
               true
           | _ ->
@@ -1067,11 +1072,17 @@ module For = struct
           (Access.call ~name: "__next__" ~location ())
       in
       begin
-        match value with
-        | Access access ->
-            access @ next
-        | expression ->
-            [Access.Expression (Node.create_with_default_location expression)] @ next
+        let access =
+          match value with
+          | Access access ->
+              access
+          | expression ->
+              [(
+                Node.create_with_default_location (
+                  Access.Expression (Node.create_with_default_location expression))
+              )]
+        in
+        access @ next
       end
     in
     {

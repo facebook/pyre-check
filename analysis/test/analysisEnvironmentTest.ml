@@ -1050,7 +1050,7 @@ let test_class_definition _ =
     |> value
     |> Node.value
   in
-  assert_equal any.Class.name (access ["object"])
+  assert_equal ~cmp:Access.equal ~printer:Access.show any.Class.name (access ["object"])
 
 
 let test_protocols _ =

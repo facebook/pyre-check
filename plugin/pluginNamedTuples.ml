@@ -18,9 +18,9 @@ let transform_ast ({ Source.qualifier; statements; _ } as source) =
       Node.location;
       value =
         Access [
-          Access.Identifier module_name;
-          Access.Identifier named_tuple;
-          Access.Call { Node.value = arguments; _ };
+          { Node.value = Access.Identifier module_name; _ };
+          { Node.value = Access.Identifier named_tuple; _ };
+          { Node.value = Access.Call arguments; _ };
         ];
     } when (Identifier.show module_name = "typing" &&
             Identifier.show named_tuple = "NamedTuple") ||

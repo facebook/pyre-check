@@ -56,13 +56,17 @@ module Record = struct
 
   module Access = struct
     type 'expression access =
-      | Call of (('expression Argument.record) list) Node.t
+      | Call of ('expression Argument.record) list
       | Expression of 'expression
       | Identifier of Identifier.t
     [@@deriving compare, eq, sexp, show, hash]
 
 
-    type 'expression record = ('expression access) list
+    type 'expression access_node = ('expression access) Node.t
+    [@@deriving compare, eq, sexp, show, hash]
+
+
+    type 'expression record = ('expression access_node) list
     [@@deriving compare, eq, sexp, show, hash]
   end
 
@@ -288,7 +292,8 @@ module Access = struct
       | _ ->
           "?"
     in
-    List.map ~f:identifier access
+    List.map ~f:Node.value access
+    |> List.map ~f:identifier
     |> String.concat ~sep:"."
     |> Format.fprintf format "%s"
 
@@ -298,10 +303,11 @@ module Access = struct
 
 
   let sanitized access =
-    let sanitized element =
+    let sanitized ({ Node.value = element; _ } as node) =
       match element with
-      | Identifier identifier -> Identifier (Identifier.sanitized identifier)
-      | _ -> element
+      | Identifier identifier ->
+          { node with Node.value = Identifier (Identifier.sanitized identifier) }
+      | _ -> node
     in
     List.map access ~f:sanitized
 
@@ -314,6 +320,7 @@ module Access = struct
       | _ -> "?"
     in
     sanitized access
+    |> List.map ~f:Node.value
     |> List.map ~f:identifier
     |> String.concat ~sep:"."
     |> Format.fprintf format "%s"
@@ -329,13 +336,13 @@ module Access = struct
 
   let delocalize access ~qualifier =
     match access with
-    | (Identifier identifier) :: tail
-      when Identifier.show identifier |> String.is_prefix ~prefix:"$local_"->
+    | ({ Node.value = (Identifier identifier); _ } as access_node) :: tail
+      when Identifier.show identifier |> String.is_prefix ~prefix:"$local_" ->
         let identifier =
           Identifier.show_sanitized identifier
           |> Identifier.create
         in
-        qualifier @ [Identifier identifier] @ tail
+        qualifier @ [{access_node with Node.value = Identifier identifier }] @ tail
     | _ ->
         access
 
@@ -343,8 +350,10 @@ module Access = struct
   let delocalize_qualified access =
     List.rev access
     |> (function
-        | (Identifier identifier) :: tail -> (Identifier (Identifier.sanitized identifier)) :: tail
-        | access -> access)
+        | ({ Node.value = (Identifier identifier); _ } as access_node) :: tail ->
+            { access_node with Node.value = (Identifier (Identifier.sanitized identifier)) } :: tail
+        | access ->
+            access)
     |> List.rev
 
 
@@ -400,31 +409,42 @@ module Access = struct
     end)
 
 
-  let create name =
-    if String.equal name "..." then
-      [Identifier (Identifier.create name)]
-    else
-      String.split ~on:'.' name
-      |> List.map ~f:(fun name -> Identifier (Identifier.create name))
+  let identifier ?(location = Location.any) identifier =
+    Node.create ~location (Identifier identifier)
 
 
-  let create_from_identifiers identifiers =
-    List.map ~f:(fun identifier -> Identifier identifier) identifiers
+  let create_from_identifiers ?(location = Location.any) identifiers =
+    List.map ~f:(identifier ~location) identifiers
 
 
-  let create_from_expression ({ Node.value; _ } as expression) =
+  let create_from_expression ({ Node.value; location } as expression) =
     match value with
     | Access access -> access
-    | _ -> [Expression expression]
+    | _ -> [Node.create ~location (Expression expression)]
+
+
+  let create ?(location = Location.any) name =
+    let identifier_names name =
+      if String.equal name "..." then
+        [name]
+      else
+        String.split ~on:'.' name
+    in
+    identifier_names name
+    |> List.map ~f:Identifier.create
+    |> create_from_identifiers ~location
 
 
   let call ?(arguments = []) ~location ~name () =
-    [Identifier (Identifier.create name); Call { Node.location; value = arguments }]
+    [
+      { Node.location; value = Identifier (Identifier.create name); };
+      { Node.location; value = Call arguments; };
+    ]
 
 
   let backup ~arguments ~name =
     match List.rev name with
-    | (Identifier name) :: _ ->
+    | ({ Node.value = Identifier name; _ } as node) :: _ ->
         (* cf. https://docs.python.org/3/reference/datamodel.html#object.__radd__ *)
         begin
           match Identifier.show name with
@@ -444,14 +464,15 @@ module Access = struct
           | "__or__" -> Some "__ror__"
           | _ -> None
         end
-        >>| fun name -> List.rev arguments, [Identifier (Identifier.create name)]
+        >>| fun name ->
+        List.rev arguments, [{ node with Node.value = Identifier (Identifier.create name) }]
     | _ ->
         None
 
 
   let redirect ~arguments ~location ~name =
     match name, arguments with
-    | [Identifier name], [{ Argument.value; _ }] ->
+    | [{ Node.value = Identifier name; _ }], [{ Argument.value; _ }] ->
         begin
           match Identifier.show name with
           | "abs" -> Some "__abs__"
@@ -474,16 +495,20 @@ let rec delocalize ({ Node.value; _ } as expression) ~qualifier =
     match value with
     | Access access ->
         let access =
-          let delocalize_element = function
-            | Access.Call ({ Node.value = arguments; _ } as call) ->
-                let delocalize_argument ({ Argument.value; _ } as argument) =
-                  { argument with Argument.value = delocalize value ~qualifier }
-                in
-                Access.Call { call with Node.value = List.map arguments ~f:delocalize_argument }
-            | Access.Expression expression ->
-                Access.Expression (delocalize expression ~qualifier)
-            | element ->
-                element
+          let delocalize_element ({ Node.value; _ } as node) =
+            let value =
+              match value with
+              | Access.Call arguments ->
+                  let delocalize_argument ({ Argument.value; _ } as argument) =
+                    { argument with Argument.value = delocalize value ~qualifier }
+                  in
+                  Access.Call (List.map arguments ~f:delocalize_argument)
+              | Access.Expression expression ->
+                  Access.Expression (delocalize expression ~qualifier)
+              | element ->
+                  element
+            in
+            { node with Node.value }
           in
           Access.delocalize access ~qualifier
           |> List.map ~f:delocalize_element
@@ -636,7 +661,7 @@ module PrettyPrinter = struct
 
   and pp_access formatter access =
     match access with
-    | Access.Call { Node.value = arguments; _ } ->
+    | Access.Call arguments ->
         Format.fprintf
           formatter
           "(%a)"
@@ -650,14 +675,14 @@ module PrettyPrinter = struct
   and pp_access_list formatter access_list =
     match access_list with
     | [] -> ()
-    | access :: [] -> Format.fprintf formatter "%a" pp_access access
-    | access :: (((Access.Call _) :: _) as access_list) ->
+    | { Node.value = access; _ } :: [] -> Format.fprintf formatter "%a" pp_access access
+    | { Node.value = access; _ } :: (({ Node.value = Access.Call _ ; _ } :: _) as access_list) ->
         Format.fprintf
           formatter
           "%a%a"
           pp_access access
           pp_access_list access_list
-    | access :: access_list ->
+    | { Node.value = access; _ } :: access_list ->
         Format.fprintf
           formatter
           "%a.%a"

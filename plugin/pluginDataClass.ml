@@ -25,7 +25,7 @@ let transform_ast ({ Source.statements; _ } as source) =
             | { Node.value = Define { Define.name = access; _ }; _ } ->
                 begin
                   match List.last access with
-                  | Some (Access.Identifier method_name) ->
+                  | Some { Node.value = Access.Identifier method_name; _ } ->
                       Identifier.equal method_name (Identifier.create name)
                   | _ ->
                       false
@@ -72,7 +72,7 @@ let transform_ast ({ Source.statements; _ } as source) =
                     }) ->
                   begin
                     match List.last access with
-                    | Some (Access.Identifier name) ->
+                    | Some { Node.value = Access.Identifier name; _ } ->
                         Parameter.create ~name ~annotation ?value () :: parameters
                     | _ ->
                         parameters

@@ -108,18 +108,18 @@ module Make (Transformer : Transformer) = struct
       let transform_children value =
         match value with
         | Access access ->
-            let transform_access access =
-              match access with
-              | Access.Call { Node.value = arguments; location } ->
-                  Access.Call
-                    {
-                      Node.value =
-                        transform_list arguments ~f:(transform_argument ~transform_expression);
-                      location;
-                    }
-              | Access.Identifier _ -> access
-              | Access.Expression expression ->
-                  Access.Expression (transform_expression expression)
+            let transform_access ({ Node.value = access; _ } as node) =
+              let access =
+                match access with
+                | Access.Call arguments ->
+                    Access.Call (
+                      transform_list arguments ~f:(transform_argument ~transform_expression)
+                    )
+                | Access.Identifier _ -> access
+                | Access.Expression expression ->
+                    Access.Expression (transform_expression expression)
+              in
+              { node with Node.value = access }
             in
             Access (transform_list access ~f:transform_access)
         | Await expression ->

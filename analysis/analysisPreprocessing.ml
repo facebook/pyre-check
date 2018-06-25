@@ -22,20 +22,17 @@ let expand_string_annotations source =
             match value with
             | Access access ->
                 let transform_element = function
-                  | Access.Call ({ Node.value = arguments ; _ } as call) ->
+                  | Access.Call arguments ->
                       let transform_argument ({ Argument.value; _ } as argument) =
                         { argument with Argument.value = transform_expression value }
                       in
-                      Access.Call {
-                        call with
-                        Node.value = List.map arguments ~f:transform_argument;
-                      }
+                      Access.Call (List.map arguments ~f:transform_argument)
                   | Access.Expression expression ->
                       Access.Expression (transform_expression expression)
                   | element ->
                       element
                 in
-                Access (List.map access ~f:transform_element)
+                Access (List.map access ~f:(Node.map ~f:transform_element))
             | String string ->
                 let parsed =
                   try
@@ -200,14 +197,18 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
       |> Identifier.create
     in
     let name = Identifier.create name in
-    let access = [Access.Identifier name] in
+    let access = [Access.identifier name] in
     {
       scope with
       aliases =
         Map.set
           aliases
           ~key:access
-          ~data:{ access = [Access.Identifier renamed]; qualifier; is_forward_reference = false };
+          ~data:{
+            access = [Access.identifier renamed];
+            qualifier;
+            is_forward_reference = false
+          };
       immutables = Set.add immutables access;
     },
     stars,
@@ -297,7 +298,7 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
           | Global identifiers ->
               let immutables =
                 let register_global immutables identifier =
-                  Set.add immutables [Access.Identifier identifier]
+                  Set.add immutables [Access.identifier ~location identifier]
                 in
                 List.fold identifiers ~init:immutables ~f:register_global
               in
@@ -359,8 +360,8 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
                     (* Qualify field assignments in class body. *)
                     let alias =
                       match qualify_access ~scope access with
-                      | [Access.Identifier name] ->
-                          [Access.Identifier (Identifier.sanitized name)]
+                      | [({ Node.value = Access.Identifier name; _ } as node)] ->
+                          [{ node with Node.value = Access.Identifier (Identifier.sanitized name)}]
                       | qualified ->
                           qualified
                     in
@@ -379,12 +380,16 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
                         List.is_prefix
                           alias
                           ~prefix:qualifier
-                          ~equal:(Access.equal_access Expression.equal)
+                          ~equal:(Access.equal_access_node Expression.equal)
                       in
                       if is_qualified then alias else qualifier @ alias
                     in
                     scope, Access qualified
-                | Access ([Access.Identifier name] as access) ->
+                | Access ([
+                    {
+                      Node.value = Access.Identifier name;
+                      location = access_location
+                    }] as access) ->
                     (* Incrementally number local variables to avoid shadowing. *)
                     let scope =
                       let qualified =
@@ -405,7 +410,8 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
                               Identifier.show name
                               |> Format.asprintf "$local_%d_%s" count
                               |> Identifier.create
-                              |> fun identifier -> [Access.Identifier identifier]
+                              |> fun identifier ->
+                              [Access.identifier ~location:access_location identifier]
                             in
                             if not (Set.mem aliases alias) then
                               alias
@@ -431,8 +437,11 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
                     let access =
                       let qualified =
                         match qualify_access ~scope access with
-                        | [Access.Identifier name] ->
-                            [Access.Identifier (Identifier.sanitized name)]
+                        | [({ Node.value = Access.Identifier name; _ } as node)] ->
+                            [{
+                              node with
+                              Node.value = Access.Identifier (Identifier.sanitized name);
+                            }]
                         | qualified ->
                             qualified
                       in
@@ -679,7 +688,7 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
       match target with
       | { Node.value = Tuple elements; _ } ->
           List.fold elements ~init:scope ~f:renamed_scope
-      | { Node.value = Access [Access.Identifier name]; _ } ->
+      | { Node.value = Access [{ Node.value = Access.Identifier name; _ }]; _ } ->
           let scope, _, _ = prefix_identifier ~scope ~prefix:"target" name in
           scope
       | _ ->
@@ -700,7 +709,7 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
               [head]
         in
         let qualify_element = function
-          | Access.Call ({ Node.value = arguments ; _ } as call) ->
+          | Access.Call arguments ->
               let qualify_argument { Argument.name; value } =
                 let name =
                   let rename identifier =
@@ -713,13 +722,13 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
                 in
                 { Argument.name; value = qualify_expression ~scope value }
               in
-              Access.Call { call with Node.value = List.map arguments ~f:qualify_argument }
+              Access.Call (List.map arguments ~f:qualify_argument)
           | Access.Expression expression ->
               Access.Expression (qualify_expression ~scope expression)
           | element ->
               element
         in
-        List.map (head @ tail) ~f:qualify_element
+        List.map (head @ tail) ~f:(Node.map ~f:qualify_element)
     | _ ->
         access
 
@@ -982,11 +991,14 @@ let expand_type_checking_imports source =
       let statement_postorder _ ({ Node.value; _ } as statement) =
         let is_type_checking { Node.value; _ } =
           match value with
-          | Access [Access.Identifier typing; Access.Identifier type_checking]
+          | Access [
+              { Node.value = Access.Identifier typing; _ };
+              { Node.value = Access.Identifier type_checking; _ }
+            ]
             when Identifier.show typing = "typing" &&
                  Identifier.show type_checking = "TYPE_CHECKING" ->
               true
-          | Access [Access.Identifier type_checking]
+          | Access [{ Node.value = Access.Identifier type_checking; _ }]
             when Identifier.show type_checking = "TYPE_CHECKING" ->
               true
           | _ ->

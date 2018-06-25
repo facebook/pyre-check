@@ -194,7 +194,8 @@ module State = struct
                         Type.is_optional expected ||
                         Option.is_some (Attribute.value attribute)) ->
                 let access =
-                  (Expression.Access.Identifier (Statement.Define.self_identifier define)) :: name
+                  (Expression.Access.identifier (Statement.Define.self_identifier define))
+                  :: name
                 in
                 if Map.mem (Resolution.annotations resolution) access then
                   errors
@@ -273,7 +274,7 @@ module State = struct
             |> Identifier.show
             |> String.filter ~f:(fun character -> character <> '*')
             |> Identifier.create
-            |> fun name -> [Access.Identifier name]
+            |> fun name -> [Access.identifier ~location name]
           in
           let { Annotation.annotation; mutability }, errors =
             match index, parent with
@@ -431,7 +432,7 @@ module State = struct
                  let parameter_name =
                    Identifier.show_sanitized key
                    |> Identifier.create
-                   |> fun name -> [Expression.Access.Identifier name]
+                   |> fun name -> [Expression.Access.identifier name]
                  in
                  let error =
                    {
@@ -644,7 +645,11 @@ module State = struct
     in
 
     let is_assert_function access =
-      List.take_while access ~f:(function | Access.Identifier _ -> true | _ -> false)
+      List.take_while
+        access
+        ~f:(function
+            | { Node.value = Access.Identifier _; _ } -> true
+            | _ -> false)
       |> Access.show
       |> Set.mem Recognized.assert_functions
     in
@@ -720,12 +725,14 @@ module State = struct
           begin
             match Node.value test with
             | Access [
-                Access.Identifier name;
-                Access.Call {
-                  Node.value = [
-                    { Argument.name = None; value = { Node.value = Access access; _ } };
-                    { Argument.name = None; value = annotation };
-                  ];
+                { Node.value = Access.Identifier name; _ };
+                {
+                  Node.value =
+                    Access.Call
+                      [
+                        { Argument.name = None; value = { Node.value = Access access; _ } };
+                        { Argument.name = None; value = annotation };
+                      ];
                   _;
                 }
               ] when Identifier.show name = "isinstance" ->
@@ -758,12 +765,16 @@ module State = struct
                 operand = {
                   Node.value =
                     Access [
-                      Access.Identifier name;
-                      Access.Call {
-                        Node.value = [
-                          { Argument.name = None; value = { Node.location; value = Access access} };
-                          { Argument.name = None; value = annotation };
-                        ];
+                      { Node.value = Access.Identifier name; _ };
+                      { Node.value =
+                          Access.Call
+                            [
+                              {
+                                Argument.name = None;
+                                value = { Node.location; value = Access access }
+                              };
+                              { Argument.name = None; value = annotation };
+                            ];
                         _;
                       };
                     ];
@@ -895,7 +906,11 @@ module State = struct
                 ComparisonOperator.left;
                 right = [
                   ComparisonOperator.IsNot,
-                  { Node.value = Access [Access.Identifier identifier; ]; _ }
+                  {
+                    Node.value =
+                      Access [{ Node.value = Access.Identifier identifier; _ }];
+                    _;
+                  }
                 ];
               } when Identifier.show identifier = "None" ->
                 let { resolution; _ } = forward state ~statement:(Statement.assume left) in
@@ -904,7 +919,11 @@ module State = struct
                 ComparisonOperator.left = { Node.location; value = Access access };
                 right = [
                   ComparisonOperator.Is,
-                  { Node.value = Access [Access.Identifier identifier; ]; _ }
+                  {
+                    Node.value =
+                      Access [{ Node.value = Access.Identifier identifier; _ }];
+                    _;
+                  }
                 ];
               } when Identifier.show identifier = "None" ->
                 let open Annotated in
@@ -927,10 +946,11 @@ module State = struct
       | Expression { Node.value = Access access; _; } when is_assert_function access ->
           let find_assert_test access =
             match access with
-            | Expression.Record.Access.Call {
-                Node.value = [{ Argument.value = test ; _ }];
-                _;
-              } -> Some test
+            | {
+              Node.value =
+                Expression.Record.Access.Call [{ Argument.value = test ; _ }];
+              _;
+            } -> Some test
             | _ -> None
           in
           List.find_map access ~f:find_assert_test
@@ -1140,13 +1160,11 @@ module State = struct
         (* Propagate the target type information. *)
         let iterator =
           let value =
-            Access (Expression.access iterator @ [
-                Access.Identifier (Identifier.create "__iter__");
-                Access.Call (Node.create ~location []);
-                Access.Identifier (Identifier.create "__next__");
-                Access.Call (Node.create ~location []);
-              ])
-            |> Node.create ~location
+            Access (
+              Expression.access iterator @
+              Access.call ~location ~name:"__iter__" () @
+              Access.call ~location ~name:"__next__" ()
+            ) |> Node.create ~location
           in
           Assign {
             Assign.target;
@@ -1170,10 +1188,11 @@ module State = struct
             (* Special case reveal_type() and cast(). *)
             let errors = match access with
               | [
-                Expression.Access.Identifier reveal_type;
-                Expression.Access.Call {
-                  Node.location;
-                  value = [{ Expression.Argument.value; _ }] };
+                { Node.value = Expression.Access.Identifier reveal_type; _ };
+                {
+                  Node.value = Expression.Access.Call [{ Expression.Argument.value; _ }];
+                  location;
+                };
               ] when reveal_type = Identifier.create "reveal_type" ->
                   let annotation = Annotated.resolve ~resolution value in
                   [{
@@ -1183,13 +1202,13 @@ module State = struct
                   }]
                   |> add_errors errors
               | [
-                Expression.Access.Identifier typing;
-                Expression.Access.Identifier cast;
-                Expression.Access.Call {
-                  Node.value = [
-                    { Expression.Argument.value = cast_annotation; _ };
-                    { Expression.Argument.value; _ };
-                  ];
+                { Node.value = Expression.Access.Identifier typing; _ };
+                { Node.value = Expression.Access.Identifier cast; _ };
+                { Node.value =
+                    Expression.Access.Call [
+                      { Expression.Argument.value = cast_annotation; _ };
+                      { Expression.Argument.value; _ };
+                    ];
                   _;
                 }
               ] when Identifier.equal typing (Identifier.create "typing") &&
@@ -1208,8 +1227,8 @@ module State = struct
               | _ ->
                   errors
             in
-            let check_single_access errors access =
-              match access with
+            let check_single_access errors ({ Node.value; _ } as access) =
+              match value with
               | Access.Identifier _ ->
                   Resolution.get_local resolution ~access:[access]
                   >>| Annotation.annotation
@@ -1220,7 +1239,7 @@ module State = struct
                       |> ignore);
                   errors
 
-              | Access.Call { Node.value = arguments; _ } ->
+              | Access.Call arguments ->
                   let check_argument
                       errors
                       { Argument.value = { Node.location = value_location; _ } as value; name } =

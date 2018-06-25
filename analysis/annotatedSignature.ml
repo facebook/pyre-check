@@ -329,7 +329,10 @@ let select ~arguments ~resolution ~callable:({ Type.Callable.overloads; _ } as c
               begin
                 let parameter, parameters =
                   let matching_parameter = function
-                    | Parameter.Named { Parameter.name = [Access.Identifier parameter_name]; _ }
+                    | Parameter.Named {
+                        Parameter.name = [{ Node.value = Access.Identifier parameter_name; _ }];
+                        _;
+                      }
                       when Identifier.equal (Node.value argument_name) parameter_name -> true
                     | _ -> false
                   in

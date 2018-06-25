@@ -815,7 +815,8 @@ let fallback_attribute ~resolution ~access definition =
     let fallback_attribute { Node.location; value } =
       let is_fallback access =
         match List.last access with
-        | Some (Access.Identifier name) when Identifier.show name = "__getattr__" -> true
+        | Some { Node.value = Access.Identifier name; _ }
+          when Identifier.show name = "__getattr__" -> true
         | _ -> false
       in
       match value with
