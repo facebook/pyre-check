@@ -4665,10 +4665,10 @@ let test_check_tuple _ =
           return 1, int_to_int(z) if z is not None else None
     |}
     [];
+
   assert_type_errors
     {|
       T = collections.namedtuple('T', 'a b c')
-
       def b(d: T) -> None:
         a = d.a + d.d
     |}
@@ -4676,7 +4676,6 @@ let test_check_tuple _ =
       "Undefined attribute [16]: `typing.Any` has no attribute `__add__`.";
       "Undefined attribute [16]: `T` has no attribute `d`.";
     ];
-
   assert_type_errors
     {|
       T = collections.namedtuple('T', 'a b c')
@@ -4685,7 +4684,18 @@ let test_check_tuple _ =
         x, y, z = t
         x, y, z, other = t
     |}
-    []
+    [];
+  assert_type_errors
+    {|
+      T = collections.namedtuple('T', 'a')
+      T(a=1)
+      def foo() -> None:
+        T(a=2)
+    |}
+    [
+      "Too many arguments [19]: Call `T.__init__` expects 1 positional argument, 2 were provided.";
+      "Too many arguments [19]: Call `T.__init__` expects 1 positional argument, 2 were provided.";
+    ]
 
 
 let test_check_meta _ =
