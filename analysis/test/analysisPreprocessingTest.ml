@@ -215,6 +215,21 @@ let test_qualify _ =
           $parameter_self.attribute = 1
           $parameter_self.attribute
     |};
+  assert_qualify
+    {|
+      from typing import Union
+      class Class:
+        _Alias = Union[int, str]
+        a = _Alias
+        def method(self, alias: _Alias): ...
+    |}
+    {|
+      from typing import Union
+      class qualifier.Class:
+        qualifier.Class._Alias = typing.Union[int, str]
+        qualifier.Class.a = qualifier.Class._Alias
+        def qualifier.Class.method($parameter_self, $parameter_alias: qualifier.Class._Alias): ...
+    |};
   assert_qualify "class Class: ..." "class qualifier.Class: ...";
   assert_qualify
     {|
