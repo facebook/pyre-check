@@ -112,6 +112,7 @@ let analyze_sources_parallel
   handles
   |> Scheduler.map_reduce
     scheduler
+    ~bucket_size:75
     ~init:
       {
         errors = [];

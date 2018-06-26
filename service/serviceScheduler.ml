@@ -32,13 +32,26 @@ let gc_control =
   Gc.get ()
 
 
-let map_reduce { workers; bucket_multiplier; number_of_workers; _ } ~init ~map ~reduce work =
-  let bucket_multiplier = Core.Int.min bucket_multiplier (1 + (List.length work / 400)) in
+let map_reduce
+    { workers; bucket_multiplier; number_of_workers; _ }
+    ?bucket_size
+    ~init
+    ~map
+    ~reduce
+    work =
+  let number_of_workers =
+    match bucket_size with
+    | Some exact_size when exact_size > 0 ->
+        (List.length work / exact_size) + 1
+    | _ ->
+        let bucket_multiplier = Core.Int.min bucket_multiplier (1 + (List.length work / 400)) in
+        number_of_workers * bucket_multiplier
+  in
   MultiWorker.call (Some workers)
     ~job:map
     ~merge:reduce
     ~neutral:init
-    ~next:(Bucket.make ~num_workers:(number_of_workers * bucket_multiplier) work)
+    ~next:(Bucket.make ~num_workers:number_of_workers work)
 
 
 let iter scheduler ~f work =

@@ -16,6 +16,7 @@ val create : configuration: Configuration.t -> ?bucket_multiplier: int -> unit -
 
 val map_reduce:
   t ->
+  ?bucket_size: int ->
   init:'a ->
   map:('a -> 'b list -> 'c) ->
   reduce:('c -> 'a -> 'a) ->
