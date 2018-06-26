@@ -622,17 +622,6 @@ module State = struct
       } as state)
       ~statement:({ Node.location; _ } as statement) =
 
-    let state =
-      let resolution_fixpoint =
-        match key with
-        | Some key ->
-            Int.Map.set state.resolution_fixpoint ~key ~data:(Resolution.annotations state.resolution)
-        | None ->
-            state.resolution_fixpoint
-      in
-      { state with resolution_fixpoint }
-    in
-
     let expected =
       let annotation =
         Annotated.Callable.return_annotation ~define ~resolution
@@ -1830,6 +1819,20 @@ module State = struct
           schedule ~define
       | _ ->
           nested_defines
+    in
+
+    let state =
+      let resolution_fixpoint =
+        match key with
+        | Some key ->
+            Int.Map.set
+              state.resolution_fixpoint
+              ~key
+              ~data:(Resolution.annotations state.resolution)
+        | None ->
+            state.resolution_fixpoint
+      in
+      { state with resolution_fixpoint }
     in
 
     { state with nested_defines }

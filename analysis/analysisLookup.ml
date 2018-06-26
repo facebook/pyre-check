@@ -6,8 +6,14 @@
 open Core
 
 open Ast
+open Statement
+open Pyre
 
+module Cfg = AnalysisCfg
+module Environment = AnalysisEnvironment
+module Preprocessing = AnalysisPreprocessing
 module Type = AnalysisType
+module TypeResolutionSharedMemory = AnalysisTypeResolutionSharedMemory
 
 
 type t = Type.t Location.Table.t
@@ -15,6 +21,102 @@ type t = Type.t Location.Table.t
 
 let create () =
   Location.Table.create ()
+
+
+(** The result state of this visitor is ignored. We need two read-only
+    pieces of information to build the location table: the types resolved for
+    this statement, and a reference to the (mutable) location table to
+    update. *)
+module ExpressionVisitor = struct
+
+  type t = Environment.Resolution.t * Type.t Location.Table.t
+
+  let expression ((resolution, lookup) as state) expression =
+    let lookup_of_arguments = function
+      | { Node.value = Expression.Access access; _ } ->
+          let check_single_access = function
+            | { Node.value = Access.Call arguments; _ } ->
+                let check_argument
+                    {
+                      Argument.value = {
+                        Node.location = value_location; _ } as value;
+                      name
+                    } =
+                  let location =
+                    match name with
+                    | Some { Node.location = { Location.start; _ }; _ } ->
+                        { value_location with Location.start }
+                    | None ->
+                        value_location
+                  in
+                  let annotation = Annotated.resolve ~resolution value in
+                  if not (Type.is_unknown annotation) then
+                    Location.Table.set lookup ~key:location ~data:annotation
+                in
+                List.iter ~f:check_argument arguments
+            | _ ->
+                ()
+          in
+          List.iter ~f:check_single_access access
+      | _ ->
+          ()
+    in
+
+    (* T30816068: we need a better visitor interface that exposes Argument.name *)
+    lookup_of_arguments expression;
+    let Node.{ location; _ } = expression in
+    let annotation = Annotated.resolve ~resolution expression in
+    if not (Type.is_unknown annotation) then
+      Location.Table.set lookup ~key:location ~data:annotation;
+    state
+
+  let statement state _ =
+    state
+end
+
+
+module Visit = Visit.Make(ExpressionVisitor)
+
+
+let create_of_source environment source =
+  let open TypeResolutionSharedMemory in
+  let resolution define annotations =
+    Environment.resolution
+      environment
+      ~define
+      ~annotations
+      ()
+  in
+  let location_lookup = Location.Table.create () in
+  let walk_defines { Node.value = ({ Define.name = caller; _ } as define); _ } =
+    let cfg = Cfg.create define in
+    let annotation_lookup =
+      let fold_annotations map { key; annotations } =
+        Int.Map.set map ~key ~data:annotations
+      in
+      TypeResolutionSharedMemory.get caller
+      >>| List.fold ~init:Int.Map.empty ~f:fold_annotations
+      |> Option.value ~default:Int.Map.empty
+    in
+    let walk_cfg ~key:node_id ~data:cfg_node =
+      let statements = Cfg.Node.statements cfg_node in
+      let walk_statements statement_index statement =
+        let annotations =
+          Int.Map.find annotation_lookup ([%hash: int * int] (node_id, statement_index))
+          |> Option.value ~default:[]
+          |> Access.Map.of_alist_exn
+        in
+        let resolution = resolution define annotations in
+        Visit.visit (resolution, location_lookup) (Source.create [statement])
+        |> ignore
+      in
+      List.iteri statements ~f:walk_statements
+    in
+    Int.Table.iteri cfg ~f:walk_cfg
+  in
+  Preprocessing.defines source
+  |> List.iter ~f:walk_defines;
+  location_lookup
 
 
 let update lookup ~location ~annotation =

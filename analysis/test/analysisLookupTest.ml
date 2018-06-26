@@ -30,9 +30,8 @@ let generate_lookup source =
     (Environment.handler ~configuration environment)
     [parsed];
   let environment = Environment.handler ~configuration environment in
-  match TypeCheck.check configuration environment parsed with
-  | { TypeCheck.Result.lookup = Some lookup; _ } -> lookup
-  | _ -> failwith "Did not generate lookup table."
+  TypeCheck.check configuration environment parsed |> ignore;
+  Lookup.create_of_source environment parsed
 
 
 let test_lookup _ =
@@ -104,10 +103,12 @@ let test_lookup_call_arguments _ =
     ~printer:(String.concat ~sep:", ")
     [
       "test.py:2:4-2:6/`int`";
+      "test.py:3:12-3:20/`str`";
       "test.py:3:4-3:20/`str`";
       "test.py:4:4-5:14/`str`";
+      "test.py:5:4-5:14/`str`";
     ]
-    (Hashtbl.to_alist lookup
+    (Location.Table.to_alist lookup
      |> List.map ~f:(fun (key, data) ->
          Format.asprintf "%s/%a" (Location.to_string key) Type.pp data)
      |> List.sort ~compare:String.compare);
@@ -130,7 +131,7 @@ let test_lookup_call_arguments _ =
   assert_annotation
     ~lookup
     ~position:{ Location.line = 3; column = 19 }
-    ~annotation:(Some "test.py:3:4-3:20/`str`");
+    ~annotation:(Some "test.py:3:12-3:20/`str`");
   assert_annotation
     ~lookup
     ~position:{ Location.line = 4; column = 3 }
@@ -150,7 +151,7 @@ let test_lookup_call_arguments _ =
   assert_annotation
     ~lookup
     ~position:{ Location.line = 5; column = 13 }
-    ~annotation:(Some "test.py:4:4-5:14/`str`")
+    ~annotation:(Some "test.py:5:4-5:14/`str`")
 
 
 let test_lookup_pick_narrowest _ =
@@ -166,11 +167,12 @@ let test_lookup_pick_narrowest _ =
   assert_equal
     ~printer:(String.concat ~sep:", ")
     [
-      "test.py:3:17-3:27/`Optional[int]`";
+      "test.py:2:46-2:50/`None`";
+      "test.py:3:17-3:27/`bool`";
       "test.py:3:21-3:27/`Optional[int]`";
       "test.py:3:7-3:11/`bool`";
     ]
-    (Hashtbl.to_alist lookup
+    (Location.Table.to_alist lookup
      |> List.map ~f:(fun (key, data) ->
          Format.asprintf "%s/%a" (Location.to_string key) Type.pp data)
      |> List.sort ~compare:String.compare);
@@ -181,7 +183,7 @@ let test_lookup_pick_narrowest _ =
   assert_annotation
     ~lookup
     ~position:{ Location.line = 3; column = 17 }
-    ~annotation:(Some "test.py:3:17-3:27/`Optional[int]`");
+    ~annotation:(Some "test.py:3:17-3:27/`bool`");
   assert_annotation
     ~lookup
     ~position:{ Location.line = 3; column = 21 }
@@ -202,7 +204,7 @@ let test_lookup_class_attributes _ =
     [
       "test.py:3:4-3:5/`bool`";
     ]
-    (Hashtbl.to_alist lookup
+    (Location.Table.to_alist lookup
      |> List.map ~f:(fun (key, data) ->
          Format.asprintf "%s/%a" (Location.to_string key) Type.pp data)
      |> List.sort ~compare:String.compare);
@@ -238,14 +240,17 @@ let test_lookup_identifier_accesses _ =
   assert_equal
     ~printer:(String.concat ~sep:", ")
     [
+      "test.py:3:13-3:15/`int`";
       "test.py:3:4-3:5/`int`";
+      "test.py:4:34-4:38/`None`";
       "test.py:5:17-5:18/`int`";
       "test.py:5:8-5:14/`int`";
       "test.py:8:10-8:13/`int`";
       "test.py:8:4-8:5/`test.A`";
+      "test.py:8:8-8:9/`test.A`";
       "test.py:9:11-9:14/`int`";
     ]
-    (Hashtbl.to_alist lookup
+    (Location.Table.to_alist lookup
      |> List.map ~f:(fun (key, data) ->
          Format.asprintf "%s/%a" (Location.to_string key) Type.pp data)
      |> List.sort ~compare:String.compare);
