@@ -61,6 +61,18 @@ class ConfigurationTest(unittest.TestCase):
         self.assertEqual(configuration.get_search_path(), ["additional/"])
         self.assertEqual(configuration.number_of_workers, 20)
 
+        json_load.side_effect = [
+            {
+                "search_path": "simple_string/",
+                "version": "VERSION",
+                "typeshed": "TYPE/%V/SHED/",
+            },
+            {},
+        ]
+        configuration = Configuration()
+        self.assertEqual(configuration.get_typeshed(), "TYPE/VERSION/SHED/")
+        self.assertEqual(configuration.get_search_path(), ["simple_string/"])
+
         # Test loading of additional directories in the search path
         # via environment.
         json_load.side_effect = [

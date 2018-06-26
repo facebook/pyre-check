@@ -233,7 +233,11 @@ class Configuration:
                 if not self._binary:
                     self._binary = configuration.get("binary")
 
-                self._search_directories.extend(configuration.get("search_path", []))
+                additional_search_path = configuration.get("search_path", [])
+                if isinstance(additional_search_path, list):
+                    self._search_directories.extend(additional_search_path)
+                else:
+                    self._search_directories.append(additional_search_path)
 
                 if not self._version_hash:
                     self._version_hash = configuration.get("version")
