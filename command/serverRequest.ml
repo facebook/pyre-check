@@ -190,6 +190,12 @@ let rec process_request
     in
     Service.Ignore.register ~configuration scheduler repopulate_handles;
 
+    (* Clear all type resolution info from shared memory for all affected sources. *)
+    List.filter_map ~f:Service.AstSharedMemory.get_source new_source_handles
+    |> List.concat_map ~f:Preprocessing.defines
+    |> List.map ~f:(fun { Node.value = { Statement.Define.name; _ }; _ } -> name)
+    |> AnalysisTypeResolutionSharedMemory.remove;
+
     let new_errors, lookups =
       let errors, lookups, _ =
         Service.TypeCheck.analyze_sources
