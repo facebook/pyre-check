@@ -19,7 +19,9 @@ module TypeOrder = AnalysisTypeOrder
 
 type class_representation = {
   class_definition: Class.t Node.t;
-  attributes: AnnotatedClass.Attribute.t list;
+  explicit_attributes: Attribute.t Access.SerializableMap.t;
+  implicit_attributes: Attribute.t Access.SerializableMap.t;
+  is_test: bool;
   methods: Type.t list;
 }
 
@@ -48,6 +50,7 @@ module type Handler = sig
     -> name: Access.t
     -> definition: (Class.t Node.t) option
     -> (Type.t * Type.t list)
+  val refine_class_definition: Type.t -> unit
   val register_alias: path: string -> key: Type.t -> data: Type.t -> unit
   val purge: File.Handle.t list -> unit
 
@@ -209,6 +212,9 @@ let handler
   let (module DependencyHandler: Dependencies.Handler) = Dependencies.handler dependencies in
 
   (module struct
+    module TypeOrderHandler = (val TypeOrder.handler order: TypeOrder.Handler)
+    module DependencyHandler = DependencyHandler
+
     let register_definition
         ~path
         ?name_override
@@ -244,21 +250,25 @@ let handler
       let add_class_definition ~primitive ~definition =
         let definition =
           match Hashtbl.find class_definitions primitive with
-          | Some {
+          | Some ({
               class_definition = { Node.location; value = preexisting };
-              methods;
-              attributes;
-            } ->
+              _;
+            } as class_representation) ->
               {
+                class_representation with
                 class_definition = {
                   Node.location;
                   value = Class.update preexisting ~definition:(Node.value definition);
                 };
-                methods;
-                attributes;
               }
           | _ ->
-              { class_definition = definition; methods = []; attributes = [] }
+              {
+                class_definition = definition;
+                methods = [];
+                explicit_attributes = Access.SerializableMap.empty;
+                implicit_attributes = Access.SerializableMap.empty;
+                is_test = false;
+              }
         in
         Hashtbl.set class_definitions ~key:primitive ~data:definition
       in
@@ -269,6 +279,36 @@ let handler
         ~add_class_definition
         ~add_class_key:DependencyHandler.add_class_key
         ~add_protocol:(Hash_set.add protocols)
+
+
+    let refine_class_definition annotation =
+      let refine { class_definition = { Node.location; value = class_definition }; _ } =
+        let in_test =
+          let is_unit_test { class_definition = { Node.value = { Class.name; _ }; _ }; _ } =
+            Access.equal name (Access.create "unittest.TestCase")
+          in
+          let successors =
+            TypeOrder.successors (module TypeOrderHandler) annotation
+            |> List.filter_map ~f:(Hashtbl.find class_definitions)
+          in
+          List.exists ~f:is_unit_test successors
+        in
+        let explicit_attributes = Class.explicitly_assigned_attributes class_definition in
+        let implicit_attributes = Class.implicit_attributes ~in_test class_definition in
+        Hashtbl.set
+          class_definitions
+          ~key:annotation
+          ~data:{
+            class_definition = { Node.location; value = class_definition };
+            is_test = in_test;
+            explicit_attributes;
+            implicit_attributes;
+            methods = [];
+          }
+      in
+      Hashtbl.find class_definitions annotation
+      >>| refine
+      |> ignore
 
 
     let register_alias ~path ~key ~data =
@@ -357,11 +397,6 @@ let handler
 
     let mode _ =
       None
-
-    module TypeOrderHandler =
-      (val TypeOrder.handler order: TypeOrder.Handler)
-
-    module DependencyHandler = DependencyHandler
   end: Handler)
 
 
@@ -1102,7 +1137,9 @@ module Builder = struct
         ~data:{
           class_definition = Node.create_with_default_location definition;
           methods = [];
-          attributes = [];
+          explicit_attributes = Access.SerializableMap.empty;
+          implicit_attributes = Access.SerializableMap.empty;
+          is_test = false;
         }
         class_definitions;
     in

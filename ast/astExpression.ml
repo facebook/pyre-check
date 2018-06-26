@@ -12,6 +12,7 @@ module Identifier = AstIdentifier
 module Location = AstLocation
 module Parameter = AstParameter
 module Node = AstNode
+module SerializableMap = AstSerializableMap
 
 
 module BooleanOperator = struct
@@ -396,6 +397,12 @@ module Access = struct
       let compare = compare
       let sexp_of_t = sexp_of_t
       let t_of_sexp = t_of_sexp
+    end)
+
+
+  module SerializableMap = SerializableMap.Make(struct
+      type nonrec t = t
+      let compare = compare
     end)
 
 

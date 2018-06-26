@@ -105,6 +105,59 @@ let test_register_class_definitions _ =
   assert_equal (TypeOrder.predecessors order (Type.primitive "C")) []
 
 
+let test_refine_class_definitions _ =
+  let environment = Environment.Builder.create ~configuration () in
+  let (module Handler: Environment.Handler) = Environment.handler ~configuration environment in
+  let source =
+    parse
+      {|
+       class C:
+         def __init__(self):
+           self.x = 3
+       class D(C):
+         def __init__(self):
+           self.y = 4
+         D.z = 5
+      |}
+  in
+  Environment.register_class_definitions (module Handler) source
+  |> ignore;
+  Environment.connect_type_order (module Handler) source;
+
+  Handler.refine_class_definition (Type.primitive "C");
+  Handler.refine_class_definition (Type.primitive "D");
+  let attribute_equal
+      (expected_target, expected_value)
+      { Node.value = { Statement.Attribute.target; value; _ }; _ } =
+    Expression.equal expected_target target &&
+    Option.equal Expression.equal expected_value value
+  in
+  let assert_attribute ~implicit class_name attribute_name expected =
+    let { Environment.explicit_attributes; implicit_attributes; _ } =
+      Option.value_exn (Handler.class_definition (Type.primitive class_name))
+    in
+    let map =
+      if implicit then
+        implicit_attributes
+      else
+        explicit_attributes
+    in
+    let actual = Access.SerializableMap.find_opt (Access.create attribute_name) map in
+    match expected, actual with
+    | Some expected, Some actual ->
+        assert_true (attribute_equal expected actual)
+    | None, None ->
+        ()
+    | _ ->
+        assert_unreached ()
+  in
+  assert_attribute ~implicit:false "C" "x" None;
+  assert_attribute ~implicit:true "C" "x" (Some (!"x", Some ~+(Expression.Integer 3)));
+  assert_attribute ~implicit:true "D" "y" (Some (!"y", Some ~+(Expression.Integer 4)));
+  assert_attribute ~implicit:false "D" "z" (Some (!"z", Some ~+(Expression.Integer 5)));
+  ()
+
+
 let test_register_aliases _ =
   let assert_resolved sources aliases =
     let (module Handler) =
@@ -1275,6 +1328,7 @@ let () =
     "modules">::test_modules;
     "import_dependencies">::test_import_dependencies;
     "register_dependencies">::test_register_dependencies;
+    "refine_class_definitions">::test_refine_class_definitions;
     "purge">::test_purge;
     "infer_protocols">::test_infer_protocols;
   ]

@@ -675,8 +675,11 @@ let attributes
               attribute_node :: attributes
         in
         Statement.Class.attributes ~include_generated_attributes ~in_test definition
-        |> Map.data
-        |> List.fold ~init:attributes ~f:collect_attributes
+        |> fun attribute_map ->
+        Access.SerializableMap.fold
+          (fun _ data attributes -> collect_attributes attributes data)
+          attribute_map
+          attributes
       in
       let superclass_definitions = superclasses ~resolution definition in
       let in_test =

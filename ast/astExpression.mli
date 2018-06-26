@@ -9,6 +9,7 @@ module Identifier = AstIdentifier
 module Location = AstLocation
 module Parameter = AstParameter
 module Node = AstNode
+module SerializableMap = AstSerializableMap
 
 module BooleanOperator : sig
   type operator =
@@ -193,9 +194,8 @@ module Access : sig
   [@@deriving compare, eq, sexp, show, hash]
 
   module Set: Set.S with type Elt.t = t
-
   module Map: Map.S with type Key.t = t
-
+  module SerializableMap: SerializableMap.S with type key = t
   include Hashable with type t := t
 
   val create: ?location: Location.t -> string -> t

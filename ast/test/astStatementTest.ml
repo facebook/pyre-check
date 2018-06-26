@@ -195,7 +195,10 @@ let test_attributes _ =
       ~cmp:(List.equal ~equal:Attribute.equal)
       ~printer:(fun attributes -> List.map ~f:Attribute.show attributes |> String.concat ~sep:"\n")
       expected
-      (parse_single_define source |> Define.implicit_attributes ~definition |> Map.data)
+      (parse_single_define source
+       |> Define.implicit_attributes ~definition
+       |> Access.SerializableMap.bindings
+       |> List.map ~f:snd)
   in
   assert_implicit_attributes "def foo(): pass" [];
 
@@ -372,7 +375,8 @@ let test_attributes _ =
       expected
       (parse_single_class source
        |> Class.attributes ~in_test ~include_generated_attributes
-       |> Map.data)
+       |> Access.SerializableMap.bindings
+       |> List.map ~f:snd)
   in
 
   assert_attributes

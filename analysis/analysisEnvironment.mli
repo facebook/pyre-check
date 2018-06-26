@@ -16,7 +16,9 @@ module TypeOrder = AnalysisTypeOrder
 
 type class_representation = {
   class_definition: Class.t Node.t;
-  attributes: AnnotatedClass.Attribute.t list;
+  explicit_attributes: Attribute.t Access.SerializableMap.t;
+  implicit_attributes: Attribute.t Access.SerializableMap.t;
+  is_test: bool;
   methods: Type.t list;
 }
 
@@ -49,6 +51,7 @@ module type Handler = sig
     -> name: Access.t
     -> definition: (Class.t Node.t) option
     -> (Type.t * Type.t list)
+  val refine_class_definition: Type.t -> unit
   val register_alias: path: string -> key: Type.t -> data: Type.t -> unit
   val purge: File.Handle.t list -> unit
 

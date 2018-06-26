@@ -70,7 +70,9 @@ let populate
     all_annotations;
 
   List.iter ~f:(register_functions (module Handler)) sources;
-  List.iter ~f:(register_globals (module Handler)) sources
+  List.iter ~f:(register_globals (module Handler)) sources;
+  (* TODO(T30713406): Merge with class registration. *)
+  List.iter ~f:Handler.refine_class_definition all_annotations
 
 
 let build
@@ -401,6 +403,7 @@ let shared_memory_handler
             FunctionDefinitions.add name definitions
           end
 
+      let refine_class_definition _ = ()
 
       let register_dependency ~path ~dependency =
         Log.log
@@ -421,21 +424,25 @@ let shared_memory_handler
         let add_class_definition ~primitive ~definition =
           let definition =
             match ClassDefinitions.get primitive with
-            | Some {
+            | Some ({
                 class_definition = { Node.location; value = preexisting };
-                methods;
-                attributes;
-              } ->
+                _;
+              } as representation) ->
                 {
+                  representation with
                   class_definition = {
                     Node.location;
                     value = Statement.Class.update preexisting ~definition:(Node.value definition);
                   };
-                  methods;
-                  attributes
                 }
             | _ ->
-                { class_definition = definition; methods = []; attributes = [] }
+                {
+                  class_definition = definition;
+                  methods = [];
+                  explicit_attributes = Statement.Access.SerializableMap.empty;
+                  implicit_attributes = Statement.Access.SerializableMap.empty;
+                  is_test = false;
+                }
           in
           ClassDefinitions.remove_batch (ClassDefinitions.KeySet.singleton primitive);
           ClassDefinitions.add primitive definition

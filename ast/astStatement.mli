@@ -227,7 +227,7 @@ module Define : sig
   val implicit_attributes
     :  t
     -> definition: statement_t Record.Class.record
-    -> Attribute.t Access.Map.t
+    -> Attribute.t Access.SerializableMap.t
   val property_attribute: location: Location.t -> t -> Attribute.t option
 
   val has_decorator: t -> string -> bool
@@ -240,11 +240,14 @@ module Class : sig
   [@@deriving compare, eq, sexp, show, hash]
 
   val constructors: ?in_test: bool -> t -> Define.t list
+
+  val implicit_attributes: ?in_test: bool -> t -> Attribute.t Access.SerializableMap.t
+  val explicitly_assigned_attributes: t -> Attribute.t Access.SerializableMap.t
   val attributes
     :  ?include_generated_attributes: bool
     -> ?in_test: bool
     -> t
-    -> Attribute.t Access.Map.t
+    -> Attribute.t Access.SerializableMap.t
 
   val update: t -> definition: t -> t
 
