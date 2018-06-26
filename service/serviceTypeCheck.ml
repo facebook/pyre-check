@@ -87,6 +87,7 @@ let analyze_sources_parallel
     ({Configuration.source_root; project_root = directory; _ } as configuration)
     environment
     handles =
+  let timer = Timer.start () in
   let merge_lookups ~key:_ = function
     | `Both (lookup, _) -> Some lookup
     | `Left lookup -> Some lookup
@@ -109,72 +110,78 @@ let analyze_sources_parallel
         | _ ->
             false)
   in
-  handles
-  |> Scheduler.map_reduce
-    scheduler
-    ~bucket_size:75
-    ~init:
-      {
-        errors = [];
-        lookups = String.Map.empty;
-        number_files = 0;
-        coverage = Coverage.create ();
-      }
-    ~map:(fun _ handles ->
-        Annotated.Class.AttributesCache.clear ();
-        let result =
-          List.fold ~init ~f:(
-            fun {
-              errors;
-              lookups;
-              number_files;
-              coverage = total_coverage;
-            }
-              handle ->
-              match AstSharedMemory.get_source handle with
-              | Some source ->
-                  let {
-                    TypeCheck.Result.errors = new_errors;
-                    lookup;
-                    coverage;
-                    _;
-                  } =
-                    analyze_source configuration environment source
-                  in
-                  {
-                    errors = List.append new_errors errors;
-                    lookups =
-                      begin
-                        match lookup with
-                        | Some table ->
-                            Map.set ~key:(File.Handle.show handle) ~data:table lookups
-                        | None ->
-                            lookups
-                      end;
-                    number_files = number_files + 1;
-                    coverage = Coverage.sum total_coverage coverage;
-                  }
-              | None -> {
-                  errors;
-                  lookups;
-                  number_files = number_files + 1;
-                  coverage = total_coverage;
-                })
-            handles
-        in
-        Statistics.flush ();
-        result)
-    ~reduce:(fun left right ->
-        let number_files = left.number_files + right.number_files in
-        Log.log ~section:`Progress "Processed %d of %d sources" number_files (List.length handles);
+  let { errors; lookups; coverage; _ } =
+    Scheduler.map_reduce
+      scheduler
+      handles
+      ~bucket_size:75
+      ~init:
         {
-          errors = List.append left.errors right.errors;
-          lookups = Map.merge ~f:merge_lookups left.lookups right.lookups;
-          number_files;
-          coverage = Coverage.sum left.coverage right.coverage;
-        })
-  |> (fun { errors; lookups; coverage; _ } ->
-      (Ignore.postprocess handles errors, lookups, coverage))
+          errors = [];
+          lookups = String.Map.empty;
+          number_files = 0;
+          coverage = Coverage.create ();
+        }
+      ~map:(fun _ handles ->
+          Annotated.Class.AttributesCache.clear ();
+          let result =
+            List.fold ~init ~f:(
+              fun {
+                errors;
+                lookups;
+                number_files;
+                coverage = total_coverage;
+              }
+                handle ->
+                match AstSharedMemory.get_source handle with
+                | Some source ->
+                    let {
+                      TypeCheck.Result.errors = new_errors;
+                      lookup;
+                      coverage;
+                      _;
+                    } =
+                      analyze_source configuration environment source
+                    in
+                    {
+                      errors = List.append new_errors errors;
+                      lookups =
+                        begin
+                          match lookup with
+                          | Some table ->
+                              Map.set ~key:(File.Handle.show handle) ~data:table lookups
+                          | None ->
+                              lookups
+                        end;
+                      number_files = number_files + 1;
+                      coverage = Coverage.sum total_coverage coverage;
+                    }
+                | None -> {
+                    errors;
+                    lookups;
+                    number_files = number_files + 1;
+                    coverage = total_coverage;
+                  })
+              handles
+          in
+          Statistics.flush ();
+          result)
+      ~reduce:(fun left right ->
+          let number_files = left.number_files + right.number_files in
+          Log.log
+            ~section:`Progress
+            "Processed %d of %d sources"
+            number_files
+            (List.length handles);
+          {
+            errors = List.append left.errors right.errors;
+            lookups = Map.merge ~f:merge_lookups left.lookups right.lookups;
+            number_files;
+            coverage = Coverage.sum left.coverage right.coverage;
+          })
+  in
+  Statistics.performance ~name:"Analyzed sources" ~timer ~configuration ();
+  Ignore.postprocess handles errors, lookups, coverage
 
 
 let analyze_sources
