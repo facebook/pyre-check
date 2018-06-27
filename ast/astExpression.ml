@@ -283,107 +283,6 @@ module Access = struct
   [@@deriving compare, eq, sexp, show, hash]
 
 
-  let pp format access =
-    let identifier (element: expression_t Record.Access.access): string =
-      match element with
-      | Identifier identifier ->
-          Identifier.show identifier
-      | Call _ ->
-          Format.asprintf "(...)"
-      | _ ->
-          "?"
-    in
-    List.map ~f:Node.value access
-    |> List.map ~f:identifier
-    |> String.concat ~sep:"."
-    |> Format.fprintf format "%s"
-
-
-  let show access =
-    Format.asprintf "%a" pp access
-
-
-  let sanitized access =
-    let sanitized ({ Node.value = element; _ } as node) =
-      match element with
-      | Identifier identifier ->
-          { node with Node.value = Identifier (Identifier.sanitized identifier) }
-      | _ -> node
-    in
-    List.map access ~f:sanitized
-
-
-  let pp_sanitized format access =
-    let identifier (element: expression_t Record.Access.access): string =
-      match element with
-      | Identifier identifier -> Identifier.show identifier
-      | Call _ -> Format.asprintf "(...)"
-      | _ -> "?"
-    in
-    sanitized access
-    |> List.map ~f:Node.value
-    |> List.map ~f:identifier
-    |> String.concat ~sep:"."
-    |> Format.fprintf format "%s"
-
-
-  let show_sanitized access =
-    Format.asprintf "%a" pp_sanitized access
-
-
-  let pp format access =
-    Format.fprintf format "%s" (show access)
-
-
-  let delocalize access ~qualifier =
-    match access with
-    | ({ Node.value = (Identifier identifier); _ } as access_node) :: tail
-      when Identifier.show identifier |> String.is_prefix ~prefix:"$local_" ->
-        let identifier =
-          Identifier.show_sanitized identifier
-          |> Identifier.create
-        in
-        qualifier @ [{access_node with Node.value = Identifier identifier }] @ tail
-    | _ ->
-        access
-
-
-  let delocalize_qualified access =
-    List.rev access
-    |> (function
-        | ({ Node.value = (Identifier identifier); _ } as access_node) :: tail ->
-            { access_node with Node.value = (Identifier (Identifier.sanitized identifier)) } :: tail
-        | access ->
-            access)
-    |> List.rev
-
-
-  let rec is_strict_prefix ~prefix access =
-    match prefix, access with
-    | [], _ :: _ ->
-        true
-    | prefix_head :: prefix, head :: access
-      when equal [prefix_head] [head] ->
-        is_strict_prefix ~prefix access
-    | _ ->
-        false
-
-
-  let drop_prefix access ~prefix =
-    let rec strip access prefix =
-      match prefix, access with
-      | prefix_head :: prefix_tail, head :: tail
-        when equal [prefix_head] [head] ->
-          strip tail prefix_tail
-      | [], access ->
-          Some access
-      | _ ->
-          None
-    in
-    strip access prefix
-    |> Option.value ~default:access
-
-
   module Set = Set.Make(struct
       type nonrec t = t
       let compare = compare
@@ -442,6 +341,122 @@ module Access = struct
     |> create_from_identifiers ~location
 
 
+  let pp format access =
+    let identifier (element: expression_t Record.Access.access): string =
+      match element with
+      | Identifier identifier ->
+          Identifier.show identifier
+      | Call _ ->
+          Format.asprintf "(...)"
+      | _ ->
+          "?"
+    in
+    List.map ~f:Node.value access
+    |> List.map ~f:identifier
+    |> String.concat ~sep:"."
+    |> Format.fprintf format "%s"
+
+
+  let show access =
+    Format.asprintf "%a" pp access
+
+
+  let sanitized access =
+    let sanitized ({ Node.value = element; _ } as node) =
+      match element with
+      | Identifier identifier ->
+          { node with Node.value = Identifier (Identifier.sanitized identifier) }
+      | _ -> node
+    in
+    List.map access ~f:sanitized
+
+
+  let pp_sanitized format access =
+    let identifier (element: expression_t Record.Access.access): string =
+      match element with
+      | Identifier identifier -> Identifier.show identifier
+      | Call _ -> Format.asprintf "(...)"
+      | _ -> "?"
+    in
+    sanitized access
+    |> List.map ~f:Node.value
+    |> List.map ~f:identifier
+    |> String.concat ~sep:"."
+    |> Format.fprintf format "%s"
+
+
+  let show_sanitized access =
+    Format.asprintf "%a" pp_sanitized access
+
+
+  let pp format access =
+    Format.fprintf format "%s" (show access)
+
+
+  let local_qualifier_pattern = Str.regexp "^\\$local_\\([a-zA-Z_]+\\)\\$"
+
+
+  let delocalize access =
+    match access with
+    | ({ Node.value = (Identifier identifier); _ } as access_node) :: tail
+      when Identifier.show identifier |> String.is_prefix ~prefix:"$local_" ->
+        let qualifier =
+          let name = Identifier.show identifier in
+          if Str.string_match local_qualifier_pattern name 0 then
+            Str.matched_group 1 name
+            |> String.substr_replace_all ~pattern:"_" ~with_:"."
+            |> create
+          else
+            begin
+              Log.debug "Unable to extract qualifier from %s" name;
+              []
+            end
+        in
+        let identifier =
+          Identifier.show_sanitized identifier
+          |> Identifier.create
+        in
+        qualifier @ [{access_node with Node.value = Identifier identifier }] @ tail
+    | _ ->
+        access
+
+
+  let delocalize_qualified access =
+    List.rev access
+    |> (function
+        | ({ Node.value = (Identifier identifier); _ } as access_node) :: tail ->
+            { access_node with Node.value = (Identifier (Identifier.sanitized identifier)) } :: tail
+        | access ->
+            access)
+    |> List.rev
+
+
+  let rec is_strict_prefix ~prefix access =
+    match prefix, access with
+    | [], _ :: _ ->
+        true
+    | prefix_head :: prefix, head :: access
+      when equal [prefix_head] [head] ->
+        is_strict_prefix ~prefix access
+    | _ ->
+        false
+
+
+  let drop_prefix access ~prefix =
+    let rec strip access prefix =
+      match prefix, access with
+      | prefix_head :: prefix_tail, head :: tail
+        when equal [prefix_head] [head] ->
+          strip tail prefix_tail
+      | [], access ->
+          Some access
+      | _ ->
+          None
+    in
+    strip access prefix
+    |> Option.value ~default:access
+
+
   let call ?(arguments = []) ~location ~name () =
     [
       { Node.location; value = Identifier (Identifier.create name); };
@@ -497,7 +512,7 @@ let access =
   Access.create_from_expression
 
 
-let rec delocalize ({ Node.value; _ } as expression) ~qualifier =
+let rec delocalize ({ Node.value; _ } as expression) =
   let value =
     match value with
     | Access access ->
@@ -507,22 +522,22 @@ let rec delocalize ({ Node.value; _ } as expression) ~qualifier =
               match value with
               | Access.Call arguments ->
                   let delocalize_argument ({ Argument.value; _ } as argument) =
-                    { argument with Argument.value = delocalize value ~qualifier }
+                    { argument with Argument.value = delocalize value }
                   in
                   Access.Call (List.map arguments ~f:delocalize_argument)
               | Access.Expression expression ->
-                  Access.Expression (delocalize expression ~qualifier)
+                  Access.Expression (delocalize expression)
               | element ->
                   element
             in
             { node with Node.value }
           in
-          Access.delocalize access ~qualifier
+          Access.delocalize access
           |> List.map ~f:delocalize_element
         in
         Access access
     | Tuple elements ->
-        Tuple (List.map elements ~f:(delocalize ~qualifier))
+        Tuple (List.map elements ~f:delocalize)
     | _ ->
         value
   in

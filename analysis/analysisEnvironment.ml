@@ -110,7 +110,7 @@ let connect_definition
     (* Handle definition. *)
     begin
       match definition with
-      | Some ({ Node.value = { Class.name; bases; _ } as definition; _ } as definition_node) ->
+      | Some ({ Node.value = { Class.bases; _ } as definition; _ } as definition_node) ->
           add_class_key ~path primitive;
           let annotated = Annotated.Class.create definition_node in
 
@@ -124,13 +124,7 @@ let connect_definition
             begin
               let register_supertype base =
                 let qualified_name =
-                  let qualifier =
-                    List.rev name
-                    |> List.tl
-                    >>| List.rev
-                    |> Option.value ~default:[]
-                  in
-                  let value = Expression.delocalize base.Argument.value ~qualifier in
+                  let value = Expression.delocalize base.Argument.value in
                   match Node.value value with
                   | Access access ->
                       let primitive, _ =
@@ -500,7 +494,7 @@ let register_aliases (module Handler: Handler) sources =
             in
             { target with Node.value = Access access }
           in
-          let value = Expression.delocalize ~qualifier value in
+          let value = Expression.delocalize value in
 
           let value_annotation = Type.create ~aliases:Handler.aliases value in
           let target_annotation = Type.create ~aliases:Handler.aliases target in

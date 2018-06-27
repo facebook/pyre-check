@@ -11,7 +11,7 @@ open Pyre
 open Statement
 
 
-let transform_ast ({ Source.qualifier; statements; _ } as source) =
+let transform_ast ({ Source.statements; _ } as source) =
   let tuple_attributes ~parent ~expression =
     match expression with
     | {
@@ -90,7 +90,7 @@ let transform_ast ({ Source.qualifier; statements; _ } as source) =
           value = Some expression;
           _;
         } ->
-          let name = Access.delocalize name ~qualifier in
+          let name = Access.delocalize name in
           tuple_attributes ~parent:name ~expression
           >>| (fun body ->
               Class {

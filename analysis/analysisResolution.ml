@@ -7,7 +7,6 @@ open Core
 
 open Ast
 open Pyre
-open Expression
 open Statement
 
 module Annotation = AnalysisAnnotation
@@ -141,25 +140,14 @@ let resolve_literal ({ resolve_literal; _  } as resolution) =
   resolve_literal ~resolution
 
 
-let parse_annotation
-    { parse_annotation; define; module_definition; _ }
-    ({ Node.value; _ } as expression) =
+let parse_annotation { parse_annotation; module_definition; _ } expression =
   let expression =
     let is_local_access =
-      match value with
-      | Access [{ Node.value = Access.Identifier name; _ }]
-        when Identifier.show name |> String.is_prefix ~prefix:"$local_" -> true
-      | _ -> false
+      Expression.show expression
+      |> String.is_substring ~substring:"$local_"
     in
     if is_local_access then
-      match define with
-      | { Define.name = scope; parent = None; _ }
-      | { Define.parent = Some scope; _ } ->
-          List.rev scope
-          |> List.tl
-          >>| List.rev
-          >>| (fun qualifier -> Expression.delocalize expression ~qualifier)
-          |> Option.value ~default:expression
+      Expression.delocalize expression
     else
       expression
   in

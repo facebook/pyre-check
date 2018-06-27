@@ -207,7 +207,7 @@ module Access : sig
   val pp_sanitized: Format.formatter -> t -> unit
   val show_sanitized: t -> string
 
-  val delocalize: t -> qualifier: t -> t
+  val delocalize: t -> t
   val delocalize_qualified: t -> t
 
   val is_strict_prefix: prefix: t -> t -> bool
@@ -222,7 +222,7 @@ module Access : sig
 end
 
 val access: t -> Access.t
-val delocalize: t -> qualifier: Access.t -> t
+val delocalize: t -> t
 val delocalize_qualified: t -> t
 
 module ComparisonOperator : sig

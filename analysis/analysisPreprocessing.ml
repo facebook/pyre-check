@@ -723,7 +723,7 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
         access
 
   and qualify_expression
-      ~scope:({ qualifier; aliases; in_annotation; _ } as scope)
+      ~scope:({ in_annotation; _ } as scope)
       ({ Node.location; value } as expression) =
     let qualified =
       let value =
@@ -869,13 +869,7 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
       { expression with Node.value }
     in
     if in_annotation then
-      let qualifier =
-        Expression.access expression
-        |> Map.find aliases
-        >>| (fun { qualifier; _ } -> qualifier)
-        |> Option.value ~default:qualifier
-      in
-      Expression.delocalize qualified ~qualifier
+      Expression.delocalize qualified
     else
       qualified
   in
