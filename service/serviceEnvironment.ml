@@ -7,7 +7,6 @@ open Core
 
 open Analysis
 open Ast
-open Environment
 open Pyre
 
 module AstSharedMemory = ServiceAstSharedMemory
@@ -18,7 +17,7 @@ open ServiceIgnoreSharedMemory
 
 
 let populate
-    (module Handler: Handler)
+    (module Handler: Environment.Handler)
     ~configuration
     ?(source_root = Path.current_working_directory ())
     ?(check_dependency_exists = true)
@@ -39,23 +38,23 @@ let populate
     ~key:(Type.primitive "PathLike")
     ~data:(Type.primitive "_PathLike");
 
-  List.iter ~f:(register_module (module Handler)) sources;
+  List.iter ~f:(Environment.register_module (module Handler)) sources;
 
   let all_annotations =
     List.fold
       ~init:Type.Set.empty
       ~f:(fun annotations source ->
-          Set.union annotations (register_class_definitions (module Handler) source))
+          Set.union annotations (Environment.register_class_definitions (module Handler) source))
       sources
     |> Set.to_list
   in
-  register_aliases (module Handler) sources;
+  Environment.register_aliases (module Handler) sources;
 
   List.iter
-    ~f:(register_dependencies ~source_root ~check_dependency_exists (module Handler))
+    ~f:(Environment.register_dependencies ~source_root ~check_dependency_exists (module Handler))
     sources;
   (* Build type order. *)
-  List.iter ~f:(connect_type_order (module Handler)) sources;
+  List.iter ~f:(Environment.connect_type_order (module Handler)) sources;
   TypeOrder.deduplicate (module Handler.TypeOrderHandler) ~annotations:all_annotations;
 
   TypeOrder.connect_annotations_to_top
@@ -69,14 +68,14 @@ let populate
     ~top:Type.Object
     all_annotations;
 
-  List.iter ~f:(register_functions (module Handler)) sources;
-  List.iter ~f:(register_globals (module Handler)) sources;
+  List.iter ~f:(Environment.register_functions (module Handler)) sources;
+  List.iter ~f:(Environment.register_globals (module Handler)) sources;
   (* TODO(T30713406): Merge with class registration. *)
   List.iter ~f:Handler.refine_class_definition all_annotations
 
 
 let build
-    ((module Handler: Handler) as handler)
+    ((module Handler: Environment.Handler) as handler)
     ~configuration:({ Configuration.source_root; _ } as configuration)
     ~stubs
     ~sources =
@@ -130,10 +129,14 @@ let build
 
 let in_process_handler ~configuration ~stubs ~sources =
   let environment = Environment.Builder.create ~configuration () in
-  let ((module Handler: Handler) as handler) = Environment.handler ~configuration environment in
+  let ((module Handler: Environment.Handler) as handler) =
+    Environment.handler
+      environment
+      ~configuration
+  in
   build handler ~configuration ~stubs ~sources;
   Log.log ~section:`Environment "%a" Environment.Builder.pp environment;
-  infer_protocols ~handler ~configuration;
+  Environment.infer_protocols ~handler ~configuration;
   TypeOrder.check_integrity (module Handler.TypeOrderHandler);
   handler
 
@@ -146,7 +149,7 @@ let shared_memory_handler
     ~sources =
   let add_to_shared_memory
       {
-        function_definitions;
+        Environment.function_definitions;
         class_definitions;
         protocols;
         modules;
@@ -199,7 +202,7 @@ let shared_memory_handler
 
   Log.initialize ~verbose ~sections;
   let environment = Environment.Builder.create ~configuration () in
-  let ((module Handler: Handler) as shared_handler) =
+  let ((module Handler: Environment.Handler) as shared_handler) =
     (module struct
       let function_definitions =
         FunctionDefinitions.get
@@ -425,19 +428,19 @@ let shared_memory_handler
           let definition =
             match ClassDefinitions.get primitive with
             | Some ({
-                class_definition = { Node.location; value = preexisting };
+                Environment.class_definition = { Node.location; value = preexisting };
                 _;
               } as representation) ->
                 {
                   representation with
-                  class_definition = {
+                  Environment.class_definition = {
                     Node.location;
                     value = Statement.Class.update preexisting ~definition:(Node.value definition);
                   };
                 }
             | _ ->
                 {
-                  class_definition = definition;
+                  Environment.class_definition = definition;
                   methods = [];
                   explicit_attributes = Statement.Access.SerializableMap.empty;
                   implicit_attributes = Statement.Access.SerializableMap.empty;
@@ -522,7 +525,7 @@ let shared_memory_handler
   in
   Statistics.event ~name:"shared memory size" ~integers:["size", heap_size] ~configuration ();
 
-  infer_protocols ~handler:shared_handler ~configuration;
+  Environment.infer_protocols ~handler:shared_handler ~configuration;
   TypeOrder.check_integrity (module Handler.TypeOrderHandler);
 
   shared_handler
