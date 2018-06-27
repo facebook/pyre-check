@@ -135,7 +135,7 @@ let comment = '#' [^ '\n' '\r']*
 let signature = '#' whitespace* "type: ("
   (['a'-'z' 'A'-'Z' ' ' ',' '[' ']' '.' '0'-'9']+)*  ") ->" whitespace* [^ '\n' '\r']+
 
-let identifier = ['$' 'a'-'z' 'A'-'Z' '_'] ['$' 'a'-'z' 'A'-'Z' '0'-'9' '_']*
+let identifier = ['$' 'a'-'z' 'A'-'Z' '_'] ['$' '?' 'a'-'z' 'A'-'Z' '0'-'9' '_']*
 
 
 let digit = ['0'-'9']

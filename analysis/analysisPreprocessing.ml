@@ -402,7 +402,7 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
                         let alias =
                           let qualifier =
                             Access.show qualifier
-                            |> String.substr_replace_all ~pattern:"." ~with_:"_"
+                            |> String.substr_replace_all ~pattern:"." ~with_:"?"
                           in
                           Identifier.show name
                           |> Format.asprintf "$local_%s$%s" qualifier

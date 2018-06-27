@@ -404,7 +404,7 @@ module Access = struct
           let name = Identifier.show identifier in
           if Str.string_match local_qualifier_pattern name 0 then
             Str.matched_group 1 name
-            |> String.substr_replace_all ~pattern:"_" ~with_:"."
+            |> String.substr_replace_all ~pattern:"?" ~with_:"."
             |> create
           else
             begin

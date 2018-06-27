@@ -352,7 +352,7 @@ let test_qualify _ =
       $local_qualifier$Int = int
       $local_qualifier$constant: qualifier.Int = ...
       def qualifier.foo($parameter$i: qualifier.Int) -> qualifier.Int:
-        $local_qualifier_foo$variable = $local_qualifier$Int
+        $local_qualifier?foo$variable = $local_qualifier$Int
       def qualifier.foo($parameter$i: typing.Tuple[qualifier.Int, str]): ...
     |};
   assert_qualify
@@ -472,8 +472,8 @@ let test_qualify _ =
     {|
       $local_qualifier$constant: int = 1
       def qualifier.foo():
-        $local_qualifier_foo$constant = 2
-        $local_qualifier_foo$constant = 3
+        $local_qualifier?foo$constant = 2
+        $local_qualifier?foo$constant = 3
     |};
   assert_qualify
     {|
@@ -485,8 +485,8 @@ let test_qualify _ =
     {|
       def qualifier.foo():
         qualifier.foo()
-        $local_qualifier_foo$foo = 1
-        $local_qualifier_foo$foo()
+        $local_qualifier?foo$foo = 1
+        $local_qualifier?foo$foo()
     |};
   assert_qualify
     {|
