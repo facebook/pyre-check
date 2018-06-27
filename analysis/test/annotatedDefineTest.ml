@@ -32,7 +32,7 @@ let test_parent_definition _ =
       parent = parent >>| Access.create;
     }
     |> Define.create
-    |> Define.parent_definition ~resolution:(resolution environment)
+    |> Define.parent_definition ~resolution:(Environment.resolution environment ())
   in
 
   let environment =
@@ -68,7 +68,7 @@ let test_parent_definition _ =
   let base_type =
     match (List.hd (Class.bases parent)) with
     | Some {Argument.value; _ } ->
-        resolution environment
+        Environment.resolution environment ()
         |> (fun resolution -> Resolution.parse_annotation resolution value)
     | _ -> Type.Top
   in
@@ -90,7 +90,7 @@ let test_method_definition _ =
       parent = parent >>| Access.create;
     }
     |> Define.create
-    |> Define.method_definition ~resolution:(resolution environment)
+    |> Define.method_definition ~resolution:(Environment.resolution environment ())
   in
   assert_is_some
     (parent_class_definition

@@ -30,7 +30,7 @@ type t = {
   module_definition: Access.t -> Module.t option;
   class_definition: Type.t -> (Class.t Node.t) option;
 
-  define: Statement.Define.t;
+  parent: Access.t option;
 }
 
 
@@ -43,10 +43,10 @@ let create
     ~global
     ~module_definition
     ~class_definition
-    ~define =
+    ?parent
+    () =
   {
     annotations;
-    define;
     order;
     resolve;
     resolve_literal;
@@ -54,6 +54,7 @@ let create
     global;
     module_definition;
     class_definition;
+    parent;
   }
 
 
@@ -87,12 +88,12 @@ let with_annotations resolution ~annotations =
   { resolution with annotations }
 
 
-let define { define; _ } =
-  define
+let parent { parent; _ } =
+  parent
 
 
-let with_define resolution ~define =
-  { resolution with define }
+let with_parent resolution ~parent =
+  { resolution with parent }
 
 
 let order { order; _ } =

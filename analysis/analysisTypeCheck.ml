@@ -258,7 +258,7 @@ module State = struct
         Node.location;
         value = ({ Define.parent; parameters; _ } as define);
       } as define_node) =
-    let resolution = Resolution.with_define resolution ~define in
+    let resolution = Resolution.with_parent resolution ~parent in
     let { resolution; errors; _ } as initial =
       create ~configuration ~resolution ~define:define_node ?lookup ()
     in
@@ -1878,12 +1878,7 @@ let check
     ({ Source.path; qualifier; statements; _ } as source) =
   Log.debug "Checking %s..." path;
 
-  let resolution =
-    Environment.resolution
-      environment
-      ~define:(Define.create_toplevel ~qualifier ~statements:[])
-      ()
-  in
+  let resolution = Environment.resolution environment () in
   let lookup = Lookup.create () in
 
   let check

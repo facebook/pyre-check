@@ -38,7 +38,8 @@ let test_return_annotation _ =
         generated = false;
         parent = None;
       }
-      |> (fun define -> Callable.return_annotation ~define ~resolution:(resolution environment))
+      |> (fun define ->
+          Callable.return_annotation ~define ~resolution:(Environment.resolution environment ()))
     in
     assert_equal ~cmp:Type.equal expected return_annotation
   in
@@ -60,7 +61,7 @@ let test_apply_decorators _ =
         class contextlib.GeneratorContextManager(contextlib.ContextManager[_T], typing.Generic[_T]):
           pass
       |}
-      |> resolution
+      |> fun environment -> Environment.resolution environment ()
     in
     let applied_return_annotation =
       Callable.apply_decorators ~define ~resolution
@@ -108,7 +109,10 @@ let test_apply_decorators _ =
 
 let test_create _ =
   let assert_callable ?parent source expected =
-    let resolution = populate source |> resolution in
+    let resolution =
+      populate source
+      |> fun environment -> Environment.resolution environment ()
+    in
     let callable =
       let parent = parent >>| Access.create in
       parse source
@@ -164,7 +168,10 @@ let test_create _ =
     "typing.Callable('module.Foo.foo')[[Named(a, str)], str][[Named(a, int)], int]";
 
   let assert_implicit_argument ?parent source expected =
-    let resolution = populate source |> resolution in
+    let resolution =
+      populate source
+      |> fun environment -> Environment.resolution environment ()
+    in
     let implicit_argument =
       let parent = parent >>| Access.create in
       parse_single_define source

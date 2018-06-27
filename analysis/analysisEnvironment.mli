@@ -89,7 +89,6 @@ val handler: t -> configuration: Configuration.t -> (module Handler)
 val resolution
   :  (module Handler)
   -> ?annotations: Annotation.t Access.Map.t
-  -> define: Define.t
   -> unit
   -> Resolution.t
 

@@ -310,12 +310,7 @@ let test_join _ =
     let environment =
       Environment.handler ~configuration (Environment.Builder.create ~configuration ())
     in
-    let resolution =
-      Environment.resolution
-        environment
-        ~define:(Statement.Define.create_toplevel ~qualifier:[] ~statements:[])
-        ()
-    in
+    let resolution = Environment.resolution environment () in
     let result = Error.join ~resolution left right in
     assert_equal ~cmp:Error.equal result expected
   in
@@ -423,12 +418,7 @@ let test_filter _ =
         class NonMockChild(Foo): ...
       |};
     ];
-  let resolution =
-    Environment.resolution
-      environment
-      ~define:(Statement.Define.create_toplevel ~qualifier:[] ~statements:[])
-      ()
-  in
+  let resolution = Environment.resolution environment () in
   let assert_filtered ?(define = mock_define) kind =
     let errors = [error ~define kind] in
     assert_equal

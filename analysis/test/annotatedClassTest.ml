@@ -24,7 +24,10 @@ let test_generics _ =
   let assert_generics source generics =
     match parse_last_statement source with
     | { Node.value = Statement.Class definition; _ } ->
-        let resolution = populate source |> resolution in
+        let resolution =
+          populate source
+          |> fun environment -> Environment.resolution environment ()
+        in
         assert_equal
           ~cmp:(List.equal ~equal:Type.equal)
           (Class.create (Node.create_with_default_location definition)
@@ -93,19 +96,19 @@ let test_superclasses _ =
   in
 
   assert_superclasses
-    (Class.superclasses ~resolution:(resolution environment) !"Foo")
+    (Class.superclasses ~resolution:(Environment.resolution environment ()) !"Foo")
     ([!"object"]);
   assert_superclasses
-    (Class.superclasses ~resolution:(resolution environment) !"SubFoo")
+    (Class.superclasses ~resolution:(Environment.resolution environment ()) !"SubFoo")
     ([!"Foo"; !"object"]);
   assert_superclasses
-    (Class.superclasses ~resolution:(resolution environment) !"SubFooBar")
+    (Class.superclasses ~resolution:(Environment.resolution environment ()) !"SubFooBar")
     ([!"Bar"; !"Foo"; !"object"]);
   assert_superclasses
-    (Class.superclasses ~resolution:(resolution environment) !"SubRecurse")
+    (Class.superclasses ~resolution:(Environment.resolution environment ()) !"SubRecurse")
     ([!"SubFooBar"; !"Bar"; !"Foo"; !"object"]);
   assert_superclasses
-    (Class.superclasses ~resolution:(resolution environment) !"SubRedundant")
+    (Class.superclasses ~resolution:(Environment.resolution environment ()) !"SubRedundant")
     ([!"SubFooBar"; !"Foo"; !"Bar"; !"object"])
 
 
@@ -120,7 +123,10 @@ let test_constructors _ =
     match parse_last_statement source with
     | { Node.value = Statement.Class ({ Record.Class.name; _ } as definition); _ }
     | { Node.value = Stub (Stub.Class ({ Record.Class.name; _ } as definition)); _ } ->
-        let resolution = populate source |> resolution in
+        let resolution =
+          populate source
+          |> fun environment -> Environment.resolution environment ()
+        in
         let defines =
           let define { parameters; annotation } =
             {
@@ -369,7 +375,7 @@ let test_class_attributes _ =
       | _ ->
           failwith "Could not parse class"
     in
-    populate source |> resolution,
+    populate source |> fun environment -> Environment.resolution environment (),
     Class.create (Node.create_with_default_location parent)
   in
 
@@ -610,7 +616,7 @@ let test_fallback_attribute _ =
   let assert_fallback_attribute source annotation =
     let resolution =
       populate source
-      |> resolution
+      |> fun environment -> Environment.resolution environment ()
     in
     let attribute =
       parse_last_statement source
@@ -666,7 +672,7 @@ let test_constraints _ =
   let assert_constraints ~target ~instantiated ?parameters source expected =
     let resolution =
       populate source
-      |> resolution
+      |> fun environment -> Environment.resolution environment ()
     in
     let target =
       let { Source.statements; _ } = parse source in
@@ -909,7 +915,7 @@ let test_method_overloads _ =
         def foo(): pass
         def baz(): pass
     |}
-    |> resolution
+    |> fun environment -> Environment.resolution environment ()
   in
   let foo, baz =
     Resolution.class_definition resolution (Type.Primitive ~~"Baz")

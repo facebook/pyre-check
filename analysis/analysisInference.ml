@@ -129,7 +129,9 @@ module State = struct
     { state with errors = List.fold parameters ~init:errors ~f:add_parameter_errors}
 
 
-  let backward ({ resolution; errors; lookup; _ } as state) ~statement =
+  let backward
+      ({ resolution; errors; _ } as state)
+      ~statement =
     let resolve_assign annotation target_annotation =
       match annotation, target_annotation with
       | Type.Top, Type.Top -> None
@@ -282,7 +284,7 @@ module State = struct
           annotate_call_accesses statement resolution
     in
 
-    { state with errors; resolution; lookup }
+    { state with errors; resolution }
 end
 
 
@@ -329,14 +331,9 @@ module SingleSourceResult = struct
 end
 
 
-let infer configuration environment ?mode_override ({ Source.path; qualifier; _ } as source) =
+let infer configuration environment ?mode_override ({ Source.path; _ } as source) =
   Log.debug "Checking %s..." path;
-  let resolution =
-    Environment.resolution
-      environment
-      ~define:(Define.create_toplevel ~qualifier ~statements:[])
-      ()
-  in
+  let resolution = Environment.resolution environment () in
 
   let dequalify_map = Preprocessing.dequalify_map source in
 

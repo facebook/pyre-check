@@ -43,7 +43,7 @@ let resolution =
       meta: typing.Type[typing.List[int]] = ...
       union: typing.Union[int, str] = ...
     |}
-  |> resolution
+  |> fun environment -> Environment.resolution environment ()
 
 
 let parse_annotation annotation =

@@ -25,7 +25,8 @@ val create
   -> global: (Access.t -> global option)
   -> module_definition: (Access.t -> Module.t option)
   -> class_definition: (Type.t -> (Class.t Node.t) option)
-  -> define: Define.t
+  -> ?parent: Access.t
+  -> unit
   -> t
 
 val set_local: t -> access: Access.t -> annotation: Annotation.t -> t
@@ -35,8 +36,8 @@ val get_local_callable: t -> access: Access.t -> Type.Callable.t option
 val annotations: t -> Annotation.t Access.Map.t
 val with_annotations: t -> annotations: Annotation.t Access.Map.t -> t
 
-val define: t -> Statement.Define.t
-val with_define: t -> define: Define.t -> t
+val parent: t -> Access.t option
+val with_parent: t -> parent: Access.t option -> t
 
 val order: t -> (module TypeOrder.Handler)
 

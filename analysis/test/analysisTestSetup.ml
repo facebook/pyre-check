@@ -269,10 +269,7 @@ let empty_define = {
 let resolution ?(sources = typeshed_stubs) () =
   let environment = environment ~sources () in
   add_defaults_to_environment ~configuration environment;
-  Environment.resolution
-    environment
-    ~define:(Define.create_toplevel ~qualifier:[] ~statements:[])
-    ()
+  Environment.resolution environment ()
 
 
 let assert_type_errors

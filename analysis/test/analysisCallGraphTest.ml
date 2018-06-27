@@ -127,7 +127,7 @@ let test_type_collection _ =
       Preprocessing.defines source
       |> List.map ~f:(fun define -> define.Node.value)
     in
-    let Define.{ name; body = statements; _ } as define = List.nth_exn defines 1 in
+    let Define.{ name; body = statements; _ } = List.nth_exn defines 1 in
     let lookup =
       let build_lookup lookup { key; annotations } =
         Int.Map.set lookup ~key ~data:annotations in
@@ -142,7 +142,7 @@ let test_type_collection _ =
         Int.Map.find_exn lookup key
         |> Access.Map.of_alist_exn
       in
-      let resolution = Environment.resolution environment ~annotations ~define () in
+      let resolution = Environment.resolution environment ~annotations () in
       let statement = List.nth_exn statements statement_index in
       Visit.collect_accesses_with_location statement
       |> List.hd_exn

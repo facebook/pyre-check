@@ -5,9 +5,7 @@
 
 open Core
 
-open Ast
 open Analysis
-open Statement
 
 open Test
 
@@ -38,13 +36,6 @@ let populate source =
     environment
   in
   Environment.handler ~configuration environment
-
-
-let resolution environment =
-  Environment.resolution
-    environment
-    ~define:(Define.create_toplevel ~qualifier:[] ~statements:[])
-    ()
 
 
 let value option =

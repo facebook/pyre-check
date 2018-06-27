@@ -1252,7 +1252,7 @@ let dequalify
     dequalify_map
     environment
     ({kind; define = { Node.location; value = define }; _ } as error) =
-  let resolution = Environment.resolution environment ~define () in
+  let resolution = Environment.resolution environment () in
   let dequalify = Type.dequalify dequalify_map in
   let kind =
     match kind with

@@ -394,7 +394,7 @@ let handler
   end: Handler)
 
 
-let resolution (module Handler: Handler) ?(annotations = Access.Map.empty) ~define () =
+let resolution (module Handler: Handler) ?(annotations = Access.Map.empty) () =
   let parse_annotation = Type.create ~aliases:Handler.aliases in
 
   let class_definition annotation =
@@ -420,7 +420,7 @@ let resolution (module Handler: Handler) ?(annotations = Access.Map.empty) ~defi
     ~global:Handler.globals
     ~module_definition:Handler.module_definition
     ~class_definition
-    ~define
+    ()
 
 
 let dependencies (module Handler: Handler) =
@@ -633,13 +633,7 @@ let register_aliases (module Handler: Handler) sources =
 let register_globals
     (module Handler: Handler)
     ({ Source.path; qualifier; statements; _ } as source) =
-  let resolution =
-    resolution
-      (module Handler: Handler)
-      ~annotations:Access.Map.empty
-      ~define:(Define.create_toplevel ~qualifier ~statements:[])
-      ()
-  in
+  let resolution = resolution (module Handler: Handler) ~annotations:Access.Map.empty () in
 
   let qualified_access access =
     let access =
@@ -852,16 +846,8 @@ let register_dependencies
   Visit.visit () source
 
 
-let register_functions
-    (module Handler: Handler)
-    ({ Source.path; qualifier; _ } as source) =
-  let resolution =
-    resolution
-      (module Handler: Handler)
-      ~annotations:Access.Map.empty
-      ~define:(Define.create_toplevel ~qualifier ~statements:[])
-      ()
-  in
+let register_functions (module Handler: Handler) ({ Source.path; _ } as source) =
+  let resolution = resolution (module Handler: Handler) ~annotations:Access.Map.empty () in
 
   let module Visit = Visit.MakeStatementVisitor(struct
       type t = ((Type.Callable.t Node.t) list) Access.Map.t
@@ -931,13 +917,7 @@ let register_functions
 
 let infer_implementations (module Handler: Handler) ~implementing_classes ~protocol =
   let module Edge = TypeOrder.Edge in
-  let resolution =
-    resolution
-      (module Handler: Handler)
-      ~annotations:Access.Map.empty
-      ~define:(Define.create_toplevel ~qualifier:[] ~statements:[])
-      ()
-  in
+  let resolution = resolution (module Handler: Handler) ~annotations:Access.Map.empty () in
   let open Annotated in
 
   Resolution.class_definition resolution protocol

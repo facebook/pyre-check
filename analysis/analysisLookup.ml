@@ -80,13 +80,6 @@ module Visit = Visit.Make(ExpressionVisitor)
 
 let create_of_source environment source =
   let open TypeResolutionSharedMemory in
-  let resolution define annotations =
-    Environment.resolution
-      environment
-      ~define
-      ~annotations
-      ()
-  in
   let location_lookup = Location.Table.create () in
   let walk_defines { Node.value = ({ Define.name = caller; _ } as define); _ } =
     let cfg = Cfg.create define in
@@ -106,7 +99,7 @@ let create_of_source environment source =
           |> Option.value ~default:[]
           |> Access.Map.of_alist_exn
         in
-        let resolution = resolution define annotations in
+        let resolution = Environment.resolution environment ~annotations () in
         Visit.visit (resolution, location_lookup) (Source.create [statement])
         |> ignore
       in

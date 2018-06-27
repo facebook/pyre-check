@@ -72,7 +72,7 @@ let test_fold _ =
           sep: str = '/'
         |};
     ]
-    |> resolution
+    |> fun environment -> Environment.resolution environment ()
   in
   let parse_annotation annotation =
     annotation
@@ -175,7 +175,7 @@ let test_fold _ =
 let assert_resolved sources access expected =
   let resolution =
     populate_with_sources sources
-    |> resolution
+    |> fun environment -> Environment.resolution environment ()
   in
   let resolved =
     parse_single_access access

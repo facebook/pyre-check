@@ -27,7 +27,7 @@ let test_fold _ =
           x: int
           y: str
     |}
-    |> resolution
+    |> (fun environment -> Environment.resolution environment ())
   in
   let assert_fold source expected =
     let actual =

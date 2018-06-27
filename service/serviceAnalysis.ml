@@ -15,13 +15,6 @@ module CallGraph = ServiceCallGraph
 
 
 let call_graph_of_source environment source =
-  let make_resolution define annotations =
-    Environment.resolution
-      environment
-      ~define
-      ~annotations
-      ()
-  in
   let fold_defines
       call_graph
       { Node.value = ({ Define.name = caller; _ } as define); _ } =
@@ -45,7 +38,7 @@ let call_graph_of_source environment source =
             ([%hash: int * int] (node_id, statement_index))
           |> Access.Map.of_alist_exn
         in
-        let resolution = make_resolution define annotations in
+        let resolution = Environment.resolution environment ~annotations () in
         let fold_accesses call_graph { Node.value = access; _ } =
           let add_call_edge call_graph ~resolution:_ ~resolved ~element:_ =
             let open Annotation.Type in
@@ -76,8 +69,7 @@ let call_graph_of_source environment source =
 
 let overrides_of_source environment source =
   let open Annotated in
-  let define = Statement.Define.create_toplevel ~qualifier:[] ~statements:[] in
-  let resolution = Environment.resolution environment ~define () in
+  let resolution = Environment.resolution environment () in
   let filter_overrides child_method =
     Method.overrides child_method ~resolution
     >>| fun ancestor_method -> (Method.name ancestor_method, Method.name child_method)

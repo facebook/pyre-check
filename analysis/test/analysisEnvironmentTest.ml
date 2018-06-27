@@ -51,25 +51,18 @@ let populate ?source_root ?(check_dependency_exists = false) source =
   populate_with_sources ?source_root ~check_dependency_exists [parse source]
 
 
-let resolution environment =
-  Environment.resolution
-    environment
-    ~define:(Define.create_toplevel ~qualifier:[] ~statements:[])
-    ()
-
-
 let global environment =
-  resolution environment
+  Environment.resolution environment ()
   |> Resolution.global
 
 
 let class_definition environment =
-  resolution environment
+  Environment.resolution environment ()
   |> Resolution.class_definition
 
 
 let parse_annotation environment =
-  resolution environment
+  Environment.resolution environment ()
   |> Resolution.parse_annotation
 
 
