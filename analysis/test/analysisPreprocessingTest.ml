@@ -192,7 +192,7 @@ let test_qualify _ =
     {|
       from typing import List
       from module import constant
-      $local_qualifier_0$a: typing.List[int] = module.constant
+      $local_qualifier$a: typing.List[int] = module.constant
     |};
 
   (* Qualify classes. *)
@@ -285,7 +285,7 @@ let test_qualify _ =
           self.local = 1
     |}
     {|
-      $local_qualifier_0$local = 0
+      $local_qualifier$local = 0
       class qualifier.C:
         def qualifier.C.__init__($parameter$self):
           $parameter$self.local = 1
@@ -299,7 +299,7 @@ let test_qualify _ =
         INDENT, other = 2, 3
     |}
     {|
-      $local_qualifier_0$INDENT = 0
+      $local_qualifier$INDENT = 0
       class qualifier.C:
          qualifier.C.INDENT = 1
          qualifier.C.INDENT, qualifier.C.other = (2, 3)
@@ -349,10 +349,10 @@ let test_qualify _ =
       def foo(i: typing.Tuple[Int, str]): ...
     |}
     {|
-      $local_qualifier_0$Int = int
-      $local_qualifier_0$constant: qualifier.Int = ...
+      $local_qualifier$Int = int
+      $local_qualifier$constant: qualifier.Int = ...
       def qualifier.foo($parameter$i: qualifier.Int) -> qualifier.Int:
-        $local_qualifier_foo_0$variable = $local_qualifier_0$Int
+        $local_qualifier_foo$variable = $local_qualifier$Int
       def qualifier.foo($parameter$i: typing.Tuple[qualifier.Int, str]): ...
     |};
   assert_qualify
@@ -364,7 +364,7 @@ let test_qualify _ =
           self._attribute: typing.Dict[Int, str] = {}
     |}
     {|
-      $local_qualifier_0$Int = int
+      $local_qualifier$Int = int
       class qualifier.Class:
         def qualifier.Class.__init__($parameter$self, $parameter$i: qualifier.Int) -> None:
           $parameter$self._attribute: qualifier.Int = 0
@@ -380,7 +380,7 @@ let test_qualify _ =
     |}
     {|
       from typing import List
-      $local_qualifier_0$T = 'typing.List'
+      $local_qualifier$T = 'typing.List'
       def qualifier.foo() -> 'typing.List.__getitem__(int)': ...
     |};
 
@@ -452,15 +452,15 @@ let test_qualify _ =
           qualifier.foo.nestedA()
     |};
 
-  (* SSA-lite. *)
+  (* SSA-gutted. *)
   assert_qualify
     {|
       constant = 1
       constant = constant
     |}
     {|
-      $local_qualifier_0$constant = 1
-      $local_qualifier_0$constant = $local_qualifier_0$constant
+      $local_qualifier$constant = 1
+      $local_qualifier$constant = $local_qualifier$constant
     |};
   assert_qualify
     {|
@@ -470,10 +470,10 @@ let test_qualify _ =
         constant = 3
     |}
     {|
-      $local_qualifier_0$constant: int = 1
+      $local_qualifier$constant: int = 1
       def qualifier.foo():
-        $local_qualifier_foo_0$constant = 2
-        $local_qualifier_foo_0$constant = 3
+        $local_qualifier_foo$constant = 2
+        $local_qualifier_foo$constant = 3
     |};
   assert_qualify
     {|
@@ -485,8 +485,8 @@ let test_qualify _ =
     {|
       def qualifier.foo():
         qualifier.foo()
-        $local_qualifier_foo_0$foo = 1
-        $local_qualifier_foo_0$foo()
+        $local_qualifier_foo$foo = 1
+        $local_qualifier_foo$foo()
     |};
   assert_qualify
     {|
@@ -494,8 +494,8 @@ let test_qualify _ =
       constant = 2
     |}
     {|
-      $local_qualifier_0$constant: int = 1
-      $local_qualifier_0$constant = 2
+      $local_qualifier$constant: int = 1
+      $local_qualifier$constant = 2
     |};
   assert_qualify
     {|
@@ -505,9 +505,9 @@ let test_qualify _ =
         global constant
     |}
     {|
-      $local_qualifier_0$constant = 1
+      $local_qualifier$constant = 1
       def qualifier.foo():
-        $local_qualifier_0$constant = 2
+        $local_qualifier$constant = 2
         global constant
     |};
   assert_qualify
@@ -529,12 +529,12 @@ let test_qualify _ =
       result = variable
     |}
     {|
-      $local_qualifier_0$flag = False
-      if $local_qualifier_0$flag:
-        $local_qualifier_0$variable = 1
+      $local_qualifier$flag = False
+      if $local_qualifier$flag:
+        $local_qualifier$variable = 1
       else:
-        $local_qualifier_0$other = 1
-      $local_qualifier_0$result = $local_qualifier_0$variable
+        $local_qualifier$other = 1
+      $local_qualifier$result = $local_qualifier$variable
     |};
   assert_qualify
     {|
@@ -546,12 +546,12 @@ let test_qualify _ =
       result = variable
     |}
     {|
-      $local_qualifier_0$flag = False
-      if $local_qualifier_0$flag:
-        $local_qualifier_0$variable = 1
+      $local_qualifier$flag = False
+      if $local_qualifier$flag:
+        $local_qualifier$variable = 1
       else:
-        $local_qualifier_0$variable = 2
-      $local_qualifier_0$result = $local_qualifier_0$variable
+        $local_qualifier$variable = 2
+      $local_qualifier$result = $local_qualifier$variable
     |};
   assert_qualify
     {|
@@ -561,10 +561,10 @@ let test_qualify _ =
       return variable
     |}
     {|
-      $local_qualifier_0$variable = None
-      if $local_qualifier_0$variable is None:
-        $local_qualifier_0$variable = 1
-      return $local_qualifier_0$variable
+      $local_qualifier$variable = None
+      if $local_qualifier$variable is None:
+        $local_qualifier$variable = 1
+      return $local_qualifier$variable
     |};
   assert_qualify
     {|
@@ -574,10 +574,10 @@ let test_qualify _ =
       result = variable
     |}
     {|
-      $local_qualifier_0$variable = 0
+      $local_qualifier$variable = 0
       with item:
-        $local_qualifier_0$variable = 1
-      $local_qualifier_0$result = $local_qualifier_0$variable
+        $local_qualifier$variable = 1
+      $local_qualifier$result = $local_qualifier$variable
     |};
   assert_qualify
     {|
@@ -590,11 +590,11 @@ let test_qualify _ =
     |}
     {|
       try:
-        $local_qualifier_0$variable = 1
+        $local_qualifier$variable = 1
       except:
         return None
       else:
-        return $local_qualifier_0$variable
+        return $local_qualifier$variable
     |}
 
 

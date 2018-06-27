@@ -400,29 +400,15 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
                          not (Set.mem locals access) &&
                          not (Set.mem immutables access) then
                         let alias =
-                          let aliases =
-                            Map.data aliases
-                            |> List.map ~f:(fun { access; _ } -> access)
-                            |> Access.Set.of_list
+                          let qualifier =
+                            Access.show qualifier
+                            |> String.substr_replace_all ~pattern:"." ~with_:"_"
                           in
-                          let rec new_alias ~count =
-                            let alias =
-                              let qualifier =
-                                Access.show qualifier
-                                |> String.substr_replace_all ~pattern:"." ~with_:"_"
-                              in
-                              Identifier.show name
-                              |> Format.asprintf "$local_%s_%d$%s" qualifier count
-                              |> Identifier.create
-                              |> fun identifier ->
-                              [Access.identifier ~location:access_location identifier]
-                            in
-                            if not (Set.mem aliases alias) then
-                              alias
-                            else
-                              new_alias ~count:(count + 1)
-                          in
-                          new_alias ~count:0
+                          Identifier.show name
+                          |> Format.asprintf "$local_%s$%s" qualifier
+                          |> Identifier.create
+                          |> fun identifier ->
+                          [Access.identifier ~location:access_location identifier]
                         in
                         {
                           scope with

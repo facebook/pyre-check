@@ -629,8 +629,8 @@ let test_fixpoint_forward _ =
     |}
     (Int.Table.of_alist_exn [
         0, create [];
-        1, create ["$local_foo_0$x", Type.Top];
-        3, create ["$local_foo_0$x", Type.Top];
+        1, create ["$local_foo$x", Type.Top];
+        3, create ["$local_foo$x", Type.Top];
         5, create [];
       ]);
   assert_fixpoint_forward
@@ -641,11 +641,11 @@ let test_fixpoint_forward _ =
     (Int.Table.of_alist_exn [
         0, create ~immutables:["$parameter$y", false] ["$parameter$y", Type.integer];
         1, create ~immutables:["$parameter$y", false] [
-          "$local_foo_0$x", Type.integer;
+          "$local_foo$x", Type.integer;
           "$parameter$y", Type.integer;
         ];
         3, create ~immutables:["$parameter$y", false] [
-          "$local_foo_0$x", Type.integer;
+          "$local_foo$x", Type.integer;
           "$parameter$y", Type.integer;
         ];
         5, create ~immutables:["$parameter$y", false] ["$parameter$y", Type.integer];
@@ -661,22 +661,22 @@ let test_fixpoint_forward _ =
     (Int.Table.of_alist_exn [
         0, create ~immutables:["$parameter$y", false] ["$parameter$y", Type.integer]; (* Entry *)
         1, create ~immutables:["$parameter$y", false] [
-          "$local_foo_0$x", Type.Top;
+          "$local_foo$x", Type.Top;
           "$parameter$y", Type.integer;
         ]; (* Exit *)
         3, create ~immutables:["$parameter$y", false] [
-          "$local_foo_0$x", Type.Top;
+          "$local_foo$x", Type.Top;
           "$parameter$y", Type.integer;
         ]; (* Final *)
         5, create ~immutables:["$parameter$y", false] ["$parameter$y", Type.integer]; (* If *)
         6, create ~immutables:["$parameter$y", false] [
-          "$local_foo_0$x", Type.Top;
+          "$local_foo$x", Type.Top;
           "$parameter$y", Type.integer;
         ]; (* Join *)
         7, create ~immutables:["$parameter$y", false] ["$parameter$y", Type.integer]; (* Body *)
         8, create ~immutables:["$parameter$y", false] ["$parameter$y", Type.integer]; (* Orelse *)
         9, create ~immutables:["$parameter$y", false] [
-          "$local_foo_0$x", Type.Top;
+          "$local_foo$x", Type.Top;
           "$parameter$y", Type.integer;
         ]; (* Return *)
       ]);

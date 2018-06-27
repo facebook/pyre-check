@@ -199,7 +199,7 @@ let test_fixpoint_backward _ =
         0,
         create
           ~expected_return:Type.integer
-          ["$return", Type.integer; "$local_foo_0$x", Type.integer; "y", Type.integer];
+          ["$return", Type.integer; "$local_foo$x", Type.integer; "y", Type.integer];
         1,
         create
           ~expected_return:Type.integer
@@ -259,7 +259,7 @@ let test_fixpoint_backward _ =
           ~expected_return:Type.integer
           [
             "$return", Type.integer;
-            "$local_foo_0$x", Type.integer;
+            "$local_foo$x", Type.integer;
             "y", Type.integer;
             "z", Type.integer;
           ];
@@ -291,7 +291,7 @@ let test_fixpoint_backward _ =
        return (x,z)
     |}
     (Int.Table.of_alist_exn [
-        0, create ~expected_return:tuple ["$return", tuple; "$local_foo_0$x", b; "y", b; "z", c];
+        0, create ~expected_return:tuple ["$return", tuple; "$local_foo$x", b; "y", b; "z", c];
         1, create ~expected_return:tuple ["$return", tuple];
         2, create ~expected_return:tuple ["$return", tuple];
         3, create ~expected_return:tuple ["$return", tuple];

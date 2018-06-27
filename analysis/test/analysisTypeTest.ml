@@ -25,7 +25,7 @@ let test_create _ =
 
   assert_create "foo" (Type.primitive "foo");
   assert_create "foo.bar" (Type.primitive "foo.bar");
-  assert_create "foo.$local_0$bar" (Type.primitive "foo.bar");
+  assert_create "foo.$local_qualifier$bar" (Type.primitive "foo.bar");
 
   assert_create "object" Type.Object;
   assert_create "$unknown" Type.Top;
