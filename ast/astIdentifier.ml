@@ -34,7 +34,7 @@ let create name = name
 let show name = name
 
 
-let sanitization_pattern = Str.regexp "^\\$[a-zA-Z]*_\\([0-9]+_\\)?"
+let sanitization_pattern = Str.regexp "^\\$.*\\$"
 
 
 let sanitized name =
@@ -60,7 +60,7 @@ let show_sanitized name =
 
 
 let remove_leading_underscores name =
-  let renaming_pattern = Str.regexp "\\(\\$[a-zA-Z]*_\\)_+" in
+  let renaming_pattern = Str.regexp "\\(\\$.*\\$\\)_+" in
   Str.global_replace renaming_pattern "\\1" name
 
 

@@ -193,8 +193,8 @@ let test_type_collection _ =
     ~qualifier:(Access.create "test1")
     ~expected:
       [
-        (5, 1, "$local_0_a.foo.(...)", "test1.A.foo");
-        (5, 3, "$local_0_a.foo.(...)", "test1.B.foo")
+        (5, 1, "$local_0$a.foo.(...)", "test1.A.foo");
+        (5, 3, "$local_0$a.foo.(...)", "test1.B.foo")
       ];
 
   assert_type_collection
@@ -212,7 +212,7 @@ let test_type_collection _ =
            a = B().foo().foo()
     |}
     ~qualifier:(Access.create "test2")
-    ~expected:[(5, 0, "$local_0_a.foo.(...).foo.(...)", "test2.A.foo")]
+    ~expected:[(5, 0, "$local_0$a.foo.(...).foo.(...)", "test2.A.foo")]
 
 
 

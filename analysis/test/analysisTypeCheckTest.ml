@@ -629,8 +629,8 @@ let test_fixpoint_forward _ =
     |}
     (Int.Table.of_alist_exn [
         0, create [];
-        1, create ["$local_0_x", Type.Top];
-        3, create ["$local_0_x", Type.Top];
+        1, create ["$local_foo_0$x", Type.Top];
+        3, create ["$local_foo_0$x", Type.Top];
         5, create [];
       ]);
   assert_fixpoint_forward
@@ -639,16 +639,16 @@ let test_fixpoint_forward _ =
        x = y
     |}
     (Int.Table.of_alist_exn [
-        0, create ~immutables:["$parameter_y", false] ["$parameter_y", Type.integer];
-        1, create ~immutables:["$parameter_y", false] [
-          "$local_0_x", Type.integer;
-          "$parameter_y", Type.integer;
+        0, create ~immutables:["$parameter$y", false] ["$parameter$y", Type.integer];
+        1, create ~immutables:["$parameter$y", false] [
+          "$local_foo_0$x", Type.integer;
+          "$parameter$y", Type.integer;
         ];
-        3, create ~immutables:["$parameter_y", false] [
-          "$local_0_x", Type.integer;
-          "$parameter_y", Type.integer;
+        3, create ~immutables:["$parameter$y", false] [
+          "$local_foo_0$x", Type.integer;
+          "$parameter$y", Type.integer;
         ];
-        5, create ~immutables:["$parameter_y", false] ["$parameter_y", Type.integer];
+        5, create ~immutables:["$parameter$y", false] ["$parameter$y", Type.integer];
       ]);
   assert_fixpoint_forward
     {|
@@ -659,25 +659,25 @@ let test_fixpoint_forward _ =
          x = z
     |}
     (Int.Table.of_alist_exn [
-        0, create ~immutables:["$parameter_y", false] ["$parameter_y", Type.integer]; (* Entry *)
-        1, create ~immutables:["$parameter_y", false] [
-          "$local_0_x", Type.Top;
-          "$parameter_y", Type.integer;
+        0, create ~immutables:["$parameter$y", false] ["$parameter$y", Type.integer]; (* Entry *)
+        1, create ~immutables:["$parameter$y", false] [
+          "$local_foo_0$x", Type.Top;
+          "$parameter$y", Type.integer;
         ]; (* Exit *)
-        3, create ~immutables:["$parameter_y", false] [
-          "$local_0_x", Type.Top;
-          "$parameter_y", Type.integer;
+        3, create ~immutables:["$parameter$y", false] [
+          "$local_foo_0$x", Type.Top;
+          "$parameter$y", Type.integer;
         ]; (* Final *)
-        5, create ~immutables:["$parameter_y", false] ["$parameter_y", Type.integer]; (* If *)
-        6, create ~immutables:["$parameter_y", false] [
-          "$local_0_x", Type.Top;
-          "$parameter_y", Type.integer;
+        5, create ~immutables:["$parameter$y", false] ["$parameter$y", Type.integer]; (* If *)
+        6, create ~immutables:["$parameter$y", false] [
+          "$local_foo_0$x", Type.Top;
+          "$parameter$y", Type.integer;
         ]; (* Join *)
-        7, create ~immutables:["$parameter_y", false] ["$parameter_y", Type.integer]; (* Body *)
-        8, create ~immutables:["$parameter_y", false] ["$parameter_y", Type.integer]; (* Orelse *)
-        9, create ~immutables:["$parameter_y", false] [
-          "$local_0_x", Type.Top;
-          "$parameter_y", Type.integer;
+        7, create ~immutables:["$parameter$y", false] ["$parameter$y", Type.integer]; (* Body *)
+        8, create ~immutables:["$parameter$y", false] ["$parameter$y", Type.integer]; (* Orelse *)
+        9, create ~immutables:["$parameter$y", false] [
+          "$local_foo_0$x", Type.Top;
+          "$parameter$y", Type.integer;
         ]; (* Return *)
       ]);
   ()

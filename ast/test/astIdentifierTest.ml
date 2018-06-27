@@ -19,11 +19,11 @@ let test_remove_leading_underscores _ =
     assert_equal ~printer:ident removed expected
   in
 
-  assert_removed "$renamed_x" "$renamed_x";
-  assert_removed "$renamed__x" "$renamed_x";
-  assert_removed "$head_____x" "$head_x";
-  assert_removed "$hx" "$hx";
-  assert_removed "__a" "__a"
+  assert_removed "$local_0$x" "$local_0$x";
+  assert_removed "$local_0$_x" "$local_0$x";
+  assert_removed "$local_0$_____x" "$local_0$x";
+  assert_removed "$return" "$return";
+  assert_removed "__name__" "__name__"
 
 
 let () =

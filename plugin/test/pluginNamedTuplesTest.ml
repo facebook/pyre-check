@@ -23,7 +23,7 @@ let test_transform_ast _ =
   in
   assert_expand
     {|
-      $local_0_T = typing.NamedTuple('T')
+      $local_0$T = typing.NamedTuple('T')
     |}
     {|
       class qualifier.T(typing.NamedTuple):

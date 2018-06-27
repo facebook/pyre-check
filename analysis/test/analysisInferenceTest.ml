@@ -199,7 +199,7 @@ let test_fixpoint_backward _ =
         0,
         create
           ~expected_return:Type.integer
-          ["$return", Type.integer; "$local_0_x", Type.integer; "y", Type.integer];
+          ["$return", Type.integer; "$local_foo_0$x", Type.integer; "y", Type.integer];
         1,
         create
           ~expected_return:Type.integer
@@ -259,7 +259,7 @@ let test_fixpoint_backward _ =
           ~expected_return:Type.integer
           [
             "$return", Type.integer;
-            "$local_0_x", Type.integer;
+            "$local_foo_0$x", Type.integer;
             "y", Type.integer;
             "z", Type.integer;
           ];
@@ -291,7 +291,7 @@ let test_fixpoint_backward _ =
        return (x,z)
     |}
     (Int.Table.of_alist_exn [
-        0, create ~expected_return:tuple ["$return", tuple; "$local_0_x", b; "y", b; "z", c];
+        0, create ~expected_return:tuple ["$return", tuple; "$local_foo_0$x", b; "y", b; "z", c];
         1, create ~expected_return:tuple ["$return", tuple];
         2, create ~expected_return:tuple ["$return", tuple];
         3, create ~expected_return:tuple ["$return", tuple];
@@ -433,7 +433,7 @@ let test_infer _ =
       def with_params (x: int,y):
           return 5
     |}
-    [{|[{"name":"$parameter_x","type":"int","value":null},{"name":"$parameter_y","type":null,"value":null}]|}];
+    [{|[{"name":"$parameter$x","type":"int","value":null},{"name":"$parameter$y","type":null,"value":null}]|}];
 
   assert_infer
     {|
@@ -506,15 +506,15 @@ let test_infer _ =
       def with_params (x: int = 5,y):
           return 5
     |}
-    [{|[{"name":"$parameter_x","type":"int","value":"5"},
-        {"name":"$parameter_y","type":null,"value":null}]|}];
+    [{|[{"name":"$parameter$x","type":"int","value":"5"},
+        {"name":"$parameter$y","type":null,"value":null}]|}];
 
   assert_infer ~fields:["inference.parameters"]
     {|
       def testing_assert_infer_fragility (x: int = 5):
           return 5
     |}
-    [{|[{"type":"int","name":"$parameter_x","value":"5"}]|}];
+    [{|[{"type":"int","name":"$parameter$x","value":"5"}]|}];
 
   assert_infer ~fields:["inference.annotation"; "inference.parameters"]
     {|
@@ -522,7 +522,7 @@ let test_infer _ =
           return x
     |}
     [
-      {|"int"|};{|[{"name":"$parameter_x","type":"int","value":"5"}]|};
+      {|"int"|};{|[{"name":"$parameter$x","type":"int","value":"5"}]|};
     ];
 
   assert_infer ~fields:["inference.annotation"]
@@ -540,7 +540,7 @@ let test_infer _ =
       def test_optional(x: Optional[str]):
           return 5
     |}
-    [{|[{"name":"$parameter_x","type":"Optional.__getitem__(str)","value":null}]|}];
+    [{|[{"name":"$parameter$x","type":"Optional.__getitem__(str)","value":null}]|}];
 
   assert_infer ~fields:["inference.annotation"; "inference.parameters"]
     {|
@@ -549,7 +549,7 @@ let test_infer _ =
           return x
     |}
     [
-      {|"Optional.__getitem__(str)"|};{|[{"name":"$parameter_x","type":"Optional[str]","value":null}]|}
+      {|"Optional.__getitem__(str)"|};{|[{"name":"$parameter$x","type":"Optional[str]","value":null}]|}
     ];
 
   assert_infer ~fields:["inference.parameters"]
@@ -557,14 +557,14 @@ let test_infer _ =
       def ret_int(x: typing.List[int]):
           return 5
     |}
-    [{|[{"name":"$parameter_x","type":"typing.List.__getitem__(int)","value":null}]|}];
+    [{|[{"name":"$parameter$x","type":"typing.List.__getitem__(int)","value":null}]|}];
 
   assert_infer ~fields:["inference.parameters"]
     {|
       def ret_list(x) -> typing.List[int]:
         return x
     |}
-    [{|[{"name":"$parameter_x","type":"typing.List[int]","value":null}]|}];
+    [{|[{"name":"$parameter$x","type":"typing.List[int]","value":null}]|}];
 
   assert_infer ~fields:["inference.async"]
     {|
@@ -590,7 +590,7 @@ let test_infer _ =
           z = y
           return (x, z)
     |}
-    [{|[{"name":"$parameter_y","type":"int","value":null}]|}];
+    [{|[{"name":"$parameter$y","type":"int","value":null}]|}];
 
   assert_infer ~fields:["inference.parameters"]
     {|
@@ -599,7 +599,7 @@ let test_infer _ =
           x = y
           return (x, z)
     |}
-    [{|[{"name":"$parameter_x","type":"int","value":null}]|}];
+    [{|[{"name":"$parameter$x","type":"int","value":null}]|}];
 
   assert_infer ~fields:["inference.parameters"]
     {|
@@ -609,7 +609,7 @@ let test_infer _ =
       def test_bad_import(x: A.C):
           return 5
     |}
-    [{|[{"name":"$parameter_x","type":"C","value":null}]|}]; (* Should be A.C *)
+    [{|[{"name":"$parameter$x","type":"C","value":null}]|}]; (* Should be A.C *)
 
   (* The next illustrates where we mess up with current simple dequalify implementation *)
   assert_infer ~fields:["inference.parameters"]
@@ -618,7 +618,7 @@ let test_infer _ =
           return 5
       from typing import Optional
     |}
-    [{|[{"name":"$parameter_x","type":"Optional.__getitem__(str)","value":null}]|}]
+    [{|[{"name":"$parameter$x","type":"Optional.__getitem__(str)","value":null}]|}]
 
 
 let test_infer_backward _ =
@@ -629,7 +629,7 @@ let test_infer_backward _ =
           return x
     |}
     [
-      {|[{"name":"$parameter_y","type":"int","value":null}]|};
+      {|[{"name":"$parameter$y","type":"int","value":null}]|};
     ];
 
   assert_infer ~fields:["inference.parameters"]
@@ -640,7 +640,7 @@ let test_infer_backward _ =
           return x
     |}
     [
-      {|[{"name":"$parameter_x","type":"int","value":null}]|};
+      {|[{"name":"$parameter$x","type":"int","value":null}]|};
     ];
 
   assert_infer ~fields:["inference.annotation";"inference.parameters"]
@@ -651,7 +651,7 @@ let test_infer_backward _ =
           return x
     |}
     [
-      {|"int"|};{|[{"name":"$parameter_y","type":"int","value":null}]|};
+      {|"int"|};{|[{"name":"$parameter$y","type":"int","value":null}]|};
     ];
 
   assert_infer ~fields:["inference.parameters"]
@@ -663,8 +663,8 @@ let test_infer_backward _ =
           return a
     |}
     [
-      {|[{"name":"$parameter_x","type":"int","value":null},{"name":"$parameter_y","type":null,"value":null}]|};
-      {|[{"name":"$parameter_x","type":null,"value":null},{"name":"$parameter_y","type":"int","value":null}]|};
+      {|[{"name":"$parameter$x","type":"int","value":null},{"name":"$parameter$y","type":null,"value":null}]|};
+      {|[{"name":"$parameter$x","type":null,"value":null},{"name":"$parameter$y","type":"int","value":null}]|};
     ];
   ()
 
@@ -713,8 +713,8 @@ let test_recursive_infer _ =
         return bar()
     |}
     [
-      {|"int"|};{|[{"name":"$parameter_a","type":null,"value":null}]|};
-      {|null|};{|[{"name":"$parameter_a","type":"int","value":null}]|};
+      {|"int"|};{|[{"name":"$parameter$a","type":null,"value":null}]|};
+      {|null|};{|[{"name":"$parameter$a","type":"int","value":null}]|};
     ]
 
 

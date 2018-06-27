@@ -193,7 +193,7 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
         "", name
     in
     let renamed =
-      Format.asprintf "$%s_%s" prefix name
+      Format.asprintf "$%s$%s" prefix name
       |> Identifier.create
     in
     let name = Identifier.create name in
@@ -407,8 +407,12 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
                           in
                           let rec new_alias ~count =
                             let alias =
+                              let qualifier =
+                                Access.show qualifier
+                                |> String.substr_replace_all ~pattern:"." ~with_:"_"
+                              in
                               Identifier.show name
-                              |> Format.asprintf "$local_%d_%s" count
+                              |> Format.asprintf "$local_%s_%d$%s" qualifier count
                               |> Identifier.create
                               |> fun identifier ->
                               [Access.identifier ~location:access_location identifier]
@@ -714,7 +718,7 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
                 let name =
                   let rename identifier =
                     Identifier.show identifier
-                    |> Format.asprintf "$parameter_%s"
+                    |> Format.asprintf "$parameter$%s"
                     |> Identifier.create
                   in
                   name

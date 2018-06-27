@@ -25,7 +25,7 @@ let test_create _ =
 
   assert_create "foo" (Type.primitive "foo");
   assert_create "foo.bar" (Type.primitive "foo.bar");
-  assert_create "foo.$local_0_bar" (Type.primitive "foo.bar");
+  assert_create "foo.$local_0$bar" (Type.primitive "foo.bar");
 
   assert_create "object" Type.Object;
   assert_create "$unknown" Type.Top;
@@ -76,7 +76,7 @@ let test_create _ =
     (Type.variable ~constraints:(Type.Explicit [Type.integer]) "_T");
   assert_create "typing.TypeVar('_T', name=int)" (Type.variable "_T");
   assert_create
-    "typing.TypeVar('_T', $parameter_bound=int)"
+    "typing.TypeVar('_T', $parameter$bound=int)"
     (Type.variable ~constraints:(Type.Bound Type.integer) "_T");
   assert_create
     "typing.TypeVar('_T', int, name=float)"

@@ -854,7 +854,7 @@ let rec create ~aliases { Node.value = expression; _ } =
                   | {
                     Argument.value = { Node.value = Access access; _ };
                     Argument.name = Some { Node.value = bound; _ };
-                  } when Identifier.show bound = "$parameter_bound" ->
+                  } when Identifier.show bound = "$parameter$bound" ->
                       Some (parse [] access)
                   | _ ->
                       None
