@@ -61,47 +61,14 @@ let set_local ({ annotations; _ } as resolution) ~access ~annotation =
   { resolution with annotations = Map.set annotations ~key:access ~data:annotation }
 
 
-let get_local { annotations; global; define = { Define.name; _ }; _ } ~access =
+let get_local { annotations; global; _ } ~access =
   match Map.find annotations access with
   | Some result ->
       Some result
   | _ ->
-      begin
-        let access, is_local =
-          match access with
-          | [({ Node.value = Access.Identifier name; _ } as node)] ->
-              let is_local =
-                Identifier.show name
-                |> String.is_prefix ~prefix:"$local_"
-              in
-              let name =
-                Identifier.show_sanitized name
-                |> Identifier.create
-              in
-              [{ node with Node.value = Access.Identifier name }], is_local
-          | _ ->
-              access, false
-        in
-        match global access with
-        | Some result ->
-            Some (Node.value result)
-        | None when is_local ->
-            (* Recursively walk up the surrounding define's name to look for globals. *)
-            (* TODO(T30767573): encode qualifier in local name to make this efficient. *)
-            let rec find_global ~qualifier ~access =
-              match global (qualifier @ access) with
-              | Some result ->
-                  Some (Node.value result)
-              | None when not (List.is_empty qualifier) ->
-                  let qualifier = List.rev qualifier |> List.tl_exn |> List.rev in
-                  find_global ~qualifier ~access
-              | _ ->
-                  None
-            in
-            find_global ~qualifier:name ~access
-        | _ ->
-            None
-      end
+      Access.delocalize access
+      |> global
+      >>| Node.value
 
 
 let get_local_callable resolution ~access =

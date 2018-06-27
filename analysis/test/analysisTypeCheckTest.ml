@@ -936,10 +936,7 @@ let test_check_with_qualification _ =
           global_number="a" # type: str
           return len(global_number)
     |}
-    [
-      "Incompatible variable type [9]: global_number is declared to have type `int` but is used " ^
-      "as type `str`.";
-    ];
+    [];
 
   assert_type_errors
     {|
@@ -956,10 +953,7 @@ let test_check_with_qualification _ =
               global global_number
               return global_number
     |}
-    [
-      "Incompatible variable type [9]: global_number is declared to have type `int` but is used " ^
-      "as type `str`.";
-    ];
+    [];
 
   assert_type_errors
     {|
@@ -3115,11 +3109,7 @@ let test_check_attributes _ =
         bar = 'foo'
         return bar
     |}
-    [
-      "Incompatible variable type [9]: bar is declared to have type `int` but is used as type " ^
-      "`str`.";
-      "Incompatible return type [7]: Expected `int` but got `str`.";
-    ];
+    ["Incompatible return type [7]: Expected `int` but got `str`."];
 
   assert_type_errors
     {|
@@ -3554,10 +3544,7 @@ let test_check_immutables _ =
     def foo() -> None:
       constant = "hi"
     |}
-    [
-      "Incompatible variable type [9]: constant is declared to have type `int` but is used as " ^
-      "type `str`.";
-    ];
+    [];
 
   assert_type_errors
     {|
@@ -3869,8 +3856,6 @@ let test_check_immutables _ =
       "Missing attribute annotation [4]: Attribute `constant` of class `Foo` has type `int` but " ^
       "no type is specified.";
       "Undefined name [18]: Global name `constant` is undefined.";
-      "Incompatible variable type [9]: foo is declared to have type " ^
-      "`typing.Callable(foo)[[], None]` but is used as type `Foo`.";
       "Undefined attribute [16]: `Foo` has no attribute `constant`.";
       "Missing global annotation [5]: Globally accessible variable `constant` has type `str` but " ^
       "no type is specified.";
