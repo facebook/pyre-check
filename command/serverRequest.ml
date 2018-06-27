@@ -194,7 +194,7 @@ let rec process_request
     List.filter_map ~f:Service.AstSharedMemory.get_source new_source_handles
     |> List.concat_map ~f:Preprocessing.defines
     |> List.map ~f:(fun { Node.value = { Statement.Define.name; _ }; _ } -> name)
-    |> AnalysisTypeResolutionSharedMemory.remove;
+    |> TypeResolutionSharedMemory.remove;
 
     let new_errors, lookups =
       let errors, lookups, _ =
