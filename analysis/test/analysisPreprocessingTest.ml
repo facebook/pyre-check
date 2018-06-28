@@ -195,6 +195,14 @@ let test_qualify _ =
       $local_qualifier$a: typing.List[int] = module.constant
     |};
 
+  assert_qualify
+    {|
+      a, *b = [1]
+    |}
+    {|
+      $local_qualifier$a, *$local_qualifier$b = [1]
+    |};
+
   (* Qualify classes. *)
   assert_qualify
     {|

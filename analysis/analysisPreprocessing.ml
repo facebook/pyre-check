@@ -368,6 +368,9 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
                       if is_qualified then alias else qualifier @ alias
                     in
                     scope, Access qualified
+                | Starred (Starred.Once access) ->
+                    let scope, access = qualify_target ~scope access in
+                    scope, Starred (Starred.Once access)
                 | Access ([Access.Identifier name] as access) ->
                     (* Incrementally number local variables to avoid shadowing. *)
                     let scope =
