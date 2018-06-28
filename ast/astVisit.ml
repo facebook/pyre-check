@@ -60,9 +60,9 @@ module Make (Visitor: Visitor) = struct
       let visit_children value =
         match value with
         | Access access ->
-            let visit_access { Node.value = access; _ } =
+            let visit_access access =
               match access with
-              | Access.Call arguments ->
+              | Access.Call { Node.value = arguments; _ } ->
                   List.iter arguments ~f:(visit_argument ~visit_expression);
               | Access.Identifier _ ->
                   ()

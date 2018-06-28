@@ -83,9 +83,9 @@ let test_expand_format_string _ =
     "foo{1+2}"
     [
       +Access [
-        +Access.Expression (+Integer 1);
-        +Access.Identifier ~~"__add__";
-        +Access.Call [{ Argument.name = None; value = +Integer 2 }];
+        Access.Expression (+Integer 1);
+        Access.Identifier ~~"__add__";
+        Access.Call (+[{ Argument.name = None; value = +Integer 2 }]);
       ]
     ]
 

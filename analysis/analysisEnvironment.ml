@@ -638,8 +638,7 @@ let register_globals
   let qualified_access access =
     let access =
       match access with
-      | { Node.value = Access.Identifier builtins; _ } :: tail
-        when Identifier.show builtins = "builtins" -> tail
+      | (Access.Identifier builtins) :: tail when Identifier.show builtins = "builtins" -> tail
       | _ -> access
     in
     Access.delocalize_qualified access
@@ -811,7 +810,6 @@ let register_dependencies
                       in
                       Format.sprintf "%s.py"
                         (access
-                         |> List.map ~f:Node.value
                          |> List.map ~f:show_identifier
                          |> List.fold ~init:(Path.absolute source_root) ~f:(^/))
                       |> (fun relative -> Path.create_relative ~root:source_root ~relative)

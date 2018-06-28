@@ -574,8 +574,8 @@ let rec create ~aliases { Node.value = expression; _ } =
       let rec parse (reversed_lead: Access.t) (tail: Access.t): t  =
         let annotation =
           match tail with
-          | { Node.value = Access.Identifier get_item; _ }
-            :: { Node.value = Access.Call [{ Argument.value = argument; _ }]; _ }
+          | (Access.Identifier get_item)
+            :: (Access.Call { Node.value = [{ Argument.value = argument; _ }]; _ })
             :: tail
             when Identifier.show get_item = "__getitem__" ->
               ignore argument; ignore tail;
@@ -590,19 +590,19 @@ let rec create ~aliases { Node.value = expression; _ } =
                 |> Identifier.create
               in
               Parametric { name; parameters = List.map parameters ~f:(create ~aliases) }
-          | ({ Node.value = Access.Identifier _; _ } as access) :: tail ->
+          | (Access.Identifier _ as access) :: tail ->
               parse (access :: reversed_lead) tail
           | [] ->
               let name =
                 let sanitized =
                   (* TODO: Access.sanitize *)
                   match reversed_lead with
-                  | ({ Node.value = Access.Identifier name; _ } as node) :: tail ->
+                  | (Access.Identifier name) :: tail ->
                       let name =
                         Identifier.show_sanitized name
                         |> Identifier.create
                       in
-                      { node with Node.value = Access.Identifier name } :: tail
+                      (Access.Identifier name) :: tail
                   | _ ->
                       reversed_lead
                 in
@@ -740,8 +740,8 @@ let rec create ~aliases { Node.value = expression; _ } =
             else
               let rec parse_overloads tail =
                 match tail with
-                | { Node.value = Access.Identifier get_item; _ } ::
-                  { Node.value = Access.Call [{ Argument.value = argument; _ }]; _ } ::
+                | (Access.Identifier get_item) ::
+                  (Access.Call { Node.value = [{ Argument.value = argument; _ }]; _ }) ::
                   tail
                   when Identifier.show get_item = "__getitem__" ->
                     let overload =
@@ -751,8 +751,8 @@ let rec create ~aliases { Node.value = expression; _ } =
                             let extract_parameter parameter =
                               match Node.value parameter with
                               | Access [
-                                  { Node.value = Access.Identifier name; _ };
-                                  { Node.value = Access.Call arguments; _ };
+                                  Access.Identifier name;
+                                  Access.Call { Node.value = arguments; _ };
                                 ] ->
                                   begin
                                     let arguments =
@@ -765,12 +765,7 @@ let rec create ~aliases { Node.value = expression; _ } =
                                       { Node.value = Access name; _ } :: annotation :: tail ->
                                         let default =
                                           match tail with
-                                          | [{
-                                              Node.value =
-                                                Access
-                                                  [{ Node.value = Access.Identifier default; _ }];
-                                              _;
-                                            }]
+                                          | [{ Node.value = Access [Access.Identifier default]; _ }]
                                             when Identifier.show default = "default" -> true
                                           | _ -> false
                                         in
@@ -829,14 +824,12 @@ let rec create ~aliases { Node.value = expression; _ } =
         in
         match expression with
         | Access [
-            { Node.value = Access.Identifier typing; _ };
-            { Node.value = Access.Identifier typevar; _ };
-            {
-              Node.value = Access.Call ({
-                  Argument.value = { Node.value = String name; _ }; _ } :: arguments
-                );
-              _;
-            };
+            Access.Identifier typing;
+            Access.Identifier typevar;
+            Access.Call ({
+                Node.value = { Argument.value = { Node.value = String name; _ }; _ } :: arguments;
+                _;
+              });
           ]
           when Identifier.show typing = "typing" && Identifier.show typevar = "TypeVar" ->
             let constraints =
@@ -874,16 +867,13 @@ let rec create ~aliases { Node.value = expression; _ } =
             }
 
         | Access
-            ({ Node.value = Access.Identifier typing; _ }
-             :: { Node.value = Access.Identifier callable; _ }
-             :: { Node.value = Access.Call modifiers; _ }
+            ((Access.Identifier typing)
+             :: (Access.Identifier callable)
+             :: (Access.Call { Node.value = modifiers; _ })
              :: overloads)
           when Identifier.show typing = "typing" && Identifier.show callable = "Callable" ->
             parse_callable ~modifiers ~overloads ()
-        | Access
-            ({ Node.value = Access.Identifier typing; _ }
-             :: { Node.value = Access.Identifier callable; _ }
-             :: overloads)
+        | Access ((Access.Identifier typing) :: (Access.Identifier callable) :: overloads)
           when Identifier.show typing = "typing" && Identifier.show callable = "Callable" ->
             parse_callable ~overloads ()
 
@@ -919,7 +909,7 @@ let rec expression annotation =
   let split name =
     match Identifier.show name with
     | "..." ->
-        [Access.identifier (Identifier.create "...")]
+        [Access.Identifier (Identifier.create "...")]
     | name ->
         String.split name ~on:'.'
         |> List.map ~f:Access.create
@@ -947,8 +937,8 @@ let rec expression annotation =
           []
     in
     [
-      Access.identifier (Identifier.create "__getitem__");
-      Node.create_with_default_location (Access.Call parameter);
+      Access.Identifier (Identifier.create "__getitem__");
+      Access.Call (Node.create_with_default_location parameter);
     ]
   in
 

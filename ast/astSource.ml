@@ -244,8 +244,7 @@ let expand_relative_import { qualifier; path; _ } ~from =
   (* Expand relative imports according to PEP 328 *)
   let dots, postfix =
     let is_dot = function
-      | { Node.value = Access.Identifier identifier; _ }
-        when Identifier.show identifier = "" -> true
+      | Access.Identifier identifier when Identifier.show identifier = "" -> true
       | _ -> false
     in
     List.split_while ~f:is_dot from

@@ -35,7 +35,7 @@ module ExpressionVisitor = struct
     let lookup_of_arguments = function
       | { Node.value = Expression.Access access; _ } ->
           let check_single_access = function
-            | { Node.value = Access.Call arguments; _ } ->
+            | Access.Call { Node.value = arguments; _ }  ->
                 let check_argument
                     {
                       Argument.value = {

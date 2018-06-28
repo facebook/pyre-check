@@ -120,9 +120,7 @@ let fold ~resolution ~initial ~f access =
   (* Resolve `super()` calls. *)
   let access, resolution =
     match access with
-    | { Node.value = Access.Identifier name; location }
-      :: { Node.value = Access.Call _; _ }
-      :: tail
+    | (Access.Identifier name) :: (Access.Call _) :: tail
       when Identifier.show name = "super" ->
         (Resolution.parent resolution
          >>| (fun parent ->
@@ -134,7 +132,7 @@ let fold ~resolution ~initial ~f access =
          >>| Class.immediate_superclasses ~resolution
          >>| function
          | Some superclass ->
-             let super = Access.identifier ~location (Identifier.create "$super") in
+             let super = Access.Identifier (Identifier.create "$super") in
              let resolution =
                Resolution.set_local
                  resolution
@@ -152,11 +150,9 @@ let fold ~resolution ~initial ~f access =
   (* Resolve `type()` calls. *)
   let access, resolution =
     match access with
-    | { Node.value = Access.Identifier name; location }
-      :: { Node.value = Access.Call [{ Argument.value; _ }]; _ }
-      :: tail
+    | (Access.Identifier name) :: (Access.Call { Node.value = [{ Argument.value; _ }]; _ }) :: tail
       when Identifier.show name = "type" ->
-        let access = Access.identifier ~location (Identifier.create "$type") in
+        let access = Access.Identifier (Identifier.create "$type") in
         let resolution =
           let annotation =
             Resolution.resolve resolution value
@@ -173,10 +169,8 @@ let fold ~resolution ~initial ~f access =
   (* Resolve function redirects. E.g. resolve `abs(x)` to `x.__abs__()`. *)
   let access =
     match access with
-    | ({ Node.value = Access.Identifier _; _ } as identifier_node)
-      :: { Node.value = Access.Call arguments; location }
-      :: tail ->
-        Access.redirect ~arguments ~location ~name:[identifier_node]
+    | (Access.Identifier name) :: (Access.Call { Node.value = arguments; location }) :: tail ->
+        Access.redirect ~arguments ~location ~name:[Access.Identifier name]
         >>| (fun redirect -> redirect @ tail)
         |> Option.value ~default:access
     | _ ->
@@ -262,7 +256,7 @@ let fold ~resolution ~initial ~f access =
         let backup () =
           let name =
             match target, List.rev lead with
-            | Some _, ({ Node.value = Access.Identifier _ ; _ } as name) :: _ -> [name]
+            | Some _, (Access.Identifier _ as name) :: _ -> [name]
             | _ -> []
           in
           match Access.backup ~arguments ~name with
@@ -376,7 +370,7 @@ let fold ~resolution ~initial ~f access =
         let ({ State.continue; accumulator; _ } as state) =
           match resolved, head with
           (* Typed context: operations are on a class definition. *)
-          | Some resolved, { Node.value = Access.Call arguments; location } ->
+          | Some resolved, Access.Call arguments ->
               (* Callable invocation. *)
               let resolved = Annotation.annotation resolved in
               let target =
@@ -403,21 +397,17 @@ let fold ~resolution ~initial ~f access =
                     |> (fun access -> Resolution.get_local_callable resolution ~access)
               in
               callable
-              >>| (fun callable ->
-                  resolve_callable
-                    ~implicit_annotation
-                    ~callable
-                    ~arguments:(Node.create ~location arguments))
+              >>| (fun callable -> resolve_callable ~implicit_annotation ~callable ~arguments)
               |> Option.value ~default:(State.abort state ())
 
-          | Some resolved, { Node.value = Access.Identifier _; _ }
+          | Some resolved, Access.Identifier _
             when Type.is_callable (Annotation.annotation resolved) ->
               (* Nested function. *)
               Resolution.get_local resolution ~access:lead
               >>| (fun resolved -> State.step state ~resolved ())
               |> Option.value ~default:(State.abort state ())
 
-          | Some resolved, { Node.value = Access.Identifier _; _ } ->
+          | Some resolved, Access.Identifier _ ->
               (* Attribute access. *)
               let target =
                 {
@@ -438,7 +428,7 @@ let fold ~resolution ~initial ~f access =
                   State.step state ~resolved ~target ~element ~continue:defined ())
               |> Option.value ~default:(State.abort state ())
 
-          | None, { Node.value = Access.Expression expression; _ } ->
+          | None, Access.Expression expression ->
               (* Arbitrary expression. *)
               let resolved = Annotation.create (Resolution.resolve resolution expression) in
               State.step state ~resolved ()

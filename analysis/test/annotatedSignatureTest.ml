@@ -75,10 +75,7 @@ let test_select _ =
     let overload =
       let arguments =
         match parse_single_access (Format.asprintf "call%s" arguments) with
-        | [
-          { Node.value = Access.Identifier _; _ };
-          { Node.value = Access.Call arguments; _ };
-        ] -> arguments
+        | [Access.Identifier _; Access.Call { Node.value = arguments; _ }] -> arguments
         | _ -> failwith "Could not parse call"
       in
       Signature.select ~arguments ~resolution ~callable

@@ -96,7 +96,7 @@ module State = struct
     let add_parameter_errors
         errors
         { Node.value = { Parameter.name; annotation; _ }; location } =
-      let access = [Access.identifier name] in
+      let access = [Access.Identifier name] in
       let add_missing_parameter_error ~due_to_any =
         Resolution.get_local resolution ~access
         >>| (fun { Annotation.annotation; _ } ->
@@ -228,7 +228,7 @@ module State = struct
             | Access value_access ->
                 let resolution =
                   match value_access with
-                  | [{ Node.value = Access.Identifier _; _ }] ->
+                  | [Access.Identifier _] ->
                       resolve_assign target_annotation (Annotated.resolve ~resolution value)
                       >>| (fun refined ->
                           Resolution.set_local

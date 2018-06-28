@@ -104,7 +104,7 @@ let test_due_to_analysis_limitations _ =
           (Error.IncompatibleAttributeType {
               Error.parent = mock_parent;
               incompatible_type = {
-                Error.name = [+Access.Identifier (~~"")];
+                Error.name = [Access.Identifier (~~"")];
                 mismatch = {
                   Error.actual = Type.Top;
                   expected = Type.Top;
@@ -118,7 +118,7 @@ let test_due_to_analysis_limitations _ =
           (Error.IncompatibleAttributeType {
               Error.parent = mock_parent;
               incompatible_type = {
-                Error.name = [+Access.Identifier (~~"")];
+                Error.name = [Access.Identifier (~~"")];
                 mismatch = {
                   Error.actual = Type.Top;
                   expected = Type.string;
@@ -132,7 +132,7 @@ let test_due_to_analysis_limitations _ =
           (Error.IncompatibleAttributeType {
               Error.parent = mock_parent;
               incompatible_type = {
-                Error.name = [+Access.Identifier (~~"")];
+                Error.name = [Access.Identifier (~~"")];
                 mismatch = {
                   Error.actual = Type.string;
                   expected = Type.Top;
@@ -146,7 +146,7 @@ let test_due_to_analysis_limitations _ =
     (Error.due_to_analysis_limitations
        (error
           (Error.UninitializedAttribute{
-              Error.name = [+Access.Identifier (~~"")];
+              Error.name = [Access.Identifier (~~"")];
               parent = mock_parent;
               mismatch = {
                 Error.actual = Type.Top;
@@ -158,7 +158,7 @@ let test_due_to_analysis_limitations _ =
     (Error.due_to_analysis_limitations
        (error
           (Error.UninitializedAttribute {
-              Error.name = [+Access.Identifier (~~"")];
+              Error.name = [Access.Identifier (~~"")];
               parent = mock_parent;
               mismatch = {
                 Error.actual = Type.string;
@@ -209,7 +209,7 @@ let test_due_to_analysis_limitations _ =
           (Error.MissingAttributeAnnotation {
               Error.parent = mock_parent;
               Error.missing_annotation = {
-                Error.name = [+Access.Identifier ~~""];
+                Error.name = [Access.Identifier ~~""];
                 annotation = Type.Top;
                 due_to_any = false;
                 evidence_locations = [];
@@ -221,7 +221,7 @@ let test_due_to_analysis_limitations _ =
           (Error.MissingAttributeAnnotation {
               Error.parent = mock_parent;
               Error.missing_annotation = {
-                Error.name = [+Access.Identifier ~~""];
+                Error.name = [Access.Identifier ~~""];
                 annotation = Type.string;
                 due_to_any = false;
                 evidence_locations = [];
@@ -319,7 +319,7 @@ let test_join _ =
        (Error.IncompatibleAttributeType {
            Error.parent = mock_parent;
            incompatible_type = {
-             Error.name = [+Access.Identifier (~~"")];
+             Error.name = [Access.Identifier (~~"")];
              mismatch = {
                Error.actual = Type.Top;
                expected = Type.Top;
@@ -328,7 +328,7 @@ let test_join _ =
            };
          }))
     (error (Error.IncompatibleVariableType {
-         Error.name = [+Access.Identifier (~~"")];
+         Error.name = [Access.Identifier (~~"")];
          mismatch = {
            Error.actual = Type.Top;
            expected = Type.Top;
@@ -370,21 +370,21 @@ let test_join _ =
   assert_join
     (error
        (Error.MissingGlobalAnnotation {
-           Error.name = [+Access.Identifier (~~"")];
+           Error.name = [Access.Identifier (~~"")];
            annotation = Type.integer;
            evidence_locations = [create_mock_location "derp.py"];
            due_to_any = false;
          }))
     (error
        (Error.MissingGlobalAnnotation {
-           Error.name = [+Access.Identifier (~~"")];
+           Error.name = [Access.Identifier (~~"")];
            annotation = Type.float;
            evidence_locations = [create_mock_location "durp.py"];
            due_to_any = false;
          }))
     (error
        (Error.MissingGlobalAnnotation {
-           Error.name = [+Access.Identifier (~~"")];
+           Error.name = [Access.Identifier (~~"")];
            annotation = Type.float;
            evidence_locations = [create_mock_location "derp.py"; create_mock_location "durp.py"];
            due_to_any = false;

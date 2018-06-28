@@ -62,11 +62,7 @@ let rec resolve ~resolution expression =
             right =
               [
                 Expression.ComparisonOperator.IsNot,
-                {
-                  Node.value =
-                    Access [{ Node.value = Expression.Access.Identifier identifier; _ }];
-                  _;
-                }
+                { Node.value = Access [Expression.Access.Identifier identifier]; _ }
               ];
           } when Identifier.show identifier = "None" ->
             [access]
@@ -233,11 +229,7 @@ let rec resolve ~resolution expression =
             Expression.ComparisonOperator.left;
             right = [
               Expression.ComparisonOperator.Is,
-              ({
-                Node.value =
-                  Access [{ Node.value = Expression.Access.Identifier identifier; _ }];
-                _;
-              } as access)
+              ({ Node.value = Access [Expression.Access.Identifier identifier]; _ } as access)
             ];
           } when Identifier.show identifier = "None" ->
             {
@@ -273,15 +265,10 @@ let rec resolve ~resolution expression =
               Node.value = Expression.Access access;
               _;
             } as access_node;
-            right =
-              [
-                Expression.ComparisonOperator.IsNot,
-                {
-                  Node.value =
-                    Access [{ Node.value = Expression.Access.Identifier identifier; _ }];
-                  _;
-                }
-              ];
+            right = [
+              Expression.ComparisonOperator.IsNot,
+              { Node.value = Access [Expression.Access.Identifier identifier]; _ }
+            ];
           } when Identifier.show identifier = "None" ->
             deoptionalize access access_node resolution
         | _ -> resolution
