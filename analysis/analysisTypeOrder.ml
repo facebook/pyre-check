@@ -1223,8 +1223,8 @@ let check_integrity (module Handler: Handler) =
                 |> List.map ~f:(Format.asprintf "%a" Type.pp)
                 |> String.concat ~sep:" -> " in
               Log.error
-                "Order is cyclic:\n%s\nTrace: %s"
-                (Handler.show ())
+                "Order is cyclic:\nTrace: %s"
+                (* (Handler.show ()) *)
                 trace;
               raise Cyclic
             end

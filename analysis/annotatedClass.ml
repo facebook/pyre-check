@@ -205,17 +205,17 @@ let generics { Node.value = { Class.bases; _ }; _ } ~resolution =
   |> Option.value ~default:[]
 
 
-let inferred_generic_base { Node.value = { Class.bases; _ }; _ } ~aliases =
+let inferred_generic_base { Node.value = { Class.bases; _ }; _ } ~resolution =
   let is_generic { Argument.value; _ } =
     let primitive, _ =
-      Type.create ~aliases value
+      Resolution.parse_annotation resolution value
       |> Type.split
     in
     Type.equal primitive Type.generic
   in
   let find_single_type_variable { Argument.value; _ } =
     let _, parameters =
-      Type.create ~aliases value
+      Resolution.parse_annotation resolution value
       |> Type.split
     in
     match parameters with

@@ -185,8 +185,8 @@ let test_register_aliases _ =
       in
       assert_equal
         ~printer:(fun string -> string)
-        (Type.show (parse_annotation (module Handler) alias))
         (Format.sprintf "`%s`" target)
+        (Type.show (parse_annotation (module Handler) alias))
     in
     List.iter aliases ~f:assert_alias
   in
@@ -284,7 +284,7 @@ let test_register_aliases _ =
     ]
     [
       "a._T", "Variable[a._T]";
-      "a._T2", "Variable[UnrelatedName]";
+      "a._T2", "Variable[a._T2]";
     ];
 
   (* Type variable aliases in classes. *)
@@ -300,7 +300,7 @@ let test_register_aliases _ =
     ]
     [
       "qualifier.Class.T", "Variable[qualifier.Class.T]";
-      "qualifier.Class.Int", "qualifier.Class.Int";
+      "qualifier.Class.Int", "int";
     ];
 
   (* Stub-suppressed aliases show up as `Any`. *)
@@ -326,6 +326,7 @@ let test_register_aliases _ =
 let test_connect_definition _ =
   let environment = Environment.Builder.create ~configuration () in
   let (module Handler: Environment.Handler) = Environment.handler ~configuration environment in
+  let resolution = Environment.resolution (module Handler) () in
   let c_primitive = Type.primitive "C" in
 
   let (module TypeOrderHandler: TypeOrder.Handler) = (module Handler.TypeOrderHandler) in
@@ -344,6 +345,7 @@ let test_connect_definition _ =
   let primitive, parameters =
     Handler.connect_definition
       ~path:"a.py"
+      ~resolution
       ~predecessor:Type.Bottom
       ~name:(Access.create "C")
       ~definition:(Some class_definition)

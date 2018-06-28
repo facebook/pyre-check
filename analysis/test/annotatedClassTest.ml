@@ -18,6 +18,7 @@ module Class = Annotated.Class
 module Attribute = Annotated.Attribute
 module Method = Annotated.Method
 module Argument = Expression.Argument
+module TestSetup = AnalysisTestSetup
 
 
 let test_generics _ =
@@ -843,9 +844,9 @@ let test_constraints _ =
 
 
 let test_inferred_generic_base _ =
-  let assert_inferred_generic ~target ~aliases source expected =
+  let assert_inferred_generic ~target source expected =
+    let ({ Source.statements; _ } as source) = parse source in
     let target =
-      let { Source.statements; _ } = parse source in
       let target = function
         | { Node.location; value = Statement.Class ({ Statement.Class.name; _ } as definition) }
           when Access.show name = target ->
@@ -856,32 +857,24 @@ let test_inferred_generic_base _ =
       List.find_map ~f:target statements
       |> value
     in
+    let resolution = TestSetup.resolution ~sources:[source] () in
     assert_equal
       ~cmp:(List.equal ~equal:Argument.equal)
       expected
-      (Annotated.Class.inferred_generic_base ~aliases target)
-  in
-  let aliases = function
-    | Type.Primitive identifier ->
-        if Identifier.show identifier = "_T" then
-          Some (Type.variable "_T")
-        else
-          None
-    | _ -> None
+      (Annotated.Class.inferred_generic_base target ~resolution)
   in
   assert_inferred_generic
     ~target:"C"
-    ~aliases
     {|
+       _T = typing.TypeVar('_T')
        class C:
          pass
      |}
     [];
   assert_inferred_generic
     ~target:"C"
-    ~aliases
     {|
-       _T = TypeVar("_T")
+       _T = typing.TypeVar("_T")
        class List(typing.Generic[_T]):
          pass
        class C(List[_T]):
@@ -893,7 +886,6 @@ let test_inferred_generic_base _ =
     }];
   assert_inferred_generic
     ~target:"List"
-    ~aliases
     {|
        _T = TypeVar("_T")
        class Iterable(typing.Generic[_T]):

@@ -62,7 +62,7 @@ val generics: t -> resolution: Resolution.t -> Type.t list
 
 val inferred_generic_base
   :  t
-  -> aliases: (Type.t -> Type.t option)
+  -> resolution: Resolution.t
   -> Argument.t list
 
 val constraints

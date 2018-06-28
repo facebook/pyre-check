@@ -305,7 +305,7 @@ let test_qualify _ =
          qualifier.C.INDENT, qualifier.C.other = (2, 3)
     |};
 
-  (* Treat special forms, type variables, and type aliases like class definitions. *)
+  (* Treat special forms like class definitions. *)
   assert_qualify
     ~path:"typing.pyi"
     {|
@@ -315,28 +315,6 @@ let test_qualify _ =
     {|
       Type: _SpecialForm = ...
       def typing.foo($parameter$l: typing.Type[int]): ...
-    |};
-  assert_qualify
-    ~path:"typing.pyi"
-    {|
-      def TypeVar(): ...
-      T = TypeVar('T')
-      def foo(t: T): ...
-    |}
-    {|
-      def typing.TypeVar(): ...
-      T = typing.TypeVar('typing.T')
-      def typing.foo($parameter$t: typing.T): ...
-    |};
-  assert_qualify
-    ~path:"typing.pyi"
-    {|
-      List = typing.TypeAlias(object)
-      def foo(l: List[int]): ...
-    |}
-    {|
-      List = typing.TypeAlias(object)
-      def typing.foo($parameter$l: typing.List[int]): ...
     |};
 
   (* Type aliases are not qualified except in annotation positions. *)

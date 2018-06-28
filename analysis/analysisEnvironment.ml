@@ -46,6 +46,7 @@ module type Handler = sig
   val register_global: path: string -> access: Access.t -> global: Resolution.global -> unit
   val connect_definition
     :  path: string
+    -> resolution: Resolution.t
     -> predecessor: Type.t
     -> name: Access.t
     -> definition: (Class.t Node.t) option
@@ -89,24 +90,41 @@ let connect_definition
     ~add_class_definition
     ~add_class_key
     ~add_protocol =
-  let rec connect_definition ~path ~predecessor ~name ~definition =
+  let rec connect_definition ~path ~resolution ~predecessor ~name ~definition =
+    let connect ~predecessor ~successor ~parameters =
+      let annotations_tracked =
+        let (module Handler: TypeOrder.Handler) = order in
+        Handler.contains (Handler.indices ()) predecessor &&
+        Handler.contains (Handler.indices ()) successor
+      in
+      let primitive_cycle =
+        (* Primitive cycles can be introduced by meta-programming. *)
+        Type.equal predecessor successor
+      in
+      let cycle_with_top =
+        match predecessor, successor with
+        | Type.Top, _ -> true
+        | Type.Object, successor when not (Type.equal successor Type.Top) -> true
+        | _ -> false
+      in
+      if annotations_tracked && not primitive_cycle && not cycle_with_top then
+        TypeOrder.connect
+          order
+          ~add_backedge:true
+          ~configuration
+          ~predecessor
+          ~successor
+          ~parameters
+    in
+
     let annotation =
-      Type.create
-        ~aliases
+      Resolution.parse_annotation
+        resolution
         (Node.create_with_default_location (Access name))
     in
     let primitive, parameters = Type.split annotation in
-    let (module Handler: TypeOrder.Handler) = order in
-    if Handler.contains (Handler.indices ()) predecessor &&
-       Handler.contains (Handler.indices ()) primitive &&
-       not (Type.equal predecessor primitive) then
-      TypeOrder.connect
-        order
-        ~add_backedge:true
-        ~configuration
-        ~predecessor
-        ~successor:primitive
-        ~parameters;
+    connect ~predecessor ~successor:primitive ~parameters;
+
     (* Handle definition. *)
     begin
       match definition with
@@ -148,42 +166,29 @@ let connect_definition
                 let super_annotation, parameters =
                   match qualified_name with
                   | Some name ->
-                      connect_definition ~path ~predecessor:annotation ~name ~definition:None
+                      connect_definition
+                        ~path
+                        ~resolution
+                        ~predecessor:annotation
+                        ~name
+                        ~definition:None
                   | None ->
-                      Type.Object, [] in
-                if not (Type.equal primitive super_annotation) &&
-                   not (Type.equal primitive Type.Top) then
-                  (* Meta-programming can introduce cycles. *)
-                  TypeOrder.connect
-                    order
-                    ~add_backedge:true
-                    ~configuration
-                    ~predecessor:primitive
-                    ~successor:super_annotation
-                    ~parameters
-                else
-                  Log.debug
-                    "Trivial cycle found: %a -> %a"
-                    Type.pp primitive
-                    Type.pp super_annotation in
+                      Type.Object, []
+                in
+                connect ~predecessor:primitive ~successor:super_annotation ~parameters
+              in
               let bases =
                 let inferred_base =
                   Annotated.Class.inferred_generic_base
-                    ~aliases
                     (Annotated.Class.create definition_node)
+                    ~resolution
                 in
                 inferred_base @ bases
               in
               List.iter bases ~f:register_supertype
             end
-          else if not (Type.equal primitive Type.Object) &&
-                  not (Type.equal primitive Type.Top) then
-            TypeOrder.connect
-              order
-              ~add_backedge:true
-              ~configuration
-              ~predecessor:primitive
-              ~successor:Type.Object;
+          else
+            connect ~predecessor:primitive ~successor:Type.Object ~parameters:[]
       | _ ->
           ()
     end;
@@ -481,7 +486,7 @@ let register_aliases (module Handler: Handler) sources =
   Type.Cache.disable ();
   let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
   let collect_aliases { Source.path; statements; qualifier; _ } =
-    let rec visit_statement ~qualifier ?(filter_type_variables = false) aliases { Node.value; _ } =
+    let rec visit_statement ~qualifier ?(in_class_body = false) aliases { Node.value; _ } =
       match value with
       | Assign { Assign.target; annotation = None; value = Some value; _ } ->
           let target =
@@ -490,7 +495,10 @@ let register_aliases (module Handler: Handler) sources =
                 Expression.access target
                 |> Access.delocalize_qualified
               in
-              qualifier @ access
+              if in_class_body then
+                access
+              else
+                qualifier @ access
             in
             { target with Node.value = Access access }
           in
@@ -500,16 +508,12 @@ let register_aliases (module Handler: Handler) sources =
           let target_annotation = Type.create ~aliases:Handler.aliases target in
           if not (Type.equal target_annotation Type.Top ||
                   Type.equal value_annotation Type.Top ||
-                  Type.equal value_annotation target_annotation ||
-                  (filter_type_variables && Type.is_resolved value_annotation)) then
+                  Type.equal value_annotation target_annotation) then
             (path, target, value) :: aliases
           else
             aliases
       | Class { Class.name; body; _ } ->
-          List.fold
-            body
-            ~init:aliases
-            ~f:(visit_statement ~qualifier:name ~filter_type_variables:true)
+          List.fold body ~init:aliases ~f:(visit_statement ~qualifier:name ~in_class_body:true)
       | Import { Import.from = Some from; imports = [{ Import.name; _ }]  }
         when Access.show name = "*" ->
           let exports =
@@ -550,7 +554,18 @@ let register_aliases (module Handler: Handler) sources =
     else
       let register_alias (any_changed, unresolved) (path, target, value) =
         let target_annotation = Type.create ~aliases:Handler.aliases target in
-        let value_annotation = Type.create ~aliases:Handler.aliases value in
+        let value_annotation =
+          match Type.create ~aliases:Handler.aliases value with
+          | Type.Variable variable ->
+              let name =
+                Expression.access target
+                |> Access.show
+                |> Identifier.create
+              in
+              Type.Variable { variable with Type.variable = name }
+          | annotation ->
+              annotation
+        in
 
         let rec tracked annotation =
           match annotation with
@@ -755,6 +770,8 @@ let register_globals
 
 
 let connect_type_order (module Handler: Handler) source =
+  let resolution = resolution (module Handler) () in
+
   let module Visit = Visit.MakeStatementVisitor(struct
       type t = unit
 
@@ -765,6 +782,7 @@ let connect_type_order (module Handler: Handler) source =
         | { Node.location; value = Stub (Stub.Class ({ Class.name; _ } as definition)) } ->
             Handler.connect_definition
               ~path
+              ~resolution
               ~predecessor:Type.Bottom
               ~name
               ~definition:(Some (Node.create ~location definition))

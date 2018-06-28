@@ -261,21 +261,6 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
                 aliases = Map.set aliases ~key:name ~data:(global_alias ~qualifier ~name);
                 skip = Set.add skip location;
               }
-          | Assign {
-              Assign.target;
-              value = Some { Node.value = Access (typing :: type_alias :: _); _ };
-              _;
-            }
-            when Access.show [typing] = "TypeAlias" ||
-                 Access.show [typing; type_alias] = "typing.TypeAlias" ||
-                 Access.show [typing] = "TypeVar" ||
-                 Access.show [typing; type_alias] = "typing.TypeVar" ->
-              let name = Expression.access target in
-              {
-                scope with
-                aliases = Map.set aliases ~key:name ~data:(global_alias ~qualifier ~name);
-                skip = Set.add skip location;
-              }
           | Class { Class.name; _ }
           | Stub (Stub.Class { Class.name; _ }) ->
               {
