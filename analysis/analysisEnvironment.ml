@@ -128,7 +128,8 @@ let connect_definition
     (* Handle definition. *)
     begin
       match definition with
-      | Some ({ Node.value = { Class.bases; _ } as definition; _ } as definition_node) ->
+      | Some ({ Node.value = { Class.name; bases; _ } as definition; _ } as definition_node)
+        when not (Type.equal primitive Type.Object) || Access.show name = "object" ->
           add_class_key ~path primitive;
           let annotated = Annotated.Class.create definition_node in
 
