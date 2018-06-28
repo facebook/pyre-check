@@ -865,14 +865,14 @@ let register_dependencies
 let register_functions (module Handler: Handler) ({ Source.path; _ } as source) =
   let resolution = resolution (module Handler: Handler) ~annotations:Access.Map.empty () in
 
-  let module Visit = Visit.MakeStatementVisitor(struct
+  let module CollectCallables = Visit.MakeStatementVisitor(struct
       type t = ((Type.Callable.t Node.t) list) Access.Map.t
 
       let statement_keep_recursing _ =
         Transform.Recurse
 
       let statement _ callables statement =
-        let register_define
+        let collect_callable
             ~location
             callables
             ({ Define.name; _ } as define) =
@@ -898,7 +898,7 @@ let register_functions (module Handler: Handler) ({ Source.path; _ } as source) 
             |> Annotated.Class.constructors ~resolution
             |> List.fold
               ~init:callables
-              ~f:(register_define ~location)
+              ~f:(collect_callable ~location)
 
         | { Node.location; value = Define define }
         | { Node.location; value = Stub (Stub.Define define) }
@@ -906,7 +906,7 @@ let register_functions (module Handler: Handler) ({ Source.path; _ } as source) 
             Annotated.Callable.apply_decorators ~resolution ~define
             |> Annotated.Define.create
             |> Annotated.Define.define
-            |> register_define ~location callables
+            |> collect_callable ~location callables
 
         | _ ->
             callables
@@ -927,7 +927,7 @@ let register_functions (module Handler: Handler) ({ Source.path; _ } as source) 
     |> ignore
   in
 
-  Visit.visit Access.Map.empty source
+  CollectCallables.visit Access.Map.empty source
   |> Map.iteri ~f:register_callables
 
 
