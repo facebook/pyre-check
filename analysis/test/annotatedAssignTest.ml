@@ -22,6 +22,7 @@ let test_fold _ =
       i = 1
       s = 'asdf'
       t = 1, 1.0
+      bigtuple = 1, 2, "", 5
       l: typing.List[int] = [1, 2]
       class Tuple(typing.NamedTuple):
           x: int
@@ -53,7 +54,12 @@ let test_fold _ =
   assert_fold "a, b = i, s" ["a", Type.integer; "b", Type.string];
   assert_fold "a, b = t" ["a", Type.integer; "b", Type.float];
   assert_fold "a, b = l" ["a", Type.integer; "b", Type.integer];
-  assert_fold "a, b = unknown" ["(a, b)", Type.Top]
+  assert_fold "a, b = unknown" ["(a, b)", Type.Top];
+  assert_fold "a, *b = l" ["a", Type.integer; "b", Type.list Type.integer];
+  assert_fold "a, *b = t" ["a", Type.integer; "b", Type.tuple [Type.float]];
+  assert_fold
+    "a, b, *c = bigtuple"
+    ["a", Type.integer; "b", Type.integer; "c", Type.tuple [Type.string; Type.integer]]
 
 
 let () =

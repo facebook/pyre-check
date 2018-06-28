@@ -54,6 +54,28 @@ let fold ~resolution ~initial ~f { Assign.target; value; _ } =
               | _ ->
                   []
             in
+            let targets, parameters =
+              match List.last targets with
+              | Some { Node.value = Starred (Starred.Once target); _ } ->
+                  let target_length = List.length targets - 1 in
+                  let annotation =
+                    match value_annotation with
+                    | Type.Tuple (Type.Bounded parameters) ->
+                        Type.Tuple (Type.Bounded (List.drop parameters target_length))
+                    | _ ->
+                        value_annotation
+                  in
+                  let parameters =
+                    if List.length parameters < List.length targets then
+                      List.map ~f:(fun _ -> Type.Top) targets
+                    else
+                      parameters
+                  in
+                  (List.take targets target_length) @ [target],
+                  (List.take parameters target_length) @ [annotation]
+              | _ ->
+                  targets, parameters
+            in
             if List.length targets = List.length parameters then
               List.fold2_exn ~init:accumulator ~f:fold_simple_assign targets parameters
             else

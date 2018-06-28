@@ -1297,6 +1297,15 @@ let test_check _ =
   assert_type_errors
     {|
       x: typing.List[int]
+      def foo() -> typing.List[str]:
+        a, *b = x
+        return b
+    |}
+    ["Incompatible return type [7]: Expected `typing.List[str]` but got `typing.List[int]`."];
+
+  assert_type_errors
+    {|
+      x: typing.List[int]
       def foo() -> typing.List[int]:
         return x.__getitem__(slice(0, 1, None))
     |}
@@ -4619,6 +4628,18 @@ let test_check_tuple _ =
         return tuple([1,2,3])
     |}
     [];
+
+  assert_type_errors
+    {|
+      def foo(x: typing.Tuple[int, int, str]) -> typing.Tuple[str, int]:
+        a, *b = x
+        return b
+    |}
+    [
+      "Incompatible return type [7]: Expected `typing.Tuple[str, int]` but " ^
+      "got `typing.Tuple[int, str]`.";
+    ];
+
   assert_type_errors
     {|
       def foo() -> typing.Sized:
