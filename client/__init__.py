@@ -81,6 +81,8 @@ def find_project_root(original_directory=None):
 
 
 def switch_root(arguments) -> None:
+    if arguments.local_configuration is not None:
+        arguments.local_configuration = os.path.realpath(arguments.local_configuration)
     arguments.original_directory = os.getcwd()
     root = find_project_root()
     os.chdir(root)

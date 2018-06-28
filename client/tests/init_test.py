@@ -6,7 +6,7 @@
 import unittest
 from unittest.mock import MagicMock, patch
 
-from .. import EnvironmentException, buck, find_project_root, resolve_source_directories
+from .. import EnvironmentException, buck, find_project_root, resolve_source_directories, switch_root
 
 
 class InitTest(unittest.TestCase):
@@ -89,3 +89,16 @@ class InitTest(unittest.TestCase):
             configuration.source_directories = ["."]
             source_directories = resolve_source_directories(arguments, configuration)
             self.assertEqual(source_directories, {"realpath(root/.)"})
+
+    @patch("os.path.realpath", return_value="realpath")
+    @patch("os.path.isfile", return_value=False)
+    @patch("os.chdir")
+    def test_switch_root(self, chdir, isfile, realpath):
+        arguments = MagicMock()
+        arguments.local_configuration = None
+        switch_root(arguments)
+        self.assertEqual(arguments.local_configuration, None)
+
+        arguments.local_configuration = "fakepath"
+        switch_root(arguments)
+        self.assertEqual(arguments.local_configuration, "realpath")
