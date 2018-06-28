@@ -95,7 +95,7 @@ module Memory = struct
   let initialize () =
     match !configuration with
     | None ->
-        let minor_heap_size = 4 * 1024 * 1024 in (* 2 MB *)
+        let minor_heap_size = 4 * 1024 * 1024 in (* 4 MB *)
         let space_overhead = 50 in
         Gc.set {
           (Gc.get ()) with
