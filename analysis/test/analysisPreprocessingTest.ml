@@ -317,37 +317,6 @@ let test_qualify _ =
       def typing.foo($parameter$l: typing.Type[int]): ...
     |};
 
-  (* Type aliases are not qualified except in annotation positions. *)
-  assert_qualify
-    {|
-      Int = int
-      constant: Int = ...
-      def foo(i: Int) -> Int:
-        variable = Int
-      def foo(i: typing.Tuple[Int, str]): ...
-    |}
-    {|
-      $local_qualifier$Int = int
-      $local_qualifier$constant: qualifier.Int = ...
-      def qualifier.foo($parameter$i: qualifier.Int) -> qualifier.Int:
-        $local_qualifier?foo$variable = $local_qualifier$Int
-      def qualifier.foo($parameter$i: typing.Tuple[qualifier.Int, str]): ...
-    |};
-  assert_qualify
-    {|
-      Int = int
-      class Class:
-        def __init__(self, i: Int) -> None:
-          self._attribute: Int = 0
-          self._attribute: typing.Dict[Int, str] = {}
-    |}
-    {|
-      $local_qualifier$Int = int
-      class qualifier.Class:
-        def qualifier.Class.__init__($parameter$self, $parameter$i: qualifier.Int) -> None:
-          $parameter$self._attribute: qualifier.Int = 0
-          $parameter$self._attribute: typing.Dict[qualifier.Int, str] = {}
-    |};
 
   (* Qualify strings. *)
   assert_qualify

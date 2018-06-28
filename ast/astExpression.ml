@@ -515,6 +515,8 @@ let rec delocalize ({ Node.value; _ } as expression) =
           |> List.map ~f:delocalize_element
         in
         Access access
+    | List elements ->
+        List (List.map elements ~f:delocalize)
     | Tuple elements ->
         Tuple (List.map elements ~f:delocalize)
     | _ ->
