@@ -17,6 +17,7 @@ let assert_expression_equal =
     ~printer:(Expression.show)
     ~pp_diff:(diff ~print:Expression.pp)
 
+
 let test_negate _ =
   assert_expression_equal
     (negate (+True))
@@ -24,6 +25,7 @@ let test_negate _ =
        UnaryOperator.operator = UnaryOperator.Not;
        operand = +True;
      })
+
 
 let test_normalize _ =
   assert_expression_equal
@@ -148,6 +150,7 @@ let test_normalize _ =
        UnaryOperator.operator = UnaryOperator.Not;
        operand = !"x";
      })
+
 
 let test_pp _ =
   let simple_expression =
@@ -283,6 +286,24 @@ let test_equality _ =
   compare_two_locations location_1 location_2
 
 
+let test_delocalize _ =
+  let assert_delocalized source expected =
+    assert_equal
+      ~printer:Expression.show
+      ~cmp:Expression.equal
+      (parse_single_expression expected)
+      (parse_single_expression source |> Expression.delocalize)
+  in
+
+  assert_delocalized "constant" "constant";
+  assert_delocalized "$local_qualifier$variable" "qualifier.variable";
+  assert_delocalized "$local_module?qualifier$variable" "module.qualifier.variable";
+
+  (* Don't attempt to delocalize qualified expressions. *)
+  assert_delocalized "qualifier.$local_qualifier$variable" "qualifier.$local_qualifier$variable"
+
+
+
 let () =
   "expression">:::[
     "negate">::test_negate;
@@ -290,5 +311,6 @@ let () =
     "pp">::test_pp;
     "drop_prefix">::test_drop_prefix;
     "equality">::test_equality;
+    "delocalize">::test_delocalize;
   ]
   |> run_test_tt_main

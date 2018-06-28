@@ -382,7 +382,7 @@ module Access = struct
     Format.fprintf format "%s" (show access)
 
 
-  let local_qualifier_pattern = Str.regexp "^\\$local_\\([a-zA-Z_]+\\)\\$"
+  let local_qualifier_pattern = Str.regexp "^\\$local_\\([a-zA-Z_\\?]+\\)\\$"
 
 
   let delocalize access =
