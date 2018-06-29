@@ -12,11 +12,9 @@ module Cfg = AnalysisCfg
 
 module type State = sig
   type t
-  [@@deriving eq, show]
+  [@@deriving show]
   val less_or_equal: left: t -> right: t -> bool
   val join: t -> t -> t
-  val meet: t -> t -> t
-  val widening_threshold: int
   val widen: previous: t -> next: t -> iteration: int -> t
   val forward: ?key:int -> t -> statement: Statement.t -> t
   val backward: t -> statement: Statement.t -> t
@@ -26,20 +24,23 @@ module type Fixpoint = sig
   type state
   (* Mapping from node to preconditions. *)
   type t = state Int.Table.t
-  [@@deriving eq, show]
+  [@@deriving show]
 
   val entry: t -> state option
   val exit: t -> state option
 
   val forward: cfg: Cfg.t -> initial: state -> t
   val backward: cfg: Cfg.t -> initial: state -> t
+
+  val equal: f: (state -> state -> bool) -> t -> t -> bool
 end
 
 module Make (State: State) = struct
+  type state = State.t
   type t = State.t Int.Table.t
 
-  let equal left right =
-    Hashtbl.equal left right State.equal
+  let equal ~f left right =
+    Int.Table.equal left right f
 
   let pp format fixpoint =
     let print_state ~key ~data =
@@ -54,9 +55,6 @@ module Make (State: State) = struct
 
   let exit fixpoint =
     Hashtbl.find fixpoint Cfg.exit_index
-
-  let widening_threshold =
-    State.widening_threshold
 
   let compute_fixpoint cfg ~initial_index ~initial ~successors ~transition =
     let fixpoint = Int.Table.create () in

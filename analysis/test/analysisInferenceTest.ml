@@ -159,7 +159,7 @@ let test_fixpoint_backward _ =
   let assert_fixpoint_backward source expected =
     let { Node.value = define; _ } as define_node = fixpoint_parse source in
     assert_equal
-      ~cmp:Fixpoint.equal
+      ~cmp:(Fixpoint.equal ~f:State.equal)
       ~printer:(fun fixpoint -> Format.asprintf "%a" Fixpoint.pp fixpoint)
       ~pp_diff:(diff ~print:Fixpoint.pp)
       expected

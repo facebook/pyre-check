@@ -849,10 +849,6 @@ module Make
     join_path ~path_elt:Element.bottom ~t [] ~st:(make_leaf elt)
     |> opt_node_tree ~message
 
-  (* Poor man's meet. *)
-  let meet apt1 _apt2 =
-    apt1
-
   let rec exists_in_tree ~f t =
     if is_empty_tree t then false
     else if f t.elt then true

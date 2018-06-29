@@ -75,7 +75,7 @@ let assert_fixpoint body expected =
     parent = None;
   } in
   assert_equal
-    ~cmp:CountingFixpoint.equal
+    ~cmp:(CountingFixpoint.equal ~f:Int.equal)
     ~printer:(fun fixpoint -> Format.asprintf "%a" CountingFixpoint.pp fixpoint)
     ~pp_diff:(diff ~print:CountingFixpoint.pp)
     expected

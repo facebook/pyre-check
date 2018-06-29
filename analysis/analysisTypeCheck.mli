@@ -74,6 +74,8 @@ module State : sig
     -> Define.t Node.t
     -> t
 
+  val widening_threshold: int
+
   include AnalysisFixpoint.State with type t := t
 end
 
