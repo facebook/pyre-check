@@ -10,7 +10,7 @@ open Expression
 open Statement
 
 
-let transform_ast ({ Source.statements; _ } as source) =
+let transform_ast ({ Source.statements; qualifier; _ } as source) =
   let expand_new_type ({ Node.location; value } as statement) =
     let value =
       match value with
@@ -36,7 +36,7 @@ let transform_ast ({ Source.statements; _ } as source) =
             };
           _;
         } when Identifier.show typing = "typing" && Identifier.show new_type = "NewType" ->
-          let name = Access.create name in
+          let name = (qualifier @ Access.create name) in
           let constructor =
             Define {
               Define.name = [Access.Identifier (Identifier.create "__init__")];

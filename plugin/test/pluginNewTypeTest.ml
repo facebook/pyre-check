@@ -24,7 +24,7 @@ let test_transform_ast _ =
       T = typing.NewType('T', int)
     |}
     {|
-      class T(int):
+      class qualifier.T(int):
         def __init__(self, input: int):
           pass
     |};
