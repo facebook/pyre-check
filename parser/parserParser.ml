@@ -19,19 +19,14 @@ let sanitize_input lines =
 
 let parse ?path lines =
   let input = sanitize_input lines in
-
-  let buffer = Lexing.from_string input in
-
-  begin
-    match path with
-    | Some relative_path ->
-        buffer.Lexing.lex_curr_p <- {
-          buffer.Lexing.lex_curr_p with
-          Lexing.pos_fname = relative_path;
-        }
-    | None -> ()
-  end;
-
+  let buffer =
+    let buffer = Lexing.from_string input in
+    buffer.Lexing.lex_curr_p <- {
+      buffer.Lexing.lex_curr_p with
+      Lexing.pos_fname = Option.value path ~default:"$invalid_path";
+    };
+    buffer
+  in
   let state = Lexer.State.initial () in
 
   try

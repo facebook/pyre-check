@@ -12,7 +12,7 @@ open PyreParser
 open Statement
 
 
-let expand_string_annotations source =
+let expand_string_annotations ({ Source.path; _ } as source) =
   let module Transform = Transform.MakeStatementTransformer(struct
       type t = unit
 
@@ -39,16 +39,13 @@ let expand_string_annotations source =
             | String string ->
                 let parsed =
                   try
-                    let buffer = Lexing.from_string (string ^ "\n") in
-                    let state = Lexer.State.initial () in
-                    match ParserGenerator.parse (Lexer.read state) buffer with
+                    match Parser.parse [string ^ "\n"] ~path with
                     | [{ Node.value = Expression { Node.value = Access access; _ } ; _ }] ->
                         Some access
                     | _ ->
-                        raise ParserGenerator.Error
+                        failwith "Not an access"
                   with
-                  | Pyre.ParserError _
-                  | ParserGenerator.Error
+                  | Parser.Error _
                   | Failure _ ->
                       begin
                         Log.debug
@@ -106,7 +103,7 @@ let expand_string_annotations source =
   |> snd
 
 
-let expand_format_string source =
+let expand_format_string ({ Source.path; _ } as source) =
   let module Transform = Transform.Make(struct
       include Transform.Identity
       type t = unit
@@ -123,20 +120,16 @@ let expand_format_string source =
             in
             let parse input_string =
               try
-                let buffer =
+                let string =
                   (String.length input_string) - 1
                   |> String.slice input_string 1
-                  |> fun processed_input -> Lexing.from_string (processed_input ^ "\n")
+                  |> fun processed_input -> processed_input ^ "\n"
                 in
-                let state = Lexer.State.initial () in
-                match ParserGenerator.parse (Lexer.read state) buffer with
-                | [{ Node.value = Expression expression; _ }] ->
-                    [expression]
-                | _ ->
-                    raise ParserGenerator.Error
+                match Parser.parse [string ^ "\n"] ~path with
+                | [{ Node.value = Expression expression; _ }] -> [expression]
+                | _ -> failwith "Not an expression"
               with
-              | Pyre.ParserError _
-              | ParserGenerator.Error
+              | Parser.Error _
               | Failure _ ->
                   begin
                     Log.debug
@@ -183,7 +176,7 @@ type scope = {
 }
 
 
-let qualify ({ Source.qualifier; statements; _ } as source) =
+let qualify ({ Source.path; qualifier; statements; _ } as source) =
   let prefix_identifier ~scope:({ aliases; immutables; _ } as scope) ~prefix name =
     let stars, name =
       let name = Identifier.show name in
@@ -797,18 +790,15 @@ let qualify ({ Source.qualifier; statements; _ } as source) =
       | String string ->
           begin
             try
-              let buffer = Lexing.from_string (string ^ "\n") in
-              let state = Lexer.State.initial () in
-              match ParserGenerator.parse (Lexer.read state) buffer with
+              match Parser.parse [string ^ "\n"] ~path with
               | [{ Node.value = Expression expression; _ }] ->
                   qualify_expression ~scope expression
                   |> Expression.show
                   |> fun string -> String string
               | _ ->
-                  raise ParserGenerator.Error
+                  failwith "Not an expression"
             with
-            | Pyre.ParserError _
-            | ParserGenerator.Error
+            | Parser.Error _
             | Failure _ ->
                 begin
                   Log.debug
