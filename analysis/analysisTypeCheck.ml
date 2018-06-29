@@ -25,15 +25,7 @@ module Coverage = AnalysisCoverage
 
 
 module State = struct
-  type nested_define_state = {
-    nested_resolution: Resolution.t;
-    nested_bottom: bool;
-  }
-
-  type nested_define = {
-    nested: Define.t;
-    initial: nested_define_state;
-  }
+  type nested_define = Define.t
 
   and t = {
     configuration: Configuration.t;
@@ -47,7 +39,7 @@ module State = struct
   }
 
 
-  let pp_nested_define format { nested = { Define.name; _ }; _ } =
+  let pp_nested_define format { Define.name; _ } =
     Format.fprintf format "%a" Access.pp name
 
 
@@ -115,7 +107,7 @@ module State = struct
 
   let equal_nested_define left right =
     (* Ignore initial state. *)
-    Define.equal left.nested right.nested
+    Define.equal left right
 
 
   and equal left right =
@@ -242,8 +234,8 @@ module State = struct
 
 
   let nested_defines { nested_defines; _ } =
-    let process_define (location, { nested; initial = { nested_resolution; _ } }) =
-      Node.create ~location nested, nested_resolution
+    let process_define (location, nested) =
+      Node.create ~location nested
     in
     Map.to_alist nested_defines
     |> List.map ~f:process_define
@@ -1756,42 +1748,7 @@ module State = struct
     let state = { state with resolution; errors; lookup; bottom = terminates_control_flow } in
 
     let nested_defines =
-      let schedule ~define =
-        let update = function
-          | Some ({ initial = { nested_resolution; nested_bottom }; _ } as nested) ->
-              let resolution, bottom =
-                if nested_bottom then
-                  state.resolution, state.bottom
-                else if state.bottom then
-                  nested_resolution, nested_bottom
-                else
-                  join_resolutions nested_resolution state.resolution, false
-              in
-              Some {
-                nested with
-                initial = { nested_resolution = resolution; nested_bottom = bottom };
-              }
-          | None ->
-              let ({ resolution = initial_resolution; _ }) =
-                initial
-                  ~configuration
-                  ?lookup
-                  ~resolution
-                  (Node.create define ~location)
-              in
-              let resolution =
-                let update ~key ~data initial_resolution =
-                  Resolution.set_local initial_resolution ~access:key ~annotation:data
-                in
-                Resolution.annotations resolution
-                |> Map.fold ~init:initial_resolution ~f:update
-              in
-              Some {
-                nested = define;
-                initial = { nested_resolution = resolution; nested_bottom = false };
-              }
-        in
-        Map.change ~f:update nested_defines location
+      let schedule ~define = Map.set nested_defines ~key:location ~data:define
       in
       match Node.value statement with
       | Class { Class.name; body; _ } ->
@@ -1937,10 +1894,12 @@ let check
       let () =
         (* Schedule nested functions for analysis. *)
         if Define.is_toplevel define || Define.is_class_toplevel define then
-          exit
-          >>| State.nested_defines
-          >>| List.iter ~f:(Queue.enqueue queue)
-          |> ignore
+          match exit with
+          | Some ({ State.resolution; _ } as exit) ->
+              State.nested_defines exit
+              |> List.iter ~f:(fun define -> Queue.enqueue queue (define, resolution))
+          | None ->
+              ()
       in
 
       let errors =
@@ -1953,7 +1912,7 @@ let check
         >>| State.coverage
         |> Option.value ~default:(Coverage.create ())
       in
-      { SingleSourceResult.errors; coverage }, queue
+      { SingleSourceResult.errors; coverage }
     with
     | TypeOrder.Untracked annotation ->
         Statistics.event
@@ -1974,8 +1933,7 @@ let check
               define = define_node;
             }];
           coverage = Coverage.create ~crashes:1 ();
-        },
-        queue
+        }
   in
 
   let results =
@@ -2005,7 +1963,7 @@ let check
               ~resolution
               define
           in
-          let result, queue = check ~define ~initial ~queue in
+          let result = check ~define ~initial ~queue in
           result :: results ~queue
       | _ ->
           []

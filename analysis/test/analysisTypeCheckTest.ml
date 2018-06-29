@@ -5629,7 +5629,7 @@ let test_scheduling _ =
     [
       "Missing global annotation [5]: Globally accessible variable `variable` has type `int` but " ^
       "no type is specified.";
-      "Incompatible return type [7]: Expected `str` but got `int`.";
+      "Incompatible return type [7]: Expected `int` but got `str`.";
     ]
 
 
