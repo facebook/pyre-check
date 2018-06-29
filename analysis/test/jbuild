@@ -41,8 +41,8 @@
   (preprocess
    (pps
     (ppx_hash)))
-  (libraries 
-   (oUnit 
+  (libraries
+   (oUnit
     ppxlib
     ppx_hash
     ppx_deriving
@@ -223,6 +223,7 @@
   (libraries
    (oUnit
     pyrelib.test
+    pyrelib.testSetup
     pyrelib.annotatedTest
     pyrelib.analysis))))
 
