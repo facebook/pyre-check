@@ -3505,9 +3505,14 @@ let test_check_attributes _ =
         def x(self) -> int: ...
         @x.setter
         def x(self, value: typing.Optional[int]) -> None: ...
+        @$local_file$__property__
+        def y(self) -> int: ...
       def bar() -> int:
         foo = Foo()
         return foo.x
+      def baz() -> int:
+        foo = Foo()
+        return foo.y
     |}
     []
 

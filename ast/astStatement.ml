@@ -250,7 +250,7 @@ end
 let has_decorator ~decorators decorator =
   let open Expression in
   let rec is_decorator expected actual =
-    match expected, Expression.delocalize actual with
+    match expected, Expression.delocalize_qualified actual with
     | (expected_decorator :: expected_decorators),
       { Node.location; value = Access ((Access.Identifier identifier) :: identifiers) }
       when Identifier.show identifier = expected_decorator ->
