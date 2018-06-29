@@ -168,35 +168,39 @@ let shared_memory_handler
         };
       } =
     Log.info "Adding environment information to shared memory...";
+    (* Writing through the caches because we are doing a
+       batch-add. Especially while still adding amounts of data that
+       exceed the cache size, the time spent doing cache bookkeeping
+       is wasted. *)
     let timer = Timer.start () in
     let add_table f = Hashtbl.iteri ~f:(fun ~key ~data -> f key data) in
     let add_type_order { TypeOrder.edges; backedges; indices; annotations } =
-      add_table OrderEdges.add edges;
+      add_table OrderEdges.write_through edges;
       let add_backedge key targets =
         let targets = TypeOrder.Target.Set.of_list targets in
-        OrderBackedges.add key (Set.to_list targets)
+        OrderBackedges.write_through key (Set.to_list targets)
       in
       add_table add_backedge backedges;
 
-      add_table OrderIndices.add indices;
-      add_table OrderAnnotations.add annotations;
-      OrderKeys.add "Order" (Hashtbl.keys annotations);
+      add_table OrderIndices.write_through indices;
+      add_table OrderAnnotations.write_through annotations;
+      OrderKeys.write_through "Order" (Hashtbl.keys annotations);
     in
     add_type_order order;
 
-    add_table FunctionDefinitions.add function_definitions;
-    add_table ClassDefinitions.add class_definitions;
-    add_table Aliases.add aliases;
-    add_table Globals.add globals;
-    add_table Dependents.add dependents;
-    add_table FunctionKeys.add (Hashtbl.map ~f:Hash_set.to_list function_keys);
-    add_table ClassKeys.add (Hashtbl.map ~f:Hash_set.to_list class_keys);
-    add_table AliasKeys.add (Hashtbl.map ~f:Hash_set.to_list alias_keys);
-    add_table GlobalKeys.add (Hashtbl.map ~f:Hash_set.to_list global_keys);
-    add_table DependentKeys.add (Hashtbl.map ~f:Hash_set.to_list dependent_keys);
+    add_table FunctionDefinitions.write_through function_definitions;
+    add_table ClassDefinitions.write_through class_definitions;
+    add_table Aliases.write_through aliases;
+    add_table Globals.write_through globals;
+    add_table Dependents.write_through dependents;
+    add_table FunctionKeys.write_through (Hashtbl.map ~f:Hash_set.to_list function_keys);
+    add_table ClassKeys.write_through (Hashtbl.map ~f:Hash_set.to_list class_keys);
+    add_table AliasKeys.write_through (Hashtbl.map ~f:Hash_set.to_list alias_keys);
+    add_table GlobalKeys.write_through (Hashtbl.map ~f:Hash_set.to_list global_keys);
+    add_table DependentKeys.write_through (Hashtbl.map ~f:Hash_set.to_list dependent_keys);
 
-    Protocols.add "Protocols" (Hash_set.to_list protocols);
-    add_table Modules.add modules;
+    Protocols.write_through "Protocols" (Hash_set.to_list protocols);
+    add_table Modules.write_through modules;
     Statistics.performance ~configuration ~name:"Added environment to shared memory" ~timer ()
   in
 
