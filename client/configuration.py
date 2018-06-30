@@ -68,17 +68,24 @@ class Configuration:
         if typeshed:
             self._typeshed = typeshed
 
-        # Order matters. The values will only be updated if a field is None.
-        local_configuration = local_configuration or original_directory
         if local_configuration:
-            path_from_root = local_configuration
-            if not os.path.isfile(local_configuration):
-                local_configuration = os.path.join(
-                    local_configuration, CONFIGURATION_FILE + ".local"
-                )
-            else:
-                path_from_root = os.path.dirname(local_configuration)
-            self._read(local_configuration, path_from_root=path_from_root)
+            # Handle local configuration explicitly configured on the
+            # commandline.
+            self._check_read_local_configuration(
+                local_configuration, fail_on_error=True
+            )
+        elif original_directory and original_directory != os.getcwd():
+            # If `pyre` was run from a directory below the project
+            # root, and no local configuration was explictly provided
+            # on the commandline, look for a local configuration from
+            # the original directory, but don't fail if it does not
+            # exist.
+            assert_readable_directory(original_directory)
+            self._check_read_local_configuration(
+                original_directory, fail_on_error=False
+            )
+
+        # Order matters. The values will only be updated if a field is None.
         self._read(CONFIGURATION_FILE + ".local", path_from_root="")
         self._read(CONFIGURATION_FILE, path_from_root="")
         self._resolve_versioned_paths()
@@ -184,6 +191,40 @@ class Configuration:
 
     def disabled(self) -> bool:
         return self._disabled
+
+    def _check_read_local_configuration(self, path: str, fail_on_error: bool) -> None:
+        if fail_on_error and not os.path.exists(path):
+            raise EnvironmentException(
+                "Local configuration path `{}` does not exist.".format(path)
+            )
+
+        if os.path.isdir(path):
+            path_from_root = path
+            local_configuration = os.path.join(path, CONFIGURATION_FILE + ".local")
+
+            if not os.path.exists(local_configuration):
+                if fail_on_error:
+                    raise EnvironmentException(
+                        "Local configuration directory `{}` does not contain "
+                        "a `{}` file.".format(
+                            path_from_root, CONFIGURATION_FILE + ".local"
+                        )
+                    )
+                else:
+                    LOG.warning(
+                        "Pyre was run from local directory `{}` with no "
+                        "`{}` file.".format(
+                            path_from_root, CONFIGURATION_FILE + ".local"
+                        )
+                    )
+                    LOG.warning(
+                        "Configuration will be read only from the project root: "
+                        "`{}`".format(os.getcwd())
+                    )
+        else:
+            path_from_root = os.path.dirname(path)
+            local_configuration = path
+        self._read(local_configuration, path_from_root=path_from_root)
 
     def _read(self, path, path_from_root) -> None:
         try:

@@ -8,7 +8,7 @@ import sys
 import unittest
 from unittest.mock import call, patch
 
-from .. import CONFIGURATION_FILE, number_of_workers
+from .. import CONFIGURATION_FILE, EnvironmentException, number_of_workers
 from ..configuration import Configuration  # noqa
 
 
@@ -158,7 +158,18 @@ class ConfigurationTest(unittest.TestCase):
         self.assertEqual(configuration.number_of_workers, number_of_workers())
 
     @patch("os.path.isfile")
-    def test_configurations(self, os_path_isfile) -> None:
+    @patch("os.path.isdir")
+    @patch("os.path.exists")
+    @patch("os.access")
+    def test_configurations(
+        self, os_access, os_path_exists, os_path_isdir, os_path_isfile
+    ) -> None:
+        # Assume all paths are valid.
+        os_access.return_value = True
+        os_path_exists.return_value = True
+
+        # Try with directories first.
+        os_path_isdir.return_value = True
         os_path_isfile.return_value = False
 
         with patch.object(Configuration, "_read") as Configuration_read:
@@ -205,6 +216,8 @@ class ConfigurationTest(unittest.TestCase):
                 ]
             )
 
+        # Try with regular configuration files then.
+        os_path_isdir.return_value = False
         os_path_isfile.return_value = True
         with patch.object(Configuration, "_read") as Configuration_read:
             Configuration(local_configuration="local/.some_configuration")
@@ -215,6 +228,45 @@ class ConfigurationTest(unittest.TestCase):
                     call(CONFIGURATION_FILE, path_from_root=""),
                 ]
             )
+
+    @patch("os.path.isfile")
+    @patch("os.path.isdir")
+    @patch("os.path.exists")
+    def test_nonexisting_local_configuration(
+        self, os_path_exists, os_path_isdir, os_path_isfile
+    ) -> None:
+        # Test that a non-existing local configuration directory was provided.
+        os_path_exists.return_value = False
+        os_path_isdir.return_value = True
+        os_path_isfile.return_value = False
+        with self.assertRaises(EnvironmentException):
+            Configuration(local_configuration="local")
+
+        with self.assertRaises(EnvironmentException):
+            Configuration(original_directory="original", local_configuration="local")
+
+        # Test that a non-existing local configuration file was provided.
+        os_path_exists.return_value = False
+        os_path_isdir.return_value = False
+        os_path_isfile.return_value = True
+        with self.assertRaises(EnvironmentException):
+            Configuration(local_configuration="local/.some_configuration")
+
+        with self.assertRaises(EnvironmentException):
+            Configuration(
+                original_directory="original",
+                local_configuration="local/.some_configuration",
+            )
+
+        # Test an existing local directory, without a configuration file.
+        os_path_exists.side_effect = lambda path: not path.endswith(".local")
+        os_path_isdir.return_value = lambda path: not path.endswith(".local")
+        os_path_isfile.return_value = lambda path: path.endswith(".local")
+        with self.assertRaises(EnvironmentException):
+            Configuration(local_configuration="localdir")
+
+        with self.assertRaises(EnvironmentException):
+            Configuration(original_directory="original", local_configuration="localdir")
 
     @patch("os.path.isdir")
     def test_empty_configuration(self, os_path_isdir) -> None:

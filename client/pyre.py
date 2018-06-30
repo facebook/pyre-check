@@ -217,9 +217,14 @@ def main() -> int:
             arguments.command = commands.Check
 
     configuration = None
+    source_directories = []
+    shared_source_directory = None
+    source_directory_path = None
+    # Having this as a fails-by-default helps flag unexpected exit
+    # from exception flows.
+    exit_code = FAILURE
     try:
         start = time.time()
-        exit_code = SUCCESS
 
         arguments.capable_terminal = is_capable_terminal()
         if arguments.debug or not arguments.capable_terminal:
@@ -228,13 +233,7 @@ def main() -> int:
         switch_root(arguments)
         log.initialize(arguments)
 
-        source_directories = []
-        shared_source_directory = None
-
-        if arguments.command in [commands.Initialize]:
-            configuration = None
-            source_directory_path = None
-        else:
+        if arguments.command not in [commands.Initialize]:
             configuration = Configuration(
                 original_directory=arguments.original_directory,
                 local_configuration=arguments.local_configuration,
