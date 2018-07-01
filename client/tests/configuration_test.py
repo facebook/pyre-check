@@ -161,8 +161,13 @@ class ConfigurationTest(unittest.TestCase):
     @patch("os.path.isdir")
     @patch("os.path.exists")
     @patch("os.access")
+    # Need to patch this method because this test messes around with
+    # isfile/isdir via the patches above. When test optimizations are
+    # applied, _apply_defaults goes crazy; hence mock it so it doesn't
+    # run - it's not important for this test anyway.
+    @patch.object(Configuration, "_apply_defaults")
     def test_configurations(
-        self, os_access, os_path_exists, os_path_isdir, os_path_isfile
+        self, config_defaults, os_access, os_path_exists, os_path_isdir, os_path_isfile
     ) -> None:
         # Assume all paths are valid.
         os_access.return_value = True
