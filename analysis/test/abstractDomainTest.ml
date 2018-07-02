@@ -25,9 +25,6 @@ end
 (* General functor that tests abstract domains. *)
 module TestAbstractDomain(Domain: AbstractDomainUnderTest) = struct
 
-  let create_test value ~f =
-    (Domain.show value) >:: (f value)
-
   let values =
     (Domain.bottom :: Domain.unrelated)
     |> List.rev_append Domain.values
@@ -38,9 +35,6 @@ module TestAbstractDomain(Domain: AbstractDomainUnderTest) = struct
 
   let test_bottom_top _ =
     assert_bool "Bottom not bottom" (Domain.is_bottom Domain.bottom)
-
-  let test_basic_values =
-    List.map ~f:(create_test ~f:test_basic) values
 
   let test_cartesian ~title ~f values =
     let test_values index (v1, v2) =
@@ -103,9 +97,6 @@ module TestAbstractDomain(Domain: AbstractDomainUnderTest) = struct
       (Format.sprintf "%s: join <= widen, %s <= %s" message join_s widen_s)
       (Domain.less_or_equal ~left:join ~right:widen)
 
-  let test_joins =
-    test_cartesian ~title:"join" ~f:test_join_conformance values
-
   let test_widens ~iteration =
     test_cartesian
       ~title:(Format.sprintf "widen(%d)" iteration)
@@ -113,14 +104,17 @@ module TestAbstractDomain(Domain: AbstractDomainUnderTest) = struct
       values
 
   (* The test suite created by this functor. *)
-  let suite =
+  let suite () =
+    let create_test value ~f = (Domain.show value) >:: (f value) in
+    let test_basic_values = List.map ~f:(create_test ~f:test_basic) values in
+    let test_joins = test_cartesian ~title:"join" ~f:test_join_conformance values in
+
     test_basic_values
     |> List.rev_append [ "test_bottom_top" >:: test_bottom_top]
     |> List.rev_append test_diff_unrelated
     |> List.rev_append test_joins
     |> List.rev_append (test_widens ~iteration:0)
     |> List.rev_append (test_widens ~iteration:1)
-    |> List.rev_append (test_widens ~iteration:2)
     |> List.rev_append (test_widens ~iteration:100)
 
 end
@@ -133,7 +127,7 @@ module StringSet: AbstractDomainUnderTest = struct
     None
 
   let unrelated =
-    List.map ~f:singleton ["a"; "b"; "c"]
+    List.map ~f:singleton ["a"; "b"]
 
   let values =
     List.cartesian_product unrelated unrelated
@@ -238,9 +232,9 @@ module TestIntSet = TestAbstractDomain(IntSet)
 
 let () =
   "abstractDomainTest">:::[
-    "flat_string">:::TestStringSet.suite;
-    "map_int_to_flat_string">:::TestIntToStringSet.suite;
-    "string_x_maps_int_to_flat_string">:::TestPair.suite;
-    "int_set">:::TestIntSet.suite;
+    "flat_string">:::(TestStringSet.suite ());
+    "map_int_to_flat_string">:::(TestIntToStringSet.suite ());
+    "string_x_maps_int_to_flat_string">:::(TestPair.suite ());
+    "int_set">:::(TestIntSet.suite ());
   ]
   |> run_test_tt_main
