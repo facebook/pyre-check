@@ -78,12 +78,12 @@ end
 
 module Label = struct
   type t =
-    | Field of string
+    | Field of Ast.Identifier.t
     | Any
   [@@deriving compare, sexp, hash]
 
   let show = function
-    | Field f -> Printf.sprintf "[%s]" f
+    | Field f -> Printf.sprintf "[%s]" (Ast.Identifier.show f)
     | Any -> "[*]"
 
   type path = t list
@@ -620,7 +620,7 @@ module Make
 
   (* path_elt2 is the path elt of t2, i.e. the join of elt's along the spine of
      the right tree to this point. *)
-  let rec less_equal_tree t1 path_elt2 t2 =
+  let rec less_or_equal_tree t1 path_elt2 t2 =
     let path_elt2 = Element.join path_elt2 t2.elt in
     if not (Element.less_or_equal ~left:t1.elt ~right:path_elt2) then
       Checks.false_witness
@@ -628,31 +628,31 @@ module Make
                      (Element.show t1.elt)
                      (Element.show path_elt2))
     else
-      less_equal_children t1.children path_elt2 t2.children
+      less_or_equal_children t1.children path_elt2 t2.children
 
-  and less_equal_opt_tree ot1 path_elt2 ot2 =
+  and less_or_equal_opt_tree ot1 path_elt2 ot2 =
     match ot1, ot2 with
     | None, _ -> Checks.true_witness
     | Some t1, None ->
         (* Check that all on left <= path_elt2 *)
-        less_equal_tree t1 path_elt2 empty_tree
+        less_or_equal_tree t1 path_elt2 empty_tree
     | Some t1, Some t2 ->
-        less_equal_tree t1 path_elt2 t2
+        less_or_equal_tree t1 path_elt2 t2
 
-  and less_equal_all c1 path_elt2 =
+  and less_or_equal_all c1 path_elt2 =
     let check_leq ~key:_ ~data:st1 acc =
       if Checks.is_true acc then
-        less_equal_tree st1 path_elt2 empty_tree
+        less_or_equal_tree st1 path_elt2 empty_tree
       else
         acc
     in
     LabelMap.fold c1 ~f:check_leq ~init:Checks.true_witness
 
-  and less_equal_children c1 path_elt2 c2 =
+  and less_or_equal_children c1 path_elt2 c2 =
     if LabelMap.is_empty c1 then Checks.true_witness
     else if LabelMap.is_empty c2 then
       (* Check that all on the left <= path_elt2 *)
-      less_equal_all c1 path_elt2
+      less_or_equal_all c1 path_elt2
     else
       (* Pointwise on non-index elements, and common index elements. Let L, R be
          the index elements present only in c1 and c2 respectively, and let
@@ -669,16 +669,16 @@ module Make
         else
           match e with
           | Label.Any ->
-              less_equal_opt_tree star1 path_elt2 star2
+              less_or_equal_opt_tree star1 path_elt2 star2
               |> Checks.opt_cons ~message:(fun () -> "[left *]")
           | Label.Field _ -> begin
               match LabelMap.find c2 e with
               | None ->  (* in L *)
-                  less_equal_opt_tree (Some st1) path_elt2 star2
+                  less_or_equal_opt_tree (Some st1) path_elt2 star2
                   |> Checks.opt_cons ~message:(fun () -> "[right *]")
 
               | Some st2 -> (* in common *)
-                  less_equal_tree st1 path_elt2 st2
+                  less_or_equal_tree st1 path_elt2 st2
                   |> Checks.opt_cons ~message:(fun () -> Label.show e)
             end
       in
@@ -689,7 +689,7 @@ module Make
         else
           match e with
           | Label.Field _ when not (LabelMap.mem c1 e) ->
-              less_equal_opt_tree star1 path_elt2 (Some st2)
+              less_or_equal_opt_tree star1 path_elt2 (Some st2)
               |> Checks.opt_cons ~message:(fun () -> "[left *]")
           | _ -> Checks.true_witness
       in
@@ -697,7 +697,7 @@ module Make
       in
       LabelMap.fold ~f:check_star_left c2 ~init:result
 
-  let less_equal apt1 apt2 =
+  let less_or_equal apt1 apt2 =
     if phys_equal apt1 apt2 then
       Checks.true_witness
     else
@@ -709,12 +709,12 @@ module Make
               Checks.false_witness
                 ~message:(fun () -> Printf.sprintf "Root '%s' only on left" (Root.show r))
           | Some t2 ->
-              less_equal_tree t1 Element.bottom t2
+              less_or_equal_tree t1 Element.bottom t2
               |> Checks.opt_cons ~message:(fun () -> Root.show r)
       in
       RootMap.fold ~f:root_and_tree_leq apt1 ~init:Checks.true_witness
 
-  let less_equal_witness = less_equal
+  let less_or_equal_witness ~left ~right = less_or_equal left right
 
   let read_tree p t =
     let path_elt, tree = read_tree_raw p t ~use_precise_fields:false in
@@ -740,12 +740,12 @@ module Make
     | None -> empty_tree
     | Some t -> t
 
-  let less_equal apt1 ap2 =
-    less_equal_witness apt1 ap2
+  let less_or_equal ~left ~right =
+    less_or_equal_witness ~left ~right
     |> Checks.is_true
 
   let check_leq msg apt1 apt2 =
-    match less_equal_witness apt1 apt2 |> Checks.get_witness with
+    match less_or_equal_witness apt1 apt2 |> Checks.get_witness with
     | None -> ()
     | Some w ->
         failwith (Printf.sprintf "leq of %s is false: %s\napt1:\n%s\napt2:\n%s\n" msg w
@@ -767,9 +767,9 @@ module Make
       Checks.check (fun () -> check_minimal_apt ~message result);
       result
 
-  let widen ~step ~prev ~next =
-    if phys_equal prev next then prev
-    else if step <= 2 then join prev next
+  let widen ~iteration ~previous ~next =
+    if phys_equal previous next then previous
+    else if iteration <= 2 then join previous next
     else
       let widen_trees prev next =
         let prev_depth = max_depth prev in
@@ -797,13 +797,13 @@ module Make
       let merge ~key = function
         | `Both (a, b) -> widen_trees a b
         | `Left t | `Right t -> Some t in
-      let result = RootMap.merge ~f:merge prev next
+      let result = RootMap.merge ~f:merge previous next
       in
-      let message () = Printf.sprintf "widen of t1:\n%s\nt2:\n%s\n" (to_string prev)
+      let message () = Printf.sprintf "widen of t1:\n%s\nt2:\n%s\n" (to_string previous)
           (to_string next)
       in
-      Checks.check (fun () -> check_leq "widen prev" prev result);
-      Checks.check (fun () -> check_leq "widen next" prev result);
+      Checks.check (fun () -> check_leq "widen prev" previous result);
+      Checks.check (fun () -> check_leq "widen next" next result);
       Checks.check (fun () -> check_minimal_apt ~message result);
       result
 
@@ -815,7 +815,7 @@ module Make
     |> opt_node_tree ~message
 
   let verify_leq t1 t2 msg =
-    match less_equal_tree t1 Element.bottom t2 |> Checks.get_witness with
+    match less_or_equal_tree t1 Element.bottom t2 |> Checks.get_witness with
     | None -> ()
     | Some w ->
         Printf.sprintf "bad join %s - %s: %s\nvs %s"
@@ -993,4 +993,8 @@ module Make
     let message = fun () -> Printf.sprintf "make_tree %s" (Label.show_path p) in
     make_tree_opt p elt
     |> opt_node_tree ~message
+
+  let show = to_string
+
+  let pp fmt apt = Format.pp_print_string fmt (show apt)
 end

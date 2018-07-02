@@ -52,7 +52,7 @@ module WithoutChecks : CHECKS
 
 module Label: sig
   type t =
-    | Field of string
+    | Field of Ast.Identifier.t
     | Any
   [@@deriving compare, sexp, hash]
   val show: t -> string
@@ -73,13 +73,14 @@ module Make :
   sig
 
     type t
+    [@@deriving show]
     type ap_tree
 
     val empty: t
     val exists: f:(Element.t -> bool) -> t -> bool
     val is_empty: t -> bool
-    val less_equal: t -> t -> bool
-    val less_equal_witness: t -> t -> Checks.witness
+    val less_or_equal: left:t -> right:t -> bool
+    val less_or_equal_witness: left:t -> right:t -> Checks.witness
     val to_string: t -> string
     val to_string_just_ap: t -> string
     val read_ap: root:Root.t -> path:Label.path -> t -> ap_tree
@@ -101,7 +102,7 @@ module Make :
     val of_list: ((Root.t * Label.path) * Element.t) list -> t
     val remove: root:Root.t -> path:Label.path -> t -> t
     val singleton: root:Root.t -> path:Label.path -> ap_tree -> t
-    val widen: step:int -> prev:t -> next:t -> t
+    val widen: iteration:int -> previous:t -> next:t -> t
 
     val iteri: f:(Root.t -> ap_tree -> unit) -> t -> unit
     val iter_paths: f:(root:Root.t -> path:Label.path -> elt:Element.t -> unit) -> t -> unit
