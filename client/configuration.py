@@ -237,16 +237,16 @@ class Configuration:
                     self.source_directories = configuration.get(
                         "source_directories", []
                     )
-                if self.source_directories:
-                    LOG.debug(
-                        "Found source directories `%s`",
-                        ", ".join(self.source_directories),
-                    )
+                    if self.source_directories:
+                        LOG.debug(
+                            "Found source directories `%s`",
+                            ", ".join(self.source_directories),
+                        )
 
                 if not self.targets:
                     self.targets = configuration.get("targets", [])
-                if self.targets:
-                    LOG.debug("Found targets `%s`", ", ".join(self.targets))
+                    if self.targets:
+                        LOG.debug("Found targets `%s`", ", ".join(self.targets))
 
                 if "disabled" in configuration:
                     self._disabled = True
