@@ -297,6 +297,7 @@ let test_delocalize _ =
 
   assert_delocalized "constant" "constant";
   assert_delocalized "$local_qualifier$variable" "qualifier.variable";
+  assert_delocalized "$local_base64$b64encode" "base64.b64encode";
   assert_delocalized "$local_module?qualifier$variable" "module.qualifier.variable";
 
   (* Don't attempt to delocalize qualified expressions. *)

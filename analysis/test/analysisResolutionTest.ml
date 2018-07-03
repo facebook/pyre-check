@@ -65,7 +65,7 @@ let test_parse_annotation _ =
       ()
   in
   assert_parse_annotation ~resolution ~expression:"int" ~expected:"int";
-  assert_parse_annotation ~resolution ~expression:"$local_0$int" ~expected:"int";
+  assert_parse_annotation ~resolution ~expression:"$local_qualifier$int" ~expected:"qualifier.int";
   assert_parse_annotation ~resolution ~expression:"empty.stub.Annotation" ~expected:"typing.Any";
   assert_parse_annotation
     ~resolution
