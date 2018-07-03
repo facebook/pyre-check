@@ -19,8 +19,8 @@
 
 
 (executable
- ((name serviceParseTest)
-  (modules (serviceParseTest))
+ ((name serviceParserTest)
+  (modules (serviceParserTest))
   (libraries
    (oUnit
     pyrelib.test
@@ -50,7 +50,7 @@
 
 (alias
  ((name runtest)
-  (deps (serviceParseTest.exe))
+  (deps (serviceParserTest.exe))
   (action (run ${<} -runner sequential))))
 
 
