@@ -5142,6 +5142,29 @@ let test_check_behavioral_subtyping _ =
     |}
     [];
 
+  (* Don't warn on dunder methods. *)
+  assert_type_errors
+    {|
+      class Foo():
+        def __dunder__(self, a: float) -> None: ...
+      class Bar(Foo):
+        def __dunder__(self, a: int) -> None: pass
+    |}
+    [];
+
+  (* Dunder methods must end with dunder. *)
+  assert_type_errors
+    {|
+      class Foo():
+        def __f(self, a: float) -> None: ...
+      class Bar(Foo):
+        def __f(self, a: int) -> None: pass
+    |}
+    [
+      "Inconsistent override [14]: `Bar.__f` overloads method defined in `Foo` inconsistently. " ^
+      "Parameter of type `int` is not a supertype of the overridden parameter `float`.";
+    ];
+
   (* Weakening of object precondition is not possible. *)
   assert_type_errors
     {|

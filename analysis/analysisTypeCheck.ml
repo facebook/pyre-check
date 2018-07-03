@@ -355,7 +355,8 @@ module State = struct
       try
         if Define.is_constructor define ||
            Define.is_class_method define ||
-           Define.is_static_method define then
+           Define.is_static_method define ||
+           Define.is_dunder_method define then
           errors
         else
           let open Annotated in

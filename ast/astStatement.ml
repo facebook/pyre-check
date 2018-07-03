@@ -362,6 +362,16 @@ module Define = struct
     has_decorator define "staticmethod"
 
 
+  let is_dunder_method { name; _ } =
+    match List.last name with
+    | Some dunder ->
+        let name = Access.show [dunder] in
+        String.is_prefix ~prefix:"__" name &&
+        String.is_suffix ~suffix:"__" name
+    | _ ->
+        false
+
+
   let is_class_method define =
     Set.exists ~f:(has_decorator define) Recognized.classmethod_decorators
 

@@ -213,6 +213,7 @@ module Define : sig
   val is_overloaded_method: t -> bool
   val is_static_method: t -> bool
   val is_class_method: t -> bool
+  val is_dunder_method: t -> bool
   val is_constructor: ?in_test: bool -> t -> bool
   val is_generated_constructor: t -> bool
   val is_property_setter: t -> bool
