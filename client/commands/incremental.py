@@ -71,7 +71,7 @@ class Incremental(ErrorHandling):
             self._print(errors)
         except ClientException as exception:
             LOG.error("Error while waiting for server.")
-            LOG.error("Re-run `%s` in order to restart the server.", " ".join(sys.argv))
+            LOG.error("Run `%s restart` in order to restart the server.", sys.argv[0])
             return FAILURE
 
         return SUCCESS
