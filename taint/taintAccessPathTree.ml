@@ -99,7 +99,7 @@ module Make
     (Checks : CHECKS)
     (Root : sig
        include Map.Key
-       val show : t -> string
+       val show: t -> string
      end)
     (Element : Analysis.AbstractDomain.S) = struct
 

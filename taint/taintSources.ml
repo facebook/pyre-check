@@ -7,9 +7,11 @@ open Core
 
 
 type t =
+  | TestSource
   | UserControlled
 [@@deriving compare, sexp, show, hash]
 
 
 let to_string = function
+  | TestSource -> "test source"
   | UserControlled -> "user controlled"

@@ -10,7 +10,23 @@
     pyrelib.ast
     pyrelib.taint))))
 
+(executable
+ ((name taintForwardAnalysisTest)
+  (modules (taintForwardAnalysisTest))
+  (libraries
+   (oUnit
+    pyrelib.ast
+    pyrelib.analysis
+    pyrelib.test
+    pyrelib.taint))))
+
+
 (alias
  ((name runtest)
   (deps (taintAccessPathTest.exe))
+  (action (run ${<} -runner sequential))))
+
+(alias
+ ((name runtest)
+  (deps (taintForwardAnalysisTest.exe))
   (action (run ${<} -runner sequential))))

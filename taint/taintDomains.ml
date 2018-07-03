@@ -10,6 +10,11 @@ open Analysis
 module ForwardTaint = struct
   include AbstractSetDomain.Make(TaintSources)
 
+  let leaves taint =
+    elements taint
+
+  let test_source =
+    singleton TaintSources.TestSource
 end
 
 module BackwardTaint = struct
