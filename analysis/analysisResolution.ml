@@ -120,21 +120,21 @@ let parse_annotation { parse_annotation; module_definition; _ } expression =
       expression
   in
   let parsed = parse_annotation expression in
-  let originates_from_empty_stub =
-    let is_empty_stub = function
-      | Type.Primitive name ->
+  let constraints = function
+    | Type.Primitive name ->
+        let originates_from_empty_stub =
           Identifier.show name
           |> Access.create
           |> fun access -> Module.from_empty_stub ~access ~module_definition
-      | _ ->
-          false
-    in
-    Type.exists parsed ~predicate:is_empty_stub
+        in
+        if originates_from_empty_stub then
+          Some Type.Object
+        else
+          None
+    | _ ->
+        None
   in
-  if originates_from_empty_stub then
-    Type.Object
-  else
-    parsed
+  Type.instantiate parsed ~constraints
 
 
 let global { global; _ } =

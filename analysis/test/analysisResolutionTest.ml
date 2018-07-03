@@ -70,7 +70,7 @@ let test_parse_annotation _ =
   assert_parse_annotation
     ~resolution
     ~expression:"typing.Dict[str, empty.stub.Annotation]"
-    ~expected:"typing.Any"
+    ~expected:"typing.Dict[str, typing.Any]"
 
 
 
