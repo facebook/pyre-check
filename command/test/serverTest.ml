@@ -712,19 +712,25 @@ let test_incremental_lookups _ =
   Scheduler.destroy initial_state.State.scheduler;
   CommandTest.clean_environment ();
   assert_is_some response;
-  assert_true (Hashtbl.mem state.State.lookups relative_path);
   let definitions =
-    Hashtbl.find_exn state.State.lookups relative_path
-    |> Hashtbl.data
-    |> List.map ~f:Type.show
+    File.Handle.create relative_path
+    |> AstSharedMemory.get_source
+    |> (fun value -> Option.value_exn value)
+    |> Lookup.create_of_source state.State.environment
+    |> Location.Table.to_alist
+    |> List.map ~f:(fun (key, data) ->
+        Format.asprintf "%s/%a" (Location.to_string key) Type.pp data
+        |> String.chop_prefix_exn ~prefix:relative_path)
     |> List.sort ~compare:String.compare
   in
   assert_equal
     ~printer:(String.concat ~sep:", ")
     [
-      "`int`";
-      "`int`";
-      "`typing.Unbound`";
+      ":3:11-3:12/`int`";
+      ":3:4-3:12/`int`";
+      ":5:8-5:9/`typing.Unbound`";
+      ":6:11-6:12/`int`";
+      ":6:4-6:12/`int`";
     ]
     definitions
 

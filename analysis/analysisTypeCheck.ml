@@ -631,20 +631,12 @@ module State = struct
       |> Set.mem Recognized.assert_functions
     in
 
-    let update_annotation_maps ~resolution ~lookup ~access ~location ~annotation =
-      (* The lookup database needs a Type.t only. *)
-      lookup
-      >>| Lookup.update ~location ~annotation:(Annotation.annotation annotation)
-      |> ignore;
-      Resolution.set_local resolution ~access ~annotation
-    in
-
     let rec forward_annotations
         ({ resolution; _ } as state)
-        ({ Node.value = statement_value; location = statement_location } as statement) =
+        ({ Node.value = statement_value; _ } as statement) =
       match statement_value with
       | Assign {
-          Assign.target = { Node.value = Access access; location };
+          Assign.target = { Node.value = Access access; _ };
           annotation = Some annotation;
           _;
         } ->
@@ -653,12 +645,12 @@ module State = struct
             Resolution.parse_annotation resolution annotation
             |> Annotation.create_immutable ~global:false
           in
-          update_annotation_maps ~resolution ~lookup ~access ~location ~annotation
+          Resolution.set_local resolution ~access ~annotation
       | Assign assign ->
           let open Annotated in
           let open Access.Element in
           let forward_annotations
-              ~target:({ Node.location; _ } as target)
+              ~target
               ~value_annotation
               resolution =
             let refine ~resolution ~target ~value_annotation =
@@ -677,7 +669,7 @@ module State = struct
                 | _, _ ->
                     Annotation.create value_annotation
               in
-              update_annotation_maps ~resolution ~lookup ~access ~location ~annotation:refined
+              Resolution.set_local resolution ~access ~annotation:refined
             in
             match Node.value target with
             | Tuple targets ->
@@ -729,11 +721,9 @@ module State = struct
                   | _ ->
                       Annotation.create annotation
                 in
-                update_annotation_maps
-                  ~resolution
-                  ~lookup
+                Resolution.set_local
+                  resolution
                   ~access
-                  ~location
                   ~annotation:updated_annotation
             | UnaryOperator {
                 UnaryOperator.operator = UnaryOperator.Not;
@@ -743,7 +733,7 @@ module State = struct
                       Access.Identifier name;
                       Access.Call {
                         Node.value = [
-                          { Argument.name = None; value = { Node.location; value = Access access} };
+                          { Argument.name = None; value = { Node.value = Access access; _ } };
                           { Argument.name = None; value = annotation };
                         ];
                         _;
@@ -773,11 +763,9 @@ module State = struct
                         |> Set.to_list
                         |> Type.union
                       in
-                      update_annotation_maps
-                        ~resolution
-                        ~lookup
+                      Resolution.set_local
+                        resolution
                         ~access
-                        ~location
                         ~annotation:(Annotation.create constrained)
                   | _ ->
                       resolution
@@ -790,11 +778,9 @@ module State = struct
                 begin
                   match Resolution.get_local resolution ~access, element with
                   | Some { Annotation.annotation = Type.Optional parameter; _ }, _ ->
-                      update_annotation_maps
-                        ~resolution
-                        ~lookup
+                      Resolution.set_local
+                        resolution
                         ~access
-                        ~location:(Node.location test)
                         ~annotation:(Annotation.create parameter)
                   | _, Attribute { origin = Instance attribute; defined; _ }
                     when defined ->
@@ -817,11 +803,9 @@ module State = struct
                                 (Attribute.annotation attribute)
                                 parameter
                             in
-                            update_annotation_maps
-                              ~resolution
-                              ~lookup
+                            Resolution.set_local
+                              resolution
                               ~access
-                              ~location:(Node.location test)
                               ~annotation:refined
                         | _ ->
                             resolution
@@ -883,7 +867,7 @@ module State = struct
                 let { resolution; _ } = forward state ~statement:(Statement.assume left) in
                 resolution
             | ComparisonOperator {
-                ComparisonOperator.left = { Node.location; value = Access access };
+                ComparisonOperator.left = { Node.value = Access access; _ };
                 right = [
                   ComparisonOperator.Is,
                   { Node.value = Access [Access.Identifier identifier; ]; _ }
@@ -902,7 +886,7 @@ module State = struct
                   | _ ->
                       Annotation.create (Type.Optional Type.Bottom)
                 in
-                update_annotation_maps ~resolution ~lookup ~access ~location ~annotation:refined
+                Resolution.set_local resolution ~access ~annotation:refined
             | _ ->
                 resolution
           end
@@ -956,21 +940,16 @@ module State = struct
             Resolution.resolve resolution (Node.create_with_default_location (Access access))
             |> Annotation.create_immutable ~global:true
           in
-          update_annotation_maps
-            ~resolution
-            ~lookup
+          Resolution.set_local
+            resolution
             ~access
-            ~location:statement_location
             ~annotation
 
       | _ ->
           (* Walk through accesses and infer annotations as we go. *)
           let propagated =
-            let propagate resolution { Node.value = access; location } =
-              let propagate _ ~resolution ~resolved ~element:_ =
-                lookup
-                >>| Lookup.update ~location ~annotation:(Annotation.annotation resolved)
-                |> ignore;
+            let propagate resolution { Node.value = access; _ } =
+              let propagate _ ~resolution ~resolved:_ ~element:_ =
                 resolution
               in
               Annotated.Access.fold
@@ -1193,32 +1172,12 @@ module State = struct
             let check_single_access errors access =
               match access with
               | Access.Identifier _ ->
-                  Resolution.get_local resolution ~access:[access]
-                  >>| Annotation.annotation
-                  |> Option.iter ~f:(function annotation ->
-                      lookup
-                      (* T30344109: this location is imprecise. *)
-                      >>| Lookup.update ~location ~annotation
-                      |> ignore);
                   errors
 
               | Access.Call { Node.value = arguments; _ } ->
                   let check_argument
                       errors
-                      { Argument.value = { Node.location = value_location; _ } as value; name } =
-                    let location =
-                      (* If this is a named parameter, extend the lookup location to include the
-                         name as well. *)
-                      name
-                      >>| (fun { Node.location = { Location.start; _ } ; _ } ->
-                          { value_location with Location.start })
-                      |> Option.value ~default:value_location
-                    in
-                    lookup
-                    >>| Lookup.update
-                      ~location
-                      ~annotation:(Annotated.resolve ~resolution value)
-                    |> ignore;
+                      { Argument.value; _ } =
                     check_expression ~resolution errors value
                   in
                   List.fold ~f:check_argument ~init:errors arguments
@@ -1299,11 +1258,9 @@ module State = struct
         | Lambda { Lambda.body; parameters } ->
             let resolution =
               let add_parameter resolution { Node.value = { Parameter.name; _ }; _ } =
-                update_annotation_maps
-                  ~resolution
-                  ~lookup
+                Resolution.set_local
+                  resolution
                   ~access:(Access.create_from_identifiers [name])
-                  ~location
                   ~annotation:(Annotation.create Type.Object)
               in
               List.fold ~f:add_parameter ~init:resolution parameters
