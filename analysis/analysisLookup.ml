@@ -49,9 +49,16 @@ module ExpressionVisitor = struct
                     | None ->
                         value_location
                   in
-                  let annotation = Annotated.resolve ~resolution value in
-                  if not (Type.is_unknown annotation) then
-                    Location.Table.set lookup ~key:location ~data:annotation
+                  try
+                    let annotation = Annotated.resolve ~resolution value in
+                    if not (Type.is_unknown annotation) then
+                      Location.Table.set lookup ~key:location ~data:annotation
+                  with AnalysisTypeOrder.Untracked _ ->
+                    (* If we cannot resolve the type of this
+                       expression, ignore it silently. The
+                       construction of the lookup table is not
+                       critical. *)
+                    ()
                 in
                 List.iter ~f:check_argument arguments
             | _ ->
@@ -64,10 +71,18 @@ module ExpressionVisitor = struct
 
     (* T30816068: we need a better visitor interface that exposes Argument.name *)
     lookup_of_arguments expression;
-    let Node.{ location; _ } = expression in
-    let annotation = Annotated.resolve ~resolution expression in
-    if not (Type.is_unknown annotation) then
-      Location.Table.set lookup ~key:location ~data:annotation;
+    let { Node.location; _ } = expression in
+    let () =
+      try
+        let annotation = Annotated.resolve ~resolution expression in
+        if not (Type.is_unknown annotation) then
+          Location.Table.set lookup ~key:location ~data:annotation
+      with AnalysisTypeOrder.Untracked _ ->
+        (* If we cannot resolve the type of this expression, ignore it
+           silently. The construction of the lookup table is not
+           critical. *)
+        ()
+    in
     state
 
   let statement state _ =
