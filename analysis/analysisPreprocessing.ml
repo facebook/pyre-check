@@ -211,9 +211,20 @@ let qualify ({ Source.path; qualifier; statements; _ } as source) =
     stars,
     renamed
   in
-
   let rec qualify_parameters ~scope parameters =
     (* Rename parameters to prevent aliasing. *)
+    let parameters =
+      let qualify_annotation { Node.location; value = { Parameter.annotation; _ } as parameter } =
+        {
+          Node.location;
+          value = {
+            parameter with
+            Parameter.annotation = annotation >>| qualify_expression ~scope;
+          };
+        }
+      in
+      List.map parameters ~f:qualify_annotation
+    in
     let rename_parameter
         (scope, reversed_parameters)
         ({ Node.value = { Parameter.name; value; annotation }; _ } as parameter) =
@@ -224,7 +235,7 @@ let qualify ({ Source.path; qualifier; statements; _ } as source) =
         Node.value = {
           Parameter.name = Identifier.map renamed ~f:(fun identifier -> stars ^ identifier);
           value = value >>| qualify_expression ~scope;
-          annotation = annotation >>| qualify_expression ~scope;
+          annotation;
         };
       } :: reversed_parameters
     in

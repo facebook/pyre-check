@@ -508,6 +508,15 @@ let test_qualify _ =
     |};
   assert_qualify
     {|
+      def foo(parameter: int, other: parameter.T):
+        parameter = 1
+    |}
+    {|
+      def qualifier.foo($parameter$parameter: int, $parameter$other: parameter.T):
+        $parameter$parameter = 1
+    |};
+  assert_qualify
+    {|
       flag = False
       if flag:
         variable = 1
