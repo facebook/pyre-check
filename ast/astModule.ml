@@ -69,7 +69,7 @@ let path { path; _ } =
   path
 
 
-let wildcard_exports { wildcard_exports; _ } =  (* Rename to wildcard_exports *)
+let wildcard_exports { wildcard_exports; _ } =
   wildcard_exports
 
 
@@ -179,13 +179,3 @@ let aliased_export { aliased_exports; _ } access =
 
 let in_wildcard_exports { wildcard_exports; _ } access =
   List.exists ~f:(Expression.Access.equal access) wildcard_exports
-
-
-let wildcard_aliases { aliased_exports; _ } =
-  let collect_wildcards (alias, target) =
-    if Access.show alias = "*" then
-      Some target
-    else
-      None
-  in
-  List.filter_map ~f:collect_wildcards aliased_exports

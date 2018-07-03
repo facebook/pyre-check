@@ -191,19 +191,11 @@ let fold ~resolution ~initial ~f access =
               Resolution.module_definition resolution lead
               >>| (fun definition ->
                   match
-                    Module.aliased_export definition [head],
-                    Module.wildcard_aliases definition with
-                  | Some export, _ ->
+                    Module.aliased_export definition [head] with
+                  | Some export ->
                       export @ tail
-                  | _, modules ->
-                      let exists_in_wildcard_exports module_name =
-                        Resolution.module_definition resolution module_name
-                        >>| (fun definition -> Module.in_wildcard_exports definition [head])
-                        |> Option.value ~default:false
-                      in
-                      match List.find ~f:exists_in_wildcard_exports modules with
-                      | Some module_name -> module_name @ [head] @ tail
-                      | _ -> resolve_exports ~lead:(lead @ [head]) ~tail)
+                  | _ ->
+                      resolve_exports ~lead:(lead @ [head]) ~tail)
               |> Option.value ~default:access
           | _ ->
               access

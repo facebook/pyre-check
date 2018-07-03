@@ -128,6 +128,17 @@ let parse
   | _ ->
       source
 
+let parse_list named_sources =
+  let create_file (name, source) =
+    File.create
+      ~content:(Some (trim_extra_indentation source))
+      (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:name)
+  in
+  Service.Parser.parse_sources_list
+    ~configuration:(Configuration.create ~source_root:(Path.current_working_directory ()) ())
+    ~scheduler:(Service.Scheduler.mock ())
+    ~files:(List.map ~f:create_file named_sources)
+
 let parse_single_statement source =
   match parse source with
   | { Source.statements = [statement]; _ } -> statement

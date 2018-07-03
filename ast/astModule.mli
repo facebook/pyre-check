@@ -30,5 +30,3 @@ val wildcard_exports: t -> Access.t list
 val aliased_export: t -> Access.t -> Access.t option
 
 val in_wildcard_exports: t -> Access.t -> bool
-
-val wildcard_aliases: t -> Access.t list

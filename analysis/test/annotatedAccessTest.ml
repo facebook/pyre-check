@@ -189,45 +189,41 @@ let assert_resolved sources access expected =
 
 
 let test_module_exports _ =
-  let assert_exports_resolved =
-    assert_resolved
-      [
-        parse
-          ~qualifier:(Access.create "implementing")
-          {|
-            def implementing.function() -> int: ...
-            constant: int = 1
-          |};
-        parse
-          ~qualifier:(Access.create "exporting")
-          {|
-            from implementing import function, constant
-            from implementing import function as aliased
-            from indirect import cyclic
-          |};
-        parse
-          ~qualifier:(Access.create "indirect")
-          {|
-            from exporting import constant, cyclic
-          |};
-        parse
-          ~qualifier:(Access.create "wildcard")
-          {|
-            from exporting import *
-          |};
-        parse
-          ~qualifier:(Access.create "exporting_wildcard_default")
-          {|
-            from implementing import function, constant
-            from implementing import function as aliased
-            __all__ = ["constant"]
-          |};
-        parse
-          ~qualifier:(Access.create "wildcard_default")
-          {|
-            from exporting_wildcard_default import *
-          |};
-      ]
+  let assert_exports_resolved access expected =
+    [
+      "implementing.py",
+      {|
+        def implementing.function() -> int: ...
+        constant: int = 1
+      |};
+      "exporting.py",
+      {|
+        from implementing import function, constant
+        from implementing import function as aliased
+        from indirect import cyclic
+      |};
+      "indirect.py",
+      {|
+        from exporting import constant, cyclic
+      |};
+      "wildcard.py",
+      {|
+        from exporting import *
+      |};
+      "exporting_wildcard_default.py",
+      {|
+        from implementing import function, constant
+        from implementing import function as aliased
+        __all__ = ["constant"]
+      |};
+      "wildcard_default.py",
+      {|
+        from exporting_wildcard_default import *
+      |};
+    ]
+    |> parse_list
+    |> List.map ~f:(fun handle -> Option.value_exn (AstSharedMemory.get_source handle))
+    |> (fun sources -> assert_resolved sources access expected)
   in
 
   assert_exports_resolved "implementing.constant" Type.integer;
