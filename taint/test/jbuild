@@ -1,0 +1,16 @@
+(jbuild_version 1)
+
+
+(executable
+ ((name taintAccessPathTest)
+  (modules (taintAccessPathTest))
+  (libraries
+   (oUnit
+    pyrelib.test
+    pyrelib.ast
+    pyrelib.taint))))
+
+(alias
+ ((name runtest)
+  (deps (taintAccessPathTest.exe))
+  (action (run ${<} -runner sequential))))

@@ -140,8 +140,8 @@ module Make
   let tree_has_children t =
     not (LabelMap.is_empty t.children)
 
-  let rec make_tree_internal p t =
-    match p with
+  let rec make_tree_internal path t =
+    match path with
     | [] -> t
     | e::rest ->
         { elt = Element.bottom;

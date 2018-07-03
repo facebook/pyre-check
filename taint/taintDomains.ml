@@ -7,32 +7,29 @@ open Core
 
 open Analysis
 
-module ForwardTaint = AbstractSetDomain.Make(TaintSources)
-module BackwardTaint = AbstractSetDomain.Make(TaintSinks)
+module ForwardTaint = struct
+  include AbstractSetDomain.Make(TaintSources)
 
+end
 
-(* Placeholder for representing parameters, locals, and special return value. *)
-module Root = struct
-  type t =
-    | LocalResult  (* Special root representing the return value location. *)
-    | Parameter of string
-    | Var of string
-  [@@deriving compare, sexp, show, hash]
+module BackwardTaint = struct
+  include AbstractSetDomain.Make(TaintSinks)
+
 end
 
 
 (* Used to infer which sources reach the exit points of a function. *)
 module ForwardState =
-  AccessPathTree.Make
-    (AccessPathTree.WithChecks)
-    (Root)
+  TaintAccessPathTree.Make
+    (TaintAccessPathTree.WithChecks)
+    (TaintAccessPath.Root)
     (ForwardTaint)
 
 
 (* Used to infer which sinks are reached from parameters, as well as the
    taint-in-taint-out (TITO) using the special LocalReturn sink. *)
 module BackwardState =
-  AccessPathTree.Make
-    (AccessPathTree.WithChecks)
-    (Root)
+  TaintAccessPathTree.Make
+    (TaintAccessPathTree.WithChecks)
+    (TaintAccessPath.Root)
     (BackwardTaint)
