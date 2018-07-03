@@ -4,6 +4,7 @@
     LICENSE file in the root directory of this source tree. *)
 
 
+module AstSharedMemory = AstSharedMemory
 module Codex = AstCodex
 module Expression = AstExpression
 module Identifier = AstIdentifier

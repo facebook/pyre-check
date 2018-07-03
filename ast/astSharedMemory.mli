@@ -3,7 +3,9 @@
     This source code is licensed under the MIT license found in the
     LICENSE file in the root directory of this source tree. *)
 
-open Ast
+module Expression = AstExpression
+module Module = AstModule
+module Source = AstSource
 
 
 val get_source: File.Handle.t -> Source.t option

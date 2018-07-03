@@ -4,9 +4,11 @@
     LICENSE file in the root directory of this source tree. *)
 
 open Core
-
-open Ast
 open Pyre
+
+module Expression = AstExpression
+module Module = AstModule
+module Source = AstSource
 
 module SharedMemory = Hack_parallel.Std.SharedMem
 

@@ -9,7 +9,6 @@ open Analysis
 open Ast
 open Pyre
 
-module AstSharedMemory = ServiceAstSharedMemory
 module EnvironmentSharedMemory = ServiceEnvironmentSharedMemory
 
 open EnvironmentSharedMemory

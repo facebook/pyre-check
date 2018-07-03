@@ -10,7 +10,6 @@ open Analysis
 open Pyre
 
 module Scheduler = ServiceScheduler
-module AstSharedMemory = ServiceAstSharedMemory
 module Ignore = ServiceIgnore
 
 

@@ -8,8 +8,6 @@ open Core
 
 open Ast
 
-module AstSharedMemory = ServiceAstSharedMemory
-
 
 type t = {
   strict_coverage: int;

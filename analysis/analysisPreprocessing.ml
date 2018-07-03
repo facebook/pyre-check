@@ -953,6 +953,31 @@ let expand_type_checking_imports source =
   |> snd
 
 
+let expand_wildcard_imports source =
+  let module Transform = Transform.MakeStatementTransformer(struct
+      include Transform.Identity
+      type t = unit
+
+      let statement_postorder state ({ Node.value; _ } as statement) =
+        match value with
+        | Import { Import.from = Some from; imports }
+          when List.exists ~f:(fun { Import.name; _ } -> Access.show name = "*") imports ->
+            let expanded_import =
+              AstSharedMemory.get_module_exports from
+              >>| List.map ~f:(fun name -> { Import.name; alias = None })
+              >>| (fun expanded -> Import { Import.from = Some from; imports = expanded })
+              >>| (fun value -> { statement with Node.value })
+              |> Option.value ~default:statement
+            in
+            state, [expanded_import]
+        | _ ->
+            state, [statement]
+    end)
+  in
+  Transform.transform () source
+  |> snd
+
+
 let return_access = Access.create "$return"
 
 
@@ -1177,6 +1202,7 @@ let preprocess source =
   |> expand_format_string
   |> replace_version_specific_code
   |> expand_type_checking_imports
+  |> expand_wildcard_imports
   |> qualify
   |> expand_returns
   |> expand_ternary_assign

@@ -9,7 +9,6 @@ open Ast
 open Analysis
 open Pyre
 
-module AstSharedMemory = ServiceAstSharedMemory
 module IgnoreSharedMemory = ServiceIgnoreSharedMemory
 module Scheduler = ServiceScheduler
 

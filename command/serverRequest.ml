@@ -150,7 +150,7 @@ let rec process_request
         let handles =
           List.filter_map ~f:(File.handle ~root:source_root) update_environment_with
         in
-        Service.AstSharedMemory.remove_paths handles;
+        AstSharedMemory.remove_paths handles;
         let (module Handler: Analysis.Environment.Handler) = state.environment in
         Handler.purge handles
       in
@@ -178,7 +178,7 @@ let rec process_request
         "Repopulating the environment with %s"
         (List.to_string ~f:File.Handle.show repopulate_handles);
       let repopulate_path handle =
-        match Service.AstSharedMemory.get_source handle with
+        match AstSharedMemory.get_source handle with
         | Some source -> [source]
         | None -> []
       in
@@ -191,7 +191,7 @@ let rec process_request
     Service.Ignore.register ~configuration scheduler repopulate_handles;
 
     (* Clear all type resolution info from shared memory for all affected sources. *)
-    List.filter_map ~f:Service.AstSharedMemory.get_source new_source_handles
+    List.filter_map ~f:AstSharedMemory.get_source new_source_handles
     |> List.concat_map ~f:Preprocessing.defines
     |> List.map ~f:(fun { Node.value = { Statement.Define.name; _ }; _ } -> name)
     |> TypeResolutionSharedMemory.remove;
@@ -338,7 +338,7 @@ let rec process_request
                 let open LanguageServer.Protocol in
                 let result =
                   File.Handle.create relative_path
-                  |> Service.AstSharedMemory.get_source
+                  |> AstSharedMemory.get_source
                   >>| Lookup.create_of_source state.environment
                   >>= Lookup.get_annotation ~position
                   >>| (fun (location, annotation) ->

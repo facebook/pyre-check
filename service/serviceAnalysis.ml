@@ -10,7 +10,6 @@ open Ast
 open Statement
 open Pyre
 
-module AstSharedMemory = ServiceAstSharedMemory
 module CallGraph = ServiceCallGraph
 
 

@@ -9,8 +9,10 @@ open OUnit2
 open Ast
 open Analysis
 open Expression
+open Service
 open Statement
 
+open Pyre
 open Test
 
 
@@ -747,6 +749,108 @@ let test_expand_type_checking_imports _ =
     |}
 
 
+let test_expand_wildcard_imports _ =
+  let assert_expanded environment_sources check_source expected =
+    let create_file (name, source) =
+      File.create
+        ~content:(Some (trim_extra_indentation source))
+        (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:name)
+    in
+    let clear_memory files =
+      let get_qualifier file =
+        File.handle file
+        >>= AstSharedMemory.get_source
+        >>| (fun { Source.qualifier; _ } -> qualifier)
+      in
+      AstSharedMemory.remove_modules (List.filter_map ~f:get_qualifier files);
+      AstSharedMemory.remove_paths (List.filter_map ~f:File.handle files);
+    in
+    let files = List.map ~f:create_file environment_sources in
+    let file_to_check = create_file ("test.py", check_source) in
+    clear_memory (file_to_check :: files);
+    Service.Parser.parse_sources_list
+      ~configuration:(Configuration.create ~source_root:(Path.current_working_directory ()) ())
+      ~scheduler:(Scheduler.mock ())
+      ~files
+    |> ignore;
+    let file_to_check_handle =
+      Service.Parser.parse_sources_list
+        ~configuration:(Configuration.create ~source_root:(Path.current_working_directory ()) ())
+        ~scheduler:(Scheduler.mock ())
+        ~files:[file_to_check]
+      |> List.hd_exn
+    in
+    assert_equal
+      ~cmp:(List.equal ~equal:Statement.equal)
+      ~printer:(fun statement_list ->
+          List.map ~f:(Statement.show) statement_list
+          |> String.concat ~sep:", ")
+      (Source.statements (parse expected))
+      (Source.statements (Option.value_exn (AstSharedMemory.get_source file_to_check_handle)))
+  in
+  assert_expanded
+    ["a.py", "def foo(): pass"]
+    {|
+      from a import b
+    |}
+    {|
+      from a import b
+    |};
+  assert_expanded
+    ["a.py", "def foo(): pass"]
+    {|
+      from a import *
+    |}
+    {|
+      from a import foo
+    |};
+  assert_expanded
+    [
+      "a.py", "def foo(): pass";
+      "b.py", "def bar(): pass";
+    ]
+    {|
+      from a import *
+      from b import *
+    |}
+    {|
+      from a import foo
+      from b import bar
+    |};
+  assert_expanded
+    [
+      "a.py",
+      {|
+        from x import y
+        def foo(): pass
+        def bar(): pass
+        def _private(): pass
+      |};
+    ]
+    {|
+      from a import *
+    |}
+    {|
+      from a import y, foo, bar
+    |};
+  assert_expanded
+    [
+      "a.py",
+      {|
+        from x import y
+        def foo(): pass
+        def bar(): pass
+        __all__ = ["bar"]
+      |};
+    ]
+    {|
+      from a import *
+    |}
+    {|
+      from a import bar
+    |}
+
+
 let test_expand_returns _ =
   let assert_expand source expected =
     assert_source_equal
@@ -1069,6 +1173,7 @@ let () =
     "qualify">::test_qualify;
     "replace_version_specific_code">::test_replace_version_specific_code;
     "expand_type_checking_imports">::test_expand_type_checking_imports;
+    "expand_wildcard_imports">::test_expand_wildcard_imports;
     "expand_returns">::test_expand_returns;
     "expand_ternary_assigns">::test_expand_ternary;
     "defines">::test_defines;

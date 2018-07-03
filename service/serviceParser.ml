@@ -11,7 +11,6 @@ open Pyre
 open PyreParser
 
 module Scheduler = ServiceScheduler
-module AstSharedMemory = ServiceAstSharedMemory
 
 
 let parse_path_to_source file =
