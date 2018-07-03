@@ -17,13 +17,15 @@ let sanitize_input lines =
   |> String.concat ~sep:"\n"
   |> fun input -> input ^ "\n"
 
-let parse ?path lines =
+let parse ?start_line ?start_column ?path lines =
   let input = sanitize_input lines in
   let buffer =
     let buffer = Lexing.from_string input in
     buffer.Lexing.lex_curr_p <- {
-      buffer.Lexing.lex_curr_p with
       Lexing.pos_fname = Option.value path ~default:"$invalid_path";
+      pos_lnum = Option.value start_line ~default:1;
+      pos_bol = -(Option.value start_column ~default:0);
+      pos_cnum = 0;
     };
     buffer
   in

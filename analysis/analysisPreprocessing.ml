@@ -110,22 +110,28 @@ let expand_format_string ({ Source.path; _ } as source) =
 
       let expression_postorder _ expression =
         match expression with
-        | { Node.location; value = FormatString { FormatString.value; _ } } ->
-            let rec get_matches regexp input_string start_position =
+        | {
+          Node.location = ({ Location.start = { Location.line; column }; _ } as location);
+          value = FormatString { FormatString.value; _ };
+        } ->
+            let rec get_matches regular_expression input_string start_position =
               try
-                let match_start_position = Str.search_forward regexp input_string start_position in
+                let match_start_position =
+                  Str.search_forward regular_expression input_string start_position
+                in
                 let match_string = Str.matched_string input_string in
-                match_string :: get_matches regexp input_string (match_start_position + 1)
+                (match_start_position + column, match_string)
+                :: get_matches regular_expression input_string (match_start_position + 1)
               with Not_found -> []
             in
-            let parse input_string =
+            let parse (start_column, input_string) =
               try
                 let string =
                   (String.length input_string) - 1
                   |> String.slice input_string 1
                   |> fun processed_input -> processed_input ^ "\n"
                 in
-                match Parser.parse [string ^ "\n"] ~path with
+                match Parser.parse [string ^ "\n"] ~start_line:line ~start_column ~path with
                 | [{ Node.value = Expression expression; _ }] -> [expression]
                 | _ -> failwith "Not an expression"
               with

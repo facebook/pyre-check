@@ -9,4 +9,9 @@ exception Error of string
 
 (** Parse python source. ?path specifies a relative path of the python file, if
     any. *)
-val parse : ?path:string -> string list -> Statement.t list
+val parse
+  :  ?start_line: int
+  -> ?start_column: int
+  -> ?path:string
+  -> string list
+  -> Statement.t list

@@ -89,7 +89,37 @@ let test_expand_format_string _ =
         Access.Identifier ~~"__add__";
         Access.Call (+[{ Argument.name = None; value = +Integer 2 }]);
       ]
-    ]
+    ];
+
+  (* Ensure we fix up locations. *)
+  let assert_locations_equal source expected_locations =
+    let construct_location ((start_line, start_column), (stop_line, stop_column)) =
+      {
+        Location.path = "test.py";
+        start = { Location.line = start_line; column = start_column };
+        stop = { Location.line = stop_line; column = stop_column };
+      }
+    in
+    let expected_locations = List.map expected_locations ~f:construct_location in
+    let { Source.statements = preprocessed; _ } =
+      Preprocessing.expand_format_string (parse_untrimmed source)
+    in
+    match preprocessed with
+    | [{ Node.value = Expression {
+        Node.value = FormatString { FormatString.expression_list; _ }; _ };
+        _;
+      }] ->
+        let actual_locations = List.map ~f:Node.location expression_list in
+        assert_equal
+          ~cmp:(fun left right -> List.equal ~equal:Location.equal left right)
+          ~printer:(List.to_string ~f:Location.show)
+          expected_locations
+          actual_locations
+    | _ ->
+        assert_unreached ()
+  in
+  assert_locations_equal "f'foo{1}'" [((1, 3), (1, 4))];
+  assert_locations_equal "f'foo{123}a{456}'" [((1, 3), (1, 6)); ((1, 9), (1, 12))]
 
 
 let test_qualify _ =
