@@ -337,7 +337,9 @@ let rec process_request
 
                 let open LanguageServer.Protocol in
                 let result =
-                  Hashtbl.find state.lookups relative_path
+                  File.Handle.create relative_path
+                  |> Service.AstSharedMemory.get_source
+                  >>| Lookup.create_of_source state.environment
                   >>= Lookup.get_annotation ~position
                   >>| (fun (location, annotation) ->
                       {
