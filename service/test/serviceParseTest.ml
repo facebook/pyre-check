@@ -208,11 +208,80 @@ let test_parse_sources context =
     source_handles
 
 
+let test_register_modules _ =
+  let assert_module_exports raw_source expected_exports =
+    let get_qualifier file =
+      File.handle file
+      >>= AstSharedMemory.get_source
+      >>| (fun { Source.qualifier; _ } -> qualifier)
+    in
+    let file =
+      File.create
+        ~content:(Some (trim_extra_indentation raw_source))
+        (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:"a.py")
+    in
+
+    (* Build environment *)
+    AstSharedMemory.remove_modules (List.filter_map ~f:get_qualifier [file]);
+    Service.Parser.parse_sources_list
+      ~configuration:(Configuration.create ~source_root:(Path.current_working_directory ()) ())
+      ~scheduler:(Scheduler.mock ())
+      ~files:[file]
+    |> ignore;
+
+    (* Check specific testing file *)
+    let qualifier = Option.value_exn (get_qualifier file) in
+    assert_is_some (AstSharedMemory.get_module qualifier);
+
+    assert_equal
+      ~cmp:(List.equal ~equal:Access.equal)
+      ~printer:(fun expression_list ->
+          List.map ~f:(Access.show) expression_list
+          |> String.concat ~sep:", ")
+      (List.map ~f:(Access.create) expected_exports)
+      (Option.value_exn (AstSharedMemory.get_module_exports qualifier))
+  in
+  assert_module_exports
+    {|
+      def foo() -> int:
+        return 1
+    |}
+    ["foo"];
+  assert_module_exports
+    {|
+      from x import y as z
+    |}
+    ["z"];
+  assert_module_exports
+    {|
+      from a import b
+      from x import y as z
+      def fuzz() -> int: pass
+    |}
+    ["b"; "z"; "fuzz"];
+  assert_module_exports
+    {|
+      from a import b
+      from x import y as z
+      def _private_fuzz() -> int: pass
+    |}
+    ["b"; "z"];
+  assert_module_exports
+    {|
+      __all__ = ["b"]
+      from a import b
+      from x import y as z
+      def fuzz() -> int: pass
+    |}
+    ["b"]
+
+
 let () =
   "parser">:::[
     "parse_stubs_modules_list">::test_parse_stubs_modules_list;
     "parse_stubs">::test_parse_stubs;
     "parse_sources">::test_parse_sources;
     "parse_sources_list">::test_parse_sources_list;
+    "register_modules">::test_register_modules;
   ]
   |> run_test_tt_main

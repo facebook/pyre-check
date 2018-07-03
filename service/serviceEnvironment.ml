@@ -200,7 +200,7 @@ let shared_memory_handler
     add_table DependentKeys.write_through (Hashtbl.map ~f:Hash_set.to_list dependent_keys);
 
     Protocols.write_through "Protocols" (Hash_set.to_list protocols);
-    add_table Modules.write_through modules;
+    add_table AstSharedMemory.add_module modules;
     Statistics.performance ~configuration ~name:"Added environment to shared memory" ~timer ()
   in
 
@@ -220,21 +220,23 @@ let shared_memory_handler
 
       let register_module ~qualifier ~local_mode ~path ~stub ~statements =
         let is_registered_empty_stub =
-          Modules.get qualifier
+          AstSharedMemory.get_module qualifier
           >>| Module.empty_stub
           |> Option.value ~default:false
         in
         if not is_registered_empty_stub then
           begin
-            Modules.remove_batch (Modules.KeySet.singleton qualifier);
-            Modules.add qualifier (Module.create ~qualifier ~local_mode ?path ~stub statements)
+            AstSharedMemory.remove_modules [qualifier];
+            AstSharedMemory.add_module
+              qualifier
+              (Module.create ~qualifier ~local_mode ?path ~stub statements)
           end
 
       let is_module access =
-        Modules.mem access
+        AstSharedMemory.in_modules access
 
       let module_definition access =
-        Modules.get access
+        AstSharedMemory.get_module access
 
       let in_class_definition_keys annotation =
         ClassDefinitions.mem annotation
@@ -505,8 +507,7 @@ let shared_memory_handler
 
         DependencyHandler.clear_keys_batch paths;
         List.map ~f:(fun path -> Ast.Source.qualifier ~path) paths
-        |> Modules.KeySet.of_list
-        |> Modules.remove_batch
+        |> AstSharedMemory.remove_modules
 
       let mode path = ErrorModes.get path
     end: Environment.Handler)

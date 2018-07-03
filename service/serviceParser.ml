@@ -38,52 +38,85 @@ let parse_path_to_source file =
       None
 
 
+let preprocess_qualifier ({ Source.path; qualifier; _ } as source) =
+  let qualifier =
+    if String.is_suffix ~suffix:".pyi" path then
+      (* Drop version from qualifier. *)
+      let is_digit qualifier =
+        try
+          qualifier
+          |> Int.of_string
+          |> ignore;
+          true
+        with _ ->
+          false
+      in
+      begin
+        match source.Source.qualifier with
+        | minor :: major :: tail
+          when is_digit (Access.show [minor]) &&
+               is_digit (Access.show [major]) ->
+            tail
+        | major :: tail when is_digit (String.prefix (Access.show [major]) 1) ->
+            tail
+        | qualifier ->
+            qualifier
+      end
+    else
+      qualifier
+  in
+  { source with Source.qualifier }
+
+
+let parse_to_module_parallel ~scheduler ~job ~files =
+  Scheduler.map_reduce
+    scheduler
+    ~init:()
+    ~map:(fun _ files -> job ~files)
+    ~reduce:(fun _ _ -> ())
+    files
+
+
+let parse_to_module_job ~configuration:{ Configuration.verbose; sections; _ } ~files =
+  Log.initialize ~verbose ~sections;
+  let parse file =
+    (file
+     |> parse_path_to_source
+     >>| fun source ->
+     let add_module_from_source
+         { Source.qualifier; path; statements; metadata = { Source.Metadata.local_mode; _ }; _ } =
+       Module.create
+         ~qualifier
+         ~local_mode
+         ~path
+         ~stub:(String.is_suffix path ~suffix:".pyi")
+         statements
+       |> AstSharedMemory.add_module qualifier
+     in
+     source
+     |> preprocess_qualifier
+     |> add_module_from_source)
+    |> ignore; ()
+  in
+  List.iter ~f:parse files
+
+
 let parse_parallel ~scheduler ~job ~files =
   Scheduler.map_reduce
     scheduler
     ~init:[]
     ~map:(fun _ files -> job ~files)
-    ~reduce:(fun new_sources parsed_sources -> parsed_sources @ new_sources)
+    ~reduce:(fun new_handles processed_handles -> processed_handles @ new_handles)
     files
 
 
-let parse_job ~configuration:{ Configuration.verbose; sections; _ } ~files =
-  Log.initialize ~verbose ~sections;
+let parse_job ~files =
   let parse handles file =
     (file
      |> parse_path_to_source
      >>= fun source ->
      Path.relative (File.path file)
      >>| fun relative ->
-     let preprocess_qualifier ({ Source.path; qualifier; _ } as source) =
-       let qualifier =
-         if String.is_suffix ~suffix:".pyi" path then
-           (* Drop version from qualifier. *)
-           let is_digit qualifier =
-             try
-               qualifier
-               |> Int.of_string
-               |> ignore;
-               true
-             with _ ->
-               false
-           in
-           begin
-             match source.Source.qualifier with
-             | minor :: major :: tail
-               when is_digit (Access.show [minor]) &&
-                    is_digit (Access.show [major]) ->
-                 tail
-             | major :: tail when is_digit (String.prefix (Access.show [major]) 1) ->
-                 tail
-             | qualifier ->
-                 qualifier
-           end
-         else
-           qualifier
-       in
-       { source with Source.qualifier }
-     in
      let handle = File.Handle.create relative in
      source
      |> preprocess_qualifier
@@ -99,9 +132,15 @@ let parse_job ~configuration:{ Configuration.verbose; sections; _ } ~files =
 let parse_sources_list ~configuration ~scheduler ~files =
   let handles =
     if Scheduler.is_parallel scheduler then
-      parse_parallel ~scheduler ~job:(parse_job ~configuration) ~files
+      begin
+        parse_to_module_parallel ~scheduler ~job:(parse_to_module_job ~configuration) ~files;
+        parse_parallel ~scheduler ~job:parse_job ~files
+      end
     else
-      parse_job ~configuration ~files
+      begin
+        parse_to_module_job ~configuration ~files;
+        parse_job ~files
+      end
   in
   handles
 

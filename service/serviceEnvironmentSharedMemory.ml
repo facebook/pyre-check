@@ -74,12 +74,6 @@ module ProtocolValue = struct
   let description = "Protocols"
 end
 
-module ModuleValue = struct
-  type t = Module.t
-  let prefix = Prefix.make ()
-  let description = "Modules"
-end
-
 module DependentKeyValue = struct
   type t = string list
   let prefix = Prefix.make ()
@@ -158,8 +152,6 @@ module Globals = SharedMemory.WithCache (AccessKey) (GlobalValue)
 module Dependents = SharedMemory.WithCache (StringKey) (DependentValue)
 
 module Protocols = SharedMemory.WithCache (StringKey) (ProtocolValue)
-
-module Modules = SharedMemory.WithCache (AccessKey) (ModuleValue)
 
 (** Keys *)
 module FunctionKeys = SharedMemory.WithCache (StringKey) (FunctionKeyValue)

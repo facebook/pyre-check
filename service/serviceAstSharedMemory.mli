@@ -7,7 +7,12 @@ open Ast
 
 
 val get_source: File.Handle.t -> Source.t option
-
 val add_source: File.Handle.t -> Source.t -> unit
 
 val remove_paths: File.Handle.t list -> unit
+
+val add_module: Expression.Access.t -> Module.t -> unit
+val remove_modules: Expression.Access.t list -> unit
+val get_module: Expression.Access.t -> Module.t option
+val get_module_exports: Expression.Access.t -> (Expression.Access.t list) option
+val in_modules: Expression.Access.t -> bool

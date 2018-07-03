@@ -6,6 +6,9 @@
 open Core
 
 open Ast
+open Pyre
+
+module SharedMemory = Hack_parallel.Std.SharedMem
 
 
 module HandleKey = struct
@@ -15,26 +18,66 @@ module HandleKey = struct
 end
 
 
-include SharedMem.NoCache
-    (HandleKey)
-    (struct
-      type t = Source.t
-      let prefix = Prefix.make ()
-      let description = "AST"
-    end)
+module SourceValue = struct
+  type t = Source.t
+  let prefix = Prefix.make ()
+  let description = "AST"
+end
+
+
+module Sources = SharedMemory.NoCache (HandleKey) (SourceValue)
 
 
 let get_source path =
-  get path
+  Sources.get path
 
 
 (* The sources must be removed by remove_paths beforehand. *)
 let add_source path source =
-  add path source
+  Sources.add path source
 
 
 (* The way hack_parallel works, only the master thread is allowed to remove items from shared
    memory. *)
 let remove_paths paths =
-  let paths = List.filter ~f:mem paths in
-  remove_batch (KeySet.of_list paths)
+  let paths = List.filter ~f:Sources.mem paths in
+  Sources.remove_batch (Sources.KeySet.of_list paths)
+
+
+module AccessKey = struct
+  type t = Expression.Access.t
+  let to_string = Expression.Access.show
+  let compare = Expression.Access.compare
+end
+
+
+module ModuleValue = struct
+  type t = Module.t
+  let prefix = Prefix.make ()
+  let description = "Module"
+end
+
+
+module Modules = SharedMemory.WithCache (AccessKey) (ModuleValue)
+
+
+let add_module access ast_module =
+  Modules.add access ast_module
+
+
+let remove_modules accesses =
+  let accesses = List.filter ~f:Modules.mem accesses in
+  Modules.remove_batch (Modules.KeySet.of_list accesses)
+
+
+let get_module access =
+  Modules.get access
+
+
+let get_module_exports access =
+  Modules.get access
+  >>| Module.wildcard_exports
+
+
+let in_modules access =
+  Modules.mem access
