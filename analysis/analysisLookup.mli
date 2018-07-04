@@ -11,14 +11,10 @@ module Type = AnalysisType
 
 type t = Type.t Location.Table.t
 
-val create: unit -> t
-
 val create_of_source:
   (module Environment.Handler) ->
   Source.t ->
   Type.t Location.Table.t
-
-val update: t -> location: Location.t -> annotation: Type.t -> unit
 
 val get_annotation: t -> position: Location.position -> (Location.t * Type.t) option
 

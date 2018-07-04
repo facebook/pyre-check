@@ -19,10 +19,6 @@ module TypeResolutionSharedMemory = AnalysisTypeResolutionSharedMemory
 type t = Type.t Location.Table.t
 
 
-let create () =
-  Location.Table.create ()
-
-
 (** The result state of this visitor is ignored. We need two read-only
     pieces of information to build the location table: the types resolved for
     this statement, and a reference to the (mutable) location table to
@@ -125,12 +121,6 @@ let create_of_source environment source =
   Preprocessing.defines source
   |> List.iter ~f:walk_defines;
   location_lookup
-
-
-let update lookup ~location ~annotation =
-  (* Do not register `unknown` annotations, as they are not useful. *)
-  if not (Type.is_unknown annotation) then
-    Hashtbl.set lookup ~key:location ~data:annotation
 
 
 let get_annotation lookup ~position =
