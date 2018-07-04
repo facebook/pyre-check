@@ -9,9 +9,11 @@ open Core
 type t =
   | LocalReturn  (* Special marker to infer function in-out behavior *)
   | RemoteCodeExecution
+  | TestSink
 [@@deriving compare, sexp, show, hash]
 
 
 let to_string = function
   | LocalReturn -> "LocalReturn"
   | RemoteCodeExecution -> "RCE"
+  | TestSink -> "test sink"

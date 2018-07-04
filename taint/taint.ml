@@ -5,6 +5,7 @@
 
 module AccessPath = TaintAccessPath
 module AccessPathTree = TaintAccessPathTree
+module BackwardAnalysis = TaintBackwardAnalysis
 module Domains = TaintDomains
 module ForwardAnalysis = TaintForwardAnalysis
 module Sinks = TaintSinks

@@ -20,10 +20,25 @@
     pyrelib.test
     pyrelib.taint))))
 
+(executable
+ ((name taintBackwardAnalysisTest)
+  (modules (taintBackwardAnalysisTest))
+  (libraries
+   (oUnit
+    pyrelib.ast
+    pyrelib.analysis
+    pyrelib.test
+    pyrelib.taint))))
+
 
 (alias
  ((name runtest)
   (deps (taintAccessPathTest.exe))
+  (action (run ${<} -runner sequential))))
+
+(alias
+ ((name runtest)
+  (deps (taintBackwardAnalysisTest.exe))
   (action (run ${<} -runner sequential))))
 
 (alias
