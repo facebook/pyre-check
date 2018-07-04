@@ -196,19 +196,13 @@ let rec process_request
     |> List.map ~f:(fun { Node.value = { Statement.Define.name; _ }; _ } -> name)
     |> TypeResolutionSharedMemory.remove;
 
-    let new_errors, lookups =
-      let errors, lookups, _ =
-        Service.TypeCheck.analyze_sources
-          scheduler
-          configuration
-          state.environment
-          new_source_handles
-      in
-      errors, lookups
+    let new_errors, _ =
+      Service.TypeCheck.analyze_sources
+        scheduler
+        configuration
+        state.environment
+        new_source_handles
     in
-    Map.iteri
-      ~f:(fun ~key:name ~data:map -> Hashtbl.set ~key:name ~data:map state.ServerState.lookups)
-      lookups;
     (* Kill all previous errors for new files we just checked *)
     List.iter ~f:(Hashtbl.remove state.errors) new_source_handles;
     (* Associate the new errors with new files *)

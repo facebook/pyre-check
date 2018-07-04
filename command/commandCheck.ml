@@ -19,7 +19,6 @@ type result = {
   handles: File.Handle.t list;
   environment: (module Environment.Handler);
   errors: Error.t list;
-  lookups: Lookup.t String.Map.t;
 }
 
 
@@ -125,7 +124,7 @@ let check
     handler ~configuration ~stubs ~sources
   in
 
-  let errors, lookups, { TypeCheck.Coverage.full; partial; untyped; ignore; crashes } =
+  let errors, { TypeCheck.Coverage.full; partial; untyped; ignore; crashes } =
     Service.TypeCheck.analyze_sources scheduler configuration environment sources
   in
   (* Log coverage results *)
@@ -161,7 +160,7 @@ let check
     | None -> Scheduler.destroy scheduler
     | Some _ -> ()
   end;
-  { handles = stubs @ sources; environment; errors; lookups }
+  { handles = stubs @ sources; environment; errors }
 
 
 (** run_command prints out the errors, for a Check run *)

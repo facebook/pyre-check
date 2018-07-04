@@ -14,7 +14,6 @@ type result = {
   handles: File.Handle.t list;
   environment: (module Environment.Handler);
   errors: Error.t list;
-  lookups: Lookup.t String.Map.t;
 }
 
 val check: Configuration.t -> Scheduler.t option -> unit -> result

@@ -65,7 +65,7 @@ let type_check_sources_list_test context =
           ~project_root:(Path.create_absolute project_root)
           ()
       in
-      let errors, _, _ =
+      let errors, _ =
         Service.TypeCheck.analyze_sources
           scheduler
           configuration

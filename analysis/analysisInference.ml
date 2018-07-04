@@ -15,7 +15,6 @@ module Annotation = AnalysisAnnotation
 module Cfg = AnalysisCfg
 module Environment = AnalysisEnvironment
 module Error = AnalysisError
-module Lookup = AnalysisLookup
 module Preprocessing = AnalysisPreprocessing
 module Type = AnalysisType
 module TypeOrder = AnalysisTypeOrder
@@ -337,8 +336,6 @@ let infer configuration environment ?mode_override ({ Source.path; _ } as source
 
   let dequalify_map = Preprocessing.dequalify_map source in
 
-  let lookup = Lookup.create () in
-
   let check ({ Node.location; value = { Define.name; _ } as define } as define_node) =
     Log.log ~section:`Check "Checking %a" Access.pp name;
     let dump = Define.dump define in
@@ -362,7 +359,6 @@ let infer configuration environment ?mode_override ({ Source.path; _ } as source
       let initial_forward =
         State.initial
           ~configuration
-          ~lookup
           ~resolution
           { Node.location; value = define }
       in
@@ -564,7 +560,6 @@ let infer configuration environment ?mode_override ({ Source.path; _ } as source
       |> List.sort ~compare:Error.compare
       |> fun errors -> {
         TypeCheck.Result.errors;
-        lookup = Some lookup;
         coverage = Coverage.create ();
       }
   in
@@ -590,6 +585,5 @@ let infer configuration environment ?mode_override ({ Source.path; _ } as source
 
     {
       TypeCheck.Result.errors;
-      lookup = Some lookup;
       coverage;
     }

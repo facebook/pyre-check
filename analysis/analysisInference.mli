@@ -8,7 +8,6 @@ open Ast
 module Annotation = AnalysisAnnotation
 module Environment = AnalysisEnvironment
 module Error = AnalysisError
-module Lookup = AnalysisLookup
 module Coverage = AnalysisCoverage
 module Cfg = AnalysisCfg
 module TypeCheck = AnalysisTypeCheck

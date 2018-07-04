@@ -15,7 +15,6 @@ module Annotation = AnalysisAnnotation
 module Cfg = AnalysisCfg
 module Environment = AnalysisEnvironment
 module Error = AnalysisError
-module Lookup = AnalysisLookup
 module Preprocessing = AnalysisPreprocessing
 module Refinement = AnalysisRefinement
 module Resolution = AnalysisResolution
@@ -32,7 +31,6 @@ module State = struct
     resolution: Resolution.t;
     errors: Error.t Location.Map.t;
     define: Define.t Node.t;
-    lookup: Lookup.t option;
     nested_defines: nested_define Location.Map.t;
     bottom: bool;
     resolution_fixpoint: (Annotation.t Access.Map.t) Int.Map.t
@@ -122,7 +120,6 @@ module State = struct
       ?(configuration = Configuration.create ())
       ~resolution
       ~define
-      ?lookup
       ?(resolution_fixpoint = Int.Map.empty)
       () =
     {
@@ -130,7 +127,6 @@ module State = struct
       resolution;
       errors = Location.Map.empty;
       define;
-      lookup;
       nested_defines = Location.Map.empty;
       bottom = false;
       resolution_fixpoint;
@@ -243,7 +239,6 @@ module State = struct
 
   let initial
       ?(configuration = Configuration.create ())
-      ?lookup
       ~resolution
       ({
         Node.location;
@@ -251,7 +246,7 @@ module State = struct
       } as define_node) =
     let resolution = Resolution.with_parent resolution ~parent in
     let { resolution; errors; _ } as initial =
-      create ~configuration ~resolution ~define:define_node ?lookup ()
+      create ~configuration ~resolution ~define:define_node ()
     in
     (* Check parameters. *)
     let annotations, errors =
@@ -608,7 +603,6 @@ module State = struct
         resolution;
         errors;
         define = ({ Node.value = { Define.async; _ } as define; _ } as define_node);
-        lookup;
         nested_defines;
         _;
       } as state)
@@ -1703,11 +1697,10 @@ module State = struct
           false
     in
 
-    let state = { state with resolution; errors; lookup; bottom = terminates_control_flow } in
+    let state = { state with resolution; errors; bottom = terminates_control_flow } in
 
     let nested_defines =
-      let schedule ~define = Map.set nested_defines ~key:location ~data:define
-      in
+      let schedule ~define = Map.set nested_defines ~key:location ~data:define in
       match Node.value statement with
       | Class { Class.name; body; _ } ->
           schedule ~define:(Define.create_class_toplevel ~qualifier:name ~statements:body)
@@ -1745,7 +1738,6 @@ module Fixpoint = AnalysisFixpoint.Make(State)
 module Result = struct
   type t = {
     errors: Error.t list;
-    lookup: Lookup.t option;
     coverage: Coverage.t;
   }
 end
@@ -1775,7 +1767,6 @@ let check
   Log.debug "Checking %s..." path;
 
   let resolution = Environment.resolution environment () in
-  let lookup = Lookup.create () in
 
   let check
       ~define:({ Node.location; value = { Define.name; parent; _ } as define } as define_node)
@@ -1917,7 +1908,6 @@ let check
           let initial =
             State.initial
               ~configuration
-              ~lookup
               ~resolution
               define
           in
@@ -1962,4 +1952,4 @@ let check
   in
   Coverage.log coverage ~configuration ~total_errors:(List.length errors) ~path;
 
-  { Result.errors; lookup = Some lookup; coverage }
+  { Result.errors; coverage }

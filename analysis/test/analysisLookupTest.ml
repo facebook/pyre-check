@@ -46,39 +46,6 @@ let test_lookup _ =
   generate_lookup source |> ignore
 
 
-let test_lookup_across_files _ =
-  let use_source =
-    {|
-      from define import zoo
-      def boo(x):
-          return zoo(x)
-    |}
-  in
-  let define_source =
-    {|
-      def zoo(x):
-          return 1
-    |}
-  in
-  let environment = Environment.Builder.create ~configuration () in
-  Service.Environment.populate
-    ~configuration
-    (Environment.handler ~configuration environment) [
-    parse ~qualifier:(Source.qualifier ~path:"use.py") ~path:"use.py" use_source;
-    parse ~qualifier:(Source.qualifier ~path:"define.py") ~path:"define.py" define_source;
-  ];
-  let parsed = parse use_source in
-  let configuration = Configuration.create ~debug:true ~infer:false () in
-  let environment = Environment.handler ~configuration environment in
-  let { TypeCheck.Result.lookup; _ } =
-    TypeCheck.check
-      configuration
-      environment
-      parsed
-  in
-  assert_is_some lookup
-
-
 let assert_annotation ~lookup ~position ~annotation =
   assert_equal
     ~printer:(Option.value ~default:"(none)")
@@ -284,7 +251,6 @@ let test_lookup_identifier_accesses _ =
 let () =
   "lookup">:::[
     "lookup">::test_lookup;
-    "lookup_across_files">::test_lookup_across_files;
     "lookup_call_arguments">::test_lookup_call_arguments;
     "lookup_pick_narrowest">::test_lookup_pick_narrowest;
     "lookup_class_attributes">::test_lookup_class_attributes;

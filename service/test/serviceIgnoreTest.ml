@@ -63,7 +63,7 @@ let assert_errors
       configuration
       environment
       handles
-    |> fun (errors, _, _) ->
+    |> fun (errors, _) ->
     List.map ~f:(fun error -> Error.description error ~detailed:show_error_traces) errors
   in
   let description_list_to_string descriptions =

@@ -37,7 +37,7 @@ let initialize
   in
   SharedMem.collect `aggressive;
   let timer = Timer.start () in
-  let { Check.handles; environment; errors = initial_errors; lookups = initial_lookups} =
+  let { Check.handles; environment; errors = initial_errors } =
     Check.check configuration (Some scheduler) () in
   Statistics.performance ~name:"initialization" ~timer ~configuration ~normals:[] ();
   Log.log ~section:`Server "Server initialized";
@@ -54,13 +54,6 @@ let initialize
             ~data:error);
     errors
   in
-  let lookups =
-    let lookups = String.Table.create () in
-    Map.iteri
-      initial_lookups
-      ~f:(fun ~key ~data -> Hashtbl.set lookups ~key ~data);
-    lookups
-  in
   {
     deferred_requests = [];
     environment;
@@ -72,7 +65,7 @@ let initialize
     last_request_time = Unix.time ();
     last_integrity_check = Unix.time ();
     connections;
-    lookups;
+    lookups = String.Table.create ();
   }
 
 
