@@ -215,29 +215,55 @@ let statements { statements; _ } =
 
 
 let qualifier ~path =
-  let reversed_elements =
-    Filename.parts path
-    |> List.tl_exn (* Strip current directory. *)
-    |> List.rev in
-  let last_without_suffix =
-    let last = List.hd_exn reversed_elements in
-    match String.rindex last '.' with
-    | Some index ->
-        String.slice last 0 index
-    | _ ->
-        last in
-  let strip = function
-    | "builtins" :: tail ->
-        tail
-    | "__init__" :: tail ->
-        tail
-    | elements ->
-        elements in
-  (last_without_suffix :: (List.tl_exn reversed_elements))
-  |> strip
-  |> List.rev_map
-    ~f:Access.create
-  |> List.concat
+  let qualifier =
+    let reversed_elements =
+      Filename.parts path
+      |> List.tl_exn (* Strip current directory. *)
+      |> List.rev in
+    let last_without_suffix =
+      let last = List.hd_exn reversed_elements in
+      match String.rindex last '.' with
+      | Some index ->
+          String.slice last 0 index
+      | _ ->
+          last in
+    let strip = function
+      | "builtins" :: tail ->
+          tail
+      | "__init__" :: tail ->
+          tail
+      | elements ->
+          elements in
+    (last_without_suffix :: (List.tl_exn reversed_elements))
+    |> strip
+    |> List.rev_map
+      ~f:Access.create
+    |> List.concat
+  in
+  if String.is_suffix ~suffix:".pyi" path then
+    (* Drop version from qualifier. *)
+    let is_digit qualifier =
+      try
+        qualifier
+        |> Int.of_string
+        |> ignore;
+        true
+      with _ ->
+        false
+    in
+    begin
+      match qualifier with
+      | minor :: major :: tail
+        when is_digit (Access.show [minor]) &&
+             is_digit (Access.show [major]) ->
+          tail
+      | major :: tail when is_digit (String.prefix (Access.show [major]) 1) ->
+          tail
+      | qualifier ->
+          qualifier
+    end
+  else
+    qualifier
 
 
 let expand_relative_import { qualifier; path; _ } ~from =

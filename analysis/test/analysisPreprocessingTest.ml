@@ -807,17 +807,12 @@ let test_expand_wildcard_imports _ =
     let files = List.map ~f:create_file environment_sources in
     let file_to_check = create_file ("test.py", check_source) in
     clear_memory (file_to_check :: files);
-    Service.Parser.parse_sources_list
-      ~configuration:(Configuration.create ~source_root:(Path.current_working_directory ()) ())
-      ~scheduler:(Scheduler.mock ())
-      ~files
-    |> ignore;
     let file_to_check_handle =
       Service.Parser.parse_sources_list
         ~configuration:(Configuration.create ~source_root:(Path.current_working_directory ()) ())
         ~scheduler:(Scheduler.mock ())
-        ~files:[file_to_check]
-      |> List.hd_exn
+        ~files:(file_to_check :: files)
+      |> List.find_exn ~f:(fun handle -> File.Handle.show handle = "test.py")
     in
     assert_equal
       ~cmp:(List.equal ~equal:Statement.equal)

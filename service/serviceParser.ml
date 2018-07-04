@@ -6,7 +6,6 @@
 open Core
 
 open Ast
-open Expression
 open Pyre
 open PyreParser
 
@@ -37,36 +36,6 @@ let parse_path_to_source file =
       None
 
 
-let preprocess_qualifier ({ Source.path; qualifier; _ } as source) =
-  let qualifier =
-    if String.is_suffix ~suffix:".pyi" path then
-      (* Drop version from qualifier. *)
-      let is_digit qualifier =
-        try
-          qualifier
-          |> Int.of_string
-          |> ignore;
-          true
-        with _ ->
-          false
-      in
-      begin
-        match source.Source.qualifier with
-        | minor :: major :: tail
-          when is_digit (Access.show [minor]) &&
-               is_digit (Access.show [major]) ->
-            tail
-        | major :: tail when is_digit (String.prefix (Access.show [major]) 1) ->
-            tail
-        | qualifier ->
-            qualifier
-      end
-    else
-      qualifier
-  in
-  { source with Source.qualifier }
-
-
 let parse_to_module_parallel ~scheduler ~job ~files =
   Scheduler.map_reduce
     scheduler
@@ -93,7 +62,6 @@ let parse_to_module_job ~configuration:{ Configuration.verbose; sections; _ } ~f
        |> AstSharedMemory.add_module qualifier
      in
      source
-     |> preprocess_qualifier
      |> add_module_from_source)
     |> ignore; ()
   in
@@ -118,7 +86,6 @@ let parse_job ~files =
      >>| fun relative ->
      let handle = File.Handle.create relative in
      source
-     |> preprocess_qualifier
      |> Analysis.Preprocessing.preprocess
      |> Plugin.apply_to_ast
      |> AstSharedMemory.add_source handle;
@@ -133,13 +100,22 @@ let parse_sources_list ~configuration ~scheduler ~files =
     if Scheduler.is_parallel scheduler then
       begin
         parse_to_module_parallel ~scheduler ~job:(parse_to_module_job ~configuration) ~files;
-        parse_parallel ~scheduler ~job:parse_job ~files
+        parse_parallel ~scheduler ~job:parse_job ~files;
       end
     else
       begin
         parse_to_module_job ~configuration ~files;
         parse_job ~files
       end
+  in
+  let () =
+    let get_qualifier file =
+      File.path file
+      |> Path.relative
+      >>| (fun path -> Source.qualifier ~path)
+    in
+    List.filter_map files ~f:get_qualifier
+    |> AstSharedMemory.remove_modules
   in
   handles
 

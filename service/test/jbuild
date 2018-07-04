@@ -23,6 +23,7 @@
   (modules (serviceParserTest))
   (libraries
    (oUnit
+    pyrelib.analysis
     pyrelib.test
     pyrelib.service))))
 

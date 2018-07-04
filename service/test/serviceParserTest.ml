@@ -223,14 +223,20 @@ let test_register_modules _ =
 
     (* Build environment *)
     AstSharedMemory.remove_modules (List.filter_map ~f:get_qualifier [file]);
-    Service.Parser.parse_sources_list
-      ~configuration:(Configuration.create ~source_root:(Path.current_working_directory ()) ())
-      ~scheduler:(Scheduler.mock ())
-      ~files:[file]
-    |> ignore;
-
+    AstSharedMemory.remove_paths (List.filter_map ~f:(fun file -> File.handle file) [file]);
+    let configuration = Configuration.create ~source_root:(Path.current_working_directory ()) () in
+    let sources =
+      Service.Parser.parse_sources_list
+        ~configuration
+        ~scheduler:(Scheduler.mock ())
+        ~files:[file]
+    in
     (* Check specific testing file *)
     let qualifier = Option.value_exn (get_qualifier file) in
+    (* The modules get removed after preprocessing. *)
+    assert_is_none (AstSharedMemory.get_module qualifier);
+
+    Service.Environment.shared_memory_handler ~configuration ~stubs:[] ~sources |> ignore;
     assert_is_some (AstSharedMemory.get_module qualifier);
 
     assert_equal
@@ -238,7 +244,7 @@ let test_register_modules _ =
       ~printer:(fun expression_list ->
           List.map ~f:(Access.show) expression_list
           |> String.concat ~sep:", ")
-      (List.map ~f:(Access.create) expected_exports)
+      (List.map ~f:Access.create expected_exports)
       (Option.value_exn (AstSharedMemory.get_module_exports qualifier))
   in
   assert_module_exports
