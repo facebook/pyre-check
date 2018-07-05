@@ -14,7 +14,7 @@ open Test
 
 let test_normalize_access _ =
   let assert_normalized expression expected =
-    let { Node.value = Access access; _ } = parse_single_expression expression in
+    let access = Access.create expression in
     let normalized = AccessPath.normalize_access access in
     assert_equal ~printer:(AccessPath.show_normalized_expression) normalized expected
   in
