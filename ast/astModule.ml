@@ -138,7 +138,7 @@ let create ~qualifier ~local_mode ?path ~stub statements =
           value = Some { Node.value = (Expression.List names); _ };
           _;
         }
-        when Access.sanitized target = Access.create "__all__" ->
+        when Access.equal (Access.sanitized target) (Access.create "__all__") ->
           let to_access = function
             | { Node.value = Expression.String name; _ } -> Some (Access.create name)
             | _ -> None
