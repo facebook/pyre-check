@@ -5,7 +5,8 @@
 
 
 type section = [
-    `Check
+  | `CallGraph
+  | `Check
   | `Debug
   | `Dependencies
   | `Dotty

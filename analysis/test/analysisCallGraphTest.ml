@@ -252,11 +252,124 @@ let test_method_overrides _ =
       ]
 
 
+let test_strongly_connected_components _ =
+  let assert_strongly_connected_components source ~qualifier ~expected =
+    let qualifier = Access.create qualifier in
+    let expected =
+      let create_access = List.map ~f:(fun access -> Access.create access) in
+      List.map expected ~f:create_access
+    in
+    let source = parse_source ~qualifier source in
+    let configuration =
+      Configuration.create
+        ~debug:true
+        ~strict:false
+        ~declare:false
+        ~infer:false
+        ()
+    in
+    let environment = TestSetup.environment ~configuration () in
+    Service.Environment.populate ~configuration environment [source];
+    check configuration environment source |> ignore;
+    let partitions =
+      let edges = CallGraph.of_source environment source in
+      CallGraph.partition ~edges
+    in
+    let printer partitions = Format.asprintf "%a" CallGraph.pp_partitions partitions in
+    assert_equal ~printer partitions expected
+  in
+
+  assert_strongly_connected_components
+    {|
+    class Foo:
+      def __init__(self):
+        pass
+
+      def c1(self):
+        return self.c1()
+
+      def c2(self):
+        return self.c1()
+    |}
+    ~qualifier:"s0"
+    ~expected:
+      [
+        ["s0.Foo.c1"];
+        ["s0.Foo.c2"];
+      ];
+
+  assert_strongly_connected_components
+    {|
+    class Foo:
+      def __init__(self):
+        pass
+
+      def c1(self):
+        return self.c2()
+
+      def c2(self):
+        return self.c1()
+
+      def c3(self):
+        return self.c4()
+
+      def c4(self):
+        return self.c3()
+
+      def c5(self):
+        return self.c5()
+    |}
+    ~qualifier:"s1"
+    ~expected:
+      [
+        ["s1.Foo.c3"; "s1.Foo.c4"];
+        ["s1.Foo.c2"; "s1.Foo.c1"];
+        ["s1.Foo.c5"];
+      ];
+
+  assert_strongly_connected_components
+    {|
+    class Foo:
+      def __init__(self):
+        pass
+
+      def c1(self):
+        return self.c2()
+
+      def c2(self):
+        return self.c1()
+
+      def c3(self):
+        b = Bar()
+        return b.c2()
+
+    class Bar:
+      def __init__(self):
+        pass
+
+      def c1(self):
+        f = Foo()
+        return f.c1()
+
+      def c2(self):
+        f = Foo()
+        return f.c3()
+    |}
+    ~qualifier:"s2"
+    ~expected:
+      [
+        ["s2.Foo.c1"; "s2.Foo.c2"];
+        ["s2.Bar.c1"];
+        ["s2.Bar.c2"; "s2.Foo.c3"];
+      ]
+
+
 let () =
   Parallel.Daemon.check_entry_point ();
   "callGraph">:::[
     "type_collection">::test_type_collection;
     "build">::test_construction;
     "overrides">::test_method_overrides;
+    "strongly_connected_components">::test_strongly_connected_components;
   ]
   |> run_test_tt_main

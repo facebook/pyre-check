@@ -62,3 +62,62 @@ let of_source environment source =
   in
   Preprocessing.defines source
   |> List.fold ~init:Access.Map.empty ~f:fold_defines
+
+
+(* Returns forest of nodes in reverse finish time order. *)
+let depth_first_search edges nodes =
+  let visited = Hashtbl.Poly.create ~size:(2 * List.length nodes) () in
+  let rec visit accumulator node =
+    if Hashtbl.mem visited node then
+      accumulator
+    else
+      begin
+        Hashtbl.add_exn visited ~key:node ~data:();
+        let successor =
+          Hashtbl.find edges node
+          |> Option.value ~default:[]
+        in
+        node :: (List.fold successor ~init:accumulator ~f:visit)
+      end
+  in
+  let partition accumulator node =
+    match visit [] node with
+    | [] -> accumulator
+    | tree -> tree :: accumulator
+  in
+  List.fold ~init:[] ~f:partition nodes
+
+
+let reverse_edges edges =
+  let reverse_edges = Access.Table.create () in
+  let walk_reverse_edges ~key:caller ~data:callees =
+    let walk_callees callee =
+      match Access.Table.find reverse_edges callee with
+      | None -> Access.Table.add_exn reverse_edges ~key:callee ~data:[caller]
+      | Some callers -> Access.Table.set reverse_edges ~key:callee ~data:(caller :: callers)
+    in
+    List.iter callees ~f:walk_callees
+  in
+  Access.Table.iteri edges ~f:walk_reverse_edges;
+  reverse_edges
+
+
+let pp_partitions formatter partitions =
+  let print_partition partitions =
+    let print_partition index accumulator nodes =
+      let nodes_to_string = Sexp.to_string (sexp_of_list Access.sexp_of_t nodes) in
+      let partition = Format.sprintf "Partition %d: %s" index nodes_to_string in
+      accumulator ^ "\n" ^ partition
+    in
+    List.foldi partitions ~init:"" ~f:print_partition
+  in
+  Format.fprintf formatter "%s" (print_partition partitions)
+
+
+let partition ~edges =
+  let edges = Access.Map.to_alist edges |> Access.Table.of_alist_exn in
+  let reverse_edges = reverse_edges edges in
+  let result = depth_first_search edges (Access.Table.keys edges) in
+  let partitions = depth_first_search reverse_edges (List.concat result) in
+  Log.log ~section:`CallGraph "%a" pp_partitions partitions;
+  partitions
