@@ -95,7 +95,15 @@ def _normalize(targets: List[str], use_cache: bool = False) -> List[str]:
             .strip()
             .split("\n")
         )
-        LOG.info("Found %d buck targets.", len(targets))
+        targets = [target for target in targets if target != ""]
+        if len(targets) == 0:
+            LOG.warning(
+                "Provided TARGETS files do not contain any binary or unittest targets."
+            )
+            return []
+        LOG.info(
+            "Found %d buck target%s.", len(targets), "s" if len(targets) > 1 else ""
+        )
         command = ["buck", "targets", "--show-output"] + targets
         # buck targets --show-output displays a line for each parsed target, even if no
         # corresponding directory is found in the filter.
