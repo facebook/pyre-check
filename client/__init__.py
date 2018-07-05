@@ -109,7 +109,11 @@ def resolve_source_directories(
     )
 
     if len(source_directories) == 0:
-        raise EnvironmentException("No targets or link trees to analyze.")
+        raise EnvironmentException(
+            "No targets or link trees to analyze.\n"
+            "You can use `pyre init` to set up a local configuration, "
+            "or `pyre --help` to check valid flags."
+        )
 
     # Translate link trees if we switched directories earlier.
     current_directory = os.getcwd()

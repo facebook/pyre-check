@@ -211,14 +211,8 @@ class Configuration:
                         )
                     )
                 else:
-                    LOG.warning(
-                        "Pyre was run from local directory `{}` with no "
-                        "`{}` file.".format(
-                            path_from_root, CONFIGURATION_FILE + ".local"
-                        )
-                    )
-                    LOG.warning(
-                        "Configuration will be read only from the project root: "
+                    LOG.info(
+                        "Configuration will be read from the project root: "
                         "`{}`".format(os.getcwd())
                     )
         else:
@@ -301,10 +295,6 @@ class Configuration:
             self._typeshed = self._typeshed.replace("%V", version_hash)
 
     def _apply_defaults(self) -> None:
-        if not self.source_directories:
-            self.source_directories.append(".")
-            LOG.info("No source directory specified, using current directory")
-
         overriding_binary = os.getenv("PYRE_BINARY")
         if overriding_binary:
             self._binary = overriding_binary
