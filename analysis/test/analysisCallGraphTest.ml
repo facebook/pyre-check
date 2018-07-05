@@ -59,7 +59,7 @@ let assert_call_graph source ~expected =
   let environment = TestSetup.environment ~configuration () in
   Service.Environment.populate ~configuration environment [source];
   check configuration environment source |> ignore;
-  let call_graph = Service.Analysis.call_graph_of_source environment source in
+  let call_graph = Analysis.CallGraph.of_source environment source in
   let result =
     let fold_call_graph ~key:caller ~data:callees result =
       let callee = List.hd_exn callees in

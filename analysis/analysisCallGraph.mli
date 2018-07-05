@@ -4,18 +4,10 @@
     LICENSE file in the root directory of this source tree. *)
 
 open Ast
-open Analysis
 open Expression
 
 
-val overrides_of_source:
-  (module Environment.Handler)
+val of_source:
+  (module AnalysisEnvironment.Handler)
   -> Source.t
   -> (Access.t list) Access.Map.t
-
-val analyze
-  :  scheduler: ServiceScheduler.t
-  -> configuration: Configuration.t
-  -> environment: (module Environment.Handler)
-  -> handles: File.Handle.t list
-  -> unit
