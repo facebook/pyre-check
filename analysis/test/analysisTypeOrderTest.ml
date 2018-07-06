@@ -204,6 +204,17 @@ let test_default _ =
   assert_true (less_or_equal order ~left:Type.float ~right:Type.complex);
   assert_false (less_or_equal order ~left:Type.complex ~right:Type.float);
 
+  assert_true (less_or_equal order ~left:Type.integer ~right:(Type.primitive "numbers.Integral"));
+  assert_true (less_or_equal order ~left:Type.integer ~right:(Type.primitive "numbers.Rational"));
+  assert_true (less_or_equal order ~left:Type.integer ~right:(Type.primitive "numbers.Number"));
+  assert_true (less_or_equal order ~left:Type.float ~right:(Type.primitive "numbers.Real"));
+  assert_true (less_or_equal order ~left:Type.float ~right:(Type.primitive "numbers.Rational"));
+  assert_true (less_or_equal order ~left:Type.float ~right:(Type.primitive "numbers.Complex"));
+  assert_true (less_or_equal order ~left:Type.float ~right:(Type.primitive "numbers.Number"));
+  assert_false (less_or_equal order ~left:Type.float ~right:(Type.primitive "numbers.Integral"));
+  assert_true (less_or_equal order ~left:Type.complex ~right:(Type.primitive "numbers.Complex"));
+  assert_false (less_or_equal order ~left:Type.complex ~right:(Type.primitive "numbers.Real"));
+
   (* Test join. *)
   assert_equal (join order Type.integer Type.integer) Type.integer;
   assert_equal (join order Type.float Type.integer) Type.float;

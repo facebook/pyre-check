@@ -1447,5 +1447,22 @@ module Builder = struct
       ~predecessor:Type.complex
       ~successor:Type.Object;
 
+    (* Abstract numerical hierarchy. *)
+    let integral = Type.primitive "numbers.Integral" in
+    insert handler integral;
+    connect ~add_backedge:true handler ~configuration ~predecessor:Type.integer ~successor:integral;
+    let rational = Type.primitive "numbers.Rational" in
+    insert handler rational;
+    connect ~add_backedge:true handler ~configuration ~predecessor:Type.float ~successor:rational;
+    let real = Type.primitive "numbers.Real" in
+    insert handler real;
+    connect ~add_backedge:true handler ~configuration ~predecessor:Type.float ~successor:real;
+    let complex = Type.primitive "numbers.Complex" in
+    insert handler complex;
+    connect ~add_backedge:true handler ~configuration ~predecessor:Type.complex ~successor:complex;
+    let number = Type.primitive "numbers.Number" in
+    insert handler number;
+    connect ~add_backedge:true handler ~configuration ~predecessor:Type.complex ~successor:number;
+
     order
 end
