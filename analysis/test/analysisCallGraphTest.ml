@@ -59,7 +59,7 @@ let assert_call_graph source ~expected =
   let environment = TestSetup.environment ~configuration () in
   Service.Environment.populate environment [source];
   check configuration environment source |> ignore;
-  let call_graph = Analysis.CallGraph.of_source environment source in
+  let call_graph = Analysis.CallGraph.create ~environment ~source in
   let result =
     let fold_call_graph ~key:caller ~data:callees result =
       let callee = List.hd_exn callees in
@@ -104,7 +104,20 @@ let test_construction _ =
     |}
     ~expected:
       "Foo.quux -> Foo.bar\n\
-       Foo.bar -> Foo.quux"
+       Foo.bar -> Foo.quux";
+
+  assert_call_graph
+    {|
+     class A:
+       def __init__(self) -> A:
+         return self
+
+     class B:
+       def __init__(self) -> A:
+         return A()
+     |}
+    ~expected:
+      "B.__init__ -> A.__init__"
 
 
 let test_type_collection _ =
@@ -272,7 +285,7 @@ let test_strongly_connected_components _ =
     Service.Environment.populate environment [source];
     check configuration environment source |> ignore;
     let partitions =
-      let edges = CallGraph.of_source environment source in
+      let edges = CallGraph.create ~environment ~source in
       CallGraph.partition ~edges
     in
     let printer partitions = Format.asprintf "%a" CallGraph.pp_partitions partitions in
@@ -359,7 +372,9 @@ let test_strongly_connected_components _ =
     ~expected:
       [
         ["s2.Foo.c1"; "s2.Foo.c2"];
+        ["s2.Foo.__init__"];
         ["s2.Bar.c1"];
+        ["s2.Bar.__init__"];
         ["s2.Bar.c2"; "s2.Foo.c3"];
       ]
 

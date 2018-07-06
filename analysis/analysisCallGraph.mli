@@ -7,9 +7,9 @@ open Ast
 open Expression
 
 
-val of_source:
-  (module AnalysisEnvironment.Handler)
-  -> Source.t
+val create:
+  environment: (module AnalysisEnvironment.Handler)
+  -> source: Source.t
   -> (Access.t list) Access.Map.t
 
 (** Returns a partition of nodes for strongly connected components in the call graph *)

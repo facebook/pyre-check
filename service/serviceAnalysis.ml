@@ -44,7 +44,7 @@ let analyze ~scheduler:_ ~configuration:_ ~environment ~handles =
       Access.Map.iteri call_graph ~f:add_call_graph
     in
     AstSharedMemory.get_source path
-    >>| Analysis.CallGraph.of_source environment
+    >>| (fun source -> Analysis.CallGraph.create ~environment ~source)
     >>| record_call_graph
     |> ignore
   in

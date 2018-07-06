@@ -28,7 +28,7 @@ type section = [
 
 
 let section_to_string = function
-  | `CallGraph -> "CallGraph"
+  | `CallGraph -> "Callgraph"
   | `Check -> "Check"
   | `Debug -> "Debug"
   | `Dependencies -> "Dependencies"
