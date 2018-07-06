@@ -172,8 +172,8 @@ let test_qualify _ =
   assert_qualify_statement "assert b" "assert a";
   assert_qualify_statement "del b" "del a";
   assert_qualify_statement
-    "\nfor b in b:\n\tb\nelse:\n\tb"
-    "\nfor $target$b in a:\n\t$target$b\nelse:\n\t$target$b";
+    "b = 1\nfor b in []: pass"
+    "$local_qualifier$b = 1\nfor $local_qualifier$b in []: pass";
   assert_qualify_statement "\nif b:\n\tb\nelse:\n\tb" "\nif a:\n\ta\nelse:\n\ta";
   assert_qualify_statement "raise b" "raise a";
   assert_qualify_statement "return b" "return a";

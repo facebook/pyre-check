@@ -660,13 +660,16 @@ let qualify ({ Source.path; qualifier; statements; _ } as source) =
     scope, { statement with Node.value }
 
   and qualify_target ~scope target =
-    let rec renamed_scope scope target =
+    let rec renamed_scope ({ locals; _ } as scope) target =
       match target with
       | { Node.value = Tuple elements; _ } ->
           List.fold elements ~init:scope ~f:renamed_scope
-      | { Node.value = Access [Access.Identifier name]; _ } ->
-          let scope, _, _ = prefix_identifier ~scope ~prefix:"target" name in
-          scope
+      | { Node.value = Access ([Access.Identifier name] as access); _ } ->
+          if Set.mem locals access then
+            scope
+          else
+            let scope, _, _ = prefix_identifier ~scope ~prefix:"target" name in
+            scope
       | _ ->
           scope
     in
