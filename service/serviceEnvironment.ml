@@ -143,7 +143,7 @@ let in_process_handler ~configuration ~stubs ~sources =
 (** First dumps environment to shared memory, then exposes through
     Environment_handler *)
 let shared_memory_handler
-    ~configuration:({ Configuration.sections; verbose; infer; _ } as configuration)
+    ~configuration:({ Configuration.infer; _ } as configuration)
     ~stubs
     ~sources =
   let add_to_shared_memory
@@ -203,7 +203,6 @@ let shared_memory_handler
     Statistics.performance ~configuration ~name:"Added environment to shared memory" ~timer ()
   in
 
-  Log.initialize ~verbose ~sections;
   let environment = Environment.Builder.create ~configuration () in
   let ((module Handler: Environment.Handler) as shared_handler) =
     (module struct

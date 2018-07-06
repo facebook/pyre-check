@@ -91,10 +91,14 @@ let create
   { workers; number_of_workers; bucket_multiplier; is_parallel = parallel }
 
 
+let initialize_process ~configuration:{ Configuration.verbose; sections; _ } =
+  Log.initialize ~verbose ~sections
+
+
 let map_reduce
     { workers; bucket_multiplier; number_of_workers; _ }
     ?bucket_size
-    ~configuration:{ Configuration.verbose; sections; _ }
+    ~configuration
     ~init
     ~map
     ~reduce
@@ -108,7 +112,7 @@ let map_reduce
         number_of_workers * bucket_multiplier
   in
   let map accumulator inputs =
-    Log.initialize ~verbose ~sections;
+    initialize_process ~configuration;
     map accumulator inputs
   in
   MultiWorker.call (Some workers)

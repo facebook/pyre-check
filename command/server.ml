@@ -419,10 +419,9 @@ let request_handler_thread
 (** Main server either as a daemon or in terminal *)
 let serve (socket, server_configuration) =
   Log.debug "Server running as pid %d" (Pid.to_int (Unix.getpid ()));
-  let ({ Configuration.verbose; sections; _ } as configuration) =
-    server_configuration.configuration
-  in
-  Log.initialize ~verbose ~sections;
+  let configuration = server_configuration.configuration in
+  Scheduler.initialize_process ~configuration;
+
   Log.log ~section:`Server "Starting daemon server loop...";
   let request_queue = Squeue.create 25 in
   let lock = Mutex.create () in
@@ -496,10 +495,7 @@ let start ({
     _;
   } as server_configuration) =
   try
-    Log.initialize
-      ~verbose:configuration.Configuration.verbose
-      ~sections:configuration.Configuration.sections;
-
+    Scheduler.initialize_process ~configuration;
     Log.info "Starting up server...";
 
     if not (Lock.check (Path.absolute lock_path)) then

@@ -7,6 +7,7 @@ open Core
 open Pyre
 
 module Socket = CommandSocket
+module Scheduler = Service.Scheduler
 
 
 let run
@@ -29,7 +30,6 @@ let run
     source_root
     () =
   try
-    Log.initialize ~verbose ~sections;
     let configuration =
       Configuration.create
         ~verbose
@@ -51,6 +51,7 @@ let run
         ~source_root:(Path.create_absolute source_root)
         ()
     in
+    Scheduler.initialize_process ~configuration;
 
     let socket =
       try

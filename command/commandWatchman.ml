@@ -13,6 +13,7 @@ open CommandWatchmanConstants
 module Time = Core_kernel.Time_ns.Span
 module Protocol = ServerProtocol
 module Socket = CommandSocket
+module Scheduler = Service.Scheduler
 
 
 let subscription watchman_directory =
@@ -253,8 +254,15 @@ let run_watchman_daemon_entry : run_watchman_daemon_entry =
 
 let run_command ~daemonize ~verbose ~sections ~source_root =
   let source_root = Path.create_absolute source_root in
-  let configuration = Configuration.create ~source_root:source_root () in
-  Log.initialize ~verbose ~sections;
+  let configuration =
+    Configuration.create
+    ~verbose
+    ~sections
+    ~source_root:source_root
+    ()
+  in
+  Scheduler.initialize_process ~configuration;
+
   Unix.handle_unix_error (fun () -> Unix.mkdir_p (watchman_root configuration |> Path.absolute));
   if not (Lock.check (Path.absolute (lock_path configuration))) then
     failwith "Watchman client exists (lock is held). Exiting.";

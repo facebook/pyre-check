@@ -12,6 +12,7 @@ open ServerProtocol
 
 
 module Socket = CommandSocket
+module Scheduler = Service.Scheduler
 
 
 let parse_query ~root query =
@@ -64,8 +65,10 @@ let parse_query ~root query =
 
 
 let run_query serialized source_root () =
-  Log.initialize ~verbose:false ~sections:[];
   let source_root = Path.create_absolute source_root in
+  let configuration = Configuration.create ~source_root () in
+  Scheduler.initialize_process ~configuration;
+
   let query = parse_query ~root:source_root serialized in
   begin
     match query with
@@ -76,7 +79,6 @@ let run_query serialized source_root () =
         exit 1
   end;
   let query = Option.value_exn query in
-  let configuration = Configuration.create ~source_root () in
   let socket = ServerOperations.connect ~retries:3 ~configuration in
   Socket.write socket query;
   match Socket.read socket with

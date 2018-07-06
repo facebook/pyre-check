@@ -45,21 +45,6 @@ let check
     }
     original_scheduler
     () =
-  Log.initialize ~verbose ~sections;
-
-  let check_directory_exists directory =
-    if not (Path.is_directory directory) then
-      raise (Invalid_argument (Format.asprintf "`%a` is not a directory" Path.pp directory));
-  in
-  check_directory_exists source_root;
-  check_directory_exists project_root;
-  List.iter ~f:check_directory_exists search_path;
-  Option.iter typeshed ~f:check_directory_exists;
-
-  let bucket_multiplier =
-    try Int.of_string (Sys.getenv "BUCKET_MULTIPLIER" |> (fun value -> Option.value_exn value))
-    with _ -> 10
-  in
   let configuration =
     Configuration.create
       ~verbose
@@ -79,6 +64,21 @@ let check
       ~recursive_infer
       ~analyze
       ()
+  in
+  Scheduler.initialize_process ~configuration;
+
+  let check_directory_exists directory =
+    if not (Path.is_directory directory) then
+      raise (Invalid_argument (Format.asprintf "`%a` is not a directory" Path.pp directory));
+  in
+  check_directory_exists source_root;
+  check_directory_exists project_root;
+  List.iter ~f:check_directory_exists search_path;
+  Option.iter typeshed ~f:check_directory_exists;
+
+  let bucket_multiplier =
+    try Int.of_string (Sys.getenv "BUCKET_MULTIPLIER" |> (fun value -> Option.value_exn value))
+    with _ -> 10
   in
   let scheduler =
     match original_scheduler with

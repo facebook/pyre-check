@@ -14,6 +14,7 @@ module Memory: sig
 end
 
 val create: configuration: Configuration.t -> ?bucket_multiplier: int -> unit -> t
+val initialize_process: configuration: Configuration.t -> unit
 
 val map_reduce
   :  t
