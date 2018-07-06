@@ -308,7 +308,7 @@ let test_due_to_analysis_limitations _ =
 let test_join _ =
   let assert_join left right expected =
     let environment =
-      Environment.handler ~configuration (Environment.Builder.create ~configuration ())
+      Environment.handler ~configuration (Environment.Builder.create ())
     in
     let resolution = Environment.resolution environment () in
     let result = Error.join ~resolution left right in
@@ -400,16 +400,14 @@ let test_join _ =
     (error (Error.Top))
 
 
-
 let test_filter _ =
   let open Error in
   let environment =
-    Environment.handler ~configuration (Environment.Builder.create ~configuration ())
+    Environment.handler ~configuration (Environment.Builder.create ())
   in
-  add_defaults_to_environment ~configuration environment;
+  add_defaults_to_environment environment;
   Service.Environment.populate
     environment
-    ~configuration
     [
       parse {|
         class Foo: ...

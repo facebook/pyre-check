@@ -56,7 +56,7 @@ let type_check_sources_list_test context =
     let environment =
       Service.Environment.in_process_handler ~configuration ~stubs:[] ~sources
     in
-    add_defaults_to_environment ~configuration environment;
+    add_defaults_to_environment environment;
 
     let assert_errors_with_root project_root expected_error_count =
       let configuration =

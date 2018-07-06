@@ -13,7 +13,6 @@ let sample
     ?(integers = [])
     ?(normals = [])
     ?(metadata = false)
-    ~configuration:_
     () =
   ignore system_time;
   ignore integers;
@@ -31,7 +30,6 @@ let performance
     ?(section = `Performance)
     ~name
     ~timer
-    ~configuration:_
     ?(integers = [])
     ?(normals = [])
     () =
@@ -44,12 +42,12 @@ let performance
   ignore section
 
 
-let coverage ?(flush = false) ~coverage:_ ~configuration:_ ?(normals = []) () =
+let coverage ?(flush = false) ~coverage:_ ?(normals = []) () =
   ignore flush;
   ignore normals
 
 
-let event ?(flush = false) ~name:_ ~configuration:_ ?(integers = []) ?(normals = []) () =
+let event ?(flush = false) ~name:_ ?(integers = []) ?(normals = []) () =
   ignore flush;
   ignore integers;
   ignore normals

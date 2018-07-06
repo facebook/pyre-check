@@ -259,7 +259,7 @@ let computation_thread request_queue configuration state =
 
 let request_handler_thread
     ({
-      configuration = ({ expected_version; source_root; _ } as configuration);
+      configuration = ({ expected_version; source_root; _ });
       use_watchman;
       watchman_creation_timeout;
       _;
@@ -409,7 +409,6 @@ let request_handler_thread
     Statistics.event
       ~flush:true
       ~name:"uncaught exception"
-      ~configuration
       ~integers:[]
       ~normals:["exception backtrace", backtrace]
       ();
@@ -447,7 +446,6 @@ let serve (socket, server_configuration) =
     Statistics.event
       ~flush:true
       ~name:"uncaught exception"
-      ~configuration
       ~integers:[]
       ~normals:["exception backtrace", backtrace]
       ();

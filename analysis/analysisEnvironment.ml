@@ -85,7 +85,6 @@ end
 
 let connect_definition
     ~order
-    ~configuration
     ~aliases
     ~add_class_definition
     ~add_class_key
@@ -108,7 +107,7 @@ let connect_definition
         | _ -> false
       in
       if annotations_tracked && not primitive_cycle && not cycle_with_top then
-        TypeOrder.connect order ~configuration ~predecessor ~successor ~parameters
+        TypeOrder.connect order ~predecessor ~successor ~parameters
     in
 
     let annotation =
@@ -202,7 +201,7 @@ let handler
       globals;
       dependencies;
     }
-    ~configuration:({ Configuration.infer; _ } as configuration) =
+    ~configuration:{ Configuration.infer; _ } =
   let (module DependencyHandler: Dependencies.Handler) = Dependencies.handler dependencies in
 
   (module struct
@@ -268,7 +267,6 @@ let handler
       in
       connect_definition
         ~order:(TypeOrder.handler order)
-        ~configuration
         ~aliases:(Hashtbl.find aliases)
         ~add_class_definition
         ~add_class_key:DependencyHandler.add_class_key
@@ -1062,30 +1060,27 @@ let infer_protocol_edges ~handler:((module Handler: Handler) as handler) =
   List.fold ~init:TypeOrder.Edge.Set.empty ~f:add_protocol_edges protocols
 
 
-let infer_protocols
-    ~handler:((module Handler: Handler) as handler)
-    ~configuration =
+let infer_protocols ~handler:((module Handler: Handler) as handler) =
   let timer = Timer.start () in
   infer_protocol_edges ~handler
   |> Set.iter ~f:(fun { TypeOrder.Edge.source; target } ->
       TypeOrder.connect
         (module Handler.TypeOrderHandler)
-        ~configuration
         ~predecessor:source
         ~successor:target);
 
   TypeOrder.check_integrity (module Handler.TypeOrderHandler);
 
-  Statistics.performance ~name:"inferred protocol implementations" ~timer ~configuration ()
+  Statistics.performance ~name:"inferred protocol implementations" ~timer ()
 
 
 module Builder = struct
-  let create ~configuration () =
+  let create () =
     let function_definitions = Access.Table.create () in
     let class_definitions = Type.Table.create () in
     let protocols = Type.Hash_set.create () in
     let modules = Access.Table.create () in
-    let order = TypeOrder.Builder.default ~configuration () in
+    let order = TypeOrder.Builder.default () in
     let aliases = Type.Table.create () in
     let globals = Access.Table.create () in
     let dependencies = Dependencies.create () in

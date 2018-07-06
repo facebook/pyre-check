@@ -91,8 +91,9 @@ let create
   { workers; number_of_workers; bucket_multiplier; is_parallel = parallel }
 
 
-let initialize_process ~configuration:{ Configuration.verbose; sections; _ } =
-  Log.initialize ~verbose ~sections
+let initialize_process ~configuration:({ Configuration.verbose; sections; _ } as configuration) =
+  Log.initialize ~verbose ~sections;
+  Configuration.set_global configuration
 
 
 let map_reduce

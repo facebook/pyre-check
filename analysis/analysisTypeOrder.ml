@@ -192,14 +192,12 @@ let connect
     ?(parameters = [])
     ?(add_backedge = true)
     ((module Handler: Handler) as order)
-    ~configuration
     ~predecessor
     ~successor =
   if not (Handler.contains (Handler.indices ()) predecessor) ||
      not (Handler.contains (Handler.indices ()) successor) then
     Statistics.event
       ~name:"Invalid type order connection"
-      ~configuration
       ~integers:[]
       ~normals:[
         "Predecessor", Type.show predecessor;
@@ -1163,7 +1161,6 @@ let remove_extra_edges (module Handler: Handler) ~bottom ~top annotations =
 
 let connect_annotations_to_top
     ((module Handler: Handler) as order)
-    ~configuration
     ~top
     annotations =
   let indices =
@@ -1178,7 +1175,7 @@ let connect_annotations_to_top
         | Some targets when List.length targets > 0 ->
             ()
         | _ ->
-            connect order ~configuration ~predecessor:annotation ~successor:top
+            connect order ~predecessor:annotation ~successor:top
       end in
   List.iter ~f:connect_to_top indices
 
@@ -1329,7 +1326,7 @@ module Builder = struct
     }
 
 
-  let default ~configuration () =
+  let default () =
     let order = create () in
     let handler = handler order in
 
@@ -1337,13 +1334,13 @@ module Builder = struct
     insert handler Type.Top;
     (* Object *)
     insert handler Type.Object;
-    connect handler ~configuration ~predecessor:Type.Bottom ~successor:Type.Object;
-    connect handler ~configuration ~predecessor:Type.Object ~successor:Type.Top;
+    connect handler ~predecessor:Type.Bottom ~successor:Type.Object;
+    connect handler ~predecessor:Type.Object ~successor:Type.Top;
 
     let insert_unconnected annotation =
       insert handler annotation;
-      connect handler ~configuration ~predecessor:Type.Bottom ~successor:annotation;
-      connect handler ~configuration ~predecessor:annotation ~successor:Type.Object
+      connect handler ~predecessor:Type.Bottom ~successor:annotation;
+      connect handler ~predecessor:annotation ~successor:Type.Object
     in
 
     (* Special forms *)
@@ -1367,9 +1364,9 @@ module Builder = struct
     let type_builtin = Type.Primitive (Identifier.create "type") in
     insert handler type_special_form;
     insert handler type_builtin;
-    connect handler ~configuration ~predecessor:Type.Bottom ~successor:type_special_form;
-    connect handler ~configuration ~predecessor:type_special_form ~successor:type_builtin;
-    connect handler ~configuration ~predecessor:type_builtin ~successor:Type.Object;
+    connect handler ~predecessor:Type.Bottom ~successor:type_special_form;
+    connect handler ~predecessor:type_special_form ~successor:type_builtin;
+    connect handler ~predecessor:type_builtin ~successor:Type.Object;
 
     insert_unconnected (Type.Primitive (Identifier.create "typing.ClassVar"));
 
@@ -1377,9 +1374,9 @@ module Builder = struct
     let typing_dict = (Type.Primitive (Identifier.create "typing.Dict")) in
     insert handler base_dict;
     insert handler typing_dict;
-    connect handler ~configuration ~predecessor:Type.Bottom ~successor:base_dict;
-    connect handler ~configuration ~predecessor:base_dict ~successor:typing_dict;
-    connect handler ~configuration ~predecessor:typing_dict ~successor:Type.Object;
+    connect handler ~predecessor:Type.Bottom ~successor:base_dict;
+    connect handler ~predecessor:base_dict ~successor:typing_dict;
+    connect handler ~predecessor:typing_dict ~successor:Type.Object;
 
     insert_unconnected (Type.Primitive (Identifier.create "None"));
 
@@ -1387,27 +1384,27 @@ module Builder = struct
     insert handler Type.integer;
     insert handler Type.float;
     insert handler Type.complex;
-    connect handler ~configuration ~predecessor:Type.Bottom ~successor:Type.integer;
-    connect handler ~configuration ~predecessor:Type.integer ~successor:Type.float;
-    connect handler ~configuration ~predecessor:Type.float ~successor:Type.complex;
-    connect handler ~configuration ~predecessor:Type.complex ~successor:Type.Object;
+    connect handler ~predecessor:Type.Bottom ~successor:Type.integer;
+    connect handler ~predecessor:Type.integer ~successor:Type.float;
+    connect handler ~predecessor:Type.float ~successor:Type.complex;
+    connect handler ~predecessor:Type.complex ~successor:Type.Object;
 
     (* Abstract numerical hierarchy. *)
     let integral = Type.primitive "numbers.Integral" in
     insert handler integral;
-    connect handler ~configuration ~predecessor:Type.integer ~successor:integral;
+    connect handler ~predecessor:Type.integer ~successor:integral;
     let rational = Type.primitive "numbers.Rational" in
     insert handler rational;
-    connect handler ~configuration ~predecessor:Type.float ~successor:rational;
+    connect handler ~predecessor:Type.float ~successor:rational;
     let real = Type.primitive "numbers.Real" in
     insert handler real;
-    connect handler ~configuration ~predecessor:Type.float ~successor:real;
+    connect handler ~predecessor:Type.float ~successor:real;
     let complex = Type.primitive "numbers.Complex" in
     insert handler complex;
-    connect handler ~configuration ~predecessor:Type.complex ~successor:complex;
+    connect handler ~predecessor:Type.complex ~successor:complex;
     let number = Type.primitive "numbers.Number" in
     insert handler number;
-    connect handler ~configuration ~predecessor:Type.complex ~successor:number;
+    connect handler ~predecessor:Type.complex ~successor:number;
 
     order
 end

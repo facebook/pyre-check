@@ -24,9 +24,8 @@ let generate_lookup source =
     |> Preprocessing.qualify
   in
   let configuration = Configuration.create ~debug:true ~infer:false () in
-  let environment = Environment.Builder.create ~configuration () in
+  let environment = Environment.Builder.create () in
   Service.Environment.populate
-    ~configuration
     (Environment.handler ~configuration environment)
     [parsed];
   let environment = Environment.handler ~configuration environment in

@@ -72,7 +72,6 @@ val connect
   :  ?parameters: Type.t list
   -> ?add_backedge: bool
   -> (module Handler)
-  -> configuration: Configuration.t
   -> predecessor: Type.t
   -> successor: Type.t
   -> unit
@@ -122,7 +121,6 @@ val deduplicate: (module Handler) -> annotations:Type.t list -> unit
 val remove_extra_edges: (module Handler) -> bottom: Type.t -> top: Type.t -> Type.t list -> unit
 val connect_annotations_to_top
   :  (module Handler)
-  -> configuration: Configuration.t
   -> top: Type.t
   -> Type.t list
 
@@ -136,5 +134,5 @@ module Builder: sig
   val create: unit -> t
   val copy: t -> t
 
-  val default: configuration: Configuration.t -> unit -> t
+  val default: unit -> t
 end

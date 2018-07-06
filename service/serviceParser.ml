@@ -195,7 +195,7 @@ let parse_stubs
   let handles =
     parse_sources_list ~configuration ~scheduler ~files:(List.map ~f:File.create paths)
   in
-  Statistics.performance ~name:"stubs parsed" ~timer ~configuration ();
+  Statistics.performance ~name:"stubs parsed" ~timer ();
   let not_parsed = (List.length paths) - (List.length handles) in
   log_parse_errors_count ~not_parsed ~description:"external file";
   handles
@@ -219,7 +219,7 @@ let parse_sources
   let not_parsed = (List.length paths) - (List.length handles) in
   log_parse_errors_count ~not_parsed ~description:"file";
 
-  Statistics.performance ~name:"sources parsed" ~timer ~configuration ();
+  Statistics.performance ~name:"sources parsed" ~timer ();
   handles
 
 

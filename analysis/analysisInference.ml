@@ -404,7 +404,6 @@ let infer configuration environment ?mode_override ({ Source.path; _ } as source
     | TypeOrder.Untracked annotation ->
         Statistics.event
           ~name:"undefined type"
-          ~configuration
           ~integers:[]
           ~normals:[
             "path", path;
@@ -581,7 +580,7 @@ let infer configuration environment ?mode_override ({ Source.path; _ } as source
       List.map ~f:SingleSourceResult.coverage results
       |> Coverage.aggregate_over_source ~source
     in
-    Coverage.log coverage ~configuration ~total_errors:(List.length errors) ~path;
+    Coverage.log coverage ~total_errors:(List.length errors) ~path;
 
     {
       TypeCheck.Result.errors;

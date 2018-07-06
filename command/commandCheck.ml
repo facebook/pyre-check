@@ -108,7 +108,6 @@ let check
       ~normals:[
         "file_name", path_to_files;
       ]
-      ~configuration
       ()
   in
 
@@ -141,7 +140,6 @@ let check
       "total_errors", List.length errors;
       "crashes", crashes;
     ]
-    ~configuration
     ~normals:[
       "file_name", path_to_files;
     ]
@@ -211,7 +209,6 @@ let run_check
   Statistics.performance
     ~name:"check"
     ~timer
-    ~configuration
     ~integers:[
       "gc_minor_collections", minor_collections;
       "gc_major_collections", major_collections;

@@ -73,6 +73,18 @@ let create
   }
 
 
+let global =
+  ref None
+
+
+let set_global configuration =
+  global := Some configuration
+
+
+let get_global () =
+  !global
+
+
 let localize ({ debug; strict; _ } as configuration) ~local_debug ~local_strict ~declare =
   {
     configuration with

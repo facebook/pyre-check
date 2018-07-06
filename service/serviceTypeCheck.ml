@@ -70,7 +70,6 @@ let analyze_source
         ~timer
         ~normals:["path", path; "request kind", "SingleFileTypeCheck"]
         ~integers:["number of lines", number_of_lines]
-        ~configuration
         ();
       result
     end
@@ -156,7 +155,7 @@ let analyze_sources_parallel
             coverage = Coverage.sum left.coverage right.coverage;
           })
   in
-  Statistics.performance ~name:"Analyzed sources" ~timer ~configuration ();
+  Statistics.performance ~name:"Analyzed sources" ~timer ();
   Ignore.postprocess handles errors, coverage
 
 

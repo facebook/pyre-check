@@ -16,9 +16,8 @@ let configuration =
 
 let populate_with_sources sources =
   let environment =
-    let environment = Environment.Builder.create ~configuration () in
+    let environment = Environment.Builder.create () in
     Service.Environment.populate
-      ~configuration
       (Environment.handler ~configuration environment)
       sources;
     environment
@@ -28,9 +27,8 @@ let populate_with_sources sources =
 
 let populate source =
   let environment =
-    let environment = Environment.Builder.create ~configuration () in
+    let environment = Environment.Builder.create () in
     Service.Environment.populate
-      ~configuration
       (Environment.handler ~configuration environment)
       [parse source];
     environment

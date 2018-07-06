@@ -11,7 +11,6 @@ val sample
   -> ?integers: (string * int) list
   -> ?normals: (string * string) list
   -> ?metadata: bool
-  -> configuration: Configuration.t
   -> unit
   -> string
 
@@ -23,7 +22,6 @@ val performance
   -> ?section: Log.section
   -> name: string
   -> timer: Timer.t
-  -> configuration: Configuration.t
   -> ?integers: (string * int) list
   -> ?normals: (string * string) list
   -> unit
@@ -32,7 +30,6 @@ val performance
 val coverage
   :  ?flush: bool
   -> coverage: (string * int) list
-  -> configuration: Configuration.t
   -> ?normals: (string * string) list
   -> unit
   -> unit
@@ -40,7 +37,6 @@ val coverage
 val event
   :  ?flush: bool
   -> name: string
-  -> configuration: Configuration.t
   -> ?integers: (string * int) list
   -> ?normals: (string * string) list
   -> unit

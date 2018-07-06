@@ -32,9 +32,8 @@ let configuration = Configuration.create ~infer:true ()
 
 
 let plain_populate ?source_root ?(check_dependency_exists = false) sources =
-  let environment = Environment.Builder.create ~configuration () in
+  let environment = Environment.Builder.create () in
   Service.Environment.populate
-    ~configuration
     ?source_root
     ~check_dependency_exists
     (Environment.handler ~configuration environment)
@@ -73,7 +72,7 @@ let create_location path start_line start_column end_line end_column =
 
 
 let test_register_class_definitions _ =
-  let environment = Environment.Builder.create ~configuration () in
+  let environment = Environment.Builder.create () in
   let (module Handler: Environment.Handler) = Environment.handler ~configuration environment in
   Environment.register_class_definitions
     (module Handler)
@@ -99,7 +98,7 @@ let test_register_class_definitions _ =
 
 
 let test_refine_class_definitions _ =
-  let environment = Environment.Builder.create ~configuration () in
+  let environment = Environment.Builder.create () in
   let (module Handler: Environment.Handler) = Environment.handler ~configuration environment in
   let source =
     parse
@@ -154,7 +153,7 @@ let test_refine_class_definitions _ =
 let test_register_aliases _ =
   let assert_resolved sources aliases =
     let (module Handler) =
-      let environment = Environment.Builder.create ~configuration () in
+      let environment = Environment.Builder.create () in
       let (module Handler: Environment.Handler) = Environment.handler ~configuration environment in
       let sources = List.map sources ~f:Preprocessing.preprocess in
       let register
@@ -324,7 +323,7 @@ let test_register_aliases _ =
 
 
 let test_connect_definition _ =
-  let environment = Environment.Builder.create ~configuration () in
+  let environment = Environment.Builder.create () in
   let (module Handler: Environment.Handler) = Environment.handler ~configuration environment in
   let resolution = Environment.resolution (module Handler) () in
   let c_primitive = Type.primitive "C" in
@@ -370,7 +369,7 @@ let test_connect_definition _ =
 
 
 let test_register_globals _ =
-  let environment = Environment.Builder.create ~configuration () in
+  let environment = Environment.Builder.create () in
   let (module Handler: Environment.Handler) = Environment.handler ~configuration environment in
   let source =
     parse
@@ -408,7 +407,7 @@ let test_register_globals _ =
 
 
 let test_connect_type_order _ =
-  let environment = Environment.Builder.create ~configuration () in
+  let environment = Environment.Builder.create () in
   let (module Handler: Environment.Handler) = Environment.handler ~configuration environment in
   let source =
     parse {|
@@ -438,7 +437,7 @@ let test_connect_type_order _ =
 
 
 let test_register_functions _ =
-  let environment = Environment.Builder.create ~configuration () in
+  let environment = Environment.Builder.create () in
   let (module Handler: Environment.Handler) = Environment.handler ~configuration environment in
   let source =
     parse {|
@@ -1174,7 +1173,7 @@ let test_import_dependencies context =
   with_bracket_chdir context (bracket_tmpdir context) create_files_and_test
 
 let test_register_dependencies _ =
-  let environment = Environment.Builder.create ~configuration () in
+  let environment = Environment.Builder.create () in
   let (module Handler: Environment.Handler) = Environment.handler ~configuration environment in
   let source = {|
          import a # a is added here
@@ -1195,7 +1194,7 @@ let test_register_dependencies _ =
 
 
 let test_purge _ =
-  let environment = Environment.Builder.create ~configuration () in
+  let environment = Environment.Builder.create () in
   let ((module Handler: Environment.Handler) as handler) =
     Environment.handler ~configuration environment
   in
@@ -1208,7 +1207,6 @@ let test_purge _ =
     |}
   in
   Service.Environment.populate
-    ~configuration
     ~check_dependency_exists:false
     handler
     [parse ~path:"test.py" source];
@@ -1245,10 +1243,9 @@ let test_infer_protocols _ =
       Test.parse source
       |> Preprocessing.preprocess
     in
-    let environment = Environment.Builder.create ~configuration () in
+    let environment = Environment.Builder.create () in
     Service.Environment.populate
       (Environment.handler ~configuration environment)
-      ~configuration
       (source :: type_sources);
     let handler = Environment.handler environment ~configuration in
     let edges = Environment.infer_protocol_edges ~handler in

@@ -17,11 +17,8 @@ let (!) name =
   Type.Primitive ~~name
 
 
-let configuration = Configuration.create ()
-
-
 let connect ?(parameters = []) order ~predecessor ~successor =
-  connect ~configuration ~parameters order ~predecessor ~successor
+  connect ~parameters order ~predecessor ~successor
 
 
 (* Butterfly:
@@ -115,7 +112,7 @@ let disconnected_order =
 
 
 let default =
-  let order = Builder.default ~configuration () |> TypeOrder.handler in
+  let order = Builder.default () |> TypeOrder.handler in
   let variable = Type.variable "_T" in
   insert order variable;
   connect order ~predecessor:Type.Bottom ~successor:variable;
@@ -172,7 +169,7 @@ let default =
 
 
 let test_default _ =
-  let order = Builder.default ~configuration () |> TypeOrder.handler in
+  let order = Builder.default () |> TypeOrder.handler in
   assert_true (less_or_equal order ~left:Type.Bottom ~right:Type.Bottom);
   assert_true (less_or_equal order ~left:Type.Bottom ~right:Type.Top);
   assert_true (less_or_equal order ~left:Type.Top ~right:Type.Top);
@@ -934,7 +931,7 @@ let test_connect_annotations_to_top _ =
     insert order !"3";
     connect order ~predecessor:!"0" ~successor:!"2";
     connect order ~predecessor:!"0" ~successor:!"1";
-    connect_annotations_to_top order ~configuration ~top:!"3" [!"0"; !"1"; !"2"; !"3"];
+    connect_annotations_to_top order ~top:!"3" [!"0"; !"1"; !"2"; !"3"];
     order in
 
   assert_equal
@@ -961,7 +958,6 @@ let test_add_backedges _ =
   *)
   let (module Handler: TypeOrder.Handler) =
     (* Don't add backedges when connecting *)
-    let connect = TypeOrder.connect ~configuration in
     let order = Builder.create () |> TypeOrder.handler in
     insert order Type.Bottom;
     insert order Type.Top;
@@ -969,12 +965,12 @@ let test_add_backedges _ =
     insert order !"B";
     insert order !"C";
     insert order !"D";
-    connect order ~add_backedge:false ~predecessor:Type.Bottom ~successor:!"D";
-    connect order ~add_backedge:false ~predecessor:!"D" ~successor:!"B";
-    connect order ~add_backedge:false ~predecessor:!"D" ~successor:!"C";
-    connect order ~add_backedge:false ~predecessor:!"B" ~successor:!"A";
-    connect order ~add_backedge:false ~predecessor:!"C" ~successor:!"A";
-    connect order ~add_backedge:false ~predecessor:!"A" ~successor:Type.Top;
+    TypeOrder.connect order ~add_backedge:false ~predecessor:Type.Bottom ~successor:!"D";
+    TypeOrder.connect order ~add_backedge:false ~predecessor:!"D" ~successor:!"B";
+    TypeOrder.connect order ~add_backedge:false ~predecessor:!"D" ~successor:!"C";
+    TypeOrder.connect order ~add_backedge:false ~predecessor:!"B" ~successor:!"A";
+    TypeOrder.connect order ~add_backedge:false ~predecessor:!"C" ~successor:!"A";
+    TypeOrder.connect order ~add_backedge:false ~predecessor:!"A" ~successor:Type.Top;
     order
   in
   let assert_backedges annotation number_of_backedges =
@@ -1063,7 +1059,7 @@ let test_to_dot _ =
     insert order Type.Top;
     connect order ~predecessor:!"0" ~successor:!"2";
     connect order ~predecessor:!"0" ~successor:!"1" ~parameters:[Type.string];
-    connect_annotations_to_top order ~configuration ~top:!"3" [!"0"; !"1"; !"2"; !"3"];
+    connect_annotations_to_top order ~top:!"3" [!"0"; !"1"; !"2"; !"3"];
     order in
   let (module Handler) = order in
   assert_equal

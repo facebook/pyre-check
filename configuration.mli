@@ -50,6 +50,9 @@ val create
   -> unit
   -> t
 
+val set_global: t -> unit
+val get_global: unit -> t option
+
 val localize: t -> local_debug:bool -> local_strict:bool -> declare:bool -> t
 
 val pyre_root: t -> Path.t

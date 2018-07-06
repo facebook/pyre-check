@@ -183,10 +183,7 @@ let rec process_request
         | None -> []
       in
       List.concat_map ~f:repopulate_path repopulate_handles
-      |> Service.Environment.populate
-        state.environment
-        ~configuration
-        ~source_root
+      |> Service.Environment.populate state.environment ~source_root
     in
     Service.Ignore.register ~configuration scheduler repopulate_handles;
 
@@ -392,7 +389,6 @@ let rec process_request
   Statistics.performance
     ~name:"server request"
     ~timer
-    ~configuration
     ~normals:["request_kind", Request.name request]
     ();
   result

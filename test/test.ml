@@ -205,7 +205,7 @@ let assert_source_equal =
     ~pp_diff:(diff ~print:Source.pp)
 
 
-let add_defaults_to_environment ~configuration environment_handler =
+let add_defaults_to_environment environment_handler =
   let source =
     parse {|
       class unittest.mock.Base: ...
@@ -213,7 +213,7 @@ let add_defaults_to_environment ~configuration environment_handler =
       class unittest.mock.NonCallableMock: ...
     |};
   in
-  Service.Environment.populate ~configuration environment_handler [source]
+  Service.Environment.populate environment_handler [source]
 
 
 (* Expression helpers. *)

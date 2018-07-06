@@ -76,7 +76,7 @@ let aggregate_over_source ~source coverages =
     coverages
 
 
-let log { full; partial; untyped; ignore; crashes } ~configuration ~total_errors ~path =
+let log { full; partial; untyped; ignore; crashes } ~total_errors ~path =
   Statistics.coverage
     ~coverage:[
       "full_type_coverage", full;
@@ -86,6 +86,5 @@ let log { full; partial; untyped; ignore; crashes } ~configuration ~total_errors
       "total_errors", total_errors;
       "crashes", crashes;
     ]
-    ~configuration
     ~normals:["file_name", path]
     ();

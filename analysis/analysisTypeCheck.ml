@@ -599,7 +599,6 @@ module State = struct
   let rec forward
       ?key
       ({
-        configuration;
         resolution;
         errors;
         define = ({ Node.value = { Define.async; _ } as define; _ } as define_node);
@@ -1046,7 +1045,6 @@ module State = struct
                   begin
                     Statistics.event
                       ~name:"undefined attribute without location"
-                      ~configuration
                       ~normals:["attribute", (Expression.Access.show attribute)]
                       ();
                     []
@@ -1866,7 +1864,6 @@ let check
     | TypeOrder.Untracked annotation ->
         Statistics.event
           ~name:"undefined type"
-          ~configuration
           ~integers:[]
           ~normals:[
             "path", path;
@@ -1950,6 +1947,6 @@ let check
     List.map ~f:SingleSourceResult.coverage results
     |> Coverage.aggregate_over_source ~source
   in
-  Coverage.log coverage ~configuration ~total_errors:(List.length errors) ~path;
+  Coverage.log coverage ~total_errors:(List.length errors) ~path;
 
   { Result.errors; coverage }

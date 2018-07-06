@@ -256,10 +256,10 @@ let run_command ~daemonize ~verbose ~sections ~source_root =
   let source_root = Path.create_absolute source_root in
   let configuration =
     Configuration.create
-    ~verbose
-    ~sections
-    ~source_root:source_root
-    ()
+      ~verbose
+      ~sections
+      ~source_root:source_root
+      ()
   in
   Scheduler.initialize_process ~configuration;
 

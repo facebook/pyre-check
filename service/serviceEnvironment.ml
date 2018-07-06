@@ -17,7 +17,6 @@ open ServiceIgnoreSharedMemory
 
 let populate
     (module Handler: Environment.Handler)
-    ~configuration
     ?(source_root = Path.current_working_directory ())
     ?(check_dependency_exists = true)
     sources =
@@ -58,7 +57,6 @@ let populate
 
   TypeOrder.connect_annotations_to_top
     (module Handler.TypeOrderHandler)
-    ~configuration
     ~top:Type.Object
     all_annotations;
   TypeOrder.remove_extra_edges
@@ -92,8 +90,8 @@ let build
   in
   let timer = Timer.start () in
   let stubs = get_sources stubs in
-  populate ~configuration ~source_root handler stubs;
-  Statistics.performance ~name:"stub environment built" ~timer ~configuration ();
+  populate ~source_root handler stubs;
+  Statistics.performance ~name:"stub environment built" ~timer ();
 
   let timer = Timer.start () in
   let sources =
@@ -107,8 +105,8 @@ let build
     let sources = get_sources sources in
     List.filter ~f:should_keep sources
   in
-  populate ~configuration ~source_root handler sources;
-  Statistics.performance ~name:"full environment built" ~timer ~configuration ();
+  populate ~source_root handler sources;
+  Statistics.performance ~name:"full environment built" ~timer ();
 
   if Log.is_enabled `Dotty then
     begin
@@ -127,7 +125,7 @@ let build
 
 
 let in_process_handler ~configuration ~stubs ~sources =
-  let environment = Environment.Builder.create ~configuration () in
+  let environment = Environment.Builder.create () in
   let ((module Handler: Environment.Handler) as handler) =
     Environment.handler
       environment
@@ -135,7 +133,7 @@ let in_process_handler ~configuration ~stubs ~sources =
   in
   build handler ~configuration ~stubs ~sources;
   Log.log ~section:`Environment "%a" Environment.Builder.pp environment;
-  Environment.infer_protocols ~handler ~configuration;
+  Environment.infer_protocols ~handler;
   TypeOrder.check_integrity (module Handler.TypeOrderHandler);
   handler
 
@@ -200,10 +198,10 @@ let shared_memory_handler
 
     Protocols.write_through "Protocols" (Hash_set.to_list protocols);
     add_table AstSharedMemory.add_module modules;
-    Statistics.performance ~configuration ~name:"Added environment to shared memory" ~timer ()
+    Statistics.performance ~name:"Added environment to shared memory" ~timer ()
   in
 
-  let environment = Environment.Builder.create ~configuration () in
+  let environment = Environment.Builder.create () in
   let ((module Handler: Environment.Handler) as shared_handler) =
     (module struct
       let function_definitions =
@@ -456,7 +454,6 @@ let shared_memory_handler
         in
         Environment.connect_definition
           ~order:(module TypeOrderHandler: TypeOrder.Handler)
-          ~configuration
           ~aliases:Aliases.get
           ~add_class_definition
           ~add_class_key:(DependencyHandler.add_class_key)
@@ -526,9 +523,9 @@ let shared_memory_handler
     |> (fun size -> size /. 1.0e6)
     |> Int.of_float
   in
-  Statistics.event ~name:"shared memory size" ~integers:["size", heap_size] ~configuration ();
+  Statistics.event ~name:"shared memory size" ~integers:["size", heap_size] ();
 
-  Environment.infer_protocols ~handler:shared_handler ~configuration;
+  Environment.infer_protocols ~handler:shared_handler;
   TypeOrder.check_integrity (module Handler.TypeOrderHandler);
 
   shared_handler

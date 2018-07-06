@@ -97,7 +97,6 @@ val dependencies: (module Handler) -> string -> string list option
 
 val connect_definition
   :  order: (module TypeOrder.Handler)
-  -> configuration: Configuration.t
   -> aliases: (Type.t -> Type.t option)
   -> add_class_definition: (primitive: Type.t -> definition: Class.t Node.t -> unit)
   -> add_class_key: (path: string -> Type.t -> unit)
@@ -151,10 +150,10 @@ val infer_implementations
   -> TypeOrder.Edge.Set.t
 (* Exposed for testing. *)
 val infer_protocol_edges: handler: (module Handler) -> TypeOrder.Edge.Set.t
-val infer_protocols: handler: (module Handler) -> configuration: Configuration.t -> unit
+val infer_protocols: handler: (module Handler) -> unit
 
 module Builder : sig
-  val create: configuration: Configuration.t -> unit -> t
+  val create: unit -> t
   val copy: t -> t
 
   val statistics: t -> string

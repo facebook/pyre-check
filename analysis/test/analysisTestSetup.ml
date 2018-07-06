@@ -245,11 +245,8 @@ let typeshed_stubs = (* Yo dawg... *)
 
 
 let environment ?(sources = typeshed_stubs) ?(configuration = configuration) () =
-  let environment = Environment.Builder.create ~configuration () in
-  Service.Environment.populate
-    (Environment.handler ~configuration environment)
-    ~configuration
-    sources;
+  let environment = Environment.Builder.create () in
+  Service.Environment.populate (Environment.handler ~configuration environment) sources;
   Environment.handler ~configuration environment
 
 
@@ -268,7 +265,7 @@ let empty_define = {
 
 let resolution ?(sources = typeshed_stubs) () =
   let environment = environment ~sources () in
-  add_defaults_to_environment ~configuration environment;
+  add_defaults_to_environment environment;
   Environment.resolution environment ()
 
 
@@ -325,7 +322,7 @@ let assert_type_errors
       in
       let environment =
         let environment = environment ~configuration () in
-        Service.Environment.populate ~configuration environment [source];
+        Service.Environment.populate environment [source];
         environment
       in
       let configuration = Configuration.create ~debug ~strict ~declare ~infer () in

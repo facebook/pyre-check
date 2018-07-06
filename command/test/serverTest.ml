@@ -175,9 +175,8 @@ let configuration = Configuration.create ~infer:true ()
 
 
 let environment () =
-  let environment = Environment.Builder.create ~configuration () in
+  let environment = Environment.Builder.create () in
   Service.Environment.populate
-    ~configuration
     (Environment.handler ~configuration environment)
     [
       parse {|
@@ -207,8 +206,8 @@ let make_errors ?(path = "test.py") ?(qualifier = []) source =
   let configuration = CommandTest.mock_analysis_configuration () in
   let source = Preprocessing.preprocess (parse ~path ~qualifier source) in
   let environment_handler = Environment.handler ~configuration (environment ()) in
-  add_defaults_to_environment ~configuration environment_handler;
-  Service.Environment.populate ~configuration (environment_handler) [source];
+  add_defaults_to_environment environment_handler;
+  Service.Environment.populate (environment_handler) [source];
   (TypeCheck.check configuration environment_handler source).TypeCheck.Result.errors
 
 let mock_server_state
@@ -216,7 +215,7 @@ let mock_server_state
     ?(initial_environment = environment ())
     errors =
   let environment = Environment.handler ~configuration initial_environment in
-  add_defaults_to_environment ~configuration environment;
+  add_defaults_to_environment environment;
   {
     State.deferred_requests = [];
     environment;
@@ -587,11 +586,10 @@ let test_incremental_dependencies _ =
 
   Out_channel.write_all "a.py" ~data:a_source;
   Out_channel.write_all "b.py" ~data:b_source;
-  let environment = Environment.Builder.create ~configuration () in
+  let environment = Environment.Builder.create () in
   let environment_handler = Environment.handler ~configuration environment in
-  add_defaults_to_environment ~configuration environment_handler;
+  add_defaults_to_environment environment_handler;
   Service.Environment.populate
-    ~configuration
     environment_handler
     [
       parse ~path:"a.py" ~qualifier:(Access.create "a") a_source;
@@ -673,11 +671,11 @@ let test_incremental_lookups _ =
     |}
     |> trim_extra_indentation
   in
-  let environment = Environment.Builder.create ~configuration () in
+  let environment = Environment.Builder.create () in
   let (module Handler: Environment.Handler) = Environment.handler ~configuration environment in
   let environment_handler = Environment.handler ~configuration environment in
-  add_defaults_to_environment ~configuration environment_handler;
-  Service.Environment.populate ~configuration environment_handler [parse source];
+  add_defaults_to_environment environment_handler;
+  Service.Environment.populate environment_handler [parse source];
   let request =
     Protocol.Request.TypeCheckRequest
       (Protocol.TypeCheckRequest.create
@@ -751,12 +749,12 @@ let test_incremental_repopulate _ =
     |}
     |> trim_extra_indentation
   in
-  let environment = Environment.Builder.create ~configuration () in
+  let environment = Environment.Builder.create () in
   let (module Handler: Environment.Handler) = Environment.handler ~configuration environment in
   let environment_handler = Environment.handler ~configuration environment in
   Out_channel.write_all ~data:source "test.py";
-  add_defaults_to_environment ~configuration environment_handler;
-  Service.Environment.populate ~configuration environment_handler [parse source];
+  add_defaults_to_environment environment_handler;
+  Service.Environment.populate environment_handler [parse source];
   let errors = File.Handle.Table.create () in
   let initial_state =
     mock_server_state
@@ -851,10 +849,10 @@ let test_incremental_attribute_caching context =
   in
   let server_configuration = ServerConfiguration.create configuration in
   let environment =
-    Analysis.Environment.Builder.create ~configuration ()
+    Analysis.Environment.Builder.create ()
     |> Analysis.Environment.handler ~configuration
   in
-  add_defaults_to_environment ~configuration environment;
+  add_defaults_to_environment environment;
   let old_state = {
     State.deferred_requests = [];
     environment;

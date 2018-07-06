@@ -10,7 +10,6 @@ open Analysis
 
 val populate
   :  (module Environment.Handler)
-  -> configuration: Configuration.t
   -> ?source_root: Path.t
   -> ?check_dependency_exists: bool
   -> Source.t list

@@ -15,9 +15,8 @@ let configuration = Configuration.create ()
 
 
 let populate ?source_root source =
-  let environment = Environment.Builder.create ~configuration () in
+  let environment = Environment.Builder.create () in
   Service.Environment.populate
-    ~configuration
     ?source_root
     (Environment.handler ~configuration environment)
     [parse source];
@@ -33,7 +32,7 @@ let primitive name = Type.Primitive ~~name
 
 
 let test_index _ =
-  let environment = Environment.Builder.create ~configuration () in
+  let environment = Environment.Builder.create () in
   let source = {|
       class baz.baz(): pass
       _T = typing.TypeVar("_T")
@@ -41,7 +40,6 @@ let test_index _ =
     |}
   in
   Service.Environment.populate
-    ~configuration
     (Environment.handler ~configuration environment)
     [parse ~path:"test.py" source];
   let {
@@ -66,7 +64,7 @@ let test_dependent_of_list _ =
     | None -> Hashtbl.set table ~key:source ~data:[dependent]
     | Some dependents -> Hashtbl.set table ~key:source ~data:(dependent :: dependents)
   in
-  let environment = Environment.Builder.create ~configuration () in
+  let environment = Environment.Builder.create () in
   let dependencies =
     { environment.Environment.dependencies with Dependencies.dependents = table }
   in
@@ -103,7 +101,7 @@ let test_transitive_dependent_of_list _ =
     | None -> Hashtbl.set table ~key:source ~data:[dependent]
     | Some dependents -> Hashtbl.set table ~key:source ~data:(dependent :: dependents)
   in
-  let environment = Environment.Builder.create ~configuration () in
+  let environment = Environment.Builder.create () in
   let dependencies =
     { environment.Environment.dependencies with Dependencies.dependents = table }
   in
@@ -133,7 +131,7 @@ let test_transitive_dependent_of_list _ =
 
 let test_transitive_dependents _ =
   let table = String.Table.create () in
-  let environment = Environment.Builder.create ~configuration () in
+  let environment = Environment.Builder.create () in
   let dependencies =
     { environment.Environment.dependencies with Dependencies.dependents = table }
   in

@@ -39,7 +39,7 @@ let initialize
   let timer = Timer.start () in
   let { Check.handles; environment; errors = initial_errors } =
     Check.check configuration (Some scheduler) () in
-  Statistics.performance ~name:"initialization" ~timer ~configuration ~normals:[] ();
+  Statistics.performance ~name:"initialization" ~timer ~normals:[] ();
   Log.log ~section:`Server "Server initialized";
   let handles = File.Handle.Set.of_list handles in
   let errors =
@@ -77,7 +77,7 @@ let remove_server_files { lock_path; socket_path; pid_path; socket_link; _ } =
 
 
 let stop_server ~reason ({ configuration; _ } as server_configuration) socket =
-  Statistics.event ~flush:true ~name:"stop server" ~configuration ~normals:["reason", reason] ();
+  Statistics.event ~flush:true ~name:"stop server" ~normals:["reason", reason] ();
   let watchman_pid =
     try
       WatchmanConstants.pid_path configuration
