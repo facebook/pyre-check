@@ -18,6 +18,7 @@ type section = [
   | `Event
   | `Fixpoint
   | `Info
+  | `Memory
   | `Parser
   | `Progress
   | `Performance
@@ -39,6 +40,7 @@ let section_to_string = function
   | `Event -> "Event"
   | `Fixpoint -> "Fixpoint"
   | `Info -> "Info"
+  | `Memory -> "Memory"
   | `Parser -> "Parser"
   | `Progress -> "Progress"
   | `Performance -> "Performance"
@@ -52,6 +54,7 @@ let enabled =
     "Dump";
     "Error";
     "Info";
+    "Memory";
     "Performance";
     "Progress";
     "Warning";

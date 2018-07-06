@@ -183,7 +183,12 @@ let rec process_request
         | None -> []
       in
       List.concat_map ~f:repopulate_path repopulate_handles
-      |> Service.Environment.populate state.environment ~source_root
+      |> Service.Environment.populate state.environment ~source_root;
+      Statistics.event
+        ~section:`Memory
+        ~name:"Shared memory size"
+        ~integers:["size", Service.EnvironmentSharedMemory.heap_size ()]
+        ();
     in
     Service.Ignore.register ~configuration scheduler repopulate_handles;
 

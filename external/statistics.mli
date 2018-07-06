@@ -36,6 +36,7 @@ val coverage
 
 val event
   :  ?flush: bool
+  -> ?section: Log.section
   -> name: string
   -> ?integers: (string * int) list
   -> ?normals: (string * string) list

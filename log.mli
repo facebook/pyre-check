@@ -16,6 +16,7 @@ type section = [
   | `Event
   | `Fixpoint
   | `Info
+  | `Memory
   | `Parser
   | `Performance
   | `Progress

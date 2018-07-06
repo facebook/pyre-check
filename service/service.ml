@@ -7,6 +7,7 @@
 module Analysis = ServiceAnalysis
 module Coverage = ServiceCoverage
 module Environment = ServiceEnvironment
+module EnvironmentSharedMemory = ServiceEnvironmentSharedMemory
 module Ignore = ServiceIgnore
 module Parser = ServiceParser
 module Scheduler = ServiceScheduler

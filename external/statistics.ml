@@ -47,7 +47,8 @@ let coverage ?(flush = false) ~coverage:_ ?(normals = []) () =
   ignore normals
 
 
-let event ?(flush = false) ~name:_ ?(integers = []) ?(normals = []) () =
+let event ?(flush = false) ?(section = `Event) ~name:_ ?(integers = []) ?(normals = []) () =
   ignore flush;
+  ignore section;
   ignore integers;
   ignore normals

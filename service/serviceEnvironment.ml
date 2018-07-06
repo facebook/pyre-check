@@ -517,13 +517,11 @@ let shared_memory_handler
         build handler ~configuration ~stubs ~sources;
         add_to_shared_memory environment
   end;
-  let heap_size =
-    EnvironmentSharedMemory.SharedMemory.heap_size ()
-    |> Float.of_int
-    |> (fun size -> size /. 1.0e6)
-    |> Int.of_float
-  in
-  Statistics.event ~name:"shared memory size" ~integers:["size", heap_size] ();
+  Statistics.event
+    ~section:`Memory
+    ~name:"Shared memory size"
+    ~integers:["size", EnvironmentSharedMemory.heap_size ()]
+    ();
 
   Environment.infer_protocols ~handler:shared_handler;
   TypeOrder.check_integrity (module Handler.TypeOrderHandler);

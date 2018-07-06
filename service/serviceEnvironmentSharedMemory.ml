@@ -174,3 +174,9 @@ module OrderEdges = SharedMemory.WithCache (IntKey) (EdgeValue)
 module OrderBackedges = SharedMemory.WithCache (IntKey) (BackedgeValue)
 
 module OrderKeys = SharedMemory.WithCache (StringKey) (OrderKeyValue)
+
+let heap_size () =
+  SharedMemory.heap_size ()
+  |> Float.of_int
+  |> (fun size -> size /. 1.0e6)
+  |> Int.of_float
