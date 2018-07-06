@@ -14,16 +14,17 @@ end
 
 val create : configuration: Configuration.t -> ?bucket_multiplier: int -> unit -> t
 
-val map_reduce:
-  t ->
-  ?bucket_size: int ->
-  init:'a ->
-  map:('a -> 'b list -> 'c) ->
-  reduce:('c -> 'a -> 'a) ->
-  'b list ->
-  'a
+val map_reduce
+  :  t
+  -> ?bucket_size: int
+  -> configuration: Configuration.t
+  -> init:'a
+  -> map:('a -> 'b list -> 'c)
+  -> reduce:('c -> 'a -> 'a)
+  -> 'b list
+  -> 'a
 
-val iter: t -> f: ('a -> unit) -> 'a list -> unit
+val iter: t -> configuration: Configuration.t -> f: ('a -> unit) -> 'a list -> unit
 
 val single_job : t -> f:('a -> 'b) -> 'a -> 'b
 

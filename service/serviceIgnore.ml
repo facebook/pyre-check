@@ -56,7 +56,7 @@ let register ~configuration scheduler handles =
     register_mode ~configuration handle;
   in
   if Scheduler.is_parallel scheduler then
-    Scheduler.iter scheduler ~f:register handles
+    Scheduler.iter scheduler ~configuration ~f:register handles
   else
     List.iter ~f:register handles;
   Statistics.performance ~name:"Registered ignores" ~timer ~configuration ~normals:[] ()

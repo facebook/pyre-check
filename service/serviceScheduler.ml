@@ -35,6 +35,7 @@ let gc_control =
 let map_reduce
     { workers; bucket_multiplier; number_of_workers; _ }
     ?bucket_size
+    ~configuration:{ Configuration.verbose; sections; _ }
     ~init
     ~map
     ~reduce
@@ -47,6 +48,10 @@ let map_reduce
         let bucket_multiplier = Core.Int.min bucket_multiplier (1 + (List.length work / 400)) in
         number_of_workers * bucket_multiplier
   in
+  let map accumulator inputs =
+    Log.initialize ~verbose ~sections;
+    map accumulator inputs
+  in
   MultiWorker.call (Some workers)
     ~job:map
     ~merge:reduce
@@ -54,9 +59,10 @@ let map_reduce
     ~next:(Bucket.make ~num_workers:number_of_workers work)
 
 
-let iter scheduler ~f work =
+let iter scheduler ~configuration ~f work =
   map_reduce
     scheduler
+    ~configuration
     ~init:()
     ~map:(fun _ work -> Core.List.iter ~f work)
     ~reduce:(fun _ _ -> ())
