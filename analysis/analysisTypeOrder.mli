@@ -70,7 +70,7 @@ val handler: t -> (module Handler)
 val insert: (module Handler) -> Type.t -> unit
 val connect
   :  ?parameters: Type.t list
-  -> add_backedge: bool
+  -> ?add_backedge: bool
   -> (module Handler)
   -> configuration: Configuration.t
   -> predecessor: Type.t

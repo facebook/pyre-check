@@ -21,7 +21,7 @@ let configuration = Configuration.create ()
 
 
 let connect ?(parameters = []) order ~predecessor ~successor =
-  connect ~configuration ~parameters ~add_backedge:true order ~predecessor ~successor
+  connect ~configuration ~parameters order ~predecessor ~successor
 
 
 (* Butterfly:

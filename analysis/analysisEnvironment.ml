@@ -108,13 +108,7 @@ let connect_definition
         | _ -> false
       in
       if annotations_tracked && not primitive_cycle && not cycle_with_top then
-        TypeOrder.connect
-          order
-          ~add_backedge:true
-          ~configuration
-          ~predecessor
-          ~successor
-          ~parameters
+        TypeOrder.connect order ~configuration ~predecessor ~successor ~parameters
     in
 
     let annotation =
@@ -1077,7 +1071,6 @@ let infer_protocols
       TypeOrder.connect
         (module Handler.TypeOrderHandler)
         ~configuration
-        ~add_backedge:true
         ~predecessor:source
         ~successor:target);
 
