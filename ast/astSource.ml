@@ -103,11 +103,18 @@ module Metadata = struct
         in
         Ignore.create ~ignored_line ~codes ~location ~kind
       in
-      if String.is_substring ~substring:"pyre-ignore" line then
+      let contains_outside_quotes ~substring line =
+        let find_substring index found characters =
+          found || (String.is_substring ~substring characters && index mod 2 = 0)
+        in
+        String.split_on_chars ~on:['\"'; '\''] line
+        |> List.foldi ~init:false ~f:find_substring
+      in
+      if contains_outside_quotes ~substring:"pyre-ignore" line then
         (create_ignore ~index ~line ~kind:Ignore.PyreIgnore) :: ignored_lines
-      else if String.is_substring ~substring:"pyre-fixme" line then
+      else if contains_outside_quotes ~substring:"pyre-fixme" line then
         (create_ignore ~index ~line ~kind:Ignore.PyreFixme) :: ignored_lines
-      else if String.is_substring ~substring:"type: ignore" line then
+      else if contains_outside_quotes ~substring:"type: ignore" line then
         (create_ignore ~index ~line ~kind:Ignore.TypeIgnore) :: ignored_lines
       else
         ignored_lines

@@ -128,7 +128,18 @@ let test_parse _ =
   (* Comment on preceding line. *)
   assert_ignore
     ["# pyre-ignore[7]"; "def foo() -> str: return"]
-    [create_ignore 2 [7] PyreIgnore 1 2 1 16]
+    [create_ignore 2 [7] PyreIgnore 1 2 1 16];
+
+  (* Don't include ignore keywords inside quotes *)
+  assert_ignore
+    ["def foo() -> int: return 1.0  # haha no 'pyre-ignore's here"]
+    [];
+  assert_ignore
+    ["def foo() -> int: return 1.0  # 'quote before is OK' pyre-ignore"]
+    [create_ignore 1 [] PyreIgnore 1 53 1 64];
+  assert_ignore
+    ["def foo() -> int: return 1.0  # 'still in quotes' 'pyre-ignore'"]
+    []
 
 
 let test_qualifier _ =
