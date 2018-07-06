@@ -152,13 +152,16 @@ module rec FixpointState : FixpointState = struct
     | Some expression -> analyze_expression expression state
 
 
-  let analyze_definition define state =
+  let analyze_definition ({ Define.name; _  } as define) state =
     let cfg = Cfg.create define in
     let initial = { taint = initial_taint; models = []; } in
     let result = Analyzer.forward ~cfg ~initial |> Analyzer.exit in
     match result with
     | None ->
-        Log.dump "definition %s did not produce result for entry node." (Cfg.show cfg);
+        Log.log
+          ~section:`Taint
+          "Definition %s did not produce result for entry node."
+          (Log.Color.cyan (Access.show name));
         state
     | Some result ->
         let source_model = extract_source_model define.Record.Define.parameters result.taint in
@@ -167,7 +170,7 @@ module rec FixpointState : FixpointState = struct
 
 
   let forward ?key:_ state ~statement:({ Node.value = statement; _ }) =
-    (* Log.dump "forward state: %s." (show state); *)
+    Log.log ~section:`Taint "Forward state: %s" (Log.Color.cyan (show state));
     match statement with
     | Assign { target; annotation; value; parent } ->
         let taint = analyze_expression_opt value state in
@@ -217,7 +220,7 @@ and Analyzer : Fixpoint.Fixpoint with type state = FixpointState.t = Fixpoint.Ma
 
 let run cfg =
   let initial = FixpointState.create () in
-  (* Log.dump "CFG: %s" (Cfg.show cfg); *)
+  Log.log ~section:`Taint "Processing CFG:@.%s" (Log.Color.cyan (Cfg.show cfg));
   let result = Analyzer.forward ~cfg ~initial |> Analyzer.exit in
-  (* let () = Log.dump "Result: %s" (FixpointState.show_models result) in *)
+  Log.log ~section:`Taint "Models: %s" (Log.Color.cyan (FixpointState.show_models result));
   result

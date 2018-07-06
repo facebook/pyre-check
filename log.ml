@@ -24,6 +24,7 @@ type section = [
   | `Performance
   | `Protocols
   | `Server
+  | `Taint
   | `Warning
 ]
 
@@ -46,6 +47,7 @@ let section_to_string = function
   | `Performance -> "Performance"
   | `Protocols -> "Protocols"
   | `Server -> "Server"
+  | `Taint -> "Taint"
   | `Warning -> "Warning"
 
 
@@ -131,6 +133,10 @@ let print format =
 module Color = struct
   let yellow string =
     Format.asprintf "\027[33m%s\027[0m" string
+
+
+  let cyan string =
+    Format.asprintf "\027[36m%s\027[0m" string
 end
 
 
