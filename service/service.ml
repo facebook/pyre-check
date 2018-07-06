@@ -5,7 +5,6 @@
 
 
 module Analysis = ServiceAnalysis
-module CallGraph = ServiceCallGraph
 module Coverage = ServiceCoverage
 module Environment = ServiceEnvironment
 module Ignore = ServiceIgnore

@@ -10,9 +10,6 @@ open Ast
 open Statement
 open Pyre
 
-module CallGraph = ServiceCallGraph
-
-
 let overrides_of_source environment source =
   let open Annotated in
   let resolution = Environment.resolution environment () in
@@ -37,9 +34,9 @@ let analyze ~scheduler:_ ~configuration:_ ~environment ~handles =
   Log.print "Analysis";
   let record_call_graph path =
     let record_call_graph call_graph =
-      CallGraph.add_callers ~path (Access.Map.keys call_graph);
+      CallGraphSharedMemory.add_callers ~path (Access.Map.keys call_graph);
       let add_call_graph ~key:caller ~data:callees =
-        CallGraph.add_call_edges ~caller ~callees
+        CallGraphSharedMemory.add_call_edges ~caller ~callees
       in
       Access.Map.iteri call_graph ~f:add_call_graph
     in
@@ -53,7 +50,7 @@ let analyze ~scheduler:_ ~configuration:_ ~environment ~handles =
   let record_overrides handle =
     let record_overrides overrides_map =
       let record_override_edge ~key:ancestor ~data:children =
-        CallGraph.add_overrides ~ancestor ~children
+        CallGraphSharedMemory.add_overrides ~ancestor ~children
       in
       Access.Map.iteri overrides_map ~f:record_override_edge
     in
