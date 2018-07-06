@@ -418,7 +418,7 @@ let request_handler_thread
 
 (** Main server either as a daemon or in terminal *)
 let serve (socket, server_configuration) =
-  Log.info "Server running as pid %d" (Pid.to_int (Unix.getpid ()));
+  Log.debug "Server running as pid %d" (Pid.to_int (Unix.getpid ()));
   let ({ Configuration.verbose; sections; _ } as configuration) =
     server_configuration.configuration
   in

@@ -264,7 +264,7 @@ let run_command ~daemonize ~verbose ~sections ~source_root =
       let stdin = Daemon.null_fd () in
       let log_path = Log.rotate (Path.absolute (log_path configuration)) in
       let stdout = Daemon.fd_of_path log_path in
-      Log.info "Spawning the watchman daemon now.";
+      Log.debug "Spawning the watchman daemon now.";
       let { Daemon.pid; _ } as handle =
         Daemon.spawn
           (stdin, stdout, stdout)
@@ -272,7 +272,7 @@ let run_command ~daemonize ~verbose ~sections ~source_root =
           configuration
       in
       Daemon.close handle;
-      Log.info "Watchman daemon pid: %d" pid
+      Log.debug "Watchman daemon pid: %d" pid
     end
   else
     begin
