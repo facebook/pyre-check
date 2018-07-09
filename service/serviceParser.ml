@@ -36,7 +36,7 @@ let parse_path_to_source file =
       None
 
 
-let parse_module ~files =
+let parse_modules_job ~files =
   let parse file =
     file
     |> parse_path_to_source
@@ -63,7 +63,7 @@ let parse_module ~files =
   List.iter files ~f:parse
 
 
-let parse_source ~files =
+let parse_sources_job ~files =
   let parse handles file =
     (file
      |> parse_path_to_source
@@ -85,19 +85,19 @@ let parse_sources ~configuration ~scheduler ~files =
   let handles =
     if Scheduler.is_parallel scheduler then
       begin
-        Scheduler.iter scheduler ~configuration ~f:(fun files -> parse_module ~files) files;
+        Scheduler.iter scheduler ~configuration ~f:(fun files -> parse_modules_job ~files) files;
         Scheduler.map_reduce
           scheduler
           ~configuration
           ~init:[]
-          ~map:(fun _ files -> parse_source ~files)
+          ~map:(fun _ files -> parse_sources_job ~files)
           ~reduce:(fun new_handles processed_handles -> processed_handles @ new_handles)
           files
       end
     else
       begin
-        parse_module ~files;
-        parse_source ~files
+        parse_modules_job ~files;
+        parse_sources_job ~files
       end
   in
   let () =
