@@ -86,7 +86,7 @@ let check
     | Some scheduler -> scheduler
   in
   (* Parsing. *)
-  let stubs, sources = Service.Parser.parse_all scheduler ~configuration in
+  let { Service.Parser.stubs; sources } = Service.Parser.parse_all scheduler ~configuration in
   (* Coverage. *)
   let () =
     let number_of_files = List.length sources in

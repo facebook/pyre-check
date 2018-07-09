@@ -216,6 +216,12 @@ let parse_sources
   handles
 
 
+type result = {
+  stubs: File.Handle.t list;
+  sources: File.Handle.t list;
+}
+
+
 let parse_all scheduler ~configuration:({ Configuration.source_root; _ } as configuration) =
   let stubs = parse_stubs scheduler ~configuration in
   let known_stubs =
@@ -246,4 +252,4 @@ let parse_all scheduler ~configuration:({ Configuration.source_root; _ } as conf
     in
     parse_sources ~filter scheduler ~configuration
   in
-  stubs, sources
+  { stubs; sources }

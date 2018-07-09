@@ -20,7 +20,9 @@ val parse_sources_list
   -> files: File.t list
   -> File.Handle.t list
 
-val parse_all
-  :  ServiceScheduler.t
-  -> configuration: Configuration.t
-  -> File.Handle.t list * File.Handle.t list
+type result = {
+  stubs: File.Handle.t list;
+  sources: File.Handle.t list;
+}
+
+val parse_all: ServiceScheduler.t -> configuration: Configuration.t -> result

@@ -183,18 +183,18 @@ let test_parse_sources context =
 
     let configuration = Configuration.create ~source_root ~search_path:[module_root] () in
     let scheduler = Scheduler.mock () in
-    let stub_handles, source_handles = Service.Parser.parse_all scheduler ~configuration in
-    let stub_handles =
-      stub_handles
+    let { Service.Parser.stubs; sources } = Service.Parser.parse_all scheduler ~configuration in
+    let stubs =
+      stubs
       |> List.map ~f:File.Handle.show
       |> List.sort ~compare:String.compare
     in
-    let source_handles =
-      source_handles
+    let sources =
+      sources
       |> List.map ~f:File.Handle.show
       |> List.sort ~compare:String.compare
     in
-    stub_handles, source_handles
+    stubs, sources
   in
   assert_equal
     ~cmp:(List.equal ~equal:String.equal)
