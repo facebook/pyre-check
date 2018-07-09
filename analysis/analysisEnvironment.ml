@@ -1069,8 +1069,6 @@ let infer_protocols ~handler:((module Handler: Handler) as handler) =
         ~predecessor:source
         ~successor:target);
 
-  TypeOrder.check_integrity (module Handler.TypeOrderHandler);
-
   Statistics.performance ~name:"inferred protocol implementations" ~timer ()
 
 
