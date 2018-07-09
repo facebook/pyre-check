@@ -37,7 +37,7 @@ let test_parse_stubs_modules_list _ =
     ]
   in
   let handles =
-    Service.Parser.parse_sources_list
+    Service.Parser.parse_sources
       ~configuration:(Configuration.create ())
       ~scheduler:(Scheduler.mock ())
       ~files
@@ -118,14 +118,14 @@ let test_parse_stubs context =
     handles
 
 
-let test_parse_sources_list _ =
+let test_parse_sources _ =
   let file =
     File.create
       ~content:(Some "def foo()->int:\n    return 1\n")
       (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:"a.py")
   in
   let handles =
-    Service.Parser.parse_sources_list
+    Service.Parser.parse_sources
       ~configuration:(Configuration.create ~source_root:(Path.current_working_directory ()) ())
       ~scheduler:(Scheduler.mock ())
       ~files:[file]
@@ -226,7 +226,7 @@ let test_register_modules _ =
     AstSharedMemory.remove_paths (List.filter_map ~f:(fun file -> File.handle file) [file]);
     let configuration = Configuration.create ~source_root:(Path.current_working_directory ()) () in
     let sources =
-      Service.Parser.parse_sources_list
+      Service.Parser.parse_sources
         ~configuration
         ~scheduler:(Scheduler.mock ())
         ~files:[file]
@@ -287,7 +287,7 @@ let () =
     "parse_stubs_modules_list">::test_parse_stubs_modules_list;
     "parse_stubs">::test_parse_stubs;
     "parse_sources">::test_parse_sources;
-    "parse_sources_list">::test_parse_sources_list;
+    "parse_sources">::test_parse_sources;
     "register_modules">::test_register_modules;
   ]
   |> run_test_tt_main

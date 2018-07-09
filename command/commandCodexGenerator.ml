@@ -35,10 +35,10 @@ let run is_parallel source_root () =
   let root = Path.create_absolute source_root in
 
   Log.info "Parsing...";
-  let source_handles = Service.Parser.parse_sources scheduler ~configuration in
+  let { Service.Parser.sources; _ } = Service.Parser.parse_all scheduler ~configuration in
 
   Log.info "Generating JSON for Codex...";
-  to_json ~root:(Path.absolute root) source_handles
+  to_json ~root:(Path.absolute root) sources
   |> Yojson.Safe.to_string
   |> Log.print "%s"
 

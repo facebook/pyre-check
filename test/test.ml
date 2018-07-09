@@ -134,7 +134,7 @@ let parse_list named_sources =
       ~content:(Some (trim_extra_indentation source))
       (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:name)
   in
-  Service.Parser.parse_sources_list
+  Service.Parser.parse_sources
     ~configuration:(Configuration.create ~source_root:(Path.current_working_directory ()) ())
     ~scheduler:(Service.Scheduler.mock ())
     ~files:(List.map ~f:create_file named_sources)

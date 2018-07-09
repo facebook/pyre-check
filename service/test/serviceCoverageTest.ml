@@ -7,7 +7,7 @@ open Service
 let test_coverage _ =
   let coverage =
     let handles =
-      Service.Parser.parse_sources_list
+      Service.Parser.parse_sources
         ~configuration:(Configuration.create ())
         ~scheduler:(Scheduler.mock ())
         ~files:[

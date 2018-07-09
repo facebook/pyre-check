@@ -81,7 +81,7 @@ let parse_source ~files =
   List.fold ~init:[] ~f:parse files
 
 
-let parse_sources_list ~configuration ~scheduler ~files =
+let parse_sources ~configuration ~scheduler ~files =
   let handles =
     if Scheduler.is_parallel scheduler then
       begin
@@ -186,7 +186,7 @@ let parse_stubs
 
   Log.info "Parsing %d stubs and external sources..." (List.length paths);
   let handles =
-    parse_sources_list ~configuration ~scheduler ~files:(List.map ~f:File.create paths)
+    parse_sources ~configuration ~scheduler ~files:(List.map ~f:File.create paths)
   in
   Statistics.performance ~name:"stubs parsed" ~timer ();
   let not_parsed = (List.length paths) - (List.length handles) in
@@ -197,23 +197,6 @@ let parse_stubs
 let find_sources ?(filter = fun _ -> true) { Configuration.source_root; _ } =
   let filter path = String.is_suffix ~suffix:".py" path && filter path in
   File.list ~filter ~root:source_root
-
-
-let parse_sources
-    ?(filter = fun _ -> true)
-    scheduler
-    ~configuration:({ Configuration.source_root; _ } as configuration) =
-  let timer = Timer.start () in
-  let paths = find_sources configuration ~filter in
-  Log.info "Parsing %d sources in `%a`..." (List.length paths) Path.pp source_root;
-  let handles =
-    parse_sources_list ~configuration ~scheduler ~files:(List.map ~f:File.create paths)
-  in
-  let not_parsed = (List.length paths) - (List.length handles) in
-  log_parse_errors_count ~not_parsed ~description:"file";
-
-  Statistics.performance ~name:"sources parsed" ~timer ();
-  handles
 
 
 type result = {
@@ -250,6 +233,15 @@ let parse_all scheduler ~configuration:({ Configuration.source_root; _ } as conf
       | _ ->
           true
     in
-    parse_sources ~filter scheduler ~configuration
+    let timer = Timer.start () in
+    let paths = find_sources configuration ~filter in
+    Log.info "Parsing %d sources in `%a`..." (List.length paths) Path.pp source_root;
+    let handles =
+      parse_sources ~configuration ~scheduler ~files:(List.map ~f:File.create paths)
+    in
+    let not_parsed = (List.length paths) - (List.length handles) in
+    log_parse_errors_count ~not_parsed ~description:"file";
+    Statistics.performance ~name:"sources parsed" ~timer ();
+    handles
   in
   { stubs; sources }

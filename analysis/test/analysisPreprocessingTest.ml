@@ -808,7 +808,7 @@ let test_expand_wildcard_imports _ =
     let file_to_check = create_file ("test.py", check_source) in
     clear_memory (file_to_check :: files);
     let file_to_check_handle =
-      Service.Parser.parse_sources_list
+      Service.Parser.parse_sources
         ~configuration:(Configuration.create ~source_root:(Path.current_working_directory ()) ())
         ~scheduler:(Scheduler.mock ())
         ~files:(file_to_check :: files)

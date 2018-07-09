@@ -155,7 +155,7 @@ let rec process_request
         Handler.purge handles
       in
       let stubs, sources = List.partition_tf ~f:is_stub update_environment_with in
-      let stubs = Service.Parser.parse_sources_list ~configuration ~scheduler ~files:stubs in
+      let stubs = Service.Parser.parse_sources ~configuration ~scheduler ~files:stubs in
       let sources =
         let keep file =
           (File.handle ~root:source_root file
@@ -167,7 +167,7 @@ let rec process_request
         in
         List.filter ~f:keep sources
       in
-      let sources = Service.Parser.parse_sources_list ~configuration ~scheduler ~files:sources in
+      let sources = Service.Parser.parse_sources ~configuration ~scheduler ~files:sources in
       stubs @ sources
     in
     let new_source_handles = List.filter_map ~f:(File.handle ~root:source_root) check in

@@ -47,7 +47,7 @@ let assert_errors
   in
   let scheduler = Scheduler.mock () in
   let handles =
-    Service.Parser.parse_sources_list
+    Service.Parser.parse_sources
       ~configuration
       ~scheduler
       ~files:(create_files ~root input_source)
