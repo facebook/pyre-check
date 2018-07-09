@@ -36,49 +36,34 @@ let parse_path_to_source file =
       None
 
 
-let parse_to_module_parallel ~scheduler ~configuration ~job ~files =
-  Scheduler.map_reduce
-    scheduler
-    ~configuration
-    ~init:()
-    ~map:(fun _ files -> job ~files)
-    ~reduce:(fun _ _ -> ())
-    files
-
-
-let parse_to_module_job ~files =
+let parse_module ~files =
   let parse file =
-    (file
-     |> parse_path_to_source
-     >>| fun source ->
-     let add_module_from_source
-         { Source.qualifier; path; statements; metadata = { Source.Metadata.local_mode; _ }; _ } =
-       Module.create
-         ~qualifier
-         ~local_mode
-         ~path
-         ~stub:(String.is_suffix path ~suffix:".pyi")
-         statements
-       |> AstSharedMemory.add_module qualifier
-     in
-     source
-     |> add_module_from_source)
-    |> ignore; ()
+    file
+    |> parse_path_to_source
+    >>| (fun source ->
+        let add_module_from_source
+            {
+              Source.qualifier;
+              path;
+              statements;
+              metadata = { Source.Metadata.local_mode; _ };
+              _;
+            } =
+          Module.create
+            ~qualifier
+            ~local_mode
+            ~path
+            ~stub:(String.is_suffix path ~suffix:".pyi")
+            statements
+          |> AstSharedMemory.add_module qualifier
+        in
+        add_module_from_source source)
+    |> ignore
   in
-  List.iter ~f:parse files
+  List.iter files ~f:parse
 
 
-let parse_parallel ~scheduler ~configuration ~job ~files =
-  Scheduler.map_reduce
-    scheduler
-    ~configuration
-    ~init:[]
-    ~map:(fun _ files -> job ~files)
-    ~reduce:(fun new_handles processed_handles -> processed_handles @ new_handles)
-    files
-
-
-let parse_job ~files =
+let parse_source ~files =
   let parse handles file =
     (file
      |> parse_path_to_source
@@ -100,17 +85,25 @@ let parse_sources_list ~configuration ~scheduler ~files =
   let handles =
     if Scheduler.is_parallel scheduler then
       begin
-        parse_to_module_parallel
-          ~scheduler
+        Scheduler.map_reduce
+          scheduler
           ~configuration
-          ~job:parse_to_module_job
-          ~files;
-        parse_parallel ~scheduler ~configuration ~job:parse_job ~files;
+          ~init:()
+          ~map:(fun _ files -> parse_module ~files)
+          ~reduce:(fun _ _ -> ())
+          files;
+        Scheduler.map_reduce
+          scheduler
+          ~configuration
+          ~init:[]
+          ~map:(fun _ files -> parse_source ~files)
+          ~reduce:(fun new_handles processed_handles -> processed_handles @ new_handles)
+          files
       end
     else
       begin
-        parse_to_module_job ~files;
-        parse_job ~files
+        parse_module ~files;
+        parse_source ~files
       end
   in
   let () =
