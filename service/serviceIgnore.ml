@@ -51,14 +51,14 @@ let register ~configuration scheduler handles =
   let timer = Timer.start () in
   remove_ignores handles;
 
-  let register handle =
-    register_ignores handle;
-    register_mode ~configuration handle;
+  let register handles =
+    List.iter handles ~f:register_ignores;
+    List.iter handles ~f:(register_mode ~configuration);
   in
   if Scheduler.is_parallel scheduler then
     Scheduler.iter scheduler ~configuration ~f:register handles
   else
-    List.iter ~f:register handles;
+    register handles;
   Statistics.performance ~name:"Registered ignores" ~timer ()
 
 

@@ -128,7 +128,7 @@ let iter scheduler ~configuration ~f work =
     scheduler
     ~configuration
     ~init:()
-    ~map:(fun _ work -> Core.List.iter ~f work)
+    ~map:(fun _ work -> f work)
     ~reduce:(fun _ _ -> ())
     work
 

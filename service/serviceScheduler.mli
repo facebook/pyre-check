@@ -26,7 +26,7 @@ val map_reduce
   -> 'b list
   -> 'a
 
-val iter: t -> configuration: Configuration.t -> f: ('a -> unit) -> 'a list -> unit
+val iter: t -> configuration: Configuration.t -> f: ('a list -> unit) -> 'a list -> unit
 
 val single_job : t -> f:('a -> 'b) -> 'a -> 'b
 

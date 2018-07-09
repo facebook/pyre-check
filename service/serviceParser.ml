@@ -85,13 +85,7 @@ let parse_sources ~configuration ~scheduler ~files =
   let handles =
     if Scheduler.is_parallel scheduler then
       begin
-        Scheduler.map_reduce
-          scheduler
-          ~configuration
-          ~init:()
-          ~map:(fun _ files -> parse_module ~files)
-          ~reduce:(fun _ _ -> ())
-          files;
+        Scheduler.iter scheduler ~configuration ~f:(fun files -> parse_module ~files) files;
         Scheduler.map_reduce
           scheduler
           ~configuration
