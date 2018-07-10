@@ -72,7 +72,7 @@ let parse_untrimmed
       let header =
         Format.asprintf
           "\nCould not parse test at %a"
-          Location.pp location
+          Location.pp_reference location
       in
       let indicator =
         if column > 0 then (String.make (column - 1) ' ') ^ "^" else "^" in
@@ -118,6 +118,7 @@ let parse
     ?(docstring = None)
     ?local_mode
     source =
+  AstSharedMemory.add_path_hash ~path;
   let ({ Source.metadata; _ } as source) =
     trim_extra_indentation source
     |> parse_untrimmed ~path ~qualifier ~debug ~version ~docstring

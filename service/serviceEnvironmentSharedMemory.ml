@@ -37,9 +37,9 @@ module StringKey = struct
 end
 
 module LocationKey = struct
-  type t = Location.t
-  let to_string = Location.to_string
-  let compare = Location.compare
+  type t = Location.reference
+  let to_string = Location.to_string_reference
+  let compare = Location.compare_reference
 end
 
 

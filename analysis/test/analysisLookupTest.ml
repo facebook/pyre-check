@@ -16,6 +16,19 @@ open Test
 let configuration = Configuration.create ()
 
 
+let show_location { Location.path; start; stop } =
+  let show_position { Location.line; column } = Format.sprintf "%d:%d" line column in
+  Format.sprintf "%s:%s-%s" (path) (show_position start) (show_position stop)
+
+
+let instantiate =
+  let lookup_table =
+    Int.Table.of_alist_exn
+      [String.hash "test.py", "test.py"]
+  in
+  Location.instantiate ~lookup:(Hashtbl.find lookup_table)
+
+
 let generate_lookup source =
   let parsed =
     parse
@@ -51,7 +64,7 @@ let assert_annotation ~lookup ~position ~annotation =
     annotation
     (Lookup.get_annotation lookup ~position
      >>| (fun (location, annotation) ->
-         Format.asprintf "%s/%a" (Location.to_string location) Type.pp annotation))
+         Format.asprintf "%s/%a" (show_location location) Type.pp annotation))
 
 
 let test_lookup_call_arguments _ =
@@ -76,7 +89,7 @@ let test_lookup_call_arguments _ =
     ]
     (Location.Table.to_alist lookup
      |> List.map ~f:(fun (key, data) ->
-         Format.asprintf "%s/%a" (Location.to_string key) Type.pp data)
+         Format.asprintf "%s/%a" (show_location (instantiate key)) Type.pp data)
      |> List.sort ~compare:String.compare);
   assert_annotation
     ~lookup
@@ -140,7 +153,7 @@ let test_lookup_pick_narrowest _ =
     ]
     (Location.Table.to_alist lookup
      |> List.map ~f:(fun (key, data) ->
-         Format.asprintf "%s/%a" (Location.to_string key) Type.pp data)
+         Format.asprintf "%s/%a" (show_location (instantiate key)) Type.pp data)
      |> List.sort ~compare:String.compare);
   assert_annotation
     ~lookup
@@ -172,7 +185,7 @@ let test_lookup_class_attributes _ =
     ]
     (Location.Table.to_alist lookup
      |> List.map ~f:(fun (key, data) ->
-         Format.asprintf "%s/%a" (Location.to_string key) Type.pp data)
+         Format.asprintf "%s/%a" (show_location (instantiate key)) Type.pp data)
      |> List.sort ~compare:String.compare);
   assert_annotation
     ~lookup
@@ -218,7 +231,7 @@ let test_lookup_identifier_accesses _ =
     ]
     (Location.Table.to_alist lookup
      |> List.map ~f:(fun (key, data) ->
-         Format.asprintf "%s/%a" (Location.to_string key) Type.pp data)
+         Format.asprintf "%s/%a" (show_location (instantiate key)) Type.pp data)
      |> List.sort ~compare:String.compare);
   assert_annotation
     ~lookup

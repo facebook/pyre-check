@@ -38,7 +38,7 @@ let poll_for_deletion lock_path =
 let test_language_server_protocol_json_format context =
   let open TypeCheck.Error in
   let filename, _ = bracket_tmpfile ~suffix:".py" context in
-  let type_error : TypeCheck.Error.t =
+  let ({ Error.location; _ } as type_error) =
     CommandTest.make_errors
       {|
         class unittest.mock.Base: ...
@@ -49,9 +49,8 @@ let test_language_server_protocol_json_format context =
     |> List.hd_exn
   in
   let type_error =
-    { type_error
-      with location = { type_error.location with Location.path = filename }
-    } in
+    { type_error with location = { location with Location.path = filename } }
+  in
 
   let normalize string =
     (* Working around OS inconsitencies. *)
@@ -192,8 +191,8 @@ let environment () =
 
 
 let associate_errors_and_filenames error_list =
-  let error_file ({ Error.location = { Location.path; _ }; _ } as error) =
-    File.Handle.create path, error
+  let error_file error =
+    File.Handle.create (Error.path error), error
   in
   List.map ~f:error_file error_list
   |> (List.fold
@@ -249,8 +248,7 @@ let assert_request_gets_response
     List.iter
       (make_errors ~path source)
       ~f:(fun error ->
-          let { Location.path; _ } = Error.location error in
-          Hashtbl.add_multi errors ~key:(File.Handle.create path) ~data:error);
+          Hashtbl.add_multi errors ~key:(File.Handle.create (Error.path error)) ~data:error);
     errors
   in
   let mock_server_state =
@@ -267,7 +265,13 @@ let assert_request_gets_response
   in
   Scheduler.destroy mock_server_state.State.scheduler;
   CommandTest.clean_environment ();
-  assert_equal response expected_response
+  let pr = (function | None -> "None" | Some response -> Protocol.show_response response) in
+  let pp_opt formatter =
+    function
+    | None -> Format.pp_print_string formatter "None"
+    | Some response -> Protocol.pp_response formatter response
+  in
+  assert_equal ~pp_diff:(diff ~print:pp_opt) ~printer:pr response expected_response
 
 
 let test_shutdown _ =
@@ -717,8 +721,8 @@ let test_incremental_lookups _ =
     |> Lookup.create_of_source state.State.environment
     |> Location.Table.to_alist
     |> List.map ~f:(fun (key, data) ->
-        Format.asprintf "%s/%a" (Location.to_string key) Type.pp data
-        |> String.chop_prefix_exn ~prefix:relative_path)
+        Format.asprintf "%s/%a" (Location.to_string_reference key) Type.pp data
+        |> String.chop_prefix_exn ~prefix:(Int.to_string (String.hash relative_path)))
     |> List.sort ~compare:String.compare
   in
   assert_equal

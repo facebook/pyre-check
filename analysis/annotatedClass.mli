@@ -118,7 +118,7 @@ module Attribute : sig
   val annotation: t -> Annotation.t
   val parent: t -> class_t
   val value: t -> Expression.t option
-  val location: t -> Location.t
+  val location: t -> Location.reference
   val defined: t -> bool
   val class_attribute: t -> bool
 

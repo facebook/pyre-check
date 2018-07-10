@@ -51,14 +51,14 @@ let mock_parent =
   |> Annotated.Class.create
 
 
-let create_mock_location path =
-  let start = { Location.line = 1; column = 1 } in
-  let stop = { Location.line = 1; column = 1 } in
-  { Location.path; start; stop; }
-
-
 let error ?(define = mock_define) kind =
-  { Error.location = Location.any; kind; define }
+  let any_position = { Location.line = -1; column = -1 } in
+
+  {
+    Error.location = { Location.path = "*"; start = any_position; stop = any_position };
+    kind;
+    define;
+  }
 
 
 let revealed_type access annotation =
@@ -109,7 +109,7 @@ let test_due_to_analysis_limitations _ =
                   Error.actual = Type.Top;
                   expected = Type.Top;
                 };
-                declare_location = Location.any;
+                declare_location = Location.any_instantiated;
               };
             })));
   assert_true
@@ -123,7 +123,7 @@ let test_due_to_analysis_limitations _ =
                   Error.actual = Type.Top;
                   expected = Type.string;
                 };
-                declare_location = Location.any;
+                declare_location = Location.any_instantiated;
               };
             })));
   assert_false
@@ -137,7 +137,7 @@ let test_due_to_analysis_limitations _ =
                   Error.actual = Type.string;
                   expected = Type.Top;
                 };
-                declare_location = Location.any;
+                declare_location = Location.any_instantiated;
               };
             })));
 
@@ -312,7 +312,7 @@ let test_join _ =
     in
     let resolution = Environment.resolution environment () in
     let result = Error.join ~resolution left right in
-    assert_equal ~cmp:Error.equal result expected
+    assert_equal ~printer:Error.show ~cmp:Error.equal result expected
   in
   assert_join
     (error
@@ -324,7 +324,7 @@ let test_join _ =
                Error.actual = Type.Top;
                expected = Type.Top;
              };
-             declare_location = Location.any;
+             declare_location = Location.any_instantiated;
            };
          }))
     (error (Error.IncompatibleVariableType {
@@ -333,7 +333,7 @@ let test_join _ =
            Error.actual = Type.Top;
            expected = Type.Top;
          };
-         declare_location = Location.any;
+         declare_location = Location.any_instantiated;
        }))
     (error Error.Top);
   assert_join
@@ -367,6 +367,13 @@ let test_join _ =
              expected = Type.string;
            };
          }));
+  let create_mock_location path =
+    {
+      Location.path;
+      start = { Location.line = 1; column = 1 };
+      stop = { Location.line = 1; column = 1 };
+    }
+  in
   assert_join
     (error
        (Error.MissingGlobalAnnotation {

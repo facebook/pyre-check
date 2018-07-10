@@ -14,53 +14,62 @@ type position = {
 [@@deriving compare, eq, sexp, show, hash]
 
 
-type t = {
-  path: string;
+type 'path t = {
+  path: 'path;
   start: position;
   stop: position;
 }
 [@@deriving compare, eq, sexp, show, hash]
 
+type reference = int t
+[@@deriving compare, eq, sexp, show, hash]
 
-let show =
-  Format.asprintf "%a" pp
+type instantiated = string t
+[@@deriving compare, eq, sexp, show, hash]
 
 
-let pp format { path; start; stop; } =
+let pp_reference format { path; start; stop } =
+  Format.fprintf format "%d:%d:%d-%d:%d" path start.line start.column stop.line stop.column
+
+
+let pp_instantiated format { path; start; stop } =
   Format.fprintf format "%s:%d:%d-%d:%d" path start.line start.column stop.line stop.column
 
 
-let to_string { path; start; stop; } =
-  Format.asprintf "%s:%d:%d-%d:%d" path start.line start.column stop.line stop.column
+let to_string pp_path { path; start; stop } =
+  Format.asprintf "%a:%d:%d-%d:%d" pp_path path start.line start.column stop.line stop.column
+
+let to_string_reference = to_string Int.pp
+let to_string_instantiated = to_string String.pp
 
 
-let pp_start format { path; start; _ } =
+let pp_start_instantiated format { path; start; _ } =
   Format.fprintf format "%s:%d:%d" path start.line start.column
 
 
-module Map = Map.Make(struct
-    type nonrec t = t
-    let compare = compare
-    let sexp_of_t = sexp_of_t
-    let t_of_sexp = t_of_sexp
+module ReferenceMap = Map.Make(struct
+    type nonrec t = reference
+    let compare = compare_reference
+    let sexp_of_t = sexp_of_reference
+    let t_of_sexp = reference_of_sexp
   end)
 
 
-module Set = Set.Make(struct
-    type nonrec t = t
-    let compare = compare
-    let sexp_of_t = sexp_of_t
-    let t_of_sexp = t_of_sexp
+module ReferenceSet = Set.Make(struct
+    type nonrec t = reference
+    let compare = compare_reference
+    let sexp_of_t = sexp_of_reference
+    let t_of_sexp = reference_of_sexp
   end)
 
 
 include Hashable.Make(struct
-    type nonrec t = t
-    let compare = compare
+    type nonrec t = reference
+    let compare = compare_reference
     let hash = Hashtbl.hash
-    let hash_fold_t = hash_fold_t
-    let sexp_of_t = sexp_of_t
-    let t_of_sexp = t_of_sexp
+    let hash_fold_t = hash_fold_reference
+    let sexp_of_t = sexp_of_reference
+    let t_of_sexp = reference_of_sexp
   end)
 
 
@@ -72,10 +81,19 @@ let create_position position =
 
 
 let create ~start ~stop = {
-  path = start.Lexing.pos_fname;
+  path = String.hash start.Lexing.pos_fname;
   start = create_position start;
   stop = create_position stop;
 }
+
+
+let instantiate ~lookup { path; start; stop } =
+  let path = Option.value (lookup path) ~default:"*" in
+  { path; start; stop }
+
+
+let to_reference { path; start; stop } =
+  { path = String.hash path; start; stop }
 
 
 let any_position =
@@ -83,6 +101,10 @@ let any_position =
 
 
 let any =
+  { path = -1; start = any_position; stop = any_position }
+
+
+let any_instantiated =
   { path = "*"; start = any_position; stop = any_position }
 
 

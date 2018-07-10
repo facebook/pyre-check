@@ -778,7 +778,6 @@ let test_show_error_traces _ =
       "non-optional type `int` but is never initialized. Attribute `attribute` is declared on " ^
       "line 3, never initialized and therefore must be `typing.Optional[int]`.";
     ];
-
   assert_type_errors ~show_error_traces:true
     {|
       class Foo:

@@ -36,7 +36,7 @@ let test_parse _ =
     let location =
       let start = { Location.line = start_line; column = start_column } in
       let stop = { Location.line = end_line; column = end_column } in
-      { Location.path = test_path; start; stop }
+      { Location.path = String.hash test_path; start; stop }
     in
     create ~ignored_line ~codes ~kind ~location
   in

@@ -12,27 +12,40 @@ type position = {
 [@@deriving compare, eq, sexp, show, hash]
 
 (* Yes, I hate abbreviations that much *)
-type t = {
-  path: string;
+type 'path t = {
+  path: 'path;
   start: position;
   stop: position;
 }
 [@@deriving compare, eq, sexp, show, hash]
 
-val to_string: t -> string
 
-val pp_start: Format.formatter -> t -> unit
+type reference = int t
+[@@deriving compare, eq, sexp, show, hash]
 
-module Map : Map.S with type Key.t = t
 
-module Set : Set.S with type Elt.t = t
+type instantiated = string t
+[@@deriving compare, eq, sexp, show, hash]
 
-include Hashable with type t := t
 
-val create: start:Lexing.position -> stop:Lexing.position -> t
+val to_string_reference: reference -> string
+val to_string_instantiated: instantiated -> string
 
-val any: t
+val pp_start_instantiated: Format.formatter -> instantiated -> unit
 
-val line: t -> int
-val column: t -> int
-val path: t -> string
+module ReferenceMap : Map.S with type Key.t = reference
+
+module ReferenceSet : Set.S with type Elt.t = reference
+
+include Hashable with type t := reference
+
+val create: start:Lexing.position -> stop:Lexing.position -> reference
+val instantiate: lookup: (int -> string option) -> reference -> instantiated
+val to_reference: instantiated -> reference
+
+val any: reference
+val any_instantiated: instantiated
+
+val line: 'path t -> int
+val column: 'path t -> int
+val path: 'path t -> 'path

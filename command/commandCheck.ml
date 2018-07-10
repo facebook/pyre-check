@@ -161,7 +161,7 @@ let check
   { handles = stubs @ sources; environment; errors }
 
 
-(** run_command prints out the errors, for a Check run *)
+(* run_command prints out the errors, for a Check run *)
 let run_check
     verbose
     expected_version

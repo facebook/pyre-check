@@ -209,12 +209,18 @@ module Access : sig
   val is_strict_prefix: prefix: t -> t -> bool
   val drop_prefix: t -> prefix: t -> t
 
-  val call: ?arguments: Argument.t list -> location: Location.t ->  name: string -> unit -> t
+  val call
+    :  ?arguments: Argument.t list
+    -> location: Location.reference
+    ->  name: string
+    -> unit
+    -> t
+
   (* Calls like `__add__` have backups that are called on exceptions. *)
   val backup: arguments: Argument.t list -> name: t -> (Argument.t list * t) option
   (* Some calls are redirected to method calls, e.g. `repr(x)` will call
      `x.__repr__()`. *)
-  val redirect: arguments: Argument.t list -> location: Location.t -> name: t -> t option
+  val redirect: arguments: Argument.t list -> location: Location.reference -> name: t -> t option
 end
 
 val access: t -> Access.t

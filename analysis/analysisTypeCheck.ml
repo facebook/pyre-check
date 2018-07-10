@@ -23,15 +23,16 @@ module TypeOrder = AnalysisTypeOrder
 module Coverage = AnalysisCoverage
 
 
+
 module State = struct
   type nested_define = Define.t
 
   and t = {
     configuration: Configuration.t;
     resolution: Resolution.t;
-    errors: Error.t Location.Map.t;
+    errors: Error.t Location.ReferenceMap.t;
     define: Define.t Node.t;
-    nested_defines: nested_define Location.Map.t;
+    nested_defines: nested_define Location.ReferenceMap.t;
     bottom: bool;
     resolution_fixpoint: (Annotation.t Access.Map.t) Int.Map.t
   }
@@ -83,7 +84,7 @@ module State = struct
       let error_to_string (location, error) =
         Format.asprintf
           "    %a -> %s"
-          Location.pp location
+          Location.pp_reference location
           (Error.description error ~detailed:true)
       in
       List.map (Map.to_alist errors) ~f:error_to_string
@@ -125,9 +126,9 @@ module State = struct
     {
       configuration;
       resolution;
-      errors = Location.Map.empty;
+      errors = Location.ReferenceMap.empty;
       define;
-      nested_defines = Location.Map.empty;
+      nested_defines = Location.ReferenceMap.empty;
       bottom = false;
       resolution_fixpoint;
     }
@@ -156,11 +157,10 @@ module State = struct
                 errors
               else
                 let error =
-                  {
-                    Error.location;
-                    kind = Error.IncompatibleConstructorAnnotation annotation;
-                    define = define_node;
-                  }
+                  Error.create
+                    ~location
+                    ~kind:(Error.IncompatibleConstructorAnnotation annotation)
+                    ~define:define_node
                 in
                 error :: errors
           | _ ->
@@ -188,18 +188,18 @@ module State = struct
                   errors
                 else
                   let error =
-                    {
-                      Error.location = Attribute.location attribute;
-                      kind = Error.UninitializedAttribute {
+                    Error.create
+                      ~location:(Attribute.location attribute)
+                      ~kind:(
+                        Error.UninitializedAttribute {
                           Error.name;
                           parent = class_definition;
                           mismatch = {
                             Error.expected;
                             actual = (Type.optional expected)
                           };
-                        };
-                      define = define_node;
-                    }
+                        })
+                      ~define:define_node
                   in
                   error :: errors
             | _ -> errors
@@ -215,9 +215,10 @@ module State = struct
         >>| check_class_attributes
         |> Option.value ~default:errors
     in
-
     Map.data errors
-    |> Error.join_at_define ~resolution ~location
+    |> Error.join_at_define
+      ~resolution
+      ~location:(Location.instantiate ~lookup:(fun hash -> AstSharedMemory.get_path ~hash) location)
     |> class_initialization_errors
     |> constructor_errors
     |> Error.filter ~configuration ~resolution
@@ -285,15 +286,14 @@ module State = struct
                 let add_missing_parameter_error value ~due_to_any =
                   let annotation = Annotated.resolve ~resolution value in
                   let error =
-                    {
-                      Error.location;
-                      kind = Error.MissingParameterAnnotation {
+                    Error.create
+                      ~location
+                      ~kind:(Error.MissingParameterAnnotation {
                           Error.name = access;
                           annotation;
                           due_to_any;
-                        };
-                      define = define_node;
-                    }
+                        })
+                      ~define:define_node
                   in
                   Annotation.create annotation,
                   Map.set ~key:location ~data:error errors
@@ -335,11 +335,10 @@ module State = struct
       with
       | TypeOrder.Untracked annotation ->
           let untracked_error =
-            {
-              Error.location;
-              kind = Error.UndefinedType annotation;
-              define = define_node;
-            }
+            Error.create
+              ~location
+              ~kind:(Error.UndefinedType annotation)
+              ~define:define_node
           in
           Resolution.annotations resolution,
           Map.set ~key:location ~data:untracked_error errors
@@ -366,14 +365,13 @@ module State = struct
              if Type.is_resolved expected &&
                 not (Resolution.less_or_equal resolution ~left:actual ~right:expected) then
                let error =
-                 {
-                   Error.location;
-                   kind = Error.InconsistentOverride {
+                 Error.create
+                   ~location
+                   ~kind:(Error.InconsistentOverride {
                        Error.overridden_method;
                        override = Error.WeakenedPostcondition { Error.actual; expected };
-                     };
-                   define = define_node;
-                 }
+                     })
+                   ~define:define_node
                in
                Map.set ~key:location ~data:error errors
              else
@@ -397,16 +395,15 @@ module State = struct
                      if not (Type.equal Type.Top expected) &&
                         not (Resolution.less_or_equal resolution ~left:expected ~right:actual) then
                        let error =
-                         {
-                           Error.location;
-                           kind = Error.InconsistentOverride {
+                         Error.create
+                           ~location
+                           ~kind:(Error.InconsistentOverride {
                                Error.overridden_method;
                                override =
                                  Error.StrengthenedPrecondition
                                    (Error.Found { Error.actual; expected });
-                             };
-                           define = define_node;
-                         }
+                             })
+                           ~define:define_node
                        in
                        Map.set ~key:location ~data:error errors
                      else
@@ -422,14 +419,13 @@ module State = struct
                    |> fun name -> [Expression.Access.Identifier name]
                  in
                  let error =
-                   {
-                     Error.location;
-                     kind = Error.InconsistentOverride {
+                   Error.create
+                     ~location
+                     ~kind:(Error.InconsistentOverride {
                          Error.overridden_method;
                          override = Error.StrengthenedPrecondition (Error.NotFound parameter_name);
-                       };
-                     define = define_node;
-                   }
+                       })
+                     ~define:define_node
                  in
                  Map.set ~key:location ~data:error errors
            in
@@ -441,11 +437,10 @@ module State = struct
       with
       | TypeOrder.Untracked annotation ->
           let untracked_error =
-            {
-              Error.location;
-              kind = Error.UndefinedType annotation;
-              define = define_node;
-            }
+            Error.create
+              ~location
+              ~kind:(Error.UndefinedType annotation)
+              ~define:define_node
           in
           Map.set ~key:location ~data:untracked_error errors
     in
@@ -970,10 +965,13 @@ module State = struct
 
     (* Gets typing errors that occur when trying to execute 'statement' in 'state' *)
     let errors =
+      let instantiate location =
+        Location.instantiate ~lookup:(fun hash -> AstSharedMemory.get_path ~hash) location
+      in
+      let add_error map error =
+        Map.set ~key:(Location.to_reference (Error.location error)) ~data:error map
+      in
       let add_errors errors =
-        let add_error sofar error =
-          Map.set ~key:error.Error.location ~data:error sofar
-        in
         List.fold ~init:errors ~f:add_error
       in
 
@@ -1011,37 +1009,34 @@ module State = struct
                         in
                         { Error.actual; expected }, name, position, (Node.location mismatch)
                       in
-                      {
-                        Error.location;
-                        kind =
-                          Error.IncompatibleParameterType {
+                      Error.create
+                        ~location
+                        ~kind:
+                          (Error.IncompatibleParameterType {
                             Error.name =
                               (name
                                >>| fun name -> Expression.Access.create_from_identifiers [name]);
                             position;
                             callee;
                             mismatch;
-                          };
-                        define = define_node;
-                      }
-                  | MissingArgument name  ->
-                      {
-                        Error.location;
-                        kind = Error.MissingArgument { Error.callee; name };
-                        define = define_node;
-                      }
+                          })
+                        ~define:define_node
+                  | MissingArgument name ->
+                      Error.create
+                        ~location
+                        ~kind:(Error.MissingArgument { Error.callee; name })
+                        ~define:define_node
                   | TooManyArguments { expected; provided } ->
-                      {
-                        Error.location;
-                        kind = Error.TooManyArguments { Error.callee; expected; provided };
-                        define = define_node;
-                      }
+                      Error.create
+                        ~location
+                        ~kind:(Error.TooManyArguments { Error.callee; expected; provided })
+                        ~define:define_node
                 in
                 [error]
 
             | Attribute { attribute; origin; defined } when not defined ->
                 let open Annotated in
-                if Location.equal location Location.any then
+                if Location.equal_reference location Location.any then
                   begin
                     Statistics.event
                       ~name:"undefined attribute without location"
@@ -1072,7 +1067,7 @@ module State = struct
                     | Module _ ->
                         Error.UndefinedName attribute
                   in
-                  { Error.location; kind; define = define_node } :: new_errors
+                  Error.create ~location ~kind ~define:define_node :: new_errors
             | _ ->
                 new_errors
         in
@@ -1129,12 +1124,11 @@ module State = struct
                   value = [{ Expression.Argument.value; _ }] };
               ] when reveal_type = Identifier.create "reveal_type" ->
                   let annotation = Annotated.resolve ~resolution value in
-                  [{
-                    Error.location;
-                    kind = Error.RevealedType { Error.expression = value; annotation };
-                    define = define_node;
-                  }]
-                  |> add_errors errors
+                  Error.create
+                    ~location
+                    ~kind:(Error.RevealedType { Error.expression = value; annotation })
+                    ~define:define_node
+                  |> add_error errors
               | [
                 Expression.Access.Identifier typing;
                 Expression.Access.Identifier cast;
@@ -1151,11 +1145,11 @@ module State = struct
                   let actual_annotation = Annotated.resolve ~resolution value in
                   if Type.is_meta cast_annotation &&
                      Type.equal (Type.single_parameter cast_annotation) actual_annotation then
-                    add_errors errors [{
-                        Error.location;
-                        kind = Error.RedundantCast actual_annotation;
-                        define = define_node;
-                      }]
+                      Error.create
+                        ~location
+                        ~kind:(Error.RedundantCast actual_annotation)
+                        ~define:define_node
+                      |> add_error errors
                   else
                     errors
               | _ ->
@@ -1189,12 +1183,11 @@ module State = struct
                 ~right:(Type.awaitable Type.Object)
             in
             if not is_awaitable then
-              [{
-                Error.location;
-                kind = Error.IncompatibleAwaitableType actual;
-                define = define_node;
-              }]
-              |> add_errors errors
+              Error.create
+                ~location
+                ~kind:(Error.IncompatibleAwaitableType actual)
+                ~define:define_node
+              |> add_error errors
             else
               errors
 
@@ -1319,61 +1312,58 @@ module State = struct
                 let error =
                   match parent with
                   | Some parent ->
-                      {
-                        Error.location;
-                        kind = Error.IncompatibleAttributeType {
+                      Error.create
+                        ~location
+                        ~kind:(Error.IncompatibleAttributeType {
                             Error.parent;
                             incompatible_type = {
                               Error.name;
                               mismatch = { Error.expected; actual = value_annotation };
                               declare_location;
                             };
-                          };
-                        define = define_node;
-                      }
+                          })
+                        ~define:define_node
                   | None ->
-                      {
-                        Error.location;
-                        kind = Error.IncompatibleVariableType {
+                      Error.create
+                        ~location
+                        ~kind:(Error.IncompatibleVariableType {
                             Error.name;
                             mismatch = { Error.expected; actual = value_annotation };
                             declare_location;
-                          };
-                        define = define_node;
-                      }
+                          })
+                        ~define:define_node
                 in
-                Map.set ~key:error.Error.location ~data:error errors
+                Map.set ~key:(Error.location error |> Location.to_reference) ~data:error errors
             in
             let add_missing_annotation_error ~expected ~parent ~name ~declare_location errors =
               if ((Type.is_unknown expected) || (Type.equal expected Type.Object)) &&
                  not (Type.is_unknown value_annotation) then
+                let evidence_location = instantiate location in
                 let error =
                   match parent with
                   | Some parent ->
-                      {
-                        Error.location = declare_location;
-                        kind = Error.MissingAttributeAnnotation {
+                      Error.create
+                        ~location:declare_location
+                        ~kind:(Error.MissingAttributeAnnotation {
                             Error.parent;
                             missing_annotation = {
                               Error.name;
                               annotation = value_annotation;
-                              evidence_locations = [location];
+                              evidence_locations = [evidence_location];
                               due_to_any = Type.equal expected Type.Object;
                             };
-                          };
-                        define = define_node;
-                      }
+                          })
+                        ~define:define_node
                   | None ->
-                      {
-                        Error.location = declare_location;
-                        kind = Error.MissingGlobalAnnotation {
+                      Error.create
+                        ~location:declare_location
+                        ~kind:(Error.MissingGlobalAnnotation {
                             Error.name;
                             annotation = value_annotation;
-                            evidence_locations = [location];
+                            evidence_locations = [evidence_location];
                             due_to_any = Type.equal expected Type.Object;
-                          };
-                        define = define_node;
-                      }
+                          })
+                        ~define:define_node
                 in
                 Map.find errors declare_location
                 >>| Error.join ~resolution error
@@ -1397,7 +1387,7 @@ module State = struct
                     ~expected
                     ~parent:(Some (Attribute.parent attribute))
                     ~name
-                    ~declare_location:(Attribute.location attribute)
+                    ~declare_location:(Attribute.location attribute |> instantiate)
                   |> add_missing_annotation_error
                     ~expected
                     ~parent:(Some (Attribute.parent attribute))
@@ -1455,7 +1445,7 @@ module State = struct
                           ~expected
                           ~parent:None
                           ~name
-                          ~declare_location:location
+                          ~declare_location:(instantiate location)
                           errors
                       in
                       (* Don't error when encountering an explicit annotation or a type alias. *)
@@ -1479,14 +1469,14 @@ module State = struct
                         ~expected
                         ~parent:None
                         ~name
-                        ~declare_location:location
+                        ~declare_location:(instantiate location)
                         errors
                   | annotation when Type.is_tuple (Annotation.annotation annotation) ->
                       add_incompatible_type_error
                         ~expected:(Annotation.annotation annotation)
                         ~parent:None
                         ~name:(Expression.Access.create "left hand side")
-                        ~declare_location:location
+                        ~declare_location:(instantiate location)
                         errors
                   | _ ->
                       errors
@@ -1543,27 +1533,25 @@ module State = struct
                   (Annotated.Define.create define |> Annotated.Define.is_generator)) &&
              not (Type.is_none actual && Type.is_noreturn expected) then
             let error =
-              {
-                Error.location;
-                kind = Error.IncompatibleReturnType {
+              Error.create
+                ~location
+                ~kind:(Error.IncompatibleReturnType {
                     Error.mismatch = { Error.expected; actual };
                     is_implicit;
-                  };
-                define = define_node;
-              }
+                  })
+                ~define:define_node
             in
             add_errors errors [error]
           else if Type.equal expected Type.Top || Type.equal expected Type.Object then
             let error =
-              {
-                Error.location;
-                kind = Error.MissingReturnAnnotation {
+              Error.create
+                ~location
+                ~kind:(Error.MissingReturnAnnotation {
                     Error.annotation = actual;
                     evidence_locations = [location.Location.start.Location.line];
                     due_to_any = Type.equal expected Type.Object;
-                  };
-                define = define_node;
-              }
+                  })
+                ~define:define_node
             in
             add_errors errors [error]
           else
@@ -1580,28 +1568,24 @@ module State = struct
             |> Type.generator ~async
           in
           if not (Resolution.less_or_equal resolution ~left:actual ~right:expected) then
-            add_errors
-              errors
-              [
-                {
-                  Error.location;
-                  kind = Error.IncompatibleReturnType {
-                      Error.mismatch = { Error.expected; actual };
-                      is_implicit = false;
-                    };
-                  define = define_node;
-                };
-              ]
+            Error.create
+              ~location
+              ~kind:(Error.IncompatibleReturnType {
+                  Error.mismatch = { Error.expected; actual };
+                  is_implicit = false;
+                    })
+              ~define:define_node
+            |> add_error errors
           else if Type.equal expected Type.Top || Type.equal expected Type.Object then
-            add_errors errors [{
-                Error.location;
-                kind = Error.MissingReturnAnnotation {
+            Error.create
+                ~location
+                ~kind:(Error.MissingReturnAnnotation {
                     Error.annotation = actual;
                     evidence_locations = [location.Location.start.Location.line];
                     due_to_any = Type.equal expected Type.Object;
-                  };
-                define = define_node;
-              }]
+                  })
+                ~define:define_node
+            |> add_error errors
           else
             errors
       | Statement.Yield _ ->
@@ -1617,28 +1601,24 @@ module State = struct
             | annotation -> Type.generator annotation
           in
           if not (Resolution.less_or_equal resolution ~left:actual ~right:expected) then
-            add_errors
-              errors
-              [
-                {
-                  Error.location;
-                  kind = Error.IncompatibleReturnType {
-                      Error.mismatch = { Error.expected; actual };
-                      is_implicit = false;
-                    };
-                  define = define_node;
-                };
-              ]
+            Error.create
+              ~location
+              ~kind:(Error.IncompatibleReturnType {
+                  Error.mismatch = { Error.expected; actual };
+                  is_implicit = false;
+                })
+              ~define:define_node
+            |> add_error errors
           else if Type.equal expected Type.Top || Type.equal expected Type.Object then
-            add_errors errors [{
-                Error.location;
-                kind = Error.MissingReturnAnnotation {
+            Error.create
+                ~location
+                ~kind:(Error.MissingReturnAnnotation {
                     Error.annotation = actual;
                     evidence_locations = [location.Location.start.Location.line];
                     due_to_any = Type.equal expected Type.Object;
-                  };
-                define = define_node;
-              }]
+                  })
+                ~define:define_node
+            |> add_error errors
           else
             errors
 
@@ -1653,11 +1633,11 @@ module State = struct
               let open Annotated.Access.Element in
               match element with
               | Attribute { origin = Module _; defined = false; _ } ->
-                  {
-                    Error.location;
-                    kind = Error.UndefinedImport import;
-                    define = define_node;
-                  } :: errors
+                  Error.create
+                    ~location
+                    ~kind:(Error.UndefinedImport import)
+                    ~define:define_node
+                  :: errors
               | _ ->
                   errors
             in
@@ -1873,11 +1853,12 @@ let check
           ();
         {
           SingleSourceResult.errors =
-            [{
-              Error.location;
-              kind = Error.UndefinedType annotation;
-              define = define_node;
-            }];
+            [
+              Error.create
+                ~location
+                ~kind:(Error.UndefinedType annotation)
+                ~define:define_node;
+            ];
           coverage = Coverage.create ~crashes:1 ();
         }
   in
@@ -1888,10 +1869,11 @@ let check
       let toplevel =
         let location =
           {
-            Location.path;
+            Location.path = path;
             start = { Location.line = 0; column = 0 };
             stop = { Location.line = 0; column = 0 };
           }
+          |> Location.to_reference
         in
         Define.create_toplevel ~qualifier ~statements
         |> Node.create ~location
@@ -1921,14 +1903,14 @@ let check
       if configuration.debug then
         errors
       else
-        let keep_error ({ Error.location = { Location.path; _ }; _ } as error) =
+        let keep_error error =
           let mode =
             match mode_override with
             | Some mode ->
                 mode
             | None ->
                 let (module Handler: Environment.Handler) = environment in
-                Handler.mode path
+                Handler.mode (Error.path error)
                 |> Option.value ~default:Source.Default
           in
           not (Error.suppress ~mode error)

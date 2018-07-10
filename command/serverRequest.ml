@@ -31,9 +31,7 @@ let rec process_request
   let timer = Timer.start () in
   let build_file_to_error_map ?(checked_files = None) error_list =
     let initial_files = Option.value ~default:(Hashtbl.keys state.errors) checked_files in
-    let error_file { Error.location = { Location.path; _ }; _ } =
-      File.Handle.create path
-    in
+    let error_file error = File.Handle.create (Error.path error) in
     List.fold
       ~init:File.Handle.Map.empty
       ~f:(fun map key -> Map.set map ~key ~data:[])
@@ -211,7 +209,7 @@ let rec process_request
     List.iter
       new_errors
       ~f:(fun error ->
-          let { Location.path; _ } = Error.location error in
+          let path = Error.path error in
           Hashtbl.add_multi
             state.errors
             ~key:(File.Handle.create path)
@@ -309,7 +307,7 @@ let rec process_request
             | GetDefinitionRequest { DefinitionRequest.id; path; position } ->
                 let definition =
                   Hashtbl.find state.lookups path
-                  >>= fun lookup -> Lookup.get_definition lookup position
+                  >>= (fun lookup -> Lookup.get_definition lookup position)
                 in
                 Some
                   (state,
@@ -381,7 +379,7 @@ let rec process_request
     | GetDefinitionRequest { DefinitionRequest.path; position; _ } ->
         state, Some (GetDefinitionResponse (
             Hashtbl.find state.lookups path
-            >>= fun lookup -> Lookup.get_definition lookup position))
+            >>= (fun lookup -> Lookup.get_definition lookup position)))
 
     | HoverRequest { DefinitionRequest.path; position; _ } ->
         state, Some (HoverResponse (

@@ -420,7 +420,7 @@ let test_language_server_hover_response _ =
       ~id:1
       ~result:(
         Some {
-          HoverResponse.location = Ast.Location.any;
+          HoverResponse.location = Ast.Location.any_instantiated;
           contents = "Hover response contents"
         })
     |> HoverResponse.to_yojson

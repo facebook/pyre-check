@@ -70,6 +70,7 @@ let parse_sources_job ~files =
      >>= fun source ->
      Path.relative (File.path file)
      >>| fun relative ->
+     AstSharedMemory.add_path_hash ~path:relative;
      let handle = File.Handle.create relative in
      source
      |> Analysis.Preprocessing.preprocess

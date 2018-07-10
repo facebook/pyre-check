@@ -43,9 +43,9 @@ module State : sig
   and t = {
     configuration: Configuration.t;
     resolution: Resolution.t;
-    errors: Error.t Location.Map.t;
+    errors: Error.t Location.ReferenceMap.t;
     define: Define.t Node.t;
-    nested_defines: nested_define Location.Map.t;
+    nested_defines: nested_define Location.ReferenceMap.t;
     bottom: bool;
     resolution_fixpoint: (Annotation.t Access.Map.t) Int.Map.t
   }

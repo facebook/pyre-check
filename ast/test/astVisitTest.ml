@@ -149,6 +149,10 @@ let test_collect_accesses_with_location _ =
     |}
     |> parse_single_statement
   in
+  let instantiate location =
+    let lookup_table = Int.Table.of_alist_exn [String.hash "test.py", "test.py"] in
+    Location.instantiate ~lookup:(Hashtbl.find lookup_table) location
+  in
   let assert_collected_accesses source expected_accesses =
     assert_equal
       ~printer:(String.concat ~sep:", ")
@@ -156,7 +160,7 @@ let test_collect_accesses_with_location _ =
       (List.map
          ~f:(fun node ->
              Format.sprintf "%s|%s"
-               (Node.location node |> Location.to_string)
+               (Node.location node |> instantiate |> Location.to_string_instantiated)
                (Node.value node |> Access.show))
          (Visit.collect_accesses_with_location source))
   in

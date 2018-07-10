@@ -16,6 +16,6 @@ val create_of_source:
   Source.t ->
   Type.t Location.Table.t
 
-val get_annotation: t -> position: Location.position -> (Location.t * Type.t) option
+val get_annotation: t -> position: Location.position -> (Location.instantiated * Type.t) option
 
-val get_definition: t -> Location.position -> Location.t option
+val get_definition: t -> Location.position -> Location.instantiated option

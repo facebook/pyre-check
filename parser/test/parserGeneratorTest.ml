@@ -2203,7 +2203,7 @@ let test_call_arguments_location _ =
         (Option.map name ~f:(fun { Node.value; location } ->
              Format.asprintf "%a/%s"
                Identifier.pp value
-               (Location.to_string location))
+               (Location.to_string_reference location))
          |> Option.value ~default:"(none)")
         Expression.pp value
     in
@@ -2217,7 +2217,7 @@ let test_call_arguments_location _ =
     ~printer:(String.concat ~sep:", ")
     [
       "name=(none) value=1";
-      "name=`second`/test.py:1:7-1:13 value=2";
+      Format.sprintf "name=`second`/%d:1:7-1:13 value=2" (String.hash "test.py");
     ]
     arguments
 
@@ -3576,14 +3576,14 @@ let test_end_position _ =
   let statement = parse_single_statement source_code in
   let location = statement.Node.location in
   let expected_location = {
-    Location.path="test.py";
+    Location.path = String.hash "test.py";
     start = {Location.line = 1; Location.column = 0};
     stop = {Location.line = 2; Location.column = 15};
   } in
   assert_equal
-    ~cmp:Location.equal
-    ~printer:(fun location -> Format.asprintf "%a" Location.pp location)
-    ~pp_diff:(diff ~print:Location.pp)
+    ~cmp:Location.equal_reference
+    ~printer:(fun location -> Format.asprintf "%a" Location.pp_reference location)
+    ~pp_diff:(diff ~print:Location.pp_reference)
     expected_location
     location
 
@@ -3594,14 +3594,14 @@ let assert_statement_location
     ~stop:(stop_line, stop_column) =
   let actual_location = statement.Node.location in
   let expected_location = {
-    Location.path="test.py";
+    Location.path = String.hash "test.py";
     start = {Location.line = start_line; Location.column = start_column};
     stop = {Location.line = stop_line; Location.column = stop_column};
   } in
   assert_equal
-    ~cmp:Location.equal
-    ~printer:(fun location -> Format.asprintf "%a" Location.pp location)
-    ~pp_diff:(diff ~print:Location.pp)
+    ~cmp:Location.equal_reference
+    ~printer:(fun location -> Format.asprintf "%a" Location.pp_reference location)
+    ~pp_diff:(diff ~print:Location.pp_reference)
     expected_location
     actual_location
 

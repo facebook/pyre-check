@@ -60,7 +60,7 @@ type parameter_mismatch = {
 type missing_annotation = {
   name: Access.t;
   annotation: Type.t;
-  evidence_locations: Location.t list;
+  evidence_locations: Location.instantiated list;
   due_to_any: bool;
 }
 [@@deriving compare, eq, sexp, hash]
@@ -74,7 +74,7 @@ type missing_attribute_annotation = {
 type incompatible_type = {
   name: Access.t;
   mismatch: mismatch;
-  declare_location: Location.t;
+  declare_location: Location.instantiated;
 }
 [@@deriving compare, eq, show, sexp, hash]
 
@@ -159,7 +159,7 @@ type kind =
 [@@deriving compare, eq, show, hash]
 
 type t = {
-  location: Location.t;
+  location: Location.instantiated;
   kind: kind;
   define: Statement.Define.t Node.t;
 }
@@ -167,8 +167,8 @@ type t = {
 
 include Hashable with type t := t
 
-val location: t -> Location.t
-val key: t -> Location.t
+val location: t -> Location.instantiated
+val key: t -> Location.reference
 val code: t -> int
 val description: t -> detailed:bool -> string
 
@@ -180,7 +180,12 @@ val join: resolution: Resolution.t -> t -> t -> t
 val meet: resolution: Resolution.t -> t -> t -> t
 val widen: resolution: Resolution.t -> previous: t -> next: t -> iteration: int -> t
 
-val join_at_define: resolution: Resolution.t -> location: Location.t -> t list -> t list
+val join_at_define
+  :  resolution: Resolution.t
+  -> location: Location.instantiated
+  -> t list
+  -> t list
+
 val join_at_source: resolution: Resolution.t -> t list -> t list
 
 val filter: configuration: Configuration.t -> resolution: Resolution.t -> t list -> t list
@@ -189,3 +194,7 @@ val suppress: mode: Source.mode -> t -> bool
 val dequalify: Access.t Access.Map.t -> (module Environment.Handler) -> t -> t
 
 val to_json: detailed: bool -> t -> Yojson.Safe.json
+
+val create: location: Location.reference -> kind: kind -> define: Statement.Define.t Node.t -> t
+
+val path: t -> string

@@ -144,11 +144,16 @@ let get_annotation lookup ~position =
         } =
       (stop_line - start_line) * 1000 + stop_column - start_column
     in
+    let instantiate_location (location, annotation) =
+      Location.instantiate ~lookup:(fun hash -> Ast.AstSharedMemory.get_path ~hash) location,
+      annotation
+    in
 
     Hashtbl.to_alist lookup
     |> List.filter ~f:(fun (key, _) -> location_contains_position key position)
     |> List.min_elt ~compare:(fun (location_left, _) (location_right, _) ->
         (weight location_left) - (weight location_right))
+    |> Option.map ~f:instantiate_location
   in
   get_best_location position
 

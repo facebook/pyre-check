@@ -95,7 +95,7 @@ let test_expand_format_string _ =
   let assert_locations_equal source expected_locations =
     let construct_location ((start_line, start_column), (stop_line, stop_column)) =
       {
-        Location.path = "test.py";
+        Location.path = String.hash "test.py";
         start = { Location.line = start_line; column = start_column };
         stop = { Location.line = stop_line; column = stop_column };
       }
@@ -111,8 +111,8 @@ let test_expand_format_string _ =
       }] ->
         let actual_locations = List.map ~f:Node.location expression_list in
         assert_equal
-          ~cmp:(fun left right -> List.equal ~equal:Location.equal left right)
-          ~printer:(List.to_string ~f:Location.show)
+          ~cmp:(fun left right -> List.equal ~equal:Location.equal_reference left right)
+          ~printer:(List.to_string ~f:Location.show_reference)
           expected_locations
           actual_locations
     | _ ->

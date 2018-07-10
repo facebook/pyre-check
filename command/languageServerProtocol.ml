@@ -172,7 +172,8 @@ module TextDocumentDefinitionResponse = struct
       result =
         Some
           (location
-           >>| (fun { Ast.Location.start; stop; path } -> {
+           >>| (fun { Ast.Location.start; stop; path } ->
+               {
                  Location.uri =
                    Path.create_relative ~root ~relative:path
                    |> Path.real_path
@@ -189,7 +190,7 @@ module HoverResponse = struct
   include LanguageServerProtocolTypes.HoverResponse
 
   type hover_result = {
-    location: Ast.Location.t;
+    location: Ast.Location.instantiated;
     contents: string;
   }
 

@@ -49,7 +49,7 @@ let parse ?start_line ?start_column ?path lines =
         let header =
           Format.asprintf
             "Could not parse file at %a"
-            Location.pp location in
+            Location.pp_reference location in
         let indicator =
           if column > 0 then
             (String.make (column - 1) ' ') ^ "^"

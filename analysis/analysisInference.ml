@@ -100,13 +100,13 @@ module State = struct
         Resolution.get_local resolution ~access
         >>| (fun { Annotation.annotation; _ } ->
             let name = Access.create_from_identifiers [name] in
-            let error = {
-              Error.location;
-              kind = Error.MissingParameterAnnotation { Error.name; annotation; due_to_any };
-              define = define_node;
-            }
+            let error =
+              Error.create
+              ~location
+              ~kind:(Error.MissingParameterAnnotation { Error.name; annotation; due_to_any })
+              ~define:define_node
             in
-            Map.set ~key:error.Error.location ~data:error errors)
+            Map.set ~key:(Error.location error |> Location.to_reference) ~data:error errors)
         |> Option.value ~default:errors
       in
       match annotation with
@@ -381,13 +381,13 @@ let infer configuration environment ?mode_override ({ Source.path; _ } as source
         if configuration.debug then
           errors
         else
-          let keep_error ({ Error.location = { Location.path; _ }; _ } as error) =
+          let keep_error error =
             let mode =
               match mode_override with
               | Some mode ->
                   mode
               | None ->
-                  Handler.mode path
+                  Handler.mode (Error.path error)
                   |> Option.value ~default:Source.Default
             in
             not (Error.suppress ~mode error)
@@ -414,11 +414,12 @@ let infer configuration environment ?mode_override ({ Source.path; _ } as source
         {
           SingleSourceResult.errors =
             if configuration.debug then
-              [{
-                Error.location;
-                kind = Error.UndefinedType annotation;
-                define = define_node;
-              }]
+              [
+                Error.create
+                  ~location
+                  ~kind:(Error.UndefinedType annotation)
+                  ~define:define_node
+              ]
             else
               [];
           coverage = Coverage.create ~crashes:1 ();
@@ -519,25 +520,27 @@ let infer configuration environment ?mode_override ({ Source.path; _ } as source
                     { define_node with Node.value = define };
                   true, globals_added_sofar
             end
-        | {
+        | ({
           Error.kind = Error.MissingAttributeAnnotation {
               Error.parent;
               missing_annotation = { Error.name; annotation; _ };
             };
-          location;
           _;
-        } ->
+        } as error) ->
             add_missing_annotation_error
               ~access:((Annotated.Class.name parent) @ name)
               ~name
-              ~location
+              ~location:(Error.location error |> Location.to_reference)
               ~annotation
-        | {
+        | ({
           Error.kind = Error.MissingGlobalAnnotation { Error.name; annotation; _ };
-          location;
           _;
-        } ->
-            add_missing_annotation_error ~access:name ~name ~location ~annotation
+        } as error) ->
+            add_missing_annotation_error
+              ~access:name
+              ~name
+              ~location:(Error.location error |> Location.to_reference)
+              ~annotation
         | _ ->
             changed, globals_added_sofar
       in

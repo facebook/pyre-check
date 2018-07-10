@@ -204,11 +204,12 @@ let arguments_codex_representation parameters =
 
 let rec source_statement_codex_representation
     source_root
+    path
     {
       Node.location = {
         Location.start = { Location.line = start_line; column };
         stop = { Location.line = stop_line; _ };
-        path;
+        _;
       };
       value
     } =
@@ -221,7 +222,7 @@ let rec source_statement_codex_representation
         comments = None;
         location = [start_line; column];
         members =
-          List.concat_map ~f:(source_statement_codex_representation source_root) body;
+          List.concat_map ~f:(source_statement_codex_representation source_root path) body;
         supers = [];
         mro = [];
         ty = "class";
@@ -237,7 +238,7 @@ let rec source_statement_codex_representation
     } -> [
       let source =
         try
-          source_root ^/ path
+          path
           |> In_channel.read_lines
           |> (fun lines -> List.drop lines (start_line - 1))
           |> (fun lines -> List.take lines (stop_line - start_line + 1))
@@ -282,16 +283,21 @@ let rec source_statement_codex_representation
 
 
 let source_to_codex_representation source_root { Source.path; statements; docstring; _ } =
+  let filename =
+    try
+      Filename.realpath (source_root ^/ path)
+    with
+      Unix.Unix_error _ -> source_root ^/ path
+  in
   {
     PythonModule.name = Filename.chop_suffix (Filename.basename path) ".py";
     docstring;
     rank = 0;
-    filename =
-      (try
-         Filename.realpath (source_root ^/ path)
-       with
-         Unix.Unix_error _ -> source_root ^/ path);
-    members = List.concat_map ~f:(source_statement_codex_representation source_root) statements;
+    filename;
+    members =
+      List.concat_map
+        ~f:(source_statement_codex_representation source_root filename)
+        statements;
   }
 
 

@@ -130,7 +130,10 @@ let postprocess handles errors =
   let create_unused_ignore_error errors unused_ignore =
     let error =
       {
-        Error.location = Ignore.location unused_ignore;
+        Error.location =
+          Location.instantiate
+            (Ignore.location unused_ignore)
+            ~lookup:(fun hash -> Ast.AstSharedMemory.get_path ~hash);
         kind = Error.UnusedIgnore (Ignore.codes unused_ignore);
         define = {
           Node.location = Ignore.location unused_ignore;

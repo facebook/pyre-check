@@ -99,7 +99,7 @@ module Metadata = struct
           let end_column = String.length line in
           let start = { Location.line = index + 1; column = start_column } in
           let stop = { Location.line = index + 1; column = end_column } in
-          { Location.path; start; stop }
+          Location.to_reference { Location.path; start; stop }
         in
         Ignore.create ~ignored_line ~codes ~location ~kind
       in

@@ -19,6 +19,12 @@ module HandleKey = struct
   let compare = File.Handle.compare
 end
 
+module IntKey = struct
+  type t = int
+  let to_string = Int.to_string
+  let compare = Int.compare
+end
+
 
 module SourceValue = struct
   type t = Source.t
@@ -27,7 +33,15 @@ module SourceValue = struct
 end
 
 
+module PathValue = struct
+  type t = string
+  let prefix = Prefix.make ()
+  let description = "Path"
+end
+
 module Sources = SharedMemory.NoCache (HandleKey) (SourceValue)
+
+module Paths = SharedMemory.WithCache (IntKey) (PathValue)
 
 
 let get_source path =
@@ -83,3 +97,11 @@ let get_module_exports access =
 
 let in_modules access =
   Modules.mem access
+
+
+let get_path ~hash =
+  Paths.get hash
+
+
+let add_path_hash ~path =
+  Paths.write_through (String.hash path) path

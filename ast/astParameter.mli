@@ -18,7 +18,7 @@ type 'expression t = 'expression parameter Node.t
 [@@deriving compare, eq, sexp, show, hash]
 
 val create
-  :  ?location: Location.t
+  :  ?location: Location.reference
   -> ?value: 'expression
   -> ?annotation: 'expression
   -> name: Identifier.t

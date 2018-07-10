@@ -70,7 +70,7 @@ type parameter_mismatch = {
 type missing_annotation = {
   name: Access.t;
   annotation: Type.t;
-  evidence_locations: Location.t list;
+  evidence_locations: Location.instantiated list;
   due_to_any: bool;
 }
 [@@deriving compare, eq, sexp, show, hash]
@@ -86,7 +86,7 @@ type missing_attribute_annotation = {
 type incompatible_type = {
   name: Access.t;
   mismatch: mismatch;
-  declare_location: Location.t;
+  declare_location: Location.instantiated;
 }
 [@@deriving compare, eq, show, sexp, hash]
 
@@ -182,7 +182,7 @@ type kind =
 
 
 type t = {
-  location: Location.t;
+  location: Location.instantiated;
   kind: kind;
   define: Define.t Node.t;
 }
@@ -203,9 +203,10 @@ let location { location; _ } =
   location
 
 
-let key { location; _ } =
-  let start = { Location.line = (Location.line location); column = -1 } in
-  { location with Location.start; stop = start }
+let key { location = { Location.start = { Location.line; _ }; path; _ }; _ } =
+  let start = { Location.line; column = -1 } in
+  { Location.start; stop = start; path }
+  |> Location.to_reference
 
 
 let code { kind; _ } =
@@ -268,8 +269,13 @@ let name { kind; _ } =
 let description
     ({
       kind;
-      location;
+      location = {
+        Location.start = { Location.line = start_line; _ };
+        Location.stop = { Location.line = stop_line; _ };
+        _;
+      };
       define = { Node.value = { Define.name = define_name; _ }; _ };
+      _;
     } as error)
     ~detailed =
   let ordinal number =
@@ -321,7 +327,7 @@ let description
                     |> List.map
                       ~f:Int.to_string
                     |> String.concat ~sep:", ")
-                   (Location.line location))
+                   start_line)
               ]
           | true ->
               [
@@ -336,7 +342,7 @@ let description
                     |> List.map
                       ~f:Int.to_string
                     |> String.concat ~sep:", ")
-                   (Location.line location))
+                   start_line)
               ]
         end
     | MissingAttributeAnnotation {
@@ -351,8 +357,7 @@ let description
         begin
           let evidence_string =
             evidence_locations
-            |> List.map
-              ~f:(Format.asprintf "%a" Location.pp_start)
+            |> List.map ~f:(Format.asprintf "%a" Location.pp_start_instantiated)
             |> String.concat ~sep:", "
           in
           if due_to_any then
@@ -365,7 +370,7 @@ let description
               Format.asprintf
                 "Attribute `%a` declared on line %d, type %a deduced from %s."
                 Access.pp name
-                (Location.line location)
+                start_line
                 Type.pp annotation
                 evidence_string
             ]
@@ -379,7 +384,7 @@ let description
               Format.asprintf
                 "Attribute `%a` declared on line %d, type %a deduced from %s."
                 Access.pp name
-                (Location.line location)
+                start_line
                 Type.pp annotation
                 evidence_string
             ]
@@ -393,8 +398,7 @@ let description
         begin
           let evidence_string =
             evidence_locations
-            |> List.map
-              ~f:(Format.asprintf "%a" Location.pp_start)
+            |> List.map ~f:(Format.asprintf "%a" Location.pp_start_instantiated)
             |> String.concat ~sep:", "
           in
           if due_to_any then
@@ -406,7 +410,7 @@ let description
               Format.asprintf
                 "Global variable `%s` declared on line %d, type %a deduced from %s."
                 (Access.show_sanitized name)
-                (Location.line location)
+                start_line
                 Type.pp annotation
                 evidence_string
             ]
@@ -419,7 +423,7 @@ let description
               Format.asprintf
                 "Global variable `%s` declared on line %d, type %a deduced from %s."
                 (Access.show_sanitized name)
-                (Location.line location)
+                start_line
                 Type.pp annotation
                 evidence_string
             ]
@@ -468,7 +472,7 @@ let description
           (Format.asprintf
              "Type %a expected on line %d, specified on line %d."
              Type.pp expected
-             error.location.Location.stop.Location.line
+             stop_line
              error.define.Node.location.Location.start.Location.line)
         ]
     | IncompatibleAttributeType {
@@ -490,7 +494,7 @@ let description
              "Attribute `%a` declared on line %d, incorrectly used on line %d."
              Access.pp name
              declare_location.Location.start.Location.line
-             (Location.line location))
+             start_line)
         ]
     | IncompatibleVariableType {
         name;
@@ -513,7 +517,7 @@ let description
           (Format.asprintf
              "%s incorrectly used on line %d."
              (Access.show_sanitized name)
-             (Location.line location))
+             start_line)
         ]
     | InconsistentOverride { overridden_method; override } ->
         let detail =
@@ -641,7 +645,7 @@ let description
           (Format.asprintf
              "Attribute `%a` is declared on line %d, never initialized and therefore must be %a."
              Access.pp name
-             (Location.line location)
+             start_line
              Type.pp actual)
         ]
     | UnusedIgnore codes ->
@@ -761,7 +765,7 @@ let less_or_equal ~resolution left right =
     Resolution.less_or_equal resolution ~left:left.actual ~right:right.actual &&
     Resolution.less_or_equal resolution ~left:left.expected ~right:right.expected
   in
-  Location.equal left.location right.location &&
+  Location.equal_instantiated left.location right.location &&
   begin
     match left.kind, right.kind with
     | IncompatibleAwaitableType left, IncompatibleAwaitableType right ->
@@ -852,8 +856,9 @@ let join ~resolution left right =
       left with
       annotation = Resolution.join resolution left.annotation right.annotation;
       evidence_locations =
-        Location.Set.of_list (left.evidence_locations @ right.evidence_locations)
-        |> Set.to_list;
+        List.dedup_and_sort
+          ~compare:Location.compare_instantiated
+          (left.evidence_locations @ right.evidence_locations);
       due_to_any = left.due_to_any && right.due_to_any;
     }
   in
@@ -985,7 +990,7 @@ let join ~resolution left right =
     | _ ->
         Log.debug
           "Incompatible type in error join at %a: %a %a"
-          Location.pp left.location
+          Location.pp_instantiated (location left)
           pp_kind left.kind
           pp_kind right.kind;
         Top
@@ -1393,7 +1398,15 @@ let dequalify
   { error with kind; define = { Node.location; value = define} }
 
 
-let to_json ~detailed ({ kind; define = { Node.value = define; _ }; location; _ } as error) =
+let to_json
+    ~detailed
+    ({
+      location =
+        { Location.path; start = { Location.line = start_line; column = start_column }; _ };
+      kind;
+      define = { Node.value = define; _ };
+      _;
+    } as error) =
   let function_name = Access.show define.Define.name in
   let print_annotation annotation =
     Format.asprintf "%a" Type.pp annotation
@@ -1475,12 +1488,24 @@ let to_json ~detailed ({ kind; define = { Node.value = define; _ }; location; _ 
     | _ -> []
   in
   `Assoc ([
-      "line", `Int (Location.line location);
-      "column", `Int (Location.column location);
-      "path", `String (Location.path location);
+      "line", `Int (start_line);
+      "column", `Int (start_column);
+      "path", `String path;
       "code", `Int (code error);
       "name", `String (name error);
       "description", `String (description error ~detailed);
       "inference", `Assoc inference_information;
       "define", `String (Access.show define.Define.name);
     ])
+
+
+let create ~location ~kind ~define  =
+  {
+    location = Location.instantiate ~lookup:(fun hash -> AstSharedMemory.get_path ~hash) location;
+    kind;
+    define
+  }
+
+
+let path { location = { Location.path; _ }; _ } =
+  path
