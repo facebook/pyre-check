@@ -38,6 +38,13 @@ let get_logs configuration =
     ]
 
 
+let get_watchman_watched_directories () =
+    let channel = Unix.open_process_in "watchman watch-list" in
+    let data = In_channel.input_all channel in
+    In_channel.close channel;
+    { RageResponse.RageResult.title = Some "Watchman watched directories"; data }
+
+
 let display_log { RageResponse.RageResult.title; data } =
   let name = Option.value_exn title in
   Out_channel.printf "\nDisplaying logs for %s:\n%s" name data
@@ -45,7 +52,7 @@ let display_log { RageResponse.RageResult.title; data } =
 
 let run_rage source_root () =
   let configuration = Configuration.create ~source_root:(Path.create_absolute source_root) () in
-  let logs = get_logs configuration in
+  let logs = get_watchman_watched_directories () :: get_logs configuration in
   List.iter ~f:display_log logs
 
 
