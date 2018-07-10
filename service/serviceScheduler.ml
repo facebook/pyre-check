@@ -28,11 +28,20 @@ module Memory = struct
 
   let initial_heap_size = 4096 * 1024 * 1024 (* 4 GB *)
 
+  let worker_garbage_control =
+    {
+      (Gc.get ()) with
+      Gc.minor_heap_size = 256 * 1024; (* 256 KB *)
+      space_overhead = 100;
+    }
+
   let initialize () =
     match !configuration with
     | None ->
         let minor_heap_size = 4 * 1024 * 1024 in (* 4 MB *)
         let space_overhead = 50 in
+        (* Only sets the GC for the master process - the parallel
+           workers use GC settings with less overhead. *)
         Gc.set {
           (Gc.get ()) with
           Gc.minor_heap_size;
@@ -85,7 +94,7 @@ let create
       ~entry
       ~nbr_procs:number_of_workers
       ~heap_handle
-      ~gc_control:(Gc.get ())
+      ~gc_control:Memory.worker_garbage_control
   in
   SharedMemory.connect heap_handle ~is_master:true;
   { workers; number_of_workers; bucket_multiplier; is_parallel = parallel }
