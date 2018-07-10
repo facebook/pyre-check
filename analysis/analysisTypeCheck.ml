@@ -1013,13 +1013,13 @@ module State = struct
                         ~location
                         ~kind:
                           (Error.IncompatibleParameterType {
-                            Error.name =
-                              (name
-                               >>| fun name -> Expression.Access.create_from_identifiers [name]);
-                            position;
-                            callee;
-                            mismatch;
-                          })
+                              Error.name =
+                                (name
+                                 >>| fun name -> Expression.Access.create_from_identifiers [name]);
+                              position;
+                              callee;
+                              mismatch;
+                            })
                         ~define:define_node
                   | MissingArgument name ->
                       Error.create
@@ -1145,11 +1145,11 @@ module State = struct
                   let actual_annotation = Annotated.resolve ~resolution value in
                   if Type.is_meta cast_annotation &&
                      Type.equal (Type.single_parameter cast_annotation) actual_annotation then
-                      Error.create
-                        ~location
-                        ~kind:(Error.RedundantCast actual_annotation)
-                        ~define:define_node
-                      |> add_error errors
+                    Error.create
+                      ~location
+                      ~kind:(Error.RedundantCast actual_annotation)
+                      ~define:define_node
+                    |> add_error errors
                   else
                     errors
               | _ ->
@@ -1573,18 +1573,18 @@ module State = struct
               ~kind:(Error.IncompatibleReturnType {
                   Error.mismatch = { Error.expected; actual };
                   is_implicit = false;
-                    })
+                })
               ~define:define_node
             |> add_error errors
           else if Type.equal expected Type.Top || Type.equal expected Type.Object then
             Error.create
-                ~location
-                ~kind:(Error.MissingReturnAnnotation {
-                    Error.annotation = actual;
-                    evidence_locations = [location.Location.start.Location.line];
-                    due_to_any = Type.equal expected Type.Object;
-                  })
-                ~define:define_node
+              ~location
+              ~kind:(Error.MissingReturnAnnotation {
+                  Error.annotation = actual;
+                  evidence_locations = [location.Location.start.Location.line];
+                  due_to_any = Type.equal expected Type.Object;
+                })
+              ~define:define_node
             |> add_error errors
           else
             errors
@@ -1611,13 +1611,13 @@ module State = struct
             |> add_error errors
           else if Type.equal expected Type.Top || Type.equal expected Type.Object then
             Error.create
-                ~location
-                ~kind:(Error.MissingReturnAnnotation {
-                    Error.annotation = actual;
-                    evidence_locations = [location.Location.start.Location.line];
-                    due_to_any = Type.equal expected Type.Object;
-                  })
-                ~define:define_node
+              ~location
+              ~kind:(Error.MissingReturnAnnotation {
+                  Error.annotation = actual;
+                  evidence_locations = [location.Location.start.Location.line];
+                  due_to_any = Type.equal expected Type.Object;
+                })
+              ~define:define_node
             |> add_error errors
           else
             errors

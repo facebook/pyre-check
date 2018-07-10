@@ -102,9 +102,9 @@ module State = struct
             let name = Access.create_from_identifiers [name] in
             let error =
               Error.create
-              ~location
-              ~kind:(Error.MissingParameterAnnotation { Error.name; annotation; due_to_any })
-              ~define:define_node
+                ~location
+                ~kind:(Error.MissingParameterAnnotation { Error.name; annotation; due_to_any })
+                ~define:define_node
             in
             Map.set ~key:(Error.location error |> Location.to_reference) ~data:error errors)
         |> Option.value ~default:errors
@@ -521,21 +521,21 @@ let infer configuration environment ?mode_override ({ Source.path; _ } as source
                   true, globals_added_sofar
             end
         | ({
-          Error.kind = Error.MissingAttributeAnnotation {
-              Error.parent;
-              missing_annotation = { Error.name; annotation; _ };
-            };
-          _;
-        } as error) ->
+            Error.kind = Error.MissingAttributeAnnotation {
+                Error.parent;
+                missing_annotation = { Error.name; annotation; _ };
+              };
+            _;
+          } as error) ->
             add_missing_annotation_error
               ~access:((Annotated.Class.name parent) @ name)
               ~name
               ~location:(Error.location error |> Location.to_reference)
               ~annotation
         | ({
-          Error.kind = Error.MissingGlobalAnnotation { Error.name; annotation; _ };
-          _;
-        } as error) ->
+            Error.kind = Error.MissingGlobalAnnotation { Error.name; annotation; _ };
+            _;
+          } as error) ->
             add_missing_annotation_error
               ~access:name
               ~name
