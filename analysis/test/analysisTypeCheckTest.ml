@@ -3435,6 +3435,16 @@ let test_check_attributes _ =
         return c.property
     |}
     [];
+  assert_type_errors
+    {|
+      _T = typing.TypeVar('_T')
+      class Class(typing.Generic[_T]):
+        @property
+        def property(self) -> _T: ...
+      def foo(c: Class[int]) -> int:
+        return c.property
+    |}
+    [];
 
   (* Do not resolve optional attributes to the optional type. *)
   assert_type_errors

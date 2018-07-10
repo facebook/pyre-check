@@ -509,15 +509,24 @@ module Attribute = struct
 
     (* Special case properties with type variables. *)
     let annotation =
-      let variables =
-        Annotation.annotation annotation
-        |> Type.variables
+      let free_variables =
+        let variables =
+          Annotation.annotation annotation
+          |> Type.variables
+          |> Type.Set.of_list
+        in
+        let generics =
+          generics parent ~resolution
+          |> Type.Set.of_list
+        in
+        Set.diff variables generics
+        |> Set.to_list
       in
-      if property && not (List.is_empty variables) then
+      if property && not (List.is_empty free_variables) then
         let constraints =
           let parent_annotation = class_annotation parent ~resolution in
           List.fold
-            variables
+            free_variables
             ~init:Type.Map.empty
             ~f:(fun map variable -> Map.set map ~key:variable ~data:parent_annotation)
           |> Map.find
