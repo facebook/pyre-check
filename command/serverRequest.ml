@@ -29,6 +29,7 @@ let rec process_request
     ({ configuration = { source_root; _ } as configuration; _ } as server_configuration)
     request =
   let timer = Timer.start () in
+  let (module Handler: Environment.Handler) = state.environment in
   let build_file_to_error_map ?(checked_files = None) error_list =
     let initial_files = Option.value ~default:(Hashtbl.keys state.errors) checked_files in
     let error_file error = File.Handle.create (Error.path error) in
@@ -74,40 +75,37 @@ let rec process_request
       state, Some (TypeCheckResponse (build_file_to_error_map errors))
     end
   in
-  let handle_type_check state { TypeCheckRequest.update_environment_with; check} =
+  let compact_shared_memory () =
     if Scheduler.Memory.heap_use_ratio () > 0.5 then
-      begin
-        let previous_use_ratio = Scheduler.Memory.heap_use_ratio () in
-        SharedMem.collect `aggressive;
-        Log.log
-          ~section:`Server
-          "Garbage collected due to a previous heap use ratio of %f. New ratio is %f."
-          previous_use_ratio
-          (Scheduler.Memory.heap_use_ratio ())
-      end;
-    let (module Handler: Environment.Handler) = state.environment in
+      let previous_use_ratio = Scheduler.Memory.heap_use_ratio () in
+      SharedMem.collect `aggressive;
+      Log.log
+        ~section:`Server
+        "Garbage collected due to a previous heap use ratio of %f. New ratio is %f."
+        previous_use_ratio
+        (Scheduler.Memory.heap_use_ratio ())
+  in
+  let handle_type_check state { TypeCheckRequest.update_environment_with; check} =
     let deferred_requests =
       if not (List.is_empty update_environment_with) then
         let files =
           let dependents =
-            let paths =
-              List.filter_map
-                ~f:(fun file ->
-                    Path.get_relative_to_root ~root:source_root ~path:(File.path file))
-                update_environment_with
+            let relative_path file =
+              Path.get_relative_to_root ~root:source_root ~path:(File.path file)
             in
-            let check_paths =
-              List.filter_map
-                ~f:(fun file ->
-                    Path.get_relative_to_root ~root:source_root ~path:(File.path file))
-                check
+            let update_environment_with =
+              List.filter_map update_environment_with ~f:relative_path
             in
+            let check = List.filter_map check ~f:relative_path in
             Log.log
               ~section:`Server
               "Handling type check request for files %a"
-              Sexp.pp (sexp_of_list sexp_of_string paths);
-            Dependencies.of_list ~get_dependencies:(Handler.dependencies) ~paths
-            |> (fun dependency_set -> Set.diff dependency_set (String.Set.of_list check_paths))
+              Sexp.pp
+              (sexp_of_list sexp_of_string update_environment_with);
+            Dependencies.of_list
+              ~get_dependencies:(Handler.dependencies)
+              ~paths:update_environment_with
+            |> Fn.flip Set.diff (String.Set.of_list check)
             |> Set.to_list
           in
 
@@ -118,7 +116,7 @@ let rec process_request
             (sexp_of_list sexp_of_string dependents);
           List.map
             ~f:(fun path ->
-                Path.create_relative ~root:configuration.source_root ~relative:path
+                Path.create_relative ~root:source_root ~relative:path
                 |> File.create)
             dependents
         in
@@ -131,11 +129,7 @@ let rec process_request
       else
         state.deferred_requests
     in
-    let scheduler =
-      Scheduler.with_parallel
-        state.scheduler
-        ~is_parallel:(List.length check > 5)
-    in
+    let scheduler = Scheduler.with_parallel state.scheduler ~is_parallel:(List.length check > 5) in
     let repopulate_handles =
       let is_stub file =
         file
@@ -149,7 +143,6 @@ let rec process_request
           List.filter_map ~f:(File.handle ~root:source_root) update_environment_with
         in
         AstSharedMemory.remove_paths handles;
-        let (module Handler: Analysis.Environment.Handler) = state.environment in
         Handler.purge handles
       in
       let stubs, sources = List.partition_tf ~f:is_stub update_environment_with in
@@ -173,15 +166,13 @@ let rec process_request
     let () =
       Log.log
         ~section:`Debug
-        "Repopulating the environment with %s"
-        (List.to_string ~f:File.Handle.show repopulate_handles);
-      let repopulate_path handle =
-        match AstSharedMemory.get_source handle with
-        | Some source -> [source]
-        | None -> []
-      in
-      List.concat_map ~f:repopulate_path repopulate_handles
+        "Repopulating the environment with %a"
+        Sexp.pp
+        (sexp_of_list (fun handle -> sexp_of_string (File.Handle.show handle)) repopulate_handles);
+
+      List.filter_map ~f:AstSharedMemory.get_source repopulate_handles
       |> Service.Environment.populate state.environment ~source_root;
+
       Statistics.event
         ~section:`Memory
         ~name:"Shared memory size"
@@ -209,11 +200,7 @@ let rec process_request
     List.iter
       new_errors
       ~f:(fun error ->
-          let path = Error.path error in
-          Hashtbl.add_multi
-            state.errors
-            ~key:(File.Handle.create path)
-            ~data:error);
+          Hashtbl.add_multi state.errors ~key:(File.Handle.create (Error.path error)) ~data:error);
     let new_files = File.Handle.Set.of_list new_source_handles in
     let checked_files =
       List.filter_map
@@ -225,7 +212,6 @@ let rec process_request
     Some (TypeCheckResponse (build_file_to_error_map ~checked_files new_errors))
   in
   let handle_type_query state request =
-    let (module Handler: Environment.Handler) = state.environment in
     let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
     match request with
     | LessOrEqual (left, right) ->
@@ -271,10 +257,15 @@ let rec process_request
   in
   let result =
     match request with
-    | TypeCheckRequest request -> handle_type_check state request
-    | TypeQueryRequest request -> handle_type_query state request
-    | DisplayTypeErrors request -> display_cached_type_errors state request
-    | FlushTypeErrorsRequest -> flush_type_errors state
+    | TypeCheckRequest request ->
+        compact_shared_memory ();
+        handle_type_check state request
+    | TypeQueryRequest request ->
+        handle_type_query state request
+    | DisplayTypeErrors request ->
+        display_cached_type_errors state request
+    | FlushTypeErrorsRequest ->
+        flush_type_errors state
     | StopRequest ->
         Log.info "Stopping the server";
         Socket.write new_socket StopResponse;
