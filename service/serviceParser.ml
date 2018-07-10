@@ -12,7 +12,7 @@ open PyreParser
 module Scheduler = ServiceScheduler
 
 
-let parse_path_to_source file =
+let parse_source file =
   File.path file |> Path.relative
   >>= fun path ->
   File.lines file
@@ -29,7 +29,7 @@ let parse_path_to_source file =
         statements)
   with
   | Parser.Error error ->
-      Log.log ~section:`Parser "%s" error;
+      Log.log ~section:`Parser ">> %s" error;
       None
   | Failure error ->
       Log.error "%s" error;
@@ -39,7 +39,7 @@ let parse_path_to_source file =
 let parse_modules_job ~files =
   let parse file =
     file
-    |> parse_path_to_source
+    |> parse_source
     >>| (fun source ->
         let add_module_from_source
             {
@@ -66,7 +66,7 @@ let parse_modules_job ~files =
 let parse_sources_job ~files =
   let parse handles file =
     (file
-     |> parse_path_to_source
+     |> parse_source
      >>= fun source ->
      Path.relative (File.path file)
      >>| fun relative ->
