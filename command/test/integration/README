@@ -1,0 +1,9 @@
+The integration test repository is a small hg repository that's initially at the first commit when extracted. The
+test runner will call "hg next" and pyre check; pyre incremental until it hits the tip.
+
+You can use the following workflow to make changes:
+
+$ tar xf fake_repository.tar; rm fake_repository.tar
+* make changes to the commit you're interested in or amend, and
+$ hg amend && hg restack or hg commit depending on the use case
+$ tar cf fake_repository.tar *.py .watchmanconfig .hg .pyre_configuration
