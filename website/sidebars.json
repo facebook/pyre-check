@@ -8,7 +8,8 @@
       "gradual-typing",
       "error-suppression",
       "error-types",
-      "lsp-integration"
+      "lsp-integration",
+      "watchman-integration"
     ]
   }
 }
