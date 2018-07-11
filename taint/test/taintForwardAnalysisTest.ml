@@ -16,7 +16,7 @@ open Test
 
 
 let parse_source source =
-  parse ~qualifier:[] source
+  parse source
   |> Preprocessing.preprocess
 
 
@@ -30,7 +30,7 @@ let get_model models name =
   List.find models ~f:(fun { ForwardAnalysis.define_name; _ } -> Access.show define_name = name)
 
 
-let assert_sources source expectation =
+let assert_sources ~source ~expect:{ define_name; returns; _ } =
   let { Node.value = define; _ } =
     parse_source source
     |> Preprocessing.defines
@@ -38,9 +38,9 @@ let assert_sources source expectation =
   in
   match ForwardAnalysis.run (Cfg.create define) with
   | None -> assert_failure "produced no result"
-  | Some result ->
-      match get_model result.ForwardAnalysis.FixpointState.models expectation.define_name with
-      | None -> assert_failure ("no model for "^expectation.define_name)
+  | Some { ForwardAnalysis.FixpointState.models; _ } ->
+      match get_model models define_name with
+      | None -> assert_failure ("no model for " ^ define_name)
       | Some model ->
           let returned_sources =
             ForwardState.read AccessPath.Root.LocalResult model.source_taint
@@ -50,7 +50,7 @@ let assert_sources source expectation =
             |> String.Set.of_list
           in
           let expected_sources =
-            List.map ~f:Sources.show expectation.returns
+            List.map ~f:Sources.show returns
             |> String.Set.of_list
           in
           assert_equal
@@ -62,27 +62,31 @@ let assert_sources source expectation =
 
 let test_simple_source _ =
   assert_sources
-    {|
-    def simple_source():
-      return __testSource()
-    |}
-    {
-      define_name = "simple_source";
-      returns = [Sources.TestSource];
-    }
+    ~source:
+      {|
+      def simple_source():
+        return __testSource()
+      |}
+    ~expect:
+      {
+        define_name = "simple_source";
+        returns = [Sources.TestSource];
+      }
 
 
 let test_local_copy _ =
   assert_sources
-    {|
-    def copy_source():
-      var = __testSource()
-      return var
-    |}
-    {
-      define_name = "copy_source";
-      returns = [Sources.TestSource];
-    }
+    ~source:
+      {|
+      def copy_source():
+        var = __testSource()
+        return var
+      |}
+    ~expect:
+      {
+        define_name = "copy_source";
+        returns = [Sources.TestSource];
+      }
 
 
 let () =
