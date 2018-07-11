@@ -27,7 +27,7 @@ module FixpointState : sig
     models: Model.t list;
   }
 
-  val create: unit -> t
+  val create: ?models: Model.t list -> unit -> t
 
   val show_models: t option -> string
 
@@ -38,4 +38,4 @@ end
 module Analyzer : Fixpoint.Fixpoint with type state := FixpointState.t
 
 
-val run: Cfg.t -> FixpointState.t option
+val run: ?models: Model.t list -> Cfg.t -> FixpointState.t option

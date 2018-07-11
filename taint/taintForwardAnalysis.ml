@@ -58,7 +58,7 @@ module type FixpointState = sig
 
   include Fixpoint.State with type t := t
 
-  val create: unit -> t
+  val create: ?models: Model.t list -> unit -> t
 
   val show_models: t option -> string
 end
@@ -73,9 +73,9 @@ module rec FixpointState : FixpointState = struct
 
   let initial_taint = ForwardState.empty
 
-  let create () = {
+  let create ?(models = []) () = {
     taint = ForwardState.empty;
-    models = [];
+    models;
   }
 
   let less_or_equal ~left:{ taint = left } ~right:{ taint = right } =
@@ -117,6 +117,41 @@ module rec FixpointState : FixpointState = struct
     analyze_expression arg.Argument.value state
     |> ForwardState.join_trees taint_accumulator
 
+  and analyze_call state callee arguments =
+    match callee with
+    | Identifier identifier ->
+        let existing_model =
+          (* TODO(T31207999): look up models in shared memory *)
+          let lookup { Model.define_name; _ } =
+            Access.create_from_identifiers [identifier] = define_name
+          in
+          List.find state.models ~f:lookup
+        in
+        let taint =
+          match existing_model with
+          | Some { source_taint; _ } ->
+              (* TODO(T31440488): analyze callee arguments *)
+              ForwardState.read TaintAccessPath.Root.LocalResult source_taint
+          | None ->
+              (* TODO(T31435739): if we don't have a model: assume function propagates argument
+                 taint (join all argument taint) *)
+              List.fold arguments ~init:ForwardState.empty_tree ~f:(analyze_argument state)
+        in
+        taint
+    | Access { expression = receiver; member = method_name } ->
+        (* TODO(T31435135): figure out the FW and TITO model for whatever is called here. *)
+        (* Member access. Don't propagate the taint to the member, skip to the receiver. *)
+        let receiver_taint = analyze_normalized_expression state receiver in
+        (* For now just join all argument and receiver taint and propagate to result. *)
+        let taint = List.fold_left ~f:(analyze_argument state) arguments ~init:receiver_taint in
+        taint
+    | callee ->
+        (* TODO(T31435135): figure out the BW and TITO model for whatever is called here. *)
+        let callee_taint = analyze_normalized_expression state callee in
+        (* For now just join all argument and receiver taint and propagate to result. *)
+        let taint = List.fold_left ~f:(analyze_argument state) arguments ~init:callee_taint in
+        taint
+
   and analyze_normalized_expression state expression =
     match expression with
     | Access { expression; member; } ->
@@ -124,22 +159,8 @@ module rec FixpointState : FixpointState = struct
         let field = TaintAccessPathTree.Label.Field member in
         let taint = ForwardState.assign_tree_path [field] ~t:ForwardState.empty_tree ~st:taint in
         taint
-    | Call { callee = Access { expression = receiver; member = method_name; }; arguments; } ->
-        (* TODO: figure out the FW and TITO model for whatever is called here. *)
-        (* Member access. Don't propagate the taint to the member, skip to the receiver. *)
-        let receiver_taint = analyze_normalized_expression state receiver in
-        (* For now just join all argument and receiver taint and propagate to result. *)
-        let taint = List.fold_left ~f:(analyze_argument state) arguments ~init:receiver_taint in
-        taint
-    | Call { callee = Identifier name; arguments; } when Identifier.show name = "__testSource"->
-        (* Builtin source for testing. *)
-        ForwardTaint.test_source |> ForwardState.make_leaf
-    | Call { callee; arguments } ->
-        (* TODO: figure out the BW and TITO model for whatever is called here. *)
-        let callee_taint = analyze_normalized_expression state callee in
-        (* For now just join all argument and receiver taint and propagate to result. *)
-        let taint = List.fold_left ~f:(analyze_argument state) arguments ~init:callee_taint in
-        taint
+    | Call { callee; arguments; } ->
+        analyze_call state callee arguments
     | Expression expression ->
         analyze_expression expression state
     | Identifier identifier ->
@@ -185,8 +206,7 @@ module rec FixpointState : FixpointState = struct
 
   let analyze_definition ({ Define.name; _  } as define) state =
     let cfg = Cfg.create define in
-    let initial = { taint = initial_taint; models = []; } in
-    let result = Analyzer.forward ~cfg ~initial |> Analyzer.exit in
+    let result = Analyzer.forward ~cfg ~initial:state |> Analyzer.exit in
     match result with
     | None ->
         Log.log
@@ -249,8 +269,8 @@ end
 and Analyzer : Fixpoint.Fixpoint with type state = FixpointState.t = Fixpoint.Make(FixpointState)
 
 
-let run cfg =
-  let initial = FixpointState.create () in
+let run ?models cfg =
+  let initial = FixpointState.create ?models () in
   Log.log ~section:`Taint "Processing CFG:@.%s" (Log.Color.cyan (Cfg.show cfg));
   let result = Analyzer.forward ~cfg ~initial |> Analyzer.exit in
   Log.log ~section:`Taint "Models: %s" (Log.Color.cyan (FixpointState.show_models result));

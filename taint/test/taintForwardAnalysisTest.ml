@@ -28,17 +28,39 @@ type source_expectation = {
 }
 
 
+let models =
+  let stub = "def taint() -> TaintSource[TestSource]: ..." in
+  let source = parse ~qualifier:(Access.create "taint_model") stub in
+  let configuration = Configuration.create () in
+  let environment =
+    let environment = Environment.Builder.create () in
+    Service.Environment.populate
+      (Environment.handler ~configuration environment)
+      [source];
+    Environment.handler ~configuration environment
+  in
+  let resolution = Environment.resolution environment () in
+  let defines =
+    source
+    |> Preprocessing.defines ~include_stubs:true
+    |> List.tl
+    |> Option.value ~default:[]
+    |> List.map ~f:Node.value
+  in
+  [ForwardAnalysis.Model.create defines resolution]
+
+
 let get_model models name =
   List.find models ~f:(fun { Model.define_name; _ } -> Access.show define_name = name)
 
 
-let assert_sources ~source ~expect:{ define_name; returns; _ } =
+let assert_sources ~source ~models ~expect:{ define_name; returns; _ } =
   let { Node.value = define; _ } =
     parse_source source
     |> Preprocessing.defines
     |> List.hd_exn
   in
-  match ForwardAnalysis.run (Cfg.create define) with
+  match ForwardAnalysis.run ~models (Cfg.create define) with
   | None -> assert_failure "produced no result"
   | Some { ForwardAnalysis.FixpointState.models; _ } ->
       match get_model models define_name with
@@ -64,10 +86,11 @@ let assert_sources ~source ~expect:{ define_name; returns; _ } =
 
 let test_simple_source _ =
   assert_sources
+    ~models
     ~source:
       {|
       def simple_source():
-        return __testSource()
+        return taint()
       |}
     ~expect:
       {
@@ -78,10 +101,11 @@ let test_simple_source _ =
 
 let test_local_copy _ =
   assert_sources
+    ~models
     ~source:
       {|
       def copy_source():
-        var = __testSource()
+        var = taint()
         return var
       |}
     ~expect:
@@ -92,23 +116,7 @@ let test_local_copy _ =
 
 
 let test_model _ =
-  let assert_model ~qualifier ~taint_annotation ~source ~expect =
-    let source = parse ~qualifier:(Access.create qualifier) source in
-    let configuration = Configuration.create () in
-    let environment = Environment.Builder.create () in
-    Service.Environment.populate
-      (Environment.handler ~configuration environment)
-      [source];
-    let environment = Environment.handler ~configuration environment in
-    let resolution = Environment.resolution environment () in
-    let defines =
-      source
-      |> Preprocessing.defines ~include_stubs:true
-      |> List.tl
-      |> Option.value ~default:[]
-      |> List.map ~f:Node.value
-    in
-    let model = Model.create defines resolution in
+  let assert_model ~model ~expect =
     assert_equal
       ~printer:ident
       (Model.show model)
@@ -123,12 +131,7 @@ let test_model _ =
       ForwardState.empty
   in
   assert_model
-    ~qualifier:"taint_model"
-    ~taint_annotation:"TaintSource"
-    ~source:
-      {|
-        def taint() -> TaintSource[TestSource]: ...
-      |}
+    ~model:(List.hd_exn models)
     ~expect:
       {
         Model.define_name = Access.create "taint";
