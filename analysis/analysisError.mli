@@ -167,6 +167,9 @@ type t = {
 
 include Hashable with type t := t
 
+val create: location: Location.reference -> kind: kind -> define: Statement.Define.t Node.t -> t
+
+val path: t -> string
 val location: t -> Location.instantiated
 val key: t -> Location.reference
 val code: t -> int
@@ -194,7 +197,3 @@ val suppress: mode: Source.mode -> t -> bool
 val dequalify: Access.t Access.Map.t -> (module Environment.Handler) -> t -> t
 
 val to_json: detailed: bool -> t -> Yojson.Safe.json
-
-val create: location: Location.reference -> kind: kind -> define: Statement.Define.t Node.t -> t
-
-val path: t -> string

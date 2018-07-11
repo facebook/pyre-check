@@ -199,6 +199,18 @@ include Hashable.Make(struct
   end)
 
 
+let create ~location ~kind ~define  =
+  {
+    location = Location.instantiate ~lookup:(fun hash -> AstSharedMemory.get_path ~hash) location;
+    kind;
+    define
+  }
+
+
+let path { location = { Location.path; _ }; _ } =
+  path
+
+
 let location { location; _ } =
   location
 
@@ -1497,15 +1509,3 @@ let to_json
       "inference", `Assoc inference_information;
       "define", `String (Access.show define.Define.name);
     ])
-
-
-let create ~location ~kind ~define  =
-  {
-    location = Location.instantiate ~lookup:(fun hash -> AstSharedMemory.get_path ~hash) location;
-    kind;
-    define
-  }
-
-
-let path { location = { Location.path; _ }; _ } =
-  path
