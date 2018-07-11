@@ -3,22 +3,28 @@
     This source code is licensed under the MIT license found in the
     LICENSE file in the root directory of this source tree. *)
 
+open Ast
 open Analysis
 open TaintDomains
+open Statement
 
 
-type model = {
-  define_name: Ast.Statement.Access.t;
-  source_taint: ForwardState.t;
-}
-[@@deriving show]
+module Model : sig
+  type t = {
+    define_name: Ast.Statement.Access.t;
+    source_taint: ForwardState.t;
+  }
+  [@@deriving show]
+
+  val create: Define.t list -> Resolution.t -> t
+end
 
 
 module FixpointState : sig
 
   type t = {
     taint: ForwardState.t;
-    models: model list;
+    models: Model.t list;
   }
 
   val create: unit -> t

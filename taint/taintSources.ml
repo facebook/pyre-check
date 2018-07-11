@@ -12,6 +12,12 @@ type t =
 [@@deriving compare, sexp, show, hash]
 
 
+let create = function
+  | "TestSource" -> TestSource
+  | "UserControlled" -> UserControlled
+  | name -> failwith (Format.sprintf "Unsupported taint source %s" name)
+
+
 let to_string = function
   | TestSource -> "test source"
   | UserControlled -> "user controlled"

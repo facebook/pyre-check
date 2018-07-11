@@ -11,17 +11,48 @@ open Statement
 open TaintDomains
 open TaintAccessPath
 
-type model = {
-  define_name: Access.t;
-  source_taint: ForwardState.t;
-}
-[@@deriving show]
+module Model = struct
+  type t = {
+    define_name: Access.t;
+    source_taint: ForwardState.t;
+  }
+  [@@deriving show]
+
+  let taint_annotation = "TaintSource"
+
+  let create defines resolution =
+
+    let introduce_taint taint_source_kind =
+      ForwardState.assign
+        ~root:TaintAccessPath.Root.LocalResult
+        ~path:[]
+        (ForwardTaint.singleton taint_source_kind
+         |> ForwardState.make_leaf)
+        ForwardState.empty
+    in
+
+    Annotated.Callable.create defines ~resolution
+    |> (fun callable -> Type.Callable callable)
+    |> function
+    | Type.Callable { kind = Named define_name ; overloads; implicit } ->
+        begin match overloads with
+          | {
+            annotation = Type.Parametric { name; parameters = (Primitive primitive) :: _ }
+          } :: _ when (Identifier.show name = taint_annotation) ->
+              let taint_source_kind = TaintSources.create (Identifier.show primitive) in
+              { define_name; source_taint = introduce_taint taint_source_kind }
+          | _ ->
+              failwith "Cannot create taint model: no annotation"
+        end
+    | _ ->
+        failwith "Cannot create taint model: not a callable"
+end
 
 
 module type FixpointState = sig
   type t = {
     taint: ForwardState.t;
-    models: model list;
+    models: Model.t list;
   }
   [@@deriving show]
 
@@ -36,7 +67,7 @@ end
 module rec FixpointState : FixpointState = struct
   type t = {
     taint: ForwardState.t;
-    models: model list;
+    models: Model.t list;
   }
   [@@deriving show]
 
@@ -165,7 +196,7 @@ module rec FixpointState : FixpointState = struct
         state
     | Some result ->
         let source_model = extract_source_model define.Record.Define.parameters result.taint in
-        let model = { define_name = define.name; source_taint = source_model; } in
+        let model = { Model.define_name = define.name; source_taint = source_model; } in
         { state with models = model :: List.rev_append result.models state.models }
 
 
@@ -210,7 +241,7 @@ module rec FixpointState : FixpointState = struct
   let show_models = function
     | None -> "no result."
     | Some result ->
-        String.concat ~sep:"\n" (List.map ~f:show_model result.FixpointState.models)
+        String.concat ~sep:"\n" (List.map ~f:Model.show result.FixpointState.models)
 
 end
 
