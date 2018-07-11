@@ -5,23 +5,28 @@
 
 open Core
 open Ast
+open Expression
 open Pyre
 
 
-(* Roots representing parameters, locals, and special return value in models. *)
+(** Roots representing parameters, locals, and special return value in models. *)
 module Root : sig
   type t =
-    | LocalResult  (* Special root representing the return value location. *)
-    | Parameter of { name: Identifier.t; position: int; }
+    | LocalResult (* Special root representing the return value location. *)
+    | Parameter of { name: Identifier.t; position: int }
     | Variable of Identifier.t
   [@@deriving compare, sexp, show, hash]
 end
 
 
-type t = { root: Root.t; path: TaintAccessPathTree.Label.path; }
+type t = {
+  root: Root.t;
+  path: TaintAccessPathTree.Label.path;
+}
 
 
-val of_accesses: 'a Expression.Record.Access.access list -> t option
+val of_accesses: Access.t -> t option
+
 val of_expression: Expression.t -> t option
 
 
@@ -29,10 +34,10 @@ type normalized_expression =
   | Access of { expression: normalized_expression; member: Identifier.t }
   | Call of {
       callee: normalized_expression;
-      arguments: Expression.t Expression.Record.Argument.record list;
+      arguments: Argument.t list;
     }
   | Identifier of Identifier.t
   | Expression of Expression.t
 [@@deriving show]
 
-val normalize_access : Expression.t Expression.Access.access list -> normalized_expression
+val normalize_access: Access.t -> normalized_expression
