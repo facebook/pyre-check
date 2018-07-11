@@ -10,6 +10,7 @@ import logging
 import os
 import shutil
 import subprocess
+import sys
 from contextlib import contextmanager
 from time import time
 from typing import Dict, Generator, List, Optional
@@ -164,7 +165,7 @@ def find_python_paths(root: str) -> List[str]:
             "pyre was unable to locate a source directory. "
             "Ensure that your project is built and re-run pyre."
         )
-        exit(1)
+        sys.exit(1)
 
 
 def is_empty(path: str) -> bool:
