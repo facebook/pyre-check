@@ -474,22 +474,6 @@ module State = struct
         (Resolution.annotations left.resolution)
 
 
-  let join_resolutions left_resolution right_resolution =
-    let merge_annotations ~key:_ = function
-      | `Both (left, right) ->
-          Some (Refinement.join ~resolution:left_resolution left right)
-      | `Left _
-      | `Right _ ->
-          Some (Annotation.create Type.Top)
-    in
-    let annotations =
-      Map.merge
-        ~f:merge_annotations
-        (Resolution.annotations left_resolution)
-        (Resolution.annotations right_resolution)
-    in
-    Resolution.with_annotations left_resolution ~annotations
-
 
   let join ({ resolution; _ } as left) right =
     if left.bottom then
@@ -503,6 +487,22 @@ module State = struct
         | `Left state
         | `Right state ->
             Some state
+      in
+      let join_resolutions left_resolution right_resolution =
+        let merge_annotations ~key:_ = function
+          | `Both (left, right) ->
+              Some (Refinement.join ~resolution:left_resolution left right)
+          | `Left _
+          | `Right _ ->
+              Some (Annotation.create Type.Top)
+        in
+        let annotations =
+          Map.merge
+            ~f:merge_annotations
+            (Resolution.annotations left_resolution)
+            (Resolution.annotations right_resolution)
+        in
+        Resolution.with_annotations left_resolution ~annotations
       in
       {
         left with
