@@ -40,6 +40,10 @@ test: hack_parallel development_tags
 python_tests:
 	./scripts/run-python-tests.sh
 
+.PHONY: server_integration_test
+server_integration_test: all
+	PYRE_BINARY="$(shell pwd)/_build/all/main.native" ./scripts/run_integration_test.py command/test/integration/fake_repository.tar
+
 .PHONY: release
 release: hack_parallel release_tags
 	@./scripts/generate-version-number.sh
