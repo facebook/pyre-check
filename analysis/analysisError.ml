@@ -1243,7 +1243,7 @@ let suppress ~mode error =
         due_to_analysis_limitations error ||
         due_to_mismatch_with_any error ||
         due_to_unsupported_calls error ||
-        Define.is_untyped define
+        (Define.is_untyped define && not (Define.is_toplevel define))
   in
 
   let suppress_in_infer ({ kind; _ } as error) =

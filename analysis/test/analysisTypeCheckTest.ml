@@ -3768,7 +3768,7 @@ let test_check_immutables _ =
   assert_type_errors
     ~debug:false
     {|
-      constant
+      constant = 1
       def foo() -> None:
         global constant
         constant = 1
@@ -4048,7 +4048,13 @@ let test_check_missing_return _ =
       def foo():
         pass
     |}
-    []
+    [];
+  assert_type_errors
+    ~debug:false
+    {|
+      1 + 'asdf'  # report in top-level function
+    |}
+    ["Incompatible parameter type [6]: Expected `int` but got `str`."]
 
 
 let test_check_yield _ =
