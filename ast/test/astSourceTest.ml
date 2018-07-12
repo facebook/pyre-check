@@ -173,7 +173,7 @@ let test_qualifier _ =
 
 let test_expand_relative_import _ =
   let assert_export ~path ~from ~expected =
-    let source = Source.create ~path ~qualifier:(Source.qualifier ~path) [] in
+    let qualifier = Source.qualifier ~path in
     let from =
       match parse_single_statement ("from " ^ from ^ " import something") with
       | { Node.value = Import { Import.from = Some from; _ }; _ } -> from
@@ -183,7 +183,7 @@ let test_expand_relative_import _ =
       ~cmp:Access.equal
       ~printer:Access.show
       (parse_single_access expected)
-      (Source.expand_relative_import source ~from)
+      (Source.expand_relative_import ~qualifier ~path ~from)
   in
 
   assert_export ~path:"module/qualifier.py" ~from:"." ~expected:"module";

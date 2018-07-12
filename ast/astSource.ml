@@ -273,38 +273,39 @@ let qualifier ~path =
     qualifier
 
 
-let expand_relative_import { qualifier; path; _ } ~from =
-  (* Expand relative imports according to PEP 328 *)
-  let dots, postfix =
-    let is_dot = function
-      | Access.Identifier identifier when Identifier.show identifier = "" -> true
-      | _ -> false
-    in
-    List.split_while ~f:is_dot from
-  in
-  let prefix =
-    if not (List.is_empty dots) then
-      let drop =
-        let drop =
-          if List.length dots = 2 && List.length postfix = 0 then
-            (* Special case for single `.` in from clause. *)
-            1
-          else
-            List.length dots
-        in
-        let is_initializer_module =
-          String.is_suffix path ~suffix:"/__init__.py" ||
-          String.is_suffix path ~suffix:"/__init__.pyi"
-        in
-        if is_initializer_module then
-          drop - 1
-        else
-          drop
-      in
-      List.rev qualifier
-      |> (fun reversed -> List.drop reversed drop)
-      |> List.rev
-    else
+let expand_relative_import ?path ~qualifier ~from =
+  match Access.show from with
+  | "builtins" ->
       []
-  in
-  prefix @ postfix
+  | serialized ->
+      (* Expand relative imports according to PEP 328 *)
+      let dots = String.take_while ~f:(fun dot -> dot = '.') serialized in
+      let postfix =
+        match String.drop_prefix serialized (String.length dots) with
+        (* Special case for single `.`, `..`, etc. in from clause. *)
+        | "" -> []
+        | nonempty -> Access.create nonempty
+      in
+      let prefix =
+        if not (String.is_empty dots) then
+          let initializer_module_offset =
+            match path with
+            | Some path ->
+                (* `.` corresponds to the directory containing the module. For non-init modules, the
+                   qualifier matches the path, so we drop exactly the number of dots. However, for
+                   __init__ modules, the directory containing it represented by the qualifier. *)
+                if String.is_suffix path ~suffix:"/__init__.py"
+                || String.is_suffix path ~suffix:"/__init__.pyi" then
+                  1
+                else
+                  0
+            | None ->
+                0
+          in
+          List.rev qualifier
+          |> (fun reversed -> List.drop reversed (String.length dots - initializer_module_offset))
+          |> List.rev
+        else
+          []
+      in
+      prefix @ postfix

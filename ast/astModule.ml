@@ -78,13 +78,7 @@ let create ~qualifier ~local_mode ?path ~stub statements =
     let aliased_exports { Node.value; _ } =
       match value with
       | Import { Import.from = Some from; imports } ->
-          let from =
-            match Access.show from with
-            | ""
-            | "." -> qualifier  (* From is `.`. *)
-            | "builtins" -> []
-            | _ -> from
-          in
+          let from = Source.expand_relative_import ?path ~qualifier ~from in
           let export { Import.name; alias } =
             let alias = Option.value ~default:name alias in
             let name = if Access.show alias = "*" then from else from @ name in

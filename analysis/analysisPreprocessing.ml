@@ -182,7 +182,7 @@ type scope = {
 }
 
 
-let qualify ({ Source.path; qualifier; statements; _ } as source) =
+let qualify ({ Source.path; qualifier = source_qualifier; statements; _ } as source) =
   let prefix_identifier ~scope:({ aliases; immutables; _ } as scope) ~prefix name =
     let stars, name =
       let name = Identifier.show name in
@@ -205,7 +205,11 @@ let qualify ({ Source.path; qualifier; statements; _ } as source) =
         Map.set
           aliases
           ~key:access
-          ~data:{ access = [Access.Identifier renamed]; qualifier; is_forward_reference = false };
+          ~data:{
+            access = [Access.Identifier renamed];
+            qualifier = source_qualifier;
+            is_forward_reference = false;
+          };
       immutables = Set.add immutables access;
     },
     stars,
@@ -551,7 +555,7 @@ let qualify ({ Source.path; qualifier; statements; _ } as source) =
       | Import { Import.from = Some from; imports }
         when Access.show from <> "builtins" ->
           let import aliases { Import.name; alias } =
-            let from = Source.expand_relative_import source ~from in
+            let from = Source.expand_relative_import ~qualifier:source_qualifier ~path ~from in
             match alias with
             | Some alias ->
                 (* Add `alias -> from.name`. *)
@@ -854,7 +858,7 @@ let qualify ({ Source.path; qualifier; statements; _ } as source) =
 
   let scope =
     {
-      qualifier;
+      qualifier = source_qualifier;
       aliases = Access.Map.empty;
       locals = Access.Set.empty;
       immutables = Access.Set.empty;

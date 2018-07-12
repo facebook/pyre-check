@@ -88,7 +88,22 @@ let test_aliased_export _ =
   assert_aliased_exports
     ~qualifier:(Access.create "some.module")
     "from . import path as other"
-    ["other", "some.module.path"];
+    ["other", "some.path"];
+
+  assert_aliased_exports
+    ~qualifier:(Access.create "some.long.module")
+    "from .relative import path as other"
+    ["other", "some.long.relative.path"];
+
+  assert_aliased_exports
+    ~qualifier:(Access.create "some.long.module")
+    "from ..relative import path as other"
+    ["other", "some.relative.path"];
+
+  assert_aliased_exports
+    ~qualifier:(Access.create "some.long.module")
+    "from ...relative import path as other"
+    ["other", "relative.path"];
 
   assert_aliased_exports
     ~qualifier:(Access.create "some.module")
