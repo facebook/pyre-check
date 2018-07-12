@@ -42,7 +42,7 @@ python_tests:
 
 .PHONY: server_integration_test
 server_integration_test: all
-	PYRE_BINARY="$(shell pwd)/_build/all/main.native" ./scripts/run_integration_test.py command/test/integration/fake_repository.tar
+	PYRE_BINARY="$(shell pwd)/_build/all/main.native" ./scripts/run_integration_test.py command/test/integration/fake_repository/
 
 .PHONY: release
 release: hack_parallel release_tags

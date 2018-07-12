@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 
 import argparse
+import filecmp
 import logging
 import os
+import shutil
 import subprocess
 import sys
-import tarfile
 import tempfile
 from contextlib import contextmanager
 
@@ -13,30 +14,85 @@ from contextlib import contextmanager
 LOG = logging.getLogger(__name__)
 
 
-class AtLatestRevision(Exception):
-    pass
+def assert_readable_directory(directory: str) -> None:
+    if not os.path.isdir(directory):
+        raise Exception("{} is not a valid directory.".format(directory))
+    if not os.access(directory, os.R_OK):
+        raise Exception("{} is not a readable directory.".format(directory))
 
 
 class Repository:
-    def __init__(self, pyre_directory, repository_tar_path: str) -> None:
-        with tarfile.open(repository_tar_path) as repository_tar:
-            repository_tar.extractall(pyre_directory)
-        self.pyre_directory = pyre_directory
+    def __init__(self, pyre_directory, repository_path: str) -> None:
+        # Parse list of fake commits.
+        assert_readable_directory(repository_path)
+        self._base_repository_path = os.path.realpath(repository_path)
+        commits_list = os.listdir(self._base_repository_path)
+        list.sort(commits_list)
+        for commit in commits_list:
+            assert_readable_directory(os.path.join(self._base_repository_path, commit))
+        self._commits_list = iter(commits_list)
+
+        # Move into the temporary directory.
+        self._pyre_directory = pyre_directory
         os.chdir(pyre_directory)
-        self.latest_hash = subprocess.check_output(
-            ["hg", "tip", "--template", "{node}"]
-        ).decode("utf-8")
 
-    def current_hash(self) -> str:
-        return subprocess.check_output(
-            ["hg", "log", "--limit", "1", "--template", "{node}"]
-        ).decode("utf-8")
+        # Seed the repository with the base commit.
+        self.__next__()
 
-    def next(self) -> None:
-        try:
-            subprocess.check_call(["hg", "next"])
-        except subprocess.CalledProcessError:
-            raise AtLatestRevision
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        self._current_commit = self._commits_list.__next__()
+        print(" >>> Moving to commit named: %s" % self._current_commit)
+
+        # Last empty path is needed to terminate the path with a directory separator.
+        original_path = os.path.join(
+            self._base_repository_path, self._current_commit, ""
+        )
+        # I could not find the right flags for rsync to touch/write
+        # only the changed files. This is crucial for watchman to
+        # generate the right notifications. Hence, this.
+        self._poor_mans_rsync(original_path, ".")
+        return self._current_commit
+
+    def _poor_mans_rsync(self, source_directory, destination_directory):
+        # Do not delete the server directory while copying!
+        assert_readable_directory(source_directory)
+        source_files = [
+            entry
+            for entry in os.listdir(source_directory)
+            if os.path.isfile(os.path.join(source_directory, entry))
+        ]
+        assert_readable_directory(destination_directory)
+        destination_files = [
+            entry
+            for entry in os.listdir(destination_directory)
+            if os.path.isfile(os.path.join(destination_directory, entry))
+        ]
+
+        # First remove all destination files that are missing in the source.
+        for filename in destination_files:
+            if filename not in source_files:
+                print(" > Removing file '%s' from destination" % filename)
+                os.remove(os.path.join(destination_directory, filename))
+
+        # Compare files across source and destination.
+        (match, mismatch, error) = filecmp.cmpfiles(
+            source_directory, destination_directory, source_files
+        )
+        for filename in match:
+            print(" > Skipping file '%s' because it matches" % filename)
+        for filename in mismatch:
+            print(" > Copying file '%s' due to mismatch" % filename)
+            shutil.copy2(
+                os.path.join(source_directory, filename), destination_directory
+            )
+        for filename in error:
+            print(" > Copying file '%s' because it is missing" % filename)
+            shutil.copy2(
+                os.path.join(source_directory, filename), destination_directory
+            )
 
     def get_pyre_errors(self):
         incremental_errors = self.run_pyre("incremental")
@@ -53,26 +109,22 @@ class Repository:
         return output.decode("utf-8")
 
 
-def run_integration_test(repository_tar_path) -> int:
+def run_integration_test(repository_path) -> int:
     base_directory = tempfile.mkdtemp()
     discrepancies = {}
-    repository = Repository(base_directory, repository_tar_path)
+    repository = Repository(base_directory, repository_path)
     with _watch_directory(base_directory):
         repository.run_pyre("start")
-        try:
-            while True:
-                discrepancies[repository.current_hash()] = repository.get_pyre_errors()
-                repository.next()  # noqa # Flake8 dislikes the use of next()
-        except AtLatestRevision:
-            pass
+        for commit in repository:
+            discrepancies[commit] = repository.get_pyre_errors()
         repository.run_pyre("stop")
 
     for revision, (actual_error, expected_error) in discrepancies.items():
         if actual_error != expected_error:
             LOG.error("Found discrepancies between incremental and complete checks!")
             print("Difference found for revision {}".format(revision))
-            print("Actual errors: {}".format(actual_error))
-            print("Expected errors: {}".format(expected_error))
+            print("Actual errors (pyre incremental): {}".format(actual_error))
+            print("Expected errors (pyre check): {}".format(expected_error))
             return 1
     return 0
 
@@ -97,6 +149,8 @@ if __name__ == "__main__":
         level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s"
     )
     parser = argparse.ArgumentParser()
-    parser.add_argument("repository_location", help="Path to tarred repository")
+    parser.add_argument(
+        "repository_location", help="Path to directory with fake commit list"
+    )
     arguments = parser.parse_args()
     sys.exit(run_integration_test(arguments.repository_location))
