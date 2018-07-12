@@ -44,7 +44,7 @@ class Repository:
 
     def __next__(self):
         self._current_commit = self._commits_list.__next__()
-        print(" >>> Moving to commit named: %s" % self._current_commit)
+        print(" >>> Moving to commit named: %s" % self._current_commit, file=sys.stderr)
 
         # Last empty path is needed to terminate the path with a directory separator.
         original_path = os.path.join(
@@ -74,7 +74,9 @@ class Repository:
         # First remove all destination files that are missing in the source.
         for filename in destination_files:
             if filename not in source_files:
-                print(" > Removing file '%s' from destination" % filename)
+                print(
+                    " > Removing file '%s' from destination" % filename, file=sys.stderr
+                )
                 os.remove(os.path.join(destination_directory, filename))
 
         # Compare files across source and destination.
@@ -82,14 +84,18 @@ class Repository:
             source_directory, destination_directory, source_files
         )
         for filename in match:
-            print(" > Skipping file '%s' because it matches" % filename)
+            print(
+                " > Skipping file '%s' because it matches" % filename, file=sys.stderr
+            )
         for filename in mismatch:
-            print(" > Copying file '%s' due to mismatch" % filename)
+            print(" > Copying file '%s' due to mismatch" % filename, file=sys.stderr)
             shutil.copy2(
                 os.path.join(source_directory, filename), destination_directory
             )
         for filename in error:
-            print(" > Copying file '%s' because it is missing" % filename)
+            print(
+                " > Copying file '%s' because it is missing" % filename, file=sys.stderr
+            )
             shutil.copy2(
                 os.path.join(source_directory, filename), destination_directory
             )
