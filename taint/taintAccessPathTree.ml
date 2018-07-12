@@ -11,22 +11,24 @@ let max_tree_depth = 4  (* TODO(T31441124) make this configurable *)
 let is_unit_test = true (* TODO(T31441124) make this configurable *)
 
 
-module type CHECKS = sig
-  type witness
-  val make_witness: bool -> false_witness:string -> witness
-  val option_construct: message:(unit -> string) -> witness -> witness
-  val false_witness: message:(unit -> string) -> witness
-  (* Captures true, as a witness, i.e. without extra info. *)
-  val true_witness: witness
-  val is_true: witness -> bool
-  val get_witness: witness -> string option
-  val and_witness: witness -> witness -> witness
-  (* Calls the argument function if checking is on, otherwise ignores it. *)
-  val check: (unit -> unit) -> unit
+module Checks = struct
+  module type S = sig
+    type witness
+    val make_witness: bool -> false_witness:string -> witness
+    val option_construct: message:(unit -> string) -> witness -> witness
+    val false_witness: message:(unit -> string) -> witness
+    (* Captures true, as a witness, i.e. without extra info. *)
+    val true_witness: witness
+    val is_true: witness -> bool
+    val get_witness: witness -> string option
+    val and_witness: witness -> witness -> witness
+    (* Calls the argument function if checking is on, otherwise ignores it. *)
+    val check: (unit -> unit) -> unit
+  end
 end
 
 
-module WithChecks: CHECKS = struct
+module WithChecks: Checks.S = struct
   type witness = string option
 
   let make_witness condition ~false_witness =
@@ -67,7 +69,7 @@ module WithChecks: CHECKS = struct
 end
 
 
-module WithoutChecks: CHECKS = struct
+module WithoutChecks: Checks.S = struct
   type witness = bool
 
 
@@ -121,13 +123,15 @@ module Label = struct
 end
 
 
-module Make
-    (Checks : CHECKS)
-    (Root : sig
-       include Map.Key
-       val show: t -> string
-     end)
-    (Element : Analysis.AbstractDomain.S) = struct
+module Root = struct
+  module type S = sig
+    include Map.Key
+    val show: t -> string
+  end
+end
+
+
+module Make (Checks: Checks.S) (Root: Root.S) (Element: Analysis.AbstractDomain.S) = struct
 
   module RootMap = Map.Make(Root)
   module LabelMap = Map.Make(Label)

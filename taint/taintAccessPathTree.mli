@@ -26,33 +26,39 @@
       depth, as we cannot grow in width (new roots) indefinitely). *)
 
 
-module type CHECKS = sig
-  type witness
+open Ast
+open Analysis
+open Core
 
-  val make_witness: bool -> false_witness: string -> witness
-  val option_construct: message: (unit -> string) -> witness -> witness
-  val false_witness: message: (unit -> string) -> witness
-  (** Captures true, as a witness, i.e. without extra info. *)
-  val true_witness: witness
-  val is_true: witness -> bool
-  val get_witness: witness -> string option
-  val and_witness: witness -> witness -> witness
-  (** Calls the argument function if checking is on, otherwise ignores it. *)
-  val check: (unit -> unit) -> unit
+
+module Checks : sig
+  module type S = sig
+    type witness
+    val make_witness: bool -> false_witness:string -> witness
+    val option_construct: message:(unit -> string) -> witness -> witness
+    val false_witness: message:(unit -> string) -> witness
+    (* Captures true, as a witness, i.e. without extra info. *)
+    val true_witness: witness
+    val is_true: witness -> bool
+    val get_witness: witness -> string option
+    val and_witness: witness -> witness -> witness
+    (* Calls the argument function if checking is on, otherwise ignores it. *)
+    val check: (unit -> unit) -> unit
+  end
 end
 
 
 (** Performs invariant checking if used to instantiate functor below. *)
-module WithChecks: CHECKS
+module WithChecks: Checks.S
 
 
 (** No invariant checking. *)
-module WithoutChecks: CHECKS
+module WithoutChecks: Checks.S
 
 
 module Label: sig
   type t =
-    | Field of Ast.Identifier.t
+    | Field of Identifier.t
     | Any
   [@@deriving compare, sexp, hash]
   val show: t -> string
@@ -63,126 +69,126 @@ module Label: sig
 end
 
 
-module Make :
-  functor(Checks : CHECKS) ->
-  functor(Root : sig
-            include Core.Map.Key
-            val show: t -> string
-          end) ->
-  functor(Element : Analysis.AbstractDomain.S) ->
-  sig
+module Root: sig
+  module type S = sig
+    include Map.Key
+    val show: t -> string
+  end
+end
 
-    type t
-    [@@deriving show]
-    type access_path_tree
 
-    val empty: t
-    val exists: f: (Element.t -> bool) -> t -> bool
-    val is_empty: t -> bool
-    val less_or_equal: left: t -> right: t -> bool
-    val less_or_equal_witness: left: t -> right: t -> Checks.witness
-    val to_string: t -> string
-    val to_string_just_access_path: t -> string
-    val read_access_path: root: Root.t -> path: Label.path -> t -> access_path_tree
+module Make (Checks: Checks.S) (Root: Root.S) (Element: AbstractDomain.S): sig
+  type t
+  [@@deriving show]
+  type access_path_tree
 
-    (** Return the path elements joined without combining them with the element at the path tip. *)
-    val read_access_path_raw:
-      root: Root.t
-      -> path: Label.path
-      -> t
-      -> use_precise_fields: bool
-      -> Element.t * access_path_tree
+  val empty: t
+  val exists: f: (Element.t -> bool) -> t -> bool
+  val is_empty: t -> bool
+  val less_or_equal: left: t -> right: t -> bool
+  val less_or_equal_witness: left: t -> right: t -> Checks.witness
+  val to_string: t -> string
+  val to_string_just_access_path: t -> string
+  val read_access_path: root: Root.t -> path: Label.path -> t -> access_path_tree
 
-    val read: Root.t -> t -> access_path_tree
+  (** Return the path elements joined without combining them with the element at the path tip. *)
+  val read_access_path_raw:
+    root: Root.t
+    -> path: Label.path
+    -> t
+    -> use_precise_fields: bool
+    -> Element.t * access_path_tree
 
-    val assign: root: Root.t -> path: Label.path -> access_path_tree -> t -> t
-    val assign_weak: root: Root.t -> path: Label.path -> access_path_tree -> t -> t
+  val read: Root.t -> t -> access_path_tree
 
-    val filter_map: f: (Root.t -> access_path_tree -> access_path_tree) -> t -> t
-    val filter_map_key: f: (Root.t -> Root.t option) -> t -> t
-    val filter_map_value: f: (Element.t -> Element.t) -> t -> t
+  val assign: root: Root.t -> path: Label.path -> access_path_tree -> t -> t
+  val assign_weak: root: Root.t -> path: Label.path -> access_path_tree -> t -> t
 
-    val fold
-      : f: (Root.t -> access_path_tree -> 'accumulator -> 'accumulator)
-      -> t
-      -> init: 'accumulator
-      -> 'accumulator
+  val filter_map: f: (Root.t -> access_path_tree -> access_path_tree) -> t -> t
+  val filter_map_key: f: (Root.t -> Root.t option) -> t -> t
+  val filter_map_value: f: (Element.t -> Element.t) -> t -> t
 
-    val fold_paths
-      : f:
-          (root: Root.t
-           -> path: Label.path
-           -> path_element: Element.t
-           -> element: Element.t
-           -> 'accumulator
-           -> 'accumulator)
-      -> init: 'accumulator
-      -> t
-      -> 'accumulator
+  val fold
+    : f: (Root.t -> access_path_tree -> 'accumulator -> 'accumulator)
+    -> t
+    -> init: 'accumulator
+    -> 'accumulator
 
-    val join: t -> t -> t
-    val of_list: ((Root.t * Label.path) * Element.t) list -> t
-    val remove: root: Root.t -> path: Label.path -> t -> t
-    val singleton: root: Root.t -> path: Label.path -> access_path_tree -> t
-    val widen: iteration: int -> previous: t -> next: t -> t
-
-    val iteri: f:(Root.t -> access_path_tree -> unit) -> t -> unit
-    val iterate_paths: f: (root: Root.t -> path: Label.path -> element: Element.t -> unit) -> t -> unit
-
-    val empty_tree: access_path_tree
-    val get_root_taint: access_path_tree -> Element.t
-    val exists_in_tree: f: (Element.t -> bool) -> access_path_tree -> bool
-    val is_empty_tree: access_path_tree -> bool
-    val make_tree: Label.path -> access_path_tree -> access_path_tree
-    val read_tree: Label.path -> access_path_tree -> access_path_tree
-    val tree_has_children: access_path_tree -> bool
-    val tree_to_string: access_path_tree -> string
-    val tree_to_string_just_access_path: access_path_tree -> string
-
-    val assign_tree_path
-      : tree: access_path_tree
-      -> Label.path
-      -> subtree: access_path_tree
-      -> access_path_tree
-
-    val collapse: access_path_tree -> Element.t
-    val collapse_to: depth: int -> access_path_tree -> access_path_tree
-    val collapse_tree_indices: access_path_tree -> access_path_tree
-    val cut_tree_after: depth: int -> access_path_tree -> access_path_tree
-
-    val filter_map_tree: f: (Element.t -> Element.t) -> access_path_tree -> access_path_tree
-    val filter_map_tree_paths
-      : f:(path: Label.path -> path_element: Element.t -> element: Element.t -> Element.t)
-      -> access_path_tree
-      -> access_path_tree
-
-    val fold_tree_children
-      : access_path_tree
-      -> init: 'accumulator
-      -> f: (Label.t -> access_path_tree -> 'accumulator -> 'accumulator)
-      -> 'accumulator
-    val fold_tree_paths:
-      init:'accumulator ->
-      f:
-        (path: Label.path
+  val fold_paths
+    : f:
+        (root: Root.t
+         -> path: Label.path
          -> path_element: Element.t
          -> element: Element.t
          -> 'accumulator
          -> 'accumulator)
-      -> access_path_tree
-      -> 'accumulator
+    -> init: 'accumulator
+    -> t
+    -> 'accumulator
 
-    val join_tree_path:
-      tree: access_path_tree
-      -> Label.path
-      -> subtree: access_path_tree
-      -> access_path_tree
-    val join_trees: access_path_tree -> access_path_tree -> access_path_tree
-    val join_root_element: access_path_tree -> Element.t -> access_path_tree
-    val make_leaf: Element.t -> access_path_tree
-    val replace_root_taint: access_path_tree -> Element.t -> access_path_tree
-    val iterate_tree_paths
-      : f: (path:Label.path -> element: Element.t -> unit)
-      -> access_path_tree
-      -> unit
-  end
+  val join: t -> t -> t
+  val of_list: ((Root.t * Label.path) * Element.t) list -> t
+  val remove: root: Root.t -> path: Label.path -> t -> t
+  val singleton: root: Root.t -> path: Label.path -> access_path_tree -> t
+  val widen: iteration: int -> previous: t -> next: t -> t
+
+  val iteri: f:(Root.t -> access_path_tree -> unit) -> t -> unit
+  val iterate_paths: f: (root: Root.t -> path: Label.path -> element: Element.t -> unit) -> t -> unit
+
+  val empty_tree: access_path_tree
+  val get_root_taint: access_path_tree -> Element.t
+  val exists_in_tree: f: (Element.t -> bool) -> access_path_tree -> bool
+  val is_empty_tree: access_path_tree -> bool
+  val make_tree: Label.path -> access_path_tree -> access_path_tree
+  val read_tree: Label.path -> access_path_tree -> access_path_tree
+  val tree_has_children: access_path_tree -> bool
+  val tree_to_string: access_path_tree -> string
+  val tree_to_string_just_access_path: access_path_tree -> string
+
+  val assign_tree_path
+    : tree: access_path_tree
+    -> Label.path
+    -> subtree: access_path_tree
+    -> access_path_tree
+
+  val collapse: access_path_tree -> Element.t
+  val collapse_to: depth: int -> access_path_tree -> access_path_tree
+  val collapse_tree_indices: access_path_tree -> access_path_tree
+  val cut_tree_after: depth: int -> access_path_tree -> access_path_tree
+
+  val filter_map_tree: f: (Element.t -> Element.t) -> access_path_tree -> access_path_tree
+  val filter_map_tree_paths
+    : f:(path: Label.path -> path_element: Element.t -> element: Element.t -> Element.t)
+    -> access_path_tree
+    -> access_path_tree
+
+  val fold_tree_children
+    : access_path_tree
+    -> init: 'accumulator
+    -> f: (Label.t -> access_path_tree -> 'accumulator -> 'accumulator)
+    -> 'accumulator
+  val fold_tree_paths:
+    init:'accumulator ->
+    f:
+      (path: Label.path
+       -> path_element: Element.t
+       -> element: Element.t
+       -> 'accumulator
+       -> 'accumulator)
+    -> access_path_tree
+    -> 'accumulator
+
+  val join_tree_path:
+    tree: access_path_tree
+    -> Label.path
+    -> subtree: access_path_tree
+    -> access_path_tree
+  val join_trees: access_path_tree -> access_path_tree -> access_path_tree
+  val join_root_element: access_path_tree -> Element.t -> access_path_tree
+  val make_leaf: Element.t -> access_path_tree
+  val replace_root_taint: access_path_tree -> Element.t -> access_path_tree
+  val iterate_tree_paths
+    : f: (path:Label.path -> element: Element.t -> unit)
+    -> access_path_tree
+    -> unit
+end

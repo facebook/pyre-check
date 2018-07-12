@@ -23,7 +23,7 @@ module BackwardTaint = struct
 end
 
 
-(* Used to infer which sources reach the exit points of a function. *)
+(** Used to infer which sources reach the exit points of a function. *)
 module ForwardState =
   TaintAccessPathTree.Make
     (TaintAccessPathTree.WithChecks)
@@ -31,8 +31,8 @@ module ForwardState =
     (ForwardTaint)
 
 
-(* Used to infer which sinks are reached from parameters, as well as the
-   taint-in-taint-out (TITO) using the special LocalReturn sink. *)
+(** Used to infer which sinks are reached from parameters, as well as the
+    taint-in-taint-out (TITO) using the special LocalReturn sink. *)
 module BackwardState =
   TaintAccessPathTree.Make
     (TaintAccessPathTree.WithChecks)
