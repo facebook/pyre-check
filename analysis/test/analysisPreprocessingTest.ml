@@ -16,6 +16,45 @@ open Pyre
 open Test
 
 
+let test_expand_relative_imports _ =
+  let assert_expand ~path source expected =
+    let parse = parse ~qualifier:(Source.qualifier ~path) in
+    assert_source_equal
+      (parse expected)
+      (Preprocessing.expand_relative_imports (parse source))
+  in
+  assert_expand
+    ~path:"module/submodule/test.py"
+    {|
+      from builtins import str
+      from . import a
+      from .relative import b
+      from .. import c
+      from ..relative import d
+    |}
+    {|
+      from builtins import str
+      from module.submodule import a
+      from module.submodule.relative import b
+      from module import c
+      from module.relative import d
+    |};
+  assert_expand
+    ~path:"module/submodule/test/__init__.py"
+    {|
+      from . import a
+      from .relative import b
+      from .. import c
+      from ..relative import d
+    |}
+    {|
+      from module.submodule import a
+      from module.submodule.relative import b
+      from module import c
+      from module.relative import d
+    |}
+
+
 let test_expand_string_annotations _ =
   let assert_expand ?(qualifier = "qualifier") source expected =
     let parse =

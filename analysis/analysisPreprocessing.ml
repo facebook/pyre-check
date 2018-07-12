@@ -12,6 +12,29 @@ open PyreParser
 open Statement
 
 
+let expand_relative_imports ({ Source.path; qualifier; _ } as source) =
+  let module Transform = Transform.MakeStatementTransformer(struct
+      type t = Access.t
+
+      let statement_postorder qualifier { Node.location; value } =
+        let value =
+          match value with
+          | Import { Import.from = Some from; imports }
+            when Access.show from <> "builtins" ->
+              Import {
+                Import.from = Some (Source.expand_relative_import ~path ~qualifier ~from);
+                imports;
+              }
+          | _ ->
+              value
+        in
+        qualifier, [{ Node.location; value }]
+    end)
+  in
+  Transform.transform qualifier source
+  |> snd
+
+
 let expand_string_annotations ({ Source.path; _ } as source) =
   let module Transform = Transform.MakeStatementTransformer(struct
       type t = unit
@@ -555,7 +578,6 @@ let qualify ({ Source.path; qualifier = source_qualifier; statements; _ } as sou
       | Import { Import.from = Some from; imports }
         when Access.show from <> "builtins" ->
           let import aliases { Import.name; alias } =
-            let from = Source.expand_relative_import ~qualifier:source_qualifier ~path ~from in
             match alias with
             | Some alias ->
                 (* Add `alias -> from.name`. *)
@@ -1222,6 +1244,7 @@ let dequalify_map source =
 
 let preprocess source =
   source
+  |> expand_relative_imports
   |> expand_string_annotations
   |> expand_format_string
   |> replace_version_specific_code
