@@ -1730,6 +1730,8 @@ let test_check _ =
         return __name__
       def g() -> str:
         return __file__
+      def h() -> str:
+        return typing.__name__
     |}
     []
 

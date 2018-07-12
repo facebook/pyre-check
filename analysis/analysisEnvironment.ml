@@ -363,6 +363,14 @@ let handler
         >>| Module.empty_stub
         |> Option.value ~default:false
       in
+
+      let string =
+        Annotation.create_immutable ~global:true Type.string
+        |> Node.create_with_default_location
+      in
+      Hashtbl.set globals ~key:(qualifier @ (Access.create "__file__")) ~data:string;
+      Hashtbl.set globals ~key:(qualifier @ (Access.create "__name__")) ~data:string;
+
       if not is_registered_empty_stub then
         Hashtbl.set
           ~key:qualifier
@@ -1089,13 +1097,6 @@ module Builder = struct
       |> Node.create_with_default_location
     in
     Hashtbl.set globals ~key:(Access.create "None") ~data:none;
-    let string =
-      Annotation.create_immutable ~global:true Type.string
-      |> Node.create_with_default_location
-    in
-    Hashtbl.set globals ~key:(Access.create "__name__") ~data:string;
-    Hashtbl.set globals ~key:(Access.create "__file__") ~data:string;
-
 
     (* Add classes for `typing.Optional` and `typing.Undeclared` that are currently not encoded
        in the stubs. *)
