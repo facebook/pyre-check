@@ -76,6 +76,10 @@ val connect
   -> successor: Type.t
   -> unit
 
+(* Disconnect the annotation from all of its successors, including any
+   backedges. It does not remove the annotation from the TypeOrder. *)
+val disconnect_successors: (module Handler) -> Type.t -> unit
+
 (* Returns true if the type order contains the literal annotation. For example, if typing.List
    is in order, `contains order typing.List` will evaluate to true, whereas
    `contains order typing.List[int]` will evaluate to false. *)

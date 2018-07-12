@@ -230,6 +230,45 @@ let connect
     end
 
 
+let disconnect_successors ((module Handler: Handler) as order) annotation =
+  if not (Handler.contains (Handler.indices ()) annotation) then
+    Statistics.event
+      ~name:"Invalid type order disconnection"
+      ~integers:[]
+      ~normals:[
+        "Annotation", Type.show annotation;
+      ]
+      ()
+  else
+    begin
+      let key = index_of order annotation in
+
+      let edges = Handler.edges () in
+      let backedges = Handler.backedges () in
+      let remove_backedge ~predecessor ~successor =
+        Handler.find backedges successor
+        >>| (fun current_predecessors ->
+            let new_predecessors =
+              List.filter
+                ~f:(fun { Target.target; _ } -> target <> predecessor)
+                current_predecessors
+            in
+            Handler.set backedges ~key:successor ~data:new_predecessors)
+        |> ignore
+      in
+
+      Handler.find edges key
+      >>| (fun successors ->
+          Handler.set edges ~key ~data:[];
+          (* Remove corresponding backedges. *)
+          List.iter
+            ~f:(fun { Target.target = successor; _ } -> remove_backedge ~predecessor:key ~successor)
+            successors
+        )
+      |> ignore
+    end
+
+
 let contains (module Handler: Handler) annotation =
   Handler.contains (Handler.indices ()) annotation
 

@@ -141,7 +141,7 @@ let in_process_handler ~configuration ~stubs ~sources =
 (** First dumps environment to shared memory, then exposes through
     Environment_handler *)
 let shared_memory_handler
-    ~configuration:({ Configuration.infer; _ } as configuration)
+    ~configuration:({ Configuration.infer; debug; _ } as configuration)
     ~stubs
     ~sources =
   let add_to_shared_memory
@@ -488,6 +488,11 @@ let shared_memory_handler
           Globals.remove_batch (Globals.KeySet.of_list keys);
         end;
 
+        (* Remove the connection to the parent (if any) for all
+           classes defined in the updated paths. *)
+        List.concat_map ~f:(fun path -> DependencyHandler.get_class_keys ~path) paths
+        |> List.iter ~f:(TypeOrder.disconnect_successors (module TypeOrderHandler));
+
         List.concat_map ~f:(fun path -> DependencyHandler.get_class_keys ~path) paths
         |> fun keys -> ClassDefinitions.remove_batch (ClassDefinitions.KeySet.of_list keys);
 
@@ -502,7 +507,11 @@ let shared_memory_handler
 
         DependencyHandler.clear_keys_batch paths;
         List.map ~f:(fun path -> Ast.Source.qualifier ~path) paths
-        |> AstSharedMemory.remove_modules
+        |> AstSharedMemory.remove_modules;
+
+        if debug then
+          (* If in debug mode, make sure the TypeOrder is still consistent. *)
+          TypeOrder.check_integrity (module TypeOrderHandler)
 
       let mode path = ErrorModes.get path
     end: Environment.Handler)
