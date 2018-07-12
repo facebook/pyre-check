@@ -103,7 +103,7 @@ module rec FixpointState : FixpointState = struct
     match ap with
     | None -> ForwardState.empty_tree
     | Some (root, path) ->
-        ForwardState.read_ap ~root ~path state.taint
+        ForwardState.read_access_path ~root ~path state.taint
 
   let store_taint ~root ~path taint state =
     { state with taint = ForwardState.assign ~root ~path taint state.taint; }
@@ -157,14 +157,19 @@ module rec FixpointState : FixpointState = struct
     | Access { expression; member; } ->
         let taint = analyze_normalized_expression state expression in
         let field = TaintAccessPathTree.Label.Field member in
-        let taint = ForwardState.assign_tree_path [field] ~t:ForwardState.empty_tree ~st:taint in
+        let taint =
+          ForwardState.assign_tree_path
+            [field]
+            ~tree:ForwardState.empty_tree
+            ~subtree:taint
+        in
         taint
     | Call { callee; arguments; } ->
         analyze_call state callee arguments
     | Expression expression ->
         analyze_expression expression state
     | Identifier identifier ->
-        ForwardState.read_ap ~root:(Root.Variable identifier) ~path:[] state.taint
+        ForwardState.read_access_path ~root:(Root.Variable identifier) ~path:[] state.taint
 
   and analyze_expression expression state =
     match expression.Node.value with

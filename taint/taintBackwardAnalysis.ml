@@ -91,7 +91,7 @@ module rec FixpointState : FixpointState = struct
     match ap with
     | None -> BackwardState.empty_tree
     | Some { root; path; } ->
-        BackwardState.read_ap ~root ~path state.taint
+        BackwardState.read_access_path ~root ~path state.taint
 
   let store_weak_taint ~root ~path taint state =
     { state with taint = BackwardState.assign_weak ~root ~path taint state.taint; }
@@ -108,7 +108,9 @@ module rec FixpointState : FixpointState = struct
     match e with
     | Access { expression; member } ->
         let field = TaintAccessPathTree.Label.Field member in
-        let taint = BackwardState.assign_tree_path [field] ~t:BackwardState.empty_tree ~st:taint in
+        let taint =
+          BackwardState.assign_tree_path [field] ~tree:BackwardState.empty_tree ~subtree:taint
+        in
         analyze_normalized_expression state taint e
     | Call { callee = Access { expression = receiver; member = method_name}; arguments; } ->
         (* TODO: figure out the BW and TAINT_IN_TAINT_OUT model for whatever is called here. *)

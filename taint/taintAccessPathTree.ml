@@ -4,16 +4,17 @@
     LICENSE file in the root directory of this source tree. *)
 
 open Core
+open Ast
 open Pyre
 
-let max_tree_depth = 4  (* Make this configurable *)
-let is_unit_test = true (* Make this configurable *)
+let max_tree_depth = 4  (* TODO(T31441124) make this configurable *)
+let is_unit_test = true (* TODO(T31441124) make this configurable *)
 
 
 module type CHECKS = sig
   type witness
   val make_witness: bool -> false_witness:string -> witness
-  val opt_cons: message:(unit -> string) -> witness -> witness
+  val option_construct: message:(unit -> string) -> witness -> witness
   val false_witness: message:(unit -> string) -> witness
   (* Captures true, as a witness, i.e. without extra info. *)
   val true_witness: witness
@@ -25,65 +26,91 @@ module type CHECKS = sig
 end
 
 
-module WithChecks : CHECKS = struct
+module WithChecks: CHECKS = struct
   type witness = string option
 
-  let make_witness b ~false_witness =
-    if not b then Some false_witness
+  let make_witness condition ~false_witness =
+    if not condition then Some false_witness
     else None
 
-  let opt_cons ~message = function
+
+  let option_construct ~message = function
     | None -> None
-    | Some s -> Some (message () ^ "->" ^ s)
+    | Some value -> Some (message () ^ "->" ^ value)
+
 
   let false_witness ~message =
     Some (message ())
 
-  let true_witness = None
 
-  let is_true = function
-    | Some _ -> false
-    | None -> true
+  let true_witness =
+    None
 
-  let get_witness w = w
 
-  let and_witness w1 w2 =
-    match w1, w2 with
+  let is_true =
+    Option.is_none
+
+
+  let get_witness witness =
+    witness
+
+
+  let and_witness left_witness right_witness =
+    match left_witness, right_witness with
     | None, None -> None
-    | Some _, None -> w1
-    | None, Some _ -> w2
-    | Some s1, Some s2 -> Some (s1 ^ "\n&& " ^ s2)
+    | Some _, None -> left_witness
+    | None, Some _ -> right_witness
+    | Some left_witness, Some right_witness -> Some (left_witness ^ "\n&& " ^ right_witness)
+
 
   let check f = f ()
 end
 
 
-module WithoutChecks : CHECKS = struct
+module WithoutChecks: CHECKS = struct
   type witness = bool
 
-  let make_witness b ~false_witness:_ = b
 
-  let opt_cons ~message:_ w = w
+  let make_witness condition ~false_witness:_ =
+    condition
 
-  let false_witness ~message:_ = false
-  let true_witness = true
-  let is_true w = w
+
+  let option_construct ~message:_ witness =
+    witness
+
+
+  let false_witness ~message:_ =
+    false
+
+
+  let true_witness =
+    true
+
+
+  let is_true witness =
+    witness
+
+
   let get_witness = function
     | true -> None
     | false -> Some "<no witness>"
+
+
   let and_witness = (&&)
+
+
   let check _ = ()
 end
 
 
 module Label = struct
   type t =
-    | Field of Ast.Identifier.t
+    | Field of Identifier.t
     | Any
   [@@deriving compare, sexp, hash]
 
   let show = function
-    | Field f -> Printf.sprintf "[%s]" (Ast.Identifier.show f)
+    | Field f -> Format.sprintf "[%s]" (Identifier.show f)
     | Any -> "[*]"
 
   type path = t list
@@ -91,7 +118,6 @@ module Label = struct
   let show_path path =
     List.map ~f:show path
     |> String.concat
-
 end
 
 
@@ -106,895 +132,1130 @@ module Make
   module RootMap = Map.Make(Root)
   module LabelMap = Map.Make(Label)
 
-  (* AP tree nodes have an abstrat domain element and a set of children indexed by
-     AP.PathElement.t *)
-  type ap_tree = {
+
+  (** Access Path tree nodes have an abstract domain element and a set of children indexed by
+      AccessPath.PathElement.t *)
+  type access_path_tree = {
     (* Abstract contribution at this node. (Not the join from the root!) *)
-    elt: Element.t;
+    element: Element.t;
     (* Edges to child nodes.
-       NOTE: Indices are special. If the AnyIndex [*] is present then it
-       covers all indices [i], that are not explicitly present.
+        NOTE: Indices are special. If the AnyIndex [*] is present then it
+        covers all indices [i], that are not explicitly present.
     *)
-    children: ap_tree LabelMap.t;
+    children: access_path_tree LabelMap.t;
   }
 
-  (* Access path trees map AP roots to ap_trees. *)
-  type t = ap_tree RootMap.t
 
-  let empty = RootMap.empty
+  (** Access path trees map AP roots to access_path_trees. *)
+  type t = access_path_tree RootMap.t
 
-  let is_empty x =
-    RootMap.is_empty x
 
-  let make_leaf elt =
-    { elt; children = LabelMap.empty }
+  let empty =
+    RootMap.empty
 
-  let empty_tree = make_leaf Element.bottom
 
-  let is_empty_info children elt =
-    LabelMap.is_empty children && Element.is_bottom elt
+  let is_empty =
+    RootMap.is_empty
 
-  let is_empty_tree t =
-    is_empty_info t.children t.elt
 
-  let tree_has_children t =
-    not (LabelMap.is_empty t.children)
+  let make_leaf element =
+    { element; children = LabelMap.empty }
 
-  let rec make_tree_internal path t =
+
+  let empty_tree =
+    make_leaf Element.bottom
+
+
+  let is_empty_info children element =
+    LabelMap.is_empty children && Element.is_bottom element
+
+
+  let is_empty_tree { children; element } =
+    is_empty_info children element
+
+
+  let tree_has_children { children; _ } =
+    not (LabelMap.is_empty children)
+
+
+  let rec make_tree_internal path tree =
     match path with
-    | [] -> t
-    | e::rest ->
-        { elt = Element.bottom;
-          children = LabelMap.singleton e (make_tree_internal rest t);
+    | [] ->
+        tree
+    | label_element :: rest ->
+        {
+          element = Element.bottom;
+          children = LabelMap.singleton label_element (make_tree_internal rest tree);
         }
 
-  let make_tree_opt p t =
-    if is_empty_tree t then None
-    else
-      Some (make_tree_internal p t)
 
-  (* Captures whether we need to widen and at what tree level.
-     None -> no widening
-     Some i -> widen start i levels down.
+  let make_tree_option path tree =
+    if is_empty_tree tree then
+      None
+    else
+      Some (make_tree_internal path tree)
+
+
+  (** Captures whether we need to widen and at what tree level.
+      None -> no widening
+      Some i -> widen start i levels down.
   *)
   type widen_depth = int option
 
-  let must_widen_depth (widen_depth : widen_depth) =
-    match widen_depth with
+
+  let must_widen_depth = function
     | None -> false
     | Some i -> i = 0
 
-  let must_widen_elt (widen_depth : widen_depth) =
-    match widen_depth with
-    | None -> false
-    | Some _ -> true
 
-  let decr_widen = function
+  let must_widen_element =
+    Option.is_some
+
+
+  let decrement_widen = function
     | None -> None
     | Some i when i > 0 -> Some (i - 1)
     | Some _ -> failwith "Decrementing widen depth below 0"
 
-  let elt_join ~widen_depth w1 w2 =
-    if must_widen_elt widen_depth
-    then Element.widen ~iteration:2 ~previous:w1 ~next:w2
-    else Element.join w1 w2
 
-  let rec to_string_tree ~show_element indent t =
-    Printf.sprintf "%s\n%s"
-      (if show_element
-       then Element.show t.elt
-       else "")
-      (to_string_children ~show_element (indent ^ "  ") t.children)
+  let element_join ~widen_depth w1 w2 =
+    if must_widen_element widen_depth then
+      Element.widen ~iteration:2 ~previous:w1 ~next:w2
+    else
+      Element.join w1 w2
 
-  and to_string_children ~show_element indent c =
-    let to_string_element ~key ~data:st acc =
-      (Printf.sprintf "%s -> %s"
-         (indent ^ Label.show key)
-         (to_string_tree ~show_element indent st))
-      ::acc
+
+  let rec to_string_tree ~show_element indent { element; children } =
+    Format.sprintf "%s\n%s"
+      (if show_element then
+         Element.show element
+       else
+         "")
+      (to_string_children ~show_element (indent ^ "  ") children)
+
+  and to_string_children ~show_element indent children =
+    let to_string_element ~key ~data:subtree accumulator =
+      Format.sprintf
+        "%s -> %s"
+        (indent ^ Label.show key)
+        (to_string_tree ~show_element indent subtree)
+      :: accumulator
     in
-    String.concat ~sep:"\n" (LabelMap.fold ~f:to_string_element ~init:[] c)
+    String.concat ~sep:"\n" (LabelMap.fold ~f:to_string_element ~init:[] children)
 
-  let to_string_elt ~show_element x =
-    let to_string_element ~key:r ~data:st acc =
-      (Printf.sprintf "%s -> %s"
-         (Root.show r)
-         (to_string_tree ~show_element "  " st))
-      ::acc
+
+  let to_string_element ~show_element element =
+    let to_string_element ~key:root ~data:subtree accumulator =
+      Format.sprintf "%s -> %s" (Root.show root) (to_string_tree ~show_element "  " subtree)
+      :: accumulator
     in
-    String.concat ~sep:"\n" (RootMap.fold ~f:to_string_element ~init:[] x)
+    String.concat ~sep:"\n" (RootMap.fold ~f:to_string_element ~init:[] element)
 
-  let to_string x =
-    to_string_elt ~show_element:true x
 
-  let to_string_just_ap x =
-    to_string_elt ~show_element:false x
+  let to_string =
+    to_string_element ~show_element:true
 
-  let tree_to_string t =
-    to_string_tree ~show_element:true "" t
 
-  let tree_to_string_just_ap t =
-    to_string_tree ~show_element:false "" t
+  let to_string_just_access_path =
+    to_string_element ~show_element:false
 
-  let rec max_depth t =
-    LabelMap.fold ~init:0 ~f:(fun ~key:_ ~data:t acc -> max (1 + max_depth t) acc)
-      t.children
 
-  let singleton ~root ~path t =
-    make_tree_internal path t
+  let tree_to_string =
+    to_string_tree ~show_element:true ""
+
+
+  let tree_to_string_just_access_path tree =
+    to_string_tree ~show_element:false "" tree
+
+
+  let rec max_depth { children; _ } =
+    LabelMap.fold
+      children
+      ~init:0
+      ~f:(fun ~key:_ ~data:tree accumulator -> max (1 + max_depth tree) accumulator)
+
+
+  let singleton ~root ~path tree =
+    make_tree_internal path tree
     |> RootMap.singleton root
 
-  let singleton ~root ~path t =
-    if is_empty_tree t
-    then empty
-    else singleton ~root ~path t
 
-  let rec is_minimal path_elt t =
-    if is_empty_tree t then
-      Checks.false_witness ~message:(fun () -> "empty leaf.")
-    else if not (Element.is_bottom t.elt) && Element.less_or_equal ~left:t.elt ~right:path_elt then
-      Checks.false_witness ~message:(fun () -> "t.elt redundant.")
+  let singleton ~root ~path tree =
+    if is_empty_tree tree then
+      empty
     else
-      let path_elt = Element.join path_elt t.elt in
-      let all_minimal ~key ~data:st witness =
-        if not (Checks.is_true witness) then witness
+      singleton ~root ~path tree
+
+
+  let rec is_minimal path_element ({ element; children } as tree) =
+    if is_empty_tree tree then
+      Checks.false_witness ~message:(fun () -> "empty leaf.")
+    else if not (Element.is_bottom element)
+         && Element.less_or_equal ~left:element ~right:path_element then
+      Checks.false_witness ~message:(fun () -> "tree.element redundant.")
+    else
+      let path_element = Element.join path_element element in
+      let all_minimal ~key ~data:subtree witness =
+        if not (Checks.is_true witness)
+        then
+          witness
         else
-          is_minimal path_elt st
-          |> Checks.opt_cons ~message:(fun () -> Label.show key)
+          is_minimal path_element subtree
+          |> Checks.option_construct ~message:(fun () -> Label.show key)
       in
-      LabelMap.fold ~f:all_minimal ~init:Checks.true_witness t.children
+      LabelMap.fold ~f:all_minimal ~init:Checks.true_witness children
 
-  let check_minimal_non_empty ~message t =
-    match is_minimal Element.bottom t |> Checks.get_witness with
-    | None -> ()
-    | Some w -> failwith (message () ^ " not minimal: " ^ w ^ ":result" ^
-                          (tree_to_string t))
 
-  let check_minimal ~message t =
-    if is_empty_tree t then ()
-    else check_minimal_non_empty ~message t
+  let check_minimal_non_empty ~message tree =
+    is_minimal Element.bottom tree
+    |> Checks.get_witness
+    |> function
+    | None ->
+        ()
+    | Some witness ->
+        let message =
+          Format.sprintf
+            "%s not minimal: %s: result %s"
+            (message ())
+            witness
+            (tree_to_string tree)
+        in
+        failwith message
 
-  let check_minimal_apt ~message apt =
+
+  let check_minimal ~message tree =
+    if is_empty_tree tree then
+      ()
+    else
+      check_minimal_non_empty ~message tree
+
+
+  let check_minimal_access_path_tree ~message access_path_tree =
     let check ~key ~data =
-      let message () = Root.show key ^ ":" ^ message ()
-      in
+      let message () = Root.show key ^ ":" ^ message () in
       check_minimal_non_empty ~message data
     in
-    RootMap.iteri ~f:check apt
+    RootMap.iteri ~f:check access_path_tree
 
-  let lookup_tree_with_default t e =
-    match LabelMap.find t.children e with
+
+  let lookup_tree_with_default { children; _ } element =
+    match LabelMap.find children element with
     | None -> empty_tree
-    | Some st -> st
+    | Some subtree -> subtree
 
-  (* Compute join of all elt components in tree t. *)
-  let rec collapse_tree elt_acc t =
-    let elt_acc = Element.join elt_acc t.elt in
-    let collapse_child ~key:_ ~data:st elt_acc =
-      collapse_tree elt_acc st
-    in
-    LabelMap.fold ~f:collapse_child ~init:elt_acc t.children
 
-  let collapse t =
-    collapse_tree Element.bottom t
+  (** Compute join of all element components in tree t. *)
+  let rec collapse_tree element_accumulator { element; children } =
+    let element_accumulator = Element.join element_accumulator element in
+    let collapse_child ~key:_ ~data:subtree = Fn.flip collapse_tree subtree in
+    LabelMap.fold ~f:collapse_child ~init:element_accumulator children
 
-  let make_leaf_opt ~path_elt ~elt =
-    if Element.less_or_equal ~left:elt ~right:path_elt then None
-    else Some (make_leaf elt)
 
-  let make_node_opt elt children =
-    if is_empty_info children elt then None
-    else Some { elt; children }
+  let collapse tree =
+    collapse_tree Element.bottom tree
 
-  let opt_node_tree ~message = function
-    | None -> empty_tree
-    | Some t ->
-        Checks.check (fun () -> check_minimal_non_empty ~message t);
-        t
 
-  type filtered_elt_t = {
-    new_elt: Element.t;
-    path_elt: Element.t;
+  let make_leaf_option ~path_element ~element =
+    if Element.less_or_equal ~left:element ~right:path_element then
+      None
+    else
+      Some (make_leaf element)
+
+
+  let make_node_option element children =
+    if is_empty_info children element
+    then
+      None
+    else
+      Some { element; children }
+
+
+  let option_node_tree ~message = function
+    | None ->
+        empty_tree
+    | Some tree ->
+        Checks.check (fun () -> check_minimal_non_empty ~message tree);
+        tree
+
+
+  type filtered_element_t = {
+    new_element: Element.t;
+    path_element: Element.t;
   }
 
-  let filter_by_path_elt ~path_elt ~elt =
-    if Element.less_or_equal ~left:elt ~right:path_elt
-    then { new_elt = Element.bottom; path_elt = path_elt }
-    else { new_elt = elt; path_elt = Element.join path_elt elt }
 
-  let rec prune_tree path_elt t =
-    let { new_elt; path_elt } = filter_by_path_elt ~path_elt ~elt:t.elt in
-    let children = LabelMap.filter_map ~f:(prune_tree path_elt) t.children
-    in
-    if is_empty_info children new_elt then None
-    else Some { elt = new_elt; children }
+  let filter_by_path_element ~path_element ~element =
+    if Element.less_or_equal ~left:element ~right:path_element then
+      { new_element = Element.bottom; path_element = path_element }
+    else
+      { new_element = element; path_element = Element.join path_element element }
 
-  let set_or_remove key opt map =
-    match opt with
+
+  let rec prune_tree path_element { element; children } =
+    let { new_element; path_element } = filter_by_path_element ~path_element ~element in
+    let children = LabelMap.filter_map ~f:(prune_tree path_element) children in
+    make_node_option new_element children
+
+
+  let set_or_remove key value map =
+    match value with
     | None -> LabelMap.remove map key
     | Some data -> LabelMap.set map ~key ~data
 
-  (* Widen differs from join in that right side does not extend trees, and Element
-     uses widen.
 
-     widen_depth is less or equal to the max depth allowed in this subtree or
-     None if we don't widen.  *)
-  let rec join_trees path_elt ~widen_depth t1 t2 =
+  (** Widen differs from join in that right side does not extend trees, and Element
+      uses widen.
+
+      widen_depth is less or equal to the max depth allowed in this subtree or
+      None if we don't widen.  *)
+  let rec join_trees
+      path_element
+      ~widen_depth
+      ({ element = left_element; children = left_children } as left_tree)
+      ({ element = right_element; children = right_children } as right_tree) =
     if must_widen_depth widen_depth then begin
-      (* Collapse t1 and t2 to achieve depth limit. Note that t1 is a leaf, only
-         if the widen depth was exactly the depth of t1.  *)
-      let t1_elt = collapse_tree Element.bottom t1
-      in
-      make_leaf_opt ~path_elt ~elt:(collapse_tree t1_elt t2)
+      (* Collapse left_tree and right_tree to achieve depth limit. Note that left_tree is a leaf,
+         only if the widen depth was exactly the depth of left_tree.  *)
+      let collapsed_left_element = collapse_tree Element.bottom left_tree in
+      make_leaf_option ~path_element ~element:(collapse_tree collapsed_left_element right_tree)
     end
     else
-      let joined_elt = elt_join ~widen_depth t1.elt t2.elt in
-      let { new_elt; path_elt } = filter_by_path_elt ~path_elt ~elt:joined_elt
+      let joined_element = element_join ~widen_depth left_element right_element in
+      let { new_element; path_element } =
+        filter_by_path_element ~path_element ~element:joined_element
       in
-      let children = join_children path_elt
-          ~widen_depth:(decr_widen widen_depth)
-          t1.children t2.children
+      let children =
+        join_children
+          path_element
+          ~widen_depth:(decrement_widen widen_depth)
+          left_children right_children
       in
-      make_node_opt new_elt children
+      make_node_option new_element children
 
-  and join_opt_trees path_elt ~widen_depth ot1 ot2 =
-    match ot1, ot2 with
-    | None, None -> None
-    | Some t1, None -> prune_tree path_elt t1
-    | None, Some t2 when widen_depth = None -> prune_tree path_elt t2
-    | None, Some t2 ->
-        join_trees path_elt ~widen_depth empty_tree t2
-    | Some t1, Some t2 ->
-        join_trees path_elt ~widen_depth t1 t2
+  and join_option_trees path_element ~widen_depth left right =
+    match left, right with
+    | None, None ->
+        None
+    | Some left, None ->
+        prune_tree path_element left
+    | None, Some right when widen_depth = None ->
+        prune_tree path_element right
+    | None, Some right ->
+        join_trees path_element ~widen_depth empty_tree right
+    | Some left, Some right ->
+        join_trees path_element ~widen_depth left right
 
-  and join_children path_elt ~widen_depth t1 t2 =
+  and join_children path_element ~widen_depth left_tree right_tree =
     (* Merging is tricky because of the special meaning of [*] and [f]. We
        have to identify the three sets of indices:
 
-       L : indices [f] only in t1
-       R : indices [f] only in t2
-       C : indices [f] common in t1 and t2.
+       L : indices [f] only in left_tree
+       R : indices [f] only in right_tree
+       C : indices [f] common in left_tree and right_tree.
 
-       Let star1 be the tree associated with t1[*] and star2 = t2[*].
+       Let left_star be the tree associated with left_tree[*] and right_star = right_tree[*].
 
        The merge result r is then:
-       r.e = pointwise merge of t1.e and t2.e (if e is not an index)
-       r.[*] = star1 merge star2
-       r.[c] = t1[c] merge t2[c] if c in C
-       f.[l] = t1[l] merge star2 if l in L
-       f.[r] = t2[r] merge star1 if r in R
+       r.element = pointwise merge of left_tree.element and right_tree.element
+                   (if element is not an index)
+       r.[*] = left_star merge right_star
+       r.[c] = left_tree[c] merge right_tree[c] if c in C
+       f.[l] = left_tree[l] merge right_star if l in L
+       f.[r] = right_tree[r] merge left_star if r in R
     *)
-    let star1 = LabelMap.find t1 Label.Any in
-    let star2 = LabelMap.find t2 Label.Any in
+    let left_star = LabelMap.find left_tree Label.Any in
+    let right_star = LabelMap.find right_tree Label.Any in
     (* merge_left takes care of C and L *)
-    let merge_left ~key:e ~data:st1 acc =
-      match e with
+    let merge_left ~key:element ~data:left_tree accumulator =
+      match element with
       | Label.Any ->
-          set_or_remove e (join_opt_trees path_elt ~widen_depth (Some st1) star2) acc
-      | Label.Field _ -> begin
-          match LabelMap.find t2 e with
-          | Some st2 ->  (* f in C *)
-              set_or_remove e (join_trees path_elt ~widen_depth st1 st2) acc
+          set_or_remove
+            element
+            (join_option_trees path_element ~widen_depth (Some left_tree) right_star)
+            accumulator
+      | Label.Field _ ->
+          match LabelMap.find right_tree element with
+          | Some right_subtree ->  (* f in C *)
+              set_or_remove
+                element
+                (join_trees path_element ~widen_depth left_tree right_subtree)
+                accumulator
           | None ->  (* f in L *)
-              set_or_remove e (join_opt_trees path_elt ~widen_depth (Some st1) star2) acc
-        end
+              set_or_remove
+                element
+                (join_option_trees path_element ~widen_depth (Some left_tree) right_star)
+                accumulator
     in
     (* merge_right takes care of R *)
-    let merge_right ~key:e ~data:st2 acc =
-      match LabelMap.find t1 e with
-      | Some _ ->  (* pointwise, already done in merge_left. *)
-          acc
+    let merge_right ~key:element ~data:right_subtree accumulator =
+      match LabelMap.find left_tree element with
+      | Some _ -> (* pointwise, already done in merge_left. *)
+          accumulator
       | None ->
-          match e with
+          match element with
           | Label.Field _ ->
-              let jt = join_opt_trees path_elt ~widen_depth star1 (Some st2) in
-              set_or_remove e jt acc
+              let join_tree =
+                join_option_trees path_element ~widen_depth left_star (Some right_subtree)
+              in
+              set_or_remove element join_tree accumulator
           | Label.Any ->
-              let jt = join_opt_trees path_elt ~widen_depth None (Some st2) in
-              set_or_remove e jt acc
+              let join_tree =
+                join_option_trees path_element ~widen_depth None (Some right_subtree)
+              in
+              set_or_remove element join_tree accumulator
     in
-    let left_done = LabelMap.fold ~init:LabelMap.empty t1
-        ~f:merge_left
-    in
-    LabelMap.fold ~init:left_done t2
-      ~f:merge_right
+    let left_done = LabelMap.fold ~init:LabelMap.empty left_tree ~f:merge_left in
+    LabelMap.fold ~init:left_done right_tree ~f:merge_right
 
-  (* Assign or join subtree st into existing tree t at path p.
-  *)
-  let rec assign_or_join_path ~do_join ~path_elt ~t p ~st =
-    if is_empty_tree t then
+
+  (** Assign or join subtree into existing tree at path. *)
+  let rec assign_or_join_path
+      ~do_join
+      ~path_element
+      ~tree:( { element; children } as tree)
+      path
+      ~subtree =
+    if is_empty_tree tree then
       (* Shortcut *)
-      prune_tree path_elt st
-      >>| make_tree_internal p
+      prune_tree path_element subtree
+      >>| make_tree_internal path
     else
-      match p with
+      match path with
       | [] ->
           if do_join then
-            join_trees path_elt ~widen_depth:None t st  (* Join point. *)
+            join_trees path_element ~widen_depth:None tree subtree  (* Join point. *)
           else
-            (* Note: we are overwriting t.elt, so no need to add it to the path. *)
-            prune_tree path_elt st  (* Assignment/join point. *)
-      | e::rest ->
-          let path_elt = Element.join path_elt t.elt in
-          let existing = lookup_tree_with_default t e in
-          match e with
+            (* Note: we are overwriting t.element, so no need to add it to the path. *)
+            prune_tree path_element subtree  (* Assignment/join point. *)
+      | label_element :: rest ->
+          let path_element = Element.join path_element element in
+          let existing = lookup_tree_with_default tree label_element in
+          match label_element with
           | Label.Any ->
               (* Special case.
                  Must merge with AnyIndex and also every specific index.
               *)
-              let augmented = LabelMap.set t.children Label.Any existing in
-              let children = LabelMap.filter_mapi
-                  ~f:(join_each_index ~path_elt rest ~st) augmented
+              let augmented = LabelMap.set children Label.Any existing in
+              let children =
+                LabelMap.filter_mapi ~f:(join_each_index ~path_element rest ~subtree) augmented
               in
-              make_node_opt t.elt children
+              make_node_option element children
           | Label.Field _ ->
               let children =
-                set_or_remove e
-                  (assign_or_join_path ~do_join ~path_elt ~t:existing rest ~st)
-                  t.children
+                set_or_remove
+                  label_element
+                  (assign_or_join_path ~do_join ~path_element ~tree:existing rest ~subtree)
+                  children
               in
-              make_node_opt t.elt children
+              make_node_option element children
 
-  and join_each_index ~path_elt rest ~st ~key:element ~data:tree =
+  and join_each_index ~path_element rest ~subtree ~key:element ~data:tree =
     match element with
     | Label.Any ->
-        assign_or_join_path ~do_join:true ~path_elt ~t:tree rest ~st
-    | Label.Field _ -> Some tree
+        assign_or_join_path ~do_join:true ~path_element ~tree rest ~subtree
+    | Label.Field _ ->
+        Some tree
 
-  (* Assign subtree st into existing tree t at path p.
-  *)
-  let assign_path = assign_or_join_path ~do_join:false
 
-  (* Like assign_path, but at assignment point, joins the tree with existing
-     tree, effectively a weak assign. *)
-  let join_path = assign_or_join_path ~do_join:true
+  (** Assign subtree subtree into existing tree at path. *)
+  let assign_path =
+    assign_or_join_path ~do_join:false
 
-  (* Collapse all distinct indices into AnyIndex *)
-  let collapse_tree_indices ({ elt=path_elt; children } as t) =
-    let message () = Printf.sprintf "collapse_tree_indices: %s"
-        (tree_to_string t)
+
+  (** Like assign_path, but at assignment point, joins the tree with existing
+      tree, effectively a weak assign. *)
+  let join_path =
+    assign_or_join_path ~do_join:true
+
+
+  (** Collapse all distinct indices into AnyIndex *)
+  let collapse_tree_indices ({ element=path_element; children } as tree) =
+    let message () =
+      Format.sprintf "collapse_tree_indices: %s" (tree_to_string tree)
     in
-    let collapse_child ~key ~data:st t =
+    let collapse_child ~key ~data:subtree tree =
       let acc_opt =
         match key with
-        | Label.Field _ -> join_path ~path_elt ~t [Label.Any] ~st
-        | Label.Any as i -> join_path ~path_elt ~t [i] ~st
+        | Label.Field _ -> join_path ~path_element ~tree [Label.Any] ~subtree
+        | Label.Any as i -> join_path ~path_element ~tree [i] ~subtree
       in
-      opt_node_tree acc_opt ~message
+      option_node_tree acc_opt ~message
     in
-    LabelMap.fold ~f:collapse_child ~init:(make_leaf path_elt) children
+    LabelMap.fold ~f:collapse_child ~init:(make_leaf path_element) children
+
 
   let access_path_to_string ~root ~path =
-    Printf.sprintf "(%s, %s)" (Root.show root) (Label.show_path path)
+    Format.sprintf "(%s, %s)" (Root.show root) (Label.show_path path)
 
-  (* Assign subtree st at r, p into apt *)
-  let assign_nonempty ~root ~path st apt =
-    Checks.check (fun () -> check_minimal_non_empty
-                     ~message:(fun () -> Printf.sprintf "assign_nonempty %s subtree"
-                                  (access_path_to_string ~root ~path)) st);
-    match RootMap.find apt root with
-    | None -> RootMap.set apt root (make_tree_internal path st)
-    | Some t ->
-        match assign_path ~path_elt:Element.bottom ~t path ~st with
+
+  (** Assign subtree subtree at root, path into access_path_tree *)
+  let assign_nonempty ~root ~path subtree access_path_tree =
+    let check () =
+      let message () =
+        Format.sprintf
+          "assign_nonempty %s subtree"
+          (access_path_to_string ~root ~path)
+      in
+      check_minimal_non_empty ~message subtree
+    in
+    Checks.check check;
+    match RootMap.find access_path_tree root with
+    | None ->
+        RootMap.set access_path_tree root (make_tree_internal path subtree)
+    | Some tree ->
+        match assign_path ~path_element:Element.bottom ~tree path ~subtree with
         | None ->
-            Printf.sprintf "assign_nonempty invariant failure. No residual for %s ~st:%s\nin~t%s"
+            Format.sprintf
+              "assign_nonempty invariant failure. No residual for %s ~st:%s\nin~t%s"
               (Label.show_path path)
-              (tree_to_string st)
-              (tree_to_string t)
+              (tree_to_string subtree)
+              (tree_to_string tree)
             |> failwith
         | Some result ->
-            Checks.check (fun () -> check_minimal_non_empty
-                             ~message:(fun () -> Printf.sprintf "assign_non_empty %s: ~st:%s\n~t:%s"
-                                          (access_path_to_string ~root ~path)
-                                          (tree_to_string st)
-                                          (tree_to_string t))
-                             result);
-            RootMap.set apt ~key:root ~data:result
+            let check () =
+              let message () =
+                Format.sprintf
+                  "assign_non_empty %s: ~st:%s\n~t:%s"
+                  (access_path_to_string ~root ~path)
+                  (tree_to_string subtree)
+                  (tree_to_string tree)
+              in
+              check_minimal_non_empty ~message result
+            in
+            Checks.check check;
+            RootMap.set access_path_tree ~key:root ~data:result
 
-  (* Assigns taint subtree st to given path, joining it with existing taint
-     tree. *)
-  let assign_weak ~root ~path st apt =
-    if is_empty_tree st
-    then apt
-    else begin
-      Checks.check (fun () -> check_minimal_non_empty
-                       ~message:(fun () -> Printf.sprintf "assign_weak %s subtree"
-                                    (access_path_to_string ~root ~path)) st);
-      match RootMap.find apt root with
-      | None -> RootMap.set apt root (make_tree_internal path st)
-      | Some t ->
-          match join_path ~path_elt:Element.bottom ~t path ~st with
-          | None -> failwith "assign_weak: st is non-empty"
+
+  (** Assigns taint subtree st to given path, joining it with existing taint
+      tree. *)
+  let assign_weak ~root ~path subtree access_path_tree =
+    if is_empty_tree subtree then
+      access_path_tree
+    else
+      let check () =
+        let message () =
+          Format.sprintf "assign_weak %s subtree" (access_path_to_string ~root ~path)
+        in
+        check_minimal_non_empty ~message subtree
+      in
+      Checks.check check;
+      match RootMap.find access_path_tree root with
+      | None ->
+          RootMap.set access_path_tree root (make_tree_internal path subtree)
+      | Some tree ->
+          match join_path ~path_element:Element.bottom ~tree path ~subtree with
+          | None ->
+              failwith "assign_weak: st is non-empty"
           | Some result ->
-              Checks.check (fun () -> check_minimal_non_empty
-                               ~message:(fun () -> Printf.sprintf "assign_weak %s: ~st:%s\n~t:%s"
-                                            (access_path_to_string ~root ~path)
-                                            (tree_to_string st)
-                                            (tree_to_string t))
-                               result);
-              RootMap.set apt root result
-    end
+              let check () =
+                let message () =
+                  Format.sprintf
+                    "assign_weak %s: ~subtree:%s\n~tree:%s"
+                    (access_path_to_string ~root ~path)
+                    (tree_to_string subtree)
+                    (tree_to_string tree)
+                in
+                check_minimal_non_empty ~message result
+              in
+              Checks.check check;
+              RootMap.set access_path_tree root result
 
-  let rec remove_tree p t =
-    match p with
+
+  let rec remove_tree path ({ children; _ } as tree) =
+    match path with
     | [] -> None  (* Remove entire subtree here *)
     (* Do not remove below AnyIndex, since that is a weak assignment. *)
-    | Label.Any::_ -> Some t
-    | e::rest ->
-        match LabelMap.find t.children e with
-        | None -> Some t  (* subtree is already empty *)
-        | Some st ->
-            match remove_tree rest st with
+    | Label.Any :: _ -> Some tree
+    | label_element :: rest ->
+        match LabelMap.find children label_element with
+        | None -> Some tree  (* subtree is already empty *)
+        | Some subtree ->
+            match remove_tree rest subtree with
             | None ->
                 (* Remove subtree *)
-                let t = { t with children = LabelMap.remove t.children e }
-                in
-                if is_empty_tree t then None
-                else Some t
-            | Some st ->
+                let tree = { tree with children = LabelMap.remove children label_element } in
+                if is_empty_tree tree then
+                  None
+                else
+                  Some tree
+            | Some subtree ->
                 (* Replace subtree *)
-                Some { t with children = LabelMap.set t.children e st }
+                Some { tree with children = LabelMap.set children label_element subtree }
 
-  (* Removes subtree rooted at (r, p) *)
-  let remove ~root ~path apt =
-    match RootMap.find apt root with
-    | None -> apt
-    | Some t ->
-        match remove_tree path t with
-        | None ->  (* Remove entire subtree *)
-            RootMap.remove apt root
-        | Some t ->  (* Replace subtree *)
-            Checks.check (fun () -> check_minimal_non_empty
-                             ~message:(fun () -> Printf.sprintf "remove %s: %s"
-                                          (access_path_to_string ~root ~path)
-                                          (to_string apt))
-                             t);
-            RootMap.set apt root t
 
-  let assign ~root ~path t apt =
-    if is_empty_tree t then
-      remove ~root ~path apt
-    else
-      assign_nonempty ~root ~path t apt
-
-  (* Read the subtree at path p within t and return the path_elt separately.
-     ~use_precise_fields overrides the default handling of [*] matching all fields.
-     This is used solely in determining port connections when emitting json.
-
-     path_elt is accumulated down the recursion and returned when we reach the
-     end of that path. That way the recursion is tail-recursive.
-  *)
-  let rec read_tree_raw ~path_elt p (t : ap_tree) ~use_precise_fields : Element.t * ap_tree option =
-    match p with
-    | [] -> path_elt, make_node_opt t.elt t.children
-    | e::rest ->
-        let path_elt = Element.join path_elt t.elt in
-        match e with
-        | Label.Any when not use_precise_fields ->  (* lookup all index fields and join result *)
-            let find_index_and_join ~key:e ~data:st (path_elt_acc, tree_acc) =
-              let path_elt_res, st = read_tree_raw ~path_elt ~use_precise_fields rest st in
-              let st = join_opt_trees Element.bottom ~widen_depth:None tree_acc st in
-              Element.join path_elt_res path_elt_acc, st
+  (** Removes subtree rooted at (root, path) *)
+  let remove ~root ~path access_path_tree =
+    match RootMap.find access_path_tree root with
+    | None -> access_path_tree
+    | Some tree ->
+        match remove_tree path tree with
+        | None -> (* Remove entire subtree *)
+            RootMap.remove access_path_tree root
+        | Some tree -> (* Replace subtree *)
+            let check () =
+              let message () =
+                Format.sprintf "remove %s: %s"
+                  (access_path_to_string ~root ~path)
+                  (to_string access_path_tree)
+              in
+              check_minimal_non_empty ~message tree
             in
-            LabelMap.fold ~init:(path_elt, None) ~f:find_index_and_join t.children
-        | Label.Field _ when not use_precise_fields -> begin  (* read [f] or [*] *)
-            match LabelMap.find t.children e with
-            | None -> begin
-                match LabelMap.find t.children Label.Any with
-                | Some st -> read_tree_raw ~path_elt ~use_precise_fields rest st
-                | None -> path_elt, None
-              end
-            | Some st -> read_tree_raw ~path_elt ~use_precise_fields rest st
-          end
-        | _ ->
-            match LabelMap.find t.children e with
-            | None -> path_elt, None
-            | Some st -> read_tree_raw ~path_elt ~use_precise_fields rest st
+            Checks.check check;
+            RootMap.set access_path_tree root tree
 
-  (* Read the subtree at path p within t. Returns the pair path_elt, tree_at_tip. *)
-  let read_tree_raw p t ~use_precise_fields =
-    let message () = Printf.sprintf "read tree_raw: %s :from: %s"
-        (Label.show_path p)
-        (tree_to_string t)
-    in
-    let path_elt, tree_opt = read_tree_raw ~path_elt:Element.bottom ~use_precise_fields p t in
-    path_elt, opt_node_tree ~message tree_opt
 
-  let assign_tree_path ~t path ~st =
-    let message () = Printf.sprintf "assign tree: %s :to: %s :in: %s"
-        (tree_to_string st)
-        (Label.show_path path)
-        (tree_to_string t)
-    in
-    assign_path ~path_elt:Element.bottom ~t path ~st
-    |> opt_node_tree ~message
-
-  let join_tree_path ~t path ~st =
-    let message () = Printf.sprintf "join tree: %s :to: %s :in: %s"
-        (tree_to_string st)
-        (Label.show_path path)
-        (tree_to_string t)
-    in
-    join_path ~path_elt:Element.bottom ~t path ~st
-    |> opt_node_tree ~message
-
-  (* path_elt2 is the path elt of t2, i.e. the join of elt's along the spine of
-     the right tree to this point. *)
-  let rec less_or_equal_tree t1 path_elt2 t2 =
-    let path_elt2 = Element.join path_elt2 t2.elt in
-    if not (Element.less_or_equal ~left:t1.elt ~right:path_elt2) then
-      Checks.false_witness
-        ~message:(fun () -> Printf.sprintf "Element not leq: %s\nvs\n%s\n"
-                     (Element.show t1.elt)
-                     (Element.show path_elt2))
+  let assign ~root ~path tree access_path_tree =
+    if is_empty_tree tree then
+      remove ~root ~path access_path_tree
     else
-      less_or_equal_children t1.children path_elt2 t2.children
+      assign_nonempty ~root ~path tree access_path_tree
 
-  and less_or_equal_opt_tree ot1 path_elt2 ot2 =
-    match ot1, ot2 with
-    | None, _ -> Checks.true_witness
-    | Some t1, None ->
-        (* Check that all on left <= path_elt2 *)
-        less_or_equal_tree t1 path_elt2 empty_tree
-    | Some t1, Some t2 ->
-        less_or_equal_tree t1 path_elt2 t2
 
-  and less_or_equal_all c1 path_elt2 =
-    let check_leq ~key:_ ~data:st1 acc =
-      if Checks.is_true acc then
-        less_or_equal_tree st1 path_elt2 empty_tree
-      else
-        acc
+  (** Read the subtree at path within tree and return the path_element separately.
+      ~use_precise_fields overrides the default handling of [*] matching all fields.
+      This is used solely in determining port connections when emitting json.
+
+      path_element is accumulated down the recursion and returned when we reach the
+      end of that path. That way the recursion is tail-recursive.
+  *)
+  let rec read_tree_raw
+      ~path_element
+      path
+      { children; element }
+      ~use_precise_fields =
+    match path with
+    | [] -> path_element, make_node_option element children
+    | label_element :: rest ->
+        let path_element = Element.join path_element element in
+        match label_element with
+        | Label.Any when not use_precise_fields ->  (* lookup all index fields and join result *)
+            let find_index_and_join
+                ~key:_
+                ~data:subtree
+                (path_element_accumulator, tree_accumulator) =
+              let path_element_result, subtree =
+                read_tree_raw ~path_element ~use_precise_fields rest subtree
+              in
+              let subtree =
+                join_option_trees Element.bottom ~widen_depth:None tree_accumulator subtree
+              in
+              Element.join path_element_result path_element_accumulator, subtree
+            in
+            LabelMap.fold ~init:(path_element, None) ~f:find_index_and_join children
+        | Label.Field _ when not use_precise_fields -> (* read [f] or [*] *)
+            begin
+              match LabelMap.find children label_element with
+              | None ->
+                  begin
+                    match LabelMap.find children Label.Any with
+                    | Some subtree -> read_tree_raw ~path_element ~use_precise_fields rest subtree
+                    | None -> path_element, None
+                  end
+              | Some st ->
+                  read_tree_raw ~path_element ~use_precise_fields rest st
+            end
+        | _ ->
+            match LabelMap.find children label_element with
+            | None -> path_element, None
+            | Some subtree -> read_tree_raw ~path_element ~use_precise_fields rest subtree
+
+
+  (** Read the subtree at path p within t. Returns the pair path_element, tree_at_tip. *)
+  let read_tree_raw path tree ~use_precise_fields =
+    let message () =
+      Format.sprintf
+        "read tree_raw: %s :from: %s"
+        (Label.show_path path)
+        (tree_to_string tree)
     in
-    LabelMap.fold c1 ~f:check_leq ~init:Checks.true_witness
+    let path_element, tree_option =
+      read_tree_raw ~path_element:Element.bottom ~use_precise_fields path tree
+    in
+    path_element, option_node_tree ~message tree_option
 
-  and less_or_equal_children c1 path_elt2 c2 =
-    if LabelMap.is_empty c1 then Checks.true_witness
-    else if LabelMap.is_empty c2 then
-      (* Check that all on the left <= path_elt2 *)
-      less_or_equal_all c1 path_elt2
+
+  let assign_tree_path ~tree path ~subtree =
+    let message () =
+      Format.sprintf
+        "assign tree: %s :to: %s :in: %s"
+        (tree_to_string subtree)
+        (Label.show_path path)
+        (tree_to_string tree)
+    in
+    assign_path ~path_element:Element.bottom ~tree path ~subtree
+    |> option_node_tree ~message
+
+
+  let join_tree_path ~tree path ~subtree =
+    let message () =
+      Format.sprintf
+        "join tree: %s :to: %s :in: %s"
+        (tree_to_string subtree)
+        (Label.show_path path)
+        (tree_to_string tree)
+    in
+    join_path ~path_element:Element.bottom ~tree path ~subtree
+    |> option_node_tree ~message
+
+
+  (** right_path_element is the path element of right_tree, i.e. the join of element's along the
+      spine of the right tree to this point. *)
+  let rec less_or_equal_tree
+      { element = left_element; children = left_children }
+      right_path_element
+      { element = right_element; children = right_children } =
+    let right_path_element = Element.join right_path_element right_element in
+    if not (Element.less_or_equal ~left:left_element ~right:right_path_element) then
+      let message () =
+        Format.sprintf "Element not less_or_equal: %s\nvs\n%s\n"
+          (Element.show left_element)
+          (Element.show right_path_element)
+      in
+      Checks.false_witness ~message
+    else
+      less_or_equal_children left_children right_path_element right_children
+
+  and less_or_equal_option_tree left_option_tree right_path_element right_option_tree =
+    match left_option_tree, right_option_tree with
+    | None, _ ->
+        Checks.true_witness
+    | Some left_tree, None ->
+        (* Check that all on left <= right_path_element *)
+        less_or_equal_tree left_tree right_path_element empty_tree
+    | Some left_tree, Some right_tree ->
+        less_or_equal_tree left_tree right_path_element right_tree
+
+  and less_or_equal_all left_label_map right_path_element =
+    let check_less_or_equal ~key:_ ~data:left_subtree accumulator =
+      if Checks.is_true accumulator then
+        less_or_equal_tree left_subtree right_path_element empty_tree
+      else
+        accumulator
+    in
+    LabelMap.fold left_label_map ~f:check_less_or_equal ~init:Checks.true_witness
+
+  and less_or_equal_children left_label_map right_path_element right_label_map =
+    if LabelMap.is_empty left_label_map then Checks.true_witness
+    else if LabelMap.is_empty right_label_map then
+      (* Check that all on the left <= right_path_element *)
+      less_or_equal_all left_label_map right_path_element
     else
       (* Pointwise on non-index elements, and common index elements. Let L, R be
-         the index elements present only in c1 and c2 respectively, and let
-         star1, star2 be the [*] subtrees of c1 and c2 respectively. Then,
+         the index elements present only in left_label_map and right_label_map respectively, and let
+         left_star, right_star be the [*] subtrees of left_label_map and right_label_map
+         respectively. Then,
 
-         star1 <= star2 /\
-         star1 <= c2[r] for all r in R /\
-         c1[l] <= star2 for all l in L.
+         left_star <= right_star /\
+         left_star <= right_label_map[r] for all r in R /\
+         left_label_map[l] <= right_star for all l in L.
       *)
-      let star1 = LabelMap.find c1 Label.Any in
-      let star2 = LabelMap.find c2 Label.Any in
-      let check_leq ~key:e ~data:st1 acc =
-        if not (Checks.is_true acc) then acc
+      let left_star = LabelMap.find left_label_map Label.Any in
+      let right_star = LabelMap.find right_label_map Label.Any in
+      let check_less_or_equal ~key:label_element ~data:left_subtree accumulator =
+        if not (Checks.is_true accumulator) then
+          accumulator
         else
-          match e with
+          match label_element with
           | Label.Any ->
-              less_or_equal_opt_tree star1 path_elt2 star2
-              |> Checks.opt_cons ~message:(fun () -> "[left *]")
-          | Label.Field _ -> begin
-              match LabelMap.find c2 e with
-              | None ->  (* in L *)
-                  less_or_equal_opt_tree (Some st1) path_elt2 star2
-                  |> Checks.opt_cons ~message:(fun () -> "[right *]")
-
-              | Some st2 -> (* in common *)
-                  less_or_equal_tree st1 path_elt2 st2
-                  |> Checks.opt_cons ~message:(fun () -> Label.show e)
-            end
+              less_or_equal_option_tree left_star right_path_element right_star
+              |> Checks.option_construct ~message:(fun () -> "[left *]")
+          | Label.Field _ ->
+              match LabelMap.find right_label_map label_element with
+              | None -> (* in L *)
+                  less_or_equal_option_tree (Some left_subtree) right_path_element right_star
+                  |> Checks.option_construct ~message:(fun () -> "[right *]")
+              | Some right_subtree -> (* in common *)
+                  less_or_equal_tree left_subtree right_path_element right_subtree
+                  |> Checks.option_construct ~message:(fun () -> Label.show label_element)
       in
       (* Check that all non-star index fields on right are larger than star1,
          unless they were matched directly. *)
-      let check_star_left ~key:e ~data:st2 acc =
-        if not (Checks.is_true acc) then acc
+      let check_star_left ~key:label_element ~data:right_subtree accumulator =
+        if not (Checks.is_true accumulator) then accumulator
         else
-          match e with
-          | Label.Field _ when not (LabelMap.mem c1 e) ->
-              less_or_equal_opt_tree star1 path_elt2 (Some st2)
-              |> Checks.opt_cons ~message:(fun () -> "[left *]")
-          | _ -> Checks.true_witness
+          match label_element with
+          | Label.Field _ when not (LabelMap.mem left_label_map label_element) ->
+              less_or_equal_option_tree left_star right_path_element (Some right_subtree)
+              |> Checks.option_construct ~message:(fun () -> "[left *]")
+          | _ ->
+              Checks.true_witness
       in
-      let result = LabelMap.fold ~f:check_leq c1 ~init:Checks.true_witness
-      in
-      LabelMap.fold ~f:check_star_left c2 ~init:result
+      let result = LabelMap.fold ~f:check_less_or_equal left_label_map ~init:Checks.true_witness in
+      LabelMap.fold ~f:check_star_left right_label_map ~init:result
 
-  let less_or_equal apt1 apt2 =
-    if phys_equal apt1 apt2 then
+
+  let less_or_equal left_access_path_tree right_access_path_tree =
+    if phys_equal left_access_path_tree right_access_path_tree then
       Checks.true_witness
     else
-      let root_and_tree_leq ~key:r ~data:t1 acc =
-        if not (Checks.is_true acc) then acc
+      let root_and_tree_less_or_equal ~key:root ~data:left_tree accumulator =
+        if not (Checks.is_true accumulator) then accumulator
         else
-          match RootMap.find apt2 r with
+          match RootMap.find right_access_path_tree root with
           | None ->
               Checks.false_witness
-                ~message:(fun () -> Printf.sprintf "Root '%s' only on left" (Root.show r))
-          | Some t2 ->
-              less_or_equal_tree t1 Element.bottom t2
-              |> Checks.opt_cons ~message:(fun () -> Root.show r)
+                ~message:(fun () -> Format.sprintf "Root '%s' only on left" (Root.show root))
+          | Some right_tree ->
+              less_or_equal_tree left_tree Element.bottom right_tree
+              |> Checks.option_construct ~message:(fun () -> Root.show root)
       in
-      RootMap.fold ~f:root_and_tree_leq apt1 ~init:Checks.true_witness
+      RootMap.fold ~f:root_and_tree_less_or_equal left_access_path_tree ~init:Checks.true_witness
 
-  let less_or_equal_witness ~left ~right = less_or_equal left right
 
-  let read_tree p t =
-    let path_elt, tree = read_tree_raw p t ~use_precise_fields:false in
-    let message () = Printf.sprintf "read [%s] from %s" (Label.show_path p) (tree_to_string t) in
-    (* Important to properly join the trees and not just join path_elt and
-       tree.elt, as otherwise this could result in non-minimal trees. *)
-    join_trees Element.bottom ~widen_depth:None (make_leaf path_elt) tree
-    |> opt_node_tree ~message
+  let less_or_equal_witness ~left ~right =
+    less_or_equal left right
 
-  let read_ap ~root ~path x =
-    match RootMap.find x root with
+
+  let read_tree path tree =
+    let path_element, tree = read_tree_raw path tree ~use_precise_fields:false in
+    let message () =
+      Format.sprintf "read [%s] from %s" (Label.show_path path) (tree_to_string tree)
+    in
+    (* Important to properly join the trees and not just join path_element and
+       tree.element, as otherwise this could result in non-minimal trees. *)
+    join_trees Element.bottom ~widen_depth:None (make_leaf path_element) tree
+    |> option_node_tree ~message
+
+
+  let read_access_path ~root ~path map =
+    match RootMap.find map root with
     | None -> empty_tree
-    | Some t -> read_tree path t
+    | Some tree -> read_tree path tree
 
-  (* Return the path_elt without combining it with the elt at the path tip. *)
-  let read_ap_raw ~root ~path x ~use_precise_fields =
-    match RootMap.find x root with
+
+  (** Return the path_element without combining it with the element at the path tip. *)
+  let read_access_path_raw ~root ~path map ~use_precise_fields =
+    match RootMap.find map root with
     | None -> (Element.bottom, empty_tree)
-    | Some t -> read_tree_raw path t ~use_precise_fields
+    | Some tree -> read_tree_raw path tree ~use_precise_fields
 
-  let read root x =
-    match RootMap.find x root with
+
+  let read root map =
+    match RootMap.find map root with
     | None -> empty_tree
-    | Some t -> t
+    | Some tree -> tree
+
 
   let less_or_equal ~left ~right =
     less_or_equal_witness ~left ~right
     |> Checks.is_true
 
-  let check_leq msg apt1 apt2 =
-    match less_or_equal_witness apt1 apt2 |> Checks.get_witness with
-    | None -> ()
-    | Some w ->
-        failwith (Printf.sprintf "leq of %s is false: %s\napt1:\n%s\napt2:\n%s\n" msg w
-                    (to_string apt1) (to_string apt2))
 
-  let join apt1 apt2 =
-    if phys_equal apt1 apt2 then apt1
+  let check_less_or_equal message left_access_path_tree right_access_path_tree =
+    let witness =
+      less_or_equal_witness left_access_path_tree right_access_path_tree
+      |> Checks.get_witness
+    in
+    match witness with
+    | None ->
+        ()
+    | Some witness ->
+        let error_message =
+          Format.sprintf "less_or_equal of %s is false: %sleft_apt:\n%s\nright_apt:\n%s\n"
+            message
+            witness
+            (to_string left_access_path_tree)
+            (to_string right_access_path_tree)
+        in
+        failwith error_message
+
+
+  let join left_access_path_tree right_access_path_tree =
+    if phys_equal left_access_path_tree right_access_path_tree then
+      left_access_path_tree
     else
       let merge ~key = function
-        | `Both (a , b) -> join_trees Element.bottom ~widen_depth:None a b
-        | `Left t | `Right t -> Some t in
-      let result = RootMap.merge ~f:merge apt1 apt2
+        | `Both (left , right) -> join_trees Element.bottom ~widen_depth:None left right
+        | `Left tree | `Right tree -> Some tree in
+      let result = RootMap.merge ~f:merge left_access_path_tree right_access_path_tree in
+      let message () =
+        Format.sprintf
+          "join of left_tree:\n%s\nright_tree:\n%s\njoin:%s"
+          (to_string left_access_path_tree)
+          (to_string right_access_path_tree)
+          (to_string result)
       in
-      let message () = Printf.sprintf "join of t1:\n%s\nt2:\n%s\njoin:%s"
-          (to_string apt1) (to_string apt2) (to_string result)
-      in
-      Checks.check (fun () -> check_leq "join apt1" apt1 result);
-      Checks.check (fun () -> check_leq "join apt2" apt2 result);
-      Checks.check (fun () -> check_minimal_apt ~message result);
+      let check message tree = check_less_or_equal message tree in
+      Checks.check (fun () -> check "join left_access_path" left_access_path_tree result);
+      Checks.check (fun () -> check "join right_access_path_tree" right_access_path_tree result);
+      Checks.check (fun () -> check_minimal_access_path_tree ~message result);
       result
 
+
   let widen ~iteration ~previous ~next =
-    if phys_equal previous next then previous
-    else if iteration <= 2 then join previous next
+    if phys_equal previous next then
+      previous
+    else if iteration <= 2 then
+      join previous next
     else
-      let widen_trees prev next =
-        let prev_depth = max_depth prev in
+      let widen_trees previous next =
+        let prev_depth = max_depth previous in
         (* Bound depth by an absolute. Otherwise, long methods can increase the
            max depth gradually, in the worst case causing a tree to be
            materialized that is exponential in size to the depth. *)
-        let widen_depth = Some (min prev_depth max_tree_depth)
-        in
-        match join_trees Element.bottom ~widen_depth prev next with
-        | None -> None
-        | Some result ->
-            let check_depth () =
-              let new_depth = max_depth result
-              in
-              if new_depth > prev_depth then
-                failwith (Printf.sprintf "widen t1\n%s\t2\n%s\nresult\n%s\n
-                        result too deep: %d > %d."
-                            (tree_to_string prev) (tree_to_string next)
-                            (tree_to_string result)
-                            new_depth prev_depth)
+        let widen_depth = Some (min prev_depth max_tree_depth) in
+        let check_result result =
+          let check_depth () =
+            let new_depth = max_depth result in
+            let message =
+              Format.sprintf
+                "widen left_tree\n%s\right_tree\n%s\nresult\n%s\nresult too deep: %d > %d."
+                (tree_to_string previous)
+                (tree_to_string next)
+                (tree_to_string result)
+                new_depth prev_depth
             in
-            Checks.check check_depth;
-            Some result
+            if new_depth > prev_depth then
+              failwith message
+          in
+          Checks.check check_depth;
+          result
+        in
+        join_trees Element.bottom ~widen_depth previous next
+        >>| check_result
       in
       let merge ~key = function
-        | `Both (a, b) -> widen_trees a b
-        | `Left t | `Right t -> Some t in
-      let result = RootMap.merge ~f:merge previous next
-      in
-      let message () = Printf.sprintf "widen of t1:\n%s\nt2:\n%s\n" (to_string previous)
+        | `Both (left, right) -> widen_trees left right
+        | `Left tree | `Right tree -> Some tree in
+      let result = RootMap.merge ~f:merge previous next in
+      let message () =
+        Format.sprintf "widen of left_tree:\n%s\nright_tree:\n%s\n"
+          (to_string previous)
           (to_string next)
       in
-      Checks.check (fun () -> check_leq "widen prev" previous result);
-      Checks.check (fun () -> check_leq "widen next" next result);
-      Checks.check (fun () -> check_minimal_apt ~message result);
+      Checks.check (fun () -> check_less_or_equal "widen previous" previous result);
+      Checks.check (fun () -> check_less_or_equal "widen next" next result);
+      Checks.check (fun () -> check_minimal_access_path_tree ~message result);
       result
 
-  (* Collapses all subtrees at depth. Used to limit amount of detail propagated
-     across function boundaries, in particular for scaling. *)
-  let collapse_to ~depth t =
-    let message () = Printf.sprintf "collapse to %d\n%s\n" depth (tree_to_string t) in
-    join_trees Element.bottom ~widen_depth:(Some depth) t t
-    |> opt_node_tree ~message
 
-  let verify_leq t1 t2 msg =
-    match less_or_equal_tree t1 Element.bottom t2 |> Checks.get_witness with
-    | None -> ()
-    | Some w ->
-        Printf.sprintf "bad join %s - %s: %s\nvs %s"
-          msg w
-          (tree_to_string t1) (tree_to_string t2)
+  (** Collapses all subtrees at depth. Used to limit amount of detail propagated
+      across function boundaries, in particular for scaling. *)
+  let collapse_to ~depth tree =
+    let message () = Format.sprintf "collapse to %d\n%s\n" depth (tree_to_string tree) in
+    join_trees Element.bottom ~widen_depth:(Some depth) tree tree
+    |> option_node_tree ~message
+
+
+  let verify_less_or_equal left_tree right_tree message =
+    match less_or_equal_tree left_tree Element.bottom right_tree |> Checks.get_witness with
+    | None ->
+        ()
+    | Some witness ->
+        Format.sprintf
+          "bad join %s - %s: %s\nvs %s"
+          message
+          witness
+          (tree_to_string left_tree)
+          (tree_to_string right_tree)
         |> failwith
 
-  let check_join_property t1 t2 result =
+
+  let check_join_property left_tree right_tree result =
     if is_unit_test then begin
-      verify_leq t1 result "t1<=result";
-      verify_leq t2 result "t2<=result";
+      verify_less_or_equal left_tree result "left_tree<=result";
+      verify_less_or_equal right_tree result "right_tree<=result";
     end;
     result
 
-  let join_trees t1 t2 =
-    if phys_equal t1 t2 then t1
+
+  let join_trees left_tree right_tree =
+    if phys_equal left_tree right_tree then
+      left_tree
     else
-      let message () = Printf.sprintf "join trees: t1\n%s\nt2:\n%s\n" (tree_to_string t1)
-          (tree_to_string t2)
+      let message () =
+        Format.sprintf
+          "join trees: left_tree\n%s\nright_tree:\n%s\n"
+          (tree_to_string left_tree)
+          (tree_to_string right_tree)
       in
-      join_trees Element.bottom ~widen_depth:None t1 t2
-      |> opt_node_tree ~message
-      |> check_join_property t1 t2
+      join_trees Element.bottom ~widen_depth:None left_tree right_tree
+      |> option_node_tree ~message
+      |> check_join_property left_tree right_tree
 
-  let get_root_taint t =
-    t.elt
 
-  let join_root_element t elt =
-    let message () = "join_root_elt"
-    in
-    join_path ~path_elt:Element.bottom ~t [] ~st:(make_leaf elt)
-    |> opt_node_tree ~message
+  let get_root_taint { element; _ } =
+    element
 
-  let rec exists_in_tree ~f t =
-    if is_empty_tree t then false
-    else if f t.elt then true
-    else exists_in_children ~f t.children
+
+  let join_root_element tree element =
+    let message () = "join_root_element" in
+    join_path ~path_element:Element.bottom ~tree [] ~subtree:(make_leaf element)
+    |> option_node_tree ~message
+
+
+  let rec exists_in_tree ~f ({ element; children } as tree) =
+    if is_empty_tree tree then false
+    else if f element then true
+    else exists_in_children ~f children
 
   and exists_in_children ~f children =
     LabelMap.exists ~f:(exists_in_tree ~f) children
 
-  let rec filter_map_tree path_elt ~f t =
-    if is_empty_tree t then None
+
+  let rec filter_map_tree path_element ~f ({ element; children } as tree) =
+    if is_empty_tree tree then
+      None
     else
-      let filtered_elt = f t.elt in
-      let { new_elt; path_elt } = filter_by_path_elt ~path_elt ~elt:filtered_elt
+      let filtered_element = f element in
+      let { new_element; path_element } =
+        filter_by_path_element ~path_element ~element:filtered_element
       in
-      let children = filter_map_children path_elt ~f t.children
+      let children =
+        filter_map_children path_element ~f children
       in
-      make_node_opt new_elt children
+      make_node_option new_element children
 
-  and filter_map_children path_elt ~f c =
-    LabelMap.filter_map ~f:(filter_map_tree path_elt ~f) c
+  and filter_map_children path_element ~f label_map =
+    LabelMap.filter_map ~f:(filter_map_tree path_element ~f) label_map
 
-  let replace_root_taint t elt =
+
+  let replace_root_taint { children; _ } element =
     (* In order to maintain minimal trees, we have to filter the children by
-       the new path_elt. *)
+       the new path_element. *)
     let result =
-      { elt;
-        children = LabelMap.filter_map ~f:(prune_tree elt) t.children
+      {
+        element;
+        children = LabelMap.filter_map ~f:(prune_tree element) children
       }
     in
-    let message () = "replace root taint"
-    in
+    let message () = "replace root taint" in
     Checks.check (fun () -> check_minimal ~message result);
     result
 
-  let filter_map_k ~f apt =
-    let accumulate ~key ~data acc =
-      match f key with
-      | None -> acc
-      | Some key -> RootMap.set acc key data
-    in
-    RootMap.fold ~f:accumulate ~init:RootMap.empty apt
 
-  let filter_map_v ~f apt =
-    let filter_map_tree t = filter_map_tree Element.bottom ~f t
+  let filter_map_key ~f access_path_tree =
+    let accumulate ~key ~data accumulator =
+      match f key with
+      | None -> accumulator
+      | Some key -> RootMap.set accumulator key data
     in
-    let result = RootMap.filter_map ~f:filter_map_tree apt in
-    let message () = "filter_map of apt:\n" ^ (to_string apt)
-    in
-    Checks.check (fun () -> check_minimal_apt ~message result);
+    RootMap.fold ~f:accumulate ~init:RootMap.empty access_path_tree
+
+
+  let filter_map_value ~f access_path_tree =
+    let filter_map_tree tree = filter_map_tree Element.bottom ~f tree in
+    let result = RootMap.filter_map ~f:filter_map_tree access_path_tree in
+    let message () = "filter_map of apt:\n" ^ (to_string access_path_tree) in
+    Checks.check (fun () -> check_minimal_access_path_tree ~message result);
     result
 
-  let filter_map_tree ~f t =
-    let message () = "filter_map_tree"
-    in
-    filter_map_tree Element.bottom ~f t
-    |> opt_node_tree ~message
 
-  (* Fold over tree, where each non-bottom elt node is visited. The function ~f
-     is passed the path to the node, the path_elt, and the non-bottom elt at the
-     node. *)
-  let fold_tree_paths ~init ~f t =
-    let rec walk_children path path_elt { elt; children } acc_0 =
-      let path_elt = Element.join elt path_elt in
-      let acc_1 =
-        if Element.is_bottom elt
-        then acc_0
-        else f ~path ~path_elt:path_elt ~elt:elt acc_0
+  let filter_map_tree ~f tree =
+    let message () = "filter_map_tree" in
+    filter_map_tree Element.bottom ~f tree
+    |> option_node_tree ~message
+
+
+  (** Fold over tree, where each non-bottom element node is visited. The function ~f
+      is passed the path to the node, the path_element, and the non-bottom element at the
+      node. *)
+  let fold_tree_paths ~init ~f tree =
+    let rec walk_children path path_element { element; children } first_accumulator =
+      let path_element = Element.join element path_element in
+      let second_accumulator =
+        if Element.is_bottom element then
+          first_accumulator
+        else
+          f ~path ~path_element:path_element ~element:element first_accumulator
       in
       if LabelMap.is_empty children then
-        acc_1
+        second_accumulator
       else
-        LabelMap.fold ~f:(fun ~key:ap_elem ~data:st acc ->
-            walk_children (path @ [ap_elem]) path_elt st acc
-          ) ~init:acc_1 children
-    in
-    walk_children [] Element.bottom t init
-
-  (* Filter map over tree, where each non-bottom elt node is visited. The function ~f
-     is passed the path to the node, the path_elt, and the non-bottom elt at the
-     node and returns a new Element to substitute (possibly bottom). *)
-  let filter_map_tree_paths ~f t =
-    let build ~path ~path_elt ~elt apt =
-      let elt = f ~path ~path_elt ~elt in
-      if Element.is_bottom elt then apt
-      else
-        assign_tree_path ~t:apt path ~st:(make_leaf elt)
-    in
-    fold_tree_paths ~init:empty_tree ~f:build t
-
-  let iter_tree_paths ~f t =
-    let wrapped_f ~path ~path_elt:_ ~elt () = f ~path ~elt in
-    fold_tree_paths ~init:() ~f:wrapped_f t
-
-  (* Removes all subtrees at depth. Used to limit amount of propagation across
-     function boundaries, in particular for scaling. *)
-  let cut_tree_after ~depth t =
-    let filter ~path ~path_elt:_ ~elt =
-      if (List.length path > depth) then Element.bottom
-      else elt
-    in
-    filter_map_tree_paths ~f:filter t
-
-  let fold_paths ~f ~init apt =
-    RootMap.fold ~f:(fun ~key ~data:t acc ->
-        let accept_path ~path ~path_elt ~elt acc =
-          f ~root:key ~path ~path_elt ~elt acc
+        let walk ~key:label_element ~data:subtree =
+          walk_children (path @ [label_element]) path_element subtree
         in
-        fold_tree_paths ~init:acc ~f:accept_path t
-      ) ~init apt
+        LabelMap.fold children ~init:second_accumulator  ~f:walk
+    in
+    walk_children [] Element.bottom tree init
 
-  let iter_paths ~f apt =
-    let wrapped_f ~root ~path ~path_elt:_ ~elt () = f ~root ~path ~elt in
-    fold_paths ~init:() ~f:wrapped_f apt
 
-  let fold ~f apt =
-    RootMap.fold ~f:(fun ~key ~data -> f key data) apt
+  (** Filter map over tree, where each non-bottom element node is visited. The function ~f
+      is passed the path to the node, the path_element, and the non-bottom element at the
+      node and returns a new Element to substitute (possibly bottom). *)
+  let filter_map_tree_paths ~f tree =
+    let build ~path ~path_element ~element access_path_tree =
+      let element = f ~path ~path_element ~element in
+      if Element.is_bottom element then
+        access_path_tree
+      else
+        assign_tree_path ~tree:access_path_tree path ~subtree:(make_leaf element)
+    in
+    fold_tree_paths ~init:empty_tree ~f:build tree
+
+
+  let iterate_tree_paths ~f tree =
+    let wrapped_f ~path ~path_element:_ ~element () = f ~path ~element in
+    fold_tree_paths ~init:() ~f:wrapped_f tree
+
+
+  (** Removes all subtrees at depth. Used to limit amount of propagation across
+      function boundaries, in particular for scaling. *)
+  let cut_tree_after ~depth tree =
+    let filter ~path ~path_element:_ ~element =
+      if (List.length path > depth) then
+        Element.bottom
+      else
+        element
+    in
+    filter_map_tree_paths ~f:filter tree
+
+
+  let fold_paths ~f ~init access_path_tree =
+    let fold ~key ~data:tree accumulator =
+      let accept_path ~path ~path_element ~element accumulator =
+        f ~root:key ~path ~path_element ~element accumulator
+      in
+      fold_tree_paths ~init:accumulator ~f:accept_path tree
+    in
+    RootMap.fold access_path_tree ~init ~f:fold
+
+
+  let iterate_paths ~f access_path_tree =
+    let wrapped_f ~root ~path ~path_element:_ ~element () = f ~root ~path ~element in
+    fold_paths ~init:() ~f:wrapped_f access_path_tree
+
+
+  let fold ~f access_path_tree =
+    RootMap.fold ~f:(fun ~key ~data -> f key data) access_path_tree
+
 
   let filter_map ~f =
     let wrapped_f ~key ~data =
       match f key data with
-      | t when is_empty_tree t -> None
-      | t -> Some t
+      | tree when is_empty_tree tree -> None
+      | tree -> Some tree
     in
     RootMap.filter_mapi ~f:wrapped_f
+
 
   let exists ~f =
     RootMap.exists ~f:(exists_in_tree ~f)
 
-  let iteri ~f apt =
-    RootMap.iteri ~f:(fun ~key ~data -> f key data) apt
 
-  let fold_tree_children t ~init ~f =
-    LabelMap.fold ~init ~f:(fun ~key ~data acc -> f key data acc) t.children
+  let iteri ~f access_path_tree =
+    RootMap.iteri ~f:(fun ~key ~data -> f key data) access_path_tree
+
+
+  let fold_tree_children { children; _ } ~init ~f =
+    LabelMap.fold ~init ~f:(fun ~key ~data acc -> f key data acc) children
+
 
   let of_list =
-    let assign_to_map rmap ((root, path), elt) =
-      assign_weak ~root ~path (make_leaf elt) rmap
+    let assign_to_map rmap ((root, path), element) =
+      assign_weak ~root ~path (make_leaf element) rmap
     in
     List.fold ~init:empty ~f:assign_to_map
 
-  let make_tree p elt =
-    let message = fun () -> Printf.sprintf "make_tree %s" (Label.show_path p) in
-    make_tree_opt p elt
-    |> opt_node_tree ~message
+
+  let make_tree path element =
+    let message = fun () -> Format.sprintf "make_tree %s" (Label.show_path path) in
+    make_tree_option path element
+    |> option_node_tree ~message
+
 
   let show = to_string
 
-  let pp fmt apt = Format.pp_print_string fmt (show apt)
+
+  let pp formatter access_path_tree = Format.pp_print_string formatter (show access_path_tree)
 end
