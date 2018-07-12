@@ -4612,7 +4612,19 @@ let test_check_refinement _ =
 let test_check_toplevel _ =
   assert_type_errors
     "int_to_int(1.0)"
-    ["Incompatible parameter type [6]: Expected `int` but got `float`."]
+    ["Incompatible parameter type [6]: Expected `int` but got `float`."];
+
+  assert_type_errors
+    {|
+      a: int = None
+      def foobar() -> None:
+          b: int = None
+    |}
+    [
+      "Incompatible variable type [9]: a is declared to have type `int` " ^
+      "but is used as type `None`.";
+      "Incompatible variable type [9]: b is declared to have type `int` but is used as type `None`."
+    ]
 
 
 let test_check_tuple _ =
