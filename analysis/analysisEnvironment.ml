@@ -1092,11 +1092,14 @@ module Builder = struct
     let dependencies = Dependencies.create () in
 
     (* Add `None` constant to globals. *)
-    let none =
-      Annotation.create_immutable ~global:true Type.none
+    let annotation annotation =
+      Annotation.create_immutable ~global:true annotation
       |> Node.create_with_default_location
     in
-    Hashtbl.set globals ~key:(Access.create "None") ~data:none;
+    Hashtbl.set globals ~key:(Access.create "None") ~data:(annotation Type.none);
+    Hashtbl.set globals
+      ~key:[Access.Identifier (Identifier.create "...")]
+      ~data:(annotation Type.Object);
 
     (* Add classes for `typing.Optional` and `typing.Undeclared` that are currently not encoded
        in the stubs. *)

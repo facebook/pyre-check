@@ -1732,8 +1732,10 @@ let test_check _ =
         return __file__
       def h() -> str:
         return typing.__name__
+      def i() -> str:
+        return ...
     |}
-    []
+    ["Incompatible return type [7]: Expected `str` but got `typing.Any`."]
 
 
 let test_check_assign _ =
