@@ -1243,9 +1243,14 @@ module State = struct
         | Lambda { Lambda.body; parameters } ->
             let resolution =
               let add_parameter resolution { Node.value = { Parameter.name; _ }; _ } =
+                let name =
+                  let name = Identifier.show name in
+                  String.chop_prefix name ~prefix:"*"
+                  |> Option.value ~default:name
+                in
                 Resolution.set_local
                   resolution
-                  ~access:(Access.create_from_identifiers [name])
+                  ~access:(Access.create name)
                   ~annotation:(Annotation.create Type.Object)
               in
               List.fold ~f:add_parameter ~init:resolution parameters

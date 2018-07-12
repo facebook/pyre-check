@@ -2057,10 +2057,10 @@ let test_check_comprehensions _ =
 
   assert_type_errors
     {|
-      def f() -> int:
-        x = lambda y: y
-        a = x(1)
-        return 0
+      def f() -> None:
+        l = lambda y: y
+        l(1)
+        lambda *y: y
     |}
     [];
 
