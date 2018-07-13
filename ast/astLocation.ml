@@ -21,30 +21,13 @@ type 'path t = {
 }
 [@@deriving compare, eq, sexp, show, hash]
 
+
 type reference = int t
 [@@deriving compare, eq, sexp, show, hash]
 
+
 type instantiated = string t
 [@@deriving compare, eq, sexp, show, hash]
-
-
-let pp_reference format { path; start; stop } =
-  Format.fprintf format "%d:%d:%d-%d:%d" path start.line start.column stop.line stop.column
-
-
-let pp_instantiated format { path; start; stop } =
-  Format.fprintf format "%s:%d:%d-%d:%d" path start.line start.column stop.line stop.column
-
-
-let to_string pp_path { path; start; stop } =
-  Format.asprintf "%a:%d:%d-%d:%d" pp_path path start.line start.column stop.line stop.column
-
-let to_string_reference = to_string Int.pp
-let to_string_instantiated = to_string String.pp
-
-
-let pp_start_instantiated format { path; start; _ } =
-  Format.fprintf format "%s:%d:%d" path start.line start.column
 
 
 module ReferenceMap = Map.Make(struct
@@ -73,18 +56,42 @@ include Hashable.Make(struct
   end)
 
 
-let create_position position =
+let create ~start ~stop =
+  let create position =
+    {
+      line = position.Lexing.pos_lnum;
+      column = position.Lexing.pos_cnum - position.Lexing.pos_bol;
+    }
+  in
   {
-    line = position.Lexing.pos_lnum;
-    column = position.Lexing.pos_cnum - position.Lexing.pos_bol;
+    path = String.hash start.Lexing.pos_fname;
+    start = create start;
+    stop = create stop;
   }
 
 
-let create ~start ~stop = {
-  path = String.hash start.Lexing.pos_fname;
-  start = create_position start;
-  stop = create_position stop;
-}
+let pp_reference format { path; start; stop } =
+  Format.fprintf format "%d:%d:%d-%d:%d" path start.line start.column stop.line stop.column
+
+
+let pp_instantiated format { path; start; stop } =
+  Format.fprintf format "%s:%d:%d-%d:%d" path start.line start.column stop.line stop.column
+
+
+let to_string pp_path { path; start; stop } =
+  Format.asprintf "%a:%d:%d-%d:%d" pp_path path start.line start.column stop.line stop.column
+
+
+let to_string_reference =
+  to_string Int.pp
+
+
+let to_string_instantiated =
+  to_string String.pp
+
+
+let pp_start_instantiated format { path; start; _ } =
+  Format.fprintf format "%s:%d:%d" path start.line start.column
 
 
 let instantiate ~lookup { path; start; stop } =

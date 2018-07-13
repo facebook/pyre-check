@@ -19,27 +19,22 @@ type 'path t = {
 }
 [@@deriving compare, eq, sexp, show, hash]
 
-
 type reference = int t
 [@@deriving compare, eq, sexp, show, hash]
-
 
 type instantiated = string t
 [@@deriving compare, eq, sexp, show, hash]
 
+val create: start:Lexing.position -> stop:Lexing.position -> reference
+
+module ReferenceMap : Map.S with type Key.t = reference
+module ReferenceSet : Set.S with type Elt.t = reference
+include Hashable with type t := reference
 
 val to_string_reference: reference -> string
 val to_string_instantiated: instantiated -> string
-
 val pp_start_instantiated: Format.formatter -> instantiated -> unit
 
-module ReferenceMap : Map.S with type Key.t = reference
-
-module ReferenceSet : Set.S with type Elt.t = reference
-
-include Hashable with type t := reference
-
-val create: start:Lexing.position -> stop:Lexing.position -> reference
 val instantiate: lookup: (int -> string option) -> reference -> instantiated
 val to_reference: instantiated -> reference
 
