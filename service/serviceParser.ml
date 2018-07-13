@@ -6,6 +6,7 @@
 open Core
 
 open Ast
+open Expression
 open Pyre
 open PyreParser
 
@@ -207,15 +208,16 @@ type result = {
 let parse_all scheduler ~configuration:({ Configuration.source_root; _ } as configuration) =
   let stubs = parse_stubs scheduler ~configuration in
   let known_stubs =
-    List.fold
-      stubs
-      ~init:Expression.Access.Set.empty
-      ~f:(fun known_stubs handle ->
-          match AstSharedMemory.get_source handle with
-          | Some { Ast.Source.qualifier; _ } ->
-              Set.add known_stubs qualifier
-          | _ ->
-              known_stubs)
+    let add_to_known_stubs sofar handle =
+      match AstSharedMemory.get_source handle with
+      | Some { Ast.Source.qualifier; path; _ } ->
+          if Set.mem sofar qualifier then
+            Statistics.event ~name:"interfering stub" ~normals:["path", path]();
+          Set.add sofar qualifier
+      | _ ->
+          sofar
+    in
+    List.fold stubs ~init:Access.Set.empty ~f:add_to_known_stubs
   in
   let sources =
     let filter path =
