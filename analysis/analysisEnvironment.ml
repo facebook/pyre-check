@@ -1096,6 +1096,18 @@ module Builder = struct
     let globals = Access.Table.create () in
     let dependencies = Dependencies.create () in
 
+    (* Register dummy module for `builtins`. *)
+    let builtins = Access.create "builtins" in
+    Hashtbl.set
+      modules
+      ~key:builtins
+      ~data:(
+        Ast.Module.create
+          ~qualifier:builtins
+          ~local_mode:Ast.Module.Source.PlaceholderStub
+          ~stub:true
+          []);
+
     (* Add `None` constant to globals. *)
     let annotation annotation =
       Annotation.create_immutable ~global:true annotation

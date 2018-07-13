@@ -1735,7 +1735,14 @@ let test_check _ =
       def i() -> str:
         return ...
     |}
-    ["Incompatible return type [7]: Expected `str` but got `typing.Any`."]
+    ["Incompatible return type [7]: Expected `str` but got `typing.Any`."];
+
+  assert_type_errors
+    {|
+      def f() -> int:
+        return builtins.__name__
+    |}
+    ["Incompatible return type [7]: Expected `int` but got `unknown`."]
 
 
 let test_check_assign _ =
