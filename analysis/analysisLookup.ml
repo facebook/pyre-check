@@ -158,5 +158,9 @@ let get_annotation lookup ~position =
   get_best_location position
 
 
+let get_all_annotations lookup =
+  Location.Reference.Table.to_alist lookup
+
+
 let get_definition _lookup _position =
   None

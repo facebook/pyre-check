@@ -719,7 +719,7 @@ let test_incremental_lookups _ =
     |> AstSharedMemory.get_source
     |> (fun value -> Option.value_exn value)
     |> Lookup.create_of_source state.State.environment
-    |> Location.Reference.Table.to_alist
+    |> Lookup.get_all_annotations
     |> List.map ~f:(fun (key, data) ->
         Format.asprintf "%s/%a" (Location.Reference.to_string key) Type.pp data
         |> String.chop_prefix_exn ~prefix:(Int.to_string (String.hash relative_path)))

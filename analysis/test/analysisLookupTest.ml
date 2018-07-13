@@ -87,7 +87,7 @@ let test_lookup_call_arguments _ =
       "test.py:4:4-5:14/`str`";
       "test.py:5:4-5:14/`str`";
     ]
-    (Location.Reference.Table.to_alist lookup
+    (Lookup.get_all_annotations lookup
      |> List.map ~f:(fun (key, data) ->
          Format.asprintf "%s/%a" (show_location (instantiate key)) Type.pp data)
      |> List.sort ~compare:String.compare);
@@ -151,7 +151,7 @@ let test_lookup_pick_narrowest _ =
       "test.py:3:21-3:27/`Optional[int]`";
       "test.py:3:7-3:11/`bool`";
     ]
-    (Location.Reference.Table.to_alist lookup
+    (Lookup.get_all_annotations lookup
      |> List.map ~f:(fun (key, data) ->
          Format.asprintf "%s/%a" (show_location (instantiate key)) Type.pp data)
      |> List.sort ~compare:String.compare);
@@ -183,7 +183,7 @@ let test_lookup_class_attributes _ =
     [
       "test.py:3:4-3:5/`bool`";
     ]
-    (Location.Reference.Table.to_alist lookup
+    (Lookup.get_all_annotations lookup
      |> List.map ~f:(fun (key, data) ->
          Format.asprintf "%s/%a" (show_location (instantiate key)) Type.pp data)
      |> List.sort ~compare:String.compare);
@@ -229,7 +229,7 @@ let test_lookup_identifier_accesses _ =
       "test.py:8:8-8:9/`test.A`";
       "test.py:9:11-9:14/`int`";
     ]
-    (Location.Reference.Table.to_alist lookup
+    (Lookup.get_all_annotations lookup
      |> List.map ~f:(fun (key, data) ->
          Format.asprintf "%s/%a" (show_location (instantiate key)) Type.pp data)
      |> List.sort ~compare:String.compare);
