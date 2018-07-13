@@ -106,7 +106,7 @@ module State = struct
                 ~kind:(Error.MissingParameterAnnotation { Error.name; annotation; due_to_any })
                 ~define:define_node
             in
-            Map.set ~key:(Error.location error |> Location.to_reference) ~data:error errors)
+            Map.set ~key:(Error.location error |> Location.reference) ~data:error errors)
         |> Option.value ~default:errors
       in
       match annotation with
@@ -530,7 +530,7 @@ let infer configuration environment ?mode_override ({ Source.path; _ } as source
             add_missing_annotation_error
               ~access:((Annotated.Class.name parent) @ name)
               ~name
-              ~location:(Error.location error |> Location.to_reference)
+              ~location:(Error.location error |> Location.reference)
               ~annotation
         | ({
             Error.kind = Error.MissingGlobalAnnotation { Error.name; annotation; _ };
@@ -539,7 +539,7 @@ let infer configuration environment ?mode_override ({ Source.path; _ } as source
             add_missing_annotation_error
               ~access:name
               ~name
-              ~location:(Error.location error |> Location.to_reference)
+              ~location:(Error.location error |> Location.reference)
               ~annotation
         | _ ->
             changed, globals_added_sofar

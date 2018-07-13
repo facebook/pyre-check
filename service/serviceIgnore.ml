@@ -63,7 +63,7 @@ let register ~configuration scheduler handles =
 
 
 let postprocess handles errors =
-  let error_lookup = Location.Table.create () in
+  let error_lookup = Location.Reference.Table.create () in
   let errors_with_ignore_suppression =
     let add_to_lookup ~key ~code =
       match Hashtbl.find error_lookup key with

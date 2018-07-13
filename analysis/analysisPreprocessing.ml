@@ -74,7 +74,7 @@ let expand_string_annotations ({ Source.path; _ } as source) =
                         Log.debug
                           "Invalid string annotation `%s` at %a"
                           string
-                          Location.pp_reference
+                          Location.Reference.pp
                           location;
                         None
                       end
@@ -164,7 +164,7 @@ let expand_format_string ({ Source.path; _ } as source) =
                     Log.debug
                       "Pyre could not parse format string `%s` at %a"
                       input_string
-                      Location.pp_reference
+                      Location.Reference.pp
                       location;
                     []
                   end
@@ -201,7 +201,7 @@ type scope = {
   immutables: Access.Set.t;
   locals: Access.Set.t;
   use_forward_references: bool;
-  skip: Location.ReferenceSet.t;
+  skip: Location.Reference.Set.t;
 }
 
 
@@ -850,7 +850,7 @@ let qualify ({ Source.path; qualifier = source_qualifier; statements; _ } as sou
                   Log.debug
                     "Invalid string annotation `%s` at %a"
                     string
-                    Location.pp_reference
+                    Location.Reference.pp
                     location;
                   String string
                 end
@@ -885,7 +885,7 @@ let qualify ({ Source.path; qualifier = source_qualifier; statements; _ } as sou
       locals = Access.Set.empty;
       immutables = Access.Set.empty;
       use_forward_references = true;
-      skip = Location.ReferenceSet.empty;
+      skip = Location.Reference.Set.empty;
     }
   in
   { source with Source.statements = qualify_statements ~scope statements |> snd }

@@ -6,7 +6,7 @@
 module Location = AstLocation
 
 type 'node_type t = {
-  location: Location.reference; [@hash.ignore]
+  location: Location.t; [@hash.ignore]
   value: 'node_type;
 }
 [@@deriving sexp, show, hash]
@@ -16,7 +16,7 @@ let create ~location value =
   { location; value }
 
 let create_with_default_location value =
-  { location = Location.any; value }
+  { location = Location.Reference.any; value }
 
 let pp print_node format { value; _ } =
   print_node format value

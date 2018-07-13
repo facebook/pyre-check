@@ -107,7 +107,7 @@
                   end
             end
       in
-      expression >>| Node.location |> Option.value ~default:Location.any
+      expression >>| Node.location |> Option.value ~default:Location.Reference.any
     in
     let arguments =
       let argument argument =
@@ -255,7 +255,7 @@ parse:
 (* Statements. *)
 
 statements:
-  | { Location.any, [] }
+  | { Location.Reference.any, [] }
   | NEWLINE; statements = statements { statements }
   | statement = statement; statements = statements {
       (* The recursion always terminates in the empty statement case. This logic avoids
@@ -636,7 +636,7 @@ compound_statement:
                       Node.value = {
                         parameter with
                           Parameter.annotation = Some {
-                            Node.location = Location.any;
+                            Node.location = Location.Reference.any;
                             value = String annotation;
                           }
                       }
@@ -813,7 +813,7 @@ block:
   ;
 
 named_optional_block(NAME):
-  | { Location.any, [] }
+  | { Location.Reference.any, [] }
   | NAME; COLON; block = block { block }
   ;
 

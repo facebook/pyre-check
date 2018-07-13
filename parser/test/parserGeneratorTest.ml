@@ -2203,7 +2203,7 @@ let test_call_arguments_location _ =
         (Option.map name ~f:(fun { Node.value; location } ->
              Format.asprintf "%a/%s"
                Identifier.pp value
-               (Location.to_string_reference location))
+               (Location.Reference.to_string location))
          |> Option.value ~default:"(none)")
         Expression.pp value
     in
@@ -3581,9 +3581,9 @@ let test_end_position _ =
     stop = {Location.line = 2; Location.column = 15};
   } in
   assert_equal
-    ~cmp:Location.equal_reference
-    ~printer:(fun location -> Format.asprintf "%a" Location.pp_reference location)
-    ~pp_diff:(diff ~print:Location.pp_reference)
+    ~cmp:Location.Reference.equal
+    ~printer:(fun location -> Format.asprintf "%a" Location.Reference.pp location)
+    ~pp_diff:(diff ~print:Location.Reference.pp)
     expected_location
     location
 
@@ -3599,9 +3599,9 @@ let assert_statement_location
     stop = {Location.line = stop_line; Location.column = stop_column};
   } in
   assert_equal
-    ~cmp:Location.equal_reference
-    ~printer:(fun location -> Format.asprintf "%a" Location.pp_reference location)
-    ~pp_diff:(diff ~print:Location.pp_reference)
+    ~cmp:Location.Reference.equal
+    ~printer:(fun location -> Format.asprintf "%a" Location.Reference.pp location)
+    ~pp_diff:(diff ~print:Location.Reference.pp)
     expected_location
     actual_location
 

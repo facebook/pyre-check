@@ -983,7 +983,7 @@ let rec expression annotation =
                           };
                         ] @ annotation @ default
                       in
-                      Access (Access.call ~arguments ~location:Location.any ~name ())
+                      Access (Access.call ~arguments ~location:Location.Reference.any ~name ())
                       |> Node.create_with_default_location
                     in
                     match parameter with

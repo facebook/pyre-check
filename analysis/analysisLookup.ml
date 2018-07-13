@@ -16,7 +16,7 @@ module Type = AnalysisType
 module TypeResolutionSharedMemory = AnalysisTypeResolutionSharedMemory
 
 
-type t = Type.t Location.Table.t
+type t = Type.t Location.Reference.Table.t
 
 
 (** The result state of this visitor is ignored. We need two read-only
@@ -25,7 +25,7 @@ type t = Type.t Location.Table.t
     update. *)
 module ExpressionVisitor = struct
 
-  type t = Environment.Resolution.t * Type.t Location.Table.t
+  type t = Environment.Resolution.t * Type.t Location.Reference.Table.t
 
   let expression ((resolution, lookup) as state) expression =
     let lookup_of_arguments = function
@@ -48,7 +48,7 @@ module ExpressionVisitor = struct
                   try
                     let annotation = Annotated.resolve ~resolution value in
                     if not (Type.is_unknown annotation) then
-                      Location.Table.set lookup ~key:location ~data:annotation
+                      Location.Reference.Table.set lookup ~key:location ~data:annotation
                   with AnalysisTypeOrder.Untracked _ ->
                     (* If we cannot resolve the type of this
                        expression, ignore it silently. The
@@ -72,7 +72,7 @@ module ExpressionVisitor = struct
       try
         let annotation = Annotated.resolve ~resolution expression in
         if not (Type.is_unknown annotation) then
-          Location.Table.set lookup ~key:location ~data:annotation
+          Location.Reference.Table.set lookup ~key:location ~data:annotation
       with AnalysisTypeOrder.Untracked _ ->
         (* If we cannot resolve the type of this expression, ignore it
            silently. The construction of the lookup table is not
@@ -91,7 +91,7 @@ module Visit = Visit.Make(ExpressionVisitor)
 
 let create_of_source environment source =
   let open TypeResolutionSharedMemory in
-  let location_lookup = Location.Table.create () in
+  let location_lookup = Location.Reference.Table.create () in
   let walk_defines { Node.value = ({ Define.name = caller; _ } as define); _ } =
     let cfg = Cfg.create define in
     let annotation_lookup =

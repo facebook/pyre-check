@@ -60,7 +60,7 @@ type parameter_mismatch = {
 type missing_annotation = {
   name: Access.t;
   annotation: Type.t;
-  evidence_locations: Location.instantiated list;
+  evidence_locations: Location.Instantiated.t list;
   due_to_any: bool;
 }
 [@@deriving compare, eq, sexp, hash]
@@ -74,7 +74,7 @@ type missing_attribute_annotation = {
 type incompatible_type = {
   name: Access.t;
   mismatch: mismatch;
-  declare_location: Location.instantiated;
+  declare_location: Location.Instantiated.t;
 }
 [@@deriving compare, eq, show, sexp, hash]
 
@@ -159,7 +159,7 @@ type kind =
 [@@deriving compare, eq, show, hash]
 
 type t = {
-  location: Location.instantiated;
+  location: Location.Instantiated.t;
   kind: kind;
   define: Statement.Define.t Node.t;
 }
@@ -167,11 +167,11 @@ type t = {
 
 include Hashable with type t := t
 
-val create: location: Location.reference -> kind: kind -> define: Statement.Define.t Node.t -> t
+val create: location: Location.t -> kind: kind -> define: Statement.Define.t Node.t -> t
 
 val path: t -> string
-val location: t -> Location.instantiated
-val key: t -> Location.reference
+val location: t -> Location.Instantiated.t
+val key: t -> Location.t
 val code: t -> int
 val description: t -> detailed:bool -> string
 
@@ -185,7 +185,7 @@ val widen: resolution: Resolution.t -> previous: t -> next: t -> iteration: int 
 
 val join_at_define
   :  resolution: Resolution.t
-  -> location: Location.instantiated
+  -> location: Location.Instantiated.t
   -> t list
   -> t list
 

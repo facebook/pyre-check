@@ -30,9 +30,9 @@ module State = struct
   and t = {
     configuration: Configuration.t;
     resolution: Resolution.t;
-    errors: Error.t Location.ReferenceMap.t;
+    errors: Error.t Location.Reference.Map.t;
     define: Define.t Node.t;
-    nested_defines: nested_define Location.ReferenceMap.t;
+    nested_defines: nested_define Location.Reference.Map.t;
     bottom: bool;
     resolution_fixpoint: (Annotation.t Access.Map.t) Int.Map.t
   }
@@ -84,7 +84,7 @@ module State = struct
       let error_to_string (location, error) =
         Format.asprintf
           "    %a -> %s"
-          Location.pp_reference location
+          Location.Reference.pp location
           (Error.description error ~detailed:true)
       in
       List.map (Map.to_alist errors) ~f:error_to_string
@@ -126,9 +126,9 @@ module State = struct
     {
       configuration;
       resolution;
-      errors = Location.ReferenceMap.empty;
+      errors = Location.Reference.Map.empty;
       define;
-      nested_defines = Location.ReferenceMap.empty;
+      nested_defines = Location.Reference.Map.empty;
       bottom = false;
       resolution_fixpoint;
     }
@@ -969,7 +969,7 @@ module State = struct
         Location.instantiate ~lookup:(fun hash -> AstSharedMemory.get_path ~hash) location
       in
       let add_error map error =
-        Map.set ~key:(Location.to_reference (Error.location error)) ~data:error map
+        Map.set ~key:(Location.reference (Error.location error)) ~data:error map
       in
       let add_errors errors =
         List.fold ~init:errors ~f:add_error
@@ -1036,7 +1036,7 @@ module State = struct
 
             | Attribute { attribute; origin; defined } when not defined ->
                 let open Annotated in
-                if Location.equal_reference location Location.any then
+                if Location.Reference.equal location Location.Reference.any then
                   begin
                     Statistics.event
                       ~name:"undefined attribute without location"
@@ -1338,7 +1338,7 @@ module State = struct
                           })
                         ~define:define_node
                 in
-                Map.set ~key:(Error.location error |> Location.to_reference) ~data:error errors
+                Map.set ~key:(Error.location error |> Location.reference) ~data:error errors
             in
             let add_missing_annotation_error ~expected ~parent ~name ~declare_location errors =
               if ((Type.is_unknown expected) || (Type.equal expected Type.Object)) &&
@@ -1878,7 +1878,7 @@ let check
             start = { Location.line = 0; column = 0 };
             stop = { Location.line = 0; column = 0 };
           }
-          |> Location.to_reference
+          |> Location.reference
         in
         Define.create_toplevel ~qualifier ~statements
         |> Node.create ~location

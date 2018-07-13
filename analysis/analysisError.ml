@@ -70,7 +70,7 @@ type parameter_mismatch = {
 type missing_annotation = {
   name: Access.t;
   annotation: Type.t;
-  evidence_locations: Location.instantiated list;
+  evidence_locations: Location.Instantiated.t list;
   due_to_any: bool;
 }
 [@@deriving compare, eq, sexp, show, hash]
@@ -86,7 +86,7 @@ type missing_attribute_annotation = {
 type incompatible_type = {
   name: Access.t;
   mismatch: mismatch;
-  declare_location: Location.instantiated;
+  declare_location: Location.Instantiated.t;
 }
 [@@deriving compare, eq, show, sexp, hash]
 
@@ -182,7 +182,7 @@ type kind =
 
 
 type t = {
-  location: Location.instantiated;
+  location: Location.Instantiated.t;
   kind: kind;
   define: Define.t Node.t;
 }
@@ -218,7 +218,7 @@ let location { location; _ } =
 let key { location = { Location.start = { Location.line; _ }; path; _ }; _ } =
   let start = { Location.line; column = -1 } in
   { Location.start; stop = start; path }
-  |> Location.to_reference
+  |> Location.reference
 
 
 let code { kind; _ } =
@@ -369,7 +369,7 @@ let description
         begin
           let evidence_string =
             evidence_locations
-            |> List.map ~f:(Format.asprintf "%a" Location.pp_start_instantiated)
+            |> List.map ~f:(Format.asprintf "%a" Location.Instantiated.pp_start)
             |> String.concat ~sep:", "
           in
           if due_to_any then
@@ -410,7 +410,7 @@ let description
         begin
           let evidence_string =
             evidence_locations
-            |> List.map ~f:(Format.asprintf "%a" Location.pp_start_instantiated)
+            |> List.map ~f:(Format.asprintf "%a" Location.Instantiated.pp_start)
             |> String.concat ~sep:", "
           in
           if due_to_any then
@@ -777,7 +777,7 @@ let less_or_equal ~resolution left right =
     Resolution.less_or_equal resolution ~left:left.actual ~right:right.actual &&
     Resolution.less_or_equal resolution ~left:left.expected ~right:right.expected
   in
-  Location.equal_instantiated left.location right.location &&
+  Location.Instantiated.equal left.location right.location &&
   begin
     match left.kind, right.kind with
     | IncompatibleAwaitableType left, IncompatibleAwaitableType right ->
@@ -869,7 +869,7 @@ let join ~resolution left right =
       annotation = Resolution.join resolution left.annotation right.annotation;
       evidence_locations =
         List.dedup_and_sort
-          ~compare:Location.compare_instantiated
+          ~compare:Location.Instantiated.compare
           (left.evidence_locations @ right.evidence_locations);
       due_to_any = left.due_to_any && right.due_to_any;
     }
@@ -1002,7 +1002,7 @@ let join ~resolution left right =
     | _ ->
         Log.debug
           "Incompatible type in error join at %a: %a %a"
-          Location.pp_instantiated (location left)
+          Location.Instantiated.pp (location left)
           pp_kind left.kind
           pp_kind right.kind;
         Top

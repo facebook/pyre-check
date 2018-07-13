@@ -131,6 +131,6 @@ type response =
   | TypeCheckResponse of (File.Handle.t * (Error.t list)) list
   | TypeQueryResponse of string
   | StopResponse
-  | GetDefinitionResponse of Location.instantiated option
-  | HoverResponse of Location.instantiated option
+  | GetDefinitionResponse of Location.Instantiated.t option
+  | HoverResponse of Location.Instantiated.t option
 [@@deriving eq, show]

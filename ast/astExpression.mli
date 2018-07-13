@@ -211,7 +211,7 @@ module Access : sig
 
   val call
     :  ?arguments: Argument.t list
-    -> location: Location.reference
+    -> location: Location.t
     ->  name: string
     -> unit
     -> t
@@ -220,7 +220,7 @@ module Access : sig
   val backup: arguments: Argument.t list -> name: t -> (Argument.t list * t) option
   (* Some calls are redirected to method calls, e.g. `repr(x)` will call
      `x.__repr__()`. *)
-  val redirect: arguments: Argument.t list -> location: Location.reference -> name: t -> t option
+  val redirect: arguments: Argument.t list -> location: Location.t -> name: t -> t option
 end
 
 val access: t -> Access.t

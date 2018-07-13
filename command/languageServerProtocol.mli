@@ -60,7 +60,7 @@ module TextDocumentDefinitionResponse : sig
   type t
   [@@deriving to_yojson]
 
-  val create: ?root: Path.t -> id: int -> location: Ast.Location.instantiated option -> t
+  val create: ?root: Path.t -> id: int -> location: Ast.Location.Instantiated.t option -> t
 end
 
 module HoverResponse : sig
@@ -68,7 +68,7 @@ module HoverResponse : sig
   [@@deriving to_yojson]
 
   type hover_result = {
-    location: Ast.Location.instantiated;
+    location: Ast.Location.Instantiated.t;
     contents: string;
   }
 

@@ -16,7 +16,7 @@ type test_node = string Ast.Node.t
 let test_equality _ =
   let compare_two_locations left right =
     let full_printer { Node.value; location } =
-      Format.asprintf "%s/%s" (Location.to_string_reference location) value
+      Format.asprintf "%s/%s" (Location.Reference.to_string location) value
     in
     let value = "some_string" in
     let node_left = Node.create ~location:left value in
@@ -45,8 +45,8 @@ let test_equality _ =
       Location.stop = { Location.line = 12; column = 7 };
     }
   in
-  compare_two_locations Location.any location_1;
-  compare_two_locations Location.any location_2;
+  compare_two_locations Location.Reference.any location_1;
+  compare_two_locations Location.Reference.any location_2;
   compare_two_locations location_1 location_2
 
 

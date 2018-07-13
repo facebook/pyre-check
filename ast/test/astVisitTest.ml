@@ -160,7 +160,7 @@ let test_collect_accesses_with_location _ =
       (List.map
          ~f:(fun node ->
              Format.sprintf "%s|%s"
-               (Node.location node |> instantiate |> Location.to_string_instantiated)
+               (Node.location node |> instantiate |> Location.Instantiated.to_string)
                (Node.value node |> Access.show))
          (Visit.collect_accesses_with_location source))
   in

@@ -229,7 +229,7 @@ module Define : sig
     :  t
     -> definition: statement_t Record.Class.record
     -> Attribute.t Access.SerializableMap.t
-  val property_attribute: location: Location.reference -> t -> Attribute.t option
+  val property_attribute: location: Location.t -> t -> Attribute.t option
 
   val has_decorator: t -> string -> bool
 end

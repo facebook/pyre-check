@@ -290,7 +290,7 @@ let test_attributes _ =
     assert_equal
       ~cmp:(Option.equal Attribute.equal)
       expected
-      (Define.property_attribute define ~location:Location.any)
+      (Define.property_attribute define ~location:Location.Reference.any)
   in
   assert_property_attribute "def Parent.foo(): pass" None;
   assert_property_attribute "@property\ndef Parent.foo(): pass" (Some ("foo", None, None, false));

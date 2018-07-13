@@ -150,8 +150,8 @@ let test_expand_format_string _ =
       }] ->
         let actual_locations = List.map ~f:Node.location expression_list in
         assert_equal
-          ~cmp:(fun left right -> List.equal ~equal:Location.equal_reference left right)
-          ~printer:(List.to_string ~f:Location.show_reference)
+          ~cmp:(fun left right -> List.equal ~equal:Location.Reference.equal left right)
+          ~printer:(List.to_string ~f:Location.Reference.show)
           expected_locations
           actual_locations
     | _ ->

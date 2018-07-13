@@ -190,7 +190,7 @@ module HoverResponse = struct
   include LanguageServerProtocolTypes.HoverResponse
 
   type hover_result = {
-    location: Ast.Location.instantiated;
+    location: Ast.Location.Instantiated.t;
     contents: string;
   }
 

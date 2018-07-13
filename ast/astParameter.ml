@@ -22,7 +22,7 @@ type 'expression t = 'expression parameter Node.t
 [@@deriving compare, eq, sexp, show, hash]
 
 
-let create ?(location = Location.any) ?value ?annotation ~name () =
+let create ?(location = Location.Reference.any) ?value ?annotation ~name () =
   {
     Node.location;
     value = {

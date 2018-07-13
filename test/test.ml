@@ -72,7 +72,7 @@ let parse_untrimmed
       let header =
         Format.asprintf
           "\nCould not parse test at %a"
-          Location.pp_reference location
+          Location.Reference.pp location
       in
       let indicator =
         if column > 0 then (String.make (column - 1) ' ') ^ "^" else "^" in

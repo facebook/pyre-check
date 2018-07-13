@@ -225,7 +225,7 @@ let test_drop_prefix _ =
 let test_equality _ =
   let compare_two_locations left right =
     let full_printer ({ Node.location; _ } as expression) =
-      Format.asprintf "%s/%a" (Location.to_string_reference location) Expression.pp expression
+      Format.asprintf "%s/%a" (Location.Reference.to_string location) Expression.pp expression
     in
     let value = String "some_string" in
     let expression_left = Node.create ~location:left value in
@@ -281,8 +281,8 @@ let test_equality _ =
       Location.stop = { Location.line = 12; column = 7 };
     }
   in
-  compare_two_locations Location.any location_1;
-  compare_two_locations Location.any location_2;
+  compare_two_locations Location.Reference.any location_1;
+  compare_two_locations Location.Reference.any location_2;
   compare_two_locations location_1 location_2
 
 

@@ -14,7 +14,7 @@ type kind =
 type t = {
   ignored_line: int;
   codes: int list;
-  location: Location.reference;
+  location: Location.t;
   kind: kind;
 }
 [@@deriving compare, eq, show, sexp, hash]
@@ -22,12 +22,12 @@ type t = {
 val create
   :  ignored_line:int
   -> codes:int list
-  -> location:Location.reference
+  -> location:Location.t
   -> kind:kind
   -> t
 
 val ignored_line: t -> int
 val codes: t -> int list
-val location: t -> Location.reference
+val location: t -> Location.t
 val kind: t -> kind
-val key: t -> Location.reference
+val key: t -> Location.t

@@ -109,7 +109,7 @@ let test_due_to_analysis_limitations _ =
                   Error.actual = Type.Top;
                   expected = Type.Top;
                 };
-                declare_location = Location.any_instantiated;
+                declare_location = Location.Instantiated.any;
               };
             })));
   assert_true
@@ -123,7 +123,7 @@ let test_due_to_analysis_limitations _ =
                   Error.actual = Type.Top;
                   expected = Type.string;
                 };
-                declare_location = Location.any_instantiated;
+                declare_location = Location.Instantiated.any;
               };
             })));
   assert_false
@@ -137,7 +137,7 @@ let test_due_to_analysis_limitations _ =
                   Error.actual = Type.string;
                   expected = Type.Top;
                 };
-                declare_location = Location.any_instantiated;
+                declare_location = Location.Instantiated.any;
               };
             })));
 
@@ -324,7 +324,7 @@ let test_join _ =
                Error.actual = Type.Top;
                expected = Type.Top;
              };
-             declare_location = Location.any_instantiated;
+             declare_location = Location.Instantiated.any;
            };
          }))
     (error (Error.IncompatibleVariableType {
@@ -333,7 +333,7 @@ let test_join _ =
            Error.actual = Type.Top;
            expected = Type.Top;
          };
-         declare_location = Location.any_instantiated;
+         declare_location = Location.Instantiated.any;
        }))
     (error Error.Top);
   assert_join

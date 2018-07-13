@@ -9,13 +9,13 @@ module Environment = AnalysisEnvironment
 module Type = AnalysisType
 
 
-type t = Type.t Location.Table.t
+type t = Type.t Location.Reference.Table.t
 
 val create_of_source:
   (module Environment.Handler) ->
   Source.t ->
-  Type.t Location.Table.t
+  Type.t Location.Reference.Table.t
 
-val get_annotation: t -> position: Location.position -> (Location.instantiated * Type.t) option
+val get_annotation: t -> position: Location.position -> (Location.Instantiated.t * Type.t) option
 
-val get_definition: t -> Location.position -> Location.instantiated option
+val get_definition: t -> Location.position -> Location.Instantiated.t option

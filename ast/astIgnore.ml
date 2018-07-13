@@ -16,7 +16,7 @@ type kind =
 type t = {
   ignored_line: int;
   codes: int list;
-  location: Location.reference;
+  location: Location.t;
   kind: kind;
 }
 [@@deriving compare, eq, show, sexp, hash]
