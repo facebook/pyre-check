@@ -38,7 +38,7 @@ let parse ?start_line ?start_column ?path lines =
   | ParserGenerator.Error
   | Failure _ ->
       let location =
-        Location.create
+        Location.Instantiated.create
           ~start:buffer.Lexing.lex_curr_p
           ~stop:buffer.Lexing.lex_curr_p
       in
@@ -49,7 +49,7 @@ let parse ?start_line ?start_column ?path lines =
         let header =
           Format.asprintf
             "Could not parse file at %a"
-            Location.Reference.pp location in
+            Location.Instantiated.pp location in
         let indicator =
           if column > 0 then
             (String.make (column - 1) ' ') ^ "^"
