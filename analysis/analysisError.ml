@@ -740,6 +740,14 @@ let due_to_unsupported_calls { kind; _ } =
       false
 
 
+let due_to_builtin_import { kind; _ } =
+  match kind with
+  | UndefinedImport import ->
+      Access.show import = "builtins"
+  | _ ->
+      false
+
+
 let due_to_mismatch_with_any { kind; _ } =
   match kind with
   | UndefinedAttribute { origin = Class { annotation = actual; _ }; _ }
@@ -1161,7 +1169,12 @@ let filter ~configuration ~resolution errors =
       | _ ->
           false
     in
-
+    let is_builtin_import_error = function
+      | { kind = UndefinedImport builtins; _ } when Access.show builtins = "builtins" ->
+          true
+      | _ ->
+          false
+    in
     (* Ignore naming mismatches on parameters of dunder methods due to unofficial typeshed naming *)
     let is_override_on_dunder_method { kind; _ } =
       let get_name overridden = overridden |> Annotated.Class.Method.name |> Access.show in
@@ -1180,6 +1193,7 @@ let filter ~configuration ~resolution errors =
     is_mock_error error ||
     is_callable_error error ||
     is_unimplemented_return_error error ||
+    is_builtin_import_error error ||
     is_override_on_dunder_method error
   in
   match configuration with
@@ -1221,6 +1235,8 @@ let suppress ~mode error =
           due_to_any
       | UndefinedType _ ->
           true
+      | UndefinedImport _ ->
+          due_to_builtin_import error
       | _ ->
           false
   in

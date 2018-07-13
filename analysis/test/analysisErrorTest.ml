@@ -459,6 +459,11 @@ let test_filter _ =
                            +Statement.Return { Return.expression = None; is_implicit = false }] ())
     (incompatible_return_type Type.integer Type.float);
 
+  (* Suppress errors due to importing builtins. *)
+  let undefined_import import = UndefinedImport (Access.create import) in
+  assert_filtered (undefined_import "builtins");
+  assert_unfiltered (undefined_import "sys");
+
   let inconsistent_override name override =
     InconsistentOverride {
       overridden_method =
