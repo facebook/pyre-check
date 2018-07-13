@@ -184,6 +184,7 @@ def initialize(arguments) -> None:
         file_handler = logging.FileHandler(".pyre/pyre.stderr")
         file_handler.setFormatter(SectionFormatter())
         file_handler.setLevel(logging.DEBUG)
+        # pyre-ignore[6]: T31515857
         handlers.append(file_handler)
     logging.addLevelName(PERFORMANCE, "PERFORMANCE")
     logging.addLevelName(PROMPT, "PROMPT")

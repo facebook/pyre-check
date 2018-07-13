@@ -120,6 +120,7 @@ class BuckTest(unittest.TestCase):
                                 [
                                     "buck",
                                     "targets",
+                                    "--show-output",
                                     "target_path",
                                     "--type",
                                     "python_binary",
@@ -127,12 +128,7 @@ class BuckTest(unittest.TestCase):
                                 ],
                                 stderr=subprocess.DEVNULL,
                                 timeout=200,
-                            ),
-                            call(
-                                ["buck", "targets", "--show-output", "a", "b"],
-                                stderr=-3,
-                                timeout=200,
-                            ),
+                            )
                         ]
                     )
 

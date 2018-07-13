@@ -129,6 +129,7 @@ class SharedSourceDirectory:
 
 def find_python_paths(root: str) -> List[str]:
     root = os.path.abspath(root)  # Return absolute paths.
+    # pyre-ignore[7]: T31515413
     try:
         output = (
             subprocess.check_output(
@@ -181,6 +182,7 @@ def remove_if_exists(path: str) -> None:
     except OSError:
         pass  # Not a file.
     try:
+        # pyre-ignore[6]: T31515153
         shutil.rmtree(path)
     except OSError:
         pass  # Not a directory.
