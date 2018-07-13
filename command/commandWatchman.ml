@@ -40,19 +40,26 @@ let subscription watchman_directory =
 let stop_watchman server_socket configuration =
   let pid_path = pid_path configuration in
 
-  Unix.handle_unix_error (fun () -> server_socket >>| Unix.close |> ignore);
+  Unix.handle_unix_error (fun () -> Option.iter server_socket ~f:Unix.close);
   (* This check is here to prevent a race where two watchman clients A and B
    * are spawned in quick succession, client A wins the race and gets to write its lock and
    * pid, and B gets a sigint. If the check weren't here, B would destroy A's lock and pid,
    * and a new client could run simultaneously with A. *)
   if Path.file_exists pid_path then
     begin
-      let read_pid = In_channel.read_all (Path.absolute pid_path) |> Int.of_string in
-      let my_pid = Unix.getpid () |> Pid.to_int in
-      if my_pid = read_pid then begin
-        Path.remove (lock_path configuration);
-        Path.remove pid_path
-      end
+      let read_pid =
+        In_channel.read_all (Path.absolute pid_path)
+        |> Int.of_string
+      in
+      let my_pid =
+        Unix.getpid ()
+        |> Pid.to_int
+      in
+      if my_pid = read_pid then
+        begin
+          Path.remove (lock_path configuration);
+          Path.remove pid_path
+        end
     end;
   exit 0
 
@@ -143,53 +150,54 @@ let listen_for_changed_files
     [Yojson.to_string (subscription watchman_directory)];
   Out_channel.flush out_channel;
   let watchman_socket = Unix.descr_of_in_channel in_channel in
-  ignore
-    begin
-      In_channel.input_line in_channel >>= fun subscriber_response ->
-      Log.info "Watchman subscriber response: %s" subscriber_response;
-      (* Throw away the the first update that includes all the files *)
-      In_channel.input_line in_channel >>= fun _ ->
-      let rec loop symlinks =
-        try
-          let ready =
-            Unix.select
-              ~read:[watchman_socket; server_socket]
-              ~write:[]
-              ~except:[]
-              ~timeout:(`After (Time.of_int_sec 5))
-              ()
-            |> fun { Unix.Select_fds.read; _ } -> read
-          in
-          let handle_socket symlinks socket =
-            let handle_watchman symlinks socket =
-              let in_channel = Unix.in_channel_of_descr socket in
-              In_channel.input_line in_channel
-              >>= process_response ~root:source_root ~watchman_directory ~symlinks
-              >>| (fun (symlinks, response) ->
-                  Log.info "Writing response %s" (Protocol.Request.show response);
-                  Socket.write server_socket response;
-                  symlinks)
-              |> Option.value ~default:symlinks
-            in
-
-            if socket = watchman_socket then
-              handle_watchman symlinks socket
-            else
-              begin
-                Socket.read server_socket |> ignore;
-                symlinks
-              end
-          in
-          List.fold ~init:symlinks ~f:handle_socket ready
-          |> loop
-        with
-        | End_of_file ->
-            Log.info "A socket was closed.";
-            stop_watchman (Some server_socket) configuration
+  let rec loop symlinks =
+    try
+      let ready =
+        Unix.select
+          ~read:[watchman_socket; server_socket]
+          ~write:[]
+          ~except:[]
+          ~timeout:(`After (Time.of_int_sec 5))
+          ()
+        |> fun { Unix.Select_fds.read; _ } -> read
       in
+      let handle_socket symlinks socket =
+        let handle_watchman symlinks socket =
+          let in_channel = Unix.in_channel_of_descr socket in
+          In_channel.input_line in_channel
+          >>= process_response ~root:source_root ~watchman_directory ~symlinks
+          >>| (fun (symlinks, response) ->
+              Log.info "Writing response %s" (Protocol.Request.show response);
+              Socket.write server_socket response;
+              symlinks)
+          |> Option.value ~default:symlinks
+        in
 
-      loop symlinks
-    end
+        if socket = watchman_socket then
+          handle_watchman symlinks socket
+        else
+          begin
+            Socket.read server_socket |> ignore;
+            symlinks
+          end
+      in
+      List.fold ~init:symlinks ~f:handle_socket ready
+      |> loop
+    with
+    | End_of_file ->
+        Log.info "A socket was closed.";
+        stop_watchman (Some server_socket) configuration
+  in
+  begin
+    In_channel.input_line in_channel
+    >>= fun subscriber_response ->
+    Log.info "Watchman subscriber response: %s" subscriber_response;
+    (* Throw away the the first update that includes all the files *)
+    In_channel.input_line in_channel
+    >>= fun _ ->
+    loop symlinks
+  end
+  |> ignore
 
 
 (* Walk up from the project root to try and find a .watchmanconfig. *)
@@ -203,6 +211,7 @@ let find_watchman_directory { Configuration.source_root; _ } =
       directory_has_watchman_config (Filename.dirname directory)
   in
   directory_has_watchman_config (Path.absolute source_root)
+
 
 let initialize watchman_directory configuration =
   Log.info
@@ -226,6 +235,7 @@ let initialize watchman_directory configuration =
 type run_watchman_daemon_entry =
   (Configuration.t, unit Daemon.in_channel, unit Daemon.out_channel) Daemon.entry
 
+
 let setup configuration pid =
   if not (Lock.grab (Path.absolute (lock_path configuration))) then
     failwith "Watchman client exists (lock is held). Exiting.";
@@ -233,6 +243,7 @@ let setup configuration pid =
     (pid_path configuration |> Path.absolute)
     ~f:(fun out_channel ->
         Format.fprintf (Format.formatter_of_out_channel out_channel) "%d%!" pid)
+
 
 let run_watchman_daemon_entry : run_watchman_daemon_entry =
   Daemon.register_entry_point
@@ -328,6 +339,7 @@ let run_command ~daemonize ~verbose ~sections ~source_root =
 
 let run daemonize verbose sections _ source_root () =
   run_command ~daemonize ~verbose ~sections ~source_root
+
 
 let command =
   Command.basic_spec
