@@ -17,11 +17,6 @@ open Test
 module Model = ForwardAnalysis.Model
 
 
-let parse_source source =
-  parse source
-  |> Preprocessing.preprocess
-
-
 type source_expectation = {
   define_name: string;
   returns: Sources.t list;
@@ -56,7 +51,8 @@ let get_model models name =
 
 let assert_sources ~source ~models ~expect:{ define_name; returns; _ } =
   let { Node.value = define; _ } =
-    parse_source source
+    parse source
+    |> Preprocessing.preprocess
     |> Preprocessing.defines
     |> List.hd_exn
   in
