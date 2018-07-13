@@ -116,12 +116,6 @@ let test_local_copy _ =
 
 
 let test_model _ =
-  let assert_model ~model ~expect =
-    assert_equal
-      ~printer:ident
-      (Model.show model)
-      (Model.show expect)
-  in
   let expect_source_taint =
     ForwardState.assign
       ~root:AccessPath.Root.LocalResult
@@ -130,13 +124,13 @@ let test_model _ =
        |> ForwardState.make_leaf)
       ForwardState.empty
   in
-  assert_model
-    ~model:(List.hd_exn models)
-    ~expect:
-      {
-        Model.define_name = Access.create "taint";
-        source_taint = expect_source_taint;
-      }
+  assert_equal
+    ~printer:Model.show
+    (List.hd_exn models)
+    {
+      Model.define_name = Access.create "taint";
+      source_taint = expect_source_taint;
+    }
 
 
 let () =
