@@ -30,7 +30,7 @@ let parse_source ?(show_parser_errors = true) file =
   with
   | Parser.Error error ->
       if show_parser_errors then
-        Log.log ~section:`Parser ">> %s" error;
+        Log.log ~section:`Parser "%s" error;
       None
   | Failure error ->
       Log.error "%s" error;
@@ -116,14 +116,17 @@ let parse_sources ~configuration ~scheduler ~files =
 
 let log_parse_errors_count ~not_parsed ~description =
   if not_parsed > 0 then
-    begin
-      Log.warning "Could not parse %d %s%s due to syntax errors!"
-        not_parsed
-        description
-        (if not_parsed > 1 then "s" else "");
+    let hint =
       if not (Log.is_enabled `Parser) then
-        Log.warning "You can use --show-parse-errors for more details."
-    end
+        " Run with `--show-parse-errors` for more details."
+      else
+        ""
+    in
+    Log.warning "Could not parse %d %s%s due to syntax errors!%s"
+      not_parsed
+      description
+      (if not_parsed > 1 then "s" else "")
+      hint
 
 
 let parse_stubs
