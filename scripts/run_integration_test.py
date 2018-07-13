@@ -44,7 +44,7 @@ class Repository:
 
     def __next__(self):
         self._current_commit = self._commits_list.__next__()
-        print(" >>> Moving to commit named: %s" % self._current_commit, file=sys.stderr)
+        LOG.info("Moving to commit named: %s" % self._current_commit)
 
         # Last empty path is needed to terminate the path with a directory separator.
         original_path = os.path.join(
@@ -74,9 +74,7 @@ class Repository:
         # First remove all destination files that are missing in the source.
         for filename in destination_files:
             if filename not in source_files:
-                print(
-                    " > Removing file '%s' from destination" % filename, file=sys.stderr
-                )
+                LOG.info("Removing file '%s' from destination" % filename)
                 os.remove(os.path.join(destination_directory, filename))
 
         # Compare files across source and destination.
@@ -84,18 +82,14 @@ class Repository:
             source_directory, destination_directory, source_files
         )
         for filename in match:
-            print(
-                " > Skipping file '%s' because it matches" % filename, file=sys.stderr
-            )
+            LOG.info("Skipping file '%s' because it matches" % filename)
         for filename in mismatch:
-            print(" > Copying file '%s' due to mismatch" % filename, file=sys.stderr)
+            LOG.info("Copying file '%s' due to mismatch" % filename)
             shutil.copy2(
                 os.path.join(source_directory, filename), destination_directory
             )
         for filename in error:
-            print(
-                " > Copying file '%s' because it is missing" % filename, file=sys.stderr
-            )
+            LOG.info("Copying file '%s' because it is missing" % filename)
             shutil.copy2(
                 os.path.join(source_directory, filename), destination_directory
             )
@@ -116,22 +110,27 @@ class Repository:
 
 
 def run_integration_test(repository_path) -> int:
-    base_directory = tempfile.mkdtemp()
-    discrepancies = {}
-    repository = Repository(base_directory, repository_path)
-    with _watch_directory(base_directory):
-        repository.run_pyre("start")
-        for commit in repository:
-            discrepancies[commit] = repository.get_pyre_errors()
-        repository.run_pyre("stop")
+    with tempfile.TemporaryDirectory() as base_directory:
+        discrepancies = {}
+        repository = Repository(base_directory, repository_path)
+        with _watch_directory(base_directory):
+            repository.run_pyre("start")
+            for commit in repository:
+                (actual_error, expected_error) = repository.get_pyre_errors()
+                if actual_error != expected_error:
+                    discrepancies[commit] = (actual_error, expected_error)
+            repository.run_pyre("stop")
 
-    for revision, (actual_error, expected_error) in discrepancies.items():
-        if actual_error != expected_error:
+        if discrepancies:
+            LOG.error("Pyre rage:")
+            print(repository.run_pyre("rage"), file=sys.stderr)
             LOG.error("Found discrepancies between incremental and complete checks!")
-            print("Difference found for revision {}".format(revision))
-            print("Actual errors (pyre incremental): {}".format(actual_error))
-            print("Expected errors (pyre check): {}".format(expected_error))
+            for revision, (actual_error, expected_error) in discrepancies.items():
+                print("Difference found for revision: {}".format(revision))
+                print("Actual errors (pyre incremental): {}".format(actual_error))
+                print("Expected errors (pyre check): {}".format(expected_error))
             return 1
+
     return 0
 
 
@@ -152,7 +151,7 @@ def _watch_directory(source_directory):
 
 if __name__ == "__main__":
     logging.basicConfig(
-        level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s"
+        level=logging.INFO, format=" >>> %(asctime)s %(levelname)s %(message)s"
     )
     parser = argparse.ArgumentParser()
     parser.add_argument(
