@@ -163,8 +163,9 @@ let test_wildcard_exports _ =
       def foo(): pass
       variable = 1
       class Bar: pass
+      $local_module$Qualified = 1
     |}
-    ["Class"; "function"; "blah"; "module"; "foo"; "variable"; "Bar"];
+    ["Class"; "function"; "blah"; "module"; "foo"; "variable"; "Bar"; "Qualified"];
 
   assert_wildcard_exports
     {|

@@ -118,7 +118,10 @@ let create ~qualifier ~local_mode ?path ~stub statements =
     let gather_toplevel (public_values, dunder_all) { Node.value; _ } =
       let filter_private =
         let is_public name =
-          let dequalified = Access.drop_prefix ~prefix:qualifier name in
+          let dequalified =
+            Access.drop_prefix ~prefix:qualifier name
+            |> Access.delocalize_qualified
+          in
           if not (String.is_prefix ~prefix:"_" (Access.show dequalified)) then
             Some dequalified
           else
