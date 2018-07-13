@@ -253,6 +253,21 @@ let test_register_aliases _ =
       "collections.Iterable", "typing.Iterable[typing.Any]";
     ];
 
+  (* Handle builtins correctly. *)
+  assert_resolved
+    [
+      parse
+        ~qualifier:(Access.create "collections")
+        {|
+          from builtins import int
+          from builtins import dict as CDict
+        |};
+    ]
+    [
+      "collections.int", "int";
+      "collections.CDict", "typing.Dict[typing.Any, typing.Any]";
+    ];
+
   assert_resolved
     [
       parse

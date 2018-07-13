@@ -529,6 +529,11 @@ let register_aliases (module Handler: Handler) sources =
           in
           List.fold exports ~init:aliases ~f:add_alias
       | Import { Import.from = Some from; imports } ->
+          let from =
+            match Access.show from with
+            | "builtins" -> []
+            | _ -> from
+          in
           let import_to_alias { Import.name; alias } =
             let qualified_name =
               match alias with
