@@ -20,7 +20,12 @@ class Start(Command):
         super(Start, self).__init__(arguments, configuration, source_directory)
         self._terminal = arguments.terminal
         self._no_watchman = arguments.no_watchman
-        self._number_of_workers = configuration.number_of_workers
+        workers = arguments.workers
+        if workers is not None and workers > 0:
+            # An explicit number of subprocesses overrides the configuration.
+            self._number_of_workers = workers
+        else:
+            self._number_of_workers = configuration.number_of_workers
 
     def _run(self) -> int:
         try:

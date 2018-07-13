@@ -88,3 +88,30 @@ class StartTest(unittest.TestCase):
                     "path1,path2",
                 ],
             )
+
+        # Check start with explicit number of workers.
+        with patch.object(commands.Command, "_call_client") as call_client:
+            arguments.no_watchman = False
+            arguments.terminal = False
+            arguments.workers = 42
+            commands.Start(arguments, configuration, source_directory=".").run()
+            call_client.assert_has_calls(
+                [
+                    call(
+                        command=commands.Start.NAME,
+                        flags=[
+                            "-project-root",
+                            ".",
+                            "-use-watchman",
+                            "-workers",
+                            "42",
+                            "-typeshed",
+                            "stub",
+                            "-expected-binary-version",
+                            "hash",
+                            "-search-path",
+                            "path1,path2",
+                        ],
+                    )
+                ]
+            )

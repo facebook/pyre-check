@@ -142,6 +142,12 @@ def main() -> int:
     rage.set_defaults(command=commands.Rage)
 
     check = parsed_commands.add_parser(commands.Check.NAME)
+    check.add_argument(
+        "--workers",
+        default=None,
+        type=int,
+        help=argparse.SUPPRESS,
+    )
     check.set_defaults(command=commands.Check)
 
     analyze = parsed_commands.add_parser(commands.Analyze.NAME)
@@ -163,6 +169,12 @@ def main() -> int:
         "--no-watchman",
         action="store_true",
         help="Do not spawn a watchman client in the background.",
+    )
+    start.add_argument(
+        "--workers",
+        default=None,
+        type=int,
+        help=argparse.SUPPRESS,
     )
     start.set_defaults(command=commands.Start)
 

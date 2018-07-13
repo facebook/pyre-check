@@ -40,6 +40,25 @@ class CheckTest(unittest.TestCase):
                 ],
             )
 
+        with patch.object(commands.Command, "_call_client") as call_client, patch(
+            "json.loads", return_value=[]
+        ):
+            arguments.workers = 42
+            commands.Check(arguments, configuration, source_directory=".").run()
+            call_client.assert_called_once_with(
+                command=commands.Check.NAME,
+                flags=[
+                    "-project-root",
+                    ".",
+                    "-workers",
+                    "42",
+                    "-typeshed",
+                    "stub",
+                    "-search-path",
+                    "path1,path2",
+                ],
+            )
+
     @patch("subprocess.check_output")
     @patch("os.path.realpath")
     def test_sequential_check(self, realpath, check_output) -> None:
