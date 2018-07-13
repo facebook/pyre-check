@@ -7,21 +7,34 @@ open Core
 
 
 module Make(Element : Set.Elt) = struct
-  module ElementSet = Set.Make(Element)
-  include ElementSet
+  module Set = struct
+    module ElementSet = Set.Make(Element)
+    include ElementSet.Tree
+  end
 
-  let bottom = ElementSet.empty
-  let is_bottom = ElementSet.is_empty
+  include Set
 
-  let join x y =
-    union x y
+
+  let bottom =
+    Set.empty
+
+
+  let is_bottom =
+    Set.is_empty
+
+
+  let join left right =
+    Set.union left right
+
 
   let widen ~iteration:_ ~previous ~next =
     join previous next
 
-  let less_or_equal ~left ~right =
-    is_subset left ~of_:right
 
-  let show a =
-    ElementSet.sexp_of_t a |> Sexp.to_string
+  let less_or_equal ~left ~right =
+    Set.is_subset left ~of_:right
+
+
+  let show element =
+    Sexp.to_string (Set.sexp_of_t element)
 end

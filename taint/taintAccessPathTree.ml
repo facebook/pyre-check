@@ -133,8 +133,17 @@ end
 
 module Make (Checks: Checks.S) (Root: Root.S) (Element: Analysis.AbstractDomain.S) = struct
 
-  module RootMap = Map.Make(Root)
-  module LabelMap = Map.Make(Label)
+
+  module RootMap = struct
+    module Map = Map.Make(Root)
+    include Map.Tree
+  end
+
+
+  module LabelMap = struct
+    module Map = Map.Make(Label)
+    include Map.Tree
+  end
 
 
   (** Access Path tree nodes have an abstract domain element and a set of children indexed by
