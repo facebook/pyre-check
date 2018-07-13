@@ -10,6 +10,7 @@ import json
 import logging
 import os
 import re
+import resource
 import subprocess
 import threading
 from typing import List  # noqa
@@ -148,11 +149,20 @@ class Command:
         client_command.extend(flags)
         client_command.append(self._source_directory)
 
+        def limit_memory_usage():
+            try:
+                limit = 20 * 1024 * 1024 * 1024  # 20 GB
+                resource.setrlimit(resource.RLIMIT_AS, (limit, limit))
+            except OSError:
+                # Run the process with unlimited memory if the underlying syscall fails.
+                pass
+
         LOG.debug("Running `%s`", " ".join(client_command))
         with subprocess.Popen(
             client_command,
             stdout=subprocess.PIPE if capture_output else None,
             stderr=subprocess.PIPE,
+            preexec_fn=limit_memory_usage,
         ) as process:
 
             # Read stdout output
