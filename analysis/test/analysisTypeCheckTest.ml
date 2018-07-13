@@ -5429,8 +5429,24 @@ let test_check_noreturn _ =
           sys.exit(-1)
         return input
     |}
-    []
+    [];
 
+  assert_type_errors
+    {|
+      def no_return() -> str:
+        sys.exit(0)  # once control flow terminates, we know input won't be returned.
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      def may_not_return() -> str:
+        if True:
+          sys.exit(0)
+        else:
+          return ""
+    |}
+    []
 
 
 let test_check_contextmanager _ =
