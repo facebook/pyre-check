@@ -219,22 +219,26 @@ let rec process_request
           TypeOrder.less_or_equal order ~left ~right
           |> Bool.to_string
         in
-        state,
-        (Some (TypeQueryResponse response))
+        state, (Some (TypeQueryResponse response))
     | Join (left, right) ->
         let response =
           TypeOrder.join order left right
           |> Type.show
         in
-        state,
-        (Some (TypeQueryResponse response))
+        state, (Some (TypeQueryResponse response))
     | Meet (left, right) ->
         let response =
           TypeOrder.meet order left right
           |> Type.show
         in
-        state,
-        (Some (TypeQueryResponse response))
+        state, (Some (TypeQueryResponse response))
+    | NormalizeType expression ->
+        let resolution = Environment.resolution state.environment () in
+        let normalized =
+          Resolution.parse_annotation resolution expression
+          |> Type.show
+        in
+        state, (Some (TypeQueryResponse normalized))
     | Superclasses annotation ->
         let resolution = Environment.resolution state.environment () in
         let response =
@@ -267,7 +271,6 @@ let rec process_request
     | FlushTypeErrorsRequest ->
         flush_type_errors state
     | StopRequest ->
-        Log.info "Stopping the server";
         Socket.write new_socket StopResponse;
         Mutex.critical_section
           state.lock

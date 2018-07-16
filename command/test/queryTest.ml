@@ -5,16 +5,22 @@
 
 open OUnit2
 
+open Core
+
+open Ast.Expression
 open Analysis
 open PyreCommand
 open Protocol
 open Pyre
+
+open Test
 
 let fake_root = Path.create_absolute "/tmp"
 
 
 let assert_parses serialized query =
   assert_equal
+    ~cmp:(fun left right -> Option.equal Request.equal left right)
     (Some (Request.TypeQueryRequest query))
     (Query.parse_query ~root:fake_root serialized)
 
@@ -55,6 +61,9 @@ let test_parse_query _ =
   assert_parses "superclasses(int)" (Superclasses (Type.integer));
   assert_fails_to_parse "superclasses()";
   assert_fails_to_parse "superclasses(int, bool)";
+
+  assert_parses "normalizeType(int)" (NormalizeType (+Access (Access.create "int")));
+  assert_fails_to_parse "normalizeType(int, str)";
 
   assert_equal
     (Query.parse_query ~root:fake_root "typecheckPath(fiddle.py)")

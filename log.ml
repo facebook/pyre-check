@@ -127,7 +127,7 @@ let warning format =
 
 
 let print format =
-  Format.printf format
+  Printf.printf format
 
 
 module Color = struct

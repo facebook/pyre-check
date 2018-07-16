@@ -42,7 +42,7 @@ val error: ('a, Format.formatter, unit, unit, unit, unit) Core.format6 -> 'a
 val warning: ('a, Format.formatter, unit, unit, unit, unit) Core.format6 -> 'a
 
 (* Logs directly to the standard output. *)
-val print: ('a, Format.formatter, unit, unit, unit, unit) Core.format6 -> 'a
+val print: ('a, Stdio.Out_channel.t, Base.unit) Base.format -> 'a
 
 module Color : sig
   val yellow: string -> string

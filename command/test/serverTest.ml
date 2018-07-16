@@ -185,6 +185,7 @@ let environment () =
         _T = TypeVar("_T")
         class list(typing.Generic[_T]): pass
         class C(int): pass
+        A = int
       |}
     ];
   environment
@@ -271,7 +272,7 @@ let assert_request_gets_response
     | None -> Format.pp_print_string formatter "None"
     | Some response -> Protocol.pp_response formatter response
   in
-  assert_equal ~pp_diff:(diff ~print:pp_opt) ~printer:pr response expected_response
+  assert_equal ~pp_diff:(diff ~print:pp_opt) ~printer:pr expected_response response
 
 
 let test_shutdown _ =
@@ -358,6 +359,12 @@ let test_query _ =
   assert_request_gets_response
     source
     (Protocol.Request.TypeQueryRequest (Protocol.Superclasses (Type.primitive "C")))
+    (Some (Protocol.TypeQueryResponse "`int`"));
+
+  assert_request_gets_response
+    source
+    (Protocol.Request.TypeQueryRequest
+       (Protocol.NormalizeType (+Expression.Access (Access.create "A"))))
     (Some (Protocol.TypeQueryResponse "`int`"))
 
 
