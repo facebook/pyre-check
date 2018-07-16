@@ -76,9 +76,8 @@ def _normalize(targets: List[str], use_cache: bool = False) -> List[str]:
         with open(CACHE_PATH) as cache_file:
             cache = json.load(cache_file)
             if use_cache:
+                LOG.info("Using cached targets.")
                 return cache[serialized_targets]
-            else:
-                LOG.info("Skipping cache.")
     except (IOError, json.JSONDecodeError):
         pass
     except KeyError:
