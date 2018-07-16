@@ -13,7 +13,7 @@ from .command_test import mock_arguments, mock_configuration
 
 
 class PersistentTest(unittest.TestCase):
-    @patch.object(commands.Persistent, "_run_null_server", return_value=None)
+    @patch.object(commands.Persistent, "run_null_server", return_value=None)
     def test_persistent(self, run_null_server) -> None:
         arguments = mock_arguments()
         configuration = mock_configuration()
@@ -29,34 +29,6 @@ class PersistentTest(unittest.TestCase):
                 flags=["-log-identifier", '"."', "-expected-binary-version", "hash"],
                 capture_output=False,
             )
-
-        # Check start of null server.
-        with patch.object(commands.Command, "_call_client") as call_client:
-            call_client.side_effect = EnvironmentException("derp")
-            arguments.no_watchman = True
-            try:
-                commands.Persistent(
-                    arguments, configuration, source_directory="."
-                ).run()
-            except (commands.ClientException, EnvironmentException):
-                commands.Persistent(
-                    arguments, configuration, source_directory="."
-                ).on_client_exception()
-            call_client.assert_has_calls(
-                [
-                    call(
-                        command=commands.Persistent.NAME,
-                        flags=[
-                            "-log-identifier",
-                            '"."',
-                            "-expected-binary-version",
-                            "hash",
-                        ],
-                        capture_output=False,
-                    )
-                ]
-            )
-            run_null_server.assert_has_calls([call(timeout=300)])
 
         # Check null server initialize output
         command = commands.Persistent(arguments, configuration, source_directory=".")
@@ -93,9 +65,7 @@ class PersistentTest(unittest.TestCase):
 
         select.return_value = ([stdin], [], [])
         # Check null server output when a valid input is given.
-        commands.Persistent(
-            mock_arguments(), mock_configuration(), source_directory="."
-        )._run_null_server(timeout=0)
+        commands.Persistent.run_null_server(timeout=0)
         json = '{"id": 0, "jsonrpc": "2.0", "result": {"capabilities": {}}}'
         self.assertEqual(
             stdout.getvalue(), "Content-Length: 59\r\n\r\n{}\r\n".format(json)

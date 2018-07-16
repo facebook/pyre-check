@@ -218,9 +218,6 @@ class Command:
     def _source_directory_string(self):
         return "`{}`".format(self._source_directory)
 
-    def on_client_exception(self) -> None:
-        pass
-
 
 class ErrorHandling(Command):
     def __init__(self, arguments, configuration, source_directory) -> None:

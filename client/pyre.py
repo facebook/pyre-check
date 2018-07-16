@@ -142,12 +142,7 @@ def main() -> int:
     rage.set_defaults(command=commands.Rage)
 
     check = parsed_commands.add_parser(commands.Check.NAME)
-    check.add_argument(
-        "--workers",
-        default=None,
-        type=int,
-        help=argparse.SUPPRESS,
-    )
+    check.add_argument("--workers", default=None, type=int, help=argparse.SUPPRESS)
     check.set_defaults(command=commands.Check)
 
     analyze = parsed_commands.add_parser(commands.Analyze.NAME)
@@ -170,12 +165,7 @@ def main() -> int:
         action="store_true",
         help="Do not spawn a watchman client in the background.",
     )
-    start.add_argument(
-        "--workers",
-        default=None,
-        type=int,
-        help=argparse.SUPPRESS,
-    )
+    start.add_argument("--workers", default=None, type=int, help=argparse.SUPPRESS)
     start.set_defaults(command=commands.Start)
 
     stop = parsed_commands.add_parser(commands.Stop.NAME)
@@ -297,14 +287,14 @@ def main() -> int:
         exit_code = arguments.command(
             arguments, configuration, source_directory_path
         ).run()
-    except (buck.BuckException, commands.ClientException) as error:
+    except (
+        buck.BuckException,
+        commands.ClientException,
+        EnvironmentException,
+    ) as error:
         LOG.error(str(error))
-        arguments.command(
-            arguments, configuration, source_directory
-        ).on_client_exception()
-        exit_code = FAILURE
-    except EnvironmentException as error:
-        LOG.error(str(error))
+        if arguments.command == commands.Persistent:
+            commands.Persistent.run_null_server(timeout=300)
         exit_code = FAILURE
     except Exception as error:
         LOG.error(str(error))

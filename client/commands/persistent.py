@@ -47,23 +47,16 @@ class Persistent(Command):
 
         return SUCCESS
 
-    def on_client_exception(self) -> None:
-        self._run_null_server(timeout=300)
-
-    def _initialize_response(self, request_id: int) -> str:
+    @classmethod
+    def _initialize_response(cls, request_id: int) -> str:
         response = json.dumps(
             {"jsonrpc": "2.0", "id": request_id, "result": {"capabilities": {}}},
             sort_keys=True,
         )
         return "Content-Length: {}\r\n\r\n{}\r\n".format(len(response), response)
 
-    def _run_null_server(self, timeout: Optional[int] = None) -> None:
-        log_statistics(
-            "perfpipe_pyre_events",
-            self._arguments,
-            self._configuration,
-            normals={"name": "null_server_launch"},
-        )
+    @classmethod
+    def run_null_server(cls, timeout: Optional[int] = None) -> None:
         to_read, _, _ = select.select([sys.stdin], [], [], 3.0)
         request_id = 0
         if to_read:
@@ -83,7 +76,7 @@ class Persistent(Command):
                 except Exception:
                     pass
 
-        sys.stdout.write(self._initialize_response(request_id))
+        sys.stdout.write(cls._initialize_response(request_id))
         sys.stdout.flush()
         start_time = int(time.time())
         while True:

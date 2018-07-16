@@ -22,7 +22,7 @@ class PyreTest(unittest.TestCase):
 
     @patch.object(configuration.Configuration, "_read")
     @patch.object(configuration.Configuration, "validate")
-    @patch.object(commands.Persistent, "_run_null_server")
+    @patch.object(commands.Persistent, "run_null_server")
     def test_persistent_integration(self, run_null_server, validate, read) -> None:
         validate.side_effect = commands.ClientException
         with patch.object(sys, "argv", ["pyre", "persistent"]):
