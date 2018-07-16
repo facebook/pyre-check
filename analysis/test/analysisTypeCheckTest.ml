@@ -5232,6 +5232,38 @@ let test_check_behavioral_subtyping _ =
       class Bar(Foo):
         def __eq__(self, o: int) -> int: pass
     |}
+    [];
+
+  (* Overrides when both *args and **kwargs exist are not inconsistent. *)
+  assert_type_errors
+    {|
+      class Foo():
+        def f(self, a: float) -> None: ...
+      class Bar(Foo):
+        def f(self, *args) -> None: pass
+    |}
+    [
+      "Inconsistent override [14]: `Bar.f` overloads method defined in `Foo` inconsistently. " ^
+      "Could not find parameter `a` in overriding signature.";
+    ];
+  assert_type_errors
+    {|
+      class Foo():
+        def f(self, b: int) -> None: ...
+      class Bar(Foo):
+        def f(self, **kwargs) -> None: pass
+    |}
+    [
+      "Inconsistent override [14]: `Bar.f` overloads method defined in `Foo` inconsistently. " ^
+      "Could not find parameter `b` in overriding signature.";
+    ];
+  assert_type_errors
+    {|
+      class Foo():
+        def f(self, c: str) -> None: ...
+      class Bar(Foo):
+        def f(self, *args, **kwargs) -> None: pass
+    |}
     []
 
 

@@ -413,21 +413,43 @@ module State = struct
                      errors
                  end
              | None ->
-                 let parameter_name =
-                   Identifier.show_sanitized key
-                   |> Identifier.create
-                   |> fun name -> [Expression.Access.Identifier name]
+                 let has_keyword_and_anonymous_starred_parameters =
+                   let starred =
+                     let collect_starred_parameters ~key ~data:_ starred =
+                       if String.is_prefix (Identifier.show key) ~prefix:"*" then
+                         key :: starred
+                       else
+                         starred
+                     in
+                     Map.fold ~f:collect_starred_parameters ~init:[] parameters
+                   in
+                   let count_stars parameter =
+                     Identifier.show parameter
+                     |> String.take_while ~f:(fun character -> character = '*')
+                     |> String.length
+                   in
+                   List.exists ~f:(fun parameter -> count_stars parameter = 1) starred
+                   && List.exists ~f:(fun parameter -> count_stars parameter = 2) starred
                  in
-                 let error =
-                   Error.create
-                     ~location
-                     ~kind:(Error.InconsistentOverride {
-                         Error.overridden_method;
-                         override = Error.StrengthenedPrecondition (Error.NotFound parameter_name);
-                       })
-                     ~define:define_node
-                 in
-                 Map.set ~key:location ~data:error errors
+                 if has_keyword_and_anonymous_starred_parameters then
+                   errors
+                 else
+                   let parameter_name =
+                     Identifier.show_sanitized key
+                     |> Identifier.create
+                     |> fun name -> [Expression.Access.Identifier name]
+                   in
+                   let error =
+                     Error.create
+                       ~location
+                       ~kind:(Error.InconsistentOverride {
+                           Error.overridden_method;
+                           override =
+                             Error.StrengthenedPrecondition (Error.NotFound parameter_name);
+                         })
+                       ~define:define_node
+                   in
+                   Map.set ~key:location ~data:error errors
            in
            Map.fold
              ~init:errors
