@@ -1,6 +1,6 @@
 {
   "targets": ["//tools/pyre/..."],
   "coverage": true,
-  "push_blocking": false,
+  "push_blocking": true,
   "differential": true
 }
