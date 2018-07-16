@@ -208,6 +208,7 @@ def main() -> int:
     `less_or_equal(left, right)`,
     `meet(left, right)`,
     `join(left, right)`,
+    `normalizeType(type)`,
     `superclasses(type)`
     """
     query.add_argument("query", help=query_message)
