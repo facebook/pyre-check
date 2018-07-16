@@ -43,11 +43,19 @@ let test_parse_query _ =
     (LessOrEqual (Type.integer, Type.integer));
 
   assert_parses
+    "Less_Or_Equal(  int, int)"
+    (LessOrEqual (Type.integer, Type.integer));
+
+  assert_parses
     "meet(int, bool)"
     (Meet (Type.integer, Type.bool));
 
   assert_parses
     "join(int, bool)"
+    (Join (Type.integer, Type.bool));
+
+  assert_parses
+    "Join(int, bool)"
     (Join (Type.integer, Type.bool));
 
   assert_fails_to_parse "less_or_equal()";

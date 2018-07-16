@@ -35,7 +35,7 @@ let parse_query ~root query =
     }] ->
       let arguments = List.map ~f:(fun { Expression.Argument.value; _ } -> value) arguments in
       begin
-        match Identifier.show name, arguments with
+        match String.lowercase (Identifier.show name), arguments with
         | "less_or_equal", [left; right] ->
             let left = Analysis.Type.create ~aliases:(fun _ -> None) left in
             let right = Analysis.Type.create ~aliases:(fun _ -> None) right in
@@ -48,7 +48,7 @@ let parse_query ~root query =
             let left = Analysis.Type.create ~aliases:(fun _ -> None) left in
             let right = Analysis.Type.create ~aliases:(fun _ -> None) right in
             Some (Request.TypeQueryRequest (ServerProtocol.Join (left, right)))
-        | "typecheckPath", arguments ->
+        | "typecheckpath", arguments ->
             let files =
               arguments
               |> List.map ~f:Expression.show
@@ -56,7 +56,7 @@ let parse_query ~root query =
               |> List.map ~f:File.create
             in
             Some (Request.TypeCheckRequest (TypeCheckRequest.create ~check:files ()))
-        | "normalizeType", [argument] ->
+        | "normalizetype", [argument] ->
             Some (Request.TypeQueryRequest (ServerProtocol.NormalizeType argument))
         | "superclasses", [class_name] ->
             let class_annotation = Analysis.Type.create ~aliases:(fun _ -> None) class_name in
