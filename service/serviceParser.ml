@@ -172,24 +172,34 @@ let parse_stubs
         in
         File.list ~filter:is_stub ~root
       in
-      List.concat_map ~f:stubs (source_root :: (typeshed_directories @ search_path))
+      List.map ~f:stubs (source_root :: (typeshed_directories @ search_path))
     in
     let modules =
       let modules root =
         Log.info "Finding external sources in `%a`..." Path.pp root;
         File.list ~filter:(String.is_suffix ~suffix:".py") ~root
       in
-      List.concat_map ~f:modules search_path
+      List.map ~f:modules search_path
     in
     stubs @ modules
   in
 
-  Log.info "Parsing %d stubs and external sources..." (List.length paths);
-  let handles =
-    parse_sources ~configuration ~scheduler ~files:(List.map ~f:File.create paths)
+  let source_count =
+    let count sofar paths = sofar + (List.length paths) in
+    List.fold paths ~init:0 ~f:count
   in
+  Log.info "Parsing %d stubs and external sources..." source_count;
+
+  let handles =
+    (* The fold ensures the order of parsing is deterministic. *)
+    let parse_sources sofar paths =
+      sofar @ (parse_sources ~configuration ~scheduler ~files:(List.map ~f:File.create paths))
+    in
+    List.fold paths ~init:[] ~f:parse_sources
+  in
+
   Statistics.performance ~name:"stubs parsed" ~timer ();
-  let not_parsed = (List.length paths) - (List.length handles) in
+  let not_parsed = source_count - (List.length handles) in
   log_parse_errors_count ~not_parsed ~description:"external file";
   handles
 
