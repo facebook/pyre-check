@@ -373,6 +373,12 @@ let test_query _ =
   assert_request_gets_response
     source
     (Protocol.Request.TypeQueryRequest
+       (Protocol.Superclasses (Type.expression (Type.primitive "Untracked"))))
+    (Some (Protocol.TypeQueryResponse "No class definition found for Untracked"));
+
+  assert_request_gets_response
+    source
+    (Protocol.Request.TypeQueryRequest
        (Protocol.NormalizeType (+Expression.Access (Access.create "A"))))
     (Some (Protocol.TypeQueryResponse "`int`"))
 

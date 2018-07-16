@@ -255,9 +255,12 @@ let rec process_request
           >>| List.map ~f:(Annotated.Class.annotation ~resolution)
           >>| List.map ~f:Type.show
           >>| String.concat ~sep:", "
-          >>| (fun response -> TypeQueryResponse response)
+          |> Option.value
+            ~default:(
+              Format.sprintf "No class definition found for %s" (Expression.show annotation))
+          |> (fun response -> TypeQueryResponse response)
         in
-        state, response
+        state, Some response
   in
   let handle_client_shutdown_request id =
     let response = LanguageServer.Protocol.ShutdownResponse.default id in
