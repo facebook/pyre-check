@@ -37,16 +37,10 @@ let parse_query ~root query =
       begin
         match String.lowercase (Identifier.show name), arguments with
         | "less_or_equal", [left; right] ->
-            let left = Analysis.Type.create ~aliases:(fun _ -> None) left in
-            let right = Analysis.Type.create ~aliases:(fun _ -> None) right in
             Some (Request.TypeQueryRequest (ServerProtocol.LessOrEqual (left, right)))
         | "meet", [left; right] ->
-            let left = Analysis.Type.create ~aliases:(fun _ -> None) left in
-            let right = Analysis.Type.create ~aliases:(fun _ -> None) right in
             Some (Request.TypeQueryRequest (ServerProtocol.Meet (left, right)))
         | "join", [left; right] ->
-            let left = Analysis.Type.create ~aliases:(fun _ -> None) left in
-            let right = Analysis.Type.create ~aliases:(fun _ -> None) right in
             Some (Request.TypeQueryRequest (ServerProtocol.Join (left, right)))
         | "typecheckpath", arguments ->
             let files =
@@ -59,8 +53,7 @@ let parse_query ~root query =
         | "normalizetype", [argument] ->
             Some (Request.TypeQueryRequest (ServerProtocol.NormalizeType argument))
         | "superclasses", [class_name] ->
-            let class_annotation = Analysis.Type.create ~aliases:(fun _ -> None) class_name in
-            Some (Request.TypeQueryRequest (ServerProtocol.Superclasses class_annotation))
+            Some (Request.TypeQueryRequest (ServerProtocol.Superclasses class_name))
         | _ -> None
       end
   | _ -> None

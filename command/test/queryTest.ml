@@ -7,13 +7,10 @@ open OUnit2
 
 open Core
 
-open Ast.Expression
 open Analysis
 open PyreCommand
 open Protocol
 open Pyre
-
-open Test
 
 let fake_root = Path.create_absolute "/tmp"
 
@@ -34,29 +31,29 @@ let assert_fails_to_parse serialized =
 let test_parse_query _ =
   assert_parses
     "less_or_equal(int, bool)"
-    (LessOrEqual (Type.integer, Type.bool));
+    (LessOrEqual (Type.expression Type.integer, Type.expression Type.bool));
   assert_parses
     "less_or_equal (int, bool)"
-    (LessOrEqual (Type.integer, Type.bool));
+    (LessOrEqual (Type.expression Type.integer, Type.expression Type.bool));
   assert_parses
     "less_or_equal(  int, int)"
-    (LessOrEqual (Type.integer, Type.integer));
+    (LessOrEqual (Type.expression Type.integer, Type.expression Type.integer));
 
   assert_parses
     "Less_Or_Equal(  int, int)"
-    (LessOrEqual (Type.integer, Type.integer));
+    (LessOrEqual (Type.expression Type.integer, Type.expression Type.integer));
 
   assert_parses
     "meet(int, bool)"
-    (Meet (Type.integer, Type.bool));
+    (Meet (Type.expression Type.integer, Type.expression Type.bool));
 
   assert_parses
     "join(int, bool)"
-    (Join (Type.integer, Type.bool));
+    (Join (Type.expression Type.integer, Type.expression Type.bool));
 
   assert_parses
     "Join(int, bool)"
-    (Join (Type.integer, Type.bool));
+    (Join (Type.expression Type.integer, Type.expression Type.bool));
 
   assert_fails_to_parse "less_or_equal()";
   assert_fails_to_parse "less_or_equal(int, int, int)";
@@ -66,11 +63,11 @@ let test_parse_query _ =
   assert_fails_to_parse "meet(int)";
 
   assert_fails_to_parse "join(int)";
-  assert_parses "superclasses(int)" (Superclasses (Type.integer));
+  assert_parses "superclasses(int)" (Superclasses (Type.expression Type.integer));
   assert_fails_to_parse "superclasses()";
   assert_fails_to_parse "superclasses(int, bool)";
 
-  assert_parses "normalizeType(int)" (NormalizeType (+Access (Access.create "int")));
+  assert_parses "normalizeType(int)" (NormalizeType (Type.expression Type.integer));
   assert_fails_to_parse "normalizeType(int, str)";
 
   assert_equal

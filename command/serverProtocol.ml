@@ -26,11 +26,11 @@ type client =
 
 
 type type_query_request =
-  | LessOrEqual of Type.t * Type.t
-  | Join of Type.t * Type.t
-  | Meet of Type.t * Type.t
+  | LessOrEqual of Expression.t * Expression.t
+  | Join of Expression.t * Expression.t
+  | Meet of Expression.t * Expression.t
   | NormalizeType of Expression.t
-  | Superclasses of Type.t
+  | Superclasses of Expression.t
 [@@deriving eq, show]
 
 

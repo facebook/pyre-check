@@ -329,36 +329,45 @@ let test_query _ =
   let source = "class C(int):\n  pass\na = 1" in
   assert_request_gets_response
     source
-    (Protocol.Request.TypeQueryRequest (Protocol.LessOrEqual (Type.integer, Type.string)))
+    (Protocol.Request.TypeQueryRequest
+       (Protocol.LessOrEqual (Type.expression Type.integer, Type.expression Type.string)))
     (Some (Protocol.TypeQueryResponse "false"));
 
   assert_request_gets_response
     source
     (Protocol.Request.TypeQueryRequest
        (Protocol.LessOrEqual
-          (Type.list (Type.Primitive (Identifier.create "C")),
-           Type.list (Type.integer))))
+          (Type.expression Type.integer, Type.expression (Type.primitive "A"))))
+    (Some (Protocol.TypeQueryResponse "true"));
+
+  assert_request_gets_response
+    source
+    (Protocol.Request.TypeQueryRequest
+       (Protocol.LessOrEqual
+          (Type.expression (Type.list (Type.Primitive (Identifier.create "C"))),
+           Type.expression (Type.list (Type.integer)))))
     (Some (Protocol.TypeQueryResponse "true"));
 
   assert_request_gets_response
     source
     (Protocol.Request.TypeQueryRequest
        (Protocol.Join
-          (Type.list (Type.Primitive (Identifier.create "C")),
-           Type.list (Type.integer))))
+          (Type.expression (Type.list (Type.Primitive (Identifier.create "C"))),
+           Type.expression (Type.list (Type.integer)))))
     (Some (Protocol.TypeQueryResponse "`typing.List[int]`"));
 
   assert_request_gets_response
     source
     (Protocol.Request.TypeQueryRequest
        (Protocol.Meet
-          (Type.list (Type.Primitive (Identifier.create "C")),
-           Type.list (Type.integer))))
+          (Type.expression (Type.list (Type.Primitive (Identifier.create "C"))),
+           Type.expression (Type.list (Type.integer)))))
     (Some (Protocol.TypeQueryResponse "`typing.List[C]`"));
 
   assert_request_gets_response
     source
-    (Protocol.Request.TypeQueryRequest (Protocol.Superclasses (Type.primitive "C")))
+    (Protocol.Request.TypeQueryRequest
+       (Protocol.Superclasses (Type.expression (Type.primitive "C"))))
     (Some (Protocol.TypeQueryResponse "`int`"));
 
   assert_request_gets_response

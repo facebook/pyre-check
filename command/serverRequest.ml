@@ -213,36 +213,42 @@ let rec process_request
   in
   let handle_type_query state request =
     let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
+    let resolution = Environment.resolution state.environment () in
     match request with
     | LessOrEqual (left, right) ->
+        let left = Resolution.parse_annotation resolution left in
+        let right = Resolution.parse_annotation resolution right in
         let response =
           TypeOrder.less_or_equal order ~left ~right
           |> Bool.to_string
         in
         state, (Some (TypeQueryResponse response))
     | Join (left, right) ->
+        let left = Resolution.parse_annotation resolution left in
+        let right = Resolution.parse_annotation resolution right in
         let response =
           TypeOrder.join order left right
           |> Type.show
         in
         state, (Some (TypeQueryResponse response))
     | Meet (left, right) ->
-        let response =
-          TypeOrder.meet order left right
-          |> Type.show
-        in
+         let left = Resolution.parse_annotation resolution left in
+         let right = Resolution.parse_annotation resolution right in
+         let response =
+           TypeOrder.meet order left right
+           |> Type.show
+         in
         state, (Some (TypeQueryResponse response))
     | NormalizeType expression ->
-        let resolution = Environment.resolution state.environment () in
         let normalized =
           Resolution.parse_annotation resolution expression
           |> Type.show
         in
         state, (Some (TypeQueryResponse normalized))
     | Superclasses annotation ->
-        let resolution = Environment.resolution state.environment () in
         let response =
-          Handler.class_definition annotation
+          Resolution.parse_annotation resolution annotation
+          |> Handler.class_definition
           >>| (fun { Analysis.Environment.class_definition; _ } -> class_definition)
           >>| Annotated.Class.create
           >>| Annotated.Class.superclasses ~resolution
