@@ -15,53 +15,58 @@ let fake_root = Path.create_absolute "/tmp"
 
 let assert_parses serialized query =
   assert_equal
+    (Some (Request.TypeQueryRequest query))
     (Query.parse_query ~root:fake_root serialized)
-    query
+
+
+let assert_fails_to_parse serialized =
+  assert_equal
+    None
+    (Query.parse_query ~root:fake_root serialized)
 
 
 let test_parse_query _ =
   assert_parses
     "less_or_equal(int, bool)"
-    (Some (Request.TypeQueryRequest (LessOrEqual (Type.integer, Type.bool))));
+    (LessOrEqual (Type.integer, Type.bool));
   assert_parses
     "less_or_equal (int, bool)"
-    (Some (Request.TypeQueryRequest (LessOrEqual (Type.integer, Type.bool))));
+    (LessOrEqual (Type.integer, Type.bool));
   assert_parses
     "less_or_equal(  int, int)"
-    (Some (Request.TypeQueryRequest (LessOrEqual (Type.integer, Type.integer))));
+    (LessOrEqual (Type.integer, Type.integer));
 
   assert_parses
     "meet(int, bool)"
-    (Some (Request.TypeQueryRequest (Meet (Type.integer, Type.bool))));
+    (Meet (Type.integer, Type.bool));
 
   assert_parses
     "join(int, bool)"
-    (Some (Request.TypeQueryRequest (Join (Type.integer, Type.bool))));
+    (Join (Type.integer, Type.bool));
 
-  assert_parses "less_or_equal()" None;
-  assert_parses "less_or_equal(int, int, int)" None;
-  assert_parses "less_or_eq(int, bool)" None;
+  assert_fails_to_parse "less_or_equal()";
+  assert_fails_to_parse "less_or_equal(int, int, int)";
+  assert_fails_to_parse "less_or_eq(int, bool)";
 
-  assert_parses "meet(int, int, int)" None;
-  assert_parses "meet(int)" None;
+  assert_fails_to_parse "meet(int, int, int)";
+  assert_fails_to_parse "meet(int)";
 
-  assert_parses "join(int)" None;
-  assert_parses "superclasses(int)" (Some (Request.TypeQueryRequest (Superclasses (Type.integer))));
-  assert_parses "superclasses()" None;
-  assert_parses "superclasses(int, bool)" None;
+  assert_fails_to_parse "join(int)";
+  assert_parses "superclasses(int)" (Superclasses (Type.integer));
+  assert_fails_to_parse "superclasses()";
+  assert_fails_to_parse "superclasses(int, bool)";
 
-  assert_parses
-    "typecheckPath(fiddle.py)"
-    (Some
-       (Request.TypeCheckRequest
-          (TypeCheckRequest.create
-             ~check:[
-               File.create (Path.create_relative ~root:fake_root ~relative:"fiddle.py");
-             ]
-             ()
-          )));
+  assert_equal
+    (Query.parse_query ~root:fake_root "typecheckPath(fiddle.py)")
+    (Some (Request.TypeCheckRequest
+             (TypeCheckRequest.create
+                ~check:[
+                  File.create (Path.create_relative ~root:fake_root ~relative:"fiddle.py");
+                ]
+                ()
+             )));
 
-  assert_parses "typecheck(1+2)" None
+  assert_fails_to_parse "typecheck(1+2)"
 
 
 let () =
