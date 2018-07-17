@@ -279,13 +279,13 @@ let run_command ~daemonize ~verbose ~sections ~source_root =
 
   (* Warn if watchman isn't picking up on changes in the current working directory. *)
   let () =
-    let watchman_watches_root =
+    let input =
       let channel = Unix.open_process_in "watchman watch-list" in
-      let input =
-        protect
-          ~f:(fun () -> In_channel.input_all channel)
-          ~finally:(fun () -> In_channel.close channel)
-      in
+      protect
+        ~f:(fun () -> In_channel.input_all channel)
+        ~finally:(fun () -> In_channel.close channel)
+    in
+    let watchman_watches_root =
       let directory_contains_root directory =
         Path.directory_contains ~directory:(Path.create_absolute directory) source_root
       in
@@ -295,16 +295,18 @@ let run_command ~daemonize ~verbose ~sections ~source_root =
         |> Yojson.Safe.Util.to_list
         |> List.map ~f:Yojson.Safe.Util.to_string
         |> List.exists ~f:directory_contains_root
-      with Yojson.Json_error _ -> false
+      with Yojson.Json_error _ ->
+        false
     in
     if not watchman_watches_root then
       begin
+        Log.info "watchman watch-list output: %s" input;
         Log.warning
           "Unable to find `%s` in watchman's watched directories, type errors might be inaccurate."
           (Path.absolute source_root);
         Log.warning
           "Documentation to integrate watchman is available at `%s`."
-          "https://pyre-check.org/docs/watchman-integration.html"
+          "https://pyre-check.org/docs/watchman-integration.html";
       end;
   in
   Unix.handle_unix_error (fun () -> Unix.mkdir_p (watchman_root configuration |> Path.absolute));
