@@ -723,21 +723,9 @@ let test_incremental_lookups _ =
       (CommandTest.mock_server_configuration ())
       request
   in
-  let _, response =
-    Request.process_request
-      mock_client_socket
-      state
-      (CommandTest.mock_server_configuration ())
-      (Protocol.Request.GetDefinitionRequest {
-          Protocol.DefinitionRequest.id = 1;
-          path = relative_path;
-          position = { Location.line = 5; column = 4 };
-        })
-  in
   Scheduler.destroy initial_state.State.scheduler;
   CommandTest.clean_environment ();
-  assert_is_some response;
-  let definitions =
+  let annotations =
     File.Handle.create relative_path
     |> AstSharedMemory.get_source
     |> (fun value -> Option.value_exn value)
@@ -757,7 +745,7 @@ let test_incremental_lookups _ =
       ":6:11-6:12/`int`";
       ":6:4-6:12/`int`";
     ]
-    definitions
+    annotations
 
 
 

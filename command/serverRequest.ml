@@ -268,6 +268,74 @@ let rec process_request
     Some (LanguageServerProtocolResponse (
         Yojson.Safe.to_string (LanguageServer.Protocol.ShutdownResponse.to_yojson response)))
   in
+  let handle_lsp_request lsp_request =
+    match lsp_request with
+    | TypeCheckRequest files -> Some (handle_type_check state files)
+    | ClientShutdownRequest id -> Some (handle_client_shutdown_request id)
+    | ClientExitRequest Persistent ->
+        Log.log ~section:`Server "Stopping persistent client";
+        Some (state, Some (ClientExitResponse Persistent))
+    | GetDefinitionRequest { DefinitionRequest.id; path; position } ->
+        let definition =
+          Hashtbl.find state.lookups path
+          >>= (fun lookup -> Lookup.get_definition lookup position)
+        in
+        Some
+          (state,
+           Some
+             (LanguageServerProtocolResponse
+                (LanguageServer.Protocol.TextDocumentDefinitionResponse.create
+                   ~root:source_root
+                   ~id
+                   ~location:definition
+                 |> LanguageServer.Protocol.TextDocumentDefinitionResponse.to_yojson
+                 |> Yojson.Safe.to_string)))
+    | HoverRequest { DefinitionRequest.id; path; position } ->
+        let relative_path =
+          Path.from_uri path
+          >>= (fun path ->
+              Path.get_relative_to_root
+                ~root:configuration.project_root
+                ~path)
+          |> Option.value ~default:path
+        in
+
+        let open LanguageServer.Protocol in
+        let result =
+          File.Handle.create relative_path
+          |> AstSharedMemory.get_source
+          >>| Lookup.create_of_source state.environment
+          >>= Lookup.get_annotation ~position
+          >>| (fun (location, annotation) ->
+              {
+                HoverResponse.location;
+                contents =
+                  Type.show annotation
+                  |> String.substr_replace_all ~pattern:"`" ~with_:"";
+              })
+        in
+        Some
+          (state,
+           Some
+             (LanguageServerProtocolResponse
+                (HoverResponse.create ~id ~result
+                 |> HoverResponse.to_yojson
+                 |> Yojson.Safe.to_string)))
+    | RageRequest id ->
+        let items = Rage.get_logs configuration in
+        Some
+          (state,
+           Some (LanguageServerProtocolResponse
+                   (LanguageServer.Protocol.RageResponse.create ~items ~id
+                    |> LanguageServer.Protocol.RageResponse.to_yojson
+                    |> Yojson.Safe.to_string)))
+    | _ ->
+        Log.log
+          ~section:`Server
+          "Ignoring request of type `%s` wrapped inside LSP request"
+          (name lsp_request);
+        None
+  in
   let result =
     match request with
     | TypeCheckRequest request ->
@@ -301,67 +369,7 @@ let rec process_request
           ~root:configuration.source_root
           ~check_on_save
           (Yojson.Safe.from_string request)
-        >>= (function
-            | TypeCheckRequest files -> Some (handle_type_check state files)
-            | ClientShutdownRequest id -> Some (handle_client_shutdown_request id)
-            | ClientExitRequest Persistent ->
-                Log.log ~section:`Server "Stopping persistent client";
-                Some (state, Some (ClientExitResponse Persistent))
-            | GetDefinitionRequest { DefinitionRequest.id; path; position } ->
-                let definition =
-                  Hashtbl.find state.lookups path
-                  >>= (fun lookup -> Lookup.get_definition lookup position)
-                in
-                Some
-                  (state,
-                   Some
-                     (LanguageServerProtocolResponse
-                        (LanguageServer.Protocol.TextDocumentDefinitionResponse.create
-                           ~root:source_root
-                           ~id
-                           ~location:definition
-                         |> LanguageServer.Protocol.TextDocumentDefinitionResponse.to_yojson
-                         |> Yojson.Safe.to_string)))
-            | HoverRequest { DefinitionRequest.id; path; position } ->
-                let relative_path =
-                  Path.from_uri path
-                  >>= (fun path ->
-                      Path.get_relative_to_root
-                        ~root:configuration.project_root
-                        ~path)
-                  |> Option.value ~default:path
-                in
-
-                let open LanguageServer.Protocol in
-                let result =
-                  File.Handle.create relative_path
-                  |> AstSharedMemory.get_source
-                  >>| Lookup.create_of_source state.environment
-                  >>= Lookup.get_annotation ~position
-                  >>| (fun (location, annotation) ->
-                      {
-                        HoverResponse.location;
-                        contents =
-                          Type.show annotation
-                          |> String.substr_replace_all ~pattern:"`" ~with_:"";
-                      })
-                in
-                Some
-                  (state,
-                   Some
-                     (LanguageServerProtocolResponse
-                        (HoverResponse.create ~id ~result
-                         |> HoverResponse.to_yojson
-                         |> Yojson.Safe.to_string)))
-            | RageRequest id ->
-                let items = Rage.get_logs configuration in
-                Some
-                  (state,
-                   Some (LanguageServerProtocolResponse
-                           (LanguageServer.Protocol.RageResponse.create ~items ~id
-                            |> LanguageServer.Protocol.RageResponse.to_yojson
-                            |> Yojson.Safe.to_string)))
-            | _ -> None)
+        >>= handle_lsp_request
         |> Option.value ~default:(state, None)
 
     | ClientShutdownRequest id -> handle_client_shutdown_request id
@@ -379,16 +387,13 @@ let rec process_request
               |> LanguageServer.Protocol.RageResponse.to_yojson
               |> Yojson.Safe.to_string))
 
-    | GetDefinitionRequest { DefinitionRequest.path; position; _ } ->
-        state, Some (GetDefinitionResponse (
-            Hashtbl.find state.lookups path
-            >>= (fun lookup -> Lookup.get_definition lookup position)))
+    (* Requests that can only be fulfilled if wrapped in a LanguageServerProtocolRequest. *)
+    | GetDefinitionRequest _
+    | HoverRequest _ ->
+        Log.warning "Request of type `%s` received in the wrong state" (name request);
+        state, None
 
-    | HoverRequest { DefinitionRequest.path; position; _ } ->
-        state, Some (HoverResponse (
-            Hashtbl.find state.lookups path
-            >>= fun lookup -> Lookup.get_definition lookup position))
-
+    (* Requests that cannot be fulfilled here. *)
     | ClientConnectionRequest _ ->
         raise InvalidRequest
   in
