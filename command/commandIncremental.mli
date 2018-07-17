@@ -15,6 +15,7 @@ val run
   -> bool
   -> bool
   -> bool
+  -> string list option
   -> int
   -> string
   -> string

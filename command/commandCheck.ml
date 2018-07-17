@@ -37,6 +37,7 @@ let check
       show_error_traces;
       log_identifier;
       parallel;
+      filter_directories;
       number_of_workers;
       project_root;
       search_path;
@@ -57,6 +58,7 @@ let check
       ~log_identifier
       ~project_root
       ~parallel
+      ?filter_directories
       ~number_of_workers
       ~search_path
       ?typeshed
@@ -174,6 +176,7 @@ let run_check
     recursive_infer
     analyze
     sequential
+    filter_directories
     number_of_workers
     log_identifier
     project_root
@@ -181,6 +184,10 @@ let run_check
     typeshed
     source_root
     () =
+  let filter_directories =
+    filter_directories
+    >>| List.map ~f:Path.create_absolute
+  in
   let configuration =
     Configuration.create
       ~verbose
@@ -196,6 +203,7 @@ let run_check
       ~analyze
       ~project_root:(Path.create_absolute project_root)
       ~parallel:(not sequential)
+      ?filter_directories
       ~number_of_workers
       ~search_path:(List.map ~f:Path.create_absolute search_path)
       ?typeshed:(typeshed >>| Path.create_absolute)

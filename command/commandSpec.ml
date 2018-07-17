@@ -30,6 +30,10 @@ let base_command_line_arguments =
     +> flag "-analyze" no_arg ~doc:"Analyze the code after type checking"
     +> flag "-sequential" no_arg ~doc:"Turn off parallel processing (parallel on by default)."
     +> flag
+      "-filter-directories"
+      (optional (Arg_type.comma_separated string))
+      ~doc:"Only report errors for files originating from one of the filter directories."
+    +> flag
       "-workers"
       (optional_with_default 4 int)
       ~doc:"WORKERS Number of workers to use in parallel processing."

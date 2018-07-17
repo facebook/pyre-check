@@ -22,6 +22,7 @@ let run
     recursive_infer
     analyze
     sequential
+    filter_directories
     number_of_workers
     log_identifier
     project_root
@@ -30,6 +31,10 @@ let run
     source_root
     () =
   try
+    let filter_directories =
+      filter_directories
+      >>| List.map ~f:Path.create_absolute
+    in
     let configuration =
       Configuration.create
         ~verbose
@@ -44,6 +49,7 @@ let run
         ~recursive_infer
         ~analyze
         ~parallel:(not sequential)
+        ?filter_directories
         ~number_of_workers
         ~search_path:(List.map ~f:Path.create_absolute search_path)
         ?typeshed:(typeshed >>| Path.create_absolute)

@@ -12,6 +12,7 @@ type t = {
   recursive_infer: bool;
   analyze: bool;
   parallel: bool;
+  filter_directories: (Path.t list) option;
   number_of_workers: int;
   source_root: Path.t;
   sections: string list;
@@ -34,6 +35,7 @@ val create
   -> ?recursive_infer:bool
   -> ?analyze: bool
   -> ?parallel: bool
+  -> ?filter_directories: Path.t list
   -> ?number_of_workers: int
   -> ?source_root:Path.t
   -> ?sections:string list

@@ -14,6 +14,7 @@ type t = {
   recursive_infer: bool;
   analyze: bool;
   parallel: bool;
+  filter_directories: (Path.t list) option;
   number_of_workers: int;
   source_root: Path.t;
   sections: string list;
@@ -37,6 +38,7 @@ let create
     ?(recursive_infer = false)
     ?(analyze = false)
     ?(parallel = true)
+    ?filter_directories
     ?(number_of_workers = 4)
     ?(source_root = Path.current_working_directory ())
     ?(sections = [])
@@ -57,6 +59,7 @@ let create
     recursive_infer;
     analyze;
     parallel;
+    filter_directories;
     number_of_workers;
     source_root;
     sections;

@@ -30,6 +30,7 @@ val run_check
   -> bool
   -> bool
   -> bool
+  -> string list option
   -> int
   -> string
   -> string

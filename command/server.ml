@@ -564,6 +564,7 @@ let run_start_command
     recursive_infer
     analyze
     sequential
+    filter_directories
     number_of_workers
     log_identifier
     project_root
@@ -571,6 +572,10 @@ let run_start_command
     typeshed
     source_root
     () =
+  let filter_directories =
+    filter_directories
+    >>| List.map ~f:Path.create_absolute
+  in
   let configuration =
     Configuration.create
       ~verbose
@@ -585,6 +590,7 @@ let run_start_command
       ~show_error_traces
       ~log_identifier
       ~parallel:(not sequential)
+      ?filter_directories
       ~number_of_workers
       ~project_root:(Path.create_absolute project_root)
       ~search_path:(List.map ~f:Path.create_absolute search_path)
