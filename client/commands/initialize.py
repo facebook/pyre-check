@@ -38,7 +38,6 @@ class Initialize(Command):
         configuration = {}
 
         watchman_configuration_path = os.path.abspath(".watchmanconfig")
-        # pyre-ignore[6]: T31515153
         if shutil.which("watchman") is not None and log.get_yes_no_input(
             "Also initialize a watchman configuration?"
         ):

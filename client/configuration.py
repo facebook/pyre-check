@@ -303,7 +303,6 @@ class Configuration:
             LOG.info(
                 "No binary specified, looking for `{}` in PATH".format(BINARY_NAME)
             )
-            # pyre-ignore[6]: T31515153
             self._binary = shutil.which(BINARY_NAME)
             if not self._binary:
                 LOG.warning("Could not find `{}` in PATH".format(BINARY_NAME))
