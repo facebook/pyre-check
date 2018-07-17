@@ -3,26 +3,4 @@
     This source code is licensed under the MIT license found in the
     LICENSE file in the root directory of this source tree. *)
 
-val run
-  :  bool
-  -> string option
-  -> string list
-  -> bool
-  -> bool
-  -> bool
-  -> bool
-  -> bool
-  -> bool
-  -> bool
-  -> bool
-  -> string list option
-  -> int
-  -> string
-  -> string
-  -> string list
-  -> string option
-  -> string
-  -> unit
-  -> unit
-
 val command: Core.Command.t

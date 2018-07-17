@@ -18,25 +18,4 @@ type result = {
 
 val check: Configuration.t -> Scheduler.t option -> unit -> result
 
-val run_check
-  : bool
-  -> string option
-  -> string list
-  -> bool
-  -> bool
-  -> bool
-  -> bool
-  -> bool
-  -> bool
-  -> bool
-  -> bool
-  -> string list option
-  -> int
-  -> string
-  -> string
-  -> string list
-  -> string option
-  -> string
-  -> unit
-  -> unit
 val check_command: Command.t
