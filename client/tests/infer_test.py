@@ -260,7 +260,7 @@ class PyreTest(unittest.TestCase):
                     }
                 )
             ],
-            "",
+            "def another_fun() -> float: ...",
         )
 
         self.assert_stub(

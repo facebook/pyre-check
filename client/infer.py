@@ -192,17 +192,7 @@ class Stub:
         )
 
     def to_string(self):
-        """ We currently ignore nested functions i.e.:
-        def fun():
-            [ALL FUNCTIONS AND CLASSES DEFINED IN HERE ARE IGNORED]
-        """
-        if (
-            len(_relativize_access(self.parent, self.path)) >= 2
-            or len(_relativize_access(self.stub.name, self.path)) >= 2
-        ):
-            return ""
-        else:
-            return self.stub.to_string()
+        return self.stub.to_string()
 
     def get_typing_imports(self):
         return self.stub.get_typing_imports()
