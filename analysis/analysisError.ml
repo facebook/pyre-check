@@ -1435,7 +1435,7 @@ let to_json
       define = { Node.value = define; _ };
       _;
     } as error) =
-  let function_name = Access.show define.Define.name in
+  let function_name = Access.show_sanitized define.Define.name in
   let print_annotation annotation =
     Format.asprintf "%a" Type.pp annotation
     |> String.strip ~drop:((=) '`')
@@ -1461,7 +1461,11 @@ let to_json
         >>| (fun string -> `String string)
         |> Option.value ~default:`Null
       in
-      `Assoc [ "name", `String (Identifier.show name); "type", annotation ; "value", value ]
+      `Assoc [
+        "name", `String (Identifier.show_sanitized name);
+        "type", annotation;
+        "value", value
+      ]
     in
     List.map ~f:to_json define.Define.parameters
   in
@@ -1471,7 +1475,7 @@ let to_json
   in
   let print_parent parent =
     parent
-    >>| Access.show
+    >>| Access.show_sanitized
     >>| (fun string -> `String string)
     |> Option.value ~default:`Null
   in
@@ -1504,14 +1508,14 @@ let to_json
     | MissingAttributeAnnotation { parent; missing_annotation = { name; annotation; _ } } ->
         [
           "annotation", `String (print_annotation annotation);
-          "parent", `String (Annotated.Class.name parent |> Access.show);
-          "attribute_name", `String (Access.show name);
+          "parent", `String (Annotated.Class.name parent |> Access.show_sanitized);
+          "attribute_name", `String (Access.show_sanitized name);
         ]
     | MissingGlobalAnnotation { name; annotation; _ } ->
         [
           "annotation", `String (print_annotation annotation);
           "parent", `Null;
-          "attribute_name", `String (Access.show name);
+          "attribute_name", `String (Access.show_sanitized name);
         ]
     | _ -> []
   in
@@ -1523,5 +1527,5 @@ let to_json
       "name", `String (name error);
       "description", `String (description error ~detailed);
       "inference", `Assoc inference_information;
-      "define", `String (Access.show define.Define.name);
+      "define", `String (Access.show_sanitized define.Define.name);
     ])
