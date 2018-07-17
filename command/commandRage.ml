@@ -39,10 +39,10 @@ let get_logs configuration =
 
 
 let get_watchman_watched_directories () =
-    let channel = Unix.open_process_in "watchman watch-list" in
-    let data = In_channel.input_all channel in
-    In_channel.close channel;
-    { RageResponse.RageResult.title = Some "Watchman watched directories"; data }
+  let channel = Unix.open_process_in "watchman watch-list" in
+  let data = In_channel.input_all channel in
+  In_channel.close channel;
+  { RageResponse.RageResult.title = Some "Watchman watched directories"; data }
 
 
 let display_log { RageResponse.RageResult.title; data } =

@@ -232,12 +232,12 @@ let rec process_request
         in
         state, (Some (TypeQueryResponse response))
     | Meet (left, right) ->
-         let left = Resolution.parse_annotation resolution left in
-         let right = Resolution.parse_annotation resolution right in
-         let response =
-           TypeOrder.meet order left right
-           |> Type.show
-         in
+        let left = Resolution.parse_annotation resolution left in
+        let right = Resolution.parse_annotation resolution right in
+        let response =
+          TypeOrder.meet order left right
+          |> Type.show
+        in
         state, (Some (TypeQueryResponse response))
     | NormalizeType expression ->
         let normalized =

@@ -376,7 +376,9 @@ let test_class_attributes _ =
       | _ ->
           failwith "Could not parse class"
     in
-    populate source |> fun environment -> Environment.resolution environment (),
+    populate source
+    |> fun environment ->
+    Environment.resolution environment (),
     Class.create (Node.create_with_default_location parent)
   in
 

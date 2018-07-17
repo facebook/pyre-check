@@ -444,7 +444,7 @@ module Access = struct
     |> Option.value ~default:access
 
 
-    let call ?(arguments = []) ~location ~name () =
+  let call ?(arguments = []) ~location ~name () =
     [Identifier (Identifier.create name); Call { Node.location; value = arguments }]
 
 
