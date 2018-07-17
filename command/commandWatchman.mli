@@ -21,6 +21,6 @@ val run_command
   -> verbose: bool
   -> sections: string list
   -> source_root: string
-  -> unit
+  -> Pid.t
 
 val command : Command.t

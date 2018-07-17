@@ -15,7 +15,8 @@ module Parallel = Hack_parallel.Std
 
 
 let start_watchman pid_path () =
-  Watchman.run_command ~daemonize:true ~verbose:false ~sections:[] ~source_root:".";
+  Watchman.run_command ~daemonize:true ~verbose:false ~sections:[] ~source_root:"."
+  |> ignore;
   let rec poll () =
     if not (Path.file_exists pid_path) then
       (Unix.nanosleep 0.1 |> ignore; poll ())

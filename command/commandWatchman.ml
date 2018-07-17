@@ -320,25 +320,24 @@ let run_command ~daemonize ~verbose ~sections ~source_root =
           configuration
       in
       Daemon.close handle;
-      Log.debug "Watchman daemon pid: %d" pid
+      Log.debug "Watchman daemon pid: %d" pid;
+      Pid.of_int pid
     end
   else
-    begin
-      let watchman_directory = find_watchman_directory configuration in
-      match watchman_directory with
-      | None -> exit 1
-      | Some watchman_directory ->
-          begin
-            let server_socket = initialize watchman_directory configuration in
-            let pid = Unix.getpid () |> Pid.to_int in
-            setup configuration pid;
-            listen_for_changed_files server_socket watchman_directory configuration
-          end
-    end
+    let watchman_directory = find_watchman_directory configuration in
+    match watchman_directory with
+    | None -> exit 1
+    | Some watchman_directory ->
+        let server_socket = initialize watchman_directory configuration in
+        let pid = Unix.getpid () |> Pid.to_int in
+        setup configuration pid;
+        listen_for_changed_files server_socket watchman_directory configuration;
+        Unix.getpid ()
 
 
 let run daemonize verbose sections _ source_root () =
   run_command ~daemonize ~verbose ~sections ~source_root
+  |> ignore
 
 
 let command =

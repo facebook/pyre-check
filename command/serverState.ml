@@ -19,6 +19,7 @@ type connections = {
   socket: Socket.t;
   persistent_clients: client Unix.File_descr.Table.t;
   file_notifiers: Socket.t list;
+  watchman_pid: Pid.t option;
 }
 
 type t = {

@@ -230,6 +230,7 @@ let mock_server_state
         State.socket = Unix.openfile ~mode:[Unix.O_RDONLY] "/dev/null";
         persistent_clients = Unix.File_descr.Table.create ();
         file_notifiers = [];
+        watchman_pid = None;
       };
     scheduler = Scheduler.mock ();
   }
@@ -867,6 +868,7 @@ let test_incremental_attribute_caching context =
       State.socket = Unix.stdout;
       persistent_clients = Unix.File_descr.Table.create ();
       file_notifiers = [];
+      watchman_pid = None;
     }
   in
   let directory = bracket_tmpdir context |> Path.create_absolute in

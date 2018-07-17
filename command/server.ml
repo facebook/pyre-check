@@ -31,17 +31,7 @@ let register_signal_handlers server_configuration socket =
     (fun _ -> ServerOperations.stop_server ~reason:"interrupt" server_configuration socket);
   Signal.Expert.handle
     Signal.pipe
-    (fun _ -> ());
-  let rec wait_on_all_children () =
-    match Unix.wait_nohang `Any with
-    | None ->
-        ()
-    | Some _ ->
-        wait_on_all_children ()
-  in
-  Signal.Expert.handle
-    Signal.chld
-    (fun _ -> wait_on_all_children ())
+    (fun _ -> ())
 
 
 let spawn_watchman_client { configuration = { sections; source_root; _ }; _ } =
@@ -344,20 +334,37 @@ let request_handler_thread
                         [file_notifier_socket])
                   !(connections).file_notifiers
               in
+              let old_watchman_pid = !(connections).watchman_pid in
+              let wait_on_watchman pid =
+                Log.log ~section:`Server "Waiting on watchman pid %d" (Pid.to_int pid);
+                match Unix.wait_nohang (`Pid pid) with
+                | None ->
+                    Log.log ~section:`Server "Unable to wait on pid %d" (Pid.to_int pid)
+                | Some _ ->
+                    Log.log ~section:`Server "pid %d successfully reaped." (Pid.to_int pid)
+              in
+              Option.iter ~f:wait_on_watchman old_watchman_pid;
+
               let exceeds_timeout () =
                 let current_time = Unix.time () in
                 current_time -. (!last_watchman_created) >= watchman_creation_timeout
               in
-              if List.is_empty file_notifiers && use_watchman && (exceeds_timeout ()) then
-                begin
-                  last_watchman_created := Unix.time ();
-                  spawn_watchman_client server_configuration
-                end;
-              connections := { !connections with file_notifiers });
+              let watchman_pid =
+                if List.is_empty file_notifiers && use_watchman && (exceeds_timeout ()) then
+                  begin
+                    last_watchman_created := Unix.time ();
+                    Some (spawn_watchman_client server_configuration)
+                  end
+                else
+                  None
+              in
+              connections := { !connections with file_notifiers; watchman_pid });
   in
   let last_watchman_created = ref 0.0 in
   let rec loop () =
-    let { socket = server_socket; persistent_clients; file_notifiers } = get_readable_sockets () in
+    let { socket = server_socket; persistent_clients; file_notifiers; _ } =
+      get_readable_sockets ()
+    in
     if not (PyrePath.is_directory source_root) then
       begin
         Log.error "Stopping server due to missing source root.";
@@ -416,7 +423,7 @@ let request_handler_thread
 
 
 (** Main server either as a daemon or in terminal *)
-let serve (socket, server_configuration) =
+let serve (socket, server_configuration, watchman_pid) =
   Log.debug "Server running as pid %d" (Pid.to_int (Unix.getpid ()));
   let configuration = server_configuration.configuration in
   Scheduler.initialize_process ~configuration;
@@ -428,6 +435,7 @@ let serve (socket, server_configuration) =
       socket;
       persistent_clients = Unix.File_descr.Table.create ();
       file_notifiers = [];
+      watchman_pid;
     }
   in
   register_signal_handlers server_configuration socket;
@@ -465,7 +473,9 @@ let setup { lock_path; pid_path; _ } =
 
 (** Daemon forking code *)
 type run_server_daemon_entry =
-  ((Socket.t * ServerConfiguration.t), unit Daemon.in_channel, unit Daemon.out_channel) Daemon.entry
+  ((Socket.t * ServerConfiguration.t * Pid.t option),
+   unit Daemon.in_channel,
+   unit Daemon.out_channel) Daemon.entry
 
 
 (** When spawned, a child is passed input/output channels that can communicate
@@ -474,13 +484,13 @@ type run_server_daemon_entry =
 let run_server_daemon_entry : run_server_daemon_entry =
   Daemon.register_entry_point
     "server_daemon"
-    (fun (socket, server_configuration) (parent_in_channel, parent_out_channel)  ->
+    (fun (socket, server_configuration, watchman_pid) (parent_in_channel, parent_out_channel)  ->
        Daemon.close_in parent_in_channel;
        Daemon.close_out parent_out_channel;
        (* Detach the from a controlling terminal *)
        Unix.Terminal_io.setsid () |> ignore;
        setup server_configuration;
-       serve (socket, server_configuration))
+       serve (socket, server_configuration, watchman_pid))
 
 
 let start ({
@@ -502,9 +512,18 @@ let start ({
     Log.log ~section:`Server "Creating server socket at `%a`" Path.pp socket_path;
     let socket = Socket.initialize_unix_socket socket_path in
 
-    if use_watchman then
-      spawn_watchman_client server_configuration;
-
+    let watchman_pid =
+      if use_watchman then
+        let pid = spawn_watchman_client server_configuration in
+        (* If the server is being run as a daemon, the watchman pid will be detached from
+           the server pid and shouldn't be waited on. *)
+        if not daemonize then
+          Some pid
+        else
+          None
+      else
+        None
+    in
     if daemonize then
       let stdin = Daemon.null_fd () in
       let log_path = Log.rotate (Path.absolute log_path) in
@@ -513,7 +532,7 @@ let start ({
       let { Daemon.pid; _ } as handle =
         Daemon.spawn
           (stdin, stdout, stdout)
-          run_server_daemon_entry (socket, server_configuration)
+          run_server_daemon_entry (socket, server_configuration, watchman_pid)
       in
       Daemon.close handle;
       Log.log ~section:`Server "Forked off daemon with pid %d" pid;
@@ -521,7 +540,7 @@ let start ({
       pid
     else begin
       setup server_configuration;
-      serve (socket, server_configuration);
+      serve (socket, server_configuration, watchman_pid);
       0
     end
   with AlreadyRunning ->
