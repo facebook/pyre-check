@@ -6,6 +6,7 @@
 import builtins
 import json
 import os
+import subprocess
 import unittest
 from unittest.mock import MagicMock, call, mock_open, patch
 
@@ -116,6 +117,33 @@ class ErrorHandlingTest(unittest.TestCase):
             "builtins.open", mock_open(read_data=local_configuration), create=True
         ):
             self.assertTrue(handler._is_under_push_blocking_configuration("/x/y/z"))
+
+    @patch.object(subprocess, "check_output")
+    def test_get_directories_to_analyze(self, check_output) -> None:
+        arguments = mock_arguments()
+        arguments.current_directory = "base"
+        arguments.original_directory = "base"
+        configuration = mock_configuration()
+        handler = commands.ErrorHandling(
+            arguments, configuration, source_directory="base"
+        )
+        check_output.return_value = "\n".join(
+            [
+                "external/a/.pyre_configuration.local",
+                "external/b/c/.pyre_configuration.local",
+            ]
+        ).encode("utf-8")
+        with patch("builtins.open", mock_open(read_data='{"push_blocking": false}')):
+            self.assertEqual(handler._get_directories_to_analyze(), set(["base"]))
+
+        with patch("builtins.open", mock_open(read_data='{"push_blocking": true}')):
+            self.assertEqual(
+                handler._get_directories_to_analyze(),
+                set(["base", "external/a", "external/b/c"]),
+            )
+
+        with patch("builtins.open", mock_open(read_data='{"continuous": true}')):
+            self.assertEqual(handler._get_directories_to_analyze(), set(["base"]))
 
     @patch.object(Error, "__init__", return_value=None)
     @patch.object(Error, "__hash__", return_value=0)

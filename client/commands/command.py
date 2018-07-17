@@ -13,7 +13,7 @@ import re
 import resource
 import subprocess
 import threading
-from typing import List  # noqa
+from typing import List, Set  # noqa
 
 from .. import SUCCESS, TEXT, EnvironmentException, log
 from ..error import Error
@@ -276,6 +276,28 @@ class ErrorHandling(Command):
             if under_configuration:
                 self._discovered_source_directories += directory_path
             return under_configuration
+
+    def _get_directories_to_analyze(self) -> Set[str]:
+        try:
+            local_configurations = (
+                subprocess.check_output(
+                    ["hg", "files", "--include", "**.pyre_configuration.local"]
+                )
+                .decode("utf-8")
+                .split()
+            )
+        except subprocess.CalledProcessError:
+            local_configurations = []
+        directories_to_analyze = set(self._discovered_source_directories)
+        for configuration_file in local_configurations:
+            try:
+                with open(configuration_file) as file:
+                    configuration = json.loads(file.read())
+                    if bool(configuration.get("push_blocking", False)):
+                        directories_to_analyze.add(os.path.dirname(configuration_file))
+            except (IOError, json.JSONDecodeError):
+                pass
+        return directories_to_analyze
 
     def _get_errors(self, result):
         result.check()
