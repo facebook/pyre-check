@@ -240,6 +240,7 @@ let parse_all scheduler ~configuration:({ Configuration.source_root; _ } as conf
       in
       match relative with
       | Some path ->
+          path = "__init__.py" ||  (* Analyze top-level `__init__.py`. *)
           not (Set.mem known_stubs (Source.qualifier ~path))
       | _ ->
           true
