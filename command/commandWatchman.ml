@@ -76,10 +76,14 @@ let build_symlink_map ~root =
 
 
 let set_symlink ~root ~symlinks ~path =
-  if not (Path.Map.mem symlinks path) &&
-     Path.directory_contains ~directory:root path then
-    Map.set symlinks ~key:(Path.real_path path) ~data:path
-  else
+  try
+    if not (Path.Map.mem symlinks path) &&
+       Path.directory_contains ~directory:root path then
+      Map.set symlinks ~key:(Path.real_path path) ~data:path
+    else
+      symlinks
+  with Unix.Unix_error _ ->
+    (* Ensure that removed file notifications don't crash the watchman client. *)
     symlinks
 
 
