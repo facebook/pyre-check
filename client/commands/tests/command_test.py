@@ -25,7 +25,6 @@ def mock_arguments():
     arguments.log_identifier = None
     arguments.current_directory = "."
     arguments.original_directory = "/original/directory/"
-    arguments.workers = None
 
     return arguments
 

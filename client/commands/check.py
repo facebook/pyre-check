@@ -13,12 +13,7 @@ class Check(ErrorHandling):
     def __init__(self, arguments, configuration, source_directory) -> None:
         super(Check, self).__init__(arguments, configuration, source_directory)
         self._log_identifier = arguments.log_identifier
-        workers = arguments.workers
-        if workers is not None and workers > 0:
-            # An explicit number of subprocesses overrides the configuration.
-            self._number_of_workers = workers
-        else:
-            self._number_of_workers = configuration.number_of_workers
+        self._number_of_workers = configuration.number_of_workers
 
     def _flags(self):
         flags = super()._flags()
