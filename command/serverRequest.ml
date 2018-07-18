@@ -212,55 +212,71 @@ let rec process_request
     Some (TypeCheckResponse (build_file_to_error_map ~checked_files new_errors))
   in
   let handle_type_query state request =
-    let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
-    let resolution = Environment.resolution state.environment () in
-    match request with
-    | LessOrEqual (left, right) ->
-        let left = Resolution.parse_annotation resolution left in
-        let right = Resolution.parse_annotation resolution right in
-        let response =
-          TypeOrder.less_or_equal order ~left ~right
-          |> Bool.to_string
-        in
-        state, (Some (TypeQueryResponse response))
-    | Join (left, right) ->
-        let left = Resolution.parse_annotation resolution left in
-        let right = Resolution.parse_annotation resolution right in
-        let response =
-          TypeOrder.join order left right
-          |> Type.show
-        in
-        state, (Some (TypeQueryResponse response))
-    | Meet (left, right) ->
-        let left = Resolution.parse_annotation resolution left in
-        let right = Resolution.parse_annotation resolution right in
-        let response =
-          TypeOrder.meet order left right
-          |> Type.show
-        in
-        state, (Some (TypeQueryResponse response))
-    | NormalizeType expression ->
-        let normalized =
-          Resolution.parse_annotation resolution expression
-          |> Type.show
-        in
-        state, (Some (TypeQueryResponse normalized))
-    | Superclasses annotation ->
-        let response =
-          Resolution.parse_annotation resolution annotation
-          |> Handler.class_definition
-          >>| (fun { Analysis.Environment.class_definition; _ } -> class_definition)
-          >>| Annotated.Class.create
-          >>| Annotated.Class.superclasses ~resolution
-          >>| List.map ~f:(Annotated.Class.annotation ~resolution)
-          >>| List.map ~f:Type.show
-          >>| String.concat ~sep:", "
-          |> Option.value
-            ~default:(
-              Format.sprintf "No class definition found for %s" (Expression.show annotation))
-          |> (fun response -> TypeQueryResponse response)
-        in
-        state, Some response
+    let handle_request () =
+      let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
+      let resolution = Environment.resolution state.environment () in
+      let parse_and_validate unparsed_annotation =
+        let annotation = Resolution.parse_annotation resolution unparsed_annotation in
+        if TypeOrder.is_instantiated order annotation then
+          annotation
+        else
+          raise (TypeOrder.Untracked annotation)
+      in
+      match request with
+      | LessOrEqual (left, right) ->
+          let left = parse_and_validate left in
+          let right = parse_and_validate right in
+          let response =
+            TypeOrder.less_or_equal order ~left ~right
+            |> Bool.to_string
+          in
+          state, (Some (TypeQueryResponse response))
+      | Join (left, right) ->
+          let left = parse_and_validate left in
+          let right = parse_and_validate right in
+          let response =
+            TypeOrder.join order left right
+            |> Type.show
+          in
+          state, (Some (TypeQueryResponse response))
+      | Meet (left, right) ->
+          let left = parse_and_validate left in
+          let right = parse_and_validate right in
+          let response =
+            TypeOrder.meet order left right
+            |> Type.show
+          in
+          state, (Some (TypeQueryResponse response))
+      | NormalizeType expression ->
+          let normalized =
+            parse_and_validate expression
+            |> Type.show
+          in
+          state, (Some (TypeQueryResponse normalized))
+      | Superclasses annotation ->
+          let response =
+            parse_and_validate annotation
+            |> Handler.class_definition
+            >>| (fun { Analysis.Environment.class_definition; _ } -> class_definition)
+            >>| Annotated.Class.create
+            >>| Annotated.Class.superclasses ~resolution
+            >>| List.map ~f:(Annotated.Class.annotation ~resolution)
+            >>| List.map ~f:Type.show
+            >>| String.concat ~sep:", "
+            |> Option.value
+              ~default:(
+                Format.sprintf "No class definition found for %s" (Expression.show annotation))
+            |> (fun response -> TypeQueryResponse response)
+          in
+          state, Some response
+    in
+    try
+      handle_request ()
+    with TypeOrder.Untracked untracked ->
+      let untracked_response =
+        Format.asprintf "Error: Type %a was not found in the type order." Type.pp untracked
+      in
+      state, Some (TypeQueryResponse untracked_response)
   in
   let handle_client_shutdown_request id =
     let response = LanguageServer.Protocol.ShutdownResponse.default id in

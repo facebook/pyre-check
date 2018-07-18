@@ -345,6 +345,13 @@ let test_query _ =
     source
     (Protocol.Request.TypeQueryRequest
        (Protocol.LessOrEqual
+          (Type.expression Type.integer, Type.expression (Type.primitive "Unknown"))))
+    (Some (Protocol.TypeQueryResponse "Error: Type `Unknown` was not found in the type order."));
+
+  assert_request_gets_response
+    source
+    (Protocol.Request.TypeQueryRequest
+       (Protocol.LessOrEqual
           (Type.expression (Type.list (Type.Primitive (Identifier.create "C"))),
            Type.expression (Type.list (Type.integer)))))
     (Some (Protocol.TypeQueryResponse "true"));
@@ -375,7 +382,13 @@ let test_query _ =
     source
     (Protocol.Request.TypeQueryRequest
        (Protocol.Superclasses (Type.expression (Type.primitive "Untracked"))))
-    (Some (Protocol.TypeQueryResponse "No class definition found for Untracked"));
+    (Some (Protocol.TypeQueryResponse "Error: Type `Untracked` was not found in the type order."));
+
+  assert_request_gets_response
+    source
+    (Protocol.Request.TypeQueryRequest
+       (Protocol.Superclasses (Type.expression (Type.parametric "Untracked" [Type.integer]))))
+    (Some (Protocol.TypeQueryResponse "No class definition found for Untracked.__getitem__(int)"));
 
   assert_request_gets_response
     source
