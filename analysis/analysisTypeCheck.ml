@@ -1949,12 +1949,24 @@ let check
         in
         List.filter ~f:keep_error errors
     in
-    List.map ~f:SingleSourceResult.errors results
-    |> List.map ~f:filter
-    |> List.concat
-    |> Error.join_at_source ~resolution
-    |> List.map ~f:(Error.dequalify (Preprocessing.dequalify_map source) environment)
-    |> List.sort ~compare:Error.compare
+    let errors =
+      List.map ~f:SingleSourceResult.errors results
+      |> List.map ~f:filter
+      |> List.concat
+      |> Error.join_at_source ~resolution
+      |> List.map ~f:(Error.dequalify (Preprocessing.dequalify_map source) environment)
+      |> List.sort ~compare:Error.compare
+    in
+    match configuration.filter_directories with
+    | None ->
+        errors
+    | Some filter_directories ->
+        let filter_by_directories { Error.location = { Ast.Location.path; _ }; _ } =
+          List.exists
+            filter_directories
+            ~f:(fun directory -> String.is_prefix ~prefix:(Path.absolute directory) path)
+        in
+        List.filter ~f:filter_by_directories errors
   in
 
   let coverage =

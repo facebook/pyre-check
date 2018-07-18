@@ -277,6 +277,8 @@ let assert_type_errors
     ?(infer = false)
     ?(show_error_traces = false)
     ?(qualifier = [])
+    ?(path = "test.py")
+    ?filter_directories
     source
     errors =
   Annotated.Class.AttributesCache.clear ();
@@ -315,7 +317,7 @@ let assert_type_errors
             ~number_of_lines:(-1)
             ()
         in
-        parse ~qualifier source
+        parse ~path ~qualifier source
         |> (fun source -> { source with Source.metadata })
         |> Preprocessing.preprocess
         |> Plugin.apply_to_ast
@@ -325,7 +327,9 @@ let assert_type_errors
         Service.Environment.populate environment [source];
         environment
       in
-      let configuration = Configuration.create ~debug ~strict ~declare ~infer () in
+      let configuration =
+        Configuration.create ~debug ~strict ~declare ~infer ?filter_directories ()
+      in
       check_errors configuration environment ?mode_override source
     in
     List.map

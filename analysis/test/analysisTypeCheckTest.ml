@@ -5785,6 +5785,28 @@ let test_format_string _ =
     ["Incompatible parameter type [6]: Expected `int` but got `str`."]
 
 
+let test_filter_directories _ =
+  let relative path =
+    Path.create_relative ~root:(Path.current_working_directory ()) ~relative:path
+  in
+  assert_type_errors
+    ~filter_directories:[relative "keep"]
+    ~path:(Path.absolute (relative "keep/error.py"))
+    {|
+      def foo() -> int:
+        return ""
+    |}
+    ["Incompatible return type [7]: Expected `int` but got `str`."];
+  assert_type_errors
+    ~filter_directories:[relative "keep"]
+    ~path:(Path.absolute (relative "throw/error.py"))
+    {|
+      def foo() -> int:
+        return ""
+    |}
+    []
+
+
 let () =
   "type">:::[
     "initial">::test_initial;
@@ -5853,5 +5875,6 @@ let () =
     "environment">::test_environment;
     "scheduling">::test_scheduling;
     "check_format_string">::test_format_string;
+    "filter_directories">::test_filter_directories;
   ]
   |> run_test_tt_main
