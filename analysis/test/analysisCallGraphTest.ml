@@ -35,7 +35,7 @@ let assert_call_graph source ~expected =
   let environment = TestSetup.environment ~configuration () in
   Service.Environment.populate environment [source];
   check configuration environment source |> ignore;
-  let call_graph = Analysis.CallGraph.create ~environment ~source in
+  let call_graph = CallGraph.create ~environment ~source in
   let result =
     let fold_call_graph ~key:caller ~data:callees result =
       let callee = List.hd_exn callees in
@@ -106,9 +106,9 @@ let test_type_collection _ =
     check configuration environment source |> ignore;
     let defines =
       Preprocessing.defines source
-      |> List.map ~f:(fun define -> define.Node.value)
+      |> List.map ~f:(fun { Node.value } -> value)
     in
-    let Define.{ name; body = statements; _ } = List.nth_exn defines 1 in
+    let { Define.name; body = statements; _ } = List.nth_exn defines 1 in
     let lookup =
       let build_lookup lookup { key; annotations } =
         Int.Map.set lookup ~key ~data:annotations in
@@ -120,7 +120,7 @@ let test_type_collection _ =
       let key = [%hash: int * int] (node_id, statement_index) in
       let test_access = Access.create test_access in
       let annotations =
-        Int.Map.find_exn lookup key
+        Map.find_exn lookup key
         |> Access.Map.of_alist_exn
       in
       let resolution = Environment.resolution environment ~annotations () in
@@ -133,7 +133,7 @@ let test_type_collection _ =
         let open Access.Element in
         let last_element =
           Annotated.Access.create access
-          |>  Annotated.Access.last_element ~resolution
+          |> Annotated.Access.last_element ~resolution
         in
         match last_element with
         | Signature {
