@@ -375,6 +375,7 @@ let request_handler_thread
       end;
     let readable =
       Unix.select
+        ~restart:true
         ~read:(server_socket :: (Hashtbl.keys persistent_clients) @ file_notifiers )
         ~write:[]
         ~except:[]
