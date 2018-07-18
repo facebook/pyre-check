@@ -133,11 +133,8 @@ let run_command expected_version log_identifier source_root () =
         try
           process_server_socket ()
         with
-        (* If the server closed and we're still alive, restart it. *)
         | End_of_file ->
             display_nuclide_message "Pyre: Lost connection to server, exiting...";
-            Log.info "Stopping server due to an end-of-file while reading";
-            Server.stop ~graceful:true (Path.absolute source_root) ();
             exit 0
     in
     try
