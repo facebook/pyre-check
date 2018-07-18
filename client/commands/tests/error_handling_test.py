@@ -134,16 +134,16 @@ class ErrorHandlingTest(unittest.TestCase):
             ]
         ).encode("utf-8")
         with patch("builtins.open", mock_open(read_data='{"push_blocking": false}')):
-            self.assertEqual(handler._get_directories_to_analyze(), set(["base"]))
+            self.assertEqual(handler._get_directories_to_analyze(), {"base"})
 
         with patch("builtins.open", mock_open(read_data='{"push_blocking": true}')):
             self.assertEqual(
                 handler._get_directories_to_analyze(),
-                set(["base", "external/a", "external/b/c"]),
+                {"base", "external/a", "external/b/c"},
             )
 
         with patch("builtins.open", mock_open(read_data='{"continuous": true}')):
-            self.assertEqual(handler._get_directories_to_analyze(), set(["base"]))
+            self.assertEqual(handler._get_directories_to_analyze(), {"base"})
 
     @patch.object(Error, "__init__", return_value=None)
     @patch.object(Error, "__hash__", return_value=0)
