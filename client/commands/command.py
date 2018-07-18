@@ -274,7 +274,7 @@ class ErrorHandling(Command):
                 and self._is_under_push_blocking_configuration(directory_path)
             )
             if under_configuration:
-                self._discovered_source_directories += directory_path
+                self._discovered_source_directories.append(directory_path)
             return under_configuration
 
     def _get_directories_to_analyze(self) -> Set[str]:
