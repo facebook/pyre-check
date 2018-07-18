@@ -23,46 +23,50 @@ class Start(Command):
         self._number_of_workers = configuration.number_of_workers
 
     def _run(self) -> int:
-        try:
-            with filesystem.try_lock(".pyre/client.lock"):
-                # This unsafe call is OK due to the client lock always
-                # being acquired before starting a server - no server can
-                # spawn in the interim which would cause a race.
-                try:
-                    with filesystem.try_lock(
-                        os.path.join(
-                            self._source_directory, ".pyre", "server", "server.lock"
+        while True:
+            # Be optimistic in grabbing the lock in order to provide users with
+            # a message when the lock is being waited on.
+            blocking = False
+            try:
+                with filesystem.acquire_lock(".pyre/client.lock", blocking):
+                    # This unsafe call is OK due to the client lock always
+                    # being acquired before starting a server - no server can
+                    # spawn in the interim which would cause a race.
+                    try:
+                        with filesystem.acquire_lock(
+                            os.path.join(
+                                self._source_directory, ".pyre", "server", "server.lock"
+                            ),
+                            blocking=False,
+                        ):
+                            pass
+                    except OSError:
+                        LOG.warning(
+                            "Server at `%s` exists, skipping.", self._source_directory
                         )
-                    ):
-                        pass
-                except OSError:
-                    LOG.warning(
-                        "Server at `%s` exists, skipping.", self._source_directory
+                        return FAILURE
+
+                    flags = self._flags()
+                    if not self._no_watchman:
+                        flags.append("-use-watchman")
+                    if self._terminal:
+                        flags.append("-terminal")
+                    flags.extend(
+                        [
+                            "-workers",
+                            str(self._number_of_workers),
+                            "-typeshed",
+                            str(self._configuration.get_typeshed()),
+                            "-expected-binary-version",
+                            str(self._configuration.get_version_hash()),
+                        ]
                     )
-                    return FAILURE
+                    search_path = self._configuration.get_search_path()
+                    if search_path:
+                        flags.extend(["-search-path", ",".join(search_path)])
+                    self._call_client(command=self.NAME, flags=flags).check()
 
-                flags = self._flags()
-                if not self._no_watchman:
-                    flags.append("-use-watchman")
-                if self._terminal:
-                    flags.append("-terminal")
-                flags.extend(
-                    [
-                        "-workers",
-                        str(self._number_of_workers),
-                        "-typeshed",
-                        str(self._configuration.get_typeshed()),
-                        "-expected-binary-version",
-                        str(self._configuration.get_version_hash()),
-                    ]
-                )
-                search_path = self._configuration.get_search_path()
-                if search_path:
-                    flags.extend(["-search-path", ",".join(search_path)])
-                self._call_client(command=self.NAME, flags=flags).check()
-
-            return SUCCESS
-
-        except OSError:
-            LOG.warning("Server is already running")
-            return FAILURE
+                    return SUCCESS
+            except OSError:
+                blocking = True
+                LOG.info("Waiting on the pyre client lock.")

@@ -14,7 +14,7 @@ from ..filesystem import (  # noqa
     __name__ as filesystem_name,
     find_python_paths,
     remove_if_exists,
-    try_lock,
+    acquire_lock,
 )
 
 
@@ -190,14 +190,19 @@ class FilesystemTest(unittest.TestCase):
             shutil_rmtree.assert_called_once_with("path")
 
     @patch("fcntl.lockf")
-    def test_try_lock(self, lock_file: unittest.mock.Mock) -> None:
+    def test_acquire_lock(self, lock_file: unittest.mock.Mock) -> None:
         (_, path) = tempfile.mkstemp()
         lockfile_file_descriptor = None
-        with try_lock(path) as file_descriptor:
+        with acquire_lock(path, blocking=False) as file_descriptor:
             lockfile_file_descriptor = file_descriptor
+
+        with acquire_lock(path, blocking=True):
+            pass
         lock_file.assert_has_calls(
             [
                 call(lockfile_file_descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB),
+                call(lockfile_file_descriptor, fcntl.LOCK_UN),
+                call(lockfile_file_descriptor, fcntl.LOCK_EX),
                 call(lockfile_file_descriptor, fcntl.LOCK_UN),
             ]
         )
@@ -209,7 +214,7 @@ class FilesystemTest(unittest.TestCase):
 
         lock_file.side_effect = fail_on_exclusive
         with self.assertRaises(OSError):
-            with try_lock(path):
+            with acquire_lock(path, blocking=False):
                 pass
 
     @patch("shutil.rmtree")

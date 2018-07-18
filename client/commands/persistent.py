@@ -13,7 +13,7 @@ from typing import Optional
 
 from .. import SUCCESS, EnvironmentException, log_statistics
 from .command import ClientException, Command
-from .restart import Restart
+from .start import Start
 
 
 class Persistent(Command):
@@ -38,9 +38,8 @@ class Persistent(Command):
             ).check()
         except (ClientException, EnvironmentException, subprocess.CalledProcessError):
             arguments.terminal = False
-            Restart(
-                arguments, self._configuration, self._source_directory, blocking=False
-            ).run()
+            Start(arguments, self._configuration, self._source_directory).run()
+
             self._call_client(
                 command=self.NAME, capture_output=False, flags=flags
             ).check()

@@ -41,7 +41,7 @@ class SharedSourceDirectory:
             pass  # Swallow.
 
         lock = os.path.join(root, ".pyre.lock")
-        with try_lock(lock):
+        with acquire_lock(lock, blocking=False):
             try:
                 with open(os.path.join(root, ".pyre.source_directories")) as file:
                     tracked = set(json.load(file))
@@ -187,11 +187,16 @@ def remove_if_exists(path: str) -> None:
 
 
 @contextmanager
-def try_lock(path: str) -> Generator[Optional[int], None, None]:
+def acquire_lock(path: str, blocking: bool) -> Generator[Optional[int], None, None]:
     """Raises an OSError if the lock can't be acquired"""
     try:
         with open(path, "w+") as lockfile:
-            fcntl.lockf(lockfile.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            if not blocking:
+                lock_command = fcntl.LOCK_EX | fcntl.LOCK_NB
+            else:
+                lock_command = fcntl.LOCK_EX
+
+            fcntl.lockf(lockfile.fileno(), lock_command)
             yield lockfile.fileno()
             fcntl.lockf(lockfile.fileno(), fcntl.LOCK_UN)
 
