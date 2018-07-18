@@ -106,7 +106,7 @@ let test_type_collection _ =
     check configuration environment source |> ignore;
     let defines =
       Preprocessing.defines source
-      |> List.map ~f:(fun { Node.value } -> value)
+      |> List.map ~f:(fun { Node.value; _ } -> value)
     in
     let { Define.name; body = statements; _ } = List.nth_exn defines 1 in
     let lookup =
