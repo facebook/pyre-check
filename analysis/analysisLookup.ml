@@ -132,7 +132,7 @@ let get_annotation lookup ~position =
       }
       { Location.column; line } =
     let start_ok = (start_line < line) || (start_line = line && start_column <= column) in
-    let stop_ok = (stop_line > line) || (stop_line = line && stop_column >= column) in
+    let stop_ok = (stop_line > line) || (stop_line = line && stop_column > column) in
     start_ok && stop_ok
   in
   let get_best_location position =

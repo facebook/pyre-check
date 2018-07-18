@@ -168,7 +168,9 @@ let parse ~root ~check_on_save request =
               Some (HoverRequest {
                   DefinitionRequest.id;
                   path;
-                  position = { Ast.Location.line = line + 1; column = character + 1};
+                  (* The LSP protocol starts a file at line 0, column 0.
+                     Pyre starts a file at line 1, column 0. *)
+                  position = { Ast.Location.line = line + 1; column = character };
                 })
           | Ok _ -> None
           | Error yojson_error -> Log.log ~section:`Server "Error: %s" yojson_error; None

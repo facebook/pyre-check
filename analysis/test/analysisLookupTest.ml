@@ -97,6 +97,10 @@ let test_lookup_call_arguments _ =
     ~annotation:(Some "test.py:2:4-2:6/`int`");
   assert_annotation
     ~lookup
+    ~position:{ Location.line = 2; column = 6 }
+    ~annotation:None;
+  assert_annotation
+    ~lookup
     ~position:{ Location.line = 3; column = 3 }
     ~annotation:None;
   assert_annotation
@@ -113,6 +117,10 @@ let test_lookup_call_arguments _ =
     ~annotation:(Some "test.py:3:12-3:20/`str`");
   assert_annotation
     ~lookup
+    ~position:{ Location.line = 3; column = 20 }
+    ~annotation:None;
+  assert_annotation
+    ~lookup
     ~position:{ Location.line = 4; column = 3 }
     ~annotation:None;
   assert_annotation
@@ -125,12 +133,20 @@ let test_lookup_call_arguments _ =
     ~annotation:(Some "test.py:4:4-5:14/`str`");
   assert_annotation
     ~lookup
+    ~position:{ Location.line = 4; column = 14 }
+    ~annotation:(Some "test.py:4:4-5:14/`str`");
+  assert_annotation
+    ~lookup
     ~position:{ Location.line = 5; column = 3 }
     ~annotation:(Some "test.py:4:4-5:14/`str`");
   assert_annotation
     ~lookup
     ~position:{ Location.line = 5; column = 13 }
-    ~annotation:(Some "test.py:5:4-5:14/`str`")
+    ~annotation:(Some "test.py:5:4-5:14/`str`");
+  assert_annotation
+    ~lookup
+    ~position:{ Location.line = 5; column = 14 }
+    ~annotation:None
 
 
 let test_lookup_pick_narrowest _ =
@@ -157,6 +173,10 @@ let test_lookup_pick_narrowest _ =
      |> List.sort ~compare:String.compare);
   assert_annotation
     ~lookup
+    ~position:{ Location.line = 3; column = 11 }
+    ~annotation:None;
+  assert_annotation
+    ~lookup
     ~position:{ Location.line = 3; column = 16 }
     ~annotation:None;
   assert_annotation
@@ -166,7 +186,11 @@ let test_lookup_pick_narrowest _ =
   assert_annotation
     ~lookup
     ~position:{ Location.line = 3; column = 21 }
-    ~annotation:(Some "test.py:3:21-3:27/`Optional[int]`")
+    ~annotation:(Some "test.py:3:21-3:27/`Optional[int]`");
+  assert_annotation
+    ~lookup
+    ~position:{ Location.line = 3; column = 27 }
+    ~annotation:None
 
 
 let test_lookup_class_attributes _ =
@@ -197,7 +221,7 @@ let test_lookup_class_attributes _ =
     ~annotation:(Some "test.py:3:4-3:5/`bool`");
   assert_annotation
     ~lookup
-    ~position:{ Location.line = 3; column = 6 }
+    ~position:{ Location.line = 3; column = 5 }
     ~annotation:None
 
 
@@ -241,6 +265,10 @@ let test_lookup_identifier_accesses _ =
     ~lookup
     ~position:{ Location.line = 5; column = 13 }
     ~annotation:(Some "test.py:5:8-5:14/`int`");
+  assert_annotation
+    ~lookup
+    ~position:{ Location.line = 5; column = 14 }
+    ~annotation:None;
   assert_annotation
     ~lookup
     ~position:{ Location.line = 5; column = 17 }
