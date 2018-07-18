@@ -13,3 +13,11 @@ type t = {
   taint_in_taint_out: BackwardState.t;
 }
 [@@deriving show]
+
+
+let create () =
+  {
+    forward = ForwardState.empty;
+    backward = BackwardState.empty;
+    taint_in_taint_out = BackwardState.empty;
+  }

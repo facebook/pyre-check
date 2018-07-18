@@ -9,25 +9,21 @@ open TaintDomains
 open Statement
 
 
-module Model : sig
-  type t = {
-    define_name: Ast.Statement.Access.t;
-    source_taint: ForwardState.t;
-  }
-  [@@deriving show]
-
-  val create: Define.t list -> Resolution.t -> t
-end
+type forward_model = {
+  define_name: Ast.Statement.Access.t;
+  source_taint: ForwardState.t;
+}
+[@@deriving show]
 
 
 module FixpointState : sig
 
   type t = {
     taint: ForwardState.t;
-    models: Model.t list;
+    models: forward_model list;
   }
 
-  val create: ?models: Model.t list -> unit -> t
+  val create: unit -> t
 
   val show_models: t option -> string
 
@@ -38,4 +34,4 @@ end
 module Analyzer : Fixpoint.Fixpoint with type state := FixpointState.t
 
 
-val run: ?models: Model.t list -> Cfg.t -> FixpointState.t option
+val run: Define.t -> forward_model option

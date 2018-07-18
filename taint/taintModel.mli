@@ -13,3 +13,5 @@ type t = {
   taint_in_taint_out: BackwardState.t;
 }
 [@@deriving show]
+
+val create: unit -> t

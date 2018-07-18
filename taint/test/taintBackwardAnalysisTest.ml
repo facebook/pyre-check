@@ -10,6 +10,7 @@ open Analysis
 open Ast
 open Statement
 open Taint
+open Domains
 
 open Test
 
@@ -20,40 +21,41 @@ type taint_in_taint_out_expectation = {
 }
 
 
-let get_model models name =
-  List.find models ~f:(fun { BackwardAnalysis.define_name; _ } -> Access.show define_name = name)
-
-
 let assert_taint_in_taint_out source { define_name; taint_in_taint_out_parameters } =
   let { Node.value = define; _ } =
     parse source
     |> Preprocessing.preprocess
     |> Preprocessing.defines
+    |> List.tl_exn
     |> List.hd_exn
   in
-  match BackwardAnalysis.run (Cfg.create define) with
-  | None -> assert_failure "produced no result"
-  | Some { models; _ } ->
-      match get_model models define_name with
-      | None -> assert_failure ("no model for " ^ define_name)
-      | Some { taint_in_taint_out; _ } ->
-          let extract_parameter_position root _ positions =
-            match root with
-            | AccessPath.Root.Parameter { position; _ } -> Int.Set.add positions position
-            | _ -> positions
-          in
-          let taint_in_taint_out_positions =
-            Domains.BackwardState.fold
-              taint_in_taint_out
-              ~f:extract_parameter_position
-              ~init:Int.Set.empty
-          in
-          let expected_positions = Int.Set.of_list taint_in_taint_out_parameters in
-          assert_equal
-            ~cmp:Int.Set.equal
-            ~printer:(Fn.compose Sexp.to_string Int.Set.sexp_of_t)
-            expected_positions
-            taint_in_taint_out_positions
+  let { BackwardAnalysis.taint_in_taint_out; _ } =
+    Option.value_exn (BackwardAnalysis.run define)
+  in
+  Taint.SharedMemory.add_model
+    ~define:(Access.create define_name)
+    { taint_in_taint_out; backward = BackwardState.empty; forward = ForwardState.empty };
+  match Taint.SharedMemory.get_model (Access.create define_name) with
+  | None -> assert_failure ("no model for " ^ define_name)
+  | Some { taint_in_taint_out; _ } ->
+      let extract_parameter_position root _ positions =
+        match root with
+        | AccessPath.Root.Parameter { position; _ } -> Int.Set.add positions position
+        | _ -> positions
+      in
+      let taint_in_taint_out_positions =
+        Domains.BackwardState.fold
+          taint_in_taint_out
+          ~f:extract_parameter_position
+          ~init:Int.Set.empty
+      in
+      let expected_positions = Int.Set.of_list taint_in_taint_out_parameters in
+      assert_equal
+        ~cmp:Int.Set.equal
+        ~printer:(Fn.compose Sexp.to_string Int.Set.sexp_of_t)
+        expected_positions
+        taint_in_taint_out_positions
+
 
 let test_plus_taint_in_taint_out _ =
   assert_taint_in_taint_out

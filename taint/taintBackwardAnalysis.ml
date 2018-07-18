@@ -8,13 +8,15 @@ open Core
 open Analysis
 open Ast
 open Expression
+open Pyre
 open Statement
 open TaintDomains
 open TaintAccessPath
 
-type model = {
-  define_name: Access.t;
+
+type backward_model = {
   taint_in_taint_out: BackwardState.t;
+  backward_taint: BackwardState.t;
 }
 [@@deriving show]
 
@@ -22,7 +24,7 @@ type model = {
 module type FixpointState = sig
   type t = {
     taint: BackwardState.t;
-    models: model list;
+    models: backward_model list;
   }
   [@@deriving show]
 
@@ -34,21 +36,21 @@ module type FixpointState = sig
 end
 
 
+let initial_taint =
+  let result_taint = BackwardTaint.add BackwardTaint.empty TaintSinks.LocalReturn in
+  BackwardState.assign
+    ~root:Root.LocalResult
+    ~path:[]
+    (BackwardState.make_leaf result_taint)
+    BackwardState.empty
+
+
 module rec FixpointState : FixpointState = struct
   type t = {
     taint: BackwardState.t;
-    models: model list;
+    models: backward_model list;
   }
   [@@deriving show]
-
-
-  let initial_taint =
-    let result_taint = BackwardTaint.add BackwardTaint.empty TaintSinks.LocalReturn in
-    BackwardState.assign
-      ~root:Root.LocalResult
-      ~path:[]
-      (BackwardState.make_leaf result_taint)
-      BackwardState.empty
 
 
   let create () = {
@@ -61,38 +63,14 @@ module rec FixpointState : FixpointState = struct
     BackwardState.less_or_equal ~left ~right
 
 
-  let join { taint = left; models } { taint = right; _ } =
+  let join ({ taint = left; models } as state) { taint = right; _ } =
     let taint = BackwardState.join left right in
-    {
-      taint;
-      models;  (* There should be no joining at class/file level. *)
-    }
+    { state with taint }
 
 
-  let widen ~previous:{ taint = previous; _ } ~next:{ taint = next; models; } ~iteration =
+  let widen ~previous:{ taint = previous; _ } ~next:({ taint = next; _ } as state) ~iteration =
     let taint = BackwardState.widen ~iteration ~previous ~next in
-    {
-      taint;
-      models;  (* There should be no joining at class/file level. *)
-    }
-
-
-  let extract_taint_in_taint_out_model parameters entry_taint =
-    let filter_to_local_return taint =
-      BackwardTaint.filter ~f:((=) TaintSinks.LocalReturn) taint
-    in
-    let extract_taint_in_taint_out position model { Node.value = { Parameter.name; _ } } =
-      let taint_in_taint_out_taint =
-        BackwardState.read (Root.Variable name) entry_taint
-        |> BackwardState.filter_map_tree ~f:filter_to_local_return
-      in
-      if not (BackwardState.is_empty_tree taint_in_taint_out_taint) then
-        let parameter = Root.(Parameter { name; position }) in
-        BackwardState.assign ~root:parameter ~path:[] taint_in_taint_out_taint model
-      else
-        model
-    in
-    List.foldi parameters ~f:extract_taint_in_taint_out ~init:BackwardState.empty
+    { state with taint }
 
 
   let get_taint access_path { taint; _ } =
@@ -177,24 +155,8 @@ module rec FixpointState : FixpointState = struct
     | Some expression -> analyze_expression taint expression state
 
 
-  let analyze_definition ~define:({ Define.name; parameters } as define) ({ models; _ } as state) =
-    let cfg = Cfg.create define in
-    let initial = { taint = initial_taint; models = [] } in
-    let result =
-      Analyzer.backward ~cfg ~initial
-      |> Analyzer.entry
-    in
-    match result with
-    | None ->
-        Log.log
-          ~section:`Taint
-          "Definition %s did not produce result for entry node."
-          (Log.Color.yellow (Access.show name));
-        state
-    | Some { taint; models = new_models } ->
-        let taint_in_taint_out_model = extract_taint_in_taint_out_model parameters taint in
-        let model = { define_name = name; taint_in_taint_out = taint_in_taint_out_model; } in
-        { state with models = model :: List.rev_append new_models models }
+  let analyze_definition ~define:_ _ =
+    failwith "We don't handle nested defines right now"
 
 
   let analyze_statement state statement =
@@ -245,16 +207,39 @@ module rec FixpointState : FixpointState = struct
     | None ->
         "no result."
     | Some result ->
-        String.concat ~sep:"\n" (List.map ~f:show_model result.FixpointState.models)
+        String.concat ~sep:"\n" (List.map ~f:show_backward_model result.FixpointState.models)
 end
 
 
 and Analyzer : Fixpoint.Fixpoint with type state = FixpointState.t = Fixpoint.Make(FixpointState)
 
 
-let run cfg =
-  let initial = FixpointState.create () in
+let extract_taint_in_taint_out_model parameters entry_taint =
+  let filter_to_local_return taint =
+    BackwardTaint.filter ~f:((=) TaintSinks.LocalReturn) taint
+  in
+  let extract_taint_in_taint_out position model { Node.value = { Parameter.name; _ } } =
+    let taint_in_taint_out_taint =
+      BackwardState.read (Root.Variable name) entry_taint
+      |> BackwardState.filter_map_tree ~f:filter_to_local_return
+    in
+    if not (BackwardState.is_empty_tree taint_in_taint_out_taint) then
+      let parameter = Root.(Parameter { name; position }) in
+      BackwardState.assign ~root:parameter ~path:[] taint_in_taint_out_taint model
+    else
+      model
+  in
+  List.foldi parameters ~f:extract_taint_in_taint_out ~init:BackwardState.empty
+
+
+let run ({ Define.name; parameters } as define) =
+  (* TODO(T31697954): initial_taint is hardcoded *)
+  let initial = { FixpointState.taint = initial_taint; models = [] } in
+  let cfg = Cfg.create define in
   Log.log ~section:`Taint "Processing CFG:@.%s" (Log.Color.yellow (Cfg.show cfg));
-  let result = Analyzer.backward ~cfg ~initial |> Analyzer.entry in
-  Log.log ~section:`Taint "Models: %s" (Log.Color.yellow (FixpointState.show_models result));
-  result
+  Analyzer.backward ~cfg ~initial
+  |> Analyzer.entry
+  >>| fun ({ taint; _ } as result) ->
+  let taint_in_taint_out = extract_taint_in_taint_out_model parameters taint in
+  Log.log ~section:`Taint "Models: %s" (Log.Color.yellow (FixpointState.show_models (Some result)));
+  { taint_in_taint_out; backward_taint = BackwardState.empty }

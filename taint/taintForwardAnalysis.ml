@@ -8,58 +8,29 @@ open Core
 open Analysis
 open Ast
 open Expression
+open Pyre
 open Statement
 open TaintDomains
 open TaintAccessPath
 
-module Model = struct
-  type t = {
-    define_name: Access.t;
-    source_taint: ForwardState.t;
-  }
-  [@@deriving show]
 
-  let taint_annotation = "TaintSource"
-
-  let create defines resolution =
-
-    let introduce_taint taint_source_kind =
-      ForwardState.assign
-        ~root:TaintAccessPath.Root.LocalResult
-        ~path:[]
-        (ForwardTaint.singleton taint_source_kind
-         |> ForwardState.make_leaf)
-        ForwardState.empty
-    in
-
-    Annotated.Callable.create defines ~resolution
-    |> (fun callable -> Type.Callable callable)
-    |> function
-    | Type.Callable { kind = Named define_name ; overloads; implicit } ->
-        begin match overloads with
-          | {
-            annotation = Type.Parametric { name; parameters = (Primitive primitive) :: _ }
-          } :: _ when (Identifier.show name = taint_annotation) ->
-              let taint_source_kind = TaintSources.create (Identifier.show primitive) in
-              { define_name; source_taint = introduce_taint taint_source_kind }
-          | _ ->
-              failwith "Cannot create taint model: no annotation"
-        end
-    | _ ->
-        failwith "Cannot create taint model: not a callable"
-end
+type forward_model = {
+  define_name: Access.t;
+  source_taint: ForwardState.t;
+}
+[@@deriving show]
 
 
 module type FixpointState = sig
   type t = {
     taint: ForwardState.t;
-    models: Model.t list;
+    models: forward_model list;
   }
   [@@deriving show]
 
   include Fixpoint.State with type t := t
 
-  val create: ?models: Model.t list -> unit -> t
+  val create: unit -> t
 
   val show_models: t option -> string
 end
@@ -68,7 +39,7 @@ end
 module rec FixpointState : FixpointState = struct
   type t = {
     taint: ForwardState.t;
-    models: Model.t list;
+    models: forward_model list;
   }
   [@@deriving show]
 
@@ -76,9 +47,9 @@ module rec FixpointState : FixpointState = struct
   let initial_taint = ForwardState.empty
 
 
-  let create ?(models = []) () = {
+  let create () = {
     taint = ForwardState.empty;
-    models;
+    models = [];
   }
 
 
@@ -100,11 +71,6 @@ module rec FixpointState : FixpointState = struct
       taint;
       models;  (* There should be no joining at class/file level. *)
     }
-
-
-  let extract_source_model _parameters exit_taint =
-    let return_taint = ForwardState.read Root.LocalResult exit_taint in
-    ForwardState.assign ~root:Root.LocalResult ~path:[] return_taint ForwardState.empty
 
 
   let get_taint_option access_path state =
@@ -133,17 +99,14 @@ module rec FixpointState : FixpointState = struct
     match callee with
     | Identifier identifier ->
         let existing_model =
-          (* TODO(T31207999): look up models in shared memory *)
-          let lookup { Model.define_name; _ } =
-            Access.create_from_identifiers [identifier] = define_name
-          in
-          List.find state.models ~f:lookup
+          let define = Access.create_from_identifiers [identifier] in
+          TaintSharedMemory.get_model ~define
         in
         let taint =
           match existing_model with
-          | Some { source_taint; _ } ->
+          | Some { forward; _ } ->
               (* TODO(T31440488): analyze callee arguments *)
-              ForwardState.read TaintAccessPath.Root.LocalResult source_taint
+              ForwardState.read TaintAccessPath.Root.LocalResult forward
           | None ->
               (* TODO(T31435739): if we don't have a model: assume function propagates argument
                  taint (join all argument taint) *)
@@ -221,23 +184,8 @@ module rec FixpointState : FixpointState = struct
     | Some expression -> analyze_expression expression state
 
 
-  let analyze_definition ~define:({ Define.name; parameters  } as define) state =
-    let cfg = Cfg.create define in
-    let result =
-      Analyzer.forward ~cfg ~initial:state
-      |> Analyzer.exit
-    in
-    match result with
-    | None ->
-        Log.log
-          ~section:`Taint
-          "Definition %s did not produce result for entry node."
-          (Log.Color.cyan (Access.show name));
-        state
-    | Some { taint; models } ->
-        let source_model = extract_source_model parameters taint in
-        let model = { Model.define_name = name; source_taint = source_model } in
-        { state with models = model :: List.rev_append models state.models }
+  let analyze_definition ~define:_ _ =
+    failwith "We don't handle nested defines right now"
 
 
   let forward ?key:_ state ~statement:({ Node.value = statement; _ }) =
@@ -283,16 +231,26 @@ module rec FixpointState : FixpointState = struct
   let show_models = function
     | None -> "no result."
     | Some result ->
-        String.concat ~sep:"\n" (List.map ~f:Model.show result.FixpointState.models)
+        String.concat ~sep:"\n" (List.map ~f:show_forward_model result.FixpointState.models)
 end
 
 
 and Analyzer : Fixpoint.Fixpoint with type state = FixpointState.t = Fixpoint.Make(FixpointState)
 
 
-let run ?models cfg =
-  let initial = FixpointState.create ?models () in
+let extract_source_model _parameters exit_taint =
+  let return_taint = ForwardState.read Root.LocalResult exit_taint in
+  ForwardState.assign ~root:Root.LocalResult ~path:[] return_taint ForwardState.empty
+
+
+let run ({ Define.name; parameters } as define) =
+  let cfg = Cfg.create define in
+  let initial = FixpointState.create () in
   Log.log ~section:`Taint "Processing CFG:@.%s" (Log.Color.cyan (Cfg.show cfg));
-  let result = Analyzer.forward ~cfg ~initial |> Analyzer.exit in
-  Log.log ~section:`Taint "Models: %s" (Log.Color.cyan (FixpointState.show_models result));
-  result
+  Analyzer.forward ~cfg ~initial
+  |> Analyzer.exit
+  >>| fun ({ FixpointState.taint; _ } as result) ->
+  let source_taint = extract_source_model parameters taint in
+  Log.log ~section:`Taint "Models: %s" (Log.Color.cyan (FixpointState.show_models (Some result)));
+  let model = { source_taint; define_name = name } in
+  model

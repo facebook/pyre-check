@@ -4,13 +4,14 @@
     LICENSE file in the root directory of this source tree. *)
 
 open Ast
+open Statement
 open Analysis
 open TaintDomains
 
 
-type model = {
-  define_name: Statement.Access.t;
+type backward_model = {
   taint_in_taint_out: BackwardState.t;
+  backward_taint: BackwardState.t;
 }
 [@@deriving show]
 
@@ -19,7 +20,7 @@ module FixpointState : sig
 
   type t = {
     taint: BackwardState.t;
-    models: model list;
+    models: backward_model list;
   }
 
   val create: unit -> t
@@ -33,4 +34,4 @@ end
 module Analyzer : Fixpoint.Fixpoint with type state = FixpointState.t
 
 
-val run: Cfg.t -> FixpointState.t option
+val run: Define.t -> backward_model option

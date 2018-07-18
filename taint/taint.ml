@@ -10,3 +10,5 @@ module Domains = TaintDomains
 module ForwardAnalysis = TaintForwardAnalysis
 module Sinks = TaintSinks
 module Sources = TaintSources
+module SharedMemory = TaintSharedMemory
+module Model = TaintModel
