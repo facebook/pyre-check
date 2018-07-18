@@ -22,17 +22,12 @@ type backward_model = {
 
 
 module type FixpointState = sig
-  type t = {
-    taint: BackwardState.t;
-    models: backward_model list;
-  }
+  type t = { taint: BackwardState.t }
   [@@deriving show]
 
   include Fixpoint.State with type t := t
 
   val create: unit -> t
-
-  val show_models: t option -> string
 end
 
 
@@ -46,31 +41,26 @@ let initial_taint =
 
 
 module rec FixpointState : FixpointState = struct
-  type t = {
-    taint: BackwardState.t;
-    models: backward_model list;
-  }
+  type t = { taint: BackwardState.t }
   [@@deriving show]
 
 
-  let create () = {
-    taint = BackwardState.empty;
-    models = [];
-  }
+  let create () =
+    { taint = BackwardState.empty }
 
 
   let less_or_equal ~left:{ taint = left; _ } ~right:{ taint = right; _ } =
     BackwardState.less_or_equal ~left ~right
 
 
-  let join ({ taint = left; models } as state) { taint = right; _ } =
+  let join { taint = left } { taint = right; _ } =
     let taint = BackwardState.join left right in
-    { state with taint }
+    { taint }
 
 
-  let widen ~previous:{ taint = previous; _ } ~next:({ taint = next; _ } as state) ~iteration =
+  let widen ~previous:{ taint = previous; _ } ~next:{ taint = next; _ } ~iteration =
     let taint = BackwardState.widen ~iteration ~previous ~next in
-    { state with taint }
+    { taint }
 
 
   let get_taint access_path { taint; _ } =
@@ -81,8 +71,8 @@ module rec FixpointState : FixpointState = struct
         BackwardState.read_access_path ~root ~path taint
 
 
-  let store_weak_taint ~root ~path taint ({ taint = state_taint } as state) =
-    { state with taint = BackwardState.assign_weak ~root ~path taint state_taint }
+  let store_weak_taint ~root ~path taint { taint = state_taint } =
+    { taint = BackwardState.assign_weak ~root ~path taint state_taint }
 
 
   let store_weak_taint_option access_path taint state =
@@ -201,13 +191,6 @@ module rec FixpointState : FixpointState = struct
 
   let forward ?key:_ state ~statement =
     failwith "Don't call me"
-
-
-  let show_models = function
-    | None ->
-        "no result."
-    | Some result ->
-        String.concat ~sep:"\n" (List.map ~f:show_backward_model result.FixpointState.models)
 end
 
 
@@ -234,12 +217,12 @@ let extract_taint_in_taint_out_model parameters entry_taint =
 
 let run ({ Define.name; parameters } as define) =
   (* TODO(T31697954): initial_taint is hardcoded *)
-  let initial = { FixpointState.taint = initial_taint; models = [] } in
+  let initial = { FixpointState.taint = initial_taint } in
   let cfg = Cfg.create define in
   Log.log ~section:`Taint "Processing CFG:@.%s" (Log.Color.yellow (Cfg.show cfg));
   Analyzer.backward ~cfg ~initial
   |> Analyzer.entry
   >>| fun ({ taint; _ } as result) ->
   let taint_in_taint_out = extract_taint_in_taint_out_model parameters taint in
-  Log.log ~section:`Taint "Models: %s" (Log.Color.yellow (FixpointState.show_models (Some result)));
+  Log.log ~section:`Taint "Models: %s" (Log.Color.yellow (FixpointState.show result));
   { taint_in_taint_out; backward_taint = BackwardState.empty }

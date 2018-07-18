@@ -18,14 +18,9 @@ type backward_model = {
 
 module FixpointState : sig
 
-  type t = {
-    taint: BackwardState.t;
-    models: backward_model list;
-  }
+  type t = { taint: BackwardState.t }
 
   val create: unit -> t
-
-  val show_models: t option -> string
 
   include Fixpoint.State with type t := t
 end

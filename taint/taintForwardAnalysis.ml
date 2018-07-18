@@ -15,62 +15,45 @@ open TaintAccessPath
 
 
 type forward_model = {
-  define_name: Access.t;
   source_taint: ForwardState.t;
 }
 [@@deriving show]
 
 
 module type FixpointState = sig
-  type t = {
-    taint: ForwardState.t;
-    models: forward_model list;
-  }
+  type t = { taint: ForwardState.t }
   [@@deriving show]
 
   include Fixpoint.State with type t := t
 
   val create: unit -> t
-
-  val show_models: t option -> string
 end
 
 
 module rec FixpointState : FixpointState = struct
-  type t = {
-    taint: ForwardState.t;
-    models: forward_model list;
-  }
+  type t = { taint: ForwardState.t }
   [@@deriving show]
 
 
   let initial_taint = ForwardState.empty
 
 
-  let create () = {
-    taint = ForwardState.empty;
-    models = [];
-  }
+  let create () =
+    { taint = ForwardState.empty }
 
 
   let less_or_equal ~left:{ taint = left } ~right:{ taint = right } =
     ForwardState.less_or_equal ~left ~right
 
 
-  let join { taint = left; models; } { taint = right; _ } =
+  let join { taint = left; } { taint = right; _ } =
     let taint = ForwardState.join left right in
-    {
-      taint;
-      models;  (* There should be no joining at class/file level. *)
-    }
+    { taint }
 
 
-  let widen ~previous:{ taint = previous; _ } ~next:{ taint = next; models; } ~iteration =
+  let widen ~previous:{ taint = previous; _ } ~next:{ taint = next } ~iteration =
     let taint = ForwardState.widen ~iteration ~previous ~next in
-    {
-      taint;
-      models;  (* There should be no joining at class/file level. *)
-    }
+    { taint }
 
 
   let get_taint_option access_path state =
@@ -81,8 +64,8 @@ module rec FixpointState : FixpointState = struct
         ForwardState.read_access_path ~root ~path state.taint
 
 
-  let store_taint ~root ~path taint ({ taint = state_taint } as state) =
-    { state with taint = ForwardState.assign ~root ~path taint state_taint }
+  let store_taint ~root ~path taint { taint = state_taint } =
+    { taint = ForwardState.assign ~root ~path taint state_taint }
 
 
   let store_taint_option access_path taint state =
@@ -226,12 +209,6 @@ module rec FixpointState : FixpointState = struct
 
   let backward state ~statement =
     failwith "Don't call me"
-
-
-  let show_models = function
-    | None -> "no result."
-    | Some result ->
-        String.concat ~sep:"\n" (List.map ~f:show_forward_model result.FixpointState.models)
 end
 
 
@@ -251,6 +228,5 @@ let run ({ Define.name; parameters } as define) =
   |> Analyzer.exit
   >>| fun ({ FixpointState.taint; _ } as result) ->
   let source_taint = extract_source_model parameters taint in
-  Log.log ~section:`Taint "Models: %s" (Log.Color.cyan (FixpointState.show_models (Some result)));
-  let model = { source_taint; define_name = name } in
-  model
+  Log.log ~section:`Taint "Model: %s" (Log.Color.cyan (FixpointState.show result));
+  { source_taint }

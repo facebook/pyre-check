@@ -86,7 +86,7 @@ let assert_sources ~source ~expect:{ define_name; returns; _ } =
     |> List.tl_exn
     |> List.hd_exn
   in
-  let { ForwardAnalysis.source_taint; _ } = Option.value_exn (ForwardAnalysis.run define) in
+  let { ForwardAnalysis.source_taint } = Option.value_exn (ForwardAnalysis.run define) in
   Taint.SharedMemory.add_model
     ~define:(Access.create define_name)
     {

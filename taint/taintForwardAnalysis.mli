@@ -10,22 +10,15 @@ open Statement
 
 
 type forward_model = {
-  define_name: Ast.Statement.Access.t;
   source_taint: ForwardState.t;
 }
 [@@deriving show]
 
 
 module FixpointState : sig
-
-  type t = {
-    taint: ForwardState.t;
-    models: forward_model list;
-  }
+  type t = { taint: ForwardState.t }
 
   val create: unit -> t
-
-  val show_models: t option -> string
 
   include Fixpoint.State with type t := t
 end
