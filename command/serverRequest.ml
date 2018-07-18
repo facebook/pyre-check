@@ -291,21 +291,20 @@ let rec process_request
                  |> LanguageServer.Protocol.TextDocumentDefinitionResponse.to_yojson
                  |> Yojson.Safe.to_string)))
     | HoverRequest { DefinitionRequest.id; path; position } ->
-        let relative_path =
-          Path.from_uri path
-          >>= (fun path ->
-              Path.get_relative_to_root
-                ~root:configuration.project_root
-                ~path)
-          |> Option.value ~default:path
-        in
-
         let open LanguageServer.Protocol in
         let result =
-          File.Handle.create relative_path
+          File.Handle.create path
           |> AstSharedMemory.get_source
           >>| Lookup.create_of_source state.environment
-          >>= Lookup.get_annotation ~position
+          >>= Lookup.get_annotation
+            ~position
+            ~source_text:(
+              Path.create_relative
+                ~root:configuration.source_root
+                ~relative:path
+              |> File.create
+              |> File.content
+              |> Option.value ~default:"")
           >>| (fun (location, annotation) ->
               {
                 HoverResponse.location;
