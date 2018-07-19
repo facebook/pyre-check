@@ -222,39 +222,27 @@ let rec process_request
         else
           raise (TypeOrder.Untracked annotation)
       in
-      match request with
-      | LessOrEqual (left, right) ->
-          let left = parse_and_validate left in
-          let right = parse_and_validate right in
-          let response =
+      let response =
+        match request with
+        | LessOrEqual (left, right) ->
+            let left = parse_and_validate left in
+            let right = parse_and_validate right in
             TypeOrder.less_or_equal order ~left ~right
             |> Bool.to_string
-          in
-          state, (Some (TypeQueryResponse response))
-      | Join (left, right) ->
-          let left = parse_and_validate left in
-          let right = parse_and_validate right in
-          let response =
+        | Join (left, right) ->
+            let left = parse_and_validate left in
+            let right = parse_and_validate right in
             TypeOrder.join order left right
             |> Type.show
-          in
-          state, (Some (TypeQueryResponse response))
-      | Meet (left, right) ->
-          let left = parse_and_validate left in
-          let right = parse_and_validate right in
-          let response =
+        | Meet (left, right) ->
+            let left = parse_and_validate left in
+            let right = parse_and_validate right in
             TypeOrder.meet order left right
             |> Type.show
-          in
-          state, (Some (TypeQueryResponse response))
-      | NormalizeType expression ->
-          let normalized =
+        | NormalizeType expression ->
             parse_and_validate expression
             |> Type.show
-          in
-          state, (Some (TypeQueryResponse normalized))
-      | Superclasses annotation ->
-          let response =
+        | Superclasses annotation ->
             parse_and_validate annotation
             |> Handler.class_definition
             >>| (fun { Analysis.Environment.class_definition; _ } -> class_definition)
@@ -266,9 +254,8 @@ let rec process_request
             |> Option.value
               ~default:(
                 Format.sprintf "No class definition found for %s" (Expression.show annotation))
-            |> (fun response -> TypeQueryResponse response)
-          in
-          state, Some response
+      in
+      TypeQueryResponse response
     in
     try
       handle_request ()
@@ -276,7 +263,7 @@ let rec process_request
       let untracked_response =
         Format.asprintf "Error: Type %a was not found in the type order." Type.pp untracked
       in
-      state, Some (TypeQueryResponse untracked_response)
+      TypeQueryResponse untracked_response
   in
   let handle_client_shutdown_request id =
     let response = LanguageServer.Protocol.ShutdownResponse.default id in
@@ -357,7 +344,7 @@ let rec process_request
         compact_shared_memory ();
         handle_type_check state request
     | TypeQueryRequest request ->
-        handle_type_query state request
+        state, Some (handle_type_query state request)
     | DisplayTypeErrors request ->
         display_cached_type_errors state request
     | FlushTypeErrorsRequest ->
