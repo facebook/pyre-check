@@ -133,7 +133,7 @@ let in_process_handler ~configuration ~stubs ~sources =
   in
   build handler ~configuration ~stubs ~sources;
   Log.log ~section:`Environment "%a" Environment.Builder.pp environment;
-  Environment.infer_protocols ~handler;
+  Environment.infer_protocols ~handler ();
   TypeOrder.check_integrity (module Handler.TypeOrderHandler);
   handler
 
@@ -532,7 +532,7 @@ let shared_memory_handler
     ~integers:["size", EnvironmentSharedMemory.heap_size ()]
     ();
 
-  Environment.infer_protocols ~handler:shared_handler;
+  Environment.infer_protocols ~handler:shared_handler ();
   TypeOrder.check_integrity (module Handler.TypeOrderHandler);
 
   shared_handler

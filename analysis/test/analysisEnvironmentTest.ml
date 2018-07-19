@@ -1243,7 +1243,7 @@ let test_infer_protocols _ =
   Service.Scheduler.mock () |> ignore;
   let configuration = Configuration.create () in
   let type_sources = TestSetup.typeshed_stubs in
-  let assert_protocols source expected_edges =
+  let assert_protocols ?classes_to_infer source expected_edges =
     let expected_edges =
       let to_edge (source, target) =
         {
@@ -1262,8 +1262,19 @@ let test_infer_protocols _ =
     Service.Environment.populate
       (Environment.handler ~configuration environment)
       (source :: type_sources);
-    let handler = Environment.handler environment ~configuration in
-    let edges = Environment.infer_protocol_edges ~handler in
+    let ((module Handler: Environment.Handler) as handler) =
+      Environment.handler environment ~configuration
+    in
+    let classes_to_infer =
+      match classes_to_infer with
+      | None ->
+          Handler.TypeOrderHandler.keys ()
+      | Some classes_to_infer ->
+          List.map classes_to_infer ~f:Type.primitive
+          |> List.filter_map
+            ~f:(Handler.TypeOrderHandler.find (Handler.TypeOrderHandler.indices ()))
+    in
+    let edges = Environment.infer_protocol_edges ~handler ~classes_to_infer in
     let expected_edges = Edge.Set.of_list expected_edges in
     assert_equal
       ~cmp:Edge.Set.equal
@@ -1285,6 +1296,39 @@ let test_infer_protocols _ =
           pass
     |}
     ["A", "P"];
+
+  assert_protocols
+    ~classes_to_infer:["A"]
+    {|
+      class P(typing.Protocol):
+        def foo() -> int:
+          pass
+
+      class A:
+        def foo() -> int:
+          pass
+      class B:
+        def foo() -> int:
+          pass
+    |}
+    ["A", "P"];
+
+  assert_protocols
+    ~classes_to_infer:["B"]
+    {|
+      class P(typing.Protocol):
+        def foo() -> int:
+          pass
+
+      class A:
+        def foo() -> int:
+          pass
+      class B:
+        def foo() -> int:
+          pass
+    |}
+    ["B", "P"];
+
   assert_protocols
     {|
       class P(typing.Protocol):

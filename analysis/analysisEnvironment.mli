@@ -149,8 +149,12 @@ val infer_implementations
   -> protocol: Type.t
   -> TypeOrder.Edge.Set.t
 (* Exposed for testing. *)
-val infer_protocol_edges: handler: (module Handler) -> TypeOrder.Edge.Set.t
-val infer_protocols: handler: (module Handler) -> unit
+val infer_protocol_edges
+  :  handler: (module Handler)
+  -> classes_to_infer: int list
+  -> TypeOrder.Edge.Set.t
+(* If classes_to_infer is not None, only infers protocols for the specified classes. *)
+val infer_protocols: ?classes_to_infer: Type.t list -> handler: (module Handler) -> unit -> unit
 
 module Builder : sig
   val create: unit -> t

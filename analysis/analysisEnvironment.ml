@@ -998,7 +998,7 @@ let infer_implementations (module Handler: Handler) ~implementing_classes ~proto
   |> Option.value ~default:Edge.Set.empty
 
 
-let infer_protocol_edges ~handler:((module Handler: Handler) as handler) =
+let infer_protocol_edges ~handler:((module Handler: Handler) as handler) ~classes_to_infer =
   let module Edge = TypeOrder.Edge in
   Log.info "Inferring protocol implementations...";
   let protocols =
@@ -1062,7 +1062,7 @@ let infer_protocol_edges ~handler:((module Handler: Handler) as handler) =
             in
             List.fold body ~f:add_method ~init:methods_to_implementing_classes
       in
-      List.fold (Handler.TypeOrderHandler.keys ()) ~f:add_type_methods ~init:Access.Map.empty
+      List.fold classes_to_infer ~f:add_type_methods ~init:Access.Map.empty
     in
     fun ~method_name -> Map.find methods_to_implementing_classes method_name
   in
@@ -1073,9 +1073,18 @@ let infer_protocol_edges ~handler:((module Handler: Handler) as handler) =
   List.fold ~init:TypeOrder.Edge.Set.empty ~f:add_protocol_edges protocols
 
 
-let infer_protocols ~handler:((module Handler: Handler) as handler) =
+let infer_protocols ?classes_to_infer ~handler:((module Handler: Handler) as handler) () =
   let timer = Timer.start () in
-  infer_protocol_edges ~handler
+  let classes_to_infer =
+    match classes_to_infer with
+    | Some classes ->
+        List.filter_map
+          classes
+          ~f:(Handler.TypeOrderHandler.find (Handler.TypeOrderHandler.indices ()))
+    | None ->
+        Handler.TypeOrderHandler.keys ()
+  in
+  infer_protocol_edges ~handler ~classes_to_infer
   |> Set.iter ~f:(fun { TypeOrder.Edge.source; target } ->
       TypeOrder.connect
         (module Handler.TypeOrderHandler)

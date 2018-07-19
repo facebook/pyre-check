@@ -172,7 +172,13 @@ let rec process_request
 
       List.filter_map ~f:AstSharedMemory.get_source repopulate_handles
       |> Service.Environment.populate state.environment ~source_root;
-
+      let classes_to_infer =
+        let get_class_keys handle =
+          Handler.DependencyHandler.get_class_keys ~path:(File.Handle.show handle)
+        in
+        List.concat_map repopulate_handles ~f:get_class_keys
+      in
+      Analysis.Environment.infer_protocols ~handler:state.environment ~classes_to_infer ();
       Statistics.event
         ~section:`Memory
         ~name:"Shared memory size"
