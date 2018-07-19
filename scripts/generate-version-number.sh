@@ -18,8 +18,9 @@ SCRIPTS_DIRECTORY="$(dirname "$("${READLINK}" -f "$0")")"
 
 # Gather build information.
 if [[ "${1}" == 'development' ]]; then
-  # Avoid rebuilding the binary at every 'make' invocation during development.
-  BUILD_INFO="development build"
+  # Use a less precise date to avoid rebuilding the binary at every
+  # 'make' invocation during development.
+  BUILD_INFO="$(uname -s -m) @ $(date "+%a %b %d %Y") (development build)"
 else
   BUILD_INFO="$(uname -s -m) @ $(date)"
 fi
