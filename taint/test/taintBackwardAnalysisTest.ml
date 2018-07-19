@@ -26,7 +26,6 @@ let assert_taint_in_taint_out source { define_name; taint_in_taint_out_parameter
     parse source
     |> Preprocessing.preprocess
     |> Preprocessing.defines
-    |> List.tl_exn
     |> List.hd_exn
   in
   let { BackwardAnalysis.taint_in_taint_out; _ } =

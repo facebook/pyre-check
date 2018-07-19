@@ -183,7 +183,7 @@ let rec process_request
 
     (* Clear all type resolution info from shared memory for all affected sources. *)
     List.filter_map ~f:AstSharedMemory.get_source new_source_handles
-    |> List.concat_map ~f:Preprocessing.defines
+    |> List.concat_map ~f:(Preprocessing.defines ~extract_into_toplevel:true)
     |> List.map ~f:(fun { Node.value = { Statement.Define.name; _ }; _ } -> name)
     |> TypeResolutionSharedMemory.remove;
 

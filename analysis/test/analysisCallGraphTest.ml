@@ -105,7 +105,7 @@ let test_type_collection _ =
     Service.Environment.populate environment [source];
     check configuration environment source |> ignore;
     let defines =
-      Preprocessing.defines source
+      Preprocessing.defines source ~extract_into_toplevel:true
       |> List.map ~f:(fun { Node.value; _ } -> value)
     in
     let { Define.name; body = statements; _ } = List.nth_exn defines 1 in

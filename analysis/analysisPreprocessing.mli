@@ -28,9 +28,11 @@ val expand_returns: Source.t -> Source.t
 (* Transforms assignments to ternaries to handle tests *)
 val expand_ternary_assign: Source.t -> Source.t
 
-(* List of function definitions in a source. *)
+(* List of function definitions in a source. extract_into_toplevel copies all definitions into a
+   toplevel definition. *)
 val defines
   :  ?include_stubs: bool
+  -> ?extract_into_toplevel: bool
   -> Source.t
   -> Statement.Define.t Node.t list
 

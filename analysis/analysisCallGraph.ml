@@ -79,8 +79,6 @@ let create ~environment ~source =
     Hashtbl.fold cfg ~init:call_graph ~f:fold_cfg
   in
   Preprocessing.defines source
-  |> List.tl
-  |> Option.value ~default:[]
   |> List.fold ~init:Access.Map.empty ~f:fold_defines
 
 

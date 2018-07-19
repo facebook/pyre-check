@@ -168,7 +168,8 @@ let create_of_source environment source =
     in
     Int.Table.iteri cfg ~f:walk_cfg
   in
-  Preprocessing.defines source
+  (* TODO(T31738631): remove extract_into_toplevel *)
+  Preprocessing.defines ~extract_into_toplevel:true source
   |> List.iter ~f:walk_defines;
   location_lookup
 

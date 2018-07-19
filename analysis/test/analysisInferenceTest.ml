@@ -152,7 +152,7 @@ let fixpoint_parse source =
   parse source
   |> Preprocessing.preprocess
   |> Preprocessing.defines
-  |> (fun defines -> List.nth_exn defines 1)
+  |> List.hd_exn
 
 
 let test_fixpoint_backward _ =

@@ -1085,7 +1085,7 @@ let test_defines _ =
   let assert_defines statements defines =
     assert_equal
       ~cmp:(List.equal ~equal:Define.equal)
-      (Preprocessing.defines (Source.create statements)
+      (Preprocessing.defines ~extract_into_toplevel:true (Source.create statements)
        |> List.map ~f:Node.value)
       defines in
 

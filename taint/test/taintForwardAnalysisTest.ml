@@ -67,8 +67,6 @@ let add_model stub =
   let defines =
     source
     |> Preprocessing.defines ~include_stubs:true
-    |> List.tl
-    |> Option.value ~default:[]
     |> List.map ~f:Node.value
   in
   let add_model_to_memory { Define.name = define; _ } model =
@@ -83,7 +81,6 @@ let assert_sources ~source ~expect:{ define_name; returns; _ } =
     parse source
     |> Preprocessing.preprocess
     |> Preprocessing.defines
-    |> List.tl_exn
     |> List.hd_exn
   in
   let { ForwardAnalysis.source_taint } = Option.value_exn (ForwardAnalysis.run define) in

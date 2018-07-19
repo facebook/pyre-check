@@ -1160,10 +1160,11 @@ let expand_ternary_assign source =
   |> snd
 
 
-let defines ?(include_stubs = false) ({ Source.qualifier; statements; _ } as source) =
-  let toplevel =
-    Node.create_with_default_location (Statement.Define.create_toplevel ~qualifier ~statements)
-  in
+let defines
+    ?(include_stubs = false)
+    ?(extract_into_toplevel = false)
+    ({ Source.qualifier; statements; _ } as source) =
+
   let module Collector = Visit.StatementCollector(struct
       type t = Define.t Node.t
       let keep_recursing =
@@ -1184,7 +1185,14 @@ let defines ?(include_stubs = false) ({ Source.qualifier; statements; _ } as sou
             None
     end)
   in
-  toplevel :: (Collector.collect source)
+  let defines = (Collector.collect source) in
+  if extract_into_toplevel then
+    let toplevel =
+      Node.create_with_default_location (Statement.Define.create_toplevel ~qualifier ~statements)
+    in
+    toplevel :: defines
+  else
+    defines
 
 
 let classes source =

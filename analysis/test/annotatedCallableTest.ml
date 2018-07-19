@@ -117,8 +117,6 @@ let test_create _ =
       let parent = parent >>| Access.create in
       parse source
       |> Preprocessing.defines ~include_stubs:true
-      |> List.tl (* Get rid of toplevel. *)
-      |> Option.value ~default:[]
       |> List.map ~f:Node.value
       |> List.map ~f:(fun define -> { define with Statement.Define.parent })
       |> Callable.create ~resolution

@@ -547,7 +547,8 @@ let infer configuration environment ?mode_override ({ Source.path; _ } as source
       List.fold ~init:(false, []) ~f:add_error errors
     in
     let errors =
-      Preprocessing.defines source
+      (* TODO(T31738631): remove extract_into_toplevel *)
+      Preprocessing.defines ~extract_into_toplevel:true source
       |> List.map ~f:check
       |> List.map ~f:SingleSourceResult.errors
       |> List.concat
