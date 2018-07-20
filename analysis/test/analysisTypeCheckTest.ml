@@ -1735,7 +1735,7 @@ let test_check _ =
       def i() -> str:
         return ...
     |}
-    ["Incompatible return type [7]: Expected `str` but got `typing.Any`."];
+    [];
 
   assert_type_errors
     {|

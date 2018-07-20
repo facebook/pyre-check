@@ -880,6 +880,9 @@ let rec create ~aliases { Node.value = expression; _ } =
         | Access access ->
             parse [] access
 
+        | Ellipses ->
+            Primitive (Identifier.create "...")
+
         | String string ->
             let access =
               try
@@ -999,8 +1002,7 @@ let rec expression annotation =
                   List (List.map ~f:parameter parameters)
                   |> Node.create_with_default_location
               | Undefined ->
-                  Access (Access.create "...")
-                  |> Node.create_with_default_location
+                  Node.create_with_default_location Ellipses
             in
             get_item_call ~call_parameters [annotation]
           in
@@ -1031,7 +1033,13 @@ let rec expression annotation =
         (Access.create "typing.Union") @ (get_item_call parameters)
     | Variable { variable; _ } -> split variable
   in
-  Node.create_with_default_location (Access (access annotation))
+
+  let value =
+    match annotation with
+    | Primitive name when Identifier.show name = "..." -> Ellipses
+    | _ -> Access (access annotation)
+  in
+  Node.create_with_default_location value
 
 
 let access annotation =

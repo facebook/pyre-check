@@ -856,10 +856,6 @@ identifier:
       Location.create ~start:(fst position) ~stop:(snd position),
       Identifier.create "async"
     }
-  | position = ELLIPSES {
-      Location.create ~start:(fst position) ~stop:(snd position),
-      Identifier.create "..."
-    }
   ;
 
 simple_access:
@@ -1055,6 +1051,11 @@ atom:
         Node.location = fst identifier;
         value = Access [Access.Identifier (snd identifier)];
       }
+    }
+
+  | ellipses = ELLIPSES {
+      let location = Location.create ~start:(fst ellipses) ~stop:(snd ellipses) in
+      Node.create Ellipses ~location
     }
 
   | left = expression;

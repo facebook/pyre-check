@@ -3766,7 +3766,7 @@ let test_stubs _ =
                       value =
                         +Tuple [
                           +Access [Access.Identifier ~~"str"];
-                          +Access [Access.Identifier ~~"..."];
+                          +Ellipses;
                         ];
                     };
                   ]);
@@ -3884,7 +3884,7 @@ let test_stubs _ =
         parameters = [
           +{
             Parameter.name = ~~"a";
-            value = Some !"...";
+            value = Some (+Ellipses);
             annotation = Some !"int";
           };
         ];
@@ -3949,7 +3949,7 @@ let test_ellipsis _ =
         parameters = [
           +{
             Parameter.name = ~~"debug";
-            value = Some !"...";
+            value = Some (+Ellipses);
             annotation = None;
           };
         ];
@@ -3968,7 +3968,7 @@ let test_ellipsis _ =
       +If {
         If.test = +ComparisonOperator {
           ComparisonOperator.left = !"x";
-          right = [ComparisonOperator.Is, !"..."];
+          right = [ComparisonOperator.Is, +Ellipses];
         };
         body = [+Pass];
         orelse = [];
