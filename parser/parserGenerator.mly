@@ -519,73 +519,55 @@ raise_from:
 compound_statement:
   | definition = CLASS; name = simple_access;
     bases = bases; colon_position = COLON;
-    body = block_or_stub {
+    body = block_or_stub_body {
       let location = Location.create ~start:definition ~stop:colon_position in
-      match body with
-      | Some (body_location, body) ->
-          let location = { location with Location.stop = body_location.Location.stop } in
-          let _, name = name in
-          let body =
-            let rec transform_toplevel_statements = function
-              | { Node.location; value = Assign assign } ->
-                  [{
-                    Node.location;
-                    value = Assign { assign with Assign.parent = Some name };
-                  }]
-              | { Node.location; value = Define define } ->
-                  [{
-                    Node.location;
-                    value = Define { define with Define.parent = Some name };
-                  }]
-              | {
-                  Node.value = If {
-                    If.test = {
-                      Node.value = ComparisonOperator {
-                          ComparisonOperator.left;
-                          right = [
-                            ComparisonOperator.GreaterThanOrEquals,
-                            { Node.value = Tuple ({ Node.value = Integer major; _ } :: _ ); _ }
-                          ];
-                        };
-                      _;
+      let body_location, body = body in
+      let location = { location with Location.stop = body_location.Location.stop } in
+      let _, name = name in
+      let body =
+        let rec transform_toplevel_statements = function
+          | { Node.location; value = Assign assign } ->
+              [{
+                Node.location;
+                value = Assign { assign with Assign.parent = Some name };
+              }]
+          | { Node.location; value = Define define } ->
+              [{
+                Node.location;
+                value = Define { define with Define.parent = Some name };
+              }]
+          | {
+              Node.value = If {
+                If.test = {
+                  Node.value = ComparisonOperator {
+                      ComparisonOperator.left;
+                      right = [
+                        ComparisonOperator.GreaterThanOrEquals,
+                        { Node.value = Tuple ({ Node.value = Integer major; _ } :: _ ); _ }
+                      ];
                     };
-                    body;
-                    _
-                  };
-                  _
-                } when (Expression.show left) = "sys.version_info" && major = 3 ->
-                  List.concat_map ~f:transform_toplevel_statements body
-              | statement ->
-                  [statement]
-            in
-            List.concat_map ~f:transform_toplevel_statements body in
-          {
-            Node.location;
-            value = Class {
-              Class.name;
-              bases;
-              body;
-              decorators = [];
-              docstring = Statement.extract_docstring body;
-            };
-          }
-      | None ->
-          let body =
-            (* TODO(T31645576): the location is imprecise. This will change when we switch classes
-               over as well. *)
-            let ellipses = create_ellipses (definition, colon_position) in
-            [Node.create (Expression ellipses) ~location]
-          in
-          {
-            Node.location;
-            value = Class {
-              Class.name = snd name;
-              bases;
-              body;
-              decorators = [];
-              docstring = None
-            };
-          }
+                  _;
+                };
+                body;
+                _
+              };
+              _
+            } when (Expression.show left) = "sys.version_info" && major = 3 ->
+              List.concat_map ~f:transform_toplevel_statements body
+          | statement ->
+              [statement]
+        in
+        List.concat_map ~f:transform_toplevel_statements body in
+      {
+        Node.location;
+        value = Class {
+          Class.name;
+          bases;
+          body;
+          decorators = [];
+          docstring = Statement.extract_docstring body;
+        };
+      }
     }
 
   | definition = DEFINE; name = simple_access;
@@ -593,92 +575,68 @@ compound_statement:
     parameters = separated_list(COMMA, define_parameter);
     RIGHTPARENS;
     return_annotation = return_annotation?;
-    colon_position = COLON;
+    COLON;
     signature_comment = SIGNATURE_COMMENT?;
-    body = block_or_stub {
-      match body with
-      | Some body ->
-          let body_location, body = body in
-          let docstring = Statement.extract_docstring body in
-          let location =
-            location_create_with_stop ~start:definition ~stop:body_location.Location.stop
-          in
-          let annotation =
-            match return_annotation with
-            | Some return_annotation -> Some return_annotation
-            | None ->
-              signature_comment
-              >>= (fun (_, return_annotation) ->
-                  Some {
-                    Node.location;
-                    value = String return_annotation
-                  }
-                )
-          in
-          let parameters =
-            match signature_comment with
-            | Some (parameter_annotations, _)
-              when not (List.is_empty parameter_annotations) ->
-                let add_annotation
-                  ({ Node.value = parameter; _ } as parameter_node)
-                  annotation =
-                    {
-                      parameter_node with
-                      Node.value = {
-                        parameter with
-                          Parameter.annotation = Some {
-                            Node.location = Location.Reference.any;
-                            value = String annotation;
-                          }
+    body = block_or_stub_body {
+      let body_location, body = body in
+      let docstring = Statement.extract_docstring body in
+      let location =
+        location_create_with_stop ~start:definition ~stop:body_location.Location.stop
+      in
+      let annotation =
+        match return_annotation with
+        | Some return_annotation -> Some return_annotation
+        | None ->
+          signature_comment
+          >>= (fun (_, return_annotation) ->
+              Some {
+                Node.location;
+                value = String return_annotation
+              }
+            )
+      in
+      let parameters =
+        match signature_comment with
+        | Some (parameter_annotations, _)
+          when not (List.is_empty parameter_annotations) ->
+            let add_annotation
+              ({ Node.value = parameter; _ } as parameter_node)
+              annotation =
+                {
+                  parameter_node with
+                  Node.value = {
+                    parameter with
+                      Parameter.annotation = Some {
+                        Node.location = Location.Reference.any;
+                        value = String annotation;
                       }
-                    }
-                in
-                if List.length parameters = List.length parameter_annotations then
-                  List.map2_exn
-                    ~f:add_annotation
-                    parameters
-                    parameter_annotations
-                else
-                  parameters
-            | _ ->
+                  }
+                }
+            in
+            if List.length parameters = List.length parameter_annotations then
+              List.map2_exn
+                ~f:add_annotation
                 parameters
-          in
-          {
-            Node.location;
-            value = Define {
-              Define.name = snd name;
-              parameters;
-              body;
-              decorators = [];
-              return_annotation = annotation;
-              async = false;
-              generated = false;
-              parent = None;
-              docstring = docstring;
-            };
-          }
-      | None ->
-          let location = Location.create ~start:definition ~stop:colon_position in
-          let body =
-            (* TODO(T31645576): the location is imprecise. This will change when we switch classes
-               over as well. *)
-            let ellipses = create_ellipses (definition, colon_position) in
-            [Node.create (Expression ellipses) ~location]
-          in
-          {
-            Node.location;
-            value = Define {
-              Define.name = snd name;
-              parameters;
-              body;
-              decorators = [];
-              return_annotation;
-              async = false;
-              generated = false;
-              parent = None;
-              docstring = None;
-            };
-          }
+                parameter_annotations
+            else
+              parameters
+        | _ ->
+            parameters
+      in
+      {
+        Node.location;
+        value = Define {
+          Define.name = snd name;
+          parameters;
+          body;
+          decorators = [];
+          return_annotation = annotation;
+          async = false;
+          generated = false;
+          parent = None;
+          docstring = docstring;
+        };
+      }
     }
 
   | start = FOR; target = expression_list; IN; iterator = test_list; COLON;
@@ -789,11 +747,15 @@ async_statement:
     }
   ;
 
-block_or_stub:
-  | ELLIPSES; NEWLINE
-  | STUB; value; NEWLINE
-  | NEWLINE+; INDENT; ELLIPSES; NEWLINE; DEDENT; NEWLINE* { None }
-  | statements = block { Some statements }
+block_or_stub_body:
+  | ellipses = ELLIPSES; NEWLINE
+  | ellipses = STUB; value; NEWLINE
+  | NEWLINE+; INDENT; ellipses = ELLIPSES; NEWLINE; DEDENT; NEWLINE* {
+    let location = Location.create ~start:(fst ellipses) ~stop:(snd ellipses) in
+    let body = [Node.create (Expression (Node.create Ellipses ~location)) ~location] in
+    location, body
+   }
+  | statements = block { statements }
   ;
 
 block:
