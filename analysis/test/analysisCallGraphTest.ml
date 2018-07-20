@@ -22,33 +22,46 @@ let parse_source ?(qualifier=[]) source =
   |> Preprocessing.preprocess
 
 
-let check_source source =
-  let configuration = TestSetup.configuration in
-  let environment = TestSetup.environment ~configuration () in
-  Service.Environment.populate environment [source];
-  check configuration environment source |> ignore
-
-
-let assert_call_graph source ~expected =
+let create_call_graph source =
   let source = parse_source source in
   let configuration = TestSetup.configuration in
   let environment = TestSetup.environment ~configuration () in
   Service.Environment.populate environment [source];
   check configuration environment source |> ignore;
-  let call_graph = CallGraph.create ~environment ~source in
-  let result =
-    let fold_call_graph ~key:caller ~data:callees result =
-      let callee = List.hd_exn callees in
-      Format.sprintf
-        "%s -> %s\n%s"
-        (Access.show caller)
-        (Access.show callee)
-        result
-    in
-    Access.Map.fold call_graph ~init:"" ~f:fold_call_graph
+  CallGraph.create ~environment ~source
+
+
+let compare_call_graph call_graph ~expected =
+  let expected =
+    let map_callee_callers (callee, callers) =
+      Access.create callee, List.map ~f:Access.create callers in
+    List.map expected ~f:map_callee_callers
   in
-  let expected = expected ^ "\n" in
-  assert_equal ~printer:ident result expected
+  assert_equal
+    ~printer:(fun l ->
+        List.fold ~init:"" l ~f:(fun acc (x,l) ->
+            acc ^ (Format.sprintf "X: %s@." (Access.show x))
+            ^    (List.fold ~init:"" l ~f:(fun acc x ->
+                acc ^ (Format.sprintf "l: %s@." (Access.show x))))))
+    call_graph
+    expected
+
+
+let assert_call_graph source ~expected =
+  let call_graph =
+    create_call_graph source
+    |> Access.Map.to_alist
+  in
+  compare_call_graph call_graph ~expected
+
+
+let assert_reverse_call_graph source ~expected =
+  let call_graph =
+    create_call_graph source
+    |> CallGraph.reverse
+    |> Access.Map.to_alist
+  in
+  compare_call_graph call_graph ~expected
 
 
 let test_construction _ =
@@ -61,10 +74,10 @@ let test_construction _ =
       def bar(self):
         return 10
 
-      def quux(self):
+      def qux(self):
         return self.bar()
     |}
-    ~expected:"Foo.quux -> Foo.bar";
+    ~expected:["Foo.qux", ["Foo.bar"]];
 
   assert_call_graph
     {|
@@ -73,14 +86,16 @@ let test_construction _ =
         pass
 
       def bar(self):
-        return self.quux()
+        return self.qux()
 
-      def quux(self):
+      def qux(self):
         return self.bar()
     |}
     ~expected:
-      "Foo.quux -> Foo.bar\n\
-       Foo.bar -> Foo.quux";
+      [
+        "Foo.bar", ["Foo.qux"];
+        "Foo.qux", ["Foo.bar"]
+      ];
 
   assert_call_graph
     {|
@@ -92,27 +107,7 @@ let test_construction _ =
        def __init__(self) -> A:
          return A()
      |}
-    ~expected:
-      "B.__init__ -> A.__init__"
-
-
-let assert_reverse_call_graph source ~expected =
-  let source = parse_source source in
-  let configuration = TestSetup.configuration in
-  let environment = TestSetup.environment ~configuration () in
-  Service.Environment.populate environment [source];
-  check configuration environment source |> ignore;
-  let call_graph =
-    CallGraph.create ~environment ~source
-    |> CallGraph.reverse
-    |> Access.Map.to_alist
-  in
-  let expected =
-    let map_callee_callers (callee, callers) =
-      Access.create callee, List.map ~f:Access.create callers in
-    List.map expected ~f:map_callee_callers
-  in
-  assert_equal call_graph expected
+    ~expected:["B.__init__", ["A.__init__"]]
 
 
 let test_construction_reverse _ =
@@ -125,10 +120,10 @@ let test_construction_reverse _ =
       def bar(self):
         return 10
 
-      def quux(self):
+      def qux(self):
         return self.bar()
     |}
-    ~expected:["Foo.bar", ["Foo.quux"]];
+    ~expected:["Foo.bar", ["Foo.qux"]];
 
   assert_reverse_call_graph
     {|
@@ -136,18 +131,20 @@ let test_construction_reverse _ =
       def __init__(self):
         pass
 
+      def baz(self):
+        return self.bar()
+
+      def qux(self):
+        return self.bar()
+
       def bar(self):
-        return self.quux()
-
-      def quux(self):
-        return self.bar()
-
-      def bazz(self):
-        return self.bar()
-  |}
+        return self.qux()
+    |}
     ~expected:
-      ["Foo.bar", ["Foo.quux"; "Foo.bazz"];
-       "Foo.quux", ["Foo.bar"]]
+      [
+        "Foo.bar", ["Foo.qux"; "Foo.baz"];
+        "Foo.qux", ["Foo.bar"];
+      ]
 
 
 let test_type_collection _ =
@@ -250,7 +247,6 @@ let test_type_collection _ =
     ~expected:[(5, 0, "$local_0$a.foo.(...).foo.(...)", "test2.A.foo")]
 
 
-
 let test_method_overrides _ =
   let assert_method_overrides source ~expected =
     let expected =
@@ -280,13 +276,13 @@ let test_method_overrides _ =
       class Baz(Bar):
         def foo(): pass
         def baz(): pass
-      class Quux(Foo):
+      class Qux(Foo):
         def foo(): pass
     |}
     ~expected:
       [
         "Bar.foo", ["Baz.foo"];
-        "Foo.foo", ["Bar.foo"; "Quux.foo"]
+        "Foo.foo", ["Bar.foo"; "Qux.foo"]
       ]
 
 
