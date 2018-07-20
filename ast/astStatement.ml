@@ -154,7 +154,6 @@ end
 module Stub = struct
   type 'statement t =
     | Class of 'statement Record.Class.record
-    | Define of 'statement Record.Define.record
   [@@deriving compare, eq, sexp, show, hash]
 end
 
@@ -439,6 +438,15 @@ module Define = struct
           false
     in
     List.exists ~f:matches body
+
+
+  let is_stub { body; _ } =
+    match List.rev body with
+    | { Node.value = Expression { Node.value = Expression.Ellipses; _ }; _ } :: _
+    | _ :: { Node.value = Expression { Node.value = Expression.Ellipses; _ }; _ } :: _ ->
+        true
+    | _ ->
+        false
 
 
   let dump define =
@@ -772,7 +780,6 @@ module Class = struct
     in
     let property_attributes =
       let property_attributes map = function
-        | { Node.location; value = Stub (Stub.Define define) }
         | { Node.location; value = Define define } ->
             begin
               match Define.property_attribute ~location define with
@@ -821,7 +828,6 @@ module Class = struct
     let callable_attributes =
       let callable_attributes map { Node.location; value } =
         match value with
-        | Stub (Stub.Define ({ Define.name = target; _ } as define))
         | Define ({ Define.name = target; _ } as define) ->
             Attribute.target ~parent:name (Node.create ~location (Expression.Access target))
             >>| (fun target ->
@@ -996,14 +1002,6 @@ module Class = struct
             begin
               let is_stub = function
                 | {
-                  Node.value = Stub (Stub.Define {
-                      Record.Define.name = stub_name;
-                      parameters = stub_parameters;
-                      _;
-                    });
-                  _;
-                }
-                | {
                   Node.value = Define {
                       Record.Define.name = stub_name;
                       parameters = stub_parameters;
@@ -1018,9 +1016,13 @@ module Class = struct
               in
               match List.find ~f:is_stub stub with
               | Some {
-                  Node.value = Stub (Stub.Define { Define.parameters; return_annotation; _ });
+                  Node.value = Define ({
+                      Define.parameters;
+                      return_annotation;
+                      _;
+                    } as stub);
                   _;
-                } ->
+                } when Define.is_stub stub ->
                   let updated_define =
                     {
                       Node.location;
@@ -1428,9 +1430,6 @@ module PrettyPrinter = struct
 
     | Stub (Stub.Class definition) ->
         Format.fprintf formatter "%a" pp_class definition
-
-    | Stub (Stub.Define define) ->
-        Format.fprintf formatter "%a" pp_define define
 
     | Try { Record.Try.body; handlers; orelse; finally } ->
         let pp_try_block formatter body =

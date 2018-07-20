@@ -146,8 +146,7 @@ let create ~qualifier ~local_mode ?path ~stub statements =
       | Class { Record.Class.name; _ }
       | Stub (Stub.Class { Record.Class.name; _ }) ->
           public_values @ (filter_private [name]), dunder_all
-      | Define { Define.name; _ }
-      | Stub (Stub.Define { Define.name; _ }) ->
+      | Define { Define.name; _ } ->
           public_values @ (filter_private [name]), dunder_all
       | Import { Import.imports; _ } ->
           let get_import_name { Import.alias; name } = Option.value alias ~default:name in

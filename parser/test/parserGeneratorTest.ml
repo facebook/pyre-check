@@ -571,18 +571,17 @@ let test_define _ =
   assert_parsed_equal
     "async def foo():\n  ..."
     [
-      +Stub
-        (Stub.Define {
-            Define.name = Access.create "foo";
-            parameters = [];
-            body = [];
-            decorators = [];
-            docstring = None;
-            return_annotation = None;
-            async = true;
-            generated = false;
-            parent = None;
-          })
+      +Define {
+        Define.name = Access.create "foo";
+        parameters = [];
+        body = [+Expression (+Ellipses)];
+        decorators = [];
+        docstring = None;
+        return_annotation = None;
+        async = true;
+        generated = false;
+        parent = None;
+      }
     ];
   assert_parsed_equal
     "@foo\nasync def foo():\n  1"
@@ -3816,91 +3815,87 @@ let test_stubs _ =
   assert_parsed_equal
     "def foo(a): ..."
     [
-      +Stub
-        (Stub.Define {
-            Define.name = Access.create "foo";
-            parameters = [
-              +{
-                Parameter.name = ~~"a";
-                value = None;
-                annotation = None;
-              };
-            ];
-            body = [];
-            decorators = [];
-            docstring = None;
-            return_annotation = None;
-            async = false;
-            generated = false;
-            parent = None;
-          });
+      +Define {
+        Define.name = Access.create "foo";
+        parameters = [
+          +{
+            Parameter.name = ~~"a";
+            value = None;
+            annotation = None;
+          };
+        ];
+        body = [+Expression (+Ellipses)];
+        decorators = [];
+        docstring = None;
+        return_annotation = None;
+        async = false;
+        generated = false;
+        parent = None;
+      };
     ];
   assert_parsed_equal
     "def foo(a): ... # type: ignore"
     [
-      +Stub
-        (Stub.Define {
-            Define.name = Access.create "foo";
-            parameters = [
-              +{
-                Parameter.name = ~~"a";
-                value = None;
-                annotation = None;
-              };
-            ];
-            body = [];
-            decorators = [];
-            docstring = None;
-            return_annotation = None;
-            async = false;
-            generated = false;
-            parent = None;
-          });
+      +Define {
+        Define.name = Access.create "foo";
+        parameters = [
+          +{
+            Parameter.name = ~~"a";
+            value = None;
+            annotation = None;
+          };
+        ];
+        body = [+Expression (+Ellipses)];
+        decorators = [];
+        docstring = None;
+        return_annotation = None;
+        async = false;
+        generated = false;
+        parent = None;
+      };
     ];
   assert_parsed_equal
     "def foo(a):\n\t..."
     [
-      +Stub
-        (Stub.Define {
-            Define.name = Access.create "foo";
-            parameters = [
-              +{
-                Parameter.name = ~~"a";
-                value = None;
-                annotation = None;
-              };
-            ];
-            body = [];
-            decorators = [];
-            docstring = None;
-            return_annotation = None;
-            async = false;
-            generated = false;
-            parent = None;
-          });
+      +Define {
+        Define.name = Access.create "foo";
+        parameters = [
+          +{
+            Parameter.name = ~~"a";
+            value = None;
+            annotation = None;
+          };
+        ];
+        body = [+Expression (+Ellipses)];
+        decorators = [];
+        docstring = None;
+        return_annotation = None;
+        async = false;
+        generated = false;
+        parent = None;
+      };
     ];
 
   assert_parsed_equal
     "@overload\ndef foo(a: int = ...):  ..."
     [
-      +Stub
-        (Stub.Define {
-            Define.name = Access.create "foo";
-            parameters = [
-              +{
-                Parameter.name = ~~"a";
-                value = Some !"...";
-                annotation = Some !"int";
-              };
-            ];
-            body = [];
-            decorators = [!"overload"];
-            docstring = None;
-            return_annotation = None;
-            async = false;
-            generated = false;
-            parent = None;
-          });
+      +Define {
+        Define.name = Access.create "foo";
+        parameters = [
+          +{
+            Parameter.name = ~~"a";
+            value = Some !"...";
+            annotation = Some !"int";
+          };
+        ];
+        body = [+Expression (+Ellipses)];
+        decorators = [!"overload"];
+        docstring = None;
+        return_annotation = None;
+        async = false;
+        generated = false;
+        parent = None;
+      };
     ];
 
   assert_parsed_equal

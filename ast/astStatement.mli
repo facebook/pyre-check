@@ -133,7 +133,6 @@ end
 module Stub : sig
   type 'statement t =
     | Class of 'statement Record.Class.record
-    | Define of 'statement Record.Define.record
   [@@deriving compare, eq, sexp, show, hash]
 end
 
@@ -217,6 +216,7 @@ module Define : sig
   val is_generated_constructor: t -> bool
   val is_property_setter: t -> bool
   val is_untyped: t -> bool
+  val is_stub: t -> bool
 
   val is_toplevel: t -> bool
   val is_class_toplevel: t -> bool

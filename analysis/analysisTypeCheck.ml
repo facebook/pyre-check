@@ -1714,7 +1714,7 @@ module State = struct
       match Node.value statement with
       | Class { Class.name; body; _ } ->
           schedule ~define:(Define.create_class_toplevel ~qualifier:name ~statements:body)
-      | Define define ->
+      | Define define when not (Define.is_stub define) ->
           schedule ~define
       | _ ->
           nested_defines

@@ -21,9 +21,6 @@
     | { Node.location; value = Stub (Stub.Class definition) } ->
         let decorated = { definition with Class.decorators = decorators; } in
         { Node.location; value = Stub (Stub.Class decorated) }
-    | { Node.location; value = Stub (Stub.Define definition) } ->
-        let decorated = { definition with Define.decorators = decorators; } in
-        { Node.location; value = Stub (Stub.Define decorated) }
     | _ -> raise (ParserError "Cannot decorate statement")
 
   type entry =
@@ -543,12 +540,6 @@ compound_statement:
                     Node.location;
                     value = Define { define with Define.parent = Some name };
                   }]
-              | { Node.location; value = Stub (Stub.Define define) } ->
-                  [{
-                    Node.location;
-                    value = Stub
-                      (Stub.Define { define with Define.parent = Some name });
-                  }]
               | {
                   Node.value = If {
                     If.test = {
@@ -664,20 +655,26 @@ compound_statement:
             };
           }
       | None ->
+          let location = Location.create ~start:definition ~stop:colon_position in
+          let body =
+            (* TODO(T31645576): the location is imprecise. This will change when we switch classes
+               over as well. *)
+            let ellipses = create_ellipses (definition, colon_position) in
+            [Node.create (Expression ellipses) ~location]
+          in
           {
-            Node.location = Location.create ~start:definition ~stop:colon_position;
-            value = Stub
-              (Stub.Define {
-                Define.name = snd name;
-                parameters;
-                body = [];
-                decorators = [];
-                return_annotation;
-                async = false;
-                generated = false;
-                parent = None;
-                docstring = None;
-              });
+            Node.location;
+            value = Define {
+              Define.name = snd name;
+              parameters;
+              body;
+              decorators = [];
+              return_annotation;
+              async = false;
+              generated = false;
+              parent = None;
+              docstring = None;
+            };
           }
     }
 
@@ -773,12 +770,6 @@ async_statement:
             Node.location;
             value = Define decorated;
           }
-      | { Node.value = Stub (Stub.Define value); _ } ->
-        let decorated = { value with Define.async = true } in
-        {
-          Node.location;
-          value = Stub (Stub.Define decorated);
-        }
       | { Node.value = For value; _ } ->
           let with_async = { value with For.async = true } in
           {

@@ -143,7 +143,6 @@ module Make (Visitor: Visitor) = struct
             List.iter bases ~f:(visit_argument ~visit_expression);
             List.iter body ~f:visit_statement;
             List.iter decorators ~f:visit_expression;
-        | Stub (Stub.Define { Define.parameters; body; decorators; return_annotation; _ })
         | Define { Define.parameters; body; decorators; return_annotation; _ } ->
             List.iter parameters ~f:(visit_parameter ~visit_expression);
             List.iter body ~f:visit_statement;
@@ -236,7 +235,6 @@ module MakeStatementVisitor (Visitor: StatementVisitor) = struct
             | Class { Class.body; _ }
             | Define { Define.body; _ }
             | Stub (Stub.Class { Class.body; _ })
-            | Stub (Stub.Define { Define.body; _ })
             | With { With.body; _ } ->
                 List.iter ~f:visit_statement body
 

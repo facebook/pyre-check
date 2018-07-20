@@ -53,12 +53,12 @@ let test_parse_stubs_modules_list _ =
       | Some {
           Source.statements = [
             {
-              Node.value = Statement.Stub (Statement.Stub.Define { Statement.Define.name; _ });
+              Node.value = Statement.Define ({ Statement.Define.name; _ } as define);
               _;
             };
           ];
           _;
-        } -> name
+        } when Statement.Define.is_stub define -> name
       | _ -> failwith "Could not get source."
     in
     assert_equal ~cmp:Access.equal ~printer:Access.show (Access.create define) name

@@ -899,7 +899,6 @@ let register_functions (module Handler: Handler) ({ Source.path; _ } as source) 
               ~f:(collect_callable ~location)
 
         | { Node.location; value = Define define }
-        | { Node.location; value = Stub (Stub.Define define) }
           when not (Define.is_constructor define) ->
             Annotated.Callable.apply_decorators ~resolution ~define
             |> Annotated.Define.create
@@ -1037,7 +1036,6 @@ let infer_protocol_edges ~handler:((module Handler: Handler) as handler) ~classe
             (* TODO(T30499509): Rely on existing class defines instead of repeating work. *)
             let add_method methods_to_implementing_classes { Node.value = statement; _ } =
               match statement with
-              | Stub (Stub.Define { Define.name; _ })
               | Define { Define.name;  _ } ->
                   let method_name = [List.last_exn name] in
                   if Set.mem protocol_methods method_name then

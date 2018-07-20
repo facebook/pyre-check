@@ -140,7 +140,6 @@ module Method = struct
           >>= (fun ({ Node.value = { Class.body; _ }; _ } as parent) ->
               let find_override { Node.value = statement; _ } =
                 match statement with
-                | Statement.Stub (Stub.Define other)
                 | Statement.Define other ->
                     let name_matches =
                       Access.equal
@@ -325,9 +324,7 @@ let constructors ({ Node.value = { Class.name; body; _ }; _ } as definition) ~re
   let constructors =
     let declared =
       let extract_constructor = function
-        | { Node.value = Statement.Stub (Stub.Define define); _ }
-        | { Node.value = Statement.Define define; _ }
-          when Define.is_constructor define ->
+        | { Node.value = Statement.Define define; _ } when Define.is_constructor define ->
             Some define
         | _ ->
             None in
@@ -373,11 +370,8 @@ let constructors ({ Node.value = { Class.name; body; _ }; _ } as definition) ~re
 
 let methods ({ Node.value = { Class.body; _ }; _ } as definition) =
   let extract_define = function
-    | { Node.value = Statement.Stub (Stub.Define define); _ }
-    | { Node.value = Define define; _ } ->
-        Some (Method.create ~define ~parent:definition)
-    | _ ->
-        None
+    | { Node.value = Define define; _ } -> Some (Method.create ~define ~parent:definition)
+    | _ -> None
   in
   List.filter_map ~f:extract_define body
 
@@ -831,9 +825,7 @@ let fallback_attribute ~resolution ~access definition =
         | _ -> false
       in
       match value with
-      | Stub (Stub.Define { Define.name; return_annotation; _ })
-      | Define { Define.name; return_annotation; _ }
-        when is_fallback name ->
+      | Define { Define.name; return_annotation; _ } when is_fallback name ->
           Some
             (Attribute.create
                ~resolution

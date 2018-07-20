@@ -113,7 +113,6 @@ let expand_string_annotations ({ Source.path; _ } as source) =
             match value with
             | Assign assign -> Assign (transform_assign ~assign)
             | Define define -> Define (transform_define ~define)
-            | Stub (Stub.Define define) -> Stub (Stub.Define (transform_define ~define))
             | _ -> value
           in
           { statement with Node.value }
@@ -301,8 +300,7 @@ let qualify ({ Source.path; qualifier = source_qualifier; statements; _ } as sou
                 scope with
                 aliases = Map.set aliases ~key:name ~data:(global_alias ~qualifier ~name);
               }
-          | Define { Define.name; _ }
-          | Stub (Stub.Define { Define.name; _ }) ->
+          | Define { Define.name; _ } ->
               {
                 scope with
                 aliases = Map.set aliases ~key:name ~data:(global_alias ~qualifier ~name);
@@ -609,9 +607,6 @@ let qualify ({ Source.path; qualifier = source_qualifier; statements; _ } as sou
       | Stub (Stub.Class definition) ->
           scope,
           Stub (Stub.Class (qualify_class definition))
-      | Stub (Stub.Define define) ->
-          scope,
-          Stub (Stub.Define (qualify_define define))
       | Try { Try.body; handlers; orelse; finally } ->
           let body_scope, body = qualify_statements ~scope body in
           let handler_scopes, handlers =
@@ -1164,17 +1159,14 @@ let defines
       type t = Define.t Node.t
       let keep_recursing =
         function
-        | { Node.value = Define _; _ }
-        | { Node.value = Stub (Stub.Define _); _ }  ->
-            Transform.Stop
-        | _ ->
-            Transform.Recurse
+        | { Node.value = Define _; _ } -> Transform.Stop
+        | _ -> Transform.Recurse
 
 
       let predicate = function
-        | { Node.location; value = Define define } ->
+        | { Node.location; value = Define define } when Define.is_stub define && include_stubs ->
             Some ({ Node.location; Node.value = define })
-        | { Node.location; value = Stub (Stub.Define define) } when include_stubs ->
+        | { Node.location; value = Define define } ->
             Some ({ Node.location; Node.value = define })
         | _ ->
             None

@@ -156,7 +156,6 @@ let parse_last_statement source =
 let parse_single_define source =
   match parse_single_statement source with
   | { Node.value = Statement.Define define; _ } -> define
-  | { Node.value = Statement.Stub (Statement.Stub.Define define); _ } -> define
   | _ -> failwith "Could not parse single define"
 
 

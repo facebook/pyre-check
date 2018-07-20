@@ -368,33 +368,6 @@ module Make (Transformer : Transformer) = struct
                       transform_list decorators ~f:transform_expression;
                     docstring;
                   }
-              | Stub.Define {
-                  Define.name;
-                  parameters;
-                  body;
-                  decorators;
-                  return_annotation;
-                  async;
-                  generated;
-                  parent;
-                  docstring;
-                } ->
-                  Stub.Define {
-                    Define.name;
-                    parameters = transform_list
-                        parameters
-                        ~f:(transform_parameter ~transform_expression);
-                    body =
-                      transform_list body ~f:transform_statement
-                      |> List.concat;
-                    decorators =
-                      transform_list decorators ~f:transform_expression;
-                    return_annotation = return_annotation >>| transform_expression;
-                    async;
-                    generated;
-                    parent;
-                    docstring;
-                  }
             in
             Stub stub
         | With { With.items; body; async } ->
@@ -493,13 +466,6 @@ module MakeStatementTransformer (Transformer: StatementTransformer) = struct
                    value with
                    Class.body = List.concat_map ~f:transform_statement body;
                  })
-
-        | Stub (Stub.Define ({ Define.body; _ } as value)) ->
-            Stub
-              (Stub.Define {
-                  value with
-                  Define.body = List.concat_map ~f:transform_statement body;
-                })
 
         | With ({ With.body; _ } as value) ->
             With {
