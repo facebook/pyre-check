@@ -184,7 +184,11 @@ let environment () =
         class typing.Generic(object): pass
         _T = TypeVar("_T")
         class list(typing.Generic[_T]): pass
-        class C(int): pass
+        class C(int):
+          def foo() -> int:
+            return 0
+          def bar() -> str:
+            return ""
         A = int
       |}
     ];
@@ -327,7 +331,15 @@ let test_protocol_type_check _ =
 
 
 let test_query _ =
-  let source = "class C(int):\n  pass\na = 1" in
+  let source =
+    {|
+      class C(int):
+        attr = 1
+        def C.foo(self) -> int:
+          return 0
+      a = 1
+    |}
+  in
   assert_request_gets_response
     source
     (Protocol.Request.TypeQueryRequest
@@ -394,7 +406,20 @@ let test_query _ =
     source
     (Protocol.Request.TypeQueryRequest
        (Protocol.NormalizeType (+Expression.Access (Access.create "A"))))
-    (Some (Protocol.TypeQueryResponse "`int`"))
+    (Some (Protocol.TypeQueryResponse "`int`"));
+
+  assert_request_gets_response
+    source
+    (Protocol.Request.TypeQueryRequest (Protocol.Methods (Type.expression (Type.primitive "C"))))
+    (Some (Protocol.TypeQueryResponse "foo\nbar"));
+
+  assert_request_gets_response
+    source
+    (Protocol.Request.TypeQueryRequest
+       (Protocol.Methods
+          (Type.expression
+             (Type.primitive "Nonexistent"))))
+    (Some (Protocol.TypeQueryResponse "Error: Type `Nonexistent` was not found in the type order."))
 
 
 let test_connect _ =

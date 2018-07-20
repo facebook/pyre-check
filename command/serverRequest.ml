@@ -260,6 +260,20 @@ let rec process_request
             |> Option.value
               ~default:(
                 Format.sprintf "No class definition found for %s" (Expression.show annotation))
+        | Methods annotation ->
+            parse_and_validate annotation
+            |> Handler.class_definition
+            >>| (fun { Analysis.Environment.class_definition; _ } -> class_definition)
+            >>| Annotated.Class.create
+            >>| Annotated.Class.methods
+            >>| List.map ~f:Annotated.Class.Method.name
+            >>| List.map ~f:(fun name -> Expression.Access.show [List.last_exn name])
+            >>| String.concat ~sep:"\n"
+            |> Option.value
+              ~default:(
+                Format.sprintf
+                  "Error: No class definition found for %s"
+                  (Expression.show annotation))
       in
       TypeQueryResponse response
     in

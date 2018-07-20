@@ -54,6 +54,8 @@ let parse_query ~root query =
             Some (Request.TypeQueryRequest (ServerProtocol.NormalizeType argument))
         | "superclasses", [class_name] ->
             Some (Request.TypeQueryRequest (ServerProtocol.Superclasses class_name))
+        | "methods", [class_name] ->
+            Some (Request.TypeQueryRequest (ServerProtocol.Methods class_name))
         | _ -> None
       end
   | _ -> None

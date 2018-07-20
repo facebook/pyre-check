@@ -31,6 +31,7 @@ type type_query_request =
   | Meet of Expression.t * Expression.t
   | NormalizeType of Expression.t
   | Superclasses of Expression.t
+  | Methods of Expression.t
 [@@deriving eq, show]
 
 
