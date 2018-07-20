@@ -75,27 +75,13 @@ let analyze_source
     end
 
 
-let analyze_sources_parallel
-    scheduler
-    ({Configuration.source_root; project_root = directory; _ } as configuration)
-    environment
-    handles =
+let analyze_sources_parallel scheduler configuration environment handles =
   let timer = Timer.start () in
   let init = {
     errors = [];
     number_files = 0;
     coverage = Coverage.create ();
   }
-  in
-  let handles =
-    handles
-    |> List.filter ~f:(fun handle ->
-        match AstSharedMemory.get_source handle with
-        | Some { Source.path; _ } ->
-            Path.create_relative ~root:source_root ~relative:path
-            |> Path.directory_contains ~follow_symlinks:true ~directory
-        | _ ->
-            false)
   in
   let { errors; coverage; _ } =
     Scheduler.map_reduce
@@ -167,22 +153,21 @@ let analyze_sources
   Log.info "Checking...";
 
   Annotated.Class.AttributesCache.clear ();
-
+  let handles =
+    let filter_by_root handle =
+      match AstSharedMemory.get_source handle with
+      | Some { Source.path; _ } ->
+          Path.create_relative ~root:source_root ~relative:path
+          |> Path.directory_contains ~follow_symlinks:true ~directory
+      | _ ->
+          false
+    in
+    List.filter handles ~f:filter_by_root
+  in
   if Scheduler.is_parallel scheduler then
     analyze_sources_parallel scheduler configuration environment handles
   else
-    let sources =
-      let source handle =
-        AstSharedMemory.get_source handle
-        >>= fun ({ Source.path; _ } as source) ->
-        let path = Path.create_relative ~root:source_root ~relative:path in
-        if Path.directory_contains ~follow_symlinks:true ~directory path then
-          Some source
-        else
-          None
-      in
-      List.filter_map ~f:source handles
-    in
+    let sources = List.filter_map ~f:AstSharedMemory.get_source handles in
     let analyze_and_postprocess
         configuration
         (current_errors, total_coverage)
