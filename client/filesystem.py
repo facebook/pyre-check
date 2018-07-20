@@ -41,7 +41,7 @@ class SharedSourceDirectory:
             pass  # Swallow.
 
         lock = os.path.join(root, ".pyre.lock")
-        with acquire_lock(lock, blocking=False):
+        with acquire_lock(lock, blocking=True):
             try:
                 with open(os.path.join(root, ".pyre.source_directories")) as file:
                     tracked = set(json.load(file))
