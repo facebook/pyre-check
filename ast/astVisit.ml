@@ -138,7 +138,6 @@ module Make (Visitor: Visitor) = struct
         | Assert { Assert.test; message } ->
             visit_expression test;
             Option.iter ~f:visit_expression message
-        | Stub (Stub.Class { Class.bases; body; decorators; _ })
         | Class { Class.bases; body; decorators; _ } ->
             List.iter bases ~f:(visit_argument ~visit_expression);
             List.iter body ~f:visit_statement;
@@ -234,7 +233,6 @@ module MakeStatementVisitor (Visitor: StatementVisitor) = struct
 
             | Class { Class.body; _ }
             | Define { Define.body; _ }
-            | Stub (Stub.Class { Class.body; _ })
             | With { With.body; _ } ->
                 List.iter ~f:visit_statement body
 

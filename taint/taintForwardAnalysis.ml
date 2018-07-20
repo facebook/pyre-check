@@ -199,7 +199,6 @@ module rec FixpointState : FixpointState = struct
         let taint = analyze_expression expression state in
         store_taint ~root:Root.LocalResult ~path:[] taint state
     | Return { expression = None; _ }
-    | Stub _
     | Try _
     | With _
     | While _

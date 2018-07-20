@@ -294,8 +294,7 @@ let qualify ({ Source.path; qualifier = source_qualifier; statements; _ } as sou
                 aliases = Map.set aliases ~key:name ~data:(global_alias ~qualifier ~name);
                 skip = Set.add skip location;
               }
-          | Class { Class.name; _ }
-          | Stub (Stub.Class { Class.name; _ }) ->
+          | Class { Class.name; _ } ->
               {
                 scope with
                 aliases = Map.set aliases ~key:name ~data:(global_alias ~qualifier ~name);
@@ -604,9 +603,6 @@ let qualify ({ Source.path; qualifier = source_qualifier; statements; _ } as sou
       | Return ({ Return.expression; _ } as return) ->
           scope,
           Return { return with Return.expression = expression >>| qualify_expression ~scope }
-      | Stub (Stub.Class definition) ->
-          scope,
-          Stub (Stub.Class (qualify_class definition))
       | Try { Try.body; handlers; orelse; finally } ->
           let body_scope, body = qualify_statements ~scope body in
           let handler_scopes, handlers =

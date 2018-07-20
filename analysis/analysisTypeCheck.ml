@@ -914,7 +914,6 @@ module State = struct
           >>| (fun assertion -> forward_annotations state (Statement.assume assertion))
           |> Option.value ~default:resolution
 
-      | Stub (Stub.Class { Class.name; _ })
       | Class { Class.name; _ } ->
           begin
             match Resolution.get_local resolution ~access:name with
@@ -1693,7 +1692,7 @@ module State = struct
             (* Check happens implicitly in the resulting control flow. *)
             errors
 
-        | Break | Continue | Global _ | Nonlocal _ | Pass | Stub _ ->
+        | Break | Continue | Global _ | Nonlocal _ | Pass ->
             errors
     in
     let resolution = forward_annotations state statement in

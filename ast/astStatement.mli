@@ -130,12 +130,6 @@ module Assign : sig
   val is_static_attribute_initialization: t -> bool
 end
 
-module Stub : sig
-  type 'statement t =
-    | Class of 'statement Record.Class.record
-  [@@deriving compare, eq, sexp, show, hash]
-end
-
 module Return : sig
   type t = {
     is_implicit: bool;
@@ -161,7 +155,6 @@ type statement =
   | Pass
   | Raise of Expression.t option
   | Return of Return.t
-  | Stub of t Stub.t
   | Try of t Record.Try.record
   | With of t Record.With.record
   | While of t While.t

@@ -3901,38 +3901,35 @@ let test_stubs _ =
   assert_parsed_equal
     "class foo(): ..."
     [
-      +Stub
-        (Stub.Class {
-            Class.name = Access.create "foo";
-            bases = [];
-            body = [];
-            decorators = [];
-            docstring = None;
-          });
+      +Class {
+        Class.name = Access.create "foo";
+        bases = [];
+        body = [+Expression (+Ellipses)];
+        decorators = [];
+        docstring = None;
+      };
     ];
   assert_parsed_equal
     "class foo():\n\t..."
     [
-      +Stub
-        (Stub.Class {
-            Class.name = Access.create "foo";
-            bases = [];
-            body = [];
-            decorators = [];
-            docstring = None;
-          });
+      +Class {
+        Class.name = Access.create "foo";
+        bases = [];
+        body = [+Expression (+Ellipses)];
+        decorators = [];
+        docstring = None;
+      };
     ];
   assert_parsed_equal
     "class foo(): ... # type: ignore"
     [
-      +Stub
-        (Stub.Class {
-            Class.name = Access.create "foo";
-            bases = [];
-            body = [];
-            decorators = [];
-            docstring = None;
-          });
+      +Class {
+        Class.name = Access.create "foo";
+        bases = [];
+        body = [+Expression (+Ellipses)];
+        decorators = [];
+        docstring = None;
+      };
     ]
 
 

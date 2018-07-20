@@ -122,8 +122,7 @@ type constructor = {
 let test_constructors _ =
   let assert_constructors ?(is_generated = false) source constructors =
     match parse_last_statement source with
-    | { Node.value = Statement.Class ({ Record.Class.name; _ } as definition); _ }
-    | { Node.value = Stub (Stub.Class ({ Record.Class.name; _ } as definition)); _ } ->
+    | { Node.value = Statement.Class ({ Record.Class.name; _ } as definition); _ } ->
         let resolution =
           populate source
           |> fun environment -> Environment.resolution environment ()
@@ -245,8 +244,7 @@ let test_constructors _ =
 let test_methods _ =
   let assert_methods source methods =
     match parse_last_statement source with
-    | { Node.value = Statement.Class definition; _ }
-    | { Node.value = Stub (Stub.Class definition); _ } ->
+    | { Node.value = Statement.Class definition; _ } ->
         let actuals =
           let method_name { Define.name; _ } =
             List.tl_exn name
@@ -302,12 +300,10 @@ let test_is_protocol _ =
 let test_implements _ =
   let assert_conforms definition protocol conforms =
     match parse_last_statement definition with
-    | { Node.value = Statement.Class definition; _ }
-    | { Node.value = Stub (Stub.Class definition); _ } ->
+    | { Node.value = Statement.Class definition; _ } ->
         begin
           match parse_last_statement protocol with
-          | { Node.value = Statement.Class protocol; _ }
-          | { Node.value = Stub (Stub.Class protocol); _ } ->
+          | { Node.value = Statement.Class protocol; _ } ->
               assert_equal
                 (Class.implements
                    ~protocol:(Class.create (Node.create_with_default_location protocol))

@@ -352,24 +352,6 @@ module Make (Transformer : Transformer) = struct
             let orelse = transform_list orelse ~f:transform_statement |> List.concat in
             let finally = transform_list finally ~f:transform_statement |> List.concat in
             Try { Try.body; handlers; orelse; finally }
-        | Stub stub ->
-            let stub =
-              match stub with
-              | Stub.Class { Class.name; bases; body; decorators; docstring; } ->
-                  Stub.Class {
-                    Class.name = name;
-                    bases = transform_list
-                        bases
-                        ~f:(transform_argument ~transform_expression);
-                    body =
-                      transform_list body ~f:transform_statement
-                      |> List.concat;
-                    decorators =
-                      transform_list decorators ~f:transform_expression;
-                    docstring;
-                  }
-            in
-            Stub stub
         | With { With.items; body; async } ->
             let transform_item (item, alias) =
               transform_expression item, alias >>| transform_expression
@@ -458,14 +440,6 @@ module MakeStatementTransformer (Transformer: StatementTransformer) = struct
               value with
               Define.body = List.concat_map ~f:transform_statement body;
             }
-
-        | Stub (Stub.Class ({ Class.body; _ } as value)) ->
-            Stub
-              (Stub.Class
-                 {
-                   value with
-                   Class.body = List.concat_map ~f:transform_statement body;
-                 })
 
         | With ({ With.body; _ } as value) ->
             With {

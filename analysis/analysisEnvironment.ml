@@ -463,8 +463,7 @@ let register_class_definitions (module Handler: Handler) source =
       let statement_keep_recursing _ = Transform.Recurse
 
       let statement _ new_annotations = function
-        | { Node.value = Class { Class.name; _ }; _ }
-        | { Node.value = Stub (Stub.Class { Class.name; _ }); _ } ->
+        | { Node.value = Class { Class.name; _ }; _ } ->
             let primitive, _ =
               Type.create ~aliases:Handler.aliases (Node.create_with_default_location (Access name))
               |> Type.split
@@ -672,8 +671,7 @@ let register_globals
       let statement_keep_recursing _ = Transform.Recurse
 
       let statement { Source.path; _ } _ = function
-        | { Node.location; value = Class { Class.name; _ } }
-        | { Node.location; value = Stub (Stub.Class { Class.name; _ }) } ->
+        | { Node.location; value = Class { Class.name; _ } } ->
             (* Register meta annotation. *)
             let primitive, _ =
               Node.create ~location (Access name)
@@ -776,8 +774,7 @@ let connect_type_order (module Handler: Handler) source =
       let statement_keep_recursing _ = Transform.Recurse
 
       let statement { Source.path; _ } _ = function
-        | { Node.location; value = Class ({ Class.name; _ } as definition) }
-        | { Node.location; value = Stub (Stub.Class ({ Class.name; _ } as definition)) } ->
+        | { Node.location; value = Class ({ Class.name; _ } as definition) } ->
             Handler.connect_definition
               ~path
               ~resolution
@@ -888,8 +885,7 @@ let register_functions (module Handler: Handler) ({ Source.path; _ } as source) 
           Map.change callables name ~f:(change callable)
         in
         match statement with
-        | { Node.location; value = Class definition }
-        | { Node.location; value = Stub (Stub.Class definition) } ->
+        | { Node.location; value = Class definition } ->
             (* Register constructors. *)
             Node.create ~location definition
             |> Annotated.Class.create

@@ -177,7 +177,6 @@ module rec FixpointState : FixpointState = struct
         let return_taint = get_taint (Some access_path) state in
         analyze_expression return_taint expression state
     | Return { expression = None; _ }
-    | Stub _
     | Try _
     | With _
     | While _

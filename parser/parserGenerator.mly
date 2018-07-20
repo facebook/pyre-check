@@ -18,9 +18,6 @@
     | { Node.location; value = Define value } ->
         let decorated = { value with Define.decorators = decorators; } in
         { Node.location; value = Define decorated }
-    | { Node.location; value = Stub (Stub.Class definition) } ->
-        let decorated = { definition with Class.decorators = decorators; } in
-        { Node.location; value = Stub (Stub.Class decorated) }
     | _ -> raise (ParserError "Cannot decorate statement")
 
   type entry =
@@ -573,15 +570,21 @@ compound_statement:
             };
           }
       | None ->
+          let body =
+            (* TODO(T31645576): the location is imprecise. This will change when we switch classes
+               over as well. *)
+            let ellipses = create_ellipses (definition, colon_position) in
+            [Node.create (Expression ellipses) ~location]
+          in
           {
             Node.location;
-            value = Stub
-              (Stub.Class {
-                Class.name = snd name;
-                bases; body = [];
-                decorators = [];
-                docstring = None
-              });
+            value = Class {
+              Class.name = snd name;
+              bases;
+              body;
+              decorators = [];
+              docstring = None
+            };
           }
     }
 

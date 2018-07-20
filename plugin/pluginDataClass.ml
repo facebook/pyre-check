@@ -13,7 +13,6 @@ open Statement
 let transform_ast ({ Source.statements; _ } as source) =
   let transform ({ Node.location; value } as statement) =
     match value with
-    | Stub Stub.Class (({ Class.name = parent; body; _ }) as origin)
     | Class ({ Class.name = parent; body; _ } as origin)
       when Class.has_decorator origin "dataclass" ||
            Class.has_decorator origin "dataclasses.dataclass" ->
@@ -100,6 +99,11 @@ let transform_ast ({ Source.statements; _ } as source) =
           Source.create statements
           |> Analysis.Preprocessing.preprocess
           |> fun { Source.statements; _ } -> statements
+        in
+        let body =
+          match body with
+          | [{ Node.value = Expression { Node.value = Ellipses; _ }; _ }] -> []
+          | _ -> body
         in
         {
           statement with

@@ -151,13 +151,6 @@ module Assign = struct
 end
 
 
-module Stub = struct
-  type 'statement t =
-    | Class of 'statement Record.Class.record
-  [@@deriving compare, eq, sexp, show, hash]
-end
-
-
 module Return = struct
   type t = {
     is_implicit: bool;
@@ -184,7 +177,6 @@ type statement =
   | Pass
   | Raise of Expression.t option
   | Return of Return.t
-  | Stub of t Stub.t
   | Try of t Record.Try.record
   | With of t Record.With.record
   | While of t While.t
@@ -857,7 +849,6 @@ module Class = struct
     let class_attributes =
       let callable_attributes map { Node.location; value } =
         match value with
-        | Stub (Stub.Class { Record.Class.name; _ })
         | Class { Record.Class.name; _ } when not (List.is_empty name) ->
             let open Expression in
             let annotation =
@@ -1427,9 +1418,6 @@ module PrettyPrinter = struct
           formatter
           "return %a"
           pp_expression_option ("", expression)
-
-    | Stub (Stub.Class definition) ->
-        Format.fprintf formatter "%a" pp_class definition
 
     | Try { Record.Try.body; handlers; orelse; finally } ->
         let pp_try_block formatter body =
