@@ -15,4 +15,7 @@ val create:
 (** Returns a partition of nodes for strongly connected components in the call graph *)
 val partition: edges: (Access.t list) Access.Map.t -> (Access.t list) list
 
+(** Reverse edges in the call graph *)
+val reverse: (Access.t list) Access.Map.t -> (Access.t list) Access.Map.t
+
 val pp_partitions: Format.formatter -> (Access.t list) list -> unit

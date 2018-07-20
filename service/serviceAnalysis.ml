@@ -30,33 +30,36 @@ let overrides_of_source environment source =
   |> List.fold ~init:Statement.Access.Map.empty ~f:record_overrides
 
 
-let analyze ~scheduler:_ ~configuration:_ ~environment ~handles =
+let analyze ~scheduler:_ ~configuration:_ ~environment ~handles:paths =
   Log.print "Analysis";
-  let record_call_graph path =
-    let record_call_graph call_graph =
+  let _call_graph =
+    let record_and_merge_call_graph path map call_graph =
       CallGraphSharedMemory.add_callers ~path (Access.Map.keys call_graph);
       let add_call_graph ~key:caller ~data:callees =
         CallGraphSharedMemory.add_call_edges ~caller ~callees
       in
-      Access.Map.iteri call_graph ~f:add_call_graph
+      Access.Map.iteri call_graph ~f:add_call_graph;
+      Map.merge_skewed map call_graph ~combine:(fun ~key:_ left _ -> left)
     in
-    AstSharedMemory.get_source path
-    >>| (fun source -> Analysis.CallGraph.create ~environment ~source)
-    >>| record_call_graph
-    |> ignore
+    let build_call_graph map path =
+      AstSharedMemory.get_source path
+      >>| (fun source -> Analysis.CallGraph.create ~environment ~source)
+      >>| record_and_merge_call_graph path map
+      |> Option.value ~default:map
+    in
+    List.fold paths ~init:Access.Map.empty ~f:build_call_graph
   in
-  List.iter handles ~f:record_call_graph;
 
-  let record_overrides handle =
+  let record_overrides path =
     let record_overrides overrides_map =
       let record_override_edge ~key:ancestor ~data:children =
         CallGraphSharedMemory.add_overrides ~ancestor ~children
       in
       Access.Map.iteri overrides_map ~f:record_override_edge
     in
-    AstSharedMemory.get_source handle
+    AstSharedMemory.get_source path
     >>| overrides_of_source environment
     >>| record_overrides
     |> ignore
   in
-  List.iter handles ~f:record_overrides
+  List.iter paths ~f:record_overrides

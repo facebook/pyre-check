@@ -96,6 +96,60 @@ let test_construction _ =
       "B.__init__ -> A.__init__"
 
 
+let assert_reverse_call_graph source ~expected =
+  let source = parse_source source in
+  let configuration = TestSetup.configuration in
+  let environment = TestSetup.environment ~configuration () in
+  Service.Environment.populate environment [source];
+  check configuration environment source |> ignore;
+  let call_graph =
+    CallGraph.create ~environment ~source
+    |> CallGraph.reverse
+    |> Access.Map.to_alist
+  in
+  let expected =
+    let map_callee_callers (callee, callers) =
+      Access.create callee, List.map ~f:Access.create callers in
+    List.map expected ~f:map_callee_callers
+  in
+  assert_equal call_graph expected
+
+
+let test_construction_reverse _ =
+  assert_reverse_call_graph
+    {|
+    class Foo:
+      def __init__(self):
+        pass
+
+      def bar(self):
+        return 10
+
+      def quux(self):
+        return self.bar()
+    |}
+    ~expected:["Foo.bar", ["Foo.quux"]];
+
+  assert_reverse_call_graph
+    {|
+    class Foo:
+      def __init__(self):
+        pass
+
+      def bar(self):
+        return self.quux()
+
+      def quux(self):
+        return self.bar()
+
+      def bazz(self):
+        return self.bar()
+  |}
+    ~expected:
+      ["Foo.bar", ["Foo.quux"; "Foo.bazz"];
+       "Foo.quux", ["Foo.bar"]]
+
+
 let test_type_collection _ =
   let open TypeResolutionSharedMemory in
   let assert_type_collection source ~qualifier ~expected =
@@ -345,6 +399,7 @@ let () =
   "callGraph">:::[
     "type_collection">::test_type_collection;
     "build">::test_construction;
+    "build_reverse">::test_construction_reverse;
     "overrides">::test_method_overrides;
     "strongly_connected_components">::test_strongly_connected_components;
   ]

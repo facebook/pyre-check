@@ -120,6 +120,16 @@ let reverse_edges edges =
   reverse_edges
 
 
+let reverse call_graph =
+  let reverse ~key ~data reverse_map =
+    List.fold
+      data
+      ~init:reverse_map
+      ~f:(fun reverse_map callee -> Access.Map.add_multi reverse_map ~key:callee ~data:key)
+  in
+  Map.fold call_graph ~init:Access.Map.empty ~f:reverse
+
+
 let pp_partitions formatter partitions =
   let print_partition partitions =
     let print_partition index accumulator nodes =
