@@ -571,14 +571,13 @@ let rec create ~aliases { Node.value = expression; _ } =
   | Some result ->
       result
   | _ ->
-      let rec parse (reversed_lead: Access.t) (tail: Access.t): t  =
+      let rec parse reversed_lead tail =
         let annotation =
           match tail with
           | (Access.Identifier get_item)
             :: (Access.Call { Node.value = [{ Argument.value = argument; _ }]; _ })
-            :: tail
+            :: _
             when Identifier.show get_item = "__getitem__" ->
-              ignore argument; ignore tail;
               let parameters =
                 match Node.value argument with
                 | Expression.Tuple elements -> elements
@@ -595,7 +594,6 @@ let rec create ~aliases { Node.value = expression; _ } =
           | [] ->
               let name =
                 let sanitized =
-                  (* TODO: Access.sanitize *)
                   match reversed_lead with
                   | (Access.Identifier name) :: tail ->
                       let name =
