@@ -3704,100 +3704,94 @@ let test_stubs _ =
   assert_parsed_equal
     "a = ..."
     [
-      +Stub
-        (Stub.Assign {
-            Assign.target = !"a";
-            annotation = None;
-            value = None;
-            parent = None;
-          });
+      +Assign {
+        Assign.target = !"a";
+        annotation = None;
+        value = Some (+Ellipses);
+        parent = None;
+      };
     ];
 
   assert_parsed_equal
     "a: int = ..."
     [
-      +Stub
-        (Stub.Assign {
-            Assign.target = !"a";
-            annotation = Some !"int";
-            value = None;
-            parent = None;
-          });
+      +Assign {
+        Assign.target = !"a";
+        annotation = Some !"int";
+        value = Some (+Ellipses);
+        parent = None;
+      };
     ];
 
   assert_parsed_equal
     "a = ... # type: int"
     [
-      +Stub
-        (Stub.Assign {
-            Assign.target = !"a";
-            annotation = Some !"int";
-            value = None;
-            parent = None;
-          });
+      +Assign {
+        Assign.target = !"a";
+        annotation = Some !"int";
+        value = Some (+Ellipses);
+        parent = None;
+      };
     ];
 
   assert_parsed_equal
     "a = ... # type: Tuple[str]"
     [
-      +Stub
-        (Stub.Assign {
-            Assign.target = !"a";
-            annotation = Some
-                (+Access [
-                   Access.Identifier ~~"Tuple";
-                   Access.Identifier ~~"__getitem__";
-                   Access.Call
-                     (+[{ Argument.name = None; value = +Access [Access.Identifier ~~"str"] }]);
-                 ]);
-            value = None;
-            parent = None;
-          });
+      +Assign {
+        Assign.target = !"a";
+        annotation = Some
+            (+Access [
+               Access.Identifier ~~"Tuple";
+               Access.Identifier ~~"__getitem__";
+               Access.Call
+                 (+[{ Argument.name = None; value = +Access [Access.Identifier ~~"str"] }]);
+             ]);
+        value = Some (+Ellipses);
+        parent = None;
+      };
     ];
 
   assert_parsed_equal
     "a = ... # type: Tuple[str, ...]"
     [
-      +Stub
-        (Stub.Assign {
-            Assign.target = !"a";
-            annotation = Some
-                (+Access [
-                   Access.Identifier ~~"Tuple";
-                   Access.Identifier ~~"__getitem__";
-                   Access.Call
-                     (+[
-                        {
-                          Argument.name = None;
-                          value =
-                            +Tuple [
-                              +Access [Access.Identifier ~~"str"];
-                              +Access [Access.Identifier ~~"..."];
-                            ];
-                        };
-                      ]);
-                 ]);
-            value = None;
-            parent = None;
-          });
+      +Assign {
+        Assign.target = !"a";
+        annotation = Some
+            (+Access [
+               Access.Identifier ~~"Tuple";
+               Access.Identifier ~~"__getitem__";
+               Access.Call
+                 (+[
+                    {
+                      Argument.name = None;
+                      value =
+                        +Tuple [
+                          +Access [Access.Identifier ~~"str"];
+                          +Access [Access.Identifier ~~"..."];
+                        ];
+                    };
+                  ]);
+             ]);
+        value = Some (+Ellipses);
+        parent = None;
+      };
     ];
 
   assert_parsed_equal
     "a: Optional[int] = ..."
     [
-      +Stub
-        (Stub.Assign {
-            Assign.target = !"a";
-            annotation = Some
-                (+Access [
-                   Access.Identifier ~~"Optional";
-                   Access.Identifier ~~"__getitem__";
-                   Access.Call
-                     (+[{ Argument.name = None; value = +Access [Access.Identifier ~~"int"] }]);
-                 ]);
-            value = None;
-            parent = None;
-          });
+      +Assign {
+        Assign.target = !"a";
+        annotation = Some
+            (+Access [
+               Access.Identifier ~~"Optional";
+               Access.Identifier ~~"__getitem__";
+               Access.Call
+                 (+[{ Argument.name = None; value = +Access [Access.Identifier ~~"int"] }]);
+             ]);
+        value = Some (+Ellipses);
+        parent = None;
+      };
     ];
 
   assert_parsed_equal
@@ -3807,13 +3801,12 @@ let test_stubs _ =
         Class.name = Access.create "A";
         bases = [];
         body = [
-          +Stub
-            (Stub.Assign {
-                Assign.target = !"a";
-                annotation = Some !"int";
-                value = None;
-                parent = Some (Access.create "A");
-              });
+          +Assign {
+            Assign.target = !"a";
+            annotation = Some !"int";
+            value = Some (+Ellipses);
+            parent = Some (Access.create "A");
+          };
         ];
         decorators = [];
         docstring = None;

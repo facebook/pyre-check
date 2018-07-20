@@ -231,6 +231,7 @@ type expression =
   | Complex of float
   | Dictionary of t Dictionary.t
   | DictionaryComprehension of ((t Dictionary.entry), t) Comprehension.t
+  | Ellipses
   | False
   | Float of float
   | FormatString of t FormatString.t
@@ -899,6 +900,9 @@ module PrettyPrinter = struct
           "%a %a"
           pp_expression_t left
           pp_comparison_list right
+
+    | Ellipses ->
+        Format.fprintf formatter "..."
 
     | Float float_value
 

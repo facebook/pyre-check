@@ -747,14 +747,6 @@ let register_globals
                 annotation = Some annotation;
                 _;
               };
-          }
-          | {
-            Node.location;
-            value = Stub (Stub.Assign {
-                Assign.target = { Node.value = Access access; _ };
-                annotation = Some annotation;
-                _;
-              });
           } ->
               let global =
                 Annotation.create_immutable

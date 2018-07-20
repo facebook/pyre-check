@@ -132,7 +132,6 @@ end
 
 module Stub : sig
   type 'statement t =
-    | Assign of Assign.t
     | Class of 'statement Record.Class.record
     | Define of 'statement Record.Define.record
   [@@deriving compare, eq, sexp, show, hash]

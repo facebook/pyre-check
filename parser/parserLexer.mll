@@ -267,7 +267,9 @@ and read_without_indent state = parse
       COMPLEX ((lexbuf.lex_start_p, lexbuf.lex_curr_p), value)
     }
 
-  | "..." whitespace* '#' whitespace* "type" whitespace* ':' { STUB }
+  | "..." whitespace* '#' whitespace* "type" whitespace* ':' {
+      STUB (lexbuf.lex_start_p, lexbuf.lex_curr_p)
+    }
   | "..." { ELLIPSES (lexbuf.lex_start_p, lexbuf.lex_curr_p) }
   | '.' { DOT lexbuf.lex_start_p }
   | '!' { EXCLAMATIONMARK }

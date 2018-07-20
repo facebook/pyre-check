@@ -118,7 +118,8 @@ module Make (Visitor: Visitor) = struct
             visit_expression operand
         | Expression.Yield expression ->
             Option.iter ~f:visit_expression expression
-        | Bytes _ | Complex _ | String _ | Integer _ | True | False | Float _ | FormatString _ ->
+        | Bytes _ | Complex _ | Ellipses | String _ | Integer _ | True | False | Float _
+        | FormatString _ ->
             ()
 
       in
@@ -130,7 +131,6 @@ module Make (Visitor: Visitor) = struct
     let rec visit_statement statement =
       let visit_children value =
         match value with
-        | Stub (Stub.Assign { Assign.target; annotation; value; _ })
         | Assign { Assign.target; annotation; value; _ } ->
             visit_expression target;
             Option.iter ~f:visit_expression annotation;
@@ -228,7 +228,6 @@ module MakeStatementVisitor (Visitor: StatementVisitor) = struct
             | Pass
             | Raise _
             | Return _
-            | Stub (Stub.Assign _)
             | Nonlocal _
             | Yield _
             | YieldFrom _ ->

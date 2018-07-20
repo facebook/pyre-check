@@ -1321,7 +1321,7 @@ module State = struct
             end
 
         (* Trivial base cases *)
-        | String _ | Complex _ | Bytes _ | Float _ | Integer _ | False | True ->
+        | Bytes _ | Complex _ | Ellipses | False | Float _ | Integer _ | String _ | True ->
             errors
       in
 

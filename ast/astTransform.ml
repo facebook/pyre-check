@@ -158,6 +158,8 @@ module Make (Transformer : Transformer) = struct
                   generators
                   ~f:(transform_generator ~transform_expression);
             }
+        | Ellipses ->
+            value
         | False ->
             value
         | Float _ ->
@@ -353,13 +355,6 @@ module Make (Transformer : Transformer) = struct
         | Stub stub ->
             let stub =
               match stub with
-              | Stub.Assign { Assign.target; annotation; value; parent } ->
-                  Stub.Assign {
-                    Assign.target = transform_expression target;
-                    annotation = annotation >>| transform_expression;
-                    value = value >>| transform_expression;
-                    parent;
-                  }
               | Stub.Class { Class.name; bases; body; decorators; docstring; } ->
                   Stub.Class {
                     Class.name = name;
@@ -474,7 +469,6 @@ module MakeStatementTransformer (Transformer: StatementTransformer) = struct
         | Pass
         | Raise _
         | Return _
-        | Stub (Stub.Assign _)
         | Nonlocal _
         | Yield _
         | YieldFrom _ ->

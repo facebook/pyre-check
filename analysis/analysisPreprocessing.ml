@@ -112,7 +112,6 @@ let expand_string_annotations ({ Source.path; _ } as source) =
           let value =
             match value with
             | Assign assign -> Assign (transform_assign ~assign)
-            | Stub (Stub.Assign assign) -> Stub (Stub.Assign (transform_assign ~assign))
             | Define define -> Define (transform_define ~define)
             | Stub (Stub.Define define) -> Stub (Stub.Define (transform_define ~define))
             | _ -> value
@@ -289,7 +288,6 @@ let qualify ({ Source.path; qualifier = source_qualifier; statements; _ } as sou
             { Node.location; value } =
           match value with
           | Assign { Assign.target; annotation = Some annotation; _ }
-          | Stub (Stub.Assign { Assign.target; annotation = Some annotation; _ })
             when Expression.show annotation = "_SpecialForm" ->
               let name = Expression.access target in
               {
@@ -608,9 +606,6 @@ let qualify ({ Source.path; qualifier = source_qualifier; statements; _ } as sou
       | Return ({ Return.expression; _ } as return) ->
           scope,
           Return { return with Return.expression = expression >>| qualify_expression ~scope }
-      | Stub (Stub.Assign assign) ->
-          let scope, assign = qualify_assign assign in
-          scope, Stub (Stub.Assign assign)
       | Stub (Stub.Class definition) ->
           scope,
           Stub (Stub.Class (qualify_class definition))
@@ -872,7 +867,7 @@ let qualify ({ Source.path; qualifier = source_qualifier; statements; _ } as sou
           Yield (Some (qualify_expression ~scope expression))
       | Yield None ->
           Yield None
-      | Bytes _ | Complex _ | False | Float _ | Integer _ | True ->
+      | Bytes _ | Complex _ | Ellipses | False | Float _ | Integer _ | True ->
           value
     in
     { expression with Node.value }

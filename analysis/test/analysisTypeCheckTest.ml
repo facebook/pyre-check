@@ -3518,7 +3518,7 @@ let test_check_attributes _ =
 
   assert_type_errors
     {|
-      __property__ = ...
+      __property__: typing.Any = ...
       x: Optional[int]
       class Foo:
         @__property__

@@ -153,7 +153,6 @@ end
 
 module Stub = struct
   type 'statement t =
-    | Assign of Assign.t
     | Class of 'statement Record.Class.record
     | Define of 'statement Record.Define.record
   [@@deriving compare, eq, sexp, show, hash]
@@ -684,14 +683,7 @@ module Class = struct
           Assign.target = { Node.value = Tuple targets; _ };
           value = Some { Node.value = Tuple values; _ };
           _;
-        }
-      | Stub
-          (Stub.Assign
-             {
-               Assign.target = { Node.value = Tuple targets; _ };
-               value = Some { Node.value = Tuple values; _ };
-               _;
-             }) ->
+        } ->
           let add_attribute map target value =
             Attribute.target ~parent:name target
             >>| (fun target ->
@@ -715,14 +707,7 @@ module Class = struct
           Assign.target = { Node.value = Tuple targets; _ };
           value = Some ({ Node.value = Access values; location } as value);
           _;
-        }
-      | Stub
-          (Stub.Assign
-             {
-               Assign.target = { Node.value = Tuple targets; _ };
-               value = Some ({ Node.value = Access values; location } as value);
-               _;
-             }) ->
+        } ->
           let add_attribute index map target =
             Attribute.target ~parent:name target
             >>| (fun target ->
@@ -750,8 +735,7 @@ module Class = struct
             |> Option.value ~default:map
           in
           List.foldi ~init:map ~f:add_attribute targets
-      | Assign { Assign.target; annotation; value; _ }
-      | Stub (Stub.Assign { Assign.target; annotation; value; _ }) ->
+      | Assign { Assign.target; annotation; value; _ } ->
           Attribute.target ~parent:name target
           >>| (fun target ->
               let access = Expression.access target in
@@ -982,7 +966,6 @@ module Class = struct
         | { Node.location; value = Assign ({ Assign.target; _ } as assign)} ->
             begin
               let is_stub = function
-                | { Node.value = Stub (Stub.Assign { Assign.target = stub_target; _ }); _ }
                 | { Node.value = Assign { Assign.target = stub_target; _; }; _; }
                   when Expression.equal target stub_target ->
                     true
@@ -990,7 +973,14 @@ module Class = struct
                     false
               in
               match List.find ~f:is_stub stub with
-              | Some { Node.value = Stub (Stub.Assign { Assign.annotation; _ }); _ } ->
+              | Some {
+                  Node.value = Assign {
+                      Assign.annotation;
+                      value = Some { Node.value = Expression.Ellipses; _ };
+                      _;
+                    };
+                  _;
+                } ->
                   let updated_assign =
                     {
                       Node.location;
@@ -1435,12 +1425,6 @@ module PrettyPrinter = struct
           formatter
           "return %a"
           pp_expression_option ("", expression)
-
-    | Stub (Stub.Assign assign) ->
-        Format.fprintf
-          formatter
-          "%a"
-          pp_assign assign
 
     | Stub (Stub.Class definition) ->
         Format.fprintf formatter "%a" pp_class definition

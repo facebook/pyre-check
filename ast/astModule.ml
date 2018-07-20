@@ -141,8 +141,7 @@ let create ~qualifier ~local_mode ?path ~stub statements =
             | _ -> None
           in
           public_values, Some (List.filter_map ~f:to_access names)
-      | Assign { Assign.target = { Node.value = Expression.Access target; _ }; _ }
-      | Stub (Stub.Assign { Assign.target = { Node.value = Expression.Access target; _ }; _ }) ->
+      | Assign { Assign.target = { Node.value = Expression.Access target; _ }; _ } ->
           public_values @ (filter_private [target]), dunder_all
       | Class { Record.Class.name; _ }
       | Stub (Stub.Class { Record.Class.name; _ }) ->

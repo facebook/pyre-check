@@ -126,6 +126,10 @@
     Access (Access.call ~arguments ~location ~name:"slice" ())
     |> Node.create ~location
 
+  let create_ellipses (start, stop) =
+    let location = Location.create ~start ~stop in
+    Node.create Ellipses ~location
+
 %}
 
 (* The syntactic junkyard. *)
@@ -146,7 +150,7 @@
 %token <Lexing.position> RIGHTCURLY
 %token <Lexing.position> RIGHTPARENS
 %token <Lexing.position> TILDE
-%token STUB
+%token <Lexing.position * Lexing.position> STUB
 %token <string list * string> SIGNATURE_COMMENT
 %token AMPERSAND
 %token AMPERSANDEQUALS
@@ -343,47 +347,46 @@ small_statement:
       } in
       List.map ~f:assign targets
   }
-  | targets = targets; ELLIPSES {
+  | targets = targets; ellipses = ELLIPSES {
       let assign target =
-      {
-        Node.location = target.Node.location;
-        value = Stub
-          (Stub.Assign {
+        {
+          Node.location = target.Node.location;
+          value = Assign {
             Assign.target;
             annotation = None;
-            value = None;
+            value = Some (create_ellipses ellipses);
             parent = None;
-          });
-      } in
+          };
+        }
+      in
       List.map ~f:assign targets
     }
-  | targets = targets; STUB; annotation = value {
+  | targets = targets; ellipses = STUB; annotation = value {
       let assign target =
-      {
-        Node.location = target.Node.location;
-        value = Stub
-          (Stub.Assign {
+        {
+          Node.location = target.Node.location;
+          value = Assign {
             Assign.target;
             annotation = Some annotation;
-            value = None;
+            value = Some (create_ellipses ellipses);
             parent = None;
-          });
-      } in
+          };
+        }
+      in
       List.map ~f:assign targets
     }
   | target = test_list;
     annotation = annotation;
     EQUALS;
-    ELLIPSES {
+    ellipses = ELLIPSES {
       [{
         Node.location = target.Node.location;
-        value = Stub
-          (Stub.Assign {
-            Assign.target;
-            annotation = Some annotation;
-            value = None;
-            parent = None;
-          });
+        value = Assign {
+          Assign.target;
+          annotation = Some annotation;
+          value = Some (create_ellipses ellipses);
+          parent = None;
+        };
       }]
     }
 
@@ -534,12 +537,6 @@ compound_statement:
                   [{
                     Node.location;
                     value = Assign { assign with Assign.parent = Some name };
-                  }]
-              | { Node.location; value = Stub (Stub.Assign assign) } ->
-                  [{
-                    Node.location;
-                    value = Stub
-                      (Stub.Assign { assign with Assign.parent = Some name });
                   }]
               | { Node.location; value = Define define } ->
                   [{

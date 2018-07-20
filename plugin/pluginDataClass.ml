@@ -62,14 +62,7 @@ let transform_ast ({ Source.statements; _ } as source) =
                   annotation = Some annotation;
                   value;
                   _;
-                }
-              | Stub
-                  (Stub.Assign {
-                      Assign.target = { Node.value = Access access; _ };
-                      annotation = Some annotation;
-                      value;
-                      _;
-                    }) ->
+                } ->
                   begin
                     match List.last access with
                     | Some (Access.Identifier name) ->

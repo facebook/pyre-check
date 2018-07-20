@@ -141,6 +141,7 @@ module rec FixpointState : FixpointState = struct
     | Complex _
     | Dictionary _
     | DictionaryComprehension _
+    | Ellipses
     | False
     | Float _
     | FormatString _
