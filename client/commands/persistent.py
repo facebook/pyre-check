@@ -32,17 +32,10 @@ class Persistent(Command):
             "-expected-binary-version",
             str(self._configuration.get_version_hash()),
         ]
-        try:
-            self._call_client(
-                command=self.NAME, capture_output=False, flags=flags
-            ).check()
-        except (ClientException, EnvironmentException, subprocess.CalledProcessError):
-            arguments.terminal = False
-            Start(arguments, self._configuration, self._source_directory).run()
+        arguments.terminal = False
+        Start(arguments, self._configuration, self._source_directory).run()
 
-            self._call_client(
-                command=self.NAME, capture_output=False, flags=flags
-            ).check()
+        self._call_client(command=self.NAME, capture_output=False, flags=flags).check()
 
         return SUCCESS
 

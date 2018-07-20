@@ -24,10 +24,20 @@ class PersistentTest(unittest.TestCase):
         with patch.object(commands.Command, "_call_client") as call_client:
             arguments.no_watchman = True
             commands.Persistent(arguments, configuration, source_directory=".").run()
-            call_client.assert_called_once_with(
-                command=commands.Persistent.NAME,
-                flags=["-log-identifier", '"."', "-expected-binary-version", "hash"],
-                capture_output=False,
+            call_client.assert_has_calls(
+                [
+                    call(
+                        command=commands.Persistent.NAME,
+                        flags=[
+                            "-log-identifier",
+                            '"."',
+                            "-expected-binary-version",
+                            "hash",
+                        ],
+                        capture_output=False,
+                    ),
+                    call().check(),
+                ]
             )
 
         # Check null server initialize output
