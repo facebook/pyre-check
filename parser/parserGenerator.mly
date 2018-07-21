@@ -591,7 +591,7 @@ compound_statement:
           >>= (fun (_, return_annotation) ->
               Some {
                 Node.location;
-                value = String return_annotation
+                value = String (StringLiteral.create return_annotation);
               }
             )
       in
@@ -608,7 +608,7 @@ compound_statement:
                     parameter with
                       Parameter.annotation = Some {
                         Node.location = Location.Reference.any;
-                        value = String annotation;
+                        value = String (StringLiteral.create annotation);
                       }
                   }
                 }
@@ -1030,7 +1030,7 @@ atom:
       let start, stop = fst (List.hd_exn bytes) in
       {
         Node.location = Location.create ~start ~stop;
-        value = Bytes (String.concat (List.map bytes ~f:snd));
+        value = String (StringLiteral.create ~bytes:true (String.concat (List.map bytes ~f:snd)));
       }
     }
 
@@ -1041,10 +1041,10 @@ atom:
       let (_, stop) = last in
       {
         Node.location = Location.create ~start ~stop;
-        value = FormatString {
-          FormatString.value = (snd format) ^ String.concat (List.map mixed_string ~f:snd);
-          expression_list = [];
-        }
+        value = String
+          (StringLiteral.create
+            ~expressions:[]
+            ((snd format) ^ String.concat (List.map mixed_string ~f:snd)));
       }
     }
 
@@ -1184,7 +1184,8 @@ atom:
       {
         Node.location = Location.create ~start ~stop;
         value = String
-          ((snd string) ^ String.concat ~sep:"" (List.map mixed_string ~f:snd));
+          (StringLiteral.create
+            ((snd string) ^ String.concat ~sep:"" (List.map mixed_string ~f:snd)));
       }
     }
 

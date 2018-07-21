@@ -132,9 +132,6 @@ let rec resolve ~resolution expression =
       in
       Resolution.join resolution left_type (resolve ~resolution right)
 
-  | Bytes _ ->
-      Type.bytes
-
   | ComparisonOperator operator ->
       let fold_comparisons sofar = function
         | Some call ->
@@ -181,9 +178,6 @@ let rec resolve ~resolution expression =
   | Float _ ->
       Type.float
 
-  | FormatString _ ->
-      Type.string
-
   | Integer _ ->
       Type.integer
 
@@ -213,8 +207,12 @@ let rec resolve ~resolution expression =
   | Starred _ ->
       Type.Object
 
-  | String _ ->
-      Type.string
+  | String { StringLiteral.kind; _ } ->
+      begin
+        match kind with
+        | StringLiteral.Bytes -> Type.bytes
+        | _ -> Type.string
+      end
 
   | Ternary ternary ->
       let rec normalize ({ Ternary.target; alternative; test; } as ternary) =
@@ -305,9 +303,6 @@ let rec resolve_literal ~resolution expression =
       resolve_literal ~resolution expression
       |> Type.awaitable_value
 
-  | Bytes _ ->
-      Type.bytes
-
   | Complex _ ->
       Type.complex
 
@@ -317,14 +312,15 @@ let rec resolve_literal ~resolution expression =
   | Float _ ->
       Type.float
 
-  | FormatString _ ->
-      Type.string
-
   | Integer _ ->
       Type.integer
 
-  | String _ ->
-      Type.string
+  | String { StringLiteral.kind; _ } ->
+      begin
+        match kind with
+        | StringLiteral.Bytes -> Type.bytes
+        | _ -> Type.string
+      end
 
   | True ->
       Type.bool

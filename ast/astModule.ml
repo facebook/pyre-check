@@ -137,7 +137,7 @@ let create ~qualifier ~local_mode ?path ~stub statements =
         }
         when Access.equal (Access.sanitized target) (Access.create "__all__") ->
           let to_access = function
-            | { Node.value = Expression.String name; _ } -> Some (Access.create name)
+            | { Node.value = Expression.String { value = name }; _ } -> Some (Access.create name)
             | _ -> None
           in
           public_values, Some (List.filter_map ~f:to_access names)

@@ -1259,9 +1259,6 @@ module State = struct
             let { resolution; errors; _ } = List.fold ~f:check_generator ~init:state generators in
             check_entry ~resolution errors element
 
-        | FormatString { FormatString.expression_list; _ } ->
-            List.fold ~f:(check_expression ~resolution) ~init:errors expression_list
-
         | Lambda { Lambda.body; parameters } ->
             let resolution =
               let add_parameter resolution { Node.value = { Parameter.name; _ }; _ } =
@@ -1299,6 +1296,9 @@ module State = struct
                   check_expression ~resolution errors expression
             end
 
+        | String { StringLiteral.kind = StringLiteral.Format expressions; _ } ->
+            List.fold expressions ~f:(check_expression ~resolution) ~init:errors
+
         | Ternary { Ternary.target; test; alternative } ->
             let errors = check_expression ~resolution errors test in
             let errors = check_expression ~resolution errors alternative in
@@ -1320,7 +1320,7 @@ module State = struct
             end
 
         (* Trivial base cases *)
-        | Bytes _ | Complex _ | Ellipses | False | Float _ | Integer _ | String _ | True ->
+        | Complex _ | Ellipses | False | Float _ | Integer _ | String _ | True ->
             errors
       in
 

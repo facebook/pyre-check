@@ -59,10 +59,10 @@ let expand_string_annotations ({ Source.path; _ } as source) =
                       element
                 in
                 Access (List.map access ~f:transform_element)
-            | String string ->
+            | String { StringLiteral.value; _ } ->
                 let parsed =
                   try
-                    match Parser.parse [string ^ "\n"] ~path with
+                    match Parser.parse [value ^ "\n"] ~path with
                     | [{ Node.value = Expression { Node.value = Access access; _ } ; _ }] ->
                         Some access
                     | _ ->
@@ -73,7 +73,7 @@ let expand_string_annotations ({ Source.path; _ } as source) =
                       begin
                         Log.debug
                           "Invalid string annotation `%s` at %a"
-                          string
+                          value
                           Location.Reference.pp
                           location;
                         None
@@ -133,7 +133,7 @@ let expand_format_string ({ Source.path; _ } as source) =
         match expression with
         | {
           Node.location = ({ Location.start = { Location.line; column }; _ } as location);
-          value = FormatString { FormatString.value; _ };
+          value = String ({ StringLiteral.value; kind = StringLiteral.Format _; _ } as literal);
         } ->
             let rec get_matches regular_expression input_string start_position =
               try
@@ -167,16 +167,13 @@ let expand_format_string ({ Source.path; _ } as source) =
                     []
                   end
             in
-            let expression_list =
+            let expressions =
               get_matches (Str.regexp "{[^{^}]*}") value 0
               |> List.concat_map ~f:parse
             in
             {
               Node.location;
-              value = FormatString {
-                  FormatString.value;
-                  expression_list;
-                };
+              value = String { literal with kind = StringLiteral.Format expressions };
             }
         | _ ->
             expression
@@ -782,11 +779,6 @@ let qualify ({ Source.path; qualifier = source_qualifier; statements; _ } as sou
             Comprehension.element = qualify_entry ~scope element;
             generators;
           }
-      | FormatString { FormatString.value; expression_list } ->
-          FormatString {
-            FormatString.value;
-            expression_list = List.map expression_list ~f:(qualify_expression ~scope)
-          }
       | Generator { Comprehension.element; generators } ->
           let scope, generators = qualify_generators ~scope generators in
           Generator {
@@ -819,14 +811,21 @@ let qualify ({ Source.path; qualifier = source_qualifier; statements; _ } as sou
           Starred (Starred.Once (qualify_expression ~scope expression))
       | Starred (Starred.Twice expression) ->
           Starred (Starred.Twice (qualify_expression ~scope expression))
-      | String string ->
+      | String { StringLiteral.value; kind } ->
           begin
+            let kind =
+              match kind with
+              | StringLiteral.Format expressions ->
+                  StringLiteral.Format (List.map expressions ~f:(qualify_expression ~scope))
+              | _ ->
+                  kind
+            in
             try
-              match Parser.parse [string ^ "\n"] ~path with
+              match Parser.parse [value ^ "\n"] ~path with
               | [{ Node.value = Expression expression; _ }] ->
                   qualify_expression ~scope expression
                   |> Expression.show
-                  |> fun string -> String string
+                  |> fun value -> String { StringLiteral.value; kind }
               | _ ->
                   failwith "Not an expression"
             with
@@ -835,10 +834,10 @@ let qualify ({ Source.path; qualifier = source_qualifier; statements; _ } as sou
                 begin
                   Log.debug
                     "Invalid string annotation `%s` at %a"
-                    string
+                    value
                     Location.Reference.pp
                     location;
-                  String string
+                  String { StringLiteral.value; kind }
                 end
           end
       | Ternary { Ternary.target; test; alternative } ->
@@ -858,7 +857,7 @@ let qualify ({ Source.path; qualifier = source_qualifier; statements; _ } as sou
           Yield (Some (qualify_expression ~scope expression))
       | Yield None ->
           Yield None
-      | Bytes _ | Complex _ | Ellipses | False | Float _ | Integer _ | True ->
+      | Complex _ | Ellipses | False | Float _ | Integer _ | True ->
           value
     in
     { expression with Node.value }

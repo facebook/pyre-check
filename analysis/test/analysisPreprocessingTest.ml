@@ -102,10 +102,7 @@ let test_expand_format_string _ =
       (Source.create ~path:"test.py"
          [
            +Expression
-             (+FormatString {
-                FormatString.value = expected_value;
-                expression_list = expected_expression_list;
-              });
+             (+String (StringLiteral.create ~expressions:expected_expression_list expected_value));
          ];)
   in
 
@@ -145,7 +142,7 @@ let test_expand_format_string _ =
     in
     match preprocessed with
     | [{ Node.value = Expression {
-        Node.value = FormatString { FormatString.expression_list; _ }; _ };
+        Node.value = String { StringLiteral.kind = StringLiteral.Format expression_list; _ }; _ };
         _;
       }] ->
         let actual_locations = List.map ~f:Node.location expression_list in

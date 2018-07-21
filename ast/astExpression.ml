@@ -213,12 +213,31 @@ module Starred = struct
   [@@deriving compare, eq, sexp, show, hash]
 end
 
-module FormatString = struct
-  type 'expression t = {
+
+module StringLiteral = struct
+  type 'expression kind =
+    | String
+    | Bytes
+    | Format of 'expression list
+
+
+  and 'expression t = {
     value: string;
-    expression_list: 'expression list;
+    kind: 'expression kind;
   }
   [@@deriving compare, eq, sexp, show, hash]
+
+
+  let create ?(bytes = false) ?expressions value =
+    let kind =
+      if bytes then
+        Bytes
+      else
+        match expressions with
+        | Some expressions -> Format expressions
+        | _ -> String
+    in
+    { value; kind }
 end
 
 
@@ -226,7 +245,6 @@ type expression =
   | Access of t Record.Access.record
   | Await of t
   | BooleanOperator of t BooleanOperator.t
-  | Bytes of string
   | ComparisonOperator of t Record.ComparisonOperator.record
   | Complex of float
   | Dictionary of t Dictionary.t
@@ -234,7 +252,6 @@ type expression =
   | Ellipses
   | False
   | Float of float
-  | FormatString of t FormatString.t
   | Generator of (t, t) Comprehension.t
   | Integer of int
   | Lambda of t Lambda.t
@@ -243,7 +260,7 @@ type expression =
   | Set of t list
   | SetComprehension of (t, t) Comprehension.t
   | Starred of t Starred.t
-  | String of string
+  | String of t StringLiteral.t
   | Ternary of t Ternary.t
   | True
   | Tuple of t list
@@ -883,16 +900,18 @@ module PrettyPrinter = struct
           BooleanOperator.pp_boolean_operator operator
           pp_expression_t right
 
-    | Bytes string
-    | String string ->
-        Format.fprintf formatter "%S" string
-
-    | FormatString { FormatString.value; expression_list } ->
-        Format.fprintf
-          formatter
-          "%s: %a"
-          value
-          pp_expression_list expression_list
+    | String { StringLiteral.value; kind } ->
+        let bytes =
+          match kind with
+          | StringLiteral.Bytes -> "b"
+          | _ -> ""
+        in
+        let expressions =
+          match kind with
+          | StringLiteral.Format expressions -> expressions
+          | _ -> []
+        in
+        Format.fprintf formatter "%s\"%s\"(%a)" bytes value pp_expression_list expressions
 
     | ComparisonOperator { ComparisonOperator.left; right } ->
         Format.fprintf

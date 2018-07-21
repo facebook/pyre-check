@@ -726,8 +726,11 @@ let rec create ~aliases { Node.value = expression; _ } =
         let parse_callable ?modifiers ~(overloads: Access.t) () =
           let kind =
             match modifiers with
-            | Some ({ Argument.value = { Node.value = String name; _ }; _ } :: _) ->
-                Named (Access.create name)
+            | Some ({
+                Argument.value = { Node.value = String { StringLiteral.value; _ }; _ };
+                _;
+              } :: _) ->
+                Named (Access.create value)
             | _ ->
                 Anonymous
           in
@@ -825,7 +828,10 @@ let rec create ~aliases { Node.value = expression; _ } =
             Access.Identifier typing;
             Access.Identifier typevar;
             Access.Call ({
-                Node.value = { Argument.value = { Node.value = String name; _ }; _ } :: arguments;
+                Node.value = {
+                  Argument.value = { Node.value = String { StringLiteral.value; _ }; _ };
+                  _;
+                } :: arguments;
                 _;
               });
           ]
@@ -860,7 +866,7 @@ let rec create ~aliases { Node.value = expression; _ } =
                 Unconstrained
             in
             Variable {
-              variable = Identifier.create name;
+              variable = Identifier.create value;
               constraints;
             }
 
@@ -881,11 +887,11 @@ let rec create ~aliases { Node.value = expression; _ } =
         | Ellipses ->
             Primitive (Identifier.create "...")
 
-        | String string ->
+        | String { StringLiteral.value; _ } ->
             let access =
               try
                 let parsed =
-                  Parser.parse [string]
+                  Parser.parse [value]
                   |> Source.create
                   |> Preprocessing.preprocess
                   |> Source.statements
@@ -894,9 +900,9 @@ let rec create ~aliases { Node.value = expression; _ } =
                 | [{ Node.value = Statement.Expression { Node.value = Access access; _ }; _ }] ->
                     access
                 | _ ->
-                    Access.create string
+                    Access.create value
               with _ ->
-                Access.create string
+                Access.create value
             in
             parse [] access
         | _ ->

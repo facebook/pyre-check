@@ -92,7 +92,7 @@ let test_apply_decorators _ =
   assert_apply_decorators
     (create_define
        ~decorators:[!"contextlib.contextmanager"]
-       ~return_annotation:(Some (+String "typing.Iterator[str]")))
+       ~return_annotation:(Some (+String (StringLiteral.create "typing.Iterator[str]"))))
     (Type.Parametric {
         Type.name = ~~"contextlib.GeneratorContextManager";
         parameters = [Type.string];
@@ -100,7 +100,8 @@ let test_apply_decorators _ =
   assert_apply_decorators
     (create_define
        ~decorators:[!"contextlib.contextmanager"]
-       ~return_annotation:(Some (+String "typing.Generator[str, None, None]")))
+       ~return_annotation:
+         (Some (+String (StringLiteral.create "typing.Generator[str, None, None]"))))
     (Type.Parametric {
         Type.name = ~~"contextlib.GeneratorContextManager";
         parameters = [Type.string];

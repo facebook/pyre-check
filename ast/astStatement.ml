@@ -911,8 +911,8 @@ module Class = struct
           } when is_slots access ->
             let add_attribute map { Node.value; _ } =
               match value with
-              | String attribute_name ->
-                  let access = Access.create attribute_name in
+              | String { StringLiteral.value; _ } ->
+                  let access = Access.create value in
                   Attribute.create
                     ~location
                     ~target:
@@ -1203,8 +1203,16 @@ let extract_docstring statements =
         String.concat ~sep:"\n" (first::rest)
   in
   match statements with
-  | { Node.value = Expression { Node.value = Expression.String s; _ }; _ } :: _ -> Some (unindent s)
-  | _ -> None
+  | {
+    Node.value = Expression {
+        Node.value = Expression.String { Expression.StringLiteral.value; _ };
+        _;
+      };
+    _;
+  } :: _ ->
+      Some (unindent value)
+  | _ ->
+      None
 
 
 module PrettyPrinter = struct

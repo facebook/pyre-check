@@ -203,11 +203,11 @@ let test_pp _ =
            annotation = None
          }
        ];
-       Lambda.body = +Tuple [!"x"; +String "y"]
+       Lambda.body = +Tuple [!"x"; +String (StringLiteral.create "y")]
      }) in
   assert_equal
     (Expression.show expression)
-    {|lambda (x=1, y=2) ((x, "y"))|}
+    {|lambda (x=1, y=2) ((x, "y"()))|}
 
 
 let test_drop_prefix _ =
@@ -227,7 +227,7 @@ let test_equality _ =
     let full_printer ({ Node.location; _ } as expression) =
       Format.asprintf "%s/%a" (Location.Reference.to_string location) Expression.pp expression
     in
-    let value = String "some_string" in
+    let value = String (StringLiteral.create "some_string") in
     let expression_left = Node.create ~location:left value in
     let expression_right = Node.create ~location:right value in
     assert_equal

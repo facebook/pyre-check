@@ -136,19 +136,25 @@ module Starred : sig
   [@@deriving compare, eq, sexp, show, hash]
 end
 
-module FormatString : sig
-  type 'expression t = {
+module StringLiteral : sig
+  type 'expression kind =
+    | String
+    | Bytes
+    | Format of 'expression list
+
+  and 'expression t = {
     value: string;
-    expression_list: 'expression list;
+    kind: 'expression kind;
   }
   [@@deriving compare, eq, sexp, show, hash]
+
+  val create: ?bytes: bool -> ?expressions: 'expression list -> string -> 'expression t
 end
 
 type expression =
   | Access of t Record.Access.record
   | Await of t
   | BooleanOperator of t BooleanOperator.t
-  | Bytes of string
   | ComparisonOperator of t Record.ComparisonOperator.record
   | Complex of float
   | Dictionary of t Dictionary.t
@@ -156,7 +162,6 @@ type expression =
   | Ellipses
   | False
   | Float of float
-  | FormatString of t FormatString.t
   | Generator of (t, t) Comprehension.t
   | Integer of int
   | Lambda of t Lambda.t
@@ -165,7 +170,7 @@ type expression =
   | Set of t list
   | SetComprehension of (t, t) Comprehension.t
   | Starred of t Starred.t
-  | String of string
+  | String of t StringLiteral.t
   | Ternary of t Ternary.t
   | True
   | Tuple of t list

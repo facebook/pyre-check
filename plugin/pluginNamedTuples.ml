@@ -28,7 +28,16 @@ let transform_ast ({ Source.statements; _ } as source) =
             Identifier.show named_tuple = "namedtuple") ->
         let attributes =
           match arguments with
-          | [_; { Argument.value = { Node.location; value = String serialized }; _ }] ->
+          | [
+            _;
+            {
+              Argument.value = {
+                Node.location;
+                value = String { StringLiteral.value = serialized };
+              };
+              _;
+            };
+          ] ->
               let attribute name =
                 Access (parent @ Access.create name)
                 |> Node.create ~location
@@ -39,7 +48,7 @@ let transform_ast ({ Source.statements; _ } as source) =
               let rec accessify ({ Node.value; _ } as expression) =
                 let value =
                   match value with
-                  | String name -> Access (parent @ Access.create name)
+                  | String { StringLiteral.value = name } -> Access (parent @ Access.create name)
                   | Tuple [name; annotation] -> Tuple [accessify name; annotation]
                   | _ -> value
                 in

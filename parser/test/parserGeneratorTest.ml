@@ -935,7 +935,7 @@ let test_define _ =
           }];
         decorators = [];
         docstring = None;
-        return_annotation = Some (+String "int");
+        return_annotation = Some (+String (StringLiteral.create "int"));
         async = false;
         generated = false;
         parent = None;
@@ -958,7 +958,7 @@ let test_define _ =
           }];
         decorators = [];
         docstring = None;
-        return_annotation = Some (+String "int");
+        return_annotation = Some (+String (StringLiteral.create "int"));
         async = false;
         generated = false;
         parent = None;
@@ -982,7 +982,7 @@ let test_define _ =
           }];
         decorators = [];
         docstring = None;
-        return_annotation = Some (+String "str");
+        return_annotation = Some (+String (StringLiteral.create "str"));
         async = false;
         generated = false;
         parent = None;
@@ -1002,7 +1002,7 @@ let test_define _ =
           +{
             Parameter.name = ~~"a";
             value = None;
-            annotation = Some (+String "str");
+            annotation = Some (+String (StringLiteral.create "str"));
           };
         ];
         body = [
@@ -1012,7 +1012,7 @@ let test_define _ =
           }];
         decorators = [];
         docstring = None;
-        return_annotation = Some (+String "str");
+        return_annotation = Some (+String (StringLiteral.create "str"));
         async = false;
         generated = false;
         parent = None;
@@ -1031,7 +1031,7 @@ let test_define _ =
           +{
             Parameter.name = ~~"a";
             value = None;
-            annotation = Some (+String "str");
+            annotation = Some (+String (StringLiteral.create "str"));
           };
         ];
         body = [
@@ -1041,7 +1041,7 @@ let test_define _ =
           }];
         decorators = [];
         docstring = None;
-        return_annotation = Some (+String "str");
+        return_annotation = Some (+String (StringLiteral.create "str"));
         async = false;
         generated = false;
         parent = None;
@@ -1071,7 +1071,7 @@ let test_define _ =
           }];
         decorators = [];
         docstring = None;
-        return_annotation = Some (+String "str");
+        return_annotation = Some (+String (StringLiteral.create "str"));
         async = false;
         generated = false;
         parent = None;
@@ -1090,12 +1090,13 @@ let test_define _ =
           +{
             Parameter.name = ~~"a";
             value = None;
-            annotation = Some (+String "typing.Union[typing.List[int], str]");
+            annotation = Some
+                (+String (StringLiteral.create "typing.Union[typing.List[int], str]"));
           };
           +{
             Parameter.name = ~~"b";
             value = None;
-            annotation = Some (+String "str");
+            annotation = Some (+String (StringLiteral.create "str"));
           };
         ];
         body = [
@@ -1105,7 +1106,7 @@ let test_define _ =
           }];
         decorators = [];
         docstring = None;
-        return_annotation = Some (+String "str");
+        return_annotation = Some (+String (StringLiteral.create "str"));
         async = false;
         generated = false;
         parent = None;
@@ -1124,12 +1125,13 @@ let test_define _ =
           +{
             Parameter.name = ~~"a";
             value = None;
-            annotation = Some (+String "typing.Union[typing.List[int], str]");
+            annotation = Some
+                (+String (StringLiteral.create "typing.Union[typing.List[int], str]"));
           };
           +{
             Parameter.name = ~~"b";
             value = None;
-            annotation = Some (+String "typing.List[str]");
+            annotation = Some (+String (StringLiteral.create "typing.List[str]"));
           };
         ];
         body = [
@@ -1139,7 +1141,7 @@ let test_define _ =
           }];
         decorators = [];
         docstring = None;
-        return_annotation = Some (+String "str");
+        return_annotation = Some (+String (StringLiteral.create "str"));
         async = false;
         generated = false;
         parent = None;
@@ -1163,7 +1165,7 @@ let test_define _ =
           }];
         decorators = [];
         docstring = None;
-        return_annotation = Some (+String "List[str]");
+        return_annotation = Some (+String (StringLiteral.create "List[str]"));
         async = false;
         generated = false;
         parent = None;
@@ -1206,7 +1208,7 @@ let test_define _ =
           }];
         decorators = [];
         docstring = None;
-        return_annotation = Some (+String "int");
+        return_annotation = Some (+String (StringLiteral.create "int"));
         async = false;
         generated = false;
         parent = None;
@@ -2222,75 +2224,51 @@ let test_call_arguments_location _ =
 
 
 let test_string _ =
-  assert_parsed_equal "'foo'" [+Expression (+String "foo")];
-  assert_parsed_equal "\"foo\"" [+Expression (+String "foo")];
-  assert_parsed_equal "'''foo'''" [+Expression (+String "foo")];
-  assert_parsed_equal "\"\"\"foo\"\"\"" [+Expression (+String "foo")];
+  assert_parsed_equal "'foo'" [+Expression (+String (StringLiteral.create "foo"))];
+  assert_parsed_equal "\"foo\"" [+Expression (+String (StringLiteral.create "foo"))];
+  assert_parsed_equal "'''foo'''" [+Expression (+String (StringLiteral.create "foo"))];
+  assert_parsed_equal "\"\"\"foo\"\"\"" [+Expression (+String (StringLiteral.create "foo"))];
 
-  assert_parsed_equal "r'foo'" [+Expression (+String "foo")];
-  assert_parsed_equal "R'foo'" [+Expression (+String "foo")];
-  assert_parsed_equal "b'foo'" [+Expression (+Bytes "foo")];
-  assert_parsed_equal "u'foo'" [+Expression (+String "foo")];
-  assert_parsed_equal "ub'foo'" [+Expression (+Bytes "foo")];
-  assert_parsed_equal "bR'foo'" [+Expression (+Bytes "foo")];
-  assert_parsed_equal "'foo' 'bar'" [+Expression (+String "foobar")];
+  assert_parsed_equal "r'foo'" [+Expression (+String (StringLiteral.create "foo"))];
+  assert_parsed_equal "R'foo'" [+Expression (+String (StringLiteral.create "foo"))];
+  assert_parsed_equal "b'foo'" [+Expression (+String (StringLiteral.create ~bytes:true "foo"))];
+  assert_parsed_equal "u'foo'" [+Expression (+String (StringLiteral.create "foo"))];
+  assert_parsed_equal "ub'foo'" [+Expression (+String (StringLiteral.create ~bytes:true "foo"))];
+  assert_parsed_equal "bR'foo'" [+Expression (+String (StringLiteral.create ~bytes:true "foo"))];
+  assert_parsed_equal "'foo' 'bar'" [+Expression (+String (StringLiteral.create "foobar"))];
+
   assert_parsed_equal
     "f'foo'"
-    [
-      +Expression
-        (+FormatString {
-           FormatString.value = "foo";
-           expression_list = [];
-         });
-    ];
+    [+Expression (+String (StringLiteral.create ~expressions:[] "foo"))];
   assert_parsed_equal
     "F'foo'"
-    [
-      +Expression
-        (+FormatString {
-           FormatString.value = "foo";
-           expression_list = [];
-         });
-    ];
-
+    [+Expression (+String (StringLiteral.create ~expressions:[] "foo"))];
   assert_parsed_equal
     "f'foo' f'bar'"
-    [
-      +Expression
-        (+FormatString {
-           FormatString.value = "foobar";
-           expression_list = [];
-         });
-    ];
+    [+Expression (+String (StringLiteral.create ~expressions:[] "foobar"))];
   assert_parsed_equal
     "f'foo' 'bar'"
-    [
-      +Expression
-        (+FormatString {
-           FormatString.value = "foobar";
-           expression_list = [];
-         });
-    ];
+    [+Expression (+String (StringLiteral.create ~expressions:[] "foobar"))];
 
   (* TODO(T29598455): Should return a FormatString intead of a String *)
-  assert_parsed_equal "'foo' f'bar'" [+Expression (+String "foobar")];
+  assert_parsed_equal "'foo' f'bar'" [+Expression (+String (StringLiteral.create "foobar"))];
 
-  assert_parsed_equal "\"'\"" [+Expression (+String "'")];
-  assert_parsed_equal "'\"'" [+Expression (+String "\"")];
-  assert_parsed_equal "\"\\\"\"" [+Expression (+String "\\\"")];
-  assert_parsed_equal "\"\\'\"" [+Expression (+String "\\\'")];
+  assert_parsed_equal "\"'\"" [+Expression (+String (StringLiteral.create "'"))];
+  assert_parsed_equal "'\"'" [+Expression (+String (StringLiteral.create "\""))];
+  assert_parsed_equal "\"\\\"\"" [+Expression (+String (StringLiteral.create "\\\""))];
+  assert_parsed_equal "\"\\'\"" [+Expression (+String (StringLiteral.create "\\\'"))];
 
-  assert_parsed_equal "\"\"\"\nfoo\"\"\"" [+Expression (+String "\nfoo")];
+  assert_parsed_equal "\"\"\"\nfoo\"\"\"" [+Expression (+String (StringLiteral.create "\nfoo"))];
 
-  assert_parsed_equal "\"f.o\\no\"" [+Expression (+String "f.o\\no")];
+  assert_parsed_equal "\"f.o\\no\"" [+Expression (+String (StringLiteral.create "f.o\\no"))];
   assert_parsed_equal
     "'a' + 'b'"
     [
       +Expression
         (+Access [
-           Access.Expression (+String "a");
+           Access.Expression (+String (StringLiteral.create "a"));
            Access.Identifier ~~"__add__";
-           Access.Call (+[{ Argument.name = None; value = +String "b" }]);
+           Access.Call (+[{ Argument.name = None; value = +String (StringLiteral.create "b") }]);
          ]);
     ];
   assert_parsed_equal
@@ -2298,9 +2276,9 @@ let test_string _ =
     [
       +Expression
         (+Access [
-           Access.Expression (+String "a");
+           Access.Expression (+String (StringLiteral.create "a"));
            Access.Identifier ~~"__add__";
-           Access.Call (+[{ Argument.name = None; value = +String "b" }]);
+           Access.Call (+[{ Argument.name = None; value = +String (StringLiteral.create "b") }]);
          ]);
     ];
   assert_parsed_equal
@@ -2308,9 +2286,9 @@ let test_string _ =
     [
       +Expression
         (+Access [
-           Access.Expression (+String "a");
+           Access.Expression (+String (StringLiteral.create "a"));
            Access.Identifier ~~"__add__";
-           Access.Call (+[{ Argument.name = None; value = +String "b" }]);
+           Access.Call (+[{ Argument.name = None; value = +String (StringLiteral.create "b") }]);
          ]);
     ];
   assert_parsed_equal
@@ -2318,9 +2296,9 @@ let test_string _ =
     [
       +Expression
         (+Access [
-           Access.Expression (+String "a");
+           Access.Expression (+String (StringLiteral.create "a"));
            Access.Identifier ~~"__add__";
-           Access.Call (+[{ Argument.name = None; value = +String "b" }]);
+           Access.Call (+[{ Argument.name = None; value = +String (StringLiteral.create "b") }]);
          ]);
     ]
 
@@ -3332,7 +3310,7 @@ let test_assert _ =
           ComparisonOperator.left = !"a";
           right = [ComparisonOperator.IsNot, !"None"];
         };
-        message = Some (+String "b or c");
+        message = Some (+String (StringLiteral.create "b or c"));
       }
     ]
 

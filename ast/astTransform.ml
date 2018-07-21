@@ -130,8 +130,6 @@ module Make (Transformer : Transformer) = struct
               operator;
               right = transform_expression right;
             }
-        | Bytes _ ->
-            value
         | ComparisonOperator { ComparisonOperator.left; right } ->
             let transform_right (operator, operand) =
               operator, transform_expression operand
@@ -164,11 +162,6 @@ module Make (Transformer : Transformer) = struct
             value
         | Float _ ->
             value
-        | FormatString { FormatString.value; expression_list } ->
-            FormatString {
-              FormatString.value;
-              expression_list = transform_list expression_list ~f:transform_expression;
-            }
         | Generator { Comprehension.element; generators } ->
             Generator {
               Comprehension.element = transform_expression element;

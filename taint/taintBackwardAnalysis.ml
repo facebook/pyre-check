@@ -114,7 +114,6 @@ module rec FixpointState : FixpointState = struct
         |> analyze_normalized_expression state taint
     | Await _
     | BooleanOperator _
-    | Bytes _
     | ComparisonOperator _
     | Complex _
     | Dictionary _
@@ -122,7 +121,6 @@ module rec FixpointState : FixpointState = struct
     | Ellipses
     | False
     | Float _
-    | FormatString _
     | Generator _
     | Integer _
     | Lambda _
