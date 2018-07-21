@@ -84,7 +84,8 @@ module State = struct
       let error_to_string (location, error) =
         Format.asprintf
           "    %a -> %s"
-          Location.Reference.pp location
+          Location.Instantiated.pp
+          (Location.instantiate ~lookup:(fun hash -> AstSharedMemory.get_path ~hash) location)
           (Error.description error ~detailed:true)
       in
       List.map (Map.to_alist errors) ~f:error_to_string
