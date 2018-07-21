@@ -920,7 +920,7 @@ let test_check_with_qualification _ =
               return global_number
 
     |}
-    [];
+    ["Incompatible return type [7]: Expected `int` but got `str`."];
 
   assert_type_errors
     {|
@@ -945,14 +945,12 @@ let test_check_with_qualification _ =
       def assign_outer() -> None:
           global_number="a" # type: str
           def assign_inner_access() -> int:
-              # TODO(T27001301): This errors because we don't propagate variables from the parent in
-              # nested functions.
               return len(global_number)
           def assign_inner_global() -> int:
               global global_number
               return global_number
     |}
-    [];
+    ["Incompatible return type [7]: Expected `int` but got `str`."];
 
   assert_type_errors
     {|
@@ -1814,8 +1812,8 @@ let test_check_coverage _ =
   assert_covered "assert ERROR";
 
   (* Nested definitions. *)
-  assert_not_covered "class B: ERROR";
-  assert_not_covered
+  assert_covered "class B: ERROR";
+  assert_covered
     ~additional_errors:[]
     "def nested() -> None: ERROR";
 
@@ -4372,6 +4370,7 @@ let test_check_nested _ =
     |}
     [
       "Incompatible parameter type [6]: Expected `int` but got `float`.";
+      "Incompatible parameter type [6]: Expected `int` but got `float`.";
     ];
 
   assert_type_errors
@@ -5701,14 +5700,13 @@ let test_scheduling _ =
     |}
     ["Incompatible parameter type [6]: Expected `int` but got `str`."];
 
-  (* Nested functions are not yet scheduled. *)
   assert_type_errors
     {|
       def bar() -> None:
         def foo() -> None:
           'string' + 1
     |}
-    [];
+    ["Incompatible parameter type [6]: Expected `int` but got `str`."];
 
   (* Class bodies are scheduled. *)
   assert_type_errors

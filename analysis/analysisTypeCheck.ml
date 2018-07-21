@@ -1851,13 +1851,12 @@ let check
 
       let () =
         (* Schedule nested functions for analysis. *)
-        if Define.is_toplevel define || Define.is_class_toplevel define then
-          match exit with
-          | Some ({ State.resolution; _ } as exit) ->
-              State.nested_defines exit
-              |> List.iter ~f:(fun define -> Queue.enqueue queue (define, resolution))
-          | None ->
-              ()
+        match exit with
+        | Some ({ State.resolution; _ } as exit) ->
+            State.nested_defines exit
+            |> List.iter ~f:(fun define -> Queue.enqueue queue (define, resolution))
+        | None ->
+            ()
       in
 
       let errors =
