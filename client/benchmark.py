@@ -17,7 +17,7 @@ from .configuration import Configuration
 LOG = logging.getLogger(__name__)
 
 
-def _parallel_check(command, process_count):
+def _parallel_check(command, process_count) -> float:
     LOG.info(
         "Running %d process%s of `%s`",
         process_count,
@@ -37,7 +37,7 @@ def _parallel_check(command, process_count):
     return time.time() - start
 
 
-def _compare_parallel_check(arguments, configuration):
+def _compare_parallel_check(arguments, configuration) -> None:
     if not os.path.isdir(arguments.source_directory):
         raise EnvironmentException(
             "`{}` is not a valid source directory.".format(arguments.source_directory)

@@ -79,7 +79,7 @@ class Command:
     def run(self) -> int:
         return self._run()
 
-    def _flags(self):
+    def _flags(self) -> List[str]:
         flags = []
         if self._debug:
             flags.extend(["-debug"])
@@ -136,7 +136,7 @@ class Command:
         except Exception:
             pass
 
-    def _call_client(self, command, flags=None, capture_output: bool = True):
+    def _call_client(self, command, flags=None, capture_output: bool = True) -> Result:
         if not flags:
             flags = []
 
@@ -185,6 +185,7 @@ class Command:
             process.wait()
             self._call_client_terminated = True
             if capture_output:
+                # pyre-fixme: stdout_reader is not always declared!
                 stdout_reader.join()
 
             output = ""
@@ -200,7 +201,7 @@ class Command:
     def _relative_path(self, path) -> str:
         return os.path.relpath(path, self._original_directory)
 
-    def _state(self):
+    def _state(self) -> State:
         pid_path = os.path.join(self._source_directory, ".pyre/server/server.pid")
         try:
             with open(pid_path) as file:
@@ -210,12 +211,12 @@ class Command:
         except Exception:
             return State.DEAD
 
-    def _server_string(self, source_directory=None):
+    def _server_string(self, source_directory=None) -> str:
         if not source_directory:
             source_directory = self._source_directory
         return "server{}".format("" if len(source_directory) < 2 else "s")
 
-    def _source_directory_string(self):
+    def _source_directory_string(self) -> str:
         return "`{}`".format(self._source_directory)
 
 
@@ -227,7 +228,7 @@ class ErrorHandling(Command):
         self._do_not_check_paths = configuration.do_not_check
         self._discovered_source_directories = [self._source_root]
 
-    def _print(self, errors):
+    def _print(self, errors) -> None:
         errors = [
             error
             for error in errors
@@ -299,7 +300,7 @@ class ErrorHandling(Command):
                 pass
         return directories_to_analyze
 
-    def _get_errors(self, result):
+    def _get_errors(self, result) -> Set[Error]:
         result.check()
 
         errors = set()

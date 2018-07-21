@@ -7,7 +7,7 @@ import os
 import subprocess
 import sys
 from collections import namedtuple
-from typing import List
+from typing import Dict, List
 
 from . import log
 
@@ -29,7 +29,7 @@ def presumed_target_root(target):
     return target
 
 
-def _find_source_directories(targets_map):
+def _find_source_directories(targets_map) -> BuckOut:
     targets = list(targets_map.keys())
     targets_not_found = []
     source_directories = []
@@ -141,7 +141,9 @@ def _build_targets(targets: List[str]) -> None:
         )
 
 
-def generate_source_directories(original_targets, build, prompt=True, use_cache=False):
+def generate_source_directories(
+    original_targets, build, prompt: bool = True, use_cache: bool = False
+):
     buck_out = _find_source_directories({target: None for target in original_targets})
     source_directories = buck_out.source_directories
 

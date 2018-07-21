@@ -7,19 +7,20 @@ import fcntl
 import os
 import tempfile
 import unittest
+from typing import Dict
 from unittest.mock import call, patch
 
 from ..filesystem import (  # noqa
     SharedSourceDirectory,
     __name__ as filesystem_name,
+    acquire_lock,
     find_python_paths,
     remove_if_exists,
-    acquire_lock,
 )
 
 
 class FilesystemTest(unittest.TestCase):
-    def test_find_python_paths(self):
+    def test_find_python_paths(self) -> None:
         root = tempfile.mkdtemp()
 
         def create_file(name: str) -> None:
@@ -39,7 +40,7 @@ class FilesystemTest(unittest.TestCase):
         os.mkdir(os.path.join(root, "mypy"))
         os.mkdir(os.path.join(root, "scipyi"))
         os.mkdir(os.path.join(root, "spy.py"))
-        create_symlink("spy.py", "directory_symlink.py"),
+        create_symlink("spy.py", "directory_symlink.py")
         create_file("mypy/my.py")
         create_file("scipyi/sci.pyi")
         create_symlink("mypy/my.py", "mypy/another.pyi")
@@ -63,7 +64,7 @@ class FilesystemTest(unittest.TestCase):
             ],
         )
 
-    def test_merge_source_directory(self):
+    def test_merge_source_directory(self) -> None:
         root = os.path.realpath(tempfile.mkdtemp())
 
         def create_file(name: str) -> None:
@@ -83,13 +84,13 @@ class FilesystemTest(unittest.TestCase):
         os.mkdir(os.path.join(root, "mypy"))
         os.mkdir(os.path.join(root, "scipyi"))
         os.mkdir(os.path.join(root, "spy.py"))
-        create_symlink("spy.py", "directory_symlink.py"),
+        create_symlink("spy.py", "directory_symlink.py")
         create_file("mypy/my.py")
         create_file("scipyi/sci.pyi")
         create_symlink("mypy/my.py", "mypy/another.pyi")
         create_symlink("scipyi/sci.pyi", "scipyi/another.py")
         shared_source_directory = SharedSourceDirectory([root])
-        all_paths = {}
+        all_paths = {}  # type: Dict[str, str]
         shared_source_directory._merge_source_directory(root, all_paths)
         self.assertEqual(
             all_paths,
@@ -166,7 +167,7 @@ class FilesystemTest(unittest.TestCase):
             any_order=True,
         )
 
-    def test_remove_if_exists(self):
+    def test_remove_if_exists(self) -> None:
         # File removal.
         with patch("os.remove") as os_remove, patch("shutil.rmtree") as shutil_rmtree:
             os_remove.side_effect = OSError()
@@ -218,7 +219,7 @@ class FilesystemTest(unittest.TestCase):
                 pass
 
     @patch("shutil.rmtree")
-    def test_cleanup(self, rmtree):
+    def test_cleanup(self, rmtree) -> None:
         shared_source_directory = SharedSourceDirectory(["first", "second"])
         shared_source_directory.cleanup()
         rmtree.assert_not_called()

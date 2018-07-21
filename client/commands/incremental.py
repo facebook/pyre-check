@@ -24,7 +24,8 @@ class Incremental(ErrorHandling):
     def __init__(self, arguments, configuration, source_directory) -> None:
         super(Incremental, self).__init__(arguments, configuration, source_directory)
 
-    def _read_stderr(self, _stream, source_directory):
+    # pyre-ignore: T31696900
+    def _read_stderr(self, _stream, source_directory) -> None:
         stderr_file = os.path.join(source_directory, ".pyre/server/server.stdout")
         with subprocess.Popen(
             ["tail", "-f", stderr_file],

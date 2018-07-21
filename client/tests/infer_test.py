@@ -495,7 +495,7 @@ class PyreTest(unittest.TestCase):
         )
 
 
-def mock_arguments():
+def mock_arguments() -> MagicMock:
     arguments = MagicMock()
 
     arguments.debug = False
@@ -510,7 +510,7 @@ def mock_arguments():
     return arguments
 
 
-def mock_configuration():
+def mock_configuration() -> MagicMock:
     configuration = MagicMock()
     configuration.get_search_path = MagicMock()
     configuration.get_typeshed = MagicMock()

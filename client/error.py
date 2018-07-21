@@ -39,7 +39,7 @@ class Error:
     def __lt__(self, other):
         return self.__key() < other.__key()
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.__key())
 
     def is_do_not_check(self) -> bool:

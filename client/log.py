@@ -50,7 +50,7 @@ class SectionFormatter(logging.Formatter):
     def __init__(self) -> None:
         super(SectionFormatter, self).__init__("%(asctime)s %(levelname)s %(message)s")
 
-    def format(self, record):
+    def format(self, record: logging.LogRecord) -> str:
         formatted = super(SectionFormatter, self).format(record)
         return re.sub(r"DEBUG \[(.*)\]", r"\1", formatted)
 
@@ -85,7 +85,7 @@ class TimedStreamHandler(logging.StreamHandler):
         thread.daemon = True
         thread.start()
 
-    def clear_lines(self):
+    def clear_lines(self) -> str:
         if self._active_lines == 0:
             return ""
         return Format.CLEAR_LINE + "".join(

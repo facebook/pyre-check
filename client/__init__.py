@@ -13,7 +13,7 @@ import subprocess
 import sys
 import traceback
 from argparse import Namespace
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Sized
 
 from . import buck
 from .filesystem import SharedSourceDirectory
@@ -67,7 +67,7 @@ def get_binary_version(configuration) -> str:
     return "No version set"
 
 
-def find_project_root(original_directory=None):
+def find_project_root(original_directory=None) -> str:
     if not original_directory:
         original_directory = os.getcwd()
 
@@ -90,7 +90,7 @@ def switch_root(arguments) -> None:
 
 
 def resolve_source_directories(
-    arguments, configuration, prompt=True, use_buck_cache=False
+    arguments, configuration, prompt: bool = True, use_buck_cache: bool = False
 ):
     source_directories = set(arguments.source_directory or [])
     targets = set(arguments.target or [])
@@ -144,7 +144,9 @@ def number_of_workers() -> int:
         return 4
 
 
-def merge_source_directories(source_directories, isolate=False):
+def merge_source_directories(
+    source_directories: Sized, isolate: bool = False
+) -> SharedSourceDirectory:
     if len(source_directories) == 0:
         raise EnvironmentException("No source directory found.")
 

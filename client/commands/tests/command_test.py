@@ -11,7 +11,7 @@ from ... import EnvironmentException  # noqa
 from ... import commands  # noqa
 
 
-def mock_arguments():
+def mock_arguments() -> MagicMock:
     arguments = MagicMock()
 
     arguments.debug = False
@@ -29,7 +29,7 @@ def mock_arguments():
     return arguments
 
 
-def mock_configuration():
+def mock_configuration() -> MagicMock:
     configuration = MagicMock()
     configuration.source_directories = ["."]
     configuration.get_search_path = MagicMock()

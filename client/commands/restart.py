@@ -15,7 +15,7 @@ class Restart(Command):
     NAME = "restart"
 
     def __init__(
-        self, arguments, configuration, source_directory, blocking=True
+        self, arguments, configuration, source_directory, blocking: bool = True
     ) -> None:
         super(Restart, self).__init__(arguments, configuration, source_directory)
         self._blocking = blocking

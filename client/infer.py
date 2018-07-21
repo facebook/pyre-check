@@ -15,7 +15,7 @@ import time
 import traceback
 from collections import defaultdict
 from pathlib import Path
-from typing import Optional, Union  # noqa
+from typing import Any, List, Optional, Set, Union  # noqa
 
 from . import (
     FAILURE,
@@ -42,7 +42,7 @@ def dequalify(annotation):
     return annotation.replace("typing.", "")
 
 
-def split_imports(types_list):
+def split_imports(types_list) -> Set[Any]:
     typing_imports = set()
     for full_type in types_list:
         if full_type:
@@ -68,7 +68,7 @@ class FunctionStub:
         self.is_async = stub.get("async")
 
     @staticmethod
-    def is_instance(stub):
+    def is_instance(stub) -> bool:
         required_fields = ["parameters", "decorators", "async", "function_name"]
         return all(field in stub.keys() for field in required_fields)
 
@@ -76,10 +76,10 @@ class FunctionStub:
         """ The last part of the access path is the function name """
         return self.name.split(".")[-1] if self.name.split(".") else ""
 
-    def _get_annotation(self):
+    def _get_annotation(self) -> str:
         return " -> " + dequalify(self.actual) if self.actual else ""
 
-    def _get_parameter_string(self):
+    def _get_parameter_string(self) -> str:
         """ Depending on if an argument has a type, the style for default values
         changes. E.g.
            def fun(x=5)
@@ -115,7 +115,7 @@ class FunctionStub:
                 return False
         return True
 
-    def to_string(self):
+    def to_string(self) -> str:
         return "{}{}def {}({}){}: ...".format(
             self._get_decorator_string(),
             self._get_async_string(),
@@ -149,7 +149,7 @@ class FieldStub:
         self.actual = stub.get("annotation")
 
     @staticmethod
-    def is_instance(stub):
+    def is_instance(stub) -> bool:
         required_fields = ["annotation", "field_name"]
         return all(field in stub.keys() for field in required_fields)
 
@@ -157,7 +157,7 @@ class FieldStub:
         """ The last part of the access path is the function name """
         return self.name.split(".")[-1] if self.name.split(".") else ""
 
-    def to_string(self):
+    def to_string(self) -> str:
         return "{}: {} = ...".format(self._get_name(), dequalify(self.actual))
 
     @functools.lru_cache(maxsize=1)
@@ -177,13 +177,13 @@ class Stub:
         elif FieldStub.is_instance(error.inference):
             self.stub = FieldStub(error.inference)
 
-    def is_function(self):
+    def is_function(self) -> bool:
         return isinstance(self.stub, FunctionStub) and not self.parent
 
     def is_method(self):
         return isinstance(self.stub, FunctionStub) and self.parent
 
-    def is_field(self):
+    def is_field(self) -> bool:
         return isinstance(self.stub, FieldStub)
 
     def is_complete(self):
@@ -289,7 +289,7 @@ class StubFile:
         path.write_text(contents)
 
 
-def generate_stub_files(arguments, errors):
+def generate_stub_files(arguments, errors) -> List[StubFile]:
     errors = [
         error
         for error in errors
