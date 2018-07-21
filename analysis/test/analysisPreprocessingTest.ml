@@ -96,27 +96,20 @@ let test_expand_string_annotations _ =
 
 
 let test_expand_format_string _ =
-  let assert_ast_equal source expected_value expected_expression_list =
+  let assert_format_string source value expressions =
     assert_source_equal
       (Preprocessing.expand_format_string (parse_untrimmed source))
-      (Source.create ~path:"test.py"
-         [
-           +Expression
-             (+String (StringLiteral.create ~expressions:expected_expression_list expected_value));
-         ];)
+      (Source.create
+         ~path:"test.py"
+         [+Expression (+String (StringLiteral.create ~expressions value))])
   in
 
-  assert_ast_equal "f'foo'" "foo" [];
-
-  assert_ast_equal "f'{1}'" "{1}" [+Integer 1];
-
-  assert_ast_equal "f'foo{1}'" "foo{1}" [+Integer 1];
-
-  assert_ast_equal "f'foo{1}{2}foo'" "foo{1}{2}foo" [+Integer 1; +Integer 2];
-
-  assert_ast_equal "f'foo{{1}}'" "foo{{1}}" [+Integer 1];
-
-  assert_ast_equal
+  assert_format_string "f'foo'" "foo" [];
+  assert_format_string "f'{1}'" "{1}" [+Integer 1];
+  assert_format_string "f'foo{1}'" "foo{1}" [+Integer 1];
+  assert_format_string "f'foo{1}{2}foo'" "foo{1}{2}foo" [+Integer 1; +Integer 2];
+  assert_format_string "f'foo{{1}}'" "foo{{1}}" [+Integer 1];
+  assert_format_string
     "f'foo{1+2}'"
     "foo{1+2}"
     [
