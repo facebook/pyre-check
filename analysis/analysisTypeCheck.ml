@@ -1326,7 +1326,6 @@ module State = struct
       in
 
       if bottom then
-
         errors
       else
         match Node.value statement with
