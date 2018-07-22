@@ -1097,8 +1097,8 @@ module State = struct
         Access.fold ~resolution ~initial:[] ~f:check_access (Access.create access)
         |> add_errors errors
 
-      and forward_expression state expression =
-        forward state ~statement:(Node.create_with_default_location (Expression expression))
+      and forward_expression state ({ Node.location; _ } as expression) =
+        forward state ~statement:(Node.create (Expression expression) ~location)
 
       and check_entry ~resolution errors { Dictionary.key; value } =
         let errors = check_expression ~resolution errors key in
