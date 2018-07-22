@@ -618,6 +618,7 @@ module State = struct
       ?key
       ({
         resolution;
+        resolution_fixpoint;
         errors;
         define = ({ Node.value = { Define.async; _ } as define; _ } as define_node);
         nested_defines;
@@ -1726,13 +1727,8 @@ module State = struct
     let state =
       let resolution_fixpoint =
         match key with
-        | Some key ->
-            Int.Map.set
-              state.resolution_fixpoint
-              ~key
-              ~data:(Resolution.annotations state.resolution)
-        | None ->
-            state.resolution_fixpoint
+        | Some key -> Map.set resolution_fixpoint ~key ~data:(Resolution.annotations resolution)
+        | None -> resolution_fixpoint
       in
       { state with resolution_fixpoint }
     in
