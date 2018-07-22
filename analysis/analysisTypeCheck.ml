@@ -1301,12 +1301,16 @@ module State = struct
             List.fold expressions ~f:(check_expression ~resolution) ~init:errors
 
         | Ternary { Ternary.target; test; alternative } ->
-            let errors = check_expression ~resolution errors test in
-            let errors = check_expression ~resolution errors alternative in
-            let state = { state with resolution } in
             let { errors; _ } =
-              let resolution = forward_annotations state (Statement.assume test) in
-              forward_expression { state with resolution; errors } target
+              let target_state =
+                forward state (Statement.assume test)
+                |> fun state -> forward_expression state target
+              in
+              let alternative_state =
+                forward state (Statement.assume (Expression.negate test))
+                |> fun state -> forward_expression state alternative
+              in
+              join target_state alternative_state
             in
             errors
 
