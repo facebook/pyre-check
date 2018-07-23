@@ -13,9 +13,9 @@ type 'a kind = ..
 
 
 (* Since extensible variants are not properly serialized/deserialized, we can't
-   store them in the heap. So we use a 1:1 mapping from 'a kind constants to 'a internal_kind,
-   which are simply the variant tag. Outside this module 'a internal_kind is abstract. *)
-type 'a internal_kind = int
+   store them in the heap. So we use a 1:1 mapping from 'a kind constants to 'a storable_kind,
+   which are simply the variant tag. Outside this module 'a storable_kind is abstract. *)
+type 'a storable_kind = int
 
 
 let get_kind_name kind =
@@ -36,7 +36,7 @@ let cast (type a) (kind : a kind) =
     raise exn
 
 
-type abstract = Abstract: 'a internal_kind -> abstract
+type abstract = Abstract: 'a storable_kind -> abstract
 
 
 let abstract k = Abstract k
@@ -47,7 +47,7 @@ type ('a,'b) equality_witness =
   | Distinct: ('a,'b) equality_witness
 
 
-let are_equal (type a b) (a : a internal_kind) (b : b internal_kind) : (a,b) equality_witness =
+let are_equal (type a b) (a : a storable_kind) (b : b storable_kind) : (a,b) equality_witness =
   if a = b then (Obj.magic Equal)
   else Distinct
 

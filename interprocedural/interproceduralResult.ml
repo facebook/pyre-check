@@ -40,7 +40,7 @@ type ('result, 'model) analysis_data = < result: 'result; model: 'model >
 
 
 (* Internal kind (stored in the shared heap). *)
-type 'a ikind = 'a Kind.internal_kind
+type 'a storable_kind = 'a Kind.storable_kind
   constraint 'a = ('result, 'model) analysis_data
 
 
@@ -63,8 +63,8 @@ type result = RK
    used.
 *)
 type ('part, _) partial_kind =
-  | ModelPart: <model:'model; ..> ikind -> (model, 'model) partial_kind
-  | ResultPart: <result:'result; ..> ikind -> (result, 'result) partial_kind
+  | ModelPart: <model:'model; ..> storable_kind -> (model, 'model) partial_kind
+  | ResultPart: <result:'result; ..> storable_kind -> (result, 'result) partial_kind
 
 
 (* Abstracts part of an analysis' data value by storing it along with
@@ -132,7 +132,7 @@ type 'a analysis_module =
 
 
 type 'a analysis = {
-  kind: 'a Kind.internal_kind;
+  kind: 'a Kind.storable_kind;
   analysis: 'a analysis_module;
 }
 
@@ -175,7 +175,7 @@ module Make(Analysis : ANALYSIS_PROVIDED) = struct
 end
 
 
-let get_analysis (type a b) (kind_to_find : (a,b) analysis_data Kind.internal_kind) =
+let get_analysis (type a b) (kind_to_find : (a,b) analysis_data Kind.storable_kind) =
   let abstract_kind = Kind.abstract kind_to_find in
   match Kind.Map.find_opt abstract_kind !analyses with
   | None -> failwith ("analysis kind does not exist: " ^ Kind.show abstract_kind)
@@ -197,7 +197,7 @@ let get_abstract_analysis analysis_kind =
    It is polymorphic over model and result, whereas the free 'a is either
    'model, or 'result based on the partial_kind. *)
 type ('part, 'a, 'b) partial_kind_function = {
-  f : 'model 'result. <model:'model; result:'result> ikind
+  f : 'model 'result. <model:'model; result:'result> storable_kind
     -> ('part, 'a) partial_kind -> 'b;
 }
 

@@ -34,8 +34,8 @@ end
 *)
 type ('result, 'model) analysis_data = < result: 'result; model: 'model >
 
-(* Internal kind (stored in the shared heap). *)
-type 'a ikind = 'a Kind.internal_kind
+(* Stored kind (storable in the shared heap). *)
+type 'a storable_kind = 'a Kind.storable_kind
   constraint 'a = ('result, 'model) analysis_data
 
 (* External kind (can't be stored in the shared heap). *)
@@ -55,8 +55,8 @@ type result = RK
    used.
 *)
 type ('part, _) partial_kind =
-  | ModelPart: <model:'model; ..> ikind -> (model, 'model) partial_kind
-  | ResultPart: <result:'result; ..> ikind -> (result, 'result) partial_kind
+  | ModelPart: <model:'model; ..> storable_kind -> (model, 'model) partial_kind
+  | ResultPart: <result:'result; ..> storable_kind -> (result, 'result) partial_kind
 
 (* Abstracts part of an analysis' data value by storing it along with
    its kind. Used for both model and result parts from each analysis. *)
@@ -115,7 +115,7 @@ type 'a analysis_module =
   constraint 'a = ('result, 'model) analysis_data
 
 type 'a analysis = {
-  kind: 'a Kind.internal_kind;
+  kind: 'a Kind.storable_kind;
   analysis: 'a analysis_module;
 }
 
@@ -123,7 +123,7 @@ type abstract_analysis = Analysis: 'a analysis -> abstract_analysis
 
 val get_abstract_analysis: Kind.abstract -> abstract_analysis
 val get_analysis:
-  ('result,'model) analysis_data Kind.internal_kind
+  ('result,'model) analysis_data Kind.storable_kind
   -> ('result,'model) analysis_data analysis_module
 
 (* To add a new analysis, the analysis should invoke the Make functor below. The

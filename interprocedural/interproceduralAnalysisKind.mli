@@ -6,11 +6,13 @@
 
 type 'analysis kind = ..
 
-type 'a internal_kind
-val cast: 'a kind -> 'a internal_kind
+(* A 1:1 kind that can be stored in the shared heap. *)
+type 'a storable_kind
+val cast: 'a kind -> 'a storable_kind
 
+(* An existentially abstracted kind for uniform lists. *)
 type abstract
-val abstract: 'a internal_kind -> abstract
+val abstract: 'a storable_kind -> abstract
 val show: abstract -> string
 
 module Map : Caml.Map.S with type key = abstract
@@ -19,7 +21,7 @@ type ('a,'b) equality_witness =
   | Equal: ('a, 'a) equality_witness
   | Distinct: ('a, 'b) equality_witness
 
-val are_equal: 'a internal_kind -> 'b internal_kind -> ('a, 'b) equality_witness
+val are_equal: 'a storable_kind -> 'b storable_kind -> ('a, 'b) equality_witness
 
 val register: 'a kind -> name:string -> abstract
 val analysis_by_name: string -> abstract option
