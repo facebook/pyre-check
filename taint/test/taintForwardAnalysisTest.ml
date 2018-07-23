@@ -8,11 +8,13 @@ open OUnit2
 
 open Analysis
 open Ast
+open Pyre
 open Statement
 open Taint
 open Domains
 
 open Test
+open Interprocedural
 
 
 type source_expectation = {
@@ -24,12 +26,15 @@ type source_expectation = {
 let create_model define resolution =
   let taint_annotation = "TaintSource" in
   let introduce_taint taint_source_kind =
-    ForwardState.assign
-      ~root:Taint.AccessPath.Root.LocalResult
-      ~path:[]
-      (ForwardTaint.singleton taint_source_kind
-       |> ForwardState.make_leaf)
-      ForwardState.empty
+    let source_taint =
+      ForwardState.assign
+        ~root:Taint.AccessPath.Root.LocalResult
+        ~path:[]
+        (ForwardTaint.singleton taint_source_kind
+         |> ForwardState.make_leaf)
+        ForwardState.empty
+    in
+    Taint.Result.Forward.{ source_taint }
   in
   Annotated.Callable.create [define] ~resolution
   |> (fun callable -> Type.Callable callable)
@@ -41,9 +46,8 @@ let create_model define resolution =
         } :: _ when (Identifier.show name = taint_annotation) ->
             let taint_source_kind = Taint.Sources.create (Identifier.show primitive) in
             {
-              Taint.Model.forward = introduce_taint taint_source_kind;
-              backward = BackwardState.empty;
-              taint_in_taint_out = BackwardState.empty
+              Taint.Result.empty_model with
+              forward = introduce_taint taint_source_kind;
             }
         | _ ->
             failwith "Cannot create taint model: no annotation"
@@ -70,7 +74,10 @@ let add_model stub =
     |> List.map ~f:Node.value
   in
   let add_model_to_memory { Define.name = define; _ } model =
-    Taint.SharedMemory.add_model ~define model
+    let call_target = `RealTarget define in
+    Result.empty_model
+    |> Result.with_model Taint.Result.kind model
+    |> Fixpoint.add_predefined call_target
   in
   let models = List.map defines ~f:(fun define -> create_model define resolution) in
   List.iter2_exn defines models ~f:add_model_to_memory
@@ -83,19 +90,19 @@ let assert_sources ~source ~expect:{ define_name; returns; _ } =
     |> Preprocessing.defines
     |> List.hd_exn
   in
-  let { ForwardAnalysis.source_taint } = Option.value_exn (ForwardAnalysis.run define) in
-  Taint.SharedMemory.add_model
-    ~define:(Access.create define_name)
-    {
-      forward = source_taint;
-      backward = BackwardState.empty;
-      taint_in_taint_out = BackwardState.empty
-    };
-  match Taint.SharedMemory.get_model ~define:(Access.create define_name) with
+  let call_target = `RealTarget (Access.create define_name) in
+  let forward_model = ForwardAnalysis.run define in
+  let taint_model = { Taint.Result.empty_model with forward = forward_model; } in
+  let () =
+    Result.empty_model
+    |> Result.with_model Taint.Result.kind taint_model
+    |> Fixpoint.add_predefined call_target
+  in
+  match Fixpoint.get_model call_target >>= Result.get_model Taint.Result.kind with
   | None -> assert_failure ("no model for " ^ define_name)
-  | Some { forward; _ } ->
+  | Some { forward = { source_taint; } ; _ } ->
       let returned_sources =
-        ForwardState.read AccessPath.Root.LocalResult forward
+        ForwardState.read AccessPath.Root.LocalResult source_taint
         |> ForwardState.collapse
         |> ForwardTaint.leaves
         |> List.map ~f:Sources.show
@@ -122,14 +129,15 @@ let test_model _ =
       ForwardState.empty
   in
   let stub = "def taint() -> TaintSource[TestSource]: ..." in
-  add_model stub;
+  let () = add_model stub in
+  let call_target = `RealTarget (Access.create "taint") in
+  let taint_model = Fixpoint.get_model call_target >>= Result.get_model Taint.Result.kind in
   assert_equal
-    ~printer:Model.show
-    (Option.value_exn (Taint.SharedMemory.get_model ~define:(Access.create "taint")))
+    ~printer:Taint.Result.show_call_model
+    (Option.value_exn taint_model)
     {
-      forward = expect_source_taint;
-      backward = BackwardState.empty;
-      taint_in_taint_out = BackwardState.empty;
+      Taint.Result.empty_model with
+      forward = { source_taint = expect_source_taint }
     }
 
 

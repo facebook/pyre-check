@@ -17,6 +17,7 @@
    (oUnit
     pyrelib.ast
     pyrelib.analysis
+    pyrelib.interprocedural
     pyrelib.test
     pyrelib.taint))))
 
@@ -27,6 +28,7 @@
    (oUnit
     pyrelib.ast
     pyrelib.analysis
+    pyrelib.interprocedural
     pyrelib.test
     pyrelib.taint))))
 

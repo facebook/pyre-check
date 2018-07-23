@@ -14,13 +14,6 @@ open TaintDomains
 open TaintAccessPath
 
 
-type backward_model = {
-  taint_in_taint_out: BackwardState.t;
-  backward_taint: BackwardState.t;
-}
-[@@deriving show]
-
-
 module type FixpointState = sig
   type t = { taint: BackwardState.t }
   [@@deriving show]
@@ -217,10 +210,16 @@ let run ({ Define.name; parameters } as define) =
   (* TODO(T31697954): initial_taint is hardcoded *)
   let initial = { FixpointState.taint = initial_taint } in
   let cfg = Cfg.create define in
-  Log.log ~section:`Taint "Processing CFG:@.%s" (Log.Color.yellow (Cfg.show cfg));
-  Analyzer.backward ~cfg ~initial
-  |> Analyzer.entry
-  >>| fun ({ taint; _ } as result) ->
-  let taint_in_taint_out = extract_taint_in_taint_out_model parameters taint in
-  Log.log ~section:`Taint "Models: %s" (Log.Color.yellow (FixpointState.show result));
-  { taint_in_taint_out; backward_taint = BackwardState.empty }
+  let () = Log.log ~section:`Taint "Processing CFG:@.%s" (Log.Color.yellow (Cfg.show cfg)) in
+  let entry_state =
+    Analyzer.backward ~cfg ~initial
+    |> Analyzer.entry in
+  let extract_model (FixpointState.{ taint; _ } as result) =
+    let taint_in_taint_out = extract_taint_in_taint_out_model parameters taint in
+    let sink_taint = BackwardState.empty in
+    let () = Log.log ~section:`Taint "Models: %s" (Log.Color.yellow (FixpointState.show result)) in
+    TaintResult.Backward.{ taint_in_taint_out; sink_taint; }
+  in
+  entry_state
+  >>| extract_model
+  |> Option.value ~default:TaintResult.Backward.empty

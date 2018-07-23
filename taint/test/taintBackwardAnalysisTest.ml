@@ -8,11 +8,12 @@ open OUnit2
 
 open Analysis
 open Ast
+open Pyre
 open Statement
 open Taint
-open Domains
 
 open Test
+open Interprocedural
 
 
 type taint_in_taint_out_expectation = {
@@ -28,15 +29,17 @@ let assert_taint_in_taint_out source { define_name; taint_in_taint_out_parameter
     |> Preprocessing.defines
     |> List.hd_exn
   in
-  let { BackwardAnalysis.taint_in_taint_out; _ } =
-    Option.value_exn (BackwardAnalysis.run define)
+  let backward_model = BackwardAnalysis.run define in
+  let taint_model = { Taint.Result.empty_model with backward = backward_model; } in
+  let call_target = `RealTarget (Access.create define_name) in
+  let () =
+    Result.empty_model
+    |> Result.with_model Taint.Result.kind taint_model
+    |> Fixpoint.add_predefined call_target
   in
-  Taint.SharedMemory.add_model
-    ~define:(Access.create define_name)
-    { taint_in_taint_out; backward = BackwardState.empty; forward = ForwardState.empty };
-  match Taint.SharedMemory.get_model (Access.create define_name) with
+  match Fixpoint.get_model call_target >>= Result.get_model Taint.Result.kind with
   | None -> assert_failure ("no model for " ^ define_name)
-  | Some { taint_in_taint_out; _ } ->
+  | Some { backward = { taint_in_taint_out; _ }; } ->
       let extract_parameter_position root _ positions =
         match root with
         | AccessPath.Root.Parameter { position; _ } -> Int.Set.add positions position

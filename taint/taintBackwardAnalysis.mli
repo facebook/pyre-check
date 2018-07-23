@@ -9,24 +9,12 @@ open Analysis
 open TaintDomains
 
 
-type backward_model = {
-  taint_in_taint_out: BackwardState.t;
-  backward_taint: BackwardState.t;
-}
-[@@deriving show]
-
-
 module FixpointState : sig
-
   type t = { taint: BackwardState.t }
-
   val create: unit -> t
-
   include Fixpoint.State with type t := t
 end
 
-
 module Analyzer : Fixpoint.Fixpoint with type state = FixpointState.t
 
-
-val run: Define.t -> backward_model option
+val run: Define.t -> TaintResult.Backward.model

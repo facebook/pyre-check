@@ -9,12 +9,6 @@ open TaintDomains
 open Statement
 
 
-type forward_model = {
-  source_taint: ForwardState.t;
-}
-[@@deriving show]
-
-
 module FixpointState : sig
   type t = { taint: ForwardState.t }
 
@@ -27,4 +21,4 @@ end
 module Analyzer : Fixpoint.Fixpoint with type state := FixpointState.t
 
 
-val run: Define.t -> forward_model option
+val run: Define.t -> TaintResult.Forward.model

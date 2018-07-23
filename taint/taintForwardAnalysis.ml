@@ -14,12 +14,6 @@ open TaintDomains
 open TaintAccessPath
 
 
-type forward_model = {
-  source_taint: ForwardState.t;
-}
-[@@deriving show]
-
-
 module type FixpointState = sig
   type t = { taint: ForwardState.t }
   [@@deriving show]
@@ -82,14 +76,15 @@ module rec FixpointState : FixpointState = struct
     match callee with
     | Identifier identifier ->
         let existing_model =
-          let define = Access.create_from_identifiers [identifier] in
-          TaintSharedMemory.get_model ~define
+          let call_target = `RealTarget (Access.create_from_identifiers [identifier]) in
+          Interprocedural.Fixpoint.get_model call_target
+          >>= Interprocedural.Result.get_model TaintResult.kind
         in
         let taint =
           match existing_model with
           | Some { forward; _ } ->
               (* TODO(T31440488): analyze callee arguments *)
-              ForwardState.read TaintAccessPath.Root.LocalResult forward
+              ForwardState.read TaintAccessPath.Root.LocalResult forward.source_taint
           | None ->
               (* TODO(T31435739): if we don't have a model: assume function propagates argument
                  taint (join all argument taint) *)
@@ -221,10 +216,16 @@ let extract_source_model _parameters exit_taint =
 let run ({ Define.name; parameters } as define) =
   let cfg = Cfg.create define in
   let initial = FixpointState.create () in
-  Log.log ~section:`Taint "Processing CFG:@.%s" (Log.Color.cyan (Cfg.show cfg));
-  Analyzer.forward ~cfg ~initial
-  |> Analyzer.exit
-  >>| fun ({ FixpointState.taint; _ } as result) ->
-  let source_taint = extract_source_model parameters taint in
-  Log.log ~section:`Taint "Model: %s" (Log.Color.cyan (FixpointState.show result));
-  { source_taint }
+  let () = Log.log ~section:`Taint "Processing CFG:@.%s" (Log.Color.cyan (Cfg.show cfg)) in
+  let exit_state =
+    Analyzer.forward ~cfg ~initial
+    |> Analyzer.exit
+  in
+  let extract_model ({ FixpointState.taint; _ } as result) =
+    let source_taint = extract_source_model parameters taint in
+    let () = Log.log ~section:`Taint "Model: %s" (Log.Color.cyan (FixpointState.show result)) in
+    TaintResult.Forward.{ source_taint; }
+  in
+  exit_state
+  >>| extract_model
+  |> Option.value ~default:TaintResult.Forward.empty
