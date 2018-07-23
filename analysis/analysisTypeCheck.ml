@@ -1298,6 +1298,7 @@ module State = struct
             List.fold expressions ~f:(forward_expression ~resolution) ~init:errors
 
         | Ternary { Ternary.target; test; alternative } ->
+            let state = { state with resolution } in
             let { errors; _ } =
               let forward_expression state ({ Node.location; _ } as expression) =
                 forward state ~statement:(Node.create (Expression expression) ~location)

@@ -1969,9 +1969,6 @@ let test_check_comprehensions _ =
         [x if y else 0 for x, y in l.items()]
     |}
     [
-      (* TODO(T30448045): we are not actually propagating the generator assignments. *)
-      "Undefined name [18]: Global name `x` is undefined.";
-      "Undefined name [18]: Global name `y` is undefined.";
     ];
 
   assert_type_errors
