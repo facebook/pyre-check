@@ -988,7 +988,7 @@ module State = struct
     in
 
     (* Gets typing errors that occur when trying to execute 'statement' in 'state' *)
-    let errors =
+    let state_with_errors =
       let instantiate location =
         Location.instantiate ~lookup:(fun hash -> AstSharedMemory.get_path ~hash) location
       in
@@ -1098,12 +1098,9 @@ module State = struct
         Access.fold ~resolution ~initial:[] ~f:check_access (Access.create access)
         |> add_errors errors
 
-      and forward_expression state ({ Node.location; _ } as expression) =
-        forward state ~statement:(Node.create (Expression expression) ~location)
-
       and check_entry ~resolution errors { Dictionary.key; value } =
-        let errors = check_expression ~resolution errors key in
-        check_expression ~resolution errors value
+        let errors = forward_expression ~resolution errors key in
+        forward_expression ~resolution errors value
 
       and check_generator
           state
@@ -1134,8 +1131,7 @@ module State = struct
         List.map ~f:Statement.assume conditions
         |> List.fold ~init:state ~f:(fun state statement -> forward state ~statement)
 
-
-      and check_expression ~resolution errors { Node.location; value } =
+      and forward_expression ~resolution errors { Node.location; value } =
         match value with
         | Access access ->
             let errors = check_access ~resolution errors (Node.create ~location access) in
@@ -1188,17 +1184,17 @@ module State = struct
                   let check_argument
                       errors
                       { Argument.value; _ } =
-                    check_expression ~resolution errors value
+                    forward_expression ~resolution errors value
                   in
                   List.fold ~f:check_argument ~init:errors arguments
 
               | Access.Expression expression ->
-                  check_expression ~resolution errors expression
+                  forward_expression ~resolution errors expression
             in
             List.fold ~f:check_single_access ~init:errors access
 
         | Await expression ->
-            let errors = check_expression ~resolution errors expression in
+            let errors = forward_expression ~resolution errors expression in
             let actual = Annotated.resolve ~resolution expression in
             let is_awaitable =
               Resolution.less_or_equal
@@ -1242,9 +1238,9 @@ module State = struct
             errors
 
         | ComparisonOperator { ComparisonOperator.left; right; _ } ->
-            let errors = check_expression ~resolution errors left in
+            let errors = forward_expression ~resolution errors left in
             let accumulate errors (_, expression) =
-              check_expression ~resolution errors expression
+              forward_expression ~resolution errors expression
             in
             List.fold ~f:accumulate ~init:errors right
 
@@ -1253,7 +1249,7 @@ module State = struct
             begin
               match keywords with
               | None -> errors
-              | Some keyword -> check_expression ~resolution errors keyword
+              | Some keyword -> forward_expression ~resolution errors keyword
             end
 
         | DictionaryComprehension { Comprehension.element; generators } ->
@@ -1276,33 +1272,36 @@ module State = struct
               in
               List.fold ~f:add_parameter ~init:resolution parameters
             in
-            check_expression ~resolution errors body
+            forward_expression ~resolution errors body
 
         | List list
         | Set list
         | Tuple list ->
-            List.fold ~f:(check_expression ~resolution) ~init:errors list
+            List.fold ~f:(forward_expression ~resolution) ~init:errors list
 
         | Generator { Comprehension.element; generators }
         | ListComprehension { Comprehension.element; generators }
         | SetComprehension { Comprehension.element; generators } ->
             let state = { state with resolution } in
             let { resolution; errors; _ } = List.fold ~f:check_generator ~init:state generators in
-            check_expression ~resolution errors element
+            forward_expression ~resolution errors element
 
         | Starred starred ->
             begin
               match starred with
               | Starred.Once expression
               | Starred.Twice expression ->
-                  check_expression ~resolution errors expression
+                  forward_expression ~resolution errors expression
             end
 
         | String { StringLiteral.kind = StringLiteral.Format expressions; _ } ->
-            List.fold expressions ~f:(check_expression ~resolution) ~init:errors
+            List.fold expressions ~f:(forward_expression ~resolution) ~init:errors
 
         | Ternary { Ternary.target; test; alternative } ->
             let { errors; _ } =
+              let forward_expression state ({ Node.location; _ } as expression) =
+                forward state ~statement:(Node.create (Expression expression) ~location)
+              in
               let target_state =
                 forward state (Statement.assume test)
                 |> fun state -> forward_expression state target
@@ -1316,270 +1315,310 @@ module State = struct
             errors
 
         | UnaryOperator { UnaryOperator.operand; operator = _ } ->
-            check_expression ~resolution errors operand
+            forward_expression ~resolution errors operand
 
         | Expression.Yield yield ->
             begin
               match yield with
               | None -> errors
-              | Some expression -> check_expression ~resolution errors expression
+              | Some expression -> forward_expression ~resolution errors expression
             end
 
         (* Trivial base cases *)
         | Complex _ | Ellipses | False | Float _ | Integer _ | String _ | True ->
             errors
-      in
 
-      if bottom then
-        errors
-      else
+      and forward_statement state statement =
         match Node.value statement with
         | Assign ({
             Assign.annotation = explicit_annotation;
             value = Some value;
             _;
           } as assign) ->
-            let check_assign ~target:({ Node.location; _ } as target) ~value_annotation errors =
-              let access = Expression.access target in
-              let add_incompatible_type_error ~expected ~parent ~name ~declare_location errors =
-                if Resolution.less_or_equal resolution ~left:value_annotation ~right:expected then
-                  errors
-                else
-                  let error =
-                    match parent with
-                    | Some parent ->
-                        Error.create
-                          ~location
-                          ~kind:(Error.IncompatibleAttributeType {
-                              Error.parent;
-                              incompatible_type = {
+            let errors =
+              let check_assign ~target:({ Node.location; _ } as target) ~value_annotation errors =
+                let access = Expression.access target in
+                let add_incompatible_type_error ~expected ~parent ~name ~declare_location errors =
+                  if Resolution.less_or_equal resolution ~left:value_annotation ~right:expected then
+                    errors
+                  else
+                    let error =
+                      match parent with
+                      | Some parent ->
+                          Error.create
+                            ~location
+                            ~kind:(Error.IncompatibleAttributeType {
+                                Error.parent;
+                                incompatible_type = {
+                                  Error.name;
+                                  mismatch = { Error.expected; actual = value_annotation };
+                                  declare_location;
+                                };
+                              })
+                            ~define:define_node
+                      | None ->
+                          Error.create
+                            ~location
+                            ~kind:(Error.IncompatibleVariableType {
                                 Error.name;
                                 mismatch = { Error.expected; actual = value_annotation };
                                 declare_location;
-                              };
-                            })
-                          ~define:define_node
-                    | None ->
-                        Error.create
-                          ~location
-                          ~kind:(Error.IncompatibleVariableType {
-                              Error.name;
-                              mismatch = { Error.expected; actual = value_annotation };
-                              declare_location;
-                            })
-                          ~define:define_node
-                  in
-                  Map.set ~key:(Error.location error |> Location.reference) ~data:error errors
-              in
-              let add_missing_annotation_error ~expected ~parent ~name ~declare_location errors =
-                if ((Type.is_unknown expected) || (Type.equal expected Type.Object)) &&
-                   not (Type.is_unknown value_annotation) then
-                  let evidence_location = instantiate location in
-                  let error =
-                    match parent with
-                    | Some parent ->
-                        Error.create
-                          ~location:declare_location
-                          ~kind:(Error.MissingAttributeAnnotation {
-                              Error.parent;
-                              missing_annotation = {
+                              })
+                            ~define:define_node
+                    in
+                    Map.set ~key:(Error.location error |> Location.reference) ~data:error errors
+                in
+                let add_missing_annotation_error ~expected ~parent ~name ~declare_location errors =
+                  if ((Type.is_unknown expected) || (Type.equal expected Type.Object)) &&
+                     not (Type.is_unknown value_annotation) then
+                    let evidence_location = instantiate location in
+                    let error =
+                      match parent with
+                      | Some parent ->
+                          Error.create
+                            ~location:declare_location
+                            ~kind:(Error.MissingAttributeAnnotation {
+                                Error.parent;
+                                missing_annotation = {
+                                  Error.name;
+                                  annotation = value_annotation;
+                                  evidence_locations = [evidence_location];
+                                  due_to_any = Type.equal expected Type.Object;
+                                };
+                              })
+                            ~define:define_node
+                      | None ->
+                          Error.create
+                            ~location:declare_location
+                            ~kind:(Error.MissingGlobalAnnotation {
                                 Error.name;
                                 annotation = value_annotation;
                                 evidence_locations = [evidence_location];
                                 due_to_any = Type.equal expected Type.Object;
-                              };
-                            })
-                          ~define:define_node
-                    | None ->
-                        Error.create
-                          ~location:declare_location
-                          ~kind:(Error.MissingGlobalAnnotation {
-                              Error.name;
-                              annotation = value_annotation;
-                              evidence_locations = [evidence_location];
-                              due_to_any = Type.equal expected Type.Object;
-                            })
-                          ~define:define_node
-                  in
-                  Map.find errors declare_location
-                  >>| Error.join ~resolution error
-                  |> Option.value ~default:error
-                  |> fun data -> Map.set ~key:declare_location ~data errors
-                else
-                  errors
-              in
-              let errors =
-                let open Annotated in
-                let open Access.Element in
-                match Access.last_element ~resolution (Access.create access) with
-                | Attribute { origin = Instance attribute; defined; _ } when defined ->
-                    let expected = Annotation.original (Attribute.annotation attribute) in
-                    let name =
-                      Expression.access
-                        (Node.create_with_default_location (Attribute.name attribute))
+                              })
+                            ~define:define_node
                     in
+                    Map.find errors declare_location
+                    >>| Error.join ~resolution error
+                    |> Option.value ~default:error
+                    |> fun data -> Map.set ~key:declare_location ~data errors
+                  else
                     errors
-                    |> add_incompatible_type_error
-                      ~expected
-                      ~parent:(Some (Attribute.parent attribute))
-                      ~name
-                      ~declare_location:(Attribute.location attribute |> instantiate)
-                    |> add_missing_annotation_error
-                      ~expected
-                      ~parent:(Some (Attribute.parent attribute))
-                      ~name
-                      ~declare_location:(Attribute.location attribute)
-                | Attribute { origin = Instance attribute; defined; _ } when not defined ->
-                    let parent = Attribute.parent attribute in
-                    begin
-                      match Class.body parent with
-                      | { Node.location; _ } :: _ ->
-                          add_missing_annotation_error
-                            ~expected:Type.Top
-                            ~parent:(Some parent)
-                            ~name:(Attribute.access attribute)
-                            ~declare_location:location
+                in
+                let errors =
+                  let open Annotated in
+                  let open Access.Element in
+                  match Access.last_element ~resolution (Access.create access) with
+                  | Attribute { origin = Instance attribute; defined; _ } when defined ->
+                      let expected = Annotation.original (Attribute.annotation attribute) in
+                      let name =
+                        Expression.access
+                          (Node.create_with_default_location (Attribute.name attribute))
+                      in
+                      errors
+                      |> add_incompatible_type_error
+                        ~expected
+                        ~parent:(Some (Attribute.parent attribute))
+                        ~name
+                        ~declare_location:(Attribute.location attribute |> instantiate)
+                      |> add_missing_annotation_error
+                        ~expected
+                        ~parent:(Some (Attribute.parent attribute))
+                        ~name
+                        ~declare_location:(Attribute.location attribute)
+                  | Attribute { origin = Instance attribute; defined; _ } when not defined ->
+                      let parent = Attribute.parent attribute in
+                      begin
+                        match Class.body parent with
+                        | { Node.location; _ } :: _ ->
+                            add_missing_annotation_error
+                              ~expected:Type.Top
+                              ~parent:(Some parent)
+                              ~name:(Attribute.access attribute)
+                              ~declare_location:location
+                              errors
+                        | _ ->
                             errors
-                      | _ ->
-                          errors
-                    end
-                | _ ->
-                    let name = access in
-                    let location =
-                      Resolution.global resolution access
-                      >>| Node.location
-                      |> Option.value ~default:location
-                    in
-                    let existing_annotation, is_explicit =
-                      match explicit_annotation with
-                      (* Explicit annotations override our existing knowledge of the target's type. *)
-                      | Some annotation ->
-                          Resolution.parse_annotation resolution annotation
-                          |> Annotation.create_immutable ~global:true,
-                          true
-                      | None ->
-                          let resolved =
-                            let default =
-                              Resolution.resolve resolution target
-                              |> Annotation.create
+                      end
+                  | _ ->
+                      let name = access in
+                      let location =
+                        Resolution.global resolution access
+                        >>| Node.location
+                        |> Option.value ~default:location
+                      in
+                      let existing_annotation, is_explicit =
+                        match explicit_annotation with
+                        (* Explicit annotations override our existing knowledge of the target's type. *)
+                        | Some annotation ->
+                            Resolution.parse_annotation resolution annotation
+                            |> Annotation.create_immutable ~global:true,
+                            true
+                        | None ->
+                            let resolved =
+                              let default =
+                                Resolution.resolve resolution target
+                                |> Annotation.create
+                              in
+                              Resolution.get_local resolution ~access
+                              |> Option.value ~default
                             in
-                            Resolution.get_local resolution ~access
-                            |> Option.value ~default
+                            resolved , false
+                      in
+                      match existing_annotation with
+                      | {
+                        Annotation.mutability = Annotation.Immutable {
+                            Annotation.scope = Annotation.Global;
+                            original = expected;
+                          };
+                        _;
+                      } ->
+                          let errors =
+                            add_incompatible_type_error
+                              ~expected
+                              ~parent:None
+                              ~name
+                              ~declare_location:(instantiate location)
+                              errors
                           in
-                          resolved , false
-                    in
-                    match existing_annotation with
-                    | {
-                      Annotation.mutability = Annotation.Immutable {
-                          Annotation.scope = Annotation.Global;
-                          original = expected;
-                        };
-                      _;
-                    } ->
-                        let errors =
+                          (* Don't error when encountering an explicit annotation or a type alias. *)
+                          if is_explicit || Type.is_meta value_annotation then
+                            errors
+                          else
+                            add_missing_annotation_error
+                              ~expected
+                              ~parent:None
+                              ~declare_location:location
+                              ~name
+                              errors
+                      | {
+                        Annotation.mutability = Annotation.Immutable {
+                            Annotation.scope = Annotation.Local;
+                            original = expected;
+                          };
+                        _;
+                      } ->
                           add_incompatible_type_error
                             ~expected
                             ~parent:None
                             ~name
                             ~declare_location:(instantiate location)
                             errors
-                        in
-                        (* Don't error when encountering an explicit annotation or a type alias. *)
-                        if is_explicit || Type.is_meta value_annotation then
-                          errors
-                        else
-                          add_missing_annotation_error
-                            ~expected
+                      | annotation when Type.is_tuple (Annotation.annotation annotation) ->
+                          add_incompatible_type_error
+                            ~expected:(Annotation.annotation annotation)
                             ~parent:None
-                            ~declare_location:location
-                            ~name
+                            ~name:(Expression.Access.create "left hand side")
+                            ~declare_location:(instantiate location)
                             errors
-                    | {
-                      Annotation.mutability = Annotation.Immutable {
-                          Annotation.scope = Annotation.Local;
-                          original = expected;
-                        };
-                      _;
-                    } ->
-                        add_incompatible_type_error
-                          ~expected
-                          ~parent:None
-                          ~name
-                          ~declare_location:(instantiate location)
+                      | _ ->
                           errors
-                    | annotation when Type.is_tuple (Annotation.annotation annotation) ->
-                        add_incompatible_type_error
-                          ~expected:(Annotation.annotation annotation)
-                          ~parent:None
-                          ~name:(Expression.Access.create "left hand side")
-                          ~declare_location:(instantiate location)
-                          errors
-                    | _ ->
-                        errors
+                in
+                let errors = forward_expression ~resolution errors value in
+                let check_target =
+                  match Node.value target with
+                  | Access access when List.length access = 1 ->
+                      false
+                  | Tuple _ ->
+                      false
+                  | List _ ->
+                      false
+                  | _ ->
+                      true
+                in
+                if check_target then
+                  forward_expression ~resolution errors target
+                else
+                  errors
               in
-              let errors = check_expression ~resolution errors value in
-              let check_target =
-                match Node.value target with
-                | Access access when List.length access = 1 ->
-                    false
-                | Tuple _ ->
-                    false
-                | List _ ->
-                    false
-                | _ ->
-                    true
-              in
-              if check_target then
-                check_expression ~resolution errors target
-              else
-                errors
+              Annotated.Assign.create assign
+              |> Annotated.Assign.fold ~resolution ~f:check_assign ~initial:errors
             in
-            Annotated.Assign.create assign
-            |> Annotated.Assign.fold ~resolution ~f:check_assign ~initial:errors
+            { state with errors }
         | Assign _ ->
             (* TODO(T26146217): add coverage. *)
-            errors
+            state
 
         | Assert { Assert.test; _ } ->
-            check_expression ~resolution errors test
+            let errors = forward_expression ~resolution errors test in
+            { state with errors }
 
         | Delete _ ->
             (* TODO(T26146217): add coverage. *)
-            errors
+            state
 
         | Expression expression ->
-            check_expression ~resolution errors expression
+            let errors = forward_expression ~resolution errors expression in
+            { state with errors }
 
         | Raise (Some expression) ->
-            check_expression ~resolution errors expression
+            let errors = forward_expression ~resolution errors expression in
+            { state with errors }
         | Raise _ ->
-            errors
+            state
 
         | Return { Return.expression; is_implicit } ->
-            let actual =
-              Option.value_map
-                expression
-                ~default:Type.none
-                ~f:(Annotated.resolve ~resolution)
+            let errors =
+              let actual =
+                Option.value_map
+                  expression
+                  ~default:Type.none
+                  ~f:(Annotated.resolve ~resolution)
+              in
+              if not (Resolution.less_or_equal resolution ~left:actual ~right:expected) &&
+                 not (Define.is_abstract_method define) &&
+                 not (Define.is_overloaded_method define) &&
+                 not (Type.is_none actual &&
+                      (Annotated.Define.create define |> Annotated.Define.is_generator)) &&
+                 not (Type.is_none actual && Type.is_noreturn expected) then
+                let error =
+                  Error.create
+                    ~location
+                    ~kind:(Error.IncompatibleReturnType {
+                        Error.mismatch = { Error.expected; actual };
+                        is_implicit;
+                      })
+                    ~define:define_node
+                in
+                add_errors errors [error]
+              else if Type.equal expected Type.Top || Type.equal expected Type.Object then
+                let error =
+                  Error.create
+                    ~location
+                    ~kind:(Error.MissingReturnAnnotation {
+                        Error.annotation = actual;
+                        evidence_locations = [location.Location.start.Location.line];
+                        due_to_any = Type.equal expected Type.Object;
+                      })
+                    ~define:define_node
+                in
+                add_errors errors [error]
+              else
+                errors
             in
-            if not (Resolution.less_or_equal resolution ~left:actual ~right:expected) &&
-               not (Define.is_abstract_method define) &&
-               not (Define.is_overloaded_method define) &&
-               not (Type.is_none actual &&
-                    (Annotated.Define.create define |> Annotated.Define.is_generator)) &&
-               not (Type.is_none actual && Type.is_noreturn expected) then
-              let error =
+            { state with errors }
+
+        | Statement.Yield { Node.value = Expression.Yield return; _ } ->
+            let errors =
+              let errors =
+                return
+                >>| forward_expression ~resolution errors
+                |> Option.value ~default:errors
+              in
+              let actual =
+                Option.value_map return ~default:Type.none ~f:(Annotated.resolve ~resolution)
+                |> Type.generator ~async
+              in
+              if not (Resolution.less_or_equal resolution ~left:actual ~right:expected) then
                 Error.create
                   ~location
                   ~kind:(Error.IncompatibleReturnType {
                       Error.mismatch = { Error.expected; actual };
-                      is_implicit;
+                      is_implicit = false;
                     })
                   ~define:define_node
-              in
-              add_errors errors [error]
-            else if Type.equal expected Type.Top || Type.equal expected Type.Object then
-              let error =
+                |> add_error errors
+              else if Type.equal expected Type.Top || Type.equal expected Type.Object then
                 Error.create
                   ~location
                   ~kind:(Error.MissingReturnAnnotation {
@@ -1588,117 +1627,99 @@ module State = struct
                       due_to_any = Type.equal expected Type.Object;
                     })
                   ~define:define_node
-              in
-              add_errors errors [error]
-            else
-              errors
-
-        | Statement.Yield { Node.value = Expression.Yield return; _ } ->
-            let errors =
-              return
-              >>| check_expression ~resolution errors
-              |> Option.value ~default:errors
+                |> add_error errors
+              else
+                errors
             in
-            let actual =
-              Option.value_map return ~default:Type.none ~f:(Annotated.resolve ~resolution)
-              |> Type.generator ~async
-            in
-            if not (Resolution.less_or_equal resolution ~left:actual ~right:expected) then
-              Error.create
-                ~location
-                ~kind:(Error.IncompatibleReturnType {
-                    Error.mismatch = { Error.expected; actual };
-                    is_implicit = false;
-                  })
-                ~define:define_node
-              |> add_error errors
-            else if Type.equal expected Type.Top || Type.equal expected Type.Object then
-              Error.create
-                ~location
-                ~kind:(Error.MissingReturnAnnotation {
-                    Error.annotation = actual;
-                    evidence_locations = [location.Location.start.Location.line];
-                    due_to_any = Type.equal expected Type.Object;
-                  })
-                ~define:define_node
-              |> add_error errors
-            else
-              errors
+            { state with errors }
         | Statement.Yield _ ->
-            errors
+            state
 
         | YieldFrom { Node.value = Expression.Yield (Some return); _ } ->
-            let errors = check_expression ~resolution errors return in
-            let actual =
-              match Annotated.resolve ~resolution return with
-              | Type.Parametric { Type.name; parameters = [parameter] }
-                when Identifier.show name = "typing.Iterator" ->
-                  Type.generator parameter
-              | annotation -> Type.generator annotation
+            let errors =
+              let errors = forward_expression ~resolution errors return in
+              let actual =
+                match Annotated.resolve ~resolution return with
+                | Type.Parametric { Type.name; parameters = [parameter] }
+                  when Identifier.show name = "typing.Iterator" ->
+                    Type.generator parameter
+                | annotation -> Type.generator annotation
+              in
+              if not (Resolution.less_or_equal resolution ~left:actual ~right:expected) then
+                Error.create
+                  ~location
+                  ~kind:(Error.IncompatibleReturnType {
+                      Error.mismatch = { Error.expected; actual };
+                      is_implicit = false;
+                    })
+                  ~define:define_node
+                |> add_error errors
+              else if Type.equal expected Type.Top || Type.equal expected Type.Object then
+                Error.create
+                  ~location
+                  ~kind:(Error.MissingReturnAnnotation {
+                      Error.annotation = actual;
+                      evidence_locations = [location.Location.start.Location.line];
+                      due_to_any = Type.equal expected Type.Object;
+                    })
+                  ~define:define_node
+                |> add_error errors
+              else
+                errors
             in
-            if not (Resolution.less_or_equal resolution ~left:actual ~right:expected) then
-              Error.create
-                ~location
-                ~kind:(Error.IncompatibleReturnType {
-                    Error.mismatch = { Error.expected; actual };
-                    is_implicit = false;
-                  })
-                ~define:define_node
-              |> add_error errors
-            else if Type.equal expected Type.Top || Type.equal expected Type.Object then
-              Error.create
-                ~location
-                ~kind:(Error.MissingReturnAnnotation {
-                    Error.annotation = actual;
-                    evidence_locations = [location.Location.start.Location.line];
-                    due_to_any = Type.equal expected Type.Object;
-                  })
-                ~define:define_node
-              |> add_error errors
-            else
-              errors
+            { state with errors }
 
         | Import { Import.from; imports } ->
-            let imports =
-              match from with
-              | Some from -> [from]
-              | None -> List.map imports ~f:(fun { Import.name; _ } -> name)
-            in
-            let to_import_error import =
-              let add_import_error errors ~resolution:_ ~resolved:_ ~element =
-                let open Annotated.Access.Element in
-                match element with
-                | Attribute { origin = Module _; defined = false; _ } ->
-                    Error.create
-                      ~location
-                      ~kind:(Error.UndefinedImport import)
-                      ~define:define_node
-                    :: errors
-                | _ ->
-                    errors
+            let errors =
+              let imports =
+                match from with
+                | Some from -> [from]
+                | None -> List.map imports ~f:(fun { Import.name; _ } -> name)
               in
-              Annotated.Access.fold
-                ~f:add_import_error
-                ~resolution
-                ~initial:[]
-                (Annotated.Access.create import)
+              let to_import_error import =
+                let add_import_error errors ~resolution:_ ~resolved:_ ~element =
+                  let open Annotated.Access.Element in
+                  match element with
+                  | Attribute { origin = Module _; defined = false; _ } ->
+                      Error.create
+                        ~location
+                        ~kind:(Error.UndefinedImport import)
+                        ~define:define_node
+                      :: errors
+                  | _ ->
+                      errors
+                in
+                Annotated.Access.fold
+                  ~f:add_import_error
+                  ~resolution
+                  ~initial:[]
+                  (Annotated.Access.create import)
+              in
+              List.concat_map ~f:to_import_error imports
+              |> add_errors errors
             in
-            List.concat_map ~f:to_import_error imports
-            |> add_errors errors
+            { state with errors }
 
         | YieldFrom _ ->
-            errors
+            state
 
         | Class _ | Define _ ->
-            (* Don't check accesses in nested classes and functions, they're analyzed separately. *)
-            errors
+            (* Don't check accesses in nested classes and functions, they're analyzed
+               separately. *)
+            state
 
         | For _  | If _ | Try _ | With _ | While _ ->
             (* Check happens implicitly in the resulting control flow. *)
-            errors
+            state
 
         | Break | Continue | Global _ | Nonlocal _ | Pass ->
-            errors
+            state
+      in
+
+      if bottom then
+        state
+      else
+        forward_statement state statement
     in
     let resolution = forward_annotations state statement in
 
@@ -1711,7 +1732,7 @@ module State = struct
           false
     in
 
-    let state = { state with resolution; errors; bottom = terminates_control_flow } in
+    let state = { state_with_errors with resolution; bottom = terminates_control_flow } in
 
     let nested_defines =
       let schedule ~define = Map.set nested_defines ~key:location ~data:define in
