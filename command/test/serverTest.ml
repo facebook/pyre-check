@@ -241,13 +241,13 @@ let mock_server_state
 
 let mock_client_socket = Unix.openfile ~mode:[Unix.O_RDONLY] "/dev/null"
 
-let assert_request_gets_response
+let assert_response
     ?(initial_errors = Error.Hash_set.create ())
     ?(source_root = Path.current_working_directory ())
     ?state
     ?(path = "test.py")
-    source
-    request
+    ~source
+    ~request
     expected_response =
   let errors =
     let errors = File.Handle.Table.create () in
@@ -282,21 +282,22 @@ let assert_request_gets_response
 
 let test_shutdown _ =
   let source = "x = 1" in
-  assert_request_gets_response
-    source
-    (Protocol.Request.ClientShutdownRequest 1)
-    (Some (Protocol.LanguageServerProtocolResponse
-             (LanguageServer.Protocol.ShutdownResponse.default 1
-              |> LanguageServer.Protocol.ShutdownResponse.to_yojson
-              |> Yojson.Safe.to_string)))
+  assert_response
+    ~source
+    ~request:(Protocol.Request.ClientShutdownRequest 1)
+    (Some
+       (Protocol.LanguageServerProtocolResponse
+          (LanguageServer.Protocol.ShutdownResponse.default 1
+           |> LanguageServer.Protocol.ShutdownResponse.to_yojson
+           |> Yojson.Safe.to_string)))
 
 
 let test_language_scheduler_shutdown _ =
   let source = "x = 1" in
-  assert_request_gets_response
-    source
-    (Protocol.Request.LanguageServerProtocolRequest
-       {|
+  assert_response
+    ~source
+    ~request:(Protocol.Request.LanguageServerProtocolRequest
+                {|
         {
            "jsonrpc": "2.0",
            "id": 2,
@@ -318,15 +319,15 @@ let test_protocol_type_check _ =
     |}
   in
   let errors = make_errors source in
-  assert_request_gets_response
-    source
-    Protocol.Request.FlushTypeErrorsRequest
+  assert_response
+    ~source
+    ~request:Protocol.Request.FlushTypeErrorsRequest
     (Some (Protocol.TypeCheckResponse (associate_errors_and_filenames errors)));
 
-  assert_request_gets_response
+  assert_response
     ~initial_errors:(Error.Hash_set.of_list errors)
-    source
-    Protocol.Request.FlushTypeErrorsRequest
+    ~source
+    ~request:Protocol.Request.FlushTypeErrorsRequest
     (Some (Protocol.TypeCheckResponse (associate_errors_and_filenames errors)))
 
 
@@ -340,85 +341,87 @@ let test_query _ =
       a = 1
     |}
   in
-  assert_request_gets_response
-    source
-    (Protocol.Request.TypeQueryRequest
-       (Protocol.LessOrEqual (Type.expression Type.integer, Type.expression Type.string)))
+  assert_response
+    ~source
+    ~request:(Protocol.Request.TypeQueryRequest
+                (Protocol.LessOrEqual (Type.expression Type.integer, Type.expression Type.string)))
     (Some (Protocol.TypeQueryResponse "false"));
 
-  assert_request_gets_response
-    source
-    (Protocol.Request.TypeQueryRequest
-       (Protocol.LessOrEqual
-          (Type.expression Type.integer, Type.expression (Type.primitive "A"))))
+  assert_response
+    ~source
+    ~request:(Protocol.Request.TypeQueryRequest
+                (Protocol.LessOrEqual
+                   (Type.expression Type.integer, Type.expression (Type.primitive "A"))))
     (Some (Protocol.TypeQueryResponse "true"));
 
-  assert_request_gets_response
-    source
-    (Protocol.Request.TypeQueryRequest
-       (Protocol.LessOrEqual
-          (Type.expression Type.integer, Type.expression (Type.primitive "Unknown"))))
+  assert_response
+    ~source
+    ~request:(Protocol.Request.TypeQueryRequest
+                (Protocol.LessOrEqual
+                   (Type.expression Type.integer, Type.expression (Type.primitive "Unknown"))))
     (Some (Protocol.TypeQueryResponse "Error: Type `Unknown` was not found in the type order."));
 
-  assert_request_gets_response
-    source
-    (Protocol.Request.TypeQueryRequest
-       (Protocol.LessOrEqual
-          (Type.expression (Type.list (Type.Primitive (Identifier.create "C"))),
-           Type.expression (Type.list (Type.integer)))))
+  assert_response
+    ~source
+    ~request:(Protocol.Request.TypeQueryRequest
+                (Protocol.LessOrEqual
+                   (Type.expression (Type.list (Type.Primitive (Identifier.create "C"))),
+                    Type.expression (Type.list (Type.integer)))))
     (Some (Protocol.TypeQueryResponse "true"));
 
-  assert_request_gets_response
-    source
-    (Protocol.Request.TypeQueryRequest
-       (Protocol.Join
-          (Type.expression (Type.list (Type.Primitive (Identifier.create "C"))),
-           Type.expression (Type.list (Type.integer)))))
+  assert_response
+    ~source
+    ~request:(Protocol.Request.TypeQueryRequest
+                (Protocol.Join
+                   (Type.expression (Type.list (Type.Primitive (Identifier.create "C"))),
+                    Type.expression (Type.list (Type.integer)))))
     (Some (Protocol.TypeQueryResponse "`typing.List[int]`"));
 
-  assert_request_gets_response
-    source
-    (Protocol.Request.TypeQueryRequest
-       (Protocol.Meet
-          (Type.expression (Type.list (Type.Primitive (Identifier.create "C"))),
-           Type.expression (Type.list (Type.integer)))))
+  assert_response
+    ~source
+    ~request:(Protocol.Request.TypeQueryRequest
+                (Protocol.Meet
+                   (Type.expression (Type.list (Type.Primitive (Identifier.create "C"))),
+                    Type.expression (Type.list (Type.integer)))))
     (Some (Protocol.TypeQueryResponse "`typing.List[C]`"));
 
-  assert_request_gets_response
-    source
-    (Protocol.Request.TypeQueryRequest
-       (Protocol.Superclasses (Type.expression (Type.primitive "C"))))
+  assert_response
+    ~source
+    ~request:(Protocol.Request.TypeQueryRequest
+                (Protocol.Superclasses (Type.expression (Type.primitive "C"))))
     (Some (Protocol.TypeQueryResponse "`int`"));
 
-  assert_request_gets_response
-    source
-    (Protocol.Request.TypeQueryRequest
-       (Protocol.Superclasses (Type.expression (Type.primitive "Untracked"))))
+  assert_response
+    ~source
+    ~request:(Protocol.Request.TypeQueryRequest
+                (Protocol.Superclasses (Type.expression (Type.primitive "Untracked"))))
     (Some (Protocol.TypeQueryResponse "Error: Type `Untracked` was not found in the type order."));
 
-  assert_request_gets_response
-    source
-    (Protocol.Request.TypeQueryRequest
-       (Protocol.Superclasses (Type.expression (Type.parametric "Untracked" [Type.integer]))))
+  assert_response
+    ~source
+    ~request:(Protocol.Request.TypeQueryRequest
+                (Protocol.Superclasses
+                   (Type.expression (Type.parametric "Untracked" [Type.integer]))))
     (Some (Protocol.TypeQueryResponse "No class definition found for Untracked.__getitem__(int)"));
 
-  assert_request_gets_response
-    source
-    (Protocol.Request.TypeQueryRequest
-       (Protocol.NormalizeType (+Expression.Access (Access.create "A"))))
+  assert_response
+    ~source
+    ~request:(Protocol.Request.TypeQueryRequest
+                (Protocol.NormalizeType (+Expression.Access (Access.create "A"))))
     (Some (Protocol.TypeQueryResponse "`int`"));
 
-  assert_request_gets_response
-    source
-    (Protocol.Request.TypeQueryRequest (Protocol.Methods (Type.expression (Type.primitive "C"))))
+  assert_response
+    ~source
+    ~request:(Protocol.Request.TypeQueryRequest
+                (Protocol.Methods (Type.expression (Type.primitive "C"))))
     (Some (Protocol.TypeQueryResponse "foo\nbar"));
 
-  assert_request_gets_response
-    source
-    (Protocol.Request.TypeQueryRequest
-       (Protocol.Methods
-          (Type.expression
-             (Type.primitive "Nonexistent"))))
+  assert_response
+    ~source
+    ~request:(Protocol.Request.TypeQueryRequest
+                (Protocol.Methods
+                   (Type.expression
+                      (Type.primitive "Nonexistent"))))
     (Some (Protocol.TypeQueryResponse "Error: Type `Nonexistent` was not found in the type order."))
 
 
@@ -482,23 +485,23 @@ let test_incremental_typecheck _ =
     associate_errors_and_filenames
       (make_errors ~path:relative_path ~qualifier:(Source.qualifier ~path:relative_path) source)
   in
-  assert_request_gets_response
-    source
-    (Protocol.Request.TypeCheckRequest
-       (Protocol.TypeCheckRequest.create
-          ~update_environment_with:[file path]
-          ~check:[file path]
-          ()))
+  assert_response
+    ~source
+    ~request:(Protocol.Request.TypeCheckRequest
+                (Protocol.TypeCheckRequest.create
+                   ~update_environment_with:[file path]
+                   ~check:[file path]
+                   ()))
     (Some (Protocol.TypeCheckResponse [(File.Handle.create relative_path), []]));
   let files = [file ~content:(Some source) path] in
   let request_with_content =
     (Protocol.Request.TypeCheckRequest
        (Protocol.TypeCheckRequest.create ~update_environment_with:files ~check:files ()))
   in
-  assert_request_gets_response
+  assert_response
     ~path
-    source
-    request_with_content
+    ~source
+    ~request:request_with_content
     (Some (Protocol.TypeCheckResponse errors));
   (* Assert that only files getting used to update the environment get parsed. *)
   let request_only_check =
@@ -532,39 +535,39 @@ let test_incremental_typecheck _ =
           ~check:[file]
           ()))
   in
-  assert_request_gets_response
+  assert_response
     ~path
-    source
-    request_only_check
+    ~source
+    ~request:request_only_check
     (Some (Protocol.TypeCheckResponse errors));
-  assert_request_gets_response
+  assert_response
     ~path
-    source
-    request_update_and_check
+    ~source
+    ~request:request_update_and_check
     (Some (Protocol.TypeCheckResponse [File.Handle.create relative_path, []]));
-  assert_request_gets_response
+  assert_response
     ~path
-    source
-    request_stub_update
+    ~source
+    ~request:request_stub_update
     (Some (Protocol.TypeCheckResponse []));
-  assert_request_gets_response
+  assert_response
     ~path
-    source
-    request_with_conflicting_stub
+    ~source
+    ~request:request_with_conflicting_stub
     (Some (Protocol.TypeCheckResponse [File.Handle.create relative_stub_path, []]));
 
   let state = mock_server_state (File.Handle.Table.create ()) in
-  assert_request_gets_response
+  assert_response
     ~path
-    source
+    ~source
     ~state
-    Protocol.Request.FlushTypeErrorsRequest
+    ~request:Protocol.Request.FlushTypeErrorsRequest
     (Some (Protocol.TypeCheckResponse []));
-  assert_request_gets_response
+  assert_response
     ~path
-    source
+    ~source
     ~state:{ state with State.deferred_requests = [request_with_content] }
-    Protocol.Request.FlushTypeErrorsRequest
+    ~request:Protocol.Request.FlushTypeErrorsRequest
     (Some (Protocol.TypeCheckResponse errors))
 
 
@@ -614,10 +617,10 @@ let test_did_save_with_content context =
     |> LanguageServer.Protocol.DidSaveTextDocument.to_yojson
     |> Yojson.Safe.to_string
   in
-  assert_request_gets_response
+  assert_response
     ~source_root:root
-    source
-    (Protocol.Request.LanguageServerProtocolRequest request)
+    ~source
+    ~request:(Protocol.Request.LanguageServerProtocolRequest request)
     (Some (Protocol.TypeCheckResponse (associate_errors_and_filenames errors)))
 
 
@@ -882,9 +885,9 @@ let test_language_scheduler_definition context =
     |> LanguageServer.Protocol.TextDocumentDefinitionResponse.to_yojson
     |> Yojson.Safe.to_string
   in
-  assert_request_gets_response
-    "a = 1"
-    (Protocol.Request.LanguageServerProtocolRequest request)
+  assert_response
+    ~source:"a = 1"
+    ~request:(Protocol.Request.LanguageServerProtocolRequest request)
     (Some (Protocol.LanguageServerProtocolResponse expected_response))
 
 
