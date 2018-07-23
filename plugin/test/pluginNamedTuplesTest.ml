@@ -27,7 +27,7 @@ let test_transform_ast _ =
     |}
     {|
       class qualifier.T(typing.NamedTuple):
-        pass
+        def qualifier.T.__init__(self): ...
     |};
   assert_expand
     {|
@@ -35,6 +35,7 @@ let test_transform_ast _ =
     |}
     {|
       class T(typing.NamedTuple):
+        def T.__init__(self, $parameter$a: typing.Any): ...
         T.a: typing.Any
     |};
   assert_expand
@@ -43,6 +44,7 @@ let test_transform_ast _ =
     |}
     {|
       class T(typing.NamedTuple):
+        def T.__init__(self, $parameter$one: typing.Any, $parameter$two: typing.Any): ...
         T.one: typing.Any
         T.two: typing.Any
     |};
@@ -52,6 +54,7 @@ let test_transform_ast _ =
     |}
     {|
       class T(typing.NamedTuple):
+        def T.__init__(self, $parameter$one: int, $parameter$two: str): ...
         T.one: int
         T.two: str
     |};
@@ -61,6 +64,11 @@ let test_transform_ast _ =
     |}
     {|
       class T(typing.NamedTuple):
+        def T.__init__(
+          self,
+          $parameter$a: typing.Any,
+          $parameter$b: typing.Any,
+          $parameter$c: typing.Any): ...
         T.a: typing.Any
         T.b: typing.Any
         T.c: typing.Any
@@ -73,9 +81,25 @@ let test_transform_ast _ =
     |}
     {|
       class Foo(Bar, typing.NamedTuple):
+        def Foo.__init__(self, $parameter$one: typing.Any, $parameter$two: typing.Any): ...
         Foo.one: typing.Any
         Foo.two: typing.Any
         Foo.three: int = 1
+    |};
+
+  assert_expand
+    {|
+      class Foo(typing.NamedTuple):
+        Foo.a: int
+        Foo.b: str
+        Foo.c: int = 3
+    |}
+    {|
+      class Foo(typing.NamedTuple):
+        def Foo.__init__(self, $parameter$a: int, $parameter$b: str): ...
+        Foo.a: int
+        Foo.b: str
+        Foo.c: int = 3
     |};
 
   (* Don't transform non-toplevel statements. *)

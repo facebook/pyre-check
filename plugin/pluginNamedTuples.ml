@@ -12,7 +12,7 @@ open Statement
 
 
 let transform_ast ({ Source.statements; _ } as source) =
-  let tuple_attributes ~parent ~expression =
+  let extract_attributes expression =
     match expression with
     | {
       Node.location;
@@ -26,6 +26,7 @@ let transform_ast ({ Source.statements; _ } as source) =
             Identifier.show named_tuple = "NamedTuple") ||
            (Identifier.show module_name = "collections" &&
             Identifier.show named_tuple = "namedtuple") ->
+        let any_annotation = Node.create ~location (Access (Access.create "typing.Any")) in
         let attributes =
           match arguments with
           | [
@@ -38,49 +39,70 @@ let transform_ast ({ Source.statements; _ } as source) =
               _;
             };
           ] ->
-              let attribute name =
-                Access (parent @ Access.create name)
-                |> Node.create ~location
-              in
               String.split serialized ~on:' '
-              |> List.map ~f:attribute
+              |> List.map ~f:(fun name -> name, any_annotation)
           | [_; { Argument.value = { Node.value = List arguments; _ }; _ }] ->
-              let rec accessify ({ Node.value; _ } as expression) =
-                let value =
-                  match value with
-                  | String { StringLiteral.value = name } -> Access (parent @ Access.create name)
-                  | Tuple [name; annotation] -> Tuple [accessify name; annotation]
-                  | _ -> value
-                in
-                { expression with Node.value }
+              let accessify ({ Node.value; _ } as expression) =
+                match value with
+                | String { StringLiteral.value = name } ->
+                    name, any_annotation
+                | Tuple [
+                    { Node.value = String { StringLiteral.value = name; _ }; _ };
+                    annotation;
+                  ] ->
+                    name, annotation
+                | _ ->
+                    Expression.show expression, any_annotation
               in
               List.map arguments ~f:accessify
           | _ ->
               []
         in
-        let attribute ({ Node.location; value } as expression) =
-          let target, annotation =
-            match value with
-            | Tuple [target; annotation] ->
-                target, annotation
-            | _ ->
-                expression, { Node.location; value = Access (Access.create "typing.Any")}
-          in
-          Assign {
-            Assign.target;
-            annotation = Some annotation;
-            value = None;
-            parent = Some parent;
-          }
-          |> Node.create ~location
-        in
-        let attributes = List.map attributes ~f:attribute in
-        if List.is_empty attributes then
-          Some [Node.create ~location Pass]
-        else
-          Some attributes
+        Some attributes
     | _ ->
         None
+  in
+  let tuple_attributes ~parent ~location attributes =
+    let attribute_statements =
+      let attribute (name, annotation) =
+        let target =
+          Access (parent @ (Access.create name))
+          |> Node.create ~location
+        in
+        Assign {
+          Assign.target;
+          annotation = Some annotation;
+          value = None;
+          parent = Some parent;
+        }
+        |> Node.create ~location
+      in
+      List.map attributes ~f:attribute
+    in
+    attribute_statements
+  in
+  let tuple_constructor ~parent ~location attributes =
+    let parameters =
+      let self_parameter = Parameter.create ~name:(Identifier.create "self") () in
+      let to_parameter (name, annotation) =
+        Parameter.create ~annotation ~name:(Identifier.create ("$parameter$" ^ name)) ()
+      in
+      self_parameter :: List.map attributes ~f:to_parameter
+    in
+    Statement.Define {
+        Define.name = parent @ Access.create "__init__";
+        parameters;
+        body = [
+          Node.create ~location (Statement.Expression (Node.create ~location Expression.Ellipses));
+        ];
+        decorators = [];
+        docstring = None;
+        return_annotation = None;
+        async = false;
+        generated = false;
+        parent = Some parent;
+      }
+    |> Node.create ~location
   in
   let tuple_base ~location =
     {
@@ -100,28 +122,70 @@ let transform_ast ({ Source.statements; _ } as source) =
           _;
         } ->
           let name = Access.delocalize name in
-          tuple_attributes ~parent:name ~expression
-          >>| (fun body ->
-              Class {
-                Class.name;
-                bases = [tuple_base ~location];
-                body;
-                decorators = [];
-                docstring = None;
-              })
-          |> Option.value ~default:value
-      | Class ({ Class.name; bases; body; _; } as original) ->
-          let extract_named_tuples (bases, attributes_sofar) ({ Argument.value; _ } as base) =
-            tuple_attributes ~parent:name ~expression:value
-            >>| (fun attributes -> (tuple_base ~location) :: bases, attributes_sofar @ attributes)
-            |> Option.value ~default:(base :: bases, attributes_sofar)
+          begin
+            match extract_attributes expression with
+            | Some attributes ->
+                let constructor = tuple_constructor ~parent:name ~location attributes in
+                let attributes = tuple_attributes ~parent:name ~location attributes in
+                Class {
+                  Class.name;
+                  bases = [tuple_base ~location];
+                  body = constructor :: attributes;
+                  decorators = [];
+                  docstring = None;
+                }
+            | None ->
+                value
+          end
+      | Class ({ Class.name; bases; body; _ } as original) ->
+          let is_named_tuple_primitive = function
+            | { Statement.Argument.value = { Node.value = Access name; _ }; _ } ->
+                Access.show name = "typing.NamedTuple"
+            | _ ->
+                false
           in
-          let reversed_bases, attributes = List.fold bases ~init:([], []) ~f:extract_named_tuples in
-          Class {
-            original with
-            Class.bases = List.rev reversed_bases;
-            body = attributes @ body;
-          }
+          if List.exists ~f:is_named_tuple_primitive bases then
+            let extract_assign = function
+              | {
+                Node.value = Assign {
+                    Assign.target = { Node.value = Access target; _ };
+                    value = None;
+                    annotation;
+                    _;
+                  };
+                _;
+              } ->
+                  let annotation =
+                    Option.value
+                      annotation
+                      ~default:(Node.create ~location (Access (Access.create "typing.Any")))
+                  in
+                  List.last target
+                  >>| (fun target -> Access.show [target], annotation)
+              | _ ->
+                  None
+            in
+            List.filter_map body ~f:extract_assign
+            |> tuple_constructor ~parent:name ~location
+            |> fun constructor -> Class { original with Class.body = constructor :: body }
+          else
+            let extract_named_tuples (bases, attributes_sofar) ({ Argument.value; _ } as base) =
+              match extract_attributes value with
+              | Some attributes ->
+                  let constructor = tuple_constructor ~parent:name ~location attributes in
+                  let attributes = tuple_attributes ~parent:name ~location attributes in
+                  (tuple_base ~location) :: bases, attributes_sofar @ (constructor :: attributes)
+              | None ->
+                  base :: bases, attributes_sofar
+            in
+            let reversed_bases, attributes =
+              List.fold bases ~init:([], []) ~f:extract_named_tuples
+            in
+            Class {
+              original with
+              Class.bases = List.rev reversed_bases;
+              body = attributes @ body;
+            }
       | _ ->
           value
     in

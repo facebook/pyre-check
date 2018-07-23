@@ -4755,8 +4755,7 @@ let test_check_tuple _ =
         T(a=2)
     |}
     [
-      "Too many arguments [19]: Call `T.__init__` expects 1 positional argument, 2 were provided.";
-      "Too many arguments [19]: Call `T.__init__` expects 1 positional argument, 2 were provided.";
+
     ]
 
 
