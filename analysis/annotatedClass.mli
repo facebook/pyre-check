@@ -65,8 +65,6 @@ val inferred_generic_base
   -> resolution: Resolution.t
   -> Argument.t list
 
-val constructor_annotation: t -> resolution: Resolution.t -> Type.t
-
 val constraints
   :  ?target: t
   -> ?parameters: Type.t list
@@ -159,3 +157,5 @@ val attribute
 
 (* Attribute defined by `__getattr__`. *)
 val fallback_attribute: resolution: Resolution.t -> access: Access.t -> t -> Attribute.t option
+
+val constructor: t -> resolution: Resolution.t -> Type.t

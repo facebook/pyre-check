@@ -238,27 +238,6 @@ let inferred_generic_base { Node.value = { Class.bases; _ }; _ } ~resolution =
     |> Option.value ~default:[]
 
 
-let constructor_annotation definition ~resolution =
-  let class_annotation = annotation definition ~resolution in
-  match class_annotation with
-  | Type.Primitive name ->
-      let generics = generics definition ~resolution in
-      (* Tuples are special. *)
-      if Identifier.show name = "tuple" then
-        match generics with
-        | [tuple_variable] ->
-            Type.Tuple (Type.Unbounded tuple_variable)
-        | _ ->
-            Type.Tuple (Type.Unbounded Type.Object)
-      else
-        if List.is_empty generics then
-          class_annotation
-        else
-          Type.Parametric { Type.name; parameters = generics }
-  | _ ->
-      class_annotation
-
-
 let constraints ?target ?parameters definition ~instantiated ~resolution =
   let target = Option.value ~default:definition target in
   let parameters =
@@ -341,20 +320,15 @@ let immediate_superclasses definition ~resolution =
   |> List.find_map ~f:has_definition
 
 
-let constructors ({ Node.value = { Class.body; _ }; _ } as definition) =
-  let declared =
-    let extract_constructor = function
-      | { Node.value = Statement.Define define; _ }
-        when Define.is_constructor define ->
-          Some define
-      | _ ->
-          None in
-    List.filter_map ~f:extract_constructor body
+let constructors ({ Node.value = { Class.body; _ }; _ }) =
+  let extract_constructor = function
+    | { Node.value = Statement.Define define; _ }
+      when Define.is_constructor define ->
+        Some define
+    | _ ->
+        None
   in
-  if List.is_empty declared then
-    [Define.create_generated_constructor (Node.value definition)]
-  else
-    declared
+  List.filter_map ~f:extract_constructor body
 
 
 let methods ({ Node.value = { Class.body; _ }; _ } as definition) =
@@ -842,3 +816,40 @@ let fallback_attribute ~resolution ~access definition =
   List.find_map
     ~f:fallback_attribute
     (definition :: (superclasses ~resolution definition))
+
+
+let constructor definition ~resolution =
+  let class_annotation = annotation definition ~resolution in
+  let return_annotation =
+    match class_annotation with
+    | Type.Primitive name ->
+        let generics = generics definition ~resolution in
+        (* Tuples are special. *)
+        if Identifier.show name = "tuple" then
+          match generics with
+          | [tuple_variable] ->
+              Type.Tuple (Type.Unbounded tuple_variable)
+          | _ ->
+              Type.Tuple (Type.Unbounded Type.Object)
+        else
+        if List.is_empty generics then
+          class_annotation
+        else
+          Type.Parametric { Type.name; parameters = generics }
+    | _ ->
+        class_annotation
+  in
+  attribute
+    definition
+    ~transitive:true
+    ~resolution
+    ~name:(Access.create "__init__")
+    ~instantiated:class_annotation
+  |> Attribute.annotation
+  |> Annotation.annotation
+  |>
+  function
+  | Type.Callable callable ->
+      Type.Callable (Type.Callable.with_return_annotation ~return_annotation callable)
+  | annotation ->
+      annotation

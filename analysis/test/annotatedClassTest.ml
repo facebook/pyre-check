@@ -120,7 +120,8 @@ type constructor = {
 
 
 let test_constructors _ =
-  let assert_constructors source constructors =
+  let assert_constructor source constructors =
+    Class.AttributesCache.clear ();
     let resolution =
       populate source
       |> fun environment -> Environment.resolution environment ()
@@ -128,99 +129,65 @@ let test_constructors _ =
     match parse_last_statement source with
     | { Node.value = Statement.Class definition; _ } ->
         let callable =
-          Type.create ~aliases:(fun _ -> None) (parse_single_expression constructors)
+          constructors
+          >>| (fun constructors ->
+              Type.create ~aliases:(fun _ -> None) (parse_single_expression constructors))
+          |> Option.value ~default:Type.Top
         in
         let actual =
           Node.create_with_default_location definition
           |> Class.create
-          |> Class.constructors
-          |> Annotated.Callable.create ~resolution
-          |> fun callable -> Type.Callable callable
+          |> Class.constructor ~resolution
         in
-        assert_equal ~cmp:Type.equal ~printer:Type.show callable actual
+        assert_equal ~printer:Type.show ~cmp:Type.equal callable actual
     | _ ->
         assert_unreached ()
   in
-  let assert_constructor_return_annotation source expected =
-    match parse_last_statement source with
-    | { Node.value = Statement.Class definition; _ } ->
-        let resolution =
-          populate source
-          |> fun environment -> Environment.resolution environment ()
-        in
-        let actual =
-          Node.create_with_default_location definition
-          |> Class.create
-          |> Class.constructor_annotation ~resolution
-        in
-        assert_equal ~cmp:Type.equal expected actual
-    | _ ->
-        assert_unreached ()
-  in
-
   (* Undefined constructors. *)
-  assert_constructors
+  assert_constructor
     "class Foo: pass"
-    "typing.Callable('Foo.__init__')[[Named(self, $unknown)], $unknown]";
+    None;
 
-  assert_constructor_return_annotation "class Foo: pass" (Type.primitive "Foo");
-
-  assert_constructors
+  assert_constructor
     "class Foo: ..."
-    "typing.Callable('Foo.__init__')[[Named(self, $unknown)], $unknown]";
-  assert_constructor_return_annotation "class Foo: ..." (Type.primitive "Foo");
+    None;
 
   (* Statement.Defined constructors. *)
-  assert_constructors
+  assert_constructor
     {|
       class Foo:
         def Foo.__init__(self, a: int) -> None: pass
     |}
-    "typing.Callable('Foo.__init__')[[Named(self, $unknown), Named(a, int)], None]";
+    (Some "typing.Callable('Foo.__init__')[[Named(self, $unknown), Named(a, int)], Foo]");
 
-  assert_constructor_return_annotation
-    {|
-      class Foo:
-        def Foo.__init__(self, a: int) -> None: pass
-    |}
-    (Type.primitive "Foo");
-
-  assert_constructors
+  assert_constructor
     {|
       class Foo:
         def Foo.__init__(self, a: int) -> None: pass
         def Foo.__init__(self, b: str) -> None: pass
     |}
-    ("typing.Callable('Foo.__init__')[[Named(self, $unknown), Named(a, int)], None]" ^
-     "[[Named(self, $unknown), Named(b, str)], None]");
+    (Some
+       ("typing.Callable('Foo.__init__')[[Named(self, $unknown), Named(b, str)], Foo]" ^
+        "[[Named(self, $unknown), Named(a, int)], Foo]"));
 
   (* Generic classes. *)
-  assert_constructors
+  assert_constructor
     {|
       _K = typing.TypeVar('_K')
       _V = typing.TypeVar('_V')
       class Foo(typing.Generic[_K, _V]):
         def Foo.__init__(self) -> None: pass
     |}
-    "typing.Callable('Foo.__init__')[[Named(self, $unknown)], None]";
-
-  assert_constructor_return_annotation
-    {|
-      _K = typing.TypeVar('_K')
-      _V = typing.TypeVar('_V')
-      class Foo(typing.Generic[_K, _V]):
-        def Foo.__init__(self) -> None: pass
-    |}
-    (Type.parametric "Foo" [Type.variable "_K"; Type.variable "_V"]);
+    (Some "typing.Callable('Foo.__init__')[[Named(self, $unknown)], Foo[_K, _V]]");
 
   (* Tuples. *)
-  assert_constructor_return_annotation
+  assert_constructor
     {|
       _T = typing.TypeVar('_T')
       class tuple(typing.Generic[_T]):
         def tuple.__init__(self) -> None: ...
     |}
-    (Type.Tuple (Type.Unbounded (Type.variable "_T")))
+    (Some "typing.Callable('tuple.__init__')[[Named(self, $unknown)], typing.Tuple[_T, ...]]")
 
 
 let test_methods _ =

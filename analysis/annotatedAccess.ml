@@ -374,18 +374,17 @@ let fold ~resolution ~initial ~f access =
               let implicit_annotation, callable =
                 match resolved with
                 | meta when Type.is_meta resolved ->
-                    let return_annotation =
-                      Resolution.class_definition resolution (Type.single_parameter meta)
-                      >>| Class.create
-                      >>| Class.constructor_annotation ~resolution
-                      |> Option.value ~default:Type.Object
+                    let callable =
+                      let class_definition =
+                        Resolution.class_definition resolution (Type.single_parameter meta)
+                        >>| Class.create
+                      in
+                      match class_definition >>| Class.constructor ~resolution with
+                      | Some (Type.Callable callable) -> Some callable
+                      | _ -> None
                     in
                     target >>| State.annotation,
-                    Type.single_parameter meta
-                    |> Type.class_name
-                    |> (fun name -> name @ (Access.create "__init__"))
-                    |> (fun access -> Resolution.get_local_callable resolution ~access)
-                    >>| Type.Callable.with_return_annotation ~return_annotation
+                    callable
                 | Type.Callable callable ->
                     target >>| State.annotation,
                     Some callable

@@ -295,7 +295,10 @@ let test_object_callables _ =
             _V = typing.TypeVar('_V')
             _T = typing.TypeVar('_T')
 
-            class Call(typing.Generic[_K, _V]):
+            class object:
+              def __init__(self) -> None:
+                pass
+            class Call(object, typing.Generic[_K, _V]):
               attribute: _K
               generic_callable: typing.Callable[[_K], _V]
               def __call__(self) -> _V: ...

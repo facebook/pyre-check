@@ -88,6 +88,7 @@ let typeshed_stubs = (* Yo dawg... *)
         class type:
           __name__: str = ...
         class object():
+          def __init__(self) -> None: pass
           def __sizeof__(self) -> int: pass
 
         class slice:

@@ -460,6 +460,7 @@ let test_register_functions _ =
        def function_with_arguments(i: int) -> None: ...
 
        class Class:
+         def Class.__init__(self) -> None: ...
          def Class.method(self, i: int) -> int: ...
          class Class.Nested:
            def Class.Nested.nested_class_method(self) -> str: ...
@@ -510,7 +511,7 @@ let test_register_functions _ =
 
   assert_global
     "Class.__init__"
-    (Some "typing.Callable('Class.__init__')[[Named(self, $unknown)], $unknown]");
+    (Some "typing.Callable('Class.__init__')[[Named(self, $unknown)], None]");
   assert_global
     "Class.method"
     (Some "typing.Callable('Class.method')[[Named(self, $unknown), Named(i, int)], int]");
@@ -599,7 +600,8 @@ let test_populate _ =
       global_unknown = x
       global_function = function
       class Class():
-        pass
+        def Class.__init__(self):
+          pass
       def function():
         pass
     |}
