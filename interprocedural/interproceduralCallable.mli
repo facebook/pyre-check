@@ -8,6 +8,8 @@
    - OverrideTarget is a set of target represented by an override tree.
 *)
 
+open Core
+
 open Ast
 open Expression
 open Statement
@@ -30,4 +32,6 @@ module Key : sig
   val compare: t -> t -> int
 end
 
-val get_definition: real_target -> Define.t option
+(* Shared heap access to top-level definitions. *)
+val add_definition: real_target -> File.Handle.t -> unit
+val get_definition: [<real_target] -> Define.t Node.t option

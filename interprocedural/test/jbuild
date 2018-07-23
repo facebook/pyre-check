@@ -14,7 +14,6 @@
     ppx_deriving
     pyrelib.service
     pyrelib.test
-    pyrelib.testSetup
     pyrelib.interprocedural
     pyrelib.analysis))))
 
@@ -32,7 +31,6 @@
     ppx_deriving
     pyrelib.service
     pyrelib.test
-    pyrelib.testSetup
     pyrelib.interprocedural
     pyrelib.analysis))))
 

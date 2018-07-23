@@ -244,7 +244,7 @@ let analyze_callable analyses step callable =
               model = get_obscure_models analyses;
               result = Result.empty_result;
             }
-        | Some define ->
+        | Some { Ast.Node.value = define; _ } ->
             analyze_define step analyses callable define
       end
   | #Callable.override_target as callable ->
@@ -252,8 +252,9 @@ let analyze_callable analyses step callable =
 
 
 let errors results =
-  let get_diagnostics (Result.Pkg { kind = Result.ResultPart kind; value; }) =
-    let module Analysis = (val (Result.get_analysis kind)) in
+  let open Result in
+  let get_diagnostics (Pkg { kind = ResultPart kind; value; }) =
+    let module Analysis = (val (get_analysis kind)) in
     Analysis.get_errors value
   in
   Kind.Map.bindings results

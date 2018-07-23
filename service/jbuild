@@ -17,6 +17,7 @@
     ppxlib
     pyrelib.ast
     pyrelib.analysis
+    pyrelib.interprocedural
     pyrelib.path
     pyrelib.plugin
     hack_parallel))))

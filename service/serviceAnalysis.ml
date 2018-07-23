@@ -62,4 +62,13 @@ let analyze ~scheduler:_ ~configuration:_ ~environment ~handles:paths =
     >>| record_overrides
     |> ignore
   in
-  List.iter paths ~f:record_overrides
+  List.iter paths ~f:record_overrides;
+
+  let record_handles_of_definitions handle =
+    AstSharedMemory.get_source handle
+    >>| Preprocessing.defines
+    >>| List.iter ~f:(fun { Node.value = { Define.name; _ } ; _ } ->
+        Interprocedural.Callable.add_definition (`RealTarget name) handle)
+    |> ignore
+  in
+  List.iter paths ~f:record_handles_of_definitions
