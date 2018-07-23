@@ -889,7 +889,7 @@ let register_functions (module Handler: Handler) ({ Source.path; _ } as source) 
             (* Register constructors. *)
             Node.create ~location definition
             |> Annotated.Class.create
-            |> Annotated.Class.constructors ~resolution
+            |> Annotated.Class.constructors
             |> List.fold
               ~init:callables
               ~f:(collect_callable ~location)

@@ -65,6 +65,8 @@ val inferred_generic_base
   -> resolution: Resolution.t
   -> Argument.t list
 
+val constructor_annotation: t -> resolution: Resolution.t -> Type.t
+
 val constraints
   :  ?target: t
   -> ?parameters: Type.t list
@@ -82,7 +84,8 @@ val immediate_superclasses
   -> resolution: Resolution.t
   -> t option
 
-val constructors: t -> resolution: Resolution.t -> Define.t list
+
+val constructors: t -> Define.t list
 val methods: t -> Method.t list
 
 val is_protocol: t -> bool

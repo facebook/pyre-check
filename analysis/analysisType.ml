@@ -1564,4 +1564,13 @@ module Callable = struct
     Callable callable
     |> f
     |> (function | Callable callable -> Some callable | _ -> None)
+
+
+  let with_return_annotation ~return_annotation ({ overloads; _ } as initial) =
+    let overloads =
+      List.map
+        overloads
+        ~f:(fun overload  -> { overload with annotation = return_annotation })
+    in
+    { initial with overloads }
 end

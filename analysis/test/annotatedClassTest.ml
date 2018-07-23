@@ -120,67 +120,55 @@ type constructor = {
 
 
 let test_constructors _ =
-  let assert_constructors ?(is_generated = false) source constructors =
+  let assert_constructors source constructors =
+    let resolution =
+      populate source
+      |> fun environment -> Environment.resolution environment ()
+    in
     match parse_last_statement source with
-    | { Node.value = Statement.Class ({ Record.Class.name; _ } as definition); _ } ->
+    | { Node.value = Statement.Class definition; _ } ->
+        let callable =
+          Type.create ~aliases:(fun _ -> None) (parse_single_expression constructors)
+        in
+        let actual =
+          Node.create_with_default_location definition
+          |> Class.create
+          |> Class.constructors
+          |> Annotated.Callable.create ~resolution
+          |> fun callable -> Type.Callable callable
+        in
+        assert_equal ~cmp:Type.equal ~printer:Type.show callable actual
+    | _ ->
+        assert_unreached ()
+  in
+  let assert_constructor_return_annotation source expected =
+    match parse_last_statement source with
+    | { Node.value = Statement.Class definition; _ } ->
         let resolution =
           populate source
           |> fun environment -> Environment.resolution environment ()
         in
-        let defines =
-          let define { parameters; annotation } =
-            {
-              Define.name = name @ (Access.create "__init__");
-              parameters;
-              body = [+Pass];
-              decorators = [];
-              docstring = None;
-              return_annotation = annotation >>| Type.expression;
-              async = false;
-              generated = is_generated;
-              parent = Some definition.Statement.Class.name;
-            }
-          in
-          List.map ~f:define constructors
-        in
-        let actuals =
+        let actual =
           Node.create_with_default_location definition
           |> Class.create
-          |> Class.constructors ~resolution
+          |> Class.constructor_annotation ~resolution
         in
-        assert_equal
-          ~cmp:(List.equal ~equal:Define.equal)
-          ~printer:(fun constructors ->
-              let constructors =
-                List.map
-                  ~f:(fun constructor -> Define.show constructor)
-                  constructors in
-              Format.asprintf "%a" Sexp.pp (sexp_of_list sexp_of_string constructors))
-          defines
-          actuals
+        assert_equal ~cmp:Type.equal expected actual
     | _ ->
         assert_unreached ()
   in
 
   (* Undefined constructors. *)
   assert_constructors
-    ~is_generated:true
     "class Foo: pass"
-    [
-      {
-        parameters = [Parameter.create ~name:~~"self" ()];
-        annotation = Some (Type.Primitive ~~"Foo")
-      };
-    ];
+    "typing.Callable('Foo.__init__')[[Named(self, $unknown)], $unknown]";
+
+  assert_constructor_return_annotation "class Foo: pass" (Type.primitive "Foo");
+
   assert_constructors
-    ~is_generated:true
     "class Foo: ..."
-    [
-      {
-        parameters = [Parameter.create ~name:~~"self" ()];
-        annotation = Some (Type.Primitive ~~"Foo");
-      };
-    ];
+    "typing.Callable('Foo.__init__')[[Named(self, $unknown)], $unknown]";
+  assert_constructor_return_annotation "class Foo: ..." (Type.primitive "Foo");
 
   (* Statement.Defined constructors. *)
   assert_constructors
@@ -188,37 +176,23 @@ let test_constructors _ =
       class Foo:
         def Foo.__init__(self, a: int) -> None: pass
     |}
-    [
-      {
-        parameters = [
-          Parameter.create ~name:~~"self" ();
-          Parameter.create ~name:~~"a" ~annotation:(Type.expression Type.integer) ();
-        ];
-        annotation = Some (Type.Primitive ~~"Foo");
-      };
-    ];
+    "typing.Callable('Foo.__init__')[[Named(self, $unknown), Named(a, int)], None]";
+
+  assert_constructor_return_annotation
+    {|
+      class Foo:
+        def Foo.__init__(self, a: int) -> None: pass
+    |}
+    (Type.primitive "Foo");
+
   assert_constructors
     {|
       class Foo:
         def Foo.__init__(self, a: int) -> None: pass
         def Foo.__init__(self, b: str) -> None: pass
     |}
-    [
-      {
-        parameters = [
-          Parameter.create ~name:~~"self" ();
-          Parameter.create ~name:~~"a" ~annotation:(Type.expression Type.integer) ();
-        ];
-        annotation = Some (Type.Primitive ~~"Foo");
-      };
-      {
-        parameters = [
-          Parameter.create ~name:~~"self" ();
-          Parameter.create ~name:~~"b" ~annotation:(Type.expression Type.string) ();
-        ];
-        annotation = Some (Type.Primitive ~~"Foo");
-      };
-    ];
+    ("typing.Callable('Foo.__init__')[[Named(self, $unknown), Named(a, int)], None]" ^
+     "[[Named(self, $unknown), Named(b, str)], None]");
 
   (* Generic classes. *)
   assert_constructors
@@ -228,17 +202,25 @@ let test_constructors _ =
       class Foo(typing.Generic[_K, _V]):
         def Foo.__init__(self) -> None: pass
     |}
-    [
-      {
-        parameters = [Parameter.create ~name:~~"self" ()];
-        annotation =
-          Some
-            (Type.Parametric {
-                Type.name = ~~"Foo";
-                parameters = [Type.variable "_K"; Type.variable "_V"];
-              });
-      };
-    ]
+    "typing.Callable('Foo.__init__')[[Named(self, $unknown)], None]";
+
+  assert_constructor_return_annotation
+    {|
+      _K = typing.TypeVar('_K')
+      _V = typing.TypeVar('_V')
+      class Foo(typing.Generic[_K, _V]):
+        def Foo.__init__(self) -> None: pass
+    |}
+    (Type.parametric "Foo" [Type.variable "_K"; Type.variable "_V"]);
+
+  (* Tuples. *)
+  assert_constructor_return_annotation
+    {|
+      _T = typing.TypeVar('_T')
+      class tuple(typing.Generic[_T]):
+        def tuple.__init__(self) -> None: ...
+    |}
+    (Type.Tuple (Type.Unbounded (Type.variable "_T")))
 
 
 let test_methods _ =

@@ -238,6 +238,27 @@ let inferred_generic_base { Node.value = { Class.bases; _ }; _ } ~resolution =
     |> Option.value ~default:[]
 
 
+let constructor_annotation definition ~resolution =
+  let class_annotation = annotation definition ~resolution in
+  match class_annotation with
+  | Type.Primitive name ->
+      let generics = generics definition ~resolution in
+      (* Tuples are special. *)
+      if Identifier.show name = "tuple" then
+        match generics with
+        | [tuple_variable] ->
+            Type.Tuple (Type.Unbounded tuple_variable)
+        | _ ->
+            Type.Tuple (Type.Unbounded Type.Object)
+      else
+        if List.is_empty generics then
+          class_annotation
+        else
+          Type.Parametric { Type.name; parameters = generics }
+  | _ ->
+      class_annotation
+
+
 let constraints ?target ?parameters definition ~instantiated ~resolution =
   let target = Option.value ~default:definition target in
   let parameters =
@@ -320,52 +341,20 @@ let immediate_superclasses definition ~resolution =
   |> List.find_map ~f:has_definition
 
 
-let constructors ({ Node.value = { Class.name; body; _ }; _ } as definition) ~resolution =
-  let constructors =
-    let declared =
-      let extract_constructor = function
-        | { Node.value = Statement.Define define; _ } when Define.is_constructor define ->
-            Some define
-        | _ ->
-            None in
-      List.filter_map ~f:extract_constructor body
-    in
-    if List.is_empty declared then
-      [Define.create_generated_constructor (Node.value definition)]
-    else
-      declared
+let constructors ({ Node.value = { Class.body; _ }; _ } as definition) =
+  let declared =
+    let extract_constructor = function
+      | { Node.value = Statement.Define define; _ }
+        when Define.is_constructor define ->
+          Some define
+      | _ ->
+          None in
+    List.filter_map ~f:extract_constructor body
   in
-  (* Adjust return name and return type. *)
-  let adjust constructor =
-    let annotation =
-      let generics = generics ~resolution definition in
-      let parsed =
-        Resolution.parse_annotation
-          resolution
-          (Node.create_with_default_location (Access name))
-      in
-      if List.is_empty generics then
-        parsed
-      else
-        match parsed with
-        | Type.Object ->
-            Type.Object
-        | Type.Primitive name ->
-            Type.Parametric {
-              Type.name;
-              parameters = generics;
-            }
-        | Type.Parametric _ ->
-            parsed
-        | _ ->
-            failwith "Parsed type was not primitive!"
-    in
-    {
-      constructor with
-      Define.return_annotation = Some (Type.expression annotation);
-    }
-  in
-  List.map ~f:adjust constructors
+  if List.is_empty declared then
+    [Define.create_generated_constructor (Node.value definition)]
+  else
+    declared
 
 
 let methods ({ Node.value = { Class.body; _ }; _ } as definition) =

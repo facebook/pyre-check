@@ -819,7 +819,29 @@ let test_from_overloads _ =
     "typing.Callable('foo')[..., int][[int, str], str][[int, str, str], int]"
 
 
+let test_with_return_annotation _ =
+  let assert_with_return_annotation return_annotation callable expected =
+    let callable =
+      match Type.create ~aliases:(fun _ -> None) (parse_single_expression callable) with
+      | Type.Callable callable -> callable
+      | _ -> failwith ("Could not extract callable from " ^ callable)
+    in
+    assert_equal
+      ~cmp:Type.equal
+      ~printer:Type.show
+      (Type.create ~aliases:(fun _ -> None) (parse_single_expression expected))
+      (Type.Callable (Type.Callable.with_return_annotation ~return_annotation callable))
+  in
 
+  assert_with_return_annotation
+    Type.string
+    "typing.Callable('foo')[..., int]"
+    "typing.Callable('foo')[..., str]";
+
+  assert_with_return_annotation
+    Type.string
+    "typing.Callable('foo')[..., int][[int], int]"
+    "typing.Callable('foo')[..., str][[int], str]"
 
 let () =
   "type">:::[
@@ -845,5 +867,6 @@ let () =
   |> run_test_tt_main;
   "callable">:::[
     "from_overloads">::test_from_overloads;
+    "with_return_annotation">::test_with_return_annotation;
   ]
   |> run_test_tt_main

@@ -202,4 +202,6 @@ module Callable : sig
   val from_overloads: t list -> t option
 
   val map: t -> f:(type_t -> type_t) -> t option
+
+  val with_return_annotation: return_annotation: type_t -> t -> t
 end

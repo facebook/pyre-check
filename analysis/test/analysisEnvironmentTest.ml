@@ -510,7 +510,7 @@ let test_register_functions _ =
 
   assert_global
     "Class.__init__"
-    (Some "typing.Callable('Class.__init__')[[Named(self, $unknown)], Class]");
+    (Some "typing.Callable('Class.__init__')[[Named(self, $unknown)], $unknown]");
   assert_global
     "Class.method"
     (Some "typing.Callable('Class.method')[[Named(self, $unknown), Named(i, int)], int]");
@@ -527,8 +527,8 @@ let test_register_functions _ =
     "ClassWithOverloadedConstructor.__init__"
     (Some
        ("typing.Callable('ClassWithOverloadedConstructor.__init__')" ^
-        "[[Named(self, $unknown), Named(i, int)], ClassWithOverloadedConstructor]" ^
-        "[[Named(self, $unknown), Named(s, str)], ClassWithOverloadedConstructor]"))
+        "[[Named(self, $unknown), Named(i, int)], None]" ^
+        "[[Named(self, $unknown), Named(s, str)], None]"))
 
 
 let test_populate _ =
@@ -646,7 +646,7 @@ let test_populate _ =
                 default = false;
               };
             ])
-          ~annotation:(Type.primitive "Class")
+          ~annotation:Type.Top
           ()));
 
   (* Loops. *)

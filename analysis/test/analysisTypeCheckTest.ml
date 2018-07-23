@@ -4677,6 +4677,16 @@ let test_check_tuple _ =
 
   assert_type_errors
     {|
+      def foo() -> typing.Tuple[int, ...]:
+        return tuple([""])
+    |}
+    [
+      "Incompatible return type [7]: Expected `typing.Tuple[int, ...]` but got " ^
+      "`typing.Tuple[str, ...]`.";
+    ];
+
+  assert_type_errors
+    {|
       def foo(x: typing.Tuple[int, int, str]) -> typing.Tuple[str, int]:
         a, *b = x
         return b
