@@ -226,4 +226,4 @@ class FilesystemTest(unittest.TestCase):
 
         shared_source_directory = SharedSourceDirectory(["first", "second"], True)
         shared_source_directory.cleanup()
-        rmtree.assert_called()
+        rmtree.assert_called_with(shared_source_directory.get_root())
