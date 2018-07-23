@@ -885,17 +885,7 @@ let register_functions (module Handler: Handler) ({ Source.path; _ } as source) 
           Map.change callables name ~f:(change callable)
         in
         match statement with
-        | { Node.location; value = Class definition } ->
-            (* Register constructors. *)
-            Node.create ~location definition
-            |> Annotated.Class.create
-            |> Annotated.Class.constructors
-            |> List.fold
-              ~init:callables
-              ~f:(collect_callable ~location)
-
-        | { Node.location; value = Define define }
-          when not (Define.is_constructor define) ->
+        | { Node.location; value = Define define } ->
             Annotated.Callable.apply_decorators ~resolution ~define
             |> Annotated.Define.create
             |> Annotated.Define.define

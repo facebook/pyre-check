@@ -83,7 +83,6 @@ val immediate_superclasses
   -> t option
 
 
-val constructors: t -> Define.t list
 val methods: t -> Method.t list
 
 val is_protocol: t -> bool

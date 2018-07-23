@@ -320,17 +320,6 @@ let immediate_superclasses definition ~resolution =
   |> List.find_map ~f:has_definition
 
 
-let constructors ({ Node.value = { Class.body; _ }; _ }) =
-  let extract_constructor = function
-    | { Node.value = Statement.Define define; _ }
-      when Define.is_constructor define ->
-        Some define
-    | _ ->
-        None
-  in
-  List.filter_map ~f:extract_constructor body
-
-
 let methods ({ Node.value = { Class.body; _ }; _ } as definition) =
   let extract_define = function
     | { Node.value = Define define; _ } -> Some (Method.create ~define ~parent:definition)
