@@ -1,10 +1,10 @@
 (tests
  (names
   pluginNamedTuplesTest
-  pluginDataClassTest)
+  pluginDataClassTest
+  pluginFilterTest)
  (libraries
   oUnit
   pyrelib.test
   pyrelib.plugin
   pyrelib.ast))
-

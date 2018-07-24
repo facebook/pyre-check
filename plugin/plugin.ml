@@ -6,6 +6,7 @@
 module NamedTuples = PluginNamedTuples
 module NewType = PluginNewType
 module DataClass = PluginDataClass
+module Filter = PluginFilter
 
 
 let apply_to_ast source =

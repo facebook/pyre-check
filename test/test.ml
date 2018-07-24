@@ -162,7 +162,7 @@ let parse_single_define source =
 let parse_single_class source =
   match parse_single_statement source with
   | { Node.value = Statement.Class definition; _ } -> definition
-  | _ -> failwith "Could not parse single define"
+  | _ -> failwith "Could not parse single class"
 
 
 let parse_single_expression source =
