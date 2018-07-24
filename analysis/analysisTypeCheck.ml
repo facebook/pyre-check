@@ -1217,29 +1217,23 @@ module State = struct
             operator;
             right = ({ Node.location; _ } as right);
           } ->
-            let errors =
-              let { errors; _ } =
-                let right =
-                  let assume =
-                    match operator with
-                    | BooleanOperator.And ->
-                        left;
-                    | BooleanOperator.Or ->
-                        Expression.normalize (Expression.negate left);
-                  in
-                  [
-                    Statement.assume assume;
-                    Node.create ~location (Statement.Expression right);
-                  ]
-                in
-                (* We only analyze right, as it contains the assumption of `left` as a
-                   statement that will be checked. *)
-                let state = { state with resolution } in
-                List.fold ~init:state ~f:(fun state statement -> forward state ~statement) right
+            let right =
+              let assume =
+                match operator with
+                | BooleanOperator.And ->
+                    left;
+                | BooleanOperator.Or ->
+                    Expression.normalize (Expression.negate left);
               in
-              errors
+              [
+                Statement.assume assume;
+                Node.create ~location (Statement.Expression right);
+              ]
             in
-            { state with errors }
+            (* We only analyze right, as it contains the assumption of `left` as a
+               statement that will be checked. *)
+            let state = { state with resolution } in
+            List.fold ~init:state ~f:(fun state statement -> forward state ~statement) right
 
         | ComparisonOperator { ComparisonOperator.left; right; _ } ->
             let state = forward_expression ~state left in
