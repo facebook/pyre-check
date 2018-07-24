@@ -601,7 +601,7 @@ module Define = struct
     match String.Set.find ~f:(has_decorator define) Recognized.property_decorators with
     | Some "util.classproperty"
     | Some "util.etc.cached_classproperty"
-    | Some "util.etc.class_property" ->
+    | Some "nodeapi.fbcode_deps.lazy_classproperty" ->
         let return_annotation =
           let open Expression in
           match return_annotation with
