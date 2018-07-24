@@ -8,10 +8,7 @@
    - OverrideTarget is a set of target represented by an override tree.
 *)
 
-open Core
-
 open Ast
-open Expression
 open Statement
 
 

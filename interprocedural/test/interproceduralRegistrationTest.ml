@@ -6,12 +6,7 @@
 open Core
 open OUnit2
 
-open Analysis
-open Ast
 open Interprocedural
-open Statement
-
-open Test
 
 
 module SimpleAnalysis = Interprocedural.Result.Make(struct

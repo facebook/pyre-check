@@ -3,10 +3,8 @@
     This source code is licensed under the MIT license found in the
     LICENSE file in the root directory of this source tree. *)
 
-open Core
 open Ast
 open Expression
-open Pyre
 
 
 (** Roots representing parameters, locals, and special return value in models. *)

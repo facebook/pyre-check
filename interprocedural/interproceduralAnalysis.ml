@@ -124,7 +124,6 @@ let show_models models =
 
 
 let widen ~iteration ~previous ~next =
-  let open Result in
   let verify_widen ~iteration ~previous ~next =
     let result = widen_models ~iteration ~previous ~next in
     if not (reached_fixpoint ~iteration ~previous:result ~next:previous) then
