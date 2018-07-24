@@ -37,9 +37,7 @@ class Incremental(ErrorHandling):
 
     def _run(self) -> int:
         if self._state() == State.DEAD:
-            LOG.warning(
-                "Server not running at `%s`. Starting...", self._source_directory
-            )
+            LOG.warning("Starting server at `%s`.", self._source_directory)
             arguments = self._arguments
             arguments.terminal = False
             arguments.no_watchman = False
@@ -59,9 +57,7 @@ class Incremental(ErrorHandling):
         if search_path:
             flags.extend(["-search-path", ",".join(search_path)])
 
-        if self._state() == State.DEAD:
-            LOG.warning("Server initializing...")
-        else:
+        if self._state() != State.DEAD:
             LOG.info("Waiting for server...")
 
         result = self._call_client(command=self.NAME, flags=flags)
