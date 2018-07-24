@@ -34,14 +34,11 @@ let generate_lookup source =
     parse
       ~qualifier:(Source.qualifier ~path:"test.py")
       ~path:"test.py" source
-    |> Preprocessing.qualify
+    |> Preprocessing.preprocess
   in
   let configuration = Configuration.create ~debug:true ~infer:false () in
-  let environment = Environment.Builder.create () in
-  Service.Environment.populate
-    (Environment.handler ~configuration environment)
-    [parsed];
-  let environment = Environment.handler ~configuration environment in
+  let environment = AnalysisTestSetup.environment ~configuration () in
+  Service.Environment.populate environment [parsed];
   TypeCheck.check configuration environment parsed |> ignore;
   (Lookup.create_of_source environment parsed, trim_extra_indentation source)
 
@@ -176,6 +173,8 @@ let test_lookup_pick_narrowest _ =
   assert_equal
     ~printer:(String.concat ~sep:", ")
     [
+      "test.py:2:14-2:18/`typing.Type[bool]`";
+      "test.py:2:37-2:40/`typing.Type[int]`";
       "test.py:2:46-2:50/`None`";
       "test.py:3:17-3:27/`bool`";
       "test.py:3:21-3:27/`Optional[int]`";
@@ -228,6 +227,7 @@ let test_lookup_class_attributes _ =
       (* `b` at 3:4-3:5 expands to `test.Foo.b`. This is the annotation
          for the `test.Foo` prefix. *)
       "test.py:3:4-3:5/`typing.Type[test.Foo]`";
+      "test.py:3:7-3:11/`typing.Type[bool]`";
     ]
     (Lookup.get_all_annotations lookup
      |> List.map ~f:(fun (key, data) ->
@@ -273,10 +273,13 @@ let test_lookup_identifier_accesses _ =
       (* `x` at 3:4-3:5 expands to `test.A.x`. This is the annotation
          for the `test.A` prefix. *)
       "test.py:3:4-3:5/`typing.Type[test.A]`";
+      "test.py:3:7-3:10/`typing.Type[int]`";
+      "test.py:4:26-4:29/`typing.Type[int]`";
       "test.py:4:34-4:38/`None`";
       "test.py:5:17-5:18/`int`";
       "test.py:5:8-5:14/`int`";
       "test.py:5:8-5:14/`test.A`";
+      "test.py:7:13-7:16/`typing.Type[int]`";
       "test.py:8:10-8:13/`int`";
       "test.py:8:4-8:5/`test.A`";
       "test.py:8:8-8:9/`test.A`";
@@ -284,6 +287,7 @@ let test_lookup_identifier_accesses _ =
       "test.py:8:8-8:9/`typing.Type[test.A]`";
       "test.py:9:11-9:14/`int`";
       "test.py:9:11-9:14/`test.A`";
+      "test.py:9:4-9:14/`int`";
     ]
     (Lookup.get_all_annotations lookup
      |> List.map ~f:(fun (key, data) ->
@@ -381,16 +385,19 @@ let test_lookup_multiline_accesses _ =
   assert_equal
     ~printer:(String.concat ~sep:", ")
     [
+      "test.py:11:13-11:16/`typing.Type[int]`";
       "test.py:12:4-12:5/`test.A`";
       "test.py:12:8-12:9/`test.A`";
       "test.py:12:8-12:9/`typing.Type[test.A]`";
       "test.py:13:12-14:13/`int`";
       "test.py:13:12-14:13/`test.A`";
+      "test.py:13:4-14:13/`int`";
       "test.py:2:13-2:17/`None`";
       "test.py:3:8-5:14/`bool`";
       "test.py:9:13-9:15/`int`";
       "test.py:9:4-9:5/`int`";
       "test.py:9:4-9:5/`typing.Type[test.A]`";
+      "test.py:9:7-9:10/`typing.Type[int]`";
     ]
     (Lookup.get_all_annotations lookup
      |> List.map ~f:(fun (key, data) ->
