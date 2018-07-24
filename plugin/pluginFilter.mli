@@ -10,11 +10,32 @@ open Statement
 open Expression
 
 
-type class_filter = {
+type define_filter = {
   name: string option;
-  bases: string list option;
   decorator: string option;
   docstring: string option;
+  parent: string option;
+}
+
+val create_define_filter
+  :   ?name: string option
+  ->  ?decorator: string option
+  ->  ?docstring: string option
+  ->  ?parent: string option
+  ->  unit
+  ->  define_filter
+
+val filter_defines
+  :   define_filter: define_filter
+  ->  statement Node.t List.t
+  ->  Define.t Node.t List.t
+
+type class_filter = {
+  name: string option;
+  decorator: string option;
+  docstring: string option;
+  bases: string list option;
+  define_filter: define_filter option;
 }
 
 val create_class_filter
@@ -22,6 +43,7 @@ val create_class_filter
   ->  ?bases: string list option
   ->  ?decorator: string option
   ->  ?docstring: string option
+  ->  ?define_filter: define_filter option
   ->  unit
   ->  class_filter
 

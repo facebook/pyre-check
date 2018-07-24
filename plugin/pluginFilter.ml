@@ -11,11 +11,79 @@ open Statement
 open Expression
 
 
-type class_filter = {
+type define_filter = {
   name: string option;
-  bases: string list option;
   decorator: string option;
   docstring: string option;
+  parent: string option;
+}
+
+
+let create_define_filter
+    ?(name = None)
+    ?(decorator = None)
+    ?(docstring = None)
+    ?(parent = None)
+    () =
+  {
+    name;
+    decorator;
+    docstring;
+    parent;
+  }
+
+
+let apply ~f argument statements =
+  argument
+  >>| f statements
+  |> Option.value ~default:statements
+
+
+let filter_defines ~define_filter:{ name; decorator; docstring; parent } statements =
+  let is_define = function
+    | { Node.location; Node.value = Define origin } ->
+        Some (Node.create ~location origin)
+    | _ ->
+        None
+  in
+  let filter_defines_by_name defines name =
+    let has_name { Node.value = { Define.name = define_name; _ }; _ } =
+      Access.equal define_name (Access.create name)
+    in
+    List.filter ~f:has_name defines
+  in
+  let filter_defines_by_decorator defines decorator =
+    List.filter ~f:(fun { Node.value; _ } -> Define.has_decorator value decorator) defines
+  in
+  let filter_defines_by_docstring defines docstring =
+    let has_docstring { Node.value = { Define.docstring = define_docstring; _ }; _ } =
+      define_docstring
+      >>| String.equal docstring
+      |> Option.value ~default:false
+    in
+    List.filter ~f:has_docstring defines
+  in
+  let filter_defines_by_parent defines parent =
+    let has_parent { Node.value = { Define.parent = define_parent; _ }; _ } =
+      define_parent
+      >>| Access.equal (Access.create parent)
+      |> Option.value ~default:false
+    in
+    List.filter ~f:has_parent defines
+  in
+  List.filter_map ~f:is_define statements
+  |> apply ~f:filter_defines_by_name name
+  |> apply ~f:filter_defines_by_decorator decorator
+  |> apply ~f:filter_defines_by_docstring docstring
+  |> apply ~f:filter_defines_by_parent parent
+
+
+type class_filter = {
+  name: string option;
+  decorator: string option;
+  docstring: string option;
+  bases: string list option;
+  define_filter: define_filter option;
 }
 
 
@@ -24,16 +92,20 @@ let create_class_filter
     ?(bases = None)
     ?(decorator = None)
     ?(docstring = None)
+    ?(define_filter = None)
     () =
   {
     name;
-    bases;
     decorator;
     docstring;
+    bases;
+    define_filter;
   }
 
 
-let filter_classes ~class_filter:{ name; bases; decorator; docstring; } statements =
+let filter_classes
+    ~class_filter:{ name; decorator; docstring; bases; define_filter }
+    statements =
   let is_class = function
     | { Node.location; value = Class origin } ->
         Some (Node.create ~location origin)
@@ -68,13 +140,15 @@ let filter_classes ~class_filter:{ name; bases; decorator; docstring; } statemen
     in
     List.filter ~f:has_docstring classes
   in
-  let apply ~f argument classes =
-    argument
-    >>| f classes
-    |> Option.value ~default:classes
+  let filter_classes_by_method classes define_filter =
+    let has_method { Node.value = { Class.body; _ }; _ } =
+      not (List.is_empty (filter_defines ~define_filter body))
+    in
+    List.filter ~f:has_method classes
   in
   List.filter_map ~f:is_class statements
   |> apply ~f:filter_classes_by_name name
   |> apply ~f:filter_classes_by_bases bases
   |> apply ~f:filter_classes_by_decorator decorator
   |> apply ~f:filter_classes_by_docstring docstring
+  |> apply ~f:filter_classes_by_method define_filter
