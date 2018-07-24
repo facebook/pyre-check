@@ -147,18 +147,28 @@ let analyze_sources_parallel scheduler configuration environment handles =
 
 let analyze_sources
     scheduler
-    ({Configuration.source_root; project_root = directory; _ } as configuration)
+    ({ Configuration.source_root; project_root; filter_directories; _ } as configuration)
     environment
     handles =
   Log.info "Checking...";
 
   Annotated.Class.AttributesCache.clear ();
   let handles =
+    let filter_by_directories path =
+      match filter_directories with
+      | None ->
+          true
+      | Some filter_directories ->
+          List.exists
+            filter_directories
+            ~f:(fun directory -> Path.directory_contains ~follow_symlinks:true ~directory path)
+    in
     let filter_by_root handle =
       match AstSharedMemory.get_source handle with
       | Some { Source.path; _ } ->
-          Path.create_relative ~root:source_root ~relative:path
-          |> Path.directory_contains ~follow_symlinks:true ~directory
+          let relative = Path.create_relative ~root:source_root ~relative:path in
+          Path.directory_contains relative ~follow_symlinks:true ~directory:project_root &&
+          filter_by_directories relative
       | _ ->
           false
     in

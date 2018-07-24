@@ -279,7 +279,6 @@ let assert_type_errors
     ?(show_error_traces = false)
     ?(qualifier = [])
     ?(path = "test.py")
-    ?filter_directories
     source
     errors =
   Annotated.Class.AttributesCache.clear ();
@@ -329,7 +328,7 @@ let assert_type_errors
         environment
       in
       let configuration =
-        Configuration.create ~debug ~strict ~declare ~infer ?filter_directories ()
+        Configuration.create ~debug ~strict ~declare ~infer ()
       in
       check_errors configuration environment ?mode_override source
     in

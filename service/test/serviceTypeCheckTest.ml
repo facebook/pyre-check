@@ -12,30 +12,62 @@ open Test
 module Scheduler = Service.Scheduler
 
 
-let create_files ~root content =
-  let default_content =
-    {|
-      class object():
-        def __sizeof__() -> int: pass
-      class typing.Sized: ...
-      class float():
-        pass
-      class int(float):
-        pass
-      class str(typing.Sized):
-        pass
-    |}
-    |> trim_extra_indentation
+let assert_errors ?filter_directories ~root ~files errors =
+  let configuration =
+    Configuration.create ?filter_directories ~project_root:root ~source_root:root ()
   in
-  let path, _ = Filename.open_temp_file ~in_dir:(Path.absolute root) "test" ".py" in
-  [
-    File.create
-      ~content:(Some (default_content ^ "\n" ^ (content |> trim_extra_indentation)))
-      (Path.create_relative ~root ~relative:path);
-  ]
+  let scheduler = Scheduler.mock () in
+  let add_file file =
+    let content = Option.value_exn (File.content file) in
+    let path = Path.absolute (File.path file) in
+    begin
+      try
+        Unix.mkdir (Filename.dirname path)
+      with Unix.Unix_error _ ->
+        ()
+    end;
+    Out_channel.write_all path ~data:content
+  in
+  List.iter ~f:add_file files;
+  let handles = Service.Parser.parse_sources ~configuration ~scheduler ~files in
+  let environment =
+    Service.Environment.in_process_handler ~configuration ~stubs:[] ~sources:handles
+  in
+  let actual_errors =
+    Service.TypeCheck.analyze_sources scheduler configuration environment handles
+    |> fst
+    |> List.map ~f:(Analysis.Error.description ~detailed:false)
+  in
+  assert_equal
+    ~printer:(List.to_string ~f:ident)
+    ~cmp:(List.equal ~equal:String.equal)
+    errors
+    actual_errors
 
 
 let type_check_sources_list_test context =
+  let create_files ~root content =
+    let default_content =
+      {|
+        class object():
+          def __sizeof__() -> int: pass
+        class typing.Sized: ...
+        class float():
+          pass
+        class int(float):
+          pass
+        class str(typing.Sized):
+          pass
+      |}
+      |> trim_extra_indentation
+    in
+    let path, _ = Filename.open_temp_file ~in_dir:(Path.absolute root) "test" ".py" in
+    [
+      File.create
+        ~content:(Some (default_content ^ "\n" ^ (content |> trim_extra_indentation)))
+        (Path.create_relative ~root ~relative:path);
+    ]
+  in
   let check context =
     let root = Path.current_working_directory () in
     let files =
@@ -45,38 +77,47 @@ let type_check_sources_list_test context =
       |}
       |> create_files ~root
     in
-    let configuration = Configuration.create () in
-    let scheduler = Scheduler.mock () in
-    let sources = Service.Parser.parse_sources ~configuration ~scheduler ~files in
-    let environment =
-      Service.Environment.in_process_handler ~configuration ~stubs:[] ~sources
-    in
-    add_defaults_to_environment environment;
-
-    let assert_errors_with_root project_root expected_error_count =
-      let configuration =
-        Configuration.create
-          ~source_root:root
-          ~project_root:(Path.create_absolute project_root)
-          ()
-      in
-      let errors, _ =
-        Service.TypeCheck.analyze_sources
-          scheduler
-          configuration
-          environment
-          sources
-      in
-      assert_equal (List.length errors) expected_error_count
-    in
-    assert_errors_with_root "/" 1;
-    assert_errors_with_root (bracket_tmpdir context) 0;
+    assert_errors ~root ~files ["Incompatible return type [7]: Expected `str` but got `int`."]
   in
   with_bracket_chdir context (bracket_tmpdir context) check
+
+
+let test_filter_directories context =
+  let root = Path.create_absolute (bracket_tmpdir context) in
+  let check_path = Path.create_relative ~root ~relative:"check/a.py" in
+  let ignore_path = Path.create_relative ~root ~relative:"ignore/b.py" in
+  let content =
+    {|
+      class C:
+        pass
+      class D:
+        def __init__(self):
+          pass
+      def foo() -> C:
+        return D()
+    |}
+    |> Test.trim_extra_indentation
+    |> (fun x -> Some x)
+  in
+  let files = [File.create ~content check_path; File.create ~content ignore_path] in
+  assert_errors
+    ~root
+    ~files
+    [
+      "Incompatible return type [7]: Expected `C` but got `D`.";
+      "Incompatible return type [7]: Expected `C` but got `D`.";
+    ];
+
+  assert_errors
+    ~root
+    ~filter_directories:[Path.create_relative ~root ~relative:"check"]
+    ~files
+    ["Incompatible return type [7]: Expected `C` but got `D`."]
 
 
 let () =
   "typeChecker">:::[
     "type_check_sources_list">::type_check_sources_list_test;
+    "filter_directories">::test_filter_directories;
   ]
   |> run_test_tt_main
