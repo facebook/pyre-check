@@ -106,6 +106,7 @@ and variable = {
 and t =
   | Bottom
   | Callable of t Record.Callable.record
+  | Deleted
   | Object
   | Optional of t
   | Parametric of parametric
@@ -248,6 +249,8 @@ let rec pp format annotation =
         |> String.concat ~sep:"]["
       in
       Format.fprintf format "`typing.Callable%s[%s]`" kind overloads
+  | Deleted ->
+      Format.fprintf format "`deleted`"
   | Object ->
       Format.fprintf format "`typing.Any`"
   | Optional Bottom ->
@@ -430,6 +433,8 @@ let rec optional parameter =
   match parameter with
   | Top ->
       Top
+  | Deleted ->
+      Deleted
   | Object ->
       Object
   | Optional _ ->
@@ -528,6 +533,7 @@ let primitive_substitution_map =
     "None", none;
     "$bottom", Bottom;
     "$unknown", Top;
+    "$deleted", Deleted;
     "typing.AsyncGenerator", parametric_anys "typing.AsyncGenerator" 2;
     "typing.AsyncIterable", parametric_anys "typing.AsyncIterable" 1;
     "typing.AsyncIterator", parametric_anys "typing.AsyncIterator" 1;
@@ -672,6 +678,7 @@ let rec create ~aliases { Node.value = expression; _ } =
                         Union (List.map ~f:(resolve visited) elements)
                     | Bottom
                     | Callable _
+                    | Deleted
                     | Object
                     | Primitive _
                     | Top ->
@@ -1013,6 +1020,7 @@ let rec expression annotation =
           List.concat_map overloads ~f:get_item_call;
         in
         Access.create "typing.Callable" @ get_item_calls
+    | Deleted -> Access.create "$deleted"
     | Object -> Access.create "object"
     | Optional Bottom ->
         split (Identifier.create "None")
@@ -1096,6 +1104,7 @@ let rec exists annotation ~predicate =
         List.exists ~f:(exists ~predicate) parameters
 
     | Bottom
+    | Deleted
     | Top
     | Object
     | Primitive _ ->
@@ -1179,7 +1188,12 @@ let is_tuple (annotation: t) =
 
 
 let is_unknown annotation =
-  exists annotation ~predicate:(function | Top -> true | _ -> false)
+  exists annotation ~predicate:(function | Top | Deleted -> true | _ -> false)
+
+
+let is_deleted = function
+  | Deleted -> true
+  | _ -> false
 
 
 let is_not_instantiated annotation =
@@ -1225,6 +1239,7 @@ let rec variables = function
   | Union elements ->
       List.concat_map ~f:variables elements
   | Bottom
+  | Deleted
   | Object
   | Primitive _
   | Top ->

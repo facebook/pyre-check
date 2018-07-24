@@ -27,6 +27,7 @@ let test_create _ =
   assert_create "foo.bar" (Type.primitive "foo.bar");
   assert_create "foo.$local_qualifier$bar" (Type.primitive "foo.bar");
 
+  assert_create "$deleted" Type.Deleted;
   assert_create "object" Type.Object;
   assert_create "$unknown" Type.Top;
 
@@ -308,6 +309,7 @@ let test_expression _ =
   assert_expression (Type.primitive "...") "...";
   assert_expression (Type.primitive "foo.bar") "foo.bar";
   assert_expression Type.Top "$unknown";
+  assert_expression Type.Deleted "$deleted";
 
   assert_expression
     (Type.Parametric {
@@ -527,6 +529,8 @@ let test_is_unknown _ =
           })));
 
   assert_false (Type.is_unknown Type.integer);
+
+  assert_true (Type.is_unknown Type.Deleted);
 
   assert_true (Type.is_unknown Type.Top);
 

@@ -620,6 +620,7 @@ let register_aliases (module Handler: Handler) sources =
               Some annotation
 
           | Type.Top
+          | Type.Deleted
           | Type.Bottom ->
               None
         in

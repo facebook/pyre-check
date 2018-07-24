@@ -394,6 +394,11 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
   | Type.Top, _ ->
       false
 
+  | _, Type.Deleted ->
+      true
+  | Type.Deleted, _ ->
+      false
+
   | _, Type.Object ->
       true
   | Type.Object, _ ->
@@ -728,6 +733,10 @@ and join ((module Handler: Handler) as order) left right =
     | _, Type.Top ->
         Type.Top
 
+    | Type.Deleted, _
+    | _, Type.Deleted ->
+        Type.Deleted
+
     | Type.Object, _
     | _, Type.Object ->
         Type.Object
@@ -892,8 +901,12 @@ and meet order left right =
     | other, Type.Top ->
         other
 
+    | Type.Deleted, other
+    | other, Type.Deleted when not (Type.equal other Type.Top) ->
+        other
+
     | Type.Object, other
-    | other, Type.Object when not (Type.equal other Type.Top)->
+    | other, Type.Object when not (Type.is_unknown other) ->
         other
 
     | Type.Bottom, _
@@ -1371,10 +1384,12 @@ module Builder = struct
 
     insert handler Type.Bottom;
     insert handler Type.Top;
+    insert handler Type.Deleted;
     (* Object *)
     insert handler Type.Object;
     connect handler ~predecessor:Type.Bottom ~successor:Type.Object;
-    connect handler ~predecessor:Type.Object ~successor:Type.Top;
+    connect handler ~predecessor:Type.Object ~successor:Type.Deleted;
+    connect handler ~predecessor:Type.Deleted ~successor:Type.Top;
 
     let insert_unconnected annotation =
       insert handler annotation;

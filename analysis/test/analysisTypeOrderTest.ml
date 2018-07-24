@@ -175,6 +175,8 @@ let test_default _ =
   assert_true (less_or_equal order ~left:Type.Top ~right:Type.Top);
   assert_true (less_or_equal order ~left:Type.Top ~right:Type.Top);
   assert_false (less_or_equal order ~left:Type.Top ~right:Type.Bottom);
+  assert_true (less_or_equal order ~left:Type.Deleted ~right:Type.Top);
+  assert_true (less_or_equal order ~left:Type.Object ~right:Type.Deleted);
 
   (* Test special forms. *)
   let assert_has_special_form primitive_name =

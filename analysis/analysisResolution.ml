@@ -64,7 +64,7 @@ let set_local ({ annotations; _ } as resolution) ~access ~annotation =
 
 let get_local { annotations; global; _ } ~access =
   match Map.find annotations access with
-  | Some result ->
+  | Some ({ Annotation.annotation; _ } as result) when not (Type.equal annotation Type.Deleted) ->
       Some result
   | _ ->
       Access.delocalize access

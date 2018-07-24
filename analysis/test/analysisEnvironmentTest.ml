@@ -1044,10 +1044,10 @@ let test_supertypes _ =
   let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
   assert_equal
     (TypeOrder.successors order (Type.primitive "foo"))
-    [Type.Object; Type.Top];
+    [Type.Object; Type.Deleted; Type.Top];
   assert_equal
     (TypeOrder.successors order (Type.primitive "bar"))
-    [Type.primitive "foo"; Type.Object; Type.Top];
+    [Type.primitive "foo"; Type.Object; Type.Deleted; Type.Top];
 
   let environment =
     populate {|
@@ -1071,6 +1071,7 @@ let test_supertypes _ =
         parameters = [Type.integer];
       };
       Type.Object;
+      Type.Deleted;
       Type.Top;
     ]
 
