@@ -40,7 +40,14 @@ let expand_string_annotations ({ Source.path; _ } as source) =
       type t = unit
 
       let statement_postorder _ ({ Node.value; _ } as statement) =
-        let rec transform_expression ({ Node.location; value } as expression) =
+        let rec transform_expression
+            ({
+              Node.location = {
+                Location.start = { Location.line = start_line; column = start_column};
+                _;
+              } as location;
+              value
+            } as expression) =
           let value =
             match value with
             | Access access ->
@@ -62,7 +69,15 @@ let expand_string_annotations ({ Source.path; _ } as source) =
             | String { StringLiteral.value; _ } ->
                 let parsed =
                   try
-                    match Parser.parse [value ^ "\n"] ~path with
+                    (* Start at column + 1 since parsing begins after
+                       the opening quote of the string literal. *)
+                    match
+                      Parser.parse
+                        ~start_line
+                        ~start_column:(start_column + 1)
+                        [value ^ "\n"]
+                        ~path
+                    with
                     | [{ Node.value = Expression { Node.value = Access access; _ } ; _ }] ->
                         Some access
                     | _ ->

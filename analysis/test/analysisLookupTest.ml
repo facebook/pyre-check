@@ -483,6 +483,71 @@ let test_lookup_out_of_bounds_accesses _ =
   List.iter indices_product ~f:test_one
 
 
+let test_lookup_string_annotations _ =
+  let source =
+    {|
+      def foo(
+         x: "int",
+         y: "str",
+      ) -> None:
+          pass
+    |}
+  in
+  let (lookup, source) = generate_lookup source in
+
+  assert_equal
+    ~printer:(String.concat ~sep:", ")
+    [
+      "test.py:3:6-3:11/`typing.Type[int]`";
+      "test.py:4:6-4:11/`typing.Type[str]`";
+      "test.py:5:5-5:9/`None`";
+    ]
+    (Lookup.get_all_annotations lookup
+     |> List.map ~f:(fun (key, data) ->
+         Format.asprintf "%s/%a" (show_location (instantiate key)) Type.pp data)
+     |> List.sort ~compare:String.compare);
+  assert_annotation
+    ~lookup
+    ~source
+    ~position:{ Location.line = 3; column = 6 }
+    ~annotation:(Some "test.py:3:6-3:11/`typing.Type[int]`");
+  assert_annotation
+    ~lookup
+    ~source
+    ~position:{ Location.line = 3; column = 7 }
+    ~annotation:(Some "test.py:3:6-3:10/`typing.Type[int]`");
+  assert_annotation
+    ~lookup
+    ~source
+    ~position:{ Location.line = 3; column = 10 }
+    ~annotation:(Some "test.py:3:6-3:11/`typing.Type[int]`");
+  assert_annotation
+    ~lookup
+    ~source
+    ~position:{ Location.line = 3; column = 11 }
+    ~annotation:None;
+  assert_annotation
+    ~lookup
+    ~source
+    ~position:{ Location.line = 4; column = 6 }
+    ~annotation:(Some "test.py:4:6-4:11/`typing.Type[str]`");
+  assert_annotation
+    ~lookup
+    ~source
+    ~position:{ Location.line = 4; column = 7 }
+    ~annotation:(Some "test.py:4:6-4:10/`typing.Type[str]`");
+  assert_annotation
+    ~lookup
+    ~source
+    ~position:{ Location.line = 4; column = 10 }
+    ~annotation:(Some "test.py:4:6-4:11/`typing.Type[str]`");
+  assert_annotation
+    ~lookup
+    ~source
+    ~position:{ Location.line = 4; column = 11 }
+    ~annotation:None
+
+
 let () =
   "lookup">:::[
     "lookup">::test_lookup;
@@ -493,5 +558,6 @@ let () =
     "lookup_unknown_accesses">::test_lookup_unknown_accesses;
     "lookup_multiline_accesses">::test_lookup_multiline_accesses;
     "lookup_out_of_bounds_accesses">::test_lookup_out_of_bounds_accesses;
+    "lookup_string_annotations">::test_lookup_string_annotations;
   ]
   |> run_test_tt_main
