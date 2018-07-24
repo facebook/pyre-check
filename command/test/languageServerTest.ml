@@ -452,6 +452,34 @@ let test_language_server_hover_response _ =
 
 let test_request_parser context =
   let root, relative, absolute = files context in
+  let open_message =
+    {
+      DidOpenTextDocument.jsonrpc = "2.0";
+      method_ = "textDocument/didOpen";
+      parameters = Some {
+          DidOpenTextDocumentParams.textDocument = {
+            TextDocumentItem.uri = "file://" ^ absolute;
+            languageId = "python";
+            version = 2;
+            text = "file content goes here";
+          };
+        }
+    }
+    |> DidOpenTextDocument.to_yojson
+  in
+  let close_message =
+    {
+      DidCloseTextDocument.jsonrpc = "2.0";
+      method_ = "textDocument/didClose";
+      parameters = Some {
+          DidCloseTextDocumentParams.textDocument = {
+            TextDocumentIdentifier.uri = "file://" ^ absolute;
+            version = None;
+          };
+        }
+    }
+    |> DidCloseTextDocument.to_yojson
+  in
   let save_message =
     DidSaveTextDocument.create ~root relative None
     |> Or_error.ok_exn
@@ -473,27 +501,35 @@ let test_request_parser context =
     |> DidChangeTextDocument.to_yojson
   in
 
-  assert_equal
-    ~cmp:(Option.equal Protocol.Request.equal)
-    ~printer:(function | Some request -> Protocol.Request.show request | _ -> "None")
-    (parse
-       ~root:(PyrePath.create_absolute Filename.temp_dir_name)
-       ~check_on_save:true
-       save_message)
+  let assert_parsed_request_equals message request =
+    assert_equal
+      ~cmp:(Option.equal Protocol.Request.equal)
+      ~printer:(function | Some request -> Protocol.Request.show request | _ -> "None")
+      request
+      (parse
+         ~root:(PyrePath.create_absolute Filename.temp_dir_name)
+         message);
+  in
+
+  assert_parsed_request_equals
+    open_message
     (Some
-       (Protocol.Request.TypeCheckRequest
-          {
-            Protocol.TypeCheckRequest.update_environment_with =
-              [File.create (Path.create_absolute absolute)];
-            check = [File.create (Path.create_absolute absolute)];
-          }));
-  assert_equal
-    ~cmp:(Option.equal Protocol.Request.equal)
-    (parse
-       ~root:(PyrePath.create_absolute Filename.temp_dir_name)
-       ~check_on_save:true
-       change_message)
+       (Protocol.Request.OpenDocument
+          (Path.create_absolute absolute |> File.create)));
+  assert_parsed_request_equals
+    close_message
+    (Some
+       (Protocol.Request.CloseDocument
+          (Path.create_absolute absolute |> File.create)));
+  assert_parsed_request_equals
+    save_message
+    (Some
+       (Protocol.Request.SaveDocument
+          (Path.create_absolute absolute |> File.create)));
+  assert_parsed_request_equals
+    change_message
     None
+
 
 let () =
   Log.initialize_for_tests ();

@@ -62,6 +62,9 @@ module Request = struct
     | ClientShutdownRequest of int
     | GetDefinitionRequest of DefinitionRequest.t
     | HoverRequest of DefinitionRequest.t
+    | OpenDocument of File.t
+    | CloseDocument of File.t
+    | SaveDocument of File.t
   [@@deriving eq, show]
 
 
@@ -123,6 +126,9 @@ module Request = struct
     | ClientShutdownRequest _ -> "ClientConnection"
     | GetDefinitionRequest _ -> "GetDefinition"
     | HoverRequest _ -> "Hover"
+    | OpenDocument _ -> "OpenDocument"
+    | CloseDocument _ -> "CloseDocument"
+    | SaveDocument _ -> "SaveDocument"
 end
 
 

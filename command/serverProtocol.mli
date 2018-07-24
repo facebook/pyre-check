@@ -59,6 +59,9 @@ module Request : sig
     | ClientShutdownRequest of int
     | GetDefinitionRequest of DefinitionRequest.t
     | HoverRequest of DefinitionRequest.t
+    | OpenDocument of File.t
+    | CloseDocument of File.t
+    | SaveDocument of File.t
   [@@deriving eq, show]
 
   type origin =

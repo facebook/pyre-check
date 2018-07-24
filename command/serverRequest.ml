@@ -291,7 +291,7 @@ let rec process_request
     Some (LanguageServerProtocolResponse (
         Yojson.Safe.to_string (LanguageServer.Protocol.ShutdownResponse.to_yojson response)))
   in
-  let handle_lsp_request lsp_request =
+  let handle_lsp_request ~check_on_save lsp_request =
     match lsp_request with
     | TypeCheckRequest files -> Some (handle_type_check state files)
     | ClientShutdownRequest id -> Some (handle_client_shutdown_request id)
@@ -351,6 +351,22 @@ let rec process_request
                    (LanguageServer.Protocol.RageResponse.create ~items ~id
                     |> LanguageServer.Protocol.RageResponse.to_yojson
                     |> Yojson.Safe.to_string)))
+
+    | OpenDocument _
+    | CloseDocument _ ->
+        None
+    | SaveDocument file ->
+        if check_on_save then
+          Some
+            (handle_type_check
+               state
+               { TypeCheckRequest.update_environment_with = [file]; check = [file]; })
+        else
+          begin
+            Log.log ~section:`Server "Explicitly ignoring didSave request";
+            None
+          end
+
     | _ ->
         Log.log
           ~section:`Server
@@ -389,9 +405,8 @@ let rec process_request
         in
         LanguageServer.RequestParser.parse
           ~root:configuration.source_root
-          ~check_on_save
           (Yojson.Safe.from_string request)
-        >>= handle_lsp_request
+        >>= handle_lsp_request ~check_on_save
         |> Option.value ~default:(state, None)
 
     | ClientShutdownRequest id -> handle_client_shutdown_request id
@@ -411,7 +426,10 @@ let rec process_request
 
     (* Requests that can only be fulfilled if wrapped in a LanguageServerProtocolRequest. *)
     | GetDefinitionRequest _
-    | HoverRequest _ ->
+    | HoverRequest _
+    | OpenDocument _
+    | CloseDocument _
+    | SaveDocument _ ->
         Log.warning "Request of type `%s` received in the wrong state" (name request);
         state, None
 

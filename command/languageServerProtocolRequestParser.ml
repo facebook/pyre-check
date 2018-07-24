@@ -11,7 +11,7 @@ open ServerProtocol
 open Request
 
 
-let parse ~root ~check_on_save request =
+let parse ~root request =
   let open LanguageServerProtocolTypes in
   let log_method_error method_name =
     Log.error
@@ -74,13 +74,16 @@ let parse ~root ~check_on_save request =
                 };
               _;
             } ->
-              Log.log
-                ~section:`Server
-                "Closed file %s"
-                (uri_to_contained_relative_path
-                   ~root:(Path.absolute root)
-                   ~uri);
-              None
+              let file =
+                uri_to_contained_relative_path
+                  ~root:(Path.absolute root)
+                  ~uri
+                |> fun relative ->
+                Path.create_relative ~root ~relative
+                |> File.create
+              in
+              Log.log ~section:`Server "Closed file %a" File.pp file;
+              Some (CloseDocument file)
           | Ok _ -> log_method_error request_method; None
           | Error yojson_error -> Log.log ~section:`Server "Error: %s" yojson_error; None
         end
@@ -102,49 +105,41 @@ let parse ~root ~check_on_save request =
                 uri_to_contained_relative_path
                   ~root:(Path.absolute root)
                   ~uri
-                |> (fun relative ->
-                    Path.create_relative ~root ~relative)
+                |> fun relative ->
+                Path.create_relative ~root ~relative
                 |> File.create
               in
               Log.log ~section:`Server "Opened file %a" File.pp file;
-              Some (DisplayTypeErrors [file])
+              Some (OpenDocument file)
           | Ok _ -> log_method_error request_method; None
           | Error yojson_error -> Log.log ~section:`Server "Error: %s" yojson_error; None
         end
 
     | "textDocument/didSave" ->
-        if check_on_save then
-          begin
-            match DidSaveTextDocument.of_yojson request with
-            | Ok {
-                DidSaveTextDocument.parameters = Some {
-                    DidSaveTextDocumentParams.textDocument = {
-                      TextDocumentIdentifier.uri;
-                      _;
-                    };
-                    text;
+        begin
+          match DidSaveTextDocument.of_yojson request with
+          | Ok {
+              DidSaveTextDocument.parameters = Some {
+                  DidSaveTextDocumentParams.textDocument = {
+                    TextDocumentIdentifier.uri;
+                    _;
                   };
-                _;
-              } ->
-                let file =
-                  uri_to_contained_relative_path
-                    ~root:(Path.absolute root)
-                    ~uri
-                  |> (fun relative ->
-                      Path.create_relative ~root ~relative)
-                  |> File.create ~content:text
-                in
-                Some
-                  (TypeCheckRequest {
-                      TypeCheckRequest.update_environment_with = [file]; check = [file]; })
-            | Ok _ -> log_method_error request_method; None
-            | Error yojson_error -> Log.log ~section:`Server "Error: %s" yojson_error; None
-          end
-        else
-          begin
-            Log.log ~section:`Server "Explicitly ignoring didSave request";
-            None
-          end
+                  text;
+                };
+              _;
+            } ->
+              let file =
+                uri_to_contained_relative_path
+                  ~root:(Path.absolute root)
+                  ~uri
+                |> fun relative ->
+                Path.create_relative ~root ~relative
+                |> File.create ~content:text
+              in
+              Some (SaveDocument file)
+          | Ok _ -> log_method_error request_method; None
+          | Error yojson_error -> Log.log ~section:`Server "Error: %s" yojson_error; None
+        end
 
     | "textDocument/hover" ->
         begin

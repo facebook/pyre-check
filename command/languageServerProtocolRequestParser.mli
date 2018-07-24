@@ -5,6 +5,5 @@
 
 val parse
   :  root: Pyre.Path.t
-  -> check_on_save:bool
   -> Yojson.Safe.json
   -> ServerProtocol.Request.t option
