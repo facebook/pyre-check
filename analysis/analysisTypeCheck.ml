@@ -1002,9 +1002,6 @@ module State = struct
           errors = Map.set errors ~key:(Location.reference (Error.location error)) ~data:error;
         }
       in
-      let add_errors ~state errors =
-        List.fold errors ~init:state ~f:(fun state error -> add_error ~state error)
-      in
 
       let rec forward_entry ~state { Dictionary.key; value } =
         let state = forward_expression ~state key in
@@ -1139,7 +1136,7 @@ module State = struct
                       new_errors
               in
               Access.fold (Access.create access) ~resolution ~initial:[] ~f:forward_access
-              |> add_errors ~state
+              |> List.fold ~init:state ~f:(fun state error -> add_error ~state error)
             in
 
             (* Special case reveal_type() and cast(). *)
@@ -1580,7 +1577,7 @@ module State = struct
                     })
                   ~define:define_node
               in
-              add_errors ~state [error]
+              add_error ~state error
             else if Type.equal expected Type.Top || Type.equal expected Type.Object then
               let error =
                 Error.create
@@ -1592,7 +1589,7 @@ module State = struct
                     })
                   ~define:define_node
               in
-              add_errors ~state [error]
+              add_error ~state error
             else
               state
 
@@ -1687,7 +1684,7 @@ module State = struct
                 (Annotated.Access.create import)
             in
             List.concat_map ~f:to_import_error imports
-            |> add_errors ~state
+            |> List.fold ~init:state ~f:(fun state error -> add_error ~state error)
 
         | YieldFrom _ ->
             state
