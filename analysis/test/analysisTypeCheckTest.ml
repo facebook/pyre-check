@@ -2380,7 +2380,7 @@ let test_check_function_parameter_errors _ =
       def foo(input: typing.Optional[Foo]) -> None:
         optional_str_to_int(input and input.attribute)
     |}
-    [];
+    ["Incompatible parameter type [6]: Expected `typing.Optional[str]` but got `unknown`."];
   assert_type_errors
     {|
       class Foo:
@@ -2388,7 +2388,10 @@ let test_check_function_parameter_errors _ =
       def foo(input: typing.Optional[Foo]) -> None:
         optional_str_to_int(input and input.undefined)
     |}
-    ["Undefined attribute [16]: `Foo` has no attribute `undefined`."]
+    [
+      "Incompatible parameter type [6]: Expected `typing.Optional[str]` but got `unknown`.";
+      "Undefined attribute [16]: `Foo` has no attribute `undefined`.";
+    ]
 
 
 let test_check_function_redirects _ =
