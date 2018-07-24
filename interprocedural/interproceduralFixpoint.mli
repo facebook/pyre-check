@@ -22,7 +22,7 @@ module Epoch : sig
   type t = int
 
   val show: t -> string
-  val pp: 'a -> t -> string
+  val pp: Format.formatter -> t -> unit
 end
 
 type step = {

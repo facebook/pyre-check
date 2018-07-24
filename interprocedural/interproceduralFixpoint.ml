@@ -18,7 +18,7 @@ module Epoch = struct
   let predefined = 0
 
   let show epoch = Format.sprintf "%d" epoch
-  let pp _ = show
+  let pp formatter epoch = Format.fprintf formatter "%s" (show epoch)
 end
 
 
