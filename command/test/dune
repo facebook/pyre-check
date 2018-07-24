@@ -1,0 +1,28 @@
+(library
+ (name commandTest)
+ (public_name pyrelib.commandTest)
+ (modules commandTest)
+ (libraries
+  oUnit
+  pyrelib.pyreCommand
+  pyrelib.test
+  pyrelib.ast
+  pyrelib.analysis))
+
+
+(tests
+ (names
+  codexGeneratorTest
+  languageServerTest
+  persistentClientTest
+  queryTest
+  serverProtocolTest
+  serverTest
+  WatchmanTest)
+ (modules :standard \ commandTest)
+ (libraries
+  oUnit
+  pyrelib.test
+  pyrelib.commandTest
+  pyrelib.pyreCommand
+  pyrelib.ast))

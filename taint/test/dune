@@ -1,0 +1,11 @@
+(tests
+ (names
+  taintAccessPathTest
+  taintForwardAnalysisTest
+  taintBackwardAnalysisTest)
+ (libraries
+  oUnit
+  pyrelib.test
+  pyrelib.ast
+  pyrelib.interprocedural
+  pyrelib.taint))

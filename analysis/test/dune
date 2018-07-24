@@ -1,0 +1,63 @@
+(library
+ (name analysisTestSetup)
+ (public_name pyrelib.testSetup)
+ (modules analysisTestSetup)
+ (libraries
+  oUnit
+  pyrelib.test
+  pyrelib.ast
+  pyrelib.analysis
+  pyrelib.plugin))
+
+
+(library
+ (name annotatedTest)
+ (public_name pyrelib.annotatedTest)
+ (modules annotatedTest)
+ (libraries
+  oUnit
+  pyrelib.test
+  pyrelib.ast
+  pyrelib.analysis))
+
+
+(tests
+ (names
+  abstractDomainTest
+  analysisCallGraphTest
+  analysisCfgTest
+  analysisDependentTest
+  analysisEnvironmentTest
+  analysisErrorTest
+  analysisFixpointTest
+  analysisInferenceTest
+  analysisLookupTest
+  analysisPreprocessingTest
+  analysisRefinementTest
+  analysisResolutionTest
+  analysisTypeCheckTest
+  analysisTypeOrderTest
+  analysisTypeTest
+  annotatedAccessTest
+  annotatedAssignTest
+  annotatedCallableTest
+  annotatedClassTest
+  annotatedDefineTest
+  annotatedResolveTest
+  annotatedSignatureTest)
+ (modules :standard \ analysisTestSetup annotatedTest)
+ (preprocess
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_compare
+   ppx_hash))
+  (libraries
+   oUnit
+   ppxlib
+   ppx_hash
+   ppx_deriving
+   pyrelib.test
+   pyrelib.annotatedTest
+   pyrelib.testSetup
+   pyrelib.analysis))

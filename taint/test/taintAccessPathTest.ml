@@ -12,7 +12,7 @@ open Expression
 open Test
 
 
-let test_normalize_access _ =
+let test_normalize_access ctxt =
   let assert_normalized expression expected =
     let access = Access.create expression in
     let normalized = AccessPath.normalize_access access in

@@ -1,0 +1,24 @@
+(library
+ (name pyreCommand)
+ (public_name pyrelib.pyreCommand)
+ (preprocess
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv
+   ppx_deriving_yojson))
+ (libraries
+  core
+  sexplib
+  ppxlib
+  yojson
+  ppx_deriving
+  ppx_deriving_yojson
+  ppx_deriving_yojson.runtime
+  hack_parallel
+  pyrelib.service
+  pyrelib.ast
+  pyrelib.analysis
+  pyrelib.experimental))

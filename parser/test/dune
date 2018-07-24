@@ -1,0 +1,9 @@
+(tests
+ (names
+  parserGeneratorTest)
+ (libraries
+  oUnit
+  pyrelib.test
+  pyrelib.ast
+  pyrelib.pyreParser))
+

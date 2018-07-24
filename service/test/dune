@@ -1,0 +1,11 @@
+(tests
+ (names
+  serviceCoverageTest
+  serviceParserTest
+  serviceTypeCheckTest)
+ (libraries
+  oUnit
+  pyrelib.analysis
+  pyrelib.test
+  pyrelib.service))
+

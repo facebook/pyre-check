@@ -7,7 +7,7 @@ _build
 .merlin
 /pyrelib.install
 /Makefile
-/jbuild
+/dune
 /_tags
 /scripts/dist
 version.ml

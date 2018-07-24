@@ -1,0 +1,20 @@
+(library
+ (name test)
+ (public_name pyrelib.test)
+ (modules test)
+ (libraries
+  oUnit
+  pyrelib.service
+  pyrelib.analysis))
+
+(tests
+ (names
+  testFileTest
+  testLogTest
+  testPathTest)
+ (modules :standard \ test)
+ (libraries
+  oUnit
+  pyrelib.service
+  pyrelib.analysis
+  pyrelib.test))

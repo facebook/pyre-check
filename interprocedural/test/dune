@@ -1,0 +1,13 @@
+(tests
+ (names
+  interproceduralRegistrationTest
+  interproceduralAnalysisTest)
+ (libraries
+  oUnit
+  ppxlib
+  ppx_hash
+  ppx_deriving
+  pyrelib.test
+  pyrelib.ast
+  pyrelib.interprocedural
+  pyrelib.taint))
