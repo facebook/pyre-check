@@ -885,8 +885,13 @@ let register_functions (module Handler: Handler) ({ Source.path; _ } as source) 
           in
           Map.change callables name ~f:(change callable)
         in
+        let is_property define =
+          String.Set.exists
+            ~f:(Statement.Define.has_decorator define)
+            Recognized.property_decorators
+        in
         match statement with
-        | { Node.location; value = Define define } ->
+        | { Node.location; value = Define define } when not (is_property define) ->
             Annotated.Callable.apply_decorators ~resolution ~define
             |> Annotated.Define.create
             |> Annotated.Define.define

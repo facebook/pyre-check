@@ -462,6 +462,8 @@ let test_register_functions _ =
        class Class:
          def Class.__init__(self) -> None: ...
          def Class.method(self, i: int) -> int: ...
+         @property
+         def Class.property_method(self) -> int: ...
          class Class.Nested:
            def Class.Nested.nested_class_method(self) -> str: ...
 
@@ -485,6 +487,7 @@ let test_register_functions _ =
   assert_is_some (Handler.function_definitions (access ["function"]));
   assert_is_some (Handler.function_definitions (access ["Class.__init__"]));
   assert_is_none (Handler.function_definitions (access ["nested_in_function"]));
+  assert_is_none (Handler.function_definitions (access ["Class.property_method"]));
 
   let assert_global access expected =
     let actual =

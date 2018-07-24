@@ -3472,6 +3472,17 @@ let test_check_attributes _ =
       "Undefined attribute [16]: Optional type has no attribute `debug`.";
     ];
 
+  (* Attributes defined with property decorators. *)
+  assert_type_errors
+    {|
+      class Foo:
+        @property
+        def prop(self) -> int: ...
+      def foo() -> str:
+        return Foo().prop
+    |}
+    ["Incompatible return type [7]: Expected `str` but got `int`."];
+
   (* Attributes defined with getters and setters. *)
   assert_type_errors
     {|
