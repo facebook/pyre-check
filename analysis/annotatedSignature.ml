@@ -157,6 +157,7 @@ let select ~arguments ~resolution ~callable:({ Type.Callable.overloads; _ } as c
 
           let less_or_equal =
             try
+              (Type.equal actual Type.Top && Type.equal expected Type.Object) ||
               Resolution.less_or_equal resolution ~left:actual ~right:expected
             with TypeOrder.Untracked _ ->
               false

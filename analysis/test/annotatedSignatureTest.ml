@@ -42,6 +42,8 @@ let resolution =
 
       meta: typing.Type[typing.List[int]] = ...
       union: typing.Union[int, str] = ...
+
+      unknown: $unknown = ...
     |}
   |> fun environment -> Environment.resolution environment ()
 
@@ -143,13 +145,13 @@ let test_select _ =
   (* Traverse anonymous arguments. *)
   assert_select "[[], int]" "()" (`Found "[[], int]");
 
-  assert_select
-    "[[int], int]" "()"
-    (`NotFoundMissingArgument "anonymous");
+  assert_select "[[int], int]" "()" (`NotFoundMissingArgument "anonymous");
   assert_select "[[], int]" "(1)" (`NotFoundTooManyArguments (0, 1));
 
   assert_select "[[int], int]" "(1)" (`Found "[[int], int]");
   assert_select "[[Named(i, int)], int]" "(1)" (`Found "[[Named(i, int)], int]");
+
+  assert_select "[[typing.Any], int]" "(unknown)" (`Found "[[typing.Any], int]");
 
   assert_select
     "[[int], int]"

@@ -4766,7 +4766,7 @@ let test_check_meta _ =
   assert_type_errors
     {|
       def foo(input) -> typing.List[int]:
-        return typing.cast(typing.List[unknown], a)
+        return typing.cast(typing.List[unknown], input)
     |}
     ["Undefined type [11]: Type `unknown` is not defined."];
   assert_type_errors

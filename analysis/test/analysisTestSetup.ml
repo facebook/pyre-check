@@ -69,7 +69,7 @@ let typeshed_stubs = (* Yo dawg... *)
         class Awaitable: pass
         class AsyncGenerator: pass
 
-        def cast(tp: Type[_T], o) -> _T: ...
+        def cast(tp: Type[_T], o: Any) -> _T: ...
       |}
     |> Preprocessing.qualify;
     Source.create ~qualifier:(Access.create "unittest.mock") [];
