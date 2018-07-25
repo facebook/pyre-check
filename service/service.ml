@@ -9,6 +9,7 @@ module Coverage = ServiceCoverage
 module Environment = ServiceEnvironment
 module EnvironmentSharedMemory = ServiceEnvironmentSharedMemory
 module Ignore = ServiceIgnore
+module Memory = ServiceMemory
 module Parser = ServiceParser
 module Scheduler = ServiceScheduler
 module TypeCheck = ServiceTypeCheck
