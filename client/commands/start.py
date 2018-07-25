@@ -7,13 +7,13 @@ import logging
 import os
 
 from .. import FAILURE, SUCCESS, filesystem
-from .command import Command
+from .command import ErrorHandling
 
 
 LOG = logging.getLogger(__name__)
 
 
-class Start(Command):
+class Start(ErrorHandling):
     NAME = "start"
 
     def __init__(self, arguments, configuration, source_directory) -> None:
@@ -47,6 +47,15 @@ class Start(Command):
                         return FAILURE
 
                     flags = self._flags()
+                    filter_directories = self._get_directories_to_analyze()
+                    # Check the length in order to only add the flag when we have a
+                    # strict superset.
+                    if len(filter_directories) > 1 and filter_directories.issuperset(
+                        {self._source_directory}
+                    ):
+                        flags.extend(
+                            ["-filter-directories", ",".join(list(filter_directories))]
+                        )
                     if not self._no_watchman:
                         flags.append("-use-watchman")
                     if self._terminal:

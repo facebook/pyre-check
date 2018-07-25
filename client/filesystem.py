@@ -5,6 +5,7 @@
 
 import errno
 import fcntl
+import functools
 import json
 import logging
 import os
@@ -16,6 +17,7 @@ from time import time
 from typing import Dict, Generator, List, Optional
 
 from . import log
+from .exceptions import EnvironmentException
 
 
 LOG = logging.getLogger(__name__)
@@ -202,3 +204,45 @@ def acquire_lock(path: str, blocking: bool) -> Generator[Optional[int], None, No
 
     except FileNotFoundError:
         yield
+
+
+class Filesystem:
+    def list(self, root: str, pattern: str) -> List[str]:
+        return (
+            subprocess.check_output(["find", root, "-name", "*{}".format(pattern)])
+            .decode("utf-8")
+            .split()
+        )
+
+
+class MercurialBackedFilesystem(Filesystem):
+    def list(self, root: str, pattern: str) -> List[str]:
+        try:
+            return (
+                subprocess.check_output(
+                    ["hg", "files", "--include", "**{}".format(pattern)]
+                )
+                .decode("utf-8")
+                .split()
+            )
+        except subprocess.CalledProcessError as exception:
+            if exception.returncode == 1:
+                # hg files exits with 1 when no matches were found.
+                return []
+            else:
+                raise EnvironmentException(
+                    "Unexpected return code {} from call to `hg files`.".format(
+                        exception.returncode
+                    )
+                )
+        except FileNotFoundError:
+            raise EnvironmentException("hg executable not found.")
+
+
+@functools.lru_cache(1)
+def get_filesystem() -> Filesystem:
+    try:
+        subprocess.check_output(["hg", "status"])
+        return MercurialBackedFilesystem()
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return Filesystem()

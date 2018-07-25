@@ -17,6 +17,7 @@ from typing import List, Set  # noqa
 
 from .. import SUCCESS, TEXT, EnvironmentException, log
 from ..error import Error
+from ..filesystem import get_filesystem
 
 
 LOG = logging.getLogger(__name__)
@@ -279,17 +280,8 @@ class ErrorHandling(Command):
             return under_configuration
 
     def _get_directories_to_analyze(self) -> Set[str]:
-        try:
-            local_configurations = (
-                subprocess.check_output(
-                    ["hg", "files", "--include", "**.pyre_configuration.local"]
-                )
-                .decode("utf-8")
-                .split()
-            )
-        except subprocess.CalledProcessError:
-            local_configurations = []
-        directories_to_analyze = set(self._discovered_source_directories)
+        local_configurations = get_filesystem().list(".", ".pyre_configuration.local")
+        directories_to_analyze = {self._source_directory}
         for configuration_file in local_configurations:
             try:
                 with open(configuration_file) as file:

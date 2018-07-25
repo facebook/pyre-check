@@ -5,12 +5,16 @@
 
 import fcntl
 import os
+import subprocess
 import tempfile
 import unittest
 from typing import Dict
 from unittest.mock import call, patch
 
+from ..exceptions import EnvironmentException
 from ..filesystem import (  # noqa
+    Filesystem,
+    MercurialBackedFilesystem,
     SharedSourceDirectory,
     __name__ as filesystem_name,
     acquire_lock,
@@ -227,3 +231,32 @@ class FilesystemTest(unittest.TestCase):
         shared_source_directory = SharedSourceDirectory(["first", "second"], True)
         shared_source_directory.cleanup()
         rmtree.assert_called_with(shared_source_directory.get_root())
+
+    @patch.object(subprocess, "check_output")
+    def test_filesystem_list(self, check_output):
+        filesystem = Filesystem()
+        filesystem.list(".", ".pyre_configuration.local")
+
+        filesystem = MercurialBackedFilesystem()
+        filesystem.list(".", ".pyre_configuration.local")
+
+        def fail_on_mercurial(arguments):
+            if "hg" in arguments:
+                raise FileNotFoundError
+            else:
+                return "external/a/.pyre_configuration.local".encode("utf-8")
+
+        check_output.side_effect = fail_on_mercurial
+        with self.assertRaises(EnvironmentException):
+            filesystem.list(".", ".pyre_configuration.local")
+        check_output.assert_has_calls(
+            [
+                call(["find", ".", "-name", "*.pyre_configuration.local"]),
+                call().decode("utf-8"),
+                call().decode().split(),
+                call(["hg", "files", "--include", "**.pyre_configuration.local"]),
+                call().decode("utf-8"),
+                call().decode().split(),
+                call(["hg", "files", "--include", "**.pyre_configuration.local"]),
+            ]
+        )

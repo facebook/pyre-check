@@ -17,6 +17,13 @@ class Check(ErrorHandling):
 
     def _flags(self):
         flags = super()._flags()
+        filter_directories = self._get_directories_to_analyze()
+        # Check the length in order to only add the flag when we have a
+        # strict superset.
+        if len(filter_directories) > 1 and filter_directories.issuperset(
+            {self._source_directory}
+        ):
+            flags.extend(["-filter-directories", ",".join(list(filter_directories))])
         flags.extend(
             [
                 "-workers",

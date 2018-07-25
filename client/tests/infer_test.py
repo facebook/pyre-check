@@ -519,7 +519,10 @@ def mock_configuration() -> MagicMock:
 
 class InferTest(unittest.TestCase):
     @patch("json.loads", return_value=[])
-    def test_infer(self, json_loads) -> None:
+    @patch.object(
+        commands.ErrorHandling, "_get_directories_to_analyze", return_value=set()
+    )
+    def test_infer(self, directories_to_analyze, json_loads) -> None:
         arguments = mock_arguments()
         arguments.recursive = False
         arguments.strict = False

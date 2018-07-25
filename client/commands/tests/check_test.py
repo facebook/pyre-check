@@ -13,7 +13,10 @@ from .command_test import mock_arguments, mock_configuration
 class CheckTest(unittest.TestCase):
     @patch("subprocess.check_output")
     @patch("os.path.realpath")
-    def test_check(self, realpath, check_output) -> None:
+    @patch.object(
+        commands.ErrorHandling, "_get_directories_to_analyze", return_value=set()
+    )
+    def test_check(self, get_directories_to_analyze, realpath, check_output) -> None:
         realpath.side_effect = lambda x: x
         arguments = mock_arguments()
 
@@ -42,7 +45,12 @@ class CheckTest(unittest.TestCase):
 
     @patch("subprocess.check_output")
     @patch("os.path.realpath")
-    def test_sequential_check(self, realpath, check_output) -> None:
+    @patch.object(
+        commands.ErrorHandling, "_get_directories_to_analyze", return_value=set()
+    )
+    def test_sequential_check(
+        self, directories_to_analyze, realpath, check_output
+    ) -> None:
         realpath.side_effect = lambda x: x
         arguments = mock_arguments()
         arguments.sequential = True
@@ -73,7 +81,12 @@ class CheckTest(unittest.TestCase):
 
     @patch("subprocess.check_output")
     @patch("os.path.realpath")
-    def test_check_dumb_terminal(self, realpath, check_output) -> None:
+    @patch.object(
+        commands.ErrorHandling, "_get_directories_to_analyze", return_value=set()
+    )
+    def test_check_dumb_terminal(
+        self, directories_to_analyze, realpath, check_output
+    ) -> None:
         realpath.side_effect = lambda x: x
         arguments = mock_arguments()
         arguments.capable_terminal = False
@@ -108,7 +121,12 @@ class CheckTest(unittest.TestCase):
 
     @patch("subprocess.check_output")
     @patch("os.path.realpath")
-    def test_check_show_parse_errors(self, realpath, check_output) -> None:
+    @patch.object(
+        commands.ErrorHandling, "_get_directories_to_analyze", return_value=set()
+    )
+    def test_check_show_parse_errors(
+        self, directories_to_analyze, realpath, check_output
+    ) -> None:
         realpath.side_effect = lambda x: x
         arguments = mock_arguments()
         arguments.show_parse_errors = True

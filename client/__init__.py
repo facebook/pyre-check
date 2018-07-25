@@ -16,6 +16,7 @@ from argparse import Namespace
 from typing import Any, Dict, Optional, Sized
 
 from . import buck
+from .exceptions import EnvironmentException as EnvironmentException
 from .filesystem import SharedSourceDirectory
 
 
@@ -31,10 +32,6 @@ JSON = "json"
 
 CONFIGURATION_FILE = ".pyre_configuration"
 BINARY_NAME = "pyre.bin"
-
-
-class EnvironmentException(Exception):
-    pass
 
 
 def assert_readable_directory(directory: str) -> None:

@@ -14,7 +14,10 @@ from .command_test import mock_arguments, mock_configuration
 
 class PersistentTest(unittest.TestCase):
     @patch.object(commands.Persistent, "run_null_server", return_value=None)
-    def test_persistent(self, run_null_server) -> None:
+    @patch.object(
+        commands.ErrorHandling, "_get_directories_to_analyze", return_value=set()
+    )
+    def test_persistent(self, directories_to_analyze, run_null_server) -> None:
         arguments = mock_arguments()
         configuration = mock_configuration()
         configuration.get_version_hash.return_value = "hash"

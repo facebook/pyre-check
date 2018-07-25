@@ -12,7 +12,10 @@ from .command_test import mock_arguments, mock_configuration
 
 class StartTest(unittest.TestCase):
     @patch("fcntl.lockf")
-    def test_start(self, lock_file) -> None:
+    @patch.object(
+        commands.ErrorHandling, "_get_directories_to_analyze", return_value=set()
+    )
+    def test_start(self, get_directories_to_analyze, lock_file) -> None:
         arguments = mock_arguments()
         arguments.terminal = False
 
