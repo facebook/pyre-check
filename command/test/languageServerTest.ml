@@ -71,7 +71,7 @@ let test_initialize_request_parses _ =
     | Ok _ ->
         ()
     | Error location ->
-        Log.error "Parse error at location: %s" location;
+        Log.dump "Parse error at location: %s" location;
         Test.assert_unreached ()
   in
   assert_parses {|
@@ -181,6 +181,101 @@ let test_initialize_request_parses _ =
       "initializationOptions": {},
       "trace": "verbose"
     }
+  }
+  |};
+  assert_parses {|
+  {
+   "jsonrpc": "2.0",
+   "id": 0,
+   "method": "initialize",
+   "params": {
+     "processId": null,
+     "rootPath": "/test/directory",
+     "rootUri": "file:///test/directory",
+     "capabilities": {
+       "workspace": {
+         "applyEdit": true,
+         "workspaceEdit": { "documentChanges": true },
+         "didChangeConfiguration": { "dynamicRegistration": true },
+         "didChangeWatchedFiles": { "dynamicRegistration": true },
+         "symbol": {
+           "dynamicRegistration": true,
+           "symbolKind": {
+             "valueSet": [
+               1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18,
+               19, 20, 21, 22, 23, 24, 25, 26
+             ]
+           }
+         },
+         "executeCommand": { "dynamicRegistration": true },
+         "configuration": true,
+         "workspaceFolders": true
+       },
+       "textDocument": {
+         "synchronization": {
+           "dynamicRegistration": true,
+           "willSave": true,
+           "willSaveWaitUntil": true,
+           "didSave": true
+         },
+         "completion": {
+           "dynamicRegistration": true,
+           "contextSupport": true,
+           "completionItem": {
+             "snippetSupport": true,
+             "commitCharactersSupport": true,
+             "documentationFormat": [ "markdown", "plaintext" ]
+           },
+           "completionItemKind": {
+             "valueSet": [
+               1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18,
+               19, 20, 21, 22, 23, 24, 25
+             ]
+           }
+         },
+         "hover": {
+           "dynamicRegistration": true,
+           "contentFormat": [ "markdown", "plaintext" ]
+         },
+         "signatureHelp": {
+           "dynamicRegistration": true,
+           "signatureInformation": {
+             "documentationFormat": [ "markdown", "plaintext" ]
+           }
+         },
+         "definition": { "dynamicRegistration": true },
+         "references": { "dynamicRegistration": true },
+         "documentHighlight": { "dynamicRegistration": true },
+         "documentSymbol": {
+           "dynamicRegistration": true,
+           "symbolKind": {
+             "valueSet": [
+               1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18,
+               19, 20, 21, 22, 23, 24, 25, 26
+             ]
+           }
+         },
+         "codeAction": { "dynamicRegistration": true },
+         "codeLens": { "dynamicRegistration": true },
+         "formatting": { "dynamicRegistration": true },
+         "rangeFormatting": { "dynamicRegistration": true },
+         "onTypeFormatting": { "dynamicRegistration": true },
+         "rename": { "dynamicRegistration": true },
+         "documentLink": { "dynamicRegistration": true },
+         "typeDefinition": { "dynamicRegistration": true },
+         "implementation": { "dynamicRegistration": true },
+         "colorProvider": { "dynamicRegistration": true }
+       }
+     },
+     "trace": "off",
+     "workspaceFolders": [
+       {
+         "uri":
+           "file:///data/users/sinancepel/instagram/instagram-server/distillery",
+         "name": "distillery"
+       }
+     ]
+   }
   }
   |}
 

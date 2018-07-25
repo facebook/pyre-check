@@ -483,11 +483,25 @@ module ClientCapabilities = struct
       execute_command: DynamicRegistration.t option
           [@key "executeCommand"]
           [@default None];
+      workspace_folders: bool option
+          [@key "workspaceFolders"]
+          [@default None];
+      configuration: bool option
+          [@key "configuration"]
+          [@default None];
     }
     (* strict is false: Nuclide LSP sends nonstandard fields *)
     [@@deriving of_yojson { strict = false }]
   end
 
+  module CompletionItemKind = struct
+    type t = {
+      value_set: int list option
+          [@key "valueSet"]
+          [@default None]
+    }
+    [@@deriving of_yojson]
+  end
 
   module TextDocumentClientCapabilities = struct
     type synchronization = {
@@ -514,7 +528,7 @@ module ClientCapabilities = struct
           [@key "commitCharactersSupport"]
           [@default None];
     }
-    [@@deriving of_yojson]
+    [@@deriving of_yojson { strict = false }]
 
     type completion = {
       dynamic_registration: bool option
@@ -522,6 +536,12 @@ module ClientCapabilities = struct
           [@default None];
       completion_item: completion_item option
           [@key "completionItem"]
+          [@default None];
+      completion_item_kind: CompletionItemKind.t option
+          [@key "completionItemKind"]
+          [@default None];
+      context_support: bool option
+          [@key "contextSupport"]
           [@default None];
     }
     [@@deriving of_yojson]
@@ -571,6 +591,15 @@ module ClientCapabilities = struct
           [@default None];
       rename: DynamicRegistration.t option
           [@key "rename"]
+          [@default None];
+      type_definition: DynamicRegistration.t option
+          [@key "typeDefinition"]
+          [@default None];
+      implementation: DynamicRegistration.t option
+          [@key "implementation"]
+          [@default None];
+      color_provider: DynamicRegistration.t option
+          [@key "colorProvider"]
           [@default None];
     }
     [@@deriving of_yojson]
