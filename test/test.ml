@@ -153,6 +153,12 @@ let parse_last_statement source =
   | _ -> failwith "Could not parse last statement"
 
 
+let parse_single_assign source =
+  match parse_single_statement source with
+  | { Node.value = Statement.Assign assign; _ } -> assign
+  | _ -> failwith "Could not parse single assign"
+
+
 let parse_single_define source =
   match parse_single_statement source with
   | { Node.value = Statement.Define define; _ } -> define

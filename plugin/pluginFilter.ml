@@ -152,3 +152,70 @@ let filter_classes
   |> apply ~f:filter_classes_by_decorator decorator
   |> apply ~f:filter_classes_by_docstring docstring
   |> apply ~f:filter_classes_by_method define_filter
+
+
+type assign_filter = {
+  target: string option;
+  annotation: string option;
+  value_regexp: string option;
+  parent: string option;
+}
+
+
+let create_assign_filter
+    ?(target = None)
+    ?(annotation = None)
+    ?(value_regexp = None)
+    ?(parent = None)
+    () =
+  {
+    target;
+    annotation;
+    value_regexp;
+    parent;
+  }
+
+
+let filter_assigns ~assign_filter:{ target; annotation; value_regexp; parent } statements =
+  let is_assign = function
+    | { Node.location; Node.value = Assign origin } ->
+        Some (Node.create ~location origin)
+    | _ ->
+        None
+  in
+  let filter_assigns_by_target assigns target =
+    let has_target { Node.value = { Assign.target = assign_target; _ }; _ } =
+      Access.equal (Expression.access assign_target) (Access.create target)
+    in
+    List.filter ~f:has_target assigns
+  in
+  let filter_assigns_by_annotation assigns annotation =
+    let has_annotatation { Node.value = { Assign.annotation = assign_annotation; _ }; _ } =
+      assign_annotation
+      >>| Expression.access
+      >>| Access.equal (Access.create annotation)
+      |> Option.value ~default:false
+    in
+    List.filter ~f:has_annotatation assigns
+  in
+  let filter_assigns_by_value_regexp assigns value_regexp =
+    let has_regexp { Node.value = { Assign.value; _ }; _ } =
+      value
+      >>| (fun value -> Str.string_match (Str.regexp value_regexp) (Expression.show value) 0)
+      |> Option.value ~default:false
+    in
+    List.filter ~f:has_regexp assigns
+  in
+  let filter_assigns_by_parent assigns parent =
+    let has_parent { Node.value = { Assign.parent = assign_parent; _ }; _ } =
+      assign_parent
+      >>| Access.equal (Access.create parent)
+      |> Option.value ~default:false
+    in
+    List.filter ~f:has_parent assigns
+  in
+  List.filter_map ~f:is_assign statements
+  |> apply ~f:filter_assigns_by_target target
+  |> apply ~f:filter_assigns_by_annotation annotation
+  |> apply ~f:filter_assigns_by_value_regexp value_regexp
+  |> apply ~f:filter_assigns_by_parent parent

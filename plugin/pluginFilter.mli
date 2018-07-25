@@ -51,3 +51,23 @@ val filter_classes
   :   class_filter: class_filter
   ->  statement Node.t List.t
   ->  Class.t Node.t List.t
+
+type assign_filter = {
+  target: string option;
+  annotation: string option;
+  value_regexp: string option;
+  parent: string option;
+}
+
+val create_assign_filter
+  :   ?target: string option
+  ->  ?annotation: string option
+  ->  ?value_regexp: string option
+  ->  ?parent: string option
+  ->  unit
+  ->  assign_filter
+
+val filter_assigns
+  :   assign_filter: assign_filter
+  ->  statement Node.t List.t
+  ->  Assign.t Node.t List.t

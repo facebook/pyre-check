@@ -318,9 +318,90 @@ let test_filter_defines _ =
     []
 
 
+let test_filter_assigns _ =
+  let assert_filter source assign_filter expected =
+    let assert_assign_equal source expected =
+      assert_equal
+        ~printer:Assign.show
+        ~cmp:Assign.equal
+        (Node.value source)
+        (parse_single_assign expected)
+    in
+    List.iter2_exn
+      ~f:assert_assign_equal
+      (Filter.filter_assigns ~assign_filter (Source.statements (parse source)))
+      expected
+  in
+  assert_filter
+    {|
+      x = 1
+      y = 1
+    |}
+    (Filter.create_assign_filter ~target:(Some "x") ())
+    ["x = 1"];
+
+  assert_filter
+    {|
+      x: int = 3
+      y: str = "foo"
+      z: int = 4
+    |}
+    (Filter.create_assign_filter ~annotation:(Some "int") ())
+    ["x: int = 3"; "z: int = 4"];
+
+  assert_filter
+    {|
+      x = a.b.c
+      y = a.b
+    |}
+    (Filter.create_assign_filter ~value_regexp:(Some "a.b*") ())
+    ["x = a.b.c"; "y = a.b"];
+
+  assert_filter
+    {|
+      Boo = typing.NotRelated('Boo', ['one', 'two'])
+      Boo = typing.NamedTuple('Boo', ['one', 'two'])
+    |}
+    (Filter.create_assign_filter ~value_regexp:(Some "typing.NamedTuple*") ())
+    ["Boo = typing.NamedTuple('Boo', ['one', 'two'])"];
+
+  assert_filter
+    {|
+      Coo = collections.namedtuple('Coo', 'a b c')
+      Foo = collections.namedtuple('Foo', 'a b c')
+    |}
+    (Filter.create_assign_filter ~value_regexp:(Some "collections.namedtuple*") ())
+    [
+      "Coo = collections.namedtuple('Coo', 'a b c')";
+      "Foo = collections.namedtuple('Foo', 'a b c')";
+    ];
+
+  (* Assume that the user of this API knows the pretty print format of expressions *)
+  assert_filter
+    {|
+      x = 1 + 2
+      y = 2
+    |}
+    (Filter.create_assign_filter ~value_regexp:(Some ".*__add__.*") ())
+    ["x = 1 + 2"];
+
+  assert_filter
+    {|
+      x = a[2]
+    |}
+    (Filter.create_assign_filter ~value_regexp:(Some ".*__getitem__.*") ())
+    ["x = a[2]"];
+
+  assert_filter
+    "x : int = 3"
+    (Filter.create_assign_filter ~parent:(Some "Foo") ())
+    []
+
+
 let () =
   "plugin_utility">:::[
     "filter_classes">::test_filter_classes;
     "filter_defines">::test_filter_defines;
+    "filter_assign">::test_filter_assigns;
   ]
   |> run_test_tt_main
