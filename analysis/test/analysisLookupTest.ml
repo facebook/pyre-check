@@ -266,7 +266,7 @@ let test_lookup_identifier_accesses _ =
   let (lookup, source) = generate_lookup source in
 
   assert_equal
-    ~printer:(String.concat ~sep:", ")
+    ~printer:(String.concat ~sep:"\n")
     [
       "test.py:3:13-3:15/`int`";
       "test.py:3:4-3:5/`int`";
@@ -281,7 +281,6 @@ let test_lookup_identifier_accesses _ =
       "test.py:5:8-5:14/`test.A`";
       "test.py:7:13-7:16/`typing.Type[int]`";
       "test.py:8:10-8:13/`int`";
-      "test.py:8:4-8:5/`test.A`";
       "test.py:8:8-8:9/`test.A`";
       (* This is the annotation for `A()` (the function call). *)
       "test.py:8:8-8:9/`typing.Type[test.A]`";
@@ -383,10 +382,9 @@ let test_lookup_multiline_accesses _ =
   let (lookup, source) = generate_lookup source in
 
   assert_equal
-    ~printer:(String.concat ~sep:", ")
+    ~printer:(String.concat ~sep:"\n")
     [
       "test.py:11:13-11:16/`typing.Type[int]`";
-      "test.py:12:4-12:5/`test.A`";
       "test.py:12:8-12:9/`test.A`";
       "test.py:12:8-12:9/`typing.Type[test.A]`";
       "test.py:13:12-14:13/`int`";

@@ -387,7 +387,7 @@ let test_forward _ =
   assert_forward
     ["x", Type.list Type.integer]
     "y = [a for a in x]"
-    ["x", Type.list Type.integer; "y", Type.list Type.integer];
+    ["a", Type.integer; "x", Type.list Type.integer; "y", Type.list Type.integer];
 
   (* Dictionary. *)
   assert_forward
@@ -405,12 +405,13 @@ let test_forward _ =
   assert_forward
     []
     "x = { key: value for target in iterator }"
-    ["x", Type.dictionary ~key:Type.Object ~value:Type.Object];
+    ["target", Type.Top; "x", Type.dictionary ~key:Type.Object ~value:Type.Object];
   assert_forward
     ["iterator", Type.list Type.integer]
     "x = { target: target for target in iterator }"
     [
       "iterator", Type.list Type.integer;
+      "target", Type.integer;
       "x", Type.dictionary ~key:Type.integer ~value:Type.integer
     ];
   assert_forward
@@ -418,6 +419,8 @@ let test_forward _ =
     "x = { k: v for k, v in iterator }"
     [
       "iterator", Type.list (Type.tuple [Type.string; Type.integer]);
+      "k", Type.string;
+      "v", Type.integer;
       "x", Type.dictionary ~key:Type.string ~value:Type.integer
     ];
   assert_forward
@@ -426,7 +429,10 @@ let test_forward _ =
     ["x", Type.dictionary ~key:Type.string ~value:Type.integer; "y", Type.integer];
 
   (* Generator. *)
-  assert_forward [] "x = (element for target in iterator)" ["x", Type.generator Type.Object];
+  assert_forward
+    []
+    "x = (element for target in iterator)"
+    ["target", Type.Top; "x", Type.generator Type.Object];
 
   (* Lambda. *)
   assert_forward
@@ -437,7 +443,10 @@ let test_forward _ =
   assert_forward
     []
     "x = lambda y: 1"
-    ["x", Type.lambda ~parameters:[Type.Object] ~return_annotation:Type.integer];
+    [
+      "x", Type.lambda ~parameters:[Type.Object] ~return_annotation:Type.integer;
+      "y", Type.Object;
+    ];
 
   (* Set. *)
   assert_forward [] "x = { 1.0, }" ["x", Type.set Type.float];
@@ -445,7 +454,7 @@ let test_forward _ =
   assert_forward
     ["x", Type.list Type.integer]
     "y = { a for a in x }"
-    ["x", Type.list Type.integer; "y", Type.set Type.integer];
+    ["a", Type.integer; "x", Type.list Type.integer; "y", Type.set Type.integer];
 
   (* Starred. *)
   assert_forward [] "x = *1.0" ["x", Type.Object];
@@ -2166,7 +2175,7 @@ let test_check_optional _ =
         return optional and int_to_bool(optional)
     |}
     [
-      "Missing return annotation [3]: Returning `typing.Optional[typing.Union[bool, int]]` but " ^
+      "Missing return annotation [3]: Returning `typing.Union[bool, int]` but " ^
       "type `Any` is specified."
     ]
 

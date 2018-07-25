@@ -276,8 +276,15 @@ let fold ~resolution ~initial ~f access =
         target
         >>= (fun { State.access; annotation } ->
             Signature.determine signature ~resolution ~annotation
-            >>| fun determined ->
-            Resolution.set_local resolution ~access ~annotation:(Annotation.create determined))
+            >>| (fun determined ->
+                match access with
+                | [Access.Identifier _] ->
+                    Resolution.set_local
+                      resolution
+                      ~access
+                      ~annotation:(Annotation.create determined)
+                | _ ->
+                    resolution))
         |> Option.value ~default:resolution
       in
 
