@@ -292,7 +292,7 @@ def main() -> int:
     ) as error:
         LOG.error(str(error))
         if arguments.command == commands.Persistent:
-            commands.Persistent.run_null_server(timeout=300)
+            commands.Persistent.run_null_server(timeout=3600)
         exit_code = FAILURE
     except Exception as error:
         LOG.error(str(error))
