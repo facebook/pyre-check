@@ -36,7 +36,7 @@ class ErrorHandlingTest(unittest.TestCase):
         )
         with patch.object(json, "loads", return_value=[error]):
             handler._get_errors(result)
-            create_error.assert_has_calls([call(False, False, False)])
+            create_error.assert_has_calls([call(False, False)])
             create_error.reset_mock()
 
         arguments.target = ["//f/g:target"]
@@ -46,7 +46,7 @@ class ErrorHandlingTest(unittest.TestCase):
         )
         with patch.object(json, "loads", return_value=[error]):
             handler._get_errors(result)
-            create_error.assert_has_calls([call(False, False, False)])
+            create_error.assert_has_calls([call(False, False)])
             create_error.reset_mock()
 
         arguments.target = []
@@ -56,7 +56,7 @@ class ErrorHandlingTest(unittest.TestCase):
         )
         with patch.object(json, "loads", return_value=[error]):
             handler._get_errors(result)
-            create_error.assert_has_calls([call(True, False, False)])
+            create_error.assert_has_calls([call(True, False)])
             create_error.reset_mock()
 
         arguments.original_directory = "/f/g/target"
@@ -67,7 +67,7 @@ class ErrorHandlingTest(unittest.TestCase):
         )
         with patch.object(json, "loads", return_value=[error]):
             handler._get_errors(result)
-            create_error.assert_has_calls([call(False, False, True)])
+            create_error.assert_has_calls([call(False, False)])
             create_error.reset_mock()
 
         # Called from root with local configuration command line argument
@@ -79,7 +79,7 @@ class ErrorHandlingTest(unittest.TestCase):
         )
         with patch.object(json, "loads", return_value=[error]):
             handler._get_errors(result)
-            create_error.assert_has_calls([call(False, False, True)])
+            create_error.assert_has_calls([call(False, False)])
             create_error.reset_mock()
 
         # Test wildcard in do not check
@@ -94,50 +94,8 @@ class ErrorHandlingTest(unittest.TestCase):
         )
         with patch.object(json, "loads", return_value=[error]):
             handler._get_errors(result)
-            create_error.assert_has_calls([call(True, False, False)])
+            create_error.assert_has_calls([call(True, False)])
             create_error.reset_mock()
-
-    @patch.object(Error, "__init__", return_value=None)
-    @patch.object(Error, "__hash__", return_value=0)
-    @patch.object(builtins, "open")
-    def test_is_push_blocking(self, open, error_hash, create_error) -> None:
-        arguments = mock_arguments()
-        arguments.original_directory = "/root/a"  # called from
-        arguments.current_directory = "/root"  # project root
-        arguments.local_configuration = None
-        configuration = mock_configuration()
-        handler = commands.ErrorHandling(
-            arguments, configuration, source_directory="/root/a/b/c"
-        )
-
-        # Configurations are push blocking
-        local_configuration = (
-            '{"targets": ["//project/..."], "continuous": true, "push_blocking": true}'
-        )
-        with patch(
-            "builtins.open", mock_open(read_data=local_configuration), create=True
-        ):
-            with patch.object(os.path, "isfile", return_value=True):
-                self.assertTrue(handler._is_under_push_blocking_configuration("/x/y"))
-                self.assertTrue(handler._is_under_push_blocking_configuration("/x/y/z"))
-            with patch.object(os.path, "isfile", return_value=False):
-                self.assertFalse(handler._is_under_push_blocking_configuration("/x/"))
-                self.assertTrue(
-                    handler._is_under_push_blocking_configuration("/x/y/z/a")
-                )
-
-        # Configurations are now not push blocking
-        local_configuration = '{"targets": ["//project/..."], "continuous": true }'
-        with patch(
-            "builtins.open", mock_open(read_data=local_configuration), create=True
-        ):
-            with patch.object(os.path, "isfile", return_value=False):
-                self.assertTrue(
-                    handler._is_under_push_blocking_configuration("/x/y/")
-                )  # cached in _discovered_source_directories
-                self.assertFalse(handler._is_under_push_blocking_configuration("/y/z"))
-            with patch.object(os.path, "isfile", return_value=True):
-                self.assertFalse(handler._is_under_push_blocking_configuration("/y/z"))
 
     @patch.object(subprocess, "check_output")
     def test_get_directories_to_analyze(self, check_output) -> None:

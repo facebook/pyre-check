@@ -235,13 +235,7 @@ class ErrorHandling(Command):
             for error in errors
             if (
                 not error.is_do_not_check()
-                and (
-                    self._verbose
-                    or not (
-                        error.is_external_to_project_root()
-                        or error.is_external_to_source_root()
-                    )
-                )
+                and (self._verbose or not (error.is_external_to_project_root()))
             )
         ]
         errors = sorted(
@@ -258,26 +252,6 @@ class ErrorHandling(Command):
             log.stdout.write("\n".join([repr(error) for error in errors]))
         else:
             log.stdout.write(json.dumps([error.__dict__ for error in errors]))
-
-    @functools.lru_cache(maxsize=128)
-    def _is_under_push_blocking_configuration(self, path: str) -> bool:
-        for source_path in self._discovered_source_directories:
-            if path.startswith(os.path.join(self._current_directory, source_path)):
-                return True
-        configuration_file = os.path.join(path, ".pyre_configuration.local")
-        if os.path.isfile(configuration_file):
-            with open(configuration_file) as file:
-                configuration = json.loads(file.read())
-                return bool(configuration.get("push_blocking", False))
-        else:
-            directory_path = os.path.dirname(path)
-            under_configuration = (
-                directory_path != path
-                and self._is_under_push_blocking_configuration(directory_path)
-            )
-            if under_configuration:
-                self._discovered_source_directories.append(directory_path)
-            return under_configuration
 
     def _get_directories_to_analyze(self) -> Set[str]:
         local_configurations = get_filesystem().list(".", ".pyre_configuration.local")
@@ -310,23 +284,12 @@ class ErrorHandling(Command):
             error["path"] = relative_path
             do_not_check = False
             external_to_project_root = True
-            external_to_source_root = True
             if full_path.startswith(self._current_directory):
                 external_to_project_root = False
-            external_to_source_root = not (
-                self._is_under_push_blocking_configuration(full_path)
-            )
             for do_not_check_path in self._do_not_check_paths:
                 if fnmatch.fnmatch(relative_path, (do_not_check_path + "*")):
                     do_not_check = True
                     break
-            errors.add(
-                Error(
-                    do_not_check,
-                    external_to_project_root,
-                    external_to_source_root,
-                    **error,
-                )
-            )
+            errors.add(Error(do_not_check, external_to_project_root, **error))
 
         return errors

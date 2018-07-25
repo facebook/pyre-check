@@ -7,14 +7,12 @@
 class Error:
     do_not_check = False  # type: bool
     external_to_project_root = False  # type: bool
-    external_to_source_root = False  # type: bool
 
     def __init__(
         self,
         do_not_check: bool = False,
         external_to_project_root: bool = False,
-        external_to_source_root: bool = False,
-        **error
+        **error,
     ) -> None:
         self.line = error["line"]
         self.column = error["column"]
@@ -25,7 +23,6 @@ class Error:
         self.inference = error["inference"]
         self.do_not_check = do_not_check
         self.external_to_project_root = external_to_project_root
-        self.external_to_source_root = external_to_source_root
 
     def __repr__(self):
         return self.__key() + " " + self.description
@@ -47,6 +44,3 @@ class Error:
 
     def is_external_to_project_root(self) -> bool:
         return self.external_to_project_root
-
-    def is_external_to_source_root(self) -> bool:
-        return self.external_to_source_root

@@ -293,10 +293,7 @@ def generate_stub_files(arguments, errors) -> List[StubFile]:
     errors = [
         error
         for error in errors
-        if error.inference
-        and not (
-            error.is_external_to_project_root() or error.is_external_to_source_root()
-        )
+        if error.inference and not (error.is_external_to_project_root())
     ]
     files = defaultdict(list)
     errors.sort(key=lambda error: error.line)
