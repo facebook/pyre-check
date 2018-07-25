@@ -6,6 +6,32 @@ sidebar_label: Error Types
 
 Elaboration on some categories of errors thrown by Pyre.
 
+## Pyre Error [9]: Incompatible Variable Type
+
+Pyre will error when assigning incompatible types to local variables and parameters that were explicitly annotated.
+
+That is, the following will error:
+
+```
+def f(x: int) -> None:
+  x = "" # Incompatible variable type error
+  y: int = 1
+  y = "" # Incompatible variable type error
+```
+
+The rationale here is that it's surprising for an explicitly annotated variable to have an
+incompatible type later on in the same function.
+
+If you intended to change the type of the variable, you can explicitly annotate it with the new type:
+
+```
+def f(x: int) -> None:
+  x: str = "" # No errors!
+  y: int = 1
+  y: str = "" # No errors!
+```
+
+
 ## Pyre Errors [14/15]: Behavioral Subtyping
 
 Method overrides should follow
