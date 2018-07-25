@@ -32,7 +32,7 @@ module Forward = struct
       ~iteration
       ~previous:{ source_taint = previous; }
       ~next:{ source_taint = next; } =
-    ForwardState.less_or_equal next previous
+    ForwardState.less_or_equal ~left:next ~right:previous
 
 end
 
@@ -73,8 +73,8 @@ module Backward = struct
       ~iteration
       ~previous:{ sink_taint = sink_taint_previous; taint_in_taint_out = tito_previous; }
       ~next:{ sink_taint = sink_taint_next; taint_in_taint_out = tito_next; } =
-    BackwardState.less_or_equal sink_taint_next sink_taint_previous
-    && BackwardState.less_or_equal tito_next tito_previous
+    BackwardState.less_or_equal ~left:sink_taint_next ~right:sink_taint_previous
+    && BackwardState.less_or_equal ~left:tito_next ~right:tito_previous
 
 end
 

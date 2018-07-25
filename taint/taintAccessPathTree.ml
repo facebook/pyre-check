@@ -548,7 +548,7 @@ module Make (Checks: Checks.S) (Root: Root.S) (Element: Analysis.AbstractDomain.
               (* Special case.
                  Must merge with AnyIndex and also every specific index.
               *)
-              let augmented = LabelMap.set children Label.Any existing in
+              let augmented = LabelMap.set children ~key:Label.Any ~data:existing in
               let children =
                 LabelMap.filter_mapi ~f:(join_each_index ~path_element rest ~subtree) augmented
               in
@@ -614,7 +614,7 @@ module Make (Checks: Checks.S) (Root: Root.S) (Element: Analysis.AbstractDomain.
     Checks.check check;
     match RootMap.find access_path_tree root with
     | None ->
-        RootMap.set access_path_tree root (make_tree_internal path subtree)
+        RootMap.set access_path_tree ~key:root ~data:(make_tree_internal path subtree)
     | Some tree ->
         match assign_path ~path_element:Element.bottom ~tree path ~subtree with
         | None ->
@@ -654,7 +654,7 @@ module Make (Checks: Checks.S) (Root: Root.S) (Element: Analysis.AbstractDomain.
       Checks.check check;
       match RootMap.find access_path_tree root with
       | None ->
-          RootMap.set access_path_tree root (make_tree_internal path subtree)
+          RootMap.set access_path_tree ~key:root ~data:(make_tree_internal path subtree)
       | Some tree ->
           match join_path ~path_element:Element.bottom ~tree path ~subtree with
           | None ->
@@ -671,7 +671,7 @@ module Make (Checks: Checks.S) (Root: Root.S) (Element: Analysis.AbstractDomain.
                 check_minimal_non_empty ~message result
               in
               Checks.check check;
-              RootMap.set access_path_tree root result
+              RootMap.set access_path_tree ~key:root ~data:result
 
 
   let rec remove_tree path ({ children; _ } as tree) =
@@ -693,7 +693,7 @@ module Make (Checks: Checks.S) (Root: Root.S) (Element: Analysis.AbstractDomain.
                   Some tree
             | Some subtree ->
                 (* Replace subtree *)
-                Some { tree with children = LabelMap.set children label_element subtree }
+                Some { tree with children = LabelMap.set children ~key:label_element ~data:subtree }
 
 
   (** Removes subtree rooted at (root, path) *)
@@ -714,7 +714,7 @@ module Make (Checks: Checks.S) (Root: Root.S) (Element: Analysis.AbstractDomain.
               check_minimal_non_empty ~message tree
             in
             Checks.check check;
-            RootMap.set access_path_tree root tree
+            RootMap.set access_path_tree ~key:root ~data:tree
 
 
   let assign ~root ~path tree access_path_tree =
@@ -956,7 +956,7 @@ module Make (Checks: Checks.S) (Root: Root.S) (Element: Analysis.AbstractDomain.
 
   let check_less_or_equal message left_access_path_tree right_access_path_tree =
     let witness =
-      less_or_equal_witness left_access_path_tree right_access_path_tree
+      less_or_equal_witness ~left:left_access_path_tree ~right:right_access_path_tree
       |> Checks.get_witness
     in
     match witness with
@@ -1141,7 +1141,7 @@ module Make (Checks: Checks.S) (Root: Root.S) (Element: Analysis.AbstractDomain.
     let accumulate ~key ~data accumulator =
       match f key with
       | None -> accumulator
-      | Some key -> RootMap.set accumulator key data
+      | Some key -> RootMap.set accumulator ~key:key ~data:data
     in
     RootMap.fold ~f:accumulate ~init:RootMap.empty access_path_tree
 

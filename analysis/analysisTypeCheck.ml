@@ -989,11 +989,13 @@ module State = struct
                 ~statement:(Node.create (Expression expression) ~location)
             in
             let target_state =
-              forward_with_annotation_propagation state (Statement.assume test)
+              forward_with_annotation_propagation state ~statement:(Statement.assume test)
               |> fun state -> forward_expression ~state target
             in
             let alternative_state =
-              forward_with_annotation_propagation state (Statement.assume (Expression.negate test))
+              forward_with_annotation_propagation
+                state
+                ~statement:(Statement.assume (Expression.negate test))
               |> fun state -> forward_expression ~state alternative
             in
             join target_state alternative_state
