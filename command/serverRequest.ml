@@ -261,13 +261,36 @@ let rec process_request
               ~default:(
                 Format.sprintf "No class definition found for %s" (Expression.show annotation))
         | Methods annotation ->
+            let show_method annotated_method =
+              let open Annotated.Class.Method in
+              let name =
+                name annotated_method
+                |> List.last
+                >>| (fun name -> Expression.Access.show [name])
+                |> Option.value ~default:""
+              in
+              let annotations = parameter_annotations_positional ~resolution annotated_method in
+              let parameter_annotations =
+                Map.keys annotations
+                |> List.sort ~compare:Int.compare
+                |> Fn.flip List.drop 1 (* Drop the self argument *)
+                |> List.map ~f:(Map.find_exn annotations)
+                |> List.map ~f:Type.show
+                |> fun parameters -> "self" :: parameters
+                |> String.concat ~sep:", "
+              in
+              let return_annotation =
+                return_annotation ~resolution annotated_method
+                |> Type.serialize
+              in
+              Format.sprintf "%s: (%s) -> %s" name parameter_annotations return_annotation
+            in
             parse_and_validate annotation
             |> Handler.class_definition
             >>| (fun { Analysis.Environment.class_definition; _ } -> class_definition)
             >>| Annotated.Class.create
             >>| Annotated.Class.methods
-            >>| List.map ~f:Annotated.Class.Method.name
-            >>| List.map ~f:(fun name -> Expression.Access.show [List.last_exn name])
+            >>| List.map ~f:show_method
             >>| String.concat ~sep:"\n"
             |> Option.value
               ~default:(

@@ -414,7 +414,7 @@ let test_query _ =
     ~source
     ~request:(Protocol.Request.TypeQueryRequest
                 (Protocol.Methods (Type.expression (Type.primitive "C"))))
-    (Some (Protocol.TypeQueryResponse "foo\nbar"));
+    (Some (Protocol.TypeQueryResponse "foo: (self) -> `int`\nbar: (self) -> `str`"));
 
   assert_response
     ~source
