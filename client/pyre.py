@@ -259,7 +259,7 @@ def main() -> int:
                 not in [commands.Check, commands.Start, commands.Restart]
                 or arguments.use_global_shared_source_directory
             )
-            if getattr(arguments, "with_fire", False):
+            if arguments.command in [commands.Kill]:
                 source_directories = ["."]
             else:
                 prompt = arguments.command not in [commands.Incremental, commands.Check]
