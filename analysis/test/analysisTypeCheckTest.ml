@@ -1111,7 +1111,7 @@ let test_coverage _ =
   in
   assert_coverage
     {| def foo(): pass |}
-    { Coverage.full = 0; partial = 0; untyped = 2; ignore = 0; crashes = 0 };
+    { Coverage.full = 0; partial = 0; untyped = 0; ignore = 0; crashes = 0 };
   assert_coverage
     {|
      def foo(y: int):
@@ -1120,7 +1120,7 @@ let test_coverage _ =
        else:
          x = z
     |}
-    { Coverage.full = 1; partial = 0; untyped = 3; ignore = 0; crashes = 0 };
+    { Coverage.full = 1; partial = 0; untyped = 1; ignore = 0; crashes = 0 };
   assert_coverage
     {|
      def foo(y: asdf):
@@ -1129,7 +1129,7 @@ let test_coverage _ =
       else:
         x = 1
     |}
-    { Coverage.full = 0; partial = 0; untyped = 1; ignore = 0; crashes = 1 };
+    { Coverage.full = 0; partial = 0; untyped = 0; ignore = 0; crashes = 1 };
 
   assert_coverage
     {|
@@ -1137,7 +1137,7 @@ let test_coverage _ =
         x = returns_undefined()
         return x
     |}
-    { Coverage.full = 0; partial = 0; untyped = 1; ignore = 0; crashes = 1 }
+    { Coverage.full = 0; partial = 0; untyped = 0; ignore = 0; crashes = 1 }
 
 
 let test_check _ =

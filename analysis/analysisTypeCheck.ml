@@ -915,36 +915,6 @@ module State = struct
           >>| (fun assertion -> forward_annotations state (Statement.assume assertion))
           |> Option.value ~default:resolution
 
-      | Class { Class.name; _ } ->
-          begin
-            match Resolution.get_local resolution ~access:name with
-            | Some _ ->
-                resolution
-            | None ->
-                (* Add a dummy annotation for locally defined classes. *)
-                if not (Define.is_toplevel define) then
-                  Resolution.set_local
-                    resolution
-                    ~access:[List.last_exn name]
-                    ~annotation:(Annotation.create Type.Object)
-                else
-                  resolution
-          end
-
-      | Define { Define.name; _ } ->
-          (* Don't propagate accesses in nested functions, they're analyzed separately.
-             Add a dummy annotation for the last element of the name, as adding the full name causes
-             module lookup issues. *)
-          begin
-            match Resolution.get_local resolution ~access:name with
-            | Some _ ->
-                resolution
-            | None ->
-                Resolution.set_local
-                  resolution
-                  ~access:name
-                  ~annotation:(Annotation.create Type.Object)
-          end
       | Global identifiers ->
           let access = Access.create_from_identifiers identifiers in
           let annotation =
