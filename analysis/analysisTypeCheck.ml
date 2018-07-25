@@ -1337,14 +1337,11 @@ module State = struct
             value = Some value;
             _;
           } as assign) ->
-            let forward_assign
-                ~target:({ Node.location; _ } as target)
-                ~value_annotation
-                ({ errors; _ } as state) =
+            let forward_assign ~target:({ Node.location; _ } as target) ~value_annotation state =
               let access = Expression.access target in
-              let add_incompatible_type_error ~expected ~parent ~name ~declare_location errors =
+              let add_incompatible_type_error ~expected ~parent ~name ~declare_location state =
                 if Resolution.less_or_equal resolution ~left:value_annotation ~right:expected then
-                  errors
+                  state
                 else
                   let error =
                     match parent with
@@ -1370,9 +1367,14 @@ module State = struct
                             })
                           ~define:define_node
                   in
-                  Map.set ~key:(Error.location error |> Location.reference) ~data:error errors
+                  add_error ~state error
               in
-              let add_missing_annotation_error ~expected ~parent ~name ~declare_location errors =
+              let add_missing_annotation_error
+                  ~expected
+                  ~parent
+                  ~name
+                  ~declare_location
+                  ({ errors; _ } as state) =
                 if ((Type.is_unknown expected) || (Type.equal expected Type.Object)) &&
                    not (Type.is_unknown value_annotation) then
                   let evidence_location = instantiate location in
@@ -1405,11 +1407,11 @@ module State = struct
                   Map.find errors declare_location
                   >>| Error.join ~resolution error
                   |> Option.value ~default:error
-                  |> fun data -> Map.set ~key:declare_location ~data errors
+                  |> add_error ~state
                 else
-                  errors
+                  state
               in
-              let errors =
+              let state =
                 let open Annotated in
                 let open Access.Element in
                 match Access.last_element ~resolution (Access.create access) with
@@ -1419,7 +1421,7 @@ module State = struct
                       Expression.access
                         (Node.create_with_default_location (Attribute.name attribute))
                     in
-                    errors
+                    state
                     |> add_incompatible_type_error
                       ~expected
                       ~parent:(Some (Attribute.parent attribute))
@@ -1440,9 +1442,9 @@ module State = struct
                             ~parent:(Some parent)
                             ~name:(Attribute.access attribute)
                             ~declare_location:location
-                            errors
+                            state
                       | _ ->
-                          errors
+                          state
                     end
                 | _ ->
                     let name = access in
@@ -1477,24 +1479,24 @@ module State = struct
                         };
                       _;
                     } ->
-                        let errors =
+                        let state =
                           add_incompatible_type_error
                             ~expected
                             ~parent:None
                             ~name
                             ~declare_location:(instantiate location)
-                            errors
+                            state
                         in
                         (* Don't error when encountering an explicit annotation or a type alias. *)
                         if is_explicit || Type.is_meta value_annotation then
-                          errors
+                          state
                         else
                           add_missing_annotation_error
                             ~expected
                             ~parent:None
                             ~declare_location:location
                             ~name
-                            errors
+                            state
                     | {
                       Annotation.mutability = Annotation.Immutable {
                           Annotation.scope = Annotation.Local;
@@ -1507,18 +1509,17 @@ module State = struct
                           ~parent:None
                           ~name
                           ~declare_location:(instantiate location)
-                          errors
+                          state
                     | annotation when Type.is_tuple (Annotation.annotation annotation) ->
                         add_incompatible_type_error
                           ~expected:(Annotation.annotation annotation)
                           ~parent:None
                           ~name:(Expression.Access.create "left hand side")
                           ~declare_location:(instantiate location)
-                          errors
+                          state
                     | _ ->
-                        errors
+                        state
               in
-              let state = { state with errors } in
               let state = forward_expression ~state value in
               let check_target =
                 match Node.value target with
