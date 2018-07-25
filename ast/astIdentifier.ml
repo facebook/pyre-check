@@ -27,7 +27,7 @@ module Set = Set.Make(struct
 
 
 let pp format identifier =
-  Format.fprintf format "`%a`" String.pp identifier
+  Format.fprintf format "%a" String.pp identifier
 
 
 let create name = name

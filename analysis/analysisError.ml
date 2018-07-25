@@ -304,7 +304,7 @@ let description
     | IncompatibleAwaitableType actual ->
         [
           (Format.asprintf
-             "Expected an awaitable but got %a."
+             "Expected an awaitable but got `%a`."
              Type.pp actual
           );
         ]
@@ -312,14 +312,14 @@ let description
     | MissingParameterAnnotation { name; annotation; due_to_any = false } ->
         [
           Format.asprintf
-            "Parameter `%s` has type %a but no type is specified."
+            "Parameter `%s` has type `%a` but no type is specified."
             (Access.show_sanitized name)
             Type.pp annotation
         ]
     | MissingParameterAnnotation { name; annotation; due_to_any = true } ->
         [
           Format.asprintf
-            "Parameter `%s` has type %a but type `Any` is specified."
+            "Parameter `%s` has type `%a` but type `Any` is specified."
             (Access.show_sanitized name)
             Type.pp annotation
         ]
@@ -329,10 +329,10 @@ let description
           | false ->
               [
                 (Format.asprintf
-                   "Returning %a but no return type is specified."
+                   "Returning `%a` but no return type is specified."
                    Type.pp annotation);
                 (Format.asprintf
-                   "Type %a was returned on %s %s, return type should be specified on line %d."
+                   "Type `%a` was returned on %s %s, return type should be specified on line %d."
                    Type.pp annotation
                    (if (List.length evidence_locations) > 1 then "lines" else "line")
                    (evidence_locations
@@ -344,10 +344,10 @@ let description
           | true ->
               [
                 (Format.asprintf
-                   "Returning %a but type `Any` is specified."
+                   "Returning `%a` but type `Any` is specified."
                    Type.pp annotation);
                 (Format.asprintf
-                   "Type %a was returned on %s %s, return type should be specified on line %d."
+                   "Type `%a` was returned on %s %s, return type should be specified on line %d."
                    Type.pp annotation
                    (if (List.length evidence_locations) > 1 then "lines" else "line")
                    (evidence_locations
@@ -375,12 +375,12 @@ let description
           if due_to_any then
             [
               Format.asprintf
-                "Attribute `%a` of class `%a` has type %a but type `Any` is specified."
+                "Attribute `%a` of class `%a` has type `%a` but type `Any` is specified."
                 Access.pp name
                 Access.pp (Annotated.Class.name parent)
                 Type.pp annotation;
               Format.asprintf
-                "Attribute `%a` declared on line %d, type %a deduced from %s."
+                "Attribute `%a` declared on line %d, type `%a` deduced from %s."
                 Access.pp name
                 start_line
                 Type.pp annotation
@@ -389,12 +389,12 @@ let description
           else
             [
               Format.asprintf
-                "Attribute `%a` of class `%a` has type %a but no type is specified."
+                "Attribute `%a` of class `%a` has type `%a` but no type is specified."
                 Access.pp name
                 Access.pp (Annotated.Class.name parent)
                 Type.pp annotation;
               Format.asprintf
-                "Attribute `%a` declared on line %d, type %a deduced from %s."
+                "Attribute `%a` declared on line %d, type `%a` deduced from %s."
                 Access.pp name
                 start_line
                 Type.pp annotation
@@ -416,11 +416,11 @@ let description
           if due_to_any then
             [
               Format.asprintf
-                "Globally accessible variable `%s` has type %a but type `Any` is specified."
+                "Globally accessible variable `%s` has type `%a` but type `Any` is specified."
                 (Access.show_sanitized name)
                 Type.pp annotation;
               Format.asprintf
-                "Global variable `%s` declared on line %d, type %a deduced from %s."
+                "Global variable `%s` declared on line %d, type `%a` deduced from %s."
                 (Access.show_sanitized name)
                 start_line
                 Type.pp annotation
@@ -429,11 +429,11 @@ let description
           else
             [
               Format.asprintf
-                "Globally accessible variable `%s` has type %a but no type is specified."
+                "Globally accessible variable `%s` has type `%a` but no type is specified."
                 (Access.show_sanitized name)
                 Type.pp annotation;
               Format.asprintf
-                "Global variable `%s` declared on line %d, type %a deduced from %s."
+                "Global variable `%s` declared on line %d, type `%a` deduced from %s."
                 (Access.show_sanitized name)
                 start_line
                 Type.pp annotation
@@ -459,11 +459,11 @@ let description
           in
           Format.asprintf "%s %s to %s" (ordinal position) parameter callee
         in
-        [Format.asprintf "Expected %a but got %a." Type.pp expected Type.pp actual; evidence]
+        [Format.asprintf "Expected `%a` but got `%a`." Type.pp expected Type.pp actual; evidence]
     | IncompatibleConstructorAnnotation annotation ->
         [
           Format.asprintf
-            "`__init__` is annotated as returning %a, but it should return `None`."
+            "`__init__` is annotated as returning `%a`, but it should return `None`."
             Type.pp
             annotation;
         ]
@@ -471,18 +471,18 @@ let description
         let message =
           if is_implicit then
             Format.asprintf
-              "Expected %a but got implicit return value of `None`."
+              "Expected `%a` but got implicit return value of `None`."
               Type.pp expected
           else
             Format.asprintf
-              "Expected %a but got %a."
+              "Expected `%a` but got `%a`."
               Type.pp expected
               Type.pp actual
         in
         [
           message;
           (Format.asprintf
-             "Type %a expected on line %d, specified on line %d."
+             "Type `%a` expected on line %d, specified on line %d."
              Type.pp expected
              stop_line
              error.define.Node.location.Location.start.Location.line)
@@ -497,7 +497,7 @@ let description
       } ->
         [
           (Format.asprintf
-             "Attribute `%a` declared in class `%a` has type %a but is used as type %a."
+             "Attribute `%a` declared in class `%a` has type `%a` but is used as type `%a`."
              Access.pp name
              Access.pp (Annotated.Class.name parent)
              Type.pp expected
@@ -515,10 +515,10 @@ let description
       } ->
         let message =
           if Type.is_tuple expected && not (Type.is_tuple actual) then
-            Format.asprintf "Unable to unpack %a, expected a `Tuple`." Type.pp actual
+            Format.asprintf "Unable to unpack `%a`, expected a `Tuple`." Type.pp actual
           else
             Format.asprintf
-              "%s is declared to have type %a but is used as type %a."
+              "%s is declared to have type `%a` but is used as type `%a`."
               (Access.show_sanitized name)
               Type.pp expected
               Type.pp actual
@@ -536,12 +536,12 @@ let description
           match override with
           | WeakenedPostcondition { actual; expected } ->
               Format.asprintf
-                "Returned type %a is not a subtype of the overridden return %a."
+                "Returned type `%a` is not a subtype of the overridden return `%a`."
                 Type.pp actual
                 Type.pp expected
           | StrengthenedPrecondition (Found { actual; expected }) ->
               Format.asprintf
-                "Parameter of type %a is not a supertype of the overridden parameter %a."
+                "Parameter of type `%a` is not a supertype of the overridden parameter `%a`."
                 Type.pp actual
                 Type.pp expected
           | StrengthenedPrecondition (NotFound name) ->
@@ -585,7 +585,7 @@ let description
     | RedundantCast annotation ->
         [
           Format.asprintf
-            "The value being cast is already of type %a."
+            "The value being cast is already of type `%a`."
             Type.pp annotation;
         ]
     | RevealedType { expression; annotation } ->
@@ -598,7 +598,7 @@ let description
         in
         [
           Format.asprintf
-            "Revealed type for `%s` is %s."
+            "Revealed type for `%s` is `%s`."
             (show_sanitized expression)
             (Type.show annotation);
         ]
@@ -610,7 +610,7 @@ let description
                 if Type.is_optional_primitive annotation then
                   "Optional type"
                 else
-                  Type.show annotation
+                  Format.asprintf "`%a`" Type.pp annotation
               in
               name
           | Module access ->
@@ -639,7 +639,7 @@ let description
     | UndefinedType annotation ->
         [
           Format.asprintf
-            "Type %a is not defined."
+            "Type `%a` is not defined."
             Type.pp annotation
         ]
     | UninitializedAttribute {
@@ -649,13 +649,13 @@ let description
       } ->
         [
           (Format.asprintf
-             "Attribute `%a` is declared in class `%a` to have non-optional type %a but is never \
+             "Attribute `%a` is declared in class `%a` to have non-optional type `%a` but is never \
               initialized."
              Access.pp name
              Access.pp (Annotated.Class.name parent)
              Type.pp expected);
           (Format.asprintf
-             "Attribute `%a` is declared on line %d, never initialized and therefore must be %a."
+             "Attribute `%a` is declared on line %d, never initialized and therefore must be `%a`."
              Access.pp name
              start_line
              Type.pp actual)
@@ -1437,7 +1437,7 @@ let to_json
     } as error) =
   let function_name = Access.show_sanitized define.Define.name in
   let print_annotation annotation =
-    Format.asprintf "%a" Type.pp annotation
+    Format.asprintf "`%a`" Type.pp annotation
     |> String.strip ~drop:((=) '`')
   in
   let parameters =

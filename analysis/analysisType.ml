@@ -199,13 +199,9 @@ let reverse_substitute name =
 
 
 let rec pp format annotation =
-  let without_backtick parameters =
-    List.map ~f:show parameters
-    |> String.concat ~sep:", "
-    |> String.substr_replace_all ~pattern:"`" ~with_:"" in
   match annotation with
   | Bottom ->
-      Format.fprintf format "`typing.Unbound`"
+      Format.fprintf format "typing.Unbound"
   | Callable { kind; overloads; _ } ->
       let kind =
         match kind with
@@ -221,69 +217,72 @@ let rec pp format annotation =
             | Defined parameters ->
                 let parameter = function
                   | Parameter.Anonymous annotation ->
-                      without_backtick [annotation]
+                      show annotation
                   | Parameter.Named { Parameter.name; annotation; default } ->
                       Format.asprintf
                         "Named(%a, %s%s)"
                         Access.pp_sanitized name
-                        (without_backtick [annotation])
+                        (show annotation)
                         (if default then ", default" else "")
                   | Parameter.Variable { Parameter.name; annotation; _ } ->
                       Format.asprintf
                         "Variable(%a, %s)"
                         Access.pp_sanitized name
-                        (without_backtick [annotation])
+                        (show annotation)
                   | Parameter.Keywords { Parameter.name; annotation; _ } ->
                       Format.asprintf
                         "Keywords(%a, %s)"
                         Access.pp_sanitized name
-                        (without_backtick [annotation])
+                        (show annotation)
                 in
                 List.map ~f:parameter parameters
                 |> String.concat ~sep:", "
                 |> fun parameters -> Format.asprintf "[%s]" parameters
           in
-          Format.asprintf "%s, %s" parameters (without_backtick [annotation])
+          Format.asprintf "%s, %s" parameters (show annotation)
         in
         List.map ~f:overload overloads
         |> String.concat ~sep:"]["
       in
-      Format.fprintf format "`typing.Callable%s[%s]`" kind overloads
+      Format.fprintf format "typing.Callable%s[%s]" kind overloads
   | Deleted ->
-      Format.fprintf format "`deleted`"
+      Format.fprintf format "deleted"
   | Object ->
-      Format.fprintf format "`typing.Any`"
+      Format.fprintf format "typing.Any"
   | Optional Bottom ->
-      Format.fprintf format "`None`"
+      Format.fprintf format "None"
   | Optional parameter ->
       Format.fprintf format
-        "`typing.Optional[%s]`"
-        (without_backtick [parameter])
+        "typing.Optional[%s]"
+        (show parameter)
   | Parametric { name; parameters }
     when Identifier.show name = "typing.Optional" && parameters = [Bottom] ->
-      Format.fprintf format "`None`"
+      Format.fprintf format "None"
   | Parametric { name; parameters } ->
       Format.fprintf format
-        "`%s[%s]`"
+        "%s[%s]"
         (Identifier.show (reverse_substitute name))
-        (without_backtick parameters)
+        (List.map ~f:show parameters
+         |> String.concat ~sep:", ")
   | Primitive name ->
       Format.fprintf format "%a" Identifier.pp name
   | Top ->
-      Format.fprintf format "`unknown`"
+      Format.fprintf format "unknown"
   | Tuple tuple ->
       let parameters =
         match tuple with
         | Bounded parameters ->
-            (without_backtick parameters)
+            (List.map ~f:show parameters
+             |> String.concat ~sep:", ")
         | Unbounded parameter  ->
-            (without_backtick [parameter]) ^ ", ..."
+            (show parameter) ^ ", ..."
       in
-      Format.fprintf format "`typing.Tuple[%s]`" parameters
+      Format.fprintf format "typing.Tuple[%s]" parameters
   | Union parameters ->
       Format.fprintf format
-        "`typing.Union[%s]`"
-        (without_backtick parameters)
+        "typing.Union[%s]"
+        (List.map ~f:show parameters
+         |> String.concat ~sep:", ")
   | Variable { variable; constraints } ->
       let constraints =
         match constraints with
@@ -299,8 +298,8 @@ let rec pp format annotation =
       in
       Format.fprintf
         format
-        "`Variable[%s%s]`"
-        (Identifier.show variable |> String.substr_replace_all ~pattern:"`" ~with_:"")
+        "Variable[%s%s]"
+        (Identifier.show variable)
         constraints
 
 

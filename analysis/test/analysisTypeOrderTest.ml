@@ -1068,13 +1068,13 @@ let test_to_dot _ =
     ~printer:ident
     ({|
        digraph {
-         0[label="`0`"]
-         1[label="`1`"]
-         2[label="`2`"]
-         3[label="`3`"]
-         4[label="`typing.Unbound`"]
-         5[label="`unknown`"]
-         0 -> 1[label="(`str`)"]
+         0[label="0"]
+         1[label="1"]
+         2[label="2"]
+         3[label="3"]
+         4[label="typing.Unbound"]
+         5[label="unknown"]
+         0 -> 1[label="(str)"]
          0 -> 2
          1 -> 3
          2 -> 3

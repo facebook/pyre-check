@@ -2218,7 +2218,7 @@ let test_call_arguments_location _ =
     ~printer:(String.concat ~sep:", ")
     [
       "name=(none) value=1";
-      Format.sprintf "name=`second`/%d:1:7-1:13 value=2" (String.hash "test.py");
+      Format.sprintf "name=second/%d:1:7-1:13 value=2" (String.hash "test.py");
     ]
     arguments
 

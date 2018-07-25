@@ -375,7 +375,7 @@ let test_query _ =
                 (Protocol.Join
                    (Type.expression (Type.list (Type.Primitive (Identifier.create "C"))),
                     Type.expression (Type.list (Type.integer)))))
-    (Some (Protocol.TypeQueryResponse "`typing.List[int]`"));
+    (Some (Protocol.TypeQueryResponse "typing.List[int]"));
 
   assert_response
     ~source
@@ -383,13 +383,13 @@ let test_query _ =
                 (Protocol.Meet
                    (Type.expression (Type.list (Type.Primitive (Identifier.create "C"))),
                     Type.expression (Type.list (Type.integer)))))
-    (Some (Protocol.TypeQueryResponse "`typing.List[C]`"));
+    (Some (Protocol.TypeQueryResponse "typing.List[C]"));
 
   assert_response
     ~source
     ~request:(Protocol.Request.TypeQueryRequest
                 (Protocol.Superclasses (Type.expression (Type.primitive "C"))))
-    (Some (Protocol.TypeQueryResponse "`int`"));
+    (Some (Protocol.TypeQueryResponse "int"));
 
   assert_response
     ~source
@@ -408,13 +408,13 @@ let test_query _ =
     ~source
     ~request:(Protocol.Request.TypeQueryRequest
                 (Protocol.NormalizeType (+Expression.Access (Access.create "A"))))
-    (Some (Protocol.TypeQueryResponse "`int`"));
+    (Some (Protocol.TypeQueryResponse "int"));
 
   assert_response
     ~source
     ~request:(Protocol.Request.TypeQueryRequest
                 (Protocol.Methods (Type.expression (Type.primitive "C"))))
-    (Some (Protocol.TypeQueryResponse "foo: (self) -> `int`\nbar: (self) -> `str`"));
+    (Some (Protocol.TypeQueryResponse "foo: (self) -> int\nbar: (self) -> str"));
 
   assert_response
     ~source
@@ -780,11 +780,11 @@ let test_incremental_lookups _ =
   assert_equal
     ~printer:(String.concat ~sep:", ")
     [
-      ":3:11-3:12/`int`";
-      ":3:4-3:12/`int`";
-      ":5:8-5:9/`typing.Unbound`";
-      ":6:11-6:12/`int`";
-      ":6:4-6:12/`int`";
+      ":3:11-3:12/int";
+      ":3:4-3:12/int";
+      ":5:8-5:9/typing.Unbound";
+      ":6:11-6:12/int";
+      ":6:4-6:12/int";
     ]
     annotations
 

@@ -184,7 +184,7 @@ let test_register_aliases _ =
       in
       assert_equal
         ~printer:(fun string -> string)
-        (Format.sprintf "`%s`" target)
+        target
         (Type.show (parse_annotation (module Handler) alias))
     in
     List.iter aliases ~f:assert_alias

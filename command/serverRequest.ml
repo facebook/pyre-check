@@ -304,7 +304,7 @@ let rec process_request
       handle_request ()
     with TypeOrder.Untracked untracked ->
       let untracked_response =
-        Format.asprintf "Error: Type %a was not found in the type order." Type.pp untracked
+        Format.asprintf "Error: Type `%a` was not found in the type order." Type.pp untracked
       in
       TypeQueryResponse untracked_response
   in

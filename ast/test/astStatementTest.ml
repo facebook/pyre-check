@@ -903,7 +903,7 @@ let test_pp _ =
     {|
       try:
         raise Exception("whoops"())
-      except SomeError as `e`:
+      except SomeError as e:
         pass
       except (AnotherError, YetAnotherError):
         x = 1

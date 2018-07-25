@@ -61,7 +61,7 @@ let assert_annotation ~lookup ~source ~position ~annotation =
     annotation
     (Lookup.get_annotation lookup ~source_text:source ~position
      >>| (fun (location, annotation) ->
-         Format.asprintf "%s/%a" (show_location location) Type.pp annotation))
+         Format.asprintf "%s/`%a`" (show_location location) Type.pp annotation))
 
 
 let test_lookup_call_arguments _ =
@@ -86,7 +86,7 @@ let test_lookup_call_arguments _ =
     ]
     (Lookup.get_all_annotations lookup
      |> List.map ~f:(fun (key, data) ->
-         Format.asprintf "%s/%a" (show_location (instantiate key)) Type.pp data)
+         Format.asprintf "%s/`%a`" (show_location (instantiate key)) Type.pp data)
      |> List.sort ~compare:String.compare);
   assert_annotation
     ~lookup
@@ -182,7 +182,7 @@ let test_lookup_pick_narrowest _ =
     ]
     (Lookup.get_all_annotations lookup
      |> List.map ~f:(fun (key, data) ->
-         Format.asprintf "%s/%a" (show_location (instantiate key)) Type.pp data)
+         Format.asprintf "%s/`%a`" (show_location (instantiate key)) Type.pp data)
      |> List.sort ~compare:String.compare);
   assert_annotation
     ~lookup
@@ -231,7 +231,7 @@ let test_lookup_class_attributes _ =
     ]
     (Lookup.get_all_annotations lookup
      |> List.map ~f:(fun (key, data) ->
-         Format.asprintf "%s/%a" (show_location (instantiate key)) Type.pp data)
+         Format.asprintf "%s/`%a`" (show_location (instantiate key)) Type.pp data)
      |> List.sort ~compare:String.compare);
   assert_annotation
     ~lookup
@@ -290,7 +290,7 @@ let test_lookup_identifier_accesses _ =
     ]
     (Lookup.get_all_annotations lookup
      |> List.map ~f:(fun (key, data) ->
-         Format.asprintf "%s/%a" (show_location (instantiate key)) Type.pp data)
+         Format.asprintf "%s/`%a`" (show_location (instantiate key)) Type.pp data)
      |> List.sort ~compare:String.compare);
   assert_annotation
     ~lookup
@@ -346,7 +346,7 @@ let test_lookup_unknown_accesses _ =
     ]
     (Lookup.get_all_annotations lookup
      |> List.map ~f:(fun (key, data) ->
-         Format.asprintf "%s/%a" (show_location (instantiate key)) Type.pp data)
+         Format.asprintf "%s/`%a`" (show_location (instantiate key)) Type.pp data)
      |> List.sort ~compare:String.compare);
   assert_annotation
     ~lookup
@@ -399,7 +399,7 @@ let test_lookup_multiline_accesses _ =
     ]
     (Lookup.get_all_annotations lookup
      |> List.map ~f:(fun (key, data) ->
-         Format.asprintf "%s/%a" (show_location (instantiate key)) Type.pp data)
+         Format.asprintf "%s/`%a`" (show_location (instantiate key)) Type.pp data)
      |> List.sort ~compare:String.compare);
   assert_annotation
     ~lookup
@@ -502,7 +502,7 @@ let test_lookup_string_annotations _ =
     ]
     (Lookup.get_all_annotations lookup
      |> List.map ~f:(fun (key, data) ->
-         Format.asprintf "%s/%a" (show_location (instantiate key)) Type.pp data)
+         Format.asprintf "%s/`%a`" (show_location (instantiate key)) Type.pp data)
      |> List.sort ~compare:String.compare);
   assert_annotation
     ~lookup

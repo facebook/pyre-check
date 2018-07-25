@@ -4474,14 +4474,14 @@ let test_check_variable_bindings _ =
       def foo(t: T) -> None:
         str_to_int(t)
     |}
-    ["Incompatible parameter type [6]: Expected `str` but got `Variable[T (bound to `int`)]`."];
+    ["Incompatible parameter type [6]: Expected `str` but got `Variable[T (bound to int)]`."];
   assert_type_errors
     {|
       T = typing.TypeVar('T', bound=int)
       def foo() -> T:
         return 1.0
     |}
-    ["Incompatible return type [7]: Expected `Variable[T (bound to `int`)]` but got `float`."]
+    ["Incompatible return type [7]: Expected `Variable[T (bound to int)]` but got `float`."]
 
 
 let test_check_refinement _ =
@@ -5079,7 +5079,7 @@ let test_check_behavioral_subtyping _ =
     [
       "Inconsistent override [14]: `Bar.foo` overloads method defined in `Foo` inconsistently. " ^
       "Parameter of type `str` is not a supertype of the overridden parameter " ^
-      "`Variable[T (bound to `int`)]`.";
+      "`Variable[T (bound to int)]`.";
     ];
   assert_type_errors
     {|
