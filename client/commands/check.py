@@ -4,7 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 from .. import FOUND_ERRORS, SUCCESS
-from .command import ErrorHandling
+from .error_handling import ErrorHandling
 
 
 class Check(ErrorHandling):

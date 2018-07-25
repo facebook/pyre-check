@@ -10,7 +10,8 @@ import subprocess
 import sys
 
 from .. import FAILURE, SUCCESS
-from .command import ClientException, ErrorHandling, State
+from .command import ClientException, State
+from .error_handling import ErrorHandling
 from .start import Start
 from .stop import Stop
 

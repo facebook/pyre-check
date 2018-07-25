@@ -7,7 +7,7 @@ import logging
 import os
 
 from .. import FAILURE, SUCCESS, filesystem
-from .command import ErrorHandling
+from .error_handling import ErrorHandling
 
 
 LOG = logging.getLogger(__name__)

@@ -5,6 +5,7 @@
 
 from .analyze import Analyze as Analyze  # noqa
 from .check import Check as Check  # noqa
+from .error_handling import ErrorHandling as ErrorHandling  # noqa
 from .incremental import Incremental as Incremental  # noqa
 from .initialize import Initialize as Initialize  # noqa
 from .kill import Kill as Kill  # noqa
@@ -19,5 +20,4 @@ from .stop import Stop as Stop  # noqa
 from .command import (  # noqa; noqa; noqa
     ClientException as ClientException,
     Command as Command,
-    ErrorHandling as ErrorHandling,
 )

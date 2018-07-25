@@ -384,7 +384,7 @@ def file_exists(path):
     return path
 
 
-class Infer(commands.command.ErrorHandling):
+class Infer(commands.ErrorHandling):
     def __init__(self, arguments, configuration, source_directory) -> None:
         arguments.show_error_traces = True
         arguments.output = JSON
