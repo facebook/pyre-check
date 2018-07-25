@@ -652,58 +652,59 @@ module State = struct
           annotation = Some annotation;
           _;
         } ->
-          (* Type annotations override values. *)
-          let annotation =
-            Resolution.parse_annotation resolution annotation
-            |> Annotation.create_immutable ~global:false
+          let resolution =
+            (* Type annotations override values. *)
+            let annotation =
+              Resolution.parse_annotation resolution annotation
+              |> Annotation.create_immutable ~global:false
+            in
+            Resolution.set_local resolution ~access ~annotation
           in
-          Resolution.set_local resolution ~access ~annotation
+          { state with resolution }
       | Assign assign ->
           let open Annotated in
           let open Access.Element in
           let forward_annotations
               ~target
               ~value_annotation
-              resolution =
-            let refine ~resolution ~target ~value_annotation =
-              let access = Expression.access target in
-              let annotation = Map.find (Resolution.annotations resolution) access in
-              let element =
-                Access.last_element ~resolution (Annotated.Access.create access)
+              state =
+            let refine ~state:({ resolution; _ } as state) ~target ~value_annotation =
+              let resolution =
+                let access = Expression.access target in
+                let annotation = Map.find (Resolution.annotations resolution) access in
+                let element = Access.last_element ~resolution (Annotated.Access.create access) in
+                let refined =
+                  match annotation, element with
+                  | Some annotation, _ when Annotation.is_immutable annotation ->
+                      Refinement.refine ~resolution annotation value_annotation
+                  | _, Attribute { origin = Instance attribute; defined; _ } when defined ->
+                      Refinement.refine
+                        ~resolution
+                        (Attribute.annotation attribute)
+                        value_annotation
+                  | _, _ ->
+                      Annotation.create value_annotation
+                in
+                Resolution.set_local resolution ~access ~annotation:refined
               in
-              let refined =
-                match annotation, element with
-                | Some annotation, _ when Annotation.is_immutable annotation ->
-                    Refinement.refine ~resolution annotation value_annotation
-                | _, Attribute { origin = Instance attribute; defined; _ }
-                  when defined ->
-                    Refinement.refine ~resolution (Attribute.annotation attribute) value_annotation
-                | _, _ ->
-                    Annotation.create value_annotation
-              in
-              Resolution.set_local resolution ~access ~annotation:refined
+              { state with resolution }
             in
             match Node.value target with
             | Tuple targets ->
-                let rec refine_tuple resolution target =
+                let rec refine_tuple state target =
                   match Node.value target with
-                  | Tuple targets ->
-                      List.fold targets ~init:resolution ~f:refine_tuple
-                  | _ ->
-                      refine
-                        ~resolution
-                        ~target
-                        ~value_annotation:Type.Top
+                  | Tuple targets -> List.fold targets ~init:state ~f:refine_tuple
+                  | _ -> refine ~state ~target ~value_annotation:Type.Top
                 in
-                List.fold targets ~init:resolution ~f:refine_tuple
+                List.fold targets ~init:state ~f:refine_tuple
             | _ ->
-                refine ~resolution ~target ~value_annotation
+                refine ~state ~target ~value_annotation
           in
           Assign.create assign
-          |> Assign.fold ~resolution ~f:forward_annotations ~initial:resolution
+          |> Assign.fold ~resolution ~f:forward_annotations ~initial:state
 
       | Assert { Assert.test; _ } ->
-          begin
+          let resolution =
             match Node.value test with
             | Access [
                 Access.Identifier name;
@@ -832,11 +833,14 @@ module State = struct
                     forward_annotations
                       state
                       (Statement.assume expression)
-                    |> Resolution.annotations
+                    |> fun { resolution; _ } -> Resolution.annotations resolution
                   in
                   match operator with
                   | BooleanOperator.And ->
-                      let resolution = forward_annotations state (Statement.assume left) in
+                      let resolution =
+                        forward_annotations state (Statement.assume left)
+                        |> fun { resolution; _ } -> resolution
+                      in
                       let left = update state left in
                       let right = update { state with resolution } right in
                       let merge ~key:_ = function
@@ -901,7 +905,8 @@ module State = struct
                 Resolution.set_local resolution ~access ~annotation:refined
             | _ ->
                 resolution
-          end
+          in
+          { state with resolution }
       | Expression { Node.value = Access access; _; } when is_assert_function access ->
           let find_assert_test access =
             match access with
@@ -912,48 +917,54 @@ module State = struct
             | _ -> None
           in
           List.find_map access ~f:find_assert_test
-          >>| (fun assertion -> forward_annotations state (Statement.assume assertion))
-          |> Option.value ~default:resolution
+          >>| (fun assertion -> forward state ~statement:(Statement.assume assertion))
+          |> Option.value ~default:state
 
       | Global identifiers ->
-          let access = Access.create_from_identifiers identifiers in
-          let annotation =
-            Resolution.resolve resolution (Node.create_with_default_location (Access access))
-            |> Annotation.create_immutable ~global:true
+          let resolution =
+            let access = Access.create_from_identifiers identifiers in
+            let annotation =
+              Resolution.resolve resolution (Node.create_with_default_location (Access access))
+              |> Annotation.create_immutable ~global:true
+            in
+            Resolution.set_local
+              resolution
+              ~access
+              ~annotation
           in
-          Resolution.set_local
-            resolution
-            ~access
-            ~annotation
+          { state with resolution }
 
       | _ ->
-          (* Walk through accesses and infer annotations as we go. *)
-          let propagated =
-            let propagate resolution { Node.value = access; _ } =
-              let propagate _ ~resolution ~resolved:_ ~element:_ =
-                resolution
+          let resolution =
+            (* Walk through accesses and infer annotations as we go. *)
+            let propagated =
+              let propagate resolution { Node.value = access; _ } =
+                let propagate _ ~resolution ~resolved:_ ~element:_ =
+                  resolution
+                in
+                Annotated.Access.fold
+                  ~resolution
+                  ~initial:resolution
+                  ~f:propagate
+                  (Annotated.Access.create access)
               in
-              Annotated.Access.fold
-                ~resolution
-                ~initial:resolution
-                ~f:propagate
-                (Annotated.Access.create access)
+              Visit.collect_accesses_with_location statement
+              |> List.fold ~init:resolution ~f:propagate
             in
-            Visit.collect_accesses_with_location statement
-            |> List.fold ~init:resolution ~f:propagate
-          in
-          let annotations =
-            let set_mutability ~key ~data =
-              let mutability =
-                Resolution.get_local resolution ~access:key
-                >>| Annotation.mutability
-                |> Option.value ~default:Annotation.Mutable
+            let annotations =
+              let set_mutability ~key ~data =
+                let mutability =
+                  Resolution.get_local resolution ~access:key
+                  >>| Annotation.mutability
+                  |> Option.value ~default:Annotation.Mutable
+                in
+                { data with Annotation.mutability }
               in
-              { data with Annotation.mutability }
+              Map.mapi ~f:set_mutability (Resolution.annotations propagated)
             in
-            Map.mapi ~f:set_mutability (Resolution.annotations propagated)
+            Resolution.with_annotations resolution ~annotations
           in
-          Resolution.with_annotations resolution ~annotations
+          { state with resolution }
     in
 
     (* Gets typing errors that occur when trying to execute 'statement' in 'state' *)
@@ -1676,7 +1687,10 @@ module State = struct
       else
         forward_statement ~state statement
     in
-    let resolution = forward_annotations state statement in
+    let resolution =
+      forward_annotations state statement
+      |> fun { resolution; _ } -> resolution
+    in
 
     let terminates_control_flow =
       match statement with
