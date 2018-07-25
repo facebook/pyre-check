@@ -90,7 +90,7 @@ def _normalize(targets: List[str], use_cache: bool = False) -> List[str]:
             + ["--type", "python_binary", "python_test"]
         )
         targets_to_destinations = (
-            subprocess.check_output(command, stderr=subprocess.DEVNULL, timeout=200)
+            subprocess.check_output(command, stderr=subprocess.PIPE, timeout=200)
             .decode()
             .strip()
             .split("\n")
@@ -121,7 +121,8 @@ def _normalize(targets: List[str], use_cache: bool = False) -> List[str]:
                 " ".join(command[:-1])
             )
         )
-    except subprocess.CalledProcessError:
+    except subprocess.CalledProcessError as error:
+        LOG.error("Buck returned error: %s" % error.stderr.decode().strip())
         raise BuckException(
             "Could not normalize targets. Check the paths or run `buck clean`."
         )
