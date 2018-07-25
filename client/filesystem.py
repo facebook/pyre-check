@@ -243,7 +243,7 @@ class MercurialBackedFilesystem(Filesystem):
 @functools.lru_cache(1)
 def get_filesystem() -> Filesystem:
     try:
-        subprocess.check_output(["hg", "status"])
+        subprocess.check_output(["hg", "status"], stderr=subprocess.DEVNULL)
         return MercurialBackedFilesystem()
     except (subprocess.CalledProcessError, FileNotFoundError):
         return Filesystem()
