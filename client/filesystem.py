@@ -220,7 +220,8 @@ class MercurialBackedFilesystem(Filesystem):
         try:
             return (
                 subprocess.check_output(
-                    ["hg", "files", "--include", "**{}".format(pattern)]
+                    ["hg", "files", "--include", "**{}".format(pattern)],
+                    stderr=subprocess.DEVNULL,
                 )
                 .decode("utf-8")
                 .split()

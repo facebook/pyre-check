@@ -240,7 +240,7 @@ class FilesystemTest(unittest.TestCase):
         filesystem = MercurialBackedFilesystem()
         filesystem.list(".", ".pyre_configuration.local")
 
-        def fail_on_mercurial(arguments):
+        def fail_on_mercurial(arguments, **kwargs):
             if "hg" in arguments:
                 raise FileNotFoundError
             else:
@@ -254,9 +254,15 @@ class FilesystemTest(unittest.TestCase):
                 call(["find", ".", "-name", "*.pyre_configuration.local"]),
                 call().decode("utf-8"),
                 call().decode().split(),
-                call(["hg", "files", "--include", "**.pyre_configuration.local"]),
+                call(
+                    ["hg", "files", "--include", "**.pyre_configuration.local"],
+                    stderr=subprocess.DEVNULL,
+                ),
                 call().decode("utf-8"),
                 call().decode().split(),
-                call(["hg", "files", "--include", "**.pyre_configuration.local"]),
+                call(
+                    ["hg", "files", "--include", "**.pyre_configuration.local"],
+                    stderr=subprocess.DEVNULL,
+                ),
             ]
         )
