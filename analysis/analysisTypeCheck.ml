@@ -953,7 +953,6 @@ module State = struct
         in
         forward_expression ~state ~expression:element
 
-
     | Starred starred ->
         begin
           match starred with
