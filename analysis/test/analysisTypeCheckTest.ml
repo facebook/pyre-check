@@ -610,6 +610,15 @@ let test_forward_statement _ =
     "assert isinstance(x, (int, str))"
     ["x", Type.integer];
 
+  (* Raise. *)
+  assert_forward ~errors:[] [] "raise 1" [];
+  assert_forward
+    ~errors:["Undefined name [18]: Global name `undefined` is undefined."]
+    []
+    "raise undefined"
+    [];
+  assert_forward ~errors:[] [] "raise" [];
+
   (* Return. *)
   assert_forward
     ~errors:["Missing return annotation [3]: Returning `int` but no return type is specified."]
