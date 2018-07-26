@@ -1004,7 +1004,7 @@ module State = struct
             } as define);
           _;
         } as state)
-      ~statement:({ Node.location; _} as statement) =
+      ~statement:{ Node.location; value } =
     let instantiate location =
       Location.instantiate ~lookup:(fun hash -> AstSharedMemory.get_path ~hash) location
     in
@@ -1023,7 +1023,7 @@ module State = struct
       else
         annotation
     in
-    match Node.value statement with
+    match value with
     | Assign ({
         Assign.target;
         annotation = explicit_annotation;
