@@ -268,35 +268,6 @@ let assert_forward precondition statement postcondition =
 
 
 let test_forward_expression _ =
-  ()
-
-
-let test_forward_statement _ =
-  ()
-
-
-let test_forward _ =
-  assert_forward ["y", Type.integer] "pass" ["y", Type.integer];
-
-  (* Assignments. *)
-  assert_forward ["y", Type.integer] "x = y" ["x", Type.integer; "y", Type.integer];
-  assert_forward ["y", Type.integer] "x = z" ["x", Type.Top; "y", Type.integer];
-
-  assert_forward ["x", Type.integer] "x += 1" ["x", Type.integer];
-
-  assert_forward
-    ["z", Type.integer]
-    "x = y = z"
-    ["x", Type.integer; "y", Type.integer; "z", Type.integer];
-
-  assert_forward
-    ["c", Type.integer; "d", Type.Top]
-    "a, b = c, d"
-    ["a", Type.integer; "b", Type.Top; "c", Type.integer; "d", Type.Top];
-
-  (* Here be dragons... *)
-  assert_forward ["z", Type.integer] "x, y = z" ["x", Type.Top; "y", Type.Top; "z", Type.integer];
-
   (* Literals. *)
   assert_forward [] "x = 1.0" ["x", Type.float];
   assert_forward [] "x = 'string'" ["x", Type.string];
@@ -338,41 +309,12 @@ let test_forward _ =
   assert_forward
     [] "x = 'hi' or 1" ["x", Type.union [Type.string; Type.integer]];
 
-
   (* Comparison operator. *)
   assert_forward [] "x = 'a' < 1" ["x", Type.float];
   assert_forward [] "x = 'a' != 1" ["x", Type.integer];
   assert_forward [] "x = 1 < 1" ["x", Type.integer];
   assert_forward [] "x = 'a' < 1 < 3" ["x", Type.integer];
   assert_forward [] "x = 'a' < 1 != 3" ["x", Type.Bottom]; (* Contradiction. *)
-
-
-  (* Tuples. *)
-  assert_forward
-    ["y", Type.integer; "z", Type.Top]
-    "x = y, z"
-    ["x", Type.tuple [Type.integer; Type.Top]; "y", Type.integer; "z", Type.Top];
-  assert_forward
-    ["z", Type.tuple [Type.integer; Type.string]]
-    "x, y = z"
-    ["x", Type.integer; "y", Type.string; "z", Type.tuple [Type.integer; Type.string]];
-  assert_forward
-    ["z", Type.Tuple (Type.Unbounded Type.integer)]
-    "x, y = z"
-    ["x", Type.integer; "y", Type.integer; "z", Type.Tuple (Type.Unbounded Type.integer)];
-  assert_forward
-    []
-    "(x, y), z = 1"
-    ["x", Type.Top; "y", Type.Top; "z", Type.Top];
-  assert_forward
-    ["z", Type.list Type.integer]
-    "x, y = z"
-    ["x", Type.integer; "y", Type.integer; "z", Type.list Type.integer];
-  assert_forward
-    []
-    "x, y = return_tuple()"
-    ["x", Type.integer; "y", Type.integer;];
-  assert_forward [] "x = ()" ["x", Type.Tuple (Type.Unbounded Type.Object)];
 
   (* Unary operator. *)
   assert_forward [] "x = -1.0" ["x", Type.float];
@@ -472,17 +414,10 @@ let test_forward _ =
     ["x", Type.awaitable Type.integer]
     "y = await x"
     ["x", Type.awaitable Type.integer; "y", Type.integer];
-
   assert_forward
     ["x", Type.primitive "IsAwaitable"]
     "y = await x"
     ["x", Type.primitive "IsAwaitable"; "y", Type.integer];
-
-  (* Lists of assignments. *)
-  assert_forward
-    ["x", Type.list Type.integer]
-    "[a, b] = x"
-    ["x", Type.list Type.integer; "a", Type.integer; "b", Type.integer];
 
   (* Redirects. *)
   assert_forward
@@ -502,6 +437,68 @@ let test_forward _ =
     "y = identity(x)"
     ["x", Type.Bottom; "y", Type.Bottom] (* Limitation: We're losing y's constraints here. *)
 
+
+let test_forward_statement _ =
+  (* Assignments. *)
+  assert_forward ["y", Type.integer] "x = y" ["x", Type.integer; "y", Type.integer];
+  assert_forward ["y", Type.integer] "x = z" ["x", Type.Top; "y", Type.integer];
+
+  assert_forward ["x", Type.integer] "x += 1" ["x", Type.integer];
+
+  assert_forward
+    ["z", Type.integer]
+    "x = y = z"
+    ["x", Type.integer; "y", Type.integer; "z", Type.integer];
+
+  assert_forward
+    ["c", Type.integer; "d", Type.Top]
+    "a, b = c, d"
+    ["a", Type.integer; "b", Type.Top; "c", Type.integer; "d", Type.Top];
+
+  (* Here be dragons... *)
+  assert_forward ["z", Type.integer] "x, y = z" ["x", Type.Top; "y", Type.Top; "z", Type.integer];
+
+  (* Assignments with tuples. *)
+  assert_forward
+    ["y", Type.integer; "z", Type.Top]
+    "x = y, z"
+    ["x", Type.tuple [Type.integer; Type.Top]; "y", Type.integer; "z", Type.Top];
+  assert_forward
+    ["z", Type.tuple [Type.integer; Type.string]]
+    "x, y = z"
+    ["x", Type.integer; "y", Type.string; "z", Type.tuple [Type.integer; Type.string]];
+  assert_forward
+    ["z", Type.Tuple (Type.Unbounded Type.integer)]
+    "x, y = z"
+    ["x", Type.integer; "y", Type.integer; "z", Type.Tuple (Type.Unbounded Type.integer)];
+  assert_forward
+    []
+    "(x, y), z = 1"
+    ["x", Type.Top; "y", Type.Top; "z", Type.Top];
+  assert_forward
+    ["z", Type.list Type.integer]
+    "x, y = z"
+    ["x", Type.integer; "y", Type.integer; "z", Type.list Type.integer];
+  assert_forward
+    []
+    "x, y = return_tuple()"
+    ["x", Type.integer; "y", Type.integer;];
+  assert_forward [] "x = ()" ["x", Type.Tuple (Type.Unbounded Type.Object)];
+
+  (* Assignments with list. *)
+  assert_forward
+    ["x", Type.list Type.integer]
+    "[a, b] = x"
+    ["x", Type.list Type.integer; "a", Type.integer; "b", Type.integer];
+
+  (* Assert. *)
+  assert_forward ["x", Type.optional Type.integer] "assert x" ["x", Type.integer];
+
+  assert_forward ["y", Type.integer] "pass" ["y", Type.integer]
+
+
+let test_forward _ =
+  ()
 
 
 let test_forward_immutables _ =
