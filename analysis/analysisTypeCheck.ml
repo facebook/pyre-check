@@ -23,7 +23,6 @@ module TypeOrder = AnalysisTypeOrder
 module Coverage = AnalysisCoverage
 
 
-
 module State = struct
   type nested_define = Define.t
 
