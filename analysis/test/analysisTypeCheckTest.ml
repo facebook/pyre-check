@@ -461,27 +461,38 @@ let test_forward_statement _ =
   let assert_forward
       ?(precondition_immutables = [])
       ?(postcondition_immutables = [])
+      ?expected_return
+      ?errors
       precondition
       statement
       postcondition =
-    let parsed =
-      parse statement
-      |> function
-      | { Source.statements = statement::rest; _ } -> statement::rest
-      | _ -> failwith "unable to parse test"
+    let forwarded =
+      let parsed =
+        parse statement
+        |> function
+        | { Source.statements = statement::rest; _ } -> statement::rest
+        | _ -> failwith "unable to parse test"
+      in
+      List.fold
+        ~f:(fun state statement -> State.forward_statement ~state ~statement)
+        ~init:(create ?expected_return ~immutables:precondition_immutables precondition)
+        parsed
     in
-    assert_state_equal
-      (create ~immutables:postcondition_immutables postcondition)
-      (List.fold
-         ~f:(fun state statement -> State.forward_statement ~state ~statement)
-         ~init:(create ~immutables:precondition_immutables precondition)
-         parsed)
+    assert_state_equal (create ~immutables:postcondition_immutables postcondition) forwarded;
+    match errors with
+    | Some errors ->
+        assert_equal
+          ~cmp:(List.equal ~equal:String.equal)
+          ~printer:(String.concat ~sep:"\n")
+          errors
+          (State.errors forwarded |> List.map ~f:(Error.description ~detailed:false))
+    | _ ->
+        ()
   in
 
   (* Assignments. *)
   assert_forward ["y", Type.integer] "x = y" ["x", Type.integer; "y", Type.integer];
   assert_forward ["y", Type.integer] "x = z" ["x", Type.Top; "y", Type.integer];
-
   assert_forward ["x", Type.integer] "x += 1" ["x", Type.integer];
 
   assert_forward
@@ -598,6 +609,20 @@ let test_forward_statement _ =
     ["x", Type.integer]
     "assert isinstance(x, (int, str))"
     ["x", Type.integer];
+
+  (* Return. *)
+  assert_forward
+    ~errors:["Missing return annotation [3]: Returning `int` but no return type is specified."]
+    []
+    "return 1"
+    [];
+  assert_forward ~expected_return:Type.integer ~errors:[] [] "return 1" [];
+  assert_forward
+    ~expected_return:Type.string
+    ~errors:["Incompatible return type [7]: Expected `str` but got `int`."]
+    []
+    "return 1"
+    [];
 
   (* Pass. *)
   assert_forward ["y", Type.integer] "pass" ["y", Type.integer]
