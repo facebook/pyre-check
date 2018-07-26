@@ -119,16 +119,7 @@ let assert_sources ~source ~expect:{ define_name; returns; _ } =
         returned_sources
 
 
-let test_model _ =
-  let expect_source_taint =
-    ForwardState.assign
-      ~root:AccessPath.Root.LocalResult
-      ~path:[]
-      (ForwardTaint.singleton TestSource
-       |> ForwardState.make_leaf)
-      ForwardState.empty
-  in
-  let stub = "def taint() -> TaintSource[TestSource]: ..." in
+let assert_model expect_source_taint stub =
   let () = add_model stub in
   let call_target = `RealTarget (Access.create "taint") in
   let taint_model = Fixpoint.get_model call_target >>= Result.get_model Taint.Result.kind in
@@ -139,6 +130,21 @@ let test_model _ =
       Taint.Result.empty_model with
       forward = { source_taint = expect_source_taint }
     }
+
+
+let test_models _ =
+  let expect_source_taint root =
+    ForwardState.assign
+      ~root
+      ~path:[]
+      (ForwardTaint.singleton TestSource
+       |> ForwardState.make_leaf)
+      ForwardState.empty
+  in
+
+  let stub = "def taint() -> TaintSource[TestSource]: ..." in
+  let return_taint = expect_source_taint Taint.AccessPath.Root.LocalResult in
+  assert_model return_taint stub
 
 
 let test_simple_source _ =
@@ -176,7 +182,7 @@ let test_local_copy _ =
 
 let () =
   "taint">:::[
-    "model">::test_model;
+    "models">::test_models;
     "simple">::test_simple_source;
     "copy">::test_local_copy;
   ]
