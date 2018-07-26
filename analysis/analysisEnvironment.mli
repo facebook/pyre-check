@@ -43,7 +43,7 @@ module type Handler = sig
     -> ?name_override: Access.t
     -> (Define.t Node.t)
     -> unit
-  val register_dependency: path: string -> dependency: string -> unit
+  val register_dependency: path: string -> dependency: Access.t -> unit
   val register_global: path: string -> access: Access.t -> global: Resolution.global -> unit
   val update_class_definition: primitive: Type.t -> definition: Class.t -> unit
   val connect_definition
@@ -75,7 +75,7 @@ module type Handler = sig
   val in_class_definition_keys: Type.t -> bool
   val aliases: Type.t -> Type.t option
   val globals: Access.t -> Resolution.global option
-  val dependencies: string -> string list option
+  val dependencies: Access.t -> string list option
 
   val mode: string -> Source.mode option
 
@@ -94,7 +94,7 @@ val resolution
   -> unit
   -> Resolution.t
 
-val dependencies: (module Handler) -> string -> string list option
+val dependencies: (module Handler) -> Access.t -> string list option
 
 val connect_definition
   :  order: (module TypeOrder.Handler)

@@ -415,8 +415,8 @@ let shared_memory_handler
       let register_dependency ~path ~dependency =
         Log.log
           ~section:`Dependencies
-          "Adding dependency from %s to %s"
-          dependency
+          "Adding dependency from %a to %s"
+          Expression.Access.pp dependency
           path;
         DependencyHandler.add_dependent ~path dependency
 

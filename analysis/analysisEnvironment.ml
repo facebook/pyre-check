@@ -42,7 +42,7 @@ module type Handler = sig
     -> ?name_override: Access.t
     -> (Define.t Node.t)
     -> unit
-  val register_dependency: path: string -> dependency: string -> unit
+  val register_dependency: path: string -> dependency: Access.t -> unit
   val register_global: path: string -> access: Access.t -> global: Resolution.global -> unit
   val update_class_definition: primitive: Type.t -> definition: Class.t -> unit
   val connect_definition
@@ -74,7 +74,7 @@ module type Handler = sig
   val in_class_definition_keys: Type.t -> bool
   val aliases: Type.t -> Type.t option
   val globals: Access.t -> Resolution.global option
-  val dependencies: string -> string list option
+  val dependencies: Access.t -> string list option
 
   val mode: string -> Source.mode option
 
@@ -229,8 +229,8 @@ let handler
     let register_dependency ~path ~dependency =
       Log.log
         ~section:`Dependencies
-        "Adding dependency from %s to %s"
-        dependency
+        "Adding dependency from %a to %s"
+        Access.pp dependency
         path;
       DependencyHandler.add_dependent ~path dependency
 
@@ -820,48 +820,11 @@ let register_dependencies
       let statement { Source.path; _ } _ = function
         | { Node.value = Import { Import.from; imports }; _ } ->
             let imports =
-              let path_of_import access =
-                let path =
-                  let path =
-                    Handler.module_definition access
-                    >>= Module.path
-                    >>| fun relative ->
-                    Path.create_relative ~root:source_root ~relative
-                  in
-                  match path with
-                  | Some path ->
-                      path
-                  | None ->
-                      let show_identifier = function
-                        | Access.Identifier identifier ->
-                            Identifier.show identifier
-                        | access -> Access.show_access Expression.pp access
-                      in
-                      Format.sprintf "%s.py"
-                        (access
-                         |> List.map ~f:show_identifier
-                         |> List.fold ~init:(Path.absolute source_root) ~f:(^/))
-                      |> (fun relative -> Path.create_relative ~root:source_root ~relative)
-                in
-                if Path.file_exists path || not check_dependency_exists then
-                  Path.relative path
-                else
-                  begin
-                    Log.log
-                      ~section:`Dependencies
-                      "Import path not found in %s"
-                      (Path.absolute path);
-                    None
-                  end
-              in
-              let import_accesses =
-                match from with
-                (* If analyzing from x import y, only add x to the dependencies.
-                   Otherwise, add all dependencies. *)
-                | None -> imports |> List.map ~f:(fun { Import.name; _ } -> name)
-                | Some base_module -> [base_module]
-              in
-              List.filter_map ~f:path_of_import import_accesses
+              match from with
+              (* If analyzing from x import y, only add x to the dependencies.
+                 Otherwise, add all dependencies. *)
+              | None -> imports |> List.map ~f:(fun { Import.name; _ } -> name)
+              | Some base_module -> [base_module]
             in
             List.iter
               ~f:(fun dependency -> Handler.register_dependency ~path ~dependency)

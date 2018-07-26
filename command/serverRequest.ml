@@ -102,8 +102,12 @@ let rec process_request
               "Handling type check request for files %a"
               Sexp.pp
               (sexp_of_list sexp_of_string update_environment_with);
+            let get_dependencies path =
+              let qualifier = Ast.Source.qualifier ~path in
+              Handler.dependencies qualifier
+            in
             Dependencies.of_list
-              ~get_dependencies:(Handler.dependencies)
+              ~get_dependencies
               ~paths:update_environment_with
             |> Fn.flip Set.diff (String.Set.of_list check)
             |> Set.to_list

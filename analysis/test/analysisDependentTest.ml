@@ -7,6 +7,7 @@ open OUnit2
 
 open Analysis
 open Ast
+open Expression
 
 open Test
 
@@ -57,102 +58,92 @@ let test_index _ =
   assert_table_contains_key alias_keys (primitive "_T")
 
 
+let add_dependent table path dependent =
+  let source = Source.qualifier ~path in
+  match Hashtbl.find table source with
+  | None -> Hashtbl.set table ~key:source ~data:[dependent]
+  | Some dependents -> Hashtbl.set table ~key:source ~data:(dependent :: dependents)
+
+
+let get_dependencies (module Handler: Environment.Handler) path =
+  Handler.dependencies (Source.qualifier ~path)
+
+
 let test_dependent_of_list _ =
-  let table = String.Table.create () in
-  let add_dependent source dependent =
-    match Hashtbl.find table source with
-    | None -> Hashtbl.set table ~key:source ~data:[dependent]
-    | Some dependents -> Hashtbl.set table ~key:source ~data:(dependent :: dependents)
-  in
+  let table = Access.Table.create () in
   let environment = Environment.Builder.create () in
   let dependencies =
     { environment.Environment.dependencies with Dependencies.dependents = table }
   in
   let environment = { environment with Environment.dependencies } in
-  let (module Handler: Environment.Handler) =
-    Environment.handler ~configuration environment
-  in
-  add_dependent "b.py" "a.py";
-  add_dependent "c.py" "a.py";
-  add_dependent "c.py" "b.py";
-  add_dependent "a.py" "test.py";
+  let get_dependencies = get_dependencies (Environment.handler ~configuration environment) in
+  add_dependent table "b.py" "a.py";
+  add_dependent table "c.py" "a.py";
+  add_dependent table "c.py" "b.py";
+  add_dependent table "a.py" "test.py";
   assert_equal
     ~cmp:String.Set.equal
     (String.Set.of_list ["a.py"])
-    (Dependencies.of_list ~paths:["b.py"; "c.py"] ~get_dependencies:Handler.dependencies);
+    (Dependencies.of_list ~paths:["b.py"; "c.py"] ~get_dependencies);
   assert_equal
     ~cmp:String.Set.equal
     (String.Set.of_list ["test.py"])
-    (Dependencies.of_list ~paths:["a.py"] ~get_dependencies:Handler.dependencies);
+    (Dependencies.of_list ~paths:["a.py"] ~get_dependencies);
   assert_equal
     ~cmp:String.Set.equal
     (String.Set.of_list ["a.py"; "b.py"])
-    (Dependencies.of_list ~paths:["c.py"] ~get_dependencies:Handler.dependencies);
+    (Dependencies.of_list ~paths:["c.py"] ~get_dependencies);
   assert_equal
     ~cmp:String.Set.equal
     (String.Set.of_list [])
-    (Dependencies.of_list ~paths:["test.py"] ~get_dependencies:Handler.dependencies)
+    (Dependencies.of_list ~paths:["test.py"] ~get_dependencies)
 
 
 let test_transitive_dependent_of_list _ =
-  let table = String.Table.create () in
-  let add_dependent source dependent =
-    match Hashtbl.find table source with
-    | None -> Hashtbl.set table ~key:source ~data:[dependent]
-    | Some dependents -> Hashtbl.set table ~key:source ~data:(dependent :: dependents)
-  in
+  let table = Access.Table.create () in
   let environment = Environment.Builder.create () in
   let dependencies =
     { environment.Environment.dependencies with Dependencies.dependents = table }
   in
   let environment = { environment with Environment.dependencies } in
-  let (module Handler: Environment.Handler) =
-    Environment.handler ~configuration environment
-  in
-  add_dependent "b.py" "a.py";
-  add_dependent "c.py" "a.py";
-  add_dependent "c.py" "b.py";
-  add_dependent "a.py" "test.py";
+  let get_dependencies = get_dependencies (Environment.handler ~configuration environment) in
+  add_dependent table "b.py" "a.py";
+  add_dependent table "c.py" "a.py";
+  add_dependent table "c.py" "b.py";
+  add_dependent table "a.py" "test.py";
   assert_equal
     ~cmp:String.Set.equal
     (String.Set.of_list ["a.py"; "test.py"])
     (Dependencies.transitive_of_list
        ~paths:["b.py"; "c.py"]
-       ~get_dependencies:Handler.dependencies);
+       ~get_dependencies);
   assert_equal
     ~cmp:String.Set.equal
     (String.Set.of_list ["a.py"; "b.py"; "test.py"])
-    (Dependencies.transitive_of_list ~paths:["c.py"] ~get_dependencies:Handler.dependencies);
+    (Dependencies.transitive_of_list ~paths:["c.py"] ~get_dependencies);
   assert_equal
     ~cmp:String.Set.equal
     (String.Set.of_list [])
-    (Dependencies.transitive_of_list ~paths:["test.py"] ~get_dependencies:Handler.dependencies)
+    (Dependencies.transitive_of_list ~paths:["test.py"] ~get_dependencies)
 
 
 let test_transitive_dependents _ =
-  let table = String.Table.create () in
+  let table = Access.Table.create () in
   let environment = Environment.Builder.create () in
   let dependencies =
     { environment.Environment.dependencies with Dependencies.dependents = table }
   in
   let environment = { environment with Environment.dependencies } in
-  let (module Handler: Environment.Handler) =
-    Environment.handler ~configuration environment
-  in
-  let add_dependency source dependency =
-    match Hashtbl.find table source with
-    | None -> Hashtbl.set table ~key:source ~data:[dependency]
-    | Some dependencies -> Hashtbl.set table ~key:source ~data:(dependency :: dependencies)
-  in
-  add_dependency "b.py" "a.py";
-  add_dependency "c.py" "a.py";
-  add_dependency "c.py" "b.py";
-  add_dependency "a.py" "test.py";
+  add_dependent table "b.py" "a.py";
+  add_dependent table "c.py" "a.py";
+  add_dependent table "c.py" "b.py";
+  add_dependent table "a.py" "test.py";
+  let get_dependencies = get_dependencies (Environment.handler ~configuration environment) in
   assert_equal
     ~cmp:String.Set.equal
     ~printer:(fun set -> Set.to_list set |> String.concat ~sep:",")
     (String.Set.of_list ["a.py"; "b.py"; "test.py"])
-    (Dependencies.transitive ~get_dependencies:Handler.dependencies ~path:"c.py")
+    (Dependencies.transitive ~get_dependencies ~path:"c.py")
 
 
 let () =

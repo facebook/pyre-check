@@ -5,6 +5,8 @@
 
 open Core
 
+open Pyre
+
 open Ast
 open Expression
 
@@ -16,12 +18,12 @@ type index = {
   class_keys: (Type.t Hash_set.t) String.Table.t;
   alias_keys: (Type.t Hash_set.t) String.Table.t;
   global_keys: (Access.t Hash_set.t) String.Table.t;
-  dependent_keys: (string Hash_set.t) String.Table.t;
+  dependent_keys: (Access.t Hash_set.t) String.Table.t;
 }
 
 type t = {
   index: index;
-  dependents: (string list) String.Table.t;
+  dependents: (Path.path list) Access.Table.t;
 }
 
 module type Handler = sig
@@ -29,17 +31,17 @@ module type Handler = sig
   val add_class_key: path: string -> Type.t -> unit
   val add_alias_key: path: string -> Type.t -> unit
   val add_global_key: path: string -> Access.t -> unit
-  val add_dependent_key: path: string -> string -> unit
+  val add_dependent_key: path: string -> Access.t -> unit
 
-  val add_dependent: path: string -> string -> unit
+  val add_dependent: path: string -> Access.t -> unit
 
-  val dependents: string -> (string list) option
+  val dependents: Access.t -> (Path.path list) option
 
   val get_function_keys: path: string -> Access.t list
   val get_class_keys: path: string -> Type.t list
   val get_alias_keys: path: string -> Type.t list
   val get_global_keys: path: string -> Access.t list
-  val get_dependent_keys: path: string -> string list
+  val get_dependent_keys: path: string -> Access.t list
 
   val clear_keys_batch: string list -> unit
 
