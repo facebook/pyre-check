@@ -252,22 +252,41 @@ let test_widen _ =
     (create ["x", Type.Top])
 
 
-let assert_forward precondition statement postcondition =
-  let parsed =
-    parse statement
-    |> function
-    | { Source.statements = statement::rest; _ } -> statement::rest
-    | _ -> failwith "unable to parse test"
-  in
-  assert_state_equal
-    (create postcondition)
-    (List.fold
-       ~f:(fun state statement -> State.forward ~key:0 state ~statement)
-       ~init:(create precondition)
-       parsed)
-
-
 let test_forward_expression _ =
+  let assert_forward precondition statement postcondition =
+    let parsed =
+      parse statement
+      |> function
+      | { Source.statements = statement::rest; _ } -> statement::rest
+      | _ -> failwith "unable to parse test"
+    in
+    (* TODO(T30448045): Call `forward_expression`. *)
+    assert_state_equal
+      (create postcondition)
+      (List.fold
+         ~f:(fun state statement -> State.forward ~key:0 state ~statement)
+         ~init:(create precondition)
+         parsed)
+  in
+
+  (* Access. *)
+  assert_forward
+    ["x", Type.dictionary ~key:Type.Bottom ~value:Type.Bottom]
+    "x.add_key(1)"
+    ["x", Type.dictionary ~key:Type.integer ~value:Type.Bottom];
+  assert_forward
+    ["x", Type.dictionary ~key:Type.Bottom ~value:Type.Bottom]
+    "x.add_value(1)"
+    ["x", Type.dictionary ~key:Type.Bottom ~value:Type.integer];
+  assert_forward
+    ["x", Type.dictionary ~key:Type.Bottom ~value:Type.Bottom]
+    "x.add_both(1, 'string')"
+    ["x", Type.dictionary ~key:Type.integer ~value:Type.string];
+  assert_forward
+    ["x", Type.dictionary ~key:Type.string ~value:Type.Bottom]
+    "x.add_key(1)"
+    ["x", Type.dictionary ~key:Type.string ~value:Type.Bottom]; (* We're not yet joining. *)
+
   (* Literals. *)
   assert_forward [] "x = 1.0" ["x", Type.float];
   assert_forward [] "x = 'string'" ["x", Type.string];
@@ -439,6 +458,21 @@ let test_forward_expression _ =
 
 
 let test_forward_statement _ =
+  let assert_forward precondition statement postcondition =
+    let parsed =
+      parse statement
+      |> function
+      | { Source.statements = statement::rest; _ } -> statement::rest
+      | _ -> failwith "unable to parse test"
+    in
+    assert_state_equal
+      (create postcondition)
+      (List.fold
+         ~f:(fun state statement -> State.forward_statement ~state ~statement)
+         ~init:(create precondition)
+         parsed)
+  in
+
   (* Assignments. *)
   assert_forward ["y", Type.integer] "x = y" ["x", Type.integer; "y", Type.integer];
   assert_forward ["y", Type.integer] "x = z" ["x", Type.Top; "y", Type.integer];
@@ -491,17 +525,7 @@ let test_forward_statement _ =
     "[a, b] = x"
     ["x", Type.list Type.integer; "a", Type.integer; "b", Type.integer];
 
-  (* Assert. *)
-  assert_forward ["x", Type.optional Type.integer] "assert x" ["x", Type.integer];
-
-  assert_forward ["y", Type.integer] "pass" ["y", Type.integer]
-
-
-let test_forward _ =
-  ()
-
-
-let test_forward_immutables _ =
+  (* Assignments with immutables. *)
   let assert_forward_immutables
       precondition
       pre_immutables
@@ -537,29 +561,9 @@ let test_forward_immutables _ =
     ["y", false]
     "y: int"
     ["y", Type.integer]
-    ["y", false]
+    ["y", false];
 
-
-let test_forward_infer_free_type_variables _ =
-  assert_forward
-    ["x", Type.dictionary ~key:Type.Bottom ~value:Type.Bottom]
-    "x.add_key(1)"
-    ["x", Type.dictionary ~key:Type.integer ~value:Type.Bottom];
-  assert_forward
-    ["x", Type.dictionary ~key:Type.Bottom ~value:Type.Bottom]
-    "x.add_value(1)"
-    ["x", Type.dictionary ~key:Type.Bottom ~value:Type.integer];
-  assert_forward
-    ["x", Type.dictionary ~key:Type.Bottom ~value:Type.Bottom]
-    "x.add_both(1, 'string')"
-    ["x", Type.dictionary ~key:Type.integer ~value:Type.string];
-  assert_forward
-    ["x", Type.dictionary ~key:Type.string ~value:Type.Bottom]
-    "x.add_key(1)"
-    ["x", Type.dictionary ~key:Type.string ~value:Type.Bottom] (* We're not yet joining. *)
-
-
-let test_forward_assert_optionals _ =
+  (* Assert. *)
   assert_forward
     ["x", Type.optional Type.integer]
     "assert x"
@@ -588,10 +592,8 @@ let test_forward_assert_optionals _ =
   assert_forward
     ["x", Type.optional Type.integer]
     "assert x is None"
-    ["x", Type.optional Type.Bottom]
+    ["x", Type.optional Type.Bottom];
 
-
-let test_forward_assert_isinstance _ =
   assert_forward ["x", Type.Object] "assert isinstance(x, int)" ["x", Type.integer];
   assert_forward
     ["x", Type.Object]
@@ -602,11 +604,32 @@ let test_forward_assert_isinstance _ =
     ["x", Type.Object]
     "assert isinstance(x, (int, str))"
     ["x", Type.union [Type.integer; Type.string]];
-
   assert_forward
     ["x", Type.integer]
     "assert isinstance(x, (int, str))"
-    ["x", Type.integer]
+    ["x", Type.integer];
+
+  (* Pass. *)
+  assert_forward ["y", Type.integer] "pass" ["y", Type.integer]
+
+
+let test_forward _ =
+  let assert_forward precondition statement postcondition =
+    let parsed =
+      parse statement
+      |> function
+      | { Source.statements = statement::rest; _ } -> statement::rest
+      | _ -> failwith "unable to parse test"
+    in
+    assert_state_equal
+      (create postcondition)
+      (List.fold
+         ~f:(fun state statement -> State.forward ~key:0 state ~statement)
+         ~init:(create precondition)
+         parsed)
+  in
+  let _ = assert_forward in
+  ()  (* TODO(T30448045): integration tests. *)
 
 
 let fixpoint_parse source =
@@ -5830,10 +5853,6 @@ let () =
     "forward_expression">::test_forward_expression;
     "forward_statement">::test_forward_statement;
     "forward">::test_forward;
-    "forward_immutables">::test_forward_immutables;
-    "forward_infer_free_type_variables">::test_forward_infer_free_type_variables;
-    "forward_assert_optionals">::test_forward_assert_optionals;
-    "forward_assert_isinstance">::test_forward_assert_isinstance;
     "fixpoint_forward">::test_fixpoint_forward;
     "reveal_type">::test_reveal_type;
     "check_error_traces">::test_show_error_traces;
