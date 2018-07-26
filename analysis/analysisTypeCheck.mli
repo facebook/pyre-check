@@ -71,8 +71,8 @@ module State : sig
   val widening_threshold: int
 
   (* Visible for testing. *)
-  val forward_expression: state: t -> Expression.t -> t
-  val forward_statement: state: t -> Statement.t -> t
+  val forward_expression: state: t -> expression: Expression.t -> t
+  val forward_statement: state: t -> statement: Statement.t -> t
 
   include AnalysisFixpoint.State with type t := t
 end

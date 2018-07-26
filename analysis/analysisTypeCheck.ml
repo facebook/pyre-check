@@ -625,14 +625,19 @@ module State = struct
     }
 
 
-  let rec forward_entry ~state { Dictionary.key; value } =
-    let state = forward_expression ~state key in
-    forward_expression ~state value
+  let rec forward_entry ~state ~entry:{ Dictionary.key; value } =
+    let state = forward_expression ~state ~expression:key in
+    forward_expression ~state ~expression:value
 
 
   and forward_generator
-      state
-      { Comprehension.target; iterator = { Node.location; _ } as iterator; conditions; _ } =
+      ~state
+      ~generator:{
+        Comprehension.target;
+        iterator = { Node.location; _ } as iterator;
+        conditions;
+        _;
+      } =
     (* TODO(T23723699): check async. *)
     (* Propagate the target type information. *)
     let iterator =
@@ -653,12 +658,14 @@ module State = struct
       }
       |> Node.create ~location
     in
-    let state = forward_statement ~state iterator in
+    let state = forward_statement ~state ~statement:iterator in
     List.map ~f:Statement.assume conditions
-    |> List.fold ~init:state ~f:(fun state statement -> forward_statement ~state statement)
+    |> List.fold ~init:state ~f:(fun state statement -> forward_statement ~state ~statement)
 
 
-  and forward_expression ~state:({ resolution; errors; define; _ } as state) { Node.location; value } =
+  and forward_expression
+      ~state:({ resolution; errors; define; _ } as state)
+      ~expression:{ Node.location; value } =
     match value with
     | Access access ->
         let resolution =
@@ -834,16 +841,16 @@ module State = struct
               state
           | Access.Call { Node.value = arguments; _ } ->
               let forward_argument state { Argument.value; _ } =
-                forward_expression ~state value
+                forward_expression ~state ~expression:value
               in
               List.fold arguments ~f:forward_argument ~init:state
           | Access.Expression expression ->
-              forward_expression ~state expression
+              forward_expression ~state ~expression
         in
         List.fold access ~f:forward_access ~init:state
 
     | Await expression ->
-        let state = forward_expression ~state expression in
+        let state = forward_expression ~state ~expression in
         let actual = Annotated.resolve ~resolution expression in
         let is_awaitable =
           Resolution.less_or_equal
@@ -883,28 +890,38 @@ module State = struct
         let state = { state with resolution } in
         List.fold
           ~init:state
-          ~f:(fun state statement -> forward_statement ~state statement)
+          ~f:(fun state statement -> forward_statement ~state ~statement)
           right
 
     | ComparisonOperator { ComparisonOperator.left; right; _ } ->
-        let state = forward_expression ~state left in
+        let state = forward_expression ~state ~expression:left in
         let accumulate state (_, expression) =
-          forward_expression ~state expression
+          forward_expression ~state ~expression
         in
         List.fold right ~f:accumulate ~init:state
 
     | Dictionary { Dictionary.entries; keywords } ->
-        let state = List.fold entries ~f:(fun state -> forward_entry ~state) ~init:state in
+        let state =
+          List.fold
+            entries
+            ~f:(fun state entry -> forward_entry ~state ~entry)
+            ~init:state
+        in
         begin
           match keywords with
           | None -> state
-          | Some keyword -> forward_expression ~state keyword
+          | Some keyword -> forward_expression ~state ~expression:keyword
         end
 
     | DictionaryComprehension { Comprehension.element; generators } ->
         let state = { state with resolution } in
-        let state = List.fold ~f:forward_generator ~init:state generators in
-        forward_entry ~state element
+        let state =
+          List.fold
+            generators
+            ~f:(fun state generator -> forward_generator ~state ~generator)
+            ~init:state
+        in
+        forward_entry ~state ~entry:element
 
     | Lambda { Lambda.body; parameters } ->
         let resolution =
@@ -921,19 +938,27 @@ module State = struct
           in
           List.fold ~f:add_parameter ~init:resolution parameters
         in
-        forward_expression ~state:{ state with resolution } body
+        forward_expression ~state:{ state with resolution } ~expression:body
 
     | List elements
     | Set elements
     | Tuple elements ->
-        List.fold elements ~f:(fun state -> forward_expression ~state) ~init:state
+        List.fold
+          elements
+          ~f:(fun state expression-> forward_expression ~state ~expression)
+          ~init:state
 
     | Generator { Comprehension.element; generators }
     | ListComprehension { Comprehension.element; generators }
     | SetComprehension { Comprehension.element; generators } ->
         let state = { state with resolution } in
-        let state = List.fold ~f:forward_generator ~init:state generators in
-        forward_expression ~state element
+        let state =
+          List.fold
+            generators
+            ~f:(fun state generator -> forward_generator ~state ~generator)
+            ~init:state
+        in
+        forward_expression ~state ~expression:element
 
 
     | Starred starred ->
@@ -941,32 +966,35 @@ module State = struct
           match starred with
           | Starred.Once expression
           | Starred.Twice expression ->
-              forward_expression ~state expression
+              forward_expression ~state ~expression
         end
 
     | String { StringLiteral.kind = StringLiteral.Format expressions; _ } ->
-        List.fold expressions ~f:(fun state -> forward_expression ~state) ~init:state
+        List.fold
+          expressions
+          ~f:(fun state expression -> forward_expression ~state ~expression)
+          ~init:state
 
     | Ternary { Ternary.target; test; alternative } ->
         let state = { state with resolution } in
         let target_state =
-          forward_statement ~state (Statement.assume test)
-          |> fun state -> forward_expression ~state target
+          forward_statement ~state ~statement:(Statement.assume test)
+          |> fun state -> forward_expression ~state ~expression:target
         in
         let alternative_state =
-          forward_statement ~state (Statement.assume (Expression.negate test))
-          |> fun state -> forward_expression ~state alternative
+          forward_statement ~state ~statement:(Statement.assume (Expression.negate test))
+          |> fun state -> forward_expression ~state ~expression:alternative
         in
         join target_state alternative_state
 
     | UnaryOperator { UnaryOperator.operand; operator = _ } ->
-        forward_expression ~state operand
+        forward_expression ~state ~expression:operand
 
     | Expression.Yield yield ->
         begin
           match yield with
           | None -> state
-          | Some expression -> forward_expression ~state expression
+          | Some expression -> forward_expression ~state ~expression
         end
 
     (* Trivial base cases *)
@@ -983,7 +1011,7 @@ module State = struct
             } as define);
           _;
         } as state)
-      ({ Node.location; _} as statement) =
+      ~statement:({ Node.location; _} as statement) =
     let is_assert_function access =
       List.take_while access ~f:(function | Access.Identifier _ -> true | _ -> false)
       |> Access.show
@@ -1008,7 +1036,8 @@ module State = struct
       } as assign) ->
         let { resolution; _ } as state =
           value
-          >>| forward_expression ~state
+          >>| (fun expression -> forward_expression ~state ~expression)
+
           |> Option.value ~default:state
         in
         let state =
@@ -1262,7 +1291,7 @@ module State = struct
             | _ -> true
           in
           if check_target then
-            forward_expression ~state target
+            forward_expression ~state ~expression:target
           else
             state
         in
@@ -1270,7 +1299,7 @@ module State = struct
         |> Annotated.Assign.fold ~resolution ~f:forward_assign ~initial:state
 
     | Assert { Assert.test; _ } ->
-        let { resolution; _ } as state = forward_expression ~state test in
+        let { resolution; _ } as state = forward_expression ~state ~expression:test in
         let resolution =
           match Node.value test with
           | Access [
@@ -1397,13 +1426,13 @@ module State = struct
           | BooleanOperator { BooleanOperator.left; operator; right } ->
               let { resolution; _ } =
                 let update state expression =
-                  forward_statement ~state (Statement.assume expression)
+                  forward_statement ~state ~statement:(Statement.assume expression)
                   |> fun { resolution; _ } -> Resolution.annotations resolution
                 in
                 match operator with
                 | BooleanOperator.And ->
                     let resolution =
-                      forward_statement ~state (Statement.assume left)
+                      forward_statement ~state ~statement:(Statement.assume left)
                       |> fun { resolution; _ } -> resolution
                     in
                     let left = update state left in
@@ -1445,7 +1474,7 @@ module State = struct
                 { Node.value = Access [Access.Identifier identifier; ]; _ }
               ];
             } when Identifier.show identifier = "None" ->
-              let { resolution; _ } = forward_statement ~state (Statement.assume left) in
+              let { resolution; _ } = forward_statement ~state ~statement:(Statement.assume left) in
               resolution
           | ComparisonOperator {
               ComparisonOperator.left = { Node.value = Access access; _ };
@@ -1482,7 +1511,7 @@ module State = struct
           | _ -> None
         in
         List.find_map access ~f:find_assert_test
-        >>| (fun assertion -> forward_statement ~state (Statement.assume assertion))
+        >>| (fun assertion -> forward_statement ~state ~statement:(Statement.assume assertion))
         |> Option.value ~default:state
 
     | Delete _ ->
@@ -1490,7 +1519,7 @@ module State = struct
         state
 
     | Expression expression ->
-        forward_expression ~state expression
+        forward_expression ~state ~expression
 
     | Global identifiers ->
         let resolution =
@@ -1507,7 +1536,7 @@ module State = struct
         { state with resolution }
 
     | Raise (Some expression) ->
-        forward_expression ~state expression
+        forward_expression ~state ~expression
     | Raise _ ->
         state
 
@@ -1553,7 +1582,7 @@ module State = struct
     | Statement.Yield { Node.value = Expression.Yield return; _ } ->
         let state =
           return
-          >>| forward_expression ~state
+          >>| (fun expression -> forward_expression ~state ~expression)
           |> Option.value ~default:state
         in
         let actual =
@@ -1585,7 +1614,7 @@ module State = struct
         state
 
     | YieldFrom { Node.value = Expression.Yield (Some return); _ } ->
-        let state = forward_expression ~state return in
+        let state = forward_expression ~state ~expression:return in
         let actual =
           match Annotated.resolve ~resolution return with
           | Type.Parametric { Type.name; parameters = [parameter] }
@@ -1675,7 +1704,7 @@ module State = struct
       if bottom then
         state
       else
-        forward_statement ~state statement
+        forward_statement ~state ~statement
     in
 
     let terminates_control_flow =
