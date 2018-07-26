@@ -267,6 +267,14 @@ let assert_forward precondition statement postcondition =
        parsed)
 
 
+let test_forward_expression _ =
+  ()
+
+
+let test_forward_statement _ =
+  ()
+
+
 let test_forward _ =
   assert_forward ["y", Type.integer] "pass" ["y", Type.integer];
 
@@ -5822,6 +5830,8 @@ let () =
     "less_or_equal">::test_less_or_equal;
     "join">::test_join;
     "widen">::test_widen;
+    "forward_expression">::test_forward_expression;
+    "forward_statement">::test_forward_statement;
     "forward">::test_forward;
     "forward_immutables">::test_forward_immutables;
     "forward_infer_free_type_variables">::test_forward_infer_free_type_variables;

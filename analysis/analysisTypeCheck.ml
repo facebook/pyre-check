@@ -614,21 +614,384 @@ module State = struct
       }
 
 
-  let rec forward
-      ?key
-      ({
-        resolution;
-        resolution_fixpoint;
-        errors;
-        define = ({ Node.value = { Define.async; _ } as define; _ } as define_node);
-        nested_defines;
-        bottom;
-        _;
-      } as state)
-      ~statement:({ Node.location; _ } as statement) =
+  let instantiate location =
+    Location.instantiate ~lookup:(fun hash -> AstSharedMemory.get_path ~hash) location
+
+
+  let add_error ~state:({ errors; _ } as state) error =
+    {
+      state with
+      errors = Map.set errors ~key:(Location.reference (Error.location error)) ~data:error;
+    }
+
+
+  let rec forward_entry ~state { Dictionary.key; value } =
+    let state = forward_expression ~state key in
+    forward_expression ~state value
+
+
+  and forward_generator
+      state
+      { Comprehension.target; iterator = { Node.location; _ } as iterator; conditions; _ } =
+    (* TODO(T23723699): check async. *)
+    (* Propagate the target type information. *)
+    let iterator =
+      let value =
+        Access (Expression.access iterator @ [
+            Access.Identifier (Identifier.create "__iter__");
+            Access.Call (Node.create ~location []);
+            Access.Identifier (Identifier.create "__next__");
+            Access.Call (Node.create ~location []);
+          ])
+        |> Node.create ~location
+      in
+      Assign {
+        Assign.target;
+        annotation = None;
+        value = Some value;
+        parent = None;
+      }
+      |> Node.create ~location
+    in
+    let state = forward_statement ~state iterator in
+    List.map ~f:Statement.assume conditions
+    |> List.fold ~init:state ~f:(fun state statement -> forward_statement ~state statement)
+
+
+  and forward_expression ~state:({ resolution; errors; define; _ } as state) { Node.location; value } =
+    match value with
+    | Access access ->
+        let resolution =
+          (* Walk through accesses and infer annotations as we go. *)
+          let propagated =
+            let propagate _ ~resolution ~resolved:_ ~element:_ =
+              resolution
+            in
+            Annotated.Access.fold
+              ~resolution
+              ~initial:resolution
+              ~f:propagate
+              (Annotated.Access.create access)
+          in
+          let annotations =
+            let set_mutability ~key ~data =
+              let mutability =
+                Resolution.get_local resolution ~access:key
+                >>| Annotation.mutability
+                |> Option.value ~default:Annotation.Mutable
+              in
+              { data with Annotation.mutability }
+            in
+            Map.mapi ~f:set_mutability (Resolution.annotations propagated)
+          in
+          Resolution.with_annotations resolution ~annotations
+        in
+        let state = { state with resolution } in
+        let state =
+          let open Annotated in
+          let open Access.Element in
+          let forward_access new_errors ~resolution:_ ~resolved:_ ~element =
+            if not (List.is_empty new_errors) then
+              new_errors
+            else
+              match element with
+              | Signature {
+                  signature =
+                    (Signature.NotFound {
+                        Signature.callable = { Type.Callable.kind; _ };
+                        reason = Some reason;
+                        _;
+                      });
+                  _;
+                } ->
+                  let open Signature in
+                  let error =
+                    let callee =
+                      match kind with
+                      | Type.Callable.Named access ->
+                          Some access
+                      | _ ->
+                          None
+                    in
+                    match reason with
+                    | Mismatch mismatch ->
+                        let mismatch, name, position, location =
+                          let { Annotated.Signature.actual; expected; name; position } =
+                            Node.value mismatch
+                          in
+                          { Error.actual; expected }, name, position, (Node.location mismatch)
+                        in
+                        Error.create
+                          ~location
+                          ~kind:
+                            (Error.IncompatibleParameterType {
+                                Error.name =
+                                  (name
+                                   >>| fun name -> Expression.Access.create_from_identifiers [name]);
+                                position;
+                                callee;
+                                mismatch;
+                              })
+                          ~define
+                    | MissingArgument name ->
+                        Error.create
+                          ~location
+                          ~kind:(Error.MissingArgument { Error.callee; name })
+                          ~define
+                    | TooManyArguments { expected; provided } ->
+                        Error.create
+                          ~location
+                          ~kind:(Error.TooManyArguments { Error.callee; expected; provided })
+                          ~define
+                  in
+                  [error]
+
+              | Attribute { attribute; origin; defined } when not defined ->
+                  let open Annotated in
+                  if Location.Reference.equal location Location.Reference.any then
+                    begin
+                      Statistics.event
+                        ~name:"undefined attribute without location"
+                        ~normals:["attribute", (Expression.Access.show attribute)]
+                        ();
+                      []
+                    end
+                  else
+                    let kind =
+                      match origin with
+                      | Instance class_attribute ->
+                          Error.UndefinedAttribute {
+                            Error.attribute;
+                            origin =
+                              Error.Class {
+                                Error.annotation =
+                                  Class.annotation
+                                    ~resolution
+                                    (Attribute.parent class_attribute);
+                                class_attribute = Attribute.class_attribute class_attribute;
+                              };
+                          }
+                      | Module access when not (List.is_empty access) ->
+                          Error.UndefinedAttribute {
+                            Error.attribute;
+                            origin = Error.Module access;
+                          }
+                      | Module _ ->
+                          Error.UndefinedName attribute
+                    in
+                    (Error.create ~location ~kind ~define) :: new_errors
+              | _ ->
+                  new_errors
+          in
+          Access.fold (Access.create access) ~resolution ~initial:[] ~f:forward_access
+          |> List.fold ~init:state ~f:(fun state error -> add_error ~state error)
+        in
+
+        (* Special case reveal_type() and cast(). *)
+        let state =
+          match access with
+          | [
+            Expression.Access.Identifier reveal_type;
+            Expression.Access.Call {
+              Node.location;
+              value = [{ Expression.Argument.value; _ }] };
+          ] when reveal_type = Identifier.create "reveal_type" ->
+              let annotation = Annotated.resolve ~resolution value in
+              Error.create
+                ~location
+                ~kind:(Error.RevealedType { Error.expression = value; annotation })
+                ~define
+              |> add_error ~state
+          | [
+            Expression.Access.Identifier typing;
+            Expression.Access.Identifier cast;
+            Expression.Access.Call {
+              Node.value = [
+                { Expression.Argument.value = cast_annotation; _ };
+                { Expression.Argument.value; _ };
+              ];
+              _;
+            }
+          ] when Identifier.equal typing (Identifier.create "typing") &&
+                 Identifier.equal cast (Identifier.create "cast") ->
+              let cast_annotation = Annotated.resolve ~resolution cast_annotation in
+              let actual_annotation = Annotated.resolve ~resolution value in
+              if Type.is_meta cast_annotation &&
+                 Type.equal (Type.single_parameter cast_annotation) actual_annotation then
+                Error.create
+                  ~location
+                  ~kind:(Error.RedundantCast actual_annotation)
+                  ~define
+                |> add_error ~state
+              else
+                state
+          | _ ->
+              state
+        in
+        let forward_access state access =
+          match access with
+          | Access.Identifier _ ->
+              state
+          | Access.Call { Node.value = arguments; _ } ->
+              let forward_argument state { Argument.value; _ } =
+                forward_expression ~state value
+              in
+              List.fold arguments ~f:forward_argument ~init:state
+          | Access.Expression expression ->
+              forward_expression ~state expression
+        in
+        List.fold access ~f:forward_access ~init:state
+
+    | Await expression ->
+        let state = forward_expression ~state expression in
+        let actual = Annotated.resolve ~resolution expression in
+        let is_awaitable =
+          Resolution.less_or_equal
+            resolution
+            ~left:actual
+            ~right:(Type.awaitable Type.Object)
+        in
+        if not is_awaitable then
+          Error.create
+            ~location
+            ~kind:(Error.IncompatibleAwaitableType actual)
+            ~define
+          |> add_error ~state
+        else
+          state
+
+    | BooleanOperator {
+        BooleanOperator.left;
+        operator;
+        right = ({ Node.location; _ } as right);
+      } ->
+        let right =
+          let assume =
+            match operator with
+            | BooleanOperator.And ->
+                left;
+            | BooleanOperator.Or ->
+                Expression.normalize (Expression.negate left);
+          in
+          [
+            Statement.assume assume;
+            Node.create ~location (Statement.Expression right);
+          ]
+        in
+        (* We only analyze right, as it contains the assumption of `left` as a
+           statement that will be checked. *)
+        let state = { state with resolution } in
+        List.fold
+          ~init:state
+          ~f:(fun state statement -> forward_statement ~state statement)
+          right
+
+    | ComparisonOperator { ComparisonOperator.left; right; _ } ->
+        let state = forward_expression ~state left in
+        let accumulate state (_, expression) =
+          forward_expression ~state expression
+        in
+        List.fold right ~f:accumulate ~init:state
+
+    | Dictionary { Dictionary.entries; keywords } ->
+        let state = List.fold entries ~f:(fun state -> forward_entry ~state) ~init:state in
+        begin
+          match keywords with
+          | None -> state
+          | Some keyword -> forward_expression ~state keyword
+        end
+
+    | DictionaryComprehension { Comprehension.element; generators } ->
+        let state = { state with resolution } in
+        let state = List.fold ~f:forward_generator ~init:state generators in
+        forward_entry ~state element
+
+    | Lambda { Lambda.body; parameters } ->
+        let resolution =
+          let add_parameter resolution { Node.value = { Parameter.name; _ }; _ } =
+            let name =
+              let name = Identifier.show name in
+              String.chop_prefix name ~prefix:"*"
+              |> Option.value ~default:name
+            in
+            Resolution.set_local
+              resolution
+              ~access:(Access.create name)
+              ~annotation:(Annotation.create Type.Object)
+          in
+          List.fold ~f:add_parameter ~init:resolution parameters
+        in
+        forward_expression ~state:{ state with resolution } body
+
+    | List elements
+    | Set elements
+    | Tuple elements ->
+        List.fold elements ~f:(fun state -> forward_expression ~state) ~init:state
+
+    | Generator { Comprehension.element; generators }
+    | ListComprehension { Comprehension.element; generators }
+    | SetComprehension { Comprehension.element; generators } ->
+        let state = { state with resolution } in
+        let state = List.fold ~f:forward_generator ~init:state generators in
+        forward_expression ~state element
+
+
+    | Starred starred ->
+        begin
+          match starred with
+          | Starred.Once expression
+          | Starred.Twice expression ->
+              forward_expression ~state expression
+        end
+
+    | String { StringLiteral.kind = StringLiteral.Format expressions; _ } ->
+        List.fold expressions ~f:(fun state -> forward_expression ~state) ~init:state
+
+    | Ternary { Ternary.target; test; alternative } ->
+        let state = { state with resolution } in
+        let target_state =
+          forward_statement ~state (Statement.assume test)
+          |> fun state -> forward_expression ~state target
+        in
+        let alternative_state =
+          forward_statement ~state (Statement.assume (Expression.negate test))
+          |> fun state -> forward_expression ~state alternative
+        in
+        join target_state alternative_state
+
+    | UnaryOperator { UnaryOperator.operand; operator = _ } ->
+        forward_expression ~state operand
+
+    | Expression.Yield yield ->
+        begin
+          match yield with
+          | None -> state
+          | Some expression -> forward_expression ~state expression
+        end
+
+    (* Trivial base cases *)
+    | Complex _ | Ellipses | False | Float _ | Integer _ | String _ | True ->
+        state
+
+
+  and forward_statement
+      ~state:({
+          resolution;
+          define = ({
+              Node.value = { Define.async; _ } as define_without_location;
+              _;
+            } as define);
+          _;
+        } as state)
+      ({ Node.location; _} as statement) =
+    let is_assert_function access =
+      List.take_while access ~f:(function | Access.Identifier _ -> true | _ -> false)
+      |> Access.show
+      |> Set.mem Recognized.assert_functions
+    in
     let expected =
       let annotation =
-        Annotated.Callable.return_annotation ~define ~resolution
+        Annotated.Callable.return_annotation ~define:define_without_location ~resolution
       in
       if async then
         Resolution.join resolution (Type.awaitable Type.Bottom) annotation
@@ -636,1030 +999,679 @@ module State = struct
       else
         annotation
     in
-
-    let is_assert_function access =
-      List.take_while access ~f:(function | Access.Identifier _ -> true | _ -> false)
-      |> Access.show
-      |> Set.mem Recognized.assert_functions
-    in
-
-    let state =
-      let instantiate location =
-        Location.instantiate ~lookup:(fun hash -> AstSharedMemory.get_path ~hash) location
-      in
-      let add_error ~state:({ errors; _ } as state) error =
-        {
-          state with
-          errors = Map.set errors ~key:(Location.reference (Error.location error)) ~data:error;
-        }
-      in
-
-      let rec forward_entry ~state { Dictionary.key; value } =
-        let state = forward_expression ~state key in
-        forward_expression ~state value
-
-      and forward_generator
-          state
-          { Comprehension.target; iterator = { Node.location; _ } as iterator; conditions; _ } =
-        (* TODO(T23723699): check async. *)
-        (* Propagate the target type information. *)
-        let iterator =
-          let value =
-            Access (Expression.access iterator @ [
-                Access.Identifier (Identifier.create "__iter__");
-                Access.Call (Node.create ~location []);
-                Access.Identifier (Identifier.create "__next__");
-                Access.Call (Node.create ~location []);
-              ])
-            |> Node.create ~location
-          in
-          Assign {
-            Assign.target;
-            annotation = None;
-            value = Some value;
-            parent = None;
-          }
-          |> Node.create ~location
+    match Node.value statement with
+    | Assign ({
+        Assign.target;
+        annotation = explicit_annotation;
+        value;
+        _;
+      } as assign) ->
+        let { resolution; _ } as state =
+          value
+          >>| forward_expression ~state
+          |> Option.value ~default:state
         in
-        let state = forward_statement ~state iterator in
-        List.map ~f:Statement.assume conditions
-        |> List.fold ~init:state ~f:(fun state statement -> forward_statement ~state statement)
-
-      and forward_expression ~state:({ resolution; errors; _ } as state) { Node.location; value } =
-        match value with
-        | Access access ->
-            let resolution =
-              (* Walk through accesses and infer annotations as we go. *)
-              let propagated =
-                let propagate _ ~resolution ~resolved:_ ~element:_ =
-                  resolution
+        let state =
+          let resolution =
+            match target, explicit_annotation with
+            | { Node.value = Access access; _ }, Some annotation ->
+                (* Type annotations override values. *)
+                let annotation =
+                  Resolution.parse_annotation resolution annotation
+                  |> Annotation.create_immutable ~global:false
                 in
-                Annotated.Access.fold
-                  ~resolution
-                  ~initial:resolution
-                  ~f:propagate
-                  (Annotated.Access.create access)
-              in
-              let annotations =
-                let set_mutability ~key ~data =
-                  let mutability =
-                    Resolution.get_local resolution ~access:key
-                    >>| Annotation.mutability
-                    |> Option.value ~default:Annotation.Mutable
-                  in
-                  { data with Annotation.mutability }
-                in
-                Map.mapi ~f:set_mutability (Resolution.annotations propagated)
-              in
-              Resolution.with_annotations resolution ~annotations
-            in
-            let state = { state with resolution } in
-            let state =
-              let open Annotated in
-              let open Access.Element in
-              let forward_access new_errors ~resolution:_ ~resolved:_ ~element =
-                if not (List.is_empty new_errors) then
-                  new_errors
-                else
-                  match element with
-                  | Signature {
-                      signature =
-                        (Signature.NotFound {
-                            Signature.callable = { Type.Callable.kind; _ };
-                            reason = Some reason;
-                            _;
-                          });
-                      _;
-                    } ->
-                      let open Signature in
-                      let error =
-                        let callee =
-                          match kind with
-                          | Type.Callable.Named access ->
-                              Some access
-                          | _ ->
-                              None
-                        in
-                        match reason with
-                        | Mismatch mismatch ->
-                            let mismatch, name, position, location =
-                              let { Annotated.Signature.actual; expected; name; position } =
-                                Node.value mismatch
-                              in
-                              { Error.actual; expected }, name, position, (Node.location mismatch)
-                            in
-                            Error.create
-                              ~location
-                              ~kind:
-                                (Error.IncompatibleParameterType {
-                                    Error.name =
-                                      (name
-                                       >>| fun name -> Expression.Access.create_from_identifiers [name]);
-                                    position;
-                                    callee;
-                                    mismatch;
-                                  })
-                              ~define:define_node
-                        | MissingArgument name ->
-                            Error.create
-                              ~location
-                              ~kind:(Error.MissingArgument { Error.callee; name })
-                              ~define:define_node
-                        | TooManyArguments { expected; provided } ->
-                            Error.create
-                              ~location
-                              ~kind:(Error.TooManyArguments { Error.callee; expected; provided })
-                              ~define:define_node
+                Resolution.set_local resolution ~access ~annotation
+            | _ ->
+                let open Annotated in
+                let open Access.Element in
+                let forward_annotations
+                    ~target
+                    ~value_annotation
+                    state =
+                  let refine ~state:({ resolution; _ } as state) ~target ~value_annotation =
+                    let resolution =
+                      let access = Expression.access target in
+                      let annotation = Map.find (Resolution.annotations resolution) access in
+                      let element =
+                        Access.last_element
+                          ~resolution
+                          (Annotated.Access.create access)
                       in
-                      [error]
-
-                  | Attribute { attribute; origin; defined } when not defined ->
-                      let open Annotated in
-                      if Location.Reference.equal location Location.Reference.any then
-                        begin
-                          Statistics.event
-                            ~name:"undefined attribute without location"
-                            ~normals:["attribute", (Expression.Access.show attribute)]
-                            ();
-                          []
-                        end
-                      else
-                        let kind =
-                          match origin with
-                          | Instance class_attribute ->
-                              Error.UndefinedAttribute {
-                                Error.attribute;
-                                origin =
-                                  Error.Class {
-                                    Error.annotation =
-                                      Class.annotation
-                                        ~resolution
-                                        (Attribute.parent class_attribute);
-                                    class_attribute = Attribute.class_attribute class_attribute;
-                                  };
-                              }
-                          | Module access when not (List.is_empty access) ->
-                              Error.UndefinedAttribute {
-                                Error.attribute;
-                                origin = Error.Module access;
-                              }
-                          | Module _ ->
-                              Error.UndefinedName attribute
-                        in
-                        Error.create ~location ~kind ~define:define_node :: new_errors
+                      let refined =
+                        match annotation, element with
+                        | Some annotation, _ when Annotation.is_immutable annotation ->
+                            Refinement.refine ~resolution annotation value_annotation
+                        | _, Attribute { origin = Instance attribute; defined; _ }
+                          when defined ->
+                            Refinement.refine
+                              ~resolution
+                              (Attribute.annotation attribute)
+                              value_annotation
+                        | _, _ ->
+                            Annotation.create value_annotation
+                      in
+                      Resolution.set_local resolution ~access ~annotation:refined
+                    in
+                    { state with resolution }
+                  in
+                  match Node.value target with
+                  | Tuple targets ->
+                      let rec refine_tuple state target =
+                        match Node.value target with
+                        | Tuple targets -> List.fold targets ~init:state ~f:refine_tuple
+                        | _ -> refine ~state ~target ~value_annotation:Type.Top
+                      in
+                      List.fold targets ~init:state ~f:refine_tuple
                   | _ ->
-                      new_errors
-              in
-              Access.fold (Access.create access) ~resolution ~initial:[] ~f:forward_access
-              |> List.fold ~init:state ~f:(fun state error -> add_error ~state error)
-            in
-
-            (* Special case reveal_type() and cast(). *)
-            let state =
-              match access with
-              | [
-                Expression.Access.Identifier reveal_type;
-                Expression.Access.Call {
-                  Node.location;
-                  value = [{ Expression.Argument.value; _ }] };
-              ] when reveal_type = Identifier.create "reveal_type" ->
-                  let annotation = Annotated.resolve ~resolution value in
-                  Error.create
-                    ~location
-                    ~kind:(Error.RevealedType { Error.expression = value; annotation })
-                    ~define:define_node
-                  |> add_error ~state
-              | [
-                Expression.Access.Identifier typing;
-                Expression.Access.Identifier cast;
-                Expression.Access.Call {
-                  Node.value = [
-                    { Expression.Argument.value = cast_annotation; _ };
-                    { Expression.Argument.value; _ };
-                  ];
-                  _;
-                }
-              ] when Identifier.equal typing (Identifier.create "typing") &&
-                     Identifier.equal cast (Identifier.create "cast") ->
-                  let cast_annotation = Annotated.resolve ~resolution cast_annotation in
-                  let actual_annotation = Annotated.resolve ~resolution value in
-                  if Type.is_meta cast_annotation &&
-                     Type.equal (Type.single_parameter cast_annotation) actual_annotation then
+                      refine ~state ~target ~value_annotation
+                in
+                Assign.create assign
+                |> Assign.fold ~resolution ~f:forward_annotations ~initial:state
+                |> fun { resolution; _ } -> resolution
+          in
+          { state with resolution }
+        in
+        let forward_assign ~target:({ Node.location; _ } as target) ~value_annotation state =
+          let access = Expression.access target in
+          let add_incompatible_type_error ~expected ~parent ~name ~declare_location state =
+            if Resolution.less_or_equal resolution ~left:value_annotation ~right:expected then
+              state
+            else
+              let error =
+                match parent with
+                | Some parent ->
                     Error.create
                       ~location
-                      ~kind:(Error.RedundantCast actual_annotation)
-                      ~define:define_node
-                    |> add_error ~state
-                  else
-                    state
-              | _ ->
-                  state
-            in
-            let forward_access state access =
-              match access with
-              | Access.Identifier _ ->
-                  state
-              | Access.Call { Node.value = arguments; _ } ->
-                  let forward_argument state { Argument.value; _ } =
-                    forward_expression ~state value
-                  in
-                  List.fold arguments ~f:forward_argument ~init:state
-              | Access.Expression expression ->
-                  forward_expression ~state expression
-            in
-            List.fold access ~f:forward_access ~init:state
-
-        | Await expression ->
-            let state = forward_expression ~state expression in
-            let actual = Annotated.resolve ~resolution expression in
-            let is_awaitable =
-              Resolution.less_or_equal
-                resolution
-                ~left:actual
-                ~right:(Type.awaitable Type.Object)
-            in
-            if not is_awaitable then
-              Error.create
-                ~location
-                ~kind:(Error.IncompatibleAwaitableType actual)
-                ~define:define_node
+                      ~kind:(Error.IncompatibleAttributeType {
+                          Error.parent;
+                          incompatible_type = {
+                            Error.name;
+                            mismatch = { Error.expected; actual = value_annotation };
+                            declare_location;
+                          };
+                        })
+                      ~define
+                | None ->
+                    Error.create
+                      ~location
+                      ~kind:(Error.IncompatibleVariableType {
+                          Error.name;
+                          mismatch = { Error.expected; actual = value_annotation };
+                          declare_location;
+                        })
+                      ~define
+              in
+              add_error ~state error
+          in
+          let add_missing_annotation_error
+              ~expected
+              ~parent
+              ~name
+              ~declare_location
+              ({ errors; _ } as state) =
+            if ((Type.is_unknown expected) || (Type.equal expected Type.Object)) &&
+               not (Type.is_unknown value_annotation) then
+              let evidence_location = instantiate location in
+              let error =
+                match parent with
+                | Some parent ->
+                    Error.create
+                      ~location:declare_location
+                      ~kind:(Error.MissingAttributeAnnotation {
+                          Error.parent;
+                          missing_annotation = {
+                            Error.name;
+                            annotation = value_annotation;
+                            evidence_locations = [evidence_location];
+                            due_to_any = Type.equal expected Type.Object;
+                          };
+                        })
+                      ~define
+                | None ->
+                    Error.create
+                      ~location:declare_location
+                      ~kind:(Error.MissingGlobalAnnotation {
+                          Error.name;
+                          annotation = value_annotation;
+                          evidence_locations = [evidence_location];
+                          due_to_any = Type.equal expected Type.Object;
+                        })
+                      ~define
+              in
+              Map.find errors declare_location
+              >>| Error.join ~resolution error
+              |> Option.value ~default:error
               |> add_error ~state
             else
               state
-
-        | BooleanOperator {
-            BooleanOperator.left;
-            operator;
-            right = ({ Node.location; _ } as right);
-          } ->
-            let right =
-              let assume =
-                match operator with
-                | BooleanOperator.And ->
-                    left;
-                | BooleanOperator.Or ->
-                    Expression.normalize (Expression.negate left);
-              in
-              [
-                Statement.assume assume;
-                Node.create ~location (Statement.Expression right);
-              ]
-            in
-            (* We only analyze right, as it contains the assumption of `left` as a
-               statement that will be checked. *)
-            let state = { state with resolution } in
-            List.fold
-              ~init:state
-              ~f:(fun state statement -> forward_statement ~state statement)
-              right
-
-        | ComparisonOperator { ComparisonOperator.left; right; _ } ->
-            let state = forward_expression ~state left in
-            let accumulate state (_, expression) =
-              forward_expression ~state expression
-            in
-            List.fold right ~f:accumulate ~init:state
-
-        | Dictionary { Dictionary.entries; keywords } ->
-            let state = List.fold entries ~f:(fun state -> forward_entry ~state) ~init:state in
-            begin
-              match keywords with
-              | None -> state
-              | Some keyword -> forward_expression ~state keyword
-            end
-
-        | DictionaryComprehension { Comprehension.element; generators } ->
-            let state = { state with resolution } in
-            let state = List.fold ~f:forward_generator ~init:state generators in
-            forward_entry ~state element
-
-        | Lambda { Lambda.body; parameters } ->
-            let resolution =
-              let add_parameter resolution { Node.value = { Parameter.name; _ }; _ } =
+          in
+          let state =
+            let open Annotated in
+            let open Access.Element in
+            match Access.last_element ~resolution (Access.create access) with
+            | Attribute { origin = Instance attribute; defined; _ } when defined ->
+                let expected = Annotation.original (Attribute.annotation attribute) in
                 let name =
-                  let name = Identifier.show name in
-                  String.chop_prefix name ~prefix:"*"
-                  |> Option.value ~default:name
+                  Expression.access
+                    (Node.create_with_default_location (Attribute.name attribute))
                 in
-                Resolution.set_local
-                  resolution
-                  ~access:(Access.create name)
-                  ~annotation:(Annotation.create Type.Object)
-              in
-              List.fold ~f:add_parameter ~init:resolution parameters
-            in
-            forward_expression ~state:{ state with resolution } body
-
-        | List elements
-        | Set elements
-        | Tuple elements ->
-            List.fold elements ~f:(fun state -> forward_expression ~state) ~init:state
-
-        | Generator { Comprehension.element; generators }
-        | ListComprehension { Comprehension.element; generators }
-        | SetComprehension { Comprehension.element; generators } ->
-            let state = { state with resolution } in
-            let state = List.fold ~f:forward_generator ~init:state generators in
-            forward_expression ~state element
-
-
-        | Starred starred ->
-            begin
-              match starred with
-              | Starred.Once expression
-              | Starred.Twice expression ->
-                  forward_expression ~state expression
-            end
-
-        | String { StringLiteral.kind = StringLiteral.Format expressions; _ } ->
-            List.fold expressions ~f:(fun state -> forward_expression ~state) ~init:state
-
-        | Ternary { Ternary.target; test; alternative } ->
-            let state = { state with resolution } in
-            let target_state =
-              forward_statement ~state (Statement.assume test)
-              |> fun state -> forward_expression ~state target
-            in
-            let alternative_state =
-              forward_statement ~state (Statement.assume (Expression.negate test))
-              |> fun state -> forward_expression ~state alternative
-            in
-            join target_state alternative_state
-
-        | UnaryOperator { UnaryOperator.operand; operator = _ } ->
-            forward_expression ~state operand
-
-        | Expression.Yield yield ->
-            begin
-              match yield with
-              | None -> state
-              | Some expression -> forward_expression ~state expression
-            end
-
-        (* Trivial base cases *)
-        | Complex _ | Ellipses | False | Float _ | Integer _ | String _ | True ->
-            state
-
-      and forward_statement ~state:({ resolution; _ } as state) statement =
-        match Node.value statement with
-        | Assign ({
-            Assign.target;
-            annotation = explicit_annotation;
-            value;
-            _;
-          } as assign) ->
-            let { resolution; _ } as state =
-              value
-              >>| forward_expression ~state
-              |> Option.value ~default:state
-            in
-            let state =
-              let resolution =
-                match target, explicit_annotation with
-                | { Node.value = Access access; _ }, Some annotation ->
-                    (* Type annotations override values. *)
-                    let annotation =
-                      Resolution.parse_annotation resolution annotation
-                      |> Annotation.create_immutable ~global:false
-                    in
-                    Resolution.set_local resolution ~access ~annotation
-                | _ ->
-                    let open Annotated in
-                    let open Access.Element in
-                    let forward_annotations
-                        ~target
-                        ~value_annotation
-                        state =
-                      let refine ~state:({ resolution; _ } as state) ~target ~value_annotation =
-                        let resolution =
-                          let access = Expression.access target in
-                          let annotation = Map.find (Resolution.annotations resolution) access in
-                          let element =
-                            Access.last_element
-                              ~resolution
-                              (Annotated.Access.create access)
-                          in
-                          let refined =
-                            match annotation, element with
-                            | Some annotation, _ when Annotation.is_immutable annotation ->
-                                Refinement.refine ~resolution annotation value_annotation
-                            | _, Attribute { origin = Instance attribute; defined; _ }
-                              when defined ->
-                                Refinement.refine
-                                  ~resolution
-                                  (Attribute.annotation attribute)
-                                  value_annotation
-                            | _, _ ->
-                                Annotation.create value_annotation
-                          in
-                          Resolution.set_local resolution ~access ~annotation:refined
-                        in
-                        { state with resolution }
-                      in
-                      match Node.value target with
-                      | Tuple targets ->
-                          let rec refine_tuple state target =
-                            match Node.value target with
-                            | Tuple targets -> List.fold targets ~init:state ~f:refine_tuple
-                            | _ -> refine ~state ~target ~value_annotation:Type.Top
-                          in
-                          List.fold targets ~init:state ~f:refine_tuple
-                      | _ ->
-                          refine ~state ~target ~value_annotation
-                    in
-                    Assign.create assign
-                    |> Assign.fold ~resolution ~f:forward_annotations ~initial:state
-                    |> fun { resolution; _ } -> resolution
-              in
-              { state with resolution }
-            in
-            let forward_assign ~target:({ Node.location; _ } as target) ~value_annotation state =
-              let access = Expression.access target in
-              let add_incompatible_type_error ~expected ~parent ~name ~declare_location state =
-                if Resolution.less_or_equal resolution ~left:value_annotation ~right:expected then
-                  state
-                else
-                  let error =
-                    match parent with
-                    | Some parent ->
-                        Error.create
-                          ~location
-                          ~kind:(Error.IncompatibleAttributeType {
-                              Error.parent;
-                              incompatible_type = {
-                                Error.name;
-                                mismatch = { Error.expected; actual = value_annotation };
-                                declare_location;
-                              };
-                            })
-                          ~define:define_node
-                    | None ->
-                        Error.create
-                          ~location
-                          ~kind:(Error.IncompatibleVariableType {
-                              Error.name;
-                              mismatch = { Error.expected; actual = value_annotation };
-                              declare_location;
-                            })
-                          ~define:define_node
-                  in
-                  add_error ~state error
-              in
-              let add_missing_annotation_error
-                  ~expected
-                  ~parent
-                  ~name
-                  ~declare_location
-                  ({ errors; _ } as state) =
-                if ((Type.is_unknown expected) || (Type.equal expected Type.Object)) &&
-                   not (Type.is_unknown value_annotation) then
-                  let evidence_location = instantiate location in
-                  let error =
-                    match parent with
-                    | Some parent ->
-                        Error.create
-                          ~location:declare_location
-                          ~kind:(Error.MissingAttributeAnnotation {
-                              Error.parent;
-                              missing_annotation = {
-                                Error.name;
-                                annotation = value_annotation;
-                                evidence_locations = [evidence_location];
-                                due_to_any = Type.equal expected Type.Object;
-                              };
-                            })
-                          ~define:define_node
-                    | None ->
-                        Error.create
-                          ~location:declare_location
-                          ~kind:(Error.MissingGlobalAnnotation {
-                              Error.name;
-                              annotation = value_annotation;
-                              evidence_locations = [evidence_location];
-                              due_to_any = Type.equal expected Type.Object;
-                            })
-                          ~define:define_node
-                  in
-                  Map.find errors declare_location
-                  >>| Error.join ~resolution error
-                  |> Option.value ~default:error
-                  |> add_error ~state
-                else
-                  state
-              in
-              let state =
-                let open Annotated in
-                let open Access.Element in
-                match Access.last_element ~resolution (Access.create access) with
-                | Attribute { origin = Instance attribute; defined; _ } when defined ->
-                    let expected = Annotation.original (Attribute.annotation attribute) in
-                    let name =
-                      Expression.access
-                        (Node.create_with_default_location (Attribute.name attribute))
-                    in
-                    state
-                    |> add_incompatible_type_error
-                      ~expected
-                      ~parent:(Some (Attribute.parent attribute))
-                      ~name
-                      ~declare_location:(Attribute.location attribute |> instantiate)
-                    |> add_missing_annotation_error
-                      ~expected
-                      ~parent:(Some (Attribute.parent attribute))
-                      ~name
-                      ~declare_location:(Attribute.location attribute)
-                | Attribute { origin = Instance attribute; defined; _ } when not defined ->
-                    let parent = Attribute.parent attribute in
-                    begin
-                      match Class.body parent with
-                      | { Node.location; _ } :: _ ->
-                          add_missing_annotation_error
-                            ~expected:Type.Top
-                            ~parent:(Some parent)
-                            ~name:(Attribute.access attribute)
-                            ~declare_location:location
-                            state
-                      | _ ->
-                          state
-                    end
-                | _ ->
-                    let name = access in
-                    let location =
-                      Resolution.global resolution access
-                      >>| Node.location
-                      |> Option.value ~default:location
-                    in
-                    let existing_annotation, is_explicit =
-                      match explicit_annotation with
-                      (* Explicit annotations override our existing knowledge of the target's type. *)
-                      | Some annotation ->
-                          Resolution.parse_annotation resolution annotation
-                          |> Annotation.create_immutable ~global:true,
-                          true
-                      | None ->
-                          let resolved =
-                            let default =
-                              Resolution.resolve resolution target
-                              |> Annotation.create
-                            in
-                            Resolution.get_local resolution ~access
-                            |> Option.value ~default
-                          in
-                          resolved , false
-                    in
-                    match existing_annotation with
-                    | {
-                      Annotation.mutability = Annotation.Immutable {
-                          Annotation.scope = Annotation.Global;
-                          original = expected;
-                        };
-                      _;
-                    } ->
-                        let state =
-                          add_incompatible_type_error
-                            ~expected
-                            ~parent:None
-                            ~name
-                            ~declare_location:(instantiate location)
-                            state
-                        in
-                        (* Don't error when encountering an explicit annotation or a type alias. *)
-                        if is_explicit || Type.is_meta value_annotation then
-                          state
-                        else
-                          add_missing_annotation_error
-                            ~expected
-                            ~parent:None
-                            ~declare_location:location
-                            ~name
-                            state
-                    | {
-                      Annotation.mutability = Annotation.Immutable {
-                          Annotation.scope = Annotation.Local;
-                          original = expected;
-                        };
-                      _;
-                    } ->
-                        add_incompatible_type_error
-                          ~expected
-                          ~parent:None
-                          ~name
-                          ~declare_location:(instantiate location)
-                          state
-                    | annotation when Type.is_tuple (Annotation.annotation annotation) ->
-                        add_incompatible_type_error
-                          ~expected:(Annotation.annotation annotation)
-                          ~parent:None
-                          ~name:(Expression.Access.create "left hand side")
-                          ~declare_location:(instantiate location)
-                          state
-                    | _ ->
-                        state
-              in
-              let check_target =
-                match Node.value target with
-                | Access access when List.length access = 1 -> false
-                | Tuple _ -> false
-                | List _ -> false
-                | _ -> true
-              in
-              if check_target then
-                forward_expression ~state target
-              else
                 state
-            in
-            Annotated.Assign.create assign
-            |> Annotated.Assign.fold ~resolution ~f:forward_assign ~initial:state
-
-        | Assert { Assert.test; _ } ->
-            let { resolution; _ } as state = forward_expression ~state test in
-            let resolution =
-              match Node.value test with
-              | Access [
-                  Access.Identifier name;
-                  Access.Call {
-                    Node.value = [
-                      { Argument.name = None; value = { Node.value = Access access; _ } };
-                      { Argument.name = None; value = annotation };
-                    ];
-                    _;
-                  }
-                ] when Identifier.show name = "isinstance" ->
-                  let annotation =
-                    match annotation with
-                    | { Node.value = Tuple elements; _ } ->
-                        Type.Union (List.map ~f:(Resolution.parse_annotation resolution) elements)
-                    | _ ->
-                        Resolution.parse_annotation resolution annotation
-                  in
-                  let updated_annotation =
-                    match Resolution.get_local resolution ~access with
-                    | Some existing_annotation when
-                        Refinement.less_or_equal
-                          ~resolution
-                          existing_annotation
-                          (Annotation.create annotation) ->
-                        existing_annotation
-                    | _ ->
-                        Annotation.create annotation
-                  in
-                  Resolution.set_local
-                    resolution
-                    ~access
-                    ~annotation:updated_annotation
-              | UnaryOperator {
-                  UnaryOperator.operator = UnaryOperator.Not;
-                  operand = {
-                    Node.value =
-                      Access [
-                        Access.Identifier name;
-                        Access.Call {
-                          Node.value = [
-                            { Argument.name = None; value = { Node.value = Access access; _ } };
-                            { Argument.name = None; value = annotation };
-                          ];
-                          _;
-                        };
-                      ];
-                    _;
-                  };
-                } when Identifier.show name = "isinstance" ->
-                  begin
-                    match Resolution.get_local resolution ~access with
-                    | Some { Annotation.annotation = Type.Union parameters; _ } ->
-                        let parameters = Type.Set.of_list parameters in
-                        let constraints =
-                          begin
-                            match annotation with
-                            | { Node.value = Tuple elements; _ } ->
-                                List.map
-                                  ~f:(Resolution.parse_annotation resolution)
-                                  elements
-                            | _ ->
-                                [Resolution.parse_annotation resolution annotation]
-                          end
-                          |> Type.Set.of_list
+                |> add_incompatible_type_error
+                  ~expected
+                  ~parent:(Some (Attribute.parent attribute))
+                  ~name
+                  ~declare_location:(Attribute.location attribute |> instantiate)
+                |> add_missing_annotation_error
+                  ~expected
+                  ~parent:(Some (Attribute.parent attribute))
+                  ~name
+                  ~declare_location:(Attribute.location attribute)
+            | Attribute { origin = Instance attribute; defined; _ } when not defined ->
+                let parent = Attribute.parent attribute in
+                begin
+                  match Class.body parent with
+                  | { Node.location; _ } :: _ ->
+                      add_missing_annotation_error
+                        ~expected:Type.Top
+                        ~parent:(Some parent)
+                        ~name:(Attribute.access attribute)
+                        ~declare_location:location
+                        state
+                  | _ ->
+                      state
+                end
+            | _ ->
+                let name = access in
+                let location =
+                  Resolution.global resolution access
+                  >>| Node.location
+                  |> Option.value ~default:location
+                in
+                let existing_annotation, is_explicit =
+                  match explicit_annotation with
+                  (* Explicit annotations override our existing knowledge of the target's type. *)
+                  | Some annotation ->
+                      Resolution.parse_annotation resolution annotation
+                      |> Annotation.create_immutable ~global:true,
+                      true
+                  | None ->
+                      let resolved =
+                        let default =
+                          Resolution.resolve resolution target
+                          |> Annotation.create
                         in
-                        let constrained =
-                          Set.diff parameters constraints
-                          |> Set.to_list
-                          |> Type.union
-                        in
-                        Resolution.set_local
-                          resolution
-                          ~access
-                          ~annotation:(Annotation.create constrained)
-                    | _ ->
-                        resolution
-                  end
-
-              | Access access ->
-                  let open Annotated in
-                  let open Access.Element in
-                  let element = Access.last_element ~resolution (Access.create access) in
-                  begin
-                    match Resolution.get_local resolution ~access, element with
-                    | Some { Annotation.annotation = Type.Optional parameter; _ }, _ ->
-                        Resolution.set_local
-                          resolution
-                          ~access
-                          ~annotation:(Annotation.create parameter)
-                    | _, Attribute { origin = Instance attribute; defined; _ }
-                      when defined ->
-                        begin
-                          match Attribute.annotation attribute with
-                          | {
-                            Annotation.annotation = Type.Optional parameter;
-                            mutability = Annotation.Mutable
-                          }
-                          | {
-                            Annotation.annotation = _;
-                            mutability = Annotation.Immutable {
-                                Annotation.original = Type.Optional parameter;
-                                _;
-                              };
-                          } ->
-                              let refined =
-                                Refinement.refine
-                                  ~resolution
-                                  (Attribute.annotation attribute)
-                                  parameter
-                              in
-                              Resolution.set_local
-                                resolution
-                                ~access
-                                ~annotation:refined
-                          | _ ->
-                              resolution
-                        end
-                    | _ ->
-                        resolution
-                  end
-
-              | BooleanOperator { BooleanOperator.left; operator; right } ->
-                  let { resolution; _ } =
-                    let update state expression =
-                      forward_statement ~state (Statement.assume expression)
-                      |> fun { resolution; _ } -> Resolution.annotations resolution
-                    in
-                    match operator with
-                    | BooleanOperator.And ->
-                        let resolution =
-                          forward_statement ~state (Statement.assume left)
-                          |> fun { resolution; _ } -> resolution
-                        in
-                        let left = update state left in
-                        let right = update { state with resolution } right in
-                        let merge ~key:_ = function
-                          | `Both (left, right) -> Some (Refinement.meet ~resolution left right)
-                          | `Left left -> Some left
-                          | `Right right -> Some right
-                        in
-                        let annotations = Map.merge ~f:merge left right in
-                        let resolution = Resolution.with_annotations resolution ~annotations in
-                        { state with resolution }
-                    | BooleanOperator.Or ->
-                        let negated_left =
-                          update state (Expression.normalize (Expression.negate left))
-                        in
-                        let resolution =
-                          Resolution.with_annotations resolution ~annotations:negated_left
-                        in
-                        let left = update state left in
-                        let right =
-                          update { state with resolution } right
-                        in
-                        join
-                          {
-                            state with
-                            resolution = Resolution.with_annotations resolution ~annotations:left;
-                          }
-                          {
-                            state with
-                            resolution = Resolution.with_annotations resolution ~annotations:right;
-                          }
-                  in
-                  resolution
-              | ComparisonOperator {
-                  ComparisonOperator.left;
-                  right = [
-                    ComparisonOperator.IsNot,
-                    { Node.value = Access [Access.Identifier identifier; ]; _ }
-                  ];
-                } when Identifier.show identifier = "None" ->
-                  let { resolution; _ } = forward state ~statement:(Statement.assume left) in
-                  resolution
-              | ComparisonOperator {
-                  ComparisonOperator.left = { Node.value = Access access; _ };
-                  right = [
-                    ComparisonOperator.Is,
-                    { Node.value = Access [Access.Identifier identifier; ]; _ }
-                  ];
-                } when Identifier.show identifier = "None" ->
-                  let open Annotated in
-                  let open Access.Element in
-                  let element = Access.last_element ~resolution (Access.create access) in
-                  let refined =
-                    match element with
-                    | Attribute { origin = Instance attribute; defined; _ } when defined ->
-                        Refinement.refine
-                          ~resolution
-                          (Attribute.annotation attribute)
-                          (Type.Optional Type.Bottom)
-                    | _ ->
-                        Annotation.create (Type.Optional Type.Bottom)
-                  in
-                  Resolution.set_local resolution ~access ~annotation:refined
-              | _ ->
-                  resolution
-            in
-            { state with resolution }
-        | Expression { Node.value = Access access; _; } when is_assert_function access ->
-            let find_assert_test access =
-              match access with
-              | Expression.Record.Access.Call {
-                  Node.value = [{ Argument.value = test ; _ }];
+                        Resolution.get_local resolution ~access
+                        |> Option.value ~default
+                      in
+                      resolved , false
+                in
+                match existing_annotation with
+                | {
+                  Annotation.mutability = Annotation.Immutable {
+                      Annotation.scope = Annotation.Global;
+                      original = expected;
+                    };
                   _;
-                } -> Some test
-              | _ -> None
-            in
-            List.find_map access ~f:find_assert_test
-            >>| (fun assertion -> forward state ~statement:(Statement.assume assertion))
-            |> Option.value ~default:state
-
-        | Delete _ ->
-            (* TODO(T26146217): add coverage. *)
+                } ->
+                    let state =
+                      add_incompatible_type_error
+                        ~expected
+                        ~parent:None
+                        ~name
+                        ~declare_location:(instantiate location)
+                        state
+                    in
+                    (* Don't error when encountering an explicit annotation or a type alias. *)
+                    if is_explicit || Type.is_meta value_annotation then
+                      state
+                    else
+                      add_missing_annotation_error
+                        ~expected
+                        ~parent:None
+                        ~declare_location:location
+                        ~name
+                        state
+                | {
+                  Annotation.mutability = Annotation.Immutable {
+                      Annotation.scope = Annotation.Local;
+                      original = expected;
+                    };
+                  _;
+                } ->
+                    add_incompatible_type_error
+                      ~expected
+                      ~parent:None
+                      ~name
+                      ~declare_location:(instantiate location)
+                      state
+                | annotation when Type.is_tuple (Annotation.annotation annotation) ->
+                    add_incompatible_type_error
+                      ~expected:(Annotation.annotation annotation)
+                      ~parent:None
+                      ~name:(Expression.Access.create "left hand side")
+                      ~declare_location:(instantiate location)
+                      state
+                | _ ->
+                    state
+          in
+          let check_target =
+            match Node.value target with
+            | Access access when List.length access = 1 -> false
+            | Tuple _ -> false
+            | List _ -> false
+            | _ -> true
+          in
+          if check_target then
+            forward_expression ~state target
+          else
             state
+        in
+        Annotated.Assign.create assign
+        |> Annotated.Assign.fold ~resolution ~f:forward_assign ~initial:state
 
-        | Expression expression ->
-            forward_expression ~state expression
-
-        | Global identifiers ->
-            let resolution =
-              let access = Access.create_from_identifiers identifiers in
+    | Assert { Assert.test; _ } ->
+        let { resolution; _ } as state = forward_expression ~state test in
+        let resolution =
+          match Node.value test with
+          | Access [
+              Access.Identifier name;
+              Access.Call {
+                Node.value = [
+                  { Argument.name = None; value = { Node.value = Access access; _ } };
+                  { Argument.name = None; value = annotation };
+                ];
+                _;
+              }
+            ] when Identifier.show name = "isinstance" ->
               let annotation =
-                Resolution.resolve resolution (Node.create_with_default_location (Access access))
-                |> Annotation.create_immutable ~global:true
+                match annotation with
+                | { Node.value = Tuple elements; _ } ->
+                    Type.Union (List.map ~f:(Resolution.parse_annotation resolution) elements)
+                | _ ->
+                    Resolution.parse_annotation resolution annotation
+              in
+              let updated_annotation =
+                match Resolution.get_local resolution ~access with
+                | Some existing_annotation when
+                    Refinement.less_or_equal
+                      ~resolution
+                      existing_annotation
+                      (Annotation.create annotation) ->
+                    existing_annotation
+                | _ ->
+                    Annotation.create annotation
               in
               Resolution.set_local
                 resolution
                 ~access
-                ~annotation
-            in
-            { state with resolution }
-
-        | Raise (Some expression) ->
-            forward_expression ~state expression
-        | Raise _ ->
-            state
-
-        | Return { Return.expression; is_implicit } ->
-            let actual =
-              Option.value_map
-                expression
-                ~default:Type.none
-                ~f:(Annotated.resolve ~resolution)
-            in
-            if not (Resolution.less_or_equal resolution ~left:actual ~right:expected) &&
-               not (Define.is_abstract_method define) &&
-               not (Define.is_overloaded_method define) &&
-               not (Type.is_none actual &&
-                    (Annotated.Define.create define |> Annotated.Define.is_generator)) &&
-               not (Type.is_none actual && Type.is_noreturn expected) then
-              let error =
-                Error.create
-                  ~location
-                  ~kind:(Error.IncompatibleReturnType {
-                      Error.mismatch = { Error.expected; actual };
-                      is_implicit;
-                    })
-                  ~define:define_node
-              in
-              add_error ~state error
-            else if Type.equal expected Type.Top || Type.equal expected Type.Object then
-              let error =
-                Error.create
-                  ~location
-                  ~kind:(Error.MissingReturnAnnotation {
-                      Error.annotation = actual;
-                      evidence_locations = [location.Location.start.Location.line];
-                      due_to_any = Type.equal expected Type.Object;
-                    })
-                  ~define:define_node
-              in
-              add_error ~state error
-            else
-              state
-
-        | Statement.Yield { Node.value = Expression.Yield return; _ } ->
-            let state =
-              return
-              >>| forward_expression ~state
-              |> Option.value ~default:state
-            in
-            let actual =
-              Option.value_map return ~default:Type.none ~f:(Annotated.resolve ~resolution)
-              |> Type.generator ~async
-            in
-            if not (Resolution.less_or_equal resolution ~left:actual ~right:expected) then
-              Error.create
-                ~location
-                ~kind:(Error.IncompatibleReturnType {
-                    Error.mismatch = { Error.expected; actual };
-                    is_implicit = false;
-                  })
-                ~define:define_node
-              |> add_error ~state
-            else if Type.equal expected Type.Top || Type.equal expected Type.Object then
-              Error.create
-                ~location
-                ~kind:(Error.MissingReturnAnnotation {
-                    Error.annotation = actual;
-                    evidence_locations = [location.Location.start.Location.line];
-                    due_to_any = Type.equal expected Type.Object;
-                  })
-                ~define:define_node
-              |> add_error ~state
-            else
-              state
-        | Statement.Yield _ ->
-            state
-
-        | YieldFrom { Node.value = Expression.Yield (Some return); _ } ->
-            let state = forward_expression ~state return in
-            let actual =
-              match Annotated.resolve ~resolution return with
-              | Type.Parametric { Type.name; parameters = [parameter] }
-                when Identifier.show name = "typing.Iterator" ->
-                  Type.generator parameter
-              | annotation -> Type.generator annotation
-            in
-            if not (Resolution.less_or_equal resolution ~left:actual ~right:expected) then
-              Error.create
-                ~location
-                ~kind:(Error.IncompatibleReturnType {
-                    Error.mismatch = { Error.expected; actual };
-                    is_implicit = false;
-                  })
-                ~define:define_node
-              |> add_error ~state
-            else if Type.equal expected Type.Top || Type.equal expected Type.Object then
-              Error.create
-                ~location
-                ~kind:(Error.MissingReturnAnnotation {
-                    Error.annotation = actual;
-                    evidence_locations = [location.Location.start.Location.line];
-                    due_to_any = Type.equal expected Type.Object;
-                  })
-                ~define:define_node
-              |> add_error ~state
-            else
-              state
-
-        | Import { Import.from; imports } ->
-            let imports =
-              match from with
-              | Some from -> [from]
-              | None -> List.map imports ~f:(fun { Import.name; _ } -> name)
-            in
-            let to_import_error import =
-              let add_import_error errors ~resolution:_ ~resolved:_ ~element =
-                let open Annotated.Access.Element in
-                match element with
-                | Attribute { origin = Module _; defined = false; _ } ->
-                    Error.create
-                      ~location
-                      ~kind:(Error.UndefinedImport import)
-                      ~define:define_node
-                    :: errors
+                ~annotation:updated_annotation
+          | UnaryOperator {
+              UnaryOperator.operator = UnaryOperator.Not;
+              operand = {
+                Node.value =
+                  Access [
+                    Access.Identifier name;
+                    Access.Call {
+                      Node.value = [
+                        { Argument.name = None; value = { Node.value = Access access; _ } };
+                        { Argument.name = None; value = annotation };
+                      ];
+                      _;
+                    };
+                  ];
+                _;
+              };
+            } when Identifier.show name = "isinstance" ->
+              begin
+                match Resolution.get_local resolution ~access with
+                | Some { Annotation.annotation = Type.Union parameters; _ } ->
+                    let parameters = Type.Set.of_list parameters in
+                    let constraints =
+                      begin
+                        match annotation with
+                        | { Node.value = Tuple elements; _ } ->
+                            List.map
+                              ~f:(Resolution.parse_annotation resolution)
+                              elements
+                        | _ ->
+                            [Resolution.parse_annotation resolution annotation]
+                      end
+                      |> Type.Set.of_list
+                    in
+                    let constrained =
+                      Set.diff parameters constraints
+                      |> Set.to_list
+                      |> Type.union
+                    in
+                    Resolution.set_local
+                      resolution
+                      ~access
+                      ~annotation:(Annotation.create constrained)
                 | _ ->
-                    errors
+                    resolution
+              end
+
+          | Access access ->
+              let open Annotated in
+              let open Access.Element in
+              let element = Access.last_element ~resolution (Access.create access) in
+              begin
+                match Resolution.get_local resolution ~access, element with
+                | Some { Annotation.annotation = Type.Optional parameter; _ }, _ ->
+                    Resolution.set_local
+                      resolution
+                      ~access
+                      ~annotation:(Annotation.create parameter)
+                | _, Attribute { origin = Instance attribute; defined; _ }
+                  when defined ->
+                    begin
+                      match Attribute.annotation attribute with
+                      | {
+                        Annotation.annotation = Type.Optional parameter;
+                        mutability = Annotation.Mutable
+                      }
+                      | {
+                        Annotation.annotation = _;
+                        mutability = Annotation.Immutable {
+                            Annotation.original = Type.Optional parameter;
+                            _;
+                          };
+                      } ->
+                          let refined =
+                            Refinement.refine
+                              ~resolution
+                              (Attribute.annotation attribute)
+                              parameter
+                          in
+                          Resolution.set_local
+                            resolution
+                            ~access
+                            ~annotation:refined
+                      | _ ->
+                          resolution
+                    end
+                | _ ->
+                    resolution
+              end
+
+          | BooleanOperator { BooleanOperator.left; operator; right } ->
+              let { resolution; _ } =
+                let update state expression =
+                  forward_statement ~state (Statement.assume expression)
+                  |> fun { resolution; _ } -> Resolution.annotations resolution
+                in
+                match operator with
+                | BooleanOperator.And ->
+                    let resolution =
+                      forward_statement ~state (Statement.assume left)
+                      |> fun { resolution; _ } -> resolution
+                    in
+                    let left = update state left in
+                    let right = update { state with resolution } right in
+                    let merge ~key:_ = function
+                      | `Both (left, right) -> Some (Refinement.meet ~resolution left right)
+                      | `Left left -> Some left
+                      | `Right right -> Some right
+                    in
+                    let annotations = Map.merge ~f:merge left right in
+                    let resolution = Resolution.with_annotations resolution ~annotations in
+                    { state with resolution }
+                | BooleanOperator.Or ->
+                    let negated_left =
+                      update state (Expression.normalize (Expression.negate left))
+                    in
+                    let resolution =
+                      Resolution.with_annotations resolution ~annotations:negated_left
+                    in
+                    let left = update state left in
+                    let right =
+                      update { state with resolution } right
+                    in
+                    join
+                      {
+                        state with
+                        resolution = Resolution.with_annotations resolution ~annotations:left;
+                      }
+                      {
+                        state with
+                        resolution = Resolution.with_annotations resolution ~annotations:right;
+                      }
               in
-              Annotated.Access.fold
-                ~f:add_import_error
-                ~resolution
-                ~initial:[]
-                (Annotated.Access.create import)
-            in
-            List.concat_map ~f:to_import_error imports
-            |> List.fold ~init:state ~f:(fun state error -> add_error ~state error)
+              resolution
+          | ComparisonOperator {
+              ComparisonOperator.left;
+              right = [
+                ComparisonOperator.IsNot,
+                { Node.value = Access [Access.Identifier identifier; ]; _ }
+              ];
+            } when Identifier.show identifier = "None" ->
+              let { resolution; _ } = forward_statement ~state (Statement.assume left) in
+              resolution
+          | ComparisonOperator {
+              ComparisonOperator.left = { Node.value = Access access; _ };
+              right = [
+                ComparisonOperator.Is,
+                { Node.value = Access [Access.Identifier identifier; ]; _ }
+              ];
+            } when Identifier.show identifier = "None" ->
+              let open Annotated in
+              let open Access.Element in
+              let element = Access.last_element ~resolution (Access.create access) in
+              let refined =
+                match element with
+                | Attribute { origin = Instance attribute; defined; _ } when defined ->
+                    Refinement.refine
+                      ~resolution
+                      (Attribute.annotation attribute)
+                      (Type.Optional Type.Bottom)
+                | _ ->
+                    Annotation.create (Type.Optional Type.Bottom)
+              in
+              Resolution.set_local resolution ~access ~annotation:refined
+          | _ ->
+              resolution
+        in
+        { state with resolution }
+    | Expression { Node.value = Access access; _; } when is_assert_function access ->
+        let find_assert_test access =
+          match access with
+          | Expression.Record.Access.Call {
+              Node.value = [{ Argument.value = test ; _ }];
+              _;
+            } -> Some test
+          | _ -> None
+        in
+        List.find_map access ~f:find_assert_test
+        >>| (fun assertion -> forward_statement ~state (Statement.assume assertion))
+        |> Option.value ~default:state
 
-        | YieldFrom _ ->
-            state
+    | Delete _ ->
+        (* TODO(T26146217): add coverage. *)
+        state
 
-        | Class _ | Define _ ->
-            (* Don't check accesses in nested classes and functions, they're analyzed
-               separately. *)
-            state
+    | Expression expression ->
+        forward_expression ~state expression
 
-        | For _  | If _ | Try _ | With _ | While _ ->
-            (* Check happens implicitly in the resulting control flow. *)
-            state
+    | Global identifiers ->
+        let resolution =
+          let access = Access.create_from_identifiers identifiers in
+          let annotation =
+            Resolution.resolve resolution (Node.create_with_default_location (Access access))
+            |> Annotation.create_immutable ~global:true
+          in
+          Resolution.set_local
+            resolution
+            ~access
+            ~annotation
+        in
+        { state with resolution }
 
-        | Break | Continue | Nonlocal _ | Pass ->
-            state
-      in
+    | Raise (Some expression) ->
+        forward_expression ~state expression
+    | Raise _ ->
+        state
 
+    | Return { Return.expression; is_implicit } ->
+        let actual =
+          Option.value_map
+            expression
+            ~default:Type.none
+            ~f:(Annotated.resolve ~resolution)
+        in
+        if not (Resolution.less_or_equal resolution ~left:actual ~right:expected) &&
+           not (Define.is_abstract_method define_without_location) &&
+           not (Define.is_overloaded_method define_without_location) &&
+           not (Type.is_none actual &&
+                (Annotated.Define.create define_without_location
+                |> Annotated.Define.is_generator)) &&
+           not (Type.is_none actual && Type.is_noreturn expected) then
+          let error =
+            Error.create
+              ~location
+              ~kind:(Error.IncompatibleReturnType {
+                  Error.mismatch = { Error.expected; actual };
+                  is_implicit;
+                })
+              ~define
+          in
+          add_error ~state error
+        else if Type.equal expected Type.Top || Type.equal expected Type.Object then
+          let error =
+            Error.create
+              ~location
+              ~kind:(Error.MissingReturnAnnotation {
+                  Error.annotation = actual;
+                  evidence_locations = [location.Location.start.Location.line];
+                  due_to_any = Type.equal expected Type.Object;
+                })
+              ~define
+          in
+          add_error ~state error
+        else
+          state
+
+    | Statement.Yield { Node.value = Expression.Yield return; _ } ->
+        let state =
+          return
+          >>| forward_expression ~state
+          |> Option.value ~default:state
+        in
+        let actual =
+          Option.value_map return ~default:Type.none ~f:(Annotated.resolve ~resolution)
+          |> Type.generator ~async
+        in
+        if not (Resolution.less_or_equal resolution ~left:actual ~right:expected) then
+          Error.create
+            ~location
+            ~kind:(Error.IncompatibleReturnType {
+                Error.mismatch = { Error.expected; actual };
+                is_implicit = false;
+              })
+            ~define
+          |> add_error ~state
+        else if Type.equal expected Type.Top || Type.equal expected Type.Object then
+          Error.create
+            ~location
+            ~kind:(Error.MissingReturnAnnotation {
+                Error.annotation = actual;
+                evidence_locations = [location.Location.start.Location.line];
+                due_to_any = Type.equal expected Type.Object;
+              })
+            ~define
+          |> add_error ~state
+        else
+          state
+    | Statement.Yield _ ->
+        state
+
+    | YieldFrom { Node.value = Expression.Yield (Some return); _ } ->
+        let state = forward_expression ~state return in
+        let actual =
+          match Annotated.resolve ~resolution return with
+          | Type.Parametric { Type.name; parameters = [parameter] }
+            when Identifier.show name = "typing.Iterator" ->
+              Type.generator parameter
+          | annotation -> Type.generator annotation
+        in
+        if not (Resolution.less_or_equal resolution ~left:actual ~right:expected) then
+          Error.create
+            ~location
+            ~kind:(Error.IncompatibleReturnType {
+                Error.mismatch = { Error.expected; actual };
+                is_implicit = false;
+              })
+            ~define
+          |> add_error ~state
+        else if Type.equal expected Type.Top || Type.equal expected Type.Object then
+          Error.create
+            ~location
+            ~kind:(Error.MissingReturnAnnotation {
+                Error.annotation = actual;
+                evidence_locations = [location.Location.start.Location.line];
+                due_to_any = Type.equal expected Type.Object;
+              })
+            ~define
+          |> add_error ~state
+        else
+          state
+
+    | Import { Import.from; imports } ->
+        let imports =
+          match from with
+          | Some from -> [from]
+          | None -> List.map imports ~f:(fun { Import.name; _ } -> name)
+        in
+        let to_import_error import =
+          let add_import_error errors ~resolution:_ ~resolved:_ ~element =
+            let open Annotated.Access.Element in
+            match element with
+            | Attribute { origin = Module _; defined = false; _ } ->
+                Error.create
+                  ~location
+                  ~kind:(Error.UndefinedImport import)
+                  ~define
+                :: errors
+            | _ ->
+                errors
+          in
+          Annotated.Access.fold
+            ~f:add_import_error
+            ~resolution
+            ~initial:[]
+            (Annotated.Access.create import)
+        in
+        List.concat_map ~f:to_import_error imports
+        |> List.fold ~init:state ~f:(fun state error -> add_error ~state error)
+
+    | YieldFrom _ ->
+        state
+
+    | Class _ | Define _ ->
+        (* Don't check accesses in nested classes and functions, they're analyzed
+           separately. *)
+        state
+
+    | For _  | If _ | Try _ | With _ | While _ ->
+        (* Check happens implicitly in the resulting control flow. *)
+        state
+
+    | Break | Continue | Nonlocal _ | Pass ->
+        state
+
+
+  let rec forward
+      ?key
+      ({
+        resolution;
+        resolution_fixpoint;
+        errors;
+        define = { Node.value = { Define.async; _ }; _ };
+        nested_defines;
+        bottom;
+        _;
+      } as state)
+      ~statement:({ Node.location; _ } as statement) =
+    let state =
       if bottom then
         state
       else
