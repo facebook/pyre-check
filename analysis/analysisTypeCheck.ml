@@ -644,11 +644,6 @@ module State = struct
     in
 
     let state =
-      let forward_with_annotation_propagation =
-        (* Temporary alias to clarify that we're relying on the annotation propagation in the
-           error propagation. *)
-        forward
-      in
       let instantiate location =
         Location.instantiate ~lookup:(fun hash -> AstSharedMemory.get_path ~hash) location
       in
@@ -686,11 +681,9 @@ module State = struct
           }
           |> Node.create ~location
         in
-        let state = forward_with_annotation_propagation state ~statement:iterator in
+        let state = forward_statement ~state iterator in
         List.map ~f:Statement.assume conditions
-        |> List.fold
-          ~init:state
-          ~f:(fun state statement -> forward_with_annotation_propagation state ~statement)
+        |> List.fold ~init:state ~f:(fun state statement -> forward_statement ~state statement)
 
       and forward_expression ~state:({ resolution; errors; _ } as state) { Node.location; value } =
         match value with
@@ -917,7 +910,7 @@ module State = struct
             let state = { state with resolution } in
             List.fold
               ~init:state
-              ~f:(fun state statement -> forward_with_annotation_propagation state ~statement)
+              ~f:(fun state statement -> forward_statement ~state statement)
               right
 
         | ComparisonOperator { ComparisonOperator.left; right; _ } ->
@@ -983,19 +976,12 @@ module State = struct
 
         | Ternary { Ternary.target; test; alternative } ->
             let state = { state with resolution } in
-            let forward_expression ~state ({ Node.location; _ } as expression) =
-              forward_with_annotation_propagation
-                state
-                ~statement:(Node.create (Expression expression) ~location)
-            in
             let target_state =
-              forward_with_annotation_propagation state ~statement:(Statement.assume test)
+              forward_statement ~state (Statement.assume test)
               |> fun state -> forward_expression ~state target
             in
             let alternative_state =
-              forward_with_annotation_propagation
-                state
-                ~statement:(Statement.assume (Expression.negate test))
+              forward_statement ~state (Statement.assume (Expression.negate test))
               |> fun state -> forward_expression ~state alternative
             in
             join target_state alternative_state
