@@ -458,7 +458,12 @@ let test_forward_expression _ =
 
 
 let test_forward_statement _ =
-  let assert_forward precondition statement postcondition =
+  let assert_forward
+      ?(precondition_immutables = [])
+      ?(postcondition_immutables = [])
+      precondition
+      statement
+      postcondition =
     let parsed =
       parse statement
       |> function
@@ -466,10 +471,10 @@ let test_forward_statement _ =
       | _ -> failwith "unable to parse test"
     in
     assert_state_equal
-      (create postcondition)
+      (create ~immutables:postcondition_immutables postcondition)
       (List.fold
          ~f:(fun state statement -> State.forward_statement ~state ~statement)
-         ~init:(create precondition)
+         ~init:(create ~immutables:precondition_immutables precondition)
          parsed)
   in
 
@@ -526,42 +531,27 @@ let test_forward_statement _ =
     ["x", Type.list Type.integer; "a", Type.integer; "b", Type.integer];
 
   (* Assignments with immutables. *)
-  let assert_forward_immutables
-      precondition
-      pre_immutables
-      statement
-      postcondition
-      post_immutables =
-    let parsed =
-      parse statement
-      |> function
-      | { Source.statements = statement::rest; _ } -> statement::rest
-      | _ -> failwith "unable to parse test"
-    in
-    assert_state_equal
-      (create postcondition ~immutables:post_immutables)
-      (List.fold
-         ~f:(fun state statement -> State.forward ~key:0 state ~statement)
-         ~init:(create precondition ~immutables:pre_immutables)
-         parsed)
-  in
-  assert_forward_immutables [] [] "global x" ["x", Type.Top] ["x", true];
-  assert_forward_immutables [] [] "y: int" ["y", Type.integer] ["y", false];
-  assert_forward_immutables [] [] "y: int = x" ["y", Type.integer] ["y", false];
-  assert_forward_immutables [] [] "y: int = 'string'" ["y", Type.integer] ["y", false];
-  assert_forward_immutables ["y", Type.Top] ["y", false] "y = x" ["y", Type.Top] ["y", false];
-  assert_forward_immutables
+  assert_forward ~postcondition_immutables:["x", true] [] "global x" ["x", Type.Top];
+  assert_forward ~postcondition_immutables:["y", false] [] "y: int" ["y", Type.integer];
+  assert_forward ~postcondition_immutables:["y", false] [] "y: int = x" ["y", Type.integer];
+  assert_forward ~postcondition_immutables:["y", false] [] "y: int = 'string'" ["y", Type.integer];
+  assert_forward
+    ~precondition_immutables:["y", false]
+    ~postcondition_immutables:["y", false]
+    ["y", Type.Top]
+    "y = x"
+    ["y", Type.Top];
+  assert_forward
+    ~postcondition_immutables:["y", false]
     ["x", Type.string]
-    []
     "y: int = x"
-    ["x", Type.string; "y", Type.integer]
-    ["y", false];
-  assert_forward_immutables
+    ["x", Type.string; "y", Type.integer];
+  assert_forward
+    ~precondition_immutables:["y", false]
+    ~postcondition_immutables:["y", false]
     ["y", Type.string]
-    ["y", false]
     "y: int"
-    ["y", Type.integer]
-    ["y", false];
+    ["y", Type.integer];
 
   (* Assert. *)
   assert_forward
