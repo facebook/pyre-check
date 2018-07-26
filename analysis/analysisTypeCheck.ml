@@ -1532,6 +1532,34 @@ module State = struct
         in
         { state with resolution }
 
+    | Import { Import.from; imports } ->
+        let imports =
+          match from with
+          | Some from -> [from]
+          | None -> List.map imports ~f:(fun { Import.name; _ } -> name)
+        in
+        let to_import_error import =
+          let add_import_error errors ~resolution:_ ~resolved:_ ~element =
+            let open Annotated.Access.Element in
+            match element with
+            | Attribute { origin = Module _; defined = false; _ } ->
+                Error.create
+                  ~location
+                  ~kind:(Error.UndefinedImport import)
+                  ~define
+                :: errors
+            | _ ->
+                errors
+          in
+          Annotated.Access.fold
+            ~f:add_import_error
+            ~resolution
+            ~initial:[]
+            (Annotated.Access.create import)
+        in
+        List.concat_map ~f:to_import_error imports
+        |> List.fold ~init:state ~f:(fun state error -> add_error ~state error)
+
     | Raise (Some expression) ->
         forward_expression ~state ~expression
     | Raise _ ->
@@ -1640,35 +1668,6 @@ module State = struct
           |> add_error ~state
         else
           state
-
-    | Import { Import.from; imports } ->
-        let imports =
-          match from with
-          | Some from -> [from]
-          | None -> List.map imports ~f:(fun { Import.name; _ } -> name)
-        in
-        let to_import_error import =
-          let add_import_error errors ~resolution:_ ~resolved:_ ~element =
-            let open Annotated.Access.Element in
-            match element with
-            | Attribute { origin = Module _; defined = false; _ } ->
-                Error.create
-                  ~location
-                  ~kind:(Error.UndefinedImport import)
-                  ~define
-                :: errors
-            | _ ->
-                errors
-          in
-          Annotated.Access.fold
-            ~f:add_import_error
-            ~resolution
-            ~initial:[]
-            (Annotated.Access.create import)
-        in
-        List.concat_map ~f:to_import_error imports
-        |> List.fold ~init:state ~f:(fun state error -> add_error ~state error)
-
     | YieldFrom _ ->
         state
 
