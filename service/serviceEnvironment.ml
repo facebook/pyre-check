@@ -68,7 +68,9 @@ let populate
   List.iter ~f:(Environment.register_functions (module Handler)) sources;
   List.iter ~f:(Environment.register_globals (module Handler)) sources;
   (* TODO(T30713406): Merge with class registration. *)
-  List.iter ~f:Handler.refine_class_definition all_annotations
+  List.iter ~f:Handler.refine_class_definition all_annotations;
+
+  List.iter ~f:(Plugin.apply_to_environment (module Handler)) sources
 
 
 let build
@@ -423,6 +425,23 @@ let shared_memory_handler
         DependencyHandler.add_global_key ~path access;
         Globals.remove_batch (Globals.KeySet.singleton access);
         Globals.add access global
+
+
+      let update_class_definition ~primitive ~definition =
+        match ClassDefinitions.get primitive with
+        | Some ({
+            Environment.class_definition;
+            _;
+          } as class_representation) ->
+            ClassDefinitions.remove_batch (ClassDefinitions.KeySet.singleton primitive);
+            ClassDefinitions.add
+              primitive
+              {
+                class_representation with
+                Environment.class_definition = { class_definition with Node.value = definition }
+              }
+        | _ ->
+            ()
 
 
       let connect_definition =

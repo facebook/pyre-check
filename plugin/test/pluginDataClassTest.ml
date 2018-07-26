@@ -6,20 +6,9 @@
 open Core
 open OUnit2
 
-open Ast
-open Plugin
 
-open Test
-
-
-let test_transform_ast _ =
-  let assert_expand ?(qualifier = "qualifier") source expected =
-    let parse = parse ~qualifier:(Source.qualifier ~path:qualifier) in
-    assert_source_equal
-      (Analysis.Preprocessing.preprocess (parse expected))
-      (DataClass.transform_ast (Analysis.Preprocessing.preprocess (parse source)))
-  in
-  assert_expand
+let test_transform_environment _ =
+  PluginTest.assert_environment_expand
     {|
       @dataclass
       class Foo:
@@ -35,7 +24,7 @@ let test_transform_ast _ =
         def __eq__(self, o) -> bool:
           pass
     |};
-  assert_expand
+  PluginTest.assert_environment_expand
     {|
       @dataclass
       class Foo:
@@ -54,7 +43,7 @@ let test_transform_ast _ =
         def __eq__(self, o) -> bool:
           pass
     |};
-  assert_expand
+  PluginTest.assert_environment_expand
     {|
       @dataclasses.dataclass
       class Foo:
@@ -71,9 +60,9 @@ let test_transform_ast _ =
         def __repr__(self) -> str:
           pass
         def __eq__(self, o) -> bool:
-          pass
+         pass
     |};
-  assert_expand
+  PluginTest.assert_environment_expand
     {|
       @dataclass
       class Foo:
@@ -83,16 +72,16 @@ let test_transform_ast _ =
           pass
     |}
     {|
-      @dataclass
-      class Foo:
-        def __init__(self) -> None:
-          pass
-        def __repr__(self) -> str:
-          pass
-        def __eq__(self, o) -> bool:
-          pass
+     @dataclass
+     class Foo:
+       def __init__(self) -> None:
+         pass
+       def __repr__(self) -> str:
+         pass
+       def __eq__(self, o) -> bool:
+         pass
     |};
-  assert_expand
+  PluginTest.assert_environment_expand
     {|
       @dataclass
       class Foo:
@@ -109,7 +98,7 @@ let test_transform_ast _ =
         def __eq__(self, o) -> bool:
           pass
     |};
-  assert_expand
+  PluginTest.assert_environment_expand
     {|
       @dataclass
       class Foo:
@@ -126,7 +115,7 @@ let test_transform_ast _ =
         def __eq__(self, o) -> bool:
           pass
     |};
-  assert_expand
+  PluginTest.assert_environment_expand
     {|
       @dataclass
       class Foo:
@@ -145,7 +134,7 @@ let test_transform_ast _ =
         def __eq__(self, o) -> bool:
           pass
     |};
-  assert_expand
+  PluginTest.assert_environment_expand
     {|
       @dataclass
       class Foo:
@@ -166,7 +155,7 @@ let test_transform_ast _ =
         def __eq__(self, o) -> bool:
           pass
     |};
-  assert_expand
+  PluginTest.assert_environment_expand
     {|
       @dataclass
       class Foo:
@@ -185,7 +174,7 @@ let test_transform_ast _ =
         def __eq__(self, o) -> bool:
           pass
     |};
-  assert_expand
+  PluginTest.assert_environment_expand
     {|
       @dataclass
       class Foo:
@@ -204,7 +193,7 @@ let test_transform_ast _ =
         def __eq__(self, o) -> bool:
           pass
     |};
-  assert_expand
+  PluginTest.assert_environment_expand
     {|
       @dataclass
       class Foo:
@@ -226,7 +215,7 @@ let test_transform_ast _ =
           pass
     |};
   (* TODO(T30619164): We currently do not add methods if arguments are present *)
-  assert_expand
+  PluginTest.assert_environment_expand
     {|
       @dataclass(eq = False)
       class Foo:
@@ -243,6 +232,6 @@ let test_transform_ast _ =
 
 let () =
   "plugin_data_class">:::[
-    "transform_ast">::test_transform_ast;
+    "transform_environment">::test_transform_environment;
   ]
   |> run_test_tt_main

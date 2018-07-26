@@ -44,6 +44,7 @@ module type Handler = sig
     -> unit
   val register_dependency: path: string -> dependency: string -> unit
   val register_global: path: string -> access: Access.t -> global: Resolution.global -> unit
+  val update_class_definition: primitive: Type.t -> definition: Class.t -> unit
   val connect_definition
     :  path: string
     -> resolution: Resolution.t
@@ -237,6 +238,20 @@ let handler
     let register_global ~path ~access ~global =
       DependencyHandler.add_global_key ~path access;
       Hashtbl.set ~key:access ~data:global globals
+
+
+    let update_class_definition ~primitive ~definition =
+      match Hashtbl.find class_definitions primitive with
+      | Some ({ class_definition; _} as class_representation) ->
+          Hashtbl.set
+            class_definitions
+            ~key:primitive
+            ~data:{
+              class_representation with
+              class_definition = { class_definition with Node.value = definition }
+            }
+      | _ ->
+          ()
 
 
     let connect_definition =

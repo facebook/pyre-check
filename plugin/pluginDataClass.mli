@@ -4,6 +4,8 @@
     LICENSE file in the root directory of this source tree. *)
 
 open Ast
+open Analysis
+open Environment
 
 
-val transform_ast: Source.t -> Source.t
+val transform_environment: (module Handler) -> Source.t -> unit

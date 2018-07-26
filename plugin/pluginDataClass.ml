@@ -8,10 +8,14 @@ open Core
 open Ast
 open Expression
 open Statement
+open Analysis
+open Environment
 
 
-let transform_ast ({ Source.statements; _ } as source) =
-  let transform ({ Node.location; value } as statement) =
+let transform_environment
+    (module Handler: Handler)
+    { Source.path; Source.statements; _ } =
+  let transform { Node.location; value } =
     match value with
     | Class ({ Class.name = parent; body; _ } as origin)
       when Class.has_decorator origin "dataclass" ||
@@ -35,7 +39,7 @@ let transform_ast ({ Source.statements; _ } as source) =
           List.exists ~f:is_matching_method body
         in
         let create_method ~name ~parameters ~return_annotation =
-          Define {
+          {
             Define.name = parent @ (Access.create name);
             parameters =
               Parameter.create ~name:(Identifier.create "self") ()
@@ -49,7 +53,6 @@ let transform_ast ({ Source.statements; _ } as source) =
             generated = false;
             parent = Some parent;
           }
-          |> Node.create ~location
         in
         (* TODO(T30619164): Parse decorator arguments and add more generated methods *)
         let methods =
@@ -95,24 +98,28 @@ let transform_ast ({ Source.statements; _ } as source) =
           else
             methods
         in
-        let preprocess statements =
-          Source.create statements
-          |> Analysis.Preprocessing.preprocess
-          |> fun { Source.statements; _ } -> statements
-        in
         let body =
+          let preprocessed_methods =
+            methods
+            |> List.map ~f:(fun define -> Node.create ~location (Define define))
+            |> List.rev
+            |> Source.create
+            |> Analysis.Preprocessing.preprocess
+            |> fun { Source.statements; _ } -> statements
+          in
           match body with
-          | [{ Node.value = Expression { Node.value = Ellipses; _ }; _ }] -> []
-          | _ -> body
+          | [{ Node.value = Expression { Node.value = Ellipses; _ }; _ }] -> preprocessed_methods
+          | _ -> body @ preprocessed_methods
         in
-        {
-          statement with
-          Node.value = Class { origin with Class.body = body @ preprocess (List.rev methods) }
-        }
+        Handler.update_class_definition
+          ~primitive:
+            (Type.create
+               ~aliases:Handler.aliases
+               (Node.create_with_default_location (Access parent))
+             |> Type.split
+             |> fst)
+          ~definition:{ origin with Class.body }
     | _ ->
-        statement
+        ()
   in
-  {
-    source with
-    Source.statements = List.map ~f:transform statements
-  }
+  List.iter ~f:transform statements
