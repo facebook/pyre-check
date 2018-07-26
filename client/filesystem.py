@@ -108,7 +108,7 @@ class SharedSourceDirectory:
     def _merge_source_directory(
         self, source_directory: str, all_paths: Dict[str, str]
     ) -> None:
-        paths = find_python_paths(root=source_directory)
+        paths = _find_python_paths(root=source_directory)
         for path in paths:
             relative = os.path.relpath(path, source_directory)
             if not path:
@@ -129,7 +129,7 @@ class SharedSourceDirectory:
                 continue
 
 
-def find_python_paths(root: str) -> List[str]:
+def _find_python_paths(root: str) -> List[str]:
     root = os.path.abspath(root)  # Return absolute paths.
     try:
         output = (
@@ -156,18 +156,18 @@ def find_python_paths(root: str) -> List[str]:
                     ")",
                     # Print all such files.
                     "-print",
-                ]
+                ],
+                stderr=subprocess.DEVNULL,
             )
             .decode("utf-8")
             .strip()
         )
         return output.split("\n")
     except subprocess.CalledProcessError:
-        LOG.error(
+        raise EnvironmentException(
             "pyre was unable to locate a source directory. "
             "Ensure that your project is built and re-run pyre."
         )
-        sys.exit(1)
 
 
 def is_empty(path: str) -> bool:

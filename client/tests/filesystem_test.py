@@ -17,8 +17,8 @@ from ..filesystem import (  # noqa
     MercurialBackedFilesystem,
     SharedSourceDirectory,
     __name__ as filesystem_name,
+    _find_python_paths,
     acquire_lock,
-    find_python_paths,
     remove_if_exists,
 )
 
@@ -50,7 +50,7 @@ class FilesystemTest(unittest.TestCase):
         create_symlink("mypy/my.py", "mypy/another.pyi")
         create_symlink("scipyi/sci.pyi", "scipyi/another.py")
         actual_paths = sorted(
-            os.path.relpath(path, root) for path in find_python_paths(root)
+            os.path.relpath(path, root) for path in _find_python_paths(root)
         )
         self.assertEqual(
             actual_paths,
@@ -141,7 +141,7 @@ class FilesystemTest(unittest.TestCase):
         create_file(os.path.join(root, "first", "b", "z.py"))
         create_file(os.path.join(root, "second", "a.py"))
 
-        def side_effect(path):
+        def side_effect(path, stderr=None):
             if path[1].endswith("first"):
                 serialized = "\n".join(
                     [
