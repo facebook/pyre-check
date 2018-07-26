@@ -614,10 +614,6 @@ module State = struct
       }
 
 
-  let instantiate location =
-    Location.instantiate ~lookup:(fun hash -> AstSharedMemory.get_path ~hash) location
-
-
   let add_error ~state:({ errors; _ } as state) error =
     {
       state with
@@ -625,47 +621,45 @@ module State = struct
     }
 
 
-  let rec forward_entry ~state ~entry:{ Dictionary.key; value } =
-    let state = forward_expression ~state ~expression:key in
-    forward_expression ~state ~expression:value
-
-
-  and forward_generator
-      ~state
-      ~generator:{
-        Comprehension.target;
-        iterator = { Node.location; _ } as iterator;
-        conditions;
-        _;
-      } =
-    (* TODO(T23723699): check async. *)
-    (* Propagate the target type information. *)
-    let iterator =
-      let value =
-        Access (Expression.access iterator @ [
-            Access.Identifier (Identifier.create "__iter__");
-            Access.Call (Node.create ~location []);
-            Access.Identifier (Identifier.create "__next__");
-            Access.Call (Node.create ~location []);
-          ])
-        |> Node.create ~location
-      in
-      Assign {
-        Assign.target;
-        annotation = None;
-        value = Some value;
-        parent = None;
-      }
-      |> Node.create ~location
-    in
-    let state = forward_statement ~state ~statement:iterator in
-    List.map ~f:Statement.assume conditions
-    |> List.fold ~init:state ~f:(fun state statement -> forward_statement ~state ~statement)
-
-
-  and forward_expression
+  let rec forward_expression
       ~state:({ resolution; errors; define; _ } as state)
       ~expression:{ Node.location; value } =
+    let rec forward_entry ~state ~entry:{ Dictionary.key; value } =
+      let state = forward_expression ~state ~expression:key in
+      forward_expression ~state ~expression:value
+    in
+    let forward_generator
+        ~state
+        ~generator:{
+          Comprehension.target;
+          iterator = { Node.location; _ } as iterator;
+          conditions;
+          _;
+        } =
+      (* TODO(T23723699): check async. *)
+      (* Propagate the target type information. *)
+      let iterator =
+        let value =
+          Access (Expression.access iterator @ [
+              Access.Identifier (Identifier.create "__iter__");
+              Access.Call (Node.create ~location []);
+              Access.Identifier (Identifier.create "__next__");
+              Access.Call (Node.create ~location []);
+            ])
+          |> Node.create ~location
+        in
+        Assign {
+          Assign.target;
+          annotation = None;
+          value = Some value;
+          parent = None;
+        }
+        |> Node.create ~location
+      in
+      let state = forward_statement ~state ~statement:iterator in
+      List.map ~f:Statement.assume conditions
+      |> List.fold ~init:state ~f:(fun state statement -> forward_statement ~state ~statement)
+    in
     match value with
     | Access access ->
         let resolution =
@@ -1012,6 +1006,9 @@ module State = struct
           _;
         } as state)
       ~statement:({ Node.location; _} as statement) =
+    let instantiate location =
+      Location.instantiate ~lookup:(fun hash -> AstSharedMemory.get_path ~hash) location
+    in
     let is_assert_function access =
       List.take_while access ~f:(function | Access.Identifier _ -> true | _ -> false)
       |> Access.show
