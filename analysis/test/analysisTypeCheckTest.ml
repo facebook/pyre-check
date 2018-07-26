@@ -632,94 +632,6 @@ let test_forward _ =
   ()  (* TODO(T30448045): integration tests. *)
 
 
-let fixpoint_parse source =
-  parse source
-  |> Preprocessing.preprocess
-  |> Preprocessing.defines
-  |> List.hd_exn
-
-
-let test_fixpoint_forward _ =
-  let assert_fixpoint_forward source expected =
-    let { Node.value = define; _ } as define_node = fixpoint_parse source in
-    assert_equal
-      ~cmp:(Fixpoint.equal ~f:State.equal)
-      ~printer:(fun fixpoint -> Format.asprintf "%a" Fixpoint.pp fixpoint)
-      ~pp_diff:(diff ~print:Fixpoint.pp)
-      expected
-      (Fixpoint.forward
-         ~cfg:(Cfg.create define)
-         ~initial:(State.initial ~resolution define_node))
-  in
-  assert_fixpoint_forward
-    {| def foo(): pass |}
-    (Int.Table.of_alist_exn [
-        0, create []; (* Entry *)
-        1, create []; (* Exit *)
-        3, create []; (* Final *)
-        5, create []; (* Pass *)
-      ]);
-  assert_fixpoint_forward
-    {|
-     def foo():
-       x = y
-    |}
-    (Int.Table.of_alist_exn [
-        0, create [];
-        1, create ["$local_foo$x", Type.Top];
-        3, create ["$local_foo$x", Type.Top];
-        5, create [];
-      ]);
-  assert_fixpoint_forward
-    {|
-     def foo(y: int):
-       x = y
-    |}
-    (Int.Table.of_alist_exn [
-        0, create ~immutables:["$parameter$y", false] ["$parameter$y", Type.integer];
-        1, create ~immutables:["$parameter$y", false] [
-          "$local_foo$x", Type.integer;
-          "$parameter$y", Type.integer;
-        ];
-        3, create ~immutables:["$parameter$y", false] [
-          "$local_foo$x", Type.integer;
-          "$parameter$y", Type.integer;
-        ];
-        5, create ~immutables:["$parameter$y", false] ["$parameter$y", Type.integer];
-      ]);
-  assert_fixpoint_forward
-    {|
-     def foo(y: int):
-       if True:
-         x = y
-       else:
-         x = z
-    |}
-    (Int.Table.of_alist_exn [
-        0, create ~immutables:["$parameter$y", false] ["$parameter$y", Type.integer]; (* Entry *)
-        1, create ~immutables:["$parameter$y", false] [
-          "$local_foo$x", Type.Top;
-          "$parameter$y", Type.integer;
-        ]; (* Exit *)
-        3, create ~immutables:["$parameter$y", false] [
-          "$local_foo$x", Type.Top;
-          "$parameter$y", Type.integer;
-        ]; (* Final *)
-        5, create ~immutables:["$parameter$y", false] ["$parameter$y", Type.integer]; (* If *)
-        6, create ~immutables:["$parameter$y", false] [
-          "$local_foo$x", Type.Top;
-          "$parameter$y", Type.integer;
-        ]; (* Join *)
-        7, create ~immutables:["$parameter$y", false] ["$parameter$y", Type.integer]; (* Body *)
-        8, create ~immutables:["$parameter$y", false] ["$parameter$y", Type.integer]; (* Orelse *)
-        9, create ~immutables:["$parameter$y", false] [
-          "$local_foo$x", Type.Top;
-          "$parameter$y", Type.integer;
-        ]; (* Return *)
-      ]);
-  ()
-
-
 let test_show_error_traces _ =
   assert_type_errors ~show_error_traces:true
     "def foo() -> int: return 1.0"
@@ -5853,7 +5765,6 @@ let () =
     "forward_expression">::test_forward_expression;
     "forward_statement">::test_forward_statement;
     "forward">::test_forward;
-    "fixpoint_forward">::test_fixpoint_forward;
     "reveal_type">::test_reveal_type;
     "check_error_traces">::test_show_error_traces;
     "check_with_qualification">::test_check_with_qualification;
