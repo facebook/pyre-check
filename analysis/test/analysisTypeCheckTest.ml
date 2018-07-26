@@ -1517,8 +1517,7 @@ let test_check _ =
     |}
     [
       "Incompatible return type [7]: Expected `str` but got `int`.";
-      "Incompatible return type [7]: Expected `str` but got `int`."
-
+      "Incompatible return type [7]: Expected `str` but got `int`.";
     ];
 
   assert_type_errors
@@ -1533,7 +1532,6 @@ let test_check _ =
       def test() -> None:
         with WithClass() as x:
           expect_string(x)
-
     |}
     [];
 
@@ -1555,67 +1553,67 @@ let test_check _ =
 
   assert_type_errors
     {|
-    def foo(x: int) -> str:
-      return ""
-    def f() -> None:
-      a = foo(1,2)
-  |}
+      def foo(x: int) -> str:
+        return ""
+      def f() -> None:
+        a = foo(1,2)
+    |}
     ["Too many arguments [19]: Call `foo` expects 1 positional argument, 2 were provided."];
 
   assert_type_errors
     {|
-    def foo(x: int) -> str:
-      return ""
-    def f() -> None:
-      a = foo()
-  |}
+      def foo(x: int) -> str:
+        return ""
+      def f() -> None:
+        a = foo()
+    |}
     ["Missing argument [20]: Call `foo` expects argument `x`."];
 
   assert_type_errors
     {|
-    def foo(x: int) -> str:
-      return ""
-    def f() -> None:
-      a = foo(y=4)
-  |}
+      def foo(x: int) -> str:
+        return ""
+      def f() -> None:
+        a = foo(y=4)
+    |}
     [];
 
   assert_type_errors
     {|
-    class C:
-      def f(self, x: str) -> None:
-        ...
-    def f(c: C) -> None:
-      a = c.f()
-  |}
+      class C:
+        def f(self, x: str) -> None:
+          ...
+      def f(c: C) -> None:
+        a = c.f()
+    |}
     ["Missing argument [20]: Call `C.f` expects argument `x`."];
 
   assert_type_errors
     {|
-    class C:
-      def f(self, x: str) -> None:
-        ...
-    def f(c: C) -> None:
-      a = c.f("", "")
-  |}
+      class C:
+        def f(self, x: str) -> None:
+          ...
+      def f(c: C) -> None:
+        a = c.f("", "")
+    |}
     ["Too many arguments [19]: Call `C.f` expects 2 positional arguments, 3 were provided."];
 
   assert_type_errors
     {|
-    def foo(x: int, y: str) -> str:
-      return ""
-    def f() -> None:
-      a = foo()
-  |}
+      def foo(x: int, y: str) -> str:
+        return ""
+      def f() -> None:
+        a = foo()
+    |}
     ["Missing argument [20]: Call `foo` expects argument `x`."];
 
   assert_type_errors
     {|
-    def foo() -> str:
-      return ""
-    def f() -> None:
-      a = foo(1,2,3,4)
-  |}
+      def foo() -> str:
+        return ""
+      def f() -> None:
+        a = foo(1,2,3,4)
+    |}
     ["Too many arguments [19]: Call `foo` expects 0 positional arguments, 4 were provided."];
 
   assert_type_errors
