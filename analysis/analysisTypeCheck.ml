@@ -911,6 +911,9 @@ module State = struct
         let state = List.fold right ~f:accumulate ~init:state in
         { state; resolved = Type.Top }
 
+    | Complex _ ->
+        { state; resolved = Type.complex }
+
     | Dictionary { Dictionary.entries; keywords } ->
         let state =
           List.fold
@@ -941,6 +944,12 @@ module State = struct
 
     | False ->
         { state; resolved = Type.bool }
+
+    | Float _ ->
+        { state; resolved = Type.float }
+
+    | Integer _ ->
+        { state; resolved = Type.integer }
 
     | Lambda { Lambda.body; parameters } ->
         let resolution =
@@ -1038,7 +1047,7 @@ module State = struct
         { state; resolved = Type.Top }
 
     (* Trivial base cases *)
-    | Complex _ | Ellipses | Float _ | Integer _ | String _ ->
+    | Ellipses | String _ ->
         { state; resolved = Type.Top }
 
 

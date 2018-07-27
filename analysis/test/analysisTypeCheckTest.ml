@@ -477,6 +477,10 @@ let test_forward_expression _ =
         ()
   in
 
+  assert_forward "1j" Type.complex;
+  assert_forward "1" Type.integer;
+  assert_forward "1.0" Type.float;
+
   assert_forward "True" Type.bool;
   assert_forward "False" Type.bool
 
