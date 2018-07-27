@@ -157,10 +157,12 @@ module Make (Checks: Checks.S) (Root: Root.S) (Element: Analysis.AbstractDomain.
     *)
     children: access_path_tree LabelMap.t;
   }
+  [@@deriving sexp]
 
 
   (** Access path trees map AP roots to access_path_trees. *)
   type t = access_path_tree RootMap.t
+  [@@deriving sexp]
 
 
   let empty =

@@ -80,7 +80,9 @@ end
 module Make (Checks: Checks.S) (Root: Root.S) (Element: AbstractDomain.S): sig
   type t
   [@@deriving show]
+
   type access_path_tree
+  [@@deriving sexp]
 
   val empty: t
   val exists: f: (Element.t -> bool) -> t -> bool
