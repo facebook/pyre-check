@@ -464,6 +464,8 @@ let test_forward_expression _ =
       |> function
       | { Source.statements = [{ Node.value = Statement.Expression expression; _ }]; _ } ->
           expression
+      | { Source.statements = [{ Node.value = Statement.Yield expression; _ }]; _ } ->
+          expression
       | _ ->
           failwith "Unable to extract expression"
     in
@@ -526,7 +528,14 @@ let test_forward_expression _ =
     "undefined if undefined else undefined"
     Type.Top;
 
-  assert_forward "True" Type.bool
+  assert_forward "True" Type.bool;
+
+  assert_forward "yield 1" (Type.generator Type.integer);
+  assert_forward
+    ~errors:["Undefined name [18]: Global name `undefined` is undefined."]
+    "yield undefined"
+    (Type.generator Type.Top);
+  assert_forward "yield" (Type.generator Type.none)
 
 
 let test_forward_statement _ =

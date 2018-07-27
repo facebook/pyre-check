@@ -1043,16 +1043,11 @@ module State = struct
     | UnaryOperator { UnaryOperator.operand; operator = _ } ->
         forward_expression ~state ~expression:operand
 
-    | Expression.Yield yield ->
-        let state =
-          match yield with
-          | None ->
-              state
-          | Some expression ->
-              let { state; _ } = forward_expression ~state ~expression in
-              state
-        in
-        { state; resolved = Type.Top }
+    | Expression.Yield (Some expression) ->
+        let { state; resolved } = forward_expression ~state ~expression in
+        { state; resolved = Type.generator resolved }
+    | Expression.Yield None ->
+        { state; resolved = Type.generator Type.none }
 
 
   and forward_statement
