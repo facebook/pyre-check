@@ -942,6 +942,9 @@ module State = struct
         let state = forward_entry ~state ~entry:element in
         { state; resolved = Type.Top }
 
+    | Ellipses ->
+        { state; resolved = Type.Top }
+
     | False ->
         { state; resolved = Type.bool }
 
@@ -1010,7 +1013,9 @@ module State = struct
                 state)
             ~init:state
         in
-        { state; resolved = Type.Top }
+        { state; resolved = Type.string }
+    | String _ ->
+        { state; resolved = Type.string }
 
     | Ternary { Ternary.target; test; alternative } ->
         let state = { state with resolution } in
@@ -1044,10 +1049,6 @@ module State = struct
               let { state; _ } = forward_expression ~state ~expression in
               state
         in
-        { state; resolved = Type.Top }
-
-    (* Trivial base cases *)
-    | Ellipses | String _ ->
         { state; resolved = Type.Top }
 
 

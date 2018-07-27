@@ -458,7 +458,15 @@ let test_forward_expression _ =
 
   (* TODO(T30448045): gradually migrate existing tests to check resolved type. *)
   let assert_forward ?(precondition = []) ?(postcondition = []) ?errors expression annotation =
-    let expression = parse_single_expression expression in
+    let expression =
+      parse expression
+      |> Preprocessing.expand_format_string
+      |> function
+      | { Source.statements = [{ Node.value = Statement.Expression expression; _ }]; _ } ->
+          expression
+      | _ ->
+          failwith "Unable to extract expression"
+    in
     let { State.state = forwarded; resolved } =
       State.forward_expression
         ~state:(create precondition)
@@ -479,10 +487,22 @@ let test_forward_expression _ =
 
   assert_forward "1j" Type.complex;
   assert_forward "1" Type.integer;
+
+  assert_forward "..." Type.Top;
+
+  assert_forward "False" Type.bool;
+
   assert_forward "1.0" Type.float;
 
-  assert_forward "True" Type.bool;
-  assert_forward "False" Type.bool
+  assert_forward "'string'" Type.string;
+  assert_forward "f'string'" Type.string;
+  assert_forward ~errors:[] "f'string{1}'" Type.string;
+  assert_forward
+    ~errors:["Undefined name [18]: Global name `undefined` is undefined."]
+    "f'string{undefined}'"
+    Type.string;
+
+  assert_forward "True" Type.bool
 
 
 let test_forward_statement _ =
