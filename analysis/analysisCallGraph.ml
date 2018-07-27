@@ -140,7 +140,7 @@ let reverse call_graph =
 let pp_partitions formatter partitions =
   let print_partition partitions =
     let print_partition index accumulator nodes =
-      let nodes_to_string = Sexp.to_string (sexp_of_list Access.sexp_of_t nodes) in
+      let nodes_to_string = Sexp.to_string [%message (nodes: Access.t list)] in
       let partition = Format.sprintf "Partition %d: %s" index nodes_to_string in
       accumulator ^ "\n" ^ partition
     in

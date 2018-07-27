@@ -379,11 +379,11 @@ let assert_infer
   in
   assert_equal
     ~cmp:(List.equal ~equal:String.equal)
-    ~printer:(fun errors -> Format.asprintf "%a" Sexp.pp (sexp_of_list sexp_of_string errors))
+    ~printer:(fun errors -> Format.asprintf "%a" Sexp.pp [%message (errors: string list)])
     ~pp_diff:
       (diff
          ~print:(fun format errors ->
-             Format.fprintf format "%a" Sexp.pp (sexp_of_list sexp_of_string errors)))
+             Format.fprintf format "%a" Sexp.pp [%message (errors: string list)]))
     (List.map ~f:(fun string -> Yojson.Safe.from_string string |> to_string) errors)
     (List.map
        ~f:fields_of_error

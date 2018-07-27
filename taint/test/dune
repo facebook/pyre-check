@@ -3,6 +3,8 @@
   taintAccessPathTest
   taintForwardAnalysisTest
   taintBackwardAnalysisTest)
+ (preprocess
+  (pps ppx_sexp_message))
  (libraries
   oUnit
   pyrelib.test

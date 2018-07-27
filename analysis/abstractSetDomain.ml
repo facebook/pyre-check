@@ -35,6 +35,6 @@ module Make(Element : Set.Elt) = struct
     Set.is_subset left ~of_:right
 
 
-  let show element =
-    Sexp.to_string (Set.sexp_of_t element)
+  let show set =
+    Sexp.to_string [%message (set: Set.t)]
 end

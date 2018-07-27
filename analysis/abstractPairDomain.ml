@@ -11,6 +11,7 @@ module Make
     (Right : AbstractDomain.S) =
 struct
   type t = Left.t * Right.t
+  [@@deriving sexp]
 
   let bottom = Left.bottom, Right.bottom
   let is_bottom (l, r) =
@@ -27,10 +28,8 @@ struct
     Left.less_or_equal ~left:l1 ~right:l2 &&
     Right.less_or_equal ~left:r1 ~right:r2
 
-  let show (l, r) =
-    Printf.sprintf "(%s, %s)"
-      (Left.show l)
-      (Right.show r)
+  let show (left, right) =
+    Format.sprintf "(%s, %s)" (Left.show left) (Right.show right)
 
   let make l r = (l, r)
 end

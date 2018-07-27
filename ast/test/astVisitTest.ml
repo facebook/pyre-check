@@ -38,8 +38,8 @@ let test_collect _ =
     let printer (expressions, statements) =
       Format.asprintf
         "%a | %a"
-        Sexp.pp (sexp_of_list Expression.sexp_of_t expressions)
-        Sexp.pp (sexp_of_list Statement.sexp_of_t statements)
+        Sexp.pp [%message (expressions: Expression.t list)]
+        Sexp.pp [%message (statements: Statement.t list)]
     in
     assert_equal ~cmp:equal ~printer expected collect in
 

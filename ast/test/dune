@@ -15,7 +15,8 @@
    ppx_deriving.show
    ppx_hash
    ppx_compare
-   ppx_sexp_conv))
+   ppx_sexp_conv
+   ppx_sexp_message))
  (libraries
   oUnit
   sexplib

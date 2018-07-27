@@ -6,6 +6,7 @@
 
 module type S = sig
   type t
+  [@@deriving sexp]
   val bottom: t
   val is_bottom: t -> bool
   val join: t -> t -> t

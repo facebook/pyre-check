@@ -71,7 +71,7 @@ let test_superclasses _ =
   let assert_superclasses result expected =
     let equal left right = Access.equal (Class.name left) (Class.name right) in
     assert_equal
-      ~printer:(fun classes -> Format.asprintf "%a" Sexp.pp (sexp_of_list Class.sexp_of_t classes))
+      ~printer:(fun classes -> Format.asprintf "%a" Sexp.pp [%message (classes: Class.t list)])
       ~cmp:(List.equal ~equal) result expected
   in
   let environment =

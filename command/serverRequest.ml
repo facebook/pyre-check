@@ -100,8 +100,7 @@ let rec process_request
             Log.log
               ~section:`Server
               "Handling type check request for files %a"
-              Sexp.pp
-              (sexp_of_list sexp_of_string update_environment_with);
+              Sexp.pp [%message (update_environment_with: string list)];
             let get_dependencies path =
               let qualifier = Ast.Source.qualifier ~path in
               Handler.dependencies qualifier
@@ -116,8 +115,7 @@ let rec process_request
           Log.log
             ~section:`Server
             "Inferred affected files: %a"
-            Sexp.pp
-            (sexp_of_list sexp_of_string dependents);
+            Sexp.pp [%message (dependents: string list)];
           List.map
             ~f:(fun path ->
                 Path.create_relative ~root:source_root ~relative:path
@@ -171,8 +169,7 @@ let rec process_request
       Log.log
         ~section:`Debug
         "Repopulating the environment with %a"
-        Sexp.pp
-        (sexp_of_list (fun handle -> sexp_of_string (File.Handle.show handle)) repopulate_handles);
+        Sexp.pp [%message (repopulate_handles: File.Handle.t list)];
 
       List.filter_map ~f:AstSharedMemory.get_source repopulate_handles
       |> Service.Environment.populate state.environment ~source_root;
@@ -281,7 +278,7 @@ let rec process_request
                 |> List.map ~f:(Map.find_exn annotations)
                 |> List.map ~f:Type.show
                 |> fun parameters -> "self" :: parameters
-                |> String.concat ~sep:", "
+                                     |> String.concat ~sep:", "
               in
               let return_annotation =
                 return_annotation ~resolution annotated_method

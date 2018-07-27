@@ -43,8 +43,8 @@ module Node = struct
       "[Node %d]\n%a\nPredecessors: %a, Successors: %a\n"
       node.id
       pp_kind node.kind
-      Sexp.pp (sexp_of_list sexp_of_int (Set.to_list node.predecessors))
-      Sexp.pp (sexp_of_list sexp_of_int (Set.to_list node.successors))
+      Sexp.pp [%message (Set.elements node.predecessors : int list)]
+      Sexp.pp [%message (Set.elements node.successors : int list)]
 
 
   let show graph =

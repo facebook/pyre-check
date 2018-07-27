@@ -100,7 +100,7 @@ let process_response ~root ~watchman_directory ~symlinks serialized_response =
       |> Util.to_list
       |> Util.filter_string
       |> fun files ->
-      Log.info "Updated files: %a" Sexp.pp (sexp_of_list sexp_of_string files);
+      Log.info "Updated files: %a" Sexp.pp [%message (files: string list)];
       let relativize_to_root path =
         match Path.get_relative_to_root ~root ~path with
         | None -> path

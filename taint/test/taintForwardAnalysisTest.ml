@@ -114,7 +114,7 @@ let assert_sources ~source ~expect:{ define_name; returns; _ } =
       in
       assert_equal
         ~cmp:String.Set.equal
-        ~printer:(Fn.compose Sexp.to_string String.Set.sexp_of_t)
+        ~printer:(fun set -> Sexp.to_string [%message (set: String.Set.t)])
         expected_sources
         returned_sources
 

@@ -3,6 +3,8 @@
   serviceCoverageTest
   serviceParserTest
   serviceTypeCheckTest)
+ (preprocess
+  (pps ppx_sexp_message))
  (libraries
   oUnit
   pyrelib.analysis

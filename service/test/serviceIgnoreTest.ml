@@ -67,7 +67,7 @@ let assert_errors
     List.map ~f:(fun error -> Error.description error ~detailed:show_error_traces) errors
   in
   let description_list_to_string descriptions =
-    Format.asprintf "%a" Sexp.pp (sexp_of_list sexp_of_string descriptions)
+    Format.asprintf "%a" Sexp.pp [%message (descriptions: string list)]
   in
   assert_equal
     ~cmp:(List.equal ~equal:String.equal)

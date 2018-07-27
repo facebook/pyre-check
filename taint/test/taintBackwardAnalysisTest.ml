@@ -54,7 +54,7 @@ let assert_taint_in_taint_out source { define_name; taint_in_taint_out_parameter
       let expected_positions = Int.Set.of_list taint_in_taint_out_parameters in
       assert_equal
         ~cmp:Int.Set.equal
-        ~printer:(Fn.compose Sexp.to_string Int.Set.sexp_of_t)
+        ~printer:(fun set -> Sexp.to_string [%message (set: Int.Set.t)])
         expected_positions
         taint_in_taint_out_positions
 

@@ -10,6 +10,7 @@ module Make(Key: Map.Key)(Element : AbstractDomain.S) = struct
   module ElementMap = Map.Make(Key)
   include (ElementMap : module type of ElementMap with type 'a t := 'a ElementMap.t)
   type t = Element.t ElementMap.t
+  [@@deriving sexp]
 
   let bottom = ElementMap.empty
   let is_bottom d =
@@ -46,9 +47,6 @@ module Make(Key: Map.Key)(Element : AbstractDomain.S) = struct
     with
     | Exit -> false
 
-  let show a =
-    let sexp_of_element e =
-      Element.show e |> String.sexp_of_t
-    in
-    ElementMap.sexp_of_t sexp_of_element a |> Sexp.to_string
+  let show map =
+    Sexp.to_string [%message (map: Element.t ElementMap.t)]
 end

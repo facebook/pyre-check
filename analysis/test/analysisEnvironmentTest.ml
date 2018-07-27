@@ -1286,7 +1286,7 @@ let test_infer_protocols _ =
     let expected_edges = Edge.Set.of_list expected_edges in
     assert_equal
       ~cmp:Edge.Set.equal
-      ~printer:(fun set -> Sexp.to_string (Edge.Set.sexp_of_t set))
+      ~printer:(fun set -> Sexp.to_string [%message (set: Edge.Set.t)])
       expected_edges
       edges
   in
