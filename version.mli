@@ -6,3 +6,4 @@
 
 val build_info: unit -> string
 val version: unit -> string
+val log_version_banner: unit -> unit

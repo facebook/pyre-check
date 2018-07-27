@@ -218,6 +218,7 @@ let find_watchman_directory { Configuration.source_root; _ } =
 
 
 let initialize watchman_directory configuration =
+  Version.log_version_banner ();
   Log.info
     "Watchman subscription: %s"
     (Yojson.pretty_to_string (subscription watchman_directory));

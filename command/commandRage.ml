@@ -51,6 +51,10 @@ let display_log { RageResponse.RageResult.title; data } =
 
 
 let run_rage source_root () =
+  Out_channel.printf
+    "Actual binary version: %s\nBinary build info: %s\n"
+    (Version.version ())
+    (Version.build_info ());
   let configuration = Configuration.create ~source_root:(Path.create_absolute source_root) () in
   let logs = get_watchman_watched_directories () :: get_logs configuration in
   List.iter ~f:display_log logs

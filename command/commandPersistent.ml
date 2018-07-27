@@ -68,6 +68,7 @@ let run_command expected_version log_identifier source_root () =
   Format.pp_set_formatter_out_channel
     Format.err_formatter
     (Out_channel.create log_path);
+  Version.log_version_banner ();
 
   let server_socket = connect_to_server () in
 

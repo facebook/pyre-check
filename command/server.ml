@@ -425,7 +425,7 @@ let request_handler_thread
 
 (** Main server either as a daemon or in terminal *)
 let serve (socket, server_configuration, watchman_pid) =
-  Log.debug "Server running as pid %d" (Pid.to_int (Unix.getpid ()));
+  Version.log_version_banner ();
   let configuration = server_configuration.configuration in
   Scheduler.initialize_process ~configuration;
 
@@ -506,6 +506,7 @@ let start ({
   try
     Scheduler.initialize_process ~configuration;
     Log.info "Starting up server...";
+    Version.log_version_banner ();
 
     if not (Lock.check (Path.absolute lock_path)) then
       raise AlreadyRunning;
