@@ -71,8 +71,10 @@ remove_hack_parallel:
 
 .PHONY: jbuilder
 jbuilder:
+	@./scripts/generate-version-number.sh development
 	@dune build @install -j auto
 
 .PHONY: jtest
 jtest:
+	@./scripts/generate-version-number.sh development
 	@OUNIT_RUNNER="sequential" dune runtest -j auto

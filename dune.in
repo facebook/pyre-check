@@ -13,7 +13,10 @@
 (library
  (name version)
  (modules version)
- (public_name pyrelib.version))
+ (public_name pyrelib.version)
+ (libraries
+  pyrelib.log
+  core))
 
 
 (library

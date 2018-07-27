@@ -22,4 +22,5 @@
   pyrelib.service
   pyrelib.ast
   pyrelib.analysis
-  pyrelib.experimental))
+  pyrelib.experimental
+  pyrelib.version))
