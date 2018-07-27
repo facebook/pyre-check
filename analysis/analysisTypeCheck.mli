@@ -14,6 +14,7 @@ module Error = AnalysisError
 module Coverage = AnalysisCoverage
 module Cfg = AnalysisCfg
 module Resolution = AnalysisResolution
+module Type = AnalysisType
 
 
 module State : sig
@@ -71,7 +72,11 @@ module State : sig
   val widening_threshold: int
 
   (* Visible for testing. *)
-  val forward_expression: state: t -> expression: Expression.t -> t
+  type resolved = {
+    state: t;
+    resolved: Type.t;
+  }
+  val forward_expression: state: t -> expression: Expression.t -> resolved
   val forward_statement: state: t -> statement: Statement.t -> t
 
   include AnalysisFixpoint.State with type t := t

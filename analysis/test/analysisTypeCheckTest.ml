@@ -454,7 +454,31 @@ let test_forward_expression _ =
   assert_forward
     ["x", Type.Bottom]
     "y = identity(x)"
-    ["x", Type.Bottom; "y", Type.Bottom] (* Limitation: We're losing y's constraints here. *)
+    ["x", Type.Bottom; "y", Type.Bottom]; (* Limitation: We're losing y's constraints here. *)
+
+  (* TODO(T30448045): gradually migrate existing tests to check resolved type. *)
+  let assert_forward ?(precondition = []) ?(postcondition = []) ?errors expression annotation =
+    let expression = parse_single_expression expression in
+    let { State.state = forwarded; resolved } =
+      State.forward_expression
+        ~state:(create precondition)
+        ~expression
+    in
+    assert_equal ~cmp:Type.equal ~printer:Type.show annotation resolved;
+    assert_state_equal (create postcondition) forwarded;
+    match errors with
+    | Some errors ->
+        assert_equal
+          ~cmp:(List.equal ~equal:String.equal)
+          ~printer:(String.concat ~sep:"\n")
+          errors
+          (State.errors forwarded |> List.map ~f:(Error.description ~detailed:false))
+    | _ ->
+        ()
+  in
+
+  assert_forward "True" Type.bool;
+  assert_forward "False" Type.bool
 
 
 let test_forward_statement _ =

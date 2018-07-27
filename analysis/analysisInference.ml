@@ -16,7 +16,6 @@ module Cfg = AnalysisCfg
 module Environment = AnalysisEnvironment
 module Error = AnalysisError
 module Preprocessing = AnalysisPreprocessing
-module Type = AnalysisType
 module TypeOrder = AnalysisTypeOrder
 module Coverage = AnalysisCoverage
 module TypeCheck = AnalysisTypeCheck

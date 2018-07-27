@@ -620,12 +620,19 @@ module State = struct
     }
 
 
+  type resolved = {
+    state: t;
+    resolved: Type.t;
+  }
+
+
   let rec forward_expression
       ~state:({ resolution; errors; define; _ } as state)
       ~expression:{ Node.location; value } =
     let rec forward_entry ~state ~entry:{ Dictionary.key; value } =
-      let state = forward_expression ~state ~expression:key in
-      forward_expression ~state ~expression:value
+      let { state; _ } = forward_expression ~state ~expression:key in
+      let { state; _ } = forward_expression ~state ~expression:value in
+      state
     in
     let forward_generator
         ~state
@@ -834,16 +841,19 @@ module State = struct
               state
           | Access.Call { Node.value = arguments; _ } ->
               let forward_argument state { Argument.value; _ } =
-                forward_expression ~state ~expression:value
+                let { state; _ } = forward_expression ~state ~expression:value in
+                state
               in
               List.fold arguments ~f:forward_argument ~init:state
           | Access.Expression expression ->
-              forward_expression ~state ~expression
+              let { state; _ } = forward_expression ~state ~expression in
+              state
         in
-        List.fold access ~f:forward_access ~init:state
+        let state = List.fold access ~f:forward_access ~init:state in
+        { state; resolved = Type.Top }
 
     | Await expression ->
-        let state = forward_expression ~state ~expression in
+        let { state; _ } = forward_expression ~state ~expression in
         let actual = Annotated.resolve ~resolution expression in
         let is_awaitable =
           Resolution.less_or_equal
@@ -851,14 +861,17 @@ module State = struct
             ~left:actual
             ~right:(Type.awaitable Type.Object)
         in
-        if not is_awaitable then
-          Error.create
-            ~location
-            ~kind:(Error.IncompatibleAwaitableType actual)
-            ~define
-          |> add_error ~state
-        else
-          state
+        let state =
+          if not is_awaitable then
+            Error.create
+              ~location
+              ~kind:(Error.IncompatibleAwaitableType actual)
+              ~define
+            |> add_error ~state
+          else
+            state
+        in
+        { state; resolved = Type.Top }
 
     | BooleanOperator {
         BooleanOperator.left;
@@ -881,17 +894,22 @@ module State = struct
         (* We only analyze right, as it contains the assumption of `left` as a
            statement that will be checked. *)
         let state = { state with resolution } in
-        List.fold
-          ~init:state
-          ~f:(fun state statement -> forward_statement ~state ~statement)
-          right
+        let state =
+          List.fold
+            ~init:state
+            ~f:(fun state statement -> forward_statement ~state ~statement)
+            right
+        in
+        { state; resolved = Type.Top }
 
     | ComparisonOperator { ComparisonOperator.left; right; _ } ->
-        let state = forward_expression ~state ~expression:left in
+        let { state; _ } = forward_expression ~state ~expression:left in
         let accumulate state (_, expression) =
-          forward_expression ~state ~expression
+          let { state; _ } = forward_expression ~state ~expression in
+          state
         in
-        List.fold right ~f:accumulate ~init:state
+        let state = List.fold right ~f:accumulate ~init:state in
+        { state; resolved = Type.Top }
 
     | Dictionary { Dictionary.entries; keywords } ->
         let state =
@@ -900,11 +918,15 @@ module State = struct
             ~f:(fun state entry -> forward_entry ~state ~entry)
             ~init:state
         in
-        begin
+        let state =
           match keywords with
-          | None -> state
-          | Some keyword -> forward_expression ~state ~expression:keyword
-        end
+          | None ->
+              state
+          | Some keyword ->
+              let { state; _ } = forward_expression ~state ~expression:keyword in
+              state
+        in
+        { state; resolved = Type.Top }
 
     | DictionaryComprehension { Comprehension.element; generators } ->
         let state = { state with resolution } in
@@ -914,7 +936,11 @@ module State = struct
             ~f:(fun state generator -> forward_generator ~state ~generator)
             ~init:state
         in
-        forward_entry ~state ~entry:element
+        let state = forward_entry ~state ~entry:element in
+        { state; resolved = Type.Top }
+
+    | False ->
+        { state; resolved = Type.bool }
 
     | Lambda { Lambda.body; parameters } ->
         let resolution =
@@ -936,10 +962,15 @@ module State = struct
     | List elements
     | Set elements
     | Tuple elements ->
-        List.fold
-          elements
-          ~f:(fun state expression-> forward_expression ~state ~expression)
-          ~init:state
+        let state =
+          List.fold
+            elements
+            ~f:(fun state expression ->
+                let { state; _ } = forward_expression ~state ~expression in
+                state)
+            ~init:state
+        in
+        { state; resolved = Type.Top }
 
     | Generator { Comprehension.element; generators }
     | ListComprehension { Comprehension.element; generators }
@@ -962,36 +993,53 @@ module State = struct
         end
 
     | String { StringLiteral.kind = StringLiteral.Format expressions; _ } ->
-        List.fold
-          expressions
-          ~f:(fun state expression -> forward_expression ~state ~expression)
-          ~init:state
+        let state =
+          List.fold
+            expressions
+            ~f:(fun state expression ->
+                let { state; _ } = forward_expression ~state ~expression in
+                state)
+            ~init:state
+        in
+        { state; resolved = Type.Top }
 
     | Ternary { Ternary.target; test; alternative } ->
         let state = { state with resolution } in
         let target_state =
           forward_statement ~state ~statement:(Statement.assume test)
-          |> fun state -> forward_expression ~state ~expression:target
+          |> fun state ->
+          let { state; _ } = forward_expression ~state ~expression:target in
+          state
         in
         let alternative_state =
           forward_statement ~state ~statement:(Statement.assume (Expression.negate test))
-          |> fun state -> forward_expression ~state ~expression:alternative
+          |> fun state ->
+          let { state; _ } = forward_expression ~state ~expression:alternative in
+          state
         in
-        join target_state alternative_state
+        let state = join target_state alternative_state in
+        { state; resolved = Type.Top }
+
+    | True ->
+        { state; resolved = Type.bool }
 
     | UnaryOperator { UnaryOperator.operand; operator = _ } ->
         forward_expression ~state ~expression:operand
 
     | Expression.Yield yield ->
-        begin
+        let state =
           match yield with
-          | None -> state
-          | Some expression -> forward_expression ~state ~expression
-        end
+          | None ->
+              state
+          | Some expression ->
+              let { state; _ } = forward_expression ~state ~expression in
+              state
+        in
+        { state; resolved = Type.Top }
 
     (* Trivial base cases *)
-    | Complex _ | Ellipses | False | Float _ | Integer _ | String _ | True ->
-        state
+    | Complex _ | Ellipses | Float _ | Integer _ | String _ ->
+        { state; resolved = Type.Top }
 
 
   and forward_statement
@@ -1031,8 +1079,9 @@ module State = struct
       } as assign) ->
         let { resolution; _ } as state =
           value
-          >>| (fun expression -> forward_expression ~state ~expression)
-
+          >>| (fun expression ->
+               let { state; _ } = forward_expression ~state ~expression in
+               state)
           |> Option.value ~default:state
         in
         let state =
@@ -1286,7 +1335,8 @@ module State = struct
             | _ -> true
           in
           if check_target then
-            forward_expression ~state ~expression:target
+            let { state; _ } = forward_expression ~state ~expression:target in
+            state
           else
             state
         in
@@ -1294,7 +1344,10 @@ module State = struct
         |> Annotated.Assign.fold ~resolution ~f:forward_assign ~initial:state
 
     | Assert { Assert.test; _ } ->
-        let { resolution; _ } as state = forward_expression ~state ~expression:test in
+        let { resolution; _ } as state =
+          let { state; _ } = forward_expression ~state ~expression:test in
+          state
+        in
         let resolution =
           match Node.value test with
           | Access [
@@ -1514,7 +1567,8 @@ module State = struct
         state
 
     | Expression expression ->
-        forward_expression ~state ~expression
+        let { state; _ } = forward_expression ~state ~expression in
+        state
 
     | Global identifiers ->
         let resolution =
@@ -1559,7 +1613,8 @@ module State = struct
         |> List.fold ~init:state ~f:(fun state error -> add_error ~state error)
 
     | Raise (Some expression) ->
-        forward_expression ~state ~expression
+        let { state; _ } = forward_expression ~state ~expression in
+        state
     | Raise _ ->
         state
 
@@ -1605,7 +1660,9 @@ module State = struct
     | Statement.Yield { Node.value = Expression.Yield return; _ } ->
         let state =
           return
-          >>| (fun expression -> forward_expression ~state ~expression)
+          >>| (fun expression ->
+               let { state; _ } = forward_expression ~state ~expression in
+               state)
           |> Option.value ~default:state
         in
         let actual =
@@ -1637,7 +1694,7 @@ module State = struct
         state
 
     | YieldFrom { Node.value = Expression.Yield (Some return); _ } ->
-        let state = forward_expression ~state ~expression:return in
+        let { state; _ } = forward_expression ~state ~expression:return in
         let actual =
           match Annotated.resolve ~resolution return with
           | Type.Parametric { Type.name; parameters = [parameter] }
