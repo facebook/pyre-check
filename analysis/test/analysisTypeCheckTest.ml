@@ -502,6 +502,30 @@ let test_forward_expression _ =
     "f'string{undefined}'"
     Type.string;
 
+  assert_forward "3 if True else 1" Type.integer;
+  assert_forward "1.0 if True else 1" Type.float;
+  assert_forward "1 if True else 1.0" Type.float;
+  assert_forward
+    ~errors:["Undefined name [18]: Global name `undefined` is undefined."]
+    "undefined if True else 1"
+    Type.Top;
+  assert_forward
+    ~errors:["Undefined name [18]: Global name `undefined` is undefined."]
+    "1 if undefined else 1"
+    Type.integer;
+  assert_forward
+    ~errors:["Undefined name [18]: Global name `undefined` is undefined."]
+    "1 if True else undefined"
+    Type.Top;
+  assert_forward
+    ~errors:[
+      "Undefined name [18]: Global name `undefined` is undefined.";
+      "Undefined name [18]: Global name `undefined` is undefined.";
+      "Undefined name [18]: Global name `undefined` is undefined.";
+    ]
+    "undefined if undefined else undefined"
+    Type.Top;
+
   assert_forward "True" Type.bool
 
 

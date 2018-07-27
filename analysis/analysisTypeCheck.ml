@@ -666,6 +666,12 @@ module State = struct
       List.map ~f:Statement.assume conditions
       |> List.fold ~init:state ~f:(fun state statement -> forward_statement ~state ~statement)
     in
+    let join_resolved ~resolution left right =
+      {
+        state = join left.state right.state;
+        resolved = Resolution.join resolution left.resolved right.resolved;
+      }
+    in
     match value with
     | Access access ->
         let resolution =
@@ -1019,20 +1025,17 @@ module State = struct
 
     | Ternary { Ternary.target; test; alternative } ->
         let state = { state with resolution } in
-        let target_state =
+        let target =
           forward_statement ~state ~statement:(Statement.assume test)
           |> fun state ->
-          let { state; _ } = forward_expression ~state ~expression:target in
-          state
+          forward_expression ~state ~expression:target
         in
-        let alternative_state =
+        let alternative =
           forward_statement ~state ~statement:(Statement.assume (Expression.negate test))
           |> fun state ->
-          let { state; _ } = forward_expression ~state ~expression:alternative in
-          state
+          forward_expression ~state ~expression:alternative
         in
-        let state = join target_state alternative_state in
-        { state; resolved = Type.Top }
+        join_resolved ~resolution target alternative
 
     | True ->
         { state; resolved = Type.bool }
