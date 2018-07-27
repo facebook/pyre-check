@@ -42,7 +42,7 @@ let create_model define resolution =
   | Type.Callable { kind = Named define_name ; overloads; implicit } ->
       begin match overloads with
         | {
-          annotation = Type.Parametric { name; parameters = (Primitive primitive) :: _ }
+          annotation = Type.Parametric { name; parameters = (Primitive primitive) :: _ }; _
         } :: _ when (Identifier.show name = taint_annotation) ->
             let taint_source_kind = Taint.Sources.create (Identifier.show primitive) in
             {

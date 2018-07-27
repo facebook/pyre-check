@@ -34,7 +34,7 @@ let transform_ast ({ Source.statements; _ } as source) =
             {
               Argument.value = {
                 Node.location;
-                value = String { StringLiteral.value = serialized };
+                value = String { StringLiteral.value = serialized; _ };
               };
               _;
             };
@@ -44,7 +44,7 @@ let transform_ast ({ Source.statements; _ } as source) =
           | [_; { Argument.value = { Node.value = List arguments; _ }; _ }] ->
               let accessify ({ Node.value; _ } as expression) =
                 match value with
-                | String { StringLiteral.value = name } ->
+                | String { StringLiteral.value = name; _ } ->
                     name, any_annotation
                 | Tuple [
                     { Node.value = String { StringLiteral.value = name; _ }; _ };
@@ -90,18 +90,18 @@ let transform_ast ({ Source.statements; _ } as source) =
       self_parameter :: List.map attributes ~f:to_parameter
     in
     Statement.Define {
-        Define.name = parent @ Access.create "__init__";
-        parameters;
-        body = [
-          Node.create ~location (Statement.Expression (Node.create ~location Expression.Ellipses));
-        ];
-        decorators = [];
-        docstring = None;
-        return_annotation = None;
-        async = false;
-        generated = false;
-        parent = Some parent;
-      }
+      Define.name = parent @ Access.create "__init__";
+      parameters;
+      body = [
+        Node.create ~location (Statement.Expression (Node.create ~location Expression.Ellipses));
+      ];
+      decorators = [];
+      docstring = None;
+      return_annotation = None;
+      async = false;
+      generated = false;
+      parent = Some parent;
+    }
     |> Node.create ~location
   in
   let tuple_base ~location =

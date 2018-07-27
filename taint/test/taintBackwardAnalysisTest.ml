@@ -39,7 +39,7 @@ let assert_taint_in_taint_out source { define_name; taint_in_taint_out_parameter
   in
   match Fixpoint.get_model call_target >>= Result.get_model Taint.Result.kind with
   | None -> assert_failure ("no model for " ^ define_name)
-  | Some { backward = { taint_in_taint_out; _ }; } ->
+  | Some { backward = { taint_in_taint_out; _ }; _ } ->
       let extract_parameter_position root _ positions =
         match root with
         | AccessPath.Root.Parameter { position; _ } -> Int.Set.add positions position

@@ -24,7 +24,11 @@ let transform_ast ({ Source.statements; qualifier; _ } as source) =
                   Access.Call {
                     Node.value = [
                       {
-                        Argument.value = { Node.value = String { StringLiteral.value = name }; _ };
+                        Argument.value =
+                          {
+                            Node.value = String { StringLiteral.value = name; _ };
+                            _
+                          };
                         _;
                       };
                       {

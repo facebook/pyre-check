@@ -213,7 +213,7 @@ let extract_source_model _parameters exit_taint =
   ForwardState.assign ~root:Root.LocalResult ~path:[] return_taint ForwardState.empty
 
 
-let run ({ Define.name; parameters } as define) =
+let run ({ Define.name; parameters; _ } as define) =
   let cfg = Cfg.create define in
   let initial = FixpointState.create () in
   let () = Log.log ~section:`Taint "Processing CFG:@.%s" (Log.Color.cyan (Cfg.show cfg)) in

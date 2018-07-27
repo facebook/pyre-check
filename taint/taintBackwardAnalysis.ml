@@ -74,7 +74,7 @@ module rec FixpointState : FixpointState = struct
     | Some (root, path) -> store_weak_taint ~root ~path taint state
 
 
-  let rec analyze_argument taint { Argument.value = argument } state =
+  let rec analyze_argument taint { Argument.value = argument; _ } state =
     analyze_expression taint argument state
 
   and analyze_normalized_expression state taint expression =
@@ -192,7 +192,7 @@ let extract_taint_in_taint_out_model parameters entry_taint =
   let filter_to_local_return taint =
     BackwardTaint.filter ~f:((=) TaintSinks.LocalReturn) taint
   in
-  let extract_taint_in_taint_out position model { Node.value = { Parameter.name; _ } } =
+  let extract_taint_in_taint_out position model { Node.value = { Parameter.name; _ }; _ } =
     let taint_in_taint_out_taint =
       BackwardState.read (Root.Variable name) entry_taint
       |> BackwardState.filter_map_tree ~f:filter_to_local_return
@@ -206,7 +206,7 @@ let extract_taint_in_taint_out_model parameters entry_taint =
   List.foldi parameters ~f:extract_taint_in_taint_out ~init:BackwardState.empty
 
 
-let run ({ Define.name; parameters } as define) =
+let run ({ Define.name; parameters; _ } as define) =
   (* TODO(T31697954): initial_taint is hardcoded *)
   let initial = { FixpointState.taint = initial_taint } in
   let cfg = Cfg.create define in
