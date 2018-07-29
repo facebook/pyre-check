@@ -76,5 +76,4 @@ jbuilder:
 
 .PHONY: jtest
 jtest:
-	@./scripts/generate-version-number.sh development
 	@OUNIT_RUNNER="sequential" dune runtest -j auto
