@@ -681,6 +681,7 @@ module State = struct
     in
     match value with
     | Access access ->
+        (* TODO(T30448045) *)
         let resolution =
           (* Walk through accesses and infer annotations as we go. *)
           let propagated =
@@ -866,6 +867,7 @@ module State = struct
         { state; resolved = Type.Top }
 
     | Await expression ->
+        (* TODO(T30448045) *)
         let { state; _ } = forward_expression ~state ~expression in
         let actual = Annotated.resolve ~resolution expression in
         let is_awaitable =
@@ -891,6 +893,7 @@ module State = struct
         operator;
         right = ({ Node.location; _ } as right);
       } ->
+        (* TODO(T30448045) *)
         let right =
           let assume =
             match operator with
@@ -916,6 +919,7 @@ module State = struct
         { state; resolved = Type.Top }
 
     | ComparisonOperator { ComparisonOperator.left; right; _ } ->
+        (* TODO(T30448045) *)
         let { state; _ } = forward_expression ~state ~expression:left in
         let accumulate state (_, expression) =
           let { state; _ } = forward_expression ~state ~expression in
@@ -928,6 +932,7 @@ module State = struct
         { state; resolved = Type.complex }
 
     | Dictionary { Dictionary.entries; keywords } ->
+        (* TODO(T30448045) *)
         let state =
           List.fold
             entries
@@ -945,6 +950,7 @@ module State = struct
         { state; resolved = Type.Top }
 
     | DictionaryComprehension { Comprehension.element; generators } ->
+        (* TODO(T30448045) *)
         let state = { state with resolution } in
         let state =
           List.fold
@@ -968,6 +974,7 @@ module State = struct
         { state; resolved = Type.integer }
 
     | Lambda { Lambda.body; parameters } ->
+        (* TODO(T30448045) *)
         let resolution =
           let add_parameter resolution { Node.value = { Parameter.name; _ }; _ } =
             let name =
@@ -995,6 +1002,7 @@ module State = struct
     | Generator { Comprehension.element; generators }
     | ListComprehension { Comprehension.element; generators }
     | SetComprehension { Comprehension.element; generators } ->
+        (* TODO(T30448045) *)
         let state = { state with resolution } in
         let state =
           List.fold
@@ -1055,6 +1063,7 @@ module State = struct
         { state; resolved = Type.tuple (List.rev resolved) }
 
     | UnaryOperator { UnaryOperator.operand; operator = _ } ->
+        (* TODO(T30448045) *)
         forward_expression ~state ~expression:operand
 
     | Expression.Yield (Some expression) ->
