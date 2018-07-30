@@ -1027,13 +1027,11 @@ module State = struct
         let state = { state with resolution } in
         let target =
           forward_statement ~state ~statement:(Statement.assume test)
-          |> fun state ->
-          forward_expression ~state ~expression:target
+          |> fun state -> forward_expression ~state ~expression:target
         in
         let alternative =
           forward_statement ~state ~statement:(Statement.assume (Expression.negate test))
-          |> fun state ->
-          forward_expression ~state ~expression:alternative
+          |> fun state -> forward_expression ~state ~expression:alternative
         in
         join_resolved ~resolution target alternative
 
