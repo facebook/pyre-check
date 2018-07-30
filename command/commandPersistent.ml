@@ -13,6 +13,10 @@ module Protocol = ServerProtocol
 module Socket = CommandSocket
 
 
+type reason = string
+type exit_code = int
+exception ClientExit of reason * exit_code
+
 let communicate server_socket =
   let display_nuclide_message message =
     ShowMessage.create LanguageServer.Types.ShowMessageParams.InfoMessage message
@@ -65,7 +69,7 @@ let communicate server_socket =
         | Protocol.ClientExitResponse Protocol.Persistent ->
             Log.info "Received stop request, exiting.";
             Unix.close server_socket;
-            exit 0
+            raise (ClientExit ("explicit stop request", 0))
         | _ -> ()
       in
       let process_stdin_socket () =
@@ -83,14 +87,16 @@ let communicate server_socket =
         with
         | End_of_file ->
             display_nuclide_message "Pyre: Lost connection to server, exiting...";
-            exit 0
+            raise (ClientExit ("unable to process socket", 0))
     in
-    try
-      List.iter ~f:process_socket read;
-      listen server_socket ()
-    with Unix.Unix_error _ ->
-      Unix.close server_socket;
-      exit 0
+    begin
+      try
+        List.iter ~f:process_socket read
+      with Unix.Unix_error _ ->
+        Unix.close server_socket;
+        raise (ClientExit ("Unix error while processing sockets", 0))
+    end;
+    listen server_socket ()
   in
   listen server_socket ()
 
@@ -118,37 +124,46 @@ let run_command expected_version log_identifier source_root () =
   Format.pp_set_formatter_out_channel Format.err_formatter (Out_channel.create log_path);
   Version.log_version_banner ();
 
-  let server_socket =
-    let server_socket =
-      try
-        ServerOperations.connect
-          ~retries:3
-          ~configuration
-      with
-      | ServerOperations.ConnectionFailure ->
-          exit 1
-      | ServerOperations.VersionMismatch { ServerOperations.server_version; expected_version } ->
-          Log.error
-            "Exiting due to version mismatch. \
-             The server version is %s, but the client was called with %s"
-            server_version
-            expected_version;
-          exit 1
-    in
-    Socket.write server_socket (Protocol.Request.ClientConnectionRequest Protocol.Persistent);
-    begin
-      match Socket.read server_socket with
-      | (Protocol.ClientConnectionResponse Protocol.Persistent) -> ()
-      | _ ->
-          let message = "Unexpected json response when attempting persistent connection" in
-          Log.info "%s" message;
-          failwith message
-    end;
-    server_socket
-  in
   try
+    let server_socket =
+      let server_socket =
+        try
+          ServerOperations.connect
+            ~retries:3
+            ~configuration
+        with
+        | ServerOperations.ConnectionFailure ->
+            raise (ClientExit ("connection failure", 1))
+        | ServerOperations.VersionMismatch { ServerOperations.server_version; expected_version } ->
+            Log.error
+              "Exiting due to version mismatch. \
+               The server version is %s, but the client was called with %s"
+              server_version
+              expected_version;
+            raise (ClientExit ("version mismatch", 1))
+      in
+      Socket.write server_socket (Protocol.Request.ClientConnectionRequest Protocol.Persistent);
+      begin
+        match Socket.read server_socket with
+        | (Protocol.ClientConnectionResponse Protocol.Persistent) -> ()
+        | _ ->
+            let message = "Unexpected json response when attempting persistent connection" in
+            Log.info "%s" message;
+            raise (ClientExit ("unexpected json response", 1))
+      end;
+      server_socket
+    in
     communicate server_socket
-  with uncaught_exception ->
+  with
+  | ClientExit (reason, exit_code) ->
+      Statistics.event
+        ~flush:true
+        ~name:"client exit"
+        ~integers:["exit code", exit_code]
+        ~normals:["reason", reason]
+        ();
+      exit exit_code
+  | uncaught_exception ->
     Statistics.event
       ~flush:true
       ~name:"persistent client exception"
