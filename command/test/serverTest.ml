@@ -452,123 +452,91 @@ let test_connect _ =
 
 
 let test_incremental_typecheck _ =
-  let path, _ =
+  let path_to_python_file prefix =
     Filename.open_temp_file
       ~in_dir:(Path.current_working_directory () |> Path.absolute)
-      "test" ".py"
+      prefix ".py"
+    |> fst
   in
-  let stub_path, _ =
-    Filename.open_temp_file
-      ~in_dir:(Path.current_working_directory () |> Path.absolute)
-      "stub" ".py"
-  in
+  let path = path_to_python_file "test" in
+  let stub_path = path_to_python_file "stub" in
   Out_channel.write_all (stub_path ^ "i") ~data:"";
 
-  let relative_path =
+  let relativize path =
     Path.create_relative ~root:(Path.current_working_directory ()) ~relative:path
     |> Path.relative
     |> Option.value ~default:path
   in
-  let relative_stub_path =
-    Path.create_relative ~root:(Path.current_working_directory ()) ~relative:stub_path
-    |> Path.relative
-    |> Option.value ~default:stub_path
-  in
+  let relative_path = relativize path in
+  let relative_stub_path = relativize stub_path in
   let source =
     {|
-        def foo()-> None:
+        def foo() -> None:
           return 1
     |}
     |> trim_extra_indentation
   in
-  let errors =
-    associate_errors_and_filenames
-      (make_errors ~path:relative_path ~qualifier:(Source.qualifier ~path:relative_path) source)
+  let assert_response ?state ~request response =
+    assert_response ~path ~source ?state ~request (Some response)
   in
   assert_response
-    ~source
     ~request:(Protocol.Request.TypeCheckRequest
                 (Protocol.TypeCheckRequest.create
                    ~update_environment_with:[file path]
                    ~check:[file path]
                    ()))
-    (Some (Protocol.TypeCheckResponse [(File.Handle.create relative_path), []]));
+    (Protocol.TypeCheckResponse [(File.Handle.create relative_path), []]);
   let files = [file ~content:(Some source) path] in
   let request_with_content =
     (Protocol.Request.TypeCheckRequest
        (Protocol.TypeCheckRequest.create ~update_environment_with:files ~check:files ()))
   in
-  assert_response
-    ~path
-    ~source
-    ~request:request_with_content
-    (Some (Protocol.TypeCheckResponse errors));
+  let errors =
+    associate_errors_and_filenames
+      (make_errors ~path:relative_path ~qualifier:(Source.qualifier ~path:relative_path) source)
+  in
+  assert_response ~request:request_with_content (Protocol.TypeCheckResponse errors);
   (* Assert that only files getting used to update the environment get parsed. *)
-  let request_only_check =
-    (Protocol.Request.TypeCheckRequest
-       (Protocol.TypeCheckRequest.create
-          ~update_environment_with:[]
-          ~check:[file ~content:(Some "def foo() -> int: return 1") path]
-          ()))
+  let open Protocol in
+  let check_request ?(update_environment_with = []) ?(check = []) () =
+    Request.TypeCheckRequest
+       (TypeCheckRequest.create
+          ~update_environment_with
+          ~check
+          ())
   in
-  let request_stub_update =
+  assert_response
+    ~request:(check_request ~check:[file ~content:(Some "def foo() -> int: return 1") path] ())
+    (Protocol.TypeCheckResponse errors);
+  let () =
     let stub_file = file ~content:(Some "") (stub_path ^ "i") in
-    (Protocol.Request.TypeCheckRequest
-       (Protocol.TypeCheckRequest.create
-          ~update_environment_with:[stub_file]
-          ~check:[]
-          ()))
+    assert_response
+      ~request:(check_request ~update_environment_with:[stub_file] ())
+      (Protocol.TypeCheckResponse [])
   in
-  let request_with_conflicting_stub =
-    Protocol.Request.TypeCheckRequest
-      (Protocol.TypeCheckRequest.create
-         ~update_environment_with:[]
-         ~check:[file ~content:(Some "def foo() -> int: return \"\"") stub_path]
-         ())
-  in
+  assert_response
+    ~request:(
+      check_request
+        ~check:[file ~content:(Some "def foo() -> int: return \"\"") stub_path]
+        ())
+    (Protocol.TypeCheckResponse [File.Handle.create relative_stub_path, []]);
 
-  let request_update_and_check =
+  let () =
     let file = file ~content:(Some "def foo() -> int: return 1") path in
-    (Protocol.Request.TypeCheckRequest
-       (Protocol.TypeCheckRequest.create
-          ~update_environment_with:[file]
-          ~check:[file]
-          ()))
+    assert_response
+      ~request:(check_request ~update_environment_with:[file] ~check:[file] ())
+      (Protocol.TypeCheckResponse [File.Handle.create relative_path, []])
   in
-  assert_response
-    ~path
-    ~source
-    ~request:request_only_check
-    (Some (Protocol.TypeCheckResponse errors));
-  assert_response
-    ~path
-    ~source
-    ~request:request_update_and_check
-    (Some (Protocol.TypeCheckResponse [File.Handle.create relative_path, []]));
-  assert_response
-    ~path
-    ~source
-    ~request:request_stub_update
-    (Some (Protocol.TypeCheckResponse []));
-  assert_response
-    ~path
-    ~source
-    ~request:request_with_conflicting_stub
-    (Some (Protocol.TypeCheckResponse [File.Handle.create relative_stub_path, []]));
 
   let state = mock_server_state (File.Handle.Table.create ()) in
   assert_response
-    ~path
-    ~source
     ~state
     ~request:Protocol.Request.FlushTypeErrorsRequest
-    (Some (Protocol.TypeCheckResponse []));
+    (Protocol.TypeCheckResponse []);
   assert_response
-    ~path
-    ~source
     ~state:{ state with State.deferred_requests = [request_with_content] }
     ~request:Protocol.Request.FlushTypeErrorsRequest
-    (Some (Protocol.TypeCheckResponse errors))
+    (Protocol.TypeCheckResponse errors)
 
 
 let test_protocol_language_server_protocol _ =
