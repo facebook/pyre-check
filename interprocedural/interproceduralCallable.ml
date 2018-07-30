@@ -28,6 +28,18 @@ type t = [ real_target | override_target ]
 type target_with_stored_result = real_target
 
 
+let make_real access = `RealTarget access
+let make_override access = `OverrideTarget access
+
+
+let get_real_access = function
+  | `RealTarget access -> access
+
+
+let get_override_access = function
+  | `OverrideTarget access -> access
+
+
 module Key = struct
   type nonrec t = t
   let to_string = show
@@ -48,6 +60,9 @@ module FileOfDefinition = SharedMemory.WithCache (RealKey)
       let prefix = Prefix.make ()
       let description = "File of definition"
     end)
+
+
+module Set = Caml.Set.Make(Key)
 
 
 let add_definition callable handle =

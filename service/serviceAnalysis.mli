@@ -5,13 +5,24 @@
 
 open Ast
 open Analysis
-open Expression
+open Statement
 
 
 val overrides_of_source:
   (module Environment.Handler)
   -> Source.t
   -> (Access.t list) Access.Map.t
+
+val record_and_merge_call_graph:
+  (module Environment.Handler)
+  -> CallGraph.t
+  -> File.Handle.t
+  -> Source.t
+  -> CallGraph.t
+
+val record_overrides: (module Environment.Handler) -> Source.t -> unit
+
+val record_path_of_definitions: File.Handle.t -> Source.t -> Define.t Node.t list
 
 val analyze
   :  scheduler: ServiceScheduler.t

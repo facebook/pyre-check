@@ -4,4 +4,4 @@
     LICENSE file in the root directory of this source tree. *)
 
 
-(* Intentionally left blank. *)
+val abstract_kind : Interprocedural.AnalysisKind.abstract

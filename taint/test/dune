@@ -1,6 +1,7 @@
 (tests
  (names
   taintAccessPathTest
+  taintAnalysisTest
   taintForwardAnalysisTest
   taintBackwardAnalysisTest)
  (preprocess

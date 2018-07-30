@@ -91,7 +91,9 @@ module type ANALYSIS_RESULT_WITH_REGISTRATION = sig
 
   module Register(Analyzer : ANALYZER
                   with type result := result
-                   and type call_model := call_model): sig end
+                   and type call_model := call_model): sig
+    val abstract_kind: Kind.abstract
+  end
 end
 
 (* The full signature of an individual analysis. This is what the general

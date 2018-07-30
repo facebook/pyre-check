@@ -9,6 +9,8 @@ open Expression
 
 type t = (Access.t list) Access.Map.t
 
+val empty: t
+
 val create:
   environment: (module AnalysisEnvironment.Handler)
   -> source: Source.t

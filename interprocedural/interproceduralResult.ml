@@ -105,7 +105,9 @@ module type ANALYSIS_RESULT_WITH_REGISTRATION = sig
 
   module Register(Analyzer : ANALYZER
                   with type result := result
-                   and type call_model := call_model): sig end
+                   and type call_model := call_model): sig
+    val abstract_kind: Kind.abstract
+  end
 end
 
 
@@ -144,12 +146,14 @@ let analyses: abstract_analysis Kind.Map.t ref = ref Kind.Map.empty
 
 
 module Register(Analysis : ANALYSIS) = struct
+  let kind = Kind.cast Analysis.kind
   let () =
-    let kind = Kind.cast Analysis.kind in
     let analysis = Analysis { kind; analysis = (module Analysis); } in
     let analysis_kind = Kind.register Analysis.kind ~name:Analysis.name
     in
     analyses := Kind.Map.add analysis_kind analysis !analyses
+
+  let abstract_kind = Kind.abstract kind
 end
 
 

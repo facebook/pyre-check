@@ -30,45 +30,60 @@ let overrides_of_source environment source =
   |> List.fold ~init:Statement.Access.Map.empty ~f:record_overrides
 
 
+let record_and_merge_call_graph environment call_graphs path source =
+  let record_and_merge_call_graph path map call_graph =
+    CallGraphSharedMemory.add_callers ~path (Access.Map.keys call_graph);
+    let add_call_graph ~key:caller ~data:callees =
+      CallGraphSharedMemory.add_call_edges ~caller ~callees
+    in
+    Access.Map.iteri call_graph ~f:add_call_graph;
+    Map.merge_skewed map call_graph ~combine:(fun ~key:_ left _ -> left)
+  in
+  Analysis.CallGraph.create ~environment ~source
+  |> record_and_merge_call_graph path call_graphs
+
+
+let record_overrides environment source =
+  let record_overrides overrides_map =
+    let record_override_edge ~key:ancestor ~data:children =
+      CallGraphSharedMemory.add_overrides ~ancestor ~children
+    in
+    Access.Map.iteri overrides_map ~f:record_override_edge
+  in
+  overrides_of_source environment source
+  |> record_overrides
+
+
+let record_path_of_definitions path source =
+  let defines = Preprocessing.defines source in
+  let record_definition { Node.value = { Define.name; _ }; _ } =
+    Interprocedural.Callable.add_definition (`RealTarget name) path
+  in
+  List.iter ~f:record_definition defines;
+  defines
+
+
 let analyze ~scheduler:_ ~configuration:_ ~environment ~handles:paths =
   Log.print "Analysis";
   let _call_graph =
-    let record_and_merge_call_graph path map call_graph =
-      CallGraphSharedMemory.add_callers ~path (Access.Map.keys call_graph);
-      let add_call_graph ~key:caller ~data:callees =
-        CallGraphSharedMemory.add_call_edges ~caller ~callees
-      in
-      Access.Map.iteri call_graph ~f:add_call_graph;
-      Map.merge_skewed map call_graph ~combine:(fun ~key:_ left _ -> left)
-    in
     let build_call_graph map path =
       AstSharedMemory.get_source path
-      >>| (fun source -> Analysis.CallGraph.create ~environment ~source)
-      >>| record_and_merge_call_graph path map
+      >>| record_and_merge_call_graph environment map path
       |> Option.value ~default:map
     in
     List.fold paths ~init:Access.Map.empty ~f:build_call_graph
   in
 
   let record_overrides path =
-    let record_overrides overrides_map =
-      let record_override_edge ~key:ancestor ~data:children =
-        CallGraphSharedMemory.add_overrides ~ancestor ~children
-      in
-      Access.Map.iteri overrides_map ~f:record_override_edge
-    in
     AstSharedMemory.get_source path
-    >>| overrides_of_source environment
-    >>| record_overrides
+    >>| record_overrides environment
     |> ignore
   in
   List.iter paths ~f:record_overrides;
 
-  let record_handles_of_definitions handle =
-    AstSharedMemory.get_source handle
-    >>| Preprocessing.defines
-    >>| List.iter ~f:(fun { Node.value = { Define.name; _ } ; _ } ->
-        Interprocedural.Callable.add_definition (`RealTarget name) handle)
+  let record_path_of_definitions path =
+    AstSharedMemory.get_source path
+    >>| record_path_of_definitions path
     |> ignore
   in
-  List.iter paths ~f:record_handles_of_definitions
+  List.iter paths ~f:record_path_of_definitions

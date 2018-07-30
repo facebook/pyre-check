@@ -29,10 +29,10 @@ let setup_environment ?(sources = []) () =
   let environment = environment ~configuration () in
   Service.Environment.populate environment sources;
   let environment = Environment.Builder.create () in
-  Service.Environment.populate (Environment.handler ~configuration environment) sources;
+  Service.Environment.populate (Environment.handler ~configuration environment) sources
 
 
-module AnalysisA = Interprocedural.Result.Make(struct
+module ResultA = Interprocedural.Result.Make(struct
     type result = string
     type call_model = int
 
@@ -70,7 +70,7 @@ module AnalysisA = Interprocedural.Result.Make(struct
   end)
 
 
-module IgnoreA = AnalysisA.Register(struct
+module AnalysisA = ResultA.Register(struct
     let init ~types ~functions = ()
 
     let analyze callable body =
@@ -78,7 +78,7 @@ module IgnoreA = AnalysisA.Register(struct
   end)
 
 
-module AnalysisB = Interprocedural.Result.Make(struct
+module ResultB = Interprocedural.Result.Make(struct
     type result = int
     type call_model = string
 
@@ -117,12 +117,15 @@ module AnalysisB = Interprocedural.Result.Make(struct
   end)
 
 
-module IgnoreB = AnalysisB.Register(struct
+module AnalysisB = ResultB.Register(struct
     let init ~types ~functions = ()
 
     let analyze callable body =
       7, "B"
   end)
+
+
+let analyses = [AnalysisA.abstract_kind; AnalysisB.abstract_kind]
 
 
 let assert_summaries ~expected summaries =
@@ -137,18 +140,15 @@ let test_unknown_function_analysis _ =
     |> List.map ~f:(fun access -> `RealTarget access)
   in
   let step = Fixpoint.{ epoch = 1; iteration = 0; } in
-  let () =
-    Analysis.one_analysis_pass step ~analyses:[AnalysisA.name; AnalysisB.name]
-      ~schedule:targets
-  in
+  let () = Analysis.one_analysis_pass step ~analyses ~schedule:targets in
   let check_obscure_model target =
     match Fixpoint.get_model target with
     | None ->
         Format.sprintf "no model stored for target %s" (Callable.show target)
         |> assert_failure
     | Some models ->
-        assert_equal (Result.get_model AnalysisA.kind models) (Some AnalysisA.obscure_model);
-        assert_equal (Result.get_model AnalysisB.kind models) (Some AnalysisB.obscure_model)
+        assert_equal (Result.get_model ResultA.kind models) (Some ResultA.obscure_model);
+        assert_equal (Result.get_model ResultB.kind models) (Some ResultB.obscure_model)
   in
   let summaries = List.concat_map ~f:Analysis.summaries targets in
   List.iter ~f:check_obscure_model targets;
@@ -185,7 +185,6 @@ let test_meta_data _ =
   let targets =
     List.map ~f:Access.create ["fun_a"; "fun_b"; "fun_c"]
     |> List.map ~f:(fun access -> `RealTarget access) in
-  let analyses = [AnalysisA.name; AnalysisB.name] in
   let step1 = Fixpoint.{ epoch = 1; iteration = 0; } in
   let () = Analysis.one_analysis_pass step1 ~analyses ~schedule:targets in
   (* All obscure functions should reach fixpoint in 1st step *)

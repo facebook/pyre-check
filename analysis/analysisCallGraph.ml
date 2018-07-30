@@ -18,6 +18,10 @@ module TypeResolutionSharedMemory = AnalysisTypeResolutionSharedMemory
 
 type t = (Access.t list) Access.Map.t
 
+
+let empty = Access.Map.empty
+
+
 let create ~environment ~source =
   let fold_defines
       call_graph

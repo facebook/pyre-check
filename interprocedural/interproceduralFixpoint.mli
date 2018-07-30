@@ -21,6 +21,7 @@ module SharedMemory = Hack_parallel.Std.SharedMem
 module Epoch : sig
   type t = int
 
+  val initial: t
   val show: t -> string
   val pp: Format.formatter -> t -> unit
 end
