@@ -457,7 +457,12 @@ let test_forward_expression _ =
     ["x", Type.Bottom; "y", Type.Bottom]; (* Limitation: We're losing y's constraints here. *)
 
   (* TODO(T30448045): gradually migrate existing tests to check resolved type. *)
-  let assert_forward ?(precondition = []) ?(postcondition = []) ?errors expression annotation =
+  let assert_forward
+      ?(precondition = [])
+      ?(postcondition = [])
+      ?(errors = `Undefined 0)
+      expression
+      annotation =
     let expression =
       parse expression
       |> Preprocessing.expand_format_string
@@ -476,15 +481,24 @@ let test_forward_expression _ =
     in
     assert_equal ~cmp:Type.equal ~printer:Type.show annotation resolved;
     assert_state_equal (create postcondition) forwarded;
-    match errors with
-    | Some errors ->
-        assert_equal
-          ~cmp:(List.equal ~equal:String.equal)
-          ~printer:(String.concat ~sep:"\n")
+    let errors =
+      match errors with
+      | `Specific errors ->
           errors
-          (State.errors forwarded |> List.map ~f:(Error.description ~detailed:false))
-    | _ ->
-        ()
+      | `Undefined count ->
+          let rec errors sofar count =
+            let error = "Undefined name [18]: Global name `undefined` is undefined." in
+            match count with
+            | 0 -> sofar
+            | count -> errors (error :: sofar) (count - 1)
+          in
+          errors [] count
+    in
+    assert_equal
+      ~cmp:(List.equal ~equal:String.equal)
+      ~printer:(String.concat ~sep:"\n")
+      errors
+      (State.errors forwarded |> List.map ~f:(Error.description ~detailed:false))
   in
 
   assert_forward "1j" Type.complex;
@@ -499,92 +513,40 @@ let test_forward_expression _ =
   assert_forward "[]" (Type.list Type.Bottom);
   assert_forward "[1]" (Type.list Type.integer);
   assert_forward "[1, 'string']" (Type.list (Type.union [Type.integer; Type.string]));
-  assert_forward
-    ~errors:["Undefined name [18]: Global name `undefined` is undefined."]
-    "[undefined]"
-    (Type.list Type.Top);
-  assert_forward
-    ~errors:[
-      "Undefined name [18]: Global name `undefined` is undefined.";
-      "Undefined name [18]: Global name `undefined` is undefined.";
-    ]
-    "[undefined, undefined]"
-    (Type.list Type.Top);
+  assert_forward ~errors:(`Undefined 1) "[undefined]" (Type.list Type.Top);
+  assert_forward ~errors:(`Undefined 2) "[undefined, undefined]" (Type.list Type.Top);
 
   assert_forward "{1}" (Type.set Type.integer);
   assert_forward "{1, 'string'}" (Type.set (Type.union [Type.integer; Type.string]));
-  assert_forward
-    ~errors:["Undefined name [18]: Global name `undefined` is undefined."]
-    "{undefined}"
-    (Type.set Type.Top);
-  assert_forward
-    ~errors:[
-      "Undefined name [18]: Global name `undefined` is undefined.";
-      "Undefined name [18]: Global name `undefined` is undefined.";
-    ]
-    "{undefined, undefined}"
-    (Type.set Type.Top);
+  assert_forward ~errors:(`Undefined 1) "{undefined}" (Type.set Type.Top);
+  assert_forward ~errors:(`Undefined 2) "{undefined, undefined}" (Type.set Type.Top);
 
   assert_forward "*1" Type.Top;
   assert_forward "**1" Type.Top;
-  assert_forward
-    ~errors:["Undefined name [18]: Global name `undefined` is undefined."]
-    "*undefined"
-    Type.Top;
+  assert_forward ~errors:(`Undefined 1) "*undefined" Type.Top;
 
   assert_forward "'string'" Type.string;
   assert_forward "f'string'" Type.string;
-  assert_forward ~errors:[] "f'string{1}'" Type.string;
-  assert_forward
-    ~errors:["Undefined name [18]: Global name `undefined` is undefined."]
-    "f'string{undefined}'"
-    Type.string;
+  assert_forward "f'string{1}'" Type.string;
+  assert_forward ~errors:(`Undefined 1) "f'string{undefined}'" Type.string;
 
   assert_forward "3 if True else 1" Type.integer;
   assert_forward "1.0 if True else 1" Type.float;
   assert_forward "1 if True else 1.0" Type.float;
-  assert_forward
-    ~errors:["Undefined name [18]: Global name `undefined` is undefined."]
-    "undefined if True else 1"
-    Type.Top;
-  assert_forward
-    ~errors:["Undefined name [18]: Global name `undefined` is undefined."]
-    "1 if undefined else 1"
-    Type.integer;
-  assert_forward
-    ~errors:["Undefined name [18]: Global name `undefined` is undefined."]
-    "1 if True else undefined"
-    Type.Top;
-  assert_forward
-    ~errors:[
-      "Undefined name [18]: Global name `undefined` is undefined.";
-      "Undefined name [18]: Global name `undefined` is undefined.";
-      "Undefined name [18]: Global name `undefined` is undefined.";
-    ]
-    "undefined if undefined else undefined"
-    Type.Top;
+  assert_forward ~errors:(`Undefined 1) "undefined if True else 1" Type.Top;
+  assert_forward ~errors:(`Undefined 1) "1 if undefined else 1" Type.integer;
+  assert_forward ~errors:(`Undefined 1) "1 if True else undefined" Type.Top;
+  assert_forward ~errors:(`Undefined 3) "undefined if undefined else undefined" Type.Top;
 
   assert_forward "True" Type.bool;
 
   assert_forward "1," (Type.tuple [Type.integer]);
   assert_forward "1, 'string'" (Type.tuple [Type.integer; Type.string]);
-  assert_forward
-    ~errors:["Undefined name [18]: Global name `undefined` is undefined."]
-    "undefined,"
-    (Type.tuple [Type.Top]);
-  assert_forward
-    ~errors:[
-      "Undefined name [18]: Global name `undefined` is undefined.";
-      "Undefined name [18]: Global name `undefined` is undefined.";
-    ]
-    "undefined, undefined"
-    (Type.tuple [Type.Top; Type.Top]);
+  assert_forward ~errors:(`Undefined 1) "undefined," (Type.tuple [Type.Top]);
+  assert_forward ~errors:(`Undefined 2) "undefined, undefined" (Type.tuple [Type.Top; Type.Top]);
 
   assert_forward "yield 1" (Type.generator Type.integer);
-  assert_forward
-    ~errors:["Undefined name [18]: Global name `undefined` is undefined."]
-    "yield undefined"
-    (Type.generator Type.Top);
+  assert_forward ~errors:(`Undefined 1) "yield undefined" (Type.generator Type.Top);
   assert_forward "yield" (Type.generator Type.none)
 
 
@@ -593,7 +555,7 @@ let test_forward_statement _ =
       ?(precondition_immutables = [])
       ?(postcondition_immutables = [])
       ?expected_return
-      ?errors
+      ?(errors = `Undefined 0)
       precondition
       statement
       postcondition =
@@ -610,20 +572,32 @@ let test_forward_statement _ =
         parsed
     in
     assert_state_equal (create ~immutables:postcondition_immutables postcondition) forwarded;
-    match errors with
-    | Some errors ->
-        assert_equal
-          ~cmp:(List.equal ~equal:String.equal)
-          ~printer:(String.concat ~sep:"\n")
+    let errors =
+      match errors with
+      | `Specific errors ->
           errors
-          (State.errors forwarded |> List.map ~f:(Error.description ~detailed:false))
-    | _ ->
-        ()
+      | `Undefined count ->
+          let rec errors sofar count =
+            let error = "Undefined name [18]: Global name `undefined` is undefined." in
+            match count with
+            | 0 -> sofar
+            | count -> errors (error :: sofar) (count - 1)
+          in
+          errors [] count
+    in
+    assert_equal
+      ~cmp:(List.equal ~equal:String.equal)
+      ~printer:(String.concat ~sep:"\n")
+      errors
+      (State.errors forwarded |> List.map ~f:(Error.description ~detailed:false))
   in
 
   (* Assignments. *)
   assert_forward ["y", Type.integer] "x = y" ["x", Type.integer; "y", Type.integer];
-  assert_forward ["y", Type.integer] "x = z" ["x", Type.Top; "y", Type.integer];
+  assert_forward
+    ["y", Type.integer; "z", Type.Top]
+    "x = z"
+    ["x", Type.Top; "y", Type.integer; "z", Type.Top];
   assert_forward ["x", Type.integer] "x += 1" ["x", Type.integer];
 
   assert_forward
@@ -637,7 +611,12 @@ let test_forward_statement _ =
     ["a", Type.integer; "b", Type.Top; "c", Type.integer; "d", Type.Top];
 
   (* Here be dragons... *)
-  assert_forward ["z", Type.integer] "x, y = z" ["x", Type.Top; "y", Type.Top; "z", Type.integer];
+  assert_forward
+    ~errors:
+      (`Specific ["Incompatible variable type [9]: Unable to unpack `int`, expected a `Tuple`."])
+    ["z", Type.integer]
+    "x, y = z"
+    ["x", Type.Top; "y", Type.Top; "z", Type.integer];
 
   (* Assignments with tuples. *)
   assert_forward
@@ -653,6 +632,8 @@ let test_forward_statement _ =
     "x, y = z"
     ["x", Type.integer; "y", Type.integer; "z", Type.Tuple (Type.Unbounded Type.integer)];
   assert_forward
+    ~errors:
+      (`Specific ["Incompatible variable type [9]: Unable to unpack `int`, expected a `Tuple`."])
     []
     "(x, y), z = 1"
     ["x", Type.Top; "y", Type.Top; "z", Type.Top];
@@ -675,15 +656,36 @@ let test_forward_statement _ =
   (* Assignments with immutables. *)
   assert_forward ~postcondition_immutables:["x", true] [] "global x" ["x", Type.Top];
   assert_forward ~postcondition_immutables:["y", false] [] "y: int" ["y", Type.integer];
-  assert_forward ~postcondition_immutables:["y", false] [] "y: int = x" ["y", Type.integer];
-  assert_forward ~postcondition_immutables:["y", false] [] "y: int = 'string'" ["y", Type.integer];
+  assert_forward
+    ~errors:
+      (`Specific [
+          "Incompatible variable type [9]: y is declared to have type `int` but is used as type "^
+          "`unknown`.";
+          "Undefined name [18]: Global name `x` is undefined.";
+        ])
+    ~postcondition_immutables:["y", false]
+    []
+    "y: int = x"
+    ["y", Type.integer];
+  assert_forward
+    ~errors:
+      (`Specific [
+          "Incompatible variable type [9]: y is declared to have type `int` but is used as type " ^
+          "`str`.";
+        ])
+    ~postcondition_immutables:["y", false] [] "y: int = 'string'" ["y", Type.integer];
   assert_forward
     ~precondition_immutables:["y", false]
     ~postcondition_immutables:["y", false]
-    ["y", Type.Top]
+    ["x", Type.Top; "y", Type.Top]
     "y = x"
-    ["y", Type.Top];
+    ["x", Type.Top; "y", Type.Top];
   assert_forward
+    ~errors:
+      (`Specific [
+          "Incompatible variable type [9]: y is declared to have type `int` but is used as type " ^
+          "`str`.";
+        ])
     ~postcondition_immutables:["y", false]
     ["x", Type.string]
     "y: int = x"
@@ -701,9 +703,9 @@ let test_forward_statement _ =
     "assert x"
     ["x", Type.integer];
   assert_forward
-    ["x", Type.optional Type.integer]
+    ["x", Type.optional Type.integer; "y", Type.integer]
     "assert y"
-    ["x", Type.optional Type.integer];
+    ["x", Type.optional Type.integer; "y", Type.integer];
   assert_forward
     ["x", Type.optional Type.integer]
     "assert x is not None"
@@ -728,7 +730,7 @@ let test_forward_statement _ =
 
   assert_forward ["x", Type.Object] "assert isinstance(x, int)" ["x", Type.integer];
   assert_forward
-    ["x", Type.Object]
+    ["x", Type.Object; "y", Type.Top]
     "assert isinstance(y, str)"
     ["x", Type.Object; "y", Type.string];
 
@@ -742,24 +744,22 @@ let test_forward_statement _ =
     ["x", Type.integer];
 
   (* Raise. *)
-  assert_forward ~errors:[] [] "raise 1" [];
-  assert_forward
-    ~errors:["Undefined name [18]: Global name `undefined` is undefined."]
-    []
-    "raise undefined"
-    [];
-  assert_forward ~errors:[] [] "raise" [];
+  assert_forward [] "raise 1" [];
+  assert_forward ~errors:(`Undefined 1) [] "raise undefined" [];
+  assert_forward [] "raise" [];
 
   (* Return. *)
   assert_forward
-    ~errors:["Missing return annotation [3]: Returning `int` but no return type is specified."]
+    ~errors:
+      (`Specific
+         ["Missing return annotation [3]: Returning `int` but no return type is specified."])
     []
     "return 1"
     [];
-  assert_forward ~expected_return:Type.integer ~errors:[] [] "return 1" [];
+  assert_forward ~expected_return:Type.integer [] "return 1" [];
   assert_forward
     ~expected_return:Type.string
-    ~errors:["Incompatible return type [7]: Expected `str` but got `int`."]
+    ~errors:(`Specific ["Incompatible return type [7]: Expected `str` but got `int`."])
     []
     "return 1"
     [];
