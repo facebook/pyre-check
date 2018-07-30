@@ -25,6 +25,7 @@ let file ?(content = None) relative =
   let root = Path.current_working_directory () in
   File.create ~content (Path.create_relative ~root ~relative)
 
+
 let poll_for_deletion lock_path =
   let rec poll () =
     if Path.file_exists lock_path then
@@ -51,7 +52,6 @@ let test_language_server_protocol_json_format context =
   let type_error =
     { type_error with location = { location with Location.path = filename } }
   in
-
   let normalize string =
     (* Working around OS inconsitencies. *)
     string
@@ -98,11 +98,7 @@ let test_language_server_protocol_json_format context =
     |> Test.trim_extra_indentation
     |> normalize
   in
-  assert_equal
-    ~printer:ident
-    ~cmp:String.equal
-    json_error_expect
-    json_error
+  assert_equal ~printer:ident ~cmp:String.equal json_error_expect json_error
 
 
 let with_timeout ~seconds f x =
@@ -269,15 +265,17 @@ let assert_response
       (CommandTest.mock_server_configuration ~source_root ())
       request
   in
-  Scheduler.destroy mock_server_state.State.scheduler;
   CommandTest.clean_environment ();
-  let pr = (function | None -> "None" | Some response -> Protocol.show_response response) in
+  let printer = function
+    | None -> "None"
+    | Some response -> Protocol.show_response response
+  in
   let pp_opt formatter =
     function
     | None -> Format.pp_print_string formatter "None"
     | Some response -> Protocol.pp_response formatter response
   in
-  assert_equal ~pp_diff:(diff ~print:pp_opt) ~printer:pr expected_response response
+  assert_equal ~pp_diff:(diff ~print:pp_opt) ~printer expected_response response
 
 
 let test_shutdown _ =
@@ -527,7 +525,6 @@ let test_protocol_language_server_protocol _ =
       (Protocol.Request.LanguageServerProtocolRequest "{\"method\":\"\"}")
   in
   let cleanup () =
-    Scheduler.destroy server_state.State.scheduler;
     CommandTest.clean_environment ()
   in
   Exn.protect ~f:(fun () -> assert_is_none response) ~finally:cleanup
@@ -580,7 +577,6 @@ let test_protocol_persistent _ =
          server_state
          (CommandTest.mock_server_configuration ())
          (Protocol.Request.ClientConnectionRequest Protocol.Persistent));
-  Scheduler.destroy server_state.State.scheduler;
   CommandTest.clean_environment ()
 
 
@@ -717,7 +713,6 @@ let test_incremental_lookups _ =
       (CommandTest.mock_server_configuration ())
       request
   in
-  Scheduler.destroy initial_state.State.scheduler;
   CommandTest.clean_environment ();
   let annotations =
     File.Handle.create relative_path
@@ -805,7 +800,6 @@ let test_incremental_repopulate _ =
     | Some expression -> assert_equal (Expression.show expression) "str"
     | None -> assert_unreached ()
   end;
-  Scheduler.destroy initial_state.State.scheduler;
   CommandTest.clean_environment ()
 
 
