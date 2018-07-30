@@ -1072,9 +1072,15 @@ module State = struct
         in
         { state; resolved = Type.tuple (List.rev resolved) }
 
-    | UnaryOperator { UnaryOperator.operand; operator = _ } ->
-        (* TODO(T30448045) *)
-        forward_expression ~state ~expression:operand
+    | UnaryOperator ({ UnaryOperator.operand; _ } as operator) ->
+        begin
+          match UnaryOperator.override operator with
+          | Some expression ->
+              forward_expression ~state ~expression
+          | None ->
+              let state = forward_expression ~state ~expression:operand in
+              { state with resolved = Type.bool }
+        end
 
     | Expression.Yield (Some expression) ->
         let { state; resolved } = forward_expression ~state ~expression in

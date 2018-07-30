@@ -551,6 +551,13 @@ let test_forward_expression _ =
   assert_forward ~errors:(`Undefined 1) "undefined," (Type.tuple [Type.Top]);
   assert_forward ~errors:(`Undefined 2) "undefined, undefined" (Type.tuple [Type.Top; Type.Top]);
 
+  assert_forward "not 1" Type.bool;
+  assert_forward ~errors:(`Undefined 1) "not undefined" Type.bool;
+  assert_forward "-1" Type.integer;
+  assert_forward "+1" Type.integer;
+  assert_forward "~1" Type.integer;
+  assert_forward ~errors:(`Undefined 1) "-undefined" Type.Top;
+
   assert_forward "yield 1" (Type.generator Type.integer);
   assert_forward ~errors:(`Undefined 1) "yield undefined" (Type.generator Type.Top);
   assert_forward "yield" (Type.generator Type.none)
