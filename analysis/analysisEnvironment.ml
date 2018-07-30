@@ -154,6 +154,15 @@ let connect_definition
                             primitive;
                           None
                         end
+                      else if Type.equal primitive Type.Top then
+                        begin
+                          Statistics.event
+                            ~name:"Superclass of top"
+                            ~section:`Environment
+                            ~normals:["unresolved name", Access.show access]
+                            ();
+                          None
+                        end
                       else
                         Some access
                   | _ ->

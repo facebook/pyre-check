@@ -569,6 +569,26 @@ let test_populate _ =
   assert_equal (parse_annotation environment !"S") Type.string;
   assert_equal (parse_annotation environment !"S2") Type.string;
 
+  (* Ensure object is a superclass if a class only has unsupported bases. *)
+  let (module Handler: Environment.Handler) =
+    populate {|
+      def foo() -> int:
+        return 1
+      class C(foo()):
+        pass
+    |}
+  in
+  let index annotation =
+    Handler.TypeOrderHandler.find_unsafe
+      (Handler.TypeOrderHandler.indices ())
+      annotation
+  in
+  assert_equal
+    (Handler.TypeOrderHandler.find
+       (Handler.TypeOrderHandler.edges ())
+         (index (Type.primitive "C")))
+    (Some [{ TypeOrder.Target.target = index Type.Object; parameters = []}]);
+
   (* Globals *)
   let assert_global_with_environment environment actual expected =
     assert_equal
