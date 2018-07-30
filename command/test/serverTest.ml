@@ -332,97 +332,75 @@ let test_protocol_type_check _ =
 
 
 let test_query _ =
-  let source =
-    {|
-      class C(int):
-        attr = 1
-        def C.foo(self) -> int:
-          return 0
-      a = 1
-    |}
+  let assert_type_query_response ~source ~query response =
+    let query = PyreCommand.Query.parse_query ~root:(Path.current_working_directory ()) query in
+    match query with
+    | None ->
+        assert_unreached ()
+    | Some request ->
+        assert_response ~source ~request (Some (Protocol.TypeQueryResponse response))
   in
-  assert_response
-    ~source
-    ~request:(Protocol.Request.TypeQueryRequest
-                (Protocol.LessOrEqual (Type.expression Type.integer, Type.expression Type.string)))
-    (Some (Protocol.TypeQueryResponse "false"));
+  assert_type_query_response
+    ~source:""
+    ~query:"less_or_equal(int, str)"
+    "false";
 
-  assert_response
-    ~source
-    ~request:(Protocol.Request.TypeQueryRequest
-                (Protocol.LessOrEqual
-                   (Type.expression Type.integer, Type.expression (Type.primitive "A"))))
-    (Some (Protocol.TypeQueryResponse "true"));
+  assert_type_query_response
+    ~source:
+      {|
+        A = int
+      |}
+    ~query:"less_or_equal(int, A)"
+    "true";
 
-  assert_response
-    ~source
-    ~request:(Protocol.Request.TypeQueryRequest
-                (Protocol.LessOrEqual
-                   (Type.expression Type.integer, Type.expression (Type.primitive "Unknown"))))
-    (Some (Protocol.TypeQueryResponse "Error: Type `Unknown` was not found in the type order."));
 
-  assert_response
-    ~source
-    ~request:(Protocol.Request.TypeQueryRequest
-                (Protocol.LessOrEqual
-                   (Type.expression (Type.list (Type.Primitive (Identifier.create "C"))),
-                    Type.expression (Type.list (Type.integer)))))
-    (Some (Protocol.TypeQueryResponse "true"));
+  assert_type_query_response
+    ~source:""
+    ~query:"less_or_equal(int, Unknown)"
+    "Error: Type `Unknown` was not found in the type order.";
 
-  assert_response
-    ~source
-    ~request:(Protocol.Request.TypeQueryRequest
-                (Protocol.Join
-                   (Type.expression (Type.list (Type.Primitive (Identifier.create "C"))),
-                    Type.expression (Type.list (Type.integer)))))
-    (Some (Protocol.TypeQueryResponse "typing.List[int]"));
+  assert_type_query_response
+    ~source:"class C(int): ..."
+    ~query:"less_or_equal(list[C], list[int])"
+    "true";
+  assert_type_query_response
+    ~source:"class C(int): ..."
+    ~query:"join(list[C], list[int])"
+    "typing.List[int]";
+  assert_type_query_response
+    ~source:"class C(int): ..."
+    ~query:"meet(list[C], list[int])"
+    "typing.List[C]";
+  assert_type_query_response
+    ~source:"class C(int): ..."
+    ~query:"superclasses(C)"
+    "int";
 
-  assert_response
-    ~source
-    ~request:(Protocol.Request.TypeQueryRequest
-                (Protocol.Meet
-                   (Type.expression (Type.list (Type.Primitive (Identifier.create "C"))),
-                    Type.expression (Type.list (Type.integer)))))
-    (Some (Protocol.TypeQueryResponse "typing.List[C]"));
+  assert_type_query_response
+    ~source:""
+    ~query:"superclasses(Unknown)"
+    "Error: Type `Unknown` was not found in the type order.";
 
-  assert_response
-    ~source
-    ~request:(Protocol.Request.TypeQueryRequest
-                (Protocol.Superclasses (Type.expression (Type.primitive "C"))))
-    (Some (Protocol.TypeQueryResponse "int"));
+  assert_type_query_response
+    ~source:""
+    ~query:"superclasses(Unknown[int])"
+    "No class definition found for Unknown.__getitem__(int)";
 
-  assert_response
-    ~source
-    ~request:(Protocol.Request.TypeQueryRequest
-                (Protocol.Superclasses (Type.expression (Type.primitive "Untracked"))))
-    (Some (Protocol.TypeQueryResponse "Error: Type `Untracked` was not found in the type order."));
+  assert_type_query_response ~source:"A = int" ~query:"normalizeType(A)" "int";
 
-  assert_response
-    ~source
-    ~request:(Protocol.Request.TypeQueryRequest
-                (Protocol.Superclasses
-                   (Type.expression (Type.parametric "Untracked" [Type.integer]))))
-    (Some (Protocol.TypeQueryResponse "No class definition found for Untracked.__getitem__(int)"));
+  assert_type_query_response
+    ~source:{|
+      class C:
+        def C.foo(self) -> int: ...
+        def C.bar(self) -> str: ...
+    |}
+    ~query:"methods(C)"
+    "foo: (self) -> int\nbar: (self) -> str";
 
-  assert_response
-    ~source
-    ~request:(Protocol.Request.TypeQueryRequest
-                (Protocol.NormalizeType (+Expression.Access (Access.create "A"))))
-    (Some (Protocol.TypeQueryResponse "int"));
-
-  assert_response
-    ~source
-    ~request:(Protocol.Request.TypeQueryRequest
-                (Protocol.Methods (Type.expression (Type.primitive "C"))))
-    (Some (Protocol.TypeQueryResponse "foo: (self) -> int\nbar: (self) -> str"));
-
-  assert_response
-    ~source
-    ~request:(Protocol.Request.TypeQueryRequest
-                (Protocol.Methods
-                   (Type.expression
-                      (Type.primitive "Nonexistent"))))
-    (Some (Protocol.TypeQueryResponse "Error: Type `Nonexistent` was not found in the type order."))
+  assert_type_query_response
+    ~source:""
+    ~query:"methods(Unknown)"
+    "Error: Type `Unknown` was not found in the type order."
 
 
 let test_connect _ =
@@ -657,16 +635,17 @@ let test_incremental_dependencies _ =
     let state, response =
       process_request (check_request ~update:[file "b.py"] ~check:[file "b.py"] ())
     in
-    assert_equal
-      ~printer:(fun response -> response >>| Protocol.show_response |> Option.value ~default:"None")
-      (Some (Protocol.TypeCheckResponse expected_errors))
-      response;
+    assert_equal (Some (Protocol.TypeCheckResponse expected_errors)) response;
     assert_equal state.State.deferred_requests [check_request ~check:[file "a.py"] ()];
     let state, response =
       process_request (check_request ~update:[file "b.py"] ~check:[file "a.py"; file "b.py"] ())
     in
+    let printer = function
+      | None -> "None"
+      | Some response -> Protocol.show_response response
+    in
     assert_equal
-      ~printer:(fun response -> response >>| Protocol.show_response |> Option.value ~default:"None")
+      ~printer
       (Some (Protocol.TypeCheckResponse [
           File.Handle.create "a.py", [];
           File.Handle.create "b.py", [];
