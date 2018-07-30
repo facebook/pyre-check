@@ -496,6 +496,35 @@ let test_forward_expression _ =
 
   assert_forward "1.0" Type.float;
 
+  assert_forward "[]" (Type.list Type.Bottom);
+  assert_forward "[1]" (Type.list Type.integer);
+  assert_forward "[1, 'string']" (Type.list (Type.union [Type.integer; Type.string]));
+  assert_forward
+    ~errors:["Undefined name [18]: Global name `undefined` is undefined."]
+    "[undefined]"
+    (Type.list Type.Top);
+  assert_forward
+    ~errors:[
+      "Undefined name [18]: Global name `undefined` is undefined.";
+      "Undefined name [18]: Global name `undefined` is undefined.";
+    ]
+    "[undefined, undefined]"
+    (Type.list Type.Top);
+
+  assert_forward "{1}" (Type.set Type.integer);
+  assert_forward "{1, 'string'}" (Type.set (Type.union [Type.integer; Type.string]));
+  assert_forward
+    ~errors:["Undefined name [18]: Global name `undefined` is undefined."]
+    "{undefined}"
+    (Type.set Type.Top);
+  assert_forward
+    ~errors:[
+      "Undefined name [18]: Global name `undefined` is undefined.";
+      "Undefined name [18]: Global name `undefined` is undefined.";
+    ]
+    "{undefined, undefined}"
+    (Type.set Type.Top);
+
   assert_forward "'string'" Type.string;
   assert_forward "f'string'" Type.string;
   assert_forward ~errors:[] "f'string{1}'" Type.string;

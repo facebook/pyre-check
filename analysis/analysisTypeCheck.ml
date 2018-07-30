@@ -666,6 +666,13 @@ module State = struct
       List.map ~f:Statement.assume conditions
       |> List.fold ~init:state ~f:(fun state statement -> forward_statement ~state ~statement)
     in
+    let forward_elements ~state ~elements =
+      let forward_element { state = ({ resolution; _ } as state); resolved } expression =
+        let { state; resolved = new_resolved } = forward_expression ~state ~expression in
+        { state; resolved = Resolution.join resolution resolved new_resolved }
+      in
+      List.fold elements ~init:{ state; resolved = Type.Bottom } ~f:forward_element
+    in
     let join_resolved ~resolution left right =
       {
         state = join left.state right.state;
@@ -977,8 +984,10 @@ module State = struct
         in
         forward_expression ~state:{ state with resolution } ~expression:body
 
-    | List elements
-    | Set elements
+    | List elements ->
+        let { state; resolved } = forward_elements ~state ~elements in
+        { state; resolved = Type.list resolved }
+
     | Tuple elements ->
         let state =
           List.fold
@@ -989,6 +998,10 @@ module State = struct
             ~init:state
         in
         { state; resolved = Type.Top }
+
+    | Set elements ->
+        let { state; resolved } = forward_elements ~state ~elements in
+        { state; resolved = Type.set resolved }
 
     | Generator { Comprehension.element; generators }
     | ListComprehension { Comprehension.element; generators }
