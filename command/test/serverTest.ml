@@ -384,7 +384,7 @@ let test_query _ =
   assert_type_query_response
     ~source:""
     ~query:"superclasses(Unknown[int])"
-    "No class definition found for Unknown.__getitem__(int)";
+    "No class definition found for Unknown[int]";
 
   assert_type_query_response ~source:"A = int" ~query:"normalizeType(A)" "int";
 

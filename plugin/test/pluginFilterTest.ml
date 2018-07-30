@@ -389,7 +389,7 @@ let test_filter_assigns _ =
     {|
       x = a[2]
     |}
-    (Filter.create_assign_filter ~value_regexp:(Some ".*__getitem__.*") ())
+    (Filter.create_assign_filter ~value_regexp:(Some "a\\[.*\\]") ())
     ["x = a[2]"];
 
   assert_filter

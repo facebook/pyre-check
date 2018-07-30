@@ -540,7 +540,7 @@ let test_infer _ =
       def test_optional(x: Optional[str]):
           return 5
     |}
-    [{|[{"name":"x","type":"Optional.__getitem__(str)","value":null}]|}];
+    [{|[{"name":"x","type":"Optional[str]","value":null}]|}];
 
   assert_infer ~fields:["inference.annotation"; "inference.parameters"]
     {|
@@ -549,7 +549,7 @@ let test_infer _ =
           return x
     |}
     [
-      {|"Optional.__getitem__(str)"|};{|[{"name":"x","type":"Optional[str]","value":null}]|}
+      {|"Optional[str]"|};{|[{"name":"x","type":"Optional[str]","value":null}]|}
     ];
 
   assert_infer ~fields:["inference.parameters"]
@@ -557,7 +557,7 @@ let test_infer _ =
       def ret_int(x: typing.List[int]):
           return 5
     |}
-    [{|[{"name":"x","type":"typing.List.__getitem__(int)","value":null}]|}];
+    [{|[{"name":"x","type":"typing.List[int]","value":null}]|}];
 
   assert_infer ~fields:["inference.parameters"]
     {|
@@ -618,7 +618,7 @@ let test_infer _ =
           return 5
       from typing import Optional
     |}
-    [{|[{"name":"x","type":"Optional.__getitem__(str)","value":null}]|}]
+    [{|[{"name":"x","type":"Optional[str]","value":null}]|}]
 
 
 let test_infer_backward _ =

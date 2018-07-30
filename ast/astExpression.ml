@@ -697,6 +697,17 @@ module PrettyPrinter = struct
     match access_list with
     | [] -> ()
     | access :: [] -> Format.fprintf formatter "%a" pp_access access
+    | access
+      :: Access.Identifier identifier
+      :: Access.Call { Node.value = arguments; _ }
+      :: access_list
+      when (Identifier.equal identifier (Identifier.create "__getitem__")) ->
+        Format.fprintf
+          formatter
+          (if List.is_empty access_list then "%a[%a]%a" else "%a[%a].%a")
+          pp_access access
+          pp_argument_list arguments
+          pp_access_list access_list
     | access :: (((Access.Call _) :: _) as access_list) ->
         Format.fprintf
           formatter

@@ -943,8 +943,8 @@ let test_pp _ =
         else:
           i = 2
         j = 2
-      i.__getitem__(j) = 3
-      i.__getitem__(slice(j,None,1)) = i.__getitem__(slice(None,j,None))
+      i[j] = 3
+      i[slice(j,None,1)] = i[slice(None,j,None)]
     |}
   in
 

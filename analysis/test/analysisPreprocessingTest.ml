@@ -397,7 +397,7 @@ let test_qualify _ =
     {|
       from typing import List
       $local_qualifier$T = 'typing.List'
-      def qualifier.foo() -> 'typing.List.__getitem__(int)': ...
+      def qualifier.foo() -> 'typing.List[int]': ...
     |};
 
   (* Qualify functions. *)

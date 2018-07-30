@@ -153,6 +153,9 @@ let test_normalize _ =
 
 
 let test_pp _ =
+  let assert_pp_equal source expected =
+    assert_equal ~printer:ident (Expression.show source) expected
+  in
   let simple_expression =
     (+BooleanOperator {
        BooleanOperator.operator = BooleanOperator.And;
@@ -162,17 +165,15 @@ let test_pp _ =
          operand = +True;
        };
      }) in
-  assert_equal
-    (Expression.show simple_expression)
+  assert_pp_equal
+    simple_expression
     "False and not True";
 
-  let expression =
-    (+List [simple_expression;simple_expression]) in
-  assert_equal
-    (Expression.show expression)
+  assert_pp_equal
+    (+List [simple_expression;simple_expression])
     "[False and not True, False and not True]";
 
-  let expression =
+  assert_pp_equal
     (+ListComprehension {
        Comprehension.element = !"element";
        Comprehension.generators = [
@@ -183,13 +184,11 @@ let test_pp _ =
            async = false;
          }
        ]
-     }) in
-  assert_equal
-    (Expression.show expression)
+     })
     "comprehension(element for generators(generator(x in x if False and not \
      True, False and not True)))";
 
-  let expression =
+  assert_pp_equal
     (+Lambda {
        Lambda.parameters = [
          +{
@@ -204,10 +203,38 @@ let test_pp _ =
          }
        ];
        Lambda.body = +Tuple [!"x"; +String (StringLiteral.create "y")]
-     }) in
-  assert_equal
-    (Expression.show expression)
-    {|lambda (x=1, y=2) ((x, "y"()))|}
+     })
+    {|lambda (x=1, y=2) ((x, "y"()))|};
+
+  assert_pp_equal
+    (+Access [
+       Access.Identifier ~~"a";
+       Access.Identifier ~~"b";
+       Access.Identifier ~~"__getitem__";
+       Access.Call
+         (+[
+            {
+              Argument.name = None;
+              value =
+                (+Access [
+                   Access.Identifier ~~"c";
+                   Access.Identifier ~~"__getitem__";
+                   Access.Call (+[{ Argument.name = None; value = +Integer 1 }]);
+                 ]);
+            }
+          ]);
+     ])
+    "a.b[c[1]]";
+
+  assert_pp_equal
+    (+Access [
+       Access.Identifier ~~"a";
+       Access.Identifier ~~"b";
+       Access.Identifier ~~"__getitem__";
+       Access.Call (+[{ Argument.name = None; value = +Integer 1 }]);
+       Access.Identifier ~~"c";
+     ])
+    "a.b[1].c"
 
 
 let test_drop_prefix _ =
