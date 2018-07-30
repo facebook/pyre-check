@@ -559,6 +559,20 @@ let test_forward_expression _ =
 
   assert_forward "True" Type.bool;
 
+  assert_forward "1," (Type.tuple [Type.integer]);
+  assert_forward "1, 'string'" (Type.tuple [Type.integer; Type.string]);
+  assert_forward
+    ~errors:["Undefined name [18]: Global name `undefined` is undefined."]
+    "undefined,"
+    (Type.tuple [Type.Top]);
+  assert_forward
+    ~errors:[
+      "Undefined name [18]: Global name `undefined` is undefined.";
+      "Undefined name [18]: Global name `undefined` is undefined.";
+    ]
+    "undefined, undefined"
+    (Type.tuple [Type.Top; Type.Top]);
+
   assert_forward "yield 1" (Type.generator Type.integer);
   assert_forward
     ~errors:["Undefined name [18]: Global name `undefined` is undefined."]

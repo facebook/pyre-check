@@ -988,17 +988,6 @@ module State = struct
         let { state; resolved } = forward_elements ~state ~elements in
         { state; resolved = Type.list resolved }
 
-    | Tuple elements ->
-        let state =
-          List.fold
-            elements
-            ~f:(fun state expression ->
-                let { state; _ } = forward_expression ~state ~expression in
-                state)
-            ~init:state
-        in
-        { state; resolved = Type.Top }
-
     | Set elements ->
         let { state; resolved } = forward_elements ~state ~elements in
         { state; resolved = Type.set resolved }
@@ -1050,6 +1039,19 @@ module State = struct
 
     | True ->
         { state; resolved = Type.bool }
+
+    | Tuple elements ->
+        let state, resolved =
+          let forward_element (state, resolved) expression =
+            let { state; resolved = new_resolved } = forward_expression ~state ~expression in
+            state, new_resolved :: resolved
+          in
+          List.fold
+            elements
+            ~f:forward_element
+            ~init:(state, [])
+        in
+        { state; resolved = Type.tuple (List.rev resolved) }
 
     | UnaryOperator { UnaryOperator.operand; operator = _ } ->
         forward_expression ~state ~expression:operand
