@@ -1005,12 +1005,13 @@ module State = struct
         forward_expression ~state ~expression:element
 
     | Starred starred ->
-        begin
+        let state =
           match starred with
           | Starred.Once expression
           | Starred.Twice expression ->
               forward_expression ~state ~expression
-        end
+        in
+        { state with resolved = Type.Top }
 
     | String { StringLiteral.kind = StringLiteral.Format expressions; _ } ->
         let state =

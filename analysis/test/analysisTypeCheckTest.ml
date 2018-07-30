@@ -525,6 +525,13 @@ let test_forward_expression _ =
     "{undefined, undefined}"
     (Type.set Type.Top);
 
+  assert_forward "*1" Type.Top;
+  assert_forward "**1" Type.Top;
+  assert_forward
+    ~errors:["Undefined name [18]: Global name `undefined` is undefined."]
+    "*undefined"
+    Type.Top;
+
   assert_forward "'string'" Type.string;
   assert_forward "f'string'" Type.string;
   assert_forward ~errors:[] "f'string{1}'" Type.string;
