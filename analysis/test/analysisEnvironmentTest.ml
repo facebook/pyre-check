@@ -655,25 +655,30 @@ let test_populate _ =
           ()));
 
   (* Loops. *)
-  try
-    populate {|
+  begin
+    try
+      populate {|
         def foo(cls):
           class cls(cls): pass
       |}
-    |> ignore
-  with TypeOrder.Cyclic ->
-    assert_unreached ();
-
-    (* Check meta variables are registered. *)
-    let assert_global =
-      {|
-        class A:
-          pass
-      |}
-      |> populate
-      |> assert_global_with_environment
-    in
-    assert_global "A" (Type.primitive "A" |> Type.meta |> Annotation.create_immutable ~global:true)
+      |> ignore
+    with TypeOrder.Cyclic ->
+      assert_unreached ()
+  end;
+  (* Check meta variables are registered. *)
+  let assert_global =
+    {|
+      class A:
+        pass
+    |}
+    |> populate
+    |> assert_global_with_environment
+  in
+  assert_global
+    "A"
+    (Type.primitive "A"
+     |> Type.meta
+     |> Annotation.create_immutable ~global:true ~original:(Some Type.Top))
 
 
 let test_infer_protocols _ =
