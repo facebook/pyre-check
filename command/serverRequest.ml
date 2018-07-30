@@ -231,36 +231,21 @@ let rec process_request
       in
       let response =
         match request with
-        | LessOrEqual (left, right) ->
-            let left = parse_and_validate left in
-            let right = parse_and_validate right in
-            TypeOrder.less_or_equal order ~left ~right
-            |> Bool.to_string
         | Join (left, right) ->
             let left = parse_and_validate left in
             let right = parse_and_validate right in
             TypeOrder.join order left right
             |> Type.show
+        | LessOrEqual (left, right) ->
+            let left = parse_and_validate left in
+            let right = parse_and_validate right in
+            TypeOrder.less_or_equal order ~left ~right
+            |> Bool.to_string
         | Meet (left, right) ->
             let left = parse_and_validate left in
             let right = parse_and_validate right in
             TypeOrder.meet order left right
             |> Type.show
-        | NormalizeType expression ->
-            parse_and_validate expression
-            |> Type.show
-        | Superclasses annotation ->
-            parse_and_validate annotation
-            |> Handler.class_definition
-            >>| (fun { Analysis.Environment.class_definition; _ } -> class_definition)
-            >>| Annotated.Class.create
-            >>| Annotated.Class.superclasses ~resolution
-            >>| List.map ~f:(Annotated.Class.annotation ~resolution)
-            >>| List.map ~f:Type.show
-            >>| String.concat ~sep:", "
-            |> Option.value
-              ~default:(
-                Format.sprintf "No class definition found for %s" (Expression.show annotation))
         | Methods annotation ->
             let show_method annotated_method =
               let open Annotated.Class.Method in
@@ -298,6 +283,45 @@ let rec process_request
                 Format.sprintf
                   "Error: No class definition found for %s"
                   (Expression.show annotation))
+        | NormalizeType expression ->
+            parse_and_validate expression
+            |> Type.show
+        | Superclasses annotation ->
+            parse_and_validate annotation
+            |> Handler.class_definition
+            >>| (fun { Analysis.Environment.class_definition; _ } -> class_definition)
+            >>| Annotated.Class.create
+            >>| Annotated.Class.superclasses ~resolution
+            >>| List.map ~f:(Annotated.Class.annotation ~resolution)
+            >>| List.map ~f:Type.show
+            >>| String.concat ~sep:", "
+            |> Option.value
+              ~default:(
+                Format.sprintf "No class definition found for %s" (Expression.show annotation))
+        | TypeAtLocation {
+            Ast.Location.path;
+            start = ({ Ast.Location.line; column} as start);
+            _;
+          } ->
+            let source_text =
+                Path.create_relative
+                  ~root:source_root
+                  ~relative:path
+                |> File.create
+                |> File.content
+                |> Option.value ~default:""
+            in
+            File.Handle.create path
+            |> AstSharedMemory.get_source
+            >>| Lookup.create_of_source state.environment
+            >>= Lookup.get_annotation ~position:start ~source_text
+            >>| (fun (_, annotation) -> Type.show annotation)
+            |> Option.value ~default:(
+              Format.sprintf
+                "Error: Not able to get lookup at %s:%d:%d"
+                path
+                line
+                column)
       in
       TypeQueryResponse response
     in

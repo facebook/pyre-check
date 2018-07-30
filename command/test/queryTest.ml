@@ -80,7 +80,18 @@ let test_parse_query _ =
                 ()
              )));
 
-  assert_fails_to_parse "typecheck(1+2)"
+  assert_fails_to_parse "typecheck(1+2)";
+
+  assert_parses
+    "type_at_location(a.py, 1, 2)"
+    (TypeAtLocation {
+        Ast.Location.path = "a.py";
+        start = { Ast.Location.line = 1; column = 2 };
+        stop = { Ast.Location.line = 1; column = 2 };
+      });
+  assert_fails_to_parse "type_at_location(a.py:1:2)";
+  assert_fails_to_parse "type_at_location('a.py', 1, 2)"
+
 
 
 let () =

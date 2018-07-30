@@ -56,6 +56,16 @@ let parse_query ~root query =
             Some (Request.TypeQueryRequest (ServerProtocol.Superclasses class_name))
         | "methods", [class_name] ->
             Some (Request.TypeQueryRequest (ServerProtocol.Methods class_name))
+        | "type_at_location",
+          [
+            { Node.value = Expression.Access path; _ };
+            { Node.value = Expression.Integer line; _ };
+            { Node.value = Expression.Integer column; _ };
+          ] ->
+            let path = Expression.Access.show path in
+            let position = { Location.line; column } in
+            let location = { Location.path; start = position; stop = position } in
+            Some (Request.TypeQueryRequest (ServerProtocol.TypeAtLocation location))
         | _ -> None
       end
   | _ -> None

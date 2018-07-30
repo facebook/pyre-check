@@ -245,6 +245,8 @@ let assert_response
     ~source
     ~request
     expected_response =
+  AstSharedMemory.remove_paths [File.Handle.create path];
+  AstSharedMemory.add_source (File.Handle.create path) (parse ~path source);
   let errors =
     let errors = File.Handle.Table.create () in
     List.iter
@@ -398,7 +400,13 @@ let test_query _ =
   assert_type_query_response
     ~source:""
     ~query:"methods(Unknown)"
-    "Error: Type `Unknown` was not found in the type order."
+    "Error: Type `Unknown` was not found in the type order.";
+
+  assert_type_query_response ~source:"a = 2" ~query:"type_at_location(test.py, 1, 4)" "int";
+  assert_type_query_response
+    ~source:"a = 2"
+    ~query:"type_at_location(test.py, 1, 3)"
+    "Error: Not able to get lookup at test.py:1:3"
 
 
 let test_connect _ =

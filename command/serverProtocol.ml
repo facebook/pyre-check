@@ -26,12 +26,13 @@ type client =
 
 
 type type_query_request =
-  | LessOrEqual of Expression.t * Expression.t
   | Join of Expression.t * Expression.t
+  | LessOrEqual of Expression.t * Expression.t
   | Meet of Expression.t * Expression.t
+  | Methods of Expression.t
   | NormalizeType of Expression.t
   | Superclasses of Expression.t
-  | Methods of Expression.t
+  | TypeAtLocation of Location.Instantiated.t
 [@@deriving eq, show]
 
 
