@@ -607,77 +607,82 @@ let test_protocol_persistent _ =
 
 
 let test_incremental_dependencies _ =
-
-  let a_source = {|
-    import b
-    def foo()->str:
-      return b.do()
-    |} |> trim_extra_indentation
+  let a_source =
+    {|
+      import b
+      def foo() -> str:
+        return b.do()
+    |}
+    |> trim_extra_indentation
   in
-  let b_source = {|
-      def do()->str:
+  let b_source =
+    {|
+      def do() -> str:
           pass
-    |} |> trim_extra_indentation
+    |}
+    |> trim_extra_indentation
   in
-
   Out_channel.write_all "a.py" ~data:a_source;
   Out_channel.write_all "b.py" ~data:b_source;
-  let environment = Environment.Builder.create () in
-  let environment_handler = Environment.handler ~configuration environment in
-  add_defaults_to_environment environment_handler;
-  Service.Environment.populate
-    environment_handler
-    [
-      parse ~path:"a.py" ~qualifier:(Access.create "a") a_source;
-      parse ~path:"b.py" ~qualifier:(Access.create "b") b_source;
-    ];
-  let expected_errors = [
-    File.Handle.create "b.py", [];
-  ]
-  in
-  let initial_state =
+  let assert_dependencies_analyzed () =
+    let environment = Environment.Builder.create () in
+    let environment_handler = Environment.handler ~configuration environment in
+    add_defaults_to_environment environment_handler;
+    Service.Environment.populate
+      environment_handler
+      [
+        parse ~path:"a.py" ~qualifier:(Access.create "a") a_source;
+        parse ~path:"b.py" ~qualifier:(Access.create "b") b_source;
+      ];
+    let expected_errors = [
+      File.Handle.create "b.py", [];
+    ]
+    in
+    let initial_state =
     mock_server_state ~initial_environment:environment (File.Handle.Table.create ()) in
-  let state, response = Request.process_request
-      mock_client_socket
-      initial_state
-      (CommandTest.mock_server_configuration ())
-      (Protocol.Request.TypeCheckRequest
-         (Protocol.TypeCheckRequest.create
-            ~update_environment_with:[file "b.py"]
-            ~check:[file "b.py"]
-            ()))
+    let check_request ?update ?check () =
+      Protocol.Request.TypeCheckRequest
+        (Protocol.TypeCheckRequest.create
+           ?update_environment_with:update
+           ?check
+           ())
+    in
+    let process_request request =
+      Request.process_request
+        mock_client_socket
+        initial_state
+        (CommandTest.mock_server_configuration ())
+        request
+    in
+    let state, response =
+      process_request (check_request ~update:[file "b.py"] ~check:[file "b.py"] ())
+    in
+    assert_equal
+      ~printer:(fun response -> response >>| Protocol.show_response |> Option.value ~default:"None")
+      (Some (Protocol.TypeCheckResponse expected_errors))
+      response;
+    assert_equal state.State.deferred_requests [check_request ~check:[file "a.py"] ()];
+    let state, response =
+      process_request (check_request ~update:[file "b.py"] ~check:[file "a.py"; file "b.py"] ())
+    in
+    assert_equal
+      ~printer:(fun response -> response >>| Protocol.show_response |> Option.value ~default:"None")
+      (Some (Protocol.TypeCheckResponse [
+          File.Handle.create "a.py", [];
+          File.Handle.create "b.py", [];
+        ]))
+      response;
+    assert_equal
+      ~printer:(List.to_string ~f:(Protocol.Request.show))
+      state.State.deferred_requests
+      []
   in
-  let second_state, second_response = Request.process_request
-      mock_client_socket
-      initial_state
-      (CommandTest.mock_server_configuration ())
-      (Protocol.Request.TypeCheckRequest
-         (Protocol.TypeCheckRequest.create
-            ~update_environment_with:[file "b.py"] ~check:[file "a.py"; file "b.py"] ()))
+  let finally () =
+    CommandTest.clean_environment ();
+    Sys.remove "a.py";
+    Sys.remove "b.py"
   in
-  Sys.remove "a.py";
-  Sys.remove "b.py";
-  Scheduler.destroy initial_state.State.scheduler;
-  CommandTest.clean_environment ();
-  assert_is_some response;
-  assert_equal
-    ~printer:Protocol.show_response
-    (Protocol.TypeCheckResponse expected_errors)
-    (Option.value_exn response);
-  assert_equal
-    state.State.deferred_requests
-    [Protocol.Request.TypeCheckRequest (Protocol.TypeCheckRequest.create ~check:[file "a.py"] ())];
-  assert_equal
-    ~printer:Protocol.show_response
-    (Protocol.TypeCheckResponse [
-        File.Handle.create "a.py", [];
-        File.Handle.create "b.py", [];
-      ])
-    (Option.value_exn second_response);
-  assert_equal
-    ~printer:(List.to_string ~f:(Protocol.Request.show))
-    second_state.State.deferred_requests
-    []
+  Exn.protect ~f:assert_dependencies_analyzed ~finally
 
 
 let test_incremental_lookups _ =
