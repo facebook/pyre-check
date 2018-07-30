@@ -501,6 +501,12 @@ let test_forward_expression _ =
       (State.errors forwarded |> List.map ~f:(Error.description ~detailed:false))
   in
 
+  assert_forward
+    ~precondition:["x", Type.integer]
+    ~postcondition:["x", Type.integer]
+    "x"
+    Type.integer;
+
   assert_forward "1j" Type.complex;
   assert_forward "1" Type.integer;
 

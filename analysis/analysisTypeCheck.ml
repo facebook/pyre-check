@@ -864,7 +864,17 @@ module State = struct
               state
         in
         let state = List.fold access ~f:forward_access ~init:state in
-        { state; resolved = Type.Top }
+        let resolved =
+          let resolved _ ~resolution:_ ~resolved ~element:_ =
+            Annotation.annotation resolved
+          in
+          Annotated.Access.fold
+            (Annotated.Access.create access)
+            ~f:resolved
+            ~resolution
+            ~initial:Type.Top
+        in
+        { state; resolved }
 
     | Await expression ->
         (* TODO(T30448045) *)
