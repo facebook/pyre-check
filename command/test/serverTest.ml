@@ -679,6 +679,7 @@ let test_incremental_dependencies _ =
     second_state.State.deferred_requests
     []
 
+
 let test_incremental_lookups _ =
   let path, _ =
     Filename.open_temp_file
@@ -860,14 +861,6 @@ let test_language_scheduler_definition context =
 
 
 let test_incremental_attribute_caching context =
-  let server_lock = Mutex.create () in
-  let connections = ref {
-      State.socket = Unix.stdout;
-      persistent_clients = Unix.File_descr.Table.create ();
-      file_notifiers = [];
-      watchman_pid = None;
-    }
-  in
   let directory = bracket_tmpdir context |> Path.create_absolute in
   let configuration =
     Configuration.create ~source_root:directory ~project_root:directory ()
@@ -878,19 +871,8 @@ let test_incremental_attribute_caching context =
     |> Analysis.Environment.handler ~configuration
   in
   add_defaults_to_environment environment;
-  let old_state = {
-    State.deferred_requests = [];
-    environment;
-    initial_errors = Error.Hash_set.create ();
-    errors = File.Handle.Table.create ();
-    handles = File.Handle.Set.empty;
-    lookups = String.Table.create ();
-    scheduler = Scheduler.mock ();
-    lock = Mutex.create ();
-    last_request_time = -1.0;
-    last_integrity_check = -1.0;
-    connections = connections;
-  }
+  let ({ State.connections; lock = server_lock; _ } as old_state) =
+    mock_server_state (File.Handle.Table.create ())
   in
   let source_path = Path.create_relative ~root:directory ~relative:"a.py" in
   let write_to_file ~content =
@@ -903,16 +885,6 @@ let test_incremental_attribute_caching context =
       class C:
         def __init__(self):
           self.a: A = A()
-        def f(self)->int:
-          bleh = self.a
-          return 1
-    |}
-  in
-  let content_without_annotation =
-    {|
-      class A:
-        pass
-      class C:
         def f(self)->int:
           bleh = self.a
           return 1
@@ -938,22 +910,26 @@ let test_incremental_attribute_caching context =
   let state = request_typecheck initial_state in
   assert_equal (get_errors state) [];
 
+  let content_without_annotation =
+    {|
+      class A:
+        pass
+      class C:
+        def f(self)->int:
+          bleh = self.a
+          return 1
+    |}
+  in
   write_to_file ~content:content_without_annotation;
   let state = request_typecheck { state with State.environment } in
   begin
     match get_errors state with
-    | [_, [{ Analysis.Error.kind; _ }]] ->
+    | [_, [error]] ->
         assert_equal
-          ~cmp:Analysis.Error.equal_kind
-          ~printer:Analysis.Error.show_kind
-          kind
-          (Analysis.Error.UndefinedAttribute {
-              Analysis.Error.attribute = Expression.Access.create "a";
-              origin = Analysis.Error.Class {
-                  Analysis.Error.annotation = Type.primitive "C";
-                  class_attribute = false;
-                };
-            })
+          ~cmp:String.equal
+          ~printer:ident
+          "Undefined attribute [16]: `C` has no attribute `a`."
+          (Error.description ~detailed:false error)
     | _ ->
         assert_unreached ()
   end;
