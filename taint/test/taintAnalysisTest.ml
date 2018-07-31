@@ -18,6 +18,7 @@ module Parallel = Hack_parallel.Std
 
 let parse_source ?(qualifier=[]) source =
   parse ~qualifier source
+  |> Preprocessing.preprocess
 
 
 let configuration = Configuration.create ()
@@ -40,6 +41,7 @@ let create_call_graph ?(test_file = "test_file") source =
   let source = parse_source source in
   let () = AstSharedMemory.add_source handle source in
   let environment = setup_environment [source] in
+  TypeCheck.check configuration environment source |> ignore;
   let call_graph =
     Service.Analysis.record_and_merge_call_graph environment CallGraph.empty handle source
   in
