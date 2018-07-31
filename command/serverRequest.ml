@@ -421,9 +421,7 @@ let rec process_request
           >>| fun (location, annotation) ->
           {
             HoverResponse.location;
-            contents =
-              Type.show annotation
-              |> String.substr_replace_all ~pattern:"`" ~with_:"";
+            contents = Type.show annotation;
           }
         in
         Some
