@@ -157,7 +157,7 @@ let connect_definition
                       else if Type.equal primitive Type.Top then
                         begin
                           Statistics.event
-                            ~name:"Superclass of top"
+                            ~name:"superclass of top"
                             ~section:`Environment
                             ~normals:["unresolved name", Access.show access]
                             ();

@@ -200,7 +200,7 @@ let shared_memory_handler
 
     Protocols.write_through "Protocols" (Hash_set.to_list protocols);
     add_table AstSharedMemory.add_module modules;
-    Statistics.performance ~name:"Added environment to shared memory" ~timer ()
+    Statistics.performance ~name:"added environment to shared memory" ~timer ()
   in
 
   let environment = Environment.Builder.create () in
@@ -547,7 +547,7 @@ let shared_memory_handler
   end;
   Statistics.event
     ~section:`Memory
-    ~name:"Shared memory size"
+    ~name:"shared memory size"
     ~integers:["size", EnvironmentSharedMemory.heap_size ()]
     ();
 

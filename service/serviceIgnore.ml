@@ -59,7 +59,7 @@ let register ~configuration scheduler handles =
     Scheduler.iter scheduler ~configuration ~f:register handles
   else
     register handles;
-  Statistics.performance ~name:"Registered ignores" ~timer ()
+  Statistics.performance ~name:"registered ignores" ~timer ()
 
 
 let postprocess handles errors =

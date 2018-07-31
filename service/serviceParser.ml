@@ -222,7 +222,7 @@ let parse_all scheduler ~configuration:({ Configuration.source_root; _ } as conf
       match AstSharedMemory.get_source handle with
       | Some { Ast.Source.qualifier; path; _ } ->
           if Set.mem sofar qualifier then
-            Statistics.event ~name:"interfering stub" ~normals:["path", path]();
+            Statistics.event ~name:"interfering stub" ~normals:["path", path] ();
           Set.add sofar qualifier
       | _ ->
           sofar

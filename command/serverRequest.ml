@@ -182,7 +182,7 @@ let rec process_request
       Analysis.Environment.infer_protocols ~handler:state.environment ~classes_to_infer ();
       Statistics.event
         ~section:`Memory
-        ~name:"Shared memory size"
+        ~name:"shared memory size"
         ~integers:["size", Service.EnvironmentSharedMemory.heap_size ()]
         ();
     in

@@ -197,7 +197,7 @@ let connect
   if not (Handler.contains (Handler.indices ()) predecessor) ||
      not (Handler.contains (Handler.indices ()) successor) then
     Statistics.event
-      ~name:"Invalid type order connection"
+      ~name:"invalid type order connection"
       ~integers:[]
       ~normals:[
         "Predecessor", Type.show predecessor;
@@ -233,7 +233,7 @@ let connect
 let disconnect_successors ((module Handler: Handler) as order) annotation =
   if not (Handler.contains (Handler.indices ()) annotation) then
     Statistics.event
-      ~name:"Invalid type order disconnection"
+      ~name:"invalid type order disconnection"
       ~integers:[]
       ~normals:[
         "Annotation", Type.show annotation;

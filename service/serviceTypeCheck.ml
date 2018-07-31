@@ -141,7 +141,7 @@ let analyze_sources_parallel scheduler configuration environment handles =
             coverage = Coverage.sum left.coverage right.coverage;
           })
   in
-  Statistics.performance ~name:"Analyzed sources" ~timer ();
+  Statistics.performance ~name:"analyzed sources" ~timer ();
   Ignore.postprocess handles errors, coverage
 
 
