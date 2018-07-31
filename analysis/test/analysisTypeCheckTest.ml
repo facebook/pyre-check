@@ -501,12 +501,14 @@ let test_forward_expression _ =
       (State.errors forwarded |> List.map ~f:(Error.description ~detailed:false))
   in
 
+  (* Access. *)
   assert_forward
     ~precondition:["x", Type.integer]
     ~postcondition:["x", Type.integer]
     "x"
     Type.integer;
 
+  (* Await. *)
   assert_forward "await awaitable_int()" Type.integer;
   assert_forward
     ~errors:(`Specific [
@@ -516,35 +518,44 @@ let test_forward_expression _ =
     "await undefined"
     Type.Top;
 
+  (* Complex literal. *)
   assert_forward "1j" Type.complex;
   assert_forward "1" Type.integer;
 
+  (* Ellipses. *)
   assert_forward "..." Type.Top;
 
+  (* False literal. *)
   assert_forward "False" Type.bool;
 
+  (* Float literal. *)
   assert_forward "1.0" Type.float;
 
+  (* Lists. *)
   assert_forward "[]" (Type.list Type.Bottom);
   assert_forward "[1]" (Type.list Type.integer);
   assert_forward "[1, 'string']" (Type.list (Type.union [Type.integer; Type.string]));
   assert_forward ~errors:(`Undefined 1) "[undefined]" (Type.list Type.Top);
   assert_forward ~errors:(`Undefined 2) "[undefined, undefined]" (Type.list Type.Top);
 
+  (* Sets. *)
   assert_forward "{1}" (Type.set Type.integer);
   assert_forward "{1, 'string'}" (Type.set (Type.union [Type.integer; Type.string]));
   assert_forward ~errors:(`Undefined 1) "{undefined}" (Type.set Type.Top);
   assert_forward ~errors:(`Undefined 2) "{undefined, undefined}" (Type.set Type.Top);
 
+  (* Starred expressions. *)
   assert_forward "*1" Type.Top;
   assert_forward "**1" Type.Top;
   assert_forward ~errors:(`Undefined 1) "*undefined" Type.Top;
 
+  (* String literals. *)
   assert_forward "'string'" Type.string;
   assert_forward "f'string'" Type.string;
   assert_forward "f'string{1}'" Type.string;
   assert_forward ~errors:(`Undefined 1) "f'string{undefined}'" Type.string;
 
+  (* Ternaries. *)
   assert_forward "3 if True else 1" Type.integer;
   assert_forward "1.0 if True else 1" Type.float;
   assert_forward "1 if True else 1.0" Type.float;
@@ -553,13 +564,16 @@ let test_forward_expression _ =
   assert_forward ~errors:(`Undefined 1) "1 if True else undefined" Type.Top;
   assert_forward ~errors:(`Undefined 3) "undefined if undefined else undefined" Type.Top;
 
+  (* True literal. *)
   assert_forward "True" Type.bool;
 
+  (* Tuples. *)
   assert_forward "1," (Type.tuple [Type.integer]);
   assert_forward "1, 'string'" (Type.tuple [Type.integer; Type.string]);
   assert_forward ~errors:(`Undefined 1) "undefined," (Type.tuple [Type.Top]);
   assert_forward ~errors:(`Undefined 2) "undefined, undefined" (Type.tuple [Type.Top; Type.Top]);
 
+  (* Unary expressions. *)
   assert_forward "not 1" Type.bool;
   assert_forward ~errors:(`Undefined 1) "not undefined" Type.bool;
   assert_forward "-1" Type.integer;
@@ -567,6 +581,7 @@ let test_forward_expression _ =
   assert_forward "~1" Type.integer;
   assert_forward ~errors:(`Undefined 1) "-undefined" Type.Top;
 
+  (* Yield. *)
   assert_forward "yield 1" (Type.generator Type.integer);
   assert_forward ~errors:(`Undefined 1) "yield undefined" (Type.generator Type.Top);
   assert_forward "yield" (Type.generator Type.none)
