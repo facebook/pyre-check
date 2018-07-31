@@ -16,7 +16,9 @@ module Result = InterproceduralResult
 
 let analysis_failed step ~exn callable ~message =
   let callable = (callable :> Callable.t) in
-  Log.dump "%s in step %s while analyzing %s.\nException %s\nBacktrace: %s"
+  Log.log
+    ~section:`Interprocedural
+    "%s in step %s while analyzing %s.\nException %s\nBacktrace: %s"
     message
     (Fixpoint.show_step step)
     (Callable.show callable)
@@ -106,7 +108,7 @@ let widen_models ~iteration ~previous ~next =
 let explain_non_fixpoint ~iteration ~previous ~next =
   let open Result in
   let witnesses = Kind.Map.merge (non_fixpoint_witness ~iteration) previous next in
-  let print_witness key () = Log.dump "%s is non-fixpoint" (Kind.show key)
+  let print_witness key () = Log.log ~section:`Interprocedural "%s is non-fixpoint" (Kind.show key)
   in
   Kind.Map.iter print_witness witnesses
 
@@ -129,13 +131,13 @@ let widen ~iteration ~previous ~next =
     let result = widen_models ~iteration ~previous ~next in
     if not (reached_fixpoint ~iteration ~previous:result ~next:previous) then
       begin
-        Log.dump "WIDEN DOES NOT RESPECT JOIN: previous = %s\nwiden = %s\n"
+        Log.log ~section:`Interprocedural "WIDEN DOES NOT RESPECT JOIN: previous = %s\nwiden = %s\n"
           (show_models previous) (show_models result);
         explain_non_fixpoint ~iteration ~previous:result ~next:previous
       end;
     if not (reached_fixpoint ~iteration ~previous:result ~next:next) then
       begin
-        Log.dump "WIDEN DOES NOT RESPECT JOIN: next = %s\nwiden = %s\n"
+        Log.log ~section:`Interprocedural "WIDEN DOES NOT RESPECT JOIN: next = %s\nwiden = %s\n"
           (show_models next) (show_models result);
         explain_non_fixpoint ~iteration ~previous:result ~next:next
       end;
@@ -219,7 +221,7 @@ let analyze_callable analyses step callable =
             (Fixpoint.Epoch.show step.epoch)
             (Fixpoint.Epoch.show epoch)
         in
-        Log.dump "%s" message;
+        Log.log ~section:`Interprocedural "%s" message;
         failwith message
     | _ -> ()
   in
@@ -228,7 +230,12 @@ let analyze_callable analyses step callable =
       begin
         match Callable.get_definition callable with
         | None ->
-            let () = Log.dump "Found no definition for %s" (Callable.show callable) in
+            let () =
+              Log.log
+                ~section:`Interprocedural
+                "Found no definition for %s"
+                (Callable.show callable)
+            in
             let () =
               if not (Fixpoint.is_initial_iteration step) then
                 let message =
@@ -237,7 +244,7 @@ let analyze_callable analyses step callable =
                     (Callable.show callable)
                     (Fixpoint.show_step step)
                 in
-                Log.dump "%s" message;
+                Log.log ~section:`Interprocedural "%s" message;
                 failwith message
             in
             Fixpoint.{
@@ -380,7 +387,7 @@ let compute_callables_to_reanalyze step previous_batch ~caller_map ~all_callable
                 (Fixpoint.Epoch.show step.epoch)
                 (Fixpoint.meta_data_to_string meta)
             in
-            Log.dump "%s" message;
+            Log.log ~section:`Interprocedural "%s" message;
             failwith message
       in
       Callable.Set.iter check_missing missing
@@ -403,14 +410,14 @@ let compute_fixpoint ~workers ~analyses ~caller_map ~all_callables epoch =
         else
           "..."
       in
-      Log.dump "Iteration #%d. Callables [%s]" iteration witnesses
+      Log.log ~section:`Interprocedural "Iteration #%d. Callables [%s]" iteration witnesses
     in
     if num_callables = 0 then
       (* Fixpoint. *)
       iteration
     else if iteration >= max_iterations then
       begin
-        Log.dump "Failed to reach interprocedural fixed point";
+        Log.log ~section:`Interprocedural "Failed to reach interprocedural fixed point";
         let max_to_show = 15 in
         let bucket =
           callables_to_analyze
@@ -425,7 +432,7 @@ let compute_fixpoint ~workers ~analyses ~caller_map ~all_callables epoch =
             (String.concat ~sep:", " (List.take bucket max_to_show))
             (if bucket_len > max_to_show then "..." else "")
         in
-        Log.dump "%s" message;
+        Log.log ~section:`Interprocedural "%s" message;
         failwith message
       end
     else
@@ -450,7 +457,7 @@ let compute_fixpoint ~workers ~analyses ~caller_map ~all_callables epoch =
       let time_f = Unix.gettimeofday () in
       let elapsed = time_f -. time_0 |> Unix.gmtime in
       let () =
-        Log.dump "Iteration #%n, heap size %n took %nm %02ds"
+        Log.log ~section:`Interprocedural "Iteration #%n, heap size %n took %nm %02ds"
           iteration hs elapsed.Unix.tm_min elapsed.Unix.tm_sec
       in
       iterate ~iteration:(iteration + 1) callables_to_analyze

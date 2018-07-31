@@ -18,6 +18,7 @@ type section = [
   | `Event
   | `Fixpoint
   | `Info
+  | `Interprocedural
   | `Memory
   | `Parser
   | `Progress
@@ -41,6 +42,7 @@ let section_to_string = function
   | `Event -> "Event"
   | `Fixpoint -> "Fixpoint"
   | `Info -> "Info"
+  | `Interprocedural -> "Interprocedural"
   | `Memory -> "Memory"
   | `Parser -> "Parser"
   | `Progress -> "Progress"
