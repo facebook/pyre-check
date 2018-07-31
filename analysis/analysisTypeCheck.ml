@@ -877,16 +877,20 @@ module State = struct
         { state; resolved }
 
     | Await expression ->
-        (* TODO(T30448045) *)
-        let { state; _ } = forward_expression ~state ~expression in
-        let actual = Annotated.resolve ~resolution expression in
-        let is_awaitable =
-          Resolution.less_or_equal
-            resolution
-            ~left:actual
-            ~right:(Type.awaitable Type.Object)
+        let { state; resolved } = forward_expression ~state ~expression in
+        let resolved =
+          Resolution.join resolution (Type.awaitable Type.Bottom) resolved
+          |> Type.awaitable_value
         in
         let state =
+          (* TODO(T30448045): switch this over to `resolved` once it is accurate enough. *)
+          let actual = Annotated.resolve ~resolution expression in
+          let is_awaitable =
+            Resolution.less_or_equal
+              resolution
+              ~left:actual
+              ~right:(Type.awaitable Type.Object)
+          in
           if not is_awaitable then
             Error.create
               ~location
@@ -896,7 +900,7 @@ module State = struct
           else
             state
         in
-        { state; resolved = Type.Top }
+        { state; resolved }
 
     | BooleanOperator {
         BooleanOperator.left;

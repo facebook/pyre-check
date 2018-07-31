@@ -507,6 +507,15 @@ let test_forward_expression _ =
     "x"
     Type.integer;
 
+  assert_forward "await awaitable_int()" Type.integer;
+  assert_forward
+    ~errors:(`Specific [
+        "Incompatible awaitable type [12]: Expected an awaitable but got `unknown`.";
+        "Undefined name [18]: Global name `undefined` is undefined.";
+      ])
+    "await undefined"
+    Type.Top;
+
   assert_forward "1j" Type.complex;
   assert_forward "1" Type.integer;
 
