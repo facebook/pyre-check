@@ -9,7 +9,7 @@ import sys
 import unittest
 from unittest.mock import call, patch
 
-from .. import buck, commands, configuration, pyre
+from .. import EnvironmentException, buck, commands, configuration, pyre
 
 
 class PyreTest(unittest.TestCase):
@@ -25,6 +25,11 @@ class PyreTest(unittest.TestCase):
     @patch.object(commands.Persistent, "run_null_server")
     def test_persistent_integration(self, run_null_server, validate, read) -> None:
         validate.side_effect = commands.ClientException
+        with patch.object(sys, "argv", ["pyre", "persistent"]):
+            self.assertEqual(pyre.main(), 2)
+            run_null_server.assert_not_called()
+
+        validate.side_effect = EnvironmentException
         with patch.object(sys, "argv", ["pyre", "persistent"]):
             self.assertEqual(pyre.main(), 2)
             run_null_server.assert_has_calls([call(timeout=3600)])

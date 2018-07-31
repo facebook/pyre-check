@@ -285,14 +285,13 @@ def main() -> int:
         exit_code = arguments.command(
             arguments, configuration, source_directory_path
         ).run()
-    except (
-        buck.BuckException,
-        commands.ClientException,
-        EnvironmentException,
-    ) as error:
+    except (buck.BuckException, EnvironmentException) as error:
         LOG.error(str(error))
         if arguments.command == commands.Persistent:
             commands.Persistent.run_null_server(timeout=3600)
+        exit_code = FAILURE
+    except commands.ClientException as error:
+        LOG.error(str(error))
         exit_code = FAILURE
     except Exception as error:
         LOG.error(str(error))
