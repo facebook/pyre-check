@@ -359,12 +359,12 @@ let rec process_request
             _;
           } ->
             let source_text =
-                Path.create_relative
-                  ~root:source_root
-                  ~relative:path
-                |> File.create
-                |> File.content
-                |> Option.value ~default:""
+              Path.create_relative
+                ~root:source_root
+                ~relative:path
+              |> File.create
+              |> File.content
+              |> Option.value ~default:""
             in
             File.Handle.create path
             |> AstSharedMemory.get_source

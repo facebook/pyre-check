@@ -586,7 +586,7 @@ let test_populate _ =
   assert_equal
     (Handler.TypeOrderHandler.find
        (Handler.TypeOrderHandler.edges ())
-         (index (Type.primitive "C")))
+       (index (Type.primitive "C")))
     (Some [{ TypeOrder.Target.target = index Type.Object; parameters = []}]);
 
   (* Globals *)

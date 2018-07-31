@@ -164,12 +164,12 @@ let run_command expected_version log_identifier source_root () =
         ();
       exit exit_code
   | uncaught_exception ->
-    Statistics.event
-      ~flush:true
-      ~name:"persistent client exception"
-      ~normals:["exception", Exn.to_string uncaught_exception]
-      ();
-    raise uncaught_exception
+      Statistics.event
+        ~flush:true
+        ~name:"persistent client exception"
+        ~normals:["exception", Exn.to_string uncaught_exception]
+        ();
+      raise uncaught_exception
 
 
 let command =

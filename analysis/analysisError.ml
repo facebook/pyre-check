@@ -1202,7 +1202,7 @@ let filter ~configuration ~resolution errors =
 
 
 let suppress ~mode error =
- let suppress_in_strict ({ kind; _ } as error) =
+  let suppress_in_strict ({ kind; _ } as error) =
     if due_to_analysis_limitations error then
       match kind with
       | TooManyArguments _

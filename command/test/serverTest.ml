@@ -484,10 +484,10 @@ let test_incremental_typecheck _ =
   let open Protocol in
   let check_request ?(update_environment_with = []) ?(check = []) () =
     Request.TypeCheckRequest
-       (TypeCheckRequest.create
-          ~update_environment_with
-          ~check
-          ())
+      (TypeCheckRequest.create
+         ~update_environment_with
+         ~check
+         ())
   in
   assert_response
     ~request:(check_request ~check:[file ~content:(Some "def foo() -> int: return 1") path] ())
@@ -621,7 +621,7 @@ let test_incremental_dependencies _ =
     ]
     in
     let initial_state =
-    mock_server_state ~initial_environment:environment (File.Handle.Table.create ()) in
+      mock_server_state ~initial_environment:environment (File.Handle.Table.create ()) in
     let check_request ?update ?check () =
       Protocol.Request.TypeCheckRequest
         (Protocol.TypeCheckRequest.create
@@ -651,9 +651,9 @@ let test_incremental_dependencies _ =
     assert_equal
       ~printer
       (Some (Protocol.TypeCheckResponse [
-          File.Handle.create "a.py", [];
-          File.Handle.create "b.py", [];
-        ]))
+           File.Handle.create "a.py", [];
+           File.Handle.create "b.py", [];
+         ]))
       response;
     assert_equal
       ~printer:(List.to_string ~f:(Protocol.Request.show))
