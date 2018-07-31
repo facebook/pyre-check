@@ -59,11 +59,8 @@ let rec resolve ~resolution expression =
 
         | ComparisonOperator {
             Expression.ComparisonOperator.left = { Node.value = Access access; _ };
-            right =
-              [
-                Expression.ComparisonOperator.IsNot,
-                { Node.value = Access [Expression.Access.Identifier identifier]; _ }
-              ];
+            operator = Expression.ComparisonOperator.IsNot;
+            right = { Node.value = Access [Expression.Access.Identifier identifier]; _ };
           } when Identifier.show identifier = "None" ->
             [access]
 
@@ -133,14 +130,9 @@ let rec resolve ~resolution expression =
       Resolution.join resolution left_type (resolve ~resolution right)
 
   | ComparisonOperator operator ->
-      let fold_comparisons sofar = function
-        | Some call ->
-            Resolution.meet resolution sofar (resolve ~resolution call)
-        | None ->
-            Resolution.meet resolution sofar Type.bool
-      in
       ComparisonOperator.override operator
-      |> List.fold ~init:Type.Top ~f:fold_comparisons
+      >>| resolve ~resolution
+      |> Option.value ~default:Type.bool
 
   | Complex _ ->
       Type.complex
@@ -229,20 +221,16 @@ let rec resolve ~resolution expression =
             }
         | Expression.ComparisonOperator {
             Expression.ComparisonOperator.left;
-            right = [
-              Expression.ComparisonOperator.Is,
-              ({ Node.value = Access [Expression.Access.Identifier identifier]; _ } as access)
-            ];
+            operator = Expression.ComparisonOperator.Is;
+            right = { Node.value = Access [Expression.Access.Identifier identifier]; _ } as access;
           } when Identifier.show identifier = "None" ->
             {
               Ternary.target = alternative;
               alternative = target;
               test = { test with Node.value = Expression.ComparisonOperator {
                   Expression.ComparisonOperator.left;
-                  right = [
-                    Expression.ComparisonOperator.IsNot,
-                    access
-                  ];
+                  operator = Expression.ComparisonOperator.IsNot;
+                  right = access;
                 }};
             }
         | _ ->
@@ -267,10 +255,8 @@ let rec resolve ~resolution expression =
               Node.value = Expression.Access access;
               _;
             } as access_node;
-            right = [
-              Expression.ComparisonOperator.IsNot,
-              { Node.value = Access [Expression.Access.Identifier identifier]; _ }
-            ];
+            operator = Expression.ComparisonOperator.IsNot;
+            right = { Node.value = Access [Expression.Access.Identifier identifier]; _ };
           } when Identifier.show identifier = "None" ->
             deoptionalize access access_node resolution
         | _ -> resolution

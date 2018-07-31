@@ -541,10 +541,8 @@ compound_statement:
                 If.test = {
                   Node.value = ComparisonOperator {
                       ComparisonOperator.left;
-                      right = [
-                        ComparisonOperator.GreaterThanOrEquals,
-                        { Node.value = Tuple ({ Node.value = Integer major; _ } :: _ ); _ }
-                      ];
+                      operator = ComparisonOperator.GreaterThanOrEquals;
+                      right = { Node.value = Tuple ({ Node.value = Integer major; _ } :: _ ); _ };
                     };
                   _;
                 };
@@ -1293,11 +1291,28 @@ test_without_ternary:
     }
   }
 
-  | left = expression; right = nonempty_list(comparison) {
-      {
-        Node.location = left.Node.location;
-        value = ComparisonOperator { ComparisonOperator.left; right };
-      }
+  | left = expression; comparisons = nonempty_list(comparison) {
+      let rec comparison ({ Node.location; _ } as left) comparisons =
+        match comparisons with
+        | (operator, right) :: comparisons when List.length comparisons > 0 ->
+            let left =
+              ComparisonOperator { ComparisonOperator.left; operator; right }
+              |> Node.create ~location
+            in
+            let right = comparison right comparisons in
+            BooleanOperator {
+              BooleanOperator.left;
+              operator = BooleanOperator.And;
+              right;
+            }
+            |> Node.create ~location;
+        | [operator, right] ->
+            ComparisonOperator { ComparisonOperator.left; operator; right }
+            |> Node.create ~location
+        | _ ->
+            failwith "The parser is a lie! Did not get a non-empty comparison list."
+      in
+      comparison left comparisons
     }
 
   | start = LAMBDA;

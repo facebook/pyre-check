@@ -107,12 +107,14 @@ let test_normalize _ =
           UnaryOperator.operator = UnaryOperator.Not;
           operand = +ComparisonOperator {
             ComparisonOperator.left = !"a";
-            right = [ComparisonOperator.LessThan, !"b"];
+            operator = ComparisonOperator.LessThan;
+            right = !"b";
           };
         }))
     (+ComparisonOperator {
        ComparisonOperator.left = !"a";
-       right = [ComparisonOperator.GreaterThanOrEquals, !"b"];
+       operator = ComparisonOperator.GreaterThanOrEquals;
+       right = !"b";
      });
 
   assert_expression_equal
@@ -121,12 +123,14 @@ let test_normalize _ =
           UnaryOperator.operator = UnaryOperator.Not;
           operand = +ComparisonOperator {
             ComparisonOperator.left = !"x";
-            right = [ ComparisonOperator.IsNot, !"y" ];
+            operator = ComparisonOperator.IsNot;
+            right = !"y";
           };
         }))
     (+ComparisonOperator {
        ComparisonOperator.left = !"x";
-       right = [ ComparisonOperator.Is, !"y" ];
+       operator = ComparisonOperator.Is;
+       right = !"y";
      });
 
   assert_expression_equal

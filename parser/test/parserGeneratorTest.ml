@@ -243,7 +243,8 @@ let test_access _ =
                   value =
                     +ComparisonOperator {
                       ComparisonOperator.left = +Integer 1;
-                      right = [ComparisonOperator.LessThan, +Integer 2];
+                      operator = ComparisonOperator.LessThan;
+                      right = +Integer 2;
                     };
                 };
               ]);
@@ -1375,7 +1376,8 @@ let test_lambda _ =
            ];
            body = +ComparisonOperator {
              ComparisonOperator.left = !"x";
-             right = [ComparisonOperator.Is, !"y"];
+             operator = ComparisonOperator.Is;
+             right = !"y";
            };
          });
     ];
@@ -1438,7 +1440,8 @@ let test_ternary _ =
         (+Ternary {
            Ternary.target = +ComparisonOperator {
              ComparisonOperator.left = !"a";
-             right = [ComparisonOperator.In, !"b"];
+             operator = ComparisonOperator.In;
+             right = !"b";
            };
            test = +Integer 1;
            alternative = +Integer 1;
@@ -1528,7 +1531,8 @@ let test_dictionary _ =
                Dictionary.key = +Integer 1;
                value = +ComparisonOperator {
                  ComparisonOperator.left = +Integer 1;
-                 right = [ComparisonOperator.LessThan, +Integer 2];
+                 operator = ComparisonOperator.LessThan;
+                 right = +Integer 2;
                };
              }];
            keywords = None;
@@ -1704,7 +1708,8 @@ let test_list _ =
         (+ListComprehension {
            Comprehension.element = +ComparisonOperator {
              ComparisonOperator.left = !"a";
-             right = [ComparisonOperator.In, !"b"];
+             operator = ComparisonOperator.In;
+             right = !"b";
            };
            generators = [
              {
@@ -1793,7 +1798,8 @@ let test_list _ =
                conditions = [
                  +ComparisonOperator {
                    ComparisonOperator.left = +Integer 1;
-                   right = [ComparisonOperator.LessThan, +Integer 2];
+                   operator = ComparisonOperator.LessThan;
+                   right = +Integer 2;
                  };
                ];
                async = false;
@@ -1815,7 +1821,8 @@ let test_list _ =
                  +BooleanOperator {
                    BooleanOperator.left = +ComparisonOperator {
                      ComparisonOperator.left = !"a";
-                     right = [ComparisonOperator.Is, +Integer 1];
+                     operator = ComparisonOperator.Is;
+                     right = +Integer 1;
                    };
                    operator = BooleanOperator.Or;
                    right = +True;
@@ -1930,7 +1937,8 @@ let test_generator _ =
         (+Generator {
            Comprehension.element = +ComparisonOperator {
              ComparisonOperator.left = !"a";
-             right = [ComparisonOperator.In, !"b"];
+             operator = ComparisonOperator.In;
+             right = !"b";
            };
            generators = [
              {
@@ -1978,7 +1986,8 @@ let test_comparison _ =
       +Expression
         (+ComparisonOperator {
            ComparisonOperator.left = +(Access (Access.create "a.b"));
-           right = [ComparisonOperator.LessThan, +Integer 2];
+           operator = ComparisonOperator.LessThan;
+           right = +Integer 2;
          });
     ];
   assert_parsed_equal
@@ -1987,7 +1996,8 @@ let test_comparison _ =
       +Expression
         (+ComparisonOperator {
            ComparisonOperator.left = +Integer 1;
-           right = [ComparisonOperator.In, +List []];
+           operator = ComparisonOperator.In;
+           right = +List [];
          });
     ];
   assert_parsed_equal
@@ -1996,7 +2006,8 @@ let test_comparison _ =
       +Expression
         (+ComparisonOperator {
            ComparisonOperator.left = +Integer 1;
-           right = [ComparisonOperator.Is, +Integer 1];
+           operator = ComparisonOperator.Is;
+           right = +Integer 1;
          });
     ];
   assert_parsed_equal
@@ -2005,7 +2016,8 @@ let test_comparison _ =
       +Expression
         (+ComparisonOperator {
            ComparisonOperator.left = +Integer 1;
-           right = [ComparisonOperator.IsNot, +Integer 1];
+           operator = ComparisonOperator.IsNot;
+           right = +Integer 1;
          });
     ];
   assert_parsed_equal
@@ -2014,31 +2026,48 @@ let test_comparison _ =
       +Expression
         (+ComparisonOperator {
            ComparisonOperator.left = +Integer 1;
-           right = [ComparisonOperator.Equals, +Integer 1];
+           operator = ComparisonOperator.Equals;
+           right = +Integer 1;
          });
     ];
   assert_parsed_equal
     "1 < 1 < 2"
     [
       +Expression
-        (+ComparisonOperator {
-           ComparisonOperator.left = +Integer 1;
-           right = [
-             ComparisonOperator.LessThan, +Integer 1;
-             ComparisonOperator.LessThan, +Integer 2;
-           ]
+        (+BooleanOperator {
+           BooleanOperator.left =
+             (+ComparisonOperator {
+                ComparisonOperator.left = +Integer 1;
+                operator = ComparisonOperator.LessThan;
+                right = +Integer 1;
+              });
+           operator = BooleanOperator.And;
+           right =
+             (+ComparisonOperator {
+                ComparisonOperator.left = +Integer 1;
+                operator = ComparisonOperator.LessThan;
+                right = +Integer 2;
+              });
          });
     ];
   assert_parsed_equal
     "1 < 1 is 2"
     [
       +Expression
-        (+ComparisonOperator {
-           ComparisonOperator.left = +Integer 1;
-           right = [
-             ComparisonOperator.LessThan, +Integer 1;
-             ComparisonOperator.Is, +Integer 2;
-           ];
+        (+BooleanOperator {
+           BooleanOperator.left =
+             (+ComparisonOperator {
+                ComparisonOperator.left = +Integer 1;
+                operator = ComparisonOperator.LessThan;
+                right = +Integer 1;
+              });
+           operator = BooleanOperator.And;
+           right =
+             (+ComparisonOperator {
+                ComparisonOperator.left = +Integer 1;
+                operator = ComparisonOperator.Is;
+                right = +Integer 2;
+              });
          });
     ]
 
@@ -2952,7 +2981,8 @@ let test_if _ =
           operator = BooleanOperator.And;
           right = +ComparisonOperator {
             ComparisonOperator.left = !"x";
-            right = [ComparisonOperator.GreaterThan, +Integer 0];
+            operator = ComparisonOperator.GreaterThan;
+            right = +Integer 0;
           };
         };
         body = [+Expression !"b"];
@@ -2971,7 +3001,8 @@ let test_if _ =
               Access.Identifier ~~"foo";
               Access.Call (+[{ Argument.name = None; value = !"x" }]);
             ];
-            right = [ComparisonOperator.GreaterThan, +Integer 0];
+            operator = ComparisonOperator.GreaterThan;
+            right = +Integer 0;
           };
         };
         body = [+Expression !"b"];
@@ -2985,7 +3016,8 @@ let test_if _ =
         If.test = +BooleanOperator {
           BooleanOperator.left = +ComparisonOperator {
             ComparisonOperator.left = !"a";
-            right = [ComparisonOperator.Is, +Integer 1];
+            operator = ComparisonOperator.Is;
+            right = +Integer 1;
           };
           operator = BooleanOperator.Or;
           right = +True;
@@ -3001,12 +3033,14 @@ let test_if _ =
         If.test = +BooleanOperator {
           BooleanOperator.left = +ComparisonOperator {
             ComparisonOperator.left = !"a";
-            right = [ComparisonOperator.Is, +Integer 1];
+            operator = ComparisonOperator.Is;
+            right = +Integer 1;
           };
           operator = BooleanOperator.Or;
           right = +ComparisonOperator {
             ComparisonOperator.left = !"b";
-            right = [ComparisonOperator.Is, +Integer 1];
+            operator = ComparisonOperator.Is;
+            right = +Integer 1;
           };
         };
         body = [+Expression !"c"];
@@ -3020,12 +3054,14 @@ let test_if _ =
         If.test = +BooleanOperator {
           BooleanOperator.left = +ComparisonOperator {
             ComparisonOperator.left = !"a";
-            right = [ComparisonOperator.Is, +Integer 1];
+            operator = ComparisonOperator.Is;
+            right = +Integer 1;
           };
           operator = BooleanOperator.Or;
           right = +ComparisonOperator {
             ComparisonOperator.left = !"b";
-            right = [ComparisonOperator.Equals, +Integer 1];
+            operator = ComparisonOperator.Equals;
+            right = +Integer 1;
           };
         };
         body = [+Expression !"c"];
@@ -3039,18 +3075,21 @@ let test_if _ =
         If.test = +BooleanOperator {
           BooleanOperator.left = +ComparisonOperator {
             ComparisonOperator.left = !"a";
-            right = [ComparisonOperator.Is, +Integer 1];
+            operator = ComparisonOperator.Is;
+            right = +Integer 1;
           };
           operator = BooleanOperator.Or;
           right = +BooleanOperator {
             BooleanOperator.left = +ComparisonOperator {
               ComparisonOperator.left = !"b";
-              right = [ComparisonOperator.Is, +Integer 1];
+              operator = ComparisonOperator.Is;
+              right = +Integer 1;
             };
             operator = BooleanOperator.Or;
             right = +ComparisonOperator {
               ComparisonOperator.left = !"c";
-              right = [ComparisonOperator.Is, +Integer 1];
+              operator = ComparisonOperator.Is;
+              right = +Integer 1;
             };
           };
         };
@@ -3289,7 +3328,8 @@ let test_assert _ =
       +Assert {
         Assert.test = +ComparisonOperator {
           ComparisonOperator.left = !"a";
-          right = [ComparisonOperator.Is, !"b"];
+          operator = ComparisonOperator.Is;
+          right = !"b";
         };
         message = None;
       };
@@ -3308,7 +3348,8 @@ let test_assert _ =
       +Assert {
         Assert.test = +ComparisonOperator {
           ComparisonOperator.left = !"a";
-          right = [ComparisonOperator.IsNot, !"None"];
+          operator = ComparisonOperator.IsNot;
+          right = !"None";
         };
         message = Some (+String (StringLiteral.create "b or c"));
       }
@@ -3946,7 +3987,8 @@ let test_ellipsis _ =
       +If {
         If.test = +ComparisonOperator {
           ComparisonOperator.left = !"x";
-          right = [ComparisonOperator.Is, +Ellipses];
+          operator = ComparisonOperator.Is;
+          right = +Ellipses;
         };
         body = [+Pass];
         orelse = [];

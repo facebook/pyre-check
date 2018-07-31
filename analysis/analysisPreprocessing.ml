@@ -775,13 +775,11 @@ let qualify ({ Source.path; qualifier = source_qualifier; statements; _ } as sou
             operator;
             right = qualify_expression ~scope right;
           }
-      | ComparisonOperator { ComparisonOperator.left; right } ->
-          let qualify_operand (operator, operand) =
-            operator, qualify_expression ~scope operand
-          in
+      | ComparisonOperator { ComparisonOperator.left; operator; right } ->
           ComparisonOperator {
             ComparisonOperator.left = qualify_expression ~scope left;
-            right = List.map right ~f:qualify_operand;
+            operator;
+            right = qualify_expression ~scope right;
           }
       | Dictionary { Dictionary.entries; keywords } ->
           Dictionary {
@@ -909,10 +907,8 @@ let replace_version_specific_code source =
               match value with
               | Expression.ComparisonOperator {
                   Expression.ComparisonOperator.left;
-                  right = [
-                    operator,
-                    right
-                  ];
+                  operator;
+                  right;
                 } ->
                   begin
                     match operator with

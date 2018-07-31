@@ -61,7 +61,8 @@ module Record : sig
 
     type 'expression record = {
       left: 'expression;
-      right: (operator * 'expression) list;
+      operator: operator;
+      right: 'expression;
     }
     [@@deriving compare, eq, sexp, show, hash]
   end
@@ -239,7 +240,7 @@ module ComparisonOperator : sig
   type t = expression_t Record.ComparisonOperator.record
   [@@deriving compare, eq, sexp, show, hash]
 
-  val override: t -> (expression_t option) list
+  val override: t -> expression_t option
 end
 
 module UnaryOperator : sig

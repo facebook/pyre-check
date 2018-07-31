@@ -130,13 +130,11 @@ module Make (Transformer : Transformer) = struct
               operator;
               right = transform_expression right;
             }
-        | ComparisonOperator { ComparisonOperator.left; right } ->
-            let transform_right (operator, operand) =
-              operator, transform_expression operand
-            in
+        | ComparisonOperator { ComparisonOperator.left; operator; right } ->
             ComparisonOperator {
               ComparisonOperator.left = transform_expression left;
-              right = transform_list right ~f:transform_right;
+              operator;
+              right = transform_expression right;
             }
         | Complex _ ->
             value

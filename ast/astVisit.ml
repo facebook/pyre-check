@@ -72,13 +72,10 @@ module Make (Visitor: Visitor) = struct
             List.iter access ~f:visit_access
         | Await expression ->
             visit_expression expression
-        | BooleanOperator { BooleanOperator.left; right; _ } ->
+        | BooleanOperator { BooleanOperator.left; right; _ }
+        | ComparisonOperator { ComparisonOperator.left; right; _ } ->
             visit_expression left;
             visit_expression right;
-        | ComparisonOperator { ComparisonOperator.left; right } ->
-            let visit_right (_, operand) = visit_expression operand in
-            visit_expression left;
-            List.iter ~f:visit_right right
         | Dictionary { Dictionary.entries; keywords } ->
             List.iter entries ~f:(visit_entry ~visit_expression);
             keywords >>| visit_expression |> ignore

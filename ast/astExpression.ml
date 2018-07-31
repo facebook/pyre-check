@@ -85,7 +85,8 @@ module Record = struct
 
     type 'expression record = {
       left: 'expression;
-      right: (operator * 'expression) list;
+      operator: operator;
+      right: 'expression;
     }
     [@@deriving compare, eq, sexp, show, hash]
 
@@ -561,33 +562,24 @@ module ComparisonOperator = struct
   [@@deriving compare, eq, sexp, show, hash]
 
 
-  let override { left; right } =
-    let simple_override ({ Node.location; _ } as left) (operator, right) =
-      begin
-        match operator with
-        | Equals -> Some "__eq__"
-        | GreaterThan -> Some "__gt__"
-        | GreaterThanOrEquals -> Some "__ge__"
-        | In -> Some "__contains__"
-        | Is
-        | IsNot -> None
-        | LessThan -> Some "__lt__"
-        | LessThanOrEquals -> Some "__le__"
-        | NotEquals -> Some "__ne__"
-        | NotIn -> None
-      end
-      >>| fun name ->
-      let arguments = [{ Argument.name = None; value = right }] in
-      Access ((access left) @ Access.call ~arguments ~location ~name ())
-      |> Node.create ~location
-    in
-    let rec collect left operands =
-      match operands with
-      | (operator, right) :: operands ->
-          (simple_override left (operator, right)) :: (collect right operands)
-      | [] -> []
-    in
-    collect left right
+  let override { left = { Node.location; _ } as left; operator; right } =
+    begin
+      match operator with
+      | Equals -> Some "__eq__"
+      | GreaterThan -> Some "__gt__"
+      | GreaterThanOrEquals -> Some "__ge__"
+      | In -> Some "__contains__"
+      | Is
+      | IsNot -> None
+      | LessThan -> Some "__lt__"
+      | LessThanOrEquals -> Some "__le__"
+      | NotEquals -> Some "__ne__"
+      | NotIn -> None
+    end
+    >>| fun name ->
+    let arguments = [{ Argument.name = None; value = right }] in
+    Access ((access left) @ Access.call ~arguments ~location ~name ())
+    |> Node.create ~location
 end
 
 
@@ -641,13 +633,13 @@ let rec normalize { Node.location; value } =
           match value with
           | ComparisonOperator {
               ComparisonOperator.left;
+              operator;
               right;
             } ->
-              let invert (operator, expression) =
-                ComparisonOperator.inverse operator, expression in
               ComparisonOperator {
                 ComparisonOperator.left;
-                right = List.map ~f:invert right;
+                operator = ComparisonOperator.inverse operator;
+                right;
               }
           | False ->
               True
@@ -744,24 +736,6 @@ module PrettyPrinter = struct
           "%a,%a"
           pp_argument argument
           pp_argument_list argument_list
-
-
-  and pp_comparison_list formatter comparison_list =
-    match comparison_list with
-    | [] -> ()
-    | (operator,expression) :: [] ->
-        Format.fprintf
-          formatter
-          "%a %a"
-          ComparisonOperator.pp_comparison_operator operator
-          pp_expression_t expression
-    | (operator,expression) :: comparison_list ->
-        Format.fprintf
-          formatter
-          "%a %a %a"
-          ComparisonOperator.pp_comparison_operator operator
-          pp_expression_t expression
-          pp_comparison_list comparison_list
 
 
   and pp_dictionary_entry formatter { Dictionary.key; value } =
@@ -924,12 +898,13 @@ module PrettyPrinter = struct
         in
         Format.fprintf formatter "%s\"%s\"(%a)" bytes value pp_expression_list expressions
 
-    | ComparisonOperator { ComparisonOperator.left; right } ->
+    | ComparisonOperator { ComparisonOperator.left; operator; right } ->
         Format.fprintf
           formatter
-          "%a %a"
+          "%a %a %a"
           pp_expression_t left
-          pp_comparison_list right
+          ComparisonOperator.pp_comparison_operator operator
+          pp_expression_t right
 
     | Ellipses ->
         Format.fprintf formatter "..."

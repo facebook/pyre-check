@@ -332,8 +332,8 @@ let test_forward_expression _ =
   assert_forward [] "x = 'a' < 1" ["x", Type.float];
   assert_forward [] "x = 'a' != 1" ["x", Type.integer];
   assert_forward [] "x = 1 < 1" ["x", Type.integer];
-  assert_forward [] "x = 'a' < 1 < 3" ["x", Type.integer];
-  assert_forward [] "x = 'a' < 1 != 3" ["x", Type.Bottom]; (* Contradiction. *)
+  assert_forward [] "x = 'a' < 1 < 3" ["x", Type.float];
+  assert_forward [] "x = 'a' < 1 != 3" ["x", Type.union[Type.bool; Type.float]];
 
   (* Unary operator. *)
   assert_forward [] "x = -1.0" ["x", Type.float];

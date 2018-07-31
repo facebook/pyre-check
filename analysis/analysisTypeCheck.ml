@@ -926,11 +926,7 @@ module State = struct
     | ComparisonOperator { ComparisonOperator.left; right; _ } ->
         (* TODO(T30448045) *)
         let { state; _ } = forward_expression ~state ~expression:left in
-        let accumulate state (_, expression) =
-          let { state; _ } = forward_expression ~state ~expression in
-          state
-        in
-        let state = List.fold right ~f:accumulate ~init:state in
+        let { state; _ } = forward_expression ~state ~expression:right in
         { state; resolved = Type.Top }
 
     | Complex _ ->
@@ -1559,19 +1555,15 @@ module State = struct
               resolution
           | ComparisonOperator {
               ComparisonOperator.left;
-              right = [
-                ComparisonOperator.IsNot,
-                { Node.value = Access [Access.Identifier identifier; ]; _ }
-              ];
+              operator = ComparisonOperator.IsNot;
+              right = { Node.value = Access [Access.Identifier identifier; ]; _ };
             } when Identifier.show identifier = "None" ->
               let { resolution; _ } = forward_statement ~state ~statement:(Statement.assume left) in
               resolution
           | ComparisonOperator {
               ComparisonOperator.left = { Node.value = Access access; _ };
-              right = [
-                ComparisonOperator.Is,
-                { Node.value = Access [Access.Identifier identifier; ]; _ }
-              ];
+              operator = ComparisonOperator.Is;
+              right = { Node.value = Access [Access.Identifier identifier; ]; _ };
             } when Identifier.show identifier = "None" ->
               let open Annotated in
               let open Access.Element in
