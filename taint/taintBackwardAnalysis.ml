@@ -77,6 +77,37 @@ module rec FixpointState : FixpointState = struct
   let rec analyze_argument taint { Argument.value = argument; _ } state =
     analyze_expression taint argument state
 
+  and analyze_call ~callee arguments state taint =
+    match callee with
+    | Identifier identifier when Identifier.show identifier = "__testSink" ->
+        let test_taint = BackwardState.make_leaf (BackwardTaint.singleton TaintSinks.TestSink) in
+        List.fold_right ~f:(analyze_argument test_taint) arguments ~init:state
+
+    | Identifier identifier when Identifier.show identifier = "__testRCESink" ->
+        let test_taint =
+          BackwardState.make_leaf (BackwardTaint.singleton TaintSinks.RemoteCodeExecution)
+        in
+        List.fold_right ~f:(analyze_argument test_taint) arguments ~init:state
+
+    | Identifier identifier ->
+        (* TODO(T32198746): lookup model for this function and apply backward taint. *)
+        let test_taint = BackwardState.make_leaf (BackwardTaint.singleton TaintSinks.TestSink) in
+        List.fold_right ~f:(analyze_argument test_taint) arguments ~init:state
+
+    | Access { expression = receiver; member = method_name} ->
+        (* TODO(T32198746): figure out the BW and TAINT_IN_TAINT_OUT model for
+           whatever is called here.
+           Member access. Don't propagate the taint to the member, skip to the receiver. *)
+        let state = List.fold_right ~f:(analyze_argument taint) arguments ~init:state in
+        analyze_normalized_expression state taint receiver
+
+    | _ ->
+        (* TODO(T32198746): figure out the BW and TAINT_IN_TAINT_OUT model for
+           whatever is called here.
+           For now, we propagate taint to all args implicitly, and to the function. *)
+        let state = List.fold_right ~f:(analyze_argument taint) arguments ~init:state in
+        analyze_normalized_expression state taint callee
+
   and analyze_normalized_expression state taint expression =
     match expression with
     | Access { expression; member } ->
@@ -85,16 +116,8 @@ module rec FixpointState : FixpointState = struct
           BackwardState.assign_tree_path [field] ~tree:BackwardState.empty_tree ~subtree:taint
         in
         analyze_normalized_expression state taint expression
-    | Call { callee = Access { expression = receiver; member = method_name}; arguments; } ->
-        (* TODO: figure out the BW and TAINT_IN_TAINT_OUT model for whatever is called here. *)
-        (* Member access. Don't propagate the taint to the member, skip to the receiver. *)
-        let state = List.fold_right ~f:(analyze_argument taint) arguments ~init:state in
-        analyze_normalized_expression state taint receiver
-    | Call { callee; arguments } ->
-        (* TODO: figure out the BW and TAINT_IN_TAINT_OUT model for whatever is called here. *)
-        (* For now, we propagate taint to all args implicitly, and to the function. *)
-        let state = List.fold_right ~f:(analyze_argument taint) arguments ~init:state in
-        analyze_normalized_expression state taint callee
+    | Call { callee; arguments; } ->
+        analyze_call ~callee arguments state taint
     | Expression expression ->
         analyze_expression taint expression state
     | Identifier name ->
@@ -154,15 +177,18 @@ module rec FixpointState : FixpointState = struct
         state
     | Define define ->
         analyze_definition ~define state
-    | Delete _
-    | Expression _
+    | Delete _ ->
+        state
+    | Expression expression ->
+        analyze_expression BackwardState.empty_tree expression state
     | For _
     | Global _
     | If _
     | Import _
     | Nonlocal _
     | Pass
-    | Raise _ -> state
+    | Raise _ ->
+        state
     | Return { expression = Some expression; _ } ->
         let access_path = { root = Root.LocalResult; path = [] } in
         let return_taint = get_taint (Some access_path) state in
@@ -188,7 +214,9 @@ end
 and Analyzer : Fixpoint.Fixpoint with type state = FixpointState.t = Fixpoint.Make(FixpointState)
 
 
-let extract_taint_in_taint_out_model parameters entry_taint =
+(* Split the inferred entry state into externally visible taint_in_taint_out
+   parts and sink_taint. *)
+let extract_tito_and_sink_models parameters entry_taint =
   let filter_to_local_return taint =
     BackwardTaint.filter ~f:((=) TaintSinks.LocalReturn) taint
   in
@@ -203,7 +231,27 @@ let extract_taint_in_taint_out_model parameters entry_taint =
     else
       model
   in
-  List.foldi parameters ~f:extract_taint_in_taint_out ~init:BackwardState.empty
+  let filter_to_real_sinks taint =
+    BackwardTaint.filter ~f:((<>) TaintSinks.LocalReturn) taint
+  in
+  let extract_sink_taint position model { Node.value = { Parameter.name; _ }; _ } =
+    let sink_taint =
+      BackwardState.read (Root.Variable name) entry_taint
+      |> BackwardState.filter_map_tree ~f:filter_to_real_sinks
+    in
+    if not (BackwardState.is_empty_tree sink_taint) then
+      let parameter = Root.(Parameter { name; position }) in
+      BackwardState.assign ~root:parameter ~path:[] sink_taint model
+    else
+      model
+  in
+  let taint_in_taint_out =
+    List.foldi parameters ~f:extract_taint_in_taint_out ~init:BackwardState.empty
+  in
+  let sink_taint =
+    List.foldi parameters ~f:extract_sink_taint ~init:BackwardState.empty
+  in
+  TaintResult.Backward.{ taint_in_taint_out; sink_taint; }
 
 
 let run ({ Define.name; parameters; _ } as define) =
@@ -213,12 +261,17 @@ let run ({ Define.name; parameters; _ } as define) =
   let () = Log.log ~section:`Taint "Processing CFG:@.%s" (Log.Color.yellow (Cfg.show cfg)) in
   let entry_state =
     Analyzer.backward ~cfg ~initial
-    |> Analyzer.entry in
-  let extract_model (FixpointState.{ taint; _ } as result) =
-    let taint_in_taint_out = extract_taint_in_taint_out_model parameters taint in
-    let sink_taint = BackwardState.empty in
-    let () = Log.log ~section:`Taint "Models: %s" (Log.Color.yellow (FixpointState.show result)) in
-    TaintResult.Backward.{ taint_in_taint_out; sink_taint; }
+    |> Analyzer.entry
+  in
+  let extract_model FixpointState.{ taint; _ } =
+    let model = extract_tito_and_sink_models parameters taint in
+    let () =
+      Log.log
+        ~section:`Taint
+        "Models: %s"
+        (Log.Color.yellow (TaintResult.Backward.show_model model))
+    in
+    model
   in
   entry_state
   >>| extract_model

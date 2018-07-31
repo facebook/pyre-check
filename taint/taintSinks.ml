@@ -8,7 +8,7 @@ type t =
   | LocalReturn  (* Special marker to infer function in-out behavior *)
   | RemoteCodeExecution
   | TestSink
-[@@deriving compare, sexp, show, hash]
+[@@deriving compare, eq, sexp, show, hash]
 
 
 let to_string = function
