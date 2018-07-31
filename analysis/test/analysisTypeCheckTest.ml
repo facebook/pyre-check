@@ -331,8 +331,8 @@ let test_forward_expression _ =
   (* Comparison operator. *)
   assert_forward [] "x = 'a' < 1" ["x", Type.float];
   assert_forward [] "x = 'a' != 1" ["x", Type.integer];
-  assert_forward [] "x = 1 < 1" ["x", Type.integer];
-  assert_forward [] "x = 'a' < 1 < 3" ["x", Type.float];
+  assert_forward [] "x = 1 < 1" ["x", Type.bool];
+  assert_forward [] "x = 'a' < 1 < 3" ["x", Type.union[Type.bool; Type.float]];
   assert_forward [] "x = 'a' < 1 != 3" ["x", Type.union[Type.bool; Type.float]];
 
   (* Unary operator. *)
@@ -524,6 +524,13 @@ let test_forward_expression _ =
   assert_forward ~errors:(`Undefined 1) "undefined or 1" Type.Top;
   assert_forward ~errors:(`Undefined 1) "1 or undefined" Type.Top;
   assert_forward ~errors:(`Undefined 2) "undefined and undefined" Type.Top;
+
+  (* Comparison operator. *)
+  assert_forward "1 < 2" Type.bool;
+  assert_forward "1 < 2 < 3" Type.bool;
+  assert_forward "1 is 2" Type.bool;
+  assert_forward ~errors:(`Undefined 1) "undefined < 1" Type.Top;
+  assert_forward ~errors:(`Undefined 2) "undefined == undefined" Type.Top;
 
   (* Complex literal. *)
   assert_forward "1j" Type.complex;

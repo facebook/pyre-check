@@ -923,11 +923,16 @@ module State = struct
         in
         { state; resolved = Resolution.join resolution resolved_left resolved_right }
 
-    | ComparisonOperator { ComparisonOperator.left; right; _ } ->
-        (* TODO(T30448045) *)
-        let { state; _ } = forward_expression ~state ~expression:left in
-        let { state; _ } = forward_expression ~state ~expression:right in
-        { state; resolved = Type.Top }
+    | ComparisonOperator ({ ComparisonOperator.left; right; _ } as operator) ->
+        begin
+          match ComparisonOperator.override operator with
+          | Some expression ->
+              forward_expression ~state ~expression
+          | None ->
+              forward_expression ~state ~expression:left
+              |> fun { state; _ } -> forward_expression ~state ~expression:right
+              |> fun state -> { state with resolved = Type.bool }
+        end
 
     | Complex _ ->
         { state; resolved = Type.complex }
