@@ -22,13 +22,18 @@ type connections = {
   watchman_pid: Pid.t option;
 }
 
+type lookups_cache_entry = {
+  table: Analysis.Lookup.t;
+  source: string;
+}
+
 type t = {
   deferred_requests: ServerProtocol.Request.t list;
   environment: (module Analysis.Environment.Handler);
   initial_errors: Analysis.Error.Hash_set.t;
   errors: (Error.t list) File.Handle.Table.t;
   handles: File.Handle.Set.t;
-  lookups: Analysis.Lookup.t String.Table.t;
+  lookups: lookups_cache_entry String.Table.t;
   scheduler: Scheduler.t;
   lock: Mutex.t;
   last_integrity_check: float;

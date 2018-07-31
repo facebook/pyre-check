@@ -48,14 +48,17 @@ let parse ~root request =
               id;
               _;
             } ->
-              let path =
+              let file =
                 uri_to_contained_relative_path
                   ~root:(Path.absolute root)
                   ~uri
+                |> fun relative ->
+                Path.create_relative ~root ~relative
+                |> File.create
               in
               Some (GetDefinitionRequest {
                   DefinitionRequest.id;
-                  path;
+                  file;
                   position = { Ast.Location.line; column = character };
                 })
           | Ok _ -> None
@@ -155,14 +158,17 @@ let parse ~root request =
               id;
               _;
             } ->
-              let path =
+              let file =
                 uri_to_contained_relative_path
                   ~root:(Path.absolute root)
                   ~uri
+                |> fun relative ->
+                Path.create_relative ~root ~relative
+                |> File.create
               in
               Some (HoverRequest {
                   DefinitionRequest.id;
-                  path;
+                  file;
                   (* The LSP protocol starts a file at line 0, column 0.
                      Pyre starts a file at line 1, column 0. *)
                   position = { Ast.Location.line = line + 1; column = character };

@@ -23,6 +23,57 @@ module Scheduler = Service.Scheduler
 exception InvalidRequest
 
 
+module LookupCache = struct
+  let relative_path file =
+    File.path file
+    |> Path.relative
+
+
+  let get ~state:{ lookups; environment; _ } ~configuration:{ source_root; _ } file =
+    let find_or_add path =
+      let construct_lookup path =
+        let add_source table =
+          let source =
+            Path.create_relative ~root:source_root ~relative:path
+            |> File.create
+            |> File.content
+            |> Option.value ~default:""
+          in
+          { table; source }
+        in
+        File.Handle.create path
+        |> AstSharedMemory.get_source
+        >>| Lookup.create_of_source environment
+        >>| add_source
+      in
+      let cache_read = String.Table.find lookups path in
+      match cache_read with
+      | Some _ ->
+          cache_read
+      | None ->
+          let lookup = construct_lookup path in
+          lookup
+          >>| (fun data -> String.Table.set lookups ~key:path ~data)
+          |> ignore;
+          lookup
+    in
+    relative_path file
+    >>= find_or_add
+
+
+  let evict ~state:{ lookups; _ } file =
+    relative_path file
+    >>| String.Table.remove lookups
+    |> ignore
+
+
+  let find ~state ~configuration file position =
+    get ~state ~configuration file
+    >>= fun { table; source } ->
+    Lookup.get_annotation table ~position ~source_text:source
+end
+
+
 let rec process_request
     new_socket
     state
@@ -145,7 +196,11 @@ let rec process_request
           List.filter_map ~f:(File.handle ~root:source_root) update_environment_with
         in
         AstSharedMemory.remove_paths handles;
-        Handler.purge handles
+        Handler.purge handles;
+        (* Evict entries from the lookup cache. The next lookup (if
+           any) will freshen the cache. *)
+        update_environment_with
+        |> List.iter ~f:(LookupCache.evict ~state)
       in
       let stubs, sources = List.partition_tf ~f:is_stub update_environment_with in
       let stubs = Service.Parser.parse_sources ~configuration ~scheduler ~files:stubs in
@@ -346,11 +401,9 @@ let rec process_request
     | ClientExitRequest Persistent ->
         Log.log ~section:`Server "Stopping persistent client";
         Some (state, Some (ClientExitResponse Persistent))
-    | GetDefinitionRequest { DefinitionRequest.id; path; position } ->
-        let definition =
-          Hashtbl.find state.lookups path
-          >>= (fun lookup -> Lookup.get_definition lookup position)
-        in
+    | GetDefinitionRequest { DefinitionRequest.id; _ } ->
+        (* TODO(T28296560). *)
+        let definition = None in
         Some
           (state,
            Some
@@ -361,28 +414,17 @@ let rec process_request
                    ~location:definition
                  |> LanguageServer.Protocol.TextDocumentDefinitionResponse.to_yojson
                  |> Yojson.Safe.to_string)))
-    | HoverRequest { DefinitionRequest.id; path; position } ->
+    | HoverRequest { DefinitionRequest.id; file; position } ->
         let open LanguageServer.Protocol in
         let result =
-          File.Handle.create path
-          |> AstSharedMemory.get_source
-          >>| Lookup.create_of_source state.environment
-          >>= Lookup.get_annotation
-            ~position
-            ~source_text:(
-              Path.create_relative
-                ~root:configuration.source_root
-                ~relative:path
-              |> File.create
-              |> File.content
-              |> Option.value ~default:"")
-          >>| (fun (location, annotation) ->
-              {
-                HoverResponse.location;
-                contents =
-                  Type.show annotation
-                  |> String.substr_replace_all ~pattern:"`" ~with_:"";
-              })
+          LookupCache.find ~state ~configuration file position
+          >>| fun (location, annotation) ->
+          {
+            HoverResponse.location;
+            contents =
+              Type.show annotation
+              |> String.substr_replace_all ~pattern:"`" ~with_:"";
+          }
         in
         Some
           (state,
@@ -400,10 +442,19 @@ let rec process_request
                     |> LanguageServer.Protocol.RageResponse.to_yojson
                     |> Yojson.Safe.to_string)))
 
-    | OpenDocument _
-    | CloseDocument _ ->
+    | OpenDocument file ->
+        (* Make sure cache is fresh. We might not have received a close notification. *)
+        LookupCache.evict ~state file;
+        LookupCache.get ~state ~configuration file
+        |> ignore;
+        None
+    | CloseDocument file ->
+        LookupCache.evict ~state file;
         None
     | SaveDocument file ->
+        (* On save, evict entries from the lookup cache. The updated
+           source will be picked up at the next lookup (if any). *)
+        LookupCache.evict ~state file;
         if check_on_save then
           Some
             (handle_type_check

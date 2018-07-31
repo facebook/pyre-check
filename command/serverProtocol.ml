@@ -12,7 +12,7 @@ open Analysis
 module DefinitionRequest = struct
   type t = {
     id: int;
-    path: string;
+    file: File.t;
     position: Location.position;
   }
   [@@deriving eq, show]
