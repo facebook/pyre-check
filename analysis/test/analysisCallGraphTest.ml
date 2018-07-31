@@ -37,14 +37,7 @@ let compare_call_graph call_graph ~expected =
       Access.create callee, List.map ~f:Access.create callers in
     List.map expected ~f:map_callee_callers
   in
-  assert_equal
-    ~printer:(fun l ->
-        List.fold ~init:"" l ~f:(fun acc (x,l) ->
-            acc ^ (Format.sprintf "X: %s@." (Access.show x))
-            ^    (List.fold ~init:"" l ~f:(fun acc x ->
-                acc ^ (Format.sprintf "l: %s@." (Access.show x))))))
-    call_graph
-    expected
+  assert_equal call_graph expected
 
 
 let assert_call_graph source ~expected =
