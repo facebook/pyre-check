@@ -171,13 +171,12 @@ let test_lookup_pick_narrowest _ =
   let (lookup, source) = generate_lookup source in
 
   assert_equal
-    ~printer:(String.concat ~sep:", ")
+    ~printer:(String.concat ~sep:"\n")
     [
       "test.py:2:14-2:18/`typing.Type[bool]`";
       "test.py:2:37-2:40/`typing.Type[int]`";
       "test.py:2:46-2:50/`None`";
       "test.py:3:17-3:27/`bool`";
-      "test.py:3:21-3:27/`Optional[int]`";
       "test.py:3:7-3:11/`bool`";
     ]
     (Lookup.get_all_annotations lookup
@@ -203,7 +202,7 @@ let test_lookup_pick_narrowest _ =
     ~lookup
     ~source
     ~position:{ Location.line = 3; column = 21 }
-    ~annotation:(Some "test.py:3:21-3:27/`Optional[int]`");
+    ~annotation:(Some "test.py:3:17-3:27/`bool`");
   assert_annotation
     ~lookup
     ~source

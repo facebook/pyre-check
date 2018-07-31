@@ -518,6 +518,13 @@ let test_forward_expression _ =
     "await undefined"
     Type.Top;
 
+  (* Boolean operator. *)
+  assert_forward "1 or 'string'" (Type.union [Type.integer; Type.string]);
+  assert_forward "1 and 'string'" (Type.union [Type.integer; Type.string]);
+  assert_forward ~errors:(`Undefined 1) "undefined or 1" Type.Top;
+  assert_forward ~errors:(`Undefined 1) "1 or undefined" Type.Top;
+  assert_forward ~errors:(`Undefined 2) "undefined and undefined" Type.Top;
+
   (* Complex literal. *)
   assert_forward "1j" Type.complex;
   assert_forward "1" Type.integer;

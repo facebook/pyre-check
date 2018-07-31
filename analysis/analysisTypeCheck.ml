@@ -907,30 +907,21 @@ module State = struct
         operator;
         right = ({ Node.location; _ } as right);
       } ->
-        (* TODO(T30448045) *)
-        let right =
+        let assume =
           let assume =
             match operator with
-            | BooleanOperator.And ->
-                left;
-            | BooleanOperator.Or ->
-                Expression.normalize (Expression.negate left);
+            | BooleanOperator.And -> left;
+            | BooleanOperator.Or -> Expression.normalize (Expression.negate left);
           in
-          [
-            Statement.assume assume;
-            Node.create ~location (Statement.Expression right);
-          ]
+          Statement.assume assume
         in
-        (* We only analyze right, as it contains the assumption of `left` as a
-           statement that will be checked. *)
-        let state = { state with resolution } in
-        let state =
-          List.fold
-            ~init:state
-            ~f:(fun state statement -> forward_statement ~state ~statement)
-            right
+        let { state; resolved = resolved_left } = forward_expression ~state ~expression:left in
+        let { state; resolved = resolved_right } =
+          forward_expression
+            ~state:(forward_statement ~state ~statement:assume)
+            ~expression:right
         in
-        { state; resolved = Type.Top }
+        { state; resolved = Resolution.join resolution resolved_left resolved_right }
 
     | ComparisonOperator { ComparisonOperator.left; right; _ } ->
         (* TODO(T30448045) *)
