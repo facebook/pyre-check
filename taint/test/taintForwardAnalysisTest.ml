@@ -57,8 +57,8 @@ let create_model define resolution =
 
 
 (** Populates shared memory with existing models *)
-let add_model stub =
-  let source = parse ~qualifier:(Access.create "taint_model") stub in
+let add_model ~stub =
+  let source = parse ~qualifier:[] stub in
   let configuration = Configuration.create () in
   let environment =
     let environment = Environment.Builder.create () in
@@ -70,6 +70,7 @@ let add_model stub =
   let resolution = Environment.resolution environment () in
   let defines =
     source
+    |> Preprocessing.preprocess
     |> Preprocessing.defines ~include_stubs:true
     |> List.map ~f:Node.value
   in
@@ -119,16 +120,16 @@ let assert_sources ~source ~expect:{ define_name; returns; _ } =
         returned_sources
 
 
-let assert_model expect_source_taint stub =
-  let () = add_model stub in
-  let call_target = `RealTarget (Access.create "taint") in
+let assert_model ~stub ~call_target ~expect_taint =
+  let () = add_model ~stub in
+  let call_target = `RealTarget (Access.create call_target) in
   let taint_model = Fixpoint.get_model call_target >>= Result.get_model Taint.Result.kind in
   assert_equal
     ~printer:Taint.Result.show_call_model
     (Option.value_exn taint_model)
     {
       Taint.Result.empty_model with
-      forward = { source_taint = expect_source_taint }
+      forward = { source_taint = expect_taint }
     }
 
 
@@ -142,14 +143,15 @@ let test_models _ =
       ForwardState.empty
   in
 
-  let stub = "def taint() -> TaintSource[TestSource]: ..." in
   let return_taint = expect_source_taint Taint.AccessPath.Root.LocalResult in
-  assert_model return_taint stub
+  assert_model
+    ~stub:"def taint() -> TaintSource[TestSource]: ..."
+    ~call_target:"taint"
+    ~expect_taint:return_taint
 
 
 let test_simple_source _ =
-  let stub = "def taint() -> TaintSource[TestSource]: ..." in
-  add_model stub;
+  add_model ~stub:"def taint() -> TaintSource[TestSource]: ...";
   assert_sources
     ~source:
       {|
@@ -164,8 +166,7 @@ let test_simple_source _ =
 
 
 let test_local_copy _ =
-  let stub = "def taint() -> TaintSource[TestSource]: ..." in
-  add_model stub;
+  add_model ~stub:"def taint() -> TaintSource[TestSource]: ...";
   assert_sources
     ~source:
       {|
