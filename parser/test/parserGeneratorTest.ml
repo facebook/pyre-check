@@ -1498,7 +1498,7 @@ let test_dictionary _ =
            Dictionary.entries = [
              { Dictionary.key = +Integer 1; value = +Integer 2 };
            ];
-           keywords = Some (+Starred (Starred.Twice !"durp"));
+           keywords = Some !"durp";
          });
     ];
   assert_parsed_equal
@@ -1507,18 +1507,18 @@ let test_dictionary _ =
       +Expression
         (+Dictionary {
            Dictionary.entries = [];
-           keywords = Some (+Starred (Starred.Twice (+List [+Integer 1])));
+           keywords = Some (+List [+Integer 1]);
          });
     ];
   assert_parsed_equal
-    "{ **durp, 1: 2}"
+    "{**durp, 1: 2}"
     [
       +Expression
         (+Dictionary {
            Dictionary.entries = [
              { Dictionary.key = +Integer 1; value = +Integer 2 };
            ];
-           keywords = Some (+Starred (Starred.Twice !"durp"));
+           keywords = Some !"durp";
          });
     ];
 

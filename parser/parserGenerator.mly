@@ -1478,8 +1478,8 @@ subscript:
 set_or_dictionary_entry:
   | test = test {
       match test with
-      | { Node.value = Starred (Starred.Twice _); _ } ->
-          Keywords test
+      | { Node.value = Starred (Starred.Twice keywords); _ } ->
+          Keywords keywords
       | _ ->
           Item test
     }
