@@ -134,9 +134,12 @@ def _build_targets(targets: List[str]) -> None:
     )
     command = ["buck", "build"] + targets
     try:
-        subprocess.check_output(command, stderr=subprocess.DEVNULL)
+        subprocess.check_output(command, stderr=subprocess.PIPE)
         LOG.warning("Finished building targets.")
-    except subprocess.CalledProcessError:
+    except subprocess.CalledProcessError as error:
+        # The output can be overwhelming, hence print only the last 20 lines.
+        lines = error.stderr.decode().splitlines()
+        LOG.error("Buck returned error: %s" % "\n".join(lines[-20:]))
         raise BuckException(
             "Could not build targets. Check the paths or run `buck clean`."
         )

@@ -154,7 +154,7 @@ class BuckTest(unittest.TestCase):
                 )
             )
             buck_build.assert_called_once_with(
-                ["buck", "build", "//t/..."], stderr=subprocess.DEVNULL
+                ["buck", "build", "//t/..."], stderr=subprocess.PIPE
             )
 
     @patch.object(log, "get_yes_no_input", return_value=False)
