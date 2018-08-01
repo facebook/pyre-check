@@ -253,149 +253,6 @@ let test_widen _ =
 
 
 let test_forward_expression _ =
-  let assert_forward precondition statement postcondition =
-    let parsed =
-      parse statement
-      |> function
-      | { Source.statements = statement::rest; _ } -> statement::rest
-      | _ -> failwith "unable to parse test"
-    in
-    (* TODO(T30448045): Call `forward_expression`. *)
-    assert_state_equal
-      (create postcondition)
-      (List.fold
-         ~f:(fun state statement -> State.forward ~key:0 state ~statement)
-         ~init:(create precondition)
-         parsed)
-  in
-
-  (* Access. *)
-  assert_forward
-    ["x", Type.dictionary ~key:Type.Bottom ~value:Type.Bottom]
-    "x.add_key(1)"
-    ["x", Type.dictionary ~key:Type.integer ~value:Type.Bottom];
-  assert_forward
-    ["x", Type.dictionary ~key:Type.Bottom ~value:Type.Bottom]
-    "x.add_value(1)"
-    ["x", Type.dictionary ~key:Type.Bottom ~value:Type.integer];
-  assert_forward
-    ["x", Type.dictionary ~key:Type.Bottom ~value:Type.Bottom]
-    "x.add_both(1, 'string')"
-    ["x", Type.dictionary ~key:Type.integer ~value:Type.string];
-  assert_forward
-    ["x", Type.dictionary ~key:Type.string ~value:Type.Bottom]
-    "x.add_key(1)"
-    ["x", Type.dictionary ~key:Type.string ~value:Type.Bottom]; (* We're not yet joining. *)
-
-  (* Literals. *)
-  assert_forward [] "x = 1.0" ["x", Type.float];
-  assert_forward [] "x = 'string'" ["x", Type.string];
-  assert_forward [] "x = b'string'" ["x", Type.bytes];
-  assert_forward [] "x = True" ["x", Type.bool];
-  assert_forward [] "x = False" ["x", Type.bool];
-  assert_forward [] "x = {}" ["x", Type.dictionary ~key:Type.Bottom ~value:Type.Bottom];
-
-  (* Calls. *)
-  assert_forward [] "x = unknown()" ["x", Type.Top];
-  assert_forward ["x", Type.string] "x = repr(x)" ["x", Type.float];
-  assert_forward [] "x = int_to_str(1)" ["x", Type.string];
-
-  (* Binary operators. *)
-  assert_forward [] "x = 1.0 + 1.0" ["x", Type.float];
-  assert_forward
-    ["x", Type.integer; "y", Type.integer]
-    "z = x + y"
-    ["x", Type.integer; "y", Type.integer; "z", Type.integer];
-  assert_forward
-    ["x", Type.string; "y", Type.string]
-    "z = x + y"
-    ["x", Type.string; "y", Type.string; "z", Type.string];
-
-  (* Boolean operators. *)
-  assert_forward [] "x = 1.0 and 1.0" ["x", Type.float];
-  assert_forward
-    ["x", Type.integer; "y", Type.integer]
-    "z = x and y"
-    ["x", Type.integer; "y", Type.integer; "z", Type.integer];
-  assert_forward
-    ["x", Type.integer; "y", Type.string]
-    "z = x and y"
-    ["x", Type.integer; "y", Type.string; "z", Type.union [Type.integer; Type.string]];
-  assert_forward
-    [] "x = None or 1" ["x", Type.integer];
-  assert_forward
-    [] "x = None or None or 1" ["x", Type.integer];
-  assert_forward
-    [] "x = 'hi' or 1" ["x", Type.union [Type.string; Type.integer]];
-
-  (* Comparison operator. *)
-  assert_forward [] "x = 'a' < 1" ["x", Type.float];
-  assert_forward [] "x = 'a' != 1" ["x", Type.integer];
-  assert_forward [] "x = 1 < 1" ["x", Type.bool];
-  assert_forward [] "x = 'a' < 1 < 3" ["x", Type.union[Type.bool; Type.float]];
-  assert_forward [] "x = 'a' < 1 != 3" ["x", Type.union[Type.bool; Type.float]];
-
-  (* Unary operator. *)
-  assert_forward [] "x = -1.0" ["x", Type.float];
-  assert_forward [] "x = not 1.0" ["x", Type.bool];
-  assert_forward [] "x = +'asdf'" ["x", Type.float];
-
-  (* Dictionary. *)
-  assert_forward
-    []
-    "x = { 1.0: 'string' }"
-    ["x", Type.dictionary ~key:Type.float ~value:Type.string];
-  assert_forward
-    []
-    "x = { 1.0: 'string', 'string': 'string' }"
-    ["x", Type.dictionary ~key:(Type.union [Type.float; Type.string]) ~value:Type.string];
-  assert_forward
-    []
-    "x = { 1.0: 'string', 1.0: 1.0 }"
-    ["x", Type.dictionary ~key:Type.float ~value:(Type.Union [Type.float; Type.string])];
-  assert_forward
-    ["x", Type.dictionary ~key:Type.string ~value:Type.integer]
-    "y = x['derp']"
-    ["x", Type.dictionary ~key:Type.string ~value:Type.integer; "y", Type.integer];
-
-  (* Lambda. *)
-  assert_forward
-    []
-    "x = lambda: 1.0"
-    ["x", Type.lambda ~parameters:[] ~return_annotation:Type.float];
-
-  (* Starred. *)
-  assert_forward [] "x = *1.0" ["x", Type.Object];
-
-  (* Await. *)
-  assert_forward
-    ["x", Type.awaitable Type.integer]
-    "y = await x"
-    ["x", Type.awaitable Type.integer; "y", Type.integer];
-  assert_forward
-    ["x", Type.primitive "IsAwaitable"]
-    "y = await x"
-    ["x", Type.primitive "IsAwaitable"; "y", Type.integer];
-
-  (* Redirects. *)
-  assert_forward
-    ["y", Type.union [Type.integer; Type.string]]
-    "x = str(y)"
-    ["x", Type.bool; "y", Type.union [Type.integer; Type.string]];
-  assert_forward [] "x = str(1)" ["x", Type.bool];
-
-  (* Unresolved type variables. *)
-  assert_forward
-    ["x", Type.set Type.Bottom]
-    "y, z = x.__iter__(), x.__iter__().__next__()"
-    ["x", Type.set Type.Bottom; "y", Type.iterator Type.Bottom; "z", Type.Bottom];
-
-  assert_forward
-    ["x", Type.Bottom]
-    "y = identity(x)"
-    ["x", Type.Bottom; "y", Type.Bottom]; (* Limitation: We're losing y's constraints here. *)
-
-  (* TODO(T30448045): gradually migrate existing tests to check resolved type. *)
   let assert_forward
       ?(precondition = [])
       ?(postcondition = [])
@@ -446,6 +303,35 @@ let test_forward_expression _ =
     ~postcondition:["x", Type.integer]
     "x"
     Type.integer;
+  assert_forward
+    ~precondition:["x", Type.dictionary ~key:Type.Bottom ~value:Type.Bottom]
+    ~postcondition:["x", Type.dictionary ~key:Type.integer ~value:Type.Bottom]
+    "x.add_key(1)"
+    Type.none;
+  assert_forward
+    ~precondition:["x", Type.dictionary ~key:Type.Bottom ~value:Type.Bottom]
+    ~postcondition:["x", Type.dictionary ~key:Type.Bottom ~value:Type.integer]
+    "x.add_value(1)"
+    Type.none;
+  assert_forward
+    ~precondition:["x", Type.dictionary ~key:Type.Bottom ~value:Type.Bottom]
+    ~postcondition:["x", Type.dictionary ~key:Type.integer ~value:Type.string]
+    "x.add_both(1, 'string')"
+    Type.none;
+  assert_forward
+    ~precondition:["x", Type.dictionary ~key:Type.integer ~value:Type.Bottom]
+    ~postcondition:["x", Type.dictionary ~key:Type.integer ~value:Type.Bottom]
+    ~errors:(`Specific [
+        "Incompatible parameter type [6]: Expected `int` but got `str`.";
+      ])
+    "x.add_key('string')"
+    Type.none;
+  assert_forward
+    ~precondition:["x", Type.dictionary ~key:Type.Bottom ~value:Type.Bottom]
+    ~postcondition:["x", Type.dictionary ~key:Type.Top ~value:Type.Bottom]
+    ~errors:(`Undefined 1)
+    "x.add_key(undefined)"
+    Type.none;
 
   (* Await. *)
   assert_forward "await awaitable_int()" Type.integer;
