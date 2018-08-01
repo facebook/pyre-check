@@ -666,6 +666,17 @@ module State = struct
       List.map ~f:Statement.assume conditions
       |> List.fold ~init:state ~f:(fun state statement -> forward_statement ~state ~statement)
     in
+    let forward_comprehension ~element ~generators =
+      let { state; resolved } =
+        List.fold
+          generators
+          ~f:(fun state generator -> forward_generator ~state ~generator)
+          ~init:state
+        |> fun state -> forward_expression ~state ~expression:element
+      in
+      (* Discard generator-local variables. *)
+      { state = { state with resolution }; resolved }
+    in
     let forward_elements ~state ~elements =
       let forward_element { state = ({ resolution; _ } as state); resolved } expression =
         let { state; resolved = new_resolved } = forward_expression ~state ~expression in
@@ -979,15 +990,8 @@ module State = struct
         { state; resolved = Type.float }
 
     | Generator { Comprehension.element; generators } ->
-        let { state; resolved } =
-          List.fold
-            generators
-            ~f:(fun state generator -> forward_generator ~state ~generator)
-            ~init:state
-          |> fun state -> forward_expression ~state:state ~expression:element
-        in
-        (* Discard generator-local variables. *)
-        { state = { state with resolution }; resolved = Type.generator resolved }
+        let { state; resolved } = forward_comprehension ~element ~generators in
+        { state; resolved = Type.generator resolved }
 
     | Integer _ ->
         { state; resolved = Type.integer }
@@ -1014,21 +1018,17 @@ module State = struct
         let { state; resolved } = forward_elements ~state ~elements in
         { state; resolved = Type.list resolved }
 
+    | ListComprehension { Comprehension.element; generators } ->
+        let { state; resolved } = forward_comprehension ~element ~generators in
+        { state; resolved = Type.list resolved }
+
     | Set elements ->
         let { state; resolved } = forward_elements ~state ~elements in
         { state; resolved = Type.set resolved }
 
-    | ListComprehension { Comprehension.element; generators }
     | SetComprehension { Comprehension.element; generators } ->
-        (* TODO(T30448045) *)
-        let state = { state with resolution } in
-        let state =
-          List.fold
-            generators
-            ~f:(fun state generator -> forward_generator ~state ~generator)
-            ~init:state
-        in
-        forward_expression ~state ~expression:element
+        let { state; resolved } = forward_comprehension ~element ~generators in
+        { state; resolved = Type.set resolved }
 
     | Starred starred ->
         let state =

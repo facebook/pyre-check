@@ -340,24 +340,6 @@ let test_forward_expression _ =
   assert_forward [] "x = not 1.0" ["x", Type.bool];
   assert_forward [] "x = +'asdf'" ["x", Type.float];
 
-  (* List. *)
-  assert_forward [] "x = []" ["x", Type.list Type.Bottom];
-  assert_forward [] "x = [1.0]" ["x", Type.list Type.float];
-  assert_forward [] "x = [1.0, 'string']" ["x", Type.list (Type.union [Type.float; Type.string])];
-  assert_forward [] "x = [] + [1]" ["x", Type.list Type.integer];
-  assert_forward
-    ["x", Type.list Type.float]
-    "y = x[0]"
-    ["x", Type.list Type.float; "y", Type.float];
-  assert_forward
-    ["x", Type.list Type.float]
-    "y = x[a:b]"
-    ["x", Type.list Type.float; "y", Type.list Type.float];
-  assert_forward
-    ["x", Type.list Type.integer]
-    "y = [a for a in x]"
-    ["a", Type.integer; "x", Type.list Type.integer; "y", Type.list Type.integer];
-
   (* Dictionary. *)
   assert_forward
     []
@@ -410,14 +392,6 @@ let test_forward_expression _ =
       "x", Type.lambda ~parameters:[Type.Object] ~return_annotation:Type.integer;
       "y", Type.Object;
     ];
-
-  (* Set. *)
-  assert_forward [] "x = { 1.0, }" ["x", Type.set Type.float];
-  assert_forward [] "x = { 1.0, 'foo' }" ["x", Type.set (Type.union [Type.float; Type.string])];
-  assert_forward
-    ["x", Type.list Type.integer]
-    "y = { a for a in x }"
-    ["a", Type.integer; "x", Type.list Type.integer; "y", Type.set Type.integer];
 
   (* Starred. *)
   assert_forward [] "x = *1.0" ["x", Type.Object];
@@ -589,12 +563,14 @@ let test_forward_expression _ =
   assert_forward "[1, 'string']" (Type.list (Type.union [Type.integer; Type.string]));
   assert_forward ~errors:(`Undefined 1) "[undefined]" (Type.list Type.Top);
   assert_forward ~errors:(`Undefined 2) "[undefined, undefined]" (Type.list Type.Top);
+  assert_forward "[element for element in [1]]" (Type.list Type.integer);
 
   (* Sets. *)
   assert_forward "{1}" (Type.set Type.integer);
   assert_forward "{1, 'string'}" (Type.set (Type.union [Type.integer; Type.string]));
   assert_forward ~errors:(`Undefined 1) "{undefined}" (Type.set Type.Top);
   assert_forward ~errors:(`Undefined 2) "{undefined, undefined}" (Type.set Type.Top);
+  assert_forward "{element for element in [1]}" (Type.set Type.integer);
 
   (* Starred expressions. *)
   assert_forward "*1" Type.Top;
