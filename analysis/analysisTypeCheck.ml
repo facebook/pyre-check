@@ -889,27 +889,25 @@ module State = struct
 
     | Await expression ->
         let { state; resolved } = forward_expression ~state ~expression in
-        let resolved =
-          Resolution.join resolution (Type.awaitable Type.Bottom) resolved
-          |> Type.awaitable_value
-        in
         let state =
-          (* TODO(T30448045): switch this over to `resolved` once it is accurate enough. *)
-          let actual = Annotated.resolve ~resolution expression in
           let is_awaitable =
             Resolution.less_or_equal
               resolution
-              ~left:actual
+              ~left:resolved
               ~right:(Type.awaitable Type.Object)
           in
           if not is_awaitable then
             Error.create
               ~location
-              ~kind:(Error.IncompatibleAwaitableType actual)
+              ~kind:(Error.IncompatibleAwaitableType resolved)
               ~define
             |> add_error ~state
           else
             state
+        in
+        let resolved =
+          Resolution.join resolution (Type.awaitable Type.Bottom) resolved
+          |> Type.awaitable_value
         in
         { state; resolved }
 
