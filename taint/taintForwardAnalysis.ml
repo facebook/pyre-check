@@ -108,6 +108,10 @@ module rec FixpointState : FixpointState = struct
   and analyze_normalized_expression state expression =
     match expression with
     | Access { expression; member; } ->
+        Log.log
+          ~section:`Taint
+          "Analyzing access expression: %s"
+          (Log.Color.cyan (TaintAccessPath.show_normalized_expression expression));
         let taint = analyze_normalized_expression state expression in
         let field = TaintAccessPathTree.Label.Field member in
         let taint =
@@ -122,6 +126,10 @@ module rec FixpointState : FixpointState = struct
     | Expression expression ->
         analyze_expression expression state
     | Identifier identifier ->
+        Log.log
+          ~section:`Taint
+          "Analyzing identifier: %s"
+          (Log.Color.cyan (Identifier.show identifier));
         ForwardState.read_access_path ~root:(Root.Variable identifier) ~path:[] state.taint
 
   and analyze_expression expression state =
@@ -166,6 +174,10 @@ module rec FixpointState : FixpointState = struct
 
 
   let forward ?key:_ state ~statement:({ Node.value = statement; _ }) =
+    Log.log
+      ~section:`Taint
+      "Analyzing statement: %s"
+      (Log.Color.cyan (Statement.show_statement statement));
     Log.log ~section:`Taint "Forward state: %s" (Log.Color.cyan (show state));
     match statement with
     | Assign { target; annotation; value; parent } ->
@@ -189,6 +201,10 @@ module rec FixpointState : FixpointState = struct
     | Pass
     | Raise _ -> state
     | Return { expression = Some expression; _ } ->
+        Log.log
+          ~section:`Taint
+          "Analyzing Return expression: %s"
+          (Node.show pp_expression expression);
         let taint = analyze_expression expression state in
         store_taint ~root:Root.LocalResult ~path:[] taint state
     | Return { expression = None; _ }
