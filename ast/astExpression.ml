@@ -563,7 +563,12 @@ module ComparisonOperator = struct
 
 
   let override { left = { Node.location; _ } as left; operator; right } =
-    begin
+    let left, right =
+      match operator with
+      | In -> right, left
+      | _ -> left, right
+    in
+    let operator =
       match operator with
       | Equals -> Some "__eq__"
       | GreaterThan -> Some "__gt__"
@@ -575,7 +580,8 @@ module ComparisonOperator = struct
       | LessThanOrEquals -> Some "__le__"
       | NotEquals -> Some "__ne__"
       | NotIn -> None
-    end
+    in
+    operator
     >>| fun name ->
     let arguments = [{ Argument.name = None; value = right }] in
     Access ((access left) @ Access.call ~arguments ~location ~name ())

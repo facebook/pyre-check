@@ -8,6 +8,7 @@ open OUnit2
 open Ast
 open Core
 open Expression
+open Pyre
 
 open Test
 
@@ -335,6 +336,25 @@ let test_delocalize _ =
   assert_delocalized "qualifier.$local_qualifier$variable" "qualifier.$local_qualifier$variable"
 
 
+let test_comparison_operator_override _ =
+  let assert_override source expected =
+    let operator =
+      match parse_single_expression source with
+      | { Node.value = ComparisonOperator operator; _ } -> operator
+      | _ -> failwith "Could not parse comparison operator."
+    in
+    assert_equal
+      ~printer:(function | Some expression -> Expression.show expression | _ -> "None")
+      ~cmp:(Option.equal Expression.equal)
+      (expected >>| parse_single_expression)
+      (ComparisonOperator.override operator)
+  in
+  assert_override "a < b" (Some "a.__lt__(b)");
+  assert_override "a == b" (Some "a.__eq__(b)");
+  assert_override "a >= b" (Some "a.__ge__(b)");
+  assert_override "a in b" (Some "b.__contains__(a)");
+  assert_override "a is not b" None
+
 
 let () =
   "expression">:::[
@@ -344,5 +364,6 @@ let () =
     "drop_prefix">::test_drop_prefix;
     "equality">::test_equality;
     "delocalize">::test_delocalize;
+    "comparison_operator_override">::test_comparison_operator_override;
   ]
   |> run_test_tt_main
