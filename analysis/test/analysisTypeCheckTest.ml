@@ -536,6 +536,33 @@ let test_forward_expression _ =
   assert_forward "1j" Type.complex;
   assert_forward "1" Type.integer;
 
+  (* Dictionaries. *)
+  assert_forward "{1: 1}" (Type.dictionary ~key:Type.integer ~value:Type.integer);
+  assert_forward "{1: 'string'}" (Type.dictionary ~key:Type.integer ~value:Type.string);
+  assert_forward
+    "{1: 1, 'string': 1}"
+    (Type.dictionary ~key:(Type.union [Type.integer; Type.string]) ~value:Type.integer);
+  assert_forward
+    "{1: 1, 1: 'string'}"
+    (Type.dictionary ~key:Type.integer ~value:(Type.union [Type.integer; Type.string]));
+  assert_forward "{**{1: 1}}" (Type.dictionary ~key:Type.integer ~value:Type.integer);
+  assert_forward
+    ~errors:(`Undefined 1)
+    "{1: 'string', **{undefined: 1}}"
+    (Type.dictionary ~key:Type.Top ~value:(Type.union [Type.string; Type.integer]));
+  assert_forward
+    ~errors:(`Undefined 1)
+    "{undefined: 1}"
+    (Type.dictionary ~key:Type.Top ~value:Type.integer);
+  assert_forward
+    ~errors:(`Undefined 1)
+    "{1: undefined}"
+    (Type.dictionary ~key:Type.integer ~value:Type.Top);
+  assert_forward
+    ~errors:(`Undefined 3)
+    "{1: undefined, undefined: undefined}"
+    (Type.dictionary ~key:Type.Top ~value:Type.Top);
+
   (* Ellipses. *)
   assert_forward "..." Type.Top;
 

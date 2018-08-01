@@ -630,9 +630,9 @@ module State = struct
       ~state:({ resolution; errors; define; _ } as state)
       ~expression:{ Node.location; value } =
     let rec forward_entry ~state ~entry:{ Dictionary.key; value } =
-      let { state; _ } = forward_expression ~state ~expression:key in
-      let { state; _ } = forward_expression ~state ~expression:value in
-      state
+      let { state; resolved = key_resolved } = forward_expression ~state ~expression:key in
+      let { state; resolved = value_resolved } = forward_expression ~state ~expression:value in
+      key_resolved, value_resolved, state
     in
     let forward_generator
         ~state
@@ -938,22 +938,24 @@ module State = struct
         { state; resolved = Type.complex }
 
     | Dictionary { Dictionary.entries; keywords } ->
-        (* TODO(T30448045) *)
-        let state =
-          List.fold
-            entries
-            ~f:(fun state entry -> forward_entry ~state ~entry)
-            ~init:state
+        let key, value, state =
+          let forward_entry (key, value, state) entry =
+            let new_key, new_value, state = forward_entry ~state ~entry in
+            Resolution.join resolution key new_key,
+            Resolution.join resolution value new_value,
+            state
+          in
+          List.fold entries ~f:forward_entry ~init:(Type.Bottom, Type.Bottom, state)
         in
-        let state =
+        let keyword, state =
           match keywords with
           | None ->
-              state
+              Type.Bottom, state
           | Some keyword ->
-              let { state; _ } = forward_expression ~state ~expression:keyword in
-              state
+              let { state; resolved } = forward_expression ~state ~expression:keyword in
+              resolved, state
         in
-        { state; resolved = Type.Top }
+        { state; resolved = Resolution.join resolution (Type.dictionary ~key ~value) keyword }
 
     | DictionaryComprehension { Comprehension.element; generators } ->
         (* TODO(T30448045) *)
@@ -964,7 +966,7 @@ module State = struct
             ~f:(fun state generator -> forward_generator ~state ~generator)
             ~init:state
         in
-        let state = forward_entry ~state ~entry:element in
+        let _, _, state = forward_entry ~state ~entry:element in
         { state; resolved = Type.Top }
 
     | Ellipses ->
