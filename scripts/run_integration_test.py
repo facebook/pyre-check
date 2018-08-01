@@ -68,9 +68,74 @@ def get_typeshed_from_github(base_directory: str) -> Optional[str]:
     return typeshed
 
 
+def find_test_typeshed(base_directory: str) -> str:
+    test_typeshed = os.getenv("PYRE_TEST_TYPESHED_LOCATION")
+    if test_typeshed and is_readable_directory(test_typeshed):
+        LOG.info("Using typeshed from environment: %s", test_typeshed)
+        return test_typeshed
+
+    # Check if we can infer typeshed from a .pyre_configuration
+    # file living in a directory above.
+    path = os.getcwd()
+    while True:
+        configuration = os.path.join(path, ".pyre_configuration")
+        if os.path.isfile(configuration):
+            test_typeshed = extract_typeshed(configuration)
+            if test_typeshed and is_readable_directory(test_typeshed):
+                LOG.info("Using typeshed from configuration: %s", test_typeshed)
+                return test_typeshed
+        parent_directory = os.path.dirname(path)
+        if parent_directory == path:
+            # We have reached the root.
+            break
+        path = parent_directory
+
+    # Try and fetch it from the web in a temporary directory.
+    temporary_typeshed = get_typeshed_from_github(base_directory)
+    if temporary_typeshed and is_readable_directory(temporary_typeshed):
+        LOG.info("Using typeshed from the web: %s", temporary_typeshed)
+        return temporary_typeshed
+    raise Exception("Could not find a valid typeshed to use")
+
+
+def poor_mans_rsync(source_directory, destination_directory):
+    # Do not delete the server directory while copying!
+    assert_readable_directory(source_directory)
+    source_files = [
+        entry
+        for entry in os.listdir(source_directory)
+        if os.path.isfile(os.path.join(source_directory, entry))
+    ]
+    assert_readable_directory(destination_directory)
+    destination_files = [
+        entry
+        for entry in os.listdir(destination_directory)
+        if os.path.isfile(os.path.join(destination_directory, entry))
+    ]
+
+    # First remove all destination files that are missing in the source.
+    for filename in destination_files:
+        if filename not in source_files:
+            LOG.info("Removing file '%s' from destination" % filename)
+            os.remove(os.path.join(destination_directory, filename))
+
+    # Compare files across source and destination.
+    (match, mismatch, error) = filecmp.cmpfiles(
+        source_directory, destination_directory, source_files
+    )
+    for filename in match:
+        LOG.info("Skipping file '%s' because it matches" % filename)
+    for filename in mismatch:
+        LOG.info("Copying file '%s' due to mismatch" % filename)
+        shutil.copy2(os.path.join(source_directory, filename), destination_directory)
+    for filename in error:
+        LOG.info("Copying file '%s' because it is missing" % filename)
+        shutil.copy2(os.path.join(source_directory, filename), destination_directory)
+
+
 class Repository:
     def __init__(self, base_directory: str, repository_path: str) -> None:
-        self._test_typeshed_location = self._find_test_typeshed(base_directory)
+        self._test_typeshed_location = find_test_typeshed(base_directory)
 
         # Parse list of fake commits.
         assert_readable_directory(repository_path)
@@ -106,48 +171,10 @@ class Repository:
         # I could not find the right flags for rsync to touch/write
         # only the changed files. This is crucial for watchman to
         # generate the right notifications. Hence, this.
-        self._poor_mans_rsync(original_path, ".")
+        poor_mans_rsync(original_path, ".")
 
         self._resolve_typeshed_location(".pyre_configuration")
         return self._current_commit
-
-    def _poor_mans_rsync(self, source_directory, destination_directory):
-        # Do not delete the server directory while copying!
-        assert_readable_directory(source_directory)
-        source_files = [
-            entry
-            for entry in os.listdir(source_directory)
-            if os.path.isfile(os.path.join(source_directory, entry))
-        ]
-        assert_readable_directory(destination_directory)
-        destination_files = [
-            entry
-            for entry in os.listdir(destination_directory)
-            if os.path.isfile(os.path.join(destination_directory, entry))
-        ]
-
-        # First remove all destination files that are missing in the source.
-        for filename in destination_files:
-            if filename not in source_files:
-                LOG.info("Removing file '%s' from destination" % filename)
-                os.remove(os.path.join(destination_directory, filename))
-
-        # Compare files across source and destination.
-        (match, mismatch, error) = filecmp.cmpfiles(
-            source_directory, destination_directory, source_files
-        )
-        for filename in match:
-            LOG.info("Skipping file '%s' because it matches" % filename)
-        for filename in mismatch:
-            LOG.info("Copying file '%s' due to mismatch" % filename)
-            shutil.copy2(
-                os.path.join(source_directory, filename), destination_directory
-            )
-        for filename in error:
-            LOG.info("Copying file '%s' because it is missing" % filename)
-            shutil.copy2(
-                os.path.join(source_directory, filename), destination_directory
-            )
 
     def _resolve_typeshed_location(self, filename):
         with fileinput.input(filename, inplace=True) as f:
@@ -158,35 +185,6 @@ class Repository:
                     ),
                     end="",
                 )
-
-    def _find_test_typeshed(self, base_directory: str) -> str:
-        test_typeshed = os.getenv("PYRE_TEST_TYPESHED_LOCATION")
-        if test_typeshed and is_readable_directory(test_typeshed):
-            LOG.info("Using typeshed from environment: %s", test_typeshed)
-            return test_typeshed
-
-        # Check if we can infer typeshed from a .pyre_configuration
-        # file living in a directory above.
-        path = os.getcwd()
-        while True:
-            configuration = os.path.join(path, ".pyre_configuration")
-            if os.path.isfile(configuration):
-                test_typeshed = extract_typeshed(configuration)
-                if test_typeshed and is_readable_directory(test_typeshed):
-                    LOG.info("Using typeshed from configuration: %s", test_typeshed)
-                    return test_typeshed
-            parent_directory = os.path.dirname(path)
-            if parent_directory == path:
-                # We have reached the root.
-                break
-            path = parent_directory
-
-        # Try and fetch it from the web in a temporary directory.
-        temporary_typeshed = get_typeshed_from_github(base_directory)
-        if temporary_typeshed and is_readable_directory(temporary_typeshed):
-            LOG.info("Using typeshed from the web: %s", temporary_typeshed)
-            return temporary_typeshed
-        raise Exception("Could not find a valid typeshed to use")
 
     def get_pyre_errors(self):
         incremental_errors = self.run_pyre("incremental")
