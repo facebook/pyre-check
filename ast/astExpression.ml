@@ -848,12 +848,12 @@ module PrettyPrinter = struct
     | Starred.Once expression ->
         Format.fprintf
           formatter
-          "%a"
+          "*%a"
           pp_expression_t expression
     | Starred.Twice expression ->
         Format.fprintf
           formatter
-          "%a"
+          "**%a"
           pp_expression_t expression
 
 
