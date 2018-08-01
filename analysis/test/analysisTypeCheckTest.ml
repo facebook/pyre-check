@@ -364,14 +364,6 @@ let test_forward_expression _ =
     "x = lambda: 1.0"
     ["x", Type.lambda ~parameters:[] ~return_annotation:Type.float];
 
-  assert_forward
-    []
-    "x = lambda y: 1"
-    [
-      "x", Type.lambda ~parameters:[Type.Object] ~return_annotation:Type.integer;
-      "y", Type.Object;
-    ];
-
   (* Starred. *)
   assert_forward [] "x = *1.0" ["x", Type.Object];
 
@@ -538,6 +530,26 @@ let test_forward_expression _ =
     ~errors:(`Undefined 1)
     "(element for element in undefined)"
     (Type.generator Type.Top);
+
+  (* Lambda. *)
+  let callable ~parameters ~annotation =
+    let parameters =
+      let rec anonymous_parameters = function
+        | count when count > 0 ->
+            Type.Callable.Parameter.Anonymous Type.Object :: anonymous_parameters (count - 1)
+        | _ ->
+            []
+      in
+      Type.Callable.Defined (anonymous_parameters parameters)
+    in
+    Type.callable ~parameters ~annotation ()
+  in
+  assert_forward "lambda: 1" (callable ~parameters:0 ~annotation:Type.integer);
+  assert_forward "lambda parameter: parameter" (callable ~parameters:1 ~annotation:Type.Object);
+  assert_forward
+    ~errors:(`Undefined 1)
+    "lambda: undefined"
+    (callable ~parameters:0 ~annotation:Type.Top);
 
   (* Lists. *)
   assert_forward "[]" (Type.list Type.Bottom);

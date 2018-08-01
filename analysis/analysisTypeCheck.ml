@@ -996,8 +996,7 @@ module State = struct
         { state; resolved = Type.integer }
 
     | Lambda { Lambda.body; parameters } ->
-        (* TODO(T30448045) *)
-        let resolution =
+        let resolution_with_parameters =
           let add_parameter resolution { Node.value = { Parameter.name; _ }; _ } =
             let name =
               let name = Identifier.show name in
@@ -1011,7 +1010,19 @@ module State = struct
           in
           List.fold ~f:add_parameter ~init:resolution parameters
         in
-        forward_expression ~state:{ state with resolution } ~expression:body
+        let { state; resolved } =
+          forward_expression
+            ~state:{ state with resolution = resolution_with_parameters }
+            ~expression:body
+        in
+        let parameters =
+          List.map parameters ~f:(fun _ -> Type.Callable.Parameter.Anonymous Type.Object)
+          |> fun parameters -> Type.Callable.Defined parameters
+        in
+        {
+          state = { state with resolution };
+          resolved = Type.callable ~parameters ~annotation:resolved ();
+        }
 
     | List elements ->
         let { state; resolved } = forward_elements ~state ~elements in
