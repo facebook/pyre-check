@@ -1117,6 +1117,7 @@ module State = struct
         value;
         _;
       } as assign) ->
+        (* TODO(T30448045): the assignment logic. *)
         let { resolution; _ } as state =
           value
           >>| (fun expression ->
