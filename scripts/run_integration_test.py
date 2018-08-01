@@ -2,6 +2,8 @@
 
 import argparse
 import filecmp
+import fileinput
+import json
 import logging
 import os
 import shutil
@@ -9,9 +11,14 @@ import subprocess
 import sys
 import tempfile
 from contextlib import contextmanager
+from typing import Optional
 
 
 LOG = logging.getLogger(__name__)
+
+
+def is_readable_directory(directory: str) -> bool:
+    return os.path.isdir(directory) and os.access(directory, os.R_OK)
 
 
 def assert_readable_directory(directory: str) -> None:
@@ -21,8 +28,50 @@ def assert_readable_directory(directory: str) -> None:
         raise Exception("{} is not a readable directory.".format(directory))
 
 
+def extract_typeshed(configuration_file: str) -> Optional[str]:
+    try:
+        with open(configuration_file) as file:
+            configuration = json.load(file)
+
+            typeshed = configuration.get("typeshed")
+            version_hash = configuration.get("version")
+            if not typeshed:
+                return None
+            if version_hash:
+                typeshed = typeshed.replace("%V", version_hash)
+            return typeshed
+    except Exception as e:
+        LOG.error("Exception raised while reading %s:", configuration_file)
+        LOG.error("%s", e)
+    return None
+
+
+def get_typeshed_from_github(base_directory: str) -> Optional[str]:
+    typeshed = os.path.join(base_directory, "typeshed")
+    os.mkdir(typeshed)
+
+    result = subprocess.run(
+        ["git", "clone", "https://github.com/python/typeshed.git", typeshed]
+    )
+    if result.returncode != 0:
+        return None
+    assert_readable_directory(typeshed)
+    # Prune all non-essential directories.
+    for entry in os.listdir(typeshed):
+        if entry in ["stdlib", "third_party"]:
+            continue
+        full_path = os.path.join(typeshed, entry)
+        if os.path.isfile(full_path):
+            os.remove(full_path)
+        elif os.path.isdir(full_path):
+            shutil.rmtree(full_path)
+    return typeshed
+
+
 class Repository:
-    def __init__(self, pyre_directory, repository_path: str) -> None:
+    def __init__(self, base_directory: str, repository_path: str) -> None:
+        self._test_typeshed_location = self._find_test_typeshed(base_directory)
+
         # Parse list of fake commits.
         assert_readable_directory(repository_path)
         self._base_repository_path = os.path.realpath(repository_path)
@@ -32,12 +81,16 @@ class Repository:
             assert_readable_directory(os.path.join(self._base_repository_path, commit))
         self._commits_list = iter(commits_list)
 
-        # Move into the temporary directory.
-        self._pyre_directory = pyre_directory
-        os.chdir(pyre_directory)
+        # Move into the temporary repository directory.
+        self._pyre_directory = os.path.join(base_directory, "repository")
+        os.mkdir(self._pyre_directory)
+        os.chdir(self._pyre_directory)
 
         # Seed the repository with the base commit.
         self.__next__()
+
+    def get_repository_directory(self) -> str:
+        return self._pyre_directory
 
     def __iter__(self):
         return self
@@ -54,6 +107,8 @@ class Repository:
         # only the changed files. This is crucial for watchman to
         # generate the right notifications. Hence, this.
         self._poor_mans_rsync(original_path, ".")
+
+        self._resolve_typeshed_location(".pyre_configuration")
         return self._current_commit
 
     def _poor_mans_rsync(self, source_directory, destination_directory):
@@ -94,6 +149,45 @@ class Repository:
                 os.path.join(source_directory, filename), destination_directory
             )
 
+    def _resolve_typeshed_location(self, filename):
+        with fileinput.input(filename, inplace=True) as f:
+            for line in f:
+                print(
+                    line.replace(
+                        "PYRE_TEST_TYPESHED_LOCATION", self._test_typeshed_location
+                    ),
+                    end="",
+                )
+
+    def _find_test_typeshed(self, base_directory: str) -> str:
+        test_typeshed = os.getenv("PYRE_TEST_TYPESHED_LOCATION")
+        if test_typeshed and is_readable_directory(test_typeshed):
+            LOG.info("Using typeshed from environment: %s", test_typeshed)
+            return test_typeshed
+
+        # Check if we can infer typeshed from a .pyre_configuration
+        # file living in a directory above.
+        path = os.getcwd()
+        while True:
+            configuration = os.path.join(path, ".pyre_configuration")
+            if os.path.isfile(configuration):
+                test_typeshed = extract_typeshed(configuration)
+                if test_typeshed and is_readable_directory(test_typeshed):
+                    LOG.info("Using typeshed from configuration: %s", test_typeshed)
+                    return test_typeshed
+            parent_directory = os.path.dirname(path)
+            if parent_directory == path:
+                # We have reached the root.
+                break
+            path = parent_directory
+
+        # Try and fetch it from the web in a temporary directory.
+        temporary_typeshed = get_typeshed_from_github(base_directory)
+        if temporary_typeshed and is_readable_directory(temporary_typeshed):
+            LOG.info("Using typeshed from the web: %s", temporary_typeshed)
+            return temporary_typeshed
+        raise Exception("Could not find a valid typeshed to use")
+
     def get_pyre_errors(self):
         incremental_errors = self.run_pyre("incremental")
         check_errors = self.run_pyre("check")
@@ -113,7 +207,7 @@ def run_integration_test(repository_path) -> int:
     with tempfile.TemporaryDirectory() as base_directory:
         discrepancies = {}
         repository = Repository(base_directory, repository_path)
-        with _watch_directory(base_directory):
+        with _watch_directory(repository.get_repository_directory()):
             repository.run_pyre("start")
             for commit in repository:
                 (actual_error, expected_error) = repository.get_pyre_errors()

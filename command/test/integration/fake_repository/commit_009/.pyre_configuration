@@ -2,5 +2,5 @@
   "source_directories": [
     "."
   ],
-  "typeshed": "/mnt/dewey/fbsource/.commits/ca012206a5909b08ec14b781a28561a8aa0b904b/fbcode/builds/typeshed"
+  "typeshed": "PYRE_TEST_TYPESHED_LOCATION"
 }
