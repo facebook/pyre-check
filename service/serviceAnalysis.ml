@@ -56,8 +56,9 @@ let record_overrides environment source =
 
 let record_path_of_definitions path source =
   let defines = Preprocessing.defines source in
-  let record_definition { Node.value = { Define.name; _ }; _ } =
-    Interprocedural.Callable.add_definition (`RealTarget name) path
+  let record_definition definition =
+    let open Interprocedural.Callable in
+    add_definition (make definition) path
   in
   List.iter ~f:record_definition defines;
   defines

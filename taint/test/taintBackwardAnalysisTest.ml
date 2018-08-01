@@ -31,7 +31,7 @@ let assert_taint_in_taint_out source { define_name; taint_in_taint_out_parameter
   in
   let backward_model = BackwardAnalysis.run define in
   let taint_model = { Taint.Result.empty_model with backward = backward_model; } in
-  let call_target = `RealTarget (Access.create define_name) in
+  let call_target = Callable.make_real (Access.create define_name) in
   let () =
     Result.empty_model
     |> Result.with_model Taint.Result.kind taint_model

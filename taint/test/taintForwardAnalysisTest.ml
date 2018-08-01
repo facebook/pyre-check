@@ -72,15 +72,14 @@ let add_model ~stub =
     source
     |> Preprocessing.preprocess
     |> Preprocessing.defines ~include_stubs:true
-    |> List.map ~f:Node.value
   in
-  let add_model_to_memory { Define.name = define; _ } model =
-    let call_target = `RealTarget define in
+  let add_model_to_memory define model =
+    let call_target = Callable.make define in
     Result.empty_model
     |> Result.with_model Taint.Result.kind model
     |> Fixpoint.add_predefined call_target
   in
-  let models = List.map defines ~f:(fun define -> create_model define resolution) in
+  let models = List.map defines ~f:(fun define -> create_model define.value resolution) in
   List.iter2_exn defines models ~f:add_model_to_memory
 
 
@@ -91,7 +90,7 @@ let assert_sources ~source ~expect:{ define_name; returns; _ } =
     |> Preprocessing.defines
     |> List.hd_exn
   in
-  let call_target = `RealTarget (Access.create define_name) in
+  let call_target = Callable.make_real (Access.create define_name) in
   let forward_model = ForwardAnalysis.run define in
   let taint_model = { Taint.Result.empty_model with forward = forward_model; } in
   let () =
@@ -122,7 +121,7 @@ let assert_sources ~source ~expect:{ define_name; returns; _ } =
 
 let assert_model ~stub ~call_target ~expect_taint =
   let () = add_model ~stub in
-  let call_target = `RealTarget (Access.create call_target) in
+  let call_target = Callable.make_real (Access.create call_target) in
   let taint_model = Fixpoint.get_model call_target >>= Result.get_model Taint.Result.kind in
   assert_equal
     ~printer:Taint.Result.show_call_model

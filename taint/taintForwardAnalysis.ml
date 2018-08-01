@@ -76,7 +76,9 @@ module rec FixpointState : FixpointState = struct
     match callee with
     | Identifier identifier ->
         let existing_model =
-          let call_target = `RealTarget (Access.create_from_identifiers [identifier]) in
+          let call_target =
+            Interprocedural.Callable.make_real (Access.create_from_identifiers [identifier])
+          in
           Interprocedural.Fixpoint.get_model call_target
           >>= Interprocedural.Result.get_model TaintResult.kind
         in

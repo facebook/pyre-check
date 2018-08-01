@@ -153,12 +153,26 @@ let widen_if_necessary step callable new_model result =
   (* Check if we've reached a fixed point *)
   match Fixpoint.get_old_model callable with
   | None ->
+      let () =
+        Log.log
+          ~section:`Interprocedural
+          "Initial model for %s\n%s"
+          (Callable.show callable)
+          (show_models new_model)
+      in
       Fixpoint.{ is_partial = true; model = new_model; result; }
   | Some old_model ->
       if reached_fixpoint ~iteration:step.Fixpoint.iteration
           ~previous:old_model ~next:new_model then
         Fixpoint.{ is_partial = false; model = old_model; result }
       else
+        let () =
+          Log.log
+            ~section:`Interprocedural
+            "Model changed for %s\n%s"
+            (Callable.show callable)
+            (show_models new_model)
+        in
         Fixpoint.{
           is_partial = true;
           model =

@@ -90,9 +90,33 @@ module rec FixpointState : FixpointState = struct
         List.fold_right ~f:(analyze_argument test_taint) arguments ~init:state
 
     | Identifier identifier ->
-        (* TODO(T32198746): lookup model for this function and apply backward taint. *)
-        let test_taint = BackwardState.make_leaf (BackwardTaint.singleton TaintSinks.TestSink) in
-        List.fold_right ~f:(analyze_argument test_taint) arguments ~init:state
+        let call_target =
+          Interprocedural.Callable.make_real (Access.create_from_identifiers [identifier])
+        in
+        let existing_model =
+          Interprocedural.Fixpoint.get_model call_target
+          >>= Interprocedural.Result.get_model TaintResult.kind
+        in
+        begin
+          match existing_model with
+          | Some { backward; _ } ->
+              let reversed_arguments = List.rev arguments in
+              let number_of_arguments = List.length reversed_arguments in
+              let analyze_argument_position reverse_position state argument =
+                let position = number_of_arguments - reverse_position - 1 in
+                let taint =
+                  BackwardState.read
+                    (TaintAccessPath.Root.Parameter { position })
+                    backward.sink_taint
+                in
+                analyze_argument taint argument state
+              in
+              List.foldi ~f:analyze_argument_position arguments ~init:state
+          | None ->
+              (* TODO(T31435739): if we don't have a model: assume function propagates argument
+                 taint to result. *)
+              List.fold_right ~f:(analyze_argument taint) arguments ~init:state
+        end
 
     | Access { expression = receiver; member = method_name} ->
         (* TODO(T32198746): figure out the BW and TAINT_IN_TAINT_OUT model for
@@ -226,7 +250,7 @@ let extract_tito_and_sink_models parameters entry_taint =
       |> BackwardState.filter_map_tree ~f:filter_to_local_return
     in
     if not (BackwardState.is_empty_tree taint_in_taint_out_taint) then
-      let parameter = Root.(Parameter { name; position }) in
+      let parameter = Root.(Parameter { position }) in
       BackwardState.assign ~root:parameter ~path:[] taint_in_taint_out_taint model
     else
       model
@@ -240,7 +264,7 @@ let extract_tito_and_sink_models parameters entry_taint =
       |> BackwardState.filter_map_tree ~f:filter_to_real_sinks
     in
     if not (BackwardState.is_empty_tree sink_taint) then
-      let parameter = Root.(Parameter { name; position }) in
+      let parameter = Root.(Parameter { position }) in
       BackwardState.assign ~root:parameter ~path:[] sink_taint model
     else
       model

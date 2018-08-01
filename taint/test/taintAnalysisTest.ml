@@ -8,7 +8,6 @@ open OUnit2
 
 open Analysis
 open Ast
-open Statement
 
 open Test
 open Interprocedural
@@ -48,7 +47,7 @@ let create_call_graph ?(test_file = "test_file") source =
   let () = Service.Analysis.record_overrides environment source in
   let callables =
     Service.Analysis.record_path_of_definitions handle source
-    |> List.map ~f:(fun { Node.value = { Define.name; _ }; _ } -> Callable.make_real name)
+    |> List.map ~f:Callable.make
   in
   let () = TypeCheck.check configuration environment source |> ignore in
   call_graph, callables
@@ -57,15 +56,21 @@ let create_call_graph ?(test_file = "test_file") source =
 let test_fixpoint _ =
   let source =
     {|
-    class Foo:
-      def __init__(self):
-        pass
+    def bar():
+      return __testSource()
 
-      def bar(self):
-        return 10
+    def qux(arg):
+      __testSink(arg)
 
-      def qux(self):
-        return self.bar()
+    def bad(arg):
+      qux(arg)
+
+    def some_source():
+      return bar()
+
+    def match_flows():
+      x = some_source()
+      bad(x)
     |}
   in
   let call_graph, all_callables = create_call_graph source in
@@ -79,7 +84,7 @@ let test_fixpoint _ =
       ~all_callables
       Fixpoint.Epoch.initial
   in
-  assert_equal 2 iterations ~printer:Int.to_string
+  assert_equal 3 iterations ~printer:Int.to_string
 
 
 let () =

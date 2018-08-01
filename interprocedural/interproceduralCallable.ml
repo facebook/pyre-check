@@ -6,6 +6,7 @@
 open Core
 
 open Ast
+open Statement
 open Expression
 open Analysis
 open Pyre
@@ -30,6 +31,10 @@ type target_with_stored_result = real_target
 
 let make_real access = `RealTarget access
 let make_override access = `OverrideTarget access
+
+
+let make { Node.value = Define.{ name; _ }; _ } =
+  make_real name
 
 
 let get_real_access = function
@@ -69,9 +74,20 @@ let add_definition callable handle =
   FileOfDefinition.add callable handle
 
 
+let define_matches access { Node.value = { Define.name; _ } ; _ } =
+  name = access
+
+
 let get_definition (`RealTarget access as callable) =
-  let open Statement in
   FileOfDefinition.get callable
   >>= AstSharedMemory.get_source
   >>| Preprocessing.defines
-  >>= List.find ~f:(fun { Node.value = { Define.name; _ } ; _ } -> name = access)
+  >>= List.find ~f:(define_matches access)
+
+
+let show callable =
+  show (callable :> t)
+
+
+let compare target1 target2 =
+  compare (target1 :> t) (target2 :> t)

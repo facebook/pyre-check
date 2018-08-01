@@ -11,7 +11,7 @@ open Expression
 module Root : sig
   type t =
     | LocalResult (* Special root representing the return value location. *)
-    | Parameter of { name: Identifier.t; position: int }
+    | Parameter of { position: int }
     | Variable of Identifier.t
   [@@deriving compare, sexp, show, hash]
 end
