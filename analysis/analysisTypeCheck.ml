@@ -978,6 +978,17 @@ module State = struct
     | Float _ ->
         { state; resolved = Type.float }
 
+    | Generator { Comprehension.element; generators } ->
+        let { state; resolved } =
+          List.fold
+            generators
+            ~f:(fun state generator -> forward_generator ~state ~generator)
+            ~init:state
+          |> fun state -> forward_expression ~state:state ~expression:element
+        in
+        (* Discard generator-local variables. *)
+        { state = { state with resolution }; resolved = Type.generator resolved }
+
     | Integer _ ->
         { state; resolved = Type.integer }
 
@@ -1007,7 +1018,6 @@ module State = struct
         let { state; resolved } = forward_elements ~state ~elements in
         { state; resolved = Type.set resolved }
 
-    | Generator { Comprehension.element; generators }
     | ListComprehension { Comprehension.element; generators }
     | SetComprehension { Comprehension.element; generators } ->
         (* TODO(T30448045) *)

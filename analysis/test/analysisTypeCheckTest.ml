@@ -397,12 +397,6 @@ let test_forward_expression _ =
     "y = x['derp']"
     ["x", Type.dictionary ~key:Type.string ~value:Type.integer; "y", Type.integer];
 
-  (* Generator. *)
-  assert_forward
-    []
-    "x = (element for target in iterator)"
-    ["target", Type.Top; "x", Type.generator Type.Object];
-
   (* Lambda. *)
   assert_forward
     []
@@ -571,6 +565,23 @@ let test_forward_expression _ =
 
   (* Float literal. *)
   assert_forward "1.0" Type.float;
+
+  (* Generators. *)
+  assert_forward "(element for element in [1])" (Type.generator Type.integer);
+  assert_forward
+    "((element, independent) for element in [1] for independent in ['string'])"
+    (Type.generator (Type.tuple [Type.integer; Type.string]));
+  assert_forward
+    "(nested for element in [[1]] for nested in element)"
+    (Type.generator Type.integer);
+  assert_forward
+    ~errors:(`Undefined 1)
+    "(undefined for element in [1])"
+    (Type.generator Type.Top);
+  assert_forward
+    ~errors:(`Undefined 1)
+    "(element for element in undefined)"
+    (Type.generator Type.Top);
 
   (* Lists. *)
   assert_forward "[]" (Type.list Type.Bottom);
