@@ -847,18 +847,18 @@ let register_dependencies
 
 let register_functions (module Handler: Handler) ({ Source.path; _ } as source) =
   let resolution = resolution (module Handler: Handler) ~annotations:Access.Map.empty () in
-
   let module CollectCallables = Visit.MakeStatementVisitor(struct
       type t = ((Type.Callable.t Node.t) list) Access.Map.t
 
       let statement_keep_recursing _ =
         Transform.Recurse
 
-      let statement _ callables statement =
+      let statement { Source.path; _ } callables statement =
         let collect_callable
             ~location
             callables
             ({ Define.name; _ } as define) =
+
           Handler.register_definition ~path ~name_override:name (Node.create ~location define);
 
           (* Register callable global. *)
@@ -889,7 +889,7 @@ let register_functions (module Handler: Handler) ({ Source.path; _ } as source) 
     end)
   in
 
-  let register_callables ~key ~data =
+  let register_callables path ~key ~data =
     assert (not (List.is_empty data));
     let location =
       List.hd_exn data
@@ -902,9 +902,8 @@ let register_functions (module Handler: Handler) ({ Source.path; _ } as source) 
     >>| (fun global -> Handler.register_global ~path ~access:key ~global)
     |> ignore
   in
-
   CollectCallables.visit Access.Map.empty source
-  |> Map.iteri ~f:register_callables
+  |> Map.iteri ~f:(register_callables path)
 
 
 let infer_implementations (module Handler: Handler) ~implementing_classes ~protocol =
