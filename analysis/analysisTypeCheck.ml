@@ -969,16 +969,15 @@ module State = struct
         { state; resolved = Resolution.join resolution (Type.dictionary ~key ~value) keyword }
 
     | DictionaryComprehension { Comprehension.element; generators } ->
-        (* TODO(T30448045) *)
-        let state = { state with resolution } in
-        let state =
+        let key, value, state =
           List.fold
             generators
             ~f:(fun state generator -> forward_generator ~state ~generator)
             ~init:state
+          |> fun state -> forward_entry ~state ~entry:element
         in
-        let _, _, state = forward_entry ~state ~entry:element in
-        { state; resolved = Type.Top }
+        (* Discard generator-local variables. *)
+        { state = { state with resolution }; resolved = Type.dictionary ~key ~value }
 
     | Ellipses ->
         { state; resolved = Type.Top }

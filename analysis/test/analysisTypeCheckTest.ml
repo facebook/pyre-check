@@ -354,27 +354,6 @@ let test_forward_expression _ =
     "x = { 1.0: 'string', 1.0: 1.0 }"
     ["x", Type.dictionary ~key:Type.float ~value:(Type.Union [Type.float; Type.string])];
   assert_forward
-    []
-    "x = { key: value for target in iterator }"
-    ["target", Type.Top; "x", Type.dictionary ~key:Type.Object ~value:Type.Object];
-  assert_forward
-    ["iterator", Type.list Type.integer]
-    "x = { target: target for target in iterator }"
-    [
-      "iterator", Type.list Type.integer;
-      "target", Type.integer;
-      "x", Type.dictionary ~key:Type.integer ~value:Type.integer
-    ];
-  assert_forward
-    ["iterator", Type.list (Type.tuple [Type.string; Type.integer])]
-    "x = { k: v for k, v in iterator }"
-    [
-      "iterator", Type.list (Type.tuple [Type.string; Type.integer]);
-      "k", Type.string;
-      "v", Type.integer;
-      "x", Type.dictionary ~key:Type.string ~value:Type.integer
-    ];
-  assert_forward
     ["x", Type.dictionary ~key:Type.string ~value:Type.integer]
     "y = x['derp']"
     ["x", Type.dictionary ~key:Type.string ~value:Type.integer; "y", Type.integer];
@@ -530,6 +509,9 @@ let test_forward_expression _ =
     ~errors:(`Undefined 3)
     "{1: undefined, undefined: undefined}"
     (Type.dictionary ~key:Type.Top ~value:Type.Top);
+  assert_forward
+    "{key: value for key in [1] for value in ['string']}"
+    (Type.dictionary ~key:Type.integer ~value:Type.string);
 
   (* Ellipses. *)
   assert_forward "..." Type.Top;
