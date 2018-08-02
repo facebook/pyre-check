@@ -12,8 +12,6 @@ open Pyre
 open Statement
 open Test
 
-module TestSetup = AnalysisTestSetup
-
 
 let test_set_local _ =
   let assert_local ~resolution ~access ~expected =
@@ -23,7 +21,7 @@ let test_set_local _ =
       (Resolution.get_local resolution ~access:(Access.create access) >>| Annotation.annotation)
   in
 
-  let resolution = TestSetup.resolution ~sources:[] () in
+  let resolution = Test.resolution ~sources:[] () in
   assert_local ~resolution ~access:"local" ~expected:None;
 
   let resolution =
@@ -53,7 +51,7 @@ let test_parse_annotation _ =
   in
 
   let resolution =
-    TestSetup.resolution
+    Test.resolution
       ~sources:[
         parse ~qualifier:(Access.create "empty") ~path:"empty.pyi" "class Empty: ...";
         parse

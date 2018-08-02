@@ -16,17 +16,15 @@ open TypeCheck
 
 open Test
 
-module TestSetup = AnalysisTestSetup
+
+let assert_type_errors = Test.assert_type_errors
 
 
-let assert_type_errors = TestSetup.assert_type_errors
-
-
-let resolution = TestSetup.resolution ()
+let resolution = Test.resolution ()
 
 
 let create
-    ?(define = TestSetup.empty_define)
+    ?(define = Test.empty_define)
     ?(expected_return = Type.Top)
     ?(immutables = [])
     annotations =
@@ -1150,9 +1148,9 @@ let test_reveal_type _ =
 let test_coverage _ =
   let assert_coverage source expected =
     let { Result.coverage; _ } =
-      let environment = TestSetup.environment () in
+      let environment = Test.environment () in
       Analysis.TypeCheck.check
-        TestSetup.configuration
+        Test.configuration
         environment
         (parse source)
     in

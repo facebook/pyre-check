@@ -13,14 +13,12 @@ open Inference
 
 open Test
 
-module TestSetup = AnalysisTestSetup
-
 
 let configuration = Configuration.create ~infer:true ()
 
 
 let create
-    ?(define = TestSetup.empty_define)
+    ?(define = Test.empty_define)
     ?(expected_return = Type.Top)
     ?(immutables = [])
     annotations =
@@ -41,7 +39,7 @@ let create
       List.map ~f:annotify annotations
       |> Access.Map.of_alist_exn
     in
-    Resolution.with_annotations (TestSetup.resolution ()) ~annotations
+    Resolution.with_annotations (Test.resolution ()) ~annotations
   in
   let define =
     +{
@@ -167,7 +165,7 @@ let test_fixpoint_backward _ =
          (Cfg.create define)
          ~initial_forward:
            (State.initial
-              ~resolution:(TestSetup.resolution ())
+              ~resolution:(Test.resolution ())
               define_node)
          ~initialize_backward:(Inference.State.initial_backward define_node))
   in
@@ -300,7 +298,7 @@ let test_fixpoint_backward _ =
 
 
 let test_check_missing_parameter _ =
-  let assert_type_errors = TestSetup.assert_type_errors in
+  let assert_type_errors = Test.assert_type_errors in
   assert_type_errors
     ~infer:true
     {|
@@ -371,7 +369,7 @@ let assert_infer
   let source =
     parse source
     |> Preprocessing.preprocess in
-  let environment = TestSetup.environment () in
+  let environment = Test.environment () in
   Service.Environment.populate environment [source];
   let to_string json =
     Yojson.Safe.sort json

@@ -14,7 +14,6 @@ open TypeCheck
 open Test
 
 module Parallel = Hack_parallel.Std
-module TestSetup = AnalysisTestSetup
 
 
 let parse_source ?(qualifier=[]) source =
@@ -24,8 +23,8 @@ let parse_source ?(qualifier=[]) source =
 
 let create_call_graph source =
   let source = parse_source source in
-  let configuration = TestSetup.configuration in
-  let environment = TestSetup.environment ~configuration () in
+  let configuration = Test.configuration in
+  let environment = Test.environment ~configuration () in
   Service.Environment.populate environment [source];
   check configuration environment source |> ignore;
   CallGraph.create ~environment ~source
@@ -144,8 +143,8 @@ let test_type_collection _ =
   let open TypeResolutionSharedMemory in
   let assert_type_collection source ~qualifier ~expected =
     let source = parse_source ~qualifier source in
-    let configuration = TestSetup.configuration in
-    let environment = TestSetup.environment ~configuration () in
+    let configuration = Test.configuration in
+    let environment = Test.environment ~configuration () in
     Service.Environment.populate environment [source];
     check configuration environment source |> ignore;
     let defines =
@@ -249,8 +248,8 @@ let test_method_overrides _ =
       List.map expected ~f:create_accesses
     in
     let source = parse_source source in
-    let configuration = TestSetup.configuration in
-    let environment = TestSetup.environment ~configuration () in
+    let configuration = Test.configuration in
+    let environment = Test.environment ~configuration () in
     Service.Environment.populate environment [source];
     let overrides_map = Service.Analysis.overrides_of_source environment source in
     let expected_overrides = Access.Map.of_alist_exn expected in
@@ -284,8 +283,8 @@ let test_strongly_connected_components _ =
     let qualifier = Access.create qualifier in
     let expected = List.map expected ~f:(List.map ~f:Access.create) in
     let source = parse_source ~qualifier source in
-    let configuration = TestSetup.configuration in
-    let environment = TestSetup.environment ~configuration () in
+    let configuration = Test.configuration in
+    let environment = Test.environment ~configuration () in
     Service.Environment.populate environment [source];
     check configuration environment source |> ignore;
     let partitions =

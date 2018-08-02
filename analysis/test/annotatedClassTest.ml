@@ -18,7 +18,6 @@ module Class = Annotated.Class
 module Attribute = Annotated.Attribute
 module Method = Annotated.Method
 module Argument = Expression.Argument
-module TestSetup = AnalysisTestSetup
 
 
 let test_generics _ =
@@ -804,7 +803,7 @@ let test_inferred_generic_base _ =
       List.find_map ~f:target statements
       |> value
     in
-    let resolution = TestSetup.resolution ~sources:[source] () in
+    let resolution = Test.resolution ~sources:[source] () in
     assert_equal
       ~cmp:(List.equal ~equal:Argument.equal)
       expected

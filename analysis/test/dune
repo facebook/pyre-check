@@ -1,16 +1,4 @@
 (library
- (name analysisTestSetup)
- (public_name pyrelib.testSetup)
- (modules analysisTestSetup)
- (libraries
-  oUnit
-  pyrelib.test
-  pyrelib.ast
-  pyrelib.analysis
-  pyrelib.plugin))
-
-
-(library
  (name annotatedTest)
  (public_name pyrelib.annotatedTest)
  (modules annotatedTest)
@@ -45,7 +33,7 @@
   annotatedDefineTest
   annotatedResolveTest
   annotatedSignatureTest)
- (modules :standard \ analysisTestSetup annotatedTest)
+ (modules :standard \ annotatedTest)
  (preprocess
   (pps
    ppx_deriving.eq
@@ -60,5 +48,4 @@
    ppx_deriving
    pyrelib.test
    pyrelib.annotatedTest
-   pyrelib.testSetup
    pyrelib.analysis))

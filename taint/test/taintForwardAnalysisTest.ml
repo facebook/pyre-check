@@ -59,15 +59,10 @@ let create_model define resolution =
 (** Populates shared memory with existing models *)
 let add_model ~stub =
   let source = parse ~qualifier:[] stub in
-  let configuration = Configuration.create () in
-  let environment =
-    let environment = Environment.Builder.create () in
-    Service.Environment.populate
-      (Environment.handler ~configuration environment)
-      [source];
-    Environment.handler ~configuration environment
-  in
-  let resolution = Environment.resolution environment () in
+  let configuration = Test.configuration in
+  let environment = Test.environment ~configuration () in
+  Service.Environment.populate environment [source];
+  let resolution = Test.resolution () in
   let defines =
     source
     |> Preprocessing.preprocess
