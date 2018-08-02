@@ -25,7 +25,7 @@ and t = {
   annotation: Type.t;
   mutability: mutability;
 }
-[@@deriving eq, show, hash]
+[@@deriving eq, show, hash, sexp]
 
 
 let pp format { annotation; mutability } =
