@@ -29,9 +29,14 @@ let base_command_line_arguments =
       ~doc:"Recursively run infer until no new annotations are generated."
     +> flag "-analyze" no_arg ~doc:"Analyze the code after type checking"
     +> flag "-sequential" no_arg ~doc:"Turn off parallel processing (parallel on by default)."
+    (* Delete -filter-directories once there are no callers *)
     +> flag
       "-filter-directories"
       (optional (Arg_type.comma_separated string))
+      ~doc:"Only report errors for files originating from one of the filter directories."
+    +> flag
+      "-filter-directories-semicolon"
+      (optional string)
       ~doc:"Only report errors for files originating from one of the filter directories."
     +> flag
       "-workers"

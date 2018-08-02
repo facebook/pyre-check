@@ -23,7 +23,9 @@ class Check(ErrorHandling):
         if len(filter_directories) > 1 and filter_directories.issuperset(
             {self._source_directory}
         ):
-            flags.extend(["-filter-directories", ",".join(list(filter_directories))])
+            flags.extend(
+                ["-filter-directories-semicolon", ";".join(list(filter_directories))]
+            )
         flags.extend(
             [
                 "-workers",

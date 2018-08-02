@@ -54,7 +54,10 @@ class Start(ErrorHandling):
                         {self._source_directory}
                     ):
                         flags.extend(
-                            ["-filter-directories", ",".join(list(filter_directories))]
+                            [
+                                "-filter-directories-semicolon",
+                                ";".join(list(filter_directories)),
+                            ]
                         )
                     if not self._no_watchman:
                         flags.append("-use-watchman")

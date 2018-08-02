@@ -23,6 +23,7 @@ let run
     analyze
     sequential
     filter_directories
+    filter_directories_semicolon
     number_of_workers
     log_identifier
     project_root
@@ -32,8 +33,16 @@ let run
     () =
   try
     let filter_directories =
-      filter_directories
+      let deprecated_directories =
+        filter_directories
+        >>| List.map ~f:Path.create_absolute
+      in
+      filter_directories_semicolon
+      >>| String.split_on_chars ~on:[';']
+      >>| List.map ~f:String.strip
       >>| List.map ~f:Path.create_absolute
+      |> (fun directories ->
+          if Option.is_some directories then directories else deprecated_directories)
     in
     let configuration =
       Configuration.create
