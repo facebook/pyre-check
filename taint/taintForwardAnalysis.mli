@@ -4,21 +4,7 @@
     LICENSE file in the root directory of this source tree. *)
 
 open Ast
-open Analysis
-open TaintDomains
 open Statement
-
-
-module FixpointState : sig
-  type t = { taint: ForwardState.t }
-
-  val create: unit -> t
-
-  include Fixpoint.State with type t := t
-end
-
-
-module Analyzer : Fixpoint.Fixpoint with type state := FixpointState.t
 
 
 val run: Define.t -> TaintResult.Forward.model
