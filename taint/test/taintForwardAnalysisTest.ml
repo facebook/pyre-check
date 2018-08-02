@@ -78,9 +78,10 @@ let add_model ~stub =
   List.iter2_exn defines models ~f:add_model_to_memory
 
 
-let assert_sources ~source ~expect:{ define_name; returns; _ } =
+let assert_sources ?qualifier ~source ~expect:{ define_name; returns; _ } =
+  let qualifier = Option.map qualifier ~f:Access.create in
   let { Node.value = ({ Define.name = analyzed_define; _ } as define); _ } =
-    parse source
+    parse ?qualifier source
     |> Preprocessing.preprocess
     |> Preprocessing.defines
     |> List.hd_exn
@@ -149,6 +150,7 @@ let test_models _ =
 let test_no_model _ =
   let assert_no_model _ =
     assert_sources
+      ?qualifier:None
       ~source:
         {|
         def copy_source():
@@ -168,6 +170,7 @@ let test_no_model _ =
 let test_simple_source _ =
   add_model ~stub:"def taint() -> TaintSource[TestSource]: ...";
   assert_sources
+    ?qualifier:None
     ~source:
       {|
       def simple_source():
@@ -183,6 +186,7 @@ let test_simple_source _ =
 let test_local_copy _ =
   add_model ~stub:"def taint() -> TaintSource[TestSource]: ...";
   assert_sources
+    ?qualifier:None
     ~source:
       {|
       def copy_source():
@@ -196,11 +200,29 @@ let test_local_copy _ =
       }
 
 
+let test_class_model _ =
+  add_model ~stub:"def taint() -> TaintSource[TestSource]: ...";
+  assert_sources
+    ~qualifier:"test"
+    ~source:
+      {|
+        class Foo:
+          def bar():
+            return taint()
+      |}
+    ~expect:
+      {
+        define_name = "test.Foo.bar";
+        returns = [Sources.TestSource];
+      }
+
+
 let () =
   "taint">:::[
     "no_model">::test_no_model;
     "models">::test_models;
     "simple">::test_simple_source;
     "copy">::test_local_copy;
+    "class_model">::test_class_model;
   ]
   |> run_test_tt_main
