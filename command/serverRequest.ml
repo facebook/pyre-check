@@ -286,6 +286,29 @@ let rec process_request
       in
       let response =
         match request with
+        | Attributes annotation ->
+            let show_attribute {
+                Node.value = { Annotated.Class.Attribute.name; annotation; _ };
+                _;
+              } =
+              Format.asprintf
+                "%s: %a"
+                (Expression.show (Node.create_with_default_location name))
+                Type.pp (Annotation.annotation annotation)
+            in
+            parse_and_validate annotation
+            |> Handler.class_definition
+            >>| (fun { Analysis.Environment.class_definition; _ } -> class_definition)
+            >>| Annotated.Class.create
+            >>| (fun annotated_class -> Annotated.Class.attributes ~resolution annotated_class)
+            >>| List.map ~f:show_attribute
+            >>| String.concat ~sep:"\n"
+            |> Option.value
+              ~default:(
+                Format.sprintf
+                  "Error: No class definition found for %s"
+                  (Expression.show annotation))
+
         | Join (left, right) ->
             let left = parse_and_validate left in
             let right = parse_and_validate right in

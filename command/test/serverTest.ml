@@ -180,12 +180,6 @@ let environment () =
         class typing.Generic(object): pass
         _T = TypeVar("_T")
         class list(typing.Generic[_T]): pass
-        class C(int):
-          def foo() -> int:
-            return 0
-          def bar() -> str:
-            return ""
-        A = int
       |}
     ];
   environment
@@ -246,7 +240,8 @@ let assert_response
     ~request
     expected_response =
   AstSharedMemory.remove_paths [File.Handle.create path];
-  AstSharedMemory.add_source (File.Handle.create path) (parse ~path source);
+  let parsed = parse ~path source in
+  AstSharedMemory.add_source (File.Handle.create path) parsed;
   let errors =
     let errors = File.Handle.Table.create () in
     List.iter
@@ -255,10 +250,15 @@ let assert_response
           Hashtbl.add_multi errors ~key:(File.Handle.create (Error.path error)) ~data:error);
     errors
   in
+  let initial_environment =
+    let environment = environment () in
+    Service.Environment.populate (Environment.handler ~configuration environment) [parsed];
+    environment
+  in
   let mock_server_state =
     match state with
     | Some state -> state
-    | None -> mock_server_state ~initial_errors errors
+    | None -> mock_server_state ~initial_environment ~initial_errors errors
   in
   let _, response =
     Request.process_request
@@ -406,7 +406,17 @@ let test_query _ =
   assert_type_query_response
     ~source:"a = 2"
     ~query:"type_at_location(test.py, 1, 3)"
-    "Error: Not able to get lookup at test.py:1:3"
+    "Error: Not able to get lookup at test.py:1:3";
+
+  assert_type_query_response
+    ~source:{|
+      class C:
+        C.x = 1
+        C.y = ""
+        def C.foo() -> int: ...
+    |}
+    ~query:"attributes(C)"
+    "foo: typing.Callable(C.foo)[[], int]\nx: int\ny: str"
 
 
 let test_connect _ =

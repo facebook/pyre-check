@@ -26,6 +26,7 @@ type client =
 
 
 type type_query_request =
+  | Attributes of Expression.t
   | Join of Expression.t * Expression.t
   | LessOrEqual of Expression.t * Expression.t
   | Meet of Expression.t * Expression.t

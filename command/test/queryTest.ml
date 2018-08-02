@@ -90,7 +90,11 @@ let test_parse_query _ =
         stop = { Ast.Location.line = 1; column = 2 };
       });
   assert_fails_to_parse "type_at_location(a.py:1:2)";
-  assert_fails_to_parse "type_at_location('a.py', 1, 2)"
+  assert_fails_to_parse "type_at_location('a.py', 1, 2)";
+
+  assert_parses "attributes(C)" (Attributes (Type.expression (Type.primitive "C")));
+  assert_fails_to_parse "attributes(C, D)"
+
 
 
 

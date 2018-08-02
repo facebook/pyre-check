@@ -36,6 +36,8 @@ let parse_query ~root query =
       let arguments = List.map ~f:(fun { Expression.Argument.value; _ } -> value) arguments in
       begin
         match String.lowercase (Identifier.show name), arguments with
+        | "attributes", [class_name] ->
+            Some (Request.TypeQueryRequest (ServerProtocol.Attributes class_name))
         | "less_or_equal", [left; right] ->
             Some (Request.TypeQueryRequest (ServerProtocol.LessOrEqual (left, right)))
         | "meet", [left; right] ->
