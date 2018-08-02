@@ -1792,25 +1792,30 @@ module State = struct
         forward_statement ~state ~statement
     in
 
-    let terminates_control_flow =
-      match statement with
-      | { Node.value = Expression expression; _ } ->
-          Resolution.resolve resolution expression
-          |> Type.is_noreturn
-      | _ ->
-          false
+    let state =
+      let terminates_control_flow =
+        match statement with
+        | { Node.value = Expression expression; _ } ->
+            Resolution.resolve resolution expression
+            |> Type.is_noreturn
+        | _ ->
+            false
+      in
+      { state with bottom = terminates_control_flow }
     in
-    let state = { state with bottom = terminates_control_flow } in
 
-    let nested_defines =
-      let schedule ~define = Map.set nested_defines ~key:location ~data:define in
-      match Node.value statement with
-      | Class { Class.name; body; _ } ->
-          schedule ~define:(Define.create_class_toplevel ~qualifier:name ~statements:body)
-      | Define define when not (Define.is_stub define) ->
-          schedule ~define
-      | _ ->
-          nested_defines
+    let state =
+      let nested_defines =
+        let schedule ~define = Map.set nested_defines ~key:location ~data:define in
+        match Node.value statement with
+        | Class { Class.name; body; _ } ->
+            schedule ~define:(Define.create_class_toplevel ~qualifier:name ~statements:body)
+        | Define define when not (Define.is_stub define) ->
+            schedule ~define
+        | _ ->
+            nested_defines
+      in
+      { state with nested_defines }
     in
 
     let state =
@@ -1822,7 +1827,7 @@ module State = struct
       { state with resolution_fixpoint }
     in
 
-    { state with nested_defines }
+    state
 
 
   let backward state ~statement:_ =
