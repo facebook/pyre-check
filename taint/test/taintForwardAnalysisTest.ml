@@ -79,21 +79,23 @@ let add_model ~stub =
 
 
 let assert_sources ~source ~expect:{ define_name; returns; _ } =
-  let { Node.value = define; _ } =
+  let { Node.value = ({ Define.name = analyzed_define; _ } as define); _ } =
     parse source
     |> Preprocessing.preprocess
     |> Preprocessing.defines
     |> List.hd_exn
   in
-  let call_target = Callable.make_real (Access.create define_name) in
+  let expected_call_target = Callable.make_real (Access.create define_name) in
+  let analyzed_call_target = Callable.make_real analyzed_define in
   let forward_model = ForwardAnalysis.run define in
   let taint_model = { Taint.Result.empty_model with forward = forward_model; } in
   let () =
     Result.empty_model
     |> Result.with_model Taint.Result.kind taint_model
-    |> Fixpoint.add_predefined call_target
+
+    |> Fixpoint.add_predefined analyzed_call_target
   in
-  match Fixpoint.get_model call_target >>= Result.get_model Taint.Result.kind with
+  match Fixpoint.get_model expected_call_target >>= Result.get_model Taint.Result.kind with
   | None -> assert_failure ("no model for " ^ define_name)
   | Some { forward = { source_taint; } ; _ } ->
       let returned_sources =
@@ -144,6 +146,25 @@ let test_models _ =
     ~expect_taint:return_taint
 
 
+let test_no_model _ =
+  let assert_no_model _ =
+    assert_sources
+      ~source:
+        {|
+        def copy_source():
+          pass
+        |}
+      ~expect:
+        {
+          define_name = "does_not_exist";
+          returns = [];
+        }
+  in
+  assert_raises
+    (OUnitTest.OUnit_failure "no model for does_not_exist")
+    assert_no_model
+
+
 let test_simple_source _ =
   add_model ~stub:"def taint() -> TaintSource[TestSource]: ...";
   assert_sources
@@ -177,6 +198,7 @@ let test_local_copy _ =
 
 let () =
   "taint">:::[
+    "no_model">::test_no_model;
     "models">::test_models;
     "simple">::test_simple_source;
     "copy">::test_local_copy;
