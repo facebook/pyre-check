@@ -637,11 +637,11 @@ module State = struct
     let forward_generator
         ~state
         ~generator:{
-          Comprehension.target;
-          iterator = { Node.location; _ } as iterator;
-          conditions;
-          _;
-        } =
+        Comprehension.target;
+        iterator = { Node.location; _ } as iterator;
+        conditions;
+        _;
+      } =
       (* TODO(T23723699): check async. *)
       (* Propagate the target type information. *)
       let iterator =
@@ -916,7 +916,7 @@ module State = struct
               forward_expression ~state ~expression
           | None ->
               forward_expression ~state ~expression:left
-              |> fun { state; _ } -> forward_expression ~state ~expression:right
+              |> (fun { state; _ } -> forward_expression ~state ~expression:right)
               |> fun state -> { state with resolved = Type.bool }
         end
 
@@ -1121,8 +1121,8 @@ module State = struct
         let { resolution; _ } as state =
           value
           >>| (fun expression ->
-               let { state; _ } = forward_expression ~state ~expression in
-               state)
+              let { state; _ } = forward_expression ~state ~expression in
+              state)
           |> Option.value ~default:state
         in
         let state =
@@ -1667,7 +1667,7 @@ module State = struct
            not (Define.is_overloaded_method define_without_location) &&
            not (Type.is_none actual &&
                 (Annotated.Define.create define_without_location
-                |> Annotated.Define.is_generator)) &&
+                 |> Annotated.Define.is_generator)) &&
            not (Type.is_none actual && Type.is_noreturn expected) then
           let error =
             Error.create
@@ -1698,8 +1698,8 @@ module State = struct
         let state =
           return
           >>| (fun expression ->
-               let { state; _ } = forward_expression ~state ~expression in
-               state)
+              let { state; _ } = forward_expression ~state ~expression in
+              state)
           |> Option.value ~default:state
         in
         let actual =

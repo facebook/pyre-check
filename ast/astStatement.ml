@@ -468,14 +468,7 @@ module Define = struct
     let attribute map { Node.location; value } =
       match value with
       | Assign { Assign.target; annotation; value; _ } ->
-          let annotation =
-            match annotation, value with
-            | None, Some { Node.value = Access access; _ } ->
-                Access.SerializableMap.find_opt access parameter_annotations
-            | _ ->
-                annotation
-          in
-          let attribute map target =
+          let attribute ~map ~target:({ Node.location; _ } as target) ~annotation =
             match target with
             | ({
                 Node.value = Access ((Access.Identifier self) :: ([_] as access));
@@ -493,16 +486,25 @@ module Define = struct
             | _ ->
                 map
           in
-          let targets =
+          begin
             match target with
             | { Node.value = Access _; _ } as target ->
-                [target]
+                let annotation =
+                  match annotation, value with
+                  | None, Some { Node.value = Access access; _ } ->
+                      Access.SerializableMap.find_opt access parameter_annotations
+                  | _ ->
+                      annotation
+                in
+                attribute ~map ~target ~annotation
             | { Node.value = Tuple targets; _ } ->
-                targets
+                List.fold
+                  ~init:map
+                  ~f:(fun map target -> attribute ~map ~target ~annotation)
+                  targets
             | _ ->
-                []
-          in
-          List.fold ~init:map ~f:attribute targets
+                map
+          end
       | _ ->
           map
     in

@@ -223,6 +223,7 @@ let test_attributes _ =
         self.attribute: str = value
     |}
     ["attribute", Some (Type.expression (Type.Union [Type.string; Type.integer])), Some !"value"];
+
   assert_implicit_attributes
     {|
       def foo():
@@ -235,6 +236,19 @@ let test_attributes _ =
       "other",
       None,
       Some (parse_single_expression "derp()");
+    ];
+  assert_implicit_attributes
+    {|
+      def foo(self, derp: int):
+        self.attribute, self.other = derp
+    |}
+    [
+      "attribute",
+      None,
+      Some (parse_single_expression "derp");
+      "other",
+      None,
+      Some (parse_single_expression "derp");
     ];
 
   assert_implicit_attributes

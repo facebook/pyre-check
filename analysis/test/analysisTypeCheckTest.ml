@@ -1798,6 +1798,7 @@ let test_check_assign _ =
         x = 'string'  # Reassignment is okay.
     |}
     [];
+
   assert_type_errors
     {|
       def foo() -> None:
@@ -1812,12 +1813,27 @@ let test_check_assign _ =
         x = input
     |}
     [];
+
   assert_type_errors
     {|
       def foo(input: int) -> None:
         x, y = input
     |}
     ["Incompatible variable type [9]: Unable to unpack `int`, expected a `Tuple`."];
+
+
+  assert_type_errors
+    {|
+      class Foo:
+        def __init__(self, coord: typing.Tuple[int, int]) -> None:
+            self.xxx, self.yyy = coord
+    |}
+    [
+      "Missing attribute annotation [4]: Attribute `xxx` of class `Foo` " ^
+      "has type `int` but no type is specified.";
+      "Missing attribute annotation [4]: Attribute `yyy` of class `Foo` " ^
+      "has type `int` but no type is specified.";
+    ];
 
   assert_type_errors
     {|
