@@ -5,16 +5,6 @@
 
 open Ast
 open Statement
-open Analysis
-open TaintDomains
 
-
-module FixpointState : sig
-  type t = { taint: BackwardState.t }
-  val create: unit -> t
-  include Fixpoint.State with type t := t
-end
-
-module Analyzer : Fixpoint.Fixpoint with type state = FixpointState.t
 
 val run: Define.t -> TaintResult.Backward.model
