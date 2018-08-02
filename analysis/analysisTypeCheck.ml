@@ -852,13 +852,13 @@ module State = struct
               state
           | Access.Call { Node.value = arguments; _ } ->
               let forward_argument state { Argument.value; _ } =
-                let { state; _ } = forward_expression ~state ~expression:value in
-                state
+                forward_expression ~state ~expression:value
+                |> fun { state; _ } -> state
               in
               List.fold arguments ~f:forward_argument ~init:state
           | Access.Expression expression ->
-              let { state; _ } = forward_expression ~state ~expression in
-              state
+              forward_expression ~state ~expression
+              |> fun { state; _ } -> state
         in
         let state = List.fold access ~f:forward_access ~init:state in
 
@@ -1029,8 +1029,8 @@ module State = struct
           List.fold
             expressions
             ~f:(fun state expression ->
-                let { state; _ } = forward_expression ~state ~expression in
-                state)
+                forward_expression ~state ~expression
+                |> fun { state; _ } -> state)
             ~init:state
         in
         { state; resolved = Type.string }
@@ -1120,9 +1120,7 @@ module State = struct
         (* TODO(T30448045): the assignment logic. *)
         let { resolution; _ } as state =
           value
-          >>| (fun expression ->
-              let { state; _ } = forward_expression ~state ~expression in
-              state)
+          >>| (fun expression -> forward_expression ~state ~expression |> fun { state; _ } -> state)
           |> Option.value ~default:state
         in
         let state =
@@ -1376,8 +1374,8 @@ module State = struct
             | _ -> true
           in
           if check_target then
-            let { state; _ } = forward_expression ~state ~expression:target in
-            state
+            forward_expression ~state ~expression:target
+            |> fun { state; _ } -> state
           else
             state
         in
@@ -1386,8 +1384,8 @@ module State = struct
 
     | Assert { Assert.test; _ } ->
         let { resolution; _ } as state =
-          let { state; _ } = forward_expression ~state ~expression:test in
-          state
+          forward_expression ~state ~expression:test
+          |> fun { state; _ } -> state
         in
         let resolution =
           match Node.value test with
@@ -1604,8 +1602,8 @@ module State = struct
         state
 
     | Expression expression ->
-        let { state; _ } = forward_expression ~state ~expression in
-        state
+        forward_expression ~state ~expression
+        |> fun { state; _ } -> state
 
     | Global identifiers ->
         let resolution =
@@ -1650,8 +1648,8 @@ module State = struct
         |> List.fold ~init:state ~f:(fun state error -> add_error ~state error)
 
     | Raise (Some expression) ->
-        let { state; _ } = forward_expression ~state ~expression in
-        state
+        forward_expression ~state ~expression
+        |> fun { state; _ } -> state
     | Raise _ ->
         state
 
@@ -1697,9 +1695,7 @@ module State = struct
     | Statement.Yield { Node.value = Expression.Yield return; _ } ->
         let state =
           return
-          >>| (fun expression ->
-              let { state; _ } = forward_expression ~state ~expression in
-              state)
+          >>| (fun expression -> forward_expression ~state ~expression |> fun { state; _ } -> state)
           |> Option.value ~default:state
         in
         let actual =
