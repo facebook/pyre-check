@@ -54,6 +54,7 @@ module State : sig
 
   val create
     :  ?configuration: Configuration.t
+    -> ?bottom: bool
     -> resolution: Resolution.t
     -> define: Statement.Define.t Node.t
     -> ?resolution_fixpoint: (Annotation.t Access.Map.t) Int.Map.t

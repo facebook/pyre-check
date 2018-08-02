@@ -119,6 +119,7 @@ module State = struct
 
   let create
       ?(configuration = Configuration.create ())
+      ?(bottom = false)
       ~resolution
       ~define
       ?(resolution_fixpoint = Int.Map.empty)
@@ -129,7 +130,7 @@ module State = struct
       errors = Location.Reference.Map.empty;
       define;
       nested_defines = Location.Reference.Map.empty;
-      bottom = false;
+      bottom;
       resolution_fixpoint;
     }
 

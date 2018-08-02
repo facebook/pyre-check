@@ -24,6 +24,7 @@ let resolution = Test.resolution ()
 
 
 let create
+    ?(bottom = false)
     ?(define = Test.empty_define)
     ?(expected_return = Type.Top)
     ?(immutables = [])
@@ -53,7 +54,7 @@ let create
       Define.return_annotation = Some (Type.expression expected_return);
     }
   in
-  State.create ~resolution ~define ()
+  State.create ~bottom ~resolution ~define ()
 
 
 let assert_state_equal =
@@ -712,22 +713,31 @@ let test_forward_statement _ =
 
 
 let test_forward _ =
-  let assert_forward precondition statement postcondition =
-    let parsed =
-      parse statement
-      |> function
-      | { Source.statements = statement::rest; _ } -> statement::rest
-      | _ -> failwith "unable to parse test"
+  let assert_forward
+      ?(precondition_bottom = false)
+      ?(postcondition_bottom = false)
+      precondition
+      statement
+      postcondition =
+    let forwarded =
+      let parsed =
+        parse statement
+        |> function
+        | { Source.statements = statement::rest; _ } -> statement::rest
+        | _ -> failwith "unable to parse test"
+      in
+      List.fold
+        ~f:(fun state statement -> State.forward ~statement state)
+        ~init:(create ~bottom:precondition_bottom precondition)
+        parsed
     in
-    assert_state_equal
-      (create postcondition)
-      (List.fold
-         ~f:(fun state statement -> State.forward ~key:0 state ~statement)
-         ~init:(create precondition)
-         parsed)
+    assert_state_equal (create ~bottom:postcondition_bottom postcondition) forwarded;
   in
-  let _ = assert_forward in
-  ()  (* TODO(T30448045): integration tests. *)
+
+  assert_forward [] "x = 1" ["x", Type.integer];
+  assert_forward ~precondition_bottom:true ~postcondition_bottom:true [] "x = 1" [];
+
+  assert_forward ~postcondition_bottom:true [] "sys.exit(1)" []
 
 
 let test_show_error_traces _ =
