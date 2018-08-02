@@ -1796,8 +1796,8 @@ module State = struct
       let terminates_control_flow =
         match statement with
         | { Node.value = Expression expression; _ } ->
-            Resolution.resolve resolution expression
-            |> Type.is_noreturn
+            forward_expression ~state ~expression
+            |> fun { resolved; _ } -> Type.is_noreturn resolved
         | _ ->
             false
       in
