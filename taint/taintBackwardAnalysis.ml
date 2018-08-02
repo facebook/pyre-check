@@ -77,6 +77,44 @@ module rec FixpointState : FixpointState = struct
   let rec analyze_argument taint { Argument.value = argument; _ } state =
     analyze_expression taint argument state
 
+
+  and analyze_call_target call_target arguments state call_taint =
+    let existing_model =
+      Interprocedural.Fixpoint.get_model call_target
+      >>= Interprocedural.Result.get_model TaintResult.kind
+    in
+    match existing_model with
+    | Some { backward; _ } ->
+        let collapsed_call_taint = BackwardState.collapse call_taint in
+        let reversed_arguments = List.rev arguments in
+        let number_of_arguments = List.length arguments in
+        let analyze_argument_position reverse_position state argument =
+          let position = number_of_arguments - reverse_position - 1 in
+          let argument_taint =
+            BackwardState.read
+              (TaintAccessPath.Root.Parameter { position })
+              backward.sink_taint
+          in
+          let taint_in_taint_out =
+            BackwardState.read
+              (TaintAccessPath.Root.Parameter { position })
+              backward.taint_in_taint_out
+            |> BackwardState.filter_map_tree ~f:(fun _ -> collapsed_call_taint)
+          in
+          let argument_taint = BackwardState.join_trees argument_taint taint_in_taint_out in
+          analyze_argument argument_taint argument state
+        in
+        List.foldi ~f:analyze_argument_position reversed_arguments ~init:state
+    | None ->
+        Log.log
+          ~section:`Taint
+          "No model found for %s"
+          (Log.Color.cyan (Interprocedural.Callable.show call_target));
+        (* TODO(T31435739): if we don't have a model: assume function propagates argument
+           taint to result. *)
+        List.fold_right ~f:(analyze_argument call_taint) arguments ~init:state
+
+
   and analyze_call ~callee arguments state taint =
     match callee with
     | Identifier identifier when Identifier.show identifier = "__testSink" ->
@@ -93,30 +131,7 @@ module rec FixpointState : FixpointState = struct
         let call_target =
           Interprocedural.Callable.make_real (Access.create_from_identifiers [identifier])
         in
-        let existing_model =
-          Interprocedural.Fixpoint.get_model call_target
-          >>= Interprocedural.Result.get_model TaintResult.kind
-        in
-        begin
-          match existing_model with
-          | Some { backward; _ } ->
-              let reversed_arguments = List.rev arguments in
-              let number_of_arguments = List.length reversed_arguments in
-              let analyze_argument_position reverse_position state argument =
-                let position = number_of_arguments - reverse_position - 1 in
-                let taint =
-                  BackwardState.read
-                    (TaintAccessPath.Root.Parameter { position })
-                    backward.sink_taint
-                in
-                analyze_argument taint argument state
-              in
-              List.foldi ~f:analyze_argument_position arguments ~init:state
-          | None ->
-              (* TODO(T31435739): if we don't have a model: assume function propagates argument
-                 taint to result. *)
-              List.fold_right ~f:(analyze_argument taint) arguments ~init:state
-        end
+        analyze_call_target call_target arguments state taint
 
     | Access { expression = receiver; member = method_name} ->
         (* TODO(T32198746): figure out the BW and TAINT_IN_TAINT_OUT model for
@@ -131,6 +146,7 @@ module rec FixpointState : FixpointState = struct
            For now, we propagate taint to all args implicitly, and to the function. *)
         let state = List.fold_right ~f:(analyze_argument taint) arguments ~init:state in
         analyze_normalized_expression state taint callee
+
 
   and analyze_normalized_expression state taint expression =
     match expression with
@@ -286,6 +302,16 @@ let run ({ Define.name; parameters; _ } as define) =
   let entry_state =
     Analyzer.backward ~cfg ~initial
     |> Analyzer.entry
+  in
+  let () =
+    match entry_state with
+    | Some entry_state ->
+        Log.log
+          ~section:`Taint
+          "Final state: %s"
+          (Log.Color.yellow (FixpointState.show entry_state))
+    | None ->
+        Log.log ~section:`Taint "No final state found"
   in
   let extract_model FixpointState.{ taint; _ } =
     let model = extract_tito_and_sink_models parameters taint in
