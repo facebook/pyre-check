@@ -92,22 +92,19 @@ let build
   in
   let timer = Timer.start () in
   let stubs = get_sources stubs in
-  populate ~source_root handler stubs;
-  Statistics.performance ~name:"stub environment built" ~timer ();
-
-  let timer = Timer.start () in
+  List.iter ~f:(Environment.register_module (module Handler)) stubs;
   let sources =
     (* If a stub matching a path's qualifier already exists, we shouldn't override. *)
     let should_keep { Source.path; qualifier; _ } =
       Handler.module_definition qualifier
       >>= Module.path
-      |> Option.value ~default:path
-      |> String.equal path
+      >>| String.equal path
+      |> Option.value ~default:true
     in
     let sources = get_sources sources in
     List.filter ~f:should_keep sources
   in
-  populate ~source_root handler sources;
+  populate ~source_root handler (stubs @ sources);
   Statistics.performance ~name:"full environment built" ~timer ();
 
   if Log.is_enabled `Dotty then
