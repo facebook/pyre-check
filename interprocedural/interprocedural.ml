@@ -6,5 +6,6 @@
 module AnalysisKind = InterproceduralAnalysisKind
 module Analysis = InterproceduralAnalysis
 module Callable = InterproceduralCallable
+module Error = InterproceduralError
 module Fixpoint = InterproceduralFixpoint
 module Result = InterproceduralResult

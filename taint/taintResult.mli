@@ -31,7 +31,7 @@ type call_model = {
 }
 [@@deriving show]
 
-type result = Analysis.Error.t list
+type result = Interprocedural.Error.t list
 
 include Interprocedural.Result.ANALYSIS_RESULT_WITH_REGISTRATION
   with type result := result

@@ -181,48 +181,7 @@ type kind =
 [@@deriving compare, eq, show, sexp, hash]
 
 
-type t = {
-  location: Location.Instantiated.t;
-  kind: kind;
-  define: Define.t Node.t;
-}
-[@@deriving compare, eq, show, sexp, hash]
-
-
-include Hashable.Make(struct
-    type nonrec t = t
-    let compare = compare
-    let hash = hash
-    let hash_fold_t = hash_fold_t
-    let sexp_of_t = sexp_of_t
-    let t_of_sexp = t_of_sexp
-  end)
-
-
-let create ~location ~kind ~define  =
-  {
-    location = Location.instantiate ~lookup:(fun hash -> AstSharedMemory.get_path ~hash) location;
-    kind;
-    define
-  }
-
-
-let path { location = { Location.path; _ }; _ } =
-  path
-
-
-let location { location; _ } =
-  location
-
-
-let key { location = { Location.start = { Location.line; _ }; path; _ }; _ } =
-  let start = { Location.line; column = -1 } in
-  { Location.start; stop = start; path }
-  |> Location.reference
-
-
-let code { kind; _ } =
-  match kind with
+let code = function
   | RevealedType _ -> -1
   | UnusedIgnore _ -> 0
   | Top -> 1
@@ -252,8 +211,7 @@ let code { kind; _ } =
   | RedundantCast _ -> 22
 
 
-let name { kind; _ } =
-  match kind with
+let name = function
   | IncompatibleAwaitableType _ -> "Incompatible awaitable type"
   | IncompatibleParameterType _ -> "Incompatible parameter type"
   | IncompatibleConstructorAnnotation _ -> "Incompatible constructor annotation"
@@ -278,18 +236,14 @@ let name { kind; _ } =
   | UnusedIgnore _ -> "Unused ignore"
 
 
-let description
-    ({
-      kind;
-      location = {
-        Location.start = { Location.line = start_line; _ };
-        Location.stop = { Location.line = stop_line; _ };
-        _;
-      };
-      define = { Node.value = { Define.name = define_name; _ }; _ };
-      _;
-    } as error)
-    ~detailed =
+let messages ~detailed ~define location kind =
+  let {
+    Location.start = { Location.line = start_line; _ };
+    Location.stop = { Location.line = stop_line; _ };
+    _;
+  } = location
+  in
+  let { Node.value = { Define.name = define_name; _ }; _ } = define in
   let ordinal number =
     let suffix =
       if (number % 10 = 1) && (number % 100 <> 11) then "st"
@@ -299,400 +253,486 @@ let description
     in
     (string_of_int number) ^ suffix
   in
-  let message kind =
-    match kind with
-    | IncompatibleAwaitableType actual ->
-        [
-          (Format.asprintf
-             "Expected an awaitable but got `%a`."
-             Type.pp actual
-          );
-        ]
-    | Top -> [ "Problem with analysis." ]
-    | MissingParameterAnnotation { name; annotation; due_to_any = false } ->
-        [
-          Format.asprintf
-            "Parameter `%s` has type `%a` but no type is specified."
-            (Access.show_sanitized name)
-            Type.pp annotation
-        ]
-    | MissingParameterAnnotation { name; annotation; due_to_any = true } ->
-        [
-          Format.asprintf
-            "Parameter `%s` has type `%a` but type `Any` is specified."
-            (Access.show_sanitized name)
-            Type.pp annotation
-        ]
-    | MissingReturnAnnotation { annotation; evidence_locations; due_to_any } ->
-        begin
-          match due_to_any with
-          | false ->
-              [
-                (Format.asprintf
-                   "Returning `%a` but no return type is specified."
-                   Type.pp annotation);
-                (Format.asprintf
-                   "Type `%a` was returned on %s %s, return type should be specified on line %d."
-                   Type.pp annotation
-                   (if (List.length evidence_locations) > 1 then "lines" else "line")
-                   (evidence_locations
-                    |> List.map
-                      ~f:Int.to_string
-                    |> String.concat ~sep:", ")
-                   start_line)
-              ]
-          | true ->
-              [
-                (Format.asprintf
-                   "Returning `%a` but type `Any` is specified."
-                   Type.pp annotation);
-                (Format.asprintf
-                   "Type `%a` was returned on %s %s, return type should be specified on line %d."
-                   Type.pp annotation
-                   (if (List.length evidence_locations) > 1 then "lines" else "line")
-                   (evidence_locations
-                    |> List.map
-                      ~f:Int.to_string
-                    |> String.concat ~sep:", ")
-                   start_line)
-              ]
-        end
-    | MissingAttributeAnnotation {
-        parent;
-        missing_annotation = {
-          name;
-          annotation;
-          evidence_locations;
-          due_to_any;
-        };
-      } ->
-        begin
-          let evidence_string =
-            evidence_locations
-            |> List.map ~f:(Format.asprintf "%a" Location.Instantiated.pp_start)
-            |> String.concat ~sep:", "
-          in
-          if due_to_any then
+  match kind with
+  | IncompatibleAwaitableType actual ->
+      [
+        (Format.asprintf
+           "Expected an awaitable but got `%a`."
+           Type.pp actual
+        );
+      ]
+  | Top -> [ "Problem with analysis." ]
+  | MissingParameterAnnotation { name; annotation; due_to_any = false } ->
+      [
+        Format.asprintf
+          "Parameter `%s` has type `%a` but no type is specified."
+          (Access.show_sanitized name)
+          Type.pp annotation
+      ]
+  | MissingParameterAnnotation { name; annotation; due_to_any = true } ->
+      [
+        Format.asprintf
+          "Parameter `%s` has type `%a` but type `Any` is specified."
+          (Access.show_sanitized name)
+          Type.pp annotation
+      ]
+  | MissingReturnAnnotation { annotation; evidence_locations; due_to_any } ->
+      begin
+        match due_to_any with
+        | false ->
             [
-              Format.asprintf
-                "Attribute `%a` of class `%a` has type `%a` but type `Any` is specified."
-                Access.pp name
-                Access.pp (Annotated.Class.name parent)
-                Type.pp annotation;
-              Format.asprintf
-                "Attribute `%a` declared on line %d, type `%a` deduced from %s."
-                Access.pp name
-                start_line
-                Type.pp annotation
-                evidence_string
+              (Format.asprintf
+                 "Returning `%a` but no return type is specified."
+                 Type.pp annotation);
+              (Format.asprintf
+                 "Type `%a` was returned on %s %s, return type should be specified on line %d."
+                 Type.pp annotation
+                 (if (List.length evidence_locations) > 1 then "lines" else "line")
+                 (evidence_locations
+                  |> List.map
+                    ~f:Int.to_string
+                  |> String.concat ~sep:", ")
+                 start_line)
             ]
-          else
+        | true ->
             [
-              Format.asprintf
-                "Attribute `%a` of class `%a` has type `%a` but no type is specified."
-                Access.pp name
-                Access.pp (Annotated.Class.name parent)
-                Type.pp annotation;
-              Format.asprintf
-                "Attribute `%a` declared on line %d, type `%a` deduced from %s."
-                Access.pp name
-                start_line
-                Type.pp annotation
-                evidence_string
+              (Format.asprintf
+                 "Returning `%a` but type `Any` is specified."
+                 Type.pp annotation);
+              (Format.asprintf
+                 "Type `%a` was returned on %s %s, return type should be specified on line %d."
+                 Type.pp annotation
+                 (if (List.length evidence_locations) > 1 then "lines" else "line")
+                 (evidence_locations
+                  |> List.map
+                    ~f:Int.to_string
+                  |> String.concat ~sep:", ")
+                 start_line)
             ]
-        end
-    | MissingGlobalAnnotation {
+      end
+  | MissingAttributeAnnotation {
+      parent;
+      missing_annotation = {
         name;
         annotation;
         evidence_locations;
         due_to_any;
-      } ->
-        begin
-          let evidence_string =
-            evidence_locations
-            |> List.map ~f:(Format.asprintf "%a" Location.Instantiated.pp_start)
-            |> String.concat ~sep:", "
-          in
-          if due_to_any then
-            [
-              Format.asprintf
-                "Globally accessible variable `%s` has type `%a` but type `Any` is specified."
-                (Access.show_sanitized name)
-                Type.pp annotation;
-              Format.asprintf
-                "Global variable `%s` declared on line %d, type `%a` deduced from %s."
-                (Access.show_sanitized name)
-                start_line
-                Type.pp annotation
-                evidence_string
-            ]
-          else
-            [
-              Format.asprintf
-                "Globally accessible variable `%s` has type `%a` but no type is specified."
-                (Access.show_sanitized name)
-                Type.pp annotation;
-              Format.asprintf
-                "Global variable `%s` declared on line %d, type `%a` deduced from %s."
-                (Access.show_sanitized name)
-                start_line
-                Type.pp annotation
-                evidence_string
-            ]
-        end
-    | IncompatibleParameterType { name; position; callee; mismatch = { actual; expected } } ->
-        let evidence =
-          let parameter =
-            match name with
-            | Some name ->
-                Access.show_sanitized name
-                |> Format.asprintf "parameter `%s`"
-            | _ ->
-                "anonymous parameter"
-          in
-          let callee =
-            match callee with
-            | Some callee ->
-                Format.asprintf "call `%a`." Access.pp callee
-            | _ ->
-                "anoynmous call"
-          in
-          Format.asprintf "%s %s to %s" (ordinal position) parameter callee
+      };
+    } ->
+      begin
+        let evidence_string =
+          evidence_locations
+          |> List.map ~f:(Format.asprintf "%a" Location.Instantiated.pp_start)
+          |> String.concat ~sep:", "
         in
-        [Format.asprintf "Expected `%a` but got `%a`." Type.pp expected Type.pp actual; evidence]
-    | IncompatibleConstructorAnnotation annotation ->
-        [
-          Format.asprintf
-            "`__init__` is annotated as returning `%a`, but it should return `None`."
-            Type.pp
-            annotation;
-        ]
-    | IncompatibleReturnType { mismatch = { actual; expected}; is_implicit } ->
-        let message =
-          if is_implicit then
+        if due_to_any then
+          [
             Format.asprintf
-              "Expected `%a` but got implicit return value of `None`."
-              Type.pp expected
-          else
+              "Attribute `%a` of class `%a` has type `%a` but type `Any` is specified."
+              Access.pp name
+              Access.pp (Annotated.Class.name parent)
+              Type.pp annotation;
             Format.asprintf
-              "Expected `%a` but got `%a`."
-              Type.pp expected
-              Type.pp actual
+              "Attribute `%a` declared on line %d, type `%a` deduced from %s."
+              Access.pp name
+              start_line
+              Type.pp annotation
+              evidence_string
+          ]
+        else
+          [
+            Format.asprintf
+              "Attribute `%a` of class `%a` has type `%a` but no type is specified."
+              Access.pp name
+              Access.pp (Annotated.Class.name parent)
+              Type.pp annotation;
+            Format.asprintf
+              "Attribute `%a` declared on line %d, type `%a` deduced from %s."
+              Access.pp name
+              start_line
+              Type.pp annotation
+              evidence_string
+          ]
+      end
+  | MissingGlobalAnnotation {
+      name;
+      annotation;
+      evidence_locations;
+      due_to_any;
+    } ->
+      begin
+        let evidence_string =
+          evidence_locations
+          |> List.map ~f:(Format.asprintf "%a" Location.Instantiated.pp_start)
+          |> String.concat ~sep:", "
         in
-        [
-          message;
-          (Format.asprintf
-             "Type `%a` expected on line %d, specified on line %d."
-             Type.pp expected
-             stop_line
-             error.define.Node.location.Location.start.Location.line)
-        ]
-    | IncompatibleAttributeType {
-        parent;
-        incompatible_type = {
-          name;
-          mismatch = { actual; expected };
-          declare_location;
-        };
-      } ->
-        [
-          (Format.asprintf
-             "Attribute `%a` declared in class `%a` has type `%a` but is used as type `%a`."
-             Access.pp name
-             Access.pp (Annotated.Class.name parent)
-             Type.pp expected
-             Type.pp actual);
-          (Format.asprintf
-             "Attribute `%a` declared on line %d, incorrectly used on line %d."
-             Access.pp name
-             declare_location.Location.start.Location.line
-             start_line)
-        ]
-    | IncompatibleVariableType {
-        name;
-        mismatch = { actual; expected };
-        _;
-      } ->
-        let message =
-          if Type.is_tuple expected && not (Type.is_tuple actual) then
-            Format.asprintf "Unable to unpack `%a`, expected a `Tuple`." Type.pp actual
-          else
+        if due_to_any then
+          [
             Format.asprintf
-              "%s is declared to have type `%a` but is used as type `%a`."
+              "Globally accessible variable `%s` has type `%a` but type `Any` is specified."
               (Access.show_sanitized name)
-              Type.pp expected
-              Type.pp actual
-
+              Type.pp annotation;
+            Format.asprintf
+              "Global variable `%s` declared on line %d, type `%a` deduced from %s."
+              (Access.show_sanitized name)
+              start_line
+              Type.pp annotation
+              evidence_string
+          ]
+        else
+          [
+            Format.asprintf
+              "Globally accessible variable `%s` has type `%a` but no type is specified."
+              (Access.show_sanitized name)
+              Type.pp annotation;
+            Format.asprintf
+              "Global variable `%s` declared on line %d, type `%a` deduced from %s."
+              (Access.show_sanitized name)
+              start_line
+              Type.pp annotation
+              evidence_string
+          ]
+      end
+  | IncompatibleParameterType { name; position; callee; mismatch = { actual; expected } } ->
+      let evidence =
+        let parameter =
+          match name with
+          | Some name ->
+              Access.show_sanitized name
+              |> Format.asprintf "parameter `%s`"
+          | _ ->
+              "anonymous parameter"
         in
-        [
-          message;
-          (Format.asprintf
-             "%s incorrectly used on line %d."
-             (Access.show_sanitized name)
-             start_line)
-        ]
-    | InconsistentOverride { overridden_method; override } ->
-        let detail =
-          match override with
-          | WeakenedPostcondition { actual; expected } ->
-              Format.asprintf
-                "Returned type `%a` is not a subtype of the overridden return `%a`."
-                Type.pp actual
-                Type.pp expected
-          | StrengthenedPrecondition (Found { actual; expected }) ->
-              Format.asprintf
-                "Parameter of type `%a` is not a supertype of the overridden parameter `%a`."
-                Type.pp actual
-                Type.pp expected
-          | StrengthenedPrecondition (NotFound name) ->
-              Format.asprintf
-                "Could not find parameter `%s` in overriding signature."
-                (Access.show_sanitized name)
-        in
-        [
-          Format.asprintf
-            "`%a` overloads method defined in `%a` inconsistently. %s"
-            Access.pp define_name
-            Access.pp
-            (Annotated.Method.parent overridden_method |> Annotated.Class.name)
-            detail
-        ]
-    | MissingArgument { callee; name } ->
         let callee =
           match callee with
-          | Some name ->
-              Format.asprintf "Call `%a`" Access.pp name
+          | Some callee ->
+              Format.asprintf "call `%a`." Access.pp callee
           | _ ->
-              "Anonymous call"
+              "anoynmous call"
         in
-        [Format.asprintf "%s expects argument `%s`." callee (Access.show_sanitized name)]
-    | TooManyArguments { callee; expected; provided } ->
-        let callee =
-          match callee with
-          | Some name ->
-              Format.asprintf "Call `%a`" Access.pp name
-          | _ ->
-              "Anonymous call"
-        in
-        [
-          Format.asprintf "%s expects %d positional argument%s, %d %s provided."
-            callee
-            expected
-            (if expected <> 1 then "s" else "")
-            provided
-            (if provided > 1 then "were" else "was");
-        ]
-    | RedundantCast annotation ->
-        [
+        Format.asprintf "%s %s to %s" (ordinal position) parameter callee
+      in
+      [Format.asprintf "Expected `%a` but got `%a`." Type.pp expected Type.pp actual; evidence]
+  | IncompatibleConstructorAnnotation annotation ->
+      [
+        Format.asprintf
+          "`__init__` is annotated as returning `%a`, but it should return `None`."
+          Type.pp
+          annotation;
+      ]
+  | IncompatibleReturnType { mismatch = { actual; expected}; is_implicit } ->
+      let message =
+        if is_implicit then
           Format.asprintf
-            "The value being cast is already of type `%a`."
-            Type.pp annotation;
-        ]
-    | RevealedType { expression; annotation } ->
-        let show_sanitized { Node.location; value } =
-          match value with
-          | Access access ->
-              Access.show_sanitized access
-          | _ ->
-              Expression.show { Node.location; value }
-        in
-        [
+            "Expected `%a` but got implicit return value of `None`."
+            Type.pp expected
+        else
           Format.asprintf
-            "Revealed type for `%s` is `%s`."
-            (show_sanitized expression)
-            (Type.show annotation);
-        ]
-    | UndefinedAttribute { attribute; origin } ->
-        let target =
-          match origin with
-          | Class { annotation; _ } ->
-              let name =
-                if Type.is_optional_primitive annotation then
-                  "Optional type"
-                else
-                  Format.asprintf "`%a`" Type.pp annotation
-              in
-              name
-          | Module access ->
-              (Format.asprintf "Module `%a`" Access.pp access)
-        in
-        let detail =
-          match origin with
-          | Class { class_attribute; _ } when class_attribute ->
-              [
-                "This attribute is accessed as a class variable; did you mean to declare it with " ^
-                "`typing.ClassVar`?";
-              ]
-          | _ ->
-              []
-        in
-        [Format.asprintf "%s has no attribute `%s`." target (Access.show_sanitized attribute)]
-        @ detail
-    | UndefinedName access ->
-        [Format.asprintf "Global name `%s` is undefined." (Access.show_sanitized access)]
-    | UndefinedImport access ->
-        [
-          Format.asprintf
-            "Could not find a module corresponding to import `%s`."
-            (Access.show_sanitized access);
-        ]
-    | UndefinedType annotation ->
-        [
-          Format.asprintf
-            "Type `%a` is not defined."
-            Type.pp annotation
-        ]
-    | UninitializedAttribute {
+            "Expected `%a` but got `%a`."
+            Type.pp expected
+            Type.pp actual
+      in
+      [
+        message;
+        (Format.asprintf
+           "Type `%a` expected on line %d, specified on line %d."
+           Type.pp expected
+           stop_line
+           define.Node.location.Location.start.Location.line)
+      ]
+  | IncompatibleAttributeType {
+      parent;
+      incompatible_type = {
         name;
-        parent;
         mismatch = { actual; expected };
-      } ->
-        [
-          (Format.asprintf
-             "Attribute `%a` is declared in class `%a` to have non-optional type `%a` but is never \
-              initialized."
-             Access.pp name
-             Access.pp (Annotated.Class.name parent)
-             Type.pp expected);
-          (Format.asprintf
-             "Attribute `%a` is declared on line %d, never initialized and therefore must be `%a`."
-             Access.pp name
-             start_line
-             Type.pp actual)
-        ]
-    | UnusedIgnore codes ->
-        let string_from_codes codes =
-          if List.length codes > 0 then
-            List.map ~f:Int.to_string codes
-            |> String.concat ~sep:", "
-            |> Format.asprintf "[%s] "
-          else
-            ""
-        in
-        let plural = List.length codes > 1 in
-        [
+        declare_location;
+      };
+    } ->
+      [
+        (Format.asprintf
+           "Attribute `%a` declared in class `%a` has type `%a` but is used as type `%a`."
+           Access.pp name
+           Access.pp (Annotated.Class.name parent)
+           Type.pp expected
+           Type.pp actual);
+        (Format.asprintf
+           "Attribute `%a` declared on line %d, incorrectly used on line %d."
+           Access.pp name
+           declare_location.Location.start.Location.line
+           start_line)
+      ]
+  | IncompatibleVariableType {
+      name;
+      mismatch = { actual; expected };
+      _;
+    } ->
+      let message =
+        if Type.is_tuple expected && not (Type.is_tuple actual) then
+          Format.asprintf "Unable to unpack `%a`, expected a `Tuple`." Type.pp actual
+        else
           Format.asprintf
-            "Pyre ignore%s %s%s extraneous."
-            (if plural then "s" else "")
-            (string_from_codes codes)
-            (if plural then "are" else "is")
-        ]
+            "%s is declared to have type `%a` but is used as type `%a`."
+            (Access.show_sanitized name)
+            Type.pp expected
+            Type.pp actual
+
+      in
+      [
+        message;
+        (Format.asprintf
+           "%s incorrectly used on line %d."
+           (Access.show_sanitized name)
+           start_line)
+      ]
+  | InconsistentOverride { overridden_method; override } ->
+      let detail =
+        match override with
+        | WeakenedPostcondition { actual; expected } ->
+            Format.asprintf
+              "Returned type `%a` is not a subtype of the overridden return `%a`."
+              Type.pp actual
+              Type.pp expected
+        | StrengthenedPrecondition (Found { actual; expected }) ->
+            Format.asprintf
+              "Parameter of type `%a` is not a supertype of the overridden parameter `%a`."
+              Type.pp actual
+              Type.pp expected
+        | StrengthenedPrecondition (NotFound name) ->
+            Format.asprintf
+              "Could not find parameter `%s` in overriding signature."
+              (Access.show_sanitized name)
+      in
+      [
+        Format.asprintf
+          "`%a` overloads method defined in `%a` inconsistently. %s"
+          Access.pp define_name
+          Access.pp
+          (Annotated.Method.parent overridden_method |> Annotated.Class.name)
+          detail
+      ]
+  | MissingArgument { callee; name } ->
+      let callee =
+        match callee with
+        | Some name ->
+            Format.asprintf "Call `%a`" Access.pp name
+        | _ ->
+            "Anonymous call"
+      in
+      [Format.asprintf "%s expects argument `%s`." callee (Access.show_sanitized name)]
+  | TooManyArguments { callee; expected; provided } ->
+      let callee =
+        match callee with
+        | Some name ->
+            Format.asprintf "Call `%a`" Access.pp name
+        | _ ->
+            "Anonymous call"
+      in
+      [
+        Format.asprintf "%s expects %d positional argument%s, %d %s provided."
+          callee
+          expected
+          (if expected <> 1 then "s" else "")
+          provided
+          (if provided > 1 then "were" else "was");
+      ]
+  | RedundantCast annotation ->
+      [
+        Format.asprintf
+          "The value being cast is already of type `%a`."
+          Type.pp annotation;
+      ]
+  | RevealedType { expression; annotation } ->
+      let show_sanitized { Node.location; value } =
+        match value with
+        | Access access ->
+            Access.show_sanitized access
+        | _ ->
+            Expression.show { Node.location; value }
+      in
+      [
+        Format.asprintf
+          "Revealed type for `%s` is `%s`."
+          (show_sanitized expression)
+          (Type.show annotation);
+      ]
+  | UndefinedAttribute { attribute; origin } ->
+      let target =
+        match origin with
+        | Class { annotation; _ } ->
+            let name =
+              if Type.is_optional_primitive annotation then
+                "Optional type"
+              else
+                Format.asprintf "`%a`" Type.pp annotation
+            in
+            name
+        | Module access ->
+            (Format.asprintf "Module `%a`" Access.pp access)
+      in
+      let detail =
+        match origin with
+        | Class { class_attribute; _ } when class_attribute ->
+            [
+              "This attribute is accessed as a class variable; did you mean to declare it with " ^
+              "`typing.ClassVar`?";
+            ]
+        | _ ->
+            []
+      in
+      [Format.asprintf "%s has no attribute `%s`." target (Access.show_sanitized attribute)]
+      @ detail
+  | UndefinedName access ->
+      [Format.asprintf "Global name `%s` is undefined." (Access.show_sanitized access)]
+  | UndefinedImport access ->
+      [
+        Format.asprintf
+          "Could not find a module corresponding to import `%s`."
+          (Access.show_sanitized access);
+      ]
+  | UndefinedType annotation ->
+      [
+        Format.asprintf
+          "Type `%a` is not defined."
+          Type.pp annotation
+      ]
+  | UninitializedAttribute {
+      name;
+      parent;
+      mismatch = { actual; expected };
+    } ->
+      [
+        (Format.asprintf
+           "Attribute `%a` is declared in class `%a` to have non-optional type `%a` but is never \
+            initialized."
+           Access.pp name
+           Access.pp (Annotated.Class.name parent)
+           Type.pp expected);
+        (Format.asprintf
+           "Attribute `%a` is declared on line %d, never initialized and therefore must be `%a`."
+           Access.pp name
+           start_line
+           Type.pp actual)
+      ]
+  | UnusedIgnore codes ->
+      let string_from_codes codes =
+        if List.length codes > 0 then
+          List.map ~f:Int.to_string codes
+          |> String.concat ~sep:", "
+          |> Format.asprintf "[%s] "
+        else
+          ""
+      in
+      let plural = List.length codes > 1 in
+      [
+        Format.asprintf
+          "Pyre ignore%s %s%s extraneous."
+          (if plural then "s" else "")
+          (string_from_codes codes)
+          (if plural then "are" else "is")
+      ]
+
+
+let inference_information ~define:{ Node.value = define; _ } kind =
+  let print_annotation annotation =
+    Format.asprintf "`%a`" Type.pp annotation
+    |> String.strip ~drop:((=) '`')
   in
-  let messages = message kind in
-  Format.asprintf
-    "%s [%d]: %s"
-    (name error)
-    (code error)
-    (
-      if detailed then
-        String.concat ~sep:" " messages
-      else
-        List.nth_exn messages 0
-    )
+  let parameters =
+    let to_json { Node.value = { Parameter.name; annotation; value }; _ } =
+      let annotation =
+        match kind with
+        | MissingParameterAnnotation { name = parameter_name; annotation = parameter_annotation; _ }
+          when Access.create_from_identifiers [name] = parameter_name ->
+            parameter_annotation
+            |> print_annotation
+            |> (fun string -> `String string)
+        | _ ->
+            annotation
+            >>| Expression.show
+            >>| (fun string -> `String string)
+            |> Option.value ~default:`Null
+      in
+      let value =
+        value
+        >>| Expression.show
+        >>| (fun string -> `String string)
+        |> Option.value ~default:`Null
+      in
+      `Assoc [
+        "name", `String (Identifier.show_sanitized name);
+        "type", annotation;
+        "value", value
+      ]
+    in
+    List.map ~f:to_json define.Define.parameters
+  in
+  let decorators =
+    let decorator_to_json decorator = `String (Expression.show decorator) in
+    List.map ~f:decorator_to_json define.Define.decorators
+  in
+  let print_parent parent =
+    parent
+    >>| Access.show_sanitized
+    >>| (fun string -> `String string)
+    |> Option.value ~default:`Null
+  in
+  let function_name = Access.show_sanitized define.Define.name in
+  match kind with
+  | MissingReturnAnnotation { annotation; _ } ->
+      `Assoc [
+        "annotation", `String (print_annotation annotation);
+        "parent", print_parent define.Define.parent;
+        "function_name", `String function_name;
+        "parameters", `List parameters;
+        "decorators", `List decorators;
+        "async", `Bool define.Define.async;
+      ]
+  | MissingParameterAnnotation _ ->
+      let return_annotation =
+        define.Define.return_annotation
+        >>| Format.asprintf "%a" Expression.pp
+        >>| (fun string -> `String string)
+        |> Option.value ~default:`Null
+      in
+      `Assoc [
+        "annotation", return_annotation;
+        "parent", print_parent define.Define.parent;
+        "function_name", `String function_name;
+        "parameters", `List parameters;
+        "decorators", `List decorators;
+        "async", `Bool define.Define.async;
+      ]
+  | MissingAttributeAnnotation { parent; missing_annotation = { name; annotation; _ } } ->
+      `Assoc [
+        "annotation", `String (print_annotation annotation);
+        "parent", `String (Annotated.Class.name parent |> Access.show_sanitized);
+        "attribute_name", `String (Access.show_sanitized name);
+      ]
+  | MissingGlobalAnnotation { name; annotation; _ } ->
+      `Assoc [
+        "annotation", `String (print_annotation annotation);
+        "parent", `Null;
+        "attribute_name", `String (Access.show_sanitized name);
+      ]
+  | _ -> `Assoc []
 
 
-let show error =
-  Format.asprintf "%a" pp error
+include AnalysisBaseError.Make(struct
+    type t = kind
+    let compare = compare_kind
+    let hash = hash_kind
+    let show = show_kind
+    let hash_fold_t = hash_fold_kind
+    let sexp_of_t = sexp_of_kind
+    let t_of_sexp = kind_of_sexp
+    let pp = pp_kind
+    let equal = equal_kind
+
+    let code = code
+    let name = name
+    let messages = messages
+    let inference_information = inference_information
+  end)
 
 
 let due_to_analysis_limitations { kind; _ } =
@@ -1424,108 +1464,3 @@ let dequalify
     { define with Define.parameters; return_annotation }
   in
   { error with kind; define = { Node.location; value = define} }
-
-
-let to_json
-    ~detailed
-    ({
-      location =
-        { Location.path; start = { Location.line = start_line; column = start_column }; _ };
-      kind;
-      define = { Node.value = define; _ };
-      _;
-    } as error) =
-  let function_name = Access.show_sanitized define.Define.name in
-  let print_annotation annotation =
-    Format.asprintf "`%a`" Type.pp annotation
-    |> String.strip ~drop:((=) '`')
-  in
-  let parameters =
-    let to_json { Node.value = { Parameter.name; annotation; value }; _ } =
-      let annotation =
-        match kind with
-        | MissingParameterAnnotation { name = parameter_name; annotation = parameter_annotation; _ }
-          when Access.create_from_identifiers [name] = parameter_name ->
-            parameter_annotation
-            |> print_annotation
-            |> (fun string -> `String string)
-        | _ ->
-            annotation
-            >>| Expression.show
-            >>| (fun string -> `String string)
-            |> Option.value ~default:`Null
-      in
-      let value =
-        value
-        >>| Expression.show
-        >>| (fun string -> `String string)
-        |> Option.value ~default:`Null
-      in
-      `Assoc [
-        "name", `String (Identifier.show_sanitized name);
-        "type", annotation;
-        "value", value
-      ]
-    in
-    List.map ~f:to_json define.Define.parameters
-  in
-  let decorators =
-    let decorator_to_json decorator = `String (Expression.show decorator) in
-    List.map ~f:decorator_to_json define.Define.decorators
-  in
-  let print_parent parent =
-    parent
-    >>| Access.show_sanitized
-    >>| (fun string -> `String string)
-    |> Option.value ~default:`Null
-  in
-  let inference_information =
-    match kind with
-    | MissingReturnAnnotation { annotation; _ } ->
-        [
-          "annotation", `String (print_annotation annotation);
-          "parent", print_parent define.Define.parent;
-          "function_name", `String function_name;
-          "parameters", `List parameters;
-          "decorators", `List decorators;
-          "async", `Bool define.Define.async;
-        ]
-    | MissingParameterAnnotation _ ->
-        let return_annotation =
-          define.Define.return_annotation
-          >>| Format.asprintf "%a" Expression.pp
-          >>| (fun string -> `String string)
-          |> Option.value ~default:`Null
-        in
-        [
-          "annotation", return_annotation;
-          "parent", print_parent define.Define.parent;
-          "function_name", `String function_name;
-          "parameters", `List parameters;
-          "decorators", `List decorators;
-          "async", `Bool define.Define.async;
-        ]
-    | MissingAttributeAnnotation { parent; missing_annotation = { name; annotation; _ } } ->
-        [
-          "annotation", `String (print_annotation annotation);
-          "parent", `String (Annotated.Class.name parent |> Access.show_sanitized);
-          "attribute_name", `String (Access.show_sanitized name);
-        ]
-    | MissingGlobalAnnotation { name; annotation; _ } ->
-        [
-          "annotation", `String (print_annotation annotation);
-          "parent", `Null;
-          "attribute_name", `String (Access.show_sanitized name);
-        ]
-    | _ -> []
-  in
-  `Assoc ([
-      "line", `Int (start_line);
-      "column", `Int (start_column);
-      "path", `String path;
-      "code", `Int (code error);
-      "name", `String (name error);
-      "description", `String (description error ~detailed);
-      "inference", `Assoc inference_information;
-      "define", `String (Access.show_sanitized define.Define.name);
-    ])

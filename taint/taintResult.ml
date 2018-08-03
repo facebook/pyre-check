@@ -4,6 +4,7 @@
     LICENSE file in the root directory of this source tree. *)
 
 
+module Error = Interprocedural.Error
 open TaintDomains
 
 
@@ -86,7 +87,7 @@ type call_model = {
 [@@deriving show]
 
 
-type result = Analysis.Error.t list
+type result = Error.t list
 
 
 module ResultArgument = struct

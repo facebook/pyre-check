@@ -3,8 +3,6 @@
     This source code is licensed under the MIT license found in the
     LICENSE file in the root directory of this source tree. *)
 
-open Core
-
 open Ast
 open Expression
 
@@ -158,22 +156,7 @@ type kind =
   | UnusedIgnore of int list
 [@@deriving compare, eq, show, hash]
 
-type t = {
-  location: Location.Instantiated.t;
-  kind: kind;
-  define: Statement.Define.t Node.t;
-}
-[@@deriving compare, eq, show, hash]
-
-include Hashable with type t := t
-
-val create: location: Location.t -> kind: kind -> define: Statement.Define.t Node.t -> t
-
-val path: t -> string
-val location: t -> Location.Instantiated.t
-val key: t -> Location.t
-val code: t -> int
-val description: t -> detailed:bool -> string
+include AnalysisBaseError.ERROR with type kind := kind
 
 val due_to_analysis_limitations: t -> bool
 val due_to_mismatch_with_any: t -> bool
@@ -195,5 +178,3 @@ val filter: configuration: Configuration.t -> resolution: Resolution.t -> t list
 val suppress: mode: Source.mode -> t -> bool
 
 val dequalify: Access.t Access.Map.t -> (module Environment.Handler) -> t -> t
-
-val to_json: detailed: bool -> t -> Yojson.Safe.json
