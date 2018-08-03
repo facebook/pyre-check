@@ -412,13 +412,14 @@ let request_handler_thread
   in
   try
     loop ()
-  with _ ->
+  with uncaught_exception ->
+    let printable = Exn.to_string uncaught_exception in
     let backtrace = Printexc.get_backtrace () in
     Statistics.event
       ~flush:true
       ~name:"uncaught exception"
       ~integers:[]
-      ~normals:["exception backtrace", backtrace]
+      ~normals:["exception", printable; "exception backtrace", backtrace]
       ();
     ServerOperations.stop_server ~reason:"exception" server_configuration (!connections).socket
 
@@ -450,13 +451,14 @@ let serve (socket, server_configuration, watchman_pid) =
   in
   try
     computation_thread request_queue server_configuration state
-  with _ ->
+  with uncaught_exception ->
+    let printable = Exn.to_string uncaught_exception in
     let backtrace = Printexc.get_backtrace () in
     Statistics.event
       ~flush:true
       ~name:"uncaught exception"
       ~integers:[]
-      ~normals:["exception backtrace", backtrace]
+      ~normals:["exception", printable; "exception backtrace", backtrace]
       ();
     ServerOperations.stop_server ~reason:"exception" server_configuration socket
 
