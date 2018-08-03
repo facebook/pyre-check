@@ -104,12 +104,15 @@ def resolve_source_directories(
             targets, build=arguments.build, prompt=prompt, use_cache=use_buck_cache
         )
     )
-
+    if os.path.isfile(CONFIGURATION_FILE):
+        initialization_command = "pyre init --local"
+    else:
+        initialization_command = "pyre init"
     if len(source_directories) == 0:
         raise EnvironmentException(
             "No targets or link trees to analyze.\n"
-            "You can use `pyre init` to set up a local configuration, "
-            "or `pyre --help` to check valid flags."
+            "You can run `pyre init --local` to set up a local configuration, "
+            "or `pyre --help` to check valid flags.".format(initialization_command)
         )
 
     # Translate link trees if we switched directories earlier.
