@@ -26,6 +26,7 @@ def mock_arguments() -> MagicMock:
     arguments.current_directory = "."
     arguments.original_directory = "/original/directory/"
     arguments.filter_directories = ["."]
+    arguments.local = False
     return arguments
 
 

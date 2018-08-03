@@ -187,6 +187,11 @@ def main() -> int:
     kill.set_defaults(command=commands.Kill)
 
     initialize = parsed_commands.add_parser(commands.Initialize.NAME, aliases=["init"])
+    initialize.add_argument(
+        "--local",
+        action="store_true",
+        help="Initializes a local configuration in a project subdirectory.",
+    )
     initialize.set_defaults(command=commands.Initialize)
 
     query = parsed_commands.add_parser(commands.Query.NAME)

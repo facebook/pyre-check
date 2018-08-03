@@ -8,7 +8,7 @@ import shutil
 import unittest
 from unittest.mock import call, patch
 
-from ... import commands, log
+from ... import EnvironmentException, commands, log
 from ...commands import initialize
 from .command_test import mock_arguments, mock_configuration
 
@@ -32,6 +32,8 @@ class InitializeTest(unittest.TestCase):
                 return False
             elif path.endswith(".pyre_configuration"):
                 return False
+            elif path.endswith(".pyre_configuration.local"):
+                return False
             else:
                 return True
 
@@ -42,3 +44,24 @@ class InitializeTest(unittest.TestCase):
             initialize.Initialize(arguments, configuration, source_directory=".").run()
             subprocess_call.assert_has_calls([call(["watchman", "watch-project", "."])])
             mock_open.assert_any_call(os.path.abspath(".watchmanconfig"), "w+")
+
+        arguments.local = True
+
+        def exists(path):
+            return False
+
+        isfile.side_effect = exists
+        with patch.object(commands.Command, "_call_client"):
+            initialize.Initialize(arguments, configuration, source_directory=".").run()
+
+        def exists(path):
+            if path.endswith(".pyre_configuration"):
+                return True
+            return False
+
+        isfile.side_effect = exists
+        with patch.object(commands.Command, "_call_client"):
+            with self.assertRaises(EnvironmentException):
+                initialize.Initialize(
+                    arguments, configuration, source_directory="."
+                ).run()

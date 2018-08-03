@@ -8,6 +8,7 @@ import logging
 import os
 import shutil
 import subprocess
+from typing import Any, Dict
 
 from .. import (
     BINARY_NAME,
@@ -26,16 +27,12 @@ LOG = logging.getLogger(__name__)
 class Initialize(Command):
     NAME = "initialize"
 
-    def _run(self) -> int:
-        configuration_path = os.path.join(os.getcwd(), CONFIGURATION_FILE)
-        if os.path.isfile(configuration_path):
-            raise EnvironmentException(
-                "A {} already exists at {}.".format(
-                    CONFIGURATION_FILE, configuration_path
-                )
-            )
+    def __init__(self, arguments, configuration, source_directory) -> None:
+        self._local: bool = arguments.local
+        super(Initialize, self).__init__(arguments, configuration, source_directory)
 
-        configuration = {}
+    def _get_configuration(self) -> Dict[str, Any]:
+        configuration: Dict[str, Any] = {}
 
         watchman_configuration_path = os.path.abspath(".watchmanconfig")
         if shutil.which("watchman") is not None and log.get_yes_no_input(
@@ -79,6 +76,42 @@ class Initialize(Command):
         )
 
         configuration["source_directories"] = [source_directory]
+        return configuration
+
+    def _get_local_configuration(self) -> Dict[str, Any]:
+        configuration = {}
+        targets = log.get_input(
+            "Which buck target(s) should pyre analyze? (//target:a,//target/b/...) "
+        )
+        configuration["targets"] = [target.strip() for target in targets.split(",")]
+        push_blocking = log.get_yes_no_input(
+            "Would you like pyre to enable pyre's push blocking integration?"
+        )
+        configuration["push_blocking"] = push_blocking
+        if push_blocking:
+            configuration["differential"] = log.get_yes_no_input(
+                "Should pyre only be push-blocking on newly introduced errors?"
+            )
+        return configuration
+
+    def _run(self) -> int:
+        configuration_path = os.path.join(self._original_directory, CONFIGURATION_FILE)
+        if os.path.isfile(configuration_path):
+            raise EnvironmentException(
+                "A pyre configuration already exists at {}.".format(configuration_path)
+            )
+        if os.path.isfile(configuration_path + ".local"):
+            raise EnvironmentException(
+                "A local pyre configuration already exists at {}.".format(
+                    configuration_path + ".local"
+                )
+            )
+        if self._local:
+            configuration_path = configuration_path + ".local"
+            configuration = self._get_local_configuration()
+        else:
+            configuration = self._get_configuration()
+
         with open(configuration_path, "w+") as configuration_file:
             json.dump(configuration, configuration_file, sort_keys=True, indent=2)
         LOG.info(
