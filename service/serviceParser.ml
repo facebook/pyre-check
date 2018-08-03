@@ -172,7 +172,7 @@ let parse_stubs
         in
         File.list ~filter:is_stub ~root
       in
-      List.map ~f:stubs (source_root :: (typeshed_directories @ search_path))
+      List.map ~f:stubs (source_root :: (search_path @ typeshed_directories))
     in
     let modules =
       let modules root =
@@ -189,17 +189,32 @@ let parse_stubs
     List.fold paths ~init:0 ~f:count
   in
   Log.info "Parsing %d stubs and external sources..." source_count;
-
-  let handles =
-    (* The fold ensures the order of parsing is deterministic. *)
-    let parse_sources sofar paths =
-      sofar @ (parse_sources ~configuration ~scheduler ~files:(List.map ~f:File.create paths))
+  let _, paths =
+    (* If two stub directories contain the same stub, prefer the one that
+       appears earlier in the search path. *)
+    let filter_interfering_stubs (qualifiers, all_paths) paths =
+      let add (qualifiers, all_paths) path =
+        match Path.relative path with
+        | Some relative ->
+            let qualifier = Ast.Source.qualifier ~path:relative in
+            if Set.mem qualifiers qualifier then
+              qualifiers, all_paths
+            else
+              Set.add qualifiers qualifier, path :: all_paths
+        | None ->
+            qualifiers, all_paths
+      in
+      List.fold ~f:add ~init:(qualifiers, all_paths) paths
     in
-    List.fold paths ~init:[] ~f:parse_sources
+    List.fold ~f:filter_interfering_stubs ~init:(Access.Set.empty, []) paths
+  in
+  let handles =
+    (* The filtering ensures the order of parsing is deterministic. *)
+    parse_sources ~configuration ~scheduler ~files:(List.map ~f:File.create paths)
   in
 
   Statistics.performance ~name:"stubs parsed" ~timer ();
-  let not_parsed = source_count - (List.length handles) in
+  let not_parsed = (List.length paths) - (List.length handles) in
   log_parse_errors_count ~not_parsed ~description:"external file";
   handles
 

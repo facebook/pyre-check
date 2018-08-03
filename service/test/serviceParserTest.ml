@@ -100,6 +100,7 @@ let test_parse_stubs context =
     in
     write_file source_root "a.pyi";
     write_file source_root "d.py";
+    write_file module_root "a.pyi";
     write_file module_root "b.pyi";
     write_file module_root "c.py";
     write_file source_root "ttypes.py";
