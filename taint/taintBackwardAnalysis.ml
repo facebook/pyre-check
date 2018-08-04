@@ -125,16 +125,6 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
 
     and analyze_call ~callee arguments state taint =
       match callee with
-      | Identifier identifier when Identifier.show identifier = "__testSink" ->
-          let test_taint = BackwardState.make_leaf (BackwardTaint.singleton TaintSinks.TestSink) in
-          List.fold_right ~f:(analyze_argument test_taint) arguments ~init:state
-
-      | Identifier identifier when Identifier.show identifier = "__testRCESink" ->
-          let test_taint =
-            BackwardState.make_leaf (BackwardTaint.singleton TaintSinks.RemoteCodeExecution)
-          in
-          List.fold_right ~f:(analyze_argument test_taint) arguments ~init:state
-
       | Identifier identifier ->
           let call_target =
             Interprocedural.Callable.make_real (Access.create_from_identifiers [identifier])
@@ -304,7 +294,6 @@ let extract_tito_and_sink_models parameters entry_taint =
 
 
 let run ({ Define.name; parameters; _ } as define) =
-  (* TODO(T31697954): initial_taint is hardcoded *)
   let module AnalysisInstance = AnalysisInstance(struct let definition = define end) in
   let open AnalysisInstance in
   let initial = FixpointState.{ taint = initial_taint } in

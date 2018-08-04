@@ -323,6 +323,7 @@ let test_call_taint_in_taint_out _ =
     ]
 
 let test_sink _ =
+  add_model ~stub:"def __testSink(parameter: TaintSink[TestSink]): ...";
   assert_taint
     {|
     def test_sink(parameter0, tainted_parameter1):
@@ -497,6 +498,7 @@ let test_models _ =
 
 
 let test_rce_sink _ =
+  add_model ~stub:"def __testRCESink(parameter: TaintSink[RemoteCodeExecution]): ...";
   assert_taint
     {|
     def test_rce_sink(parameter0, tainted_parameter1):
@@ -516,6 +518,8 @@ let test_rce_sink _ =
 
 
 let test_rce_and_test_sink _ =
+  add_model ~stub:"def __testRCESink(parameter: TaintSink[RemoteCodeExecution]): ...";
+  add_model ~stub:"def __testSink(parameter: TaintSink[TestSink]): ...";
   assert_taint
     {|
     def test_rce_and_test_sink(test_only, rce_only, both):

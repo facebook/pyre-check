@@ -84,7 +84,7 @@ let test_fixpoint _ =
       ~all_callables
       Fixpoint.Epoch.initial
   in
-  assert_equal 3 iterations ~printer:Int.to_string
+  assert_equal 2 iterations ~printer:Int.to_string
 
 
 let () =
