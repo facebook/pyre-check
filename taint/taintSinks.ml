@@ -11,6 +11,13 @@ type t =
 [@@deriving compare, eq, sexp, show, hash]
 
 
+let create = function
+  | "LocalReturn" -> LocalReturn
+  | "RemoteCodeExecution" -> RemoteCodeExecution
+  | "TestSink" -> TestSink
+  | name -> failwith (Format.sprintf "Unsupported taint source %s" name)
+
+
 let to_string = function
   | LocalReturn -> "LocalReturn"
   | RemoteCodeExecution -> "RCE"
