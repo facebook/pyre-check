@@ -185,6 +185,7 @@ let refine ~position ~source_text (location, entry) =
              || character = '_')
       in
       let find_word_range text ~column =
+        let column = Int.max 0 (Int.min column ((String.length text) - 1)) in
         let start_column =
           String.rfindi ~pos:(column - 1) text ~f:word_delimiter
           >>| (fun index -> index + 1)

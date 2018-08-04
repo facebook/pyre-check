@@ -455,14 +455,17 @@ let test_lookup_multiline_accesses _ =
 let test_lookup_out_of_bounds_accesses _ =
   let source =
     {|
-      def foo() -> None:
+      def foo() -> int:
           arbitrary["key"] = value
+          return (
+              1
+          )
     |}
   in
   let (lookup, source) = generate_lookup source in
 
   (* Test that no crazy combination crashes the lookup. *)
-  let indices = [ -100; -1; 0; 1; 2; 3; 4; 5; 18; 28; 100 ] in
+  let indices = [ -100; -1; 0; 1; 2; 3; 4; 5; 12; 18; 28; 100 ] in
   let indices_product =
     List.concat_map
       indices
