@@ -24,78 +24,19 @@ type parameter_taint = {
 }
 
 
-let create_sink_model { Define.parameters; _ } =
-  let taint_annotation = "TaintSink" in
-  let introduce_taint
-      ~root
-      ~taint_sink_kind
-      ({ Taint.Result.backward = { sink_taint; _ }; _ } as taint) =
-    let sink_taint =
-      BackwardState.assign
-        ~root
-        ~path:[]
-        (BackwardTaint.singleton taint_sink_kind
-         |> BackwardState.make_leaf)
-        sink_taint
-    in
-    { taint with backward = { taint.backward with sink_taint } }
-  in
-  let seed_taint =
-    { Taint.Result.empty_model with
-      backward = {
-        sink_taint = BackwardState.empty;
-        taint_in_taint_out = BackwardState.empty};
-    }
-  in
-  let taint_parameter position seed_taint = function
-    | { Parameter.annotation =
-          Some {
-            Node.value =
-              Expression.Access
-                (Identifier taint_direction
-                 :: _
-                 :: Call {
-                   value = {
-                     Argument.value = {
-                       value = Access (Identifier taint_sink_kind :: _);
-                       _;
-                     };
-                     _;
-                   }
-                     :: _;
-                   _ }
-                 :: _);
-            _ };
-        _ } when Identifier.show taint_direction = taint_annotation ->
-        let taint_sink_kind = Taint.Sinks.create (Identifier.show taint_sink_kind) in
-        let root = Taint.AccessPath.Root.Parameter { position } in
-        introduce_taint ~root ~taint_sink_kind seed_taint
-    | _ -> seed_taint
-  in
-  List.map parameters ~f:(fun { Node.value; _ } -> value)
-  |> List.foldi ~init:seed_taint ~f:taint_parameter
-
-
 (** Populates shared memory with existing models. *)
-let add_model ~stub =
-  let source = parse ~qualifier:[] stub in
-  let defines =
-    source
-    |> Preprocessing.preprocess
-    |> Preprocessing.defines ~include_stubs:true
-  in
-  let add_model_to_memory define model =
-    let call_target = Callable.make define in
+let add_models ~model_source =
+  let add_model_to_memory Model.{ call_target; model }=
     Result.empty_model
     |> Result.with_model Taint.Result.kind model
     |> Fixpoint.add_predefined call_target
   in
-  let models = List.map defines ~f:(fun { value; _ } -> create_sink_model value) in
-  List.iter2_exn defines models ~f:add_model_to_memory
+  let models = Model.create ~model_source |> Or_error.ok_exn in
+  List.iter models ~f:add_model_to_memory
 
 
-let assert_sink_model ~stub ~call_target ~expect_taint =
-  let () = add_model ~stub in
+let assert_sink_model ~model_source ~call_target ~expect_taint =
+  let () = add_models ~model_source in
   let call_target = Callable.make_real (Access.create call_target) in
   let taint_model = Fixpoint.get_model call_target >>= Result.get_model Taint.Result.kind in
   let expect_parameter_taint =
@@ -126,24 +67,24 @@ let assert_sink_model ~stub ~call_target ~expect_taint =
 
 let test_sink_models _ =
   assert_sink_model
-    ~stub:"def sink(parameter: TaintSink[TestSink]): ..."
+    ~model_source:"def sink(parameter: TaintSink[TestSink]): ..."
     ~call_target:"sink"
     ~expect_taint:[`Parameter 0];
 
   assert_sink_model
-    ~stub:"def sink(parameter0, parameter1: TaintSink[TestSink]): ..."
+    ~model_source:"def sink(parameter0, parameter1: TaintSink[TestSink]): ..."
     ~call_target:"sink"
     ~expect_taint:[`Parameter 1];
 
   assert_sink_model
-    ~stub:"def sink(parameter0: TaintSink[TestSink], parameter1: TaintSink[TestSink]): ..."
+    ~model_source:"def sink(parameter0: TaintSink[TestSink], parameter1: TaintSink[TestSink]): ..."
     ~call_target:"sink"
     ~expect_taint:[`Parameter 0; `Parameter 1];
 
   let assert_not_tainted _ =
     try
       assert_sink_model
-        ~stub:"def sink(parameter0, parameter1: TaintSink[TestSink]): ..."
+        ~model_source:"def sink(parameter0, parameter1: TaintSink[TestSink]): ..."
         ~call_target:"sink"
         ~expect_taint:[`Parameter 0]
     with
@@ -323,7 +264,7 @@ let test_call_taint_in_taint_out _ =
     ]
 
 let test_sink _ =
-  add_model ~stub:"def __testSink(parameter: TaintSink[TestSink]): ...";
+  add_models ~model_source:"def __testSink(parameter: TaintSink[TestSink]): ...";
   assert_taint
     {|
     def test_sink(parameter0, tainted_parameter1):
@@ -498,7 +439,7 @@ let test_models _ =
 
 
 let test_rce_sink _ =
-  add_model ~stub:"def __testRCESink(parameter: TaintSink[RemoteCodeExecution]): ...";
+  add_models ~model_source:"def __testRCESink(parameter: TaintSink[RemoteCodeExecution]): ...";
   assert_taint
     {|
     def test_rce_sink(parameter0, tainted_parameter1):
@@ -518,8 +459,14 @@ let test_rce_sink _ =
 
 
 let test_rce_and_test_sink _ =
-  add_model ~stub:"def __testRCESink(parameter: TaintSink[RemoteCodeExecution]): ...";
-  add_model ~stub:"def __testSink(parameter: TaintSink[TestSink]): ...";
+  let model_source =
+    {|
+      def __testRCESink(parameter: TaintSink[RemoteCodeExecution]): ...
+      def __testSink(parameter: TaintSink[TestSink]): ...
+    |}
+    |> Test.trim_extra_indentation
+  in
+  add_models ~model_source;
   assert_taint
     {|
     def test_rce_and_test_sink(test_only, rce_only, both):

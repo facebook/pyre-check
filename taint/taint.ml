@@ -9,6 +9,7 @@ module Analysis = TaintAnalysis
 module BackwardAnalysis = TaintBackwardAnalysis
 module Domains = TaintDomains
 module ForwardAnalysis = TaintForwardAnalysis
+module Model = TaintModel
 module Result = TaintResult
 module Sinks = TaintSinks
 module Sources = TaintSources
