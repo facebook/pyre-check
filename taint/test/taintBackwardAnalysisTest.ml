@@ -23,7 +23,138 @@ type parameter_taint = {
   sinks: Taint.Sinks.t list;
 }
 
-type taint_expectation = {
+
+let create_sink_model { Define.parameters; _ } =
+  let taint_annotation = "TaintSink" in
+  let introduce_taint
+      ~root
+      ~taint_sink_kind
+      ({ Taint.Result.backward = { sink_taint; _ }; _ } as taint) =
+    let sink_taint =
+      BackwardState.assign
+        ~root
+        ~path:[]
+        (BackwardTaint.singleton taint_sink_kind
+         |> BackwardState.make_leaf)
+        sink_taint
+    in
+    { taint with backward = { taint.backward with sink_taint } }
+  in
+  let seed_taint =
+    { Taint.Result.empty_model with
+      backward = {
+        sink_taint = BackwardState.empty;
+        taint_in_taint_out = BackwardState.empty};
+    }
+  in
+  let taint_parameter position seed_taint = function
+    | { Parameter.annotation =
+          Some {
+            Node.value =
+              Expression.Access
+                (Identifier taint_direction
+                 :: _
+                 :: Call {
+                   value = {
+                     Argument.value = {
+                       value = Access (Identifier taint_sink_kind :: _);
+                       _;
+                     };
+                     _;
+                   }
+                     :: _;
+                   _ }
+                 :: _);
+            _ };
+        _ } when Identifier.show taint_direction = taint_annotation ->
+        let taint_sink_kind = Taint.Sinks.create (Identifier.show taint_sink_kind) in
+        let root = Taint.AccessPath.Root.Parameter { position } in
+        introduce_taint ~root ~taint_sink_kind seed_taint
+    | _ -> seed_taint
+  in
+  List.map parameters ~f:(fun { Node.value; _ } -> value)
+  |> List.foldi ~init:seed_taint ~f:taint_parameter
+
+
+(** Populates shared memory with existing models. *)
+let add_model ~stub =
+  let source = parse ~qualifier:[] stub in
+  let defines =
+    source
+    |> Preprocessing.preprocess
+    |> Preprocessing.defines ~include_stubs:true
+  in
+  let add_model_to_memory define model =
+    let call_target = Callable.make define in
+    Result.empty_model
+    |> Result.with_model Taint.Result.kind model
+    |> Fixpoint.add_predefined call_target
+  in
+  let models = List.map defines ~f:(fun { value; _ } -> create_sink_model value) in
+  List.iter2_exn defines models ~f:add_model_to_memory
+
+
+let assert_sink_model ~stub ~call_target ~expect_taint =
+  let () = add_model ~stub in
+  let call_target = Callable.make_real (Access.create call_target) in
+  let taint_model = Fixpoint.get_model call_target >>= Result.get_model Taint.Result.kind in
+  let expect_parameter_taint =
+    let parameter_taint state (`Parameter position) =
+      BackwardState.assign
+        ~root:(Root.Parameter { position })
+        ~path:[]
+        (BackwardTaint.singleton TestSink
+         |> BackwardState.make_leaf)
+        state
+    in
+    List.fold
+      expect_taint
+      ~init:BackwardState.empty
+      ~f:parameter_taint
+  in
+  assert_equal
+    ~printer:Taint.Result.show_call_model
+    {
+      Taint.Result.empty_model with
+      backward = {
+        sink_taint = expect_parameter_taint;
+        taint_in_taint_out = BackwardState.empty;
+      };
+    }
+    (Option.value_exn taint_model)
+
+
+let test_sink_models _ =
+  assert_sink_model
+    ~stub:"def sink(parameter: TaintSink[TestSink]): ..."
+    ~call_target:"sink"
+    ~expect_taint:[`Parameter 0];
+
+  assert_sink_model
+    ~stub:"def sink(parameter0, parameter1: TaintSink[TestSink]): ..."
+    ~call_target:"sink"
+    ~expect_taint:[`Parameter 1];
+
+  assert_sink_model
+    ~stub:"def sink(parameter0: TaintSink[TestSink], parameter1: TaintSink[TestSink]): ..."
+    ~call_target:"sink"
+    ~expect_taint:[`Parameter 0; `Parameter 1];
+
+  let assert_not_tainted _ =
+    try
+      assert_sink_model
+        ~stub:"def sink(parameter0, parameter1: TaintSink[TestSink]): ..."
+        ~call_target:"sink"
+        ~expect_taint:[`Parameter 0]
+    with
+    | OUnitTest.OUnit_failure _ -> failwith "Parameter 0 should not be tainted"
+  in
+  assert_raises
+    (Failure "Parameter 0 should not be tainted")
+    assert_not_tainted
+
+
+type taint_in_taint_out_expectation = {
   define_name: string;
   taint_sink_parameters: parameter_taint list;
   tito_parameters: int list;
