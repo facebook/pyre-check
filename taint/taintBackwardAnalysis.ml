@@ -34,7 +34,7 @@ let initial_taint =
 
 
 module type FUNCTION_CONTEXT = sig
-  val definition : Define.t
+  val definition: Define.t
 end
 
 

@@ -8,6 +8,7 @@ module AccessPathTree = TaintAccessPathTree
 module Analysis = TaintAnalysis
 module BackwardAnalysis = TaintBackwardAnalysis
 module Domains = TaintDomains
+module Flow = TaintFlow
 module ForwardAnalysis = TaintForwardAnalysis
 module Model = TaintModel
 module Result = TaintResult

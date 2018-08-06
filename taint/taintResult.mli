@@ -13,7 +13,7 @@ module Backward : sig
   }
   [@@deriving show]
 
-  val empty : model
+  val empty: model
 end
 
 module Forward : sig
@@ -22,7 +22,7 @@ module Forward : sig
   }
   [@@deriving show]
 
-  val empty : model
+  val empty: model
 end
 
 type call_model = {

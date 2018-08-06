@@ -37,7 +37,7 @@ module type ERROR = sig
     kind: kind;
     define: Statement.Define.t Node.t;
   }
-  [@@deriving compare, eq, show, hash]
+  [@@deriving compare, eq, show, sexp, hash]
 
   include Hashable with type t := t
 
