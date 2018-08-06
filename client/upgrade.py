@@ -57,7 +57,12 @@ def run_fixme(arguments) -> None:
                 number = index + 1
                 if number in codes:
                     if list(codes[number]) == ["0"]:
-                        # Skip unused ignores.
+                        # Handle unused ignores.
+                        replacement = re.sub(
+                            r"# pyre-(ignore|fixme).*$", "", line
+                        ).rstrip()
+                        if replacement != "":
+                            new_lines.append(replacement)
                         continue
 
                     sorted_codes = sorted(list(codes[number]))

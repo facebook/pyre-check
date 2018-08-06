@@ -102,3 +102,19 @@ class PostprocessTest(unittest.TestCase):
             upgrade.run_fixme(arguments)
             arguments.comment = None
             path_write_text.assert_called_once_with("2")
+
+        # Test removal of extraneous ignore (trailing comment).
+        with patch.object(pathlib.Path, "write_text") as path_write_text:
+            json_load.return_value = [
+                {
+                    "path": "path.py",
+                    "line": 1,
+                    "description": "Error [0]: extranous ignore",
+                }
+            ]
+
+            path_read_text.return_value = "1# pyre-ignore[0]: [1, 2, 3]\n2"
+            arguments.description = True
+            upgrade.run_fixme(arguments)
+            arguments.comment = None
+            path_write_text.assert_called_once_with("1\n2")
