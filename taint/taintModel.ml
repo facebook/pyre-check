@@ -70,17 +70,10 @@ let create ~model_source =
     |> Parser.parse
     |> List.filter_map ~f:filter_define
   in
-  let create_model { Define.name; Define.parameters; _ } =
+  let create_model { Define.name; parameters; _ } =
     let call_target = Callable.make_real name in
-    let initial_model = {
-      TaintResult.empty_model with
-      backward = {
-        sink_taint = BackwardState.empty;
-        taint_in_taint_out = BackwardState.empty};
-    }
-    in
     List.map parameters ~f:(fun { Node.value; _ } -> value)
-    |> List.foldi ~init:initial_model ~f:taint_parameter
+    |> List.foldi ~init:TaintResult.empty_model ~f:taint_parameter
     |> (fun model -> { model; call_target })
   in
   match List.map defines ~f:create_model with
