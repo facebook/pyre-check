@@ -928,33 +928,37 @@ let replace_version_specific_code source =
               | _ ->
                   Neither
             in
+            let add_pass_statement ~location body =
+              if List.is_empty body then
+                [Node.create ~location Statement.Pass]
+              else
+                body
+            in
             begin
               match extract_single_comparison test with
               | Comparison
-                  (left, { Node.value = Expression.Tuple ({ Node.value = major; _ } :: _); _ })
-                when Expression.show left = "sys.version_info" && major = Expression.Integer 3 ->
-                  (),
-                  if List.is_empty orelse then
-                    [Node.create ~location Statement.Pass]
-                  else
-                    orelse
+                  (left,
+                   {
+                     Node.value = Expression.Tuple ({ Node.value = Expression.Integer 3; _ } :: _);
+                     _;
+                   })
+                when Expression.show left = "sys.version_info" ->
+                  (), add_pass_statement ~location orelse
+              | Comparison (left, { Node.value = Expression.Integer 3; _ })
+                when Expression.show left = "sys.version_info[0]" ->
+                  (), add_pass_statement ~location orelse
               | Comparison
                   ({ Node.value = Expression.Tuple ({ Node.value = major; _ } :: _); _ }, right)
                 when Expression.show right = "sys.version_info" && major = Expression.Integer 3 ->
-                  (),
-                  if List.is_empty body then
-                    [Node.create ~location Statement.Pass]
-                  else
-                    body
-              | Equality (left, right)
+                  (), add_pass_statement ~location body
+              | Comparison ({ Node.value = Expression.Integer 3; _ }, right)
+                when Expression.show right = "sys.version_info[0]" ->
+                  (), add_pass_statement ~location body
+             | Equality (left, right)
                 when String.is_prefix ~prefix:"sys.version_info" (Expression.show left) ||
                      String.is_prefix ~prefix:"sys.version_info" (Expression.show right) ->
                   (* Never pin our stubs to a python version. *)
-                  (),
-                  if List.is_empty orelse then
-                    [Node.create ~location Statement.Pass]
-                  else
-                    orelse
+                  (), add_pass_statement ~location orelse
               | _ ->
                   (), [statement]
             end

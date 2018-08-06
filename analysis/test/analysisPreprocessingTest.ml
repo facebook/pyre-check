@@ -765,6 +765,27 @@ let test_replace_version_specific_code _ =
     |}
     {|
        from A import B
+    |};
+
+  assert_preprocessed
+    {|
+      if sys.version_info[0] >= 3:
+        a = 1
+      else:
+        a = 2
+    |}
+    {|
+      a = 1
+    |};
+  assert_preprocessed
+    {|
+      if sys.version_info[0] < 3:
+        a = 1
+      else:
+        a = 2
+    |}
+    {|
+      a = 2
     |}
 
 
