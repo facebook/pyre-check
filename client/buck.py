@@ -118,6 +118,7 @@ def _normalize(targets: List[str], use_cache: bool = False) -> List[str]:
         raise BuckException(
             "Seems like `{}` is hanging.\n   "
             "Try running `buck clean` before trying again.".format(
+                # pyre-fixme: command not always defined
                 " ".join(command[:-1])
             )
         )

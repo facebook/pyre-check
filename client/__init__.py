@@ -225,6 +225,7 @@ def find_typeshed() -> Optional[str]:
     try:
         import typeshed
 
+        # pyre-fixme: Undefined name typeshed
         return typeshed.typeshed
     except ImportError:
         LOG.debug("`import typeshed` failed, attempting a manual lookup")
