@@ -5579,6 +5579,16 @@ let test_check_noreturn _ =
         else:
           return ""
     |}
+    [];
+
+  assert_type_errors
+    {|
+      def no_return() -> int:
+        if True:
+          return 1
+        else:
+          sys.exit(0)
+    |}
     []
 
 

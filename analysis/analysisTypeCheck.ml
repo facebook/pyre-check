@@ -1604,7 +1604,11 @@ module State = struct
 
     | Expression expression ->
         forward_expression ~state ~expression
-        |> fun { state; _ } -> state
+        |> fun { state; resolved } ->
+        if Type.is_noreturn resolved then
+          { state with bottom = true }
+        else
+          state
 
     | Global identifiers ->
         let resolution =
@@ -1791,19 +1795,6 @@ module State = struct
       else
         forward_statement ~state ~statement
     in
-
-    let state =
-      let terminates_control_flow =
-        match statement with
-        | { Node.value = Expression expression; _ } ->
-            forward_expression ~state ~expression
-            |> fun { resolved; _ } -> Type.is_noreturn resolved
-        | _ ->
-            false
-      in
-      { state with bottom = terminates_control_flow }
-    in
-
     let state =
       let nested_defines =
         let schedule ~define = Map.set nested_defines ~key:location ~data:define in
