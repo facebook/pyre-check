@@ -40,19 +40,19 @@ let transform_ast ({ Source.statements; _ } as source) =
             };
           ] ->
               String.split serialized ~on:' '
-              |> List.map ~f:(fun name -> name, any_annotation)
+              |> List.map ~f:(fun name -> name, any_annotation, None)
           | [_; { Argument.value = { Node.value = List arguments; _ }; _ }] ->
               let accessify ({ Node.value; _ } as expression) =
                 match value with
                 | String { StringLiteral.value = name; _ } ->
-                    name, any_annotation
+                    name, any_annotation, None
                 | Tuple [
                     { Node.value = String { StringLiteral.value = name; _ }; _ };
                     annotation;
                   ] ->
-                    name, annotation
+                    name, annotation, None
                 | _ ->
-                    Expression.show expression, any_annotation
+                    Expression.show expression, any_annotation, None
               in
               List.map arguments ~f:accessify
           | _ ->
@@ -64,7 +64,7 @@ let transform_ast ({ Source.statements; _ } as source) =
   in
   let tuple_attributes ~parent ~location attributes =
     let attribute_statements =
-      let attribute (name, annotation) =
+      let attribute (name, annotation, value) =
         let target =
           Access (parent @ (Access.create name))
           |> Node.create ~location
@@ -72,7 +72,7 @@ let transform_ast ({ Source.statements; _ } as source) =
         Assign {
           Assign.target;
           annotation = Some annotation;
-          value = None;
+          value;
           parent = Some parent;
         }
         |> Node.create ~location
@@ -84,8 +84,8 @@ let transform_ast ({ Source.statements; _ } as source) =
   let tuple_constructor ~parent ~location attributes =
     let parameters =
       let self_parameter = Parameter.create ~name:(Identifier.create "self") () in
-      let to_parameter (name, annotation) =
-        Parameter.create ~annotation ~name:(Identifier.create ("$parameter$" ^ name)) ()
+      let to_parameter (name, annotation, value) =
+        Parameter.create ?value ~annotation ~name:(Identifier.create ("$parameter$" ^ name)) ()
       in
       self_parameter :: List.map attributes ~f:to_parameter
     in
@@ -149,7 +149,7 @@ let transform_ast ({ Source.statements; _ } as source) =
               | {
                 Node.value = Assign {
                     Assign.target = { Node.value = Access target; _ };
-                    value = None;
+                    value;
                     annotation;
                     _;
                   };
@@ -161,7 +161,7 @@ let transform_ast ({ Source.statements; _ } as source) =
                       ~default:(Node.create ~location (Access (Access.create "typing.Any")))
                   in
                   List.last target
-                  >>| (fun target -> Access.show [target], annotation)
+                  >>| (fun target -> Access.show [target], annotation, value)
               | _ ->
                   None
             in

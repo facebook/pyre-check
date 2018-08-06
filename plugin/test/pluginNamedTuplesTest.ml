@@ -96,7 +96,7 @@ let test_transform_ast _ =
     |}
     {|
       class Foo(typing.NamedTuple):
-        def Foo.__init__(self, $parameter$a: int, $parameter$b: str): ...
+        def Foo.__init__(self, $parameter$a: int, $parameter$b: str, $parameter$c: int = 3): ...
         Foo.a: int
         Foo.b: str
         Foo.c: int = 3
