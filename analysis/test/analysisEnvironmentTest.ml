@@ -567,8 +567,32 @@ let test_populate _ =
   assert_equal (parse_annotation environment !"S") Type.string;
   assert_equal (parse_annotation environment !"S2") Type.string;
 
+  let assert_superclasses ~environment ~base ~superclasses =
+    let (module Handler: Environment.Handler) = environment in
+    let index annotation =
+      Handler.TypeOrderHandler.find_unsafe
+        (Handler.TypeOrderHandler.indices ())
+        annotation
+    in
+    let targets =
+      (Handler.TypeOrderHandler.find
+         (Handler.TypeOrderHandler.edges ())
+         (index (Type.primitive base)))
+    in
+    let to_target annotation = { TypeOrder.Target.target = index annotation; parameters = [] } in
+    assert_equal targets (Some (List.map ~f:to_target superclasses))
+  in
+  (* Metaclasses aren't superclasses. *)
+  let environment =
+    populate {|
+      class abc.ABCMeta: ...
+      class C(metaclass=abc.ABCMeta): ...
+    |}
+  in
+  assert_superclasses ~environment ~base:"C" ~superclasses:[Type.Object];
+
   (* Ensure object is a superclass if a class only has unsupported bases. *)
-  let (module Handler: Environment.Handler) =
+  let environment =
     populate {|
       def foo() -> int:
         return 1
@@ -576,16 +600,7 @@ let test_populate _ =
         pass
     |}
   in
-  let index annotation =
-    Handler.TypeOrderHandler.find_unsafe
-      (Handler.TypeOrderHandler.indices ())
-      annotation
-  in
-  assert_equal
-    (Handler.TypeOrderHandler.find
-       (Handler.TypeOrderHandler.edges ())
-       (index (Type.primitive "C")))
-    (Some [{ TypeOrder.Target.target = index Type.Object; parameters = []}]);
+  assert_superclasses ~environment ~base:"C" ~superclasses:[Type.Object];
 
   (* Globals *)
   let assert_global_with_environment environment actual expected =

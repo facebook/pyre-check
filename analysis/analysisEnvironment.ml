@@ -189,7 +189,10 @@ let connect_definition
                 in
                 inferred_base @ bases
               in
-              List.iter bases ~f:register_supertype
+              bases
+              (* Don't register metaclass=abc.ABCMeta, etc. superclasses. *)
+              |> List.filter ~f:(fun { Argument.name; _ } -> Option.is_none name)
+              |> List.iter ~f:register_supertype
             end
           else
             connect ~predecessor:primitive ~successor:Type.Object ~parameters:[]
