@@ -41,7 +41,8 @@ let transform_ast ({ Source.statements; _ } as source) =
           ] ->
               String.split serialized ~on:' '
               |> List.map ~f:(fun name -> name, any_annotation, None)
-          | [_; { Argument.value = { Node.value = List arguments; _ }; _ }] ->
+          | [_; { Argument.value = { Node.value = List arguments; _ }; _ }]
+          | [_; { Argument.value = { Node.value = Tuple arguments; _ }; _ }] ->
               let accessify ({ Node.value; _ } as expression) =
                 match value with
                 | String { StringLiteral.value = name; _ } ->

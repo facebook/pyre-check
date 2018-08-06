@@ -102,6 +102,29 @@ let test_transform_ast _ =
         Foo.c: int = 3
     |};
 
+  assert_expand
+    {|
+      class Foo(collections.namedtuple("PatchDocument", ("op", "path", "value", "ts", "lazy"))):
+        pass
+    |}
+    {|
+      class Foo(typing.NamedTuple):
+         def Foo.__init__(
+           self,
+           $parameter$op: typing.Any,
+           $parameter$path: typing.Any,
+           $parameter$value: typing.Any,
+           $parameter$ts: typing.Any,
+           $parameter$lazy: typing.Any):
+           ...
+         Foo.op: typing.Any
+         Foo.path: typing.Any
+         Foo.value: typing.Any
+         Foo.ts: typing.Any
+         Foo.lazy: typing.Any
+         pass
+    |};
+
   (* Don't transform non-toplevel statements. *)
   assert_expand
     {|
