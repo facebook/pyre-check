@@ -28,59 +28,15 @@ let parse_source ?(qualifier=[]) source =
   |> Preprocessing.preprocess
 
 
-let create_model define resolution =
-  let taint_annotation = "TaintSource" in
-  let introduce_taint taint_source_kind =
-    let source_taint =
-      ForwardState.assign
-        ~root:Taint.AccessPath.Root.LocalResult
-        ~path:[]
-        (ForwardTaint.singleton taint_source_kind
-         |> ForwardState.make_leaf)
-        ForwardState.empty
-    in
-    Taint.Result.Forward.{ source_taint }
-  in
-  Annotated.Callable.create [define] ~resolution
-  |> (fun callable -> Type.Callable callable)
-  |> function
-  | Type.Callable { kind = Named define_name ; overloads; implicit } ->
-      begin match overloads with
-        | {
-          annotation = Type.Parametric { name; parameters = (Primitive primitive) :: _ }; _
-        } :: _ when (Identifier.show name = taint_annotation) ->
-            let taint_source_kind = Taint.Sources.create (Identifier.show primitive) in
-            {
-              Taint.Result.empty_model with
-              forward = introduce_taint taint_source_kind;
-            }
-        | _ ->
-            failwith "Cannot create taint model: no annotation"
-      end
-  | _ ->
-      failwith "Cannot create taint model: not a callable"
-
-
-(** Populates shared memory with existing models *)
-let add_model ~stub =
-  let source = parse ~qualifier:[] stub in
-  let configuration = Test.configuration in
-  let environment = Test.environment ~configuration () in
-  Service.Environment.populate environment [source];
-  let resolution = Test.resolution () in
-  let defines =
-    source
-    |> Preprocessing.preprocess
-    |> Preprocessing.defines ~include_stubs:true
-  in
-  let add_model_to_memory define model =
-    let call_target = Callable.make define in
+(** Populates shared memory with existing models. *)
+let add_models ~model_source =
+  let add_model_to_memory Model.{ call_target; model }=
     Result.empty_model
     |> Result.with_model Taint.Result.kind model
     |> Fixpoint.add_predefined call_target
   in
-  let models = List.map defines ~f:(fun define -> create_model define.value resolution) in
-  List.iter2_exn defines models ~f:add_model_to_memory
+  let models = Model.create ~model_source |> Or_error.ok_exn in
+  List.iter models ~f:add_model_to_memory
 
 
 let assert_sources ?qualifier ~source ~expect =
@@ -142,36 +98,6 @@ let assert_sources ?qualifier ~source ~expect =
   List.iter ~f:check_expectation expect
 
 
-let assert_model ~stub ~call_target ~expect_taint =
-  let () = add_model ~stub in
-  let call_target = Callable.make_real (Access.create call_target) in
-  let taint_model = Fixpoint.get_model call_target >>= Result.get_model Taint.Result.kind in
-  assert_equal
-    ~printer:Taint.Result.show_call_model
-    (Option.value_exn taint_model)
-    {
-      Taint.Result.empty_model with
-      forward = { source_taint = expect_taint }
-    }
-
-
-let test_models _ =
-  let expect_source_taint root =
-    ForwardState.assign
-      ~root
-      ~path:[]
-      (ForwardTaint.singleton TestSource
-       |> ForwardState.make_leaf)
-      ForwardState.empty
-  in
-
-  let return_taint = expect_source_taint Taint.AccessPath.Root.LocalResult in
-  assert_model
-    ~stub:"def taint() -> TaintSource[TestSource]: ..."
-    ~call_target:"taint"
-    ~expect_taint:return_taint
-
-
 let test_no_model _ =
   let assert_no_model _ =
     assert_sources
@@ -194,7 +120,7 @@ let test_no_model _ =
 
 
 let test_simple_source _ =
-  add_model ~stub:"def taint() -> TaintSource[TestSource]: ...";
+  add_models ~model_source:"def taint() -> TaintSource[TestSource]: ...";
   assert_sources
     ?qualifier:None
     ~source:
@@ -211,7 +137,7 @@ let test_simple_source _ =
 
 
 let test_local_copy _ =
-  add_model ~stub:"def taint() -> TaintSource[TestSource]: ...";
+  add_models ~model_source:"def taint() -> TaintSource[TestSource]: ...";
   assert_sources
     ?qualifier:None
     ~source:
@@ -229,7 +155,7 @@ let test_local_copy _ =
 
 
 let test_class_model _ =
-  add_model ~stub:"def taint() -> TaintSource[TestSource]: ...";
+  add_models ~model_source:"def taint() -> TaintSource[TestSource]: ...";
   assert_sources
     ~qualifier:"test"
     ~source:
@@ -247,7 +173,7 @@ let test_class_model _ =
 
 
 let test_apply_method_model_at_call_site _ =
-  add_model ~stub:"def taint() -> TaintSource[TestSource]: ...";
+  add_models ~model_source:"def taint() -> TaintSource[TestSource]: ...";
   assert_sources
     ~qualifier:"test"
     ~source:
@@ -342,7 +268,6 @@ let test_apply_method_model_at_call_site _ =
 let () =
   "taint">:::[
     "no_model">::test_no_model;
-    "models">::test_models;
     "simple">::test_simple_source;
     "copy">::test_local_copy;
     "class_model">::test_class_model;

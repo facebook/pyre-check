@@ -4,7 +4,8 @@
   taintAnalysisTest
   taintFlowTest
   taintForwardAnalysisTest
-  taintBackwardAnalysisTest)
+  taintBackwardAnalysisTest
+  taintModelTest)
  (preprocess
   (pps ppx_sexp_message))
  (libraries
