@@ -16,7 +16,7 @@ module Type = AnalysisType
 module TypeResolutionSharedMemory = AnalysisTypeResolutionSharedMemory
 
 
-type approximate_entry = {
+type approximate_annotation = {
   (* Each prefix is stored with the order of its elements reversed to
      reduce the lookup complexity. *)
   reversed_prefix: Access.t;
@@ -24,14 +24,16 @@ type approximate_entry = {
 }
 
 
-type entry =
+type annotation_information =
   | Precise of Type.t
   (* This lists all approximate annotations living at this
      location, in decreasing order of prefix length. *)
-  | Approximate of approximate_entry list
+  | Approximate of approximate_annotation list
 
 
-type t = entry Location.Reference.Table.t
+type t = {
+  annotations_lookup: annotation_information Location.Reference.Table.t;
+}
 
 
 (** The result state of this visitor is ignored. We need two read-only
@@ -40,10 +42,13 @@ type t = entry Location.Reference.Table.t
     update. *)
 module ExpressionVisitor = struct
 
-  type t = Environment.Resolution.t * entry Location.Reference.Table.t
+  type t = {
+    resolution: Environment.Resolution.t;
+    annotations_lookup: annotation_information Location.Reference.Table.t;
+  }
 
   let expression
-      ((resolution, lookup) as state)
+      ({ resolution; annotations_lookup } as state)
       ({ Node.location = expression_location; value = expression_value} as expression) =
     let lookup_of_arguments = function
       | { Node.value = Expression.Access access; _ } ->
@@ -65,7 +70,10 @@ module ExpressionVisitor = struct
                   try
                     let annotation = Annotated.resolve ~resolution value in
                     if not (Type.is_unknown annotation) then
-                      Location.Reference.Table.set lookup ~key:location ~data:(Precise annotation)
+                      Location.Reference.Table.set
+                        annotations_lookup
+                        ~key:location
+                        ~data:(Precise annotation)
                   with AnalysisTypeOrder.Untracked _ ->
                     (* If we cannot resolve the type of this
                        expression, ignore it silently. The
@@ -112,7 +120,7 @@ module ExpressionVisitor = struct
           in
           if (List.length prefixes) > 0 then
             Location.Reference.Table.set
-              lookup
+              annotations_lookup
               ~key:expression_location
               ~data:(Approximate prefixes)
       | _ ->
@@ -120,7 +128,7 @@ module ExpressionVisitor = struct
             let annotation = Annotated.resolve ~resolution expression in
             if not (Type.is_unknown annotation) then
               Location.Reference.Table.set
-                lookup
+                annotations_lookup
                 ~key:expression_location
                 ~data:(Precise annotation)
           with AnalysisTypeOrder.Untracked _ ->
@@ -141,7 +149,7 @@ module Visit = Visit.Make(ExpressionVisitor)
 
 let create_of_source environment source =
   let open TypeResolutionSharedMemory in
-  let location_lookup = Location.Reference.Table.create () in
+  let annotations_lookup = Location.Reference.Table.create () in
   let walk_defines { Node.value = ({ Define.name = caller; _ } as define); _ } =
     let cfg = Cfg.create define in
     let annotation_lookup =
@@ -161,7 +169,7 @@ let create_of_source environment source =
           |> Access.Map.of_alist_exn
         in
         let resolution = Environment.resolution environment ~annotations () in
-        Visit.visit (resolution, location_lookup) (Source.create [statement])
+        Visit.visit { ExpressionVisitor.resolution; annotations_lookup } (Source.create [statement])
         |> ignore
       in
       List.iteri statements ~f:walk_statements
@@ -171,7 +179,7 @@ let create_of_source environment source =
   (* TODO(T31738631): remove extract_into_toplevel *)
   Preprocessing.defines ~extract_into_toplevel:true source
   |> List.iter ~f:walk_defines;
-  location_lookup
+  { annotations_lookup }
 
 
 let refine ~position ~source_text (location, entry) =
@@ -249,7 +257,7 @@ let refine ~position ~source_text (location, entry) =
       refine_approximate location entries
 
 
-let get_annotation lookup ~position ~source_text =
+let get_annotation { annotations_lookup } ~position ~source_text =
   let location_contains_position
       {
         Location.start = { Location.column = start_column; line = start_line };
@@ -270,7 +278,7 @@ let get_annotation lookup ~position ~source_text =
         } =
       (stop_line - start_line) * 1000 + stop_column - start_column
     in
-    Hashtbl.to_alist lookup
+    Hashtbl.to_alist annotations_lookup
     |> List.filter ~f:(fun (key, _) -> location_contains_position key position)
     |> List.min_elt ~compare:(fun (location_left, _) (location_right, _) ->
         (weight location_left) - (weight location_right))
@@ -284,7 +292,7 @@ let get_annotation lookup ~position ~source_text =
   >>| instantiate_location
 
 
-let get_all_annotations lookup =
+let get_all_annotations { annotations_lookup } =
   let expand_approximate (location, entry) =
     match entry with
     | Precise annotation ->
@@ -294,7 +302,7 @@ let get_all_annotations lookup =
            mostly used for testing. *)
         List.map entries ~f:(fun { annotation; _ } -> (location, annotation))
   in
-  Location.Reference.Table.to_alist lookup
+  Location.Reference.Table.to_alist annotations_lookup
   |> List.concat_map ~f:expand_approximate
 
 
