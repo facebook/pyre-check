@@ -15,31 +15,11 @@ open Interprocedural
 module Parallel = Hack_parallel.Std
 
 
-let parse_source ?(qualifier=[]) source =
-  parse ~qualifier source
-  |> Preprocessing.preprocess
-
-
-let configuration = Configuration.create ()
-
-
-let environment ?(configuration = configuration) sources =
-  let _ = Test.parse "" in  (* Make sure Test module is loaded. *)
-  let environment = Environment.Builder.create () in
-  Service.Environment.populate (Environment.handler ~configuration environment) sources;
-  Environment.handler ~configuration environment
-
-
-let setup_environment sources =
-  let () = Parallel.Daemon.check_entry_point () in
-  environment sources ~configuration
-
-
 let create_call_graph ?(test_file = "test_file") source =
   let handle = File.Handle.create test_file in
-  let source = parse_source source in
+  let source = Test.parse source in
   let () = AstSharedMemory.add_source handle source in
-  let environment = setup_environment [source] in
+  let environment = Test.environment () in
   TypeCheck.check configuration environment source |> ignore;
   let call_graph =
     Service.Analysis.record_and_merge_call_graph environment CallGraph.empty handle source
@@ -49,7 +29,6 @@ let create_call_graph ?(test_file = "test_file") source =
     Service.Analysis.record_path_of_definitions handle source
     |> List.map ~f:Callable.make
   in
-  let () = TypeCheck.check configuration environment source |> ignore in
   call_graph, callables
 
 
@@ -84,10 +63,18 @@ let test_fixpoint _ =
       ~all_callables
       Fixpoint.Epoch.initial
   in
-  assert_equal 2 iterations ~printer:Int.to_string
+  assert_equal 3 iterations ~printer:Int.to_string
 
 
 let () =
+  let model_source =
+    {|
+      def __testSink(arg: TaintSink[RemoteCodeExecution]): ...
+      def __testSource() -> TaintSource[TestSource]: ...
+    |}
+    |> Test.trim_extra_indentation
+  in
+  Service.Analysis.add_models ~model_source;
   "taint">:::[
     "fixpoint">::test_fixpoint;
   ]
