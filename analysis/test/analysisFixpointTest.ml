@@ -34,7 +34,7 @@ end = struct
     | _ ->
         state
 
-  let backward state ~statement =
+  let backward ?key:_ state ~statement =
     match statement with
     | { Node.value = Pass; _ } ->
         state + 1

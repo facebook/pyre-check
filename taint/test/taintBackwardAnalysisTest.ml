@@ -41,9 +41,16 @@ type taint_in_taint_out_expectation = {
 
 
 let assert_taint source ~expected =
-  let defines =
+  let source =
     parse source
     |> Preprocessing.preprocess
+  in
+  let configuration = Test.configuration in
+  let environment = Test.environment ~configuration () in
+  Service.Environment.populate environment [source];
+  TypeCheck.check configuration environment source |> ignore;
+  let defines =
+    source
     |> Preprocessing.defines
     |> List.rev
   in
@@ -272,6 +279,7 @@ let test_rce_and_test_sink _ =
       }
     ]
 
+
 let test_tito_sink _ =
   assert_taint
     {|
@@ -296,6 +304,105 @@ let test_tito_sink _ =
       }
     ]
 
+
+let test_apply_method_model_at_call_site _ =
+  add_models ~model_source:"def __testSink(parameter: TaintSink[TestSink]): ...";
+  assert_taint
+    {|
+      class Foo:
+        def qux(tainted_parameter):
+          command_unsafe = tainted_parameter
+          __testSink(command_unsafe)
+
+      class Bar:
+        def qux(not_tainted_parameter):
+          pass
+
+      def taint_across_methods(tainted_parameter):
+        f = Foo()
+        return f.qux(tainted_parameter)
+      |}
+    ~expected:[
+      {
+        define_name = "taint_across_methods";
+        taint_sink_parameters = [
+          { position = 0; sinks = [Taint.Sinks.TestSink] };
+        ];
+        tito_parameters = [];
+      };
+    ];
+
+  assert_taint
+    {|
+      class Foo:
+        def qux(tainted_parameter):
+          command_unsafe = tainted_parameter
+          __testSink(command_unsafe)
+
+      class Bar:
+        def qux(not_tainted_parameter):
+          pass
+
+      def taint_across_methods(not_tainted_parameter):
+        f = Bar()
+        return f.qux(not_tainted_parameter)
+    |}
+    ~expected:[
+      {
+        define_name = "taint_across_methods";
+        taint_sink_parameters = [];
+        tito_parameters = [];
+      };
+    ];
+
+  assert_taint
+    {|
+      class Foo:
+        def qux(tainted_parameter):
+          command_unsafe = tainted_parameter
+          __testSink(command_unsafe)
+
+      class Bar:
+        def qux(not_tainted_parameter):
+          pass
+
+      def taint_across_methods(f: Foo, tainted_parameter):
+        return f.qux(tainted_parameter)
+      |}
+    ~expected:[
+      {
+        define_name = "taint_across_methods";
+        taint_sink_parameters = [
+          { position = 0; sinks = [] };
+          { position = 1; sinks = [Taint.Sinks.TestSink] };
+        ];
+        tito_parameters = [];
+      };
+    ];
+
+  assert_taint
+    {|
+      class Foo:
+        def qux(tainted_parameter):
+          command_unsafe = tainted_parameter
+          __testSink(command_unsafe)
+
+      class Bar:
+        def qux(not_tainted_parameter):
+          pass
+
+      def taint_across_methods(f: Bar, not_tainted_parameter):
+        return f.qux(not_tainted_parameter)
+    |}
+    ~expected:[
+      {
+        define_name = "taint_across_methods";
+        taint_sink_parameters = [];
+        tito_parameters = [];
+      };
+    ]
+
+
 let () =
   "taint">:::[
     "plus_taint_in_taint_out">::test_plus_taint_in_taint_out;
@@ -305,5 +412,6 @@ let () =
     "rce_and_test_sink">::test_rce_and_test_sink;
     "test_call_tito">::test_call_taint_in_taint_out;
     "test_tito_sink">::test_tito_sink;
+    "test_apply_method_model_at_call_site">::test_apply_method_model_at_call_site;
   ]
   |> run_test_tt_main

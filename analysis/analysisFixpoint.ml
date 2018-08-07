@@ -17,7 +17,7 @@ module type State = sig
   val join: t -> t -> t
   val widen: previous: t -> next: t -> iteration: int -> t
   val forward: ?key:int -> t -> statement: Statement.t -> t
-  val backward: t -> statement: Statement.t -> t
+  val backward: ?key:int -> t -> statement: Statement.t -> t
 end
 
 module type Fixpoint = sig
@@ -147,8 +147,15 @@ module Make (State: State) = struct
       ~transition
 
   let backward ~cfg ~initial =
-    let transition _ init statements =
-      List.fold_right ~f:(fun statement -> State.backward ~statement) ~init statements
+    let transition node_id init statements =
+      let statement_index = ref (List.length statements) in
+      let backward statement =
+        statement_index := !statement_index - 1;
+        State.backward
+          ~key:([%hash: int * int] (node_id, !statement_index))
+          ~statement
+      in
+      List.fold_right ~f:backward ~init statements
     in
     compute_fixpoint
       cfg

@@ -276,7 +276,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           state
 
 
-    let backward state ~statement =
+    let backward ?key:_ state ~statement =
       failwith "Don't call me"
   end
 

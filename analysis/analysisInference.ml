@@ -128,6 +128,7 @@ module State = struct
 
 
   let backward
+      ?key:_
       ({ resolution; errors; _ } as state)
       ~statement =
     let resolve_assign annotation target_annotation =

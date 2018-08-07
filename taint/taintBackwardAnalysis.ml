@@ -162,7 +162,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           analyze_normalized_expression state taint callee
 
 
-    and analyze_normalized_expression state taint expression =
+    and analyze_normalized_expression ?key state taint expression =
       match expression with
       | Access { expression; member } ->
           let field = TaintAccessPathTree.Label.Field member in
@@ -171,7 +171,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           in
           analyze_normalized_expression state taint expression
       | Call { callee; arguments; } ->
-          analyze_call ~callee arguments.value state taint
+          analyze_call ?key ~callee arguments.value state taint
       | Expression expression ->
           analyze_expression taint expression state
       | Global access ->
@@ -179,11 +179,11 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       | Local name ->
           store_weak_taint ~root:(Root.Variable name) ~path:[] taint state
 
-    and analyze_expression taint { Node.value = expression; _ } state =
+    and analyze_expression ?key taint { Node.value = expression; _ } state =
       match expression with
       | Access access ->
           normalize_access access
-          |> analyze_normalized_expression state taint
+          |> analyze_normalized_expression ?key state taint
       | Await _
       | BooleanOperator _
       | ComparisonOperator _
@@ -210,22 +210,22 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           state
 
 
-    let analyze_expression_option taint expression state =
+    let analyze_expression_option ?key taint expression state =
       match expression with
       | None -> state
-      | Some expression -> analyze_expression taint expression state
+      | Some expression -> analyze_expression ?key taint expression state
 
 
     let analyze_definition ~define:_ _ =
       failwith "We don't handle nested defines right now"
 
 
-    let analyze_statement state statement =
+    let analyze_statement ?key state statement =
       Log.log ~section:`Taint "Backward state: %s" (Log.Color.yellow (show state));
       match statement with
       | Assign { target; value; _ } ->
           let access_path = of_expression target in
-          analyze_expression_option (get_taint access_path state) value state
+          analyze_expression_option ?key (get_taint access_path state) value state
       | Assert _
       | Break
       | Class _
@@ -236,7 +236,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       | Delete _ ->
           state
       | Expression expression ->
-          analyze_expression BackwardState.empty_tree expression state
+          analyze_expression ?key BackwardState.empty_tree expression state
       | For _
       | Global _
       | If _
@@ -258,8 +258,8 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           state
 
 
-    let backward state ~statement:({ Node.value = statement; _ }) =
-      analyze_statement state statement
+    let backward ?key state ~statement:({ Node.value = statement; _ }) =
+      analyze_statement ?key state statement
 
 
     let forward ?key:_ state ~statement =

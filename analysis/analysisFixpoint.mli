@@ -17,7 +17,7 @@ module type State = sig
   val join: t -> t -> t
   val widen: previous: t -> next: t -> iteration: int -> t
   val forward: ?key:int -> t -> statement: Statement.t -> t
-  val backward: t -> statement: Statement.t -> t
+  val backward: ?key:int -> t -> statement: Statement.t -> t
 end
 
 module type Fixpoint = sig

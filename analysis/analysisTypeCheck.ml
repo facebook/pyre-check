@@ -1821,7 +1821,7 @@ module State = struct
     state
 
 
-  let backward state ~statement:_ =
+  let backward ?key:_ state ~statement:_ =
     state
 end
 
