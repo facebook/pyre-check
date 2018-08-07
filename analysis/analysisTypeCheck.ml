@@ -908,7 +908,16 @@ module State = struct
             ~state:(forward_statement ~state ~statement:assume)
             ~expression:right
         in
-        { state; resolved = Resolution.join resolution resolved_left resolved_right }
+        let resolved =
+          match resolved_left, resolved_right, operator with
+          | Optional resolved_left, resolved_right, BooleanOperator.Or ->
+              Resolution.join resolution resolved_left resolved_right
+          | Optional resolved_left, resolved_right, BooleanOperator.And ->
+              Type.optional resolved_right
+          | resolved_left, resolved_right, _ ->
+              Resolution.join resolution resolved_left resolved_right
+        in
+        { state; resolved }
 
     | ComparisonOperator ({ ComparisonOperator.left; right; _ } as operator) ->
         begin
