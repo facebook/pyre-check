@@ -125,9 +125,9 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
 
     and analyze_call ~callee arguments state taint =
       match callee with
-      | Identifier identifier ->
+      | Global access ->
           let call_target =
-            Interprocedural.Callable.make_real (Access.create_from_identifiers [identifier])
+            Interprocedural.Callable.make_real (Access.create_from_identifiers access)
           in
           analyze_call_target call_target arguments state taint
 
@@ -155,10 +155,12 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           in
           analyze_normalized_expression state taint expression
       | Call { callee; arguments; } ->
-          analyze_call ~callee arguments state taint
+          analyze_call ~callee arguments.value state taint
       | Expression expression ->
           analyze_expression taint expression state
-      | Identifier name ->
+      | Global access ->
+          state
+      | Local name ->
           store_weak_taint ~root:(Root.Variable name) ~path:[] taint state
 
     and analyze_expression taint { Node.value = expression; _ } state =

@@ -46,32 +46,71 @@ let of_expression = function
 
 type normalized_expression =
   | Access of { expression: normalized_expression; member: Identifier.t }
-  | Call of { callee: normalized_expression; arguments: Argument.t list }
-  | Identifier of Identifier.t
+  | Call of {
+      callee: normalized_expression;
+      arguments: Argument.t list Node.t;
+    }
+  | Global of Identifier.t list
+  | Local of Identifier.t
   | Expression of Expression.t
 [@@deriving show]
-
-
-let normalize_root_access = function
-  | Access.Identifier identifier ->
-      Identifier identifier
-  | Access.Expression expression ->
-      Expression expression
-  | Access.Call _ ->
-      failwith "invalid root (call) in access"
 
 
 let normalize_access_list left = function
   | Access.Identifier member ->
       Access { expression = left; member }
   | Access.Call arguments ->
-      Call { callee = left; arguments = arguments.Node.value }
+      Call { callee = left; arguments = arguments }
   | Access.Expression _ ->
       failwith "invalid expr in access (not in root position)"
 
 
-let normalize_access = function
-  | root :: path ->
-      List.fold path ~init:(normalize_root_access root) ~f:normalize_access_list
+let is_local identifier =
+  String.is_prefix ~prefix:"$" (Identifier.show identifier)
+
+
+let rec split_maximal_prefix path =
+  match path with
+  | [] ->
+      ([], [])
+  | Access.Identifier identifier :: rest ->
+      let (prefix, rest) = split_maximal_prefix rest in
+      (identifier :: prefix), rest
+  | Access.Call _ :: _ ->
+      [], path
+  | Access.Expression expression :: _ ->
+      failwith "invalid expr in access (not in root position)"
+
+
+let rec split_root = function
+  | Access.Identifier identifier :: rest when is_local identifier ->
+      Local identifier, rest
+  | Access.Expression expression :: rest ->
+      Expression expression, rest
+  | Access.Identifier identifier :: rest ->
+      let (prefix, rest) = split_maximal_prefix rest in
+      Global (identifier :: prefix), rest
+  | Access.Call _ :: _ ->
+      failwith "invalid root (call) in access"
   | _ ->
       failwith "empty access"
+
+
+let normalize_access path =
+  let (root, rest) = split_root path in
+  List.fold rest ~init:root ~f:normalize_access_list
+
+
+let rec as_access = function
+  | Global access ->
+      Access.create_from_identifiers access
+  | Local identifier ->
+      Access.create_from_identifiers [identifier]
+  | Expression expression ->
+      [Access.Expression expression]
+  | Call { callee; arguments; } ->
+      let callee_access = as_access callee in
+      callee_access @ [Access.Call arguments]
+  | Access { expression; member; } ->
+      let left = as_access expression in
+      left @ [Access.Identifier member]

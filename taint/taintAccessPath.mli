@@ -32,10 +32,13 @@ type normalized_expression =
   | Access of { expression: normalized_expression; member: Identifier.t }
   | Call of {
       callee: normalized_expression;
-      arguments: Argument.t list;
+      arguments: Argument.t list Node.t;
     }
-  | Identifier of Identifier.t
+  | Global of Identifier.t list
+  | Local of Identifier.t
   | Expression of Expression.t
 [@@deriving show]
 
 val normalize_access: Access.t -> normalized_expression
+
+val as_access: normalized_expression -> Access.t

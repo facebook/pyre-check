@@ -17,14 +17,28 @@ let test_normalize_access ctxt =
     let normalized = AccessPath.normalize_access access in
     assert_equal ~printer:(AccessPath.show_normalized_expression) normalized expected
   in
+
   assert_normalized
     "a.b.c"
+    (AccessPath.Global [
+        Identifier.create "a";
+        Identifier.create "b";
+        Identifier.create "c";
+      ]);
+
+  assert_normalized
+    "$a"
+    (AccessPath.Local (
+        Identifier.create "$a"
+      ));
+
+  assert_normalized
+    "$a.b"
     (AccessPath.Access {
-        member = Identifier.create "c";
-        expression = AccessPath.Access {
-            member = Identifier.create "b";
-            expression = (AccessPath.Identifier (Identifier.create "a"))
-          }
+        expression = (AccessPath.Local (
+            Identifier.create "$a"
+          ));
+        member = Identifier.create "b";
       })
 
 

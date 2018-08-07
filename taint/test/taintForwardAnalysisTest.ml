@@ -61,6 +61,12 @@ let assert_sources ?qualifier ~source ~expect =
   in
   let analyze_and_store_in_order define =
     let call_target = Callable.make define in
+    let () =
+      Log.log
+        ~section:`Taint
+        "Analyzing %s"
+        (Interprocedural.Callable.show call_target)
+    in
     let forward = ForwardAnalysis.run define.Node.value in
     let model = { Taint.Result.empty_model with forward } in
     Result.empty_model
@@ -265,6 +271,58 @@ let test_apply_method_model_at_call_site _ =
     ]
 
 
+let test_taint_in_taint_out_application _ =
+  let model_source =
+    {|
+      def taint() -> TaintSource[TestSource]: ...
+
+      def tito(x: TaintInTaintOut[LocalReturn]): ...
+
+      def no_tito(x): ...
+    |}
+    |> Test.trim_extra_indentation
+  in
+  add_models ~model_source;
+
+  assert_sources
+    ~qualifier:"test"
+    ~source:
+      {|
+        def simple_source():
+          return taint()
+
+        def taint_with_tito():
+          y = simple_source()
+          x = tito(y)
+          return x
+      |}
+    ~expect:[
+      {
+        define_name = "test.simple_source";
+        returns = [Sources.TestSource];
+      }
+    ];
+
+  assert_sources
+    ~qualifier:"test"
+    ~source:
+      {|
+        def simple_source():
+          return taint()
+
+        def no_tito_taint():
+          y = simple_source()
+          x = no_tito(y)
+          return x
+      |}
+    ~expect:[
+      {
+        define_name = "test.no_tito_taint";
+        returns = [];
+      }
+    ]
+
+
 let () =
   "taint">:::[
     "no_model">::test_no_model;
@@ -272,5 +330,6 @@ let () =
     "copy">::test_local_copy;
     "class_model">::test_class_model;
     "test_apply_method_model_at_call_site">::test_apply_method_model_at_call_site;
+    "test_taint_in_taint_out_application">::test_taint_in_taint_out_application;
   ]
   |> run_test_tt_main

@@ -85,21 +85,48 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           >>= Interprocedural.Result.get_model TaintResult.kind
         in
         match existing_model with
-        | Some { forward; _ } ->
-            (* TODO(T31440488): analyze callee arguments *)
-            ForwardState.read TaintAccessPath.Root.LocalResult forward.source_taint
+        | Some ({ forward; backward; _ } as model) ->
+            Log.log
+              ~section:`Taint
+              "Model for %s:\n%s\n"
+              (Interprocedural.Callable.show call_target)
+              (TaintResult.show_call_model model);
+            let analyze_argument_position position tito { Argument.value = argument; _ } =
+              let argument_taint = analyze_expression argument state in
+              let read_argument_taint ~path ~path_element:_ ~element:_ tito =
+                ForwardState.read_tree path argument_taint
+                |> ForwardState.collapse
+                |> ForwardTaint.join tito
+              in
+              let tito =
+                BackwardState.read
+                  (TaintAccessPath.Root.Parameter { position })
+                  backward.taint_in_taint_out
+                |> BackwardState.fold_tree_paths ~init:tito ~f:read_argument_taint
+              in
+              tito
+            in
+            let tito = List.foldi ~f:analyze_argument_position arguments ~init:ForwardTaint.empty in
+            let result_taint =
+              ForwardState.read TaintAccessPath.Root.LocalResult forward.source_taint
+            in
+            ForwardState.join_root_element result_taint tito
         | None ->
-            (* TODO(T31435739): if we don't have a model: assume function propagates argument
+            Log.log
+              ~section:`Taint
+              "No model for %s"
+              (Interprocedural.Callable.show call_target);
+            (* If we don't have a model: assume function propagates argument
                taint (join all argument taint) *)
             List.fold arguments ~init:ForwardState.empty_tree ~f:(analyze_argument state)
       in
       match callee with
-      | Identifier identifier ->
-          let access = Access.create_from_identifiers [identifier] in
+      | Global access ->
+          let access = Access.create_from_identifiers access in
           let call_target = Interprocedural.Callable.make_real access in
           apply_call_target_taint call_target
-      | Access { expression = Identifier receiver; member = method_name } ->
-          let access = Access.create_from_identifiers [receiver] in
+      | Access { expression; member = method_name } ->
+          let access = as_access expression in
           let build_lookup lookup { TypeResolutionSharedMemory.key; annotations } =
             Int.Map.set lookup ~key ~data:annotations in
           let receiver_type =
@@ -129,6 +156,10 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           taint
 
     and analyze_normalized_expression ?key state expression =
+      Log.log
+        ~section:`Taint
+        "Analyzing normalized expression: %s"
+        (Log.Color.cyan (show_normalized_expression expression));
       match expression with
       | Access { expression; member; } ->
           Log.log
@@ -145,10 +176,12 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           in
           taint
       | Call { callee; arguments; } ->
-          analyze_call ?key ~callee arguments state
+          analyze_call ?key ~callee arguments.value state
       | Expression expression ->
           analyze_expression expression state
-      | Identifier identifier ->
+      | Global _ ->
+          ForwardState.empty_tree
+      | Local identifier ->
           Log.log
             ~section:`Taint
             "Analyzing identifier: %s"
@@ -156,6 +189,10 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           ForwardState.read_access_path ~root:(Root.Variable identifier) ~path:[] state.taint
 
     and analyze_expression ?key expression state =
+      Log.log
+        ~section:`Taint
+        "Analyzing expression: %s"
+        (Log.Color.cyan (Expression.show_expression expression.value));
       match expression.Node.value with
       | Access access ->
           normalize_access access
@@ -199,9 +236,9 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
     let forward ?key state ~statement:({ Node.value = statement; _ }) =
       Log.log
         ~section:`Taint
-        "Analyzing statement: %s"
+        "State: %s\nAnalyzing statement: %s"
+        (Log.Color.cyan (show state))
         (Log.Color.cyan (Statement.show_statement statement));
-      Log.log ~section:`Taint "Forward state: %s" (Log.Color.cyan (show state));
       match statement with
       | Assign { target; annotation; value; parent } ->
           let taint = analyze_expression_option ?key value state in
