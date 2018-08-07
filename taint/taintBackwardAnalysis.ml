@@ -123,20 +123,36 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           List.fold_right ~f:(analyze_argument call_taint) arguments ~init:state
 
 
-    and analyze_call ~callee arguments state taint =
+    and analyze_call ?key ~callee arguments state taint =
       match callee with
       | Global access ->
-          let call_target =
-            Interprocedural.Callable.make_real (Access.create_from_identifiers access)
-          in
+          let access = Access.create_from_identifiers access in
+          let call_target = Interprocedural.Callable.make_real access in
           analyze_call_target call_target arguments state taint
 
       | Access { expression = receiver; member = method_name} ->
-          (* TODO(T32198746): figure out the BW and TAINT_IN_TAINT_OUT model for
-             whatever is called here.
-             Member access. Don't propagate the taint to the member, skip to the receiver. *)
-          let state = List.fold_right ~f:(analyze_argument taint) arguments ~init:state in
-          analyze_normalized_expression state taint receiver
+          let access = as_access receiver in
+          let build_lookup lookup { TypeResolutionSharedMemory.key; annotations } =
+            Int.Map.set lookup ~key ~data:annotations in
+          let receiver_type =
+            key
+            >>= fun key -> TypeResolutionSharedMemory.get FunctionContext.definition.name
+            >>| List.fold ~init:Int.Map.empty ~f:build_lookup
+            >>= Fn.flip Int.Map.find key
+            >>| Access.Map.of_alist_exn
+            >>= Fn.flip Access.Map.find access
+          in
+          let state =
+            match receiver_type with
+            | Some { annotation = Primitive primitive ; _ } ->
+                let access = Access.create_from_identifiers [primitive; method_name] in
+                let call_target = Interprocedural.Callable.make_real access in
+                analyze_call_target call_target arguments state taint
+            | _ ->
+                let state = List.fold_right ~f:(analyze_argument taint) arguments ~init:state in
+                analyze_normalized_expression state taint receiver
+          in
+          state
 
       | _ ->
           (* TODO(T32198746): figure out the BW and TAINT_IN_TAINT_OUT model for
@@ -254,6 +270,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
   and Analyzer : Fixpoint.Fixpoint with type state = FixpointState.t = Fixpoint.Make(FixpointState)
 
 end
+
 
 (* Split the inferred entry state into externally visible taint_in_taint_out
    parts and sink_taint. *)
