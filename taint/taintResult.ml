@@ -12,7 +12,7 @@ module Forward = struct
   type model = {
     source_taint: ForwardState.t;
   }
-  [@@deriving show]
+  [@@deriving show, sexp]
 
   let empty = {
     source_taint = ForwardState.empty;
@@ -43,7 +43,7 @@ module Backward = struct
     taint_in_taint_out: BackwardState.t;
     sink_taint: BackwardState.t;
   }
-  [@@deriving show]
+  [@@deriving show, sexp]
 
   let empty = {
     sink_taint = BackwardState.empty;
@@ -84,7 +84,7 @@ type call_model = {
   forward: Forward.model;
   backward: Backward.model;
 }
-[@@deriving show]
+[@@deriving show, sexp]
 
 
 type result = Error.t list

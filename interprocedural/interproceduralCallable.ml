@@ -15,15 +15,15 @@ module SharedMemory = Hack_parallel.Std.SharedMem
 
 
 type real_target = [ `RealTarget of Access.t ]
-[@@deriving show, compare]
+[@@deriving show, sexp, compare]
 
 
 type override_target = [ `OverrideTarget of Access.t ]
-[@@deriving show, compare]
+[@@deriving show, sexp, compare]
 
 
 type t = [ real_target | override_target ]
-[@@deriving show, compare]
+[@@deriving show, sexp, compare]
 
 
 type target_with_stored_result = real_target

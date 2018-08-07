@@ -79,7 +79,7 @@ end
 
 module Make (Checks: Checks.S) (Root: Root.S) (Element: AbstractDomain.S): sig
   type t
-  [@@deriving show]
+  [@@deriving show, sexp]
 
   type access_path_tree
   [@@deriving sexp]

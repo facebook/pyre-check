@@ -7,125 +7,211 @@ open Core
 open OUnit2
 
 open Ast
-open Pyre
 open Statement
 open Taint
 open AccessPath
 open Domains
+open Model
+open Result
 
 open Interprocedural
 
 
-let assert_source_model ~model_source ~call_target ~expect_taint =
-  let () = Service.Analysis.add_models ~model_source in
-  let expect_source_taint root =
-    ForwardState.assign
-      ~root
-      ~path:[]
-      (ForwardTaint.singleton TestSource
-       |> ForwardState.make_leaf)
-      ForwardState.empty
-  in
-  let expect_taint = expect_source_taint expect_taint in
-  let call_target = Callable.make_real (Access.create call_target) in
-  let taint_model = Fixpoint.get_model call_target >>= Result.get_model Taint.Result.kind in
-  assert_equal
-    ~printer:Taint.Result.show_call_model
-    (Option.value_exn taint_model)
-    {
-      Taint.Result.empty_model with
-      forward = { source_taint = expect_taint }
-    }
+type parameter_taint = {
+  position: int;
+  sinks: Taint.Sinks.t list;
+}
 
 
-let assert_sink_model ~model_source ~call_target ~expect_taint =
-  let () = Service.Analysis.add_models ~model_source in
-  let call_target = Callable.make_real (Access.create call_target) in
-  let taint_model = Fixpoint.get_model call_target >>= Result.get_model Taint.Result.kind in
-  let expect_parameter_taint =
-    let assign_backward_taint position taint taint_sink_kind =
-      BackwardState.assign
-        ~root:(Root.Parameter { position })
-        ~path:[]
-        (BackwardTaint.singleton taint_sink_kind
-         |> BackwardState.make_leaf)
-        taint
-    in
-    let parameter_taint
-        ({ Taint.Result.backward = { sink_taint; taint_in_taint_out}; _ } as taint)
-        parameter =
-      let backward =
-        match parameter with
-        | `SinkParameter position ->
-            let sink_taint = assign_backward_taint position sink_taint TestSink in
-            { taint.backward with sink_taint }
-        | `TaintInTaintOutParameter position ->
-            let taint_in_taint_out =
-              assign_backward_taint
-                position
-                taint_in_taint_out LocalReturn
-            in
-            { taint.backward with taint_in_taint_out }
+type model_expectation = {
+  define_name: string;
+  returns: Sources.t list;
+  taint_sink_parameters: parameter_taint list;
+  tito_parameters: int list;
+}
+
+
+let assert_model ~model_source ~expect =
+  let expect_source_taint model source =
+    let forward =
+      let source_taint =
+        ForwardState.assign_weak
+          ~root:Root.LocalResult
+          ~path:[]
+          (ForwardTaint.singleton source
+           |> ForwardState.make_leaf)
+          model.forward.source_taint
       in
-      { taint with backward }
+      Taint.Result.Forward.{ source_taint }
     in
-    List.fold
-      expect_taint
-      ~init:Taint.Result.empty_model
-      ~f:parameter_taint
+    { model with forward }
   in
+  let expect_sink_taint model { position; sinks } =
+    let taint_sink_parameters model taint_sink_kind =
+      let backward =
+        let sink_taint =
+          BackwardState.assign_weak
+            ~root:(Root.Parameter { position })
+            ~path:[]
+            (BackwardTaint.singleton taint_sink_kind
+             |> BackwardState.make_leaf)
+            model.backward.sink_taint
+        in
+        { model.backward with sink_taint }
+      in
+      { model with backward }
+    in
+    List.fold sinks ~init:model ~f:taint_sink_parameters
+  in
+  let expect_taint_in_taint_out model position =
+    let backward =
+      let taint_in_taint_out =
+        BackwardState.assign_weak
+          ~root:(Root.Parameter { position })
+          ~path:[]
+          (BackwardTaint.singleton LocalReturn
+           |> BackwardState.make_leaf)
+          model.backward.taint_in_taint_out
+      in
+      { model.backward with taint_in_taint_out }
+    in
+    { model with backward }
+  in
+  let create_model { define_name; returns; taint_sink_parameters; tito_parameters } =
+    let call_target = Callable.make_real (Access.create define_name) in
+    Taint.Result.empty_model
+    |> (fun model -> List.fold returns ~init:model ~f:expect_source_taint)
+    |> (fun model -> List.fold taint_sink_parameters ~init:model ~f:expect_sink_taint)
+    |> (fun model -> List.fold tito_parameters ~init:model ~f:expect_taint_in_taint_out)
+    |> (fun model -> { call_target; model })
+  in
+  let expect_models = List.map expect ~f:create_model in
+  let models = Model.create ~model_source |> Or_error.ok_exn in
   assert_equal
-    ~printer:Taint.Result.show_call_model
-    expect_parameter_taint
-    (Option.value_exn taint_model)
+    ~printer:(fun models -> Sexp.to_string [%message (models: Model.t list)])
+    expect_models
+    models
+
+
+let assert_invalid_model ~model_source ~expect =
+  let error_message =
+    match Model.create ~model_source with
+    | Error error -> Base.Error.to_string_hum error
+    | _ -> failwith "Invalid model should result in error"
+  in
+  assert_equal ~printer:ident expect error_message
 
 
 let test_source_models _ =
-  assert_source_model
+  assert_model
     ~model_source:"def taint() -> TaintSource[TestSource]: ..."
-    ~call_target:"taint"
-    ~expect_taint:Taint.AccessPath.Root.LocalResult
+    ~expect:[
+      {
+        define_name = "taint";
+        returns = [Sources.TestSource];
+        taint_sink_parameters = [];
+        tito_parameters = [];
+      }
+    ]
 
 
 let test_sink_models _ =
-  assert_sink_model
+  assert_model
     ~model_source:"def sink(parameter: TaintSink[TestSink]): ..."
-    ~call_target:"sink"
-    ~expect_taint:[`SinkParameter 0];
+    ~expect:[
+      {
+        define_name = "sink";
+        returns = [];
+        taint_sink_parameters = [
+          { position = 0; sinks = [Taint.Sinks.TestSink] }
+        ];
+        tito_parameters = []
+      }
+    ];
 
-  assert_sink_model
+  assert_model
     ~model_source:"def sink(parameter0, parameter1: TaintSink[TestSink]): ..."
-    ~call_target:"sink"
-    ~expect_taint:[`SinkParameter 1];
+    ~expect:[
+      {
+        define_name = "sink";
+        returns = [];
+        taint_sink_parameters = [
+          { position = 0; sinks = [] };
+          { position = 1; sinks = [Taint.Sinks.TestSink] }
+        ];
+        tito_parameters = []
+      }
+    ];
 
-  assert_sink_model
+  assert_model
     ~model_source:"def sink(parameter0: TaintSink[TestSink], parameter1: TaintSink[TestSink]): ..."
-    ~call_target:"sink"
-    ~expect_taint:[`SinkParameter 0; `SinkParameter 1];
+    ~expect:[
+      {
+        define_name = "sink";
+        returns = [];
+        taint_sink_parameters = [
+          { position = 0; sinks = [Taint.Sinks.TestSink] };
+          { position = 1; sinks = [Taint.Sinks.TestSink] }
+        ];
+        tito_parameters = []
+      }
+    ];
 
-  let assert_not_tainted _ =
-    try
-      assert_sink_model
-        ~model_source:"def sink(parameter0, parameter1: TaintSink[TestSink]): ..."
-        ~call_target:"sink"
-        ~expect_taint:[`SinkParameter 0]
-    with
-    | OUnitTest.OUnit_failure _ -> failwith "Parameter 0 should not be tainted"
-  in
-  assert_raises
-    (Failure "Parameter 0 should not be tainted")
-    assert_not_tainted;
+  assert_model
+    ~model_source:"def sink(parameter0: TaintSink[TestSink], parameter1: TaintSink[TestSink]): ..."
+    ~expect:[
+      {
+        define_name = "sink";
+        returns = [];
+        taint_sink_parameters = [
+          { position = 0; sinks = [Taint.Sinks.TestSink] };
+          { position = 1; sinks = [Taint.Sinks.TestSink] }
+        ];
+        tito_parameters = []
+      }
+    ]
 
-  assert_sink_model
+
+let test_taint_in_taint_out_models _ =
+  assert_model
     ~model_source:"def tito(parameter: TaintInTaintOut[LocalReturn]): ..."
-    ~call_target:"tito"
-    ~expect_taint:[`TaintInTaintOutParameter 0]
+    ~expect:[
+      {
+        define_name = "tito";
+        returns = [];
+        taint_sink_parameters = [];
+        tito_parameters = [0]
+      }
+    ]
+
+
+let test_invalid_models _ =
+  assert_invalid_model
+    ~model_source:"def sink(parameter: TaintSink[Unsupported]): ..."
+    ~expect:"Unsupported taint sink Unsupported";
+
+  assert_invalid_model
+    ~model_source:"def sink(parameter: TaintSink[TestSource]): ..."
+    ~expect:"Unsupported taint sink TestSource";
+
+  assert_invalid_model
+    ~model_source:"def source() -> TaintSource[Invalid]: ..."
+    ~expect:"Unsupported taint source Invalid";
+
+  assert_invalid_model
+    ~model_source:"def source() -> TaintInTaintOut[TestSink]: ..."
+    ~expect:{|"Unrecognized taint direction in return annotation: TaintInTaintOut"|};
+
+  assert_invalid_model
+    ~model_source:"def sink(parameter: InvalidTaintDirection[TestSink]): ..."
+    ~expect:{|"Unrecognized taint direction in parameter annotation InvalidTaintDirection"|}
 
 
 let () =
-  Service.Scheduler.mock () |> ignore;
   "taint_model">:::[
     "source_models">::test_source_models;
     "sink_models">::test_sink_models;
+    "taint_in_taint_out_models">::test_taint_in_taint_out_models;
+    "invalid_models">::test_invalid_models;
   ]
   |> run_test_tt_main

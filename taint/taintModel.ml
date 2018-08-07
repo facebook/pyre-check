@@ -19,6 +19,7 @@ type t = {
   call_target: Callable.t;
   model: TaintResult.call_model;
 }
+[@@deriving show, sexp]
 
 
 let introduce_sink_taint

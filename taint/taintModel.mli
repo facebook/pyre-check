@@ -12,5 +12,7 @@ type t = {
   call_target: Callable.t;
   model: TaintResult.call_model;
 }
+[@@deriving show, sexp]
+
 
 val create: model_source: string -> t list Or_error.t

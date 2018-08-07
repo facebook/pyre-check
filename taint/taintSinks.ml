@@ -15,7 +15,7 @@ let create = function
   | "LocalReturn" -> LocalReturn
   | "RemoteCodeExecution" -> RemoteCodeExecution
   | "TestSink" -> TestSink
-  | name -> failwith (Format.sprintf "Unsupported taint source %s" name)
+  | name -> failwith (Format.sprintf "Unsupported taint sink %s" name)
 
 
 let to_string = function

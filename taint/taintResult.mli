@@ -11,7 +11,7 @@ module Backward : sig
     taint_in_taint_out: BackwardState.t;
     sink_taint: BackwardState.t;
   }
-  [@@deriving show]
+  [@@deriving show, sexp]
 
   val empty: model
 end
@@ -20,7 +20,7 @@ module Forward : sig
   type model = {
     source_taint: ForwardState.t;
   }
-  [@@deriving show]
+  [@@deriving show, sexp]
 
   val empty: model
 end
@@ -29,7 +29,7 @@ type call_model = {
   forward: Forward.model;
   backward: Backward.model;
 }
-[@@deriving show]
+[@@deriving show, sexp]
 
 type result = Interprocedural.Error.t list
 

@@ -13,12 +13,13 @@ open Statement
 
 
 type real_target = [ `RealTarget of Access.t ]
-[@@deriving show, compare]
+[@@deriving show, sexp, compare]
 
 type override_target = [ `OverrideTarget of Access.t ]
-[@@deriving show, compare]
+[@@deriving show, sexp, compare]
 
 type t = [ real_target | override_target ]
+[@@deriving show, sexp, compare]
 
 val show: [< t ] -> string
 val compare: ([< t ] as 'a) -> 'a -> int
