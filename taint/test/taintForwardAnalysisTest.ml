@@ -28,17 +28,6 @@ let parse_source ?(qualifier=[]) source =
   |> Preprocessing.preprocess
 
 
-(** Populates shared memory with existing models. *)
-let add_models ~model_source =
-  let add_model_to_memory Model.{ call_target; model }=
-    Result.empty_model
-    |> Result.with_model Taint.Result.kind model
-    |> Fixpoint.add_predefined call_target
-  in
-  let models = Model.create ~model_source |> Or_error.ok_exn in
-  List.iter models ~f:add_model_to_memory
-
-
 let assert_sources ?qualifier ~source ~expect =
   let qualifier = Option.map qualifier ~f:Access.create in
   let source =
@@ -126,7 +115,7 @@ let test_no_model _ =
 
 
 let test_simple_source _ =
-  add_models ~model_source:"def taint() -> TaintSource[TestSource]: ...";
+  Service.Analysis.add_models ~model_source:"def taint() -> TaintSource[TestSource]: ...";
   assert_sources
     ?qualifier:None
     ~source:
@@ -143,7 +132,7 @@ let test_simple_source _ =
 
 
 let test_local_copy _ =
-  add_models ~model_source:"def taint() -> TaintSource[TestSource]: ...";
+  Service.Analysis.add_models ~model_source:"def taint() -> TaintSource[TestSource]: ...";
   assert_sources
     ?qualifier:None
     ~source:
@@ -161,7 +150,7 @@ let test_local_copy _ =
 
 
 let test_class_model _ =
-  add_models ~model_source:"def taint() -> TaintSource[TestSource]: ...";
+  Service.Analysis.add_models ~model_source:"def taint() -> TaintSource[TestSource]: ...";
   assert_sources
     ~qualifier:"test"
     ~source:
@@ -179,7 +168,7 @@ let test_class_model _ =
 
 
 let test_apply_method_model_at_call_site _ =
-  add_models ~model_source:"def taint() -> TaintSource[TestSource]: ...";
+  Service.Analysis.add_models ~model_source:"def taint() -> TaintSource[TestSource]: ...";
   assert_sources
     ~qualifier:"test"
     ~source:
@@ -282,7 +271,7 @@ let test_taint_in_taint_out_application _ =
     |}
     |> Test.trim_extra_indentation
   in
-  add_models ~model_source;
+  Service.Analysis.add_models ~model_source;
 
   assert_sources
     ~qualifier:"test"

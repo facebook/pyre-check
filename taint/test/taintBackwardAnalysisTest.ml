@@ -22,17 +22,6 @@ type parameter_taint = {
 }
 
 
-(** Populates shared memory with existing models. *)
-let add_models ~model_source =
-  let add_model_to_memory Model.{ call_target; model }=
-    Result.empty_model
-    |> Result.with_model Taint.Result.kind model
-    |> Fixpoint.add_predefined call_target
-  in
-  let models = Model.create ~model_source |> Or_error.ok_exn in
-  List.iter models ~f:add_model_to_memory
-
-
 type taint_in_taint_out_expectation = {
   define_name: string;
   taint_sink_parameters: parameter_taint list;
@@ -209,7 +198,7 @@ let test_call_taint_in_taint_out _ =
     ]
 
 let test_sink _ =
-  add_models ~model_source:"def __testSink(parameter: TaintSink[TestSink]): ...";
+  Service.Analysis.add_models ~model_source:"def __testSink(parameter: TaintSink[TestSink]): ...";
   assert_taint
     {|
     def test_sink(parameter0, tainted_parameter1):
@@ -229,7 +218,8 @@ let test_sink _ =
 
 
 let test_rce_sink _ =
-  add_models ~model_source:"def __testRCESink(parameter: TaintSink[RemoteCodeExecution]): ...";
+  Service.Analysis.add_models
+    ~model_source:"def __testRCESink(parameter: TaintSink[RemoteCodeExecution]): ...";
   assert_taint
     {|
     def test_rce_sink(parameter0, tainted_parameter1):
@@ -256,7 +246,7 @@ let test_rce_and_test_sink _ =
     |}
     |> Test.trim_extra_indentation
   in
-  add_models ~model_source;
+  Service.Analysis.add_models ~model_source;
   assert_taint
     {|
     def test_rce_and_test_sink(test_only, rce_only, both):
@@ -306,7 +296,7 @@ let test_tito_sink _ =
 
 
 let test_apply_method_model_at_call_site _ =
-  add_models ~model_source:"def __testSink(parameter: TaintSink[TestSink]): ...";
+  Service.Analysis.add_models ~model_source:"def __testSink(parameter: TaintSink[TestSink]): ...";
   assert_taint
     {|
       class Foo:

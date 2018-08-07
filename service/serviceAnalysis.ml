@@ -64,6 +64,18 @@ let record_path_of_definitions path source =
   defines
 
 
+let add_models ~model_source =
+  let open Taint in
+  let open Interprocedural in
+  let add_model_to_memory Model.{ call_target; model }=
+    Result.empty_model
+    |> Result.with_model Taint.Result.kind model
+    |> Fixpoint.add_predefined call_target
+  in
+  let models = Model.create ~model_source |> Or_error.ok_exn in
+  List.iter models ~f:add_model_to_memory
+
+
 let analyze ~scheduler:_ ~configuration:_ ~environment ~handles:paths =
   Log.print "Analysis";
   let _call_graph =

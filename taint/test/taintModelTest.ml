@@ -16,19 +16,8 @@ open Domains
 open Interprocedural
 
 
-(** Populates shared memory with existing models. *)
-let add_models ~model_source =
-  let add_model_to_memory Model.{ call_target; model }=
-    Result.empty_model
-    |> Result.with_model Taint.Result.kind model
-    |> Fixpoint.add_predefined call_target
-  in
-  let models = Model.create ~model_source |> Or_error.ok_exn in
-  List.iter models ~f:add_model_to_memory
-
-
 let assert_source_model ~model_source ~call_target ~expect_taint =
-  let () = add_models ~model_source in
+  let () = Service.Analysis.add_models ~model_source in
   let expect_source_taint root =
     ForwardState.assign
       ~root
@@ -50,7 +39,7 @@ let assert_source_model ~model_source ~call_target ~expect_taint =
 
 
 let assert_sink_model ~model_source ~call_target ~expect_taint =
-  let () = add_models ~model_source in
+  let () = Service.Analysis.add_models ~model_source in
   let call_target = Callable.make_real (Access.create call_target) in
   let taint_model = Fixpoint.get_model call_target >>= Result.get_model Taint.Result.kind in
   let expect_parameter_taint =

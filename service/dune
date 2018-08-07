@@ -18,4 +18,5 @@
   pyrelib.interprocedural
   pyrelib.path
   pyrelib.plugin
+  pyrelib.taint
   hack_parallel))

@@ -24,6 +24,9 @@ val record_overrides: (module Environment.Handler) -> Source.t -> unit
 
 val record_path_of_definitions: File.Handle.t -> Source.t -> Define.t Node.t list
 
+(** Populates shared memory with preexisting models. *)
+val add_models: model_source: string -> unit
+
 val analyze
   :  scheduler: ServiceScheduler.t
   -> configuration: Configuration.t
