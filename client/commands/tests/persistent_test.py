@@ -7,6 +7,7 @@ import io
 import unittest
 from unittest.mock import call, patch
 
+from .. import monitor  # noqa
 from ... import EnvironmentException  # noqa
 from ... import commands  # noqa
 from .command_test import mock_arguments, mock_configuration
@@ -17,7 +18,10 @@ class PersistentTest(unittest.TestCase):
     @patch.object(
         commands.ErrorHandling, "_get_directories_to_analyze", return_value=set()
     )
-    def test_persistent(self, directories_to_analyze, run_null_server) -> None:
+    @patch.object(monitor.Monitor, "daemonize")
+    def test_persistent(
+        self, _daemonize, directories_to_analyze, run_null_server
+    ) -> None:
         arguments = mock_arguments()
         configuration = mock_configuration()
         configuration.get_version_hash.return_value = "hash"

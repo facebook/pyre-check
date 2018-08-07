@@ -8,6 +8,7 @@ import os
 
 from .. import FAILURE, SUCCESS, filesystem
 from .error_handling import ErrorHandling
+from .monitor import Monitor
 
 
 LOG = logging.getLogger(__name__)
@@ -29,6 +30,9 @@ class Start(ErrorHandling):
             blocking = False
             try:
                 with filesystem.acquire_lock(".pyre/client.lock", blocking):
+                    Monitor(
+                        self._arguments, self._configuration, self._source_directory
+                    ).daemonize()
                     # This unsafe call is OK due to the client lock always
                     # being acquired before starting a server - no server can
                     # spawn in the interim which would cause a race.
@@ -81,4 +85,4 @@ class Start(ErrorHandling):
                     return SUCCESS
             except OSError:
                 blocking = True
-                LOG.info("Waiting on the pyre client lock.")
+                LOG.info("Waiting on the pyre client lock, pid %d.", os.getpid())

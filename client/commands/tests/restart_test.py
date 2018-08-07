@@ -7,14 +7,15 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 from ... import commands
-from ...commands import restart
+from ...commands import monitor, restart
 from .command_test import mock_arguments, mock_configuration
 
 
 class RestartTest(unittest.TestCase):
     @patch.object(restart, "Stop")
     @patch.object(restart, "Start")
-    def test_restart(self, commands_Start, commands_Stop) -> None:
+    @patch.object(monitor.Monitor, "daemonize")
+    def test_restart(self, _daemonize, commands_Start, commands_Stop) -> None:
         state = MagicMock()
         state.running = ["."]
 

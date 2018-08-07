@@ -6,7 +6,8 @@
 import unittest
 from unittest.mock import call, patch
 
-from ... import commands
+from .. import monitor  # noqa
+from ... import commands  # noqa
 from .command_test import mock_arguments, mock_configuration
 
 
@@ -15,7 +16,8 @@ class StartTest(unittest.TestCase):
     @patch.object(
         commands.ErrorHandling, "_get_directories_to_analyze", return_value=set()
     )
-    def test_start(self, get_directories_to_analyze, lock_file) -> None:
+    @patch.object(monitor.Monitor, "daemonize")
+    def test_start(self, _daemonize, get_directories_to_analyze, lock_file) -> None:
         arguments = mock_arguments()
         arguments.terminal = False
 
