@@ -20,6 +20,7 @@ class ErrorHandling(Command):
         self._output = arguments.output
         self._do_not_check_paths = configuration.do_not_check
         self._discovered_source_directories = [self._source_root]
+        self._local_configuration = arguments.local_configuration
 
     def _print(self, errors) -> None:
         errors = [
@@ -47,7 +48,14 @@ class ErrorHandling(Command):
 
     def _get_directories_to_analyze(self) -> Set[str]:
         local_configurations = get_filesystem().list(".", ".pyre_configuration.local")
-        directories_to_analyze = {self._source_directory}
+
+        current_project_directory = self._original_directory
+        if self._local_configuration:
+            current_project_directory = self._local_configuration
+        directories_to_analyze = {
+            os.path.relpath(current_project_directory, os.getcwd())
+        }
+
         for configuration_file in local_configurations:
             try:
                 with open(configuration_file) as file:

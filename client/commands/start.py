@@ -52,11 +52,7 @@ class Start(ErrorHandling):
 
                     flags = self._flags()
                     filter_directories = self._get_directories_to_analyze()
-                    # Check the length in order to only add the flag when we have a
-                    # strict superset.
-                    if len(filter_directories) > 1 and filter_directories.issuperset(
-                        {self._source_directory}
-                    ):
+                    if len(filter_directories):
                         flags.extend(
                             [
                                 "-filter-directories-semicolon",
