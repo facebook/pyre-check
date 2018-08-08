@@ -420,7 +420,11 @@ let request_handler_thread
       ~flush:true
       ~name:"uncaught exception"
       ~integers:[]
-      ~normals:["exception", printable; "exception backtrace", backtrace]
+      ~normals:[
+        "exception", printable;
+        "exception backtrace", backtrace;
+        "exception origin", "server";
+      ]
       ();
     ServerOperations.stop_server ~reason:"exception" server_configuration (!connections).socket
 
