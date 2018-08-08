@@ -414,15 +414,13 @@ let request_handler_thread
   try
     loop ()
   with uncaught_exception ->
-    let printable = Exn.to_string uncaught_exception in
-    let backtrace = Printexc.get_backtrace () in
     Statistics.event
       ~flush:true
       ~name:"uncaught exception"
       ~integers:[]
       ~normals:[
-        "exception", printable;
-        "exception backtrace", backtrace;
+        "exception", Exn.to_string uncaught_exception;
+        "exception backtrace", Printexc.get_backtrace ();
         "exception origin", "server";
       ]
       ();

@@ -165,12 +165,13 @@ let run_command expected_version log_identifier source_root () =
         ();
       exit exit_code
   | uncaught_exception ->
-      let printable = Exn.to_string uncaught_exception in
-      let backtrace = Printexc.get_backtrace () in
       Statistics.event
         ~flush:true
         ~name:"persistent client exception"
-        ~normals:["exception", printable; "exception backtrace", backtrace]
+        ~normals:[
+          "exception", Exn.to_string uncaught_exception;
+          "exception backtrace", Printexc.get_backtrace ();
+        ]
         ();
       raise uncaught_exception
 
