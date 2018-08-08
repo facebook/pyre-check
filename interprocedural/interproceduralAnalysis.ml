@@ -266,7 +266,7 @@ let analyze_callable analyses step callable =
               model = get_obscure_models analyses;
               result = Result.empty_result;
             }
-        | Some { Ast.Node.value = define; _ } ->
+        | Some define ->
             analyze_define step analyses callable define
       end
   | #Callable.override_target as callable ->

@@ -15,15 +15,19 @@ type flow = {
 [@@deriving sexp]
 
 type flows = flow list
+[@@deriving sexp]
 
-type flow_candidates = {
-  candidates: flows;
+type candidate = {
+  flows: flows;
+  location: Location.t;
 }
+[@@deriving sexp]
 
 type flow_state = {
   matched: flows;
   rest: flows;
 }
+[@@deriving sexp]
 
 val partition_flows:
   ?sources: (TaintSources.t -> bool)
@@ -32,12 +36,12 @@ val partition_flows:
   -> flow_state
 
 val generate_source_sink_matches:
-  source_tree: ForwardState.access_path_tree
+  location: Location.t
+  -> source_tree: ForwardState.access_path_tree
   -> sink_tree: BackwardState.access_path_tree
-  -> flow_candidates
+  -> candidate
 
 val generate_errors:
   define: Define.t Node.t
-  -> location: Location.t
-  -> flow_candidates
+  -> candidate
   -> Interprocedural.Error.t list

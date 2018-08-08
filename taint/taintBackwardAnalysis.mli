@@ -7,4 +7,4 @@ open Ast
 open Statement
 
 
-val run: Define.t -> TaintResult.Backward.model
+val run: Define.t Node.t -> TaintResult.Backward.model

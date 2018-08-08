@@ -34,7 +34,7 @@ let initial_taint =
 
 
 module type FUNCTION_CONTEXT = sig
-  val definition: Define.t
+  val definition: Define.t Node.t
 end
 
 
@@ -136,7 +136,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
             Int.Map.set lookup ~key ~data:annotations in
           let receiver_type =
             key
-            >>= fun key -> TypeResolutionSharedMemory.get FunctionContext.definition.name
+            >>= fun key -> TypeResolutionSharedMemory.get FunctionContext.definition.value.name
             >>| List.fold ~init:Int.Map.empty ~f:build_lookup
             >>= Fn.flip Int.Map.find key
             >>| Access.Map.of_alist_exn
@@ -312,11 +312,11 @@ let extract_tito_and_sink_models parameters entry_taint =
   TaintResult.Backward.{ taint_in_taint_out; sink_taint; }
 
 
-let run ({ Define.name; parameters; _ } as define) =
+let run ({ Node.value = { Define.name; parameters; _ }; _ } as define) =
   let module AnalysisInstance = AnalysisInstance(struct let definition = define end) in
   let open AnalysisInstance in
   let initial = FixpointState.{ taint = initial_taint } in
-  let cfg = Cfg.create define in
+  let cfg = Cfg.create define.value in
   let () = Log.log ~section:`Taint "Processing CFG:@.%s" (Log.Color.yellow (Cfg.show cfg)) in
   let entry_state =
     Analyzer.backward ~cfg ~initial

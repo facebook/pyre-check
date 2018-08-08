@@ -56,7 +56,7 @@ let assert_sources ?qualifier ~source ~expect =
         "Analyzing %s"
         (Interprocedural.Callable.show call_target)
     in
-    let forward = ForwardAnalysis.run define.Node.value in
+    let forward, _errors = ForwardAnalysis.run define in
     let model = { Taint.Result.empty_model with forward } in
     Result.empty_model
     |> Result.with_model Taint.Result.kind model

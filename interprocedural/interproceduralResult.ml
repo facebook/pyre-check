@@ -86,7 +86,7 @@ type result_t = result_pkg Kind.Map.t
 module type ANALYZER = sig
   type result
   type call_model
-  val analyze: Callable.real_target -> Define.t -> result * call_model
+  val analyze: Callable.real_target -> Define.t Node.t -> result * call_model
 
   (* Called once on master before analysis of individual callables. *)
   val init: types:string list -> functions:Callable.t list -> unit
@@ -255,6 +255,11 @@ let get (type part a)
 let get_model kind models =
   let kind = Kind.cast kind in
   get (ModelPart kind) models
+
+
+let get_result kind results =
+  let kind = Kind.cast kind in
+  get (ResultPart kind) results
 
 
 let empty_model = Kind.Map.empty

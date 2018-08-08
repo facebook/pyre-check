@@ -8,6 +8,7 @@ open OUnit2
 
 open Analysis
 open Ast
+open Statement
 open Expression
 open Pyre
 open Taint
@@ -28,18 +29,24 @@ type parameter_taint = {
 }
 
 
-type model_expectation = {
+type error_expectation = {
+  code: int;
+  pattern: string;
+}
+
+
+type define_expectation = {
   define_name: string;
   returns: Sources.t list;
   taint_sink_parameters: parameter_taint list;
   tito_parameters: int list;
+  errors: error_expectation list;
 }
 
 
 type expect_fixpoint = {
-  expect_models: model_expectation list;
+  expect: define_expectation list;
   iterations: int;
-  flow_errors: Error.t list
 }
 
 
@@ -64,7 +71,7 @@ let create_call_graph ?(test_file = "test_file") source =
   call_graph, callables
 
 
-let create_model { define_name; returns; taint_sink_parameters; tito_parameters } =
+let create_model { define_name; returns; taint_sink_parameters; tito_parameters; _ } =
   let expect_source_taint model source =
     let forward =
       let source_taint =
@@ -118,7 +125,10 @@ let create_model { define_name; returns; taint_sink_parameters; tito_parameters 
   |> (fun model -> { call_target; model })
 
 
-let assert_fixpoint ~source ~expect:{ iterations = expect_iterations; expect_models; _ } =
+let create_result_patterns { define_name; errors; _ } = define_name, errors
+
+
+let assert_fixpoint ~source ~expect:{ iterations = expect_iterations; expect } =
   let call_graph, all_callables = create_call_graph source in
   let caller_map = CallGraph.reverse call_graph in
   let analyses = [Taint.Analysis.abstract_kind] in
@@ -136,11 +146,57 @@ let assert_fixpoint ~source ~expect:{ iterations = expect_iterations; expect_mod
     >>= Result.get_model Taint.Result.kind
     >>| (fun model -> { call_target; model })
   in
-  let models = List.filter_map expect_models ~f:read_analysis_model in
-  let expect_models = List.map expect_models ~f:create_model in
+  let read_analysis_result { define_name; _ } =
+    let call_target = Callable.make_real (Access.create define_name) in
+    Fixpoint.get_result call_target
+    |> Result.get_result Taint.Result.kind
+    >>| (fun result -> define_name, result)
+  in
+  let assert_error define { code; pattern } error =
+    if code <> Error.code error then
+      Format.sprintf "Expected error code %d for %s, but got %d"
+        code
+        define
+        (Error.code error)
+      |> assert_failure;
+    let error_string = Error.description ~detailed:true error in
+    let regexp = Str.regexp pattern in
+    if not (Str.string_match regexp error_string 0) then
+      Format.sprintf "Expected error for %s to match %s, but got %s"
+        define
+        pattern
+        error_string
+      |> assert_failure
+  in
+  let assert_errors (define1, error_patterns) (define2, errors) =
+    if define1 <> define2 then
+      Format.sprintf "Expected errors for %s, but found %s"
+        define1
+        define2
+      |> assert_failure;
+    assert_equal
+      (List.length error_patterns)
+      (List.length errors)
+      ~msg:(Format.sprintf "Number of errors for %s" define1)
+      ~printer:Int.to_string;
+    List.iter2_exn ~f:(assert_error define1) error_patterns errors
+  in
+  let models = List.filter_map expect ~f:read_analysis_model in
+  let expect_models = List.map expect ~f:create_model in
+  let results = List.filter_map expect ~f:read_analysis_result in
+  let expect_results = List.map expect ~f:create_result_patterns in
   assert_bool "Callgraph is empty!" (Access.Map.length call_graph > 0);
   assert_equal expect_iterations iterations ~printer:Int.to_string;
-  assert_equal expect_models models ~printer:(fun model -> Sexp.to_string [%message (model: Model.t list)])
+  assert_equal
+    (List.length expect_models)
+    (List.length models)
+    ~msg:"Number of define outcomes"
+    ~printer:Int.to_string;
+  assert_equal
+    expect_models
+    models
+    ~printer:(fun model -> Sexp.to_string [%message (model: Model.t list)]);
+  List.iter2_exn expect_results results ~f:assert_errors
 
 
 let test_fixpoint _ =
@@ -162,44 +218,59 @@ let test_fixpoint _ =
       def match_flows():
         x = some_source()
         bad(x)
+
+      def rce_problem():
+        x = __userControlled()
+        __eval(x)
       |}
     ~expect:{
       iterations = 3;
-      flow_errors = [];
-      expect_models = [
+      expect = [
+        {
+          define_name = "rce_problem";
+          returns = [];
+          taint_sink_parameters = [];
+          tito_parameters = [];
+          errors = [{ code = 5001; pattern = ".*UserControlled.*RemoteCodeExecution" }];
+        };
         {
           define_name = "match_flows";
           returns = [];
           taint_sink_parameters = [];
           tito_parameters = [];
+          errors = [{ code= 5002; pattern = ".*TestSource.*TestSink" }];
         };
         {
           define_name = "qux";
           returns = [];
           taint_sink_parameters = [
-            { position = 0; sinks = [Taint.Sinks.RemoteCodeExecution] }
+            { position = 0; sinks = [Taint.Sinks.TestSink] }
           ];
           tito_parameters = [];
+          errors = [];
         };
         {
           define_name = "bad";
           returns = [];
           taint_sink_parameters = [
-            { position = 0; sinks = [Taint.Sinks.RemoteCodeExecution] }
+            { position = 0; sinks = [Taint.Sinks.TestSink] }
           ];
           tito_parameters = [];
+          errors = [];
         };
         {
           define_name = "bar";
           returns = [Sources.TestSource];
           taint_sink_parameters = [];
           tito_parameters = [];
+          errors = [];
         };
         {
           define_name = "some_source";
           returns = [Sources.TestSource];
           taint_sink_parameters = [];
           tito_parameters = [];
+          errors = [];
         }
       ]
     }
@@ -208,8 +279,10 @@ let test_fixpoint _ =
 let () =
   let model_source =
     {|
-      def __testSink(arg: TaintSink[RemoteCodeExecution]): ...
+      def __testSink(arg: TaintSink[TestSink]): ...
       def __testSource() -> TaintSource[TestSource]: ...
+      def __eval(arg: TaintSink[RemoteCodeExecution]): ...
+      def __userControlled() -> TaintSource[UserControlled]: ...
     |}
     |> Test.trim_extra_indentation
   in

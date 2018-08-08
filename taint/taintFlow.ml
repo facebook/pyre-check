@@ -15,11 +15,14 @@ type flow = {
 
 
 type flows = flow list
+[@@deriving sexp]
 
 
-type flow_candidates = {
-  candidates: flows;
+type candidate = {
+  flows: flows;
+  location: Ast.Expression.Location.t;
 }
+[@@deriving sexp]
 
 
 (* Compute all flows from paths in ~source tree to corresponding paths in
@@ -29,7 +32,7 @@ type flow_candidates = {
    respectively. For each path p in B from the root to some node with non-empty
    taint T, we match T with the join of taint in the upward and downward closure
    from node at path p in F. *)
-let generate_source_sink_matches ~source_tree ~sink_tree =
+let generate_source_sink_matches ~location ~source_tree ~sink_tree =
   let make_source_sink_matches ~path ~path_element:_ ~element:sink_taint matches =
     let source_taint = ForwardState.collapse (ForwardState.read_tree path source_tree) in
     if ForwardTaint.is_empty source_taint then
@@ -37,19 +40,20 @@ let generate_source_sink_matches ~source_tree ~sink_tree =
     else
       { source_taint; sink_taint; } :: matches
   in
-  let candidates =
+  let flows =
     if ForwardState.is_empty_tree source_tree then
       []
     else
       BackwardState.fold_tree_paths ~init:[] ~f:make_source_sink_matches sink_tree
   in
-  { candidates; }
+  { location; flows; }
 
 
 type flow_state = {
   matched: flows;
   rest: flows;
 }
+[@@deriving sexp]
 
 
 (* partition taint flow t according to sources/sinks filters into matching and
@@ -136,9 +140,15 @@ let make_error define location code name flows =
       sink_taint = join_sink_taint (List.map flows ~f:get_sink_taint);
     }
   in
-  let _flow = join_flows flows in
+  let flow = join_flows flows in
   (* TODO(T32467565) emit trace roots. *)
-  let messages = [] in
+  let messages = [
+    Format.sprintf
+      "Flow from %s to %s detected."
+      (ForwardTaint.show flow.source_taint)
+      (BackwardTaint.show flow.sink_taint)
+  ]
+  in
   let kind = { Interprocedural.Error.name; messages; code; } in
   Interprocedural.Error.create ~location ~define ~kind
 
@@ -151,7 +161,7 @@ let any_sinks sink_list sink =
   List.exists ~f:((=) sink) sink_list
 
 
-let generate_errors ~define ~location { candidates } =
+let generate_errors ~define { location; flows; } =
   let apply_rule (errors, remaining_flows) { sources; sinks; code; name; } =
     let { matched; rest; } =
       partition_flows
@@ -166,5 +176,5 @@ let generate_errors ~define ~location { candidates } =
         let new_error = make_error define location code name matched in
         new_error :: errors, rest
   in
-  let errors, _ = List.fold ~f:apply_rule ~init:([], candidates) rules in
+  let errors, _ = List.fold ~f:apply_rule ~init:([], flows) rules in
   errors

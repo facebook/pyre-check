@@ -146,8 +146,8 @@ let test_no_errors _ =
       |> Node.create_with_default_location
     in
     let errors =
-      generate_source_sink_matches ~source_tree ~sink_tree
-      |> generate_errors ~define ~location
+      generate_source_sink_matches ~location ~source_tree ~sink_tree
+      |> generate_errors ~define
     in
     assert_equal
       ~msg:"Errors"
@@ -191,8 +191,8 @@ let test_errors _ =
       |> Node.create_with_default_location
     in
     let errors =
-      generate_source_sink_matches ~source_tree ~sink_tree
-      |> generate_errors ~define ~location
+      generate_source_sink_matches ~location ~source_tree ~sink_tree
+      |> generate_errors ~define
     in
     assert_equal
       ~msg:"Error"

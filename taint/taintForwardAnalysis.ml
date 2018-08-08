@@ -25,7 +25,10 @@ end
 
 
 module type FUNCTION_CONTEXT = sig
-  val definition : Define.t
+  val definition: Define.t Node.t
+
+  val add_flow_candidate: TaintFlow.candidate -> unit
+  val generate_errors: unit -> Interprocedural.Error.t list
 end
 
 
@@ -92,6 +95,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
               (Interprocedural.Callable.show call_target)
               (TaintResult.show_call_model model);
             let analyze_argument_position position tito { Argument.value = argument; _ } =
+              let { Node.location; _ } = argument in
               let argument_taint = analyze_expression argument state in
               let read_argument_taint ~path ~path_element:_ ~element:_ tito =
                 ForwardState.read_tree path argument_taint
@@ -104,6 +108,18 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
                   backward.taint_in_taint_out
                 |> BackwardState.fold_tree_paths ~init:tito ~f:read_argument_taint
               in
+              let flow_candidate =
+                let sink_tree =
+                  BackwardState.read
+                    (TaintAccessPath.Root.Parameter { position })
+                    backward.sink_taint
+                in
+                TaintFlow.generate_source_sink_matches
+                  ~location
+                  ~source_tree:argument_taint
+                  ~sink_tree
+              in
+              FunctionContext.add_flow_candidate flow_candidate;
               tito
             in
             let tito = List.foldi ~f:analyze_argument_position arguments ~init:ForwardTaint.empty in
@@ -131,7 +147,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
             Int.Map.set lookup ~key ~data:annotations in
           let receiver_type =
             key
-            >>= fun key -> TypeResolutionSharedMemory.get FunctionContext.definition.name
+            >>= fun key -> TypeResolutionSharedMemory.get FunctionContext.definition.value.name
             >>| List.fold ~init:Int.Map.empty ~f:build_lookup
             >>= Fn.flip Int.Map.find key
             >>| Access.Map.of_alist_exn
@@ -156,16 +172,8 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           taint
 
     and analyze_normalized_expression ?key state expression =
-      Log.log
-        ~section:`Taint
-        "Analyzing normalized expression: %s"
-        (Log.Color.cyan (show_normalized_expression expression));
       match expression with
       | Access { expression; member; } ->
-          Log.log
-            ~section:`Taint
-            "Analyzing access expression: %s"
-            (Log.Color.cyan (TaintAccessPath.show_normalized_expression expression));
           let taint = analyze_normalized_expression state expression in
           let field = TaintAccessPathTree.Label.Field member in
           let taint =
@@ -189,10 +197,6 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           ForwardState.read_access_path ~root:(Root.Variable identifier) ~path:[] state.taint
 
     and analyze_expression ?key expression state =
-      Log.log
-        ~section:`Taint
-        "Analyzing expression: %s"
-        (Log.Color.cyan (Expression.show_expression expression.value));
       match expression.Node.value with
       | Access access ->
           normalize_access access
@@ -251,8 +255,11 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           state
       | Define define ->
           analyze_definition ~define state
-      | Delete _
-      | Expression _
+      | Delete _ ->
+          state
+      | Expression expression ->
+          let _ = analyze_expression ?key expression state in
+          state
       | For _
       | Global _
       | If _
@@ -261,10 +268,6 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       | Pass
       | Raise _ -> state
       | Return { expression = Some expression; _ } ->
-          Log.log
-            ~section:`Taint
-            "Analyzing Return expression: %s"
-            (Node.show pp_expression expression);
           let taint = analyze_expression expression state in
           store_taint ~root:Root.LocalResult ~path:[] taint state
       | Return { expression = None; _ }
@@ -289,10 +292,33 @@ let extract_source_model _parameters exit_taint =
   ForwardState.assign ~root:Root.LocalResult ~path:[] return_taint ForwardState.empty
 
 
-let run ({ Define.parameters; _ } as define) =
-  let module AnalysisInstance = AnalysisInstance(struct let definition = define end) in
+let run ({ Node.value = { Define.parameters; _ }; _ } as define) =
+  let module Context = struct
+    let definition = define
+
+    let candidates = Location.Reference.Table.create ()
+
+    let add_flow_candidate candidate =
+      Location.Reference.Table.set
+        candidates
+        ~key:candidate.TaintFlow.location
+        ~data:candidate
+
+    let generate_errors () =
+      let accumulate ~key ~data:candidate errors =
+        let new_errors = TaintFlow.generate_errors ~define:definition candidate in
+        List.rev_append new_errors errors
+      in
+      Location.Reference.Table.fold candidates ~f:accumulate ~init:[]
+  end
+  in
+  let module AnalysisInstance = AnalysisInstance(Context) in
   let open AnalysisInstance in
-  let cfg = Cfg.create define in
+  Log.log
+    ~section:`Taint
+    "Starting analysis of %s"
+    (Interprocedural.Callable.show (Interprocedural.Callable.make define));
+  let cfg = Cfg.create define.value in
   let initial = FixpointState.create () in
   let () = Log.log ~section:`Taint "Processing CFG:@.%s" (Log.Color.cyan (Cfg.show cfg)) in
   let exit_state =
@@ -304,6 +330,16 @@ let run ({ Define.parameters; _ } as define) =
     let () = Log.log ~section:`Taint "Model: %s" (Log.Color.cyan (FixpointState.show result)) in
     TaintResult.Forward.{ source_taint; }
   in
-  exit_state
-  >>| extract_model
-  |> Option.value ~default:TaintResult.Forward.empty
+  let errors = Context.generate_errors () in
+  let () =
+    Log.log
+      ~section:`Taint
+      "Errors %s"
+      (Sexp.to_string [%message (errors: Interprocedural.Error.t list)])
+  in
+  let model =
+    exit_state
+    >>| extract_model
+    |> Option.value ~default:TaintResult.Forward.empty
+  in
+  model, errors

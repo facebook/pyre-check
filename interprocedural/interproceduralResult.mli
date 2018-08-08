@@ -3,6 +3,8 @@
     This source code is licensed under the MIT license found in the
     LICENSE file in the root directory of this source tree. *)
 
+open Ast
+
 module Callable = InterproceduralCallable
 module Kind = InterproceduralAnalysisKind
 
@@ -74,7 +76,7 @@ type result_t = result_pkg Kind.Map.t
 module type ANALYZER = sig
   type result
   type call_model
-  val analyze: Callable.real_target -> Ast.Statement.Define.t -> result * call_model
+  val analyze: Callable.real_target -> Statement.Define.t Node.t -> result * call_model
 
   (* Called once on master before analysis of individual callables. *)
   val init: types:string list -> functions:Callable.t list -> unit
@@ -144,9 +146,11 @@ val empty_model: model_t
 val empty_result: result_t
 
 val get: ('part, 'value) partial_kind -> 'part pkg Kind.Map.t -> 'value option
-val get_model: ('result,'model) analysis_data Kind.kind -> model_t -> 'model option
+val get_model: ('result, 'model) analysis_data Kind.kind -> model_t -> 'model option
 val with_model:
   ('result, 'model) analysis_data Kind.kind
   -> 'model
   -> model pkg Kind.Map.t
   -> model pkg Kind.Map.t
+
+val get_result: ('result, 'model) analysis_data Kind.kind -> result_t -> 'result option

@@ -56,7 +56,7 @@ let assert_taint source ~expected =
         "Analyzing %s"
         (Interprocedural.Callable.show call_target)
     in
-    let backward = BackwardAnalysis.run define.Node.value in
+    let backward = BackwardAnalysis.run define in
     let model = { Taint.Result.empty_model with backward } in
     Result.empty_model
     |> Result.with_model Taint.Result.kind model
