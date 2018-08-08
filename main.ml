@@ -10,6 +10,7 @@ open PyreCommand
 
 
 let commands = [
+  "analyze", Analyze.command;
   "check", Check.check_command;
   "codex", CodexGenerator.command;
   "query", Query.command;

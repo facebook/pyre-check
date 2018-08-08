@@ -12,7 +12,6 @@ type t = {
   start_time: float;
   infer: bool;
   recursive_infer: bool;
-  analyze: bool;
   parallel: bool;
   filter_directories: (Path.t list) option;
   number_of_workers: int;
@@ -37,7 +36,6 @@ let create
     ?(start_time = Unix.time())
     ?(infer = false)
     ?(recursive_infer = false)
-    ?(analyze = false)
     ?(parallel = true)
     ?filter_directories
     ?(number_of_workers = 4)
@@ -59,7 +57,6 @@ let create
     start_time;
     infer;
     recursive_infer;
-    analyze;
     parallel;
     filter_directories;
     number_of_workers;

@@ -31,7 +31,6 @@ let check
       debug;
       infer;
       recursive_infer;
-      analyze;
       strict;
       declare;
       show_error_traces;
@@ -65,7 +64,6 @@ let check
       ?typeshed
       ~infer
       ~recursive_infer
-      ~analyze
       ?logger
       ()
   in
@@ -149,13 +147,6 @@ let check
     ]
     ();
 
-  if analyze then
-    Service.Analysis.analyze
-      ~scheduler
-      ~configuration
-      ~environment
-      ~handles:sources;
-
   (* Only destroy the scheduler if the check command created it. *)
   begin
     match original_scheduler with
@@ -176,7 +167,6 @@ let run_check
     show_error_traces
     infer
     recursive_infer
-    analyze
     sequential
     filter_directories
     filter_directories_semicolon
@@ -213,7 +203,6 @@ let run_check
       ?logger
       ~infer
       ~recursive_infer
-      ~analyze
       ~project_root:(Path.create_absolute project_root)
       ~parallel:(not sequential)
       ?filter_directories
@@ -238,11 +227,10 @@ let run_check
     ~normals:["request kind", "FullCheck"]
     ();
   (* Print results. *)
-  if not analyze then
-    Yojson.Safe.to_string
-      (`List
-         (List.map ~f:(fun error -> Error.to_json ~detailed:show_error_traces error) errors))
-    |> Log.print "%s";
+  Yojson.Safe.to_string
+    (`List
+       (List.map ~f:(fun error -> Error.to_json ~detailed:show_error_traces error) errors))
+  |> Log.print "%s";
   Statistics.flush ()
 
 

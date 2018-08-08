@@ -567,7 +567,6 @@ let run_start_command
     show_error_traces
     infer
     recursive_infer
-    analyze
     sequential
     filter_directories
     filter_directories_semicolon
@@ -599,7 +598,6 @@ let run_start_command
       ~debug
       ~infer
       ~recursive_infer
-      ~analyze
       ~strict
       ~declare
       ~show_error_traces

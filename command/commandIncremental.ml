@@ -20,7 +20,6 @@ let run
     show_error_traces
     infer
     recursive_infer
-    analyze
     sequential
     filter_directories
     filter_directories_semicolon
@@ -58,7 +57,6 @@ let run
         ?logger
         ~infer
         ~recursive_infer
-        ~analyze
         ~parallel:(not sequential)
         ?filter_directories
         ~number_of_workers

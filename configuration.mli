@@ -10,7 +10,6 @@ type t = {
   start_time: float;
   infer: bool;
   recursive_infer: bool;
-  analyze: bool;
   parallel: bool;
   filter_directories: (Path.t list) option;
   number_of_workers: int;
@@ -34,7 +33,6 @@ val create
   :  ?start_time: float
   -> ?infer:bool
   -> ?recursive_infer:bool
-  -> ?analyze: bool
   -> ?parallel: bool
   -> ?filter_directories: Path.t list
   -> ?number_of_workers: int
