@@ -34,12 +34,13 @@ let register_signal_handlers server_configuration socket =
     (fun _ -> ())
 
 
-let spawn_watchman_client { configuration = { sections; source_root; _ }; _ } =
+let spawn_watchman_client { configuration = { sections; project_root; source_root; _ }; _ } =
   CommandWatchman.run_command
     ~daemonize:true
     ~verbose:false
     ~sections
     ~source_root:(Path.absolute source_root)
+    ~project_root:(Some (Path.absolute project_root))
 
 
 let computation_thread request_queue configuration state =

@@ -205,7 +205,7 @@ let listen_for_changed_files
 
 
 (* Walk up from the project root to try and find a .watchmanconfig. *)
-let find_watchman_directory { Configuration.source_root; _ } =
+let find_watchman_directory { Configuration.project_root; _ } =
   let rec directory_has_watchman_config directory =
     if Sys.is_file (directory ^/ ".watchmanconfig") = `Yes then
       Some (Path.create_absolute directory)
@@ -214,7 +214,7 @@ let find_watchman_directory { Configuration.source_root; _ } =
     else
       directory_has_watchman_config (Filename.dirname directory)
   in
-  directory_has_watchman_config (Path.absolute source_root)
+  directory_has_watchman_config (Path.absolute project_root)
 
 
 let initialize watchman_directory configuration =
@@ -267,13 +267,19 @@ let run_watchman_daemon_entry : run_watchman_daemon_entry =
            let server_socket = initialize watchman_directory configuration in
            listen_for_changed_files server_socket watchman_directory configuration)
 
-let run_command ~daemonize ~verbose ~sections ~source_root =
+let run_command ~daemonize ~verbose ~sections ~source_root ~project_root =
   let source_root = Path.create_absolute source_root in
+  let project_root =
+    project_root
+    >>| Path.create_absolute
+    |> Option.value ~default:source_root
+  in
   let configuration =
     Configuration.create
       ~verbose
       ~sections
-      ~source_root:source_root
+      ~source_root
+      ~project_root
       ()
   in
   Scheduler.initialize_process ~configuration;
@@ -342,8 +348,8 @@ let run_command ~daemonize ~verbose ~sections ~source_root =
         Unix.getpid ()
 
 
-let run daemonize verbose sections _ source_root () =
-  run_command ~daemonize ~verbose ~sections ~source_root
+let run daemonize verbose sections project_root source_root () =
+  run_command ~daemonize ~verbose ~sections ~source_root ~project_root
   |> ignore
 
 

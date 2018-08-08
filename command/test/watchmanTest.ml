@@ -15,7 +15,12 @@ module Parallel = Hack_parallel.Std
 
 
 let start_watchman pid_path () =
-  Watchman.run_command ~daemonize:true ~verbose:false ~sections:[] ~source_root:"."
+  Watchman.run_command
+    ~daemonize:true
+    ~verbose:false
+    ~sections:[]
+    ~source_root:"."
+    ~project_root:(Some ".")
   |> ignore;
   let rec poll () =
     if not (Path.file_exists pid_path) then
@@ -59,7 +64,13 @@ let test_watchman_exists context =
 
   assert_raises
     (Failure "Watchman client exists (lock is held). Exiting.")
-    (fun () -> Watchman.run_command ~daemonize:false ~verbose:false ~sections:[] ~source_root:".");
+    (fun () ->
+       Watchman.run_command
+         ~daemonize:false
+         ~verbose:false
+         ~sections:[]
+         ~source_root:"."
+         ~project_root:(Some "."));
   CommandTest.clean_environment ()
 
 
