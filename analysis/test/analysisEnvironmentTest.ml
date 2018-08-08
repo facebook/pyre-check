@@ -443,10 +443,12 @@ let test_connect_type_order _ =
   assert_equal (parse_annotation (module Handler) (!"B")) (Type.primitive "D");
   assert_equal (parse_annotation (module Handler) (!"A")) (Type.primitive "D");
   assert_is_none (Handler.function_definitions (access ["foo"]));
-  assert_equal (TypeOrder.successors order (Type.primitive "C")) [Type.Object; Type.Top];
+  assert_equal
+    (TypeOrder.successors order (Type.primitive "C"))
+    [Type.Object; Type.Deleted; Type.Top];
   assert_equal
     (TypeOrder.successors order (Type.primitive "D"))
-    [Type.primitive "C"; Type.Object; Type.Top]
+    [Type.primitive "C"; Type.Object; Type.Deleted; Type.Top]
 
 
 let test_register_functions _ =
@@ -1412,6 +1414,7 @@ let () =
     "register_class_definitions">::test_register_class_definitions;
     "register_aliases">::test_register_aliases;
     "connect_definition">::test_connect_definition;
+    "connect_type_order">::test_connect_type_order;
     "register_globals">::test_register_globals;
     "register_functions">::test_register_functions;
     "populate">::test_populate;
