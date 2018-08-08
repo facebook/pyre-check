@@ -1820,14 +1820,14 @@ let test_check _ =
       def f(meta: type[int]) -> typing.Type[int]:
         return meta
     |}
-    ["Incompatible return type [7]: Expected `typing.Type[int]` but got `type[int]`."];
+    [];
 
   assert_type_errors
     {|
       def f(meta: type) -> typing.Type[int]:
         return meta
     |}
-    ["Incompatible return type [7]: Expected `typing.Type[int]` but got `type[typing.Any]`."]
+    ["Incompatible return type [7]: Expected `typing.Type[int]` but got `typing.Type[typing.Any]`."]
 
 
 let test_check_assign _ =

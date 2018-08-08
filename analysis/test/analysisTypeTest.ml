@@ -489,8 +489,12 @@ let test_is_not_instantiated _ =
 let test_is_meta _ =
   assert_true
     (Type.is_meta
-       (Type.Parametric { Type.name = ~~"typing.Type"; parameters = [Type.integer] }));
-  assert_false (Type.is_meta Type.integer)
+       (Type.Parametric { Type.name = ~~"type"; parameters = [Type.integer] }));
+  assert_false (Type.is_meta Type.integer);
+  assert_false
+    (Type.is_meta
+       (Type.Parametric { Type.name = ~~"typing.Type"; parameters = [Type.integer] }))
+
 
 
 let test_is_none _ =

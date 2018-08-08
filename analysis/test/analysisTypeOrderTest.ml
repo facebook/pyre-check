@@ -186,7 +186,6 @@ let test_default _ =
   assert_has_special_form "typing.Generic";
   assert_has_special_form "typing.Protocol";
   assert_has_special_form "typing.Callable";
-  assert_has_special_form "typing.Type";
   assert_has_special_form "typing.ClassVar";
 
   (* Mock. *)

@@ -194,6 +194,8 @@ let reverse_substitute name =
       Identifier.create "typing.List"
   | "set" ->
       Identifier.create "typing.Set"
+  | "type" ->
+      Identifier.create "typing.Type"
   | _ ->
       name
 
@@ -442,17 +444,18 @@ let rec optional parameter =
       Optional parameter
 
 
-let meta = function
-  | Variable _ ->
-      Parametric {
-        name = Identifier.create "type";
-        parameters = [Top];
-      }
-  | annotation ->
-      Parametric {
-        name = Identifier.create "typing.Type";
-        parameters = [annotation];
-      }
+let meta annotation =
+  let parameter =
+    match annotation with
+    | Variable _ ->
+        Object
+    | annotation ->
+        annotation
+  in
+  Parametric {
+    name = Identifier.create "type";
+    parameters = [parameter];
+  }
 
 
 let sequence parameter =
@@ -554,7 +557,7 @@ let primitive_substitution_map =
     "typing.Sequence", parametric_anys "typing.Sequence" 1;
     "typing.Set", parametric_anys "typing.Set" 1;
     "typing.Tuple", Tuple (Unbounded Object);
-    "typing.Type", parametric_anys "typing.Type" 1;
+    "typing.Type", parametric_anys "type" 1;
     "type", parametric_anys "type" 1;
   ]
   |> List.map
@@ -569,6 +572,7 @@ let parametric_substitution_map =
     "typing.FrozenSet", "frozenset";
     "typing.List", "list";
     "typing.Set", "set";
+    "typing.Type", "type";
   ]
   |> List.map
     ~f:(fun (original, substitute) -> Identifier.create original, Identifier.create substitute)
@@ -1148,7 +1152,7 @@ let is_generic = function
 
 
 let is_meta = function
-  | Parametric { name; _ } -> Identifier.show name = "typing.Type"
+  | Parametric { name; _ } -> Identifier.show name = "type"
   | _ -> false
 
 
