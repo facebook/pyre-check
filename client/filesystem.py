@@ -28,9 +28,22 @@ class SharedSourceDirectory:
         self._source_directories = set(source_directories)
         self._isolate = isolate
 
+    def get_scratch_directory(self) -> str:
+        try:
+            return (
+                subprocess.check_output(["scratch", "path", "--subdir", "pyre"])
+                .decode("utf-8")
+                .strip()
+            )
+        except Exception:
+            return os.path.join(os.getcwd(), ".pyre")
+
+    @functools.lru_cache(1)
     def get_root(self) -> str:
         suffix = "_{}".format(str(os.getpid())) if self._isolate else ""
-        return ".pyre/shared_source_directory{}".format(suffix)
+        return os.path.join(
+            self.get_scratch_directory(), "shared_source_directory{}".format(suffix)
+        )
 
     def prepare(self) -> None:
         start = time()
