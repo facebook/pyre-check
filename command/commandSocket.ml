@@ -18,9 +18,10 @@ let initialize_unix_socket path =
 let open_connection socket_path =
   Log.debug "Attempting to connect...";
   let socket_address = Unix.ADDR_UNIX (Path.absolute socket_path) in
-  try `Success (Unix.open_connection socket_address) with
-  | Unix.Unix_error (Unix.ECONNREFUSED, _, _)
-  | Unix.Unix_error (Unix.ENOENT, _, _) -> `Failure
+  match (Unix.open_connection socket_address) with
+  | connection -> `Success connection
+  | exception Unix.Unix_error (Unix.ECONNREFUSED, _, _) -> `Failure
+  | exception Unix.Unix_error (Unix.ENOENT, _, _) -> `Failure
 
 
 (** We're using Hack's marshalling code to read and write on sockets. Please
@@ -34,10 +35,8 @@ let read =
 
 
 let write_ignoring_epipe socket message =
-  try
-    Marshal_tools.to_fd_with_preamble socket message
-  with
-  | Unix.Unix_error (kind, name, parameter) ->
-      match kind with
-      | Unix.EPIPE -> Log.info "Ignoring error on write due to EPIPE"
-      | _ -> raise (Unix.Unix_error (kind, name, parameter))
+  match Marshal_tools.to_fd_with_preamble socket message with
+  | marshalled ->
+      marshalled
+  | exception Unix.Unix_error (Unix.EPIPE, _, _) ->
+      Log.info "Ignoring error on write due to EPIPE"
