@@ -26,6 +26,7 @@ type t = {
   declare: bool;
   show_error_traces: bool;
   log_identifier: string;
+  logger: string option;
 }
 [@@deriving show]
 
@@ -49,6 +50,7 @@ val create
   -> ?debug:bool
   -> ?show_error_traces:bool
   -> ?log_identifier:string
+  -> ?logger:string
   -> unit
   -> t
 

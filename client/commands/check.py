@@ -14,6 +14,7 @@ class Check(ErrorHandling):
         super(Check, self).__init__(arguments, configuration, source_directory)
         self._log_identifier = arguments.log_identifier
         self._number_of_workers = configuration.number_of_workers
+        self._logger = configuration.logger
 
     def _flags(self):
         flags = super()._flags()
@@ -35,6 +36,8 @@ class Check(ErrorHandling):
             flags.extend(["-search-path", ",".join(search_path)])
         if self._log_identifier:
             flags.extend(["-log-identifier", self._log_identifier])
+        if self._logger:
+            flags.extend(["-logger", self._logger])
         return flags
 
     def _run(self, retries: int = 1) -> int:

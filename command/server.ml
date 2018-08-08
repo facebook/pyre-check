@@ -572,6 +572,7 @@ let run_start_command
     filter_directories_semicolon
     number_of_workers
     log_identifier
+    logger
     project_root
     search_path
     typeshed
@@ -602,6 +603,7 @@ let run_start_command
       ~declare
       ~show_error_traces
       ~log_identifier
+      ?logger
       ~parallel:(not sequential)
       ?filter_directories
       ~number_of_workers

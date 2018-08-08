@@ -26,6 +26,7 @@ let run
     filter_directories_semicolon
     number_of_workers
     log_identifier
+    logger
     project_root
     search_path
     typeshed
@@ -54,6 +55,7 @@ let run
         ~declare
         ~show_error_traces
         ~log_identifier
+        ?logger
         ~infer
         ~recursive_infer
         ~analyze

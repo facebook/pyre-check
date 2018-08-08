@@ -47,6 +47,10 @@ let base_command_line_arguments =
       (optional_with_default "" string)
       ~doc:"IDENTIFIER Add given identifier to logged samples."
     +> flag
+      "-logger"
+      (optional string)
+      ~doc:"Tool used for logging statistics."
+    +> flag
       "-project-root"
       (optional_with_default "/" string)
       ~doc:"ROOT Only check sources under this root directory."

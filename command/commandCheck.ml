@@ -43,6 +43,7 @@ let check
       search_path;
       typeshed;
       source_root;
+      logger;
     }
     original_scheduler
     () =
@@ -65,6 +66,7 @@ let check
       ~infer
       ~recursive_infer
       ~analyze
+      ?logger
       ()
   in
   Scheduler.initialize_process ~configuration;
@@ -180,6 +182,7 @@ let run_check
     filter_directories_semicolon
     number_of_workers
     log_identifier
+    logger
     project_root
     search_path
     typeshed
@@ -207,6 +210,7 @@ let run_check
       ~declare
       ~show_error_traces
       ~log_identifier
+      ?logger
       ~infer
       ~recursive_infer
       ~analyze

@@ -35,6 +35,7 @@ def mock_configuration() -> MagicMock:
     configuration.source_directories = ["."]
     configuration.get_search_path = MagicMock()
     configuration.get_typeshed = MagicMock()
+    configuration.logger = None
     return configuration
 
 
