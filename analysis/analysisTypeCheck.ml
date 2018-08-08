@@ -720,10 +720,9 @@ module State = struct
             }
           ] when Identifier.equal typing (Identifier.create "typing") &&
                  Identifier.equal cast (Identifier.create "cast") ->
-              let cast_annotation = Annotated.resolve ~resolution cast_annotation in
+              let cast_annotation = Resolution.parse_annotation resolution cast_annotation in
               let actual_annotation = Annotated.resolve ~resolution value in
-              if Type.is_meta cast_annotation &&
-                 Type.equal (Type.single_parameter cast_annotation) actual_annotation then
+              if Type.equal cast_annotation actual_annotation then
                 Error.create
                   ~location
                   ~kind:(Error.RedundantCast actual_annotation)

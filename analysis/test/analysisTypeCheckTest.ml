@@ -4994,7 +4994,20 @@ let test_check_redundant_cast _ =
       def foo(x) -> None:
         typing.cast(int, x)
     |}
+    [];
+  assert_type_errors
+    {|
+      def foo(x: dict[int, int]) -> None:
+        typing.cast(dict[int, int], x)
+    |}
+    ["Redundant cast [22]: The value being cast is already of type `typing.Dict[int, int]`."];
+  assert_type_errors
+    {|
+      def foo(x: dict[int, int]) -> None:
+        typing.cast(dict[int, str], x)
+    |}
     []
+
 
 let test_check_assert _ =
   assert_type_errors
