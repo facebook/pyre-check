@@ -623,15 +623,15 @@ let start_command =
   Command.basic_spec
     ~summary:"Starts a server in the foreground by default. See help for daemon options."
     Command.Spec.(
-      (empty
-       +> flag
-         "-log-file"
-         (optional file)
-         ~doc:(Format.sprintf "filename Log file (Default is ./pyre/server/server.stdout)")
-       +> flag
-         "-terminal"
-         no_arg
-         ~doc:"Run the server from the terminal instead of running as a daemon.")
+      empty
+      +> flag
+        "-log-file"
+        (optional file)
+        ~doc:(Format.sprintf "filename Log file (Default is ./pyre/server/server.stdout)")
+      +> flag
+        "-terminal"
+        no_arg
+        ~doc:"Run the server from the terminal instead of running as a daemon."
       +> flag
         "-use-watchman"
         no_arg
