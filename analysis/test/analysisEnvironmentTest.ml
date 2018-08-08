@@ -1410,26 +1410,29 @@ let test_infer_protocols _ =
 
 
 let () =
-  "environment">:::[
-    "register_class_definitions">::test_register_class_definitions;
-    "register_aliases">::test_register_aliases;
-    "connect_definition">::test_connect_definition;
+  "environment_type_order">:::[
     "connect_type_order">::test_connect_type_order;
-    "register_globals">::test_register_globals;
-    "register_functions">::test_register_functions;
-    "populate">::test_populate;
-    "infer_protocols">::test_infer_protocols;
-    "less_or_equal">::test_less_or_equal;
     "join">::test_join;
+    "less_or_equal">::test_less_or_equal;
     "meet">::test_meet;
     "supertypes">::test_supertypes;
+  ]
+  |> run_test_tt_main;
+  "environment">:::[
     "class_definition">::test_class_definition;
-    "protocols">::test_protocols;
-    "modules">::test_modules;
+    "connect_definition">::test_connect_definition;
     "import_dependencies">::test_import_dependencies;
-    "register_dependencies">::test_register_dependencies;
-    "refine_class_definitions">::test_refine_class_definitions;
-    "purge">::test_purge;
     "infer_protocols">::test_infer_protocols;
+    "infer_protocols">::test_infer_protocols;
+    "modules">::test_modules;
+    "populate">::test_populate;
+    "protocols">::test_protocols;
+    "purge">::test_purge;
+    "refine_class_definitions">::test_refine_class_definitions;
+    "register_aliases">::test_register_aliases;
+    "register_class_definitions">::test_register_class_definitions;
+    "register_dependencies">::test_register_dependencies;
+    "register_functions">::test_register_functions;
+    "register_globals">::test_register_globals;
   ]
   |> run_test_tt_main
