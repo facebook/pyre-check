@@ -702,7 +702,7 @@ module State = struct
               Node.location;
               value = [{ Expression.Argument.value; _ }] };
           ] when reveal_type = Identifier.create "reveal_type" ->
-              let annotation = Annotated.resolve ~resolution value in
+              let { state; resolved = annotation } = forward_expression ~state ~expression:value in
               Error.create
                 ~location
                 ~kind:(Error.RevealedType { Error.expression = value; annotation })
@@ -1667,11 +1667,11 @@ module State = struct
         state
 
     | Return { Return.expression; is_implicit } ->
-        let actual =
+        let { state; resolved = actual } =
           Option.value_map
             expression
-            ~default:Type.none
-            ~f:(Annotated.resolve ~resolution)
+            ~default:{ state; resolved = Type.none }
+            ~f:(fun expression -> forward_expression ~state ~expression)
         in
         if not (Resolution.less_or_equal resolution ~left:actual ~right:expected) &&
            not (Define.is_abstract_method define_without_location) &&
@@ -1740,9 +1740,9 @@ module State = struct
         state
 
     | YieldFrom { Node.value = Expression.Yield (Some return); _ } ->
-        let { state; _ } = forward_expression ~state ~expression:return in
+        let { state; resolved } = forward_expression ~state ~expression:return in
         let actual =
-          match Annotated.resolve ~resolution return with
+          match resolved with
           | Type.Parametric { Type.name; parameters = [parameter] }
             when Identifier.show name = "typing.Iterator" ->
               Type.generator parameter
