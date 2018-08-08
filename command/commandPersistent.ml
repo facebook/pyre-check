@@ -168,7 +168,7 @@ let run_command expected_version log_identifier source_root () =
       Statistics.event
         ~section:`Error
         ~flush:true
-        ~name:"persistent client exception"
+        ~name:"uncaught exception"
         ~normals:[
           "exception", Exn.to_string uncaught_exception;
           "exception backtrace", Printexc.get_backtrace ();

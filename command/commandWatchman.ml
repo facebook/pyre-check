@@ -357,9 +357,9 @@ let run_command ~daemonize ~verbose ~sections ~source_root ~project_root =
           Unix.getpid ()
   with uncaught_exception ->
     Statistics.event
+      ~section:`Error
       ~flush:true
       ~name:"uncaught exception"
-      ~section:`Error
       ~integers:[]
       ~normals:[
         "exception", Exn.to_string uncaught_exception;
