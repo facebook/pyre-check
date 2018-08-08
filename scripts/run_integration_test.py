@@ -11,7 +11,6 @@ import subprocess
 import sys
 import tempfile
 from contextlib import contextmanager
-from typing import Optional
 
 
 LOG = logging.getLogger(__name__)
@@ -28,7 +27,7 @@ def assert_readable_directory(directory: str) -> None:
         raise Exception("{} is not a readable directory.".format(directory))
 
 
-def extract_typeshed(configuration_file: str) -> Optional[str]:
+def extract_typeshed(configuration_file: str):
     try:
         with open(configuration_file) as file:
             configuration = json.load(file)
@@ -46,7 +45,7 @@ def extract_typeshed(configuration_file: str) -> Optional[str]:
     return None
 
 
-def get_typeshed_from_github(base_directory: str) -> Optional[str]:
+def get_typeshed_from_github(base_directory: str):
     typeshed = os.path.join(base_directory, "typeshed")
     os.mkdir(typeshed)
 
