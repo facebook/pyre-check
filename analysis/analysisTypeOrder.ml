@@ -1418,9 +1418,20 @@ module Builder = struct
     let type_builtin = Type.Primitive (Identifier.create "type") in
     insert handler type_special_form;
     insert handler type_builtin;
+
+    let type_variable = Type.variable "_T" in
     connect handler ~predecessor:Type.Bottom ~successor:type_special_form;
-    connect handler ~predecessor:type_special_form ~successor:type_builtin;
-    connect handler ~predecessor:type_builtin ~successor:Type.Object;
+    connect
+      handler
+      ~predecessor:type_special_form
+      ~parameters:[type_variable]
+      ~successor:type_builtin;
+    connect
+      handler
+      ~predecessor:type_special_form
+      ~parameters:[type_variable]
+      ~successor:Type.generic;
+    connect handler ~predecessor:type_builtin ~parameters:[type_variable] ~successor:Type.generic;
 
     insert_unconnected (Type.Primitive (Identifier.create "typing.ClassVar"));
 

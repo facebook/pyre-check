@@ -444,7 +444,10 @@ let rec optional parameter =
 
 let meta = function
   | Variable _ ->
-      primitive "type"
+      Parametric {
+        name = Identifier.create "type";
+        parameters = [Top];
+      }
   | annotation ->
       Parametric {
         name = Identifier.create "typing.Type";
@@ -552,6 +555,7 @@ let primitive_substitution_map =
     "typing.Set", parametric_anys "typing.Set" 1;
     "typing.Tuple", Tuple (Unbounded Object);
     "typing.Type", parametric_anys "typing.Type" 1;
+    "type", parametric_anys "type" 1;
   ]
   |> List.map
     ~f:(fun (original, substitute) -> Identifier.create original, substitute)

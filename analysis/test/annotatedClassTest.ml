@@ -490,7 +490,7 @@ let test_class_attributes _ =
         Foo.__static__: typing.ClassVar[int]
         Foo.__instance__: int
     |}
-    "__instance____static____meta____type__";
+    "__instance____static____meta____type____getitem__";
 
   (* Test 'attribute' *)
   let assert_attribute ~parent ~parent_instantiated_type ~attribute_name ~expected_attribute =
