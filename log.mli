@@ -45,6 +45,8 @@ val warning: ('a, Format.formatter, unit, unit, unit, unit) Core.format6 -> 'a
 (* Logs directly to the standard output. *)
 val print: ('a, Stdio.Out_channel.t, Base.unit) Base.format -> 'a
 
+val log_unix_error: ?section:section -> (Unix.error * string * string) -> unit
+
 module Color : sig
   val yellow: string -> string
 

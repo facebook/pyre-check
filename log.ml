@@ -132,6 +132,10 @@ let print format =
   Printf.printf format
 
 
+let log_unix_error ?(section = `Error) (error_kind, name, parameters) =
+  log ~section "Unix error %s: %s(%s)" (Unix.error_message error_kind) name parameters
+
+
 module Color = struct
   let yellow string =
     Format.asprintf "\027[33m%s\027[0m" string

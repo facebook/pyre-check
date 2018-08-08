@@ -72,8 +72,8 @@ let build_symlink_map files =
     try
       let key = Path.real_path path in
       Map.set map ~key ~data:path
-    with Unix.Unix_error (error, function_name, parameter) ->
-      Log.warning "%s: %s(%s)" (Unix.error_message error) function_name parameter;
+    with Unix.Unix_error (error, name, parameters) ->
+      Log.log_unix_error ~section:`Warning (error, name, parameters);
       map
   in
   List.fold ~init:Path.Map.empty ~f:add_symlink files
@@ -86,8 +86,9 @@ let set_symlink ~root ~symlinks ~path =
       Map.set symlinks ~key:(Path.real_path path) ~data:path
     else
       symlinks
-  with Unix.Unix_error _ ->
+  with Unix.Unix_error (error, name, parameters) ->
     (* Ensure that removed file notifications don't crash the watchman client. *)
+    Log.log_unix_error ~section:`Warning (error, name, parameters);
     symlinks
 
 

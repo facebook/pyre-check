@@ -71,13 +71,13 @@ let computation_thread request_queue configuration state =
               List.iter ~f:(Socket.write socket) responses;
               { failures }
             with
-            | (Unix.Unix_error (kind, name, description)) ->
+            | (Unix.Unix_error (error, name, parameters)) ->
                 begin
-                  match kind with
+                  match error with
                   | Unix.EPIPE ->
                       Log.warning "Got an EPIPE while broadcasting to a persistent client";
                       { failures = failures + 1 }
-                  | _ -> raise (Unix.Unix_error (kind, name, description))
+                  | _ -> raise (Unix.Unix_error (error, name, parameters))
                 end
           in
           Mutex.critical_section lock ~f:(fun () ->

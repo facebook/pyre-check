@@ -92,7 +92,8 @@ let communicate server_socket =
     begin
       try
         List.iter ~f:process_socket read
-      with Unix.Unix_error _ ->
+      with Unix.Unix_error (error, name, parameters) ->
+        Log.log_unix_error (error, name, parameters);
         Unix.close server_socket;
         raise (ClientExit ("Unix error while processing sockets", 0))
     end;

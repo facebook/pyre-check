@@ -134,8 +134,8 @@ let directory_contains ?(follow_symlinks = false) ~directory path =
     let directory = absolute directory in
     String.is_prefix ~prefix:directory path
   with
-  | Unix.Unix_error (error, name, parameter) ->
-      Log.error "Unix error %s: Function %s(%s)" (Unix.Error.message error) name parameter;
+  | Unix.Unix_error (error, name, parameters) ->
+      Log.log_unix_error (error, name, parameters);
       false
 
 
