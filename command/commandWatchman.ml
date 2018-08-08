@@ -67,12 +67,16 @@ let stop_watchman server_socket configuration =
 let recheck_threshold = 200
 
 
-let build_symlink_map ~root =
-  let files = File.list ~filter:(fun file -> Filename.check_suffix file ".py") ~root in
-  List.fold
-    ~init:Path.Map.empty
-    ~f:(fun map path -> Map.set map ~key:(Path.real_path path) ~data:path)
-    files
+let build_symlink_map files =
+  let add_symlink map path =
+    try
+      let key = Path.real_path path in
+      Map.set map ~key ~data:path
+    with Unix.Unix_error (error, function_name, parameter) ->
+      Log.warning "%s: %s(%s)" (Unix.error_message error) function_name parameter;
+      map
+  in
+  List.fold ~init:Path.Map.empty ~f:add_symlink files
 
 
 let set_symlink ~root ~symlinks ~path =
@@ -139,7 +143,10 @@ let listen_for_changed_files
     server_socket
     watchman_directory
     ({ Configuration.source_root; _ } as configuration) =
-  let symlinks = build_symlink_map ~root:source_root in
+  let symlinks =
+    File.list ~filter:(fun file -> Filename.check_suffix file ".py") ~root:source_root
+    |> build_symlink_map
+  in
   let socket_path =
     let open Yojson.Safe in
     Unix.open_process_in "watchman get-sockname --no-pretty"

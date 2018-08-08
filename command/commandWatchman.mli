@@ -9,6 +9,8 @@ open Pyre
 
 module Socket = CommandSocket
 
+(* Exposed for testing. *)
+val build_symlink_map: PyrePath.t list -> PyrePath.t Path.Map.t
 val process_response
   :  root: Path.t
   -> watchman_directory:Path.t
