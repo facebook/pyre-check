@@ -197,6 +197,8 @@ class Repository:
                 ["pyre", "--noninteractive", "--output=json", command]
             )
         except subprocess.CalledProcessError as error:
+            if error.returncode not in [0, 1]:
+                raise error
             output = error.output
         return output.decode("utf-8")
 
