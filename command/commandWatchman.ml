@@ -294,7 +294,7 @@ let run_command ~daemonize ~verbose ~sections ~source_root ~project_root =
     in
     let watchman_watches_root =
       let directory_contains_root directory =
-        Path.directory_contains ~directory:(Path.create_absolute directory) source_root
+        Path.directory_contains ~directory:(Path.create_absolute directory) project_root
       in
       try
         let watch_list = Yojson.Safe.from_string input in
