@@ -110,7 +110,7 @@ let run_command expected_version log_identifier source_root () =
       ?expected_version
       ()
   in
-  Configuration.set_global configuration;
+  Service.Scheduler.initialize_process ~configuration;
   (* Log stderr to file *)
   let log_path =
     let persistent_client_directory =
@@ -166,11 +166,13 @@ let run_command expected_version log_identifier source_root () =
       exit exit_code
   | uncaught_exception ->
       Statistics.event
+        ~section:`Error
         ~flush:true
         ~name:"persistent client exception"
         ~normals:[
           "exception", Exn.to_string uncaught_exception;
           "exception backtrace", Printexc.get_backtrace ();
+          "exception origin", "persistent";
         ]
         ();
       raise uncaught_exception
