@@ -8,6 +8,7 @@ open OUnit2
 
 open Analysis
 open Ast
+open Expression
 
 open Test
 open Interprocedural
@@ -20,6 +21,7 @@ let create_call_graph ?(test_file = "test_file") source =
   let source = Test.parse source in
   let () = AstSharedMemory.add_source handle source in
   let environment = Test.environment () in
+  Service.Environment.populate environment [source];
   TypeCheck.check configuration environment source |> ignore;
   let call_graph =
     Service.Analysis.record_and_merge_call_graph environment CallGraph.empty handle source
@@ -63,6 +65,7 @@ let test_fixpoint _ =
       ~all_callables
       Fixpoint.Epoch.initial
   in
+  assert_bool "Callgraph is empty!" (Access.Map.length call_graph > 0);
   assert_equal 3 iterations ~printer:Int.to_string
 
 
