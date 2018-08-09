@@ -70,7 +70,7 @@ let assert_taint source ~expected =
       | AccessPath.Root.Parameter { position; _ } ->
           let sinks =
             Domains.BackwardState.collapse sink_tree
-            |> Domains.BackwardTaint.elements
+            |> Domains.BackwardTaint.leaves
           in
           let sinks =
             Int.Map.find sink_map position

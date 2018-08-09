@@ -122,7 +122,9 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
               FunctionContext.add_flow_candidate flow_candidate;
               tito
             in
-            let tito = List.foldi ~f:analyze_argument_position arguments ~init:ForwardTaint.empty in
+            let tito =
+              List.foldi ~f:analyze_argument_position arguments ~init:ForwardTaint.bottom
+            in
             let result_taint =
               ForwardState.read TaintAccessPath.Root.LocalResult forward.source_taint
             in

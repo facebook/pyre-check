@@ -25,7 +25,7 @@ end
 
 
 let initial_taint =
-  let result_taint = BackwardTaint.add BackwardTaint.empty TaintSinks.LocalReturn in
+  let result_taint = BackwardTaint.singleton TaintSinks.LocalReturn in
   BackwardState.assign
     ~root:Root.LocalResult
     ~path:[]
@@ -276,7 +276,8 @@ end
    parts and sink_taint. *)
 let extract_tito_and_sink_models parameters entry_taint =
   let filter_to_local_return taint =
-    BackwardTaint.filter ~f:((=) TaintSinks.LocalReturn) taint
+    BackwardTaint.partition_tf ~f:((=) TaintSinks.LocalReturn) taint
+    |> fst
   in
   let extract_taint_in_taint_out position model { Node.value = { Parameter.name; _ }; _ } =
     let taint_in_taint_out_taint =
@@ -290,7 +291,8 @@ let extract_tito_and_sink_models parameters entry_taint =
       model
   in
   let filter_to_real_sinks taint =
-    BackwardTaint.filter ~f:((<>) TaintSinks.LocalReturn) taint
+    BackwardTaint.partition_tf ~f:((<>) TaintSinks.LocalReturn) taint
+    |> fst
   in
   let extract_sink_taint position model { Node.value = { Parameter.name; _ }; _ } =
     let sink_taint =

@@ -35,7 +35,7 @@ type candidate = {
 let generate_source_sink_matches ~location ~source_tree ~sink_tree =
   let make_source_sink_matches ~path ~path_element:_ ~element:sink_taint matches =
     let source_taint = ForwardState.collapse (ForwardState.read_tree path source_tree) in
-    if ForwardTaint.is_empty source_taint then
+    if ForwardTaint.is_bottom source_taint then
       matches
     else
       { source_taint; sink_taint; } :: matches
@@ -61,21 +61,21 @@ type flow_state = {
 let partition_flow ?sources ?sinks flow =
   let included_source_taint, excluded_source_taint =
     match sources with
-    | None -> flow.source_taint, ForwardTaint.empty
+    | None -> flow.source_taint, ForwardTaint.bottom
     | Some f -> ForwardTaint.partition_tf ~f flow.source_taint
   in
   let included_sink_taint, excluded_sink_taint =
     match sinks with
-    | None -> flow.sink_taint, BackwardTaint.empty
+    | None -> flow.sink_taint, BackwardTaint.bottom
     | Some f -> BackwardTaint.partition_tf ~f flow.sink_taint
   in
-  if ForwardTaint.is_empty included_source_taint
-  || BackwardTaint.is_empty included_sink_taint then
+  if ForwardTaint.is_bottom included_source_taint
+  || BackwardTaint.is_bottom included_sink_taint then
     { matched = []; rest = [ flow ]; }
   else
     let matched = [ { source_taint = included_source_taint; sink_taint = included_sink_taint; } ] in
     match
-      ForwardTaint.is_empty excluded_source_taint, BackwardTaint.is_empty excluded_sink_taint
+      ForwardTaint.is_bottom excluded_source_taint, BackwardTaint.is_bottom excluded_sink_taint
     with
     | true, true ->
         { matched; rest = []; }
@@ -129,10 +129,10 @@ let make_error define location code name flows =
   let get_source_taint { source_taint; _ } = source_taint in
   let get_sink_taint { sink_taint; _ } = sink_taint in
   let join_source_taint source_taints =
-    List.fold source_taints ~init:ForwardTaint.empty ~f:ForwardTaint.join
+    List.fold source_taints ~init:ForwardTaint.bottom ~f:ForwardTaint.join
   in
   let join_sink_taint sink_taints =
-    List.fold sink_taints ~init:BackwardTaint.empty ~f:BackwardTaint.join
+    List.fold sink_taints ~init:BackwardTaint.bottom ~f:BackwardTaint.join
   in
   let join_flows flows =
     {
