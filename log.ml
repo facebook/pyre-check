@@ -95,10 +95,28 @@ let initialize_for_tests () =
   Hash_set.add enabled "Dump"
 
 
+let time_zone = ref None
+(* A safer version of Time.Zone.local, which defaults to UTC instead
+   of throwing an exception if we cannot figure out local time. See
+   https://github.com/janestreet/core/issues/96 for one example when
+   this can happen *)
+let get_time_zone () =
+  match !time_zone with
+  | Some zone -> zone
+  | None ->
+      let zone =
+        try
+          force Time.Zone.local
+        with _ ->
+          Time.Zone.utc
+      in
+      time_zone := Some zone;
+      zone
+
 let log ~section format =
   let section = section_to_string section in
   if Hash_set.mem enabled section then
-    let zone = force Time.Zone.local in
+    let zone = get_time_zone () in
     Format.fprintf
       Format.err_formatter
       ("%s %s " ^^ format ^^ "\n%!")
@@ -148,7 +166,7 @@ end
 
 let rotate ?(number_to_keep = 10) basename =
   let timestamp =
-    Time.to_filename_string ~zone:(force Time.Zone.local) (Time.now ())
+    Time.to_filename_string ~zone:(get_time_zone ()) (Time.now ())
   in
   let suppress_system_error f =
     try
