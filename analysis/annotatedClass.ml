@@ -320,6 +320,22 @@ let immediate_superclasses definition ~resolution =
   |> List.find_map ~f:has_definition
 
 
+let metaclass definition ~resolution =
+  let get_metaclass { Node.value = { Class.bases; _ }; _ } =
+    let get_metaclass = function
+      | { Argument.name = Some { Node.value = metaclass; _ }; value }
+        when Identifier.equal metaclass (Identifier.create "metaclass") ->
+          Some (Resolution.parse_annotation resolution value)
+      | _ ->
+          None
+    in
+    List.find_map ~f:get_metaclass bases
+  in
+  definition :: superclasses ~resolution definition
+  |> List.find_map ~f:get_metaclass
+  |> Option.value ~default:(Type.primitive "type")
+
+
 let methods ({ Node.value = { Class.body; _ }; _ } as definition) =
   let extract_define = function
     | { Node.value = Define define; _ } -> Some (Method.create ~define ~parent:definition)
@@ -660,41 +676,10 @@ let attributes
       (* Class over meta hierarchy if necessary. *)
       let meta_definitions =
         if class_attributes then
-          let default =
-            (Resolution.class_definition resolution (Type.primitive "type")
-             >>| fun definition -> [definition])
-            |> Option.value ~default:[]
-          in
-          let find_meta_definition sofar superclass_annotation =
-            match sofar with
-            | Some definition ->
-                Some definition
-            | None ->
-                Resolution.class_definition resolution superclass_annotation
-                >>= (fun { Node.value = { Statement.Class.bases; _ }; _ } ->
-                    let find_meta_definition { Argument.name; value } =
-                      match name with
-                      | Some { Node.value = name; _ } when Identifier.show name = "metaclass" ->
-                          Resolution.parse_annotation resolution value
-                          |> Resolution.class_definition resolution
-                      | _ ->
-                          None
-                    in
-                    List.find_map ~f:find_meta_definition bases)
-          in
-          match find_meta_definition None (annotation ~resolution definition) with
-          | Some definition ->
-              (* Unrolling the first fold because `TypeOrder.successors_fold` is not folding over
-                 the passed in annotation. *)
-              definition :: (superclasses ~resolution definition)
-          | _ ->
-              (TypeOrder.successors_fold
-                 (Resolution.order resolution)
-                 ~initial:None
-                 ~f:find_meta_definition
-                 (annotation ~resolution definition)
-               >>| fun definition -> definition :: (superclasses ~resolution definition))
-              |> Option.value ~default
+          metaclass ~resolution definition
+          |> Resolution.class_definition resolution
+          >>| (fun definition -> definition :: superclasses ~resolution definition)
+          |> Option.value ~default:[]
         else
           []
       in

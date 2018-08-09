@@ -28,6 +28,7 @@ val bases: t -> Argument.t list
 val body: t -> Statement.t list
 
 val annotation: t -> resolution: Resolution.t -> Type.t
+val metaclass: t -> resolution: Resolution.t -> Type.t
 
 module Method : sig
   type t

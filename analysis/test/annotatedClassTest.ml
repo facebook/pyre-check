@@ -498,7 +498,7 @@ let test_class_attributes _ =
         foo.third: int = 1
         foo.class_attribute: typing.ClassVar[int]
     |}
-    ("__init__class_attributefirstimplicitsecondthird__name__");
+    ("__init__class_attributefirstimplicitsecondthird__name____getitem__");
   assert_fold
     ~class_attributes:true
     {|
@@ -862,6 +862,59 @@ let test_inferred_generic_base _ =
     []
 
 
+let test_metaclasses _ =
+  let assert_metaclass ~source ~target metaclass =
+    let ({ Source.statements; _ } as source) = parse source in
+    let target =
+      let target = function
+        | { Node.location; value = Statement.Class ({ Statement.Class.name; _ } as definition) }
+          when Access.show name = target ->
+            Some (Class.create { Node.location; value = definition })
+        | _ ->
+            None
+      in
+      List.find_map ~f:target statements
+    in
+    let resolution = Test.resolution ~sources:[source] () in
+    match target with
+    | Some target ->
+        assert_equal
+          (Type.primitive metaclass)
+          (Annotated.Class.metaclass ~resolution target)
+    | None ->
+        assert_unreached ()
+  in
+  assert_metaclass
+    ~source:{|
+       class C:
+         pass
+    |}
+    ~target:"C"
+    "type";
+
+  assert_metaclass
+    ~source:{|
+      class Meta:
+        pass
+      class C(metaclass=Meta):
+        pass
+    |}
+    ~target:"C"
+    "Meta";
+
+  assert_metaclass
+    ~source:{|
+      class Meta:
+        pass
+      class C(metaclass=Meta):
+        pass
+      class D(C):
+        pass
+    |}
+    ~target:"D"
+    "Meta"
+
+
 let test_method_overloads _ =
   let resolution =
     populate {|
@@ -1000,6 +1053,7 @@ let () =
     "generics">::test_generics;
     "superclasses">::test_superclasses;
     "constructors">::test_constructors;
+    "metaclasses">::test_metaclasses;
     "methods">::test_methods;
     "is_protocol">::test_is_protocol;
     "implements">::test_implements;
