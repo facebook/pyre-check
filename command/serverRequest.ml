@@ -67,10 +67,16 @@ module LookupCache = struct
     |> ignore
 
 
-  let find ~state ~configuration file position =
+  let find_annotation ~state ~configuration file position =
     get ~state ~configuration file
     >>= fun { table; source } ->
     Lookup.get_annotation table ~position ~source_text:source
+
+
+  let find_definition ~state ~configuration file position =
+    get ~state ~configuration file
+    >>= fun { table; _ } ->
+    Lookup.get_definition table ~position
 end
 
 
@@ -424,23 +430,23 @@ let rec process_request
     | ClientExitRequest Persistent ->
         Log.log ~section:`Server "Stopping persistent client";
         Some (state, Some (ClientExitResponse Persistent))
-    | GetDefinitionRequest { DefinitionRequest.id; _ } ->
-        (* TODO(T28296560). *)
-        let definition = None in
+    | GetDefinitionRequest { DefinitionRequest.id; file; position } ->
+        let open LanguageServer.Protocol in
+        let definition = LookupCache.find_definition ~state ~configuration file position in
         Some
           (state,
            Some
              (LanguageServerProtocolResponse
-                (LanguageServer.Protocol.TextDocumentDefinitionResponse.create
+                (TextDocumentDefinitionResponse.create
                    ~root:source_root
                    ~id
                    ~location:definition
-                 |> LanguageServer.Protocol.TextDocumentDefinitionResponse.to_yojson
+                 |> TextDocumentDefinitionResponse.to_yojson
                  |> Yojson.Safe.to_string)))
     | HoverRequest { DefinitionRequest.id; file; position } ->
         let open LanguageServer.Protocol in
         let result =
-          LookupCache.find ~state ~configuration file position
+          LookupCache.find_annotation ~state ~configuration file position
           >>| fun (location, annotation) ->
           {
             HoverResponse.location;

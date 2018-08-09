@@ -165,7 +165,7 @@ end
 module TextDocumentDefinitionResponse = struct
   include LanguageServerProtocolTypes.TextDocumentDefinitionResponse
 
-  let create ?(root = Path.current_working_directory ()) ~id ~location =
+  let create ~root ~id ~location =
     {
       jsonrpc = "2.0";
       id;

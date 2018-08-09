@@ -59,10 +59,15 @@ let parse ~root request =
               Some (GetDefinitionRequest {
                   DefinitionRequest.id;
                   file;
-                  position = { Ast.Location.line; column = character };
+                  (* The LSP protocol starts a file at line 0, column 0.
+                     Pyre starts a file at line 1, column 0. *)
+                  position = { Ast.Location.line = line + 1; column = character };
                 })
-          | Ok _ -> None
-          | Error yojson_error -> Log.dump "%s" yojson_error; None
+          | Ok _ ->
+              None
+          | Error yojson_error ->
+              Log.dump "%s" yojson_error;
+              None
         end
     | "textDocument/didClose" ->
         begin
@@ -87,8 +92,12 @@ let parse ~root request =
               in
               Log.log ~section:`Server "Closed file %a" File.pp file;
               Some (CloseDocument file)
-          | Ok _ -> log_method_error request_method; None
-          | Error yojson_error -> Log.log ~section:`Server "Error: %s" yojson_error; None
+          | Ok _ ->
+              log_method_error request_method;
+              None
+          | Error yojson_error ->
+              Log.log ~section:`Server "Error: %s" yojson_error;
+              None
         end
 
     | "textDocument/didOpen" ->
@@ -114,8 +123,12 @@ let parse ~root request =
               in
               Log.log ~section:`Server "Opened file %a" File.pp file;
               Some (OpenDocument file)
-          | Ok _ -> log_method_error request_method; None
-          | Error yojson_error -> Log.log ~section:`Server "Error: %s" yojson_error; None
+          | Ok _ ->
+              log_method_error request_method;
+              None
+          | Error yojson_error ->
+              Log.log ~section:`Server "Error: %s" yojson_error;
+              None
         end
 
     | "textDocument/didSave" ->
@@ -140,8 +153,12 @@ let parse ~root request =
                 |> File.create ~content:text
               in
               Some (SaveDocument file)
-          | Ok _ -> log_method_error request_method; None
-          | Error yojson_error -> Log.log ~section:`Server "Error: %s" yojson_error; None
+          | Ok _ ->
+              log_method_error request_method;
+              None
+          | Error yojson_error ->
+              Log.log ~section:`Server "Error: %s" yojson_error;
+              None
         end
 
     | "textDocument/hover" ->
@@ -173,8 +190,11 @@ let parse ~root request =
                      Pyre starts a file at line 1, column 0. *)
                   position = { Ast.Location.line = line + 1; column = character };
                 })
-          | Ok _ -> None
-          | Error yojson_error -> Log.log ~section:`Server "Error: %s" yojson_error; None
+          | Ok _ ->
+              None
+          | Error yojson_error ->
+              Log.log ~section:`Server "Error: %s" yojson_error;
+              None
         end
 
     | "shutdown" ->
