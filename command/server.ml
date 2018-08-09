@@ -692,8 +692,12 @@ let run_stop graceful source_root () =
       in
       poll ()
     in
-    poll_for_deletion (ServerConfiguration.socket_path configuration)
-    |> exit_strategy
+    match poll_for_deletion (ServerConfiguration.socket_path configuration) with
+    | exit_code ->
+        exit_strategy exit_code
+    | exception ServerConfiguration.ServerNotRunning ->
+        (* Our job is done if the server is not running. *)
+        exit_strategy 0
   with
   | NotRunning
   | Unix.Unix_error _
