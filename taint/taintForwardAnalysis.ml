@@ -244,7 +244,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
         (Log.Color.cyan (show state))
         (Log.Color.cyan (Statement.show_statement statement));
       match statement with
-      | Assign { target; annotation; value; parent } ->
+      | Assign { target; value; _ } ->
           let taint = analyze_expression_option ?key value state in
           let access_path = of_expression target in
           store_taint_option access_path taint state
@@ -279,7 +279,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           state
 
 
-    let backward ?key:_ state ~statement =
+    let backward ?key:_ _ ~statement:_ =
       failwith "Don't call me"
   end
 
@@ -305,7 +305,7 @@ let run ({ Node.value = { Define.parameters; _ }; _ } as define) =
         ~data:candidate
 
     let generate_errors () =
-      let accumulate ~key ~data:candidate errors =
+      let accumulate ~key:_ ~data:candidate errors =
         let new_errors = TaintFlow.generate_errors ~define:definition candidate in
         List.rev_append new_errors errors
       in

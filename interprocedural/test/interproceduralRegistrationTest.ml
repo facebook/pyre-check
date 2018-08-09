@@ -22,13 +22,13 @@ module SimpleAnalysis = Interprocedural.Result.Make(struct
 
     let show_call_model = string_of_int
 
-    let join ~iteration a b =
+    let join ~iteration:_ a b =
       a + b
 
     let widen ~iteration ~previous ~next =
       join ~iteration previous next
 
-    let reached_fixpoint ~iteration ~previous ~next =
+    let reached_fixpoint ~iteration:_ ~previous ~next =
       next <= previous
 
     let summaries _ _ _ = []
@@ -36,9 +36,9 @@ module SimpleAnalysis = Interprocedural.Result.Make(struct
 
 
 include SimpleAnalysis.Register(struct
-    let init ~types ~functions = ()
+    let init ~types:_ ~functions:_ = ()
 
-    let analyze callable body = "some result", 5
+    let analyze _callable _body = "some result", 5
   end)
 
 
@@ -46,7 +46,7 @@ let test_simple_analysis _ =
   match  AnalysisKind.analysis_by_name SimpleAnalysis.name with
   | None -> assert_failure "Lookup of analysis module failed."
   | Some analysis_kind ->
-      let Result.Analysis { kind; analysis; } = Result.get_abstract_analysis analysis_kind in
+      let Result.Analysis { analysis; _ } = Result.get_abstract_analysis analysis_kind in
       let module Analysis = (val analysis) in
       assert_equal (Analysis.empty_model |> Analysis.show_call_model) "0";
       assert_equal (Analysis.obscure_model |> Analysis.show_call_model) "-1";

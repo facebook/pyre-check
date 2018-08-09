@@ -31,9 +31,9 @@ include Analysis.BaseError.Make(struct
     let name { name; _ } =
       name
 
-    let messages ~detailed ~define location { messages; _ } =
+    let messages ~detailed:_ ~define:_ _ { messages; _ } =
       messages
 
-    let inference_information ~define kind =
+    let inference_information ~define:_ _ =
       `Null
   end)

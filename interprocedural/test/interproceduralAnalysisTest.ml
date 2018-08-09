@@ -45,13 +45,13 @@ module ResultA = Interprocedural.Result.Make(struct
 
     let show_call_model = string_of_int
 
-    let join ~iteration a b =
+    let join ~iteration:_ a b =
       a + b
 
     let widen ~iteration ~previous ~next =
       join ~iteration previous next
 
-    let reached_fixpoint ~iteration ~previous ~next =
+    let reached_fixpoint ~iteration:_ ~previous ~next =
       next <= previous
 
     let summaries callable result_option model =
@@ -71,9 +71,9 @@ module ResultA = Interprocedural.Result.Make(struct
 
 
 module AnalysisA = ResultA.Register(struct
-    let init ~types ~functions = ()
+    let init ~types:_ ~functions:_ = ()
 
-    let analyze callable body =
+    let analyze _callable _body =
       "A", 5
   end)
 
@@ -92,13 +92,13 @@ module ResultB = Interprocedural.Result.Make(struct
     let show_call_model model =
       model
 
-    let join ~iteration a b =
+    let join ~iteration:_ a b =
       a ^ b
 
     let widen ~iteration ~previous ~next =
       join ~iteration previous next
 
-    let reached_fixpoint ~iteration ~previous ~next =
+    let reached_fixpoint ~iteration:_ ~previous ~next =
       next <= previous
 
     let summaries callable result_option model =
@@ -118,9 +118,9 @@ module ResultB = Interprocedural.Result.Make(struct
 
 
 module AnalysisB = ResultB.Register(struct
-    let init ~types ~functions = ()
+    let init ~types:_ ~functions:_ = ()
 
-    let analyze callable body =
+    let analyze _callable _body =
       7, "B"
   end)
 

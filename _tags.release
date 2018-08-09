@@ -19,5 +19,5 @@ true: bin_annot
 true: annot
 true: thread
 true: use_menhir
-true: warn(A-3-4-27-34-32-39-40-41-42-44-45-48-49-50-57)
+true: warn(A-3-4-34-32-39-40-41-42-44-45-48-49-50-57)
 true: optimize(3)

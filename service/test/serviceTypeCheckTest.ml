@@ -68,7 +68,7 @@ let type_check_sources_list_test context =
         (Path.create_relative ~root ~relative:path);
     ]
   in
-  let check context =
+  let check _ =
     let root = Path.current_working_directory () in
     let files =
       {|

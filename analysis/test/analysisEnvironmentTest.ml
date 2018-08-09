@@ -29,23 +29,21 @@ let value option =
 let configuration = Configuration.create ~infer:true ()
 
 
-let plain_populate ?source_root ?(check_dependency_exists = false) sources =
+let plain_populate sources =
   let environment = Environment.Builder.create () in
   Service.Environment.populate
-    ?source_root
-    ~check_dependency_exists
     (Environment.handler ~configuration environment)
     sources;
   environment
 
 
-let populate_with_sources ?source_root ?(check_dependency_exists = false) sources =
-  plain_populate ?source_root ~check_dependency_exists sources
+let populate_with_sources sources =
+  plain_populate sources
   |> Environment.handler ~configuration
 
 
-let populate ?source_root ?(check_dependency_exists = false) source =
-  populate_with_sources ?source_root ~check_dependency_exists [parse source]
+let populate source =
+  populate_with_sources [parse source]
 
 
 let global environment =
@@ -1216,8 +1214,6 @@ let test_import_dependencies context =
     in
     let environment =
       populate_with_sources
-        ~source_root:(Path.current_working_directory ())
-        ~check_dependency_exists:true
         [
           parse ~path:"test.py" ~qualifier:(Access.create "test") source;
           parse ~path:"a.py" ~qualifier:(Access.create "a") "";
@@ -1244,7 +1240,6 @@ let test_register_dependencies _ =
       |}
   in
   Environment.register_dependencies
-    ~check_dependency_exists:false
     (module Handler)
     (parse ~path:"test.py" source);
   let dependencies path = Environment.dependencies (module Handler) (Source.qualifier ~path) in
@@ -1270,7 +1265,6 @@ let test_purge _ =
     |}
   in
   Service.Environment.populate
-    ~check_dependency_exists:false
     handler
     [parse ~path:"test.py" source];
   assert_is_some (Handler.class_definition (Type.primitive "baz.baz"));

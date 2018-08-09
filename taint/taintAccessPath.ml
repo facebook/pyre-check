@@ -78,7 +78,7 @@ let rec split_maximal_prefix path =
       (identifier :: prefix), rest
   | Access.Call _ :: _ ->
       [], path
-  | Access.Expression expression :: _ ->
+  | Access.Expression _ :: _ ->
       failwith "invalid expr in access (not in root position)"
 
 

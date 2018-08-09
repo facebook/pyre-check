@@ -14,7 +14,7 @@ open Environment
 
 let transform_environment
     (module Handler: Handler)
-    { Source.path; Source.statements; _ } =
+    { Source.statements; _ } =
   let transform { Node.location; value } =
     match value with
     | Class ({ Class.name = parent; body; _ } as origin)

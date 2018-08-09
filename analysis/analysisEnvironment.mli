@@ -4,7 +4,6 @@
     LICENSE file in the root directory of this source tree. *)
 
 open Ast
-open Pyre
 open Statement
 
 module Annotation = AnalysisAnnotation
@@ -132,9 +131,7 @@ val connect_type_order
   -> unit
 
 val register_dependencies
-  :  ?source_root: Path.t
-  -> ?check_dependency_exists: bool
-  -> (module Handler)
+  :  (module Handler)
   -> Source.t
   -> unit
 

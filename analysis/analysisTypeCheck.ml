@@ -628,7 +628,7 @@ module State = struct
 
 
   let rec forward_expression
-      ~state:({ resolution; errors; define; _ } as state)
+      ~state:({ resolution; define; _ } as state)
       ~expression:{ Node.location; value } =
     let rec forward_entry ~state ~entry:{ Dictionary.key; value } =
       let { state; resolved = key_resolved } = forward_expression ~state ~expression:key in
@@ -891,7 +891,7 @@ module State = struct
     | BooleanOperator {
         BooleanOperator.left;
         operator;
-        right = ({ Node.location; _ } as right);
+        right;
       } ->
         let assume =
           let assume =
@@ -911,7 +911,7 @@ module State = struct
           match resolved_left, resolved_right, operator with
           | Optional resolved_left, resolved_right, BooleanOperator.Or ->
               Resolution.join resolution resolved_left resolved_right
-          | Optional resolved_left, resolved_right, BooleanOperator.And ->
+          | Optional _, resolved_right, BooleanOperator.And ->
               Type.optional resolved_right
           | resolved_left, resolved_right, _ ->
               Resolution.join resolution resolved_left resolved_right
@@ -1790,8 +1790,6 @@ module State = struct
       ({
         resolution;
         resolution_fixpoint;
-        errors;
-        define = { Node.value = { Define.async; _ }; _ };
         nested_defines;
         bottom;
         _;

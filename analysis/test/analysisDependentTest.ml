@@ -15,10 +15,9 @@ open Test
 let configuration = Configuration.create ()
 
 
-let populate ?source_root source =
+let populate source =
   let environment = Environment.Builder.create () in
   Service.Environment.populate
-    ?source_root
     (Environment.handler ~configuration environment)
     [parse source];
   environment

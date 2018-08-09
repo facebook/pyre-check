@@ -4,14 +4,11 @@
     LICENSE file in the root directory of this source tree. *)
 
 open Ast
-open Pyre
 open Analysis
 
 
 val populate
   :  (module Environment.Handler)
-  -> ?source_root: Path.t
-  -> ?check_dependency_exists: bool
   -> Source.t list
   -> unit
 

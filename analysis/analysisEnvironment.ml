@@ -818,12 +818,7 @@ let connect_type_order (module Handler: Handler) source =
   |> ignore
 
 
-let register_dependencies
-    ?(source_root = Path.current_working_directory ())
-    ?(check_dependency_exists = true)
-    (module Handler: Handler)
-    source =
-
+let register_dependencies (module Handler: Handler) source =
   let module Visit = Visit.MakeStatementVisitor(struct
       type t = unit
 

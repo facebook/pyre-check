@@ -174,7 +174,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           analyze_call ?key ~callee arguments.value state taint
       | Expression expression ->
           analyze_expression taint expression state
-      | Global access ->
+      | Global _ ->
           state
       | Local name ->
           store_weak_taint ~root:(Root.Variable name) ~path:[] taint state
@@ -262,7 +262,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       analyze_statement ?key state statement
 
 
-    let forward ?key:_ state ~statement =
+    let forward ?key:_ _ ~statement:_ =
       failwith "Don't call me"
   end
 
@@ -312,7 +312,7 @@ let extract_tito_and_sink_models parameters entry_taint =
   TaintResult.Backward.{ taint_in_taint_out; sink_taint; }
 
 
-let run ({ Node.value = { Define.name; parameters; _ }; _ } as define) =
+let run ({ Node.value = { Define.parameters; _ }; _ } as define) =
   let module AnalysisInstance = AnalysisInstance(struct let definition = define end) in
   let open AnalysisInstance in
   let initial = FixpointState.{ taint = initial_taint } in

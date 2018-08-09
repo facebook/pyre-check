@@ -17,8 +17,6 @@ open ServiceIgnoreSharedMemory
 
 let populate
     (module Handler: Environment.Handler)
-    ?(source_root = Path.current_working_directory ())
-    ?(check_dependency_exists = true)
     sources =
   (* Yikes... *)
   Handler.register_alias
@@ -49,7 +47,7 @@ let populate
   Environment.register_aliases (module Handler) sources;
 
   List.iter
-    ~f:(Environment.register_dependencies ~source_root ~check_dependency_exists (module Handler))
+    ~f:(Environment.register_dependencies (module Handler))
     sources;
   (* Build type order. *)
   List.iter ~f:(Environment.connect_type_order (module Handler)) sources;
@@ -75,7 +73,7 @@ let populate
 
 let build
     ((module Handler: Environment.Handler) as handler)
-    ~configuration:({ Configuration.source_root; _ } as configuration)
+    ~configuration
     ~stubs
     ~sources =
   Log.info "Building type environment...";
@@ -104,7 +102,7 @@ let build
     let sources = get_sources sources in
     List.filter ~f:should_keep sources
   in
-  populate ~source_root handler (stubs @ sources);
+  populate handler (stubs @ sources);
   Statistics.performance ~name:"full environment built" ~timer ();
 
   if Log.is_enabled `Dotty then

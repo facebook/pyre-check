@@ -465,7 +465,7 @@ module Define = struct
       in
       List.fold ~init:Access.SerializableMap.empty ~f:add_parameter parameters
     in
-    let attribute map { Node.location; value } =
+    let attribute map { Node.value; _ } =
       match value with
       | Assign { Assign.target; annotation; value; _ } ->
           let attribute ~map ~target:({ Node.location; _ } as target) ~annotation =

@@ -11,8 +11,8 @@ module Scheduler = Service.Scheduler
 
 
 let run_analysis
-    taint
-    taint_models
+    _taint
+    _taint_models
     verbose
     expected_version
     sections

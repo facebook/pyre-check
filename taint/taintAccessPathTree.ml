@@ -979,7 +979,7 @@ module Make (Checks: Checks.S) (Root: Root.S) (Element: Analysis.AbstractDomain.
     if phys_equal left_access_path_tree right_access_path_tree then
       left_access_path_tree
     else
-      let merge ~key = function
+      let merge ~key:_ = function
         | `Both (left , right) -> join_trees Element.bottom ~widen_depth:None left right
         | `Left tree | `Right tree -> Some tree in
       let result = RootMap.merge ~f:merge left_access_path_tree right_access_path_tree in
@@ -1029,7 +1029,7 @@ module Make (Checks: Checks.S) (Root: Root.S) (Element: Analysis.AbstractDomain.
         join_trees Element.bottom ~widen_depth previous next
         >>| check_result
       in
-      let merge ~key = function
+      let merge ~key:_ = function
         | `Both (left, right) -> widen_trees left right
         | `Left tree | `Right tree -> Some tree in
       let result = RootMap.merge ~f:merge previous next in

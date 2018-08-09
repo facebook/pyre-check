@@ -214,7 +214,7 @@ let analyze_define step analyses callable define =
   widen_if_necessary step callable new_model results
 
 
-let analyze_overrides step callable =
+let analyze_overrides _step _callable =
   Fixpoint.{
     is_partial = false;
     model = Result.empty_model;
@@ -287,7 +287,7 @@ let errors results =
 
 let summaries_internal callable models results =
   let open Result in
-  let merge kind model_opt result_opt =
+  let merge _ model_opt result_opt =
     match model_opt with
     | Some model ->
         Some (model, result_opt)

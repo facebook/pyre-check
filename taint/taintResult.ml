@@ -30,7 +30,7 @@ module Forward = struct
     { source_taint = ForwardState.widen ~iteration ~previous ~next }
 
   let reached_fixpoint
-      ~iteration
+      ~iteration:_
       ~previous:{ source_taint = previous; }
       ~next:{ source_taint = next; } =
     ForwardState.less_or_equal ~left:next ~right:previous
@@ -71,7 +71,7 @@ module Backward = struct
     { sink_taint; taint_in_taint_out; }
 
   let reached_fixpoint
-      ~iteration
+      ~iteration:_
       ~previous:{ sink_taint = sink_taint_previous; taint_in_taint_out = tito_previous; }
       ~next:{ sink_taint = sink_taint_next; taint_in_taint_out = tito_next; } =
     BackwardState.less_or_equal ~left:sink_taint_next ~right:sink_taint_previous
@@ -109,7 +109,7 @@ module ResultArgument = struct
     backward = Backward.empty;
   }
 
-  let join ~iteration left right =
+  let join ~iteration:_ left right =
     {
       forward = Forward.join left.forward right.forward;
       backward = Backward.join left.backward right.backward;
@@ -128,7 +128,7 @@ module ResultArgument = struct
     Forward.reached_fixpoint ~iteration ~previous:previous.forward ~next:next.forward
     && Backward.reached_fixpoint ~iteration ~previous:previous.backward ~next:next.backward
 
-  let summaries callable result model =
+  let summaries _callable _result _model =
     []
 end
 

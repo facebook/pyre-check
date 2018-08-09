@@ -33,8 +33,8 @@ let transform_ast ({ Source.statements; _ } as source) =
             _;
             {
               Argument.value = {
-                Node.location;
                 value = String { StringLiteral.value = serialized; _ };
+                _
               };
               _;
             };

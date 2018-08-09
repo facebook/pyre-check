@@ -227,7 +227,7 @@ let rec process_request
         Sexp.pp [%message (repopulate_handles: File.Handle.t list)];
 
       List.filter_map ~f:AstSharedMemory.get_source repopulate_handles
-      |> Service.Environment.populate state.environment ~source_root;
+      |> Service.Environment.populate state.environment;
       let classes_to_infer =
         let get_class_keys handle =
           Handler.DependencyHandler.get_class_keys ~path:(File.Handle.show handle)
