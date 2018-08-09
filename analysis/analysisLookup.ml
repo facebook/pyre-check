@@ -33,6 +33,7 @@ type annotation_information =
 
 type t = {
   annotations_lookup: annotation_information Location.Reference.Table.t;
+  definitions_lookup: Location.Reference.t Location.Reference.Table.t;
 }
 
 
@@ -45,10 +46,11 @@ module ExpressionVisitor = struct
   type t = {
     resolution: Environment.Resolution.t;
     annotations_lookup: annotation_information Location.Reference.Table.t;
+    definitions_lookup: Location.Reference.t Location.Reference.Table.t;
   }
 
   let expression
-      ({ resolution; annotations_lookup } as state)
+      ({ resolution; annotations_lookup; definitions_lookup } as state)
       ({ Node.location = expression_location; value = expression_value} as expression) =
     let lookup_of_arguments = function
       | { Node.value = Expression.Access access; _ } ->
@@ -95,7 +97,25 @@ module ExpressionVisitor = struct
     let () =
       match expression_value with
       | Expression.Access access ->
-          (* Enumerate all prefixes of this access and resolve them separately. *)
+          (* Definitions. *)
+          let not_a_call = function
+            | Access.Call _ -> false
+            | _ -> true
+          in
+          let store_definition definition_location =
+            if not (Location.equal definition_location Location.Reference.any) then
+              Location.Reference.Table.set
+                definitions_lookup
+                ~key:expression_location
+                ~data:definition_location
+          in
+          List.take_while access ~f:not_a_call
+          |> AnalysisResolution.global resolution
+          >>| Node.location
+          >>| store_definition
+          |> ignore;
+
+          (* Annotations - enumerate all prefixes of this access and resolve them separately. *)
           let register_prefix (prefix, prefixes_sofar) element =
             let access = prefix @ [element] in
             let annotation =
@@ -150,6 +170,7 @@ module Visit = Visit.Make(ExpressionVisitor)
 let create_of_source environment source =
   let open TypeResolutionSharedMemory in
   let annotations_lookup = Location.Reference.Table.create () in
+  let definitions_lookup = Location.Reference.Table.create () in
   let walk_defines { Node.value = ({ Define.name = caller; _ } as define); _ } =
     let cfg = Cfg.create define in
     let annotation_lookup =
@@ -169,7 +190,9 @@ let create_of_source environment source =
           |> Access.Map.of_alist_exn
         in
         let resolution = Environment.resolution environment ~annotations () in
-        Visit.visit { ExpressionVisitor.resolution; annotations_lookup } (Source.create [statement])
+        Visit.visit
+          { ExpressionVisitor.resolution; annotations_lookup; definitions_lookup }
+          (Source.create [statement])
         |> ignore
       in
       List.iteri statements ~f:walk_statements
@@ -179,7 +202,7 @@ let create_of_source environment source =
   (* TODO(T31738631): remove extract_into_toplevel *)
   Preprocessing.defines ~extract_into_toplevel:true source
   |> List.iter ~f:walk_defines;
-  { annotations_lookup }
+  { annotations_lookup; definitions_lookup }
 
 
 let refine ~position ~source_text (location, entry) =
@@ -257,7 +280,7 @@ let refine ~position ~source_text (location, entry) =
       refine_approximate location entries
 
 
-let get_annotation { annotations_lookup } ~position ~source_text =
+let get_best_location lookup_table ~position =
   let location_contains_position
       {
         Location.start = { Location.column = start_column; line = start_line };
@@ -269,30 +292,31 @@ let get_annotation { annotations_lookup } ~position ~source_text =
     let stop_ok = (stop_line > line) || (stop_line = line && stop_column > column) in
     start_ok && stop_ok
   in
-  let get_best_location position =
-    let weight
-        {
-          Location.start = { Location.column = start_column; line = start_line };
-          stop = { Location.column = stop_column; line = stop_line };
-          _;
-        } =
-      (stop_line - start_line) * 1000 + stop_column - start_column
-    in
-    Hashtbl.to_alist annotations_lookup
-    |> List.filter ~f:(fun (key, _) -> location_contains_position key position)
-    |> List.min_elt ~compare:(fun (location_left, _) (location_right, _) ->
-        (weight location_left) - (weight location_right))
+  let weight
+      {
+        Location.start = { Location.column = start_column; line = start_line };
+        stop = { Location.column = stop_column; line = stop_line };
+        _;
+      } =
+    (stop_line - start_line) * 1000 + stop_column - start_column
   in
+  Hashtbl.filter_keys lookup_table ~f:(fun key -> location_contains_position key position)
+  |> Hashtbl.to_alist
+  |> List.min_elt ~compare:(fun (location_left, _) (location_right, _) ->
+      (weight location_left) - (weight location_right))
+
+
+let get_annotation { annotations_lookup; _ } ~position ~source_text =
   let instantiate_location (location, annotation) =
     Location.instantiate ~lookup:(fun hash -> Ast.AstSharedMemory.get_path ~hash) location,
     annotation
   in
-  get_best_location position
+  get_best_location annotations_lookup ~position
   >>| refine ~position ~source_text
   >>| instantiate_location
 
 
-let get_all_annotations { annotations_lookup } =
+let get_all_annotations { annotations_lookup; _ } =
   let expand_approximate (location, entry) =
     match entry with
     | Precise annotation ->
@@ -306,5 +330,11 @@ let get_all_annotations { annotations_lookup } =
   |> List.concat_map ~f:expand_approximate
 
 
-let get_definition _lookup _position =
-  None
+let get_definition { definitions_lookup; _ } ~position =
+  get_best_location definitions_lookup ~position
+  >>| snd
+  >>| Location.instantiate ~lookup:(fun hash -> Ast.AstSharedMemory.get_path ~hash)
+
+
+let get_all_definitions { definitions_lookup; _ } =
+  Location.Reference.Table.to_alist definitions_lookup

@@ -24,7 +24,7 @@ let show_location { Location.path; start; stop } =
 let instantiate =
   let lookup_table =
     Int.Table.of_alist_exn
-      [String.hash "test.py", "test.py"]
+      [String.hash "test.py", "test.py"; String.hash "builtins.pyi", "builtins.pyi"]
   in
   Location.instantiate ~lookup:(Hashtbl.find lookup_table)
 
@@ -548,6 +548,65 @@ let test_lookup_string_annotations _ =
     ~annotation:None
 
 
+let assert_definition ~lookup ~position ~definition =
+  assert_equal
+    ~printer:(Option.value ~default:"(none)")
+    definition
+    (Lookup.get_definition lookup ~position
+     >>| show_location)
+
+
+let test_lookup_definitions _ =
+  let source =
+    {|
+      def getint() -> int:
+          return 12
+
+      def takeint(a:int) -> None:
+          pass
+
+      def foo(a:int, b:str) -> None:
+          pass
+
+      def test() -> None:
+          foo(a=getint(), b="one")
+          takeint(getint())
+    |}
+  in
+  let lookup, _ = generate_lookup source in
+
+  assert_equal
+    ~printer:(String.concat ~sep:", ")
+    [
+      "test.py:12:10-12:16 -> test.py:2:0-3:13";
+      "test.py:12:4-12:7 -> test.py:8:0-9:8";
+      "test.py:13:12-13:18 -> test.py:2:0-3:13";
+      "test.py:13:4-13:11 -> test.py:5:0-6:8";
+      "test.py:2:16-2:19 -> builtins.pyi:51:0-65:34";
+      "test.py:5:14-5:17 -> builtins.pyi:51:0-65:34";
+      "test.py:8:10-8:13 -> builtins.pyi:51:0-65:34";
+      "test.py:8:17-8:20 -> builtins.pyi:70:0-85:42";
+    ]
+    (Lookup.get_all_definitions lookup
+     |> List.map ~f:(fun (key, data) ->
+         Format.asprintf "%s -> %s"
+           (show_location (instantiate key))
+           (show_location (instantiate data)))
+     |> List.sort ~compare:String.compare);
+  assert_definition
+    ~lookup
+    ~position:{ Location.line = 12; column = 0 }
+    ~definition:None;
+  assert_definition
+    ~lookup
+    ~position:{ Location.line = 12; column = 4 }
+    ~definition:(Some "test.py:8:0-9:8");
+  assert_definition
+    ~lookup
+    ~position:{ Location.line = 12; column = 7 }
+    ~definition:None
+
+
 let () =
   "lookup">:::[
     "lookup">::test_lookup;
@@ -559,5 +618,6 @@ let () =
     "lookup_multiline_accesses">::test_lookup_multiline_accesses;
     "lookup_out_of_bounds_accesses">::test_lookup_out_of_bounds_accesses;
     "lookup_string_annotations">::test_lookup_string_annotations;
+    "lookup_definitions">::test_lookup_definitions;
   ]
   |> run_test_tt_main

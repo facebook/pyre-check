@@ -295,6 +295,7 @@ let typeshed_stubs = (* Yo dawg... *)
     |> Preprocessing.qualify;
     parse
       ~qualifier:(Access.create "typing")
+      ~path:"typing.pyi"
       {|
         class _SpecialForm: ...
 
@@ -338,6 +339,7 @@ let typeshed_stubs = (* Yo dawg... *)
     Source.create ~qualifier:(Access.create "unittest.mock") [];
     parse
       ~qualifier:[]
+      ~path:"builtins.pyi"
       {|
         import typing
 

@@ -21,4 +21,6 @@ val get_annotation:
 
 val get_all_annotations: t -> (Location.t * Type.t) list
 
-val get_definition: t -> Location.position -> Location.Instantiated.t option
+val get_definition: t -> position: Location.position -> Location.Instantiated.t option
+
+val get_all_definitions: t -> (Location.t * Location.t) list
