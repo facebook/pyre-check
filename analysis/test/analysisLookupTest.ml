@@ -582,10 +582,10 @@ let test_lookup_definitions _ =
       "test.py:12:4-12:7 -> test.py:8:0-9:8";
       "test.py:13:12-13:18 -> test.py:2:0-3:13";
       "test.py:13:4-13:11 -> test.py:5:0-6:8";
-      "test.py:2:16-2:19 -> builtins.pyi:51:0-65:34";
-      "test.py:5:14-5:17 -> builtins.pyi:51:0-65:34";
-      "test.py:8:10-8:13 -> builtins.pyi:51:0-65:34";
-      "test.py:8:17-8:20 -> builtins.pyi:70:0-85:42";
+      "test.py:2:16-2:19 -> builtins.pyi:52:0-66:34";
+      "test.py:5:14-5:17 -> builtins.pyi:52:0-66:34";
+      "test.py:8:10-8:13 -> builtins.pyi:52:0-66:34";
+      "test.py:8:17-8:20 -> builtins.pyi:71:0-86:42";
     ]
     (Lookup.get_all_definitions lookup
      |> List.map ~f:(fun (key, data) ->
