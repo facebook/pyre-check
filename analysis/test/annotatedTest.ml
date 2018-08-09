@@ -30,7 +30,7 @@ let populate source =
     let environment = Environment.Builder.create () in
     Service.Environment.populate
       (Environment.handler ~configuration environment)
-      [parse source];
+      (parse source :: typeshed_stubs);
     environment
   in
   Environment.handler ~configuration environment

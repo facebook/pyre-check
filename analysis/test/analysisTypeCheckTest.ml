@@ -3048,8 +3048,64 @@ let test_check_init _ =
       "Missing global annotation [5]: Globally accessible variable `a` has type `Foo` " ^
       "but no type is specified.";
       "Incompatible parameter type [6]: Expected `int` but got `str`.";
-    ]
+    ];
 
+  assert_type_errors
+    {|
+      class Foo:
+        def __new__(cls, x: int) -> None:
+          pass
+      a: Foo = Foo("")
+    |}
+    ["Incompatible parameter type [6]: Expected `int` but got `str`."];
+
+  (* Prefer init over new if both exist. *)
+  assert_type_errors
+    {|
+      class Foo:
+        def __new__(cls, x: int) -> None:
+          pass
+        def __init__(self, x: str) -> None:
+          pass
+      a: Foo = Foo("")
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      class Super:
+        def __new__(cls, x: int) -> None: ...
+
+      class C(Super):
+        pass
+      c: C = C("")
+    |}
+    ["Incompatible parameter type [6]: Expected `int` but got `str`."];
+
+  (* We look at both __init__ and __new__ in the inheritance structure. *)
+  assert_type_errors
+    {|
+      class SuperSuper:
+        def __init__(self, x: str) -> None: ...
+      class Super(SuperSuper):
+        def __new__(cls, x: int) -> None: ...
+      class C(Super):
+        pass
+      c: C = C("")
+    |}
+    ["Incompatible parameter type [6]: Expected `int` but got `str`."];
+
+  assert_type_errors
+    {|
+      class SuperSuper:
+        def __new__(self, x: str) -> None: ...
+      class Super(SuperSuper):
+        def __init__(cls, x: int) -> None: ...
+      class C(Super):
+        pass
+      c: C = C("")
+    |}
+    ["Incompatible parameter type [6]: Expected `int` but got `str`."]
 
 let test_check_attributes _ =
   assert_type_errors

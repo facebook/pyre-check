@@ -354,6 +354,7 @@ let typeshed_stubs = (* Yo dawg... *)
           __name__: str = ...
         class object():
           def __init__(self) -> None: pass
+          def __new__(self) -> typing.Any: pass
           def __sizeof__(self) -> int: pass
 
         class slice:

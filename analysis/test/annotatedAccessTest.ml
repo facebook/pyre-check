@@ -174,7 +174,7 @@ let test_fold _ =
 
 let assert_resolved sources access expected =
   let resolution =
-    populate_with_sources sources
+    populate_with_sources (sources @ typeshed_stubs)
     |> fun environment -> Environment.resolution environment ()
   in
   let resolved =

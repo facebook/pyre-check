@@ -828,17 +828,75 @@ let constructor definition ~resolution =
     | _ ->
         class_annotation
   in
-  attribute
-    definition
-    ~transitive:true
-    ~resolution
-    ~name:(Access.create "__init__")
-    ~instantiated:class_annotation
-  |> Attribute.annotation
-  |> Annotation.annotation
-  |>
-  function
+  let definitions =
+    definition :: superclasses ~resolution definition
+    |> List.map ~f:name
+  in
+  let definition_index attribute =
+    attribute
+    |> Attribute.parent
+    |> name
+    |> (fun class_name -> List.findi definitions ~f:(fun _ name -> Access.equal name class_name))
+    >>| fst
+    |> Option.value ~default:Int.max_value
+  in
+  let constructor_signature, constructor_index =
+    let attribute =
+      attribute
+        definition
+        ~transitive:true
+        ~resolution
+        ~name:(Access.create "__init__")
+        ~instantiated:class_annotation
+    in
+    let signature =
+      attribute
+      |> Attribute.annotation
+      |> Annotation.annotation
+    in
+    signature, definition_index attribute
+  in
+  let new_signature, new_index =
+    let attribute =
+      attribute
+        definition
+        ~transitive:true
+        ~resolution
+        ~name:(Access.create "__new__")
+        ~instantiated:class_annotation
+    in
+    let signature =
+      attribute
+      |> Attribute.annotation
+      |> Annotation.annotation
+      |> function
+      | Type.Callable ({ Type.Callable.overloads; _ } as callable) ->
+          let open Type.Callable in
+          (* __new__ requires a metaclass to be passed in as the first argument; unannotate to
+             prevent extraneous errors. *)
+          let unannotate_first_parameter ({ parameters; _ } as overload) =
+            match parameters with
+            | Defined ((Parameter.Named { name; default; _ }) :: rest) ->
+                let parameter = Parameter.Named { name; default; annotation = class_annotation } in
+                { overload with parameters = Defined (parameter :: rest) }
+            | _ ->
+                overload
+          in
+          let overloads = List.map ~f:unannotate_first_parameter overloads in
+          Type.Callable { callable with Type.Callable.overloads }
+      | annotation ->
+          annotation
+    in
+    signature, definition_index attribute
+  in
+  let signature =
+    if new_index < constructor_index then
+      new_signature
+    else
+      constructor_signature
+  in
+  match signature with
   | Type.Callable callable ->
       Type.Callable (Type.Callable.with_return_annotation ~return_annotation callable)
-  | annotation ->
-      annotation
+  | _ ->
+      signature

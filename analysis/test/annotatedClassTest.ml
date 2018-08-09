@@ -145,11 +145,11 @@ let test_constructors _ =
   (* Undefined constructors. *)
   assert_constructor
     "class Foo: pass"
-    None;
+    (Some "typing.Callable('object.__init__')[[Named(self, $unknown)], Foo]");
 
   assert_constructor
     "class Foo: ..."
-    None;
+    (Some "typing.Callable('object.__init__')[[Named(self, $unknown)], Foo]");
 
   (* Statement.Defined constructors. *)
   assert_constructor
@@ -186,7 +186,27 @@ let test_constructors _ =
       class tuple(typing.Generic[_T]):
         def tuple.__init__(self) -> None: ...
     |}
-    (Some "typing.Callable('tuple.__init__')[[Named(self, $unknown)], typing.Tuple[_T, ...]]")
+    (Some "typing.Callable('tuple.__init__')[[Named(self, $unknown)], typing.Tuple[_T, ...]]");
+
+  (* Constructors, both __init__ and __new__, are inherited from parents. *)
+  assert_constructor
+    {|
+      class Parent:
+        def Parent.__init__(self, x: int) -> None:
+          pass
+      class C(Parent):
+        pass
+    |}
+    (Some "typing.Callable('Parent.__init__')[[Named(self, $unknown), Named(x, int)], C]");
+  assert_constructor
+    {|
+      class Parent:
+        def Parent.__new__(self, x: str) -> None:
+          pass
+      class C(Parent):
+        pass
+    |}
+    (Some "typing.Callable('Parent.__new__')[[Named(self, C), Named(x, str)], C]")
 
 
 let test_methods _ =
@@ -490,7 +510,7 @@ let test_class_attributes _ =
         Foo.__static__: typing.ClassVar[int]
         Foo.__instance__: int
     |}
-    "__instance____static____meta____type____getitem__";
+    "__instance____static____meta____name____type____init____new____sizeof____getitem__";
 
   (* Test 'attribute' *)
   let assert_attribute ~parent ~parent_instantiated_type ~attribute_name ~expected_attribute =
