@@ -66,7 +66,7 @@ end = struct
     fold
       map
       ~init:[]
-      ~f:(fun ~key ~data leaves ->
+      ~f:(fun ~key:_ ~data leaves ->
           Element.leaves data
           |> List.merge ~compare:Leaf.compare leaves)
 
