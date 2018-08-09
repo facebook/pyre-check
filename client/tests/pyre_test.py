@@ -50,7 +50,8 @@ class PyreTest(unittest.TestCase):
                 )
         with patch.object(commands.Incremental, "run", return_value=0):
             with patch.object(sys, "argv", ["pyre"]):
-                # One for shutil.which("watchman"), another for shutil.which(BINARY_NAME).
+                # One for shutil.which("watchman"),
+                # another for shutil.which(BINARY_NAME).
                 with patch.object(shutil, "which", side_effect=[True, True]):
                     self.assertEqual(pyre.main(), 0)
                     generate_source_directories.assert_called_with(

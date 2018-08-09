@@ -11,7 +11,6 @@ import logging
 import os
 import shutil
 import subprocess
-import sys
 from contextlib import contextmanager
 from time import time
 from typing import Dict, Generator, List, Optional

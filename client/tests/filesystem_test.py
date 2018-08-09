@@ -8,10 +8,10 @@ import os
 import subprocess
 import tempfile
 import unittest
-from typing import Dict
+from typing import Dict  # noqa
 from unittest.mock import call, patch
 
-from ..exceptions import EnvironmentException
+from ..exceptions import EnvironmentException  # noqa
 from ..filesystem import (  # noqa
     Filesystem,
     MercurialBackedFilesystem,

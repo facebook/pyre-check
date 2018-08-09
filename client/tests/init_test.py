@@ -6,7 +6,13 @@
 import unittest
 from unittest.mock import MagicMock, patch
 
-from .. import EnvironmentException, buck, find_project_root, resolve_source_directories, switch_root
+from .. import (
+    EnvironmentException,
+    buck,
+    find_project_root,
+    resolve_source_directories,
+    switch_root,
+)
 
 
 class InitTest(unittest.TestCase):
