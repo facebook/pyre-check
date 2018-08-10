@@ -367,15 +367,8 @@ let float =
   Primitive (Identifier.create "float")
 
 
-let none =
-  Optional Bottom
-
-
-let named_tuple =
-  Primitive (Identifier.create "typing.NamedTuple")
-
-
 let generator ?(async=false) parameter =
+  let none = Optional Bottom in
   if async then
     Parametric {
       name = Identifier.create "typing.AsyncGenerator";
@@ -434,20 +427,6 @@ let list parameter =
   }
 
 
-let rec optional parameter =
-  match parameter with
-  | Top ->
-      Top
-  | Deleted ->
-      Deleted
-  | Object ->
-      Object
-  | Optional _ ->
-      parameter
-  | _ ->
-      Optional parameter
-
-
 let meta annotation =
   let parameter =
     match annotation with
@@ -460,6 +439,28 @@ let meta annotation =
     name = Identifier.create "type";
     parameters = [parameter];
   }
+
+
+let named_tuple =
+  Primitive (Identifier.create "typing.NamedTuple")
+
+
+let none =
+  Optional Bottom
+
+
+let rec optional parameter =
+  match parameter with
+  | Top ->
+      Top
+  | Deleted ->
+      Deleted
+  | Object ->
+      Object
+  | Optional _ ->
+      parameter
+  | _ ->
+      Optional parameter
 
 
 let sequence parameter =
@@ -488,6 +489,7 @@ let tuple parameters: t =
 
 let undeclared =
   primitive "typing.Undeclared"
+
 
 let union parameters =
   let parameters =
@@ -1131,16 +1133,14 @@ let is_callable = function
   | _ -> false
 
 
-let is_ellipses = function
-  | Primitive primitive when Identifier.show primitive = "ellipses" -> true
+let is_deleted = function
+  | Deleted -> true
   | _ -> false
 
 
-let is_iterator = function
-  | Parametric { name; _ } ->
-      String.equal (Identifier.show name) "typing.Iterator"
-  | _ ->
-      false
+let is_ellipses = function
+  | Primitive primitive when Identifier.show primitive = "ellipses" -> true
+  | _ -> false
 
 
 let is_generator = function
@@ -1156,6 +1156,13 @@ let is_generator = function
 let is_generic = function
   | Parametric { name; _ } ->
       Identifier.show name = "typing.Generic"
+  | _ ->
+      false
+
+
+let is_iterator = function
+  | Parametric { name; _ } ->
+      String.equal (Identifier.show name) "typing.Iterator"
   | _ ->
       false
 
@@ -1205,11 +1212,6 @@ let is_tuple (annotation: t) =
 
 let is_unknown annotation =
   exists annotation ~predicate:(function | Top | Deleted -> true | _ -> false)
-
-
-let is_deleted = function
-  | Deleted -> true
-  | _ -> false
 
 
 let is_not_instantiated annotation =

@@ -126,16 +126,16 @@ val iterable: t -> t
 val iterator: t -> t
 val lambda: parameters: t list -> return_annotation: t -> t
 val list: t -> t
-val optional: t -> t
 val meta: t -> t
+val named_tuple: t
+val none: t
+val optional: t -> t
 val sequence: t -> t
 val set: t -> t
 val string: t
 val tuple: t list -> t
 val undeclared: t
 val union: t list -> t
-val named_tuple: t
-val none: t
 val yield: t -> t
 
 val create
@@ -151,20 +151,20 @@ val exists: t -> predicate: (t -> bool) -> bool
 val contains_callable: t -> bool
 
 val is_callable: t -> bool
+val is_deleted: t -> bool
 val is_ellipses: t -> bool
 val is_generator: t -> bool
 val is_generic: t -> bool
+val is_iterator: t -> bool
 val is_meta: t -> bool
 val is_none: t -> bool
 val is_noreturn: t -> bool
-val is_iterator: t -> bool
 val is_optional: t -> bool
 val is_optional_primitive: t -> bool
 val is_primitive: t -> bool
 val is_protocol: t -> bool
 val is_tuple: t -> bool
 val is_unknown: t -> bool
-val is_deleted: t-> bool
 
 (* Contains `Bottom` or variables. *)
 val is_not_instantiated: t -> bool
