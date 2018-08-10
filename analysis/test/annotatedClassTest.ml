@@ -498,7 +498,7 @@ let test_class_attributes _ =
         foo.third: int = 1
         foo.class_attribute: typing.ClassVar[int]
     |}
-    ("__init__class_attributefirstimplicitsecondthird__name____init____new____sizeof____getitem__");
+    "__init__class_attributefirstimplicitsecondthird__name____init____new____sizeof____getitem__";
   assert_fold
     ~class_attributes:true
     {|

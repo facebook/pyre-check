@@ -1376,87 +1376,68 @@ module Builder = struct
       indices = Hashtbl.copy indices;
       annotations = Hashtbl.copy annotations;
     }
-
-
   let default () =
     let order = create () in
     let handler = handler order in
 
-    insert handler Type.Bottom;
-    insert handler Type.Top;
-    insert handler Type.Deleted;
-    (* Object *)
-    insert handler Type.Object;
-    connect handler ~predecessor:Type.Bottom ~successor:Type.Object;
-    connect handler ~predecessor:Type.Object ~successor:Type.Deleted;
-    connect handler ~predecessor:Type.Deleted ~successor:Type.Top;
 
-    let insert_unconnected annotation =
-      insert handler annotation;
-      connect handler ~predecessor:Type.Bottom ~successor:annotation;
-      connect handler ~predecessor:annotation ~successor:Type.Object
+    let default_annotations =
+      let singleton annotation = [Type.Bottom; annotation; Type.Object] in
+      [
+        [Type.Bottom; Type.Object; Type.Deleted; Type.Top];
+        (* Special forms *)
+        singleton (Type.primitive "typing.Tuple");
+        singleton Type.named_tuple;
+        singleton Type.generic;
+        singleton (Type.primitive "typing.Protocol");
+        singleton (Type.primitive "typing.Callable");
+        singleton (Type.primitive "typing.FrozenSet");
+        singleton (Type.primitive "typing.Optional");
+        singleton (Type.primitive "typing.TypeVar");
+        singleton (Type.primitive "typing.Undeclared");
+        singleton (Type.primitive "typing.Union");
+        singleton (Type.primitive "typing.NoReturn");
+        (* Ensure unittest.mock.Base is there because we check against it. *)
+        singleton (Type.primitive "unittest.mock.Base");
+        singleton (Type.primitive "unittest.mock.NonCallableMock");
+        singleton (Type.primitive "typing.ClassVar");
+        [Type.Bottom; Type.primitive "dict"; Type.primitive "typing.Dict"; Type.Object];
+        singleton (Type.primitive "None");
+        (* Numerical hierarchy. *)
+        [
+          Type.Bottom;
+          Type.integer;
+          Type.float;
+          Type.complex;
+          Type.primitive "numbers.Complex";
+          Type.primitive "numbers.Number";
+          Type.Object;
+        ];
+        [Type.integer; Type.primitive "numbers.Integral"; Type.Object];
+        [Type.float; Type.primitive "numbers.Rational"; Type.Object];
+        [Type.float; Type.primitive "numbers.Real"; Type.Object];
+      ]
     in
+    List.concat default_annotations
+    |> Type.Set.of_list
+    |> Set.iter ~f:(insert handler);
 
-    (* Special forms *)
-    insert_unconnected (Type.primitive "typing.Tuple");
-    insert_unconnected (Type.named_tuple);
-    insert_unconnected Type.generic;
-    insert_unconnected (Type.primitive "typing.Protocol");
-    insert_unconnected (Type.primitive "typing.Callable");
-    insert_unconnected (Type.primitive "typing.FrozenSet");
-    insert_unconnected (Type.primitive "typing.Optional");
-    insert_unconnected (Type.primitive "typing.TypeVar");
-    insert_unconnected (Type.primitive "typing.Undeclared");
-    insert_unconnected (Type.primitive "typing.Union");
-    insert_unconnected (Type.primitive "typing.NoReturn");
+    let rec connect_primitive_chain annotations =
+      match annotations with
+      | predecessor :: successor :: rest ->
+          connect handler ~predecessor ~successor;
+          connect_primitive_chain (successor :: rest)
+      | _ ->
+          ()
+    in
+    List.iter ~f:connect_primitive_chain default_annotations;
 
-    (* Ensure unittest.mock.Base is there because we check against it. *)
-    insert_unconnected (Type.primitive "unittest.mock.Base");
-    insert_unconnected (Type.primitive "unittest.mock.NonCallableMock");
-
+    (* Since the builtin type hierarchy is not primitive, it's special cased. *)
     let type_builtin = Type.Primitive (Identifier.create "type") in
+    let type_variable = Type.variable "_T" in
     insert handler type_builtin;
     connect handler ~predecessor:Type.Bottom ~successor:type_builtin;
-    let type_variable = Type.variable "_T" in
     connect handler ~predecessor:type_builtin ~parameters:[type_variable] ~successor:Type.generic;
-
-    insert_unconnected (Type.Primitive (Identifier.create "typing.ClassVar"));
-
-    let base_dict =  (Type.Primitive (Identifier.create "dict")) in
-    let typing_dict = (Type.Primitive (Identifier.create "typing.Dict")) in
-    insert handler base_dict;
-    insert handler typing_dict;
-    connect handler ~predecessor:Type.Bottom ~successor:base_dict;
-    connect handler ~predecessor:base_dict ~successor:typing_dict;
-    connect handler ~predecessor:typing_dict ~successor:Type.Object;
-
-    insert_unconnected (Type.Primitive (Identifier.create "None"));
-
-    (* Numerical hierarchy. *)
-    insert handler Type.integer;
-    insert handler Type.float;
-    insert handler Type.complex;
-    connect handler ~predecessor:Type.Bottom ~successor:Type.integer;
-    connect handler ~predecessor:Type.integer ~successor:Type.float;
-    connect handler ~predecessor:Type.float ~successor:Type.complex;
-    connect handler ~predecessor:Type.complex ~successor:Type.Object;
-
-    (* Abstract numerical hierarchy. *)
-    let integral = Type.primitive "numbers.Integral" in
-    insert handler integral;
-    connect handler ~predecessor:Type.integer ~successor:integral;
-    let rational = Type.primitive "numbers.Rational" in
-    insert handler rational;
-    connect handler ~predecessor:Type.float ~successor:rational;
-    let real = Type.primitive "numbers.Real" in
-    insert handler real;
-    connect handler ~predecessor:Type.float ~successor:real;
-    let complex = Type.primitive "numbers.Complex" in
-    insert handler complex;
-    connect handler ~predecessor:Type.complex ~successor:complex;
-    let number = Type.primitive "numbers.Number" in
-    insert handler number;
-    connect handler ~predecessor:Type.complex ~successor:number;
 
     order
 end
