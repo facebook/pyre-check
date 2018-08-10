@@ -186,8 +186,8 @@ let create_of_source environment source =
       let walk_statements statement_index statement =
         let annotations =
           Int.Map.find annotation_lookup ([%hash: int * int] (node_id, statement_index))
-          |> Option.value ~default:[]
-          |> Access.Map.of_alist_exn
+          |> Option.value ~default:Access.Map.Tree.empty
+          |> Access.Map.of_tree
         in
         let resolution = Environment.resolution environment ~annotations () in
         Visit.visit

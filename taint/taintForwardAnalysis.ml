@@ -152,7 +152,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
             >>= fun key -> TypeResolutionSharedMemory.get FunctionContext.definition.value.name
             >>| List.fold ~init:Int.Map.empty ~f:build_lookup
             >>= Fn.flip Int.Map.find key
-            >>| Access.Map.of_alist_exn
+            >>| Access.Map.of_tree
             >>= Fn.flip Access.Map.find access
           in
           let taint =

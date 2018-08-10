@@ -13,7 +13,7 @@ open Statement
 type annotations =
   {
     key: int;
-    annotations: (Access.t * AnalysisResolution.Annotation.t) list;
+    annotations: AnalysisResolution.Annotation.t Access.Map.Tree.t;
   }
 
 val add: Access.t -> annotations list -> unit

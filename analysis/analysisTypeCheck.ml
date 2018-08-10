@@ -33,7 +33,7 @@ module State = struct
     define: Define.t Node.t;
     nested_defines: nested_define Location.Reference.Map.t;
     bottom: bool;
-    resolution_fixpoint: (Annotation.t Access.Map.t) Int.Map.t
+    resolution_fixpoint: (Annotation.t Access.Map.Tree.t) Int.Map.Tree.t
   }
 
 
@@ -122,7 +122,7 @@ module State = struct
       ?(bottom = false)
       ~resolution
       ~define
-      ?(resolution_fixpoint = Int.Map.empty)
+      ?(resolution_fixpoint = Int.Map.Tree.empty)
       () =
     {
       configuration;
@@ -1818,8 +1818,14 @@ module State = struct
     let state =
       let resolution_fixpoint =
         match key with
-        | Some key -> Map.set resolution_fixpoint ~key ~data:(Resolution.annotations resolution)
-        | None -> resolution_fixpoint
+        | Some key ->
+            let data =
+              Resolution.annotations resolution
+              |> Access.Map.to_tree
+            in
+            Int.Map.Tree.set resolution_fixpoint ~key ~data
+        | None ->
+            resolution_fixpoint
       in
       { state with resolution_fixpoint }
     in
@@ -1929,10 +1935,10 @@ let check
           let serialize ~key ~data:annotations accumulator =
             {
               key;
-              annotations = Access.Map.to_alist annotations
+              annotations = annotations
             } :: accumulator
           in
-          Int.Map.fold resolution_fixpoint ~init:[] ~f:serialize
+          Int.Map.Tree.fold resolution_fixpoint ~init:[] ~f:serialize
           |> AnalysisTypeResolutionSharedMemory.add name
         in
         exit

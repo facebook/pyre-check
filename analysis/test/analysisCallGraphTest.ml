@@ -164,7 +164,7 @@ let test_type_collection _ =
       let test_access = Access.create test_access in
       let annotations =
         Map.find_exn lookup key
-        |> Access.Map.of_alist_exn
+        |> Access.Map.of_tree
       in
       let resolution = Environment.resolution environment ~annotations () in
       let statement = List.nth_exn statements statement_index in

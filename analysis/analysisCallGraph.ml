@@ -43,8 +43,8 @@ let create ~environment ~source =
           Map.find
             annotation_lookup
             ([%hash: int * int] (node_id, statement_index))
-          |> Option.value ~default:[]
-          |> Access.Map.of_alist_exn
+          |> Option.value ~default:Access.Map.Tree.empty
+          |> Access.Map.of_tree
         in
         let resolution = Environment.resolution environment ~annotations () in
         let fold_accesses call_graph { Node.value = access; _ } =

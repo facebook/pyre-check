@@ -48,7 +48,7 @@ module State : sig
     define: Define.t Node.t;
     nested_defines: nested_define Location.Reference.Map.t;
     bottom: bool;
-    resolution_fixpoint: (Annotation.t Access.Map.t) Int.Map.t
+    resolution_fixpoint: (Annotation.t Access.Map.Tree.t) Int.Map.Tree.t
   }
   [@@deriving eq, show]
 
@@ -57,7 +57,7 @@ module State : sig
     -> ?bottom: bool
     -> resolution: Resolution.t
     -> define: Statement.Define.t Node.t
-    -> ?resolution_fixpoint: (Annotation.t Access.Map.t) Int.Map.t
+    -> ?resolution_fixpoint: (Annotation.t Access.Map.Tree.t) Int.Map.Tree.t
     -> unit
     -> t
 
