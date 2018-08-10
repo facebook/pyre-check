@@ -116,8 +116,8 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       | None ->
           Log.log
             ~section:`Taint
-            "No model found for %s"
-            (Log.Color.cyan (Interprocedural.Callable.show call_target));
+            "No model found for %a"
+            Interprocedural.Callable.pp call_target;
           (* TODO(T31435739): if we don't have a model: assume function propagates argument
              taint to result. *)
           List.fold_right ~f:(analyze_argument call_taint) arguments ~init:state
@@ -319,7 +319,7 @@ let run ({ Node.value = { Define.parameters; _ }; _ } as define) =
   let open AnalysisInstance in
   let initial = FixpointState.{ taint = initial_taint } in
   let cfg = Cfg.create define.value in
-  let () = Log.log ~section:`Taint "Processing CFG:@.%s" (Log.Color.yellow (Cfg.show cfg)) in
+  let () = Log.log ~section:`Taint "Processing CFG:@.%a" Cfg.pp cfg in
   let entry_state =
     Analyzer.backward ~cfg ~initial
     |> Analyzer.entry
@@ -329,8 +329,8 @@ let run ({ Node.value = { Define.parameters; _ }; _ } as define) =
     | Some entry_state ->
         Log.log
           ~section:`Taint
-          "Final state: %s"
-          (Log.Color.yellow (FixpointState.show entry_state))
+          "Final state: %a"
+          FixpointState.pp entry_state
     | None ->
         Log.log ~section:`Taint "No final state found"
   in
@@ -339,8 +339,8 @@ let run ({ Node.value = { Define.parameters; _ }; _ } as define) =
     let () =
       Log.log
         ~section:`Taint
-        "Models: %s"
-        (Log.Color.yellow (TaintResult.Backward.show_model model))
+        "Models: %a"
+        TaintResult.Backward.pp_model model
     in
     model
   in

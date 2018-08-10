@@ -91,9 +91,9 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
         | Some ({ forward; backward; _ } as model) ->
             Log.log
               ~section:`Taint
-              "Model for %s:\n%s\n"
-              (Interprocedural.Callable.show call_target)
-              (TaintResult.show_call_model model);
+              "Model for %a:\n%a\n"
+              Interprocedural.Callable.pp call_target
+              TaintResult.pp_call_model model;
             let analyze_argument_position position tito { Argument.value = argument; _ } =
               let { Node.location; _ } = argument in
               let argument_taint = analyze_expression argument state in
@@ -132,8 +132,8 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
         | None ->
             Log.log
               ~section:`Taint
-              "No model for %s"
-              (Interprocedural.Callable.show call_target);
+              "No model for %a"
+              Interprocedural.Callable.pp call_target;
             (* If we don't have a model: assume function propagates argument
                taint (join all argument taint) *)
             List.fold arguments ~init:ForwardState.empty_tree ~f:(analyze_argument state)
@@ -194,8 +194,8 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       | Local identifier ->
           Log.log
             ~section:`Taint
-            "Analyzing identifier: %s"
-            (Log.Color.cyan (Identifier.show identifier));
+            "Analyzing identifier: %a"
+            Identifier.pp identifier;
           ForwardState.read_access_path ~root:(Root.Variable identifier) ~path:[] state.taint
 
     and analyze_expression ?key expression state =
@@ -242,9 +242,9 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
     let forward ?key state ~statement:({ Node.value = statement; _ }) =
       Log.log
         ~section:`Taint
-        "State: %s\nAnalyzing statement: %s"
-        (Log.Color.cyan (show state))
-        (Log.Color.cyan (Statement.show_statement statement));
+        "State: %a\nAnalyzing statement: %a"
+        pp state
+        Statement.pp_statement statement;
       match statement with
       | Assign { target; value; _ } ->
           let taint = analyze_expression_option ?key value state in
@@ -318,18 +318,18 @@ let run ({ Node.value = { Define.parameters; _ }; _ } as define) =
   let open AnalysisInstance in
   Log.log
     ~section:`Taint
-    "Starting analysis of %s"
-    (Interprocedural.Callable.show (Interprocedural.Callable.make define));
+    "Starting analysis of %a"
+    Interprocedural.Callable.pp (Interprocedural.Callable.make define);
   let cfg = Cfg.create define.value in
   let initial = FixpointState.create () in
-  let () = Log.log ~section:`Taint "Processing CFG:@.%s" (Log.Color.cyan (Cfg.show cfg)) in
+  let () = Log.log ~section:`Taint "Processing CFG:@.%a" Cfg.pp cfg in
   let exit_state =
     Analyzer.forward ~cfg ~initial
     |> Analyzer.exit
   in
   let extract_model ({ FixpointState.taint; _ } as result) =
     let source_taint = extract_source_model parameters taint in
-    let () = Log.log ~section:`Taint "Model: %s" (Log.Color.cyan (FixpointState.show result)) in
+    let () = Log.log ~section:`Taint "Model: %a" FixpointState.pp result in
     TaintResult.Forward.{ source_taint; }
   in
   let errors = Context.generate_errors () in
