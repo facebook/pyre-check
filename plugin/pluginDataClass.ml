@@ -66,6 +66,11 @@ let transform_environment
                   _;
                 } ->
                   begin
+                    let value =
+                      match value with
+                      | { Node.value = Ellipses; _ } -> None
+                      | _ -> Some value
+                    in
                     match List.last access with
                     | Some (Access.Identifier name) ->
                         Parameter.create ~name ~annotation ?value () :: parameters

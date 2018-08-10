@@ -2469,7 +2469,7 @@ let test_class _ =
           +Assign {
             Assign.target = !"attribute";
             annotation = Some !"int";
-            value = Some (+Integer 1);
+            value = +Integer 1;
             parent = Some (Access.create "foo");
           };
         ];
@@ -2488,7 +2488,7 @@ let test_class _ =
           +Assign {
             Assign.target = !"attribute";
             annotation = Some !"int";
-            value = None;
+            value = +Ellipses;
             parent = Some (Access.create "foo");
           };
         ];
@@ -2541,7 +2541,7 @@ let test_class _ =
               +Assign {
                 Assign.target = +Access (Access.create "self.bar");
                 annotation = None;
-                value = Some (+Integer 0);
+                value = +Integer 0;
                 parent = None;
               };
             ];
@@ -2650,7 +2650,7 @@ let test_assign _ =
       +Assign {
         Assign.target = !"a";
         annotation = None;
-        value = Some !"b";
+        value = !"b";
         parent = None;
       };
     ];
@@ -2660,7 +2660,7 @@ let test_assign _ =
       +Assign {
         Assign.target = !"a";
         annotation = None;
-        value = Some (+Integer 1);
+        value = +Integer 1;
         parent = None;
       };
     ];
@@ -2670,7 +2670,7 @@ let test_assign _ =
       +Assign {
         Assign.target = !"a";
         annotation = Some !"int";
-        value = Some (+Integer 1);
+        value = +Integer 1;
         parent = None;
       };
     ];
@@ -2680,7 +2680,7 @@ let test_assign _ =
       +Assign {
         Assign.target = (+Tuple [!"a"; !"b"]);
         annotation = None;
-        value = Some (+Integer 1);
+        value = +Integer 1;
         parent = None;
       };
     ];
@@ -2690,14 +2690,12 @@ let test_assign _ =
       +Assign {
         Assign.target = !"a";
         annotation = None;
-        value = Some (
-            +Access [
-              Access.Identifier ~~"a";
-              Access.Call (+[]);
-              Access.Identifier ~~"foo";
-              Access.Call (+[]);
-            ]
-          );
+        value = +Access [
+          Access.Identifier ~~"a";
+          Access.Call (+[]);
+          Access.Identifier ~~"foo";
+          Access.Call (+[]);
+        ];
         parent = None;
       };
     ];
@@ -2707,13 +2705,13 @@ let test_assign _ =
       +Assign {
         Assign.target = !"a";
         annotation = None;
-        value = Some (+Integer 1);
+        value = +Integer 1;
         parent = None;
       };
       +Assign {
         Assign.target = !"b";
         annotation = None;
-        value = Some (+Integer 1);
+        value = +Integer 1;
         parent = None;
       };
     ];
@@ -2724,7 +2722,7 @@ let test_assign _ =
       +Assign {
         Assign.target = !"a";
         annotation = None;
-        value = Some (+Expression.Yield (Some !"b"));
+        value = +Expression.Yield (Some !"b");
         parent = None;
       };
     ];
@@ -2735,13 +2733,11 @@ let test_assign _ =
       +Assign {
         Assign.target = !"a";
         annotation = None;
-        value =
-          Some
-            (+Access [
-               Access.Identifier ~~"a";
-               Access.Identifier ~~"__add__";
-               Access.Call (+[{ Argument.name = None; value = +Integer 1 }]);
-             ]);
+        value = +Access [
+          Access.Identifier ~~"a";
+          Access.Identifier ~~"__add__";
+          Access.Call (+[{ Argument.name = None; value = +Integer 1 }]);
+        ];
         parent = None;
       };
     ];
@@ -2751,14 +2747,12 @@ let test_assign _ =
       +Assign {
         Assign.target = +Access (Access.create "a.b");
         annotation = None;
-        value =
-          Some
-            (+Access [
-               Access.Identifier ~~"a";
-               Access.Identifier ~~"b";
-               Access.Identifier ~~"__add__";
-               Access.Call (+[{ Argument.name = None; value = +Integer 1 }]);
-             ]);
+        value = +Access [
+          Access.Identifier ~~"a";
+          Access.Identifier ~~"b";
+          Access.Identifier ~~"__add__";
+          Access.Call (+[{ Argument.name = None; value = +Integer 1 }]);
+        ];
         parent = None;
       };
     ];
@@ -2768,11 +2762,11 @@ let test_assign _ =
       +Assign {
         Assign.target = +Access (Access.create "a");
         annotation = None;
-        value = Some (+Ternary {
-            Ternary.target = !"b";
-            test = !"b";
-            alternative = !"c";
-          };);
+        value = +Ternary {
+          Ternary.target = !"b";
+          test = !"b";
+          alternative = !"c";
+        };
         parent = None;
       };
     ];
@@ -2782,11 +2776,11 @@ let test_assign _ =
       +Assign {
         Assign.target = +Access (Access.create "a");
         annotation = None;
-        value = Some (+BooleanOperator {
-            BooleanOperator.left = !"b";
-            operator = BooleanOperator.Or;
-            right = !"c";
-          });
+        value = +BooleanOperator {
+          BooleanOperator.left = !"b";
+          operator = BooleanOperator.Or;
+          right = !"c";
+        };
         parent = None;
       };
     ];
@@ -2796,15 +2790,15 @@ let test_assign _ =
       +Assign {
         Assign.target = +Access (Access.create "a");
         annotation = None;
-        value = Some (+BooleanOperator {
-            BooleanOperator.left = !"b";
+        value = +BooleanOperator {
+          BooleanOperator.left = !"b";
+          operator = BooleanOperator.Or;
+          right = +BooleanOperator {
+            BooleanOperator.left = !"c";
             operator = BooleanOperator.Or;
-            right = +BooleanOperator {
-              BooleanOperator.left = !"c";
-              operator = BooleanOperator.Or;
-              right = !"d";
-            };
-          });
+            right = !"d";
+          };
+        };
         parent = None;
       };
     ]
@@ -3725,7 +3719,7 @@ let test_stubs _ =
       +Assign {
         Assign.target = !"a";
         annotation = None;
-        value = Some (+Ellipses);
+        value = +Ellipses;
         parent = None;
       };
     ];
@@ -3736,7 +3730,7 @@ let test_stubs _ =
       +Assign {
         Assign.target = !"a";
         annotation = Some !"int";
-        value = Some (+Ellipses);
+        value = +Ellipses;
         parent = None;
       };
     ];
@@ -3747,7 +3741,7 @@ let test_stubs _ =
       +Assign {
         Assign.target = !"a";
         annotation = Some !"int";
-        value = Some (+Ellipses);
+        value = +Ellipses;
         parent = None;
       };
     ];
@@ -3764,7 +3758,7 @@ let test_stubs _ =
                Access.Call
                  (+[{ Argument.name = None; value = +Access [Access.Identifier ~~"str"] }]);
              ]);
-        value = Some (+Ellipses);
+        value = +Ellipses;
         parent = None;
       };
     ];
@@ -3790,7 +3784,7 @@ let test_stubs _ =
                     };
                   ]);
              ]);
-        value = Some (+Ellipses);
+        value = +Ellipses;
         parent = None;
       };
     ];
@@ -3807,7 +3801,7 @@ let test_stubs _ =
                Access.Call
                  (+[{ Argument.name = None; value = +Access [Access.Identifier ~~"int"] }]);
              ]);
-        value = Some (+Ellipses);
+        value = +Ellipses;
         parent = None;
       };
     ];
@@ -3822,7 +3816,7 @@ let test_stubs _ =
           +Assign {
             Assign.target = !"a";
             annotation = Some !"int";
-            value = Some (+Ellipses);
+            value = +Ellipses;
             parent = Some (Access.create "A");
           };
         ];

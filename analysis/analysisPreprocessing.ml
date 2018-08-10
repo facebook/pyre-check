@@ -476,7 +476,7 @@ let qualify ({ Source.path; qualifier = source_qualifier; statements; _ } as sou
         {
           Assign.target;
           annotation = annotation >>| qualify_expression ~scope;
-          value = value >>| qualify_expression ~scope;
+          value = qualify_expression value ~scope;
           parent = parent >>| fun access -> qualify_access ~scope access;
         }
       in
@@ -1042,12 +1042,7 @@ let expand_returns source =
             [
               {
                 Node.location;
-                value = Assign {
-                    Assign.target;
-                    annotation = None;
-                    value = Some value;
-                    parent = None;
-                  };
+                value = Assign { Assign.target; annotation = None; value; parent = None };
               };
               { Node.location; value = Return { return with Return.expression = Some target } };
             ]
@@ -1126,8 +1121,7 @@ let expand_ternary_assign source =
         | {
           Node.location;
           value = Assign ({
-              Assign.value =
-                Some { Node.value = Ternary { Ternary.target; test; alternative }; _ };
+              Assign.value = { Node.value = Ternary { Ternary.target; test; alternative }; _ };
               _;
             } as assign)
         } ->
@@ -1138,15 +1132,12 @@ let expand_ternary_assign source =
                 value = If {
                     If.test;
                     body = [
-                      {
-                        Node.location;
-                        value = Assign { assign with Assign.value = Some target };
-                      }
+                      { Node.location; value = Assign { assign with Assign.value = target } };
                     ];
                     orelse = [
                       {
                         Node.location;
-                        value = Assign { assign with Assign.value = Some alternative };
+                        value = Assign { assign with Assign.value = alternative };
                       }
                     ];
                   };

@@ -222,9 +222,8 @@ let test_lookup_class_attributes _ =
   assert_equal
     ~printer:(String.concat ~sep:", ")
     [
+      "*:-1:-1--1:-1/ellipses";
       "test.py:3:4-3:5/bool";
-      (* `b` at 3:4-3:5 expands to `test.Foo.b`. This is the annotation
-         for the `test.Foo` prefix. *)
       "test.py:3:4-3:5/typing.Type[test.Foo]";
       "test.py:3:7-3:11/typing.Type[bool]";
     ]

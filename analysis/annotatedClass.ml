@@ -378,7 +378,7 @@ module Attribute = struct
     name: Expression.expression;
     parent: class_t;
     annotation: Annotation.t;
-    value: Expression.t option;
+    value: Expression.t;
     defined: bool;
     class_attribute: bool;
     async: bool;
@@ -500,6 +500,8 @@ module Attribute = struct
         annotation
     in
 
+    let value = Option.value value ~default:(Node.create Ellipses ~location) in
+
     {
       Node.location;
       value = { name = target; parent; annotation; value; defined; class_attribute; async };
@@ -531,6 +533,12 @@ module Attribute = struct
 
   let value { Node.value = { value; _ }; _ } =
     value
+
+
+  let initialized { Node.value = { value = { Node.value; _ }; _ }; _ } =
+    match value with
+    | Ellipses -> false
+    | _ -> true
 
 
   let location { Node.location; _ } =

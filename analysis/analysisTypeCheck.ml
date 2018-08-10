@@ -181,7 +181,7 @@ module State = struct
             | Access name
               when not (Type.equal expected Type.Top ||
                         Type.is_optional expected ||
-                        Option.is_some (Attribute.value attribute)) ->
+                        Attribute.initialized attribute) ->
                 let access =
                   (Expression.Access.Identifier (Statement.Define.self_identifier define)) :: name
                 in
@@ -655,12 +655,7 @@ module State = struct
             ])
           |> Node.create ~location
         in
-        Assign {
-          Assign.target;
-          annotation = None;
-          value = Some value;
-          parent = None;
-        }
+        Assign { Assign.target; annotation = None; value; parent = None }
         |> Node.create ~location
       in
       let state = forward_statement ~state ~statement:iterator in
@@ -1128,9 +1123,8 @@ module State = struct
       } as assign) ->
         (* TODO(T30448045): the assignment logic. *)
         let { resolution; _ } as state =
-          value
-          >>| (fun expression -> forward_expression ~state ~expression |> fun { state; _ } -> state)
-          |> Option.value ~default:state
+          forward_expression ~state ~expression:value
+          |> fun { state; _ } -> state
         in
         let state =
           let resolution =

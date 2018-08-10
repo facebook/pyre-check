@@ -132,7 +132,7 @@ let create ~qualifier ~local_mode ?path ~stub statements =
       match value with
       | Assign {
           Assign.target = { Node.value = Expression.Access target; _ };
-          value = Some { Node.value = (Expression.List names); _ };
+          value = { Node.value = (Expression.List names); _ };
           _;
         }
         when Access.equal (Access.sanitized target) (Access.create "__all__") ->

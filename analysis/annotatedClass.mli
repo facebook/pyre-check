@@ -94,7 +94,7 @@ module Attribute : sig
     name: Expression.expression;
     parent: class_t;
     annotation: Annotation.t;
-    value: Expression.t option;
+    value: Expression.t;
     defined: bool;
     class_attribute: bool;
     async: bool;
@@ -118,7 +118,8 @@ module Attribute : sig
 
   val annotation: t -> Annotation.t
   val parent: t -> class_t
-  val value: t -> Expression.t option
+  val value: t -> Expression.t
+  val initialized: t -> bool
   val location: t -> Location.t
   val defined: t -> bool
   val class_attribute: t -> bool

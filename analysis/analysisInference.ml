@@ -220,7 +220,7 @@ module State = struct
 
     let resolution =
       match Node.value statement with
-      | Assign { Assign.target; value = Some value; _ } -> (
+      | Assign { Assign.target; value; _ } -> (
           (* Get the annotations of the targets and set the 'value' to be the meet *)
           let rec propagate_assign resolution target_annotation value =
             match Node.value value with

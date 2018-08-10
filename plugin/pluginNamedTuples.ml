@@ -73,7 +73,7 @@ let transform_ast ({ Source.statements; _ } as source) =
         Assign {
           Assign.target;
           annotation = Some annotation;
-          value;
+          value = Option.value value ~default:(Node.create Ellipses ~location);
           parent = Some parent;
         }
         |> Node.create ~location
@@ -86,6 +86,11 @@ let transform_ast ({ Source.statements; _ } as source) =
     let parameters =
       let self_parameter = Parameter.create ~name:(Identifier.create "self") () in
       let to_parameter (name, annotation, value) =
+        let value =
+          match value with
+          | Some { Node.value = Ellipses; _ } -> None
+          | _ -> value
+        in
         Parameter.create ?value ~annotation ~name:(Identifier.create ("$parameter$" ^ name)) ()
       in
       self_parameter :: List.map attributes ~f:to_parameter
@@ -119,7 +124,7 @@ let transform_ast ({ Source.statements; _ } as source) =
             Node.value = Access name;
             _;
           };
-          value = Some expression;
+          value = expression;
           _;
         } ->
           let name = Access.delocalize name in
@@ -162,7 +167,7 @@ let transform_ast ({ Source.statements; _ } as source) =
                       ~default:(Node.create ~location (Access (Access.create "typing.Any")))
                   in
                   List.last target
-                  >>| (fun target -> Access.show [target], annotation, value)
+                  >>| (fun target -> Access.show [target], annotation, Some value)
               | _ ->
                   None
             in

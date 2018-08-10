@@ -140,7 +140,7 @@ module Assign = struct
   type t = {
     target: Expression.t;
     annotation: Expression.t option;
-    value: Expression.t option;
+    value: Expression.t;
     parent: Access.t option;
   }
   [@@deriving compare, eq, sexp, show, hash]
@@ -476,7 +476,7 @@ module Define = struct
               } as target) when Identifier.equal self (self_identifier define) ->
                 let attribute =
                   let target = { target with Node.value = Access access } in
-                  Attribute.create ~primitive:true ~location ~target ?annotation ?value ()
+                  Attribute.create ~primitive:true ~location ~target ?annotation ~value ()
                 in
                 let update = function
                   | Some attributes -> Some (attribute :: attributes)
@@ -491,7 +491,7 @@ module Define = struct
             | { Node.value = Access _; _ } as target ->
                 let annotation =
                   match annotation, value with
-                  | None, Some { Node.value = Access access; _ } ->
+                  | None, { Node.value = Access access; _ } ->
                       Access.SerializableMap.find_opt access parameter_annotations
                   | _ ->
                       annotation
@@ -683,7 +683,7 @@ module Class = struct
       (* Handle multiple assignments on same line *)
       | Assign {
           Assign.target = { Node.value = Tuple targets; _ };
-          value = Some { Node.value = Tuple values; _ };
+          value = { Node.value = Tuple values; _ };
           _;
         } ->
           let add_attribute map target value =
@@ -707,7 +707,7 @@ module Class = struct
             map
       | Assign {
           Assign.target = { Node.value = Tuple targets; _ };
-          value = Some ({ Node.value = Access values; location } as value);
+          value = { Node.value = Access values; location } as value;
           _;
         } ->
           let add_attribute index map target =
@@ -747,7 +747,7 @@ module Class = struct
                   ~location
                   ~target
                   ?annotation
-                  ?value
+                  ~value
                   ()
               in
               Access.SerializableMap.set
@@ -908,7 +908,7 @@ module Class = struct
         match value with
         | Assign {
             Assign.target = { Node.value = Access access; _ };
-            value = Some { Node.value = List attributes; location };
+            value = { Node.value = List attributes; location };
             _;
           } when is_slots access ->
             let add_attribute map { Node.value; _ } =
@@ -975,7 +975,7 @@ module Class = struct
               | Some {
                   Node.value = Assign {
                       Assign.annotation;
-                      value = Some { Node.value = Expression.Ellipses; _ };
+                      value = { Node.value = Expression.Ellipses; _ };
                       _;
                     };
                   _;
@@ -1078,10 +1078,7 @@ module For = struct
       value = Assign {
           Assign.target;
           annotation = None;
-          value = Some {
-              Node.location;
-              value = Access value;
-            };
+          value = { Node.location; value = Access value };
           parent = None;
         }
     }
@@ -1122,7 +1119,7 @@ module With = struct
          {
            Assign.target;
            annotation = None;
-           value = Some enter_call;
+           value = enter_call;
            parent = None;
          }
        in
@@ -1154,7 +1151,7 @@ module Try = struct
         value = Assign {
             Assign.target;
             annotation = Some annotation;
-            value = None;
+            value = Node.create Ellipses ~location;
             parent = None;
           }
       }
@@ -1300,7 +1297,7 @@ module PrettyPrinter = struct
       "%a%a = %a%a"
       pp_access_list_option parent
       Expression.pp target
-      pp_expression_option ("", value)
+      Expression.pp value
       pp_expression_option (" # ", annotation)
 
 

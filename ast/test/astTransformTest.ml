@@ -437,11 +437,11 @@ let test_statement_transformer _ =
       let count, value =
         match value with
         | Statement.Assign
-            ({ Assign.value = Some ({ Node.value = Integer number; _ } as value); _ } as assign) ->
+            ({ Assign.value = { Node.value = Integer number; _ } as value; _ } as assign) ->
             count + number,
             Statement.Assign {
               assign with
-              Assign.value = Some { value with Node.value = Integer (number + 1) };
+              Assign.value = { value with Node.value = Integer (number + 1) };
             }
         | _ ->
             count, value

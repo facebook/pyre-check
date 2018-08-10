@@ -208,12 +208,6 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           state
 
 
-    let analyze_expression_option ?key taint expression state =
-      match expression with
-      | None -> state
-      | Some expression -> analyze_expression ?key taint expression state
-
-
     let analyze_definition ~define:_ state =
       state
 
@@ -223,7 +217,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       match statement with
       | Assign { target; value; _ } ->
           let access_path = of_expression target in
-          analyze_expression_option ?key (get_taint access_path state) value state
+          analyze_expression ?key (get_taint access_path state) value state
       | Assert _
       | Break
       | Class _

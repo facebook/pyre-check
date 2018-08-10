@@ -245,7 +245,7 @@ module Make (Transformer : Transformer) = struct
             Assign {
               Assign.target = transform_expression target;
               annotation = annotation >>| transform_expression;
-              value = value >>| transform_expression;
+              value = transform_expression value;
               parent;
             }
         | Assert { Assert.test; message } ->

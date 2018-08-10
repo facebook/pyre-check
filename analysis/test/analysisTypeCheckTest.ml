@@ -3252,7 +3252,7 @@ let test_check_attributes _ =
     |}
     [
       "Missing attribute annotation [4]: Attribute `bar` of class `Foo` has type `str` but type " ^
-      "`Any` " ^ "is specified.";
+      "`Any` is specified.";
       "Incompatible return type [7]: Expected `int` but got `str`."
     ];
 
@@ -4924,9 +4924,7 @@ let test_check_tuple _ =
       def foo() -> None:
         T(a=2)
     |}
-    [
-
-    ]
+    []
 
 
 let test_check_meta _ =

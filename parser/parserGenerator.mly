@@ -297,7 +297,7 @@ small_statement:
         value = Assign {
           Assign.target;
           annotation = None;
-          value = Some value;
+          value;
           parent = None;
         };
       }]
@@ -309,7 +309,7 @@ small_statement:
         value = Assign {
           Assign.target;
           annotation = Some annotation;
-          value = None;
+          value = Node.create_with_default_location Ellipses;
           parent = None;
         };
       }]
@@ -323,7 +323,7 @@ small_statement:
         value = Assign {
           Assign.target;
           annotation = Some annotation;
-          value = Some value;
+          value;
           parent = None;
         };
       }]
@@ -335,7 +335,7 @@ small_statement:
         value = Assign {
           Assign.target;
           annotation = None;
-          value = Some value;
+          value;
           parent = None;
         };
       } in
@@ -348,7 +348,7 @@ small_statement:
           value = Assign {
             Assign.target;
             annotation = None;
-            value = Some (create_ellipses ellipses);
+            value = create_ellipses ellipses;
             parent = None;
           };
         }
@@ -362,7 +362,7 @@ small_statement:
           value = Assign {
             Assign.target;
             annotation = Some annotation;
-            value = Some (create_ellipses ellipses);
+            value = create_ellipses ellipses;
             parent = None;
           };
         }
@@ -378,7 +378,7 @@ small_statement:
         value = Assign {
           Assign.target;
           annotation = Some annotation;
-          value = Some (create_ellipses ellipses);
+          value = create_ellipses ellipses;
           parent = None;
         };
       }]

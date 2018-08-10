@@ -130,7 +130,7 @@ module Make (Visitor: Visitor) = struct
         | Assign { Assign.target; annotation; value; _ } ->
             visit_expression target;
             Option.iter ~f:visit_expression annotation;
-            Option.iter ~f:visit_expression value
+            visit_expression value
         | Assert { Assert.test; message } ->
             visit_expression test;
             Option.iter ~f:visit_expression message

@@ -16,7 +16,7 @@ let transform_ast ({ Source.statements; qualifier; _ } as source) =
       match value with
       | Assign {
           Assign.value =
-            Some {
+            {
               Node.value =
                 Access [
                   Access.Identifier typing;

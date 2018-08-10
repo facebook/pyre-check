@@ -200,9 +200,7 @@ let filter_assigns ~assign_filter:{ target; annotation; value_regexp; parent } s
   in
   let filter_assigns_by_value_regexp assigns value_regexp =
     let has_regexp { Node.value = { Assign.value; _ }; _ } =
-      value
-      >>| (fun value -> Str.string_match (Str.regexp value_regexp) (Expression.show value) 0)
-      |> Option.value ~default:false
+      Str.string_match (Str.regexp value_regexp) (Expression.show value) 0
     in
     List.filter ~f:has_regexp assigns
   in

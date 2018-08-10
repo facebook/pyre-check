@@ -515,7 +515,7 @@ let register_aliases (module Handler: Handler) sources =
   let collect_aliases { Source.path; statements; qualifier; _ } =
     let rec visit_statement ~qualifier ?(in_class_body = false) aliases { Node.value; _ } =
       match value with
-      | Assign { Assign.target; annotation = None; value = Some value; _ } ->
+      | Assign { Assign.target; annotation = None; value; _ } ->
           let target =
             let access =
               let access =
@@ -732,12 +732,7 @@ let register_globals
           match statement with
           | {
             Node.location;
-            value = Assign {
-                Assign.target;
-                annotation = None;
-                value = Some value;
-                _;
-              };
+            value = Assign { Assign.target; annotation = None; value; _ };
           } ->
               begin
                 try

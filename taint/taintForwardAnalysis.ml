@@ -227,12 +227,6 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           ForwardState.empty_tree
 
 
-    let analyze_expression_option ?key expression state =
-      match expression with
-      | None -> ForwardState.empty_tree
-      | Some expression -> analyze_expression ?key expression state
-
-
     let analyze_definition ~define:_ state =
       state
 
@@ -245,7 +239,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
         Statement.pp_statement statement;
       match statement with
       | Assign { target; value; _ } ->
-          let taint = analyze_expression_option ?key value state in
+          let taint = analyze_expression ?key value state in
           let access_path = of_expression target in
           store_taint_option access_path taint state
       | Assert _

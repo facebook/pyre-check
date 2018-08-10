@@ -271,7 +271,7 @@ let rec source_statement_codex_representation
       | Access access -> [
           CodexNode.VariableNode {
             CodexNode.Variable.name = access_with_parent access parent;
-            default = Option.map ~f:Expression.show value;
+            default = Some (Expression.show value);
             location =
               [location.Location.start.Location.line; location.Location.start.Location.column];
             ty = "variable";
