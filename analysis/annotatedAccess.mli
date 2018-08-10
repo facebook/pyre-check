@@ -10,7 +10,6 @@ module Annotation = AnalysisAnnotation
 module Resolution = AnalysisResolution
 module Type = AnalysisType
 
-module Assign = AnnotatedAssign
 module Class = AnnotatedClass
 module Attribute = Class.Attribute
 module Method = Class.Method

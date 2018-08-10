@@ -13,8 +13,6 @@ open Statement
 open Test
 open AnnotatedTest
 
-module Assign = Annotated.Assign
-
 
 let test_resolve_literal _ =
   let resolution =

@@ -27,7 +27,6 @@
   analysisTypeOrderTest
   analysisTypeTest
   annotatedAccessTest
-  annotatedAssignTest
   annotatedCallableTest
   annotatedClassTest
   annotatedDefineTest
