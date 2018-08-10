@@ -1157,6 +1157,27 @@ module State = struct
                 | Type.Parametric { Type.parameters = [parameter]; _ } -> parameter
                 | _ -> Type.Top
           in
+          let is_nonuniform_sequence ~minimum_length annotation =
+            (* TODO(32692300): this should support tuple subclasses (e.g. named tuples) as well. *)
+            match annotation with
+            | Type.Tuple (Type.Bounded parameters)
+              when minimum_length <= List.length parameters ->
+                true
+            | _ ->
+                false
+          in
+          let nonuniform_sequence_parameters ~minimum_length annotation =
+            match annotation with
+            | Type.Tuple (Type.Bounded parameters)
+              when minimum_length <= List.length parameters ->
+                parameters
+            | _ ->
+                let rec parameters = function
+                  | count when count > 0 -> Type.Top :: (parameters (count - 1))
+                  | _ -> []
+                in
+                parameters minimum_length
+          in
 
           match value, guide with
           | Access access, guide ->
@@ -1325,9 +1346,9 @@ module State = struct
                 elements
                 ~init:state
                 ~f:(fun state target -> forward_assign ~state ~target ~guide ~resolved)
-          | List elements, Type.Tuple (Type.Bounded annotations)
-          | Tuple elements, Type.Tuple (Type.Bounded annotations)
-            when List.length elements <= List.length annotations ->
+          | List elements, guide
+          | Tuple elements, guide
+            when is_nonuniform_sequence ~minimum_length:(List.length elements) guide ->
               let left, starred, right =
                 let is_starred { Node.value; _ } =
                   match value with
@@ -1351,6 +1372,11 @@ module State = struct
                 left, starred, right
               in
               let annotations =
+                let annotations =
+                  nonuniform_sequence_parameters
+                    ~minimum_length:(List.length elements)
+                    guide
+                in
                 let left, tail = List.split_n annotations (List.length left) in
                 let starred, right = List.split_n tail (List.length tail - List.length right) in
                 let starred =
