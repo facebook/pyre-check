@@ -560,12 +560,15 @@ let test_forward_statement _ =
     "x = y = z"
     ["x", Type.integer; "y", Type.integer; "z", Type.integer];
 
+  (* Assignments with tuples. *)
   assert_forward
     ["c", Type.integer; "d", Type.Top]
     "a, b = c, d"
     ["a", Type.integer; "b", Type.Top; "c", Type.integer; "d", Type.Top];
-
-  (* Here be dragons... *)
+  assert_forward
+    ["c", Type.Tuple (Type.Unbounded Type.integer)]
+    "a, b = c"
+    ["a", Type.integer; "b", Type.integer; "c", Type.Tuple (Type.Unbounded Type.integer)];
   assert_forward
     ~errors:
       (`Specific ["Incompatible variable type [9]: Unable to unpack `int`, expected a `Tuple`."])
@@ -573,7 +576,6 @@ let test_forward_statement _ =
     "x, y = z"
     ["x", Type.Top; "y", Type.Top; "z", Type.integer];
 
-  (* Assignments with tuples. *)
   assert_forward
     ["y", Type.integer; "z", Type.Top]
     "x = y, z"
@@ -588,7 +590,9 @@ let test_forward_statement _ =
     ["x", Type.integer; "y", Type.integer; "z", Type.Tuple (Type.Unbounded Type.integer)];
   assert_forward
     ~errors:
-      (`Specific ["Incompatible variable type [9]: Unable to unpack `int`, expected a `Tuple`."])
+      (`Specific [
+          "Incompatible variable type [9]: Unable to unpack `unknown`, expected a `Tuple`.";
+        ])
     []
     "(x, y), z = 1"
     ["x", Type.Top; "y", Type.Top; "z", Type.Top];
@@ -607,44 +611,26 @@ let test_forward_statement _ =
     ["x", Type.list Type.integer]
     "[a, b] = x"
     ["x", Type.list Type.integer; "a", Type.integer; "b", Type.integer];
+  assert_forward
+    ["x", Type.list Type.integer]
+    "a, *b = x"
+    ["x", Type.list Type.integer; "a", Type.integer; "b", Type.list Type.integer];
 
   (* Assignments with immutables. *)
   assert_forward ~postcondition_immutables:["x", true] [] "global x" ["x", Type.Top];
   assert_forward ~postcondition_immutables:["y", false] [] "y: int" ["y", Type.integer];
   assert_forward
-    ~errors:
-      (`Specific [
-          "Incompatible variable type [9]: y is declared to have type `int` but is used as type "^
-          "`unknown`.";
-          "Undefined name [18]: Global name `x` is undefined.";
-        ])
+    ~errors:(`Specific [ "Undefined name [18]: Global name `x` is undefined."])
     ~postcondition_immutables:["y", false]
     []
     "y: int = x"
     ["y", Type.integer];
-  assert_forward
-    ~errors:
-      (`Specific [
-          "Incompatible variable type [9]: y is declared to have type `int` but is used as type " ^
-          "`str`.";
-        ])
-    ~postcondition_immutables:["y", false] [] "y: int = 'string'" ["y", Type.integer];
   assert_forward
     ~precondition_immutables:["y", false]
     ~postcondition_immutables:["y", false]
     ["x", Type.Top; "y", Type.Top]
     "y = x"
     ["x", Type.Top; "y", Type.Top];
-  assert_forward
-    ~errors:
-      (`Specific [
-          "Incompatible variable type [9]: y is declared to have type `int` but is used as type " ^
-          "`str`.";
-        ])
-    ~postcondition_immutables:["y", false]
-    ["x", Type.string]
-    "y: int = x"
-    ["x", Type.string; "y", Type.integer];
   assert_forward
     ~precondition_immutables:["y", false]
     ~postcondition_immutables:["y", false]
@@ -871,8 +857,10 @@ let test_show_error_traces _ =
       constant = 1
     |}
     [
+      "Missing global annotation [5]: Globally accessible variable `constant` has type `int` but " ^
+      "no type is specified. Global variable `constant` declared on line 2, type `int` deduced " ^
+      "from test.py:5:2.";
       "Undefined name [18]: Global name `x` is undefined.";
-      (* TODO(T29421309): unbreak missing global annotation errors. *)
     ];
 
   assert_type_errors ~show_error_traces:true
@@ -884,6 +872,9 @@ let test_show_error_traces _ =
       constant = 1
     |}
     [
+      "Missing global annotation [5]: Globally accessible variable `constant` has type " ^
+      "`typing.Union[int, str]` but no type is specified. Global variable `constant` declared " ^
+      "on line 2, type `typing.Union[int, str]` deduced from test.py:5:2, test.py:6:2.";
       "Undefined name [18]: Global name `x` is undefined.";
     ];
 
@@ -900,7 +891,6 @@ let test_show_error_traces _ =
       "type `int` deduced from test.py:5:4.";
       "Undefined name [18]: Global name `x` is undefined.";
     ];
-
 
   assert_type_errors ~show_error_traces:true
     {|
@@ -920,17 +910,6 @@ let test_show_error_traces _ =
       "`typing.Union[int, str]` but no type is specified. Global variable `x` " ^
       "declared on line 7, type `typing.Union[int, str]` deduced from test.py:4:2, " ^
       "test.py:7:2."
-    ];
-
-  assert_type_errors ~show_error_traces:true
-    {|
-      def f()->int:
-        x : int = ""
-        return 0
-    |}
-    [
-      "Incompatible variable type [9]: x is declared to have type `int` but is used " ^
-      "as type `str`. x incorrectly used on line 3.";
     ]
 
 
@@ -1362,15 +1341,6 @@ let test_check _ =
   assert_type_errors
     {|
       x: typing.List[int]
-      def foo() -> typing.List[str]:
-        a, *b = x
-        return b
-    |}
-    ["Incompatible return type [7]: Expected `typing.List[str]` but got `typing.List[int]`."];
-
-  assert_type_errors
-    {|
-      x: typing.List[int]
       def foo() -> typing.List[int]:
         return x.__getitem__(slice(0, 1, None))
     |}
@@ -1481,8 +1451,7 @@ let test_check _ =
         return x + y + z
     |}
     [
-      (* There should be no name errors here. *)
-      "Incompatible variable type [9]: Unable to unpack `int`, expected a `Tuple`.";
+      "Incompatible variable type [9]: Unable to unpack `unknown`, expected a `Tuple`.";
       "Incompatible return type [7]: Expected `int` but got `unknown`.";
     ];
 
@@ -2088,7 +2057,7 @@ let test_check_comprehensions _ =
     |}
     [
       "Incompatible return type [7]: Expected `typing.Dict[int, str]` but got " ^
-      "`typing.Dict[typing.Any, typing.Any]`.";
+      "`typing.Dict[unknown, unknown]`.";
       "Incompatible variable type [9]: Unable to unpack `int`, expected a `Tuple`.";
     ];
 
@@ -2269,8 +2238,8 @@ let test_check_optional _ =
         return optional and int_to_bool(optional)
     |}
     [
-      "Missing return annotation [3]: Returning `typing.Union[bool, int]` but " ^
-      "type `Any` is specified."
+      "Missing return annotation [3]: Returning `typing.Optional[bool]` but " ^
+      "type `Any` is specified.";
     ]
 
 
@@ -3160,11 +3129,7 @@ let test_check_attributes _ =
         def f(self) -> str:
             return self.bar
     |}
-    [
-      "Incompatible attribute type [8]: " ^
-      "Attribute `bar` declared in class `Foo` has type `int` but is used as type `None`.";
-      "Incompatible return type [7]: Expected `str` but got `int`.";
-    ];
+    ["Incompatible return type [7]: Expected `str` but got `int`."];
 
 
   assert_type_errors
@@ -3188,8 +3153,10 @@ let test_check_attributes _ =
       b = 1
     |}
     [
-      "Missing global annotation [5]: " ^
-      "Globally accessible variable `b` has type `int` but no type is specified.";
+      "Missing global annotation [5]: Globally accessible variable `a` has type " ^
+      "`typing.Type[str]` but no type is specified.";
+      "Missing global annotation [5]: Globally accessible variable `b` has type `int` but no " ^
+      "type is specified.";
     ];
 
   assert_type_errors
@@ -3237,7 +3204,6 @@ let test_check_attributes _ =
     [
       "Missing attribute annotation [4]: Attribute `bar` of class `Foo` has type `str` but no " ^
       "type is specified.";
-      "Undefined attribute [16]: `Foo` has no attribute `bar`.";
       "Incompatible return type [7]: Expected `int` but got `str`.";
       "Undefined attribute [16]: `Foo` has no attribute `bar`.";
     ];
@@ -3301,7 +3267,6 @@ let test_check_attributes _ =
     [
       "Missing attribute annotation [4]: Attribute `bar` of class `Foo` has type `str` but no " ^
       "type is specified.";
-      "Undefined attribute [16]: `Foo` has no attribute `bar`.";
       "Incompatible return type [7]: Expected `int` but got `str`.";
       "Undefined attribute [16]: `Foo` has no attribute `bar`.";
     ];
@@ -3427,8 +3392,6 @@ let test_check_attributes _ =
       "Missing attribute annotation [4]: Attribute `baz` of class `Foo` has type " ^
       "`typing.Optional[int]` but no type is specified.";
       (* TODO(T24330702): we should only report this once. *)
-      "Undefined attribute [16]: `Foo` has no attribute `baz`.";
-      "Undefined attribute [16]: `Foo` has no attribute `baz`.";
       "Undefined attribute [16]: `Foo` has no attribute `baz`.";
       "Undefined attribute [16]: `Foo` has no attribute `baz`.";
     ];
@@ -3875,13 +3838,6 @@ let test_check_immutables _ =
   assert_type_errors
     {|
     def foo() -> None:
-      x: int = "hi"
-    |}
-    ["Incompatible variable type [9]: x is declared to have type `int` but is used as type `str`."];
-
-  assert_type_errors
-    {|
-    def foo() -> None:
       x = 1
       y: str
       y = x
@@ -3924,7 +3880,6 @@ let test_check_immutables _ =
       "Missing attribute annotation [4]: Attribute `attribute` of class `Foo` has type `int` but " ^
       "no type is specified.";
       "Undefined name [18]: Global name `attribute` is undefined.";
-      "Undefined attribute [16]: `Foo` has no attribute `attribute`.";
     ];
 
   assert_type_errors
@@ -4062,7 +4017,6 @@ let test_check_immutables _ =
       "Missing attribute annotation [4]: Attribute `constant` of class `Foo` has type `int` but " ^
       "no type is specified.";
       "Undefined name [18]: Global name `constant` is undefined.";
-      "Undefined attribute [16]: `Foo` has no attribute `constant`.";
       "Missing global annotation [5]: Globally accessible variable `constant` has type `str` but " ^
       "no type is specified.";
     ];
@@ -4669,11 +4623,7 @@ let test_check_refinement _ =
         l: typing.List[int] = None
         l.append('a')
     |}
-    [
-      "Incompatible variable type [9]: l is declared to have type `typing.List[int]` but is " ^
-      "used as type `None`.";
-      "Incompatible parameter type [6]: Expected `int` but got `str`.";
-    ];
+    ["Incompatible parameter type [6]: Expected `int` but got `str`."];
 
   assert_type_errors
     {|
@@ -4800,11 +4750,7 @@ let test_check_toplevel _ =
       def foobar() -> None:
           b: int = None
     |}
-    [
-      "Incompatible variable type [9]: a is declared to have type `int` " ^
-      "but is used as type `None`.";
-      "Incompatible variable type [9]: b is declared to have type `int` but is used as type `None`."
-    ]
+    []
 
 
 let test_check_tuple _ =
@@ -4862,8 +4808,10 @@ let test_check_tuple _ =
         return b
     |}
     [
-      "Incompatible return type [7]: Expected `typing.Tuple[str, int]` but " ^
-      "got `typing.Tuple[int, str]`.";
+      "Incompatible variable type [9]: ? is declared to have type " ^
+      "`typing.Tuple[typing.Any, ...]` but is used as type `typing.Tuple[int, int, str]`.";
+      "Incompatible return type [7]: Expected `typing.Tuple[str, int]` but got `unknown`.";
+      "Undefined name [18]: Global name `b` is undefined.";
     ];
 
   assert_type_errors
@@ -4916,7 +4864,11 @@ let test_check_tuple _ =
         x, y, z = t
         x, y, z, other = t
     |}
-    [];
+    [
+      "Incompatible variable type [9]: Unable to unpack `T`, expected a `Tuple`.";
+      "Incompatible variable type [9]: Unable to unpack `T`, expected a `Tuple`.";
+      "Incompatible variable type [9]: Unable to unpack `T`, expected a `Tuple`.";
+    ];
   assert_type_errors
     {|
       T = collections.namedtuple('T', 'a')
@@ -5943,9 +5895,9 @@ let test_scheduling _ =
         return variable
     |}
     [
-      "Missing global annotation [5]: Globally accessible variable `variable` has type `int` but " ^
-      "no type is specified.";
       "Incompatible return type [7]: Expected `int` but got `str`.";
+      "Missing global annotation [5]: Globally accessible variable `variable` has type " ^
+      "`typing.Union[int, str]` but no type is specified.";
     ]
 
 

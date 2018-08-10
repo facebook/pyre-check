@@ -584,7 +584,7 @@ let test_lookup_definitions _ =
       "test.py:2:16-2:19 -> builtins.pyi:54:0-68:34";
       "test.py:5:14-5:17 -> builtins.pyi:54:0-68:34";
       "test.py:8:10-8:13 -> builtins.pyi:54:0-68:34";
-      "test.py:8:17-8:20 -> builtins.pyi:73:0-88:42";
+      "test.py:8:17-8:20 -> builtins.pyi:73:0-88:49";
     ]
     (Lookup.get_all_definitions lookup
      |> List.map ~f:(fun (key, data) ->
