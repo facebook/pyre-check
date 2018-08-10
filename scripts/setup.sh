@@ -39,6 +39,9 @@ do
     "--temporary-root")
       OPAM_ROOT="$(mktemp -d)"
       ;;
+    "--opam-root")
+      OPAM_ROOT="${arguments[$index+1]}"
+      ;;
     "--repository")
       OPAM_REPOSITORY="${arguments[$index+1]}"
       ;;
