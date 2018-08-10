@@ -1326,6 +1326,7 @@ module State = struct
                 { state with resolution }
               in
               state
+          | List elements, guide
           | Tuple elements, guide
             when is_uniform_sequence guide ->
               let propagate state element =
@@ -1338,14 +1339,6 @@ module State = struct
                     forward_assign ~state ~target:element ~guide ~resolved
               in
               List.fold elements ~init:state ~f:propagate
-          | List elements, guide
-            when is_uniform_sequence guide ->
-              let guide = uniform_sequence_parameter resolved in
-              let resolved = uniform_sequence_parameter resolved in
-              List.fold
-                elements
-                ~init:state
-                ~f:(fun state target -> forward_assign ~state ~target ~guide ~resolved)
           | List elements, guide
           | Tuple elements, guide
             when is_nonuniform_sequence ~minimum_length:(List.length elements) guide ->

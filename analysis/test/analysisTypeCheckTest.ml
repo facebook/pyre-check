@@ -609,6 +609,10 @@ let test_forward_statement _ =
     ["x", Type.list Type.integer; "a", Type.integer; "b", Type.integer];
   assert_forward
     ["x", Type.list Type.integer]
+    "[a, *b] = x"
+    ["x", Type.list Type.integer; "a", Type.integer; "b", Type.list Type.integer];
+  assert_forward
+    ["x", Type.list Type.integer]
     "a, *b = x"
     ["x", Type.list Type.integer; "a", Type.integer; "b", Type.list Type.integer];
 
