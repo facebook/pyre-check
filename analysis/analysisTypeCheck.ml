@@ -1327,7 +1327,44 @@ module State = struct
                 ~f:(fun state target -> forward_assign ~state ~target ~guide ~resolved)
           | List elements, Type.Tuple (Type.Bounded annotations)
           | Tuple elements, Type.Tuple (Type.Bounded annotations)
-            when List.length elements = List.length annotations ->
+            when List.length elements <= List.length annotations ->
+              let left, starred, right =
+                let is_starred { Node.value; _ } =
+                  match value with
+                  | Starred (Starred.Once _) -> true
+                  | _ -> false
+                in
+                let left, tail =
+                  List.split_while
+                    elements
+                    ~f:(fun element -> not (is_starred element))
+                in
+                let starred, right =
+                  let starred, right = List.split_while tail ~f:is_starred in
+                  let starred =
+                    match starred with
+                    | [{ Node.value = Starred (Starred.Once starred); _ }] -> [starred]
+                    | _ -> []
+                  in
+                  starred, right
+                in
+                left, starred, right
+              in
+              let annotations =
+                let left, tail = List.split_n annotations (List.length left) in
+                let starred, right = List.split_n tail (List.length tail - List.length right) in
+                let starred =
+                  if not (List.is_empty starred) then
+                    let annotation =
+                      List.fold starred ~init:Type.Bottom ~f:(Resolution.join resolution)
+                      |> Type.list
+                    in
+                    [annotation]
+                  else
+                    []
+                in
+                left @ starred @ right
+              in
               let resolved =
                 match resolved with
                 | Type.Tuple (Type.Bounded annotations)
@@ -1336,7 +1373,7 @@ module State = struct
                 | _ ->
                     List.map elements ~f:(fun _ -> Type.Top)
               in
-              List.zip_exn elements annotations
+              List.zip_exn (left @ starred @ right) annotations
               |> List.zip_exn resolved
               |> List.fold
                 ~init:state

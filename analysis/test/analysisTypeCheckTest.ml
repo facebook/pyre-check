@@ -622,6 +622,32 @@ let test_forward_statement _ =
     "a, b = c"
     ["a", Type.integer; "b", Type.integer; "c", Type.Tuple (Type.Unbounded Type.integer)];
 
+  (* Assignments with non-uniform sequences. *)
+  assert_forward
+    ["x", Type.tuple [Type.integer; Type.string; Type.float]]
+    "*a, b = x"
+    [
+      "x", Type.tuple [Type.integer; Type.string; Type.float];
+      "a", Type.list (Type.union [Type.integer; Type.string]);
+      "b", Type.float;
+    ];
+  assert_forward
+    ["x", Type.tuple [Type.integer; Type.string; Type.float]]
+    "a, *b = x"
+    [
+      "x", Type.tuple [Type.integer; Type.string; Type.float];
+      "a", Type.integer;
+      "b", Type.list (Type.union [Type.string; Type.float]);
+    ];
+  assert_forward
+    ["x", Type.tuple [Type.integer; Type.string; Type.integer; Type.float]]
+    "a, *b, c = x"
+    [
+      "x", Type.tuple [Type.integer; Type.string; Type.integer; Type.float];
+      "a", Type.integer;
+      "b", Type.list (Type.union [Type.string; Type.integer]);
+      "c", Type.float;
+    ];
 
   (* Assignments with immutables. *)
   assert_forward ~postcondition_immutables:["x", true] [] "global x" ["x", Type.Top];
@@ -4808,7 +4834,6 @@ let test_check_tuple _ =
       "`typing.Tuple[str, ...]`.";
     ];
 
-  (* TODO(T30448045): fix propagation of non-uniform sequence assignment. *)
   assert_type_errors
     {|
       def foo(x: typing.Tuple[int, int, str]) -> typing.Tuple[str, int]:
@@ -4816,10 +4841,8 @@ let test_check_tuple _ =
         return b
     |}
     [
-      "Incompatible variable type [9]: ? is declared to have type " ^
-      "`typing.Tuple[typing.Any, ...]` but is used as type `typing.Tuple[int, int, str]`.";
-      "Incompatible return type [7]: Expected `typing.Tuple[str, int]` but got `unknown`.";
-      "Undefined name [18]: Global name `b` is undefined.";
+      "Incompatible return type [7]: Expected `typing.Tuple[str, int]` but got " ^
+      "`typing.List[typing.Union[int, str]]`.";
     ];
 
   assert_type_errors
