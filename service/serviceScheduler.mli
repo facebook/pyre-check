@@ -4,6 +4,8 @@
     LICENSE file in the root directory of this source tree. *)
 
 
+open Hack_parallel.Std
+
 type t
 
 val create: configuration: Configuration.t -> ?bucket_multiplier: int -> unit -> t
@@ -26,6 +28,8 @@ val single_job : t -> f:('a -> 'b) -> 'a -> 'b
 val is_parallel : t -> bool
 
 val with_parallel: is_parallel: bool -> t -> t
+
+val workers: t -> Worker.t list
 
 val mock: unit -> t
 

@@ -10,6 +10,7 @@ open Ast
 open Statement
 open Pyre
 
+
 let overrides_of_source environment source =
   let open Annotated in
   let resolution = Environment.resolution environment () in
@@ -77,9 +78,7 @@ let add_models ~model_source =
   List.iter models ~f:add_model_to_memory
 
 
-let analyze ?taint_models_directory ~scheduler:_ ~configuration:_ ~environment ~handles:paths () =
-  Log.print "Analysis";
-
+let analyze ?taint_models_directory ~scheduler ~configuration:_ ~environment ~handles:paths () =
   (* Add models *)
   let () =
     match taint_models_directory with
@@ -90,7 +89,7 @@ let analyze ?taint_models_directory ~scheduler:_ ~configuration:_ ~environment ~
             raise (Invalid_argument (Format.asprintf "`%a` is not a directory" Path.pp directory))
         in
         check_directory_exists directory;
-        Log.info "Finding taint models in %s" (Path.show directory);
+        Log.info "Finding taint models in %a" Path.pp directory;
         let add_models path =
           Path.create_absolute path
           |> File.create
@@ -106,25 +105,59 @@ let analyze ?taint_models_directory ~scheduler:_ ~configuration:_ ~environment ~
     | None -> ()
   in
 
-  let _call_graph =
-    let build_call_graph map path =
-      AstSharedMemory.get_source path
-      >>| record_and_merge_call_graph environment map path
-      |> Option.value ~default:map
-    in
-    List.fold paths ~init:Access.Map.empty ~f:build_call_graph
-  in
-
+  Log.info "Recording overrides...";
+  let timer = Timer.start () in
   let record_overrides path =
     AstSharedMemory.get_source path
     >>| record_overrides environment
     |> ignore
   in
   List.iter paths ~f:record_overrides;
+  Statistics.performance ~name:"Overrides recorded" ~timer ();
 
-  let record_path_of_definitions path =
-    AstSharedMemory.get_source path
-    >>| record_path_of_definitions path
-    |> ignore
+  Log.info "Building call graph...";
+  let timer = Timer.start () in
+  let call_graph =
+    let build_call_graph map path =
+      try
+        AstSharedMemory.get_source path
+        >>| record_and_merge_call_graph environment map path
+        |> Option.value ~default:map
+      with TypeOrder.Untracked untracked_type ->
+        Log.info "Error building call graph in file %a for untracked type %a"
+          File.Handle.pp path
+          Type.pp untracked_type;
+        map
+    in
+    List.fold paths ~init:Access.Map.empty ~f:build_call_graph
   in
-  List.iter paths ~f:record_path_of_definitions
+  Statistics.performance ~name:"Call graph built" ~timer ();
+  Log.info "Call graph edges: %d" (Access.Map.length call_graph);
+
+  let caller_map = CallGraph.reverse call_graph in
+
+  let all_callables =
+    let make_callables path =
+      AstSharedMemory.get_source path
+      >>| fun source ->
+      record_path_of_definitions path source
+      |> List.map ~f:Interprocedural.Callable.make
+    in
+    List.filter_map paths ~f:make_callables
+    |> List.concat
+  in
+
+  let analyses = [Taint.Analysis.abstract_kind] in
+
+  Log.info "Analysis fixpoint started...";
+  let timer = Timer.start () in
+  let iterations =
+    Interprocedural.Analysis.compute_fixpoint
+      ~workers:(Some (ServiceScheduler.workers scheduler))
+      ~analyses
+      ~caller_map
+      ~all_callables
+      Interprocedural.Fixpoint.Epoch.initial
+  in
+  Statistics.performance ~name:"Analysis fixpoint complete" ~timer ();
+  Log.info "Fixpoint iterations: %d" iterations

@@ -109,5 +109,9 @@ let with_parallel ~is_parallel service =
   { service with is_parallel }
 
 
+let workers { workers; _ } =
+  workers
+
+
 let destroy _ =
   Worker.killall ()

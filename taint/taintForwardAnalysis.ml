@@ -235,8 +235,8 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       | Some expression -> analyze_expression ?key expression state
 
 
-    let analyze_definition ~define:_ _ =
-      failwith "We don't handle nested defines right now"
+    let analyze_definition ~define:_ state =
+      state
 
 
     let forward ?key state ~statement:({ Node.value = statement; _ }) =
