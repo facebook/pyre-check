@@ -4801,6 +4801,7 @@ let test_check_tuple _ =
       "`typing.Tuple[str, ...]`.";
     ];
 
+  (* TODO(T30448045): fix propagation of non-uniform sequence assignment. *)
   assert_type_errors
     {|
       def foo(x: typing.Tuple[int, int, str]) -> typing.Tuple[str, int]:
@@ -4856,6 +4857,8 @@ let test_check_tuple _ =
       "Undefined attribute [16]: `typing.Any` has no attribute `__add__`.";
       "Undefined attribute [16]: `T` has no attribute `d`.";
     ];
+
+  (* TODO(T30448045): fix unpacking of named tuples. *)
   assert_type_errors
     {|
       T = collections.namedtuple('T', 'a b c')
