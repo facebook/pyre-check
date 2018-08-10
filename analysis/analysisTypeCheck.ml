@@ -1141,7 +1141,11 @@ module State = struct
                 Resolution.less_or_equal
                   resolution
                   ~left:annotation
-                  ~right:(Type.iterable Type.Object)
+                  ~right:(Type.iterable Type.Object) ||
+                Resolution.less_or_equal
+                  resolution
+                  ~left:annotation
+                  ~right:Type.named_tuple
           in
           let uniform_sequence_parameter annotation =
             match annotation with

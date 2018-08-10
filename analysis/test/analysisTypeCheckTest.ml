@@ -4865,7 +4865,6 @@ let test_check_tuple _ =
       "Undefined attribute [16]: `T` has no attribute `d`.";
     ];
 
-  (* TODO(T30448045): fix unpacking of named tuples. *)
   assert_type_errors
     {|
       T = collections.namedtuple('T', 'a b c')
@@ -4874,11 +4873,7 @@ let test_check_tuple _ =
         x, y, z = t
         x, y, z, other = t
     |}
-    [
-      "Incompatible variable type [9]: Unable to unpack `T`, expected a `Tuple`.";
-      "Incompatible variable type [9]: Unable to unpack `T`, expected a `Tuple`.";
-      "Incompatible variable type [9]: Unable to unpack `T`, expected a `Tuple`.";
-    ];
+    [];
   assert_type_errors
     {|
       T = collections.namedtuple('T', 'a')
