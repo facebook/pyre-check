@@ -181,6 +181,14 @@ class Configuration:
                 typeshed_subdirectory = os.path.join(
                     self._typeshed, typeshed_subdirectory_name
                 )
+                if (
+                    not os.path.isdir(typeshed_subdirectory)
+                    or typeshed_subdirectory_name == "tests"
+                    or typeshed_subdirectory_name[0] == "."
+                ):
+                    # Ignore some well-known directories we do not care about.
+                    continue
+
                 assert_readable_directory(typeshed_subdirectory)
                 for typeshed_version_directory_name in os.listdir(
                     typeshed_subdirectory

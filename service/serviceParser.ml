@@ -144,7 +144,10 @@ let parse_stubs
             match Core.Sys.ls_dir root with
             | entries ->
                 let select_directories sofar path =
-                  if Core.Sys.is_directory (root ^/ path) = `Yes then
+                  if Core.Sys.is_directory (root ^/ path) = `Yes &&
+                     path <> "tests" &&
+                     not (String.is_prefix path ~prefix:".")
+                  then
                     (Path.create_relative ~root:typeshed_path ~relative:path) :: sofar
                   else
                     sofar

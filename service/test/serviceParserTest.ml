@@ -119,7 +119,35 @@ let test_parse_stubs context =
     handles
 
 
-let test_parse_sources _ =
+let test_parse_typeshed context =
+  let handles =
+    let source_root = Path.create_absolute (bracket_tmpdir context) in
+    let typeshed_root = Path.create_absolute (bracket_tmpdir context) in
+
+    let write_file root relative =
+      File.create ~content:(Some "def foo() -> int: ...") (Path.create_relative ~root ~relative)
+      |> File.write
+    in
+    write_file typeshed_root "folder/a.pyi";
+    write_file typeshed_root "valid/b.pyi";
+    write_file typeshed_root "test/c.pyi";
+    write_file typeshed_root "tests/d.pyi";
+    write_file typeshed_root ".skipme/e.pyi";
+
+    Service.Parser.parse_stubs
+      (Scheduler.mock ())
+      ~configuration:(Configuration.create ~source_root ~typeshed:typeshed_root ())
+    |> List.map ~f:File.Handle.show
+    |> List.sort ~compare:String.compare
+  in
+  assert_equal
+    ~cmp:(List.equal ~equal:String.equal)
+    ~printer:(String.concat ~sep:", ")
+    ["a.pyi"; "b.pyi"; "c.pyi"]
+    handles
+
+
+let test_parse_source _ =
   let file =
     File.create
       ~content:(Some "def foo()->int:\n    return 1\n")
@@ -287,7 +315,8 @@ let () =
   "parser">:::[
     "parse_stubs_modules_list">::test_parse_stubs_modules_list;
     "parse_stubs">::test_parse_stubs;
-    "parse_sources">::test_parse_sources;
+    "parse_typeshed">::test_parse_typeshed;
+    "parse_source">::test_parse_source;
     "parse_sources">::test_parse_sources;
     "register_modules">::test_register_modules;
   ]
