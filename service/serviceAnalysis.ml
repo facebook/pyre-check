@@ -67,7 +67,8 @@ let record_path_of_definitions path source =
 let add_models ~model_source =
   let open Taint in
   let open Interprocedural in
-  let add_model_to_memory Model.{ call_target; model }=
+  let add_model_to_memory Model.{ call_target; model } =
+    Log.info "Adding taint model %S to shared memory" (Callable.target_name call_target);
     Result.empty_model
     |> Result.with_model Taint.Result.kind model
     |> Fixpoint.add_predefined call_target
@@ -76,8 +77,35 @@ let add_models ~model_source =
   List.iter models ~f:add_model_to_memory
 
 
-let analyze ~scheduler:_ ~configuration:_ ~environment ~handles:paths =
+let analyze ?taint_models_directory ~scheduler:_ ~configuration:_ ~environment ~handles:paths () =
   Log.print "Analysis";
+
+  (* Add models *)
+  let () =
+    match taint_models_directory with
+    | Some directory ->
+        let directory = Path.create_absolute directory in
+        let check_directory_exists directory =
+          if not (Path.is_directory directory) then
+            raise (Invalid_argument (Format.asprintf "`%a` is not a directory" Path.pp directory))
+        in
+        check_directory_exists directory;
+        Log.info "Finding taint models in %s" (Path.show directory);
+        let add_models path =
+          Path.create_absolute path
+          |> File.create
+          |> File.content
+          >>| (fun model_source -> add_models ~model_source)
+          |> ignore
+        in
+        let directory = Path.absolute directory in
+        Sys.readdir directory
+        |> Array.to_list
+        |> List.map ~f:((^/) directory)
+        |> List.iter ~f:add_models
+    | None -> ()
+  in
+
   let _call_graph =
     let build_call_graph map path =
       AstSharedMemory.get_source path

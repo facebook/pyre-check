@@ -22,6 +22,7 @@ type t = [ real_target | override_target ]
 [@@deriving show, sexp, compare]
 
 val show: [< t ] -> string
+val target_name: [< t ] -> string
 val compare: ([< t ] as 'a) -> 'a -> int
 
 type target_with_stored_result = real_target

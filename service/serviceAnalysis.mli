@@ -28,8 +28,10 @@ val record_path_of_definitions: File.Handle.t -> Source.t -> Define.t Node.t lis
 val add_models: model_source: string -> unit
 
 val analyze
-  :  scheduler: ServiceScheduler.t
+  :  ?taint_models_directory: string
+  -> scheduler: ServiceScheduler.t
   -> configuration: Configuration.t
   -> environment: (module Environment.Handler)
   -> handles: File.Handle.t list
+  -> unit
   -> unit

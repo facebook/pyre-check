@@ -12,7 +12,7 @@ module Scheduler = Service.Scheduler
 
 let run_analysis
     _taint
-    _taint_models
+    taint_models_directory
     verbose
     expected_version
     sections
@@ -76,7 +76,13 @@ let run_analysis
   let () =
     CommandCheck.check configuration (Some scheduler) ()
     |> fun { handles; environment; _ } ->
-    Service.Analysis.analyze ~scheduler ~configuration ~environment ~handles
+    Service.Analysis.analyze
+      ?taint_models_directory
+      ~scheduler
+      ~configuration
+      ~environment
+      ~handles
+      ()
   in
   let { Caml.Gc.minor_collections; major_collections; compactions; _ } = Caml.Gc.stat () in
   Statistics.performance

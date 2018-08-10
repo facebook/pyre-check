@@ -89,5 +89,10 @@ let show callable =
   show (callable :> t)
 
 
+let target_name = function
+  | `RealTarget target -> Format.sprintf "%s (real)" (Access.show target)
+  | `OverrideTarget target -> Format.sprintf "%s (override)" (Access.show target)
+
+
 let compare target1 target2 =
   compare (target1 :> t) (target2 :> t)
