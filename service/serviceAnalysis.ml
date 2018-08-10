@@ -78,7 +78,7 @@ let add_models ~model_source =
   List.iter models ~f:add_model_to_memory
 
 
-let analyze ?taint_models_directory ~scheduler ~configuration:_ ~environment ~handles:paths () =
+let analyze ?taint_models_directory ~scheduler ~configuration ~environment ~handles:paths () =
   (* Add models *)
   let () =
     match taint_models_directory with
@@ -129,7 +129,13 @@ let analyze ?taint_models_directory ~scheduler ~configuration:_ ~environment ~ha
           Type.pp untracked_type;
         map
     in
-    List.fold paths ~init:Access.Map.empty ~f:build_call_graph
+    ServiceScheduler.map_reduce
+      scheduler
+      ~configuration
+      ~init:Access.Map.empty
+      ~map:(fun _ paths -> List.fold paths ~init:Access.Map.empty ~f:build_call_graph)
+      ~reduce:(Map.merge_skewed ~combine:(fun ~key:_ left _ -> left))
+      paths
   in
   Statistics.performance ~name:"Call graph built" ~timer ();
   Log.info "Call graph edges: %d" (Access.Map.length call_graph);
