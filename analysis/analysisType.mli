@@ -165,7 +165,6 @@ val is_protocol: t -> bool
 val is_tuple: t -> bool
 val is_unknown: t -> bool
 val is_deleted: t-> bool
-val is_list: t -> bool
 
 (* Contains `Bottom` or variables. *)
 val is_not_instantiated: t -> bool

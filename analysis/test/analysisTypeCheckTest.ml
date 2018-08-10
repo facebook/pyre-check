@@ -566,10 +566,6 @@ let test_forward_statement _ =
     "a, b = c, d"
     ["a", Type.integer; "b", Type.Top; "c", Type.integer; "d", Type.Top];
   assert_forward
-    ["c", Type.Tuple (Type.Unbounded Type.integer)]
-    "a, b = c"
-    ["a", Type.integer; "b", Type.integer; "c", Type.Tuple (Type.Unbounded Type.integer)];
-  assert_forward
     ~errors:
       (`Specific ["Incompatible variable type [9]: Unable to unpack `int`, expected a `Tuple`."])
     ["z", Type.integer]
@@ -615,6 +611,17 @@ let test_forward_statement _ =
     ["x", Type.list Type.integer]
     "a, *b = x"
     ["x", Type.list Type.integer; "a", Type.integer; "b", Type.list Type.integer];
+
+  (* Assignments with uniform sequences. *)
+  assert_forward
+    ["x", Type.iterable Type.integer]
+    "[a, b] = x"
+    ["x", Type.iterable Type.integer; "a", Type.integer; "b", Type.integer];
+  assert_forward
+    ["c", Type.Tuple (Type.Unbounded Type.integer)]
+    "a, b = c"
+    ["a", Type.integer; "b", Type.integer; "c", Type.Tuple (Type.Unbounded Type.integer)];
+
 
   (* Assignments with immutables. *)
   assert_forward ~postcondition_immutables:["x", true] [] "global x" ["x", Type.Top];
@@ -2170,7 +2177,7 @@ let test_check_comprehensions _ =
       def foo(d: typing.Dict[str, int]) -> None:
         { k: v for k, v in d }
     |}
-    ["Incompatible variable type [9]: Unable to unpack `str`, expected a `Tuple`."]
+    []
 
 
 let test_check_optional _ =

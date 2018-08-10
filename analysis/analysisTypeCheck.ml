@@ -1132,6 +1132,28 @@ module State = struct
             ~target:{ Node.location; value }
             ~guide
             ~resolved =
+
+          let is_uniform_sequence annotation =
+            match annotation with
+            | Type.Tuple (Type.Unbounded _) ->
+                true
+            | _ ->
+                Resolution.less_or_equal
+                  resolution
+                  ~left:annotation
+                  ~right:(Type.iterable Type.Object)
+          in
+          let uniform_sequence_parameter annotation =
+            match annotation with
+            | Type.Tuple (Type.Unbounded parameter) ->
+                parameter
+            | _ ->
+                Resolution.join resolution annotation (Type.iterable Type.Bottom)
+                |> function
+                | Type.Parametric { Type.parameters = [parameter]; _ } -> parameter
+                | _ -> Type.Top
+          in
+
           match value, guide with
           | Access access, guide ->
               let annotation, element =
@@ -1280,31 +1302,21 @@ module State = struct
               in
               state
           | Tuple elements, guide
-            when Type.is_list guide ->
+            when is_uniform_sequence guide ->
               let propagate state element =
                 match Node.value element with
                 | Starred (Starred.Once target) ->
                     forward_assign ~state ~target ~guide ~resolved
                 | _ ->
-                    let guide = Type.single_parameter guide in
-                    let resolved =
-                      if Type.is_list resolved then
-                        Type.single_parameter resolved
-                      else
-                        Type.Top
-                    in
+                    let guide = uniform_sequence_parameter guide in
+                    let resolved = uniform_sequence_parameter resolved in
                     forward_assign ~state ~target:element ~guide ~resolved
               in
               List.fold elements ~init:state ~f:propagate
           | List elements, guide
-            when Type.is_list guide ->
-              let guide = Type.single_parameter resolved in
-              let resolved =
-                if Type.is_list resolved then
-                  Type.single_parameter resolved
-                else
-                  Type.Top
-              in
+            when is_uniform_sequence guide ->
+              let guide = uniform_sequence_parameter resolved in
+              let resolved = uniform_sequence_parameter resolved in
               List.fold
                 elements
                 ~init:state
@@ -1326,17 +1338,6 @@ module State = struct
                 ~init:state
                 ~f:(fun state (resolved, (target, guide)) ->
                     forward_assign ~state ~target ~guide ~resolved)
-          | List elements, Type.Tuple (Type.Unbounded annotation)
-          | Tuple elements, Type.Tuple (Type.Unbounded annotation) ->
-              let resolved =
-                match resolved with
-                | Type.Tuple (Type.Unbounded annotation) -> annotation
-                | _ -> Type.Top
-              in
-              List.fold
-                elements
-                ~init:state
-                ~f:(fun state target -> forward_assign ~state ~target ~guide:annotation ~resolved)
           | List elements, _
           | Tuple elements, _ ->
               let state =

@@ -1212,11 +1212,6 @@ let is_deleted = function
   | _ -> false
 
 
-let is_list = function
-  | Parametric { name; _ } -> Identifier.show name = "list"
-  | _ -> false
-
-
 let is_not_instantiated annotation =
   let predicate = function
     | Bottom -> true
