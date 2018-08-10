@@ -98,7 +98,7 @@ rsync -avm --filter='- tests/' --filter='+ */' --filter='-! *.py' "${SCRIPTS_DIR
 sed -i -e "/__version__/s/= \".*\"/= \"${PACKAGE_VERSION}\"/" "${BUILD_ROOT}/${MODULE_NAME}/version.py"
 
 # Copy binary files.
-BINARY_FILE="${SCRIPTS_DIRECTORY}/../_build/all/main.native"
+BINARY_FILE="${SCRIPTS_DIRECTORY}/../_build/default/main.exe"
 if [[ ! -f "${BINARY_FILE}" ]]; then
   echo "The binary file ${BINARY_FILE} does not exist."
   echo "Have you run 'make' in the toplevel directory?"

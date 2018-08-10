@@ -3,38 +3,16 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-FLAGS = -use-ocamlfind -no-links -no-hygiene -cflags="-warn-error +a"
-INCLUDES = . parser plugin analysis annotated ast test service language_server command command/server taint interprocedural %VERSION%
-BUILD = ocamlbuild $(FLAGS) $(addprefix -I , $(INCLUDES))
-
-TEST_FLAGS = -runner sequential
-FILTER=%
-TESTS = $(foreach include, \
-	 $(INCLUDES), \
-	 $(filter $(FILTER), $(patsubst %.ml, %.native, $(wildcard $(include)/test/*Test.ml))))
-
 export OCAMLFIND_IGNORE_DUPS_IN=$(dir $(OCAML_TOPLEVEL_PATH))ocaml/compiler-libs
 
 .PHONY: all
-all: hack_parallel development_tags
+all: hack_parallel
 	@./scripts/generate-version-number.sh development
-	$(BUILD) -build-dir _build/all main.native
-
-.PHONY: byte
-byte:
-	$(BUILD) -build-dir _build/byte main.byte
-
-
-RUN_TESTS = $(TESTS:%=_build/test/%)
-
-.PHONY: $(RUN_TESTS)
-$(RUN_TESTS):
-	@$@ $(TEST_FLAGS)
+	dune build @install -j auto --profile dev
 
 .PHONY: test
-test: hack_parallel development_tags
-	$(BUILD) -pkg oUnit -build-dir _build/test $(TESTS)
-	@$(MAKE) --keep-going $(RUN_TESTS)
+test: hack_parallel
+	@OUNIT_RUNNER="sequential" dune runtest -j auto --profile dev
 
 .PHONY: python_tests
 python_tests:
@@ -42,38 +20,21 @@ python_tests:
 
 .PHONY: server_integration_test
 server_integration_test: all
-	PYRE_BINARY="$(shell pwd)/_build/all/main.native" ./scripts/run_integration_test.py command/test/integration/fake_repository/
+	PYRE_BINARY="$(shell pwd)/_build/default/main.exe" ./scripts/run_integration_test.py command/test/integration/fake_repository/
 
 .PHONY: release
-release: hack_parallel release_tags
+release: hack_parallel
 	@./scripts/generate-version-number.sh
-	$(BUILD) -build-dir _build/all main.native
+	dune build @install -j auto --profile release
 
 .PHONY: clean
 clean:
-	$(BUILD) -clean
+	dune clean
 
 .PHONY: hack_parallel
 hack_parallel:
 	@if [ ! -d hack_parallel/_build ]; then echo 'Hack_parallel is not installed...'; make -C hack_parallel; make install -C hack_parallel; fi
 
-.PHONY: development_tags
-development_tags:
-	@cp _tags.development _tags
-
-.PHONY: release_tags
-release_tags:
-	@cp _tags.release _tags
-
 .PHONY: remove_hack_parallel
 remove_hack_parallel:
 	@make -C hack_parallel clean && make -C hack_parallel remove
-
-.PHONY: jbuilder
-jbuilder:
-	@./scripts/generate-version-number.sh development
-	@dune build @install -j auto
-
-.PHONY: jtest
-jtest:
-	@OUNIT_RUNNER="sequential" dune runtest -j auto
