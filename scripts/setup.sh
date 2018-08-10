@@ -45,6 +45,9 @@ do
     "--configure")
       CONFIGURE=1
       ;;
+    "--environment-only")
+      ENVIRONMENT_ONLY=1
+      ;;
     "--development")
       COMPILER="${DEVELOPMENT_COMPILER}"
       ;;
@@ -164,6 +167,11 @@ test "$opam_install_dependencies_succeeded" = 1 \
   && install_hack_parallel=1
 test "$install_hack_parallel" = 1 \
   || die 'Could not install hack_parallel'
+
+if [[ -n "${ENVIRONMENT_ONLY}" ]]; then
+  echo 'Environment built successfully, stopping here as requested.'
+  exit 0
+fi
 
 # Build and run tests.
 jobs="$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 1)"
