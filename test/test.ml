@@ -357,6 +357,8 @@ let typeshed_stubs = (* Yo dawg... *)
           def __new__(self) -> typing.Any: pass
           def __sizeof__(self) -> int: pass
 
+        class ellipses: ...
+
         class slice:
           @overload
           def __init__(self, stop: typing.Optional[int]) -> None: ...

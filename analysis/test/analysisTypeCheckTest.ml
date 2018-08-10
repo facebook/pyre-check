@@ -402,7 +402,7 @@ let test_forward_expression _ =
     (Type.dictionary ~key:Type.integer ~value:Type.string);
 
   (* Ellipses. *)
-  assert_forward "..." Type.Top;
+  assert_forward "..." Type.ellipses;
 
   (* False literal. *)
   assert_forward "False" Type.bool;
@@ -1799,7 +1799,7 @@ let test_check _ =
       def i() -> str:
         return ...
     |}
-    [];
+    ["Incompatible return type [7]: Expected `str` but got `ellipses`."];
 
   assert_type_errors
     {|

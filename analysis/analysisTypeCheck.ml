@@ -964,7 +964,7 @@ module State = struct
         { state = { state with resolution }; resolved = Type.dictionary ~key ~value }
 
     | Ellipses ->
-        { state; resolved = Type.Top }
+        { state; resolved = Type.ellipses }
 
     | False ->
         { state; resolved = Type.bool }
@@ -1195,7 +1195,8 @@ module State = struct
         let forward_assign ~target:({ Node.location; _ } as target) ~value_annotation state =
           let access = Expression.access target in
           let add_incompatible_type_error ~expected ~parent ~name ~declare_location state =
-            if Resolution.less_or_equal resolution ~left:value_annotation ~right:expected then
+            if Type.is_ellipses value_annotation ||
+               Resolution.less_or_equal resolution ~left:value_annotation ~right:expected then
               state
             else
               let error =
@@ -1231,7 +1232,7 @@ module State = struct
               ~declare_location
               ({ errors; _ } as state) =
             if ((Type.is_unknown expected) || (Type.equal expected Type.Object)) &&
-               not (Type.is_unknown value_annotation) then
+               not (Type.is_unknown value_annotation || Type.is_ellipses value_annotation) then
               let evidence_location = instantiate location in
               let error =
                 match parent with

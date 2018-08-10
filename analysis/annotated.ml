@@ -157,8 +157,7 @@ let rec resolve ~resolution expression =
         ~value:(Type.assume_any (resolve ~resolution value))
 
   | Ellipses ->
-      (* Technically its own type but don't care. *)
-      Type.Bottom
+      Type.ellipses
 
   | Generator { Comprehension.element; generators } ->
       let resolution = with_generators resolution generators in

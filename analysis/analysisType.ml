@@ -359,6 +359,10 @@ let dictionary ~key ~value =
   }
 
 
+let ellipses =
+  Primitive (Identifier.create "ellipses")
+
+
 let float =
   Primitive (Identifier.create "float")
 
@@ -1124,6 +1128,11 @@ let contains_callable annotation =
 
 let is_callable = function
   | Callable _ -> true
+  | _ -> false
+
+
+let is_ellipses = function
+  | Primitive primitive when Identifier.show primitive = "ellipses" -> true
   | _ -> false
 
 
