@@ -1930,15 +1930,11 @@ let check
 
       let () =
         (* Write fixpoint type resolutions to shared memory *)
-        let open AnalysisTypeResolutionSharedMemory in
         let dump_resolutions { State.resolution_fixpoint; _ } =
-          let serialize ~key ~data:annotations accumulator =
-            {
-              key;
-              annotations = annotations
-            } :: accumulator
-          in
-          Int.Map.Tree.fold resolution_fixpoint ~init:[] ~f:serialize
+          Int.Map.Tree.fold
+            resolution_fixpoint
+            ~init:Int.Map.Tree.empty
+            ~f:(fun ~key ~data -> Int.Map.Tree.set ~key ~data)
           |> AnalysisTypeResolutionSharedMemory.add name
         in
         exit

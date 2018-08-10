@@ -168,17 +168,13 @@ module Visit = Visit.Make(ExpressionVisitor)
 
 
 let create_of_source environment source =
-  let open TypeResolutionSharedMemory in
   let annotations_lookup = Location.Reference.Table.create () in
   let definitions_lookup = Location.Reference.Table.create () in
   let walk_defines { Node.value = ({ Define.name = caller; _ } as define); _ } =
     let cfg = Cfg.create define in
     let annotation_lookup =
-      let fold_annotations map { key; annotations } =
-        Int.Map.set map ~key ~data:annotations
-      in
       TypeResolutionSharedMemory.get caller
-      >>| List.fold ~init:Int.Map.empty ~f:fold_annotations
+      >>| Int.Map.Tree.fold ~init:Int.Map.empty ~f:(fun ~key ~data -> Int.Map.set ~key ~data)
       |> Option.value ~default:Int.Map.empty
     in
     let walk_cfg ~key:node_id ~data:cfg_node =

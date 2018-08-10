@@ -26,15 +26,11 @@ let create ~environment ~source =
   let fold_defines
       call_graph
       { Node.value = ({ Define.name = caller; _ } as define); _ } =
-    let open TypeResolutionSharedMemory in
     let cfg = Cfg.create define in
     let annotation_lookup =
-      let fold_annotations map { key; annotations } =
-        Map.set map ~key ~data:annotations
-      in
       TypeResolutionSharedMemory.get caller
-      |> Option.value ~default:[]
-      |> List.fold ~init:Int.Map.empty ~f:fold_annotations
+      |> Option.value ~default:Int.Map.Tree.empty
+      |> Int.Map.Tree.fold ~init:Int.Map.empty ~f:(fun ~key ~data -> Int.Map.set ~key ~data)
     in
     let fold_cfg ~key:node_id ~data:node call_graph =
       let statements = Cfg.Node.statements node in

@@ -17,13 +17,10 @@ module AccessKey = struct
 end
 
 type annotations =
-  {
-    key: int;
-    annotations: AnalysisResolution.Annotation.t Access.Map.Tree.t;
-  }
+  (AnalysisResolution.Annotation.t Access.Map.Tree.t) Int.Map.Tree.t
 
 module TypeAnnotationsValue = struct
-  type t = annotations list
+  type t = annotations
   let prefix = Prefix.make ()
   let description = "Node type resolution"
 end

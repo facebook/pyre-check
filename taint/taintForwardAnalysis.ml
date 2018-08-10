@@ -145,12 +145,10 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           apply_call_target_taint call_target
       | Access { expression; member = method_name } ->
           let access = as_access expression in
-          let build_lookup lookup { TypeResolutionSharedMemory.key; annotations } =
-            Int.Map.set lookup ~key ~data:annotations in
           let receiver_type =
             key
             >>= fun key -> TypeResolutionSharedMemory.get FunctionContext.definition.value.name
-            >>| List.fold ~init:Int.Map.empty ~f:build_lookup
+            >>| Int.Map.Tree.fold ~init:Int.Map.empty ~f:(fun ~key ~data -> Int.Map.set ~key ~data)
             >>= Fn.flip Int.Map.find key
             >>| Access.Map.of_tree
             >>= Fn.flip Access.Map.find access

@@ -140,7 +140,6 @@ let test_construction_reverse _ =
 
 
 let test_type_collection _ =
-  let open TypeResolutionSharedMemory in
   let assert_type_collection source ~qualifier ~expected =
     let source = parse_source ~qualifier source in
     let configuration = Test.configuration in
@@ -153,11 +152,9 @@ let test_type_collection _ =
     in
     let { Define.name; body = statements; _ } = List.nth_exn defines 1 in
     let lookup =
-      let build_lookup lookup { key; annotations } =
-        Int.Map.set lookup ~key ~data:annotations in
       TypeResolutionSharedMemory.get name
       |> (fun value -> Option.value_exn value)
-      |> List.fold ~init:Int.Map.empty ~f:build_lookup
+      |> Int.Map.Tree.fold ~init:Int.Map.empty ~f:(fun ~key ~data -> Int.Map.set ~key ~data)
     in
     let test_expect (node_id, statement_index, test_access, expected_type) =
       let key = [%hash: int * int] (node_id, statement_index) in
