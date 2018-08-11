@@ -8,21 +8,21 @@ open Analysis
 open Statement
 
 
-val overrides_of_source:
-  (module Environment.Handler)
-  -> Source.t
+val overrides_of_source
+  :  environment: (module Environment.Handler)
+  -> source: Source.t
   -> (Access.t list) Access.Map.t
 
-val record_and_merge_call_graph:
-  (module Environment.Handler)
-  -> CallGraph.t
-  -> File.Handle.t
-  -> Source.t
+val record_and_merge_call_graph
+  :  environment: (module Environment.Handler)
+  -> call_graph: CallGraph.t
+  -> path: File.Handle.t
+  -> source: Source.t
   -> CallGraph.t
 
-val record_overrides: (module Environment.Handler) -> Source.t -> unit
+val record_overrides: environment: (module Environment.Handler) -> source: Source.t -> unit
 
-val record_path_of_definitions: File.Handle.t -> Source.t -> Define.t Node.t list
+val record_path_of_definitions: path: File.Handle.t -> source: Source.t -> Define.t Node.t list
 
 (** Populates shared memory with preexisting models. *)
 val add_models: model_source: string -> unit

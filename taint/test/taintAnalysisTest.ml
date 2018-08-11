@@ -61,11 +61,16 @@ let create_call_graph ?(test_file = "test_file") source =
   Service.Environment.populate environment [source];
   TypeCheck.check configuration environment source |> ignore;
   let call_graph =
-    Service.Analysis.record_and_merge_call_graph environment CallGraph.empty handle source
+    Service.Analysis.record_and_merge_call_graph
+      ~environment
+      ~call_graph:CallGraph.empty
+      ~path:handle
+      ~source
   in
-  let () = Service.Analysis.record_overrides environment source in
+  let () =
+    Service.Analysis.record_overrides ~environment ~source in
   let callables =
-    Service.Analysis.record_path_of_definitions handle source
+    Service.Analysis.record_path_of_definitions ~path:handle ~source
     |> List.map ~f:Callable.make
   in
   call_graph, callables

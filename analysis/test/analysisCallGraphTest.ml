@@ -248,7 +248,7 @@ let test_method_overrides _ =
     let configuration = Test.configuration in
     let environment = Test.environment ~configuration () in
     Service.Environment.populate environment [source];
-    let overrides_map = Service.Analysis.overrides_of_source environment source in
+    let overrides_map = Service.Analysis.overrides_of_source ~environment ~source in
     let expected_overrides = Access.Map.of_alist_exn expected in
     let equal_elements = List.equal ~equal:Access.equal in
     assert_equal

@@ -11,7 +11,7 @@ open Statement
 open Pyre
 
 
-let overrides_of_source environment source =
+let overrides_of_source ~environment ~source =
   let open Annotated in
   let resolution = Environment.resolution environment () in
   let filter_overrides child_method =
@@ -31,7 +31,7 @@ let overrides_of_source environment source =
   |> List.fold ~init:Statement.Access.Map.empty ~f:record_overrides
 
 
-let record_and_merge_call_graph environment call_graphs path source =
+let record_and_merge_call_graph ~environment ~call_graph ~path ~source =
   let record_and_merge_call_graph path map call_graph =
     CallGraphSharedMemory.add_callers ~path (Access.Map.keys call_graph);
     let add_call_graph ~key:caller ~data:callees =
@@ -41,21 +41,21 @@ let record_and_merge_call_graph environment call_graphs path source =
     Map.merge_skewed map call_graph ~combine:(fun ~key:_ left _ -> left)
   in
   Analysis.CallGraph.create ~environment ~source
-  |> record_and_merge_call_graph path call_graphs
+  |> record_and_merge_call_graph path call_graph
 
 
-let record_overrides environment source =
+let record_overrides ~environment ~source =
   let record_overrides overrides_map =
     let record_override_edge ~key:ancestor ~data:children =
       CallGraphSharedMemory.add_overrides ~ancestor ~children
     in
     Access.Map.iteri overrides_map ~f:record_override_edge
   in
-  overrides_of_source environment source
+  overrides_of_source ~environment ~source
   |> record_overrides
 
 
-let record_path_of_definitions path source =
+let record_path_of_definitions ~path ~source =
   let defines = Preprocessing.defines source in
   let record_definition definition =
     let open Interprocedural.Callable in
@@ -109,7 +109,7 @@ let analyze ?taint_models_directory ~scheduler ~configuration ~environment ~hand
   let timer = Timer.start () in
   let record_overrides path =
     AstSharedMemory.get_source path
-    >>| record_overrides environment
+    >>| (fun source -> record_overrides ~environment ~source)
     |> ignore
   in
   List.iter paths ~f:record_overrides;
@@ -121,10 +121,10 @@ let analyze ?taint_models_directory ~scheduler ~configuration ~environment ~hand
     let build_call_graph map path =
       try
         AstSharedMemory.get_source path
-        >>| record_and_merge_call_graph environment map path
+        >>| (fun source -> record_and_merge_call_graph ~environment ~call_graph:map ~path ~source)
         |> Option.value ~default:map
       with TypeOrder.Untracked untracked_type ->
-        Log.info "Error building call graph in file %a for untracked type %a"
+        Log.info "Error building call graph in path %a for untracked type %a"
           File.Handle.pp path
           Type.pp untracked_type;
         map
@@ -146,7 +146,7 @@ let analyze ?taint_models_directory ~scheduler ~configuration ~environment ~hand
     let make_callables path =
       AstSharedMemory.get_source path
       >>| fun source ->
-      record_path_of_definitions path source
+      record_path_of_definitions ~path ~source
       |> List.map ~f:Interprocedural.Callable.make
     in
     List.filter_map paths ~f:make_callables
