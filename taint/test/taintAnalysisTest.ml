@@ -134,7 +134,6 @@ let assert_fixpoint ~source ~expect:{ iterations = expect_iterations; expect } =
   let analyses = [Taint.Analysis.abstract_kind] in
   let iterations =
     Analysis.compute_fixpoint
-      ~workers:None
       ~analyses
       ~caller_map
       ~all_callables

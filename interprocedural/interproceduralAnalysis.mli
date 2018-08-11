@@ -16,8 +16,8 @@ val one_analysis_pass:
   -> schedule:Callable.t list -> unit
 
 (* Returns number of iterations. *)
-val compute_fixpoint:
-  workers:Hack_parallel.Std.Worker.t list option
+val compute_fixpoint
+  :  ?workers:Hack_parallel.Std.Worker.t list
   -> analyses:Kind.abstract list
   -> caller_map:CallGraph.t
   -> all_callables:Callable.t list

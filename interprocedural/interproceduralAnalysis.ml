@@ -409,7 +409,7 @@ let compute_callables_to_reanalyze step previous_batch ~caller_map ~all_callable
   callables_to_reanalyze
 
 
-let compute_fixpoint ~workers ~analyses ~caller_map ~all_callables epoch =
+let compute_fixpoint ?workers ~analyses ~caller_map ~all_callables epoch =
   (* Start iteration > 0 is to avoid a useless special 0 iteration for mega
      components. *)
   let max_iterations = 100 in
