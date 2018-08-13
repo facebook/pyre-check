@@ -718,11 +718,11 @@ module State = struct
           ] when Identifier.equal typing (Identifier.create "typing") &&
                  Identifier.equal cast (Identifier.create "cast") ->
               let cast_annotation = Resolution.parse_annotation resolution cast_annotation in
-              let actual_annotation = Annotated.resolve ~resolution value in
-              if Type.equal cast_annotation actual_annotation then
+              let { resolved; _ } = forward_expression ~state ~expression:value in
+              if Type.equal cast_annotation resolved then
                 Error.create
                   ~location
-                  ~kind:(Error.RedundantCast actual_annotation)
+                  ~kind:(Error.RedundantCast resolved)
                   ~define
                 |> add_error ~state
               else
