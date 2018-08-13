@@ -370,10 +370,13 @@ let test_forward_expression _ =
   (* Complex literal. *)
   assert_forward "1j" Type.complex;
   assert_forward "1" Type.integer;
+  assert_forward "\"\"" Type.string;
+  assert_forward "b\"\"" Type.bytes;
 
   (* Dictionaries. *)
   assert_forward "{1: 1}" (Type.dictionary ~key:Type.integer ~value:Type.integer);
   assert_forward "{1: 'string'}" (Type.dictionary ~key:Type.integer ~value:Type.string);
+  assert_forward "{b'': ''}" (Type.dictionary ~key:Type.bytes ~value:Type.string);
   assert_forward
     "{1: 1, 'string': 1}"
     (Type.dictionary ~key:(Type.union [Type.integer; Type.string]) ~value:Type.integer);

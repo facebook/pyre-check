@@ -1040,7 +1040,11 @@ module State = struct
             ~init:state
         in
         { state; resolved = Type.string }
-    | String _ ->
+
+    | String { StringLiteral.kind = StringLiteral.Bytes; _ } ->
+        { state; resolved = Type.bytes }
+
+    | String { StringLiteral.kind = StringLiteral.String; _ } ->
         { state; resolved = Type.string }
 
     | Ternary { Ternary.target; test; alternative } ->
