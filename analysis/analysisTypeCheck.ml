@@ -689,48 +689,48 @@ module State = struct
       }
     in
     match value with
-    | Access access ->
-        (* Special case reveal_type() and cast(). *)
+    | Access [
+        Expression.Access.Identifier reveal_type;
+        Expression.Access.Call {
+          Node.location;
+          value = [{ Expression.Argument.value; _ }] };
+      ] when reveal_type = Identifier.create "reveal_type" ->
+        (* Special case reveal_type(). *)
+        let { state; resolved = annotation } = forward_expression ~state ~expression:value in
         let state =
-          match access with
-          | [
-            Expression.Access.Identifier reveal_type;
-            Expression.Access.Call {
-              Node.location;
-              value = [{ Expression.Argument.value; _ }] };
-          ] when reveal_type = Identifier.create "reveal_type" ->
-              let { state; resolved = annotation } = forward_expression ~state ~expression:value in
-              Error.create
-                ~location
-                ~kind:(Error.RevealedType { Error.expression = value; annotation })
-                ~define
-              |> add_error ~state
-          | [
-            Expression.Access.Identifier typing;
-            Expression.Access.Identifier cast;
-            Expression.Access.Call {
-              Node.value = [
-                { Expression.Argument.value = cast_annotation; _ };
-                { Expression.Argument.value; _ };
-              ];
-              _;
-            }
-          ] when Identifier.equal typing (Identifier.create "typing") &&
-                 Identifier.equal cast (Identifier.create "cast") ->
-              let cast_annotation = Resolution.parse_annotation resolution cast_annotation in
-              let { resolved; _ } = forward_expression ~state ~expression:value in
-              if Type.equal cast_annotation resolved then
-                Error.create
-                  ~location
-                  ~kind:(Error.RedundantCast resolved)
-                  ~define
-                |> add_error ~state
-              else
-                state
-          | _ ->
-              state
+          Error.create
+            ~location
+            ~kind:(Error.RevealedType { Error.expression = value; annotation })
+            ~define
+          |> add_error ~state
         in
-
+        { state; resolved = Type.none }
+    | Access [
+        Expression.Access.Identifier typing;
+        Expression.Access.Identifier cast;
+        Expression.Access.Call {
+          Node.value = [
+            { Expression.Argument.value = cast_annotation; _ };
+            { Expression.Argument.value; _ };
+          ];
+          _;
+        }
+      ] when Identifier.equal typing (Identifier.create "typing") &&
+             Identifier.equal cast (Identifier.create "cast") ->
+        let cast_annotation = Resolution.parse_annotation resolution cast_annotation in
+        let { resolved; _ } = forward_expression ~state ~expression:value in
+        let state =
+          if Type.equal cast_annotation resolved then
+            Error.create
+              ~location
+              ~kind:(Error.RedundantCast resolved)
+              ~define
+            |> add_error ~state
+          else
+            state
+        in
+        { state; resolved = cast_annotation }
+    | Access access ->
         (* Walk through the access. *)
         let _, state, resolved =
           let open Annotated in

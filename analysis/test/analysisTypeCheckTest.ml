@@ -856,7 +856,6 @@ let test_show_error_traces _ =
         reveal_type(a + b)
     |}
     [
-      "Undefined name [18]: Global name `reveal_type` is undefined.";
       "Revealed type [-1]: Revealed type for `a.__add__.(...)` is `int`.";
     ];
 
@@ -1151,7 +1150,6 @@ let test_reveal_type _ =
         reveal_type(x)
     |}
     [
-      "Undefined name [18]: Global name `reveal_type` is undefined.";
       "Revealed type [-1]: Revealed type for `x` is `str`.";
     ];
 
@@ -1161,7 +1159,6 @@ let test_reveal_type _ =
         reveal_type(x)
     |}
     [
-      "Undefined name [18]: Global name `reveal_type` is undefined.";
       "Revealed type [-1]: Revealed type for `x` is `typing.Unbound`.";
     ];
   assert_type_errors
@@ -1170,7 +1167,6 @@ let test_reveal_type _ =
         reveal_type(x + y)
     |}
     [
-      "Undefined name [18]: Global name `reveal_type` is undefined.";
       "Revealed type [-1]: Revealed type for `x.__add__.(...)` is `int`.";
     ];
   assert_type_errors
@@ -1180,7 +1176,6 @@ let test_reveal_type _ =
         reveal_type(int_to_str(x))
     |}
     [
-      "Undefined name [18]: Global name `reveal_type` is undefined.";
       "Revealed type [-1]: Revealed type for `int_to_str.(...)` is `str`.";
     ]
 
