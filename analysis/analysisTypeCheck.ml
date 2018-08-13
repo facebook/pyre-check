@@ -1703,7 +1703,7 @@ module State = struct
     | Raise (Some expression) ->
         forward_expression ~state ~expression
         |> fun { state; _ } -> state
-    | Raise _ ->
+    | Raise None ->
         state
 
     | Return { Return.expression; is_implicit } ->
@@ -1746,11 +1746,6 @@ module State = struct
           state
 
     | Statement.Yield { Node.value = Expression.Yield return; _ } ->
-        let state =
-          return
-          >>| (fun expression -> forward_expression ~state ~expression |> fun { state; _ } -> state)
-          |> Option.value ~default:state
-        in
         let { state; resolved = actual } =
           match return with
           | Some expression ->
