@@ -144,9 +144,13 @@ module State = struct
         let infer_annotations resolution arguments { Type.Callable.overloads; implicit; _ } =
           let rec infer_annotations_list parameters arguments resolution =
             let rec infer_annotation resolution parameter_annotation argument =
+              let state = { state with resolution } in
               match Node.value argument with
               | Access value ->
-                  resolve_assign parameter_annotation (Annotated.resolve ~resolution argument)
+                  let { resolved; _ } =
+                    TypeCheck.State.forward_expression ~state ~expression:argument
+                  in
+                  resolve_assign parameter_annotation resolved
                   >>| (fun refined ->
                       Resolution.set_local
                         resolution
@@ -223,12 +227,16 @@ module State = struct
       | Assign { Assign.target; value; _ } -> (
           (* Get the annotations of the targets and set the 'value' to be the meet *)
           let rec propagate_assign resolution target_annotation value =
+            let state = { state with resolution } in
             match Node.value value with
             | Access value_access ->
                 let resolution =
                   match value_access with
                   | [Access.Identifier _] ->
-                      resolve_assign target_annotation (Annotated.resolve ~resolution value)
+                      let { resolved; _ } =
+                        TypeCheck.State.forward_expression ~state ~expression:value
+                      in
+                      resolve_assign target_annotation resolved
                       >>| (fun refined ->
                           Resolution.set_local
                             resolution
@@ -267,9 +275,13 @@ module State = struct
           | Tuple targets, Tuple values
             when List.length targets = List.length values ->
               let target_annotations =
-                List.map
-                  ~f:(Annotated.resolve ~resolution)
-                  targets
+                let resolve expression =
+                  let { resolved; _ } =
+                    TypeCheck.State.forward_expression ~state:{ state with resolution } ~expression
+                  in
+                  resolved
+                in
+                List.map targets ~f:resolve
               in
               List.fold2_exn
                 ~init:resolution
@@ -277,8 +289,12 @@ module State = struct
                 target_annotations
                 values
           | _, _ ->
-              let target_annotation = Annotated.resolve ~resolution target in
-              propagate_assign resolution target_annotation value)
+              let { resolved; _ } =
+                TypeCheck.State.forward_expression
+                  ~state:{ state with resolution }
+                  ~expression:target
+              in
+              propagate_assign resolution resolved value)
       | _ ->
           annotate_call_accesses statement resolution
     in
