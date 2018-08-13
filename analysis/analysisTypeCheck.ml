@@ -1815,7 +1815,7 @@ module State = struct
         state
 
 
-  let rec forward
+  let forward
       ?key
       ({
         resolution;
