@@ -77,7 +77,6 @@ def main() -> int:
     )
     parser.add_argument(
         "--log-identifier",
-        action="store",
         default="",
         help=argparse.SUPPRESS,  # Add given identifier to logged samples.
     )
