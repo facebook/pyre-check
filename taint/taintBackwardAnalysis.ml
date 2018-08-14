@@ -154,6 +154,17 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
                 let access = Access.create_from_identifiers [primitive; method_name] in
                 let call_target = Interprocedural.Callable.make_real access in
                 apply_call_targets arguments state taint [call_target]
+            | Some { annotation = Union annotations; _ } ->
+                let filter_receivers = function
+                  | Type.Primitive receiver ->
+                      Access.create_from_identifiers [receiver; method_name]
+                      |> Interprocedural.Callable.make_real
+                      |> Option.some
+                  | _ ->
+                      None
+                in
+                List.filter_map annotations ~f:filter_receivers
+                |> apply_call_targets arguments state taint
             | _ ->
                 let state = List.fold_right ~f:(analyze_argument taint) arguments ~init:state in
                 analyze_normalized_expression state taint receiver

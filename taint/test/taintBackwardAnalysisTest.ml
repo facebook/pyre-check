@@ -390,6 +390,35 @@ let test_apply_method_model_at_call_site _ =
         taint_sink_parameters = [];
         tito_parameters = [];
       };
+    ];
+
+  assert_taint
+    {|
+      class Foo:
+        def qux(tainted_parameter):
+          command_unsafe = tainted_parameter
+          __testSink(command_unsafe)
+
+      class Bar:
+        def qux(not_tainted_parameter):
+          pass
+
+      def taint_across_union_receiver_types(condition, tainted_parameter):
+        if condition:
+          f = Foo()
+        else:
+          f = Bar()
+
+        return f.qux(tainted_parameter)
+      |}
+    ~expected:[
+      {
+        define_name = "taint_across_union_receiver_types";
+        taint_sink_parameters = [
+          { position = 1; sinks = [Taint.Sinks.TestSink] };
+        ];
+        tito_parameters = [];
+      };
     ]
 
 
