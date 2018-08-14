@@ -19,7 +19,7 @@ class ErrorHandling(Command):
         self._verbose = arguments.verbose
         self._output = arguments.output
         self._do_not_check_paths = configuration.do_not_check
-        self._discovered_source_directories = [self._source_root]
+        self._discovered_source_directories = [self._local_root]
         self._local_configuration = arguments.local_configuration
 
     def _print(self, errors) -> None:

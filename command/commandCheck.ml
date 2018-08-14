@@ -41,7 +41,7 @@ let check
       project_root;
       search_path;
       typeshed;
-      source_root;
+      local_root;
       logger;
     }
     original_scheduler
@@ -50,7 +50,7 @@ let check
     Configuration.create
       ~verbose
       ~sections
-      ~source_root
+      ~local_root
       ~debug
       ~strict
       ~declare
@@ -73,7 +73,7 @@ let check
     if not (Path.is_directory directory) then
       raise (Invalid_argument (Format.asprintf "`%a` is not a directory" Path.pp directory));
   in
-  check_directory_exists source_root;
+  check_directory_exists local_root;
   check_directory_exists project_root;
   List.iter ~f:check_directory_exists search_path;
   Option.iter typeshed ~f:check_directory_exists;
@@ -96,8 +96,8 @@ let check
       Service.Coverage.coverage ~sources ~number_of_files
     in
     let path_to_files =
-      Path.get_relative_to_root ~root:project_root ~path:source_root
-      |> Option.value ~default:(Path.absolute source_root)
+      Path.get_relative_to_root ~root:project_root ~path:local_root
+      |> Option.value ~default:(Path.absolute local_root)
     in
 
     Statistics.coverage
@@ -130,8 +130,8 @@ let check
   in
   (* Log coverage results *)
   let path_to_files =
-    Path.get_relative_to_root ~root:project_root ~path:source_root
-    |> Option.value ~default:(Path.absolute source_root)
+    Path.get_relative_to_root ~root:project_root ~path:local_root
+    |> Option.value ~default:(Path.absolute local_root)
   in
   Statistics.coverage
     ~coverage:[
@@ -176,7 +176,7 @@ let run_check
     project_root
     search_path
     typeshed
-    source_root
+    local_root
     () =
   let filter_directories =
     let deprecated_directories =
@@ -209,7 +209,7 @@ let run_check
       ~number_of_workers
       ~search_path:(List.map ~f:Path.create_absolute search_path)
       ?typeshed:(typeshed >>| Path.create_absolute)
-      ~source_root:(Path.create_absolute source_root)
+      ~local_root:(Path.create_absolute local_root)
       ()
   in
 

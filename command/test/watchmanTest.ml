@@ -19,7 +19,7 @@ let start_watchman pid_path () =
     ~daemonize:true
     ~verbose:false
     ~sections:[]
-    ~source_root:"."
+    ~local_root:"."
     ~project_root:(Some ".")
   |> ignore;
   let rec poll () =
@@ -40,7 +40,7 @@ let test_watchman_exists context =
            ~relative:".watchmanconfig"))
   then
     Out_channel.write_all ".watchmanconfig" ~data:"{}";
-  let configuration = Configuration.create ~source_root:(Path.current_working_directory ()) () in
+  let configuration = Configuration.create ~local_root:(Path.current_working_directory ()) () in
   let watchman_root = (Configuration.pyre_root configuration) ^| "watchman" in
   let pid_path = watchman_root ^| "watchman.pid" in
   let lock_path = watchman_root ^| "watchman.lock" in
@@ -69,7 +69,7 @@ let test_watchman_exists context =
          ~daemonize:false
          ~verbose:false
          ~sections:[]
-         ~source_root:"."
+         ~local_root:"."
          ~project_root:(Some "."));
   CommandTest.clean_environment ()
 

@@ -14,7 +14,7 @@ module Scheduler = Service.Scheduler
 
 let assert_errors ?filter_directories ~root ~files errors =
   let configuration =
-    Configuration.create ?filter_directories ~project_root:root ~source_root:root ()
+    Configuration.create ?filter_directories ~project_root:root ~local_root:root ()
   in
   let scheduler = Scheduler.mock () in
   let add_file file =

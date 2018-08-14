@@ -22,7 +22,7 @@ val run_command
   :  daemonize: bool
   -> verbose: bool
   -> sections: string list
-  -> source_root: string
+  -> local_root: string
   -> project_root: string option
   -> Pid.t
 

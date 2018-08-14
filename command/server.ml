@@ -34,17 +34,17 @@ let register_signal_handlers server_configuration socket =
     (fun _ -> ())
 
 
-let spawn_watchman_client { configuration = { sections; project_root; source_root; _ }; _ } =
+let spawn_watchman_client { configuration = { sections; project_root; local_root; _ }; _ } =
   CommandWatchman.run_command
     ~daemonize:true
     ~verbose:false
     ~sections
-    ~source_root:(Path.absolute source_root)
+    ~local_root:(Path.absolute local_root)
     ~project_root:(Some (Path.absolute project_root))
 
 
 let computation_thread request_queue configuration state =
-  let rec loop ({ configuration = { source_root; _ }; pid_path; _ } as configuration) state =
+  let rec loop ({ configuration = { local_root; _ }; pid_path; _ } as configuration) state =
     let errors_to_lsp_responses error_map =
       let diagnostic_to_response = function
         | Ok diagnostic_error -> [
@@ -58,7 +58,7 @@ let computation_thread request_queue configuration state =
       error_map
       |> List.map
         ~f:(fun (handle, errors) ->
-            LanguageServer.Protocol.PublishDiagnostics.of_errors ~root:source_root handle errors)
+            LanguageServer.Protocol.PublishDiagnostics.of_errors ~root:local_root handle errors)
       |> List.concat_map ~f:diagnostic_to_response
     in
     (* Decides what to broadcast to persistent clients after a request is processed. *)
@@ -244,7 +244,7 @@ let computation_thread request_queue configuration state =
 
 let request_handler_thread
     ({
-      configuration = ({ expected_version; source_root; _ });
+      configuration = ({ expected_version; local_root; _ });
       use_watchman;
       watchman_creation_timeout;
       _;
@@ -360,7 +360,7 @@ let request_handler_thread
     let { socket = server_socket; persistent_clients; file_notifiers; _ } =
       get_readable_sockets ()
     in
-    if not (PyrePath.is_directory source_root) then
+    if not (PyrePath.is_directory local_root) then
       begin
         Log.error "Stopping server due to missing source root.";
         ServerOperations.stop_server
@@ -576,7 +576,7 @@ let run_start_command
     project_root
     search_path
     typeshed
-    source_root
+    local_root
     () =
   let filter_directories =
     let deprecated_directories =
@@ -609,7 +609,7 @@ let run_start_command
       ~project_root:(Path.create_absolute project_root)
       ~search_path:(List.map ~f:Path.create_absolute search_path)
       ?typeshed:(typeshed >>| Path.create_absolute)
-      ~source_root:(Path.create_absolute source_root)
+      ~local_root:(Path.create_absolute local_root)
       ()
   in
   let log_path = log_path >>| Path.create_absolute in
@@ -638,8 +638,8 @@ let start_command =
     run_start_command
 
 
-let run_stop graceful source_root () =
-  let configuration = Configuration.create ~source_root:(Path.create_absolute source_root) () in
+let run_stop graceful local_root () =
+  let configuration = Configuration.create ~local_root:(Path.create_absolute local_root) () in
   (* Force an immediate process exit from this function only if
      performing a non-graceful shutdown. *)
   let exit_strategy = if graceful then ignore else exit in
@@ -706,8 +706,8 @@ let run_stop graceful source_root () =
       exit_strategy 1
 
 
-let stop ?(graceful=false) source_root () =
-  run_stop graceful source_root ()
+let stop ?(graceful=false) local_root () =
+  run_stop graceful local_root ()
 
 
 let stop_command =

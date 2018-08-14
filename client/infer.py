@@ -531,15 +531,15 @@ def main():
         else:
             local_configuration_path = configuration.get_local_configuration()
             if local_configuration_path:
-                source_root = os.path.dirname(
+                local_root = os.path.dirname(
                     os.path.relpath(
                         local_configuration_path, arguments.current_directory
                     )
                 )
             else:
-                source_root = None
+                local_root = None
             shared_source_directory = merge_source_directories(
-                source_directories, source_root
+                source_directories, local_root
             )
             source_directory_path = shared_source_directory.get_root()
         Infer(arguments, configuration, source_directory_path).run()

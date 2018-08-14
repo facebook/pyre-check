@@ -102,10 +102,10 @@ let communicate server_socket =
   listen server_socket ()
 
 
-let run_command expected_version log_identifier source_root () =
-  let source_root = Path.create_absolute source_root in
+let run_command expected_version log_identifier local_root () =
+  let local_root = Path.create_absolute local_root in
   let configuration = Configuration.create
-      ~source_root
+      ~local_root
       ~log_identifier
       ?expected_version
       ()

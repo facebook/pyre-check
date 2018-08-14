@@ -15,7 +15,7 @@ type t = {
   parallel: bool;
   filter_directories: (Path.t list) option;
   number_of_workers: int;
-  source_root: Path.t;
+  local_root: Path.t;
   sections: string list;
   debug: bool;
   project_root: Path.t;
@@ -39,7 +39,7 @@ let create
     ?(parallel = true)
     ?filter_directories
     ?(number_of_workers = 4)
-    ?(source_root = Path.current_working_directory ())
+    ?(local_root = Path.current_working_directory ())
     ?(sections = [])
     ?(project_root = Path.create_absolute "/")
     ?(search_path = [])
@@ -60,7 +60,7 @@ let create
     parallel;
     filter_directories;
     number_of_workers;
-    source_root;
+    local_root;
     sections;
     debug;
     project_root;
@@ -97,5 +97,5 @@ let localize ({ debug; strict; _ } as configuration) ~local_debug ~local_strict 
   }
 
 
-let pyre_root { source_root; _ } =
-  Path.append source_root ~element:".pyre"
+let pyre_root { local_root; _ } =
+  Path.append local_root ~element:".pyre"

@@ -132,7 +132,7 @@ let log_parse_errors_count ~not_parsed ~description =
 
 let parse_stubs
     scheduler
-    ~configuration:({ Configuration.source_root; typeshed; search_path; _ } as configuration) =
+    ~configuration:({ Configuration.local_root; typeshed; search_path; _ } as configuration) =
   let timer = Timer.start () in
 
   let paths =
@@ -175,7 +175,7 @@ let parse_stubs
         in
         File.list ~filter:is_stub ~root
       in
-      List.map ~f:stubs (source_root :: (search_path @ typeshed_directories))
+      List.map ~f:stubs (local_root :: (search_path @ typeshed_directories))
     in
     let modules =
       let modules root =
@@ -222,9 +222,9 @@ let parse_stubs
   handles
 
 
-let find_sources ?(filter = fun _ -> true) { Configuration.source_root; _ } =
+let find_sources ?(filter = fun _ -> true) { Configuration.local_root; _ } =
   let filter path = String.is_suffix ~suffix:".py" path && filter path in
-  File.list ~filter ~root:source_root
+  File.list ~filter ~root:local_root
 
 
 type result = {
@@ -233,7 +233,7 @@ type result = {
 }
 
 
-let parse_all scheduler ~configuration:({ Configuration.source_root; _ } as configuration) =
+let parse_all scheduler ~configuration:({ Configuration.local_root; _ } as configuration) =
   let stubs = parse_stubs scheduler ~configuration in
   let known_stubs =
     let add_to_known_stubs sofar handle =
@@ -251,7 +251,7 @@ let parse_all scheduler ~configuration:({ Configuration.source_root; _ } as conf
     let filter path =
       let relative =
         Path.get_relative_to_root
-          ~root:source_root
+          ~root:local_root
           (* We want to filter based on the path of the symlink instead of the path the
              symlink points to. *)
           ~path:(Path.create_absolute ~follow_symbolic_links:false path)
@@ -265,7 +265,7 @@ let parse_all scheduler ~configuration:({ Configuration.source_root; _ } as conf
     in
     let timer = Timer.start () in
     let paths = find_sources configuration ~filter in
-    Log.info "Parsing %d sources in `%a`..." (List.length paths) Path.pp source_root;
+    Log.info "Parsing %d sources in `%a`..." (List.length paths) Path.pp local_root;
     let handles =
       parse_sources ~configuration ~scheduler ~files:(List.map ~f:File.create paths)
     in

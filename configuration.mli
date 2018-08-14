@@ -13,7 +13,7 @@ type t = {
   parallel: bool;
   filter_directories: (Path.t list) option;
   number_of_workers: int;
-  source_root: Path.t;
+  local_root: Path.t;
   sections: string list;
   debug: bool;
   project_root: Path.t;
@@ -36,7 +36,7 @@ val create
   -> ?parallel: bool
   -> ?filter_directories: Path.t list
   -> ?number_of_workers: int
-  -> ?source_root:Path.t
+  -> ?local_root:Path.t
   -> ?sections:string list
   -> ?project_root:Path.t
   -> ?search_path: Path.t list

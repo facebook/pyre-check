@@ -29,7 +29,7 @@ let run
     project_root
     search_path
     typeshed
-    source_root
+    local_root
     () =
   try
     let filter_directories =
@@ -63,7 +63,7 @@ let run
         ~search_path:(List.map ~f:Path.create_absolute search_path)
         ?typeshed:(typeshed >>| Path.create_absolute)
         ~project_root:(Path.create_absolute project_root)
-        ~source_root:(Path.create_absolute source_root)
+        ~local_root:(Path.create_absolute local_root)
         ()
     in
     Scheduler.initialize_process ~configuration;

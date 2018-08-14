@@ -144,7 +144,7 @@ let test_server_stops _ =
 let test_server_exits_on_directory_removal context =
   let directory = bracket_tmpdir context in
   let pid =
-    Pid.of_int (CommandTest.start_server ~source_root:(Path.create_absolute directory) ())
+    Pid.of_int (CommandTest.start_server ~local_root:(Path.create_absolute directory) ())
   in
   Sys_utils.rm_dir_tree directory;
   Exn.protect
@@ -233,7 +233,7 @@ let mock_client_socket = Unix.openfile ~mode:[Unix.O_RDONLY] "/dev/null"
 
 let assert_response
     ?(initial_errors = Error.Hash_set.create ())
-    ?(source_root = Path.current_working_directory ())
+    ?(local_root = Path.current_working_directory ())
     ?state
     ?(path = "test.py")
     ~source
@@ -264,7 +264,7 @@ let assert_response
     Request.process_request
       mock_client_socket
       mock_server_state
-      (CommandTest.mock_server_configuration ~source_root ())
+      (CommandTest.mock_server_configuration ~local_root ())
       request
   in
   CommandTest.clean_environment ();
@@ -579,7 +579,7 @@ let test_did_save_with_content context =
     |> Yojson.Safe.to_string
   in
   assert_response
-    ~source_root:root
+    ~local_root:root
     ~source
     ~request:(Protocol.Request.LanguageServerProtocolRequest request)
     (Some (Protocol.TypeCheckResponse (associate_errors_and_filenames errors)))
@@ -859,7 +859,7 @@ let test_language_scheduler_definition context =
 let test_incremental_attribute_caching context =
   let directory = bracket_tmpdir context |> Path.create_absolute in
   let configuration =
-    Configuration.create ~source_root:directory ~project_root:directory ()
+    Configuration.create ~local_root:directory ~project_root:directory ()
   in
   let server_configuration = ServerConfiguration.create configuration in
   let environment =

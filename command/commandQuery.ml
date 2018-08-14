@@ -73,12 +73,12 @@ let parse_query ~root query =
   | _ -> None
 
 
-let run_query serialized source_root () =
-  let source_root = Path.create_absolute source_root in
-  let configuration = Configuration.create ~source_root () in
+let run_query serialized local_root () =
+  let local_root = Path.create_absolute local_root in
+  let configuration = Configuration.create ~local_root () in
   Scheduler.initialize_process ~configuration;
 
-  let query = parse_query ~root:source_root serialized in
+  let query = parse_query ~root:local_root serialized in
   begin
     match query with
     | Some _ ->

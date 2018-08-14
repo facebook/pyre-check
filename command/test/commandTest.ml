@@ -23,29 +23,29 @@ let clean_environment () =
 
 
 let mock_analysis_configuration
-    ?(source_root = Path.current_working_directory ())
+    ?(local_root = Path.current_working_directory ())
     ?expected_version
     () =
   Configuration.create
     ~debug:false
     ~parallel:false
     ?expected_version
-    ~source_root
+    ~local_root
     ()
 
 
 let mock_server_configuration
-    ?(source_root = Path.current_working_directory ())
+    ?(local_root = Path.current_working_directory ())
     ?expected_version
     () =
   let temporary = Filename.temp_file "" "" in
   ServerConfiguration.create
     ~log_path:(Path.create_absolute temporary)
-    (mock_analysis_configuration ~source_root ?expected_version ())
+    (mock_analysis_configuration ~local_root ?expected_version ())
 
 
-let start_server ?(source_root = Path.current_working_directory ()) ?expected_version () =
-  Server.start (mock_server_configuration ~source_root ?expected_version ())
+let start_server ?(local_root = Path.current_working_directory ()) ?expected_version () =
+  Server.start (mock_server_configuration ~local_root ?expected_version ())
 
 
 let environment () =

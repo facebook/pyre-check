@@ -21,18 +21,18 @@ let to_json ~root handles =
   let sources = get_sources handles in
   `Assoc (List.map sources ~f:(Codex.source_to_json root))
 
-let run is_parallel source_root () =
-  if Sys.is_directory source_root <> `Yes then
-    raise (Invalid_argument (Format.asprintf "`%s` is not a directory" source_root));
+let run is_parallel local_root () =
+  if Sys.is_directory local_root <> `Yes then
+    raise (Invalid_argument (Format.asprintf "`%s` is not a directory" local_root));
 
   let configuration =
     Configuration.create
       ~parallel:is_parallel
-      ~source_root:(Path.create_absolute source_root)
+      ~local_root:(Path.create_absolute local_root)
       ()
   in
   let scheduler = Scheduler.create ~configuration () in
-  let root = Path.create_absolute source_root in
+  let root = Path.create_absolute local_root in
 
   Log.info "Parsing...";
   let { Service.Parser.sources; _ } = Service.Parser.parse_all scheduler ~configuration in

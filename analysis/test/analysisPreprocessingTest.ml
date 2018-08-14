@@ -859,7 +859,7 @@ let test_expand_wildcard_imports _ =
     clear_memory (file_to_check :: files);
     let file_to_check_handle =
       Service.Parser.parse_sources
-        ~configuration:(Configuration.create ~source_root:(Path.current_working_directory ()) ())
+        ~configuration:(Configuration.create ~local_root:(Path.current_working_directory ()) ())
         ~scheduler:(Scheduler.mock ())
         ~files:(file_to_check :: files)
       |> List.find_exn ~f:(fun handle -> File.Handle.show handle = "test.py")

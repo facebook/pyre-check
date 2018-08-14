@@ -147,7 +147,7 @@ let analyze_sources_parallel scheduler configuration environment handles =
 
 let analyze_sources
     scheduler
-    ({ Configuration.source_root; project_root; filter_directories; _ } as configuration)
+    ({ Configuration.local_root; project_root; filter_directories; _ } as configuration)
     environment
     handles =
   Log.info "Checking...";
@@ -166,7 +166,7 @@ let analyze_sources
     let filter_by_root handle =
       match AstSharedMemory.get_source handle with
       | Some { Source.path; _ } ->
-          let relative = Path.create_relative ~root:source_root ~relative:path in
+          let relative = Path.create_relative ~root:local_root ~relative:path in
           Path.directory_contains relative ~follow_symlinks:true ~directory:project_root &&
           filter_by_directories relative
       | _ ->

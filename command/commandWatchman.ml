@@ -143,9 +143,9 @@ let process_response ~root ~watchman_directory ~symlinks serialized_response =
 let listen_for_changed_files
     server_socket
     watchman_directory
-    ({ Configuration.source_root; _ } as configuration) =
+    ({ Configuration.local_root; _ } as configuration) =
   let symlinks =
-    File.list ~filter:(fun file -> Filename.check_suffix file ".py") ~root:source_root
+    File.list ~filter:(fun file -> Filename.check_suffix file ".py") ~root:local_root
     |> build_symlink_map
   in
   let socket_path =
@@ -177,7 +177,7 @@ let listen_for_changed_files
         let handle_watchman symlinks socket =
           let in_channel = Unix.in_channel_of_descr socket in
           In_channel.input_line in_channel
-          >>= process_response ~root:source_root ~watchman_directory ~symlinks
+          >>= process_response ~root:local_root ~watchman_directory ~symlinks
           >>| (fun (symlinks, response) ->
               Log.info "Writing response %s" (Protocol.Request.show response);
               Socket.write server_socket response;
@@ -275,19 +275,19 @@ let run_watchman_daemon_entry : run_watchman_daemon_entry =
            let server_socket = initialize watchman_directory configuration in
            listen_for_changed_files server_socket watchman_directory configuration)
 
-let run_command ~daemonize ~verbose ~sections ~source_root ~project_root =
+let run_command ~daemonize ~verbose ~sections ~local_root ~project_root =
   try
-    let source_root = Path.create_absolute source_root in
+    let local_root = Path.create_absolute local_root in
     let project_root =
       project_root
       >>| Path.create_absolute
-      |> Option.value ~default:source_root
+      |> Option.value ~default:local_root
     in
     let configuration =
       Configuration.create
         ~verbose
         ~sections
-        ~source_root
+        ~local_root
         ~project_root
         ()
     in
@@ -319,7 +319,7 @@ let run_command ~daemonize ~verbose ~sections ~source_root ~project_root =
           Log.info "watchman watch-list output: %s" input;
           Log.warning
             "Unable to find `%s` in watchman's watched directories, type errors might be inaccurate."
-            (Path.absolute source_root);
+            (Path.absolute local_root);
           Log.warning
             "Documentation to integrate watchman is available at `%s`."
             "https://pyre-check.org/docs/watchman-integration.html";
@@ -370,8 +370,8 @@ let run_command ~daemonize ~verbose ~sections ~source_root ~project_root =
     raise uncaught_exception
 
 
-let run daemonize verbose sections project_root source_root () =
-  run_command ~daemonize ~verbose ~sections ~source_root ~project_root
+let run daemonize verbose sections project_root local_root () =
+  run_command ~daemonize ~verbose ~sections ~local_root ~project_root
   |> ignore
 
 

@@ -29,12 +29,12 @@ module LookupCache = struct
     |> Path.relative
 
 
-  let get ~state:{ lookups; environment; _ } ~configuration:{ source_root; _ } file =
+  let get ~state:{ lookups; environment; _ } ~configuration:{ local_root; _ } file =
     let find_or_add path =
       let construct_lookup path =
         let add_source table =
           let source =
-            Path.create_relative ~root:source_root ~relative:path
+            Path.create_relative ~root:local_root ~relative:path
             |> File.create
             |> File.content
             |> Option.value ~default:""
@@ -83,7 +83,7 @@ end
 let rec process_request
     new_socket
     state
-    ({ configuration = { source_root; _ } as configuration; _ } as server_configuration)
+    ({ configuration = { local_root; _ } as configuration; _ } as server_configuration)
     request =
   let timer = Timer.start () in
   let (module Handler: Environment.Handler) = state.environment in
@@ -108,7 +108,7 @@ let rec process_request
           Hashtbl.data state.errors
           |> List.concat
       | _ ->
-          List.filter_map ~f:(File.handle ~root:source_root) files
+          List.filter_map ~f:(File.handle ~root:local_root) files
           |> List.filter_map ~f:(Hashtbl.find state.errors)
           |> List.concat
     in
@@ -148,7 +148,7 @@ let rec process_request
         let files =
           let dependents =
             let relative_path file =
-              Path.get_relative_to_root ~root:source_root ~path:(File.path file)
+              Path.get_relative_to_root ~root:local_root ~path:(File.path file)
             in
             let update_environment_with =
               List.filter_map update_environment_with ~f:relative_path
@@ -175,7 +175,7 @@ let rec process_request
             Sexp.pp [%message (dependents: string list)];
           List.map
             ~f:(fun path ->
-                Path.create_relative ~root:source_root ~relative:path
+                Path.create_relative ~root:local_root ~relative:path
                 |> File.create)
             dependents
         in
@@ -199,7 +199,7 @@ let rec process_request
       let () =
         (* Clean up all data related to updated files. *)
         let handles =
-          List.filter_map ~f:(File.handle ~root:source_root) update_environment_with
+          List.filter_map ~f:(File.handle ~root:local_root) update_environment_with
         in
         AstSharedMemory.remove_paths handles;
         Handler.purge handles;
@@ -212,7 +212,7 @@ let rec process_request
       let stubs = Service.Parser.parse_sources ~configuration ~scheduler ~files:stubs in
       let sources =
         let keep file =
-          (File.handle ~root:source_root file
+          (File.handle ~root:local_root file
            >>= fun path -> Some (Source.qualifier ~path:(File.Handle.show path))
            >>= Handler.module_definition
            >>= Module.path
@@ -224,7 +224,7 @@ let rec process_request
       let sources = Service.Parser.parse_sources ~configuration ~scheduler ~files:sources in
       stubs @ sources
     in
-    let new_source_handles = List.filter_map ~f:(File.handle ~root:source_root) check in
+    let new_source_handles = List.filter_map ~f:(File.handle ~root:local_root) check in
     Annotated.Class.AttributesCache.clear ();
     let () =
       Log.log
@@ -389,7 +389,7 @@ let rec process_request
           } ->
             let source_text =
               Path.create_relative
-                ~root:source_root
+                ~root:local_root
                 ~relative:path
               |> File.create
               |> File.content
@@ -438,7 +438,7 @@ let rec process_request
            Some
              (LanguageServerProtocolResponse
                 (TextDocumentDefinitionResponse.create
-                   ~root:source_root
+                   ~root:local_root
                    ~id
                    ~location:definition
                  |> TextDocumentDefinitionResponse.to_yojson
@@ -530,7 +530,7 @@ let rec process_request
                 List.is_empty file_notifiers)
         in
         LanguageServer.RequestParser.parse
-          ~root:configuration.source_root
+          ~root:configuration.local_root
           (Yojson.Safe.from_string request)
         >>= handle_lsp_request ~check_on_save
         |> Option.value ~default:(state, None)

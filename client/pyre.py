@@ -282,19 +282,19 @@ def main() -> int:
             else:
                 local_configuration_path = configuration.get_local_configuration()
                 if local_configuration_path:
-                    source_root = os.path.dirname(
+                    local_root = os.path.dirname(
                         os.path.relpath(
                             local_configuration_path, arguments.current_directory
                         )
                     )
                 else:
-                    source_root = None
+                    local_root = None
                 isolate = (
                     arguments.command in [commands.Check]
                     and not arguments.use_global_shared_source_directory
                 )
                 shared_source_directory = merge_source_directories(
-                    source_directories, source_root, isolate
+                    source_directories, local_root, isolate
                 )
                 source_directory_path = shared_source_directory.get_root()
 

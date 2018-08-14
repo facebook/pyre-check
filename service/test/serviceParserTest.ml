@@ -91,24 +91,24 @@ let test_parse_stubs_modules_list _ =
 
 let test_parse_stubs context =
   let handles =
-    let source_root = Path.create_absolute (bracket_tmpdir context) in
+    let local_root = Path.create_absolute (bracket_tmpdir context) in
     let module_root = Path.create_absolute (bracket_tmpdir context) in
 
     let write_file root relative =
       File.create ~content:(Some "def foo() -> int: ...") (Path.create_relative ~root ~relative)
       |> File.write
     in
-    write_file source_root "a.pyi";
-    write_file source_root "d.py";
+    write_file local_root "a.pyi";
+    write_file local_root "d.py";
     write_file module_root "a.pyi";
     write_file module_root "b.pyi";
     write_file module_root "c.py";
-    write_file source_root "ttypes.py";
-    write_file source_root "ttypes.pyi";
+    write_file local_root "ttypes.py";
+    write_file local_root "ttypes.pyi";
 
     Service.Parser.parse_stubs
       (Scheduler.mock ())
-      ~configuration:(Configuration.create ~source_root ~search_path:[module_root] ())
+      ~configuration:(Configuration.create ~local_root ~search_path:[module_root] ())
     |> List.map ~f:File.Handle.show
     |> List.sort ~compare:String.compare
   in
@@ -121,7 +121,7 @@ let test_parse_stubs context =
 
 let test_parse_typeshed context =
   let handles =
-    let source_root = Path.create_absolute (bracket_tmpdir context) in
+    let local_root = Path.create_absolute (bracket_tmpdir context) in
     let typeshed_root = Path.create_absolute (bracket_tmpdir context) in
 
     let write_file root relative =
@@ -136,7 +136,7 @@ let test_parse_typeshed context =
 
     Service.Parser.parse_stubs
       (Scheduler.mock ())
-      ~configuration:(Configuration.create ~source_root ~typeshed:typeshed_root ())
+      ~configuration:(Configuration.create ~local_root ~typeshed:typeshed_root ())
     |> List.map ~f:File.Handle.show
     |> List.sort ~compare:String.compare
   in
@@ -155,7 +155,7 @@ let test_parse_source _ =
   in
   let handles =
     Service.Parser.parse_sources
-      ~configuration:(Configuration.create ~source_root:(Path.current_working_directory ()) ())
+      ~configuration:(Configuration.create ~local_root:(Path.current_working_directory ()) ())
       ~scheduler:(Scheduler.mock ())
       ~files:[file]
   in
@@ -184,7 +184,7 @@ let test_parse_source _ =
 
 let test_parse_sources context =
   let stub_handles, source_handles =
-    let source_root = Path.create_absolute (bracket_tmpdir context) in
+    let local_root = Path.create_absolute (bracket_tmpdir context) in
     let module_root = Path.create_absolute (bracket_tmpdir context) in
     let link_root = Path.create_absolute (bracket_tmpdir context) in
 
@@ -192,25 +192,25 @@ let test_parse_sources context =
       File.create ~content:(Some "def foo() -> int: ...") (Path.create_relative ~root ~relative)
       |> File.write
     in
-    write_file source_root "a.pyi";
-    write_file source_root "a.py";
+    write_file local_root "a.pyi";
+    write_file local_root "a.py";
 
     write_file module_root "b.pyi";
-    write_file source_root "b.py";
+    write_file local_root "b.py";
 
-    write_file source_root "c.py";
+    write_file local_root "c.py";
 
     write_file link_root "link.py";
     write_file link_root "seemingly_unrelated.pyi";
 
     Unix.symlink
       ~src:((Path.absolute link_root) ^/ "link.py")
-      ~dst:((Path.absolute source_root) ^/ "d.py");
+      ~dst:((Path.absolute local_root) ^/ "d.py");
     Unix.symlink
       ~src:((Path.absolute link_root) ^/ "seemingly_unrelated.pyi")
-      ~dst:((Path.absolute source_root) ^/ "d.pyi");
+      ~dst:((Path.absolute local_root) ^/ "d.pyi");
 
-    let configuration = Configuration.create ~source_root ~search_path:[module_root] () in
+    let configuration = Configuration.create ~local_root ~search_path:[module_root] () in
     let scheduler = Scheduler.mock () in
     let { Service.Parser.stubs; sources } = Service.Parser.parse_all scheduler ~configuration in
     let stubs =
@@ -253,7 +253,7 @@ let test_register_modules _ =
     (* Build environment *)
     AstSharedMemory.remove_modules (List.filter_map ~f:get_qualifier [file]);
     AstSharedMemory.remove_paths (List.filter_map ~f:(fun file -> File.handle file) [file]);
-    let configuration = Configuration.create ~source_root:(Path.current_working_directory ()) () in
+    let configuration = Configuration.create ~local_root:(Path.current_working_directory ()) () in
     let sources =
       Service.Parser.parse_sources
         ~configuration

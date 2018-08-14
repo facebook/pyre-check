@@ -50,12 +50,12 @@ let display_log { RageResponse.RageResult.title; data } =
   Out_channel.printf "\nDisplaying logs for %s:\n%s" name data
 
 
-let run_rage source_root () =
+let run_rage local_root () =
   Out_channel.printf
     "Actual binary version: %s\nBinary build info: %s\n"
     (Version.version ())
     (Version.build_info ());
-  let configuration = Configuration.create ~source_root:(Path.create_absolute source_root) () in
+  let configuration = Configuration.create ~local_root:(Path.create_absolute local_root) () in
   let logs = get_watchman_watched_directories () :: get_logs configuration in
   List.iter ~f:display_log logs
 
