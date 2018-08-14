@@ -498,7 +498,7 @@ let test_class_attributes _ =
         foo.third: int = 1
         foo.class_attribute: typing.ClassVar[int]
     |}
-    "__init__class_attributefirstimplicitsecondthird__name____init____new____sizeof____getitem__";
+    "__init__class_attributefirstimplicitsecondthird__name____getitem____init____new____sizeof__";
   assert_fold
     ~class_attributes:true
     {|
@@ -510,7 +510,7 @@ let test_class_attributes _ =
         Foo.__static__: typing.ClassVar[int]
         Foo.__instance__: int
     |}
-    "__instance____static____meta____name____type____init____new____sizeof____getitem__";
+    "__instance____static____meta____name____type____getitem____init____new____sizeof__";
 
   (* Test 'attribute' *)
   let assert_attribute ~parent ~parent_instantiated_type ~attribute_name ~expected_attribute =

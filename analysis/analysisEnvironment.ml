@@ -122,7 +122,7 @@ let connect_definition
     (* Handle definition. *)
     begin
       match definition with
-      | Some ({ Node.value = { Class.name; bases; _ } as definition; _ } as definition_node)
+      | Some ({ Node.value = { Class.name; bases; _ }; _ } as definition_node)
         when not (Type.equal primitive Type.Object) || Access.show name = "object" ->
           add_class_key ~path primitive;
           let annotated = Annotated.Class.create definition_node in
@@ -133,69 +133,64 @@ let connect_definition
 
           (* Register normal annotations. *)
           add_class_definition ~primitive ~definition:definition_node;
-          if List.length definition.Class.bases > 0 then
-            begin
-              let register_supertype base =
-                let qualified_name =
-                  let value = Expression.delocalize base.Argument.value in
-                  match Node.value value with
-                  | Access access ->
-                      let primitive, _ =
-                        Type.create ~aliases value
-                        |> Type.split
-                      in
-                      if not (TypeOrder.contains order primitive) &&
-                         not (Type.equal primitive Type.Top) then
-                        begin
-                          Log.log
-                            ~section:`Environment
-                            "Superclass annotation %a is missing"
-                            Type.pp
-                            primitive;
-                          None
-                        end
-                      else if Type.equal primitive Type.Top then
-                        begin
-                          Statistics.event
-                            ~name:"superclass of top"
-                            ~section:`Environment
-                            ~normals:["unresolved name", Access.show access]
-                            ();
-                          None
-                        end
-                      else
-                        Some access
-                  | _ ->
-                      None in
-                let super_annotation, parameters =
-                  match qualified_name with
-                  | Some name ->
-                      connect_definition
-                        ~path
-                        ~resolution
-                        ~predecessor:annotation
-                        ~name
-                        ~definition:None
-                  | None ->
-                      Type.Object, []
-                in
-                connect ~predecessor:primitive ~successor:super_annotation ~parameters
-              in
-              let bases =
-                let inferred_base =
-                  Annotated.Class.inferred_generic_base
-                    (Annotated.Class.create definition_node)
+          let register_supertype base =
+            let qualified_name =
+              let value = Expression.delocalize base.Argument.value in
+              match Node.value value with
+              | Access access ->
+                  let primitive, _ =
+                    Type.create ~aliases value
+                    |> Type.split
+                  in
+                  if not (TypeOrder.contains order primitive) &&
+                     not (Type.equal primitive Type.Top) then
+                    begin
+                      Log.log
+                        ~section:`Environment
+                        "Superclass annotation %a is missing"
+                        Type.pp
+                        primitive;
+                      None
+                    end
+                  else if Type.equal primitive Type.Top then
+                    begin
+                      Statistics.event
+                        ~name:"superclass of top"
+                        ~section:`Environment
+                        ~normals:["unresolved name", Access.show access]
+                        ();
+                      None
+                    end
+                  else
+                    Some access
+              | _ ->
+                  None in
+            let super_annotation, parameters =
+              match qualified_name with
+              | Some name ->
+                  connect_definition
+                    ~path
                     ~resolution
-                in
-                inferred_base @ bases
-              in
-              bases
-              (* Don't register metaclass=abc.ABCMeta, etc. superclasses. *)
-              |> List.filter ~f:(fun { Argument.name; _ } -> Option.is_none name)
-              |> List.iter ~f:register_supertype
-            end
-          else
-            connect ~predecessor:primitive ~successor:Type.Object ~parameters:[]
+                    ~predecessor:annotation
+                    ~name
+                    ~definition:None
+              | None ->
+                  Type.Object, []
+            in
+            connect ~predecessor:primitive ~successor:super_annotation ~parameters
+          in
+          let bases =
+            let inferred_base =
+              Annotated.Class.inferred_generic_base
+                (Annotated.Class.create definition_node)
+                ~resolution
+            in
+            inferred_base @ bases
+          in
+          bases
+          (* Don't register metaclass=abc.ABCMeta, etc. superclasses. *)
+          |> List.filter ~f:(fun { Argument.name; _ } -> Option.is_none name)
+          |> List.iter ~f:register_supertype
       | _ ->
           ()
     end;

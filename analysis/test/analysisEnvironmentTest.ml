@@ -433,9 +433,14 @@ let test_connect_type_order _ =
     |}
   in
   let order = (module Handler.TypeOrderHandler: TypeOrder.Handler) in
-  Environment.register_class_definitions (module Handler) source |> ignore;
+  let all_annotations =
+    Environment.register_class_definitions (module Handler) source
+    |> Set.to_list
+  in
   Environment.register_aliases (module Handler) [source];
   Environment.connect_type_order (module Handler) source;
+  Environment.TypeOrder.connect_annotations_to_top order ~top:Type.Object all_annotations;
+
   assert_equal (parse_annotation (module Handler) (!"C")) (Type.primitive "C");
   assert_equal (parse_annotation (module Handler) (!"D")) (Type.primitive "D");
   assert_equal (parse_annotation (module Handler) (!"B")) (Type.primitive "D");
