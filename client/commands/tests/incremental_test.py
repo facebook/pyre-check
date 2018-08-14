@@ -34,7 +34,7 @@ class IncrementalTest(unittest.TestCase):
             "json.loads", return_value=[]
         ):
             incremental.Incremental(
-                arguments, configuration, source_directory="."
+                arguments, configuration, analysis_directory="."
             ).run()
             call_client.assert_called_once_with(
                 command=commands.Incremental.NAME,
@@ -54,7 +54,7 @@ class IncrementalTest(unittest.TestCase):
         with patch.object(commands.Command, "_call_client") as call_client, patch(
             "json.loads", return_value=[]
         ):
-            commands.Incremental(arguments, configuration, source_directory=".").run()
+            commands.Incremental(arguments, configuration, analysis_directory=".").run()
             commands_Start.assert_called_with(arguments, configuration, ".")
             call_client.assert_has_calls(
                 [

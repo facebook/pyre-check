@@ -24,8 +24,8 @@ from . import (
     is_capable_terminal,
     log,
     log_statistics,
-    merge_source_directories,
-    resolve_source_directories,
+    merge_analysis_directories,
+    resolve_analysis_directories,
     switch_root,
 )
 from .configuration import Configuration
@@ -99,13 +99,18 @@ def main() -> int:
         "--target", action="append", help="The buck target to check"
     )
 
+    analysis_directory = parser.add_argument_group("analysis-directory")
+    analysis_directory.add_argument(
+        "--analysis-directory", action="append", help="The analysis directory to check"
+    )
+
     source_directory = parser.add_argument_group("source-directory")
     source_directory.add_argument(
-        "--source-directory", action="append", help="The source directory to check"
+        "--source-directory", action="append", help="The analysis directory to check"
     )
 
     parser.add_argument(
-        "--use-global-shared-source-directory",
+        "--use-global-shared-analysis-directory",
         action="store_true",
         help=argparse.SUPPRESS,
     )
@@ -214,6 +219,9 @@ def main() -> int:
 
     arguments = parser.parse_args()
 
+    if arguments.source_directory:
+        arguments.analysis_directory = arguments.source_directory
+
     if not hasattr(arguments, "command"):
         if shutil.which("watchman"):
             arguments.command = commands.Incremental
@@ -228,9 +236,9 @@ def main() -> int:
             arguments.command = commands.Check
 
     configuration = None
-    source_directories = []
-    shared_source_directory = None
-    source_directory_path = None
+    analysis_directories = []
+    shared_analysis_directory = None
+    analysis_directory_path = None
     # Having this as a fails-by-default helps flag unexpected exit
     # from exception flows.
     exit_code = FAILURE
@@ -267,21 +275,21 @@ def main() -> int:
             use_buck_cache = (
                 arguments.command
                 not in [commands.Check, commands.Start, commands.Restart]
-                or arguments.use_global_shared_source_directory
+                or arguments.use_global_shared_analysis_directory
             )
             if arguments.command in [commands.Kill]:
-                source_directories = ["."]
+                analysis_directories = ["."]
             else:
                 prompt = arguments.command not in [commands.Incremental, commands.Check]
-                source_directories = resolve_source_directories(
+                analysis_directories = resolve_analysis_directories(
                     arguments,
                     configuration,
                     prompt=prompt,
                     use_buck_cache=use_buck_cache,
                 )
 
-            if len(source_directories) == 1:
-                source_directory_path = source_directories.pop()
+            if len(analysis_directories) == 1:
+                analysis_directory_path = analysis_directories.pop()
             else:
                 local_configuration_path = configuration.get_local_configuration()
                 if local_configuration_path:
@@ -294,15 +302,15 @@ def main() -> int:
                     local_root = None
                 isolate = (
                     arguments.command in [commands.Check]
-                    and not arguments.use_global_shared_source_directory
+                    and not arguments.use_global_shared_analysis_directory
                 )
-                shared_source_directory = merge_source_directories(
-                    source_directories, local_root, isolate
+                shared_analysis_directory = merge_analysis_directories(
+                    analysis_directories, local_root, isolate
                 )
-                source_directory_path = shared_source_directory.get_root()
+                analysis_directory_path = shared_analysis_directory.get_root()
 
         exit_code = arguments.command(
-            arguments, configuration, source_directory_path
+            arguments, configuration, analysis_directory_path
         ).run()
     except (buck.BuckException, EnvironmentException) as error:
         LOG.error(str(error))
@@ -322,8 +330,8 @@ def main() -> int:
         exit_code = SUCCESS
     finally:
         log.cleanup(arguments)
-        if shared_source_directory:
-            shared_source_directory.cleanup()
+        if shared_analysis_directory:
+            shared_analysis_directory.cleanup()
         if configuration and configuration.logger:
             log_statistics(
                 "perfpipe_pyre_usage",

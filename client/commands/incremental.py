@@ -22,27 +22,29 @@ LOG = logging.getLogger(__name__)
 class Incremental(ErrorHandling):
     NAME = "incremental"
 
-    def __init__(self, arguments, configuration, source_directory) -> None:
-        super(Incremental, self).__init__(arguments, configuration, source_directory)
+    def __init__(self, arguments, configuration, analysis_directory) -> None:
+        super(Incremental, self).__init__(arguments, configuration, analysis_directory)
 
     # pyre-ignore: T31696900
-    def _read_stderr(self, _stream, source_directory) -> None:
-        stderr_file = os.path.join(source_directory, ".pyre/server/server.stdout")
+    def _read_stderr(self, _stream, analysis_directory) -> None:
+        stderr_file = os.path.join(analysis_directory, ".pyre/server/server.stdout")
         with subprocess.Popen(
             ["tail", "-f", stderr_file],
             stdout=subprocess.PIPE,
             stderr=subprocess.DEVNULL,
         ) as stderr_tail:
             atexit.register(stderr_tail.terminate)
-            super(Incremental, self)._read_stderr(stderr_tail.stdout, source_directory)
+            super(Incremental, self)._read_stderr(
+                stderr_tail.stdout, analysis_directory
+            )
 
     def _run(self) -> int:
         if self._state() == State.DEAD:
-            LOG.warning("Starting server at `%s`.", self._source_directory)
+            LOG.warning("Starting server at `%s`.", self._analysis_directory)
             arguments = self._arguments
             arguments.terminal = False
             arguments.no_watchman = False
-            Start(arguments, self._configuration, self._source_directory).run()
+            Start(arguments, self._configuration, self._analysis_directory).run()
 
         flags = self._flags()
         flags.extend(

@@ -33,7 +33,7 @@ def mock_arguments() -> MagicMock:
 
 def mock_configuration() -> MagicMock:
     configuration = MagicMock()
-    configuration.source_directories = ["."]
+    configuration.analysis_directories = ["."]
     configuration.get_search_path = MagicMock()
     configuration.get_typeshed = MagicMock()
     configuration.logger = None
@@ -67,7 +67,7 @@ class CommandTest(unittest.TestCase):
             open.side_effect = [io.StringIO("1")]
             self.assertEqual(
                 commands.Command(
-                    arguments, configuration, source_directory="."
+                    arguments, configuration, analysis_directory="."
                 )._state(),
                 commands.command.State.RUNNING,
             )
@@ -76,7 +76,7 @@ class CommandTest(unittest.TestCase):
             open.side_effect = [io.StringIO("derp")]
             self.assertEqual(
                 commands.Command(
-                    arguments, configuration, source_directory="."
+                    arguments, configuration, analysis_directory="."
                 )._state(),
                 commands.command.State.DEAD,
             )

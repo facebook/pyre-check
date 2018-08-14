@@ -22,14 +22,14 @@ from .exceptions import EnvironmentException
 LOG = logging.getLogger(__name__)
 
 
-class SharedSourceDirectory:
+class SharedAnalysisDirectory:
     def __init__(
         self,
-        source_directories,
+        analysis_directories,
         local_root: Optional[str] = None,
         isolate: bool = False,
     ):
-        self._source_directories = set(source_directories)
+        self._analysis_directories = set(analysis_directories)
         self._local_root = local_root
         self._isolate = isolate
 
@@ -45,7 +45,7 @@ class SharedSourceDirectory:
 
     @functools.lru_cache(1)
     def get_root(self) -> str:
-        path_to_root = self._local_root or "shared_source_directory"
+        path_to_root = self._local_root or "shared_analysis_directory"
         suffix = "_{}".format(str(os.getpid())) if self._isolate else ""
         return os.path.join(
             self.get_scratch_directory(), "{}{}".format(path_to_root, suffix)
@@ -64,26 +64,26 @@ class SharedSourceDirectory:
         lock = os.path.join(root, ".pyre.lock")
         with acquire_lock(lock, blocking=True):
             try:
-                with open(os.path.join(root, ".pyre.source_directories")) as file:
+                with open(os.path.join(root, ".pyre.analysis_directories")) as file:
                     tracked = set(json.load(file))
 
-                if self._source_directories.issubset(tracked):
+                if self._analysis_directories.issubset(tracked):
                     # We might want to merge in additional files.
-                    LOG.info("Shared source directory is up to date")
+                    LOG.info("Shared analysis directory is up to date")
                     return
             except (OSError, json.JSONDecodeError):
                 pass
 
             # Clear the directory and merge in files.
-            LOG.info("Shared source directory is stale, updating...")
+            LOG.info("Shared analysis directory is stale, updating...")
             self._clear()
             self._merge()
 
             # Write out tracked targets.
-            with open(os.path.join(root, ".pyre.source_directories"), "w") as file:
-                json.dump(list(self._source_directories), file)
+            with open(os.path.join(root, ".pyre.analysis_directories"), "w") as file:
+                json.dump(list(self._analysis_directories), file)
 
-            LOG.log(log.PERFORMANCE, "Merged source directories in %fs", time() - start)
+            LOG.log(log.PERFORMANCE, "Merged analysis directories in %fs", time() - start)
 
     def cleanup(self):
         try:
@@ -105,8 +105,8 @@ class SharedSourceDirectory:
         root = self.get_root()
 
         all_paths = {}
-        for source_directory in self._source_directories:
-            self._merge_source_directory(source_directory, all_paths)
+        for analysis_directory in self._analysis_directories:
+            self._merge_analysis_directory(analysis_directory, all_paths)
         for relative, original in all_paths.items():
             merged = os.path.join(root, relative)
             directory = os.path.dirname(merged)
@@ -124,15 +124,15 @@ class SharedSourceDirectory:
                     LOG.error(str(error))
 
     # Exposed for testing.
-    def _merge_source_directory(
-        self, source_directory: str, all_paths: Dict[str, str]
+    def _merge_analysis_directory(
+        self, analysis_directory: str, all_paths: Dict[str, str]
     ) -> None:
-        paths = _find_python_paths(root=source_directory)
+        paths = _find_python_paths(root=analysis_directory)
         for path in paths:
-            relative = os.path.relpath(path, source_directory)
+            relative = os.path.relpath(path, analysis_directory)
             if not path:
                 continue
-            # don't bother stat'ing paths that are already in the source directory.
+            # don't bother stat'ing paths that are already in the analysis directory.
             if relative in all_paths:
                 continue
             try:
@@ -184,7 +184,7 @@ def _find_python_paths(root: str) -> List[str]:
         return output.split("\n")
     except subprocess.CalledProcessError:
         raise EnvironmentException(
-            "pyre was unable to locate a source directory. "
+            "pyre was unable to locate a analysis directory. "
             "Ensure that your project is built and re-run pyre."
         )
 

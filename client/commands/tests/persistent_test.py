@@ -30,7 +30,7 @@ class PersistentTest(unittest.TestCase):
         # Check start without watchman.
         with patch.object(commands.Command, "_call_client") as call_client:
             arguments.no_watchman = True
-            commands.Persistent(arguments, configuration, source_directory=".").run()
+            commands.Persistent(arguments, configuration, analysis_directory=".").run()
             call_client.assert_has_calls(
                 [
                     call(
@@ -48,7 +48,7 @@ class PersistentTest(unittest.TestCase):
             )
 
         # Check null server initialize output
-        command = commands.Persistent(arguments, configuration, source_directory=".")
+        command = commands.Persistent(arguments, configuration, analysis_directory=".")
         self.assertEqual(
             command._initialize_response(5),
             "Content-Length: 59\r\n\r\n"

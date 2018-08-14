@@ -20,8 +20,8 @@ LOG = logging.getLogger(__name__)
 class Kill(Command):
     NAME = "kill"
 
-    def __init__(self, arguments, configuration, source_directory) -> None:
-        super(Kill, self).__init__(arguments, configuration, source_directory)
+    def __init__(self, arguments, configuration, analysis_directory) -> None:
+        super(Kill, self).__init__(arguments, configuration, analysis_directory)
 
     def _run(self) -> int:
         self._kill_all_processes()

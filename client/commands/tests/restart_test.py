@@ -26,7 +26,7 @@ class RestartTest(unittest.TestCase):
         configuration.get_typeshed.return_value = "stub"
         configuration.get_search_path.return_value = ["path1", "path2"]
 
-        source_directory = "."
+        analysis_directory = "."
 
         with patch.object(restart, "Stop") as commands_Stop, patch.object(
             restart, "Start"
@@ -34,11 +34,13 @@ class RestartTest(unittest.TestCase):
             restart, "Incremental"
         ) as commands_Incremental:
             commands.Restart(
-                arguments, configuration, source_directory, blocking=False
+                arguments, configuration, analysis_directory, blocking=False
             )._run()
-            commands_Stop.assert_called_with(arguments, configuration, source_directory)
+            commands_Stop.assert_called_with(
+                arguments, configuration, analysis_directory
+            )
             commands_Start.assert_called_with(
-                arguments, configuration, source_directory
+                arguments, configuration, analysis_directory
             )
             commands_Incremental.assert_not_called()
 
@@ -47,9 +49,11 @@ class RestartTest(unittest.TestCase):
         ) as commands_Start, patch.object(
             restart, "Incremental"
         ) as commands_Incremental:
-            commands.Restart(arguments, configuration, source_directory)._run()
-            commands_Stop.assert_called_with(arguments, configuration, source_directory)
+            commands.Restart(arguments, configuration, analysis_directory)._run()
+            commands_Stop.assert_called_with(
+                arguments, configuration, analysis_directory
+            )
             commands_Incremental.assert_called_with(
-                arguments, configuration, source_directory
+                arguments, configuration, analysis_directory
             )
             commands_Start.assert_not_called()

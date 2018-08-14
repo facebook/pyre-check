@@ -15,18 +15,18 @@ class Restart(Command):
     NAME = "restart"
 
     def __init__(
-        self, arguments, configuration, source_directory, blocking: bool = True
+        self, arguments, configuration, analysis_directory, blocking: bool = True
     ) -> None:
-        super(Restart, self).__init__(arguments, configuration, source_directory)
+        super(Restart, self).__init__(arguments, configuration, analysis_directory)
         self._blocking = blocking
 
     def _run(self) -> int:
-        Stop(self._arguments, self._configuration, self._source_directory).run()
+        Stop(self._arguments, self._configuration, self._analysis_directory).run()
         if self._blocking:
             Incremental(
-                self._arguments, self._configuration, self._source_directory
+                self._arguments, self._configuration, self._analysis_directory
             ).run()
         else:
-            Start(self._arguments, self._configuration, self._source_directory).run()
+            Start(self._arguments, self._configuration, self._analysis_directory).run()
 
         return SUCCESS

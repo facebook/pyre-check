@@ -30,7 +30,7 @@ class StartTest(unittest.TestCase):
         # Check start without watchman.
         with patch.object(commands.Command, "_call_client") as call_client:
             arguments.no_watchman = True
-            commands.Start(arguments, configuration, source_directory=".").run()
+            commands.Start(arguments, configuration, analysis_directory=".").run()
             call_client.assert_called_once_with(
                 command=commands.Start.NAME,
                 flags=[
@@ -50,7 +50,7 @@ class StartTest(unittest.TestCase):
         # Check start with watchman.
         with patch.object(commands.Command, "_call_client") as call_client:
             arguments.no_watchman = False
-            commands.Start(arguments, configuration, source_directory=".").run()
+            commands.Start(arguments, configuration, analysis_directory=".").run()
             call_client.assert_has_calls(
                 [
                     call(
@@ -76,7 +76,7 @@ class StartTest(unittest.TestCase):
         with patch.object(commands.Command, "_call_client") as call_client:
             arguments.no_watchman = True
             arguments.terminal = True
-            commands.Start(arguments, configuration, source_directory=".").run()
+            commands.Start(arguments, configuration, analysis_directory=".").run()
             call_client.assert_called_once_with(
                 command=commands.Start.NAME,
                 flags=[

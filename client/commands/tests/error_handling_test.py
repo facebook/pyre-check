@@ -32,7 +32,7 @@ class ErrorHandlingTest(unittest.TestCase):
         error.__getitem__.side_effect = error_dictionary.__getitem__
 
         handler = commands.ErrorHandling(
-            arguments, configuration, source_directory="/test/f/g"
+            arguments, configuration, analysis_directory="/test/f/g"
         )
         with patch.object(json, "loads", return_value=[error]):
             handler._get_errors(result)
@@ -42,7 +42,7 @@ class ErrorHandlingTest(unittest.TestCase):
         arguments.target = ["//f/g:target"]
         configuration.targets = []
         handler = commands.ErrorHandling(
-            arguments, configuration, source_directory="/test/f/g"
+            arguments, configuration, analysis_directory="/test/f/g"
         )
         with patch.object(json, "loads", return_value=[error]):
             handler._get_errors(result)
@@ -52,7 +52,7 @@ class ErrorHandlingTest(unittest.TestCase):
         arguments.target = []
         configuration.do_not_check = ["auto/gen"]
         handler = commands.ErrorHandling(
-            arguments, configuration, source_directory="/test/auto/gen"
+            arguments, configuration, analysis_directory="/test/auto/gen"
         )
         with patch.object(json, "loads", return_value=[error]):
             handler._get_errors(result)
@@ -63,7 +63,7 @@ class ErrorHandlingTest(unittest.TestCase):
         arguments.target = ["//f/g:target"]
         configuration.targets = []
         handler = commands.ErrorHandling(
-            arguments, configuration, source_directory="/test/h/i"
+            arguments, configuration, analysis_directory="/test/h/i"
         )
         with patch.object(json, "loads", return_value=[error]):
             handler._get_errors(result)
@@ -75,7 +75,7 @@ class ErrorHandlingTest(unittest.TestCase):
         arguments.current_directory = "/"  # project root
         arguments.local_configuration = "/test"
         handler = commands.ErrorHandling(
-            arguments, configuration, source_directory="/shared"
+            arguments, configuration, analysis_directory="/shared"
         )
         with patch.object(json, "loads", return_value=[error]):
             handler._get_errors(result)
@@ -90,7 +90,7 @@ class ErrorHandlingTest(unittest.TestCase):
         error.__getitem__.side_effect = error_dictionary.__getitem__
         configuration.do_not_check = ["*/b"]
         handler = commands.ErrorHandling(
-            arguments, configuration, source_directory="/a"
+            arguments, configuration, analysis_directory="/a"
         )
         with patch.object(json, "loads", return_value=[error]):
             handler._get_errors(result)
@@ -104,7 +104,7 @@ class ErrorHandlingTest(unittest.TestCase):
         arguments.original_directory = "base"
         configuration = mock_configuration()
         handler = commands.ErrorHandling(
-            arguments, configuration, source_directory="base"
+            arguments, configuration, analysis_directory="base"
         )
         check_output.return_value = "\n".join(
             [

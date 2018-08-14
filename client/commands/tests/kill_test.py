@@ -18,5 +18,5 @@ class KillTest(unittest.TestCase):
         realpath.side_effect = ["/test-binary"]
         arguments = mock_arguments()
         configuration = mock_configuration()
-        commands.Kill(arguments, configuration, source_directory=None).run()
+        commands.Kill(arguments, configuration, analysis_directory=None).run()
         run.assert_called_with(["pkill", "-f", "pyre.bin"])

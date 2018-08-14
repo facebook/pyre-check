@@ -17,8 +17,8 @@ LOG = logging.getLogger(__name__)
 class Start(ErrorHandling):
     NAME = "start"
 
-    def __init__(self, arguments, configuration, source_directory) -> None:
-        super(Start, self).__init__(arguments, configuration, source_directory)
+    def __init__(self, arguments, configuration, analysis_directory) -> None:
+        super(Start, self).__init__(arguments, configuration, analysis_directory)
         self._terminal = arguments.terminal
         self._no_watchman = arguments.no_watchman
         self._number_of_workers = configuration.number_of_workers
@@ -31,7 +31,7 @@ class Start(ErrorHandling):
             try:
                 with filesystem.acquire_lock(".pyre/client.lock", blocking):
                     Monitor(
-                        self._arguments, self._configuration, self._source_directory
+                        self._arguments, self._configuration, self._analysis_directory
                     ).daemonize()
                     # This unsafe call is OK due to the client lock always
                     # being acquired before starting a server - no server can
@@ -39,14 +39,17 @@ class Start(ErrorHandling):
                     try:
                         with filesystem.acquire_lock(
                             os.path.join(
-                                self._source_directory, ".pyre", "server", "server.lock"
+                                self._analysis_directory,
+                                ".pyre",
+                                "server",
+                                "server.lock",
                             ),
                             blocking=False,
                         ):
                             pass
                     except OSError:
                         LOG.warning(
-                            "Server at `%s` exists, skipping.", self._source_directory
+                            "Server at `%s` exists, skipping.", self._analysis_directory
                         )
                         return FAILURE
 

@@ -14,10 +14,10 @@ LOG = logging.getLogger(__name__)
 
 
 class Monitor:
-    def __init__(self, arguments, configuration, source_directory) -> None:
+    def __init__(self, arguments, configuration, analysis_directory) -> None:
         self.arguments = arguments
         self.configuration = configuration
-        self.source_directory = source_directory
+        self.analysis_directory = analysis_directory
         self.watchman_client = None
 
     def _subscribe_to_watchman(self, root: str) -> None:
@@ -42,21 +42,23 @@ class Monitor:
             LOG.info("Not starting monitor due to %s", str(exception))
             sys.exit(1)
         try:
-            os.makedirs(os.path.join(self.source_directory, ".pyre/monitor"))
+            os.makedirs(os.path.join(self.analysis_directory, ".pyre/monitor"))
         except OSError:
             pass
-        lock_path = os.path.join(self.source_directory, ".pyre/monitor/monitor.lock")
+        lock_path = os.path.join(self.analysis_directory, ".pyre/monitor/monitor.lock")
         # Die silently if unable to acquire the lock.
         with acquire_lock(lock_path, blocking=False):
             file_handler = logging.FileHandler(
-                os.path.join(self.source_directory, ".pyre/monitor/monitor.log")
+                os.path.join(self.analysis_directory, ".pyre/monitor/monitor.log")
             )
             file_handler.setFormatter(
                 logging.Formatter("%(asctime)s %(levelname)s %(message)s")
             )
             LOG.addHandler(file_handler)
 
-            pid_path = os.path.join(self.source_directory, ".pyre/monitor/monitor.pid")
+            pid_path = os.path.join(
+                self.analysis_directory, ".pyre/monitor/monitor.pid"
+            )
             with open(pid_path, "w+") as pid_file:
                 pid_file.write(str(os.getpid()))
 
@@ -79,7 +81,7 @@ class Monitor:
                         )
                         LOG.info("Stopping running pyre server.")
                         stop.Stop(
-                            self.arguments, self.configuration, self.source_directory
+                            self.arguments, self.configuration, self.analysis_directory
                         ).run()
                 except KeyError:
                     pass

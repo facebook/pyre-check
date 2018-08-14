@@ -14,12 +14,14 @@ LOG = logging.getLogger(__name__)
 
 
 class ErrorHandling(Command):
-    def __init__(self, arguments, configuration, source_directory) -> None:
-        super(ErrorHandling, self).__init__(arguments, configuration, source_directory)
+    def __init__(self, arguments, configuration, analysis_directory) -> None:
+        super(ErrorHandling, self).__init__(
+            arguments, configuration, analysis_directory
+        )
         self._verbose = arguments.verbose
         self._output = arguments.output
         self._do_not_check_paths = configuration.do_not_check
-        self._discovered_source_directories = [self._local_root]
+        self._discovered_analysis_directories = [self._local_root]
         self._local_configuration = arguments.local_configuration
 
     def _print(self, errors) -> None:
@@ -77,7 +79,7 @@ class ErrorHandling(Command):
 
         for error in results:
             full_path = os.path.realpath(
-                os.path.join(self._source_directory, error["path"])
+                os.path.join(self._analysis_directory, error["path"])
             )
             # Relativize path to user's cwd.
             relative_path = self._relative_path(full_path)

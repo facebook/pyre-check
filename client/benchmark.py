@@ -38,9 +38,11 @@ def _parallel_check(command, process_count) -> float:
 
 
 def _compare_parallel_check(arguments, configuration) -> None:
-    if not os.path.isdir(arguments.source_directory):
+    if not os.path.isdir(arguments.analysis_directory):
         raise EnvironmentException(
-            "`{}` is not a valid source directory.".format(arguments.source_directory)
+            "`{}` is not a valid analysis directory.".format(
+                arguments.analysis_directory
+            )
         )
     flags = [
         "-typeshed",
@@ -53,7 +55,7 @@ def _compare_parallel_check(arguments, configuration) -> None:
         flags.extend(["-search-path", ",".join(search_path)])
     client_command = [configuration.get_binary(), "check"]
     client_command.extend(flags)
-    client_command.append(arguments.source_directory)
+    client_command.append(arguments.analysis_directory)
 
     process_count = arguments.min
     while process_count < arguments.max:
@@ -75,7 +77,7 @@ def _compare_parallel_check(arguments, configuration) -> None:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--source-directory", action="store", help="Source directory to run check on."
+        "--analysis-directory", action="store", help="Source directory to run check on."
     )
     parser.add_argument(
         "--min",

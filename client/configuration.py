@@ -72,7 +72,7 @@ class Configuration:
         typeshed=None,
         preserve_pythonpath=False,
     ) -> None:
-        self.source_directories = []
+        self.analysis_directories = []
         self.targets = []
         self.logger = None
         self.do_not_check = []
@@ -137,10 +137,10 @@ class Configuration:
                 )
 
             if not is_list_of_strings(
-                self.source_directories
+                self.analysis_directories
             ) or not is_list_of_strings(self.targets):
                 raise InvalidConfiguration(
-                    "`target` and `source_directories` fields must be lists of "
+                    "`target` and `analysis_directories` fields must be lists of "
                     "strings."
                 )
 
@@ -276,10 +276,17 @@ class Configuration:
 
                 configuration = _ConfigurationFile(file)
 
-                self.source_directories = configuration.consume(
+                self.analysis_directories = configuration.consume(
+                    "analysis_directories",
+                    default=[],
+                    current=self.analysis_directories,
+                    print_on_success=True,
+                )
+
+                self.analysis_directories = configuration.consume(
                     "source_directories",
                     default=[],
-                    current=self.source_directories,
+                    current=self.analysis_directories,
                     print_on_success=True,
                 )
 

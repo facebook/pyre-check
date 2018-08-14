@@ -10,9 +10,9 @@ from .command import Command
 class Query(Command):
     NAME = "query"
 
-    def __init__(self, arguments, configuration, source_directory) -> None:
+    def __init__(self, arguments, configuration, analysis_directory) -> None:
         self.query = arguments.query
-        super(Query, self).__init__(arguments, configuration, source_directory)
+        super(Query, self).__init__(arguments, configuration, analysis_directory)
 
     def _flags(self):
         return [self.query]

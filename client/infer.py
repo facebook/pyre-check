@@ -28,8 +28,8 @@ from . import (
     is_capable_terminal,
     log,
     log_statistics,
-    merge_source_directories,
-    resolve_source_directories,
+    merge_analysis_directories,
+    resolve_analysis_directories,
     switch_root,
 )
 from .configuration import Configuration
@@ -385,10 +385,10 @@ def file_exists(path):
 
 
 class Infer(commands.ErrorHandling):
-    def __init__(self, arguments, configuration, source_directory) -> None:
+    def __init__(self, arguments, configuration, analysis_directory) -> None:
         arguments.show_error_traces = True
         arguments.output = JSON
-        super(Infer, self).__init__(arguments, configuration, source_directory)
+        super(Infer, self).__init__(arguments, configuration, analysis_directory)
         self._recursive = arguments.recursive
         self._print_errors = arguments.print_only
 
@@ -488,11 +488,11 @@ def main():
         "--target", action="append", help="The buck target to check"
     )
 
-    source_directory = parser.add_argument_group("source-directory")
-    source_directory.add_argument(
-        "--source-directory",
+    analysis_directory = parser.add_argument_group("analysis-directory")
+    analysis_directory.add_argument(
+        "--analysis-directory",
         action="append",
-        help="The source directory to run the inference on.",
+        help="The analysis directory to run the inference on.",
     )
 
     arguments = parser.parse_args()
@@ -502,8 +502,8 @@ def main():
     error_message = ""
     try:
         exit_code = SUCCESS
-        source_directories = []
-        shared_source_directory = None
+        analysis_directories = []
+        shared_analysis_directory = None
 
         arguments.capable_terminal = is_capable_terminal()
         if arguments.debug or not arguments.capable_terminal:
@@ -523,11 +523,11 @@ def main():
 
         configuration.validate()
 
-        source_directories = resolve_source_directories(
+        analysis_directories = resolve_analysis_directories(
             arguments, configuration, prompt=False
         )
-        if len(source_directories) == 1:
-            source_directory_path = source_directories.pop()
+        if len(analysis_directories) == 1:
+            analysis_directory_path = analysis_directories.pop()
         else:
             local_configuration_path = configuration.get_local_configuration()
             if local_configuration_path:
@@ -538,11 +538,11 @@ def main():
                 )
             else:
                 local_root = None
-            shared_source_directory = merge_source_directories(
-                source_directories, local_root
+            shared_analysis_directory = merge_analysis_directories(
+                analysis_directories, local_root
             )
-            source_directory_path = shared_source_directory.get_root()
-        Infer(arguments, configuration, source_directory_path).run()
+            analysis_directory_path = shared_analysis_directory.get_root()
+        Infer(arguments, configuration, analysis_directory_path).run()
     except (
         buck.BuckException,
         commands.ClientException,
@@ -559,8 +559,8 @@ def main():
         LOG.info(traceback.format_exc())
         exit_code = FAILURE
     finally:
-        if shared_source_directory:
-            shared_source_directory.cleanup()
+        if shared_analysis_directory:
+            shared_analysis_directory.cleanup()
         log.cleanup(arguments)
         if configuration and configuration.logger:
             log_statistics(

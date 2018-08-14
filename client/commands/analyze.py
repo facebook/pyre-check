@@ -10,8 +10,8 @@ from .check import Check
 class Analyze(Check):
     NAME = "analyze"
 
-    def __init__(self, arguments, configuration, source_directory) -> None:
-        super(Analyze, self).__init__(arguments, configuration, source_directory)
+    def __init__(self, arguments, configuration, analysis_directory) -> None:
+        super(Analyze, self).__init__(arguments, configuration, analysis_directory)
 
     def _flags(self):
         flags = super()._flags()

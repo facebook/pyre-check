@@ -16,8 +16,8 @@ LOG = logging.getLogger(__name__)
 class Stop(Command):
     NAME = "stop"
 
-    def __init__(self, arguments, configuration, source_directory) -> None:
-        super(Stop, self).__init__(arguments, configuration, source_directory)
+    def __init__(self, arguments, configuration, analysis_directory) -> None:
+        super(Stop, self).__init__(arguments, configuration, analysis_directory)
 
     def _run(self) -> int:
         if self._state() == State.DEAD:
@@ -25,11 +25,11 @@ class Stop(Command):
         else:
             try:
                 self._call_client(command=self.NAME).check()
-                LOG.info("Stopped server at `%s`", self._source_directory)
+                LOG.info("Stopped server at `%s`", self._analysis_directory)
             except ClientException:
                 LOG.info("Could not stop server, attempting to kill.")
                 arguments = self._arguments
                 arguments.with_fire = False
-                Kill(arguments, self._configuration, self._source_directory).run()
+                Kill(arguments, self._configuration, self._analysis_directory).run()
 
         return SUCCESS

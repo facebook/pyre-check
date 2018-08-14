@@ -32,7 +32,7 @@ class AnalyzeTest(unittest.TestCase):
             result.output = ""
             call_client.return_value = result
 
-            commands.Analyze(arguments, configuration, source_directory=".").run()
+            commands.Analyze(arguments, configuration, analysis_directory=".").run()
             call_client.assert_called_once_with(
                 command=commands.Check.NAME,
                 flags=[

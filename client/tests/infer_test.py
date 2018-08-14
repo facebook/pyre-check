@@ -532,7 +532,7 @@ class InferTest(unittest.TestCase):
         configuration.get_search_path.return_value = ["path1", "path2"]
 
         with patch.object(commands.Command, "_call_client") as call_client:
-            Infer(arguments, configuration, source_directory=".").run()
+            Infer(arguments, configuration, analysis_directory=".").run()
             call_client.assert_called_once_with(
                 command=commands.Check.NAME,
                 flags=[
@@ -549,7 +549,7 @@ class InferTest(unittest.TestCase):
 
         with patch.object(commands.Command, "_call_client") as call_client:
             arguments.recursive = True
-            Infer(arguments, configuration, source_directory=".").run()
+            Infer(arguments, configuration, analysis_directory=".").run()
             call_client.assert_called_once_with(
                 command=commands.Check.NAME,
                 flags=[

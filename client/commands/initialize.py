@@ -27,9 +27,9 @@ LOG = logging.getLogger(__name__)
 class Initialize(Command):
     NAME = "initialize"
 
-    def __init__(self, arguments, configuration, source_directory) -> None:
+    def __init__(self, arguments, configuration, analysis_directory) -> None:
         self._local: bool = arguments.local
-        super(Initialize, self).__init__(arguments, configuration, source_directory)
+        super(Initialize, self).__init__(arguments, configuration, analysis_directory)
 
     def _get_configuration(self) -> Dict[str, Any]:
         configuration: Dict[str, Any] = {}
@@ -71,11 +71,11 @@ class Initialize(Command):
                 )
         configuration["typeshed"] = typeshed
 
-        source_directory = log.get_optional_input(
+        analysis_directory = log.get_optional_input(
             "Which directory should pyre be initialized in?", "."
         )
 
-        configuration["source_directories"] = [source_directory]
+        configuration["analysis_directories"] = [analysis_directory]
         return configuration
 
     def _get_local_configuration(self) -> Dict[str, Any]:

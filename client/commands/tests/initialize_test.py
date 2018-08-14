@@ -41,7 +41,9 @@ class InitializeTest(unittest.TestCase):
         # One for shutil.which("watchman"), another for shutil.which(BINARY_NAME).
         which.side_effect = [True, True]
         with patch.object(commands.Command, "_call_client"):
-            initialize.Initialize(arguments, configuration, source_directory=".").run()
+            initialize.Initialize(
+                arguments, configuration, analysis_directory="."
+            ).run()
             subprocess_call.assert_has_calls([call(["watchman", "watch-project", "."])])
             mock_open.assert_any_call(os.path.abspath(".watchmanconfig"), "w+")
 
@@ -52,7 +54,9 @@ class InitializeTest(unittest.TestCase):
 
         isfile.side_effect = exists
         with patch.object(commands.Command, "_call_client"):
-            initialize.Initialize(arguments, configuration, source_directory=".").run()
+            initialize.Initialize(
+                arguments, configuration, analysis_directory="."
+            ).run()
 
         def exists(path):
             if path.endswith(".pyre_configuration"):
@@ -63,5 +67,5 @@ class InitializeTest(unittest.TestCase):
         with patch.object(commands.Command, "_call_client"):
             with self.assertRaises(EnvironmentException):
                 initialize.Initialize(
-                    arguments, configuration, source_directory="."
+                    arguments, configuration, analysis_directory="."
                 ).run()

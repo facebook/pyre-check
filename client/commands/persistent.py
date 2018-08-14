@@ -19,12 +19,12 @@ from .start import Start
 class Persistent(Command):
     NAME = "persistent"
 
-    def __init__(self, arguments, configuration, source_directory) -> None:
-        super(Persistent, self).__init__(arguments, configuration, source_directory)
+    def __init__(self, arguments, configuration, analysis_directory) -> None:
+        super(Persistent, self).__init__(arguments, configuration, analysis_directory)
 
     def _run(self) -> int:
         arguments = self._arguments
-        log_identifier = self._source_directory
+        log_identifier = self._analysis_directory
 
         flags = [
             "-log-identifier",
@@ -33,7 +33,7 @@ class Persistent(Command):
             str(self._configuration.get_version_hash()),
         ]
         arguments.terminal = False
-        Start(arguments, self._configuration, self._source_directory).run()
+        Start(arguments, self._configuration, self._analysis_directory).run()
 
         self._call_client(command=self.NAME, capture_output=False, flags=flags).check()
 

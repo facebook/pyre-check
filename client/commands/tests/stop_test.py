@@ -24,12 +24,12 @@ class StopTest(unittest.TestCase):
         # Check start without watchman.
         commands_Command_state.return_value = commands.command.State.RUNNING
         with patch.object(commands.Command, "_call_client") as call_client:
-            commands.Stop(arguments, configuration, source_directory=".").run()
+            commands.Stop(arguments, configuration, analysis_directory=".").run()
             call_client.assert_called_once_with(command=commands.Stop.NAME)
 
         commands_Command_state.return_value = commands.command.State.DEAD
         with patch.object(commands.Command, "_call_client") as call_client:
-            commands.Stop(arguments, configuration, source_directory=".").run()
+            commands.Stop(arguments, configuration, analysis_directory=".").run()
             call_client.assert_not_called()
 
         commands_Command_state.return_value = commands.command.State.RUNNING
@@ -42,6 +42,6 @@ class StopTest(unittest.TestCase):
                 return Mock()
 
             call_client.side_effect = fail_on_stop
-            commands.Stop(arguments, configuration, source_directory=".").run()
+            commands.Stop(arguments, configuration, analysis_directory=".").run()
             call_client.assert_has_calls([call(command=commands.Stop.NAME)])
             kill_run.assert_has_calls([call()])

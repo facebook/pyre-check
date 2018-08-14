@@ -17,7 +17,7 @@ from typing import Any, Dict, Optional, Sized
 
 from . import buck
 from .exceptions import EnvironmentException as EnvironmentException
-from .filesystem import SharedSourceDirectory
+from .filesystem import SharedAnalysisDirectory
 
 
 LOG = logging.getLogger(__name__)
@@ -86,21 +86,21 @@ def switch_root(arguments) -> None:
     arguments.current_directory = root
 
 
-def resolve_source_directories(
+def resolve_analysis_directories(
     arguments, configuration, prompt: bool = True, use_buck_cache: bool = False
 ):
-    source_directories = set(arguments.source_directory or [])
+    analysis_directories = set(arguments.analysis_directory or [])
     targets = set(arguments.target or [])
 
     # Only read configuration if no arguments were provided.
-    if not source_directories and not targets:
-        source_directories = set(configuration.source_directories)
+    if not analysis_directories and not targets:
+        analysis_directories = set(configuration.analysis_directories)
         targets = set(configuration.targets)
     else:
         LOG.warning("Setting up a .pyre_configuration file may reduce overhead.")
 
-    source_directories.update(
-        buck.generate_source_directories(
+    analysis_directories.update(
+        buck.generate_analysis_directories(
             targets, build=arguments.build, prompt=prompt, use_cache=use_buck_cache
         )
     )
@@ -108,7 +108,7 @@ def resolve_source_directories(
         initialization_command = "pyre init --local"
     else:
         initialization_command = "pyre init"
-    if len(source_directories) == 0:
+    if len(analysis_directories) == 0:
         raise EnvironmentException(
             "No targets or link trees to analyze.\n"
             "You can run `pyre init --local` to set up a local configuration, "
@@ -118,11 +118,11 @@ def resolve_source_directories(
     # Translate link trees if we switched directories earlier.
     current_directory = os.getcwd()
     if not arguments.original_directory.startswith(current_directory):
-        return source_directories
+        return analysis_directories
 
     translation = os.path.relpath(arguments.original_directory, current_directory)
     if not translation:
-        return source_directories
+        return analysis_directories
 
     def _translate(path):
         if os.path.isabs(path):
@@ -134,7 +134,7 @@ def resolve_source_directories(
 
         return path
 
-    return {_translate(path) for path in source_directories}
+    return {_translate(path) for path in analysis_directories}
 
 
 def number_of_workers() -> int:
@@ -144,17 +144,17 @@ def number_of_workers() -> int:
         return 4
 
 
-def merge_source_directories(
-    source_directories: Sized, local_root: Optional[str], isolate: bool = False
-) -> SharedSourceDirectory:
-    if len(source_directories) == 0:
-        raise EnvironmentException("No source directory found.")
+def merge_analysis_directories(
+    analysis_directories: Sized, local_root: Optional[str], isolate: bool = False
+) -> SharedAnalysisDirectory:
+    if len(analysis_directories) == 0:
+        raise EnvironmentException("No analysis directory found.")
 
-    shared_source_directory = SharedSourceDirectory(
-        source_directories, local_root, isolate
+    shared_analysis_directory = SharedAnalysisDirectory(
+        analysis_directories, local_root, isolate
     )
-    shared_source_directory.prepare()
-    return shared_source_directory
+    shared_analysis_directory.prepare()
+    return shared_analysis_directory
 
 
 def log_statistics(
@@ -175,7 +175,7 @@ def log_statistics(
                 "arguments": str(arguments),
                 "command_line": " ".join(sys.argv),
                 "host": os.getenv("HOSTNAME") or "",
-                "source_directory": str(arguments.source_directory or []),
+                "analysis_directory": str(arguments.analysis_directory or []),
                 "target": str(arguments.target or []),
                 "user": os.getenv("USER") or "",
                 "version": str(configuration.get_version_hash()),

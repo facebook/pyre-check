@@ -19,6 +19,21 @@ class ConfigurationTest(unittest.TestCase):
     def test_init(self, os_environ, json_load, builtins_open) -> None:
         json_load.side_effect = [
             {
+                "analysis_directories": ["a"],
+                "logger": "/usr/logger",
+                "do_not_check": ["buck-out/dev/gen"],
+            },
+            {},
+        ]
+
+        configuration = Configuration()
+        self.assertEqual(configuration.analysis_directories, ["a"])
+        self.assertEqual(configuration.targets, [])
+        self.assertEqual(configuration.logger, "/usr/logger")
+        self.assertEqual(configuration.do_not_check, ["buck-out/dev/gen"])
+
+        json_load.side_effect = [
+            {
                 "source_directories": ["a"],
                 "logger": "/usr/logger",
                 "do_not_check": ["buck-out/dev/gen"],
@@ -27,7 +42,7 @@ class ConfigurationTest(unittest.TestCase):
         ]
 
         configuration = Configuration()
-        self.assertEqual(configuration.source_directories, ["a"])
+        self.assertEqual(configuration.analysis_directories, ["a"])
         self.assertEqual(configuration.targets, [])
         self.assertEqual(configuration.logger, "/usr/logger")
         self.assertEqual(configuration.do_not_check, ["buck-out/dev/gen"])
@@ -35,7 +50,7 @@ class ConfigurationTest(unittest.TestCase):
         json_load.side_effect = [{"targets": ["//a/b/c"], "disabled": 1}, {}]
         configuration = Configuration()
         self.assertEqual(configuration.targets, ["//a/b/c"])
-        self.assertEqual(configuration.source_directories, [])
+        self.assertEqual(configuration.analysis_directories, [])
         self.assertEqual(configuration.get_version_hash(), None)
         self.assertEqual(configuration.logger, None)
         self.assertEqual(configuration.do_not_check, [])
@@ -312,7 +327,7 @@ class ConfigurationTest(unittest.TestCase):
 
             configuration = Configuration()
             os_path_isdir.assert_has_calls(calls)
-            self.assertEqual(configuration.source_directories, [])
+            self.assertEqual(configuration.analysis_directories, [])
             self.assertEqual(configuration.targets, [])
             self.assertEqual(configuration.get_version_hash(), None)
             self.assertEqual(configuration.logger, None)

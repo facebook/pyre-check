@@ -46,11 +46,11 @@ class Command:
     _buffer = []  # type: List[str]
     _call_client_terminated = False  # type: bool
 
-    def __init__(self, arguments, configuration, source_directory) -> None:
+    def __init__(self, arguments, configuration, analysis_directory) -> None:
         self._arguments = arguments
         self._configuration = configuration
 
-        self._source_directory = source_directory
+        self._analysis_directory = analysis_directory
         self._debug = arguments.debug
         self._sequential = arguments.sequential
         self._strict = arguments.strict
@@ -112,7 +112,7 @@ class Command:
         for line in stdout:
             self._buffer.append(line.decode())
 
-    def _read_stderr(self, stream, _source_directory) -> None:
+    def _read_stderr(self, stream, _analysis_directory) -> None:
         buffer = None
         log_pattern = re.compile(r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} (\w+) (.*)")
         try:
@@ -138,14 +138,14 @@ class Command:
         if not flags:
             flags = []
 
-        if not os.path.isdir(self._source_directory):
+        if not os.path.isdir(self._analysis_directory):
             raise EnvironmentException(
-                "`{}` is not a link tree.".format(self._source_directory)
+                "`{}` is not a link tree.".format(self._analysis_directory)
             )
 
         client_command = [self._configuration.get_binary(), command]
         client_command.extend(flags)
-        client_command.append(self._source_directory)
+        client_command.append(self._analysis_directory)
 
         def limit_memory_usage():
             try:
@@ -174,7 +174,8 @@ class Command:
             # Read the error output and print it.
             self._call_client_terminated = False
             stderr_reader = threading.Thread(
-                target=self._read_stderr, args=(process.stderr, self._source_directory)
+                target=self._read_stderr,
+                args=(process.stderr, self._analysis_directory),
             )
             stderr_reader.daemon = True
             stderr_reader.start()
@@ -200,7 +201,7 @@ class Command:
         return os.path.relpath(path, self._original_directory)
 
     def _state(self) -> State:
-        pid_path = os.path.join(self._source_directory, ".pyre/server/server.pid")
+        pid_path = os.path.join(self._analysis_directory, ".pyre/server/server.pid")
         try:
             with open(pid_path) as file:
                 pid = int(file.read())
@@ -209,10 +210,10 @@ class Command:
         except Exception:
             return State.DEAD
 
-    def _server_string(self, source_directory=None) -> str:
-        if not source_directory:
-            source_directory = self._source_directory
-        return "server{}".format("" if len(source_directory) < 2 else "s")
+    def _server_string(self, analysis_directory=None) -> str:
+        if not analysis_directory:
+            analysis_directory = self._analysis_directory
+        return "server{}".format("" if len(analysis_directory) < 2 else "s")
 
-    def _source_directory_string(self) -> str:
-        return "`{}`".format(self._source_directory)
+    def _analysis_directory_string(self) -> str:
+        return "`{}`".format(self._analysis_directory)

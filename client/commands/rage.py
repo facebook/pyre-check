@@ -11,8 +11,8 @@ from .command import Command
 class Rage(Command):
     NAME = "rage"
 
-    def __init__(self, arguments, configuration, source_directory) -> None:
-        super(Rage, self).__init__(arguments, configuration, source_directory)
+    def __init__(self, arguments, configuration, analysis_directory) -> None:
+        super(Rage, self).__init__(arguments, configuration, analysis_directory)
         self._arguments.command = self.NAME
         self._configuration = configuration
 

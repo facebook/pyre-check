@@ -15,7 +15,7 @@ from ..exceptions import EnvironmentException  # noqa
 from ..filesystem import (  # noqa
     Filesystem,
     MercurialBackedFilesystem,
-    SharedSourceDirectory,
+    SharedAnalysisDirectory,
     __name__ as filesystem_name,
     _find_python_paths,
     acquire_lock,
@@ -68,7 +68,7 @@ class FilesystemTest(unittest.TestCase):
             ],
         )
 
-    def test_merge_source_directory(self) -> None:
+    def test_merge_analysis_directory(self) -> None:
         root = os.path.realpath(tempfile.mkdtemp())
 
         def create_file(name: str) -> None:
@@ -93,9 +93,9 @@ class FilesystemTest(unittest.TestCase):
         create_file("scipyi/sci.pyi")
         create_symlink("mypy/my.py", "mypy/another.pyi")
         create_symlink("scipyi/sci.pyi", "scipyi/another.py")
-        shared_source_directory = SharedSourceDirectory([root])
+        shared_analysis_directory = SharedAnalysisDirectory([root])
         all_paths = {}  # type: Dict[str, str]
-        shared_source_directory._merge_source_directory(root, all_paths)
+        shared_analysis_directory._merge_analysis_directory(root, all_paths)
         self.assertEqual(
             all_paths,
             {
@@ -155,11 +155,11 @@ class FilesystemTest(unittest.TestCase):
 
         check_output.side_effect = side_effect
         os_path_realpath.side_effect = lambda x: x
-        shared_source_directory = SharedSourceDirectory(
+        shared_analysis_directory = SharedAnalysisDirectory(
             [os.path.join(root, "first"), os.path.join(root, "second")]
         )
-        shared_source_directory._merge()
-        shared_root = shared_source_directory.get_root()
+        shared_analysis_directory._merge()
+        shared_root = shared_analysis_directory.get_root()
         os_makedirs.assert_has_calls([call(shared_root), call(shared_root + "/b")])
         os_symlink.assert_has_calls(
             [
@@ -224,15 +224,15 @@ class FilesystemTest(unittest.TestCase):
 
     @patch("shutil.rmtree")
     def test_cleanup(self, rmtree) -> None:
-        shared_source_directory = SharedSourceDirectory(["first", "second"])
-        shared_source_directory.cleanup()
+        shared_analysis_directory = SharedAnalysisDirectory(["first", "second"])
+        shared_analysis_directory.cleanup()
         rmtree.assert_not_called()
 
-        shared_source_directory = SharedSourceDirectory(
+        shared_analysis_directory = SharedAnalysisDirectory(
             ["first", "second"], isolate=True
         )
-        shared_source_directory.cleanup()
-        rmtree.assert_called_with(shared_source_directory.get_root())
+        shared_analysis_directory.cleanup()
+        rmtree.assert_called_with(shared_analysis_directory.get_root())
 
     @patch.object(subprocess, "check_output")
     def test_filesystem_list(self, check_output):
@@ -275,45 +275,45 @@ class FilesystemTest(unittest.TestCase):
         # No scratch, no local configuration
         check_output.side_effect = FileNotFoundError
         getcwd.return_value = "default"
-        shared_source_directory = SharedSourceDirectory(["first", "second"])
+        shared_analysis_directory = SharedAnalysisDirectory(["first", "second"])
 
-        directory = shared_source_directory.get_scratch_directory()
+        directory = shared_analysis_directory.get_scratch_directory()
         self.assertEqual(directory, "default/.pyre")
 
-        root = shared_source_directory.get_root()
-        self.assertEqual(root, "default/.pyre/shared_source_directory")
+        root = shared_analysis_directory.get_root()
+        self.assertEqual(root, "default/.pyre/shared_analysis_directory")
 
         # Scratch, no local configuration
         check_output.side_effect = None
         check_output.return_value = "/scratch\n".encode("utf-8")
-        shared_source_directory = SharedSourceDirectory(["first", "second"])
-        directory = shared_source_directory.get_scratch_directory()
+        shared_analysis_directory = SharedAnalysisDirectory(["first", "second"])
+        directory = shared_analysis_directory.get_scratch_directory()
         self.assertEqual(directory, "/scratch")
 
-        root = shared_source_directory.get_root()
-        self.assertEqual(root, "/scratch/shared_source_directory")
+        root = shared_analysis_directory.get_root()
+        self.assertEqual(root, "/scratch/shared_analysis_directory")
 
         # No scratch, using local configuration
         check_output.side_effect = FileNotFoundError
         getcwd.return_value = "default"
-        shared_source_directory = SharedSourceDirectory(
+        shared_analysis_directory = SharedAnalysisDirectory(
             ["first", "second"], "path/to/local"
         )
 
-        directory = shared_source_directory.get_scratch_directory()
+        directory = shared_analysis_directory.get_scratch_directory()
         self.assertEqual(directory, "default/.pyre")
 
-        root = shared_source_directory.get_root()
+        root = shared_analysis_directory.get_root()
         self.assertEqual(root, "default/.pyre/path/to/local")
 
         # Scratch, using local configuration
         check_output.side_effect = None
         check_output.return_value = "/scratch\n".encode("utf-8")
-        shared_source_directory = SharedSourceDirectory(
+        shared_analysis_directory = SharedAnalysisDirectory(
             ["first", "second"], "path/to/local"
         )
-        directory = shared_source_directory.get_scratch_directory()
+        directory = shared_analysis_directory.get_scratch_directory()
         self.assertEqual(directory, "/scratch")
 
-        root = shared_source_directory.get_root()
+        root = shared_analysis_directory.get_root()
         self.assertEqual(root, "/scratch/path/to/local")
