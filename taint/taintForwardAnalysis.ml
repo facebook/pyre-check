@@ -81,77 +81,77 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       analyze_expression argument state
       |> ForwardState.join_trees taint_accumulator
 
-    and analyze_call ?key ~callee arguments state =
-      let apply_call_targets call_targets =
-        let apply_call_target call_target =
-          let existing_model =
-            Interprocedural.Fixpoint.get_model call_target
-            >>= Interprocedural.Result.get_model TaintResult.kind
-          in
-          match existing_model with
-          | Some ({ forward; backward; _ } as model) ->
-              Log.log
-                ~section:`Taint
-                "Model for %a:\n%a\n"
-                Interprocedural.Callable.pp call_target
-                TaintResult.pp_call_model model;
-              let analyze_argument_position position tito { Argument.value = argument; _ } =
-                let { Node.location; _ } = argument in
-                let argument_taint = analyze_expression argument state in
-                let read_argument_taint ~path ~path_element:_ ~element:_ tito =
-                  ForwardState.read_tree path argument_taint
-                  |> ForwardState.collapse
-                  |> ForwardTaint.join tito
-                in
-                let tito =
-                  BackwardState.read
-                    (TaintAccessPath.Root.Parameter { position })
-                    backward.taint_in_taint_out
-                  |> BackwardState.fold_tree_paths ~init:tito ~f:read_argument_taint
-                in
-                let flow_candidate =
-                  let sink_tree =
-                    BackwardState.read
-                      (TaintAccessPath.Root.Parameter { position })
-                      backward.sink_taint
-                  in
-                  TaintFlow.generate_source_sink_matches
-                    ~location
-                    ~source_tree:argument_taint
-                    ~sink_tree
-                in
-                FunctionContext.add_flow_candidate flow_candidate;
-                tito
+    and apply_call_targets arguments state call_targets =
+      let apply_call_target call_target =
+        let existing_model =
+          Interprocedural.Fixpoint.get_model call_target
+          >>= Interprocedural.Result.get_model TaintResult.kind
+        in
+        match existing_model with
+        | Some ({ forward; backward; _ } as model) ->
+            Log.log
+              ~section:`Taint
+              "Model for %a:\n%a\n"
+              Interprocedural.Callable.pp call_target
+              TaintResult.pp_call_model model;
+            let analyze_argument_position position tito { Argument.value = argument; _ } =
+              let { Node.location; _ } = argument in
+              let argument_taint = analyze_expression argument state in
+              let read_argument_taint ~path ~path_element:_ ~element:_ tito =
+                ForwardState.read_tree path argument_taint
+                |> ForwardState.collapse
+                |> ForwardTaint.join tito
               in
               let tito =
-                List.foldi ~f:analyze_argument_position arguments ~init:ForwardTaint.bottom
+                BackwardState.read
+                  (TaintAccessPath.Root.Parameter { position })
+                  backward.taint_in_taint_out
+                |> BackwardState.fold_tree_paths ~init:tito ~f:read_argument_taint
               in
-              let result_taint =
-                ForwardState.read TaintAccessPath.Root.LocalResult forward.source_taint
+              let flow_candidate =
+                let sink_tree =
+                  BackwardState.read
+                    (TaintAccessPath.Root.Parameter { position })
+                    backward.sink_taint
+                in
+                TaintFlow.generate_source_sink_matches
+                  ~location
+                  ~source_tree:argument_taint
+                  ~sink_tree
               in
-              ForwardState.join_root_element result_taint tito
-          | None ->
-              Log.log
-                ~section:`Taint
-                "No model for %a"
-                Interprocedural.Callable.pp call_target;
-              (* If we don't have a model: assume function propagates argument
-                 taint (join all argument taint) *)
-              List.fold arguments ~init:ForwardState.empty_tree ~f:(analyze_argument state)
-        in
-        match call_targets with
-        | [] ->
-            (* If we don't have a call target: propagate argument taint. *)
+              FunctionContext.add_flow_candidate flow_candidate;
+              tito
+            in
+            let tito =
+              List.foldi ~f:analyze_argument_position arguments ~init:ForwardTaint.bottom
+            in
+            let result_taint =
+              ForwardState.read TaintAccessPath.Root.LocalResult forward.source_taint
+            in
+            ForwardState.join_root_element result_taint tito
+        | None ->
+            Log.log
+              ~section:`Taint
+              "No model for %a"
+              Interprocedural.Callable.pp call_target;
+            (* If we don't have a model: assume function propagates argument
+               taint (join all argument taint) *)
             List.fold arguments ~init:ForwardState.empty_tree ~f:(analyze_argument state)
-        | call_targets ->
-            List.map call_targets ~f:apply_call_target
-            |> List.fold ~init:ForwardState.empty_tree ~f:ForwardState.join_trees
       in
+      match call_targets with
+      | [] ->
+          (* If we don't have a call target: propagate argument taint. *)
+          List.fold arguments ~init:ForwardState.empty_tree ~f:(analyze_argument state)
+      | call_targets ->
+          List.map call_targets ~f:apply_call_target
+          |> List.fold ~init:ForwardState.empty_tree ~f:ForwardState.join_trees
+
+    and analyze_call ?key ~callee arguments state =
       match callee with
       | Global access ->
           let access = Access.create_from_identifiers access in
           let call_target = Interprocedural.Callable.make_real access in
-          apply_call_targets [call_target]
+          apply_call_targets arguments state [call_target]
       | Access { expression; member = method_name } ->
           let access = as_access expression in
           let receiver_type =
@@ -182,7 +182,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
                 (* TODO(T32332602): handle additional call expressions here *)
                 []
           in
-          let taint = apply_call_targets call_targets in
+          let taint = apply_call_targets arguments state call_targets in
           taint
       | callee ->
           (* TODO(T31435135): figure out the BW and TITO model for whatever is called here. *)

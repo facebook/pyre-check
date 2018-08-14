@@ -86,49 +86,57 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       analyze_expression taint argument state
 
 
-    and analyze_call_target call_target arguments state call_taint =
-      let existing_model =
-        Interprocedural.Fixpoint.get_model call_target
-        >>= Interprocedural.Result.get_model TaintResult.kind
+    and apply_call_targets arguments state call_taint call_targets =
+      let analyze_call_target call_target =
+        let existing_model =
+          Interprocedural.Fixpoint.get_model call_target
+          >>= Interprocedural.Result.get_model TaintResult.kind
+        in
+        match existing_model with
+        | Some { backward; _ } ->
+            let collapsed_call_taint = BackwardState.collapse call_taint in
+            let reversed_arguments = List.rev arguments in
+            let number_of_arguments = List.length arguments in
+            let analyze_argument_position reverse_position state argument =
+              let position = number_of_arguments - reverse_position - 1 in
+              let argument_taint =
+                BackwardState.read
+                  (TaintAccessPath.Root.Parameter { position })
+                  backward.sink_taint
+              in
+              let taint_in_taint_out =
+                BackwardState.read
+                  (TaintAccessPath.Root.Parameter { position })
+                  backward.taint_in_taint_out
+                |> BackwardState.filter_map_tree ~f:(fun _ -> collapsed_call_taint)
+              in
+              let argument_taint = BackwardState.join_trees argument_taint taint_in_taint_out in
+              analyze_argument argument_taint argument state
+            in
+            List.foldi ~f:analyze_argument_position reversed_arguments ~init:state
+        | None ->
+            Log.log
+              ~section:`Taint
+              "No model found for %a"
+              Interprocedural.Callable.pp call_target;
+            (* If we don't have a model: assume function propagates argument
+               taint to result. *)
+            List.fold_right ~f:(analyze_argument call_taint) arguments ~init:state
       in
-      match existing_model with
-      | Some { backward; _ } ->
-          let collapsed_call_taint = BackwardState.collapse call_taint in
-          let reversed_arguments = List.rev arguments in
-          let number_of_arguments = List.length arguments in
-          let analyze_argument_position reverse_position state argument =
-            let position = number_of_arguments - reverse_position - 1 in
-            let argument_taint =
-              BackwardState.read
-                (TaintAccessPath.Root.Parameter { position })
-                backward.sink_taint
-            in
-            let taint_in_taint_out =
-              BackwardState.read
-                (TaintAccessPath.Root.Parameter { position })
-                backward.taint_in_taint_out
-              |> BackwardState.filter_map_tree ~f:(fun _ -> collapsed_call_taint)
-            in
-            let argument_taint = BackwardState.join_trees argument_taint taint_in_taint_out in
-            analyze_argument argument_taint argument state
-          in
-          List.foldi ~f:analyze_argument_position reversed_arguments ~init:state
-      | None ->
-          Log.log
-            ~section:`Taint
-            "No model found for %a"
-            Interprocedural.Callable.pp call_target;
-          (* TODO(T31435739): if we don't have a model: assume function propagates argument
-             taint to result. *)
+      match call_targets with
+      | [] ->
+          (* If we don't have a call target: propagate argument taint. *)
           List.fold_right ~f:(analyze_argument call_taint) arguments ~init:state
-
+      | call_targets ->
+          List.map call_targets ~f:analyze_call_target
+          |> List.fold ~init:(FixpointState.create ()) ~f:FixpointState.join
 
     and analyze_call ?key ~callee arguments state taint =
       match callee with
       | Global access ->
           let access = Access.create_from_identifiers access in
           let call_target = Interprocedural.Callable.make_real access in
-          analyze_call_target call_target arguments state taint
+          apply_call_targets arguments state taint [call_target]
 
       | Access { expression = receiver; member = method_name} ->
           let access = as_access receiver in
@@ -145,7 +153,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
             | Some { annotation = Primitive primitive ; _ } ->
                 let access = Access.create_from_identifiers [primitive; method_name] in
                 let call_target = Interprocedural.Callable.make_real access in
-                analyze_call_target call_target arguments state taint
+                apply_call_targets arguments state taint [call_target]
             | _ ->
                 let state = List.fold_right ~f:(analyze_argument taint) arguments ~init:state in
                 analyze_normalized_expression state taint receiver
