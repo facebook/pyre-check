@@ -14,7 +14,7 @@ class Check(ErrorHandling):
         super(Check, self).__init__(arguments, configuration, source_directory)
         self._log_identifier = arguments.log_identifier
         self._number_of_workers = configuration.number_of_workers
-        self._logger = configuration.logger
+        self._logger = arguments.logger or configuration.logger
 
     def _flags(self):
         flags = super()._flags()

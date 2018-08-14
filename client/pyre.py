@@ -80,6 +80,9 @@ def main() -> int:
         default="",
         help=argparse.SUPPRESS,  # Add given identifier to logged samples.
     )
+    parser.add_argument(
+        "--logger", help=argparse.SUPPRESS  # Specify custom logging binary.
+    )
 
     parser.add_argument(
         "--binary-version",

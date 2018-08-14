@@ -22,6 +22,7 @@ def mock_arguments() -> MagicMock:
     arguments.show_parse_errors = False
     arguments.local_configuration = None
     arguments.logging_sections = None
+    arguments.logger = None
     arguments.log_identifier = None
     arguments.current_directory = "."
     arguments.original_directory = "/original/directory/"
