@@ -72,11 +72,14 @@ def main() -> int:
         action="store_true",
         help="Display detailed information about parse errors",
     )
-    # Enable sectional logging.
-    parser.add_argument("--logging-sections", help=argparse.SUPPRESS)
-    # Add given identifier to logged samples.
     parser.add_argument(
-        "--log-identifier", action="store", default="", help=argparse.SUPPRESS
+        "--logging-sections", help=argparse.SUPPRESS  # Enable sectional logging.
+    )
+    parser.add_argument(
+        "--log-identifier",
+        action="store",
+        default="",
+        help=argparse.SUPPRESS,  # Add given identifier to logged samples.
     )
 
     parser.add_argument(
