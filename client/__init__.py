@@ -225,9 +225,8 @@ def find_typeshed() -> Optional[str]:
         return bundled_typeshed
 
     try:
-        import typeshed
+        import typeshed  # pyre-fixme: Can't find module import typeshed
 
-        # pyre-fixme: Undefined name typeshed
         return typeshed.typeshed
     except ImportError:
         LOG.debug("`import typeshed` failed, attempting a manual lookup")
