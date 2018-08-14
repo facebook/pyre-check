@@ -168,16 +168,17 @@ class ConfigurationTest(unittest.TestCase):
         os_path_isfile.return_value = False
 
         with patch.object(Configuration, "_read") as Configuration_read:
-            Configuration()
+            configuration = Configuration()
             Configuration_read.assert_has_calls(
                 [
                     call(CONFIGURATION_FILE + ".local", path_from_root=""),
                     call(CONFIGURATION_FILE, path_from_root=""),
                 ]
             )
+            self.assertEqual(configuration.get_local_configuration(), None)
 
         with patch.object(Configuration, "_read") as Configuration_read:
-            Configuration(original_directory="original")
+            configuration = Configuration(original_directory="original")
             Configuration_read.assert_has_calls(
                 [
                     call(
@@ -188,8 +189,12 @@ class ConfigurationTest(unittest.TestCase):
                     call(CONFIGURATION_FILE, path_from_root=""),
                 ]
             )
+            self.assertEqual(
+                configuration.get_local_configuration(),
+                "original/" + CONFIGURATION_FILE + ".local",
+            )
         with patch.object(Configuration, "_read") as Configuration_read:
-            Configuration(local_configuration="local")
+            configuration = Configuration(local_configuration="local")
             Configuration_read.assert_has_calls(
                 [
                     call(
@@ -199,8 +204,14 @@ class ConfigurationTest(unittest.TestCase):
                     call(CONFIGURATION_FILE, path_from_root=""),
                 ]
             )
+            self.assertEqual(
+                configuration.get_local_configuration(),
+                "local/" + CONFIGURATION_FILE + ".local",
+            )
         with patch.object(Configuration, "_read") as Configuration_read:
-            Configuration(original_directory="original", local_configuration="local")
+            configuration = Configuration(
+                original_directory="original", local_configuration="local"
+            )
             Configuration_read.assert_has_calls(
                 [
                     call(
@@ -209,19 +220,28 @@ class ConfigurationTest(unittest.TestCase):
                     call(CONFIGURATION_FILE + ".local", path_from_root=""),
                     call(CONFIGURATION_FILE, path_from_root=""),
                 ]
+            )
+            self.assertEqual(
+                configuration.get_local_configuration(),
+                "local/" + CONFIGURATION_FILE + ".local",
             )
 
         # Try with regular configuration files then.
         os_path_isdir.return_value = False
         os_path_isfile.return_value = True
         with patch.object(Configuration, "_read") as Configuration_read:
-            Configuration(local_configuration="local/.some_configuration")
+            configuration = Configuration(
+                local_configuration="local/.some_configuration"
+            )
             Configuration_read.assert_has_calls(
                 [
                     call("local/.some_configuration", path_from_root="local"),
                     call(CONFIGURATION_FILE + ".local", path_from_root=""),
                     call(CONFIGURATION_FILE, path_from_root=""),
                 ]
+            )
+            self.assertEqual(
+                configuration.get_local_configuration(), "local/.some_configuration"
             )
 
     @patch("os.path.isfile")

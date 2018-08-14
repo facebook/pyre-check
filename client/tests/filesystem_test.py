@@ -228,7 +228,9 @@ class FilesystemTest(unittest.TestCase):
         shared_source_directory.cleanup()
         rmtree.assert_not_called()
 
-        shared_source_directory = SharedSourceDirectory(["first", "second"], True)
+        shared_source_directory = SharedSourceDirectory(
+            ["first", "second"], isolate=True
+        )
         shared_source_directory.cleanup()
         rmtree.assert_called_with(shared_source_directory.get_root())
 
@@ -270,6 +272,7 @@ class FilesystemTest(unittest.TestCase):
     @patch("os.getcwd")
     @patch.object(subprocess, "check_output")
     def test_get_scratch_directory(self, check_output, getcwd):
+        # No scratch, no local configuration
         check_output.side_effect = FileNotFoundError
         getcwd.return_value = "default"
         shared_source_directory = SharedSourceDirectory(["first", "second"])
@@ -280,6 +283,7 @@ class FilesystemTest(unittest.TestCase):
         root = shared_source_directory.get_root()
         self.assertEqual(root, "default/.pyre/shared_source_directory")
 
+        # Scratch, no local configuration
         check_output.side_effect = None
         check_output.return_value = "/scratch\n".encode("utf-8")
         shared_source_directory = SharedSourceDirectory(["first", "second"])
@@ -288,3 +292,28 @@ class FilesystemTest(unittest.TestCase):
 
         root = shared_source_directory.get_root()
         self.assertEqual(root, "/scratch/shared_source_directory")
+
+        # No scratch, using local configuration
+        check_output.side_effect = FileNotFoundError
+        getcwd.return_value = "default"
+        shared_source_directory = SharedSourceDirectory(
+            ["first", "second"], "path/to/local"
+        )
+
+        directory = shared_source_directory.get_scratch_directory()
+        self.assertEqual(directory, "default/.pyre")
+
+        root = shared_source_directory.get_root()
+        self.assertEqual(root, "default/.pyre/path/to/local")
+
+        # Scratch, using local configuration
+        check_output.side_effect = None
+        check_output.return_value = "/scratch\n".encode("utf-8")
+        shared_source_directory = SharedSourceDirectory(
+            ["first", "second"], "path/to/local"
+        )
+        directory = shared_source_directory.get_scratch_directory()
+        self.assertEqual(directory, "/scratch")
+
+        root = shared_source_directory.get_root()
+        self.assertEqual(root, "/scratch/path/to/local")

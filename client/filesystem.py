@@ -23,8 +23,14 @@ LOG = logging.getLogger(__name__)
 
 
 class SharedSourceDirectory:
-    def __init__(self, source_directories, isolate: bool = False):
+    def __init__(
+        self,
+        source_directories,
+        source_root: Optional[str] = None,
+        isolate: bool = False,
+    ):
         self._source_directories = set(source_directories)
+        self._source_root = source_root
         self._isolate = isolate
 
     def get_scratch_directory(self) -> str:
@@ -39,9 +45,10 @@ class SharedSourceDirectory:
 
     @functools.lru_cache(1)
     def get_root(self) -> str:
+        path_to_root = self._source_root or "shared_source_directory"
         suffix = "_{}".format(str(os.getpid())) if self._isolate else ""
         return os.path.join(
-            self.get_scratch_directory(), "shared_source_directory{}".format(suffix)
+            self.get_scratch_directory(), "{}{}".format(path_to_root, suffix)
         )
 
     def prepare(self) -> None:

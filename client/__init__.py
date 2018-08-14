@@ -145,12 +145,14 @@ def number_of_workers() -> int:
 
 
 def merge_source_directories(
-    source_directories: Sized, isolate: bool = False
+    source_directories: Sized, source_root: Optional[str], isolate: bool = False
 ) -> SharedSourceDirectory:
     if len(source_directories) == 0:
         raise EnvironmentException("No source directory found.")
 
-    shared_source_directory = SharedSourceDirectory(source_directories, isolate)
+    shared_source_directory = SharedSourceDirectory(
+        source_directories, source_root, isolate
+    )
     shared_source_directory.prepare()
     return shared_source_directory
 

@@ -529,7 +529,18 @@ def main():
         if len(source_directories) == 1:
             source_directory_path = source_directories.pop()
         else:
-            shared_source_directory = merge_source_directories(source_directories)
+            local_configuration_path = configuration.get_local_configuration()
+            if local_configuration_path:
+                source_root = os.path.dirname(
+                    os.path.relpath(
+                        local_configuration_path, arguments.current_directory
+                    )
+                )
+            else:
+                source_root = None
+            shared_source_directory = merge_source_directories(
+                source_directories, source_root
+            )
             source_directory_path = shared_source_directory.get_root()
         Infer(arguments, configuration, source_directory_path).run()
     except (

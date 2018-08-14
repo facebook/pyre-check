@@ -81,6 +81,7 @@ class Configuration:
         self._version_hash = None
         self._binary = None
         self._typeshed = None
+        self._local_configuration = None
 
         # Handle search path from multiple sources
         self._search_directories = []
@@ -231,6 +232,9 @@ class Configuration:
     def get_search_path(self) -> List[str]:
         return self._search_directories
 
+    def get_local_configuration(self) -> str:
+        return self._local_configuration
+
     def disabled(self) -> bool:
         return self._disabled
 
@@ -257,9 +261,12 @@ class Configuration:
                         "Configuration will be read from the project root: "
                         "`{}`".format(os.getcwd())
                     )
+            else:
+                self._local_configuration = local_configuration
         else:
             path_from_root = os.path.dirname(path)
             local_configuration = path
+            self._local_configuration = local_configuration
         self._read(local_configuration, path_from_root=path_from_root)
 
     def _read(self, path, path_from_root) -> None:
