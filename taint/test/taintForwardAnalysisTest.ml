@@ -257,6 +257,33 @@ let test_apply_method_model_at_call_site _ =
         define_name = "test.taint_across_methods";
         returns = [];
       }
+    ];
+
+  assert_sources
+    ~qualifier:"test"
+    ~source:
+      {|
+        class Foo:
+          def qux():
+            return taint()
+
+        class Bar:
+          def qux():
+            return not_tainted()
+
+        def taint_with_union_type(condition):
+          if condition:
+            f = Foo()
+          else:
+            f = Bar()
+
+          return f.qux()
+      |}
+    ~expect:[
+      {
+        define_name = "test.taint_with_union_type";
+        returns = [Sources.TestSource];
+      }
     ]
 
 
@@ -320,5 +347,6 @@ let () =
     "class_model">::test_class_model;
     "test_apply_method_model_at_call_site">::test_apply_method_model_at_call_site;
     "test_taint_in_taint_out_application">::test_taint_in_taint_out_application;
+    "test_union">::test_taint_in_taint_out_application;
   ]
   |> run_test_tt_main
