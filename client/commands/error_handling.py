@@ -28,7 +28,7 @@ class ErrorHandling(Command):
             for error in errors
             if (
                 not error.is_do_not_check()
-                and (self._verbose or not (error.is_external_to_project_root()))
+                and (self._verbose or not (error.is_external_to_global_root()))
             )
         ]
         errors = sorted(
@@ -83,13 +83,13 @@ class ErrorHandling(Command):
             relative_path = self._relative_path(full_path)
             error["path"] = relative_path
             do_not_check = False
-            external_to_project_root = True
+            external_to_global_root = True
             if full_path.startswith(self._current_directory):
-                external_to_project_root = False
+                external_to_global_root = False
             for do_not_check_path in self._do_not_check_paths:
                 if fnmatch.fnmatch(relative_path, (do_not_check_path + "*")):
                     do_not_check = True
                     break
-            errors.add(Error(do_not_check, external_to_project_root, **error))
+            errors.add(Error(do_not_check, external_to_global_root, **error))
 
         return errors

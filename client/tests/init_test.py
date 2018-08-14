@@ -9,7 +9,7 @@ from unittest.mock import MagicMock, patch
 from .. import (
     EnvironmentException,
     buck,
-    find_project_root,
+    find_global_root,
     resolve_source_directories,
     switch_root,
 )
@@ -19,11 +19,11 @@ class InitTest(unittest.TestCase):
     @patch("os.path.isfile")
     def test_find_configuration(self, os_mock_isfile) -> None:
         os_mock_isfile.side_effect = [False, False, False, True]
-        self.assertEqual(find_project_root("/a/b/c/d"), "/a")
+        self.assertEqual(find_global_root("/a/b/c/d"), "/a")
         os_mock_isfile.side_effect = [True]
-        self.assertEqual(find_project_root("/a"), "/a")
+        self.assertEqual(find_global_root("/a"), "/a")
         os_mock_isfile.side_effect = [False, False]
-        self.assertEqual(find_project_root("/a/b"), "/a/b")
+        self.assertEqual(find_global_root("/a/b"), "/a/b")
 
     @patch("os.path.realpath", side_effect=lambda path: "realpath({})".format(path))
     @patch("os.getcwd", return_value="/")

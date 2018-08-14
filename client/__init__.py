@@ -64,7 +64,7 @@ def get_binary_version(configuration) -> str:
     return "No version set"
 
 
-def find_project_root(original_directory=None) -> str:
+def find_global_root(original_directory=None) -> str:
     if not original_directory:
         original_directory = os.getcwd()
 
@@ -81,7 +81,7 @@ def switch_root(arguments) -> None:
     if arguments.local_configuration is not None:
         arguments.local_configuration = os.path.realpath(arguments.local_configuration)
     arguments.original_directory = os.getcwd()
-    root = find_project_root()
+    root = find_global_root()
     os.chdir(root)
     arguments.current_directory = root
 
