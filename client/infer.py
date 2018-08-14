@@ -417,8 +417,12 @@ class Infer(commands.ErrorHandling):
 
 def main():
     parser = argparse.ArgumentParser(
-        epilog="environment variables:  `PYRE_BINARY` overrides the pyre "
-        "client binary used."
+        allow_abbrev=False,
+        formatter_class=argparse.RawTextHelpFormatter,
+        epilog="environment variables:"
+        "\n   `PYRE_BINARY` overrides the pyre binary used."
+        "\n   `PYRE_VERSION_HASH` overrides the pyre version set in the "
+        "configuration files.",
     )
 
     parser.add_argument(

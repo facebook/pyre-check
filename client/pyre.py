@@ -40,7 +40,14 @@ def main() -> int:
         assert_readable_directory(directory)
         return directory
 
-    parser = argparse.ArgumentParser(allow_abbrev=False)
+    parser = argparse.ArgumentParser(
+        allow_abbrev=False,
+        formatter_class=argparse.RawTextHelpFormatter,
+        epilog="environment variables:"
+        "\n   `PYRE_BINARY` overrides the pyre binary used."
+        "\n   `PYRE_VERSION_HASH` overrides the pyre version set in the "
+        "configuration files.",
+    )
 
     parser.add_argument(
         "-l", "--local-configuration", type=str, help="Use a local configuration"
@@ -49,6 +56,12 @@ def main() -> int:
     parser.add_argument(
         "--version", action="version", version="%(prog)s version " + __version__
     )
+    parser.add_argument(
+        "--binary-version",
+        action="store_true",
+        help="Print the pyre.bin version to be used",
+    )
+
     parser.add_argument("--debug", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--sequential", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--strict", action="store_true", help=argparse.SUPPRESS)
@@ -82,12 +95,6 @@ def main() -> int:
     )
     parser.add_argument(
         "--logger", help=argparse.SUPPRESS  # Specify custom logging binary.
-    )
-
-    parser.add_argument(
-        "--binary-version",
-        action="store_true",
-        help="Print the pyre.bin version to be used",
     )
 
     # Link tree determination.
