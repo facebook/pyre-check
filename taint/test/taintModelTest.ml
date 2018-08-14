@@ -111,7 +111,7 @@ let test_source_models _ =
         returns = [Sources.TestSource];
         taint_sink_parameters = [];
         tito_parameters = [];
-      }
+      };
     ]
 
 
@@ -140,7 +140,7 @@ let test_sink_models _ =
           { position = 1; sinks = [Taint.Sinks.TestSink] }
         ];
         tito_parameters = []
-      }
+      };
     ];
 
   assert_model
@@ -154,7 +154,7 @@ let test_sink_models _ =
           { position = 1; sinks = [Taint.Sinks.TestSink] }
         ];
         tito_parameters = []
-      }
+      };
     ];
 
   assert_model
@@ -168,7 +168,7 @@ let test_sink_models _ =
           { position = 1; sinks = [Taint.Sinks.TestSink] }
         ];
         tito_parameters = []
-      }
+      };
     ]
 
 
@@ -181,7 +181,7 @@ let test_taint_in_taint_out_models _ =
         returns = [];
         taint_sink_parameters = [];
         tito_parameters = [0]
-      }
+      };
     ]
 
 

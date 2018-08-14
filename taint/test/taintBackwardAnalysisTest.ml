@@ -156,7 +156,7 @@ let test_plus_taint_in_taint_out _ =
         define_name = "test_plus_taint_in_taint_out";
         taint_sink_parameters = [];
         tito_parameters = [0];
-      }
+      };
     ]
 
 let test_concatenate_taint_in_taint_out _ =
@@ -172,7 +172,7 @@ let test_concatenate_taint_in_taint_out _ =
         define_name = "test_concatenate_taint_in_taint_out";
         taint_sink_parameters = [];
         tito_parameters = [1];
-      }
+      };
     ]
 
 let test_call_taint_in_taint_out _ =
@@ -291,7 +291,7 @@ let test_tito_sink _ =
           { position = 1; sinks = [Taint.Sinks.TestSink]; };
         ];
         tito_parameters = [];
-      }
+      };
     ]
 
 

@@ -106,7 +106,7 @@ let test_no_model _ =
         {
           define_name = "does_not_exist";
           returns = [];
-        }
+        };
       ]
   in
   assert_raises
@@ -127,7 +127,7 @@ let test_simple_source _ =
       {
         define_name = "simple_source";
         returns = [Sources.TestSource];
-      }
+      };
     ]
 
 
@@ -145,7 +145,7 @@ let test_local_copy _ =
       {
         define_name = "copy_source";
         returns = [Sources.TestSource];
-      }
+      };
     ]
 
 
@@ -163,7 +163,7 @@ let test_class_model _ =
       {
         define_name = "test.Foo.bar";
         returns = [Sources.TestSource];
-      }
+      };
     ]
 
 
@@ -189,7 +189,7 @@ let test_apply_method_model_at_call_site _ =
       {
         define_name = "test.taint_across_methods";
         returns = [Sources.TestSource];
-      }
+      };
     ];
 
   assert_sources
@@ -212,7 +212,7 @@ let test_apply_method_model_at_call_site _ =
       {
         define_name = "test.taint_across_methods";
         returns = [];
-      }
+      };
     ];
 
   assert_sources
@@ -256,7 +256,7 @@ let test_apply_method_model_at_call_site _ =
       {
         define_name = "test.taint_across_methods";
         returns = [];
-      }
+      };
     ];
 
   assert_sources
@@ -283,7 +283,7 @@ let test_apply_method_model_at_call_site _ =
       {
         define_name = "test.taint_with_union_type";
         returns = [Sources.TestSource];
-      }
+      };
     ]
 
 
@@ -316,7 +316,7 @@ let test_taint_in_taint_out_application _ =
       {
         define_name = "test.simple_source";
         returns = [Sources.TestSource];
-      }
+      };
     ];
 
   assert_sources
@@ -335,7 +335,7 @@ let test_taint_in_taint_out_application _ =
       {
         define_name = "test.no_tito_taint";
         returns = [];
-      }
+      };
     ]
 
 
