@@ -546,6 +546,36 @@ let test_lookup_string_annotations _ =
     ~position:{ Location.line = 4; column = 11 }
     ~annotation:None
 
+let test_lookup_union_type_resolution _ =
+  let source =
+    {|
+      class A():
+          pass
+
+      class B():
+          pass
+
+      class C():
+          pass
+
+      def foo(condition):
+          if condition:
+              f = A()
+          elif condition > 1:
+              f = B()
+          else:
+              f = C()
+
+          return f
+    |}
+  in
+  let lookup, source = generate_lookup source in
+  assert_annotation
+    ~lookup
+    ~source
+    ~position:{ Location.line = 19; column = 11 }
+    ~annotation:(Some "test.py:19:11-19:12/typing.Union[test.A, test.B, test.C]")
+
 
 let assert_definition ~lookup ~position ~definition =
   assert_equal
@@ -617,6 +647,7 @@ let () =
     "lookup_multiline_accesses">::test_lookup_multiline_accesses;
     "lookup_out_of_bounds_accesses">::test_lookup_out_of_bounds_accesses;
     "lookup_string_annotations">::test_lookup_string_annotations;
+    "lookup_union_type_resolution">::test_lookup_union_type_resolution;
     "lookup_definitions">::test_lookup_definitions;
   ]
   |> run_test_tt_main

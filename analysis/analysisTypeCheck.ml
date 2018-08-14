@@ -374,10 +374,22 @@ module State = struct
           (Resolution.annotations previous.resolution)
           (Resolution.annotations next.resolution)
       in
+      let join_resolution_fixpoints ~key:_ = function
+        | `Left next_resolution
+        | `Right next_resolution
+        | `Both (_, next_resolution) -> Some next_resolution
+      in
+      let resolution_fixpoint =
+        Int.Map.Tree.merge
+          ~f:join_resolution_fixpoints
+          previous.resolution_fixpoint
+          next.resolution_fixpoint
+      in
       {
         previous with
         errors = Map.merge ~f:widen_errors previous.errors next.errors;
         resolution = Resolution.with_annotations resolution ~annotations;
+        resolution_fixpoint
       }
 
 
