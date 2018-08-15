@@ -13,7 +13,7 @@ open Expression
 open Test
 
 
-let assert_environment_expand source expected =
+let assert_environment_contains source expected =
   let (module Handler: Environment.Handler) =
     Environment.handler
       ~configuration:(Configuration.create ~infer:true ())
@@ -21,26 +21,25 @@ let assert_environment_expand source expected =
   in
   let source = Analysis.Preprocessing.preprocess (parse source) in
   Service.Environment.populate (module Handler) [source];
-  let rec get_class_name statements =
-    let get_name { Node.value; _ } =
+
+  let class_types =
+    let get_name_if_class { Node.value; _ } =
       match value with
-      | Assign { Assign.target = { Node.value = Access name; _ }; _ } ->
-          Some (Access.delocalize name)
       | Class { Class.name; _ } ->
           Some name
-      | Define { Define.body; _ } ->
-          Some (get_class_name body)
       | _ ->
           None
     in
-    List.find_map_exn ~f:get_name statements
+    let get_type name =
+      Access name
+      |> Node.create_with_default_location
+      |> Type.create ~aliases:Handler.aliases
+    in
+    Source.statements source
+    |> List.filter_map ~f:get_name_if_class
+    |> List.map ~f:get_type
   in
-  let class_type =
-    Type.create
-      ~aliases:Handler.aliases
-      (Node.create_with_default_location (Access (get_class_name (Source.statements source))))
-  in
-  if not (String.equal expected "") then
+  let assert_class_equal class_type expected =
     let { Environment.class_definition; _ } =
       Option.value_exn (Handler.class_definition class_type)
     in
@@ -50,5 +49,5 @@ let assert_environment_expand source expected =
          ~path:"test.py"
          [+Statement.Class (Node.value class_definition)]
       )
-  else
-    assert_is_none (Handler.class_definition class_type)
+  in
+  List.iter2_exn ~f:assert_class_equal class_types expected
