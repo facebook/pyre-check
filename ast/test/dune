@@ -1,14 +1,14 @@
 (tests
  (names
-  astCodexTest
-  astExpressionTest
-  astIdentifierTest
-  astModuleTest
-  astNodeTest
-  astSourceTest
-  astStatementTest
-  astTransformTest
-  astVisitTest)
+  codexTest
+  expressionTest
+  identifierTest
+  moduleTest
+  nodeTest
+  sourceTest
+  statementTest
+  transformTest
+  visitTest)
  (preprocess
   (pps
    ppx_deriving.eq
