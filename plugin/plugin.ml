@@ -6,10 +6,8 @@
 open Analysis
 open Environment
 
-module NamedTuples = PluginNamedTuples
-module NewType = PluginNewType
-module DataClass = PluginDataClass
-module Filter = PluginFilter
+module NamedTuples = NamedTuples
+module Filter = Filter
 
 
 let apply_to_ast source =

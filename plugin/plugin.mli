@@ -7,10 +7,9 @@ open Ast
 open Analysis
 open Environment
 
-module NamedTuples = PluginNamedTuples
-module NewType = PluginNewType
-module DataClass = PluginDataClass
-module Filter = PluginFilter
+module NamedTuples = NamedTuples
+module Filter = Filter
+
 
 val apply_to_ast: Source.t -> Source.t
 
