@@ -6,9 +6,6 @@
 open Ast
 open Statement
 
-module Resolution = AnalysisResolution
-module Type = AnalysisType
-
 
 val return_annotation: define: Define.t -> resolution: Resolution.t -> Type.t
 

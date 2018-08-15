@@ -11,10 +11,6 @@ open Pyre
 open Statement
 
 module Callable = AnnotatedCallable
-module Annotation = AnalysisAnnotation
-module Resolution = AnalysisResolution
-module Type = AnalysisType
-module TypeOrder = AnalysisTypeOrder
 
 
 type t = Class.t Node.t

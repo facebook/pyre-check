@@ -10,11 +10,6 @@ open Expression
 open Pyre
 open Statement
 
-module Environment = AnalysisEnvironment
-module Resolution = AnalysisResolution
-module Type = AnalysisType
-module TypeOrder = AnalysisTypeOrder
-
 
 type class_origin = {
   annotation: Type.t;
@@ -717,7 +712,7 @@ let inference_information ~define:{ Node.value = define; _ } kind =
   | _ -> `Assoc []
 
 
-include AnalysisBaseError.Make(struct
+include BaseError.Make(struct
     type t = kind
     let compare = compare_kind
     let hash = hash_kind

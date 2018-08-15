@@ -15,7 +15,6 @@ open Test
 open AnnotatedTest
 
 module Resolution = Analysis.Resolution
-module Type = AnalysisType
 
 module Signature = Annotated.Signature
 

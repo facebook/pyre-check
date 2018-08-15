@@ -12,16 +12,7 @@ open Expression
 open Configuration
 open Statement
 
-module Annotation = AnalysisAnnotation
-module Cfg = AnalysisCfg
-module Environment = AnalysisEnvironment
 module Error = AnalysisError
-module Preprocessing = AnalysisPreprocessing
-module Refinement = AnalysisRefinement
-module Resolution = AnalysisResolution
-module Type = AnalysisType
-module TypeOrder = AnalysisTypeOrder
-module Coverage = AnalysisCoverage
 
 
 module State = struct
@@ -1890,7 +1881,7 @@ module State = struct
 end
 
 
-module Fixpoint = AnalysisFixpoint.Make(State)
+module Fixpoint = Fixpoint.Make(State)
 
 
 module Result = struct
@@ -1987,7 +1978,7 @@ let check
             resolution_fixpoint
             ~init:Int.Map.Tree.empty
             ~f:(fun ~key ~data -> Int.Map.Tree.set ~key ~data)
-          |> AnalysisTypeResolutionSharedMemory.add name
+          |> TypeResolutionSharedMemory.add name
         in
         exit
         >>| dump_resolutions

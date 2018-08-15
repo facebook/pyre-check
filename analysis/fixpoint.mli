@@ -7,8 +7,6 @@ open Core
 
 open Ast
 
-module Cfg = AnalysisCfg
-
 
 module type State = sig
   type t

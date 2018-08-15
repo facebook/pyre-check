@@ -10,9 +10,6 @@ open Expression
 open Pyre
 open Statement
 
-module Resolution = AnalysisResolution
-module Type = AnalysisType
-
 module Callable = AnnotatedCallable
 module Class = AnnotatedClass
 module Attribute = Class.Attribute

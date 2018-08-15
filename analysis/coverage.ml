@@ -7,9 +7,6 @@ open Core
 
 open Ast
 
-module Annotation = AnalysisAnnotation
-module Type = AnalysisType
-
 
 type t = {
   full: int;

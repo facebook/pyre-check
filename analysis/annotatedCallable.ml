@@ -10,10 +10,6 @@ open Pyre
 open Ast
 open Statement
 
-module Resolution = AnalysisResolution
-module Type = AnalysisType
-module TypeOrder = AnalysisTypeOrder
-
 
 let return_annotation ~define:({ Define.return_annotation; async; _ } as define) ~resolution =
   let annotation =

@@ -312,7 +312,7 @@ let check
     handler ~configuration ~stubs ~sources
   in
 
-  let errors, { Analysis.TypeCheck.Coverage.full; partial; untyped; ignore; crashes } =
+  let errors, { Analysis.Coverage.full; partial; untyped; ignore; crashes } =
     analyze_sources scheduler configuration environment sources
   in
   (* Log coverage results *)

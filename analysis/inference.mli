@@ -5,14 +5,7 @@
 
 open Ast
 
-module Annotation = AnalysisAnnotation
-module Environment = AnalysisEnvironment
 module Error = AnalysisError
-module Coverage = AnalysisCoverage
-module Cfg = AnalysisCfg
-module TypeCheck = AnalysisTypeCheck
-
-open TypeCheck
 
 
 module State : sig
@@ -28,7 +21,7 @@ module State : sig
   val check_entry: t -> t
 end
 
-module Fixpoint : AnalysisFixpoint.Fixpoint with type state := State.t
+module Fixpoint : Fixpoint.Fixpoint with type state := State.t
 
 val backward_fixpoint
   :  Cfg.t
@@ -41,4 +34,4 @@ val infer
   -> (module Environment.Handler)
   -> ?mode_override: Source.mode
   -> Source.t
-  -> Result.t
+  -> TypeCheck.Result.t

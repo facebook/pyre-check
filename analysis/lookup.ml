@@ -10,12 +10,6 @@ open Pyre
 open Ast
 open Statement
 
-module Cfg = AnalysisCfg
-module Environment = AnalysisEnvironment
-module Preprocessing = AnalysisPreprocessing
-module Type = AnalysisType
-module TypeResolutionSharedMemory = AnalysisTypeResolutionSharedMemory
-
 
 type approximate_annotation = {
   (* Each prefix is stored with the order of its elements reversed to
@@ -45,7 +39,7 @@ type t = {
 module ExpressionVisitor = struct
 
   type t = {
-    resolution: Environment.Resolution.t;
+    resolution: Resolution.t;
     annotations_lookup: annotation_information Location.Reference.Table.t;
     definitions_lookup: Location.Reference.t Location.Reference.Table.t;
   }
@@ -77,7 +71,7 @@ module ExpressionVisitor = struct
                         annotations_lookup
                         ~key:location
                         ~data:(Precise annotation)
-                  with AnalysisTypeOrder.Untracked _ ->
+                  with TypeOrder.Untracked _ ->
                     (* If we cannot resolve the type of this
                        expression, ignore it silently. The
                        construction of the lookup table is not
@@ -111,7 +105,7 @@ module ExpressionVisitor = struct
                 ~data:definition_location
           in
           List.take_while access ~f:not_a_call
-          |> AnalysisResolution.global resolution
+          |> Resolution.global resolution
           >>| Node.location
           >>| store_definition
           |> ignore;
@@ -152,7 +146,7 @@ module ExpressionVisitor = struct
                 annotations_lookup
                 ~key:expression_location
                 ~data:(Precise annotation)
-          with AnalysisTypeOrder.Untracked _ ->
+          with TypeOrder.Untracked _ ->
             (* If we cannot resolve the type of this expression, ignore it
                silently. The construction of the lookup table is not
                critical. *)

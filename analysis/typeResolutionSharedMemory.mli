@@ -12,7 +12,7 @@ open Expression
 (** Maps a key, unique to each statement for a function CFG, to type
     annotations.  They key is computed from a tuple CFG node ID and and statement
     index (see Fixpoint.forward) *)
-type annotations = (AnalysisResolution.Annotation.t Access.Map.Tree.t) Int.Map.Tree.t
+type annotations = (Annotation.t Access.Map.Tree.t) Int.Map.Tree.t
 
 val add: Access.t -> annotations -> unit
 

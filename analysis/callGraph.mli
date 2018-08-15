@@ -12,7 +12,7 @@ type t = (Access.t list) Access.Map.t
 val empty: t
 
 val create:
-  environment: (module AnalysisEnvironment.Handler)
+  environment: (module Environment.Handler)
   -> source: Source.t
   -> t
 

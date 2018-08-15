@@ -6,9 +6,6 @@
 open Ast
 open Expression
 
-module Resolution = AnalysisResolution
-module Type = AnalysisType
-
 
 type too_many_arguments = {
   expected: int;

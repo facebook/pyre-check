@@ -9,7 +9,6 @@ open Ast
 open Expression
 open Pyre
 
-module Type = AnalysisType
 
 type index = {
   function_keys: (Access.t Hash_set.t) String.Table.t;

@@ -10,12 +10,6 @@ open Pyre
 open Ast
 open Statement
 
-module Annotation = AnalysisAnnotation
-module Cfg = AnalysisCfg
-module Environment = AnalysisEnvironment
-module Preprocessing = AnalysisPreprocessing
-module TypeResolutionSharedMemory = AnalysisTypeResolutionSharedMemory
-
 
 type t = (Access.t list) Access.Map.t
 
@@ -46,7 +40,6 @@ let create ~environment ~source =
         let resolution = Environment.resolution environment ~annotations () in
         let fold_accesses call_graph { Node.value = access; _ } =
           let add_call_edge call_graph ~resolution:_ ~resolved:_ ~element =
-            let open Annotation.Type in
             let open Annotated.Access in
             let add_call_edge call_graph caller callee =
               Log.log
@@ -65,7 +58,7 @@ let create ~environment ~source =
                 Element.signature =
                   Annotated.Signature.Found {
                     Annotated.Signature.callable = {
-                      Callable.kind = Callable.Named callee;
+                      Type.Callable.kind = Type.Callable.Named callee;
                       _;
                     };
                     _;

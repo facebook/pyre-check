@@ -8,7 +8,6 @@ open Core
 open Ast
 open Pyre
 
-module Cfg = AnalysisCfg
 
 module type State = sig
   type t

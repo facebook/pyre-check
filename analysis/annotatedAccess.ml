@@ -9,10 +9,6 @@ open Ast
 open Expression
 open Pyre
 
-module Annotation = AnalysisAnnotation
-module Resolution = AnalysisResolution
-module Type = AnalysisType
-
 module Class = AnnotatedClass
 module Attribute = Class.Attribute
 module Method = Class.Method

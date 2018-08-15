@@ -11,19 +11,11 @@ open Expression
 open Pyre
 open Statement
 
-module Annotation = AnalysisAnnotation
-module Cfg = AnalysisCfg
-module Environment = AnalysisEnvironment
 module Error = AnalysisError
-module Preprocessing = AnalysisPreprocessing
-module TypeOrder = AnalysisTypeOrder
-module Coverage = AnalysisCoverage
-module TypeCheck = AnalysisTypeCheck
-
-open TypeCheck
 
 
 module State = struct
+  open TypeCheck
   include TypeCheck.State
 
 
@@ -303,7 +295,7 @@ module State = struct
 end
 
 
-module Fixpoint = AnalysisFixpoint.Make(State)
+module Fixpoint = Fixpoint.Make(State)
 
 
 let rec backward_fixpoint cfg ~initial_forward ~initialize_backward =

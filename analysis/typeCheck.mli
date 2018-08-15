@@ -8,13 +8,7 @@ open Core
 open Ast
 open Statement
 
-module Annotation = AnalysisAnnotation
-module Environment = AnalysisEnvironment
 module Error = AnalysisError
-module Coverage = AnalysisCoverage
-module Cfg = AnalysisCfg
-module Resolution = AnalysisResolution
-module Type = AnalysisType
 
 
 module State : sig
@@ -80,10 +74,10 @@ module State : sig
   val forward_expression: state: t -> expression: Expression.t -> resolved
   val forward_statement: state: t -> statement: Statement.t -> t
 
-  include AnalysisFixpoint.State with type t := t
+  include Fixpoint.State with type t := t
 end
 
-module Fixpoint : AnalysisFixpoint.Fixpoint with type state := State.t
+module Fixpoint : Fixpoint.Fixpoint with type state := State.t
 
 module Result : sig
   type t = {

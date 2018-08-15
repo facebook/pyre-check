@@ -10,11 +10,6 @@ open Pyre
 open Ast
 open Expression
 
-module Annotation = AnalysisAnnotation
-module Resolution = AnalysisResolution
-module Type = AnalysisType
-module TypeOrder = AnalysisTypeOrder
-
 module Class = AnnotatedClass
 
 

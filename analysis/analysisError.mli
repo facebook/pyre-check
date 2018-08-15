@@ -6,10 +6,6 @@
 open Ast
 open Expression
 
-module Environment = AnalysisEnvironment
-module Resolution = AnalysisResolution
-module Type = AnalysisType
-
 
 type class_origin = {
   annotation: Type.t;
@@ -156,7 +152,7 @@ type kind =
   | UnusedIgnore of int list
 [@@deriving compare, eq, show, hash]
 
-include AnalysisBaseError.ERROR with type kind := kind
+include BaseError.ERROR with type kind := kind
 
 val due_to_analysis_limitations: t -> bool
 val due_to_mismatch_with_any: t -> bool

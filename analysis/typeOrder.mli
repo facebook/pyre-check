@@ -5,7 +5,6 @@
 
 open Core
 
-module Type = AnalysisType
 
 exception Cyclic
 exception Incomplete

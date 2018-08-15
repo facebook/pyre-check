@@ -5,9 +5,6 @@
 
 open Ast
 
-module Environment = AnalysisEnvironment
-module Type = AnalysisType
-
 
 type t
 

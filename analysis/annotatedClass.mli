@@ -8,10 +8,6 @@ open Core
 open Ast
 open Statement
 
-module Annotation = AnalysisAnnotation
-module Resolution = AnalysisResolution
-module Type = AnalysisType
-
 
 type t
 [@@deriving compare, eq, sexp, show, hash]

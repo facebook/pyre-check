@@ -17,7 +17,7 @@ module AccessKey = struct
 end
 
 type annotations =
-  (AnalysisResolution.Annotation.t Access.Map.Tree.t) Int.Map.Tree.t
+  (Annotation.t Access.Map.Tree.t) Int.Map.Tree.t
 
 module TypeAnnotationsValue = struct
   type t = annotations

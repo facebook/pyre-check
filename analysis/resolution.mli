@@ -6,10 +6,6 @@
 open Ast
 open Statement
 
-module Annotation = AnalysisAnnotation
-module Type = AnalysisType
-module TypeOrder = AnalysisTypeOrder
-
 
 type global = Annotation.t Node.t
 [@@deriving eq, show]

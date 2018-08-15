@@ -467,7 +467,7 @@ let test_connect_type_order _ =
   assert_successors (Type.primitive "C") [];
   assert_successors (Type.primitive "D") [Type.primitive "C"];
 
-  Environment.TypeOrder.connect_annotations_to_top order ~top:Type.Object all_annotations;
+  TypeOrder.connect_annotations_to_top order ~top:Type.Object all_annotations;
 
   assert_successors (Type.primitive "C") [Type.Object; Type.Deleted; Type.Top];
   assert_successors (Type.primitive "D") [Type.primitive "C"; Type.Object; Type.Deleted; Type.Top]

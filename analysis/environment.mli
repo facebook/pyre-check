@@ -6,12 +6,6 @@
 open Ast
 open Statement
 
-module Annotation = AnalysisAnnotation
-module Dependencies = AnalysisDependencies
-module Resolution = AnalysisResolution
-module Type = AnalysisType
-module TypeOrder = AnalysisTypeOrder
-
 
 type class_representation = {
   class_definition: Class.t Node.t;
