@@ -5,6 +5,7 @@
  (libraries
   oUnit
   pyrelib.pyreCommand
+  pyrelib.languageServer
   pyrelib.test
   pyrelib.ast
   pyrelib.analysis))
@@ -25,4 +26,5 @@
   pyrelib.test
   pyrelib.commandTest
   pyrelib.pyreCommand
+  pyrelib.languageServer
   pyrelib.ast))

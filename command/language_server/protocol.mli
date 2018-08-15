@@ -9,10 +9,10 @@ open Pyre
 open Analysis
 
 
-module InitializeRequest : module type of LanguageServerProtocolTypes.InitializeRequest
+module InitializeRequest : module type of Types.InitializeRequest
 
 module TextDocumentDefinitionRequest
-  : module type of LanguageServerProtocolTypes.TextDocumentDefinitionRequest
+  : module type of Types.TextDocumentDefinitionRequest
 
 (** PublishDiagnostics notification, method="textDocument/publishDiagnostics" *)
 module PublishDiagnostics : sig
@@ -37,7 +37,7 @@ module ShowMessage : sig
   type t
   [@@deriving to_yojson]
 
-  val create: LanguageServerProtocolTypes.ShowMessageParams.messageType -> string -> t
+  val create: Types.ShowMessageParams.messageType -> string -> t
 end
 
 module InitializeResponse : sig
@@ -80,7 +80,7 @@ module RageResponse : sig
   [@@deriving to_yojson]
 
   val create
-    :  items: LanguageServerProtocolTypes.RageResponse.RageResult.rageItem list
+    :  items: Types.RageResponse.RageResult.rageItem list
     -> id: int
     -> t
 end

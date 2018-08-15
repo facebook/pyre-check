@@ -7,11 +7,11 @@ open Core
 
 open Pyre
 open Analysis
-open LanguageServerProtocolTypes
+open Types
 
 
 module Range = struct
-  include LanguageServerProtocolTypes.Range
+  include Types.Range
 
   let create
       ~start:{ Ast.Location.line = start_line; column = start_column }
@@ -22,12 +22,12 @@ module Range = struct
     }
 end
 
-module InitializeRequest = LanguageServerProtocolTypes.InitializeRequest
+module InitializeRequest = Types.InitializeRequest
 
-module TextDocumentDefinitionRequest = LanguageServerProtocolTypes.TextDocumentDefinitionRequest
+module TextDocumentDefinitionRequest = Types.TextDocumentDefinitionRequest
 
 module PublishDiagnostics = struct
-  include LanguageServerProtocolTypes.PublishDiagnostics
+  include Types.PublishDiagnostics
 
   let of_errors ?(root = Path.current_working_directory ()) handle errors =
     let path = File.Handle.show handle in
@@ -62,7 +62,7 @@ end
 
 
 module DidSaveTextDocument = struct
-  include LanguageServerProtocolTypes.DidSaveTextDocument
+  include Types.DidSaveTextDocument
 
 
   let create ?(root = Path.current_working_directory ()) path content =
@@ -89,7 +89,7 @@ end
 
 
 module ShowMessage = struct
-  include LanguageServerProtocolTypes.ShowMessage
+  include Types.ShowMessage
 
   let create messageType content =
     {
@@ -104,7 +104,7 @@ end
 
 
 module InitializeResponse = struct
-  include LanguageServerProtocolTypes.InitializeResponse
+  include Types.InitializeResponse
 
   let default id =
     let open TextDocumentSyncOptions in
@@ -146,14 +146,14 @@ end
 
 
 module ShutdownResponse = struct
-  include LanguageServerProtocolTypes.ShutdownResponse
+  include Types.ShutdownResponse
 
   let default id =
     {
       jsonrpc = "2.0";
       id;
       result = begin
-        match LanguageServerProtocolTypes.Null.of_yojson `Null with
+        match Types.Null.of_yojson `Null with
         | Ok result -> Some result
         | Error _ -> None
       end;
@@ -163,7 +163,7 @@ end
 
 
 module TextDocumentDefinitionResponse = struct
-  include LanguageServerProtocolTypes.TextDocumentDefinitionResponse
+  include Types.TextDocumentDefinitionResponse
 
   let create ~root ~id ~location =
     {
@@ -187,7 +187,7 @@ end
 
 
 module HoverResponse = struct
-  include LanguageServerProtocolTypes.HoverResponse
+  include Types.HoverResponse
 
   type hover_result = {
     location: Ast.Location.Instantiated.t;
@@ -211,7 +211,7 @@ end
 
 
 module RageResponse = struct
-  include LanguageServerProtocolTypes.RageResponse
+  include Types.RageResponse
 
   let create ~items ~id =
     {

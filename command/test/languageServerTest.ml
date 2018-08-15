@@ -9,7 +9,6 @@ open OUnit2
 open PyreCommand
 open LanguageServer.Types
 open LanguageServer.Protocol
-open LanguageServer.RequestParser
 open Pyre
 
 module Parallel = Hack_parallel.Std
@@ -601,7 +600,7 @@ let test_request_parser context =
       ~cmp:(Option.equal Protocol.Request.equal)
       ~printer:(function | Some request -> Protocol.Request.show request | _ -> "None")
       request
-      (parse
+      (RequestParser.parse
          ~root:(PyrePath.create_absolute Filename.temp_dir_name)
          message);
   in

@@ -22,3 +22,4 @@ module ServerConfiguration = ServerConfiguration
 module ServerOperations = ServerOperations
 module Socket = CommandSocket
 module State = ServerState
+module RequestParser = ServerRequestParser

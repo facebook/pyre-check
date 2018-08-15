@@ -12,7 +12,7 @@ open Request
 
 
 let parse ~root request =
-  let open LanguageServerProtocolTypes in
+  let open LanguageServer.Types in
   let log_method_error method_name =
     Log.error
       "Error for method %s: %s does not have required parameters"

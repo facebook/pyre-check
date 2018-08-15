@@ -529,7 +529,7 @@ let rec process_request
                 let { file_notifiers; _ } = !(state.connections) in
                 List.is_empty file_notifiers)
         in
-        LanguageServer.RequestParser.parse
+        ServerRequestParser.parse
           ~root:configuration.local_root
           (Yojson.Safe.from_string request)
         >>= handle_lsp_request ~check_on_save
