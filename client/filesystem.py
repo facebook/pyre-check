@@ -63,27 +63,11 @@ class SharedAnalysisDirectory:
 
         lock = os.path.join(root, ".pyre.lock")
         with acquire_lock(lock, blocking=True):
-            try:
-                with open(os.path.join(root, ".pyre.analysis_directories")) as file:
-                    tracked = set(json.load(file))
-
-                if self._analysis_directories.issubset(tracked):
-                    # We might want to merge in additional files.
-                    LOG.info("Shared analysis directory is up to date")
-                    return
-            except (OSError, json.JSONDecodeError):
-                pass
-
-            # Clear the directory and merge in files.
-            LOG.info("Shared analysis directory is stale, updating...")
             self._clear()
             self._merge()
-
-            # Write out tracked targets.
-            with open(os.path.join(root, ".pyre.analysis_directories"), "w") as file:
-                json.dump(list(self._analysis_directories), file)
-
-            LOG.log(log.PERFORMANCE, "Merged analysis directories in %fs", time() - start)
+            LOG.log(
+                log.PERFORMANCE, "Merged analysis directories in %fs", time() - start
+            )
 
     def cleanup(self):
         try:

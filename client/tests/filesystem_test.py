@@ -8,6 +8,7 @@ import os
 import subprocess
 import tempfile
 import unittest
+from contextlib import contextmanager
 from typing import Dict  # noqa
 from unittest.mock import call, patch
 
@@ -317,3 +318,18 @@ class FilesystemTest(unittest.TestCase):
 
         root = shared_analysis_directory.get_root()
         self.assertEqual(root, "/scratch/path/to/local")
+
+    @patch("os.makedirs")
+    @patch(filesystem_name + ".acquire_lock")
+    @patch.object(SharedAnalysisDirectory, "_clear")
+    @patch.object(SharedAnalysisDirectory, "_merge")
+    def test_prepare(self, merge, clear, acquire_lock, makedirs):
+        @contextmanager
+        def acquire(*args, **kwargs):
+            yield
+
+        shared_analysis_directory = SharedAnalysisDirectory(["first", "second"])
+        acquire_lock.side_effect = acquire
+        shared_analysis_directory.prepare()
+        merge.assert_has_calls([call()])
+        clear.assert_has_calls([call()])
