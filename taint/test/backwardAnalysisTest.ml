@@ -28,9 +28,10 @@ type taint_in_taint_out_expectation = {
 }
 
 
-let assert_taint source ~expected =
+let assert_taint ?qualifier ~source ~expected =
+  let qualifier = Option.map qualifier ~f:Access.create in
   let source =
-    parse source
+    parse ?qualifier source
     |> Preprocessing.preprocess
   in
   let configuration = Test.configuration in
@@ -145,14 +146,16 @@ let assert_taint source ~expected =
 
 let test_plus_taint_in_taint_out _ =
   assert_taint
-    {|
-    def test_plus_taint_in_taint_out(tainted_parameter1, parameter2):
-      tainted_value = tainted_parameter1 + 5
-      return tainted_value
-    |}
+    ~qualifier:"plus"
+    ~source:
+      {|
+      def test_plus_taint_in_taint_out(tainted_parameter1, parameter2):
+        tainted_value = tainted_parameter1 + 5
+        return tainted_value
+      |}
     ~expected:[
       {
-        define_name = "test_plus_taint_in_taint_out";
+        define_name = "plus.test_plus_taint_in_taint_out";
         taint_sink_parameters = [];
         tito_parameters = [0];
       };
@@ -160,15 +163,17 @@ let test_plus_taint_in_taint_out _ =
 
 let test_concatenate_taint_in_taint_out _ =
   assert_taint
-    {|
-    def test_concatenate_taint_in_taint_out(parameter0, tainted_parameter1):
-      unused_parameter = parameter0
-      command_unsafe = 'echo' + tainted_parameter1 + ' >> /dev/null'
-      return command_unsafe
-    |}
+    ~qualifier:"concatenate"
+    ~source:
+      {|
+      def test_concatenate_taint_in_taint_out(parameter0, tainted_parameter1):
+        unused_parameter = parameter0
+        command_unsafe = 'echo' + tainted_parameter1 + ' >> /dev/null'
+        return command_unsafe
+      |}
     ~expected:[
       {
-        define_name = "test_concatenate_taint_in_taint_out";
+        define_name = "concatenate.test_concatenate_taint_in_taint_out";
         taint_sink_parameters = [];
         tito_parameters = [1];
       };
@@ -176,21 +181,23 @@ let test_concatenate_taint_in_taint_out _ =
 
 let test_call_taint_in_taint_out _ =
   assert_taint
-    {|
-    def test_base_tito(parameter0, tainted_parameter1):
-      return tainted_parameter1
+    ~qualifier:"call_taint"
+    ~source:
+      {|
+      def test_base_tito(parameter0, tainted_parameter1):
+        return tainted_parameter1
 
-    def test_called_tito(tainted_parameter0, parameter1):
-      return test_base_tito(parameter1, tainted_parameter0)
+      def test_called_tito(tainted_parameter0, parameter1):
+        return test_base_tito(parameter1, tainted_parameter0)
     |}
     ~expected:[
       {
-        define_name = "test_base_tito";
+        define_name = "call_taint.test_base_tito";
         taint_sink_parameters = [];
         tito_parameters = [1];
       };
       {
-        define_name = "test_called_tito";
+        define_name = "call_taint.test_called_tito";
         taint_sink_parameters = [];
         tito_parameters = [0];
       };
@@ -200,15 +207,17 @@ let test_sink _ =
   Service.StaticAnalysis.add_models
     ~model_source:"def __testSink(parameter: TaintSink[TestSink]): ...";
   assert_taint
-    {|
-    def test_sink(parameter0, tainted_parameter1):
-      unused_parameter = parameter0
-      command_unsafe = 'echo' + tainted_parameter1 + ' >> /dev/null'
-      __testSink(command_unsafe)
-    |}
+    ~qualifier:"test_sink"
+    ~source:
+      {|
+      def test_sink(parameter0, tainted_parameter1):
+        unused_parameter = parameter0
+        command_unsafe = 'echo' + tainted_parameter1 + ' >> /dev/null'
+        __testSink(command_unsafe)
+      |}
     ~expected:[
       {
-        define_name = "test_sink";
+        define_name = "test_sink.test_sink";
         taint_sink_parameters = [
           { position = 1; sinks = [Taint.Sinks.TestSink]; };
         ];
@@ -221,15 +230,17 @@ let test_rce_sink _ =
   Service.StaticAnalysis.add_models
     ~model_source:"def __testRCESink(parameter: TaintSink[RemoteCodeExecution]): ...";
   assert_taint
-    {|
-    def test_rce_sink(parameter0, tainted_parameter1):
-      unused_parameter = parameter0
-      command_unsafe = 'echo' + tainted_parameter1 + ' >> /dev/null'
-      __testRCESink(command_unsafe)
-    |}
+    ~qualifier:"test_rce"
+    ~source:
+      {|
+      def test_rce_sink(parameter0, tainted_parameter1):
+        unused_parameter = parameter0
+        command_unsafe = 'echo' + tainted_parameter1 + ' >> /dev/null'
+        __testRCESink(command_unsafe)
+      |}
     ~expected:[
       {
-        define_name = "test_rce_sink";
+        define_name = "test_rce.test_rce_sink";
         taint_sink_parameters = [
           { position = 1; sinks = [Taint.Sinks.RemoteCodeExecution]; }
         ];
@@ -248,18 +259,20 @@ let test_rce_and_test_sink _ =
   in
   Service.StaticAnalysis.add_models ~model_source;
   assert_taint
-    {|
-    def test_rce_and_test_sink(test_only, rce_only, both):
-      __testSink(test_only)
-      __testRCESink(rce_only)
-      if True:
-        __testSink(both)
-      else:
-        __testRCESink(both)
-    |}
+    ~qualifier:"test_both"
+    ~source:
+      {|
+      def test_rce_and_test_sink(test_only, rce_only, both):
+        __testSink(test_only)
+        __testRCESink(rce_only)
+        if True:
+          __testSink(both)
+        else:
+          __testRCESink(both)
+      |}
     ~expected:[
       {
-        define_name = "test_rce_and_test_sink";
+        define_name = "test_both.test_rce_and_test_sink";
         taint_sink_parameters = [
           { position = 0; sinks = [Taint.Sinks.TestSink]; };
           { position = 1; sinks = [Taint.Sinks.RemoteCodeExecution]; };
@@ -272,20 +285,22 @@ let test_rce_and_test_sink _ =
 
 let test_tito_sink _ =
   assert_taint
-    {|
-    def test_base_tito(parameter0, tainted_parameter1):
-      return tainted_parameter1
+    ~qualifier:"test_in_out_sink"
+    ~source:
+      {|
+      def test_base_tito(parameter0, tainted_parameter1):
+        return tainted_parameter1
 
-    def test_called_tito(tainted_parameter0, parameter1):
-      return test_base_tito(parameter1, tainted_parameter0)
+      def test_called_tito(tainted_parameter0, parameter1):
+        return test_base_tito(parameter1, tainted_parameter0)
 
-    def test_tito_sink(parameter0, tainted_parameter1):
-      tainted = test_called_tito(tainted_parameter1, parameter0)
-      __testSink(tainted)
-    |}
+      def test_tito_sink(parameter0, tainted_parameter1):
+        tainted = test_called_tito(tainted_parameter1, parameter0)
+        __testSink(tainted)
+      |}
     ~expected:[
       {
-        define_name = "test_tito_sink";
+        define_name = "test_in_out_sink.test_tito_sink";
         taint_sink_parameters = [
           { position = 0; sinks = []; };
           { position = 1; sinks = [Taint.Sinks.TestSink]; };
@@ -298,23 +313,25 @@ let test_tito_sink _ =
 let test_apply_method_model_at_call_site _ =
   Service.StaticAnalysis.add_models ~model_source:"def __testSink(parameter: TaintSink[TestSink]): ...";
   assert_taint
-    {|
-      class Foo:
-        def qux(tainted_parameter):
-          command_unsafe = tainted_parameter
-          __testSink(command_unsafe)
+    ~qualifier:"test_apply_method"
+    ~source:
+      {|
+        class Foo:
+          def qux(tainted_parameter):
+            command_unsafe = tainted_parameter
+            __testSink(command_unsafe)
 
-      class Bar:
-        def qux(not_tainted_parameter):
-          pass
+        class Bar:
+          def qux(not_tainted_parameter):
+            pass
 
-      def taint_across_methods(tainted_parameter):
-        f = Foo()
-        return f.qux(tainted_parameter)
+        def taint_across_methods(tainted_parameter):
+          f = Foo()
+          return f.qux(tainted_parameter)
       |}
     ~expected:[
       {
-        define_name = "taint_across_methods";
+        define_name = "test_apply_method.taint_across_methods";
         taint_sink_parameters = [
           { position = 0; sinks = [Taint.Sinks.TestSink] };
         ];
@@ -323,45 +340,49 @@ let test_apply_method_model_at_call_site _ =
     ];
 
   assert_taint
-    {|
-      class Foo:
-        def qux(tainted_parameter):
-          command_unsafe = tainted_parameter
-          __testSink(command_unsafe)
+    ~qualifier:"test_apply_method2"
+    ~source:
+      {|
+        class Foo:
+          def qux(tainted_parameter):
+            command_unsafe = tainted_parameter
+            __testSink(command_unsafe)
 
-      class Bar:
-        def qux(not_tainted_parameter):
-          pass
+        class Bar:
+          def qux(not_tainted_parameter):
+            pass
 
-      def taint_across_methods(not_tainted_parameter):
-        f = Bar()
-        return f.qux(not_tainted_parameter)
-    |}
+        def taint_across_methods(not_tainted_parameter):
+          f = Bar()
+          return f.qux(not_tainted_parameter)
+      |}
     ~expected:[
       {
-        define_name = "taint_across_methods";
+        define_name = "test_apply_method2.taint_across_methods";
         taint_sink_parameters = [];
         tito_parameters = [];
       };
     ];
 
   assert_taint
-    {|
-      class Foo:
-        def qux(tainted_parameter):
-          command_unsafe = tainted_parameter
-          __testSink(command_unsafe)
+    ~qualifier:"test_apply_method3"
+    ~source:
+      {|
+        class Foo:
+          def qux(tainted_parameter):
+            command_unsafe = tainted_parameter
+            __testSink(command_unsafe)
 
-      class Bar:
-        def qux(not_tainted_parameter):
-          pass
+        class Bar:
+          def qux(not_tainted_parameter):
+            pass
 
-      def taint_across_methods(f: Foo, tainted_parameter):
-        return f.qux(tainted_parameter)
+        def taint_across_methods(f: Foo, tainted_parameter):
+          return f.qux(tainted_parameter)
       |}
     ~expected:[
       {
-        define_name = "taint_across_methods";
+        define_name = "test_apply_method3.taint_across_methods";
         taint_sink_parameters = [
           { position = 0; sinks = [] };
           { position = 1; sinks = [Taint.Sinks.TestSink] };
@@ -371,49 +392,53 @@ let test_apply_method_model_at_call_site _ =
     ];
 
   assert_taint
-    {|
-      class Foo:
-        def qux(tainted_parameter):
-          command_unsafe = tainted_parameter
-          __testSink(command_unsafe)
+    ~qualifier:"test_apply_method4"
+    ~source:
+      {|
+        class Foo:
+          def qux(tainted_parameter):
+            command_unsafe = tainted_parameter
+            __testSink(command_unsafe)
 
-      class Bar:
-        def qux(not_tainted_parameter):
-          pass
+        class Bar:
+          def qux(not_tainted_parameter):
+            pass
 
-      def taint_across_methods(f: Bar, not_tainted_parameter):
-        return f.qux(not_tainted_parameter)
-    |}
+        def taint_across_methods(f: Bar, not_tainted_parameter):
+          return f.qux(not_tainted_parameter)
+      |}
     ~expected:[
       {
-        define_name = "taint_across_methods";
+        define_name = "test_apply_method4.taint_across_methods";
         taint_sink_parameters = [];
         tito_parameters = [];
       };
     ];
 
   assert_taint
-    {|
-      class Foo:
-        def qux(tainted_parameter):
-          command_unsafe = tainted_parameter
-          __testSink(command_unsafe)
+    ~qualifier:"test_apply_method5"
+    ~source:
+      {|
+        class Foo:
+          def qux(tainted_parameter):
+            command_unsafe = tainted_parameter
+            __testSink(command_unsafe)
 
-      class Bar:
-        def qux(not_tainted_parameter):
-          pass
+        class Bar:
+          def qux(not_tainted_parameter):
+            pass
 
-      def taint_across_union_receiver_types(condition, tainted_parameter):
-        if condition:
-          f = Foo()
-        else:
-          f = Bar()
+        def taint_across_union_receiver_types(condition, tainted_parameter):
+          if condition:
+            f = Foo()
+          else:
+            f = Bar()
 
-        return f.qux(tainted_parameter)
+          return f.qux(tainted_parameter)
       |}
     ~expected:[
       {
-        define_name = "taint_across_union_receiver_types";
+        define_name = "test_apply_method5.taint_across_union_receiver_types";
         taint_sink_parameters = [
           { position = 1; sinks = [Taint.Sinks.TestSink] };
         ];
