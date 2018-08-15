@@ -476,10 +476,9 @@ let register_class_definitions (module Handler: Handler) source =
               |> Type.split
             in
             if not (TypeOrder.contains order primitive) then
-              begin
-                TypeOrder.insert order primitive;
-                Set.add new_annotations primitive
-              end
+              TypeOrder.insert order primitive;
+            if not (Set.mem TypeOrder.Builder.builtin_types primitive) then
+              Set.add new_annotations primitive
             else
               new_annotations
         | _ ->

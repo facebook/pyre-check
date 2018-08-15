@@ -90,7 +90,28 @@ let test_register_class_definitions _ =
   assert_equal (Handler.function_definitions (access ["foo"])) None;
   let order = (module Handler.TypeOrderHandler: TypeOrder.Handler) in
   assert_equal (TypeOrder.successors order (Type.primitive "C")) [];
-  assert_equal (TypeOrder.predecessors order (Type.primitive "C")) []
+  assert_equal (TypeOrder.predecessors order (Type.primitive "C")) [];
+
+  (* Annotations for classes are returned even if they already exist in the handler. *)
+  let new_annotations =
+    Environment.register_class_definitions
+      (module Handler)
+      (parse {|
+         class C:
+           ...
+       |})
+  in
+  assert_equal ~cmp:Type.Set.equal new_annotations (Type.Set.singleton (Type.primitive "C"));
+  (* Builtins can't be overridden. *)
+  let new_annotations =
+    Environment.register_class_definitions
+      (module Handler)
+      (parse {|
+         class int:
+           pass
+       |})
+  in
+  assert_equal ~cmp:Type.Set.equal new_annotations Type.Set.empty
 
 
 let test_refine_class_definitions _ =

@@ -139,4 +139,5 @@ module Builder: sig
   val copy: t -> t
 
   val default: unit -> t
+  val builtin_types: Type.Set.t
 end

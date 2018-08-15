@@ -1376,52 +1376,56 @@ module Builder = struct
       indices = Hashtbl.copy indices;
       annotations = Hashtbl.copy annotations;
     }
+
+
+  let default_annotations =
+    let singleton annotation = [Type.Bottom; annotation; Type.Object] in
+    [
+      [Type.Bottom; Type.Object; Type.Deleted; Type.Top];
+      (* Special forms *)
+      singleton (Type.primitive "typing.Tuple");
+      singleton Type.named_tuple;
+      singleton Type.generic;
+      singleton (Type.primitive "typing.Protocol");
+      singleton (Type.primitive "typing.Callable");
+      singleton (Type.primitive "typing.FrozenSet");
+      singleton (Type.primitive "typing.Optional");
+      singleton (Type.primitive "typing.TypeVar");
+      singleton (Type.primitive "typing.Undeclared");
+      singleton (Type.primitive "typing.Union");
+      singleton (Type.primitive "typing.NoReturn");
+      (* Ensure unittest.mock.Base is there because we check against it. *)
+      singleton (Type.primitive "unittest.mock.Base");
+      singleton (Type.primitive "unittest.mock.NonCallableMock");
+      singleton (Type.primitive "typing.ClassVar");
+      [Type.Bottom; Type.primitive "dict"; Type.primitive "typing.Dict"; Type.Object];
+      singleton (Type.primitive "None");
+      (* Numerical hierarchy. *)
+      [
+        Type.Bottom;
+        Type.integer;
+        Type.float;
+        Type.complex;
+        Type.primitive "numbers.Complex";
+        Type.primitive "numbers.Number";
+        Type.Object;
+      ];
+      [Type.integer; Type.primitive "numbers.Integral"; Type.Object];
+      [Type.float; Type.primitive "numbers.Rational"; Type.Object];
+      [Type.float; Type.primitive "numbers.Real"; Type.Object];
+    ]
+
+
+  let builtin_types =
+    List.concat default_annotations
+    |> Type.Set.of_list
+
+
   let default () =
     let order = create () in
     let handler = handler order in
 
-
-    let default_annotations =
-      let singleton annotation = [Type.Bottom; annotation; Type.Object] in
-      [
-        [Type.Bottom; Type.Object; Type.Deleted; Type.Top];
-        (* Special forms *)
-        singleton (Type.primitive "typing.Tuple");
-        singleton Type.named_tuple;
-        singleton Type.generic;
-        singleton (Type.primitive "typing.Protocol");
-        singleton (Type.primitive "typing.Callable");
-        singleton (Type.primitive "typing.FrozenSet");
-        singleton (Type.primitive "typing.Optional");
-        singleton (Type.primitive "typing.TypeVar");
-        singleton (Type.primitive "typing.Undeclared");
-        singleton (Type.primitive "typing.Union");
-        singleton (Type.primitive "typing.NoReturn");
-        (* Ensure unittest.mock.Base is there because we check against it. *)
-        singleton (Type.primitive "unittest.mock.Base");
-        singleton (Type.primitive "unittest.mock.NonCallableMock");
-        singleton (Type.primitive "typing.ClassVar");
-        [Type.Bottom; Type.primitive "dict"; Type.primitive "typing.Dict"; Type.Object];
-        singleton (Type.primitive "None");
-        (* Numerical hierarchy. *)
-        [
-          Type.Bottom;
-          Type.integer;
-          Type.float;
-          Type.complex;
-          Type.primitive "numbers.Complex";
-          Type.primitive "numbers.Number";
-          Type.Object;
-        ];
-        [Type.integer; Type.primitive "numbers.Integral"; Type.Object];
-        [Type.float; Type.primitive "numbers.Rational"; Type.Object];
-        [Type.float; Type.primitive "numbers.Real"; Type.Object];
-      ]
-    in
-    List.concat default_annotations
-    |> Type.Set.of_list
-    |> Set.iter ~f:(insert handler);
-
+    Set.iter builtin_types ~f:(insert handler);
     let rec connect_primitive_chain annotations =
       match annotations with
       | predecessor :: successor :: rest ->
