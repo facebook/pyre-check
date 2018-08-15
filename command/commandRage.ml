@@ -8,9 +8,7 @@ open Core
 open Pyre
 
 open LanguageServer.Types
-
-module WatchmanConstants = CommandWatchmanConstants
-module PersistentConstants = CommandPersistentConstants
+open Constants
 
 
 let get_logs configuration =
@@ -32,9 +30,9 @@ let get_logs configuration =
       (ServerConfiguration.create configuration
        |> fun { ServerConfiguration.log_path; _ } -> log_path);
       "watchman",
-      (WatchmanConstants.log_path configuration);
+      (Watchman.log_path configuration);
       "persistent",
-      (PersistentConstants.log_path configuration);
+      (Persistent.log_path configuration);
     ]
 
 

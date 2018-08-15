@@ -1,6 +1,6 @@
 (library
- (name pyreCommand)
- (public_name pyrelib.pyreCommand)
+ (name constants)
+ (public_name pyrelib.constants)
  (preprocess
   (pps
    ppx_deriving.eq
@@ -23,6 +23,5 @@
   pyrelib.ast
   pyrelib.analysis
   pyrelib.experimental
-  pyrelib.constants
   pyrelib.languageServer
   pyrelib.version))

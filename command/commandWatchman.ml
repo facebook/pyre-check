@@ -8,7 +8,7 @@ open Hack_parallel.Std
 
 open Pyre
 
-open CommandWatchmanConstants
+open Constants.Watchman
 
 module Time = Core_kernel.Time_ns.Span
 module Protocol = ServerProtocol

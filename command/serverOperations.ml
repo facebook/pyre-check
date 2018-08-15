@@ -8,10 +8,10 @@ open Core
 open Pyre
 open ServerConfiguration
 open ServerState
+open Constants
 
 module Check = CommandCheck
 module Handshake = CommandHandshake
-module WatchmanConstants = CommandWatchmanConstants
 
 type version_mismatch = {
   server_version: string;
@@ -79,7 +79,7 @@ let stop_server ~reason ({ configuration; _ } as server_configuration) socket =
   Statistics.event ~flush:true ~name:"stop server" ~normals:["reason", reason] ();
   let watchman_pid =
     try
-      WatchmanConstants.pid_path configuration
+      Watchman.pid_path configuration
       |> Path.absolute
       |> Sys_utils.cat
       |> Int.of_string
