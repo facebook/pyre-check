@@ -1,6 +1,6 @@
 (tests
  (names
-  parserGeneratorTest)
+  generatorTest)
  (libraries
   oUnit
   pyrelib.test
