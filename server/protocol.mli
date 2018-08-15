@@ -41,14 +41,14 @@ module TypeQuery: sig
     name: string;
     annotation: Type.t;
   }
-  [@@deriving eq, show]
+  [@@deriving eq, show, to_yojson]
 
   type method_representation = {
     name: string;
     parameters: Type.t list;
     return_annotation: Type.t;
   }
-  [@@deriving eq, show]
+  [@@deriving eq, show, to_yojson]
 
   type base_response =
     | FoundAttributes of attribute list
@@ -56,14 +56,12 @@ module TypeQuery: sig
     | Type of Type.t
     | Superclasses of Type.t list
     | Boolean of bool
-  [@@deriving eq, show]
+  [@@deriving eq, show, to_yojson]
 
   type response =
     | Response of base_response
     | Error of string
-  [@@deriving eq, show]
-
-  val human_readable: response -> string
+  [@@deriving eq, show, to_yojson]
 end
 
 

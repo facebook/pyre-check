@@ -50,8 +50,50 @@ let test_flatten _ =
       assert_unreached ()
 
 
+let test_type_query_json _ =
+  let open TypeQuery in
+  let assert_serializes response json =
+    assert_equal
+      ~printer:Yojson.Safe.to_string
+      (response_to_yojson response)
+      (Yojson.Safe.from_string json)
+  in
+  assert_serializes (Error "message") {|{"error": "message"}|};
+  assert_serializes
+    (Response
+       (FoundAttributes
+          [{ name = "name"; annotation = Analysis.Type.integer }]))
+    {|{"response": {"attributes": [{"name": "name", "annotation": "int"}]}}|};
+  assert_serializes
+    (Response
+       (FoundMethods
+          [{
+            name = "method";
+            parameters = [Analysis.Type.integer];
+            return_annotation = Analysis.Type.string;
+          }]))
+    {|
+      {
+       "response": {
+         "methods": [
+           {
+             "name": "method",
+             "parameters": ["int"],
+             "return_annotation": "str"
+           }
+         ]
+       }
+      }
+    |};
+  assert_serializes (Response (Type Analysis.Type.integer)) {|{"response": {"type": "int"}}|};
+  assert_serializes
+    (Response (Superclasses [Analysis.Type.integer; Analysis.Type.string]))
+    {| {"response": {"superclasses": ["int", "str"]}} |}
+
+
 let () =
   "serverProtocol">:::[
-    "flatten">::test_flatten
+    "flatten">::test_flatten;
+    "type_query_json">::test_type_query_json;
   ]
   |> run_test_tt_main

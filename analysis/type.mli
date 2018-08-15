@@ -209,3 +209,5 @@ module Callable : sig
 
   val with_return_annotation: return_annotation: type_t -> t -> t
 end
+
+val to_yojson: t -> Yojson.Safe.json

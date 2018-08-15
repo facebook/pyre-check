@@ -1605,3 +1605,7 @@ module Callable = struct
     in
     { initial with overloads }
 end
+
+
+let to_yojson annotation =
+  `String (show annotation)

@@ -93,7 +93,7 @@ let run_query serialized local_root () =
   Socket.write socket query;
   match Socket.read socket with
   | TypeQueryResponse response ->
-      Log.print "%s" (human_readable response)
+      Log.print "%s" (Yojson.Safe.pretty_to_string (response_to_yojson response))
   | (TypeCheckResponse _) as response ->
       Log.print "%s" (Server.Protocol.show_response response)
   | response ->

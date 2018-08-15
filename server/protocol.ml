@@ -55,14 +55,14 @@ module TypeQuery = struct
     name: string;
     annotation: Type.t;
   }
-  [@@deriving eq, show]
+  [@@deriving eq, show, to_yojson]
 
   type method_representation = {
     name: string;
     parameters: Type.t list;
     return_annotation: Type.t;
   }
-  [@@deriving eq, show]
+  [@@deriving eq, show, to_yojson]
 
   type base_response =
     | FoundAttributes of attribute list
@@ -72,40 +72,28 @@ module TypeQuery = struct
     | Boolean of bool
   [@@deriving eq, show]
 
-  type response =
+  let base_response_to_yojson = function
+    | FoundAttributes attributes ->
+        `Assoc ["attributes", `List (List.map attributes ~f:attribute_to_yojson)]
+    | FoundMethods methods ->
+        `Assoc ["methods", `List (List.map methods ~f:method_representation_to_yojson)]
+    | Type annotation ->
+        `Assoc ["type", Type.to_yojson annotation]
+    | Superclasses classes ->
+        `Assoc ["superclasses", `List (List.map classes ~f:Type.to_yojson)]
+    | Boolean boolean ->
+        `Assoc ["boolean", `Bool boolean]
+
+   type response =
     | Response of base_response
     | Error of string
   [@@deriving eq, show]
 
-  let human_readable response =
-    match response with
-    | Response (FoundAttributes attributes) ->
-        attributes
-        |> List.map
-          ~f:(fun { name; annotation } -> Format.asprintf "%s: %a" name Type.pp annotation)
-        |> String.concat ~sep:"\n"
-    | Response (FoundMethods methods) ->
-        let show_method { name; parameters; return_annotation } =
-          Format.sprintf
-            "%s: (%s) -> %s"
-            name
-            (List.map parameters ~f:Type.show
-             |> String.concat ~sep:", ")
-            (Type.show return_annotation)
-        in
-        methods
-        |> List.map ~f:show_method
-        |> String.concat ~sep:"\n"
-    | Response (Type annotation) ->
-        Type.show annotation
-    | Response (Superclasses classes) ->
-        classes
-        |> List.map ~f:Type.show
-        |> String.concat ~sep:", "
-    | Response (Boolean boolean) ->
-        Format.sprintf "%b" boolean
+  let response_to_yojson = function
+    | Response base_response ->
+        `Assoc ["response", base_response_to_yojson base_response]
     | Error message ->
-        Format.sprintf "Error: %s" message
+        `Assoc ["error", `String message]
 end
 
 
