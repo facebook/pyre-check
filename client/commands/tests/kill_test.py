@@ -3,9 +3,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import signal
 import unittest
-from unittest.mock import call, mock_open, patch
+from unittest.mock import patch
 
 from ... import commands  # noqa
 from .command_test import mock_arguments, mock_configuration

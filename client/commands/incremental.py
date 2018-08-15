@@ -13,7 +13,6 @@ from .. import FAILURE, SUCCESS
 from .command import ClientException, State
 from .error_handling import ErrorHandling
 from .start import Start
-from .stop import Stop
 
 
 LOG = logging.getLogger(__name__)

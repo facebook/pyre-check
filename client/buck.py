@@ -7,7 +7,7 @@ import os
 import subprocess
 import sys
 from collections import namedtuple
-from typing import Dict, List
+from typing import Dict, List  # noqa
 
 from . import log
 

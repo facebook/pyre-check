@@ -6,13 +6,12 @@
 import json
 import re
 import select
-import subprocess
 import sys
 import time
 from typing import Optional
 
-from .. import SUCCESS, EnvironmentException, log_statistics
-from .command import ClientException, Command
+from .. import SUCCESS
+from .command import Command
 from .start import Start
 
 

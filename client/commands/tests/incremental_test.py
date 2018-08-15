@@ -7,6 +7,7 @@ import unittest
 from unittest.mock import MagicMock, call, patch
 
 from ... import commands
+from ...commands import stop  # noqa
 from ...commands import incremental
 from .command_test import mock_arguments, mock_configuration
 
@@ -14,7 +15,7 @@ from .command_test import mock_arguments, mock_configuration
 class IncrementalTest(unittest.TestCase):
     @patch.object(commands.Command, "_state")
     @patch.object(incremental, "Start")
-    @patch.object(incremental, "Stop")
+    @patch.object(stop, "Stop")
     def test_incremental(
         self, commands_Stop, commands_Start, commands_Command_state
     ) -> None:

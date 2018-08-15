@@ -4,14 +4,10 @@
 # LICENSE file in the root directory of this source tree.
 
 import logging
-import os
-import signal
 import subprocess
-import traceback
 
 from .. import BINARY_NAME, SUCCESS
-from ..filesystem import remove_if_exists
-from .command import Command, State
+from .command import Command
 
 
 LOG = logging.getLogger(__name__)

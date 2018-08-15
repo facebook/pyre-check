@@ -7,7 +7,7 @@ import os  # noqa
 import sys  # noqa
 import unittest
 from contextlib import contextmanager
-from unittest.mock import call, patch, MagicMock
+from unittest.mock import call, patch
 
 from ..commands import monitor  # noqa
 from .infer_test import mock_arguments, mock_configuration
@@ -50,6 +50,7 @@ class MonitorTest(unittest.TestCase):
         configuration = mock_configuration()
         try:
             import pywatchman  # noqa
+
             with patch.object(pywatchman, "client") as pywatchman_client:
                 pywatchman_client.side_effect = Exception
                 with self.assertRaises(Exception):

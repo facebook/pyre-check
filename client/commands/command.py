@@ -4,7 +4,6 @@
 # LICENSE file in the root directory of this source tree.
 
 import enum
-import json
 import logging
 import os
 import re
@@ -13,8 +12,7 @@ import subprocess
 import threading
 from typing import List, Set  # noqa
 
-from .. import SUCCESS, TEXT, EnvironmentException, log
-from ..error import Error
+from .. import SUCCESS, EnvironmentException, log
 
 
 LOG = logging.getLogger(__name__)
