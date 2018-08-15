@@ -28,7 +28,7 @@ type t = {
 (* Socket paths in OCaml are limited to a length of +-100 characters. We work around this by
    creating the socket in a temporary directory and symlinking to it from the pyre directory. *)
 let socket_path ?(create=false) configuration =
-  let link_path = Constants.Server.root configuration ^| "server.sock" in
+  let link_path = Service.Constants.Server.root configuration ^| "server.sock" in
   if Path.file_exists link_path || not create then
     try
       Unix.readlink (Path.absolute link_path)
@@ -54,10 +54,10 @@ let create
     ?log_path
     ?(use_watchman = false)
     configuration =
-  let server_root = Constants.Server.root configuration in
+  let server_root = Service.Constants.Server.root configuration in
   (* Allow absolute log_path path (e.g., for /dev/null) *)
   let log_path =
-    Option.value log_path ~default:(Constants.Server.log_path configuration)
+    Option.value log_path ~default:(Service.Constants.Server.log_path configuration)
   in
   {
     socket_path = socket_path ~create:true configuration;

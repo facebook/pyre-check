@@ -10,7 +10,7 @@ open Pyre
 open Network
 open Server
 
-open Constants.Watchman
+open Service.Constants.Watchman
 
 module Time = Core_kernel.Time_ns.Span
 module Scheduler = Service.Scheduler

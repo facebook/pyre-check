@@ -23,7 +23,6 @@
   pyrelib.ast
   pyrelib.analysis
   pyrelib.experimental
-  pyrelib.constants
   pyrelib.pyre
   pyrelib.server
   pyrelib.network
