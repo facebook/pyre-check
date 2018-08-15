@@ -8,9 +8,7 @@ open Core
 open Hack_parallel.Std
 
 
-module Callable = InterproceduralCallable
-module Fixpoint = InterproceduralFixpoint
-module Kind = InterproceduralAnalysisKind
+module Kind = AnalysisKind
 module Result = InterproceduralResult
 
 

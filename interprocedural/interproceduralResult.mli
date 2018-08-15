@@ -5,8 +5,7 @@
 
 open Ast
 
-module Callable = InterproceduralCallable
-module Kind = InterproceduralAnalysisKind
+module Kind = AnalysisKind
 
 
 (* Implemented by an individual analysis to be plugged into the global fixpoint. *)

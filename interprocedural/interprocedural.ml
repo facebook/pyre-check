@@ -3,9 +3,9 @@
     This source code is licensed under the MIT license found in the
     LICENSE file in the root directory of this source tree. *)
 
-module AnalysisKind = InterproceduralAnalysisKind
+module AnalysisKind = AnalysisKind
 module Analysis = InterproceduralAnalysis
-module Callable = InterproceduralCallable
+module Callable = Callable
 module Error = InterproceduralError
-module Fixpoint = InterproceduralFixpoint
+module Fixpoint = Fixpoint
 module Result = InterproceduralResult

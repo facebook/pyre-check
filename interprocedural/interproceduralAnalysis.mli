@@ -3,11 +3,8 @@
     This source code is licensed under the MIT license found in the
     LICENSE file in the root directory of this source tree. *)
 
-open Analysis
 
-module Callable = InterproceduralCallable
-module Fixpoint = InterproceduralFixpoint
-module Kind = InterproceduralAnalysisKind
+module Kind = AnalysisKind
 
 
 val one_analysis_pass:
@@ -19,7 +16,7 @@ val one_analysis_pass:
 val compute_fixpoint
   :  ?workers:Hack_parallel.Std.Worker.t list
   -> analyses:Kind.abstract list
-  -> caller_map:CallGraph.t
+  -> caller_map:Analysis.CallGraph.t
   -> all_callables:Callable.t list
   -> Fixpoint.Epoch.t
   -> int

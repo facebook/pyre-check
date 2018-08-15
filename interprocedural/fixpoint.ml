@@ -7,7 +7,6 @@
 open Core
 
 
-module Callable = InterproceduralCallable
 module Result = InterproceduralResult
 module SharedMemory = Hack_parallel.Std.SharedMem
 
