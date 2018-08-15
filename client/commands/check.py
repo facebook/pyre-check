@@ -41,7 +41,7 @@ class Check(ErrorHandling):
         return flags
 
     def _run(self, retries: int = 1) -> None:
-        result = self._call_client(command=self.NAME, flags=self._flags())
+        result = self._call_client(command=self.NAME)
         errors = self._get_errors(result)
         self._print(errors)
 

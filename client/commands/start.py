@@ -5,6 +5,7 @@
 
 import logging
 import os
+from typing import List
 
 from .. import FAILURE, filesystem
 from .error_handling import ErrorHandling
@@ -54,35 +55,35 @@ class Start(ErrorHandling):
                         self._exit_code = FAILURE
                         return
 
-                    flags = self._flags()
-                    filter_directories = self._get_directories_to_analyze()
-                    if len(filter_directories):
-                        flags.extend(
-                            [
-                                "-filter-directories-semicolon",
-                                ";".join(list(filter_directories)),
-                            ]
-                        )
-                    if not self._no_watchman:
-                        flags.append("-use-watchman")
-                    if self._terminal:
-                        flags.append("-terminal")
-                    flags.extend(
-                        [
-                            "-workers",
-                            str(self._number_of_workers),
-                            "-typeshed",
-                            str(self._configuration.get_typeshed()),
-                            "-expected-binary-version",
-                            str(self._configuration.get_version_hash()),
-                        ]
-                    )
-                    search_path = self._configuration.get_search_path()
-                    if search_path:
-                        flags.extend(["-search-path", ",".join(search_path)])
-                    self._call_client(command=self.NAME, flags=flags).check()
-
+                    self._call_client(command=self.NAME).check()
                     return
             except OSError:
                 blocking = True
                 LOG.info("Waiting on the pyre client lock, pid %d.", os.getpid())
+
+    def _flags(self) -> List[str]:
+        flags = super()._flags()
+        filter_directories = self._get_directories_to_analyze()
+        if len(filter_directories):
+            flags.extend(
+                ["-filter-directories-semicolon", ";".join(list(filter_directories))]
+            )
+        if not self._no_watchman:
+            flags.append("-use-watchman")
+        if self._terminal:
+            flags.append("-terminal")
+        flags.extend(
+            [
+                "-workers",
+                str(self._number_of_workers),
+                "-typeshed",
+                str(self._configuration.get_typeshed()),
+                "-expected-binary-version",
+                str(self._configuration.get_version_hash()),
+            ]
+        )
+        search_path = self._configuration.get_search_path()
+        if search_path:
+            flags.extend(["-search-path", ",".join(search_path)])
+
+        return flags

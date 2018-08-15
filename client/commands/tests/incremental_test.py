@@ -34,12 +34,12 @@ class IncrementalTest(unittest.TestCase):
         with patch.object(commands.Command, "_call_client") as call_client, patch(
             "json.loads", return_value=[]
         ):
-            incremental.Incremental(
+            command = incremental.Incremental(
                 arguments, configuration, analysis_directory="."
-            ).run()
-            call_client.assert_called_once_with(
-                command=commands.Incremental.NAME,
-                flags=[
+            )
+            self.assertEquals(
+                command._flags(),
+                [
                     "-project-root",
                     ".",
                     "-typeshed",
@@ -51,27 +51,32 @@ class IncrementalTest(unittest.TestCase):
                 ],
             )
 
+            command.run()
+            call_client.assert_called_once_with(command=commands.Incremental.NAME)
+
         commands_Command_state.return_value = commands.command.State.DEAD
         with patch.object(commands.Command, "_call_client") as call_client, patch(
             "json.loads", return_value=[]
         ):
-            commands.Incremental(arguments, configuration, analysis_directory=".").run()
+            command = commands.Incremental(
+                arguments, configuration, analysis_directory="."
+            )
+            self.assertEquals(
+                command._flags(),
+                [
+                    "-project-root",
+                    ".",
+                    "-typeshed",
+                    "stub",
+                    "-expected-binary-version",
+                    "hash",
+                    "-search-path",
+                    "path1,path2",
+                ],
+            )
+
+            command.run()
             commands_Start.assert_called_with(arguments, configuration, ".")
             call_client.assert_has_calls(
-                [
-                    call(
-                        command=commands.Incremental.NAME,
-                        flags=[
-                            "-project-root",
-                            ".",
-                            "-typeshed",
-                            "stub",
-                            "-expected-binary-version",
-                            "hash",
-                            "-search-path",
-                            "path1,path2",
-                        ],
-                    )
-                ],
-                any_order=True,
+                [call(command=commands.Incremental.NAME)], any_order=True
             )

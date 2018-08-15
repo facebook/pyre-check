@@ -30,19 +30,17 @@ class PersistentTest(unittest.TestCase):
         # Check start without watchman.
         with patch.object(commands.Command, "_call_client") as call_client:
             arguments.no_watchman = True
-            commands.Persistent(arguments, configuration, analysis_directory=".").run()
+            command = commands.Persistent(
+                arguments, configuration, analysis_directory="."
+            )
+            self.assertEquals(
+                command._flags(),
+                ["-log-identifier", '"."', "-expected-binary-version", "hash"],
+            )
+            command.run()
             call_client.assert_has_calls(
                 [
-                    call(
-                        command=commands.Persistent.NAME,
-                        flags=[
-                            "-log-identifier",
-                            '"."',
-                            "-expected-binary-version",
-                            "hash",
-                        ],
-                        capture_output=False,
-                    ),
+                    call(command=commands.Persistent.NAME, capture_output=False),
                     call().check(),
                 ]
             )

@@ -8,7 +8,7 @@ import re
 import select
 import sys
 import time
-from typing import Optional
+from typing import Optional, List
 
 from .command import Command
 from .start import Start
@@ -22,18 +22,18 @@ class Persistent(Command):
 
     def _run(self) -> None:
         arguments = self._arguments
-        log_identifier = self._analysis_directory
-
-        flags = [
-            "-log-identifier",
-            '"{}"'.format(log_identifier),
-            "-expected-binary-version",
-            str(self._configuration.get_version_hash()),
-        ]
         arguments.terminal = False
         Start(arguments, self._configuration, self._analysis_directory).run()
 
-        self._call_client(command=self.NAME, capture_output=False, flags=flags).check()
+        self._call_client(command=self.NAME, capture_output=False).check()
+
+    def _flags(self) -> List[str]:
+        return [
+            "-log-identifier",
+            '"{}"'.format(self._analysis_directory),
+            "-expected-binary-version",
+            str(self._configuration.get_version_hash()),
+        ]
 
     @classmethod
     def _initialize_response(cls, request_id: int) -> str:

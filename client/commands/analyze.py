@@ -21,5 +21,5 @@ class Analyze(Check):
         return flags
 
     def _run(self, retries: int = 1) -> None:
-        result = self._call_client(command=self.NAME, flags=self._flags())
+        result = self._call_client(command=self.NAME)
         log.stdout.write(result.output)

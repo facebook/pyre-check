@@ -393,15 +393,7 @@ class Infer(commands.ErrorHandling):
         self._print_errors = arguments.print_only
 
     def run(self) -> commands.Command:
-        flags = self._flags()
-        flags.extend(["-infer", "-typeshed", str(self._configuration.get_typeshed())])
-        search_path = self._configuration.get_search_path()
-        if search_path:
-            flags.extend(["-search-path", ",".join(search_path)])
-        if self._recursive:
-            flags.append("-recursive-infer")
-
-        result = self._call_client(command=commands.Check.NAME, flags=flags)
+        result = self._call_client(command=commands.Check.NAME)
         errors = self._get_errors(result)
         if self._print_errors:
             self._print(errors)
@@ -414,6 +406,16 @@ class Infer(commands.ErrorHandling):
                 annotate_paths(self._arguments, stubs, type_directory)
 
         return self
+
+    def _flags(self) -> List[str]:
+        flags = super()._flags()
+        flags.extend(["-infer", "-typeshed", str(self._configuration.get_typeshed())])
+        search_path = self._configuration.get_search_path()
+        if search_path:
+            flags.extend(["-search-path", ",".join(search_path)])
+        if self._recursive:
+            flags.append("-recursive-infer")
+        return flags
 
 
 def main():

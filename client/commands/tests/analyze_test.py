@@ -32,10 +32,10 @@ class AnalyzeTest(unittest.TestCase):
             result.output = ""
             call_client.return_value = result
 
-            commands.Analyze(arguments, configuration, analysis_directory=".").run()
-            call_client.assert_called_once_with(
-                command=commands.Analyze.NAME,
-                flags=[
+            command = commands.Analyze(arguments, configuration, analysis_directory=".")
+            self.assertEquals(
+                command._flags(),
+                [
                     "-project-root",
                     ".",
                     "-workers",
@@ -46,3 +46,5 @@ class AnalyzeTest(unittest.TestCase):
                     "path1,path2",
                 ],
             )
+            command.run()
+            call_client.assert_called_once_with(command=commands.Analyze.NAME)

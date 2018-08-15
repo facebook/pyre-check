@@ -18,6 +18,6 @@ class Query(Command):
         return [self.query]
 
     def _run(self) -> None:
-        result = self._call_client(command=self.NAME, flags=self._flags())
+        result = self._call_client(command=self.NAME)
         result.check()
         log.stdout.write(result.output)

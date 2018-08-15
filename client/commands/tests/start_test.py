@@ -30,10 +30,10 @@ class StartTest(unittest.TestCase):
         # Check start without watchman.
         with patch.object(commands.Command, "_call_client") as call_client:
             arguments.no_watchman = True
-            commands.Start(arguments, configuration, analysis_directory=".").run()
-            call_client.assert_called_once_with(
-                command=commands.Start.NAME,
-                flags=[
+            command = commands.Start(arguments, configuration, analysis_directory=".")
+            self.assertEquals(
+                command._flags(),
+                [
                     "-project-root",
                     ".",
                     "-workers",
@@ -46,40 +46,41 @@ class StartTest(unittest.TestCase):
                     "path1,path2",
                 ],
             )
+            command.run()
+            call_client.assert_called_once_with(command=commands.Start.NAME)
 
         # Check start with watchman.
         with patch.object(commands.Command, "_call_client") as call_client:
             arguments.no_watchman = False
-            commands.Start(arguments, configuration, analysis_directory=".").run()
-            call_client.assert_has_calls(
+            command = commands.Start(arguments, configuration, analysis_directory=".")
+            self.assertEquals(
+                command._flags(),
                 [
-                    call(
-                        command=commands.Start.NAME,
-                        flags=[
-                            "-project-root",
-                            ".",
-                            "-use-watchman",
-                            "-workers",
-                            "5",
-                            "-typeshed",
-                            "stub",
-                            "-expected-binary-version",
-                            "hash",
-                            "-search-path",
-                            "path1,path2",
-                        ],
-                    )
-                ]
+                    "-project-root",
+                    ".",
+                    "-use-watchman",
+                    "-workers",
+                    "5",
+                    "-typeshed",
+                    "stub",
+                    "-expected-binary-version",
+                    "hash",
+                    "-search-path",
+                    "path1,path2",
+                ],
             )
+            command.run()
+            call_client.assert_has_calls([call(command=commands.Start.NAME)])
 
         # Check start with terminal.
         with patch.object(commands.Command, "_call_client") as call_client:
             arguments.no_watchman = True
             arguments.terminal = True
-            commands.Start(arguments, configuration, analysis_directory=".").run()
-            call_client.assert_called_once_with(
-                command=commands.Start.NAME,
-                flags=[
+
+            command = commands.Start(arguments, configuration, analysis_directory=".")
+            self.assertEquals(
+                command._flags(),
+                [
                     "-project-root",
                     ".",
                     "-terminal",
@@ -93,3 +94,5 @@ class StartTest(unittest.TestCase):
                     "path1,path2",
                 ],
             )
+            command.run()
+            call_client.assert_called_once_with(command=commands.Start.NAME)

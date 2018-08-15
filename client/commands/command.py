@@ -141,17 +141,14 @@ class Command:
         except Exception:
             pass
 
-    def _call_client(self, command, flags=None, capture_output: bool = True) -> Result:
-        if not flags:
-            flags = []
-
+    def _call_client(self, command, capture_output: bool = True) -> Result:
         if not os.path.isdir(self._analysis_directory):
             raise EnvironmentException(
                 "`{}` is not a link tree.".format(self._analysis_directory)
             )
 
         client_command = [self._configuration.get_binary(), command]
-        client_command.extend(flags)
+        client_command.extend(self._flags())
         client_command.append(self._analysis_directory)
 
         def limit_memory_usage():

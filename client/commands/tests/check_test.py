@@ -28,10 +28,10 @@ class CheckTest(unittest.TestCase):
         with patch.object(commands.Command, "_call_client") as call_client, patch(
             "json.loads", return_value=[]
         ):
-            commands.Check(arguments, configuration, analysis_directory=".").run()
-            call_client.assert_called_once_with(
-                command=commands.Check.NAME,
-                flags=[
+            command = commands.Check(arguments, configuration, analysis_directory=".")
+            self.assertEquals(
+                command._flags(),
+                [
                     "-project-root",
                     ".",
                     "-workers",
@@ -42,6 +42,8 @@ class CheckTest(unittest.TestCase):
                     "path1,path2",
                 ],
             )
+            command.run()
+            call_client.assert_called_once_with(command=commands.Check.NAME)
 
     @patch("subprocess.check_output")
     @patch("os.path.realpath")
@@ -63,10 +65,10 @@ class CheckTest(unittest.TestCase):
         with patch.object(commands.Command, "_call_client") as call_client, patch(
             "json.loads", return_value=[]
         ):
-            commands.Check(arguments, configuration, analysis_directory=".").run()
-            call_client.assert_called_once_with(
-                command=commands.Check.NAME,
-                flags=[
+            command = commands.Check(arguments, configuration, analysis_directory=".")
+            self.assertEquals(
+                command._flags(),
+                [
                     "-sequential",
                     "-project-root",
                     ".",
@@ -78,6 +80,8 @@ class CheckTest(unittest.TestCase):
                     "path1,path2",
                 ],
             )
+            command.run()
+            call_client.assert_called_once_with(command=commands.Check.NAME)
 
     @patch("subprocess.check_output")
     @patch("os.path.realpath")
@@ -99,15 +103,10 @@ class CheckTest(unittest.TestCase):
         with patch.object(commands.Command, "_call_client") as call_client, patch(
             "json.loads", return_value=[]
         ):
-            exit_code = (
-                commands.Check(arguments, configuration, analysis_directory=".")
-                .run()
-                .exit_code()
-            )
-            self.assertEqual(exit_code, 0)
-            call_client.assert_called_once_with(
-                command=commands.Check.NAME,
-                flags=[
+            command = commands.Check(arguments, configuration, analysis_directory=".")
+            self.assertEquals(
+                command._flags(),
+                [
                     "-logging-sections",
                     "-progress",
                     "-project-root",
@@ -120,6 +119,9 @@ class CheckTest(unittest.TestCase):
                     "path1,path2",
                 ],
             )
+            exit_code = command.run().exit_code()
+            self.assertEqual(exit_code, 0)
+            call_client.assert_called_once_with(command=commands.Check.NAME)
 
     @patch("subprocess.check_output")
     @patch("os.path.realpath")
@@ -141,10 +143,10 @@ class CheckTest(unittest.TestCase):
         with patch.object(commands.Command, "_call_client") as call_client, patch(
             "json.loads", return_value=[]
         ):
-            commands.Check(arguments, configuration, analysis_directory=".").run()
-            call_client.assert_called_once_with(
-                command=commands.Check.NAME,
-                flags=[
+            command = commands.Check(arguments, configuration, analysis_directory=".")
+            self.assertEquals(
+                command._flags(),
+                [
                     "-logging-sections",
                     "parser",
                     "-project-root",
@@ -157,3 +159,5 @@ class CheckTest(unittest.TestCase):
                     "path1,path2",
                 ],
             )
+            command.run()
+            call_client.assert_called_once_with(command=commands.Check.NAME)
