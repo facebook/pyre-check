@@ -1,8 +1,8 @@
 (tests
  (names
-  pluginNamedTuplesTest
-  pluginDataClassTest
-  pluginFilterTest)
+  namedTuplesTest
+  dataClassTest
+  filterTest)
  (libraries
   oUnit
   pyrelib.test

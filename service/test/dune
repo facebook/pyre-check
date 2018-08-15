@@ -1,8 +1,8 @@
 (tests
  (names
-  serviceCoverageTest
-  serviceParserTest
-  serviceTypeCheckTest)
+  coverageTest
+  parserTest
+  typeCheckTest)
  (preprocess
   (pps ppx_sexp_message))
  (libraries

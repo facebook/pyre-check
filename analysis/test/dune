@@ -12,20 +12,20 @@
 (tests
  (names
   abstractDomainTest
-  analysisCallGraphTest
-  analysisCfgTest
-  analysisDependentTest
-  analysisEnvironmentTest
+  CallGraphTest
+  CfgTest
+  DependentTest
+  EnvironmentTest
   analysisErrorTest
-  analysisFixpointTest
-  analysisInferenceTest
-  analysisLookupTest
-  analysisPreprocessingTest
-  analysisRefinementTest
-  analysisResolutionTest
-  analysisTypeCheckTest
-  analysisTypeOrderTest
-  analysisTypeTest
+  FixpointTest
+  InferenceTest
+  LookupTest
+  PreprocessingTest
+  RefinementTest
+  ResolutionTest
+  TypeCheckTest
+  TypeOrderTest
+  TypeTest
   annotatedAccessTest
   annotatedCallableTest
   annotatedClassTest

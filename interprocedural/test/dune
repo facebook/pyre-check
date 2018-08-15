@@ -1,6 +1,6 @@
 (tests
  (names
-  interproceduralRegistrationTest
+  registrationTest
   interproceduralAnalysisTest)
  (libraries
   oUnit

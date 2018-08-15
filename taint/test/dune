@@ -1,11 +1,11 @@
 (tests
  (names
-  taintAccessPathTest
+  accessPathTest
   taintAnalysisTest
-  taintFlowTest
-  taintForwardAnalysisTest
-  taintBackwardAnalysisTest
-  taintModelTest)
+  flowTest
+  forwardAnalysisTest
+  backwardAnalysisTest
+  modelTest)
  (preprocess
   (pps ppx_sexp_message))
  (libraries
