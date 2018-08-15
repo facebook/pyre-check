@@ -92,10 +92,8 @@ let run_query serialized local_root () =
   let socket = Server.Operations.connect ~retries:3 ~configuration in
   Socket.write socket query;
   match Socket.read socket with
-  | TypeQueryResponse (Response serialized) ->
-      Log.print "%s" serialized
-  | TypeQueryResponse (Error error) ->
-      Log.print "%s" error
+  | TypeQueryResponse response ->
+      Log.print "%s" (human_readable response)
   | (TypeCheckResponse _) as response ->
       Log.print "%s" (Server.Protocol.show_response response)
   | response ->

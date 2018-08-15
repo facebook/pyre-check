@@ -503,53 +503,51 @@ let rec process_request
       let response =
         match request with
         | TypeQuery.Attributes annotation ->
-            let show_attribute {
+            let to_attribute {
                 Node.value = { Annotated.Class.Attribute.name; annotation; _ };
                 _;
               } =
-              Format.asprintf
-                "%s: %a"
-                (Expression.show (Node.create_with_default_location name))
-                Type.pp (Annotation.annotation annotation)
+              let annotation = Annotation.annotation annotation in
+              {
+                TypeQuery.name = Expression.show (Node.create_with_default_location name);
+                annotation;
+              }
             in
             parse_and_validate annotation
             |> Handler.class_definition
             >>| (fun { Analysis.Environment.class_definition; _ } -> class_definition)
             >>| Annotated.Class.create
             >>| (fun annotated_class -> Annotated.Class.attributes ~resolution annotated_class)
-            >>| List.map ~f:show_attribute
-            >>| String.concat ~sep:"\n"
-            >>| (fun response -> TypeQuery.Response response)
+            >>| List.map ~f:to_attribute
+            >>| (fun attributes -> TypeQuery.Response (TypeQuery.FoundAttributes attributes))
+
             |> Option.value
               ~default:(
-                TypeQuery.Error
-                  (Format.sprintf
-                     "No class definition found for %s"
-                     (Expression.show annotation)))
+                TypeQuery.Error (
+                  Format.sprintf
+                    "No class definition found for %s"
+                    (Expression.show annotation)))
 
         | TypeQuery.Join (left, right) ->
             let left = parse_and_validate left in
             let right = parse_and_validate right in
             TypeOrder.join order left right
-            |> Type.show
-            |> (fun response -> TypeQuery.Response response)
+            |> (fun annotation -> TypeQuery.Response (TypeQuery.Type annotation))
 
         | TypeQuery.LessOrEqual (left, right) ->
             let left = parse_and_validate left in
             let right = parse_and_validate right in
             TypeOrder.less_or_equal order ~left ~right
-            |> Bool.to_string
-            |> (fun response -> TypeQuery.Response response)
+            |> (fun response -> TypeQuery.Response (TypeQuery.Boolean response))
 
         | TypeQuery.Meet (left, right) ->
             let left = parse_and_validate left in
             let right = parse_and_validate right in
             TypeOrder.meet order left right
-            |> Type.show
-            |> (fun response -> TypeQuery.Response response)
+            |> (fun annotation -> TypeQuery.Response (TypeQuery.Type annotation))
 
         | TypeQuery.Methods annotation ->
-            let show_method annotated_method =
+            let to_method annotated_method =
               let open Annotated.Class.Method in
               let name =
                 name annotated_method
@@ -558,40 +556,39 @@ let rec process_request
                 |> Option.value ~default:""
               in
               let annotations = parameter_annotations_positional ~resolution annotated_method in
-              let parameter_annotations =
+              let parameters =
                 Map.keys annotations
                 |> List.sort ~compare:Int.compare
                 |> Fn.flip List.drop 1 (* Drop the self argument *)
                 |> List.map ~f:(Map.find_exn annotations)
-                |> List.map ~f:Type.show
-                |> fun parameters -> "self" :: parameters
-                                     |> String.concat ~sep:", "
+                |> fun parameters -> (Type.primitive "self") :: parameters
+
+
+
+
+
+
               in
-              let return_annotation =
-                return_annotation ~resolution annotated_method
-                |> Type.serialize
-              in
-              Format.sprintf "%s: (%s) -> %s" name parameter_annotations return_annotation
+              let return_annotation = return_annotation ~resolution annotated_method in
+              { TypeQuery.name; parameters; return_annotation }
             in
             parse_and_validate annotation
             |> Handler.class_definition
             >>| (fun { Analysis.Environment.class_definition; _ } -> class_definition)
             >>| Annotated.Class.create
             >>| Annotated.Class.methods
-            >>| List.map ~f:show_method
-            >>| String.concat ~sep:"\n"
-            >>| (fun response -> TypeQuery.Response response)
+            >>| List.map ~f:to_method
+            >>| (fun methods -> TypeQuery.Response (TypeQuery.FoundMethods methods))
+
             |> Option.value
               ~default:(
                 TypeQuery.Error
                   (Format.sprintf
                      "No class definition found for %s"
                      (Expression.show annotation)))
-
         | TypeQuery.NormalizeType expression ->
             parse_and_validate expression
-            |> Type.show
-            |> (fun response -> TypeQuery.Response response)
+            |> (fun annotation -> TypeQuery.Response (TypeQuery.Type annotation))
 
         | TypeQuery.Superclasses annotation ->
             parse_and_validate annotation
@@ -600,14 +597,13 @@ let rec process_request
             >>| Annotated.Class.create
             >>| Annotated.Class.superclasses ~resolution
             >>| List.map ~f:(Annotated.Class.annotation ~resolution)
-            >>| List.map ~f:Type.show
-            >>| String.concat ~sep:", "
-            >>| (fun response -> TypeQuery.Response response)
+            >>| (fun classes -> TypeQuery.Response (TypeQuery.Superclasses classes))
+
+
             |> Option.value
               ~default:(
                 TypeQuery.Error
                   (Format.sprintf "No class definition found for %s" (Expression.show annotation)))
-
         | TypeQuery.TypeAtLocation {
             Ast.Location.path;
             start = ({ Ast.Location.line; column} as start);
@@ -625,15 +621,14 @@ let rec process_request
             |> Ast.SharedMemory.get_source
             >>| Lookup.create_of_source state.environment
             >>= Lookup.get_annotation ~position:start ~source_text
-            >>| (fun (_, annotation) -> Type.show annotation)
-            >>| (fun response -> TypeQuery.Response response)
+            >>| (fun (_, annotation) -> TypeQuery.Response (TypeQuery.Type annotation))
             |> Option.value ~default:(
-              TypeQuery.Error
-                (Format.sprintf
-                   "Not able to get lookup at %s:%d:%d"
-                   path
-                   line
-                   column))
+              TypeQuery.Error (
+                Format.sprintf
+                  "Not able to get lookup at %s:%d:%d"
+                  path
+                  line
+                  column))
       in
       TypeQueryResponse response
     in

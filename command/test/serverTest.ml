@@ -340,10 +340,16 @@ let test_query _ =
     | Some request ->
         assert_response ~source ~request (Some (Protocol.TypeQueryResponse response))
   in
+  let parse_annotation serialized =
+    serialized
+    |> fun literal -> String (StringLiteral.create literal)
+    |> Node.create_with_default_location
+    |> Type.create ~aliases:(fun _ -> None)
+  in
   assert_type_query_response
     ~source:""
     ~query:"less_or_equal(int, str)"
-    (Protocol.TypeQuery.Response "false");
+    (Protocol.TypeQuery.Response (Protocol.TypeQuery.Boolean false));
 
   assert_type_query_response
     ~source:
@@ -351,7 +357,7 @@ let test_query _ =
         A = int
       |}
     ~query:"less_or_equal(int, A)"
-    (Protocol.TypeQuery.Response "true");
+    (Protocol.TypeQuery.Response (Protocol.TypeQuery.Boolean true));
 
   assert_type_query_response
     ~source:""
@@ -361,19 +367,19 @@ let test_query _ =
   assert_type_query_response
     ~source:"class C(int): ..."
     ~query:"less_or_equal(list[C], list[int])"
-    (Protocol.TypeQuery.Response "true");
+    (Protocol.TypeQuery.Response (Protocol.TypeQuery.Boolean true));
   assert_type_query_response
     ~source:"class C(int): ..."
     ~query:"join(list[C], list[int])"
-    (Protocol.TypeQuery.Response "typing.List[int]");
+    (Protocol.TypeQuery.Response (Protocol.TypeQuery.Type (parse_annotation "typing.List[int]")));
   assert_type_query_response
     ~source:"class C(int): ..."
     ~query:"meet(list[C], list[int])"
-    (Protocol.TypeQuery.Response "typing.List[C]");
+    (Protocol.TypeQuery.Response (Protocol.TypeQuery.Type (parse_annotation "typing.List[C]")));
   assert_type_query_response
     ~source:"class C(int): ..."
     ~query:"superclasses(C)"
-    (Protocol.TypeQuery.Response "int");
+    (Protocol.TypeQuery.Response (Protocol.TypeQuery.Superclasses [Type.integer]));
 
   assert_type_query_response
     ~source:""
@@ -388,7 +394,7 @@ let test_query _ =
   assert_type_query_response
     ~source:"A = int"
     ~query:"normalizeType(A)"
-    (Protocol.TypeQuery.Response "int");
+    (Protocol.TypeQuery.Response (Protocol.TypeQuery.Type Type.integer));
 
   assert_type_query_response
     ~source:{|
@@ -397,7 +403,19 @@ let test_query _ =
         def C.bar(self) -> str: ...
     |}
     ~query:"methods(C)"
-    (Protocol.TypeQuery.Response "foo: (self) -> int\nbar: (self) -> str");
+    (Protocol.TypeQuery.Response
+       (Protocol.TypeQuery.FoundMethods [
+           {
+             Protocol.TypeQuery.name = "foo";
+             parameters = [Type.primitive "self"];
+             return_annotation = Type.integer;
+           };
+           {
+             Protocol.TypeQuery.name = "bar";
+             parameters = [Type.primitive "self"];
+             return_annotation = Type.string;
+           }
+         ]));
 
   assert_type_query_response
     ~source:""
@@ -407,7 +425,7 @@ let test_query _ =
   assert_type_query_response
     ~source:"a = 2"
     ~query:"type_at_location(test.py, 1, 4)"
-    (Protocol.TypeQuery.Response "int");
+    (Protocol.TypeQuery.Response (Protocol.TypeQuery.Type Type.integer));
   assert_type_query_response
     ~source:"a = 2"
     ~query:"type_at_location(test.py, 1, 3)"
@@ -421,7 +439,25 @@ let test_query _ =
         def C.foo() -> int: ...
     |}
     ~query:"attributes(C)"
-    (Protocol.TypeQuery.Response "foo: typing.Callable(C.foo)[[], int]\nx: int\ny: str")
+    (Protocol.TypeQuery.Response
+       (Protocol.TypeQuery.FoundAttributes [
+           {
+             Protocol.TypeQuery.name = "foo";
+             annotation = Type.Callable {
+                 Type.Callable.kind = Type.Callable.Named (Access.create "C.foo");
+                 overloads = [
+                   {
+                     Type.Callable.annotation = Type.integer;
+                     parameters = Type.Callable.Defined [];
+                   };
+                 ];
+                 implicit = Type.Callable.Instance;
+               }
+           };
+           { Protocol.TypeQuery.name = "x"; annotation = Type.integer };
+           { Protocol.TypeQuery.name = "y"; annotation = Type.string };
+         ]));
+  ()
 
 
 let test_connect _ =

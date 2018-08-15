@@ -37,10 +37,33 @@ module TypeQuery: sig
     | TypeAtLocation of Location.Instantiated.t
   [@@deriving eq, show]
 
+  type attribute = {
+    name: string;
+    annotation: Type.t;
+  }
+  [@@deriving eq, show]
+
+  type method_representation = {
+    name: string;
+    parameters: Type.t list;
+    return_annotation: Type.t;
+  }
+  [@@deriving eq, show]
+
+  type base_response =
+    | FoundAttributes of attribute list
+    | FoundMethods of method_representation list
+    | Type of Type.t
+    | Superclasses of Type.t list
+    | Boolean of bool
+  [@@deriving eq, show]
+
   type response =
-    | Response of string
+    | Response of base_response
     | Error of string
   [@@deriving eq, show]
+
+  val human_readable: response -> string
 end
 
 

@@ -50,10 +50,62 @@ module TypeQuery = struct
     | TypeAtLocation of Location.Instantiated.t
   [@@deriving eq, show]
 
+
+  type attribute = {
+    name: string;
+    annotation: Type.t;
+  }
+  [@@deriving eq, show]
+
+  type method_representation = {
+    name: string;
+    parameters: Type.t list;
+    return_annotation: Type.t;
+  }
+  [@@deriving eq, show]
+
+  type base_response =
+    | FoundAttributes of attribute list
+    | FoundMethods of method_representation list
+    | Type of Type.t
+    | Superclasses of Type.t list
+    | Boolean of bool
+  [@@deriving eq, show]
+
   type response =
-    | Response of string
+    | Response of base_response
     | Error of string
   [@@deriving eq, show]
+
+  let human_readable response =
+    match response with
+    | Response (FoundAttributes attributes) ->
+        attributes
+        |> List.map
+          ~f:(fun { name; annotation } -> Format.asprintf "%s: %a" name Type.pp annotation)
+        |> String.concat ~sep:"\n"
+    | Response (FoundMethods methods) ->
+        let show_method { name; parameters; return_annotation } =
+          Format.sprintf
+            "%s: (%s) -> %s"
+            name
+            (List.map parameters ~f:Type.show
+             |> String.concat ~sep:", ")
+            (Type.show return_annotation)
+        in
+        methods
+        |> List.map ~f:show_method
+        |> String.concat ~sep:"\n"
+    | Response (Type annotation) ->
+        Type.show annotation
+    | Response (Superclasses classes) ->
+        classes
+        |> List.map ~f:Type.show
+        |> String.concat ~sep:", "
+    | Response (Boolean boolean) ->
+        Format.sprintf "%b" boolean
+    | Error message ->
+        Format.sprintf "Error: %s" message
 end
 
 
