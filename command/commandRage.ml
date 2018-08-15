@@ -8,7 +8,6 @@ open Core
 open Pyre
 
 open LanguageServer.Types
-open Constants
 
 
 let get_logs configuration =
@@ -27,12 +26,11 @@ let get_logs configuration =
     ~f:get_log
     [
       "server",
-      (ServerConfiguration.create configuration
-       |> fun { ServerConfiguration.log_path; _ } -> log_path);
+      (Constants.Server.log_path configuration);
       "watchman",
-      (Watchman.log_path configuration);
+      (Constants.Watchman.log_path configuration);
       "persistent",
-      (Persistent.log_path configuration);
+      (Constants.Persistent.log_path configuration);
     ]
 
 

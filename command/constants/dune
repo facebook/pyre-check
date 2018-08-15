@@ -19,9 +19,7 @@
   ppx_deriving_yojson
   ppx_deriving_yojson.runtime
   hack_parallel
-  pyrelib.service
   pyrelib.ast
   pyrelib.analysis
   pyrelib.experimental
-  pyrelib.languageServer
   pyrelib.version))

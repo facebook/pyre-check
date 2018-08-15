@@ -19,4 +19,6 @@
   pyrelib.path
   pyrelib.plugin
   pyrelib.taint
+  pyrelib.constants
+  pyrelib.languageServer
   hack_parallel))
