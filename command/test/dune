@@ -27,4 +27,5 @@
   pyrelib.commandTest
   pyrelib.pyreCommand
   pyrelib.languageServer
+  pyrelib.network
   pyrelib.ast))

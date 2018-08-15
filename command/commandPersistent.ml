@@ -7,10 +7,10 @@ open Core
 
 open LanguageServer.Protocol
 open Pyre
+open Network
 
 module Time = Core_kernel.Time_ns.Span
 module Protocol = ServerProtocol
-module Socket = CommandSocket
 
 
 type reason = string

@@ -5,6 +5,8 @@
 
 open Core
 
+open Network
+
 type version_mismatch = {
   server_version: string;
   expected_version: string;
@@ -14,7 +16,7 @@ type version_mismatch = {
 exception ConnectionFailure
 exception VersionMismatch of version_mismatch
 
-val connect: retries: int -> configuration: Configuration.t -> CommandSocket.t
+val connect: retries: int -> configuration: Configuration.t -> Socket.t
 
 val initialize
   :  ?old_state: ServerState.t

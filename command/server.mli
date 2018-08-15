@@ -5,7 +5,6 @@
 
 open Core
 
-module Socket = CommandSocket
 
 val start: ServerConfiguration.t -> int
 val start_command: Command.t

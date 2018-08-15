@@ -5,9 +5,10 @@
 
 open Core
 
+open Network
+
 module Error = Analysis.Error
 module Scheduler = Service.Scheduler
-module Socket = CommandSocket
 
 
 type client = {

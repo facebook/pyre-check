@@ -6,12 +6,11 @@
 open Core
 
 open Ast
+open Network
 open Pyre
 open PyreParser
 open ServerProtocol
 
-
-module Socket = CommandSocket
 module Scheduler = Service.Scheduler
 
 

@@ -1,6 +1,6 @@
 (library
- (name pyreCommand)
- (public_name pyrelib.pyreCommand)
+ (name network)
+ (public_name pyrelib.network)
  (preprocess
   (pps
    ppx_deriving.eq
@@ -19,11 +19,6 @@
   ppx_deriving_yojson
   ppx_deriving_yojson.runtime
   hack_parallel
-  pyrelib.service
-  pyrelib.ast
-  pyrelib.analysis
-  pyrelib.experimental
   pyrelib.constants
-  pyrelib.network
   pyrelib.languageServer
   pyrelib.version))

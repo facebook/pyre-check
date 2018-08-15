@@ -5,8 +5,8 @@
 
 open Core
 open Pyre
+open Network
 
-module Socket = CommandSocket
 module Scheduler = Service.Scheduler
 
 

@@ -7,6 +7,7 @@ open Core
 
 open Ast
 open Analysis
+open Network
 
 open ServerState
 open Configuration

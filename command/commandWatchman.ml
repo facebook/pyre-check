@@ -7,12 +7,12 @@ open Core
 open Hack_parallel.Std
 
 open Pyre
+open Network
 
 open Constants.Watchman
 
 module Time = Core_kernel.Time_ns.Span
 module Protocol = ServerProtocol
-module Socket = CommandSocket
 module Scheduler = Service.Scheduler
 
 

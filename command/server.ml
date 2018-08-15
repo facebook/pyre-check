@@ -10,13 +10,13 @@ open Hack_parallel.Std
 
 open Pyre
 
+open Network
 open Configuration
 open ServerConfiguration
 open ServerProtocol
 
 module Time = Core_kernel.Time_ns.Span
 module Handshake = ServerHandshake
-module Socket = CommandSocket
 module Request = ServerRequest
 module State = ServerState
 
