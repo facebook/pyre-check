@@ -439,20 +439,24 @@ let test_connect_type_order _ =
   in
   Environment.register_aliases (module Handler) [source];
   Environment.connect_type_order (module Handler) source;
-  Environment.TypeOrder.connect_annotations_to_top order ~top:Type.Object all_annotations;
 
   assert_equal (parse_annotation (module Handler) (!"C")) (Type.primitive "C");
   assert_equal (parse_annotation (module Handler) (!"D")) (Type.primitive "D");
   assert_equal (parse_annotation (module Handler) (!"B")) (Type.primitive "D");
   assert_equal (parse_annotation (module Handler) (!"A")) (Type.primitive "D");
   assert_is_none (Handler.function_definitions (access ["foo"]));
-  assert_equal
-    (TypeOrder.successors order (Type.primitive "C"))
-    [Type.Object; Type.Deleted; Type.Top];
-  assert_equal
-    (TypeOrder.successors order (Type.primitive "D"))
-    [Type.primitive "C"; Type.Object; Type.Deleted; Type.Top]
 
+  let assert_successors annotation successors =
+    assert_equal (TypeOrder.successors order annotation) successors
+  in
+  (* Classes get connected to object via `connect_annotations_to_top`. *)
+  assert_successors (Type.primitive "C") [];
+  assert_successors (Type.primitive "D") [Type.primitive "C"];
+
+  Environment.TypeOrder.connect_annotations_to_top order ~top:Type.Object all_annotations;
+
+  assert_successors (Type.primitive "C") [Type.Object; Type.Deleted; Type.Top];
+  assert_successors (Type.primitive "D") [Type.primitive "C"; Type.Object; Type.Deleted; Type.Top]
 
 let test_register_functions _ =
   let environment = Environment.Builder.create () in

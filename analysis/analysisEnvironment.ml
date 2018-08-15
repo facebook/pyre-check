@@ -165,19 +165,19 @@ let connect_definition
                     Some access
               | _ ->
                   None in
-            let super_annotation, parameters =
-              match qualified_name with
-              | Some name ->
+            match qualified_name with
+            | Some name ->
+                let super_annotation, parameters =
                   connect_definition
                     ~path
                     ~resolution
                     ~predecessor:annotation
                     ~name
                     ~definition:None
-              | None ->
-                  Type.Object, []
-            in
-            connect ~predecessor:primitive ~successor:super_annotation ~parameters
+                in
+                connect ~predecessor:primitive ~successor:super_annotation ~parameters
+            | None ->
+                ()
           in
           let bases =
             let inferred_base =
