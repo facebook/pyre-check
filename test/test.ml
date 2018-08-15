@@ -56,12 +56,12 @@ let parse_untrimmed
         ~metadata
         ~path
         ~qualifier
-        (ParserGenerator.parse (Lexer.read state) buffer)
+        (Generator.parse (Lexer.read state) buffer)
     in
     source
   with
   | Pyre.ParserError _
-  | ParserGenerator.Error ->
+  | Generator.Error ->
       let location =
         Location.create
           ~start:buffer.Lexing.lex_curr_p

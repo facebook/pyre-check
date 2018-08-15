@@ -6,9 +6,6 @@
 open Core
 open Ast
 
-module ParserGenerator = ParserGenerator
-module Lexer = ParserLexer
-
 
 exception Error of string
 
@@ -32,10 +29,10 @@ let parse ?start_line ?start_column ?path lines =
   let state = Lexer.State.initial () in
 
   try
-    ParserGenerator.parse (Lexer.read state) buffer
+    Generator.parse (Lexer.read state) buffer
   with
   | Pyre.ParserError _
-  | ParserGenerator.Error
+  | Generator.Error
   | Failure _ ->
       let location =
         Location.Instantiated.create
