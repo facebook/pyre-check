@@ -5,17 +5,4 @@
 
 open Core
 
-open Analysis
-
-module Scheduler = Service.Scheduler
-
-
-type result = {
-  handles: File.Handle.t list;
-  environment: (module Environment.Handler);
-  errors: Error.t list;
-}
-
-val check: Configuration.t -> Scheduler.t option -> unit -> result
-
 val check_command: Command.t

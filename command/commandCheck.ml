@@ -6,154 +6,9 @@
 open Core
 
 open Analysis
-open Configuration
 open Pyre
 
-module Scheduler = Service.Scheduler
-
-
-let server_not_running = 2
-
-
-type result = {
-  handles: File.Handle.t list;
-  environment: (module Environment.Handler);
-  errors: Error.t list;
-}
-
-
-let check
-    {
-      start_time = _;
-      verbose;
-      expected_version = _;
-      sections;
-      debug;
-      infer;
-      recursive_infer;
-      strict;
-      declare;
-      show_error_traces;
-      log_identifier;
-      parallel;
-      filter_directories;
-      number_of_workers;
-      project_root;
-      search_path;
-      typeshed;
-      local_root;
-      logger;
-    }
-    original_scheduler
-    () =
-  let configuration =
-    Configuration.create
-      ~verbose
-      ~sections
-      ~local_root
-      ~debug
-      ~strict
-      ~declare
-      ~show_error_traces
-      ~log_identifier
-      ~project_root
-      ~parallel
-      ?filter_directories
-      ~number_of_workers
-      ~search_path
-      ?typeshed
-      ~infer
-      ~recursive_infer
-      ?logger
-      ()
-  in
-  Scheduler.initialize_process ~configuration;
-
-  let check_directory_exists directory =
-    if not (Path.is_directory directory) then
-      raise (Invalid_argument (Format.asprintf "`%a` is not a directory" Path.pp directory));
-  in
-  check_directory_exists local_root;
-  check_directory_exists project_root;
-  List.iter ~f:check_directory_exists search_path;
-  Option.iter typeshed ~f:check_directory_exists;
-
-  let bucket_multiplier =
-    try Int.of_string (Sys.getenv "BUCKET_MULTIPLIER" |> (fun value -> Option.value_exn value))
-    with _ -> 10
-  in
-  let scheduler =
-    match original_scheduler with
-    | None -> Scheduler.create ~configuration ~bucket_multiplier ()
-    | Some scheduler -> scheduler
-  in
-  (* Parsing. *)
-  let { Service.Parser.stubs; sources } = Service.Parser.parse_all scheduler ~configuration in
-  (* Coverage. *)
-  let () =
-    let number_of_files = List.length sources in
-    let { Service.Coverage.strict_coverage; declare_coverage; default_coverage; source_files } =
-      Service.Coverage.coverage ~sources ~number_of_files
-    in
-    let path_to_files =
-      Path.get_relative_to_root ~root:project_root ~path:local_root
-      |> Option.value ~default:(Path.absolute local_root)
-    in
-
-    Statistics.coverage
-      ~coverage:[
-        "strict_coverage", strict_coverage;
-        "declare_coverage", declare_coverage;
-        "default_coverage", default_coverage;
-        "source_files", source_files;
-      ]
-      ~normals:[
-        "file_name", path_to_files;
-      ]
-      ()
-  in
-
-  (* Build environment. *)
-  Service.Postprocess.register_ignores ~configuration scheduler sources;
-  let environment =
-    let handler =
-      if Scheduler.is_parallel scheduler then
-        Service.Environment.shared_memory_handler
-      else
-        Service.Environment.in_process_handler
-    in
-    handler ~configuration ~stubs ~sources
-  in
-
-  let errors, { TypeCheck.Coverage.full; partial; untyped; ignore; crashes } =
-    Service.TypeCheck.analyze_sources scheduler configuration environment sources
-  in
-  (* Log coverage results *)
-  let path_to_files =
-    Path.get_relative_to_root ~root:project_root ~path:local_root
-    |> Option.value ~default:(Path.absolute local_root)
-  in
-  Statistics.coverage
-    ~coverage:[
-      "full_type_coverage", full;
-      "partial_type_coverage", partial;
-      "no_type_coverage", untyped;
-      "ignore_coverage", ignore;
-      "total_errors", List.length errors;
-      "crashes", crashes;
-    ]
-    ~normals:[
-      "file_name", path_to_files;
-    ]
-    ();
-
-  (* Only destroy the scheduler if the check command created it. *)
-  begin
-    match original_scheduler with
-    | None -> Scheduler.destroy scheduler
-    | Some _ -> ()
-  end;
-  { handles = stubs @ sources; environment; errors }
+open Service
 
 
 (* run_command prints out the errors, for a Check run *)
@@ -214,7 +69,7 @@ let run_check
   in
 
   let timer = Timer.start () in
-  let { errors; _ } = check configuration None () in
+  let { TypeCheck.errors; _ } = TypeCheck.check configuration None () in
   let { Caml.Gc.minor_collections; major_collections; compactions; _ } = Caml.Gc.stat () in
   Statistics.performance
     ~name:"check"

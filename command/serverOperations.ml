@@ -9,9 +9,9 @@ open Pyre
 open Network
 open ServerConfiguration
 open ServerState
+open Service
 open Constants
 
-module Check = CommandCheck
 module Handshake = ServerHandshake
 
 type version_mismatch = {
@@ -37,8 +37,8 @@ let initialize
   in
   SharedMem.collect `aggressive;
   let timer = Timer.start () in
-  let { Check.handles; environment; errors = initial_errors } =
-    Check.check configuration (Some scheduler) () in
+  let { TypeCheck.handles; environment; errors = initial_errors } =
+    TypeCheck.check configuration (Some scheduler) () in
   Statistics.performance ~name:"initialization" ~timer ~normals:[] ();
   Log.log ~section:`Server "Server initialized";
   let handles = File.Handle.Set.of_list handles in

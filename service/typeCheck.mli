@@ -6,9 +6,17 @@
 open Analysis
 
 
+type result = {
+  handles: File.Handle.t list;
+  environment: (module Environment.Handler);
+  errors: Error.t list;
+}
+
 val analyze_sources
   :  Scheduler.t
   -> Configuration.t
   -> (module Environment.Handler)
   -> File.Handle.t list
-  -> Error.t list * TypeCheck.Coverage.t
+  -> Error.t list * Coverage.t
+
+val check: Configuration.t -> Scheduler.t option -> unit -> result
