@@ -17,7 +17,6 @@ open Request
 
 open Pyre
 
-module Rage = CommandRage
 module Scheduler = Service.Scheduler
 
 
@@ -462,7 +461,7 @@ let rec process_request
                  |> HoverResponse.to_yojson
                  |> Yojson.Safe.to_string)))
     | RageRequest id ->
-        let items = Rage.get_logs configuration in
+        let items = Service.Rage.get_logs configuration in
         Some
           (state,
            Some (LanguageServerProtocolResponse
@@ -543,7 +542,7 @@ let rec process_request
         state, Some (ClientExitResponse client)
 
     | RageRequest id ->
-        let items = Rage.get_logs configuration in
+        let items = Service.Rage.get_logs configuration in
         state,
         Some
           (LanguageServerProtocolResponse

@@ -10,30 +10,6 @@ open Pyre
 open LanguageServer.Types
 
 
-let get_logs configuration =
-  let get_log (name, path) =
-    let read_path path =
-      if Path.file_exists path then
-        Some (Sys_utils.cat (Path.absolute path))
-      else
-        None
-    in
-    read_path path
-    >>| fun content ->
-    { RageResponse.RageResult.title = Some name; data = content }
-  in
-  List.filter_map
-    ~f:get_log
-    [
-      "server",
-      (Constants.Server.log_path configuration);
-      "watchman",
-      (Constants.Watchman.log_path configuration);
-      "persistent",
-      (Constants.Persistent.log_path configuration);
-    ]
-
-
 let get_watchman_watched_directories () =
   let channel = Unix.open_process_in "watchman watch-list" in
   let data = In_channel.input_all channel in
@@ -52,7 +28,7 @@ let run_rage local_root () =
     (Version.version ())
     (Version.build_info ());
   let configuration = Configuration.create ~local_root:(Path.create_absolute local_root) () in
-  let logs = get_watchman_watched_directories () :: get_logs configuration in
+  let logs = get_watchman_watched_directories () :: Service.Rage.get_logs configuration in
   List.iter ~f:display_log logs
 
 
