@@ -279,6 +279,39 @@ let test_apply_method_model_at_call_site _ =
         define_name = "test_apply_method5.taint_with_union_type";
         returns = [Sources.TestSource];
       };
+    ];
+
+  assert_taint
+    ~qualifier:"test_apply_method6"
+    ~source:
+      {|
+        class Foo:
+          def qux():
+            return not_tainted()
+
+        class Bar:
+          def qux():
+            return not_tainted()
+
+        class Baz:
+          def qux():
+            return taint()
+
+        def taint_with_union_type(condition):
+          if condition:
+            f = Foo()
+          elif condition > 1:
+            f = Bar()
+          else:
+            f = Baz()
+
+          return f.qux()
+      |}
+    ~expect:[
+      {
+        define_name = "test_apply_method6.taint_with_union_type";
+        returns = [Sources.TestSource];
+      };
     ]
 
 

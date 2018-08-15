@@ -444,6 +444,43 @@ let test_apply_method_model_at_call_site _ =
         ];
         tito_parameters = [];
       };
+    ];
+
+  assert_taint
+    ~qualifier:"test_apply_method6"
+    ~source:
+      {|
+        class Foo:
+          def qux(not_tainted_parameter):
+            pass
+
+        class Bar:
+          def qux(not_tainted_parameter):
+            pass
+
+        class Baz:
+          def qux(tainted_parameter):
+            command_unsafe = tainted_parameter
+            __testSink(command_unsafe)
+
+        def taint_across_union_receiver_types(condition, tainted_parameter):
+          if condition:
+            f = Foo()
+          elif condition > 1:
+            f = Bar()
+          else:
+            f = Baz()
+
+          return f.qux(tainted_parameter)
+      |}
+    ~expected:[
+      {
+        define_name = "test_apply_method6.taint_across_union_receiver_types";
+        taint_sink_parameters = [
+          { position = 1; sinks = [Taint.Sinks.TestSink] };
+        ];
+        tito_parameters = [];
+      };
     ]
 
 
