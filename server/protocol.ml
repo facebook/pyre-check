@@ -25,18 +25,6 @@ type client =
 [@@deriving eq, show]
 
 
-type type_query_request =
-  | Attributes of Expression.t
-  | Join of Expression.t * Expression.t
-  | LessOrEqual of Expression.t * Expression.t
-  | Meet of Expression.t * Expression.t
-  | Methods of Expression.t
-  | NormalizeType of Expression.t
-  | Superclasses of Expression.t
-  | TypeAtLocation of Location.Instantiated.t
-[@@deriving eq, show]
-
-
 module TypeCheckRequest = struct
   type t = {
     update_environment_with: File.t list;
@@ -50,6 +38,25 @@ module TypeCheckRequest = struct
 end
 
 
+module TypeQuery = struct
+  type request =
+    | Attributes of Expression.t
+    | Join of Expression.t * Expression.t
+    | LessOrEqual of Expression.t * Expression.t
+    | Meet of Expression.t * Expression.t
+    | Methods of Expression.t
+    | NormalizeType of Expression.t
+    | Superclasses of Expression.t
+    | TypeAtLocation of Location.Instantiated.t
+  [@@deriving eq, show]
+
+  type response =
+    | Response of string
+    | Error of string
+  [@@deriving eq, show]
+end
+
+
 module Request = struct
   type t =
     | LanguageServerProtocolRequest of string
@@ -59,7 +66,7 @@ module Request = struct
     | DisplayTypeErrors of File.t list
     | FlushTypeErrorsRequest
     | TypeCheckRequest of TypeCheckRequest.t
-    | TypeQueryRequest of type_query_request
+    | TypeQueryRequest of TypeQuery.request
     | StopRequest
     | ClientShutdownRequest of int
     | GetDefinitionRequest of DefinitionRequest.t
@@ -139,7 +146,7 @@ type response =
   | ClientConnectionResponse of client
   | ClientExitResponse of client
   | TypeCheckResponse of (File.Handle.t * (Error.t list)) list
-  | TypeQueryResponse of string
+  | TypeQueryResponse of TypeQuery.response
   | StopResponse
   | GetDefinitionResponse of Location.Instantiated.t option
   | HoverResponse of Location.Instantiated.t option

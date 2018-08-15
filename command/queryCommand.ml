@@ -13,6 +13,7 @@ open Server
 open Protocol
 
 module Scheduler = Service.Scheduler
+open Server.Protocol.TypeQuery
 
 
 let parse_query ~root query =
@@ -37,13 +38,13 @@ let parse_query ~root query =
       begin
         match String.lowercase (Identifier.show name), arguments with
         | "attributes", [class_name] ->
-            Some (Request.TypeQueryRequest (Server.Protocol.Attributes class_name))
+            Some (Request.TypeQueryRequest (Attributes class_name))
         | "less_or_equal", [left; right] ->
-            Some (Request.TypeQueryRequest (Server.Protocol.LessOrEqual (left, right)))
+            Some (Request.TypeQueryRequest (LessOrEqual (left, right)))
         | "meet", [left; right] ->
-            Some (Request.TypeQueryRequest (Server.Protocol.Meet (left, right)))
+            Some (Request.TypeQueryRequest (Meet (left, right)))
         | "join", [left; right] ->
-            Some (Request.TypeQueryRequest (Server.Protocol.Join (left, right)))
+            Some (Request.TypeQueryRequest (Join (left, right)))
         | "typecheckpath", arguments ->
             let files =
               arguments
@@ -53,11 +54,11 @@ let parse_query ~root query =
             in
             Some (Request.TypeCheckRequest (TypeCheckRequest.create ~check:files ()))
         | "normalizetype", [argument] ->
-            Some (Request.TypeQueryRequest (Server.Protocol.NormalizeType argument))
+            Some (Request.TypeQueryRequest (NormalizeType argument))
         | "superclasses", [class_name] ->
-            Some (Request.TypeQueryRequest (Server.Protocol.Superclasses class_name))
+            Some (Request.TypeQueryRequest (Superclasses class_name))
         | "methods", [class_name] ->
-            Some (Request.TypeQueryRequest (Server.Protocol.Methods class_name))
+            Some (Request.TypeQueryRequest (Methods class_name))
         | "type_at_location",
           [
             { Node.value = Expression.Access path; _ };
@@ -67,7 +68,7 @@ let parse_query ~root query =
             let path = Expression.Access.show path in
             let position = { Location.line; column } in
             let location = { Location.path; start = position; stop = position } in
-            Some (Request.TypeQueryRequest (Server.Protocol.TypeAtLocation location))
+            Some (Request.TypeQueryRequest (TypeAtLocation location))
         | _ -> None
       end
   | _ -> None
@@ -91,10 +92,12 @@ let run_query serialized local_root () =
   let socket = Server.Operations.connect ~retries:3 ~configuration in
   Socket.write socket query;
   match Socket.read socket with
-  | Server.Protocol.TypeQueryResponse serialized ->
+  | TypeQueryResponse (Response serialized) ->
       Log.print "%s" serialized
+  | TypeQueryResponse (Error error) ->
+      Log.print "%s" error
   | (TypeCheckResponse _) as response ->
-      Log.print "%s" (show_response response)
+      Log.print "%s" (Server.Protocol.show_response response)
   | response ->
       Log.error "Unexpected response %s from server" (Server.Protocol.show_response response)
 

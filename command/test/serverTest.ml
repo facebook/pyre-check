@@ -343,7 +343,7 @@ let test_query _ =
   assert_type_query_response
     ~source:""
     ~query:"less_or_equal(int, str)"
-    "false";
+    (Protocol.TypeQuery.Response "false");
 
   assert_type_query_response
     ~source:
@@ -351,42 +351,44 @@ let test_query _ =
         A = int
       |}
     ~query:"less_or_equal(int, A)"
-    "true";
-
+    (Protocol.TypeQuery.Response "true");
 
   assert_type_query_response
     ~source:""
     ~query:"less_or_equal(int, Unknown)"
-    "Error: Type `Unknown` was not found in the type order.";
+    (Protocol.TypeQuery.Error "Type `Unknown` was not found in the type order.");
 
   assert_type_query_response
     ~source:"class C(int): ..."
     ~query:"less_or_equal(list[C], list[int])"
-    "true";
+    (Protocol.TypeQuery.Response "true");
   assert_type_query_response
     ~source:"class C(int): ..."
     ~query:"join(list[C], list[int])"
-    "typing.List[int]";
+    (Protocol.TypeQuery.Response "typing.List[int]");
   assert_type_query_response
     ~source:"class C(int): ..."
     ~query:"meet(list[C], list[int])"
-    "typing.List[C]";
+    (Protocol.TypeQuery.Response "typing.List[C]");
   assert_type_query_response
     ~source:"class C(int): ..."
     ~query:"superclasses(C)"
-    "int";
+    (Protocol.TypeQuery.Response "int");
 
   assert_type_query_response
     ~source:""
     ~query:"superclasses(Unknown)"
-    "Error: Type `Unknown` was not found in the type order.";
+    (Protocol.TypeQuery.Error "Type `Unknown` was not found in the type order.");
 
   assert_type_query_response
     ~source:""
     ~query:"superclasses(Unknown[int])"
-    "No class definition found for Unknown[int]";
+    (Protocol.TypeQuery.Error "No class definition found for Unknown[int]");
 
-  assert_type_query_response ~source:"A = int" ~query:"normalizeType(A)" "int";
+  assert_type_query_response
+    ~source:"A = int"
+    ~query:"normalizeType(A)"
+    (Protocol.TypeQuery.Response "int");
 
   assert_type_query_response
     ~source:{|
@@ -395,18 +397,21 @@ let test_query _ =
         def C.bar(self) -> str: ...
     |}
     ~query:"methods(C)"
-    "foo: (self) -> int\nbar: (self) -> str";
+    (Protocol.TypeQuery.Response "foo: (self) -> int\nbar: (self) -> str");
 
   assert_type_query_response
     ~source:""
     ~query:"methods(Unknown)"
-    "Error: Type `Unknown` was not found in the type order.";
+    (Protocol.TypeQuery.Error "Type `Unknown` was not found in the type order.");
 
-  assert_type_query_response ~source:"a = 2" ~query:"type_at_location(test.py, 1, 4)" "int";
+  assert_type_query_response
+    ~source:"a = 2"
+    ~query:"type_at_location(test.py, 1, 4)"
+    (Protocol.TypeQuery.Response "int");
   assert_type_query_response
     ~source:"a = 2"
     ~query:"type_at_location(test.py, 1, 3)"
-    "Error: Not able to get lookup at test.py:1:3";
+    (Protocol.TypeQuery.Error "Not able to get lookup at test.py:1:3");
 
   assert_type_query_response
     ~source:{|
@@ -416,7 +421,7 @@ let test_query _ =
         def C.foo() -> int: ...
     |}
     ~query:"attributes(C)"
-    "foo: typing.Callable(C.foo)[[], int]\nx: int\ny: str"
+    (Protocol.TypeQuery.Response "foo: typing.Callable(C.foo)[[], int]\nx: int\ny: str")
 
 
 let test_connect _ =

@@ -502,7 +502,7 @@ let rec process_request
       in
       let response =
         match request with
-        | Attributes annotation ->
+        | TypeQuery.Attributes annotation ->
             let show_attribute {
                 Node.value = { Annotated.Class.Attribute.name; annotation; _ };
                 _;
@@ -519,28 +519,36 @@ let rec process_request
             >>| (fun annotated_class -> Annotated.Class.attributes ~resolution annotated_class)
             >>| List.map ~f:show_attribute
             >>| String.concat ~sep:"\n"
+            >>| (fun response -> TypeQuery.Response response)
             |> Option.value
               ~default:(
-                Format.sprintf
-                  "Error: No class definition found for %s"
-                  (Expression.show annotation))
+                TypeQuery.Error
+                  (Format.sprintf
+                     "No class definition found for %s"
+                     (Expression.show annotation)))
 
-        | Join (left, right) ->
+        | TypeQuery.Join (left, right) ->
             let left = parse_and_validate left in
             let right = parse_and_validate right in
             TypeOrder.join order left right
             |> Type.show
-        | LessOrEqual (left, right) ->
+            |> (fun response -> TypeQuery.Response response)
+
+        | TypeQuery.LessOrEqual (left, right) ->
             let left = parse_and_validate left in
             let right = parse_and_validate right in
             TypeOrder.less_or_equal order ~left ~right
             |> Bool.to_string
-        | Meet (left, right) ->
+            |> (fun response -> TypeQuery.Response response)
+
+        | TypeQuery.Meet (left, right) ->
             let left = parse_and_validate left in
             let right = parse_and_validate right in
             TypeOrder.meet order left right
             |> Type.show
-        | Methods annotation ->
+            |> (fun response -> TypeQuery.Response response)
+
+        | TypeQuery.Methods annotation ->
             let show_method annotated_method =
               let open Annotated.Class.Method in
               let name =
@@ -572,15 +580,20 @@ let rec process_request
             >>| Annotated.Class.methods
             >>| List.map ~f:show_method
             >>| String.concat ~sep:"\n"
+            >>| (fun response -> TypeQuery.Response response)
             |> Option.value
               ~default:(
-                Format.sprintf
-                  "Error: No class definition found for %s"
-                  (Expression.show annotation))
-        | NormalizeType expression ->
+                TypeQuery.Error
+                  (Format.sprintf
+                     "No class definition found for %s"
+                     (Expression.show annotation)))
+
+        | TypeQuery.NormalizeType expression ->
             parse_and_validate expression
             |> Type.show
-        | Superclasses annotation ->
+            |> (fun response -> TypeQuery.Response response)
+
+        | TypeQuery.Superclasses annotation ->
             parse_and_validate annotation
             |> Handler.class_definition
             >>| (fun { Analysis.Environment.class_definition; _ } -> class_definition)
@@ -589,10 +602,13 @@ let rec process_request
             >>| List.map ~f:(Annotated.Class.annotation ~resolution)
             >>| List.map ~f:Type.show
             >>| String.concat ~sep:", "
+            >>| (fun response -> TypeQuery.Response response)
             |> Option.value
               ~default:(
-                Format.sprintf "No class definition found for %s" (Expression.show annotation))
-        | TypeAtLocation {
+                TypeQuery.Error
+                  (Format.sprintf "No class definition found for %s" (Expression.show annotation)))
+
+        | TypeQuery.TypeAtLocation {
             Ast.Location.path;
             start = ({ Ast.Location.line; column} as start);
             _;
@@ -610,12 +626,14 @@ let rec process_request
             >>| Lookup.create_of_source state.environment
             >>= Lookup.get_annotation ~position:start ~source_text
             >>| (fun (_, annotation) -> Type.show annotation)
+            >>| (fun response -> TypeQuery.Response response)
             |> Option.value ~default:(
-              Format.sprintf
-                "Error: Not able to get lookup at %s:%d:%d"
-                path
-                line
-                column)
+              TypeQuery.Error
+                (Format.sprintf
+                   "Not able to get lookup at %s:%d:%d"
+                   path
+                   line
+                   column))
       in
       TypeQueryResponse response
     in
@@ -623,9 +641,9 @@ let rec process_request
       handle_request ()
     with TypeOrder.Untracked untracked ->
       let untracked_response =
-        Format.asprintf "Error: Type `%a` was not found in the type order." Type.pp untracked
+        Format.asprintf "Type `%a` was not found in the type order." Type.pp untracked
       in
-      TypeQueryResponse untracked_response
+      TypeQueryResponse (TypeQuery.Error untracked_response)
   in
   let handle_client_shutdown_request id =
     let response = LanguageServer.Protocol.ShutdownResponse.default id in
