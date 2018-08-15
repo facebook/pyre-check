@@ -27,6 +27,7 @@ from . import (
     merge_analysis_directories,
     resolve_analysis_directories,
     switch_root,
+    translate_arguments,
 )
 from .configuration import Configuration
 from .version import __version__
@@ -148,7 +149,7 @@ def main() -> int:
 
     # Subcommands.
     parsed_commands = parser.add_subparsers(
-        metavar="{check, kill, incremental, initialize (init), "
+        metavar="{analyze, check, kill, incremental, initialize (init), "
         "query, rage, restart, start, stop}"
     )
 
@@ -163,6 +164,12 @@ def main() -> int:
 
     analyze = parsed_commands.add_parser(commands.Analyze.NAME)
     analyze.set_defaults(command=commands.Analyze)
+    analyze.add_argument(
+        "--taint-models-path",
+        default=None,
+        type=readable_directory,
+        help="Location of taint models",
+    )
 
     persistent = parsed_commands.add_parser(commands.Persistent.NAME)
     persistent.add_argument(
@@ -257,6 +264,7 @@ def main() -> int:
             arguments.noninteractive = True
 
         switch_root(arguments)
+        translate_arguments(commands, arguments)
         log.initialize(arguments)
 
         if arguments.command not in [commands.Initialize]:

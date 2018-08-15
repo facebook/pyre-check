@@ -34,7 +34,7 @@ class AnalyzeTest(unittest.TestCase):
 
             commands.Analyze(arguments, configuration, analysis_directory=".").run()
             call_client.assert_called_once_with(
-                command=commands.Check.NAME,
+                command=commands.Analyze.NAME,
                 flags=[
                     "-project-root",
                     ".",
@@ -44,6 +44,5 @@ class AnalyzeTest(unittest.TestCase):
                     "stub",
                     "-search-path",
                     "path1,path2",
-                    "-analyze",
                 ],
             )

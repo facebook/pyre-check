@@ -86,6 +86,30 @@ def switch_root(arguments) -> None:
     arguments.current_directory = root
 
 
+def translate_path(root, path):
+    if os.path.isabs(path):
+        return path
+
+    translated = os.path.join(root, path)
+    if os.path.exists(translated):
+        return os.path.realpath(translated)
+
+    return path
+
+
+def translate_arguments(commands, arguments):
+    root = arguments.original_directory
+
+    if arguments.command in [commands.Analyze]:
+        if arguments.taint_models_path:
+            arguments.taint_models_path = translate_path(
+                root, arguments.taint_models_path
+            )
+
+    if arguments.logger:
+        arguments.logger = translate_path(root, arguments.logger)
+
+
 def resolve_analysis_directories(
     arguments, configuration, prompt: bool = True, use_buck_cache: bool = False
 ):
@@ -124,17 +148,7 @@ def resolve_analysis_directories(
     if not translation:
         return analysis_directories
 
-    def _translate(path):
-        if os.path.isabs(path):
-            return path
-
-        translated = os.path.join(translation, path)
-        if os.path.exists(translated):
-            return os.path.realpath(translated)
-
-        return path
-
-    return {_translate(path) for path in analysis_directories}
+    return {translate_path(translation, path) for path in analysis_directories}
 
 
 def number_of_workers() -> int:
