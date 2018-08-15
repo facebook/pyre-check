@@ -239,6 +239,46 @@ let test_methods _ =
     ["foo"; "bar"; "baz"]
 
 
+let test_has_method _ =
+  let get_actual source target_method =
+    match parse_last_statement source with
+    | { Node.value = Statement.Class definition; _ } ->
+        let actual =
+          Node.create_with_default_location definition
+          |> Class.create
+          |> Class.has_method ~name:target_method
+        in
+        actual
+    | _ ->
+        false
+  in
+  let assert_has_method source target_method =
+    assert_true (get_actual source target_method)
+  in
+  let assert_not_has_method source target_method =
+    assert_false (get_actual source target_method)
+  in
+  assert_not_has_method "class A: pass" "foo";
+  assert_has_method
+    {|
+      class A:
+        def A.foo(): pass
+        def A.bar(): pass
+        1 + 1
+        def A.baz(): ...
+    |}
+    "foo";
+  assert_has_method
+    {|
+      class A:
+        def A.foo(): pass
+        def A.bar(): pass
+        1 + 1
+        def A.baz(): ...
+    |}
+    "baz"
+
+
 let test_is_protocol _ =
   let assert_is_protocol bases expected =
     let is_protocol =

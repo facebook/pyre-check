@@ -81,6 +81,7 @@ val immediate_superclasses
 
 
 val methods: t -> Method.t list
+val has_method: t -> name: string -> bool
 
 val is_protocol: t -> bool
 val implements: t -> protocol: t -> bool
