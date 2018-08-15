@@ -3469,6 +3469,7 @@ let test_check_attributes _ =
         return Foo.attribute
     |}
     ["Incompatible return type [7]: Expected `str` but got `int`."];
+
   assert_type_errors
     {|
       class Foo:
@@ -3479,6 +3480,17 @@ let test_check_attributes _ =
         return Foo.Bar().attribute
     |}
     ["Incompatible return type [7]: Expected `str` but got `int`."];
+
+  assert_type_errors
+    {|
+      class Foo:
+        DERP: typing.ClassVar[str] = "test"
+
+        @staticmethod
+        def derp() -> str:
+          return Foo.DERP
+    |}
+    [];
 
   (* Attributes defined in constructor. *)
   assert_type_errors
