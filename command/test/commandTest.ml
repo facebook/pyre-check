@@ -44,7 +44,7 @@ let mock_server_configuration
 
 
 let start_server ?(local_root = Path.current_working_directory ()) ?expected_version () =
-  PyreCommand.Server.start (mock_server_configuration ~local_root ?expected_version ())
+  Commands.Server.start (mock_server_configuration ~local_root ?expected_version ())
 
 
 let environment () =

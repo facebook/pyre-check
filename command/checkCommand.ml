@@ -92,5 +92,5 @@ let run_check
 let check_command =
   Command.basic_spec
     ~summary:"Runs a full check without a server (default)"
-    CommandSpec.base_command_line_arguments
+    Specification.base_command_line_arguments
     run_check

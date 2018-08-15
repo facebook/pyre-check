@@ -112,5 +112,5 @@ let command =
         "-taint-models"
         (optional file)
         ~doc:"directory A directory containing models to introduce taint."
-      ++ CommandSpec.base_command_line_arguments)
+      ++ Specification.base_command_line_arguments)
     run_analysis

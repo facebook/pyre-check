@@ -33,7 +33,7 @@ let register_signal_handlers server_configuration socket =
 
 
 let spawn_watchman_client { configuration = { sections; project_root; local_root; _ }; _ } =
-  CommandWatchman.run_command
+  WatchmanCommand.run_command
     ~daemonize:true
     ~verbose:false
     ~sections
@@ -632,7 +632,7 @@ let start_command =
         "-use-watchman"
         no_arg
         ~doc:"Subscribe to watchman for file changes."
-      ++ CommandSpec.base_command_line_arguments)
+      ++ Specification.base_command_line_arguments)
     run_start_command
 
 

@@ -4,8 +4,9 @@
  (modules commandTest)
  (libraries
   oUnit
-  pyrelib.pyreCommand
+  pyrelib.commands
   pyrelib.languageServer
+  pyrelib.server
   pyrelib.test
   pyrelib.ast
   pyrelib.analysis))
@@ -25,7 +26,7 @@
   oUnit
   pyrelib.test
   pyrelib.commandTest
-  pyrelib.pyreCommand
+  pyrelib.commands
   pyrelib.languageServer
   pyrelib.network
   pyrelib.server

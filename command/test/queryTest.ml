@@ -19,13 +19,13 @@ let assert_parses serialized query =
   assert_equal
     ~cmp:(fun left right -> Option.equal Request.equal left right)
     (Some (Request.TypeQueryRequest query))
-    (PyreCommand.Query.parse_query ~root:fake_root serialized)
+    (Commands.Query.parse_query ~root:fake_root serialized)
 
 
 let assert_fails_to_parse serialized =
   assert_equal
     None
-    (PyreCommand.Query.parse_query ~root:fake_root serialized)
+    (Commands.Query.parse_query ~root:fake_root serialized)
 
 
 let test_parse_query _ =
@@ -71,7 +71,7 @@ let test_parse_query _ =
   assert_fails_to_parse "normalizeType(int, str)";
 
   assert_equal
-    (PyreCommand.Query.parse_query ~root:fake_root "typecheckPath(fiddle.py)")
+    (Commands.Query.parse_query ~root:fake_root "typecheckPath(fiddle.py)")
     (Some (Request.TypeCheckRequest
              (TypeCheckRequest.create
                 ~check:[

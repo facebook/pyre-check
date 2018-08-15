@@ -1,6 +1,6 @@
 (library
- (name pyreCommand)
- (public_name pyrelib.pyreCommand)
+ (name commands)
+ (public_name pyrelib.commands)
  (preprocess
   (pps
    ppx_deriving.eq

@@ -110,5 +110,5 @@ let command =
               Starts a daemon server in the current directory if it does not exist."
     Command.Spec.(
       empty
-      ++ CommandSpec.base_command_line_arguments)
+      ++ Specification.base_command_line_arguments)
     run

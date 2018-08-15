@@ -145,7 +145,7 @@
   pyrelib.analysis
   pyrelib.ast
   pyrelib.service
-  pyrelib.pyreCommand
+  pyrelib.commands
   pyrelib.configuration
   pyrelib.pyre
   pyrelib.taint

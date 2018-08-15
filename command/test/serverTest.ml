@@ -123,7 +123,7 @@ let with_timeout ~seconds f x =
 
 let test_server_stops _ =
   let pid = Pid.of_int (CommandTest.start_server ()) in
-  Command.run ~argv:["_"; "-graceful"] PyreCommand.Server.stop_command;
+  Command.run ~argv:["_"; "-graceful"] Commands.Server.stop_command;
   let { ServerConfiguration.lock_path; socket_path; _ } =
     ServerConfiguration.create (Configuration.create ())
   in
@@ -163,7 +163,7 @@ let test_server_exits_on_directory_removal context =
 
 let test_stop_handles_unix_errors context =
   let long_path = bracket_tmpdir ~suffix:(String.init ~f:(fun _ -> 'a') 140) context in
-  Command.run ~argv:["_"; "-graceful"; long_path] PyreCommand.Server.stop_command
+  Command.run ~argv:["_"; "-graceful"; long_path] Commands.Server.stop_command
 
 
 let configuration = Configuration.create ~infer:true ()
@@ -333,7 +333,7 @@ let test_protocol_type_check _ =
 
 let test_query _ =
   let assert_type_query_response ~source ~query response =
-    let query = PyreCommand.Query.parse_query ~root:(Path.current_working_directory ()) query in
+    let query = Commands.Query.parse_query ~root:(Path.current_working_directory ()) query in
     match query with
     | None ->
         assert_unreached ()
@@ -430,7 +430,7 @@ let test_connect _ =
   Unix.nanosleep 0.5
   |> ignore;
   let cleanup () =
-    PyreCommand.Server.stop ~graceful:true "." ();
+    Commands.Server.stop ~graceful:true "." ();
     with_timeout ~seconds:3 poll_for_deletion lock_path;
     CommandTest.clean_environment ()
   in
