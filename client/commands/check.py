@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from .. import FOUND_ERRORS, SUCCESS
+from .. import FOUND_ERRORS
 from .error_handling import ErrorHandling
 
 
@@ -40,9 +40,10 @@ class Check(ErrorHandling):
             flags.extend(["-logger", self._logger])
         return flags
 
-    def _run(self, retries: int = 1) -> int:
+    def _run(self, retries: int = 1) -> None:
         result = self._call_client(command=self.NAME, flags=self._flags())
         errors = self._get_errors(result)
         self._print(errors)
 
-        return FOUND_ERRORS if errors else SUCCESS
+        if errors:
+            self._exit_code = FOUND_ERRORS

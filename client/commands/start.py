@@ -6,7 +6,7 @@
 import logging
 import os
 
-from .. import FAILURE, SUCCESS, filesystem
+from .. import FAILURE, filesystem
 from .error_handling import ErrorHandling
 from .monitor import Monitor
 
@@ -23,7 +23,7 @@ class Start(ErrorHandling):
         self._no_watchman = arguments.no_watchman
         self._number_of_workers = configuration.number_of_workers
 
-    def _run(self) -> int:
+    def _run(self) -> None:
         while True:
             # Be optimistic in grabbing the lock in order to provide users with
             # a message when the lock is being waited on.
@@ -51,7 +51,8 @@ class Start(ErrorHandling):
                         LOG.warning(
                             "Server at `%s` exists, skipping.", self._analysis_directory
                         )
-                        return FAILURE
+                        self._exit_code = FAILURE
+                        return
 
                     flags = self._flags()
                     filter_directories = self._get_directories_to_analyze()
@@ -81,7 +82,7 @@ class Start(ErrorHandling):
                         flags.extend(["-search-path", ",".join(search_path)])
                     self._call_client(command=self.NAME, flags=flags).check()
 
-                    return SUCCESS
+                    return
             except OSError:
                 blocking = True
                 LOG.info("Waiting on the pyre client lock, pid %d.", os.getpid())

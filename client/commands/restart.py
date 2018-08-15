@@ -4,7 +4,6 @@
 # LICENSE file in the root directory of this source tree.
 
 
-from .. import SUCCESS
 from .command import Command
 from .incremental import Incremental
 from .start import Start
@@ -20,7 +19,7 @@ class Restart(Command):
         super(Restart, self).__init__(arguments, configuration, analysis_directory)
         self._blocking = blocking
 
-    def _run(self) -> int:
+    def _run(self) -> None:
         Stop(self._arguments, self._configuration, self._analysis_directory).run()
         if self._blocking:
             Incremental(
@@ -28,5 +27,3 @@ class Restart(Command):
             ).run()
         else:
             Start(self._arguments, self._configuration, self._analysis_directory).run()
-
-        return SUCCESS

@@ -99,9 +99,11 @@ class CheckTest(unittest.TestCase):
         with patch.object(commands.Command, "_call_client") as call_client, patch(
             "json.loads", return_value=[]
         ):
-            exit_code = commands.Check(
-                arguments, configuration, analysis_directory="."
-            ).run()
+            exit_code = (
+                commands.Check(arguments, configuration, analysis_directory=".")
+                .run()
+                .exit_code()
+            )
             self.assertEqual(exit_code, 0)
             call_client.assert_called_once_with(
                 command=commands.Check.NAME,

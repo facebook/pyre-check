@@ -6,7 +6,7 @@
 import logging
 import subprocess
 
-from .. import BINARY_NAME, SUCCESS
+from .. import BINARY_NAME
 from .command import Command
 
 
@@ -19,13 +19,7 @@ class Kill(Command):
     def __init__(self, arguments, configuration, analysis_directory) -> None:
         super(Kill, self).__init__(arguments, configuration, analysis_directory)
 
-    def _run(self) -> int:
-        self._kill_all_processes()
-        return SUCCESS
-
-    def _kill_all_processes(self) -> None:
-        """
-            Kills all processes that have the same binary as the one specified
-            in the # configuration.
-        """
+    def _run(self) -> None:
+        # Kills all processes that have the same binary as the one specified
+        # in the # configuration.
         subprocess.run(["pkill", "-f", "{}".format(BINARY_NAME)])

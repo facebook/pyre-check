@@ -10,7 +10,6 @@ import sys
 import time
 from typing import Optional
 
-from .. import SUCCESS
 from .command import Command
 from .start import Start
 
@@ -21,7 +20,7 @@ class Persistent(Command):
     def __init__(self, arguments, configuration, analysis_directory) -> None:
         super(Persistent, self).__init__(arguments, configuration, analysis_directory)
 
-    def _run(self) -> int:
+    def _run(self) -> None:
         arguments = self._arguments
         log_identifier = self._analysis_directory
 
@@ -35,8 +34,6 @@ class Persistent(Command):
         Start(arguments, self._configuration, self._analysis_directory).run()
 
         self._call_client(command=self.NAME, capture_output=False, flags=flags).check()
-
-        return SUCCESS
 
     @classmethod
     def _initialize_response(cls, request_id: int) -> str:

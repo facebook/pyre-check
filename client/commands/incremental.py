@@ -9,7 +9,7 @@ import os
 import subprocess
 import sys
 
-from .. import FAILURE, SUCCESS
+from .. import FAILURE
 from .command import ClientException, State
 from .error_handling import ErrorHandling
 from .start import Start
@@ -37,7 +37,7 @@ class Incremental(ErrorHandling):
                 stderr_tail.stdout, analysis_directory
             )
 
-    def _run(self) -> int:
+    def _run(self) -> None:
         if self._state() == State.DEAD:
             LOG.warning("Starting server at `%s`.", self._analysis_directory)
             arguments = self._arguments
@@ -71,6 +71,4 @@ class Incremental(ErrorHandling):
         except ClientException as exception:
             LOG.error("Error while waiting for server.")
             LOG.error("Run `%s restart` in order to restart the server.", sys.argv[0])
-            return FAILURE
-
-        return SUCCESS
+            self._exit_code = FAILURE

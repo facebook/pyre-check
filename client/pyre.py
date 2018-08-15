@@ -324,9 +324,11 @@ def main() -> int:
                 )
                 analysis_directory_path = shared_analysis_directory.get_root()
 
-        exit_code = arguments.command(
-            arguments, configuration, analysis_directory_path
-        ).run()
+        exit_code = (
+            arguments.command(arguments, configuration, analysis_directory_path)
+            .run()
+            .exit_code()
+        )
     except (buck.BuckException, EnvironmentException) as error:
         LOG.error(str(error))
         if arguments.command == commands.Persistent:

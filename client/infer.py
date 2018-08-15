@@ -392,7 +392,7 @@ class Infer(commands.ErrorHandling):
         self._recursive = arguments.recursive
         self._print_errors = arguments.print_only
 
-    def run(self) -> int:
+    def run(self) -> commands.Command:
         flags = self._flags()
         flags.extend(["-infer", "-typeshed", str(self._configuration.get_typeshed())])
         search_path = self._configuration.get_search_path()
@@ -412,7 +412,8 @@ class Infer(commands.ErrorHandling):
             if self._arguments.in_place is not None:
                 LOG.info("Annotating files")
                 annotate_paths(self._arguments, stubs, type_directory)
-        return SUCCESS
+
+        return self
 
 
 def main():

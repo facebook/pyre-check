@@ -7,7 +7,7 @@ import json
 import shutil
 import sys
 import unittest
-from unittest.mock import call, patch
+from unittest.mock import MagicMock, call, patch
 
 from .. import EnvironmentException, buck, commands, configuration, pyre
 
@@ -42,13 +42,16 @@ class PyreTest(unittest.TestCase):
     def test_buck_build_prompting(
         self, generate_analysis_directories, validate, read, _json_load, _json_dump
     ) -> None:
-        with patch.object(commands.Check, "run", return_value=0):
+        mock_success = MagicMock()
+        mock_success.exit_code = lambda: 0
+
+        with patch.object(commands.Check, "run", return_value=mock_success):
             with patch.object(sys, "argv", ["pyre", "check"]):
                 self.assertEqual(pyre.main(), 0)
                 generate_analysis_directories.assert_called_with(
                     set(), build=False, prompt=False, use_cache=False
                 )
-        with patch.object(commands.Incremental, "run", return_value=0):
+        with patch.object(commands.Incremental, "run", return_value=mock_success):
             with patch.object(sys, "argv", ["pyre"]):
                 # One for shutil.which("watchman"),
                 # another for shutil.which(BINARY_NAME).
@@ -57,7 +60,7 @@ class PyreTest(unittest.TestCase):
                     generate_analysis_directories.assert_called_with(
                         set(), build=False, prompt=False, use_cache=True
                     )
-        with patch.object(commands.Persistent, "run", return_value=0):
+        with patch.object(commands.Persistent, "run", return_value=mock_success):
             with patch.object(sys, "argv", ["pyre", "persistent"]):
                 self.assertEqual(pyre.main(), 0)
                 generate_analysis_directories.assert_called_with(

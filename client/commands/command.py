@@ -45,6 +45,8 @@ class Command:
     _buffer = []  # type: List[str]
     _call_client_terminated = False  # type: bool
 
+    _exit_code = SUCCESS  # type: int
+
     def __init__(self, arguments, configuration, analysis_directory) -> None:
         self._arguments = arguments
         self._configuration = configuration
@@ -70,11 +72,15 @@ class Command:
         else:
             self._local_root = arguments.original_directory
 
-    def run(self) -> int:
-        return self._run()
+    def run(self) -> "Command":
+        self._run()
+        return self
+
+    def exit_code(self) -> int:
+        return self._exit_code
 
     @abstractmethod
-    def _run(self) -> int:
+    def _run(self) -> None:
         """ Abstract method expected to be overridden by subclasses. """
         pass
 

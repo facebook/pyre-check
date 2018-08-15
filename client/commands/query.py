@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from .. import SUCCESS, log
+from .. import log
 from .command import Command
 
 
@@ -17,8 +17,7 @@ class Query(Command):
     def _flags(self):
         return [self.query]
 
-    def _run(self) -> int:
+    def _run(self) -> None:
         result = self._call_client(command=self.NAME, flags=self._flags())
         result.check()
         log.stdout.write(result.output)
-        return SUCCESS
