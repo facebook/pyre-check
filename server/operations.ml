@@ -8,11 +8,10 @@ open Core
 open Pyre
 open Network
 open ServerConfiguration
-open ServerState
+open State
 open Service
 open Constants
 
-module Handshake = ServerHandshake
 
 type version_mismatch = {
   server_version: string;

@@ -6,7 +6,8 @@
 open Core
 open OUnit2
 
-open PyreCommand.Protocol
+open Server
+open Protocol
 open Request
 open Test
 

@@ -7,7 +7,6 @@ open Core
 open OUnit2
 
 open Analysis
-open PyreCommand
 open Pyre
 open Test
 
@@ -39,13 +38,13 @@ let mock_server_configuration
     ?expected_version
     () =
   let temporary = Filename.temp_file "" "" in
-  ServerConfiguration.create
+  Server.ServerConfiguration.create
     ~log_path:(Path.create_absolute temporary)
     (mock_analysis_configuration ~local_root ?expected_version ())
 
 
 let start_server ?(local_root = Path.current_working_directory ()) ?expected_version () =
-  Server.start (mock_server_configuration ~local_root ?expected_version ())
+  PyreCommand.Server.start (mock_server_configuration ~local_root ?expected_version ())
 
 
 let environment () =

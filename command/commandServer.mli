@@ -5,6 +5,7 @@
 
 open Core
 
+open Server
 
 val start: ServerConfiguration.t -> int
 val start_command: Command.t

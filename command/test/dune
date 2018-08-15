@@ -28,4 +28,5 @@
   pyrelib.pyreCommand
   pyrelib.languageServer
   pyrelib.network
+  pyrelib.server
   pyrelib.ast))

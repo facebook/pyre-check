@@ -28,7 +28,7 @@ type lookups_cache_entry = {
 }
 
 type t = {
-  deferred_requests: ServerProtocol.Request.t list;
+  deferred_requests: Protocol.Request.t list;
   environment: (module Analysis.Environment.Handler);
   initial_errors: Analysis.Error.Hash_set.t;
   errors: (Error.t list) File.Handle.Table.t;

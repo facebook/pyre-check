@@ -7,15 +7,15 @@ open Core
 open OUnit2
 
 open Pyre
-open PyreCommand
 open Path.AppendOperator
+open Server
 
 
 module Parallel = Hack_parallel.Std
 
 
 let start_watchman pid_path () =
-  Watchman.run_command
+  PyreCommand.Watchman.run_command
     ~daemonize:true
     ~verbose:false
     ~sections:[]
@@ -53,7 +53,7 @@ let test_watchman_exists context =
   in
 
   let tear_down (pid_path, lock_path, pid) _ =
-    Server.stop ~graceful:true "." ();
+    PyreCommand.Server.stop ~graceful:true "." ();
     Signal.send_i Signal.int (`Pid (Pid.of_int pid));
     Path.remove pid_path;
     Path.remove lock_path;
@@ -65,7 +65,7 @@ let test_watchman_exists context =
   assert_raises
     (Failure "Watchman client exists (lock is held). Exiting.")
     (fun () ->
-       Watchman.run_command
+       PyreCommand.Watchman.run_command
          ~daemonize:false
          ~verbose:false
          ~sections:[]
@@ -105,13 +105,13 @@ let test_watchman_client context =
       ]
   in
   let cleanup () =
-    Server.stop ~graceful:true "." ();
+    PyreCommand.Server.stop ~graceful:true "." ();
     CommandTest.clean_environment ()
   in
   CommandTest.protect
     ~f:(fun () ->
         match
-          Watchman.process_response
+          PyreCommand.Watchman.process_response
             ~root
             ~watchman_directory:root
             ~symlinks
@@ -131,7 +131,7 @@ let test_watchman_client context =
   CommandTest.protect
     ~f:(fun () ->
         match
-          Watchman.process_response
+          PyreCommand.Watchman.process_response
             ~root
             ~watchman_directory:root
             ~symlinks
@@ -183,7 +183,7 @@ let test_different_root context =
         file
     in
     match
-      Watchman.process_response
+      PyreCommand.Watchman.process_response
         ~root
         ~watchman_directory
         ~symlinks
@@ -204,8 +204,8 @@ let test_different_root context =
   CommandTest.start_server () |> ignore;
 
   let cleanup () =
-    Command.run ~argv:["_"; "-graceful"] Server.stop_command;
-    Server.stop ~graceful:true "." ();
+    Command.run ~argv:["_"; "-graceful"] PyreCommand.Server.stop_command;
+    PyreCommand.Server.stop ~graceful:true "." ();
     CommandTest.clean_environment ()
   in
   CommandTest.protect
@@ -232,7 +232,7 @@ let test_build_symlink_map context =
 
   let assert_keys ~links expected =
     let expected_map = Path.Map.of_alist_exn expected in
-    let map = Watchman.build_symlink_map links in
+    let map = PyreCommand.Watchman.build_symlink_map links in
     assert_equal ~cmp:(Path.Map.equal Path.equal) expected_map map
   in
   assert_keys ~links:[link] [target, link];

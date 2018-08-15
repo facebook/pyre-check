@@ -19,11 +19,11 @@ exception VersionMismatch of version_mismatch
 val connect: retries: int -> configuration: Configuration.t -> Socket.t
 
 val initialize
-  :  ?old_state: ServerState.t
+  :  ?old_state: State.t
   -> Mutex.t
-  -> ServerState.connections ref
+  -> State.connections ref
   -> ServerConfiguration.t
-  -> ServerState.t
+  -> State.t
 
 val stop_server: reason: string -> ServerConfiguration.t -> Unix.File_descr.t -> unit
 

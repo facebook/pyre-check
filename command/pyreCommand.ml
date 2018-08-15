@@ -13,11 +13,3 @@ module Query = CommandQuery
 module Rage = CommandRage
 module Watchman = CommandWatchman
 module Server = CommandServer
-
-(** Server modules exposed by command *)
-module Protocol = ServerProtocol
-module Request = ServerRequest
-module ServerConfiguration = ServerConfiguration
-module ServerOperations = ServerOperations
-module State = ServerState
-module RequestParser = ServerRequestParser

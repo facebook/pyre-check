@@ -9,7 +9,8 @@ open Ast
 open Network
 open Pyre
 open PyreParser
-open ServerProtocol
+open Server
+open Protocol
 
 module Scheduler = Service.Scheduler
 
@@ -36,13 +37,13 @@ let parse_query ~root query =
       begin
         match String.lowercase (Identifier.show name), arguments with
         | "attributes", [class_name] ->
-            Some (Request.TypeQueryRequest (ServerProtocol.Attributes class_name))
+            Some (Request.TypeQueryRequest (Server.Protocol.Attributes class_name))
         | "less_or_equal", [left; right] ->
-            Some (Request.TypeQueryRequest (ServerProtocol.LessOrEqual (left, right)))
+            Some (Request.TypeQueryRequest (Server.Protocol.LessOrEqual (left, right)))
         | "meet", [left; right] ->
-            Some (Request.TypeQueryRequest (ServerProtocol.Meet (left, right)))
+            Some (Request.TypeQueryRequest (Server.Protocol.Meet (left, right)))
         | "join", [left; right] ->
-            Some (Request.TypeQueryRequest (ServerProtocol.Join (left, right)))
+            Some (Request.TypeQueryRequest (Server.Protocol.Join (left, right)))
         | "typecheckpath", arguments ->
             let files =
               arguments
@@ -52,11 +53,11 @@ let parse_query ~root query =
             in
             Some (Request.TypeCheckRequest (TypeCheckRequest.create ~check:files ()))
         | "normalizetype", [argument] ->
-            Some (Request.TypeQueryRequest (ServerProtocol.NormalizeType argument))
+            Some (Request.TypeQueryRequest (Server.Protocol.NormalizeType argument))
         | "superclasses", [class_name] ->
-            Some (Request.TypeQueryRequest (ServerProtocol.Superclasses class_name))
+            Some (Request.TypeQueryRequest (Server.Protocol.Superclasses class_name))
         | "methods", [class_name] ->
-            Some (Request.TypeQueryRequest (ServerProtocol.Methods class_name))
+            Some (Request.TypeQueryRequest (Server.Protocol.Methods class_name))
         | "type_at_location",
           [
             { Node.value = Expression.Access path; _ };
@@ -66,7 +67,7 @@ let parse_query ~root query =
             let path = Expression.Access.show path in
             let position = { Location.line; column } in
             let location = { Location.path; start = position; stop = position } in
-            Some (Request.TypeQueryRequest (ServerProtocol.TypeAtLocation location))
+            Some (Request.TypeQueryRequest (Server.Protocol.TypeAtLocation location))
         | _ -> None
       end
   | _ -> None
@@ -87,15 +88,15 @@ let run_query serialized local_root () =
         exit 1
   end;
   let query = Option.value_exn query in
-  let socket = ServerOperations.connect ~retries:3 ~configuration in
+  let socket = Server.Operations.connect ~retries:3 ~configuration in
   Socket.write socket query;
   match Socket.read socket with
-  | ServerProtocol.TypeQueryResponse serialized ->
+  | Server.Protocol.TypeQueryResponse serialized ->
       Log.print "%s" serialized
   | (TypeCheckResponse _) as response ->
       Log.print "%s" (show_response response)
   | response ->
-      Log.error "Unexpected response %s from server" (ServerProtocol.show_response response)
+      Log.error "Unexpected response %s from server" (Server.Protocol.show_response response)
 
 
 let command =

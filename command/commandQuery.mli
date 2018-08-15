@@ -5,6 +5,8 @@
 
 open Core
 
-val parse_query: root: Pyre.Path.t -> string -> ServerProtocol.Request.t option
+open Server
+
+val parse_query: root: Pyre.Path.t -> string -> Protocol.Request.t option
 
 val command: Command.t

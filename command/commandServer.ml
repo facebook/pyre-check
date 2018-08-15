@@ -12,23 +12,21 @@ open Pyre
 
 open Network
 open Configuration
+open Server
 open ServerConfiguration
-open ServerProtocol
+open State
+open Protocol
 
 module Time = Core_kernel.Time_ns.Span
-module Handshake = ServerHandshake
-module Request = ServerRequest
-module State = ServerState
 
 exception AlreadyRunning
 exception NotRunning
-open State
 
 
 let register_signal_handlers server_configuration socket =
   Signal.Expert.handle
     Signal.int
-    (fun _ -> ServerOperations.stop_server ~reason:"interrupt" server_configuration socket);
+    (fun _ -> Server.Operations.stop_server ~reason:"interrupt" server_configuration socket);
   Signal.Expert.handle
     Signal.pipe
     (fun _ -> ())
@@ -84,22 +82,22 @@ let computation_thread request_queue configuration state =
     let handle_request state ~request:(origin, request) =
       let process_request socket state configuration request =
         try
-          Log.log ~section:`Server "Processing request %a" ServerProtocol.Request.pp request;
-          Request.process_request socket state configuration request
+          Log.log ~section:`Server "Processing request %a" Server.Protocol.Request.pp request;
+          Server.Request.process_request socket state configuration request
         with
-        | Request.InvalidRequest ->
+        | Server.Request.InvalidRequest ->
             Log.error "Exiting due to invalid request";
             Mutex.critical_section
               state.lock
               ~f:(fun () ->
-                  ServerOperations.stop_server
+                  Server.Operations.stop_server
                     ~reason:"malformed request"
                     configuration
                     !(state.connections).socket);
             state, None
       in
       match origin with
-      | ServerProtocol.Request.PersistentSocket socket ->
+      | Server.Protocol.Request.PersistentSocket socket ->
           let write_or_forget socket responses =
             try
               List.iter ~f:(Socket.write socket) responses
@@ -141,8 +139,8 @@ let computation_thread request_queue configuration state =
             | None -> ()
           end;
           state
-      | ServerProtocol.Request.FileNotifier
-      | ServerProtocol.Request.Background ->
+      | Server.Protocol.Request.FileNotifier
+      | Server.Protocol.Request.Background ->
           let { socket; persistent_clients; _ } =
             Mutex.critical_section state.lock ~f:(fun () -> !(state.connections))
           in
@@ -155,7 +153,7 @@ let computation_thread request_queue configuration state =
                 ()
           end;
           state
-      | ServerProtocol.Request.NewConnectionSocket socket ->
+      | Server.Protocol.Request.NewConnectionSocket socket ->
           let { persistent_clients; _ } =
             Mutex.critical_section state.lock ~f:(fun () -> !(state.connections))
           in
@@ -175,7 +173,7 @@ let computation_thread request_queue configuration state =
           let state =
             {
               state with
-              deferred_requests = ServerProtocol.Request.flatten state.deferred_requests;
+              deferred_requests = Server.Protocol.Request.flatten state.deferred_requests;
               last_request_time = Unix.time ();
             }
           in
@@ -185,7 +183,7 @@ let computation_thread request_queue configuration state =
                 state
             | request :: requests ->
                 let state = { state with deferred_requests = requests } in
-                handle_request state ~request:(ServerProtocol.Request.Background, request)
+                handle_request state ~request:(Server.Protocol.Request.Background, request)
           end
       | 0, true ->
           (* Stop if the server is idle. *)
@@ -195,7 +193,7 @@ let computation_thread request_queue configuration state =
               Mutex.critical_section
                 state.lock
                 ~f:(fun () ->
-                    ServerOperations.stop_server
+                    Server.Operations.stop_server
                       ~reason:"idle"
                       configuration
                       !(state.connections).socket)
@@ -221,7 +219,7 @@ let computation_thread request_queue configuration state =
                           "Stopping server in integrity check. Got %s in the pid file, expected %s."
                           pid
                           (Pid.to_string (Unix.getpid ()));
-                        ServerOperations.stop_server
+                        Server.Operations.stop_server
                           ~reason:"failed integrity check"
                           configuration
                           !(state.connections).socket);
@@ -258,19 +256,19 @@ let request_handler_thread
   in
   let queue_request ~origin request =
     match request, origin with
-    | ServerProtocol.Request.StopRequest, ServerProtocol.Request.NewConnectionSocket socket ->
+    | Server.Protocol.Request.StopRequest, Server.Protocol.Request.NewConnectionSocket socket ->
         Socket.write socket StopResponse;
-        ServerOperations.stop_server
+        Server.Operations.stop_server
           ~reason:"explicit request"
           server_configuration
           !(connections).socket
-    | ServerProtocol.Request.StopRequest, _ ->
-        ServerOperations.stop_server
+    | Server.Protocol.Request.StopRequest, _ ->
+        Server.Operations.stop_server
           ~reason:"explicit request"
           server_configuration
           !(connections).socket
-    | ServerProtocol.Request.ClientConnectionRequest client,
-      ServerProtocol.Request.NewConnectionSocket socket ->
+    | Server.Protocol.Request.ClientConnectionRequest client,
+      Server.Protocol.Request.NewConnectionSocket socket ->
         Log.log ~section:`Server "Adding %s client" (show_client client);
         Mutex.critical_section
           lock
@@ -286,10 +284,10 @@ let request_handler_thread
                   | FileNotifier ->
                       { !connections with file_notifiers = socket::file_notifiers }
                 end)
-    | ServerProtocol.Request.ClientConnectionRequest _, _ ->
+    | Server.Protocol.Request.ClientConnectionRequest _, _ ->
         Log.error
           "Unexpected request origin %s for connection request"
-          (ServerProtocol.Request.origin_name origin)
+          (Server.Protocol.Request.origin_name origin)
     | _ ->
         Squeue.push_or_drop request_queue (origin, request) |> ignore;
   in
@@ -297,7 +295,7 @@ let request_handler_thread
     try
       Log.log ~section:`Server "A persistent client socket is readable.";
       let request = Socket.read socket in
-      queue_request ~origin:(ServerProtocol.Request.PersistentSocket socket) request
+      queue_request ~origin:(Server.Protocol.Request.PersistentSocket socket) request
     with
     | End_of_file ->
         Log.log ~section:`Server "Persistent client disconnected";
@@ -310,7 +308,7 @@ let request_handler_thread
     try
       Log.log ~section:`Server "A file notifier is readable.";
       let request = Socket.read socket in
-      queue_request ~origin:ServerProtocol.Request.FileNotifier request
+      queue_request ~origin:Server.Protocol.Request.FileNotifier request
     with
     | End_of_file ->
         Log.log ~section:`Server "File notifier disconnected";
@@ -363,7 +361,7 @@ let request_handler_thread
     if not (PyrePath.is_directory local_root) then
       begin
         Log.error "Stopping server due to missing source root.";
-        ServerOperations.stop_server
+        Server.Operations.stop_server
           ~reason:"missing source root"
           server_configuration
           !(connections).socket
@@ -392,7 +390,7 @@ let request_handler_thread
             Socket.read new_socket
             |> fun Handshake.ClientConnected ->
             let request = Socket.read new_socket in
-            queue_request ~origin:(ServerProtocol.Request.NewConnectionSocket new_socket) request
+            queue_request ~origin:(Server.Protocol.Request.NewConnectionSocket new_socket) request
           with
           | End_of_file ->
               Log.warning "New client socket unreadable"
@@ -419,7 +417,7 @@ let request_handler_thread
         "exception origin", "server";
       ]
       ();
-    ServerOperations.stop_server ~reason:"exception" server_configuration (!connections).socket
+    Server.Operations.stop_server ~reason:"exception" server_configuration (!connections).socket
 
 
 (** Main server either as a daemon or in terminal *)
@@ -445,7 +443,7 @@ let serve (socket, server_configuration, watchman_pid) =
   |> ignore;
 
   let state =
-    ServerOperations.initialize lock connections server_configuration
+    Server.Operations.initialize lock connections server_configuration
   in
   try
     computation_thread request_queue server_configuration state
@@ -461,7 +459,7 @@ let serve (socket, server_configuration, watchman_pid) =
         "exception origin", "server";
       ]
       ();
-    ServerOperations.stop_server ~reason:"exception" server_configuration socket
+    Server.Operations.stop_server ~reason:"exception" server_configuration socket
 
 
 (* Create lock file and pid file. Used for both daemon mode and in-terminal *)
@@ -667,7 +665,7 @@ let run_stop graceful local_root () =
     Socket.read socket
     |> fun (Handshake.ServerConnected _) ->
     Socket.write socket Handshake.ClientConnected;
-    Socket.write socket ServerProtocol.Request.StopRequest;
+    Socket.write socket Server.Protocol.Request.StopRequest;
     begin
       match Socket.read socket with
       | StopResponse -> Log.info "Server stopped, polling for deletion of socket."

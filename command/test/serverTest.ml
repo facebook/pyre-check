@@ -10,8 +10,8 @@ open Analysis
 open Ast
 open Expression
 open Pyre
-open PyreCommand
 open PyreParser
+open Server
 open Test
 
 module Parallel = Hack_parallel.Std
@@ -123,7 +123,7 @@ let with_timeout ~seconds f x =
 
 let test_server_stops _ =
   let pid = Pid.of_int (CommandTest.start_server ()) in
-  Command.run ~argv:["_"; "-graceful"] Server.stop_command;
+  Command.run ~argv:["_"; "-graceful"] PyreCommand.Server.stop_command;
   let { ServerConfiguration.lock_path; socket_path; _ } =
     ServerConfiguration.create (Configuration.create ())
   in
@@ -163,7 +163,7 @@ let test_server_exits_on_directory_removal context =
 
 let test_stop_handles_unix_errors context =
   let long_path = bracket_tmpdir ~suffix:(String.init ~f:(fun _ -> 'a') 140) context in
-  Command.run ~argv:["_"; "-graceful"; long_path] Server.stop_command
+  Command.run ~argv:["_"; "-graceful"; long_path] PyreCommand.Server.stop_command
 
 
 let configuration = Configuration.create ~infer:true ()
@@ -430,18 +430,18 @@ let test_connect _ =
   Unix.nanosleep 0.5
   |> ignore;
   let cleanup () =
-    Server.stop ~graceful:true "." ();
+    PyreCommand.Server.stop ~graceful:true "." ();
     with_timeout ~seconds:3 poll_for_deletion lock_path;
     CommandTest.clean_environment ()
   in
   Exn.protect
     ~f:(fun () ->
         assert_raises
-          (ServerOperations.VersionMismatch {
-              ServerOperations.server_version = "A";
+          (Server.Operations.VersionMismatch {
+              Server.Operations.server_version = "A";
               expected_version = "B";
             })
-          (fun () -> ServerOperations.connect ~retries:1 ~configuration))
+          (fun () -> Server.Operations.connect ~retries:1 ~configuration))
     ~finally:cleanup
 
 
@@ -888,7 +888,7 @@ let test_incremental_attribute_caching context =
   in
   write_to_file ~content:content_with_annotation;
   let initial_state =
-    ServerOperations.initialize ~old_state server_lock connections server_configuration
+    Server.Operations.initialize ~old_state server_lock connections server_configuration
   in
   let request_typecheck state =
     Request.process_request

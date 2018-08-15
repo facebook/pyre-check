@@ -6,6 +6,7 @@
 open Core
 open Pyre
 open Network
+open Server
 
 module Scheduler = Service.Scheduler
 
@@ -70,18 +71,18 @@ let run
 
     let socket =
       try
-        ServerOperations.connect ~retries:3 ~configuration
-      with ServerOperations.ConnectionFailure ->
+        Server.Operations.connect ~retries:3 ~configuration
+      with Server.Operations.ConnectionFailure ->
         raise ServerConfiguration.ServerNotRunning
     in
 
     Socket.write
       socket
-      ServerProtocol.Request.FlushTypeErrorsRequest;
+      Server.Protocol.Request.FlushTypeErrorsRequest;
 
     let response_json =
       match Socket.read socket with
-      | ServerProtocol.TypeCheckResponse errors ->
+      | Server.Protocol.TypeCheckResponse errors ->
           errors
           |> List.map ~f:snd
           |> List.concat
@@ -98,7 +99,7 @@ let run
   | ServerConfiguration.ServerNotRunning ->
       Log.print "Server is not running.\n";
       exit 1
-  | ServerOperations.VersionMismatch _ ->
+  | Server.Operations.VersionMismatch _ ->
       Log.print "The running server has an incompatible version with the current version.\n";
       exit 1
 

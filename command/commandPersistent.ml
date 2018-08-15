@@ -8,9 +8,9 @@ open Core
 open LanguageServer.Protocol
 open Pyre
 open Network
+open Server
 
 module Time = Core_kernel.Time_ns.Span
-module Protocol = ServerProtocol
 
 
 type reason = string
@@ -129,13 +129,13 @@ let run_command expected_version log_identifier local_root () =
     let server_socket =
       let server_socket =
         try
-          ServerOperations.connect
+          Server.Operations.connect
             ~retries:3
             ~configuration
         with
-        | ServerOperations.ConnectionFailure ->
+        | Server.Operations.ConnectionFailure ->
             raise (ClientExit ("connection failure", 1))
-        | ServerOperations.VersionMismatch { ServerOperations.server_version; expected_version } ->
+        | Server.Operations.VersionMismatch { Server.Operations.server_version; expected_version } ->
             Log.error
               "Exiting due to version mismatch. \
                The server version is %s, but the client was called with %s"

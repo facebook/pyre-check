@@ -8,11 +8,11 @@ open Hack_parallel.Std
 
 open Pyre
 open Network
+open Server
 
 open Constants.Watchman
 
 module Time = Core_kernel.Time_ns.Span
-module Protocol = ServerProtocol
 module Scheduler = Service.Scheduler
 
 
@@ -232,9 +232,9 @@ let initialize watchman_directory configuration =
     (Yojson.pretty_to_string (subscription watchman_directory));
   let server_socket =
     try
-      ServerOperations.connect ~retries:5 ~configuration
+      Server.Operations.connect ~retries:5 ~configuration
     with
-    | ServerOperations.ConnectionFailure -> stop_watchman None configuration
+    | Server.Operations.ConnectionFailure -> stop_watchman None configuration
   in
   Socket.write server_socket (Protocol.Request.ClientConnectionRequest Protocol.FileNotifier);
   if Socket.read server_socket <> Protocol.ClientConnectionResponse Protocol.FileNotifier then

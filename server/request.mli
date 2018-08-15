@@ -7,9 +7,15 @@ open Core
 
 
 exception InvalidRequest
+
+val parse
+  :  root: Pyre.Path.t
+  -> Yojson.Safe.json
+  -> Protocol.Request.t option
+
 val process_request
   :  Unix.File_descr.t
-  -> ServerState.t
+  -> State.t
   -> ServerConfiguration.t
-  -> ServerProtocol.Request.t
-  -> ServerState.t * (ServerProtocol.response option)
+  -> Protocol.Request.t
+  -> State.t * (Protocol.response option)
