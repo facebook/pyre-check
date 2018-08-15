@@ -232,7 +232,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
 
 
     let analyze_statement ?key state statement =
-      Log.log ~section:`Taint "Backward state: %s" (Log.Color.yellow (show state));
+      Log.log ~section:`Taint "Backward state: %a" pp state;
       match statement with
       | Assign { target; value; _ } ->
           let access_path = of_expression target in
