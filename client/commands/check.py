@@ -4,10 +4,10 @@
 # LICENSE file in the root directory of this source tree.
 
 from .. import FOUND_ERRORS
-from .error_handling import ErrorHandling
+from .reporting import Reporting
 
 
-class Check(ErrorHandling):
+class Check(Reporting):
     NAME = "check"
 
     def __init__(self, arguments, configuration, analysis_directory) -> None:

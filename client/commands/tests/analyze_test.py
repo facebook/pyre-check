@@ -13,9 +13,7 @@ from .command_test import mock_arguments, mock_configuration
 class AnalyzeTest(unittest.TestCase):
     @patch("subprocess.check_output")
     @patch("os.path.realpath")
-    @patch.object(
-        commands.ErrorHandling, "_get_directories_to_analyze", return_value=set()
-    )
+    @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
     def test_analyze(self, directories_to_analyze, realpath, check_output) -> None:
         realpath.side_effect = lambda x: x
         arguments = mock_arguments()

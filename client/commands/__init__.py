@@ -5,13 +5,13 @@
 
 from .analyze import Analyze as Analyze  # noqa
 from .check import Check as Check  # noqa
-from .error_handling import ErrorHandling as ErrorHandling  # noqa
 from .incremental import Incremental as Incremental  # noqa
 from .initialize import Initialize as Initialize  # noqa
 from .kill import Kill as Kill  # noqa
 from .persistent import Persistent as Persistent  # noqa
 from .query import Query as Query  # noqa
 from .rage import Rage as Rage  # noqa
+from .reporting import Reporting as Reporting  # noqa
 from .restart import Restart as Restart  # noqa
 from .start import Start  # noqa
 from .stop import Stop as Stop  # noqa

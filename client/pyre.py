@@ -74,8 +74,8 @@ def main() -> int:
     # Logging.
     parser.add_argument(
         "--output",
-        choices=[commands.error_handling.TEXT, commands.error_handling.JSON],
-        default=commands.error_handling.TEXT,
+        choices=[commands.reporting.TEXT, commands.reporting.JSON],
+        default=commands.reporting.TEXT,
         help="How to format output",
     )
     parser.add_argument("--verbose", action="store_true", help="Enable verbose logging")

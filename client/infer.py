@@ -383,10 +383,10 @@ def file_exists(path):
     return path
 
 
-class Infer(commands.ErrorHandling):
+class Infer(commands.Reporting):
     def __init__(self, arguments, configuration, analysis_directory) -> None:
         arguments.show_error_traces = True
-        arguments.output = commands.error_handling.JSON
+        arguments.output = commands.reporting.JSON
         super(Infer, self).__init__(arguments, configuration, analysis_directory)
         self._recursive = arguments.recursive
         self._print_errors = arguments.print_only

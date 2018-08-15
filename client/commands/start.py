@@ -8,14 +8,14 @@ import os
 from typing import List
 
 from .. import FAILURE, filesystem
-from .error_handling import ErrorHandling
 from .monitor import Monitor
+from .reporting import Reporting
 
 
 LOG = logging.getLogger(__name__)
 
 
-class Start(ErrorHandling):
+class Start(Reporting):
     NAME = "start"
 
     def __init__(self, arguments, configuration, analysis_directory) -> None:

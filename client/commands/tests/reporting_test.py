@@ -15,7 +15,7 @@ from ...error import Error  # noqa
 from .command_test import mock_arguments, mock_configuration
 
 
-class ErrorHandlingTest(unittest.TestCase):
+class ReportingTest(unittest.TestCase):
     @patch.object(Error, "__init__", return_value=None)
     @patch.object(Error, "__hash__", return_value=0)
     @patch.object(os.path, "realpath", side_effect=lambda path: path)
@@ -31,7 +31,7 @@ class ErrorHandlingTest(unittest.TestCase):
         error_dictionary = {"path": "target"}
         error.__getitem__.side_effect = error_dictionary.__getitem__
 
-        handler = commands.ErrorHandling(
+        handler = commands.Reporting(
             arguments, configuration, analysis_directory="/test/f/g"
         )
         with patch.object(json, "loads", return_value=[error]):
@@ -41,7 +41,7 @@ class ErrorHandlingTest(unittest.TestCase):
 
         arguments.target = ["//f/g:target"]
         configuration.targets = []
-        handler = commands.ErrorHandling(
+        handler = commands.Reporting(
             arguments, configuration, analysis_directory="/test/f/g"
         )
         with patch.object(json, "loads", return_value=[error]):
@@ -51,7 +51,7 @@ class ErrorHandlingTest(unittest.TestCase):
 
         arguments.target = []
         configuration.do_not_check = ["auto/gen"]
-        handler = commands.ErrorHandling(
+        handler = commands.Reporting(
             arguments, configuration, analysis_directory="/test/auto/gen"
         )
         with patch.object(json, "loads", return_value=[error]):
@@ -62,7 +62,7 @@ class ErrorHandlingTest(unittest.TestCase):
         arguments.original_directory = "/f/g/target"
         arguments.target = ["//f/g:target"]
         configuration.targets = []
-        handler = commands.ErrorHandling(
+        handler = commands.Reporting(
             arguments, configuration, analysis_directory="/test/h/i"
         )
         with patch.object(json, "loads", return_value=[error]):
@@ -74,7 +74,7 @@ class ErrorHandlingTest(unittest.TestCase):
         arguments.original_directory = "/"  # called from
         arguments.current_directory = "/"  # project root
         arguments.local_configuration = "/test"
-        handler = commands.ErrorHandling(
+        handler = commands.Reporting(
             arguments, configuration, analysis_directory="/shared"
         )
         with patch.object(json, "loads", return_value=[error]):
@@ -89,9 +89,7 @@ class ErrorHandlingTest(unittest.TestCase):
         error_dictionary = {"path": "b/c"}
         error.__getitem__.side_effect = error_dictionary.__getitem__
         configuration.do_not_check = ["*/b"]
-        handler = commands.ErrorHandling(
-            arguments, configuration, analysis_directory="/a"
-        )
+        handler = commands.Reporting(arguments, configuration, analysis_directory="/a")
         with patch.object(json, "loads", return_value=[error]):
             handler._get_errors(result)
             create_error.assert_has_calls([call(True, False)])
@@ -103,7 +101,7 @@ class ErrorHandlingTest(unittest.TestCase):
         arguments.current_directory = "base"
         arguments.original_directory = "base"
         configuration = mock_configuration()
-        handler = commands.ErrorHandling(
+        handler = commands.Reporting(
             arguments, configuration, analysis_directory="base"
         )
         check_output.return_value = "\n".join(

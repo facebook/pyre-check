@@ -16,11 +16,9 @@ TEXT = "text"  # type: str
 JSON = "json"  # type: str
 
 
-class ErrorHandling(Command):
+class Reporting(Command):
     def __init__(self, arguments, configuration, analysis_directory) -> None:
-        super(ErrorHandling, self).__init__(
-            arguments, configuration, analysis_directory
-        )
+        super().__init__(arguments, configuration, analysis_directory)
         self._verbose = arguments.verbose
         self._output = arguments.output
         self._do_not_check_paths = configuration.do_not_check

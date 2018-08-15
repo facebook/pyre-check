@@ -11,14 +11,14 @@ import sys
 
 from .. import FAILURE
 from .command import ClientException, State
-from .error_handling import ErrorHandling
+from .reporting import Reporting
 from .start import Start
 
 
 LOG = logging.getLogger(__name__)
 
 
-class Incremental(ErrorHandling):
+class Incremental(Reporting):
     NAME = "incremental"
 
     def __init__(self, arguments, configuration, analysis_directory) -> None:

@@ -13,9 +13,7 @@ from .command_test import mock_arguments, mock_configuration
 
 class StartTest(unittest.TestCase):
     @patch("fcntl.lockf")
-    @patch.object(
-        commands.ErrorHandling, "_get_directories_to_analyze", return_value=set()
-    )
+    @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
     @patch.object(monitor.Monitor, "daemonize")
     def test_start(self, _daemonize, get_directories_to_analyze, lock_file) -> None:
         arguments = mock_arguments()
