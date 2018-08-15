@@ -7,7 +7,7 @@ open Analysis
 
 
 val analyze_sources
-  : ServiceScheduler.t
+  :  Scheduler.t
   -> Configuration.t
   -> (module Environment.Handler)
   -> File.Handle.t list

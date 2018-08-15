@@ -25,7 +25,7 @@ end
 
 
 module IgnoreValue = struct
-  type t = Ignore.t
+  type t = Ast.Ignore.t
   let prefix = Prefix.make ()
   let description = "Ignore"
 end

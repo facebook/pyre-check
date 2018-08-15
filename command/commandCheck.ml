@@ -114,7 +114,7 @@ let check
   in
 
   (* Build environment. *)
-  Service.Ignore.register ~configuration scheduler sources;
+  Service.Postprocess.register_ignores ~configuration scheduler sources;
   let environment =
     let handler =
       if Scheduler.is_parallel scheduler then

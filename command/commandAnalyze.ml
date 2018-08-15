@@ -76,7 +76,7 @@ let run_analysis
   let () =
     CommandCheck.check configuration (Some scheduler) ()
     |> fun { handles; environment; _ } ->
-    Service.Analysis.analyze
+    Service.StaticAnalysis.analyze
       ?taint_models_directory
       ~scheduler
       ~configuration

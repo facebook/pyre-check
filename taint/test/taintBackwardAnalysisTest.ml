@@ -197,7 +197,8 @@ let test_call_taint_in_taint_out _ =
     ]
 
 let test_sink _ =
-  Service.Analysis.add_models ~model_source:"def __testSink(parameter: TaintSink[TestSink]): ...";
+  Service.StaticAnalysis.add_models
+    ~model_source:"def __testSink(parameter: TaintSink[TestSink]): ...";
   assert_taint
     {|
     def test_sink(parameter0, tainted_parameter1):
@@ -217,7 +218,7 @@ let test_sink _ =
 
 
 let test_rce_sink _ =
-  Service.Analysis.add_models
+  Service.StaticAnalysis.add_models
     ~model_source:"def __testRCESink(parameter: TaintSink[RemoteCodeExecution]): ...";
   assert_taint
     {|
@@ -245,7 +246,7 @@ let test_rce_and_test_sink _ =
     |}
     |> Test.trim_extra_indentation
   in
-  Service.Analysis.add_models ~model_source;
+  Service.StaticAnalysis.add_models ~model_source;
   assert_taint
     {|
     def test_rce_and_test_sink(test_only, rce_only, both):
@@ -295,7 +296,7 @@ let test_tito_sink _ =
 
 
 let test_apply_method_model_at_call_site _ =
-  Service.Analysis.add_models ~model_source:"def __testSink(parameter: TaintSink[TestSink]): ...";
+  Service.StaticAnalysis.add_models ~model_source:"def __testSink(parameter: TaintSink[TestSink]): ...";
   assert_taint
     {|
       class Foo:

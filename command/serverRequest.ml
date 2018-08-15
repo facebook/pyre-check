@@ -247,7 +247,7 @@ let rec process_request
         ~integers:["size", Service.EnvironmentSharedMemory.heap_size ()]
         ();
     in
-    Service.Ignore.register ~configuration scheduler repopulate_handles;
+    Service.Postprocess.register_ignores ~configuration scheduler repopulate_handles;
 
     (* Clear all type resolution info from shared memory for all affected sources. *)
     List.filter_map ~f:Ast.SharedMemory.get_source new_source_handles

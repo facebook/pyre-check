@@ -9,10 +9,7 @@ open Ast
 open Analysis
 open Pyre
 
-module IgnoreSharedMemory = ServiceIgnoreSharedMemory
-module Scheduler = ServiceScheduler
-
-open IgnoreSharedMemory
+open PostprocessSharedMemory
 
 
 let remove_ignores handles =
@@ -23,7 +20,7 @@ let remove_ignores handles =
   |> IgnoreLines.remove_batch
 
 
-let register_ignores handle =
+let register_ignores_for_handle handle =
   let key = File.Handle.show handle in
   (* Register new ignores. *)
   match Ast.SharedMemory.get_source handle with
@@ -47,12 +44,12 @@ let register_mode ~configuration handle =
   ErrorModes.add key mode
 
 
-let register ~configuration scheduler handles =
+let register_ignores ~configuration scheduler handles =
   let timer = Timer.start () in
   remove_ignores handles;
 
   let register handles =
-    List.iter handles ~f:register_ignores;
+    List.iter handles ~f:register_ignores_for_handle;
     List.iter handles ~f:(register_mode ~configuration);
   in
   if Scheduler.is_parallel scheduler then
@@ -62,7 +59,7 @@ let register ~configuration scheduler handles =
   Statistics.performance ~name:"registered ignores" ~timer ()
 
 
-let postprocess handles errors =
+let ignore handles errors =
   let error_lookup = Location.Reference.Table.create () in
   let errors_with_ignore_suppression =
     let add_to_lookup ~key ~code =

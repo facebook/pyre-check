@@ -5,8 +5,6 @@
 
 open Hack_parallel.Std
 
-module Memory = ServiceMemory
-
 
 type t = {
   is_parallel: bool;

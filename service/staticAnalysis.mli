@@ -3,8 +3,8 @@
     This source code is licensed under the MIT license found in the
     LICENSE file in the root directory of this source tree. *)
 
-open Ast
 open Analysis
+open Ast
 open Statement
 
 
@@ -29,7 +29,7 @@ val add_models: model_source: string -> unit
 
 val analyze
   :  ?taint_models_directory: string
-  -> scheduler: ServiceScheduler.t
+  -> scheduler: Scheduler.t
   -> configuration: Configuration.t
   -> environment: (module Environment.Handler)
   -> handles: File.Handle.t list

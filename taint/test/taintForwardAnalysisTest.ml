@@ -115,7 +115,7 @@ let test_no_model _ =
 
 
 let test_simple_source _ =
-  Service.Analysis.add_models ~model_source:"def taint() -> TaintSource[TestSource]: ...";
+  Service.StaticAnalysis.add_models ~model_source:"def taint() -> TaintSource[TestSource]: ...";
   assert_sources
     ?qualifier:None
     ~source:
@@ -132,7 +132,7 @@ let test_simple_source _ =
 
 
 let test_local_copy _ =
-  Service.Analysis.add_models ~model_source:"def taint() -> TaintSource[TestSource]: ...";
+  Service.StaticAnalysis.add_models ~model_source:"def taint() -> TaintSource[TestSource]: ...";
   assert_sources
     ?qualifier:None
     ~source:
@@ -150,7 +150,7 @@ let test_local_copy _ =
 
 
 let test_class_model _ =
-  Service.Analysis.add_models ~model_source:"def taint() -> TaintSource[TestSource]: ...";
+  Service.StaticAnalysis.add_models ~model_source:"def taint() -> TaintSource[TestSource]: ...";
   assert_sources
     ~qualifier:"test"
     ~source:
@@ -168,7 +168,7 @@ let test_class_model _ =
 
 
 let test_apply_method_model_at_call_site _ =
-  Service.Analysis.add_models ~model_source:"def taint() -> TaintSource[TestSource]: ...";
+  Service.StaticAnalysis.add_models ~model_source:"def taint() -> TaintSource[TestSource]: ...";
   assert_sources
     ~qualifier:"test"
     ~source:
@@ -298,7 +298,7 @@ let test_taint_in_taint_out_application _ =
     |}
     |> Test.trim_extra_indentation
   in
-  Service.Analysis.add_models ~model_source;
+  Service.StaticAnalysis.add_models ~model_source;
 
   assert_sources
     ~qualifier:"test"

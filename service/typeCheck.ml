@@ -9,9 +9,6 @@ open Ast
 open Analysis
 open Pyre
 
-module Scheduler = ServiceScheduler
-module Ignore = ServiceIgnore
-
 
 type analysis_results = {
   errors: Error.t list;
@@ -142,7 +139,7 @@ let analyze_sources_parallel scheduler configuration environment handles =
           })
   in
   Statistics.performance ~name:"analyzed sources" ~timer ();
-  Ignore.postprocess handles errors, coverage
+  Postprocess.ignore handles errors, coverage
 
 
 let analyze_sources
@@ -196,6 +193,6 @@ let analyze_sources
     in
     let errors =
       List.concat errors
-      |> Ignore.postprocess handles
+      |> Postprocess.ignore handles
     in
     errors, coverage

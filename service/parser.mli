@@ -6,11 +6,11 @@
 
 val find_sources: ?filter: (string -> bool) -> Configuration.t -> Pyre.Path.t list
 
-val parse_stubs: ServiceScheduler.t -> configuration: Configuration.t -> File.Handle.t list
+val parse_stubs: Scheduler.t -> configuration: Configuration.t -> File.Handle.t list
 
 val parse_sources
   :  configuration: Configuration.t
-  -> scheduler: ServiceScheduler.t
+  -> scheduler: Scheduler.t
   -> files: File.t list
   -> File.Handle.t list
 
@@ -19,4 +19,4 @@ type result = {
   sources: File.Handle.t list;
 }
 
-val parse_all: ServiceScheduler.t -> configuration: Configuration.t -> result
+val parse_all: Scheduler.t -> configuration: Configuration.t -> result

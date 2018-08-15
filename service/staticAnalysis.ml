@@ -129,7 +129,7 @@ let analyze ?taint_models_directory ~scheduler ~configuration ~environment ~hand
           Type.pp untracked_type;
         map
     in
-    ServiceScheduler.map_reduce
+    Scheduler.map_reduce
       scheduler
       ~configuration
       ~init:Access.Map.empty
@@ -159,7 +159,7 @@ let analyze ?taint_models_directory ~scheduler ~configuration ~environment ~hand
   let timer = Timer.start () in
   let iterations =
     Interprocedural.Analysis.compute_fixpoint
-      ~workers:(ServiceScheduler.workers scheduler)
+      ~workers:(Scheduler.workers scheduler)
       ~analyses
       ~caller_map
       ~all_callables

@@ -10,8 +10,6 @@ open Expression
 open Pyre
 open PyreParser
 
-module Scheduler = ServiceScheduler
-
 
 let parse_source ?(show_parser_errors = true) file =
   File.path file |> Path.relative

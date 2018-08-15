@@ -9,10 +9,8 @@ open Analysis
 open Ast
 open Pyre
 
-module EnvironmentSharedMemory = ServiceEnvironmentSharedMemory
-
 open EnvironmentSharedMemory
-open ServiceIgnoreSharedMemory
+open PostprocessSharedMemory
 
 
 let populate
