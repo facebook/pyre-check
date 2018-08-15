@@ -15,7 +15,7 @@ open ServerConfiguration
 open ServerProtocol
 
 module Time = Core_kernel.Time_ns.Span
-module Handshake = CommandHandshake
+module Handshake = ServerHandshake
 module Socket = CommandSocket
 module Request = ServerRequest
 module State = ServerState

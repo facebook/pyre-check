@@ -11,7 +11,7 @@ open ServerState
 open Constants
 
 module Check = CommandCheck
-module Handshake = CommandHandshake
+module Handshake = ServerHandshake
 
 type version_mismatch = {
   server_version: string;
