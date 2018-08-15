@@ -9,9 +9,9 @@
 
 (tests
  (names
-  testFileTest
-  testLogTest
-  testPathTest)
+  fileTest
+  logTest
+  pathTest)
  (modules :standard \ test)
  (libraries
   oUnit
