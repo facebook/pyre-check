@@ -460,14 +460,18 @@ let test_class_attributes _ =
         string_names
         attribute =
       match Attribute.name attribute with
-      | Expression.Access access -> string_names ^ (Access.show access)
+      | Expression.Access access -> (Access.show access) :: string_names
       | _ -> string_names
     in
     let resolution, parent = setup source in
+    let actual =
+      Class.attribute_fold ~class_attributes ~resolution ~initial:[] ~f:callback parent
+      |> List.sort ~compare:String.compare
+    in
     assert_equal
-      ~printer:Fn.id
-      (Class.attribute_fold ~class_attributes ~resolution ~initial:"" ~f:callback parent)
-      fold
+      ~printer:(List.to_string ~f:ident)
+      (List.sort ~compare:String.compare fold)
+      actual
   in
 
   assert_fold
@@ -483,7 +487,14 @@ let test_class_attributes _ =
         foo.third: int = 1
         foo.class_attribute: typing.ClassVar[int]
     |}
-    "__init__class_attributefirstimplicitsecondthird";
+    [
+      "__init__";
+      "class_attribute";
+      "first";
+      "implicit";
+      "second";
+      "third";
+    ];
   assert_fold
     ~class_attributes:true
     {|
@@ -498,7 +509,19 @@ let test_class_attributes _ =
         foo.third: int = 1
         foo.class_attribute: typing.ClassVar[int]
     |}
-    "__init__class_attributefirstimplicitsecondthird__name____getitem____init____new____sizeof__";
+    [
+      "__init__";
+      "class_attribute";
+      "first";
+      "implicit";
+      "second";
+      "third";
+      "__name__";
+      "__getitem__";
+      "__init__";
+      "__new__";
+      "__sizeof__";
+    ];
   assert_fold
     ~class_attributes:true
     {|
@@ -510,8 +533,17 @@ let test_class_attributes _ =
         Foo.__static__: typing.ClassVar[int]
         Foo.__instance__: int
     |}
-    "__instance____static____meta____name____type____getitem____init____new____sizeof__";
-
+    [
+      "__instance__";
+      "__static__";
+      "__meta__";
+      "__name__";
+      "__type__";
+      "__getitem__";
+      "__init__";
+      "__new__";
+      "__sizeof__";
+    ];
   (* Test 'attribute' *)
   let assert_attribute ~parent ~parent_instantiated_type ~attribute_name ~expected_attribute =
     let instantiated, class_attributes =
