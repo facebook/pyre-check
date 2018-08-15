@@ -460,13 +460,6 @@ let test_connect_type_order _ =
   in
   Environment.register_aliases (module Handler) [source];
   Environment.connect_type_order (module Handler) source;
-
-  assert_equal (parse_annotation (module Handler) (!"C")) (Type.primitive "C");
-  assert_equal (parse_annotation (module Handler) (!"D")) (Type.primitive "D");
-  assert_equal (parse_annotation (module Handler) (!"B")) (Type.primitive "D");
-  assert_equal (parse_annotation (module Handler) (!"A")) (Type.primitive "D");
-  assert_is_none (Handler.function_definitions (access ["foo"]));
-
   let assert_successors annotation successors =
     assert_equal (TypeOrder.successors order annotation) successors
   in
