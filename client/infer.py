@@ -19,7 +19,6 @@ from typing import Any, List, Optional, Set, Union  # noqa
 
 from . import (
     FAILURE,
-    JSON,
     SUCCESS,
     EnvironmentException,
     buck,
@@ -387,7 +386,7 @@ def file_exists(path):
 class Infer(commands.ErrorHandling):
     def __init__(self, arguments, configuration, analysis_directory) -> None:
         arguments.show_error_traces = True
-        arguments.output = JSON
+        arguments.output = commands.error_handling.JSON
         super(Infer, self).__init__(arguments, configuration, analysis_directory)
         self._recursive = arguments.recursive
         self._print_errors = arguments.print_only

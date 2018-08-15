@@ -26,9 +26,6 @@ SUCCESS = 0
 FOUND_ERRORS = 1
 FAILURE = 2
 
-TEXT = "text"
-JSON = "json"
-
 CONFIGURATION_FILE = ".pyre_configuration"
 BINARY_NAME = "pyre.bin"
 

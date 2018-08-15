@@ -13,9 +13,7 @@ import traceback
 
 from . import (
     FAILURE,
-    JSON,
     SUCCESS,
-    TEXT,
     EnvironmentException,
     assert_readable_directory,
     buck,
@@ -75,7 +73,10 @@ def main() -> int:
 
     # Logging.
     parser.add_argument(
-        "--output", choices=[TEXT, JSON], default=TEXT, help="How to format output"
+        "--output",
+        choices=[commands.error_handling.TEXT, commands.error_handling.JSON],
+        default=commands.error_handling.TEXT,
+        help="How to format output",
     )
     parser.add_argument("--verbose", action="store_true", help="Enable verbose logging")
     parser.add_argument(

@@ -4,13 +4,16 @@ import logging
 import os
 from typing import Set
 
-from .. import TEXT, log
+from .. import log
 from ..error import Error
 from ..filesystem import get_filesystem
 from .command import ClientException, Command
 
 
 LOG = logging.getLogger(__name__)
+
+TEXT = "text"  # type: str
+JSON = "json"  # type: str
 
 
 class ErrorHandling(Command):
