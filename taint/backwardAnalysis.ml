@@ -10,8 +10,8 @@ open Ast
 open Expression
 open Pyre
 open Statement
-open TaintDomains
-open TaintAccessPath
+open Domains
+open AccessPath
 
 
 module type FixpointState = sig
@@ -25,7 +25,7 @@ end
 
 
 let initial_taint =
-  let result_taint = BackwardTaint.singleton TaintSinks.LocalReturn in
+  let result_taint = BackwardTaint.singleton Sinks.LocalReturn in
   BackwardState.assign
     ~root:Root.LocalResult
     ~path:[]
@@ -101,12 +101,12 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
               let position = number_of_arguments - reverse_position - 1 in
               let argument_taint =
                 BackwardState.read
-                  (TaintAccessPath.Root.Parameter { position })
+                  (AccessPath.Root.Parameter { position })
                   backward.sink_taint
               in
               let taint_in_taint_out =
                 BackwardState.read
-                  (TaintAccessPath.Root.Parameter { position })
+                  (AccessPath.Root.Parameter { position })
                   backward.taint_in_taint_out
                 |> BackwardState.filter_map_tree ~f:(fun _ -> collapsed_call_taint)
               in
@@ -182,7 +182,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
     and analyze_normalized_expression ?key state taint expression =
       match expression with
       | Access { expression; member } ->
-          let field = TaintAccessPathTree.Label.Field member in
+          let field = AccessPathTree.Label.Field member in
           let taint =
             BackwardState.assign_tree_path [field] ~tree:BackwardState.empty_tree ~subtree:taint
           in
@@ -287,7 +287,7 @@ end
    parts and sink_taint. *)
 let extract_tito_and_sink_models parameters entry_taint =
   let filter_to_local_return taint =
-    BackwardTaint.partition_tf ~f:((=) TaintSinks.LocalReturn) taint
+    BackwardTaint.partition_tf ~f:((=) Sinks.LocalReturn) taint
     |> fst
   in
   let extract_taint_in_taint_out position model { Node.value = { Parameter.name; _ }; _ } =
@@ -302,7 +302,7 @@ let extract_tito_and_sink_models parameters entry_taint =
       model
   in
   let filter_to_real_sinks taint =
-    BackwardTaint.partition_tf ~f:((<>) TaintSinks.LocalReturn) taint
+    BackwardTaint.partition_tf ~f:((<>) Sinks.LocalReturn) taint
     |> fst
   in
   let extract_sink_taint position model { Node.value = { Parameter.name; _ }; _ } =

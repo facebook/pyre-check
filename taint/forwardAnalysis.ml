@@ -10,8 +10,8 @@ open Ast
 open Expression
 open Pyre
 open Statement
-open TaintDomains
-open TaintAccessPath
+open Domains
+open AccessPath
 
 
 module type FixpointState = sig
@@ -27,7 +27,7 @@ end
 module type FUNCTION_CONTEXT = sig
   val definition: Define.t Node.t
 
-  val add_flow_candidate: TaintFlow.candidate -> unit
+  val add_flow_candidate: Flow.candidate -> unit
   val generate_errors: unit -> Interprocedural.Error.t list
 end
 
@@ -104,17 +104,17 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
               in
               let tito =
                 BackwardState.read
-                  (TaintAccessPath.Root.Parameter { position })
+                  (AccessPath.Root.Parameter { position })
                   backward.taint_in_taint_out
                 |> BackwardState.fold_tree_paths ~init:tito ~f:read_argument_taint
               in
               let flow_candidate =
                 let sink_tree =
                   BackwardState.read
-                    (TaintAccessPath.Root.Parameter { position })
+                    (AccessPath.Root.Parameter { position })
                     backward.sink_taint
                 in
-                TaintFlow.generate_source_sink_matches
+                Flow.generate_source_sink_matches
                   ~location
                   ~source_tree:argument_taint
                   ~sink_tree
@@ -126,7 +126,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
               List.foldi ~f:analyze_argument_position arguments ~init:ForwardTaint.bottom
             in
             let result_taint =
-              ForwardState.read TaintAccessPath.Root.LocalResult forward.source_taint
+              ForwardState.read AccessPath.Root.LocalResult forward.source_taint
             in
             ForwardState.join_root_element result_taint tito
         | None ->
@@ -195,7 +195,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       match expression with
       | Access { expression; member; } ->
           let taint = analyze_normalized_expression state expression in
-          let field = TaintAccessPathTree.Label.Field member in
+          let field = AccessPathTree.Label.Field member in
           let taint =
             ForwardState.assign_tree_path
               [field]
@@ -315,12 +315,12 @@ let run ({ Node.value = { Define.parameters; _ }; _ } as define) =
     let add_flow_candidate candidate =
       Location.Reference.Table.set
         candidates
-        ~key:candidate.TaintFlow.location
+        ~key:candidate.Flow.location
         ~data:candidate
 
     let generate_errors () =
       let accumulate ~key:_ ~data:candidate errors =
-        let new_errors = TaintFlow.generate_errors ~define:definition candidate in
+        let new_errors = Flow.generate_errors ~define:definition candidate in
         List.rev_append new_errors errors
       in
       Location.Reference.Table.fold candidates ~f:accumulate ~init:[]

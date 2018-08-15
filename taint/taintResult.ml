@@ -5,7 +5,7 @@
 
 
 module Error = Interprocedural.Error
-open TaintDomains
+open Domains
 
 
 module Forward = struct

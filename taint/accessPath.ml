@@ -21,14 +21,14 @@ end
 
 type t = {
   root: Root.t;
-  path: TaintAccessPathTree.Label.path;
+  path: AccessPathTree.Label.path;
 }
 
 
 let of_access path access_element =
   match path, access_element with
   | Some path, Access.Identifier id ->
-      Some (TaintAccessPathTree.Label.Field id :: path)
+      Some (AccessPathTree.Label.Field id :: path)
   | _ -> None
 
 

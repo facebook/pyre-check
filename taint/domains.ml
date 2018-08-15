@@ -92,8 +92,8 @@ module TraceInfo = struct
 end
 
 
-module SourceSet = Set(TaintSources)
-module SinkSet = Set(TaintSinks)
+module SourceSet = Set(Sources)
+module SinkSet = Set(Sinks)
 
 
 module ForwardTaint = struct
@@ -122,16 +122,16 @@ end
 
 (** Used to infer which sources reach the exit points of a function. *)
 module ForwardState =
-  TaintAccessPathTree.Make
-    (TaintAccessPathTree.WithChecks)
-    (TaintAccessPath.Root)
+  AccessPathTree.Make
+    (AccessPathTree.WithChecks)
+    (AccessPath.Root)
     (ForwardTaint)
 
 
 (** Used to infer which sinks are reached from parameters, as well as the
     taint-in-taint-out (TITO) using the special LocalReturn sink. *)
 module BackwardState =
-  TaintAccessPathTree.Make
-    (TaintAccessPathTree.WithChecks)
-    (TaintAccessPath.Root)
+  AccessPathTree.Make
+    (AccessPathTree.WithChecks)
+    (AccessPath.Root)
     (BackwardTaint)

@@ -19,7 +19,7 @@ end
 
 type t = {
   root: Root.t;
-  path: TaintAccessPathTree.Label.path;
+  path: AccessPathTree.Label.path;
 }
 
 

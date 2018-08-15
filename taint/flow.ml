@@ -5,7 +5,7 @@
 
 open Core
 
-open TaintDomains
+open Domains
 
 
 type flow = {
@@ -103,8 +103,8 @@ let partition_flows ?sources ?sinks flows =
 
 
 type rule = {
-  sources: TaintSources.t list;
-  sinks: TaintSinks.t list;
+  sources: Sources.t list;
+  sinks: Sinks.t list;
   code: int;
   name: string;
 }
@@ -112,14 +112,14 @@ type rule = {
 
 let rules = [
   {
-    sources = [ TaintSources.UserControlled ];
-    sinks = [ TaintSinks.RemoteCodeExecution ];
+    sources = [ Sources.UserControlled ];
+    sinks = [ Sinks.RemoteCodeExecution ];
     code = 5001;
     name = "User controlled data may lead to remote code execution.";
   };
   {
-    sources = [ TaintSources.TestSource ];
-    sinks = [ TaintSinks.TestSink ];
+    sources = [ Sources.TestSource ];
+    sinks = [ Sinks.TestSink ];
     code = 5002;
     name = "Flow from test source to test sink.";
   };

@@ -5,7 +5,7 @@
 
 open Ast
 open Statement
-open TaintDomains
+open Domains
 
 
 type flow = {
@@ -30,8 +30,8 @@ type flow_state = {
 [@@deriving sexp]
 
 val partition_flows:
-  ?sources: (TaintSources.t -> bool)
-  -> ?sinks: (TaintSinks.t -> bool)
+  ?sources: (Sources.t -> bool)
+  -> ?sinks: (Sinks.t -> bool)
   -> flows
   -> flow_state
 

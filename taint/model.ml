@@ -11,7 +11,7 @@ open Expression
 open PyreParser
 open Interprocedural
 open Statement
-open TaintDomains
+open Domains
 open TaintResult
 
 
@@ -36,7 +36,7 @@ let introduce_sink_taint
         taint
     in
     match taint_sink_kind with
-    | TaintSinks.LocalReturn ->
+    | Sinks.LocalReturn ->
         let taint_in_taint_out = assign_backward_taint taint_in_taint_out  in
         { taint.backward with taint_in_taint_out }
     | _ ->
@@ -49,7 +49,7 @@ let introduce_sink_taint
 let introduce_source_taint taint_source_kind =
   let source_taint =
     ForwardState.assign
-      ~root:TaintAccessPath.Root.LocalResult
+      ~root:AccessPath.Root.LocalResult
       ~path:[]
       (ForwardTaint.singleton taint_source_kind
        |> ForwardState.make_leaf)
@@ -86,8 +86,8 @@ let taint_parameter position model expression =
   match taint_annotation expression with
   | Some (taint_direction, taint_kind)
     when taint_direction = "TaintSink" || taint_direction = "TaintInTaintOut" ->
-      let taint_sink_kind = TaintSinks.create taint_kind in
-      let root = TaintAccessPath.Root.Parameter { position } in
+      let taint_sink_kind = Sinks.create taint_kind in
+      let root = AccessPath.Root.Parameter { position } in
       introduce_sink_taint ~root ~taint_sink_kind model
       |> Or_error.return
   | Some (taint_direction, _) ->
@@ -99,7 +99,7 @@ let taint_parameter position model expression =
 let taint_return model expression =
   match taint_annotation expression with
   | Some (taint_direction, taint_kind) when taint_direction = "TaintSource" ->
-      let taint_source_kind = TaintSources.create taint_kind in
+      let taint_source_kind = Sources.create taint_kind in
       Or_error.return { model with forward = introduce_source_taint taint_source_kind }
   | Some (taint_direction, _) ->
       Or_error.errorf "Unrecognized taint direction in return annotation: %s" taint_direction
