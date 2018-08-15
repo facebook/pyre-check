@@ -26,7 +26,7 @@ let remove_ignores handles =
 let register_ignores handle =
   let key = File.Handle.show handle in
   (* Register new ignores. *)
-  match AstSharedMemory.get_source handle with
+  match Ast.SharedMemory.get_source handle with
   | Some source ->
       let ignore_lines = Source.ignore_lines source in
       List.iter
@@ -40,7 +40,7 @@ let register_ignores handle =
 let register_mode ~configuration handle =
   let key = File.Handle.show handle in
   let mode =
-    match AstSharedMemory.get_source handle with
+    match Ast.SharedMemory.get_source handle with
     | Some source -> Source.mode source ~configuration
     | _ -> Source.Default
   in
@@ -85,7 +85,7 @@ let postprocess handles errors =
   let unused_ignores =
     let paths_from_handles =
       let get_path paths handle =
-        AstSharedMemory.get_source handle
+        Ast.SharedMemory.get_source handle
         >>| (fun { Source.path; _ } -> path :: paths)
         |> Option.value ~default:paths
       in
@@ -133,7 +133,7 @@ let postprocess handles errors =
         Error.location =
           Location.instantiate
             (Ignore.location unused_ignore)
-            ~lookup:(fun hash -> Ast.AstSharedMemory.get_path ~hash);
+            ~lookup:(fun hash -> Ast.SharedMemory.get_path ~hash);
         kind = Error.UnusedIgnore (Ignore.codes unused_ignore);
         define = {
           Node.location = Ignore.location unused_ignore;

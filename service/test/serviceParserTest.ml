@@ -49,7 +49,7 @@ let test_parse_stubs_modules_list _ =
   in
   let assert_stub_matches_name ~handle define =
     let name =
-      match AstSharedMemory.get_source (get_handle_at handle) with
+      match Ast.SharedMemory.get_source (get_handle_at handle) with
       | Some {
           Source.statements = [
             {
@@ -65,7 +65,7 @@ let test_parse_stubs_modules_list _ =
   in
   let assert_module_matches_name ~handle define =
     let name =
-      match AstSharedMemory.get_source (get_handle_at handle) with
+      match Ast.SharedMemory.get_source (get_handle_at handle) with
       | Some {
           Source.statements = [
             {
@@ -162,7 +162,7 @@ let test_parse_source _ =
   let handle = Option.value_exn (File.handle file) in
   assert_equal handles [handle];
 
-  let source = AstSharedMemory.get_source handle in
+  let source = Ast.SharedMemory.get_source handle in
   assert_equal (Option.is_some source) true;
 
   let { Source.path; statements; metadata = { Source.Metadata.number_of_lines; _ }; _ } =
@@ -241,7 +241,7 @@ let test_register_modules _ =
   let assert_module_exports raw_source expected_exports =
     let get_qualifier file =
       File.handle file
-      >>= AstSharedMemory.get_source
+      >>= Ast.SharedMemory.get_source
       >>| (fun { Source.qualifier; _ } -> qualifier)
     in
     let file =
@@ -251,8 +251,8 @@ let test_register_modules _ =
     in
 
     (* Build environment *)
-    AstSharedMemory.remove_modules (List.filter_map ~f:get_qualifier [file]);
-    AstSharedMemory.remove_paths (List.filter_map ~f:(fun file -> File.handle file) [file]);
+    Ast.SharedMemory.remove_modules (List.filter_map ~f:get_qualifier [file]);
+    Ast.SharedMemory.remove_paths (List.filter_map ~f:(fun file -> File.handle file) [file]);
     let configuration = Configuration.create ~local_root:(Path.current_working_directory ()) () in
     let sources =
       Service.Parser.parse_sources
@@ -263,10 +263,10 @@ let test_register_modules _ =
     (* Check specific testing file *)
     let qualifier = Option.value_exn (get_qualifier file) in
     (* The modules get removed after preprocessing. *)
-    assert_is_none (AstSharedMemory.get_module qualifier);
+    assert_is_none (Ast.SharedMemory.get_module qualifier);
 
     Service.Environment.shared_memory_handler ~configuration ~stubs:[] ~sources |> ignore;
-    assert_is_some (AstSharedMemory.get_module qualifier);
+    assert_is_some (Ast.SharedMemory.get_module qualifier);
 
     assert_equal
       ~cmp:(List.equal ~equal:Access.equal)
@@ -274,7 +274,7 @@ let test_register_modules _ =
           List.map ~f:(Access.show) expression_list
           |> String.concat ~sep:", ")
       (List.map ~f:Access.create expected_exports)
-      (Option.value_exn (AstSharedMemory.get_module_exports qualifier))
+      (Option.value_exn (Ast.SharedMemory.get_module_exports qualifier))
   in
   assert_module_exports
     {|

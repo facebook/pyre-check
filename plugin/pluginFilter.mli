@@ -7,7 +7,6 @@ open Core
 
 open Ast
 open Statement
-open Expression
 
 
 type define_filter = {

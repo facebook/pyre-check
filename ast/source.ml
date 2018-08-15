@@ -5,11 +5,7 @@
 
 open Core
 
-open AstExpression
-
-module Ignore = AstIgnore
-module Location = AstLocation
-module Statement = AstStatement
+open Expression
 
 
 type mode =

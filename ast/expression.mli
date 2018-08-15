@@ -5,11 +5,6 @@
 
 open Core
 
-module Identifier = AstIdentifier
-module Location = AstLocation
-module Parameter = AstParameter
-module Node = AstNode
-module SerializableMap = AstSerializableMap
 
 module BooleanOperator : sig
   type operator =

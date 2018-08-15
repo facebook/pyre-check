@@ -5,8 +5,9 @@
 
 open Core
 
-open Ast
 open Pyre
+
+open Ast
 open Statement
 
 module Annotation = AnalysisAnnotation

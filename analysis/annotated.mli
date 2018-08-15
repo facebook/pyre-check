@@ -4,7 +4,6 @@
     LICENSE file in the root directory of this source tree. *)
 
 open Ast
-open Statement
 
 module Annotation = AnalysisAnnotation
 module Resolution = AnalysisResolution

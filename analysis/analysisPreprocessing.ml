@@ -954,7 +954,7 @@ let replace_version_specific_code source =
               | Comparison ({ Node.value = Expression.Integer 3; _ }, right)
                 when Expression.show right = "sys.version_info[0]" ->
                   (), add_pass_statement ~location body
-             | Equality (left, right)
+              | Equality (left, right)
                 when String.is_prefix ~prefix:"sys.version_info" (Expression.show left) ||
                      String.is_prefix ~prefix:"sys.version_info" (Expression.show right) ->
                   (* Never pin our stubs to a python version. *)
@@ -1009,7 +1009,7 @@ let expand_wildcard_imports source =
         | Import { Import.from = Some from; imports }
           when List.exists ~f:(fun { Import.name; _ } -> Access.show name = "*") imports ->
             let expanded_import =
-              AstSharedMemory.get_module_exports from
+              Ast.SharedMemory.get_module_exports from
               >>| List.map ~f:(fun name -> { Import.name; alias = None })
               >>| (fun expanded -> Import { Import.from = Some from; imports = expanded })
               >>| (fun value -> { statement with Node.value })

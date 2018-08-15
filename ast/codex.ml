@@ -6,12 +6,8 @@
 open Core
 
 open Pyre
-open AstExpression
+open Expression
 
-module Expression = AstExpression
-module Location = AstLocation
-module Source = AstSource
-module Statement = AstStatement
 
 (** Given a JSON that's an assoc at the top level, change the key's binding to value,
   * keeping the rest of the attributes the same. *)

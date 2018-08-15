@@ -7,12 +7,6 @@ open Core
 
 open Pyre
 
-module Expression = AstExpression
-module Parameter = AstParameter
-module Identifier = AstIdentifier
-module Location = AstLocation
-module Node = AstNode
-
 module Access = Expression.Access
 module Argument = Expression.Argument
 

@@ -42,7 +42,7 @@ module LookupCache = struct
           { table; source }
         in
         File.Handle.create path
-        |> AstSharedMemory.get_source
+        |> Ast.SharedMemory.get_source
         >>| Lookup.create_of_source environment
         >>| add_source
       in
@@ -201,7 +201,7 @@ let rec process_request
         let handles =
           List.filter_map ~f:(File.handle ~root:local_root) update_environment_with
         in
-        AstSharedMemory.remove_paths handles;
+        Ast.SharedMemory.remove_paths handles;
         Handler.purge handles;
         (* Evict entries from the lookup cache. The next lookup (if
            any) will freshen the cache. *)
@@ -232,7 +232,7 @@ let rec process_request
         "Repopulating the environment with %a"
         Sexp.pp [%message (repopulate_handles: File.Handle.t list)];
 
-      List.filter_map ~f:AstSharedMemory.get_source repopulate_handles
+      List.filter_map ~f:Ast.SharedMemory.get_source repopulate_handles
       |> Service.Environment.populate state.environment;
       let classes_to_infer =
         let get_class_keys handle =
@@ -250,7 +250,7 @@ let rec process_request
     Service.Ignore.register ~configuration scheduler repopulate_handles;
 
     (* Clear all type resolution info from shared memory for all affected sources. *)
-    List.filter_map ~f:AstSharedMemory.get_source new_source_handles
+    List.filter_map ~f:Ast.SharedMemory.get_source new_source_handles
     |> List.concat_map ~f:(Preprocessing.defines ~extract_into_toplevel:true)
     |> List.map ~f:(fun { Node.value = { Statement.Define.name; _ }; _ } -> name)
     |> TypeResolutionSharedMemory.remove;
@@ -396,7 +396,7 @@ let rec process_request
               |> Option.value ~default:""
             in
             File.Handle.create path
-            |> AstSharedMemory.get_source
+            |> Ast.SharedMemory.get_source
             >>| Lookup.create_of_source state.environment
             >>= Lookup.get_annotation ~position:start ~source_text
             >>| (fun (_, annotation) -> Type.show annotation)

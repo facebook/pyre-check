@@ -8,7 +8,7 @@ open OUnit2
 
 open Ast
 open Statement
-open Source.Ignore
+open Ignore
 open Test
 
 

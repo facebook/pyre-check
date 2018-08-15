@@ -5,13 +5,10 @@
 
 open Core
 
-open AstExpression
 open Pyre
-open AstStatement
 
-module Expression = AstExpression
-module Statement = AstStatement
-module Source = AstSource
+open Expression
+open Statement
 
 
 type recursion_behavior =

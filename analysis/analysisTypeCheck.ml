@@ -5,10 +5,11 @@
 
 open Core
 
-open Ast
-open Configuration
-open Expression
 open Pyre
+
+open Ast
+open Expression
+open Configuration
 open Statement
 
 module Annotation = AnalysisAnnotation
@@ -84,7 +85,7 @@ module State = struct
         Format.asprintf
           "    %a -> %s"
           Location.Instantiated.pp
-          (Location.instantiate ~lookup:(fun hash -> AstSharedMemory.get_path ~hash) location)
+          (Location.instantiate ~lookup:(fun hash -> Ast.SharedMemory.get_path ~hash) location)
           (Error.description error ~detailed:true)
       in
       List.map (Map.to_alist errors) ~f:error_to_string
@@ -219,7 +220,7 @@ module State = struct
     Map.data errors
     |> Error.join_at_define
       ~resolution
-      ~location:(Location.instantiate ~lookup:(fun hash -> AstSharedMemory.get_path ~hash) location)
+      ~location:(Location.instantiate ~lookup:(fun hash -> Ast.SharedMemory.get_path ~hash) location)
     |> class_initialization_errors
     |> constructor_errors
     |> Error.filter ~configuration ~resolution
@@ -1115,7 +1116,7 @@ module State = struct
         } as state)
       ~statement:{ Node.location; value } =
     let instantiate location =
-      Location.instantiate ~lookup:(fun hash -> AstSharedMemory.get_path ~hash) location
+      Location.instantiate ~lookup:(fun hash -> Ast.SharedMemory.get_path ~hash) location
     in
     let is_assert_function access =
       List.take_while access ~f:(function | Access.Identifier _ -> true | _ -> false)

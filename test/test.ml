@@ -119,7 +119,7 @@ let parse
     ?(docstring = None)
     ?local_mode
     source =
-  AstSharedMemory.add_path_hash ~path;
+  Ast.SharedMemory.add_path_hash ~path;
   let ({ Source.metadata; _ } as source) =
     trim_extra_indentation source
     |> parse_untrimmed ~path ~qualifier ~debug ~version ~docstring

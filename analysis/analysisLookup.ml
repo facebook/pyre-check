@@ -5,9 +5,10 @@
 
 open Core
 
+open Pyre
+
 open Ast
 open Statement
-open Pyre
 
 module Cfg = AnalysisCfg
 module Environment = AnalysisEnvironment
@@ -304,7 +305,7 @@ let get_best_location lookup_table ~position =
 
 let get_annotation { annotations_lookup; _ } ~position ~source_text =
   let instantiate_location (location, annotation) =
-    Location.instantiate ~lookup:(fun hash -> Ast.AstSharedMemory.get_path ~hash) location,
+    Location.instantiate ~lookup:(fun hash -> Ast.SharedMemory.get_path ~hash) location,
     annotation
   in
   get_best_location annotations_lookup ~position
@@ -329,7 +330,7 @@ let get_all_annotations { annotations_lookup; _ } =
 let get_definition { definitions_lookup; _ } ~position =
   get_best_location definitions_lookup ~position
   >>| snd
-  >>| Location.instantiate ~lookup:(fun hash -> Ast.AstSharedMemory.get_path ~hash)
+  >>| Location.instantiate ~lookup:(fun hash -> Ast.SharedMemory.get_path ~hash)
 
 
 let get_all_definitions { definitions_lookup; _ } =

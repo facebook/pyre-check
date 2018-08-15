@@ -77,7 +77,7 @@ module Make(Kind : KIND) = struct
 
   let create ~location ~kind ~define  =
     {
-      location = Location.instantiate ~lookup:(fun hash -> AstSharedMemory.get_path ~hash) location;
+      location = Location.instantiate ~lookup:(fun hash -> Ast.SharedMemory.get_path ~hash) location;
       kind;
       define
     }

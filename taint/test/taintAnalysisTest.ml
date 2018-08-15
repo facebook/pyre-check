@@ -8,7 +8,6 @@ open OUnit2
 
 open Analysis
 open Ast
-open Statement
 open Expression
 open Pyre
 open Taint
@@ -56,7 +55,7 @@ let create_call_graph ?(test_file = "test_file") source =
     Test.parse source
     |> Preprocessing.preprocess
   in
-  let () = AstSharedMemory.add_source handle source in
+  let () = Ast.SharedMemory.add_source handle source in
   let environment = Test.environment () in
   Service.Environment.populate environment [source];
   TypeCheck.check configuration environment source |> ignore;

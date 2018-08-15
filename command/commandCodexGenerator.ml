@@ -14,7 +14,7 @@ let to_json ~root handles =
     List.fold
       ~init:[]
       ~f:(fun sources path ->
-          match AstSharedMemory.get_source path with
+          match Ast.SharedMemory.get_source path with
           | Some source -> source::sources
           | None -> sources)
   in

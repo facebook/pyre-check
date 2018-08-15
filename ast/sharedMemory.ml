@@ -6,10 +6,6 @@
 open Core
 open Pyre
 
-module Expression = AstExpression
-module Module = AstModule
-module Source = AstSource
-
 module SharedMemory = Hack_parallel.Std.SharedMem
 
 

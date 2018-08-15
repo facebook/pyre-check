@@ -57,7 +57,7 @@ let parse_modules_job ~files =
             ~path
             ~stub:(String.is_suffix path ~suffix:".pyi")
             statements
-          |> AstSharedMemory.add_module qualifier
+          |> Ast.SharedMemory.add_module qualifier
         in
         add_module_from_source source)
     |> ignore
@@ -72,12 +72,12 @@ let parse_sources_job ~files =
      >>= fun source ->
      Path.relative (File.path file)
      >>| fun relative ->
-     AstSharedMemory.add_path_hash ~path:relative;
+     Ast.SharedMemory.add_path_hash ~path:relative;
      let handle = File.Handle.create relative in
      source
      |> Analysis.Preprocessing.preprocess
      |> Plugin.apply_to_ast
-     |> AstSharedMemory.add_source handle;
+     |> Ast.SharedMemory.add_source handle;
      handle :: handles)
     |> Option.value ~default:handles
   in
@@ -110,7 +110,7 @@ let parse_sources ~configuration ~scheduler ~files =
       >>| (fun path -> Source.qualifier ~path)
     in
     List.filter_map files ~f:get_qualifier
-    |> AstSharedMemory.remove_modules
+    |> Ast.SharedMemory.remove_modules
   in
   handles
 
@@ -237,7 +237,7 @@ let parse_all scheduler ~configuration:({ Configuration.local_root; _ } as confi
   let stubs = parse_stubs scheduler ~configuration in
   let known_stubs =
     let add_to_known_stubs sofar handle =
-      match AstSharedMemory.get_source handle with
+      match Ast.SharedMemory.get_source handle with
       | Some { Ast.Source.qualifier; path; _ } ->
           if Set.mem sofar qualifier then
             Statistics.event ~name:"interfering stub" ~normals:["path", path] ();

@@ -1053,7 +1053,7 @@ module Builder = struct
       ~data:(
         Ast.Module.create
           ~qualifier:builtins
-          ~local_mode:Ast.Module.Source.PlaceholderStub
+          ~local_mode:Ast.Source.PlaceholderStub
           ~stub:true
           []);
 

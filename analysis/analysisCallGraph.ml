@@ -5,9 +5,10 @@
 
 open Core
 
+open Pyre
+
 open Ast
 open Statement
-open Pyre
 
 module Annotation = AnalysisAnnotation
 module Cfg = AnalysisCfg

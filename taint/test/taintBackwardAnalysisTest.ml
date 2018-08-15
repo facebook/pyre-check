@@ -9,7 +9,6 @@ open OUnit2
 open Analysis
 open Ast
 open Pyre
-open Statement
 open Expression
 open Taint
 

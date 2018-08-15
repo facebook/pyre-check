@@ -6,7 +6,7 @@
 open Core
 
 open Ast
-open Statement
+open Expression
 
 module SharedMemory = Hack_parallel.Std.SharedMem
 

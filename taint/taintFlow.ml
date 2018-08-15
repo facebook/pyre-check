@@ -4,6 +4,7 @@
     LICENSE file in the root directory of this source tree. *)
 
 open Core
+
 open TaintDomains
 
 
@@ -20,7 +21,7 @@ type flows = flow list
 
 type candidate = {
   flows: flows;
-  location: Ast.Expression.Location.t;
+  location: Ast.Location.t;
 }
 [@@deriving sexp]
 

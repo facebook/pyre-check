@@ -84,7 +84,7 @@ let build
     List.fold
       ~init:[]
       ~f:(fun handles path ->
-          match AstSharedMemory.get_source path with
+          match Ast.SharedMemory.get_source path with
           | Some handle -> handle :: handles
           | None -> handles)
   in
@@ -194,7 +194,7 @@ let shared_memory_handler
     add_table DependentKeys.write_through (Hashtbl.map ~f:Hash_set.to_list dependent_keys);
 
     Protocols.write_through "Protocols" (Hash_set.to_list protocols);
-    add_table AstSharedMemory.add_module modules;
+    add_table Ast.SharedMemory.add_module modules;
     Statistics.performance ~name:"added environment to shared memory" ~timer ()
   in
 
@@ -213,23 +213,23 @@ let shared_memory_handler
 
       let register_module ~qualifier ~local_mode ~path ~stub ~statements =
         let is_registered_empty_stub =
-          AstSharedMemory.get_module qualifier
+          Ast.SharedMemory.get_module qualifier
           >>| Module.empty_stub
           |> Option.value ~default:false
         in
         if not is_registered_empty_stub then
           begin
-            AstSharedMemory.remove_modules [qualifier];
-            AstSharedMemory.add_module
+            Ast.SharedMemory.remove_modules [qualifier];
+            Ast.SharedMemory.add_module
               qualifier
               (Module.create ~qualifier ~local_mode ?path ~stub statements)
           end
 
       let is_module access =
-        AstSharedMemory.in_modules access
+        Ast.SharedMemory.in_modules access
 
       let module_definition access =
-        AstSharedMemory.get_module access
+        Ast.SharedMemory.get_module access
 
       let in_class_definition_keys annotation =
         ClassDefinitions.mem annotation
@@ -521,7 +521,7 @@ let shared_memory_handler
 
         DependencyHandler.clear_keys_batch paths;
         List.map ~f:(fun path -> Ast.Source.qualifier ~path) paths
-        |> AstSharedMemory.remove_modules;
+        |> Ast.SharedMemory.remove_modules;
 
         if debug then
           (* If in debug mode, make sure the TypeOrder is still consistent. *)

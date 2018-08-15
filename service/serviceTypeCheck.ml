@@ -105,7 +105,7 @@ let analyze_sources_parallel scheduler configuration environment handles =
                 coverage = total_coverage;
               }
                 handle ->
-                match AstSharedMemory.get_source handle with
+                match Ast.SharedMemory.get_source handle with
                 | Some source ->
                     let {
                       TypeCheck.Result.errors = new_errors;
@@ -164,7 +164,7 @@ let analyze_sources
             ~f:(fun directory -> Path.directory_contains ~follow_symlinks:true ~directory path)
     in
     let filter_by_root handle =
-      match AstSharedMemory.get_source handle with
+      match Ast.SharedMemory.get_source handle with
       | Some { Source.path; _ } ->
           let relative = Path.create_relative ~root:local_root ~relative:path in
           Path.directory_contains relative ~follow_symlinks:true ~directory:project_root &&
@@ -177,7 +177,7 @@ let analyze_sources
   if Scheduler.is_parallel scheduler then
     analyze_sources_parallel scheduler configuration environment handles
   else
-    let sources = List.filter_map ~f:AstSharedMemory.get_source handles in
+    let sources = List.filter_map ~f:Ast.SharedMemory.get_source handles in
     let analyze_and_postprocess
         configuration
         (current_errors, total_coverage)

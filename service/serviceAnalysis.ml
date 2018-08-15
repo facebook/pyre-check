@@ -108,7 +108,7 @@ let analyze ?taint_models_directory ~scheduler ~configuration ~environment ~hand
   Log.info "Recording overrides...";
   let timer = Timer.start () in
   let record_overrides path =
-    AstSharedMemory.get_source path
+    Ast.SharedMemory.get_source path
     >>| (fun source -> record_overrides ~environment ~source)
     |> ignore
   in
@@ -120,7 +120,7 @@ let analyze ?taint_models_directory ~scheduler ~configuration ~environment ~hand
   let call_graph =
     let build_call_graph map path =
       try
-        AstSharedMemory.get_source path
+        Ast.SharedMemory.get_source path
         >>| (fun source -> record_and_merge_call_graph ~environment ~call_graph:map ~path ~source)
         |> Option.value ~default:map
       with TypeOrder.Untracked untracked_type ->
@@ -144,7 +144,7 @@ let analyze ?taint_models_directory ~scheduler ~configuration ~environment ~hand
 
   let all_callables =
     let make_callables path =
-      AstSharedMemory.get_source path
+      Ast.SharedMemory.get_source path
       >>| fun source ->
       record_path_of_definitions ~path ~source
       |> List.map ~f:Interprocedural.Callable.make

@@ -239,9 +239,9 @@ let assert_response
     ~source
     ~request
     expected_response =
-  AstSharedMemory.remove_paths [File.Handle.create path];
+  Ast.SharedMemory.remove_paths [File.Handle.create path];
   let parsed = parse ~path source in
-  AstSharedMemory.add_source (File.Handle.create path) parsed;
+  Ast.SharedMemory.add_source (File.Handle.create path) parsed;
   let errors =
     let errors = File.Handle.Table.create () in
     List.iter
@@ -734,7 +734,7 @@ let test_incremental_lookups _ =
   CommandTest.clean_environment ();
   let annotations =
     File.Handle.create relative_path
-    |> AstSharedMemory.get_source
+    |> Ast.SharedMemory.get_source
     |> (fun value -> Option.value_exn value)
     |> Lookup.create_of_source state.State.environment
     |> Lookup.get_all_annotations

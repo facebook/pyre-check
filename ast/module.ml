@@ -6,10 +6,6 @@
 open Core
 
 open Pyre
-
-module Statement = AstStatement
-module Source = AstSource
-
 open Statement
 
 

@@ -5,7 +5,6 @@
 
 open Core
 
-module Location = AstLocation
 
 type kind =
   | TypeIgnore

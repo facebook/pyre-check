@@ -3,11 +3,9 @@
     This source code is licensed under the MIT license found in the
     LICENSE file in the root directory of this source tree. *)
 
-module Location = AstLocation
-
 type 'node_type t = {
   location: Location.t; [@hash.ignore]
-  value: 'node_type;
+    value: 'node_type;
 }
 [@@deriving sexp, show, hash]
 

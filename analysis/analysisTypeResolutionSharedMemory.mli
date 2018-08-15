@@ -6,7 +6,7 @@
 open Core
 
 open Ast
-open Statement
+open Expression
 
 
 (** Maps a key, unique to each statement for a function CFG, to type

@@ -5,10 +5,10 @@
 
 open Core
 
+open Pyre
+
 open Ast
 open Expression
-open Statement
-open Pyre
 
 module Annotation = AnalysisAnnotation
 module Resolution = AnalysisResolution
