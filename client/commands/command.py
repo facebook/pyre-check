@@ -10,6 +10,7 @@ import re
 import resource
 import subprocess
 import threading
+from abc import abstractmethod
 from typing import List, Set  # noqa
 
 from .. import SUCCESS, EnvironmentException, log
@@ -69,11 +70,13 @@ class Command:
         else:
             self._local_root = arguments.original_directory
 
-    def _run(self) -> int:
-        pass
-
     def run(self) -> int:
         return self._run()
+
+    @abstractmethod
+    def _run(self) -> int:
+        """ Abstract method expected to be overridden by subclasses. """
+        pass
 
     def _flags(self) -> List[str]:
         flags = []
