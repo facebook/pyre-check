@@ -10,11 +10,12 @@ module Kind = AnalysisKind
 val one_analysis_pass:
   analyses:Kind.abstract list
   -> Fixpoint.step
-  -> schedule:Callable.t list -> unit
+  -> callables:Callable.t list -> unit
 
 (* Returns number of iterations. *)
 val compute_fixpoint
-  :  ?workers:Hack_parallel.Std.Worker.t list
+  :  configuration:Configuration.t
+  -> scheduler:Scheduler.t
   -> analyses:Kind.abstract list
   -> caller_map:Analysis.CallGraph.t
   -> all_callables:Callable.t list

@@ -319,13 +319,13 @@ let summaries callable =
 
 
 (* Called on a worker with a set of functions to analyze. *)
-let one_analysis_pass ~analyses step ~schedule =
+let one_analysis_pass ~analyses step ~callables =
   let analyses = List.map ~f:Result.get_abstract_analysis analyses in
   let analyze_and_cache callable =
     let result = analyze_callable analyses step callable in
     Fixpoint.add_state step callable result
   in
-  List.iter schedule ~f:analyze_and_cache
+  List.iter callables ~f:analyze_and_cache
 
 
 let make_n_list_buckets ~buckets work =
@@ -407,12 +407,10 @@ let compute_callables_to_reanalyze step previous_batch ~caller_map ~all_callable
   callables_to_reanalyze
 
 
-let compute_fixpoint ?workers ~analyses ~caller_map ~all_callables epoch =
+let compute_fixpoint ~configuration ~scheduler ~analyses ~caller_map ~all_callables epoch =
   (* Start iteration > 0 is to avoid a useless special 0 iteration for mega
      components. *)
   let max_iterations = 100 in
-  let bucket_size = 10_000 in
-  let num_workers = match workers with None -> 1 | Some w -> List.length w in
   let rec iterate ~iteration callables_to_analyze =
     let num_callables = List.length callables_to_analyze in
     let () =
@@ -449,17 +447,17 @@ let compute_fixpoint ?workers ~analyses ~caller_map ~all_callables epoch =
       end
     else
       let time_0 = Unix.gettimeofday () in
-      let buckets = max (num_callables / bucket_size) (num_workers * 5) in
       let step = Fixpoint.{ epoch; iteration; } in
       let old_batch = Fixpoint.KeySet.of_list callables_to_analyze in
       let () =
         Fixpoint.oldify old_batch;
-        MultiWorker.call
-          workers
-          ~job:(fun _ Bucket.{ work = schedule; _ } -> one_analysis_pass ~analyses step ~schedule)
-          ~neutral: ()
-          ~merge:(fun _ _ -> ())
-          ~next:(make_n_list_buckets ~buckets callables_to_analyze);
+        Scheduler.map_reduce
+          scheduler
+          ~configuration
+          ~map:(fun _ callables -> one_analysis_pass ~analyses step ~callables)
+          ~init:()
+          ~reduce:(fun _ _ -> ())
+          callables_to_analyze;
         Fixpoint.remove_old old_batch
       in
       let callables_to_analyze =

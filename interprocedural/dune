@@ -20,5 +20,6 @@
   pyrelib.ast
   pyrelib.pyreParser
   pyrelib.recognized
+  pyrelib.scheduler
   pyrelib.statistics
   pyrelib.file))

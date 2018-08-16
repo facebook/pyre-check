@@ -159,7 +159,8 @@ let analyze ?taint_models_directory ~scheduler ~configuration ~environment ~hand
   let timer = Timer.start () in
   let iterations =
     Interprocedural.Analysis.compute_fixpoint
-      ~workers:(Scheduler.workers scheduler)
+      ~configuration
+      ~scheduler
       ~analyses
       ~caller_map
       ~all_callables
