@@ -166,5 +166,7 @@ let analyze ?taint_models_directory ~scheduler ~configuration ~environment ~hand
       ~all_callables
       Interprocedural.Fixpoint.Epoch.initial
   in
+  let errors = Interprocedural.Analysis.extract_errors scheduler ~configuration all_callables in
   Statistics.performance ~name:"Analysis fixpoint complete" ~timer ();
-  Log.info "Fixpoint iterations: %d" iterations
+  Log.info "Fixpoint iterations: %d" iterations;
+  errors

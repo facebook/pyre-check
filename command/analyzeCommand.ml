@@ -71,7 +71,7 @@ let run_analysis
     with _ -> 10
   in
   let scheduler = Scheduler.create ~configuration ~bucket_multiplier () in
-  let () =
+  let errors =
     Service.TypeCheck.check configuration (Some scheduler) ()
     |> fun { handles; environment; _ } ->
     Service.StaticAnalysis.analyze
@@ -93,6 +93,12 @@ let run_analysis
     ]
     ~normals:["request kind", "FullCheck"]
     ();
+  (* Print results. *)
+  Yojson.Safe.to_string
+    (`List
+       (List.map
+          ~f:(fun error -> Interprocedural.Error.to_json ~detailed:show_error_traces error) errors))
+  |> Log.print "%s";
   Statistics.flush ();
   Scheduler.destroy scheduler
 

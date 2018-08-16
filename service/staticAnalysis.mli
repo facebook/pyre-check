@@ -34,4 +34,4 @@ val analyze
   -> environment: (module Environment.Handler)
   -> handles: File.Handle.t list
   -> unit
-  -> unit
+  -> Interprocedural.Error.t list

@@ -271,7 +271,7 @@ let analyze_callable analyses step callable =
       analyze_overrides step callable
 
 
-let errors results =
+let get_errors results =
   let open Result in
   let get_diagnostics (Pkg { kind = ResultPart kind; value; }) =
     let module Analysis = (val (get_analysis kind)) in
@@ -279,9 +279,8 @@ let errors results =
   in
   Kind.Map.bindings results
   |> List.map ~f:snd
-  |> List.concat_no_order
   |> List.map ~f:get_diagnostics
-
+  |> List.concat_no_order
 
 let summaries_internal callable models results =
   let open Result in
@@ -473,3 +472,21 @@ let compute_fixpoint ~configuration ~scheduler ~analyses ~caller_map ~all_callab
       iterate ~iteration:(iteration + 1) callables_to_analyze
   in
   iterate ~iteration:0 all_callables
+
+
+let extract_errors scheduler ~configuration all_callables =
+  let extract_errors callables =
+    List.fold
+      ~f:(fun errors callable -> (Fixpoint.get_result callable |> get_errors) :: errors)
+      ~init:[]
+      callables
+    |> List.concat_no_order
+  in
+  Scheduler.map_reduce
+    scheduler
+    ~configuration
+    ~init:[]
+    ~map:(fun _ callables -> extract_errors callables)
+    ~reduce:List.cons
+    all_callables
+  |> List.concat_no_order

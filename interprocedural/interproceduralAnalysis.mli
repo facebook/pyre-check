@@ -23,3 +23,9 @@ val compute_fixpoint
   -> int
 
 val summaries: Callable.t -> Yojson.Safe.json list
+
+val extract_errors:
+  Scheduler.t
+  -> configuration: Configuration.t
+  -> Callable.t list
+  -> InterproceduralError.t list
