@@ -14,9 +14,6 @@ open PyreParser
 open Server
 open Test
 
-module Parallel = Hack_parallel.Std
-module Scheduler = Service.Scheduler
-
 
 exception Timeout
 

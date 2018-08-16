@@ -7,8 +7,6 @@ open Core
 
 open Pyre
 
-module Scheduler = Service.Scheduler
-
 
 let run_analysis
     _taint

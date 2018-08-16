@@ -19,8 +19,6 @@ open Result
 open Test
 open Interprocedural
 
-module Parallel = Hack_parallel.Std
-
 
 type parameter_taint = {
   position: int;

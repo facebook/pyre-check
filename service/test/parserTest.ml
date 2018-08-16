@@ -5,7 +5,6 @@
 
 open Core
 open OUnit2
-open Service
 open Test
 
 open Ast

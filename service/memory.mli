@@ -5,8 +5,10 @@
 
 module SharedMemory = Hack_parallel.Std.SharedMem
 
+include module type of SharedMemory with type handle = Hack_parallel.Std.SharedMem.handle
 
-val get_heap_handle: unit -> SharedMemory.handle
+
+val get_heap_handle: unit -> handle
 
 (* Between 0.0 and 1.0 *)
 val heap_use_ratio: unit -> float

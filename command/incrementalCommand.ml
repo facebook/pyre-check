@@ -8,8 +8,6 @@ open Pyre
 open Network
 open Server
 
-module Scheduler = Service.Scheduler
-
 
 let run
     verbose

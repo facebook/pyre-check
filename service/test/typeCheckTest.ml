@@ -9,8 +9,6 @@ open OUnit2
 open Pyre
 open Test
 
-module Scheduler = Service.Scheduler
-
 
 let assert_errors ?filter_directories ~root ~files errors =
   let configuration =

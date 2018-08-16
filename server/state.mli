@@ -8,7 +8,6 @@ open Core
 open Network
 
 module Error = Analysis.Error
-module Scheduler = Service.Scheduler
 
 
 type client = {

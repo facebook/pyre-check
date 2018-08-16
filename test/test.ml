@@ -17,7 +17,7 @@ let () =
   Log.initialize_for_tests ();
   Statistics.disable ();
   Type.Cache.disable ();
-  Service.Scheduler.mock () |> ignore
+  Scheduler.mock () |> ignore
 
 
 let parse_untrimmed
@@ -138,7 +138,7 @@ let parse_list named_sources =
   in
   Service.Parser.parse_sources
     ~configuration:(Configuration.create ~local_root:(Path.current_working_directory ()) ())
-    ~scheduler:(Service.Scheduler.mock ())
+    ~scheduler:(Scheduler.mock ())
     ~files:(List.map ~f:create_file named_sources)
 
 let parse_single_statement source =

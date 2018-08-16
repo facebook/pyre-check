@@ -6,6 +6,9 @@
 
 open Hack_parallel.Std
 
+module Daemon = Daemon
+
+
 type t
 
 val create: configuration: Configuration.t -> ?bucket_multiplier: int -> unit -> t

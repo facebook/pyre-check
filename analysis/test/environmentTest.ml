@@ -1305,7 +1305,7 @@ let test_purge _ =
 
 let test_infer_protocols _ =
   let open Analysis in
-  Service.Scheduler.mock () |> ignore;
+  Scheduler.mock () |> ignore;
   let configuration = Configuration.create () in
   let type_sources = Test.typeshed_stubs in
   let assert_protocols ?classes_to_infer source expected_edges =

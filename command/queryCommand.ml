@@ -11,9 +11,7 @@ open Pyre
 open PyreParser
 open Server
 open Protocol
-
-module Scheduler = Service.Scheduler
-open Server.Protocol.TypeQuery
+open TypeQuery
 
 
 let parse_query ~root query =

@@ -13,7 +13,6 @@ open Server
 open Service.Constants.Watchman
 
 module Time = Core_kernel.Time_ns.Span
-module Scheduler = Service.Scheduler
 
 
 let subscription watchman_directory =

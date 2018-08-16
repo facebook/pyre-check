@@ -110,7 +110,7 @@ let run_command expected_version log_identifier local_root () =
       ?expected_version
       ()
   in
-  Service.Scheduler.initialize_process ~configuration;
+  Scheduler.initialize_process ~configuration;
   (* Log stderr to file *)
   let log_path =
     let persistent_client_directory =

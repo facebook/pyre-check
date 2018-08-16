@@ -11,9 +11,6 @@ open Path.AppendOperator
 open Server
 
 
-module Parallel = Hack_parallel.Std
-
-
 let start_watchman pid_path () =
   Commands.Watchman.run_command
     ~daemonize:true

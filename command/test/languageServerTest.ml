@@ -12,8 +12,6 @@ open Protocol
 open Pyre
 open Server
 
-module Parallel = Hack_parallel.Std
-
 
 let files context =
   let root = Path.create_absolute Filename.temp_dir_name in

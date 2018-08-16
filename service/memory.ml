@@ -4,14 +4,15 @@
     LICENSE file in the root directory of this source tree. *)
 
 
-open Hack_parallel.Std
+module SharedMemory = Hack_parallel.Std.SharedMem
 
-module SharedMemory = SharedMem
+include SharedMemory
+
 
 type bytes = int
 
 type configuration = {
-  heap_handle: SharedMemory.handle;
+  heap_handle: Hack_parallel.Std.SharedMem.handle;
   minor_heap_size: bytes;
 }
 

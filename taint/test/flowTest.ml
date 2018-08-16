@@ -206,7 +206,7 @@ let test_errors _ =
 
 
 let () =
-  Service.Scheduler.mock () |> ignore;
+  Scheduler.mock () |> ignore;
   "test_taint_flow">:::[
     "partition_match_all">::test_partition_match_all;
     "partition_match_some_sources">::test_partition_match_some_sources;

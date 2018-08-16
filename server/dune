@@ -24,6 +24,7 @@
   pyrelib.analysis
   pyrelib.configuration
   pyrelib.experimental
+  pyrelib.memory
   pyrelib.network
   pyrelib.languageServer
   pyrelib.version))

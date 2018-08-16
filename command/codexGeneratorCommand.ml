@@ -7,7 +7,6 @@ open Core
 
 open Ast
 open Pyre
-open Service
 
 let to_json ~root handles =
   let get_sources =

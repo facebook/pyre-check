@@ -17,8 +17,6 @@ open Request
 
 open Pyre
 
-module Scheduler = Service.Scheduler
-
 
 exception InvalidRequest
 
@@ -343,14 +341,14 @@ let rec process_request
     end
   in
   let compact_shared_memory () =
-    if Service.Memory.heap_use_ratio () > 0.5 then
-      let previous_use_ratio = Service.Memory.heap_use_ratio () in
+    if Memory.heap_use_ratio () > 0.5 then
+      let previous_use_ratio = Memory.heap_use_ratio () in
       SharedMem.collect `aggressive;
       Log.log
         ~section:`Server
         "Garbage collected due to a previous heap use ratio of %f. New ratio is %f."
         previous_use_ratio
-        (Service.Memory.heap_use_ratio ())
+        (Memory.heap_use_ratio ())
   in
   let handle_type_check state { TypeCheckRequest.update_environment_with; check} =
     let deferred_requests =

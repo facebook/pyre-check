@@ -5,6 +5,8 @@
 
 open Hack_parallel.Std
 
+module Daemon = Daemon
+
 
 type t = {
   is_parallel: bool;
@@ -32,7 +34,7 @@ let create
       ~heap_handle
       ~gc_control:Memory.worker_garbage_control
   in
-  SharedMem.connect heap_handle ~is_master:true;
+  Memory.connect heap_handle ~is_master:true;
   { workers; number_of_workers; bucket_multiplier; is_parallel = parallel }
 
 
