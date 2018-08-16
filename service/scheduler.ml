@@ -61,7 +61,8 @@ let map_reduce
     initialize_process ~configuration;
     map accumulator inputs
   in
-  MultiWorker.call (Some workers)
+  MultiWorker.call
+    (Some workers)
     ~job:map
     ~merge:reduce
     ~neutral:init
