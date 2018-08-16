@@ -5208,7 +5208,11 @@ let test_check_behavioral_subtyping _ =
       "Inconsistent override [15]: `Bar.foo` overloads method defined in `Foo` inconsistently. " ^
       "Returned type `None` is not a subtype of the overridden return `int`."
     ];
+
+  (* Missing annotations. *)
   assert_type_errors
+    ~strict:false
+    ~debug:false
     {|
       class Foo():
         def foo() -> int: ...
@@ -5217,9 +5221,18 @@ let test_check_behavioral_subtyping _ =
     |}
     [
       "Inconsistent override [15]: `Bar.foo` overloads method defined in `Foo` inconsistently. " ^
-      "Returned type `unknown` is not a subtype of the overridden return `int`.";
-      "Missing return annotation [3]: Returning `None` but no return type is specified."
+      "The overriding method is not annotated but should return a subtype of `int`.";
     ];
+  (* TODO(T29679691): We should also warn when parameter annotations are missing. *)
+  assert_type_errors
+    ~strict:false
+    {|
+      class Foo():
+        def foo(input: int) -> int: ...
+      class Bar(Foo):
+        def foo(input) -> int: ...
+    |}
+    [];
 
   assert_type_errors
     {|

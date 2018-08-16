@@ -483,10 +483,15 @@ let messages ~detailed:_ ~define location kind =
       let detail =
         match override with
         | WeakenedPostcondition { actual; expected } ->
-            Format.asprintf
-              "Returned type `%a` is not a subtype of the overridden return `%a`."
-              Type.pp actual
-              Type.pp expected
+            if Type.equal actual Type.Top then
+              Format.asprintf
+                "The overriding method is not annotated but should return a subtype of `%a`."
+                Type.pp expected
+            else
+              Format.asprintf
+                "Returned type `%a` is not a subtype of the overridden return `%a`."
+                Type.pp actual
+                Type.pp expected
         | StrengthenedPrecondition (Found { actual; expected }) ->
             Format.asprintf
               "Parameter of type `%a` is not a supertype of the overridden parameter `%a`."
@@ -1278,6 +1283,8 @@ let suppress ~mode error =
 
   let suppress_in_default ({ kind; define = { Node.value = define; _ }; _ } as error) =
     match kind with
+    | InconsistentOverride { override = WeakenedPostcondition { actual = Type.Top; _ }; _ } ->
+        false
     | MissingReturnAnnotation _
     | MissingParameterAnnotation _
     | MissingAttributeAnnotation _
