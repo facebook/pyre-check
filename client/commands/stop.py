@@ -4,6 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import logging
+from typing import List
 
 from .command import ClientException, Command, State
 from .kill import Kill
@@ -17,6 +18,9 @@ class Stop(Command):
 
     def __init__(self, arguments, configuration, analysis_directory) -> None:
         super(Stop, self).__init__(arguments, configuration, analysis_directory)
+
+    def _flags(self) -> List[str]:
+        return []
 
     def _run(self) -> None:
         if self._state() == State.DEAD:

@@ -45,3 +45,9 @@ class StopTest(unittest.TestCase):
             commands.Stop(arguments, configuration, analysis_directory=".").run()
             call_client.assert_has_calls([call(command=commands.Stop.NAME)])
             kill_run.assert_has_calls([call()])
+
+        # Stop ignores irrelevant flags.
+        arguments.debug = True
+        call_client.side_effect = None
+        flags = commands.Stop(arguments, configuration, analysis_directory=".")._flags()
+        self.assertEqual(flags, [])
