@@ -158,7 +158,6 @@ let analyze_sources
     environment
     handles =
   let open Analysis in
-  Log.info "Checking...";
 
   Annotated.Class.AttributesCache.clear ();
   let handles =
@@ -182,6 +181,7 @@ let analyze_sources
     in
     List.filter handles ~f:filter_by_root
   in
+  Log.info "Checking %d sources..." (List.length handles);
   if Scheduler.is_parallel scheduler then
     analyze_sources_parallel scheduler configuration environment handles
   else
