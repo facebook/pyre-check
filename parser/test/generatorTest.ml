@@ -2558,11 +2558,11 @@ let test_class _ =
       };
     ];
 
-  (* Test handling of versioned stubs. *)
+  (* We mark parents for functions under if statements. *)
   assert_parsed_equal
     (trim_extra_indentation {|
       class foo():
-        if sys.version_info >= (3, 5):
+        if True:
           def bar():
             pass
     |})
@@ -2571,48 +2571,23 @@ let test_class _ =
         Class.name = Access.create "foo";
         bases = [];
         body = [
-          +Define {
-            Define.name = Access.create "bar";
-            parameters = [];
-            body = [+Pass];
-            decorators = [];
-            docstring = None;
-            return_annotation = None;
-            async = false;
-            generated = false;
-            parent = Some (Access.create "foo");
-          };
-        ];
-        decorators = [];
-        docstring = None;
-      };
-    ];
-
-  (* Testing with only major version not minor *)
-  assert_parsed_equal
-    (trim_extra_indentation {|
-      class foo():
-        if sys.version_info >= (3,):
-          def bar():
-            pass
-    |})
-    [
-      +Class {
-        Class.name = Access.create "foo";
-        bases = [];
-        body = [
-          +Define {
-            Define.name = Access.create "bar";
-            parameters = [];
-            body = [+Pass];
-            decorators = [];
-            docstring = None;
-            return_annotation = None;
-            async = false;
-            generated = false;
-            parent = Some (Access.create "foo");
-          };
-        ];
+          +If {
+            If.test = +Expression.True;
+            body = [
+              +Define {
+                Define.name = Access.create "bar";
+                parameters = [];
+                body = [+Pass];
+                decorators = [];
+                docstring = None;
+                return_annotation = None;
+                async = false;
+                generated = false;
+                parent = Some (Access.create "foo");
+              };
+            ];
+            orelse = []
+          }];
         decorators = [];
         docstring = None;
       };

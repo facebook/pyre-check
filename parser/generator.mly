@@ -527,35 +527,35 @@ compound_statement:
       let body =
         let rec transform_toplevel_statements = function
           | { Node.location; value = Assign assign } ->
-              [{
+              {
                 Node.location;
                 value = Assign { assign with Assign.parent = Some name };
-              }]
+              }
           | { Node.location; value = Define define } ->
-              [{
+              {
                 Node.location;
                 value = Define { define with Define.parent = Some name };
-              }]
+              }
           | {
-              Node.value = If {
-                If.test = {
-                  Node.value = ComparisonOperator {
-                      ComparisonOperator.left;
-                      operator = ComparisonOperator.GreaterThanOrEquals;
-                      right = { Node.value = Tuple ({ Node.value = Integer major; _ } :: _ ); _ };
-                    };
-                  _;
-                };
+              Node.location;
+              value = If {
+                If.test;
                 body;
-                _
+                orelse;
               };
-              _
-            } when (Expression.show left) = "sys.version_info" && major = 3 ->
-              List.concat_map ~f:transform_toplevel_statements body
+            } ->
+              {
+                Node.location;
+                value = If {
+                  If.test;
+                  body = List.map ~f:transform_toplevel_statements body;
+                  orelse = List.map ~f:transform_toplevel_statements orelse;
+                };
+              }
           | statement ->
-              [statement]
+              statement
         in
-        List.concat_map ~f:transform_toplevel_statements body in
+        List.map ~f:transform_toplevel_statements body in
       {
         Node.location;
         value = Class {
