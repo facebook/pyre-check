@@ -257,7 +257,7 @@ class Configuration:
                         )
                     )
                 else:
-                    LOG.info(
+                    LOG.debug(
                         "Configuration will be read from the project root: "
                         "`{}`".format(os.getcwd())
                     )
