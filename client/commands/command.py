@@ -13,7 +13,7 @@ import threading
 from abc import abstractmethod
 from typing import List, Set  # noqa
 
-from .. import SUCCESS, EnvironmentException, log
+from .. import EnvironmentException, log
 
 
 LOG = logging.getLogger(__name__)
@@ -28,13 +28,19 @@ class State(enum.IntEnum):
     RUNNING = 1
 
 
+class ExitCode(enum.IntEnum):
+    SUCCESS = 0
+    FOUND_ERRORS = 1
+    FAILURE = 2
+
+
 class Result:
     def __init__(self, code, output) -> None:
         self.code = code
         self.output = output
 
     def check(self) -> None:
-        if self.code != SUCCESS:
+        if self.code != ExitCode.SUCCESS:
             raise ClientException(
                 "Client exited with error code {}:"
                 "\n{}".format(self.code, self.output)
@@ -45,7 +51,7 @@ class Command:
     _buffer = []  # type: List[str]
     _call_client_terminated = False  # type: bool
 
-    _exit_code = SUCCESS  # type: int
+    _exit_code = ExitCode.SUCCESS  # type: ExitCode
 
     def __init__(self, arguments, configuration, analysis_directory) -> None:
         self._arguments = arguments

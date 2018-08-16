@@ -16,7 +16,7 @@ import sys
 import traceback
 from collections import defaultdict
 
-from . import FAILURE, SUCCESS
+from .commands import ExitCode
 
 
 LOG = logging.getLogger(__name__)
@@ -187,15 +187,15 @@ if __name__ == "__main__":
     )
 
     try:
-        exit_code = SUCCESS
+        exit_code = ExitCode.SUCCESS
         arguments.function(arguments)
     except PostprocessError as error:
         LOG.error(str(error))
         LOG.debug(traceback.format_exc())
-        exit_code = FAILURE
+        exit_code = ExitCode.FAILURE
     except Exception as error:
         LOG.error(str(error))
         LOG.info(traceback.format_exc())
-        exit_code = FAILURE
+        exit_code = ExitCode.FAILURE
 
     sys.exit(exit_code)

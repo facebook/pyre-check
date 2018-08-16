@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from .. import FOUND_ERRORS
+from .command import ExitCode
 from .reporting import Reporting
 
 
@@ -46,4 +46,4 @@ class Check(Reporting):
         self._print(errors)
 
         if errors:
-            self._exit_code = FOUND_ERRORS
+            self._exit_code = ExitCode.FOUND_ERRORS

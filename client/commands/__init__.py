@@ -20,4 +20,5 @@ from .stop import Stop as Stop  # noqa
 from .command import (  # noqa; noqa; noqa
     ClientException as ClientException,
     Command as Command,
+    ExitCode as ExitCode,
 )

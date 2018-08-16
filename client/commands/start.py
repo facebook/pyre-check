@@ -7,7 +7,8 @@ import logging
 import os
 from typing import List
 
-from .. import FAILURE, filesystem
+from .. import filesystem
+from .command import ExitCode
 from .monitor import Monitor
 from .reporting import Reporting
 
@@ -52,7 +53,7 @@ class Start(Reporting):
                         LOG.warning(
                             "Server at `%s` exists, skipping.", self._analysis_directory
                         )
-                        self._exit_code = FAILURE
+                        self._exit_code = ExitCode.FAILURE
                         return
 
                     self._call_client(command=self.NAME).check()

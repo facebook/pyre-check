@@ -12,8 +12,6 @@ import time
 import traceback
 
 from . import (
-    FAILURE,
-    SUCCESS,
     EnvironmentException,
     assert_readable_directory,
     buck,
@@ -27,6 +25,7 @@ from . import (
     switch_root,
     translate_arguments,
 )
+from .commands import ExitCode
 from .configuration import Configuration
 from .version import __version__
 
@@ -256,7 +255,7 @@ def main() -> int:
     analysis_directory_path = None
     # Having this as a fails-by-default helps flag unexpected exit
     # from exception flows.
-    exit_code = FAILURE
+    exit_code = ExitCode.FAILURE
     try:
         start = time.time()
 
@@ -280,11 +279,11 @@ def main() -> int:
                 LOG.log(
                     log.SUCCESS, "Pyre will not run due to being explicitly disabled"
                 )
-                return SUCCESS
+                return ExitCode.SUCCESS
 
             if arguments.binary_version:
                 log.stdout.write(get_binary_version(configuration))
-                return SUCCESS
+                return ExitCode.SUCCESS
 
             configuration.validate()
 
@@ -334,18 +333,18 @@ def main() -> int:
         LOG.error(str(error))
         if arguments.command == commands.Persistent:
             commands.Persistent.run_null_server(timeout=3600)
-        exit_code = FAILURE
+        exit_code = ExitCode.FAILURE
     except commands.ClientException as error:
         LOG.error(str(error))
-        exit_code = FAILURE
+        exit_code = ExitCode.FAILURE
     except Exception as error:
         LOG.error(str(error))
         LOG.info(traceback.format_exc())
-        exit_code = FAILURE
+        exit_code = ExitCode.FAILURE
     except KeyboardInterrupt:
         LOG.warning("Interrupted by user")
         LOG.debug(traceback.format_exc())
-        exit_code = SUCCESS
+        exit_code = ExitCode.SUCCESS
     finally:
         log.cleanup(arguments)
         if shared_analysis_directory:
@@ -372,5 +371,5 @@ if __name__ == "__main__":
             "Pyre could not determine the current working directory. "
             "Has it been removed?\nExiting."
         )
-        sys.exit(FAILURE)
+        sys.exit(ExitCode.FAILURE)
     sys.exit(main())

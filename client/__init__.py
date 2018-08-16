@@ -22,10 +22,6 @@ from .filesystem import SharedAnalysisDirectory
 LOG = logging.getLogger(__name__)
 
 
-SUCCESS = 0
-FOUND_ERRORS = 1
-FAILURE = 2
-
 CONFIGURATION_FILE = ".pyre_configuration"
 BINARY_NAME = "pyre.bin"
 

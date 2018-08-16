@@ -9,8 +9,7 @@ import os
 import subprocess
 import sys
 
-from .. import FAILURE
-from .command import ClientException, State
+from .command import ClientException, ExitCode, State
 from .reporting import Reporting
 from .start import Start
 
@@ -44,7 +43,7 @@ class Incremental(Reporting):
         except ClientException as exception:
             LOG.error("Error while waiting for server.")
             LOG.error("Run `%s restart` in order to restart the server.", sys.argv[0])
-            self._exit_code = FAILURE
+            self._exit_code = ExitCode.FAILURE
 
     def _flags(self):
         flags = super()._flags()

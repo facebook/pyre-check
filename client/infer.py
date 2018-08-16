@@ -18,8 +18,6 @@ from pathlib import Path
 from typing import Any, List, Optional, Set, Union  # noqa
 
 from . import (
-    FAILURE,
-    SUCCESS,
     EnvironmentException,
     buck,
     commands,
@@ -31,6 +29,7 @@ from . import (
     resolve_analysis_directories,
     switch_root,
 )
+from .commands import ExitCode
 from .configuration import Configuration
 
 
@@ -507,7 +506,7 @@ def main():
     stubs = []
     error_message = ""
     try:
-        exit_code = SUCCESS
+        exit_code = ExitCode.SUCCESS
         analysis_directories = []
         shared_analysis_directory = None
 
@@ -525,7 +524,7 @@ def main():
 
         if arguments.version or arguments.binary_version:
             sys.stdout.write(get_binary_version(configuration) + "\n")
-            return SUCCESS
+            return ExitCode.SUCCESS
 
         configuration.validate()
 
@@ -557,13 +556,13 @@ def main():
         error_message = str(error)
         LOG.error(error_message)
         LOG.error("For more information, run 'pyre-infer --help'.")
-        exit_code = FAILURE
+        exit_code = ExitCode.FAILURE
     except Exception as error:
         error_message = str(error)
         LOG.error(error_message)
         LOG.error("For more information, run 'pyre-infer --help'.")
         LOG.info(traceback.format_exc())
-        exit_code = FAILURE
+        exit_code = ExitCode.FAILURE
     finally:
         if shared_analysis_directory:
             shared_analysis_directory.cleanup()
