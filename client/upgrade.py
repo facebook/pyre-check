@@ -8,10 +8,8 @@ import argparse
 import itertools
 import json
 import logging
-import os
 import pathlib
 import re
-import subprocess
 import sys
 import traceback
 from collections import defaultdict
@@ -90,72 +88,6 @@ def run_fixme(arguments) -> None:
         raise PostprocessError(str(error))
 
 
-def run_unused_ignores(arguments) -> None:
-    expected_error_lines = defaultdict(lambda: set())
-
-    status = subprocess.check_output(["/usr/bin/hg", "status"])
-    dirty = len(status.strip()) > 0
-
-    if dirty:
-        LOG.info("Saving repository state")
-        subprocess.check_call(["/usr/bin/hg", "shelve"])
-
-    def _remove_ignores(path):
-        modified = False
-        with open(path, "r") as file:
-            lines = list(file)
-            for number, line in enumerate(lines):
-                match = re.match(r"(.*)# pyre-(ignore|fixme).*", line)
-                if match:
-                    modified = True
-                    lines[number] = match.groups()[0] + "\n"
-                    expected_error_lines[path].add(number + 1)
-                else:
-                    lines[number] = line
-
-        if modified:
-            LOG.info("Removed ignores in `%s`", path)
-            with open(path, "w") as file:
-                file.write("".join(lines))
-
-    for directory, _, filenames in os.walk("."):
-        directory = directory[2:]  # strip './' prefix
-        for filename in filenames:
-            path = os.path.join(directory, filename)
-            if not path.endswith(".py"):
-                continue
-            _remove_ignores(path)
-
-    LOG.info("Rechecking...")
-    errors = json.loads(
-        subprocess.check_output(["/usr/local/bin/pyre", "--output=json", "check"])
-    )
-
-    # Compare result to expectations.
-    unused_ignores = defaultdict(lambda: set())
-    for path, expected_error_lines in expected_error_lines.items():
-        for line in expected_error_lines:
-            matches = [
-                path == error["path"]
-                and (line == error["line"] or line + 1 == error["line"])
-                for error in errors
-            ]
-            if not any(matches):
-                unused_ignores[path].add(line)
-
-    LOG.info("Restoring repository state")
-    subprocess.check_call(["/usr/bin/hg", "revert", "--all"])
-    if dirty:
-        subprocess.check_call(["/usr/bin/hg", "unshelve"])
-
-    for path, lines in unused_ignores.items():
-        LOG.info(
-            "Found unused ignores in `%s`: %s",
-            path,
-            ", ".join([str(line) for line in lines]),
-        )
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--verbose", action="store_true", help="Enable verbose logging")
@@ -171,9 +103,6 @@ if __name__ == "__main__":
         action="store_true",
         help="Comment with the error's description",
     )
-
-    unused_ignores = commands.add_parser("unused-ignores")
-    unused_ignores.set_defaults(function=run_unused_ignores)
 
     # Initialize default values.
     arguments = parser.parse_args()
