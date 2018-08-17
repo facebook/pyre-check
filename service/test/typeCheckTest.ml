@@ -28,14 +28,15 @@ let assert_errors ?filter_directories ~root ~files errors =
   in
   List.iter ~f:add_file files;
   let handles = Service.Parser.parse_sources ~configuration ~scheduler ~files in
-  let environment =
-    Service.Environment.in_process_handler ~configuration ~stubs:[] ~sources:handles
+  let ((module Handler: Analysis.Environment.Handler) as environment) =
+    Service.Environment.handler ~configuration ~stubs:[] ~sources:handles
   in
   let actual_errors =
     Service.TypeCheck.analyze_sources scheduler configuration environment handles
     |> fst
     |> List.map ~f:(Analysis.Error.description ~detailed:false)
   in
+  Handler.purge handles;
   assert_equal
     ~printer:(List.to_string ~f:ident)
     ~cmp:(List.equal ~equal:String.equal)

@@ -303,13 +303,7 @@ let check
   (* Build environment. *)
   Postprocess.register_ignores ~configuration scheduler sources;
   let environment =
-    let handler =
-      if Scheduler.is_parallel scheduler then
-        Environment.shared_memory_handler
-      else
-        Environment.in_process_handler
-    in
-    handler ~configuration ~stubs ~sources
+    Environment.handler ~configuration ~stubs ~sources
   in
 
   let errors, { Analysis.Coverage.full; partial; untyped; ignore; crashes } =

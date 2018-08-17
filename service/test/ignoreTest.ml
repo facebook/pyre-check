@@ -52,8 +52,8 @@ let assert_errors
       ~scheduler
       ~files:(create_files ~root input_source)
   in
-  let environment =
-    Service.Environment.in_process_handler ~configuration ~stubs:[] ~sources:handles
+  let ((module Handler: Environment.Handler) as environment) =
+    Service.Environment.handler ~configuration ~stubs:[] ~sources:handles
   in
   add_defaults_to_environment environment;
   Service.Ignore.register ~configuration scheduler handles;
@@ -66,6 +66,7 @@ let assert_errors
     |> fun (errors, _) ->
     List.map ~f:(fun error -> Error.description error ~detailed:show_error_traces) errors
   in
+  Handler.purge handles;
   let description_list_to_string descriptions =
     Format.asprintf "%a" Sexp.pp [%message (descriptions: string list)]
   in
