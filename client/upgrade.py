@@ -24,16 +24,8 @@ class PostprocessError(Exception):
     pass
 
 
-def run_fixme(arguments) -> None:
+def run_fixme(arguments, result) -> None:
     try:
-
-        def error_path(error):
-            return error["path"]
-
-        result = itertools.groupby(
-            sorted(json.load(sys.stdin), key=error_path), error_path
-        )
-
         for path, errors in result:
             LOG.info("Processing `%s`", path)
 
@@ -112,7 +104,14 @@ if __name__ == "__main__":
 
     try:
         exit_code = ExitCode.SUCCESS
-        arguments.function(arguments)
+
+        def error_path(error):
+            return error["path"]
+
+        result = itertools.groupby(
+            sorted(json.load(sys.stdin), key=error_path), error_path
+        )
+        arguments.function(arguments, result)
     except PostprocessError as error:
         LOG.error(str(error))
         LOG.debug(traceback.format_exc())
