@@ -91,11 +91,11 @@ let run_query serialized local_root () =
   Socket.write socket query;
   match Socket.read socket with
   | TypeQueryResponse response ->
-      Log.print "%s" (Yojson.Safe.pretty_to_string (response_to_yojson response))
+      Log.print "%s\n" (Yojson.Safe.pretty_to_string (response_to_yojson response))
   | (TypeCheckResponse _) as response ->
-      Log.print "%s" (Server.Protocol.show_response response)
+      Log.print "%s\n" (Server.Protocol.show_response response)
   | response ->
-      Log.error "Unexpected response %s from server" (Server.Protocol.show_response response)
+      Log.error "Unexpected response %s from server\n" (Server.Protocol.show_response response)
 
 
 let command =
