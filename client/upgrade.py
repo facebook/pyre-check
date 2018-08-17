@@ -20,64 +20,55 @@ from .commands import ExitCode
 LOG = logging.getLogger(__name__)
 
 
-class PostprocessError(Exception):
-    pass
-
-
 def run_fixme(arguments, result) -> None:
-    try:
-        for path, errors in result:
-            LOG.info("Processing `%s`", path)
+    for path, errors in result:
+        LOG.info("Processing `%s`", path)
 
-            # Build map from line to error codes.
-            codes = defaultdict(lambda: set())
-            descriptions = defaultdict(lambda: set())
-            for error in errors:
-                match = re.search(r"\[(\d+)\]: (.*)", error["description"])
-                if match:
-                    codes[error["line"]].add(match.group(1))
-                    descriptions[error["line"]].add(match.group(2))
+        # Build map from line to error codes.
+        codes = defaultdict(lambda: set())
+        descriptions = defaultdict(lambda: set())
+        for error in errors:
+            match = re.search(r"\[(\d+)\]: (.*)", error["description"])
+            if match:
+                codes[error["line"]].add(match.group(1))
+                descriptions[error["line"]].add(match.group(2))
 
-            # Replace lines in file.
-            path = pathlib.Path(path)
-            lines = path.read_text().split("\n")
+        # Replace lines in file.
+        path = pathlib.Path(path)
+        lines = path.read_text().split("\n")
 
-            new_lines = []
-            for index, line in enumerate(lines):
-                number = index + 1
-                if number in codes:
-                    if list(codes[number]) == ["0"]:
-                        # Handle unused ignores.
-                        replacement = re.sub(
-                            r"# pyre-(ignore|fixme).*$", "", line
-                        ).rstrip()
-                        if replacement != "":
-                            new_lines.append(replacement)
-                        continue
+        new_lines = []
+        for index, line in enumerate(lines):
+            number = index + 1
+            if number in codes:
+                if list(codes[number]) == ["0"]:
+                    # Handle unused ignores.
+                    replacement = re.sub(r"# pyre-(ignore|fixme).*$", "", line).rstrip()
+                    if replacement != "":
+                        new_lines.append(replacement)
+                    continue
 
-                    sorted_codes = sorted(list(codes[number]))
-                    sorted_descriptions = sorted(list(descriptions[number]))
+                sorted_codes = sorted(list(codes[number]))
+                sorted_descriptions = sorted(list(descriptions[number]))
 
-                    description = ""
-                    if arguments.comment:
-                        description = ": " + arguments.comment
-                    else:
-                        description = ": " + ", ".join(sorted_descriptions)
-
-                    comment = "{}# pyre-fixme[{}]{}".format(
-                        line[: (len(line) - len(line.lstrip(" ")))],  # indent
-                        ", ".join([str(code) for code in sorted_codes]),
-                        description,
-                    )
-                    LOG.info("Adding `%s` on line %d", comment, number)
-
-                    new_lines.extend([comment, line])
+                description = ""
+                if arguments.comment:
+                    description = ": " + arguments.comment
                 else:
-                    new_lines.append(line)
+                    description = ": " + ", ".join(sorted_descriptions)
 
-            path.write_text("\n".join(new_lines))
-    except (json.JSONDecodeError, OSError) as error:
-        raise PostprocessError(str(error))
+                comment = "{}# pyre-fixme[{}]{}".format(
+                    line[: (len(line) - len(line.lstrip(" ")))],  # indent
+                    ", ".join([str(code) for code in sorted_codes]),
+                    description,
+                )
+                LOG.info("Adding `%s` on line %d", comment, number)
+
+                new_lines.extend([comment, line])
+            else:
+                new_lines.append(line)
+
+        path.write_text("\n".join(new_lines))
 
 
 if __name__ == "__main__":
@@ -112,10 +103,6 @@ if __name__ == "__main__":
             sorted(json.load(sys.stdin), key=error_path), error_path
         )
         arguments.function(arguments, result)
-    except PostprocessError as error:
-        LOG.error(str(error))
-        LOG.debug(traceback.format_exc())
-        exit_code = ExitCode.FAILURE
     except Exception as error:
         LOG.error(str(error))
         LOG.info(traceback.format_exc())
