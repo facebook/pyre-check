@@ -16,7 +16,6 @@ class PostprocessTest(unittest.TestCase):
     def test_fixme(self, path_read_text, json_load) -> None:
         arguments = MagicMock()
         arguments.comment = None
-        arguments.description = False
 
         # Test empty.
         json_load.return_value = []
@@ -30,7 +29,9 @@ class PostprocessTest(unittest.TestCase):
 
             path_read_text.return_value = "  1\n2"
             upgrade.run_fixme(arguments)
-            path_write_text.assert_called_once_with("  # pyre-fixme[1]\n  1\n2")
+            path_write_text.assert_called_once_with(
+                "  # pyre-fixme[1]: description\n  1\n2"
+            )
 
         # Test error with comment.
         with patch.object(pathlib.Path, "write_text") as path_write_text:
@@ -54,7 +55,7 @@ class PostprocessTest(unittest.TestCase):
             path_read_text.return_value = "1\n2"
             upgrade.run_fixme(arguments)
             path_write_text.assert_called_once_with(
-                "# pyre-fixme[1]\n1\n# pyre-fixme[1, 2]\n2"
+                "# pyre-fixme[1]: description\n1\n# pyre-fixme[1, 2]: description\n2"
             )
 
         # Test errors in multiple files.
@@ -70,21 +71,10 @@ class PostprocessTest(unittest.TestCase):
             path_read_text.return_value = "1\n2"
             upgrade.run_fixme(arguments)
             path_write_text.has_calls(
-                [call("# pyre-fixme[1]\n1\n2"), call("1\n#pyre-fixme[2]\n2")]
-            )
-
-        # Test error with description.
-        with patch.object(pathlib.Path, "write_text") as path_write_text:
-            json_load.return_value = [
-                {"path": "path.py", "line": 1, "description": "Error [2]: description"}
-            ]
-
-            path_read_text.return_value = "  1\n2"
-            arguments.description = True
-            upgrade.run_fixme(arguments)
-            arguments.comment = None
-            path_write_text.assert_called_once_with(
-                "  # pyre-fixme[2]: description\n  1\n2"
+                [
+                    call("# pyre-fixme[1]: description\n1\n2"),
+                    call("1\n#pyre-fixme[2]: description\n2"),
+                ]
             )
 
         # Test removal of extraneous ignore.
@@ -114,7 +104,6 @@ class PostprocessTest(unittest.TestCase):
             ]
 
             path_read_text.return_value = "1# pyre-ignore[0]: [1, 2, 3]\n2"
-            arguments.description = True
             upgrade.run_fixme(arguments)
             arguments.comment = None
             path_write_text.assert_called_once_with("1\n2")

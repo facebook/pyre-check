@@ -69,7 +69,7 @@ def run_fixme(arguments) -> None:
                     description = ""
                     if arguments.comment:
                         description = ": " + arguments.comment
-                    elif arguments.description:
+                    else:
                         description = ": " + ", ".join(sorted_descriptions)
 
                     comment = "{}# pyre-fixme[{}]{}".format(
@@ -97,12 +97,7 @@ if __name__ == "__main__":
 
     fixme = commands.add_parser("fixme")
     fixme.set_defaults(function=run_fixme)
-    fixme.add_argument("--comment", help="Comment after fixme comments")
-    fixme.add_argument(
-        "--description",
-        action="store_true",
-        help="Comment with the error's description",
-    )
+    fixme.add_argument("--comment", help="Custom comment after fixme comments")
 
     # Initialize default values.
     arguments = parser.parse_args()
