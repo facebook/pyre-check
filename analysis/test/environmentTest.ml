@@ -375,7 +375,6 @@ let test_connect_definition _ =
 
   let primitive, parameters =
     Handler.connect_definition
-      ~path:"a.py"
       ~resolution
       ~predecessor:Type.Bottom
       ~name:(Access.create "C")

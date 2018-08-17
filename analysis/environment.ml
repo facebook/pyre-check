@@ -40,8 +40,7 @@ module type Handler = sig
   val register_global: path: string -> access: Access.t -> global: Resolution.global -> unit
   val update_class_definition: primitive: Type.t -> definition: Class.t -> unit
   val connect_definition
-    :  path: string
-    -> resolution: Resolution.t
+    :  resolution: Resolution.t
     -> predecessor: Type.t
     -> name: Access.t
     -> definition: (Class.t Node.t) option
@@ -82,9 +81,8 @@ let connect_definition
     ~order
     ~aliases
     ~add_class_definition
-    ~add_class_key
     ~add_protocol =
-  let rec connect_definition ~path ~resolution ~predecessor ~name ~definition =
+  let rec connect_definition ~resolution ~predecessor ~name ~definition =
     let connect ~predecessor ~successor ~parameters =
       let annotations_tracked =
         let (module Handler: TypeOrder.Handler) = order in
@@ -118,7 +116,6 @@ let connect_definition
       match definition with
       | Some ({ Node.value = { Class.name; bases; _ }; _ } as definition_node)
         when not (Type.equal primitive Type.Object) || Access.show name = "object" ->
-          add_class_key ~path primitive;
           let annotated = Annotated.Class.create definition_node in
 
           (* Register protocols. *)
@@ -155,7 +152,6 @@ let connect_definition
                 else
                   let super_annotation, parameters =
                     connect_definition
-                      ~path
                       ~resolution
                       ~predecessor:annotation
                       ~name
@@ -270,7 +266,6 @@ let handler
         ~order:(TypeOrder.handler order)
         ~aliases:(Hashtbl.find aliases)
         ~add_class_definition
-        ~add_class_key:DependencyHandler.add_class_key
         ~add_protocol:(Hash_set.add protocols)
 
 
@@ -463,12 +458,13 @@ let register_class_definitions (module Handler: Handler) source =
 
       let statement_keep_recursing _ = Transform.Recurse
 
-      let statement _ new_annotations = function
+      let statement { Source.path; _ } new_annotations = function
         | { Node.value = Class { Class.name; _ }; _ } ->
             let primitive, _ =
               Type.create ~aliases:Handler.aliases (Node.create_with_default_location (Access name))
               |> Type.split
             in
+            Handler.DependencyHandler.add_class_key ~path primitive;
             if not (TypeOrder.contains order primitive) then
               TypeOrder.insert order primitive;
             if not (Set.mem TypeOrder.Builder.builtin_types primitive) then
@@ -769,10 +765,9 @@ let connect_type_order (module Handler: Handler) source =
 
       let statement_keep_recursing _ = Transform.Recurse
 
-      let statement { Source.path; _ } _ = function
+      let statement _ _ = function
         | { Node.location; value = Class ({ Class.name; _ } as definition) } ->
             Handler.connect_definition
-              ~path
               ~resolution
               ~predecessor:Type.Bottom
               ~name

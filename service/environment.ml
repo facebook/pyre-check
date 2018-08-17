@@ -454,7 +454,6 @@ let handler
           ~order:(module TypeOrderHandler: TypeOrder.Handler)
           ~aliases:Aliases.get
           ~add_class_definition
-          ~add_class_key:(DependencyHandler.add_class_key)
           ~add_protocol:(fun protocol ->
               let protocols = Protocols.get "Protocols" |> Option.value ~default:[] in
               Protocols.remove_batch (Protocols.KeySet.singleton "Protocols");

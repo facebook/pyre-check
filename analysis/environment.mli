@@ -40,8 +40,7 @@ module type Handler = sig
   val register_global: path: string -> access: Access.t -> global: Resolution.global -> unit
   val update_class_definition: primitive: Type.t -> definition: Class.t -> unit
   val connect_definition
-    :  path: string
-    -> resolution: Resolution.t
+    :  resolution: Resolution.t
     -> predecessor: Type.t
     -> name: Access.t
     -> definition: (Class.t Node.t) option
@@ -93,10 +92,8 @@ val connect_definition
   :  order: (module TypeOrder.Handler)
   -> aliases: (Type.t -> Type.t option)
   -> add_class_definition: (primitive: Type.t -> definition: Class.t Node.t -> unit)
-  -> add_class_key: (path: string -> Type.t -> unit)
   -> add_protocol: (Type.t -> unit)
-  -> (path: string
-      -> resolution: Resolution.t
+  -> (resolution: Resolution.t
       -> predecessor: Type.t
       -> name: Access.t
       -> definition: (Class.t Node.t) option
