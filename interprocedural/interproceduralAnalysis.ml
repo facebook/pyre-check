@@ -5,8 +5,6 @@
 
 
 open Core
-open Hack_parallel.Std
-
 
 module Kind = AnalysisKind
 module Result = InterproceduralResult

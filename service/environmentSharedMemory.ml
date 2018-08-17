@@ -8,7 +8,7 @@ open Analysis
 open Ast
 open Statement
 
-module SharedMemory = Hack_parallel.Std.SharedMem
+module SharedMemory = Memory
 
 
 (** Keys *)

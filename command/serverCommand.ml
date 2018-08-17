@@ -5,13 +5,12 @@
 
 
 open Core
-open Hack_parallel.Std
-
 
 open Pyre
 
 open Network
 open Configuration
+open Scheduler
 open Server
 open ServerConfiguration
 open State

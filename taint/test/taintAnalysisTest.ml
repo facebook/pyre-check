@@ -18,8 +18,6 @@ open Result
 
 open Interprocedural
 
-module Parallel = Hack_parallel.Std
-
 
 type parameter_taint = {
   position: int;
@@ -283,7 +281,7 @@ let test_fixpoint ~scheduler _ =
 
 
 let () =
-  let () = Parallel.Daemon.check_entry_point () in
+  let () = Scheduler.Daemon.check_entry_point () in
   let configuration = Configuration.create ~number_of_workers:1 ~parallel:true () in
   let scheduler = Scheduler.create ~configuration () in
   let model_source =

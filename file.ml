@@ -28,7 +28,7 @@ let content { path; content } =
   | Some content -> Some content
   | None ->
       try
-        Some (Sys_utils.cat (Path.absolute path))
+        Some (In_channel.read_all (Path.absolute path))
       with Sys_error _ ->
         None
 

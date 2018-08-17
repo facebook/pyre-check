@@ -4,10 +4,10 @@
     LICENSE file in the root directory of this source tree. *)
 
 open Core
-open Hack_parallel.Std
 
 open Pyre
 open Network
+open Scheduler
 open Server
 
 open Service.Constants.Watchman

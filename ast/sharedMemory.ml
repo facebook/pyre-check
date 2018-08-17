@@ -6,7 +6,7 @@
 open Core
 open Pyre
 
-module SharedMemory = Hack_parallel.Std.SharedMem
+module SharedMemory = Memory
 
 
 module HandleKey = struct

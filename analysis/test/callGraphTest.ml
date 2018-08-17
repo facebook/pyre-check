@@ -13,8 +13,6 @@ open TypeCheck
 
 open Test
 
-module Parallel = Hack_parallel.Std
-
 
 let parse_source ?(qualifier=[]) source =
   parse ~qualifier source
@@ -380,7 +378,7 @@ let test_strongly_connected_components _ =
 
 
 let () =
-  Parallel.Daemon.check_entry_point ();
+  Scheduler.Daemon.check_entry_point ();
   "callGraph">:::[
     "type_collection">::test_type_collection;
     "build">::test_construction;

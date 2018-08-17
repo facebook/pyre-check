@@ -14,7 +14,7 @@
 open Core
 
 module Result = InterproceduralResult
-module SharedMemory = Hack_parallel.Std.SharedMem
+module SharedMemory = Memory
 
 
 module Epoch : sig

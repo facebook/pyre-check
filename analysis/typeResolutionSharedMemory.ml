@@ -8,7 +8,7 @@ open Core
 open Ast
 open Expression
 
-module SharedMemory = Hack_parallel.Std.SharedMem
+module SharedMemory = Memory
 
 module AccessKey = struct
   type t = Access.t

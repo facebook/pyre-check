@@ -3,9 +3,8 @@
     This source code is licensed under the MIT license found in the
     LICENSE file in the root directory of this source tree. *)
 
-module SharedMemory = Hack_parallel.Std.SharedMem
-
-include module type of SharedMemory with type handle = Hack_parallel.Std.SharedMem.handle
+include module type of Hack_parallel.Std.SharedMem
+  with type handle = Hack_parallel.Std.SharedMem.handle
 
 
 val get_heap_handle: unit -> handle
