@@ -13,6 +13,7 @@ import re
 import sys
 import traceback
 from collections import defaultdict
+from typing import Any, List, Tuple
 
 from .commands import ExitCode
 
@@ -71,6 +72,42 @@ def run_fixme(arguments, result) -> None:
         path.write_text("\n".join(new_lines))
 
 
+def run_missing_overridden_return_annotations(
+    arugments, errors: List[Tuple[str, List[Any]]]
+) -> None:
+    for path, errors in result:
+        LOG.info(f"Patching errors in `{path}`.")
+        errors = reversed(sorted(errors, key=lambda error: error["line"]))
+
+        lines = []
+        with open(path) as file:
+            lines = [line.rstrip() for line in file.readlines()]
+
+        for error in errors:
+            if error["code"] != 15:
+                continue
+            line = error["line"] - 1
+
+            match = re.match(r".*`(.*)`\.", error["description"])
+            if not match:
+                continue
+            annotation = match.groups()[0]
+
+            # Find last closing parenthesis in after line.
+            LOG.info(f"Looking at {line}: {lines[line]}")
+            while True:
+                if "):" in lines[line]:
+                    lines[line] = lines[line].replace("):", f") -> {annotation}:")
+                    LOG.info(f"{line}: {lines[line]}")
+                    break
+                else:
+                    line = line + 1
+
+        LOG.warn(f"Writing patched {path}")
+        with open(path, "w") as file:
+            file.write("\n".join(lines))
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--verbose", action="store_true", help="Enable verbose logging")
@@ -81,6 +118,13 @@ if __name__ == "__main__":
     fixme = commands.add_parser("fixme")
     fixme.set_defaults(function=run_fixme)
     fixme.add_argument("--comment", help="Custom comment after fixme comments")
+
+    missing_overridden_return_annotations = commands.add_parser(
+        "missing-overridden-return-annotations"
+    )
+    missing_overridden_return_annotations.set_defaults(
+        function=run_missing_overridden_return_annotations
+    )
 
     # Initialize default values.
     arguments = parser.parse_args()
