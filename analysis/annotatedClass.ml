@@ -47,6 +47,10 @@ let body { Node.value = { Class.body; _ }; _ } =
   body
 
 
+let has_decorator { Node.value = { Class.decorators; _ }; _ } =
+  Expression.exists_in_list ~expression_list:decorators
+
+
 let annotation { Node.value = { Class.name; _ }; location } ~resolution =
   Resolution.parse_annotation resolution (Node.create ~location (Access name))
 

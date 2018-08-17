@@ -232,23 +232,6 @@ module Attribute = struct
 end
 
 
-let has_decorator ~decorators decorator =
-  let open Expression in
-  let rec is_decorator expected actual =
-    match expected, Expression.delocalize_qualified actual with
-    | (expected_decorator :: expected_decorators),
-      { Node.location; value = Access ((Access.Identifier identifier) :: identifiers) }
-      when Identifier.show identifier = expected_decorator ->
-        if List.is_empty expected_decorators && List.is_empty identifiers then
-          true
-        else
-          is_decorator expected_decorators { Node.location; value = Access identifiers }
-    | _ ->
-        false
-  in
-  List.exists ~f:(is_decorator (String.split ~on:'.' decorator)) decorators
-
-
 module Define = struct
   include Record.Define
 
@@ -324,7 +307,7 @@ module Define = struct
 
 
   let has_decorator { decorators; _ } decorator =
-    has_decorator ~decorators decorator
+    Expression.exists_in_list ~expression_list:decorators decorator
 
 
   let is_coroutine define =
@@ -1030,7 +1013,7 @@ module Class = struct
 
 
   let has_decorator { decorators; _ } decorator =
-    has_decorator ~decorators decorator
+    Expression.exists_in_list ~expression_list:decorators decorator
 end
 
 
