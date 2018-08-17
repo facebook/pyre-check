@@ -312,7 +312,6 @@ let immediate_superclasses definition ~resolution =
   Handler.find (Handler.indices ()) annotation
   >>= Handler.find (Handler.edges ())
   |> Option.value ~default:[]
-  |> List.rev
   |> List.find_map ~f:has_definition
 
 
