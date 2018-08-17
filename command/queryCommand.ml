@@ -37,28 +37,20 @@ let parse_query ~root query =
         match String.lowercase (Identifier.show name), arguments with
         | "attributes", [class_name] ->
             Some (Request.TypeQueryRequest (Attributes class_name))
+        | "join", [left; right] ->
+            Some (Request.TypeQueryRequest (Join (left, right)))
         | "less_or_equal", [left; right] ->
             Some (Request.TypeQueryRequest (LessOrEqual (left, right)))
         | "meet", [left; right] ->
             Some (Request.TypeQueryRequest (Meet (left, right)))
-        | "join", [left; right] ->
-            Some (Request.TypeQueryRequest (Join (left, right)))
-        | "typecheckpath", arguments ->
-            let files =
-              arguments
-              |> List.map ~f:Expression.show
-              |> List.map ~f:(fun relative -> Path.create_relative ~root ~relative)
-              |> List.map ~f:File.create
-            in
-            Some (Request.TypeCheckRequest (TypeCheckRequest.create ~check:files ()))
+        | "methods", [class_name] ->
+            Some (Request.TypeQueryRequest (Methods class_name))
         | "normalizetype", [argument] ->
             Some (Request.TypeQueryRequest (NormalizeType argument))
         | "signature", [{ Node.value = Expression.Access function_name; _ }] ->
             Some (Request.TypeQueryRequest (Signature function_name))
         | "superclasses", [class_name] ->
             Some (Request.TypeQueryRequest (Superclasses class_name))
-        | "methods", [class_name] ->
-            Some (Request.TypeQueryRequest (Methods class_name))
         | "type_at_location",
           [
             { Node.value = Expression.Access path; _ };
@@ -69,6 +61,14 @@ let parse_query ~root query =
             let position = { Location.line; column } in
             let location = { Location.path; start = position; stop = position } in
             Some (Request.TypeQueryRequest (TypeAtLocation location))
+        | "typecheckpath", arguments ->
+            let files =
+              arguments
+              |> List.map ~f:Expression.show
+              |> List.map ~f:(fun relative -> Path.create_relative ~root ~relative)
+              |> List.map ~f:File.create
+            in
+            Some (Request.TypeCheckRequest (TypeCheckRequest.create ~check:files ()))
         | _ -> None
       end
   | _ -> None

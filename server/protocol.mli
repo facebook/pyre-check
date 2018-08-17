@@ -64,12 +64,12 @@ module TypeQuery: sig
   [@@deriving eq, show, to_yojson]
 
   type base_response =
+    | Boolean of bool
     | FoundAttributes of attribute list
     | FoundMethods of method_representation list
     | FoundSignature of found_signature list
-    | Type of Type.t
     | Superclasses of Type.t list
-    | Boolean of bool
+    | Type of Type.t
   [@@deriving eq, show, to_yojson]
 
   type response =

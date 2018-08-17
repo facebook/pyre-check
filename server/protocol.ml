@@ -78,27 +78,27 @@ module TypeQuery = struct
   [@@deriving eq, show, to_yojson]
 
   type base_response =
+    | Boolean of bool
     | FoundAttributes of attribute list
     | FoundMethods of method_representation list
     | FoundSignature of found_signature list
-    | Type of Type.t
     | Superclasses of Type.t list
-    | Boolean of bool
+    | Type of Type.t
   [@@deriving eq, show]
 
   let base_response_to_yojson = function
+    | Boolean boolean ->
+        `Assoc ["boolean", `Bool boolean]
     | FoundAttributes attributes ->
         `Assoc ["attributes", `List (List.map attributes ~f:attribute_to_yojson)]
     | FoundMethods methods ->
         `Assoc ["methods", `List (List.map methods ~f:method_representation_to_yojson)]
     | FoundSignature signatures ->
         `Assoc ["signature", `List (List.map signatures ~f:found_signature_to_yojson)]
-    | Type annotation ->
-        `Assoc ["type", Type.to_yojson annotation]
     | Superclasses classes ->
         `Assoc ["superclasses", `List (List.map classes ~f:Type.to_yojson)]
-    | Boolean boolean ->
-        `Assoc ["boolean", `Bool boolean]
+    | Type annotation ->
+        `Assoc ["type", Type.to_yojson annotation]
 
    type response =
     | Response of base_response
