@@ -53,6 +53,8 @@ let parse_query ~root query =
             Some (Request.TypeCheckRequest (TypeCheckRequest.create ~check:files ()))
         | "normalizetype", [argument] ->
             Some (Request.TypeQueryRequest (NormalizeType argument))
+        | "signature", [{ Node.value = Expression.Access function_name; _ }] ->
+            Some (Request.TypeQueryRequest (Signature function_name))
         | "superclasses", [class_name] ->
             Some (Request.TypeQueryRequest (Superclasses class_name))
         | "methods", [class_name] ->

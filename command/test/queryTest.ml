@@ -93,9 +93,10 @@ let test_parse_query _ =
   assert_fails_to_parse "type_at_location('a.py', 1, 2)";
 
   assert_parses "attributes(C)" (Attributes (Type.expression (Type.primitive "C")));
-  assert_fails_to_parse "attributes(C, D)"
+  assert_fails_to_parse "attributes(C, D)";
 
-
+  assert_parses "signature(a.b)" (Signature (Ast.Expression.Access.create "a.b"));
+  assert_fails_to_parse "signature(a.b, a.c)"
 
 
 let () =
