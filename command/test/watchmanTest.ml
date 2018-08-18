@@ -8,16 +8,17 @@ open OUnit2
 
 open Pyre
 open Path.AppendOperator
-
-
-module Parallel = Hack_parallel.Std
-module Protocol = ServerProtocol
-module Socket = CommandSocket
-module Watchman = CommandWatchman
+open Server
 
 
 let start_watchman pid_path () =
-  Watchman.run_command ~daemonize:true ~verbose:false ~sections:[] ~source_root:".";
+  Commands.Watchman.run_command
+    ~daemonize:true
+    ~verbose:false
+    ~sections:[]
+    ~local_root:"."
+    ~project_root:(Some ".")
+  |> ignore;
   let rec poll () =
     if not (Path.file_exists pid_path) then
       (Unix.nanosleep 0.1 |> ignore; poll ())
@@ -36,7 +37,7 @@ let test_watchman_exists context =
            ~relative:".watchmanconfig"))
   then
     Out_channel.write_all ".watchmanconfig" ~data:"{}";
-  let configuration = Configuration.create ~source_root:(Path.current_working_directory ()) () in
+  let configuration = Configuration.create ~local_root:(Path.current_working_directory ()) () in
   let watchman_root = (Configuration.pyre_root configuration) ^| "watchman" in
   let pid_path = watchman_root ^| "watchman.pid" in
   let lock_path = watchman_root ^| "watchman.lock" in
@@ -49,7 +50,7 @@ let test_watchman_exists context =
   in
 
   let tear_down (pid_path, lock_path, pid) _ =
-    Server.stop ~graceful:true "." ();
+    Commands.Server.stop ~graceful:true "." ();
     Signal.send_i Signal.int (`Pid (Pid.of_int pid));
     Path.remove pid_path;
     Path.remove lock_path;
@@ -60,7 +61,13 @@ let test_watchman_exists context =
 
   assert_raises
     (Failure "Watchman client exists (lock is held). Exiting.")
-    (fun () -> Watchman.run_command ~daemonize:false ~verbose:false ~sections:[] ~source_root:".");
+    (fun () ->
+       Commands.Watchman.run_command
+         ~daemonize:false
+         ~verbose:false
+         ~sections:[]
+         ~local_root:"."
+         ~project_root:(Some "."));
   CommandTest.clean_environment ()
 
 
@@ -95,13 +102,13 @@ let test_watchman_client context =
       ]
   in
   let cleanup () =
-    Server.stop ~graceful:true "." ();
+    Commands.Server.stop ~graceful:true "." ();
     CommandTest.clean_environment ()
   in
   CommandTest.protect
     ~f:(fun () ->
         match
-          Watchman.process_response
+          Commands.Watchman.process_response
             ~root
             ~watchman_directory:root
             ~symlinks
@@ -121,7 +128,7 @@ let test_watchman_client context =
   CommandTest.protect
     ~f:(fun () ->
         match
-          Watchman.process_response
+          Commands.Watchman.process_response
             ~root
             ~watchman_directory:root
             ~symlinks
@@ -173,7 +180,7 @@ let test_different_root context =
         file
     in
     match
-      Watchman.process_response
+      Commands.Watchman.process_response
         ~root
         ~watchman_directory
         ~symlinks
@@ -194,8 +201,8 @@ let test_different_root context =
   CommandTest.start_server () |> ignore;
 
   let cleanup () =
-    Command.run ~argv:["_"; "-graceful"] Server.stop_command;
-    Server.stop ~graceful:true "." ();
+    Command.run ~argv:["_"; "-graceful"] Commands.Server.stop_command;
+    Commands.Server.stop ~graceful:true "." ();
     CommandTest.clean_environment ()
   in
   CommandTest.protect
@@ -208,6 +215,41 @@ let test_different_root context =
   cleanup ()
 
 
+let test_build_symlink_map context =
+  let root =
+    bracket_tmpdir context
+    |> Path.create_absolute
+  in
+  let path relative = Path.create_relative ~root ~relative in
+  let create_file path = Out_channel.write_all ~data:"" (Path.absolute path) in
+  let link = path "link.py" in
+  let target = path "original.py" in
+  create_file target;
+  Unix.symlink ~src:(Path.absolute target) ~dst:(Path.absolute link);
+
+  let assert_keys ~links expected =
+    let expected_map = Path.Map.of_alist_exn expected in
+    let map = Commands.Watchman.build_symlink_map links in
+    assert_equal ~cmp:(Path.Map.equal Path.equal) expected_map map
+  in
+  assert_keys ~links:[link] [target, link];
+
+  let broken = path "broken.py" in
+  create_file broken;
+
+  let broken_link = path "broken_link.py" in
+  Unix.symlink ~src:(Path.absolute broken) ~dst:(Path.absolute broken_link);
+  Unix.remove (Path.absolute broken);
+  assert_keys
+    ~links:[link; broken_link]
+    [target, link];
+
+  let nonexistent = path "nonexistent.py" in
+  assert_keys
+    ~links:[link; broken_link; nonexistent]
+    [target, link]
+
+
 let () =
   CommandTest.run_command_tests
     "watchman"
@@ -215,4 +257,5 @@ let () =
       "watchman_exists", test_watchman_exists;
       "watchman_client", test_watchman_client;
       "different_root", test_different_root;
+      "build_symlink_map", test_build_symlink_map;
     ]

@@ -1,0 +1,12 @@
+(tests
+ (names
+  coverageTest
+  parserTest
+  typeCheckTest)
+ (preprocess
+  (pps ppx_sexp_message))
+ (libraries
+  oUnit
+  pyrelib.analysis
+  pyrelib.test
+  pyrelib.service))

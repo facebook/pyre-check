@@ -83,7 +83,7 @@ class HomeSplash extends React.Component {
             <Button href={docUrl('installation.html', language)}>
               Install Pyre
             </Button>
-            <Button href={docUrl('documentation.html', language)}>
+            <Button href={docUrl('overview.html', language)}>
               Documentation
             </Button>
           </PromoSection>
@@ -121,7 +121,7 @@ const FeatureCallout = props => (
     style={{textAlign: 'center'}}>
     <h2>About Pyre</h2>
     <MarkdownBlock>
-      Pyre is a fast, scalable type checker for large python codebases,
+      Pyre is a fast, scalable type checker for large Python 3 codebases,
       designed to help improve code quality and development speed by flagging
       type errors interactively in your terminal or favorite editor.
       We follow the typing standards introduced in

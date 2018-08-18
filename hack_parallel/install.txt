@@ -339,3 +339,4 @@ _build/hack_parallel.a
 _build/hack_parallel.cmi
 _build/hack_parallel.cmo
 _build/hack_parallel.cmt
+_build/libhp.a

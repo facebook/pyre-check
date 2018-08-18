@@ -16,12 +16,38 @@
   max-width: 100%;
 }
 
+.mainContainer .wrapper .post header h1 {
+  margin-bottom: 1em;
+}
+
 .mainContainer .wrapper .post h1 {
-  margin-bottom: 20px;
+  margin-top: 1em;
+  margin-bottom: 0.2em;
+  font-size: 200%;
+}
+
+.mainContainer .wrapper .post h2 {
+  font-size: 150%;
+}
+
+.mainContainer .wrapper .post h3 {
+  text-transform: uppercase;
+  font-size: 100%;
 }
 
 .mainContainer .wrapper p {
   max-width: 100%;
+  padding-top: 0;
+}
+
+.mainContainer .wrapper code {
+  font-family: monospace;
+  padding-left: 0.2em;
+  padding-right: 0.2em;
+}
+
+.mainContainer .wrapper pre code {
+  padding: 10px 10px 10px 10px;
 }
 
 .docsNavContainer {
@@ -48,6 +74,11 @@
 .docs-prevnext {
   margin-top: 10px;
   margin-bottom: 100px;
+}
+
+code {
+  box-shadow: none;
+  padding: 0;
 }
 
 nav.toc .toggleNav ul li a {

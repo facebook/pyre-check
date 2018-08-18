@@ -10,9 +10,6 @@ open Analysis
 open Pyre
 open Test
 
-module Parallel = Hack_parallel.Std
-module Socket = CommandSocket
-
 
 let clean_environment () =
   (* Clean up: hack library modifies the environment, causing OUnit to
@@ -22,34 +19,36 @@ let clean_environment () =
   Worker.killall ()
 
 
-let mock_analysis_configuration ?(source_root = Path.current_working_directory ()) ?version () =
+let mock_analysis_configuration
+    ?(local_root = Path.current_working_directory ())
+    ?expected_version
+    () =
   Configuration.create
     ~debug:false
     ~parallel:false
-    ?version
-    ~source_root
+    ?expected_version
+    ~local_root
     ()
 
 
 let mock_server_configuration
-    ?(source_root = Path.current_working_directory ())
-    ?version
+    ?(local_root = Path.current_working_directory ())
+    ?expected_version
     () =
   let temporary = Filename.temp_file "" "" in
-  ServerConfiguration.create
+  Server.ServerConfiguration.create
     ~log_path:(Path.create_absolute temporary)
-    (mock_analysis_configuration ~source_root ?version ())
+    (mock_analysis_configuration ~local_root ?expected_version ())
 
 
-let start_server ?(source_root = Path.current_working_directory ()) ?version () =
-  Server.start (mock_server_configuration ~source_root ?version ())
+let start_server ?(local_root = Path.current_working_directory ()) ?expected_version () =
+  Commands.Server.start (mock_server_configuration ~local_root ?expected_version ())
 
 
 let environment () =
   let configuration = Configuration.create () in
-  let environment = Environment.Builder.create ~configuration () in
-  Environment.populate
-    ~configuration
+  let environment = Environment.Builder.create () in
+  Service.Environment.populate
     (Environment.handler ~configuration environment)
     [
       parse {|
@@ -63,14 +62,14 @@ let make_errors source =
   let configuration = Configuration.create () in
   let source = Preprocessing.preprocess (parse source) in
   let environment_handler = Environment.handler ~configuration (environment ()) in
-  Environment.populate ~configuration environment_handler [source];
+  Service.Environment.populate environment_handler [source];
   let configuration = mock_analysis_configuration () in
-  (TypeCheck.check configuration environment_handler mock_call_graph source).TypeCheck.Result.errors
+  (TypeCheck.check configuration environment_handler source).TypeCheck.Result.errors
 
 
 let run_command_tests test_category tests =
   (* We need this to fork off processes *)
-  Parallel.Daemon.check_entry_point ();
+  Scheduler.Daemon.check_entry_point ();
   Hh_logger.Level.set_min_level Hh_logger.Level.Fatal;
   let (!) f context = with_bracket_chdir context (bracket_tmpdir context) f in
   test_category>:::(List.map ~f:(fun (name, test_function) -> name>::(!test_function)) tests)

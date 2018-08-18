@@ -1,14 +1,21 @@
 _.DS_Store
+__pycache__
+/.pyre
+yarn-error.log
 
-/_build
+_build
+.merlin
+/pyrelib.install
 /Makefile
+/dune
 /_tags
-/hack_parallel/_build
 /scripts/dist
+version.ml
 
 website/translated_docs
 website/build/
 website/yarn.lock
+website/yarn-error.log
 website/node_modules
 website/i18n/*
 !website/i18n/en.json

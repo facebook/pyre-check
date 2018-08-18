@@ -7,7 +7,8 @@ open Core
 
 
 type section = [
-    `Check
+  | `CallGraph
+  | `Check
   | `Debug
   | `Dependencies
   | `Dotty
@@ -17,15 +18,20 @@ type section = [
   | `Event
   | `Fixpoint
   | `Info
+  | `Interprocedural
+  | `Memory
   | `Parser
+  | `Progress
   | `Performance
   | `Protocols
   | `Server
+  | `Taint
   | `Warning
 ]
 
 
 let section_to_string = function
+  | `CallGraph -> "Callgraph"
   | `Check -> "Check"
   | `Debug -> "Debug"
   | `Dependencies -> "Dependencies"
@@ -36,10 +42,14 @@ let section_to_string = function
   | `Event -> "Event"
   | `Fixpoint -> "Fixpoint"
   | `Info -> "Info"
+  | `Interprocedural -> "Interprocedural"
+  | `Memory -> "Memory"
   | `Parser -> "Parser"
+  | `Progress -> "Progress"
   | `Performance -> "Performance"
   | `Protocols -> "Protocols"
   | `Server -> "Server"
+  | `Taint -> "Taint"
   | `Warning -> "Warning"
 
 
@@ -48,7 +58,9 @@ let enabled =
     "Dump";
     "Error";
     "Info";
+    "Memory";
     "Performance";
+    "Progress";
     "Warning";
   ]
 
@@ -61,8 +73,21 @@ let initialize ~verbose ~sections =
   if verbose then
     Hash_set.add enabled "Debug";
 
-  List.map ~f:(fun section -> String.lowercase section |> String.capitalize) sections
-  |> List.iter ~f:(fun section -> Hash_set.add enabled section)
+  let handle_section section =
+    let normalize section =
+      String.lowercase section
+      |> String.capitalize
+    in
+
+    match String.chop_prefix ~prefix:"-" section with
+    | Some section ->
+        normalize section
+        |> Hash_set.remove enabled
+    | None ->
+        normalize section
+        |> Hash_set.add enabled
+  in
+  List.iter ~f:handle_section sections
 
 
 let initialize_for_tests () =
@@ -70,10 +95,28 @@ let initialize_for_tests () =
   Hash_set.add enabled "Dump"
 
 
+let time_zone = ref None
+(* A safer version of Time.Zone.local, which defaults to UTC instead
+   of throwing an exception if we cannot figure out local time. See
+   https://github.com/janestreet/core/issues/96 for one example when
+   this can happen *)
+let get_time_zone () =
+  match !time_zone with
+  | Some zone -> zone
+  | None ->
+      let zone =
+        try
+          force Time.Zone.local
+        with _ ->
+          Time.Zone.utc
+      in
+      time_zone := Some zone;
+      zone
+
 let log ~section format =
   let section = section_to_string section in
   if Hash_set.mem enabled section then
-    let zone = force Time.Zone.local in
+    let zone = get_time_zone () in
     Format.fprintf
       Format.err_formatter
       ("%s %s " ^^ format ^^ "\n%!")
@@ -104,18 +147,26 @@ let warning format =
 
 
 let print format =
-  Format.printf format
+  Printf.printf format
+
+
+let log_unix_error ?(section = `Error) (error_kind, name, parameters) =
+  log ~section "Unix error %s: %s(%s)" (Unix.error_message error_kind) name parameters
 
 
 module Color = struct
   let yellow string =
     Format.asprintf "\027[33m%s\027[0m" string
+
+
+  let cyan string =
+    Format.asprintf "\027[36m%s\027[0m" string
 end
 
 
 let rotate ?(number_to_keep = 10) basename =
   let timestamp =
-    Time.to_filename_string ~zone:(force Time.Zone.local) (Time.now ())
+    Time.to_filename_string ~zone:(get_time_zone ()) (Time.now ())
   in
   let suppress_system_error f =
     try

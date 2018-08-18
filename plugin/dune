@@ -1,0 +1,8 @@
+(library
+ (name plugin)
+ (public_name pyrelib.plugin)
+ (libraries
+  core
+  pyrelib.ast
+  pyrelib.pyre
+  pyrelib.analysis))

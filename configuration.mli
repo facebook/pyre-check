@@ -10,20 +10,22 @@ type t = {
   start_time: float;
   infer: bool;
   recursive_infer: bool;
-  analyze: bool;
   parallel: bool;
+  filter_directories: (Path.t list) option;
   number_of_workers: int;
-  source_root: Path.t;
+  local_root: Path.t;
   sections: string list;
   debug: bool;
   project_root: Path.t;
-  stub_roots: Path.t list;
+  search_path: Path.t list;
+  typeshed: Path.t option;
   verbose: bool;
-  version: string option;
+  expected_version: string option;
   strict: bool;
   declare: bool;
   show_error_traces: bool;
   log_identifier: string;
+  logger: string option;
 }
 [@@deriving show]
 
@@ -31,22 +33,27 @@ val create
   :  ?start_time: float
   -> ?infer:bool
   -> ?recursive_infer:bool
-  -> ?analyze: bool
   -> ?parallel: bool
+  -> ?filter_directories: Path.t list
   -> ?number_of_workers: int
-  -> ?source_root:Path.t
+  -> ?local_root:Path.t
   -> ?sections:string list
   -> ?project_root:Path.t
-  -> ?stub_roots: Path.t list
+  -> ?search_path: Path.t list
+  -> ?typeshed: Path.t
   -> ?verbose:bool
-  -> ?version:string
+  -> ?expected_version:string
   -> ?strict:bool
   -> ?declare:bool
   -> ?debug:bool
   -> ?show_error_traces:bool
   -> ?log_identifier:string
+  -> ?logger:string
   -> unit
   -> t
+
+val set_global: t -> unit
+val get_global: unit -> t option
 
 val localize: t -> local_debug:bool -> local_strict:bool -> declare:bool -> t
 

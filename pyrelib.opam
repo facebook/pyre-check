@@ -1,0 +1,20 @@
+opam-version: "1.2"
+version: ""
+maintainer: "pyre@fb.com"
+authors: ["Pyre team"]
+homepage: "https://github.com/facebook/pyre-check"
+bug-reports: "https://github.com/facebook/pyre-check/issues"
+dev-repo: "https://github.com/facebook/pyre-check.git"
+license: "MIT"
+build: [["jbuilder" "build" "-p" name "-j" jobs "@install"]]
+build-test: [["jbuilder" "runtest" "-p" name "-j" jobs]]
+depends: [
+  "core"
+  "sedlex"
+  "yojson"
+  "ppxlib"
+  "ppx_deriving"
+  "ppx_deriving_yojson"
+  "menhir"
+  "ounit" {test}
+]

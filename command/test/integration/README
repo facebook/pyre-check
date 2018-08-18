@@ -1,0 +1,17 @@
+The integration_test directory mocks a small hg repository. It
+contains a list of subdirectories, each representing the state of the
+repository at each commit.
+
+The integration test script replays the "commit subdirectories" in
+alphabetical order, and calls "pyre check; pyre incremental" until it
+hits the tip. No specific naming scheme is required for the
+subdirectories, but the format "commit_XXX" is strongly
+encouraged. You can also append a suffix to the directory name if you
+want to encode extra information in the directory name.
+
+"commit_000" should always be the first directory, since that "empty
+commit" is used to initialize the repository.
+
+To add new commits, add a new directory with a name that follows the
+current last. Add the python files you want to test, and make sure to
+copy the control files (.pyre_configuration, .watchmanconfig) as well.

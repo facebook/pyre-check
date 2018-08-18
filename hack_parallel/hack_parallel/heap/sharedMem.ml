@@ -866,11 +866,11 @@ module FreqCache (Key : sig type t end) (Config:ConfigType) :
     Hashtbl.clear cache;
     size := 0
 
-  (* The collection function is called when we reach twice original capacity
-   * in size. When the collection is triggered, we only keep the most recent
-   * object.
+  (* The collection function is called when we reach twice original
+   * capacity in size. When the collection is triggered, we only keep
+   * the most frequently used objects.
    * So before collection: size = 2 * capacity
-   * After collection: size = capacity (with the most recent objects)
+   * After collection: size = capacity (with the most frequently used objects)
   *)
   let collect() =
     if !size < 2 * Config.capacity then () else
@@ -940,18 +940,21 @@ module OrderedCache (Key : sig type t end) (Config:ConfigType):
     ()
 
   let add x y =
-    if !size < Config.capacity
+    if !size >= Config.capacity
     then begin
-      incr size;
-      let () = Queue.push x queue in
-      ()
-    end
-    else begin
+      (* Remove oldest element - if it's still around. *)
       let elt = Queue.pop queue in
-      Hashtbl.remove cache elt;
-      Queue.push x queue;
-      Hashtbl.replace cache x y
-    end
+      if Hashtbl.mem cache elt
+      then begin
+        decr size;
+        Hashtbl.remove cache elt
+      end;
+    end;
+    (* Add the new element, but bump the size only if it's a new addition. *)
+    Queue.push x queue;
+    if not (Hashtbl.mem cache x)
+    then incr size;
+    Hashtbl.replace cache x y
 
   let find x = Hashtbl.find cache x
   let get x = try Some (find x) with Not_found -> None

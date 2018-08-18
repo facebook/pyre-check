@@ -6,11 +6,8 @@
 open Core
 open OUnit2
 
-open ServerConfiguration
-
-module Parallel = Hack_parallel.Std
-module Protocol = ServerProtocol
-module Socket = CommandSocket
+open Server
+open Network
 
 
 let test_persistent_client_connect context =
@@ -18,14 +15,14 @@ let test_persistent_client_connect context =
     Format.pp_set_formatter_out_channel
       Format.err_formatter (Out_channel.create "/dev/null");
     CommandTest.start_server () |> ignore;
-    ServerOperations.connect
+    Server.Operations.connect
       ~retries:5
       ~configuration:(CommandTest.mock_server_configuration ()).configuration
   in
 
   let tear_down client_socket _ =
     Unix.close client_socket;
-    Command.run ~argv:["_"; "-graceful"] Server.stop_command;
+    Command.run ~argv:["_"; "-graceful"] Commands.Server.stop_command;
     CommandTest.clean_environment ()
   in
 

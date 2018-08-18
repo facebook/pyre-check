@@ -52,8 +52,11 @@ let pp format path =
   Format.fprintf format "%s" (absolute path)
 
 
-let create_absolute path =
-  Absolute (Filename.realpath path)
+let create_absolute ?(follow_symbolic_links = true) path =
+  if follow_symbolic_links then
+    Absolute (Filename.realpath path)
+  else
+    Absolute path
 
 
 let create_relative ~root ~relative =
@@ -112,19 +115,11 @@ let last path =
   |> List.last
   |> Option.value ~default:absolute
 
-let follow_symlinks path =
-  let rec follow_symlinks absolute =
-    let is_symlink =
-      Sys.file_exists absolute = `Yes &&
-      let { Unix.st_kind; _ } = Unix.lstat absolute in
-      st_kind = Unix.S_LNK
-    in
-    if is_symlink then
-      follow_symlinks (Unix.readlink absolute)
-    else
-      absolute
-  in
-  Absolute (follow_symlinks (absolute path))
+
+let real_path path =
+  match path with
+  | Absolute _ -> path
+  | Relative _ -> absolute path |> create_absolute
 
 
 let directory_contains ?(follow_symlinks = false) ~directory path =
@@ -139,8 +134,8 @@ let directory_contains ?(follow_symlinks = false) ~directory path =
     let directory = absolute directory in
     String.is_prefix ~prefix:directory path
   with
-  | Unix.Unix_error (error, name, parameter) ->
-      Log.error "Unix error %s: Function %s(%s)" (Unix.Error.message error) name parameter;
+  | Unix.Unix_error (error, name, parameters) ->
+      Log.log_unix_error (error, name, parameters);
       false
 
 

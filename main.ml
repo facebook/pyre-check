@@ -5,11 +5,11 @@
 
 open Core
 
-module Parallel = Hack_parallel.Std
-open PyreCommand
+open Commands
 
 
 let commands = [
+  "analyze", Analyze.command;
   "check", Check.check_command;
   "codex", CodexGenerator.command;
   "query", Query.command;
@@ -24,8 +24,10 @@ let commands = [
 
 let () =
   Random.self_init ();
-  Parallel.Daemon.check_entry_point ();
+  Scheduler.Daemon.check_entry_point ();
   Command.group
     ~summary:"Analyze Python files"
     commands
   |> Command.run
+    ~build_info:(Version.build_info ())
+    ~version:(Version.version ())

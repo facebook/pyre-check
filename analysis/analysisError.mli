@@ -3,14 +3,8 @@
     This source code is licensed under the MIT license found in the
     LICENSE file in the root directory of this source tree. *)
 
-open Core
-
 open Ast
 open Expression
-
-module Environment = AnalysisEnvironment
-module Resolution = AnalysisResolution
-module Type = AnalysisType
 
 
 type class_origin = {
@@ -36,6 +30,12 @@ type mismatch = {
 }
 [@@deriving compare, eq, show, hash]
 
+type return_mismatch = {
+  mismatch: mismatch;
+  is_implicit: bool;
+}
+[@@deriving compare, eq, show, hash]
+
 type missing_parameter = {
   name: Access.t;
   annotation: Type.t;
@@ -54,7 +54,7 @@ type parameter_mismatch = {
 type missing_annotation = {
   name: Access.t;
   annotation: Type.t;
-  evidence_locations: Location.t list;
+  evidence_locations: Location.Instantiated.t list;
   due_to_any: bool;
 }
 [@@deriving compare, eq, sexp, hash]
@@ -68,7 +68,7 @@ type missing_attribute_annotation = {
 type incompatible_type = {
   name: Access.t;
   mismatch: mismatch;
-  declare_location: Location.t;
+  declare_location: Location.Instantiated.t;
 }
 [@@deriving compare, eq, show, sexp, hash]
 
@@ -78,15 +78,19 @@ type incompatible_attribute_type = {
 }
 [@@deriving compare, eq, show, sexp, hash]
 
+type precondition_mismatch =
+  | Found of mismatch
+  | NotFound of Access.t
+[@@deriving compare, eq, show, sexp, hash]
+
 type override =
-  | StrengthenedPrecondition
-  | WeakenedPostcondition
+  | StrengthenedPrecondition of precondition_mismatch
+  | WeakenedPostcondition of mismatch
 [@@deriving compare, eq, show, sexp, hash]
 
 type inconsistent_override = {
   overridden_method: Annotated.Method.t;
   override: override;
-  mismatch: mismatch;
 }
 [@@deriving compare, eq, show, sexp, hash]
 
@@ -117,11 +121,17 @@ type missing_argument = {
 }
 [@@deriving compare, eq, sexp, show, hash]
 
+type revealed_type = {
+  expression: Expression.t;
+  annotation: Type.t;
+}
+[@@deriving compare, eq, sexp, show, hash]
+
 type kind =
   | IncompatibleAwaitableType of Type.t
   | IncompatibleParameterType of parameter_mismatch
   | IncompatibleConstructorAnnotation of Type.t
-  | IncompatibleReturnType of mismatch
+  | IncompatibleReturnType of return_mismatch
   | IncompatibleAttributeType of incompatible_attribute_type
   | IncompatibleVariableType of incompatible_type
   | InconsistentOverride of inconsistent_override
@@ -130,28 +140,19 @@ type kind =
   | MissingGlobalAnnotation of missing_annotation
   | MissingParameterAnnotation of missing_parameter
   | MissingReturnAnnotation of missing_return
+  | RedundantCast of Type.t
+  | RevealedType of revealed_type
   | TooManyArguments of too_many_arguments
   | Top
   | UndefinedAttribute of undefined_attribute
+  | UndefinedImport of Access.t
   | UndefinedName of Access.t
   | UndefinedType of Type.t
   | UninitializedAttribute of initialization_mismatch
   | UnusedIgnore of int list
 [@@deriving compare, eq, show, hash]
 
-type t = {
-  location: Location.t;
-  kind: kind;
-  define: Statement.Define.t Node.t;
-}
-[@@deriving compare, eq, show, hash]
-
-include Hashable with type t := t
-
-val location: t -> Location.t
-val key: t -> Location.t
-val code: t -> int
-val description: t -> detailed:bool -> string
+include BaseError.ERROR with type kind := kind
 
 val due_to_analysis_limitations: t -> bool
 val due_to_mismatch_with_any: t -> bool
@@ -161,12 +162,15 @@ val join: resolution: Resolution.t -> t -> t -> t
 val meet: resolution: Resolution.t -> t -> t -> t
 val widen: resolution: Resolution.t -> previous: t -> next: t -> iteration: int -> t
 
-val join_at_define: resolution: Resolution.t -> location: Location.t -> t list -> t list
+val join_at_define
+  :  resolution: Resolution.t
+  -> location: Location.Instantiated.t
+  -> t list
+  -> t list
+
 val join_at_source: resolution: Resolution.t -> t list -> t list
 
 val filter: configuration: Configuration.t -> resolution: Resolution.t -> t list -> t list
 val suppress: mode: Source.mode -> t -> bool
 
 val dequalify: Access.t Access.Map.t -> (module Environment.Handler) -> t -> t
-
-val to_json: detailed: bool -> t -> Yojson.Safe.json

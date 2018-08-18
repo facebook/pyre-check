@@ -1,0 +1,10 @@
+(tests
+ (names
+  namedTuplesTest
+  dataClassTest
+  filterTest)
+ (libraries
+  oUnit
+  pyrelib.test
+  pyrelib.plugin
+  pyrelib.ast))

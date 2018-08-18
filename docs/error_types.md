@@ -6,6 +6,32 @@ sidebar_label: Error Types
 
 Elaboration on some categories of errors thrown by Pyre.
 
+## Pyre Error [9]: Incompatible Variable Type
+
+Pyre will error when assigning incompatible types to local variables and parameters that were explicitly annotated.
+
+That is, the following will error:
+
+```
+def f(x: int) -> None:
+  x = "" # Incompatible variable type error
+  y: int = 1
+  y = "" # Incompatible variable type error
+```
+
+The rationale here is that it's surprising for an explicitly annotated variable to have an
+incompatible type later on in the same function.
+
+If you intended to change the type of the variable, you can explicitly annotate it with the new type:
+
+```
+def f(x: int) -> None:
+  x: str = "" # No errors!
+  y: int = 1
+  y: str = "" # No errors!
+```
+
+
 ## Pyre Errors [14/15]: Behavioral Subtyping
 
 Method overrides should follow
@@ -61,3 +87,16 @@ Pyre has various ways of inferring what is an attribute of an object:
 Pyre does one level of inlining to infer implicit parameters
 We suggest you do not heavily rely on this feature as it is not sound and makes our code brittle.
 Support for this is temporary.
+
+## Pyre Errors [18/21]: Undefined Name, Undefined Import
+
+Error 18 ("Undefined name") is raised when your code tries to access a variable or function that Pyre could not resolve.
+This is usually caused by failing to import the proper module.
+
+```
+  # 'import some_module' is missing
+  some_module.some_func()
+```
+
+Pyre will raise error 21 instead ("Undefined import") when the import statement is present, but the module to be imported could not be found in the search path.
+If the module provides stub files, please provide their location via the `--search-path` commandline parameter.

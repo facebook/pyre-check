@@ -9,7 +9,7 @@ set -e
 
 # global constants
 PACKAGE_NAME="pyre-check"
-PACKAGE_VERSION="0.0.6"
+PACKAGE_VERSION=
 AUTHOR='Facebook'
 AUTHOR_EMAIL='pyre@fb.com'
 MAINTAINER='Facebook'
@@ -22,7 +22,7 @@ RUNTIME_DEPENDENCIES="'typeshed'"
 
 # helpers
 die() {
-  printf '\n%s: %s, exiting.\n' "$(basename "$0")" "$*" >&2
+  printf '\n%s: %s; exiting.\n' "$(basename "$0")" "$*" >&2
   exit 1
 }
 error_trap () {
@@ -35,7 +35,7 @@ trap error_trap ERR
 if [[ "${MACHTYPE}" = *apple* ]]; then
   READLINK=greadlink
   HAS_PIP_GREATER_THAN_1_5=no
-  WHEEL_DISTRIBUTION_PLATFORM=macosx_10_13_x86_64
+  WHEEL_DISTRIBUTION_PLATFORM=macosx_10_11_x86_64
 else
   READLINK=readlink
   HAS_PIP_GREATER_THAN_1_5=yes
@@ -63,12 +63,25 @@ while [[ $# -gt 0 ]]; do
         die "Not a valid location to bundle typeshed from: '${1}'"
       fi
       ;;
+    "--version")
+      shift 1
+      if [[ -z "${1}" ]]; then
+        die 'Version number is missing from commandline'
+      fi
+      if ! [[ "${1}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+        die "Version number '${1}' is not in the expected format"
+      fi
+      PACKAGE_VERSION="${1}"
+      ;;
     *)
       echo "Unrecognized parameter: ${1}"
       ;;
   esac
   shift
 done
+
+# Check preconditions.
+[[ -z "${PACKAGE_VERSION}" ]] && die 'Package version not provided, please use --version'
 
 # Create build tree.
 SCRIPTS_DIRECTORY="$(dirname "$("${READLINK}" -f "$0")")"
@@ -80,10 +93,12 @@ echo "Using build root: ${BUILD_ROOT}"
 # Copy source files.
 mkdir "${MODULE_NAME}"
 # i.e. copy all *.py files from all directories, except "tests"
-rsync -avm --filter='- tests/' --filter='+ */' --filter='-! *.py' "${SCRIPTS_DIRECTORY}/" "${BUILD_ROOT}/${MODULE_NAME}"
+rsync -avm --filter='- tests/' --filter='+ */' --filter='-! *.py' "${SCRIPTS_DIRECTORY}/../client/" "${BUILD_ROOT}/${MODULE_NAME}"
+# Patch version number.
+sed -i -e "/__version__/s/= \".*\"/= \"${PACKAGE_VERSION}\"/" "${BUILD_ROOT}/${MODULE_NAME}/version.py"
 
 # Copy binary files.
-BINARY_FILE="${SCRIPTS_DIRECTORY}/../_build/all/main.native"
+BINARY_FILE="${SCRIPTS_DIRECTORY}/../_build/default/main.exe"
 if [[ ! -f "${BINARY_FILE}" ]]; then
   echo "The binary file ${BINARY_FILE} does not exist."
   echo "Have you run 'make' in the toplevel directory?"
@@ -101,7 +116,7 @@ cp "${SCRIPTS_DIRECTORY}/../README.md" \
 if [[ -n "${BUNDLE_TYPESHED}" ]]; then
   mkdir -p "${BUILD_ROOT}/typeshed/"
   rsync --recursive --copy-links --prune-empty-dirs --verbose \
-        --chmod="+w" --include="stdlib/***" --exclude="*" \
+        --chmod="+w" --include="stdlib/***" --include="third_party/***" --exclude="*" \
         "${BUNDLE_TYPESHED}/" "${BUILD_ROOT}/typeshed/"
 fi
 
@@ -109,7 +124,11 @@ fi
 cat > "${BUILD_ROOT}/setup.py" <<HEREDOC
 import glob
 import os
+import sys
 from setuptools import setup, find_packages
+
+if sys.version_info < (3, 5):
+    sys.exit('Error: ${PACKAGE_NAME} only runs on Python 3.5 and above.')
 
 def find_typeshed_files(base):
     if not os.path.isdir(base):
@@ -154,6 +173,7 @@ setup(
         'Operating System :: POSIX :: Linux',
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Topic :: Software Development',
     ],
@@ -161,7 +181,7 @@ setup(
 
     packages=find_packages(exclude=['tests']),
     data_files=[('bin', ['bin/pyre.bin'])] + find_typeshed_files("${BUILD_ROOT}/"),
-    python_requires='>=3',
+    python_requires='>=3.5',
     install_requires=[${RUNTIME_DEPENDENCIES}],
     entry_points={
         'console_scripts': [

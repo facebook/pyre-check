@@ -9,21 +9,30 @@ open OUnit2
 open Ast
 open Analysis
 open Expression
+open Statement
 open Test
 
 
-let define ?(body = []) () =
-  +{
-    Statement.Define.name = Access.create "foo";
+let define_value ?(return_annotation = Some !"int") ?(body = []) ?(name = "foo") () =
+  {
+    Statement.Define.name = Access.create name;
     parameters = [];
     body;
     decorators = [];
     docstring = None;
-    return_annotation = Some !"int";
+    return_annotation;
     async = false;
     generated = false;
     parent = None;
   }
+
+
+let untyped_define =
+  +(define_value ~return_annotation:None ~body:[] ())
+
+
+let define ?(body = []) () =
+  +(define_value ~body ())
 
 
 let mock_define =
@@ -42,14 +51,21 @@ let mock_parent =
   |> Annotated.Class.create
 
 
-let create_mock_location path =
-  let start = { Location.line = 1; column = 1 } in
-  let stop = { Location.line = 1; column = 1 } in
-  { Location.path; start; stop; }
-
-
 let error ?(define = mock_define) kind =
-  { Error.location = Location.any; kind; define }
+  let any_position = { Location.line = -1; column = -1 } in
+
+  {
+    Error.location = { Location.path = "*"; start = any_position; stop = any_position };
+    kind;
+    define;
+  }
+
+
+let revealed_type access annotation =
+  Error.RevealedType {
+    Error.expression = Node.create_with_default_location (Access (Access.create access));
+    annotation;
+  }
 
 
 let missing_return annotation =
@@ -62,8 +78,8 @@ let missing_return annotation =
 
 let incompatible_return_type actual expected =
   Error.IncompatibleReturnType {
-    Error.actual;
-    expected;
+    Error.mismatch = { Error.actual; expected };
+    is_implicit = false;
   }
 
 
@@ -88,12 +104,12 @@ let test_due_to_analysis_limitations _ =
           (Error.IncompatibleAttributeType {
               Error.parent = mock_parent;
               incompatible_type = {
-                Error.name = [Expression.Access.Identifier (~~"")];
+                Error.name = [Access.Identifier (~~"")];
                 mismatch = {
                   Error.actual = Type.Top;
                   expected = Type.Top;
                 };
-                declare_location = Location.any;
+                declare_location = Location.Instantiated.any;
               };
             })));
   assert_true
@@ -102,12 +118,12 @@ let test_due_to_analysis_limitations _ =
           (Error.IncompatibleAttributeType {
               Error.parent = mock_parent;
               incompatible_type = {
-                Error.name = [Expression.Access.Identifier (~~"")];
+                Error.name = [Access.Identifier (~~"")];
                 mismatch = {
                   Error.actual = Type.Top;
                   expected = Type.string;
                 };
-                declare_location = Location.any;
+                declare_location = Location.Instantiated.any;
               };
             })));
   assert_false
@@ -116,12 +132,12 @@ let test_due_to_analysis_limitations _ =
           (Error.IncompatibleAttributeType {
               Error.parent = mock_parent;
               incompatible_type = {
-                Error.name = [Expression.Access.Identifier (~~"")];
+                Error.name = [Access.Identifier (~~"")];
                 mismatch = {
                   Error.actual = Type.string;
                   expected = Type.Top;
                 };
-                declare_location = Location.any;
+                declare_location = Location.Instantiated.any;
               };
             })));
 
@@ -130,7 +146,7 @@ let test_due_to_analysis_limitations _ =
     (Error.due_to_analysis_limitations
        (error
           (Error.UninitializedAttribute{
-              Error.name = [Expression.Access.Identifier (~~"")];
+              Error.name = [Access.Identifier (~~"")];
               parent = mock_parent;
               mismatch = {
                 Error.actual = Type.Top;
@@ -142,7 +158,7 @@ let test_due_to_analysis_limitations _ =
     (Error.due_to_analysis_limitations
        (error
           (Error.UninitializedAttribute {
-              Error.name = [Expression.Access.Identifier (~~"")];
+              Error.name = [Access.Identifier (~~"")];
               parent = mock_parent;
               mismatch = {
                 Error.actual = Type.string;
@@ -193,7 +209,7 @@ let test_due_to_analysis_limitations _ =
           (Error.MissingAttributeAnnotation {
               Error.parent = mock_parent;
               Error.missing_annotation = {
-                Error.name = [Expression.Access.Identifier ~~""];
+                Error.name = [Access.Identifier ~~""];
                 annotation = Type.Top;
                 due_to_any = false;
                 evidence_locations = [];
@@ -205,7 +221,7 @@ let test_due_to_analysis_limitations _ =
           (Error.MissingAttributeAnnotation {
               Error.parent = mock_parent;
               Error.missing_annotation = {
-                Error.name = [Expression.Access.Identifier ~~""];
+                Error.name = [Access.Identifier ~~""];
                 annotation = Type.string;
                 due_to_any = false;
                 evidence_locations = [];
@@ -255,22 +271,31 @@ let test_due_to_analysis_limitations _ =
     (Error.due_to_analysis_limitations
        (error
           (Error.IncompatibleReturnType {
-              Error.actual = Type.Top;
-              expected = Type.Top;
+              Error.mismatch = {
+                Error.actual = Type.Top;
+                expected = Type.Top;
+              };
+              is_implicit = false;
             })));
   assert_true
     (Error.due_to_analysis_limitations
        (error
           (Error.IncompatibleReturnType {
-              Error.actual = Type.Top;
-              expected = Type.string;
+              Error.mismatch = {
+                Error.actual = Type.Top;
+                expected = Type.string;
+              };
+              is_implicit = false;
             })));
   assert_false
     (Error.due_to_analysis_limitations
        (error
           (Error.IncompatibleReturnType {
-              Error.actual = Type.string;
-              expected = Type.Top;
+              Error.mismatch = {
+                Error.actual = Type.string;
+                expected = Type.Top;
+              };
+              is_implicit = false;
             })));
 
   (* UndefinedType. *)
@@ -283,32 +308,32 @@ let test_due_to_analysis_limitations _ =
 let test_join _ =
   let assert_join left right expected =
     let environment =
-      Environment.handler ~configuration (Environment.Builder.create ~configuration ())
+      Environment.handler ~configuration (Environment.Builder.create ())
     in
     let resolution = Environment.resolution environment () in
     let result = Error.join ~resolution left right in
-    assert_equal ~cmp:Error.equal result expected
+    assert_equal ~printer:Error.show ~cmp:Error.equal result expected
   in
   assert_join
     (error
        (Error.IncompatibleAttributeType {
            Error.parent = mock_parent;
            incompatible_type = {
-             Error.name = [Expression.Access.Identifier (~~"")];
+             Error.name = [Access.Identifier (~~"")];
              mismatch = {
                Error.actual = Type.Top;
                expected = Type.Top;
              };
-             declare_location = Location.any;
+             declare_location = Location.Instantiated.any;
            };
          }))
     (error (Error.IncompatibleVariableType {
-         Error.name = [Expression.Access.Identifier (~~"")];
+         Error.name = [Access.Identifier (~~"")];
          mismatch = {
            Error.actual = Type.Top;
            expected = Type.Top;
          };
-         declare_location = Location.any;
+         declare_location = Location.Instantiated.any;
        }))
     (error Error.Top);
   assert_join
@@ -342,38 +367,54 @@ let test_join _ =
              expected = Type.string;
            };
          }));
+  let create_mock_location path =
+    {
+      Location.path;
+      start = { Location.line = 1; column = 1 };
+      stop = { Location.line = 1; column = 1 };
+    }
+  in
   assert_join
     (error
        (Error.MissingGlobalAnnotation {
-           Error.name = [Expression.Access.Identifier (~~"")];
+           Error.name = [Access.Identifier (~~"")];
            annotation = Type.integer;
            evidence_locations = [create_mock_location "derp.py"];
            due_to_any = false;
          }))
     (error
        (Error.MissingGlobalAnnotation {
-           Error.name = [Expression.Access.Identifier (~~"")];
+           Error.name = [Access.Identifier (~~"")];
            annotation = Type.float;
            evidence_locations = [create_mock_location "durp.py"];
            due_to_any = false;
          }))
     (error
        (Error.MissingGlobalAnnotation {
-           Error.name = [Expression.Access.Identifier (~~"")];
+           Error.name = [Access.Identifier (~~"")];
            annotation = Type.float;
            evidence_locations = [create_mock_location "derp.py"; create_mock_location "durp.py"];
            due_to_any = false;
-         }))
+         }));
+
+  assert_join
+    (error (revealed_type "a" Type.integer))
+    (error (revealed_type "a" Type.float))
+    (error (revealed_type "a" Type.float));
+  assert_join
+    (error (revealed_type "a" Type.integer))
+    (error (revealed_type "b" Type.float))
+    (error (Error.Top))
 
 
 let test_filter _ =
+  let open Error in
   let environment =
-    Environment.handler ~configuration (Environment.Builder.create ~configuration ())
+    Environment.handler ~configuration (Environment.Builder.create ())
   in
-  add_defaults_to_environment ~configuration environment;
-  Environment.populate
+  add_defaults_to_environment environment;
+  Service.Environment.populate
     environment
-    ~configuration
     [
       parse {|
         class Foo: ...
@@ -387,14 +428,14 @@ let test_filter _ =
     let errors = [error ~define kind] in
     assert_equal
       []
-      (Error.filter ~configuration ~resolution errors)
+      (filter ~configuration ~resolution errors)
   in
   let assert_unfiltered ?(define = mock_define) kind =
     let errors = [error ~define kind] in
     assert_equal
-      ~cmp:(List.equal ~equal:Error.equal)
+      ~cmp:(List.equal ~equal)
       errors
-      (Error.filter ~configuration ~resolution errors)
+      (filter ~configuration ~resolution errors)
   in
   (* Suppress mock errors. *)
   assert_filtered (incompatible_return_type (Type.primitive "unittest.mock.Mock") Type.integer);
@@ -414,8 +455,39 @@ let test_filter _ =
   (* Suppress return errors in unimplemented defines. *)
   assert_unfiltered (incompatible_return_type Type.integer Type.float);
   assert_filtered
-    ~define:(define ~body:[+Statement.Pass; +Statement.Return None] ())
-    (incompatible_return_type Type.integer Type.float)
+    ~define:(define ~body:[+Statement.Pass;
+                           +Statement.Return { Return.expression = None; is_implicit = false }] ())
+    (incompatible_return_type Type.integer Type.float);
+
+  (* Suppress errors due to importing builtins. *)
+  let undefined_import import = UndefinedImport (Access.create import) in
+  assert_filtered (undefined_import "builtins");
+  assert_unfiltered (undefined_import "sys");
+
+  let inconsistent_override name override =
+    InconsistentOverride {
+      overridden_method =
+        Annotated.Class.Method.create ~define:(define_value ~name ()) ~parent:(mock_parent);
+      override;
+    }
+  in
+  (* Suppress parameter errors on override of dunder methods *)
+  assert_unfiltered
+    (inconsistent_override
+       "foo"
+       (StrengthenedPrecondition (NotFound (Access.create "x"))));
+  assert_unfiltered
+    (inconsistent_override
+       "__foo__"
+       (WeakenedPostcondition { actual = Type.Top; expected = Type.integer }));
+  assert_unfiltered
+    (inconsistent_override
+       "__foo__"
+       (StrengthenedPrecondition (Found { actual = Type.none; expected = Type.integer })));
+  assert_filtered
+    (inconsistent_override
+       "__foo__"
+       (StrengthenedPrecondition (NotFound (Access.create "x"))))
 
 
 let test_suppress _ =
@@ -442,7 +514,10 @@ let test_suppress _ =
 
   assert_suppressed Source.Default (missing_return Type.integer);
   assert_not_suppressed Source.Default (incompatible_return_type Type.integer Type.float);
-  assert_suppressed Source.Default (incompatible_return_type Type.integer Type.Object)
+  assert_suppressed Source.Default (incompatible_return_type Type.integer Type.Object);
+  assert_not_suppressed Source.Default (revealed_type "a" Type.integer);
+  assert_not_suppressed ~define:untyped_define Source.Default (revealed_type "a" Type.integer);
+  assert_suppressed Source.Default (Error.UndefinedName (Access.create "reveal_type"))
 
 
 let () =

@@ -27,7 +27,7 @@ val list
 
 module Handle : sig
   type t
-  [@@deriving compare, eq, show, hash]
+  [@@deriving compare, eq, show, sexp, hash]
 
   val create: string -> t
 

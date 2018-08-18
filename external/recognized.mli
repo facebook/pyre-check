@@ -11,3 +11,6 @@ val classmethod_decorators: String.Set.t
 val property_decorators: String.Set.t
 
 val enumeration_classes: String.Set.t
+
+(* Names of functions that implement an 'assert'. *)
+val assert_functions: String.Set.t

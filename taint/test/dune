@@ -1,0 +1,16 @@
+(tests
+ (names
+  accessPathTest
+  taintAnalysisTest
+  flowTest
+  forwardAnalysisTest
+  backwardAnalysisTest
+  modelTest)
+ (preprocess
+  (pps ppx_sexp_message))
+ (libraries
+  oUnit
+  pyrelib.test
+  pyrelib.ast
+  pyrelib.interprocedural
+  pyrelib.taint))

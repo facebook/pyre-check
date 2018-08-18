@@ -17,14 +17,14 @@ const users = [
 
 const siteConfig = {
   title: 'Pyre',
-  tagline: 'A performant typechecker for Python',
-  url: 'https://github.com/facebook/pyre-check',
-  baseUrl: '/pyre/',
+  tagline: 'A performant type-checker for Python 3',
+  url: 'https://pyre-check.org',
+  baseUrl: '/',
   organizationName: 'facebook',
   projectName: 'pyre-check',
   headerLinks: [
     { doc: 'installation', label: 'Getting Started' },
-    { doc: 'documentation', label: 'Documentation' },
+    { doc: 'overview', label: 'Documentation' },
     { href: 'https://github.com/facebook/pyre-check', label: 'GitHub' },
   ],
   disableHeaderTitle: true,
