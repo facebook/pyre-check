@@ -92,6 +92,12 @@ def run_missing_overridden_return_annotations(
                 continue
             annotation = match.groups()[0]
 
+            if (
+                annotation == "typing.Optional[typing.Unbound]"
+                or annotation == "Optional[typing.Unbound]"
+            ):
+                annotation = "None"
+
             # Find last closing parenthesis in after line.
             LOG.info(f"Looking at {line}: {lines[line]}")
             while True:
