@@ -1,6 +1,8 @@
 # Pyre
 Pyre es un comprobador de tipo de rendimiento para Python.
 
+*Lea esto en otros idiomas: [Inglés] (README.md)*
+
 ## Empezando
 
 Para instalar Pyre en tu sistema ejecuta `pip install pyre-check` y ¡listo! Ejecútelo en su proyecto con `pyre --source-directory . check`.
