@@ -1,7 +1,7 @@
 # Pyre
 Pyre is a performant type checker for python.
 
-*Read this in other languages: [English](README.es.md)*
+*Read this in other languages: [Español](README.es.md)*
 
 ## Getting Started
 
