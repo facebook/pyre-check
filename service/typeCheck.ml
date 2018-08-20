@@ -288,14 +288,12 @@ let check
     in
 
     Statistics.coverage
+      ~path:path_to_files
       ~coverage:[
         "strict_coverage", strict_coverage;
         "declare_coverage", declare_coverage;
         "default_coverage", default_coverage;
         "source_files", source_files;
-      ]
-      ~normals:[
-        "file_name", path_to_files;
       ]
       ()
   in
@@ -315,6 +313,7 @@ let check
     |> Option.value ~default:(Path.absolute local_root)
   in
   Statistics.coverage
+    ~path:path_to_files
     ~coverage:[
       "full_type_coverage", full;
       "partial_type_coverage", partial;
@@ -322,9 +321,6 @@ let check
       "ignore_coverage", ignore;
       "total_errors", List.length errors;
       "crashes", crashes;
-    ]
-    ~normals:[
-      "file_name", path_to_files;
     ]
     ();
 

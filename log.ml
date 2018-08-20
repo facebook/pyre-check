@@ -9,6 +9,7 @@ open Core
 type section = [
   | `CallGraph
   | `Check
+  | `Coverage
   | `Debug
   | `Dependencies
   | `Dotty
@@ -33,6 +34,7 @@ type section = [
 let section_to_string = function
   | `CallGraph -> "Callgraph"
   | `Check -> "Check"
+  | `Coverage -> "Coverage"
   | `Debug -> "Debug"
   | `Dependencies -> "Dependencies"
   | `Dotty -> "Dotty"

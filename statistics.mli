@@ -28,8 +28,8 @@ val performance
 
 val coverage
   :  ?flush: bool
+  -> path: string
   -> coverage: (string * int) list
-  -> ?normals: (string * string) list
   -> unit
   -> unit
 
