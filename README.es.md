@@ -11,9 +11,9 @@ Para una documentación más detallada, ver https://pyre-check.org.
 
 * **Python**: necesitas **Python 3.5 o posterior** para ejecutar Pyre.
 * **Sistema operativo**:
-   * una versión reciente de Linux (probamos en **Ubuntu 16.04 LTS** y **CentOS 7**);
-   * **OSX 10.11** o más reciente;
-   * ¡Ojo!: Windows no es compatible.
+  * una versión reciente de Linux (probamos en **Ubuntu 16.04 LTS** y **CentOS 7**);
+  * **OSX 10.11** o más reciente;
+  * ¡Ojo!: Windows no es compatible.
 
 ## Instalación
 
