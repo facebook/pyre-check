@@ -1,7 +1,7 @@
 # Pyre
 Pyre es un comprobador de tipo de rendimiento para Python.
 
-*Lea esto en otros idiomas: [Inglés] (README.md)*
+*Lea esto en otros idiomas: [Inglés](README.md)*
 
 ## Empezando
 
