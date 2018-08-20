@@ -71,7 +71,7 @@ let test_superclasses _ =
     let equal left right = Access.equal (Class.name left) (Class.name right) in
     assert_equal
       ~printer:(fun classes -> Format.asprintf "%a" Sexp.pp [%message (classes: Class.t list)])
-      ~cmp:(List.equal ~equal) result expected
+      ~cmp:(List.equal ~equal) expected result
   in
   let environment =
     populate {|
@@ -103,13 +103,13 @@ let test_superclasses _ =
     ([!"Foo"; !"object"]);
   assert_superclasses
     (Class.superclasses ~resolution:(Environment.resolution environment ()) !"SubFooBar")
-    ([!"Bar"; !"Foo"; !"object"]);
+    ([!"Foo"; !"Bar"; !"object"]);
   assert_superclasses
     (Class.superclasses ~resolution:(Environment.resolution environment ()) !"SubRecurse")
-    ([!"SubFooBar"; !"Bar"; !"Foo"; !"object"]);
+    ([!"SubFooBar"; !"Foo"; !"Bar"; !"object"]);
   assert_superclasses
     (Class.superclasses ~resolution:(Environment.resolution environment ()) !"SubRedundant")
-    ([!"SubFooBar"; !"Foo"; !"Bar"; !"object"])
+    ([!"Foo"; !"SubFooBar"; !"object"; !"Bar"])
 
 
 type constructor = {

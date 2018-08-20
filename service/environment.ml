@@ -119,23 +119,9 @@ let build
     end
 
 
-let in_process_handler ~configuration ~stubs ~sources =
-  let environment = Environment.Builder.create () in
-  let ((module Handler: Environment.Handler) as handler) =
-    Environment.handler
-      environment
-      ~configuration
-  in
-  build handler ~configuration ~stubs ~sources;
-  Log.log ~section:`Environment "%a" Environment.Builder.pp environment;
-  Environment.infer_protocols ~handler ();
-  TypeOrder.check_integrity (module Handler.TypeOrderHandler);
-  handler
-
-
 (** First dumps environment to shared memory, then exposes through
     Environment_handler *)
-let shared_memory_handler
+let handler
     ~configuration:({ Configuration.infer; debug; _ } as configuration)
     ~stubs
     ~sources =
@@ -468,7 +454,6 @@ let shared_memory_handler
           ~order:(module TypeOrderHandler: TypeOrder.Handler)
           ~aliases:Aliases.get
           ~add_class_definition
-          ~add_class_key:(DependencyHandler.add_class_key)
           ~add_protocol:(fun protocol ->
               let protocols = Protocols.get "Protocols" |> Option.value ~default:[] in
               Protocols.remove_batch (Protocols.KeySet.singleton "Protocols");
@@ -528,16 +513,9 @@ let shared_memory_handler
       let mode path = ErrorModes.get path
     end: Environment.Handler)
   in
-  begin
-    match Sys.getenv "PYRE_USE_SHARED_MEMORY" with
-    | Some "1" ->
-        add_to_shared_memory environment;
-        build shared_handler ~configuration ~stubs ~sources
-    | _ ->
-        let handler = Environment.handler ~configuration environment in
-        build handler ~configuration ~stubs ~sources;
-        add_to_shared_memory environment
-  end;
+  let handler = Environment.handler ~configuration environment in
+  build handler ~configuration ~stubs ~sources;
+  add_to_shared_memory environment;
   Statistics.event
     ~section:`Memory
     ~name:"shared memory size"

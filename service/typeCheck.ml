@@ -158,7 +158,6 @@ let analyze_sources
     environment
     handles =
   let open Analysis in
-  Log.info "Checking...";
 
   Annotated.Class.AttributesCache.clear ();
   let handles =
@@ -182,6 +181,7 @@ let analyze_sources
     in
     List.filter handles ~f:filter_by_root
   in
+  Log.info "Checking %d sources..." (List.length handles);
   if Scheduler.is_parallel scheduler then
     analyze_sources_parallel scheduler configuration environment handles
   else
@@ -288,14 +288,12 @@ let check
     in
 
     Statistics.coverage
+      ~path:path_to_files
       ~coverage:[
         "strict_coverage", strict_coverage;
         "declare_coverage", declare_coverage;
         "default_coverage", default_coverage;
         "source_files", source_files;
-      ]
-      ~normals:[
-        "file_name", path_to_files;
       ]
       ()
   in
@@ -303,13 +301,7 @@ let check
   (* Build environment. *)
   Postprocess.register_ignores ~configuration scheduler sources;
   let environment =
-    let handler =
-      if Scheduler.is_parallel scheduler then
-        Environment.shared_memory_handler
-      else
-        Environment.in_process_handler
-    in
-    handler ~configuration ~stubs ~sources
+    Environment.handler ~configuration ~stubs ~sources
   in
 
   let errors, { Analysis.Coverage.full; partial; untyped; ignore; crashes } =
@@ -321,6 +313,7 @@ let check
     |> Option.value ~default:(Path.absolute local_root)
   in
   Statistics.coverage
+    ~path:path_to_files
     ~coverage:[
       "full_type_coverage", full;
       "partial_type_coverage", partial;
@@ -328,9 +321,6 @@ let check
       "ignore_coverage", ignore;
       "total_errors", List.length errors;
       "crashes", crashes;
-    ]
-    ~normals:[
-      "file_name", path_to_files;
     ]
     ();
 

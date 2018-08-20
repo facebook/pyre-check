@@ -94,7 +94,7 @@ let run_analysis
     ~normals:["request kind", "FullCheck"]
     ();
   (* Print results. *)
-  Yojson.Safe.to_string
+  Yojson.Safe.pretty_to_string
     (`List
        (List.map
           ~f:(fun error -> Interprocedural.Error.to_json ~detailed:show_error_traces error) errors))

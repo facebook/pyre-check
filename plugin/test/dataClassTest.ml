@@ -26,6 +26,7 @@ let test_transform_environment _ =
             pass
       |}
     ];
+
   PluginTest.assert_environment_contains
     {|
       @dataclass
@@ -47,6 +48,7 @@ let test_transform_environment _ =
             pass
       |}
     ];
+
   PluginTest.assert_environment_contains
     {|
       @dataclasses.dataclass
@@ -68,6 +70,7 @@ let test_transform_environment _ =
            pass
       |}
     ];
+
   PluginTest.assert_environment_contains
     {|
       @dataclass
@@ -89,6 +92,7 @@ let test_transform_environment _ =
            pass
       |}
     ];
+
   PluginTest.assert_environment_contains
     {|
       @dataclass
@@ -108,6 +112,7 @@ let test_transform_environment _ =
             pass
       |}
     ];
+
   PluginTest.assert_environment_contains
     {|
       @dataclass
@@ -127,6 +132,7 @@ let test_transform_environment _ =
             pass
       |}
     ];
+
   PluginTest.assert_environment_contains
     {|
       @dataclass
@@ -148,6 +154,7 @@ let test_transform_environment _ =
             pass
       |}
     ];
+
   PluginTest.assert_environment_contains
     {|
       @dataclass
@@ -171,6 +178,7 @@ let test_transform_environment _ =
             pass
       |}
     ];
+
   PluginTest.assert_environment_contains
     {|
       @dataclass
@@ -192,6 +200,7 @@ let test_transform_environment _ =
             pass
       |}
     ];
+
   PluginTest.assert_environment_contains
     {|
       @dataclass
@@ -213,6 +222,7 @@ let test_transform_environment _ =
             pass
       |}
     ];
+
   PluginTest.assert_environment_contains
     {|
       @dataclass
@@ -236,6 +246,7 @@ let test_transform_environment _ =
             pass
       |}
     ];
+
   (* TODO(T30619164): We currently do not add methods if arguments are present *)
   PluginTest.assert_environment_contains
     {|
@@ -251,6 +262,249 @@ let test_transform_environment _ =
           def foo(self) -> None:
             pass
       |}
+    ];
+
+  (* Dataclass inheritance *)
+  PluginTest.assert_environment_contains
+    {|
+      @dataclass
+      class C(Base):
+        z: int = 10
+        x: int = 15
+      @dataclass
+      class Base:
+        x: Any = 15.0
+        y: int = 0
+        z: str = "a"
+    |}
+    [
+      {|
+        @dataclass
+        class C(Base):
+          z: int = 10
+          x: int = 15
+          def __init__(self, x: int = 15, y: int = 0, z: int = 10) -> None:
+            pass
+          def __repr__(self) -> str:
+            pass
+          def __eq__(self, o) -> bool:
+            pass
+      |};
+      {|
+        @dataclass
+        class Base:
+          x: Any = 15.0
+          y: int = 0
+          z: str = "a"
+          def __init__(self, x: Any = 15.0, y: int = 0, z: str = "a") -> None:
+            pass
+          def __repr__(self) -> str:
+            pass
+          def __eq__(self, o) -> bool:
+            pass
+      |};
+    ];
+
+  PluginTest.assert_environment_contains
+    {|
+      @dataclass
+      class C(Base):
+        z: int = 10
+        x: int = 15
+      class Base:
+        x: Any = 15.0
+        y: int = 0
+        z: str = "a"
+    |}
+    [
+      {|
+        @dataclass
+        class C(Base):
+          z: int = 10
+          x: int = 15
+          def __init__(self, x: int = 15, y: int = 0, z: int = 10) -> None:
+            pass
+          def __repr__(self) -> str:
+            pass
+          def __eq__(self, o) -> bool:
+            pass
+      |};
+      {|
+        class Base:
+          x: Any = 15.0
+          y: int = 0
+          z: str = "a"
+      |};
+    ];
+
+  PluginTest.assert_environment_contains
+    {|
+      @dataclass
+      class C(Base):
+        z: int = 10
+        x = 15
+      @dataclass
+      class Base:
+        x: Any = 15.0
+        y: int = 0
+    |}
+    [
+      {|
+        @dataclass
+        class C(Base):
+          z: int = 10
+          x = 15
+          def __init__(self, x: Any = 15.0, y: int = 0, z: int = 10) -> None:
+            pass
+          def __repr__(self) -> str:
+            pass
+          def __eq__(self, o) -> bool:
+            pass
+      |};
+      {|
+        @dataclass
+        class Base:
+          x: Any = 15.0
+          y: int = 0
+          def __init__(self, x: Any = 15.0, y: int = 0) -> None:
+            pass
+          def __repr__(self) -> str:
+            pass
+          def __eq__(self, o) -> bool:
+            pass
+      |};
+    ];
+
+  PluginTest.assert_environment_contains
+    {|
+      @dataclass
+      class C(Base):
+        z: int = 10
+        x: int
+      @dataclass
+      class Base:
+        x: str = "a"
+        y: int = 0
+    |}
+    [
+      {|
+        @dataclass
+        class C(Base):
+          z: int = 10
+          x: int
+          def __init__(self, x: int = "a", y: int = 0, z: int = 10) -> None:
+            pass
+          def __repr__(self) -> str:
+            pass
+          def __eq__(self, o) -> bool:
+            pass
+      |};
+      {|
+        @dataclass
+        class Base:
+          x: str = "a"
+          y: int = 0
+          def __init__(self, x: str = "a", y: int = 0) -> None:
+            pass
+          def __repr__(self) -> str:
+            pass
+          def __eq__(self, o) -> bool:
+            pass
+      |};
+    ];
+
+  PluginTest.assert_environment_contains
+    {|
+      @dataclass
+      class C(B):
+        z: int = 10
+        x: int = 15
+      class B(Base):
+        z: str = "a"
+        y: int = 20
+      @dataclass
+      class Base:
+        x: Any = 15.0
+        y: int = 0
+    |}
+    [
+      {|
+        @dataclass
+        class C(B):
+          z: int = 10
+          x: int = 15
+          def __init__(self, x: int = 15, y: int = 20, z: int = 10) -> None:
+            pass
+          def __repr__(self) -> str:
+            pass
+          def __eq__(self, o) -> bool:
+            pass
+      |};
+      {|
+        class B(Base):
+          z: str = "a"
+          y: int = 20
+      |};
+      {|
+        @dataclass
+        class Base:
+          x: Any = 15.0
+          y: int = 0
+          def __init__(self, x: Any = 15.0, y: int = 0) -> None:
+            pass
+          def __repr__(self) -> str:
+            pass
+          def __eq__(self, o) -> bool:
+            pass
+      |};
+    ];
+
+  PluginTest.assert_environment_contains
+    {|
+      @dataclass
+      class C(B, A):
+        z: int = 10
+      @dataclass
+      class B:
+        y: int = 5
+      @dataclass
+      class A:
+        x: int = 15
+    |}
+    [
+      {|
+        @dataclass
+        class C(B, A):
+          z: int = 10
+          def __init__(self, x: int = 15, y: int = 5, z: int = 10) -> None:
+            pass
+          def __repr__(self) -> str:
+            pass
+          def __eq__(self, o) -> bool:
+            pass
+      |};
+      {|
+        @dataclass
+        class B:
+          y: int = 5
+          def __init__(self, y: int = 5) -> None:
+            pass
+          def __repr__(self) -> str:
+            pass
+          def __eq__(self, o) -> bool:
+            pass
+      |};
+      {|
+        @dataclass
+        class A:
+          x: int = 15
+          def __init__(self, x: int = 15) -> None:
+            pass
+          def __repr__(self) -> str:
+            pass
+          def __eq__(self, o) -> bool:
+            pass
+      |};
     ]
 
 

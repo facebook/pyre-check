@@ -11,8 +11,6 @@ open Ast
 open Interprocedural
 open Statement
 
-module Parallel = Hack_parallel.Std
-
 
 let configuration = Configuration.create ()
 
@@ -25,7 +23,7 @@ let environment ?(sources = []) ?(configuration = configuration) () =
 
 
 let setup_environment ?(sources = []) () =
-  let () = Parallel.Daemon.check_entry_point () in
+  let () = Scheduler.Daemon.check_entry_point () in
   let environment = environment ~configuration () in
   Service.Environment.populate environment sources;
   let environment = Environment.Builder.create () in

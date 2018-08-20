@@ -264,7 +264,7 @@ let test_register_modules _ =
     (* The modules get removed after preprocessing. *)
     assert_is_none (Ast.SharedMemory.get_module qualifier);
 
-    Service.Environment.shared_memory_handler ~configuration ~stubs:[] ~sources |> ignore;
+    Service.Environment.handler ~configuration ~stubs:[] ~sources |> ignore;
     assert_is_some (Ast.SharedMemory.get_module qualifier);
 
     assert_equal

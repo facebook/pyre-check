@@ -20,7 +20,7 @@ PROMPT = 50
 SUCCESS = 60
 
 
-stdout = io.StringIO()
+stdout = io.StringIO(newline="")
 
 
 class Color:

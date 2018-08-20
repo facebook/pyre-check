@@ -18,5 +18,6 @@
   ppx_deriving_yojson.runtime
   pyrelib.file
   pyrelib.pyre
+  pyrelib.memory
   pyrelib.configuration
   pyrelib.recognized))

@@ -12,13 +12,7 @@ val populate
   -> Source.t list
   -> unit
 
-val in_process_handler
-  :  configuration: Configuration.t
-  -> stubs: File.Handle.t list
-  -> sources: File.Handle.t list
-  -> (module Environment.Handler)
-
-val shared_memory_handler
+val handler
   :  configuration: Configuration.t
   -> stubs: File.Handle.t list
   -> sources: File.Handle.t list

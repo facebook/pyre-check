@@ -18,7 +18,6 @@
   ppx_deriving
   ppx_deriving_yojson
   ppx_deriving_yojson.runtime
-  hack_parallel
   pyrelib.ast
   pyrelib.analysis
   pyrelib.experimental

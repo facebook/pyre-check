@@ -75,6 +75,7 @@ let aggregate_over_source ~source coverages =
 
 let log { full; partial; untyped; ignore; crashes } ~total_errors ~path =
   Statistics.coverage
+    ~path
     ~coverage:[
       "full_type_coverage", full;
       "partial_type_coverage", partial;
@@ -83,5 +84,4 @@ let log { full; partial; untyped; ignore; crashes } ~total_errors ~path =
       "total_errors", total_errors;
       "crashes", crashes;
     ]
-    ~normals:["file_name", path]
     ();

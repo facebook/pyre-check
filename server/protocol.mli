@@ -33,6 +33,7 @@ module TypeQuery: sig
     | Meet of Expression.t * Expression.t
     | Methods of Expression.t
     | NormalizeType of Expression.t
+    | Signature of Expression.Access.t
     | Superclasses of Expression.t
     | TypeAtLocation of Location.Instantiated.t
   [@@deriving eq, show]
@@ -50,12 +51,25 @@ module TypeQuery: sig
   }
   [@@deriving eq, show, to_yojson]
 
+  type found_parameter = {
+    parameter_name: string;
+    annotation: Type.t option;
+  }
+  [@@deriving eq, show, to_yojson]
+
+  type found_signature = {
+    return_type: Type.t option;
+    parameters: found_parameter list;
+  }
+  [@@deriving eq, show, to_yojson]
+
   type base_response =
+    | Boolean of bool
     | FoundAttributes of attribute list
     | FoundMethods of method_representation list
-    | Type of Type.t
+    | FoundSignature of found_signature list
     | Superclasses of Type.t list
-    | Boolean of bool
+    | Type of Type.t
   [@@deriving eq, show, to_yojson]
 
   type response =

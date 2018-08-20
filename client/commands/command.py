@@ -199,9 +199,7 @@ class Command:
 
             output = ""
             if capture_output:
-                output = "\n".join(self._buffer)
-            if "[" in output:
-                output = output[output.index("[") :]
+                output = "".join(self._buffer)
             if process.returncode != 0 and capture_output:
                 output = "".join(self._buffer)
 

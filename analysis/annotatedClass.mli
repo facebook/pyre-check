@@ -22,6 +22,7 @@ val create: Class.t Node.t -> t
 val name: t -> Access.t
 val bases: t -> Argument.t list
 val body: t -> Statement.t list
+val has_decorator: t -> string -> bool
 
 val annotation: t -> resolution: Resolution.t -> Type.t
 val metaclass: t -> resolution: Resolution.t -> Type.t

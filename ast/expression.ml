@@ -665,6 +665,22 @@ let rec normalize { Node.location; value } =
   { Node.location; value = normalized }
 
 
+let exists_in_list ~expression_list target_string =
+  let rec matches expected actual =
+    match expected, delocalize_qualified actual with
+    | (expected :: expected_tail),
+      { Node.location; value = Access ((Access.Identifier identifier) :: identifiers) }
+      when Identifier.show identifier = expected ->
+        if List.is_empty expected_tail && List.is_empty identifiers then
+          true
+        else
+          matches expected_tail { Node.location; value = Access identifiers }
+    | _ ->
+        false
+  in
+  List.exists ~f:(matches (String.split ~on:'.' target_string)) expression_list
+
+
 module PrettyPrinter = struct
   let rec pp_expression_t formatter expression_t =
     match expression_t with

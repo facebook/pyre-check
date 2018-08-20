@@ -11,7 +11,7 @@ open Expression
 open Analysis
 open Pyre
 
-module SharedMemory = Hack_parallel.Std.SharedMem
+module SharedMemory = Memory
 
 
 type real_target = [ `RealTarget of Access.t ]

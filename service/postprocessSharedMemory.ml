@@ -7,7 +7,7 @@ open Core
 
 open Ast
 
-module SharedMemory = Hack_parallel.Std.SharedMem
+module SharedMemory = Memory
 
 
 module StringKey = struct

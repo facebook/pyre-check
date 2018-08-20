@@ -1154,7 +1154,6 @@ let deduplicate (module Handler: Handler) ~annotations =
       let deduplicate found =
         List.fold ~f:keep_first ~init:(Int.Set.empty, []) found
         |> snd
-        |> List.rev
       in
       match Handler.find edges index with
       | Some found ->

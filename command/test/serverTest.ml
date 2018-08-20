@@ -454,7 +454,96 @@ let test_query _ =
            { Protocol.TypeQuery.name = "x"; annotation = Type.integer };
            { Protocol.TypeQuery.name = "y"; annotation = Type.string };
          ]));
-  ()
+  ();
+
+  assert_type_query_response
+    ~source:{|
+      def foo(x: int) -> int:
+        pass
+    |}
+    ~query:"signature(foo)"
+    (Protocol.TypeQuery.Response
+       (Protocol.TypeQuery.FoundSignature [
+           {
+             Protocol.TypeQuery.return_type = Some Type.integer;
+             Protocol.TypeQuery.parameters = [
+               {
+                 Protocol.TypeQuery.parameter_name = "x";
+                 Protocol.TypeQuery.annotation = Some Type.integer;
+               }
+             ];
+           };
+         ]));
+
+  assert_type_query_response
+    ~source:{|
+      def foo(x) -> int:
+        pass
+    |}
+    ~query:"signature(foo)"
+    (Protocol.TypeQuery.Response
+       (Protocol.TypeQuery.FoundSignature [
+           {
+             Protocol.TypeQuery.return_type = Some Type.integer;
+             Protocol.TypeQuery.parameters = [
+               {
+                 Protocol.TypeQuery.parameter_name = "x";
+                 Protocol.TypeQuery.annotation = None;
+               }
+             ];
+           };
+         ]));
+
+  assert_type_query_response
+    ~source:{|
+      def foo(x: int):
+        pass
+    |}
+    ~query:"signature(foo)"
+    (Protocol.TypeQuery.Response
+       (Protocol.TypeQuery.FoundSignature [
+           {
+             Protocol.TypeQuery.return_type = None;
+             Protocol.TypeQuery.parameters = [
+               {
+                 Protocol.TypeQuery.parameter_name = "x";
+                 Protocol.TypeQuery.annotation = Some Type.integer;
+               }
+             ];
+           };
+         ]));
+
+  assert_type_query_response
+    ~source:{|
+      alias = int
+      def foo(x: alias):
+        pass
+    |}
+    ~query:"signature(foo)"
+    (Protocol.TypeQuery.Response
+       (Protocol.TypeQuery.FoundSignature [
+           {
+             Protocol.TypeQuery.return_type = None;
+             Protocol.TypeQuery.parameters = [
+               {
+                 Protocol.TypeQuery.parameter_name = "x";
+                 Protocol.TypeQuery.annotation = Some Type.integer;
+               }
+             ];
+           };
+         ]));
+
+  assert_type_query_response
+    ~source:{|
+      x = 1
+    |}
+    ~query:"signature(x)"
+    (Protocol.TypeQuery.Error "x is not a callable");
+
+  assert_type_query_response
+    ~source:""
+    ~query:"signature(unknown)"
+    (Protocol.TypeQuery.Error "No signature found for unknown")
 
 
 let test_connect _ =

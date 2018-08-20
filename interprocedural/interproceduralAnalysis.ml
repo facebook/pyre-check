@@ -5,8 +5,6 @@
 
 
 open Core
-open Hack_parallel.Std
-
 
 module Kind = AnalysisKind
 module Result = InterproceduralResult
@@ -325,23 +323,6 @@ let one_analysis_pass ~analyses step ~callables =
     Fixpoint.add_state step callable result
   in
   List.iter callables ~f:analyze_and_cache
-
-
-let make_n_list_buckets ~buckets work =
-  let splitter work buckets =
-    let work = Array.of_list work in
-    let bucket_size = Array.length work / buckets in
-    let remainder = Array.length work mod buckets in
-    let index = ref 0
-    in
-    fun ~bucket ->
-      let bucket_size = min (Array.length work - !index)
-          (bucket_size + if bucket < remainder then 1 else 0) in
-      let result = Array.sub work ~pos:!index ~len:bucket_size in
-      index := bucket_size + !index;
-      Array.to_list result
-  in
-  Bucket.make_n_buckets ~buckets:buckets ~split:(splitter work buckets)
 
 
 let get_callable_dependents ~caller_map = function

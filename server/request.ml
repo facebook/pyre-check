@@ -588,6 +588,59 @@ let rec process_request
             parse_and_validate expression
             |> (fun annotation -> TypeQuery.Response (TypeQuery.Type annotation))
 
+        | TypeQuery.Signature function_name ->
+            let keep_known_annotation annotation =
+              match annotation with
+              | Type.Top ->
+                  None
+              | _ ->
+                  Some annotation
+            in
+            begin
+              match Resolution.global resolution function_name with
+              | Some { Node.value; _ } ->
+                  begin
+                    match Annotation.annotation value with
+                    | Type.Callable { Type.Callable.overloads; _ } ->
+                        let overload_signature { Type.Callable.annotation; parameters } =
+                          match parameters with
+                          | Type.Callable.Defined parameters ->
+                              let format parameter =
+                                match parameter with
+                                | Type.Callable.Parameter.Named
+                                    { Type.Callable.Parameter.name; annotation; _ } ->
+                                    let name = Expression.Access.sanitized name in
+                                    Some {
+                                      TypeQuery.parameter_name = Expression.Access.show name;
+                                      annotation = keep_known_annotation annotation;
+                                    }
+                                | _ ->
+                                    None
+                              in
+                              let parameters = List.filter_map ~f:format parameters in
+                              Some {
+                                TypeQuery.return_type = keep_known_annotation annotation;
+                                parameters;
+                              }
+                          | _ ->
+                              None
+                        in
+                        TypeQuery.Response
+                          (TypeQuery.FoundSignature
+                             (List.filter_map overloads ~f:overload_signature))
+                    | _ ->
+                        TypeQuery.Error
+                          (Format.sprintf
+                             "%s is not a callable"
+                             (Expression.Access.show function_name))
+                  end
+
+              | None ->
+                  TypeQuery.Error
+                    (Format.sprintf
+                       "No signature found for %s"
+                       (Expression.Access.show function_name))
+            end
         | TypeQuery.Superclasses annotation ->
             parse_and_validate annotation
             |> Handler.class_definition

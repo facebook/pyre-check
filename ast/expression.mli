@@ -255,6 +255,8 @@ val pp : Format.formatter -> t -> unit
 
 val show : t -> string
 
+val exists_in_list : expression_list: t list -> string -> bool
+
 val pp_expression_list : Format.formatter -> t list -> unit
 
 val pp_expression_access_list : Format.formatter -> Access.t -> unit
