@@ -23,6 +23,10 @@ See [INSTALL.md](https://github.com/facebook/pyre-check/blob/master/INSTALL.md) 
 
 See [CONTRIBUTING.md](https://github.com/facebook/pyre-check/blob/master/CONTRIBUTING.md) for how to help out.
 
+## Languages
+
+Para la versión en español [README.es.md](https://github.com/facebook/pyre-check/blob/master/README.es.md).
+
 ## License
 
 Pyre is licensed under the MIT license.
