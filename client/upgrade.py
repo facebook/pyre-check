@@ -79,9 +79,8 @@ def run_missing_overridden_return_annotations(
         LOG.info(f"Patching errors in `{path}`.")
         errors = reversed(sorted(errors, key=lambda error: error["line"]))
 
-        lines = []
-        with open(path) as file:
-            lines = [line.rstrip() for line in file.readlines()]
+        path = pathlib.Path(path)
+        lines = path.read_text().split("\n")
 
         for error in errors:
             if error["code"] != 15:
@@ -103,9 +102,8 @@ def run_missing_overridden_return_annotations(
                 else:
                     line = line + 1
 
-        LOG.warn(f"Writing patched {path}")
-        with open(path, "w") as file:
-            file.write("\n".join(lines))
+        LOG.warn(f"Writing patched {str(path)}")
+        path.write_text("\n".join(lines))
 
 
 if __name__ == "__main__":
