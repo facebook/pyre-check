@@ -19,11 +19,11 @@ For more detailed documentation, see https://pyre-check.org.
 
 ## Installation
 
-See [INSTALL.md](https://github.com/facebook/pyre-check/blob/master/INSTALL.md) for details on installing Pyre from a packaged version or from source.
+See [INSTALL.md](INSTALL.md) for details on installing Pyre from a packaged version or from source.
 
 ## Join the Pyre community
 
-See [CONTRIBUTING.md](https://github.com/facebook/pyre-check/blob/master/CONTRIBUTING.md) for how to help out.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for how to help out.
 
 ## License
 
