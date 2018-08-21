@@ -279,6 +279,26 @@ let rec resolve ~resolution expression =
    literals and annotations found in the resolution map, without any resolutions/joins. *)
 let rec resolve_literal ~resolution expression =
   match Node.value expression with
+  | Access access ->
+      begin
+        match Expression.Access.name_and_arguments ~call:access with
+        | Some { Expression.Access.callee; _ } ->
+            let class_name =
+              Expression.Access (Expression.Access.create callee)
+              |> Ast.Node.create_with_default_location
+              |> Resolution.parse_annotation resolution
+            in
+            let is_defined =
+              Resolution.class_definition resolution class_name
+              |> Option.is_some
+            in
+            if is_defined then
+              class_name
+            else
+              Type.Top
+        | None ->
+            Type.Top
+      end
   | Await expression ->
       resolve_literal ~resolution expression
       |> Type.awaitable_value

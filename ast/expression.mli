@@ -218,6 +218,13 @@ module Access : sig
     -> unit
     -> t
 
+  type call = {
+    callee: string;
+    arguments: Argument.t list;
+  }
+  (* If `call` is a simple function call, evaulates to the name and arguments. *)
+  val name_and_arguments: call: t -> call option
+
   (* Calls like `__add__` have backups that are called on exceptions. *)
   val backup: arguments: Argument.t list -> name: t -> (Argument.t list * t) option
   (* Some calls are redirected to method calls, e.g. `repr(x)` will call

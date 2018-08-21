@@ -460,6 +460,24 @@ module Access = struct
   let call ?(arguments = []) ~location ~name () =
     [Identifier (Identifier.create name); Call { Node.location; value = arguments }]
 
+  type call = {
+    callee: string;
+    arguments: Argument.t list;
+  }
+
+  let name_and_arguments ~call =
+    let is_identifier = function
+      | Identifier _ ->
+          true
+      | _ ->
+          false
+    in
+    match List.split_while ~f:is_identifier call with
+    | identifiers, [Call { Node.value = arguments; _ }] ->
+        Some { callee = show identifiers; arguments }
+    | _ ->
+        None
+
 
   let backup ~arguments ~name =
     match List.rev name with

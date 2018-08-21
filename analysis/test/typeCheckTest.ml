@@ -3716,7 +3716,42 @@ let test_check_attributes _ =
         foo = Foo()
         return foo.y
     |}
-    []
+    [];
+
+  (* We infer basic constructors. *)
+  assert_type_errors
+    {|
+      class C:
+        pass
+      class D:
+        def __init__(self) -> None:
+          self.x = C()
+        def foo(self) -> int:
+          return self.x
+    |}
+    [
+      "Missing attribute annotation [4]: Attribute `x` of class `D` has type `C` but no type is" ^
+      " specified.";
+      "Incompatible return type [7]: Expected `int` but got `C`.";
+    ];
+
+  assert_type_errors
+    {|
+      class C:
+        pass
+      class D:
+        def __init__(self) -> None:
+          # We trust the callee blindly without examining the arguments for inference.
+          self.x = C(1,2,3,4)
+        def foo(self) -> int:
+          return self.x
+    |}
+    [
+      "Missing attribute annotation [4]: Attribute `x` of class `D` has type `C` but no type is" ^
+      " specified.";
+      "Too many arguments [19]: Call `object.__init__` expects 1 positional argument, 5 were" ^
+      " provided.";
+      "Incompatible return type [7]: Expected `int` but got `C`."]
 
 
 let test_check_globals _ =
