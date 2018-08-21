@@ -9,9 +9,9 @@ posible.
 
 Aceptamos activamente sus solicitudes de extracción.
 
-1. Tenedor el repositorio y crear su rama de `master`.
+1. Fork el repositorio y crear su rama de `master`.
 2. Si ha agregado un código que debe probarse, agregue pruebas.
-3. Si ha cambiado las API, actualice la documentación.
+3. Si ha cambiado las APIs, actualice la documentación.
 4. Asegúrese de que el conjunto de pruebas pase (consulte [la siguiente sección](# pruebas en ejecución)).
 5. Asegúrese de que su código se filtre (consulte [la siguiente sección](# estilo de codificación)).
 6. Si aún no lo ha hecho, complete el Acuerdo de Licencia del Colaborador ("CLA").
@@ -33,11 +33,10 @@ Pyre ejecuta dos suites de prueba diferentes:
 Para aceptar su solicitud de extracción, necesitamos que envíe un CLA. Solo necesitas
 hacer esto una vez para trabajar en cualquiera de los proyectos de código abierto de Facebook.
 
-Complete su CLA aquí: <https://code.facebook.com/cla>. Si tienes alguna pregunta,
+Completa su CLA aquí: <https://code.facebook.com/cla>. Si tienes alguna pregunta,
 por favor escríbanos a cla@fb.com.
 
-También se espera que siga el [Código de conducta](CODE_OF_CONDUCT.md),
-así que lea eso si es un colaborador nuevo.
+También se espera que siga el [Código de conducta](CODE_OF_CONDUCT.md), así que lea eso si es un colaborador nuevo.
 
 ## Cuestiones
 
@@ -64,7 +63,7 @@ Más información disponible en: https://github.com/ambv/black
 ### OCaml
 
 - no utilizamos anotaciones de tipo fuera de los archivos de interfaz a menos que sea necesario
-- use ocp-indent para formatear
+- usa ocp-indent para formatear
 
 En un nivel alto, Pyre realiza los siguientes pasos para cuando se llama "pira" desde la línea de comando:
 
