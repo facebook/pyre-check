@@ -38,7 +38,7 @@ module type Handler = sig
     -> unit
   val register_dependency: path: string -> dependency: Access.t -> unit
   val register_global: path: string -> access: Access.t -> global: Resolution.global -> unit
-  val update_class_definition: primitive: Type.t -> definition: Class.t -> unit
+  val set_class_definition: primitive: Type.t -> definition: Class.t Node.t -> unit
   val connect_definition
     :  resolution: Resolution.t
     -> predecessor: Type.t

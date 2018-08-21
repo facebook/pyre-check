@@ -1007,7 +1007,11 @@ module Class = struct
         | _ ->
             statement :: updated, undefined
       in
-      List.fold ~init:([], stub) ~f:update body
+      let stub = match stub with
+        | [{ Node.value = Expression { Node.value = Ellipses; _ }; _ }] -> []
+        | _ -> stub
+      in
+      List.fold ~init:([], stub) ~f:update (List.rev body)
     in
     { definition with Record.Class.body = undefined @ updated }
 

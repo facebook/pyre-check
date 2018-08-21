@@ -38,7 +38,7 @@ module type Handler = sig
     -> unit
   val register_dependency: path: string -> dependency: Access.t -> unit
   val register_global: path: string -> access: Access.t -> global: Resolution.global -> unit
-  val update_class_definition: primitive: Type.t -> definition: Class.t -> unit
+  val set_class_definition: primitive: Type.t -> definition: Class.t Node.t -> unit
   val connect_definition
     :  resolution: Resolution.t
     -> predecessor: Type.t
@@ -222,50 +222,37 @@ let handler
       Hashtbl.set ~key:access ~data:global globals
 
 
-    let update_class_definition ~primitive ~definition =
-      match Hashtbl.find class_definitions primitive with
-      | Some ({ class_definition; _} as class_representation) ->
-          Hashtbl.set
-            class_definitions
-            ~key:primitive
-            ~data:{
+    let set_class_definition ~primitive ~definition =
+      let definition =
+        match Hashtbl.find class_definitions primitive with
+        | Some ({
+            class_definition = { Node.location; value = preexisting };
+            _;
+          } as class_representation) ->
+            {
               class_representation with
-              class_definition = { class_definition with Node.value = definition }
+              class_definition = {
+                Node.location;
+                value = Class.update preexisting ~definition:(Node.value definition);
+              };
             }
-      | _ ->
-          ()
+        | _ ->
+            {
+              class_definition = definition;
+              methods = [];
+              explicit_attributes = Access.SerializableMap.empty;
+              implicit_attributes = Access.SerializableMap.empty;
+              is_test = false;
+            }
+      in
+      Hashtbl.set class_definitions ~key:primitive ~data:definition
 
 
     let connect_definition =
-      let add_class_definition ~primitive ~definition =
-        let definition =
-          match Hashtbl.find class_definitions primitive with
-          | Some ({
-              class_definition = { Node.location; value = preexisting };
-              _;
-            } as class_representation) ->
-              {
-                class_representation with
-                class_definition = {
-                  Node.location;
-                  value = Class.update preexisting ~definition:(Node.value definition);
-                };
-              }
-          | _ ->
-              {
-                class_definition = definition;
-                methods = [];
-                explicit_attributes = Access.SerializableMap.empty;
-                implicit_attributes = Access.SerializableMap.empty;
-                is_test = false;
-              }
-        in
-        Hashtbl.set class_definitions ~key:primitive ~data:definition
-      in
       connect_definition
         ~order:(TypeOrder.handler order)
         ~aliases:(Hashtbl.find aliases)
-        ~add_class_definition
+        ~add_class_definition:set_class_definition
         ~add_protocol:(Hash_set.add protocols)
 
 

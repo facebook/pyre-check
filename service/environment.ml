@@ -406,54 +406,38 @@ let handler
         Globals.add access global
 
 
-      let update_class_definition ~primitive ~definition =
-        match ClassDefinitions.get primitive with
-        | Some ({
-            Environment.class_definition;
-            _;
-          } as class_representation) ->
-            ClassDefinitions.remove_batch (ClassDefinitions.KeySet.singleton primitive);
-            ClassDefinitions.add
-              primitive
+      let set_class_definition ~primitive ~definition =
+        let definition =
+          match ClassDefinitions.get primitive with
+          | Some ({
+              Environment.class_definition = { Node.location; value = preexisting };
+              _;
+            } as representation) ->
               {
-                class_representation with
-                Environment.class_definition = { class_definition with Node.value = definition }
+                representation with
+                Environment.class_definition = {
+                  Node.location;
+                  value = Statement.Class.update preexisting ~definition:(Node.value definition);
+                };
               }
-        | _ ->
-            ()
+          | _ ->
+              {
+                Environment.class_definition = definition;
+                methods = [];
+                explicit_attributes = Statement.Access.SerializableMap.empty;
+                implicit_attributes = Statement.Access.SerializableMap.empty;
+                is_test = false;
+              }
+        in
+        ClassDefinitions.remove_batch (ClassDefinitions.KeySet.singleton primitive);
+        ClassDefinitions.add primitive definition
 
 
       let connect_definition =
-        let add_class_definition ~primitive ~definition =
-          let definition =
-            match ClassDefinitions.get primitive with
-            | Some ({
-                Environment.class_definition = { Node.location; value = preexisting };
-                _;
-              } as representation) ->
-                {
-                  representation with
-                  Environment.class_definition = {
-                    Node.location;
-                    value = Statement.Class.update preexisting ~definition:(Node.value definition);
-                  };
-                }
-            | _ ->
-                {
-                  Environment.class_definition = definition;
-                  methods = [];
-                  explicit_attributes = Statement.Access.SerializableMap.empty;
-                  implicit_attributes = Statement.Access.SerializableMap.empty;
-                  is_test = false;
-                }
-          in
-          ClassDefinitions.remove_batch (ClassDefinitions.KeySet.singleton primitive);
-          ClassDefinitions.add primitive definition
-        in
         Environment.connect_definition
           ~order:(module TypeOrderHandler: TypeOrder.Handler)
           ~aliases:Aliases.get
-          ~add_class_definition
+          ~add_class_definition:set_class_definition
           ~add_protocol:(fun protocol ->
               let protocols = Protocols.get "Protocols" |> Option.value ~default:[] in
               Protocols.remove_batch (Protocols.KeySet.singleton "Protocols");
