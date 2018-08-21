@@ -1,10 +1,12 @@
 # Contribuyendo a Pyre
+
 Queremos hacer que la contribución a este proyecto sea tan fácil y transparente como
 posible.
 
 *Lea esto en otros idiomas: [Inglés](CONTRIBUTING.md)*
 
 ## Pull Requests
+
 Aceptamos activamente sus solicitudes de extracción.
 
 1. Tenedor el repositorio y crear su rama de `master`.
@@ -27,6 +29,7 @@ Pyre ejecuta dos suites de prueba diferentes:
 * Las pruebas de Python para los wrappers se ejecutan a través de `make python_tests`.
 
 ## Acuerdo de licencia del colaborador ("CLA")
+
 Para aceptar su solicitud de extracción, necesitamos que envíe un CLA. Solo necesitas
 hacer esto una vez para trabajar en cualquiera de los proyectos de código abierto de Facebook.
 
@@ -37,10 +40,12 @@ También se espera que siga el [Código de conducta](CODE_OF_CONDUCT.md),
 así que lea eso si es un colaborador nuevo.
 
 ## Cuestiones
+
 Usamos problemas de GitHub para rastrear errores públicos. Por favor, asegúrese de que su descripción sea
 claro y tiene instrucciones suficientes para poder reproducir el problema.
 
 ## Estilo de codificación
+
 Valoramos el código consistente. Por favor, sigue el estilo del código que lo rodea. Reglas útiles para todos los idiomas son
 * evitar abreviaturas.
 * evitar indentaciones variables (por ejemplo alinear parámetros con el paréntesis de apertura de una función). Tiende a echar a perder la culpa de git y resulta rápidamente con conflictos con el límite de longitud de línea.
@@ -53,10 +58,11 @@ Valoramos el código consistente. Por favor, sigue el estilo del código que lo 
 </p>
 
 Usamos el formateador de código `Black` para todos los archivos de Python.
-Puede instalar la última versión a través de `pip install black` y ejecutarlo sobre los archivos del cliente como` black pyre-check / client`.
+Puede instalar la última versión a través de `pip install black` y ejecutarlo sobre los archivos del cliente como` black pyre-check/client`.
 Más información disponible en: https://github.com/ambv/black
 
 ### OCaml
+
 - no utilizamos anotaciones de tipo fuera de los archivos de interfaz a menos que sea necesario
 - use ocp-indent para formatear
 
@@ -66,7 +72,7 @@ En un nivel alto, Pyre realiza los siguientes pasos para cuando se llama "pira" 
 
 2. Determine qué comando de piratería ejecutar. Los comandos incluyen algunos que manejan el tiempo de vida y el estado de un servidor de piro persistente para un proyecto, así como un comando de ejecución independiente denominado `pyre check`. La implementación de estos comandos se encuentra en `commands/`. `main.ml` agrega estos comandos y maneja el análisis de los argumentos de la línea de comandos. La mayoría de los pasos eventualmente llamarán a TypeCheckService.
 
-3. El módulo TypeCheckService llamará a ParseService, que localizará todas las fuentes en la raíz de origen determinada y todas las dependencias, y analizará, procesará previamente y agregará las fuentes a la memoria compartida. ParseService y TypeCheckService viven bajo `service/`, mientras que el analizador se encuentra en `analizador/`, y el preprocesador está bajo `analysis/analysisPreprocessing.ml`. El AST (árbol de sintaxis abstracta) en el que se analiza el código fuente se especifica en los archivos del directorio `ast/`.
+3. El módulo TypeCheckService llamará a ParseService, que localizará todas las fuentes en la raíz de origen determinada y todas las dependencias, y analizará, procesará previamente y agregará las fuentes a la memoria compartida. ParseService y TypeCheckService viven bajo `service/`, mientras que el analizador se encuentra en `parser/`, y el preprocesador está bajo `analysis/analysisPreprocessing.ml`. El AST (árbol de sintaxis abstracta) en el que se analiza el código fuente se especifica en los archivos del directorio `ast/`.
 
 4. A continuación, pyre completará el entorno de tipo global con las fuentes del proyecto y las dependencias. Tenga en cuenta que no analizamos recursivamente las importaciones de los archivos del proyecto, sino que agregamos todas las fuentes al entorno a la vez. Esta elección facilita la paralelización de la construcción del entorno de tipo, pero tiene el costo de no poder depender de las dependencias de un archivo que se analizan al agregarlo al entorno de tipo. El entorno de tipos se puede considerar como una colección de tablas hash, nombres de funciones de asignación, clases, globales, etc. en sus implementaciones a las que se puede acceder desde la memoria compartida. El orden de tipo, que se explica con más detalle en una sección a continuación, también se construye aquí.
 
