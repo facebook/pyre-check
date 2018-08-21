@@ -19,11 +19,11 @@ Para una documentación más detallada, ver https://pyre-check.org.
 
 ## Instalación
 
-Consulte [Instalación](INSTALL.es.md) para obtener detalles sobre la instalación de Pyre desde una versión empaquetada o desde el origen.
+Consulte [INSTALL.es.md](INSTALL.es.md) para obtener detalles sobre la instalación de Pyre desde una versión empaquetada o desde el origen.
 
 ## Únete a la comunidad de Pyre
 
-Consulte [Contribuir](CONTRIBUTING.es.md) para saber cómo ayudar.
+Consulte [CONTRIBUTING.es.md](CONTRIBUTING.es.md) para saber cómo ayudar.
 
 ## Licencia
 
