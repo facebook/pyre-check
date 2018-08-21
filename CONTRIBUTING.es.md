@@ -12,8 +12,8 @@ Aceptamos activamente sus solicitudes de extracción.
 1. Fork el repositorio y crear su rama de `master`.
 2. Si ha agregado un código que debe probarse, agregue pruebas.
 3. Si ha cambiado las APIs, actualice la documentación.
-4. Asegúrese de que el conjunto de pruebas pase (consulte [la siguiente sección](# pruebas en ejecución)).
-5. Asegúrese de que su código se filtre (consulte [la siguiente sección](# estilo de codificación)).
+4. Asegúrese de que el conjunto de pruebas pase (consulte [la siguiente sección](#ejecución-de-pruebas)).
+5. Asegúrese de que su código se filtre (consulte [la siguiente sección](#estilo-de-codificación)).
 6. Si aún no lo ha hecho, complete el Acuerdo de Licencia del Colaborador ("CLA").
 
 ## Ejecución de pruebas
