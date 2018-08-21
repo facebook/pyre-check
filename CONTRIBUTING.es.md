@@ -2,7 +2,7 @@
 Queremos hacer que la contribución a este proyecto sea tan fácil y transparente como
 posible.
 
-*Lea esto en otros idiomas: [Inglés](CONTRIBUTING.es.md)*
+*Lea esto en otros idiomas: [Inglés](CONTRIBUTING.md)*
 
 ## Pull Requests
 Aceptamos activamente sus solicitudes de extracción.
