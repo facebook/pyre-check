@@ -11,7 +11,7 @@ open Expression
 
 module Record : sig
   module Callable : sig
-    module Parameter : sig
+    module RecordParameter : sig
       type 'annotation named = {
         name: Access.t;
         annotation: 'annotation;
@@ -31,7 +31,7 @@ module Record : sig
       | Named of Access.t
 
     and 'annotation parameters =
-      | Defined of ('annotation Parameter.t) list
+      | Defined of ('annotation RecordParameter.t) list
       | Undefined
 
     and 'annotation overload = {
@@ -198,6 +198,15 @@ val instantiate_variables: t -> t
 val dequalify: Access.t Access.Map.t -> t -> t
 
 module Callable : sig
+  module Parameter: sig
+    include module type of struct include Record.Callable.RecordParameter end
+
+    type parameter = type_t t
+    [@@deriving compare, eq, sexp, show, hash]
+
+    module Map : Core.Map.S with type Key.t = parameter
+  end
+
   include module type of struct include Record.Callable end
 
   type t = type_t Record.Callable.record

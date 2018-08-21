@@ -13,7 +13,7 @@ open PyreParser
 
 module Record = struct
   module Callable = struct
-    module Parameter = struct
+    module RecordParameter = struct
       type 'annotation named = {
         name: Access.t;
         annotation: 'annotation;
@@ -43,7 +43,7 @@ module Record = struct
 
 
     and 'annotation parameters =
-      | Defined of ('annotation Parameter.t) list
+      | Defined of ('annotation RecordParameter.t) list
       | Undefined
 
 
@@ -76,6 +76,9 @@ end
 
 
 open Record.Callable
+
+
+module Parameter = Record.Callable.RecordParameter
 
 
 type parametric = {
@@ -118,6 +121,9 @@ and t =
 
 type type_t = t
 [@@deriving compare, eq, sexp, show, hash]
+let type_compare = compare
+let type_sexp_of_t = sexp_of_t
+let type_t_of_sexp = t_of_sexp
 
 
 module Map = Map.Make(struct
@@ -1567,8 +1573,21 @@ let rec dequalify map annotation =
 
 
 module Callable = struct
-  include Record.Callable
+  module Parameter = struct
+    include Record.Callable.RecordParameter
 
+    type parameter = type_t t
+    [@@deriving compare, eq, sexp, show, hash]
+
+    module Map = Core.Map.Make(struct
+        type nonrec t = parameter
+        let compare = compare type_compare
+        let sexp_of_t = sexp_of_t type_sexp_of_t
+        let t_of_sexp = t_of_sexp type_t_of_sexp
+      end)
+  end
+
+  include Record.Callable
 
   type t = type_t Record.Callable.record
   [@@deriving compare, eq, sexp, show, hash]

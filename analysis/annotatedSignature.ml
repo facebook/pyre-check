@@ -84,6 +84,12 @@ type resolution_state = {
 }
 
 
+type parameters_to_arguments = {
+  argument_mapping: (Argument.t list) Type.Callable.Parameter.Map.t;
+  unmatched_arguments: Argument.t list;
+}
+
+
 let select ~arguments ~resolution ~callable:({ Type.Callable.overloads; _ } as callable) =
   (* Assuming calls have the following format:
      `[argument,]* [\*variable,]* [keyword=value,]* [\*\*keywords]*` *)
