@@ -437,7 +437,6 @@ let handler
         Environment.connect_definition
           ~order:(module TypeOrderHandler: TypeOrder.Handler)
           ~aliases:Aliases.get
-          ~add_class_definition:set_class_definition
           ~add_protocol:(fun protocol ->
               let protocols = Protocols.get "Protocols" |> Option.value ~default:[] in
               Protocols.remove_batch (Protocols.KeySet.singleton "Protocols");

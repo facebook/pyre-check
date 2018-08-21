@@ -80,7 +80,6 @@ end
 let connect_definition
     ~order
     ~aliases
-    ~add_class_definition
     ~add_protocol =
   let rec connect_definition ~resolution ~predecessor ~name ~definition =
     let connect ~predecessor ~successor ~parameters =
@@ -123,7 +122,6 @@ let connect_definition
             add_protocol primitive;
 
           (* Register normal annotations. *)
-          add_class_definition ~primitive ~definition:definition_node;
           let register_supertype { Argument.value; _ } =
             let value = Expression.delocalize value in
             match Node.value value with
@@ -252,7 +250,6 @@ let handler
       connect_definition
         ~order:(TypeOrder.handler order)
         ~aliases:(Hashtbl.find aliases)
-        ~add_class_definition:set_class_definition
         ~add_protocol:(Hash_set.add protocols)
 
 
@@ -446,12 +443,15 @@ let register_class_definitions (module Handler: Handler) source =
       let statement_keep_recursing _ = Transform.Recurse
 
       let statement { Source.path; _ } new_annotations = function
-        | { Node.value = Class { Class.name; _ }; _ } ->
+        | { Node.location; value = Class ({ Class.name; _ } as definition); } ->
             let primitive, _ =
               Type.create ~aliases:Handler.aliases (Node.create_with_default_location (Access name))
               |> Type.split
             in
             Handler.DependencyHandler.add_class_key ~path primitive;
+            Handler.set_class_definition
+              ~primitive
+              ~definition:{ Node.location; value = definition };
             if not (TypeOrder.contains order primitive) then
               TypeOrder.insert order primitive;
             if not (Set.mem TypeOrder.Builder.builtin_types primitive) then

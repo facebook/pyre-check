@@ -91,7 +91,6 @@ val dependencies: (module Handler) -> Access.t -> string list option
 val connect_definition
   :  order: (module TypeOrder.Handler)
   -> aliases: (Type.t -> Type.t option)
-  -> add_class_definition: (primitive: Type.t -> definition: Class.t Node.t -> unit)
   -> add_protocol: (Type.t -> unit)
   -> (resolution: Resolution.t
       -> predecessor: Type.t
