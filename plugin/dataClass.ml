@@ -13,11 +13,15 @@ open Environment
 
 
 let transform_environment ((module Handler: Handler) as order) { Source.statements; _ } =
+  let get_dataclass_decorator { Node.location; value = ast_class } =
+    let open Annotated in
+    let annotated = Class.create { Node.location; value = ast_class } in
+    Class.get_decorator annotated ~decorator:"dataclasses.dataclass"
+    @ Class.get_decorator annotated ~decorator:"dataclass"
+  in
   let update_dataclasses = function
     | { Node.value = Class ({ Class.name = parent;  _ } as ast_class); location }
-      when Class.has_decorator ast_class "dataclass" ||
-           Class.has_decorator ast_class "dataclasses.dataclass" ->
-        (* TODO(T30619164): Parse decorator arguments and add more generated methods *)
+      when not (List.is_empty (get_dataclass_decorator { Node.location; value = ast_class })) ->
         let annotated_class = Annotated.Class.create { Node.location; value = ast_class } in
         let resolution = Environment.resolution order () in
         let class_type = Annotated.Class.annotation ~resolution annotated_class in

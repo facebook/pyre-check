@@ -247,7 +247,6 @@ let test_transform_environment _ =
       |}
     ];
 
-  (* TODO(T30619164): We currently do not add methods if arguments are present *)
   PluginTest.assert_environment_contains
     {|
       @dataclass(eq = False)
@@ -260,6 +259,12 @@ let test_transform_environment _ =
         @dataclass(eq = False)
         class Foo:
           def foo(self) -> None:
+            pass
+          def __init__(self) -> None:
+            pass
+          def __repr__(self) -> str:
+            pass
+          def __eq__(self, o) -> bool:
             pass
       |}
     ];
