@@ -12,6 +12,16 @@ open Analysis
 open Environment
 
 
+type dataclass_options = {
+  init: bool;
+  repr: bool;
+  eq: bool;
+  order: bool;
+  unsafe_hash: bool;
+  frozen: bool;
+}
+
+
 let transform_environment ((module Handler: Handler) as order) { Source.statements; _ } =
   let get_dataclass_decorator { Node.location; value = ast_class } =
     let open Annotated in
@@ -23,6 +33,43 @@ let transform_environment ((module Handler: Handler) as order) { Source.statemen
     | { Node.value = Class ({ Class.name = parent;  _ } as ast_class); location }
       when not (List.is_empty (get_dataclass_decorator { Node.location; value = ast_class })) ->
         let annotated_class = Annotated.Class.create { Node.location; value = ast_class } in
+        let dataclass_options =
+          let default =
+            {
+              init = true;
+              repr = true;
+              eq = true;
+              order = false;
+              unsafe_hash = false;
+              frozen = false;
+            }
+          in
+          match get_dataclass_decorator { Node.location; value = ast_class } with
+          | { Annotated.Class.arguments = Some arguments; _ } :: _ ->
+              let rec read_arguments options arguments =
+                match arguments with
+                | [] ->
+                    options
+                | { Argument.name = Some { Node.value = name; _ }; value = { Node.value; _ } }
+                  :: arguments ->
+                    let updated_options =
+                      match Identifier.show_sanitized name, value with
+                      | "init", False -> { options with init = false }
+                      | "repr", False -> { options with repr = false }
+                      | "eq", False -> { options with eq = false }
+                      | "order", True -> { options with order = true }
+                      | "unsafe_hash", True -> { options with unsafe_hash = true }
+                      | "frozen", True -> { options with frozen = true }
+                      | _ -> options
+                    in
+                    read_arguments updated_options arguments
+                | _ :: tail ->
+                    read_arguments options tail
+              in
+              read_arguments default arguments
+          | _ ->
+              default
+        in
         let resolution = Environment.resolution order () in
         let class_type = Annotated.Class.annotation ~resolution annotated_class in
         let generated_methods =
@@ -42,8 +89,8 @@ let transform_environment ((module Handler: Handler) as order) { Source.statemen
               parent = Some parent;
             }
           in
-          let add_init methods =
-            if not (Annotated.Class.has_method annotated_class ~name:"__init__") then
+          let add_init { init; _ } methods =
+            if init && not (Annotated.Class.has_method annotated_class ~name:"__init__") then
               let parameters =
                 let collect_parameters parameters { Node.value; _ } =
                   match value with
@@ -98,14 +145,14 @@ let transform_environment ((module Handler: Handler) as order) { Source.statemen
             else
               methods
           in
-          let add_repr methods =
-            if not (Annotated.Class.has_method annotated_class ~name:"__repr__") then
+          let add_repr { repr; _ } methods =
+            if repr && not (Annotated.Class.has_method annotated_class ~name:"__repr__") then
               create_method ~name:"__repr__" ~parameters:[] ~return_annotation:"str" :: methods
             else
               methods
           in
-          let add_eq methods =
-            if not (Annotated.Class.has_method annotated_class ~name:"__eq__") then
+          let add_eq { eq; _ } methods =
+            if eq && not (Annotated.Class.has_method annotated_class ~name:"__eq__") then
               create_method
                 ~name:"__eq__"
                 ~parameters:[Parameter.create ~name:(Identifier.create "o") ()]
@@ -122,7 +169,11 @@ let transform_environment ((module Handler: Handler) as order) { Source.statemen
             |> Analysis.Preprocessing.preprocess
             |> fun { Source.statements; _ } -> statements
           in
-          [] |> add_init |> add_repr |> add_eq |> preprocess
+          []
+          |> add_init dataclass_options
+          |> add_repr dataclass_options
+          |> add_eq dataclass_options
+          |> preprocess
         in
         Handler.set_class_definition
           ~primitive:class_type
