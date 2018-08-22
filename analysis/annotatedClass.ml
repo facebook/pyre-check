@@ -17,6 +17,13 @@ type t = Class.t Node.t
 [@@deriving compare, eq, sexp, show, hash]
 
 
+type decorator = {
+  access: string;
+  arguments: (Argument.t list) option
+}
+[@@deriving compare, eq, sexp, show, hash]
+
+
 let name_equal
     { Node.value = { Class.name = left; _ }; _ }
     { Node.value = { Class.name = right; _ }; _ } =
@@ -47,8 +54,23 @@ let body { Node.value = { Class.body; _ }; _ } =
   body
 
 
-let has_decorator { Node.value = { Class.decorators; _ }; _ } =
-  Expression.exists_in_list ~expression_list:decorators
+let get_decorator { Node.value = { Class.decorators; _ }; _ } ~decorator =
+  let matches target decorator =
+    match decorator with
+    | { Node.value = Access access; _ } ->
+        begin
+          match Expression.Access.name_and_arguments ~call:access with
+          | Some { callee = name; arguments } when name = target ->
+              Some { access = name; arguments = Some arguments }
+          | None when Access.show access = target ->
+              Some { access = Access.show access; arguments = None }
+          | _ ->
+              None
+        end
+    | _ ->
+        None
+  in
+  List.filter_map ~f:(matches decorator) decorators
 
 
 let annotation { Node.value = { Class.name; _ }; location } ~resolution =

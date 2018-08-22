@@ -621,6 +621,36 @@ let test_define _ =
       };
     ];
   assert_parsed_equal
+    "@decorator(a=b, c=d)\ndef foo(a):\n  1"
+    [
+      +Define {
+        Define.name = Access.create "foo";
+        parameters = [
+          +{
+            Parameter.name = ~~"a";
+            value = None;
+            annotation = None;
+          };
+        ];
+        body = [+Expression (+Integer 1)];
+        decorators = [
+          (+Access [
+             Access.Identifier ~~"decorator";
+             Access.Call
+               (+[
+                  { Argument.name = Some ~+(~~"a"); value = !"b" };
+                  { Argument.name = Some ~+(~~"c"); value = !"d" };
+                ]);
+           ]);
+        ];
+        docstring = None;
+        return_annotation = None;
+        async = false;
+        generated = false;
+        parent = None;
+      };
+    ];
+  assert_parsed_equal
     "@foo\n\n@bar\ndef foo(a):\n  1"
     [
       +Define {

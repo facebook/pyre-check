@@ -118,6 +118,102 @@ type constructor = {
 }
 
 
+let test_get_decorator _ =
+  let assert_get_decorator source decorator expected =
+    match parse_last_statement source with
+    | { Node.value = Statement.Class definition; _ } ->
+        let actual =
+          Node.create_with_default_location definition
+          |> Class.create
+          |> Class.get_decorator ~decorator
+        in
+        assert_equal ~cmp:(List.equal ~equal:Class.equal_decorator) expected actual
+    | _ ->
+        assert_true (List.is_empty expected)
+  in
+  assert_get_decorator "class A: pass" "decorator" [];
+  assert_get_decorator
+    {|
+      @decorator
+      class A:
+        pass
+    |}
+    "decorator"
+    [{ access = "decorator"; arguments = None }];
+  assert_get_decorator
+    {|
+      @decorator.a.b
+      class A:
+        pass
+    |}
+    "decorator.a"
+    [];
+  assert_get_decorator
+    {|
+      @decorator
+      class A:
+        pass
+    |}
+    "decorator.a"
+    [];
+  assert_get_decorator
+    {|
+      @decorator.a.b
+      class A:
+        pass
+    |}
+    "decorator.a.b"
+    [{ access = "decorator.a.b"; arguments = None }];
+  assert_get_decorator
+    {|
+      @decorator(a=b, c=d)
+      class A:
+        pass
+    |}
+    "decorator.a.b"
+    [];
+  assert_get_decorator
+    {|
+      @other.decorator
+      @decorator(a=b, c=d)
+      class A:
+        pass
+    |}
+    "decorator"
+    [
+      {
+        access = "decorator";
+        arguments = Some [
+            { Argument.name = Some ~+(~~"a"); value = !"b"};
+            { Argument.name = Some ~+(~~"c"); value = !"d"}
+          ];
+      };
+    ];
+  assert_get_decorator
+    {|
+      @decorator(a=b)
+      @decorator(a=b, c=d)
+      class A:
+        pass
+    |}
+    "decorator"
+    [
+      {
+        access = "decorator";
+        arguments = Some [
+            { Argument.name = Some ~+(~~"a"); value = !"b"};
+          ];
+      };
+      {
+        access = "decorator";
+        arguments = Some [
+            { Argument.name = Some ~+(~~"a"); value = !"b"};
+            { Argument.name = Some ~+(~~"c"); value = !"d"}
+          ];
+      };
+    ]
+
+
 let test_constructors _ =
   let assert_constructor source constructors =
     Class.AttributesCache.clear ();
@@ -1124,6 +1220,7 @@ let () =
   "class">:::[
     "generics">::test_generics;
     "superclasses">::test_superclasses;
+    "get_decorator">::test_get_decorator;
     "constructors">::test_constructors;
     "metaclasses">::test_metaclasses;
     "methods">::test_methods;
