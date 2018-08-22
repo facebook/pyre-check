@@ -38,21 +38,21 @@ let create ~environment ~source =
           |> Access.Map.of_tree
         in
         let resolution = Environment.resolution environment ~annotations () in
-        let fold_accesses call_graph { Node.value = access; _ } =
-          let add_call_edge call_graph ~resolution:_ ~resolved:_ ~element =
-            let open Annotated.Access in
-            let add_call_edge call_graph caller callee =
-              Log.log
-                ~section:`CallGraph
-                "Adding call edge %a -> %a"
-                Access.pp caller
-                Access.pp callee;
-              let update_callees = function
-                | Some callees -> callee :: callees
-                | None -> [callee]
-              in
-              Access.Map.update call_graph caller ~f:update_callees
+        let process_access call_graph access =
+          let add_call_edge call_graph caller callee =
+            Log.log
+              ~section:`CallGraph
+              "Adding call edge %a -> %a"
+              Access.pp caller
+              Access.pp callee;
+            let update_callees = function
+              | Some callees -> Access.Set.add callees callee
+              | None -> Access.Set.singleton callee
             in
+            Access.Map.update call_graph caller ~f:update_callees
+          in
+          let resolve_access _ ~resolution:_ ~resolved:_ ~element =
+            let open Annotated.Access in
             match element with
             | Element.Signature {
                 Element.signature =
@@ -65,15 +65,27 @@ let create ~environment ~source =
                   };
                 _;
               } ->
-                add_call_edge call_graph caller callee
+                Some callee
             | _ ->
-                call_graph
+                None
           in
           Annotated.Access.create access
-          |> Annotated.Access.fold ~resolution ~initial:call_graph ~f:add_call_edge
+          |> Annotated.Access.fold ~resolution ~initial:None ~f:resolve_access
+          |> function
+          | Some callee ->
+              add_call_edge call_graph caller callee
+          | None ->
+              (* TODO: we don't need this case if signatures are created for all calls. *)
+              match List.rev access with
+              | Access.Call _ :: _
+                ->
+                  let access = List.take access (List.length access - 1) in
+                  add_call_edge call_graph caller access
+              | _ ->
+                  call_graph
         in
-        Visit.collect_accesses_with_location statement
-        |> List.fold ~init:call_graph ~f:fold_accesses
+        Visit.collect_accesses statement
+        |> List.fold ~init:call_graph ~f:process_access
       in
       List.foldi statements ~init:call_graph ~f:fold_statements
     in
@@ -81,6 +93,7 @@ let create ~environment ~source =
   in
   Preprocessing.defines source
   |> List.fold ~init:Access.Map.empty ~f:fold_defines
+  |> Access.Map.map ~f:Access.Set.to_list
 
 
 (* Returns forest of nodes in reverse finish time order. *)

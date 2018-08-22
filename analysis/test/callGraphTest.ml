@@ -34,7 +34,10 @@ let compare_call_graph call_graph ~expected =
       Access.create callee, List.map ~f:Access.create callers in
     List.map expected ~f:map_callee_callers
   in
-  assert_equal call_graph expected
+  let printer call_graph =
+    Sexp.to_string [%message (call_graph : (Access.t * Access.t list) list)]
+  in
+  assert_equal ~printer expected call_graph
 
 
 let assert_call_graph source ~expected =
@@ -96,8 +99,24 @@ let test_construction _ =
      class B:
        def __init__(self) -> A:
          return A()
-     |}
-    ~expected:["B.__init__", ["A.__init__"]]
+    |}
+    ~expected:["B.__init__", ["A.__init__"]];
+
+  assert_call_graph
+    {|
+     def foo():
+       foobar.bar("foo")
+    |}
+    ~expected:["foo", ["foobar.bar"]];
+
+  assert_call_graph
+    {|
+     from bar.baz import qux
+     def foo():
+       qux.derp()
+    |}
+    ~expected:["foo", ["bar.baz.qux.derp"]]
+
 
 
 let test_construction_reverse _ =
@@ -185,7 +204,7 @@ let test_type_collection _ =
               };
             _;
           } ->
-            assert_equal (Expression.Access.show callable_type) expected_type
+            assert_equal expected_type (Expression.Access.show callable_type)
         | _ ->
             assert false
     in
@@ -251,8 +270,8 @@ let test_method_overrides _ =
     let equal_elements = List.equal ~equal:Access.equal in
     assert_equal
       ~cmp:(Access.Map.equal equal_elements)
-      overrides_map
       expected_overrides
+      overrides_map
   in
   assert_method_overrides
     {|
@@ -287,7 +306,7 @@ let test_strongly_connected_components _ =
       CallGraph.partition ~edges
     in
     let printer partitions = Format.asprintf "%a" CallGraph.pp_partitions partitions in
-    assert_equal ~printer partitions expected
+    assert_equal ~printer expected partitions
   in
 
   assert_strongly_connected_components
@@ -369,8 +388,8 @@ let test_strongly_connected_components _ =
     ~qualifier:"s2"
     ~expected:
       [
-        ["s2.Foo.c1"; "s2.Foo.c2"];
         ["s2.Foo.__init__"];
+        ["s2.Foo.c1"; "s2.Foo.c2"];
         ["s2.Bar.c1"];
         ["s2.Bar.__init__"];
         ["s2.Bar.c2"; "s2.Foo.c3"];
