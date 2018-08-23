@@ -199,6 +199,47 @@ let test_expand_relative_import _ =
   assert_export ~path:"module/__init__.py" ~from:"." ~expected:"module"
 
 
+let test_binary_interface_hash _ =
+  let assert_hash_equal ?(equal = true) left right =
+    let parse source =
+      let { Source.statements; _ } = parse source in
+      let metadata =
+        String.split ~on:'\n' source
+        |> Source.Metadata.parse "test.py"
+      in
+      Source.create ~metadata statements
+    in
+    let equal = if equal then (=) else (<>) in
+    assert_equal
+      ~cmp:equal
+      (Source.binary_interface_hash (parse left))
+      (Source.binary_interface_hash (parse right))
+  in
+  let assert_hash_unequal = assert_hash_equal ~equal:false in
+
+  (* Metadata. *)
+  assert_hash_equal
+    {|
+      # pyre-strict
+    |}
+    {|
+      # pyre-strict
+    |};
+  assert_hash_unequal
+    {|
+      # pyre-strict
+    |}
+    {|
+    |};
+  assert_hash_unequal
+    {|
+      # pyre-strict
+    |}
+    {|
+      # pyre-declare-but-dont-check
+    |}
+
+
 let () =
   "metadata">:::[
     "parse">::test_parse;
@@ -207,5 +248,6 @@ let () =
   "source">:::[
     "qualifier">::test_qualifier;
     "expand_relative_import">::test_expand_relative_import;
+    "binary_interface_hash">::test_binary_interface_hash;
   ]
   |> run_test_tt_main
