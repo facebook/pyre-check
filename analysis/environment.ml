@@ -51,6 +51,8 @@ module type Handler = sig
 
   val function_definitions: Access.t -> (Define.t Node.t) list option
   val class_definition: Type.t -> class_representation option
+
+  val register_protocol: Type.t -> unit
   val protocols: unit -> Type.t list
 
   val register_module
@@ -79,8 +81,7 @@ end
 
 let connect_definition
     ~order
-    ~aliases
-    ~add_protocol =
+    ~aliases =
   let rec connect_definition ~resolution ~predecessor ~name ~definition =
     let connect ~predecessor ~successor ~parameters =
       let annotations_tracked =
@@ -115,11 +116,6 @@ let connect_definition
       match definition with
       | Some ({ Node.value = { Class.name; bases; _ }; _ } as definition_node)
         when not (Type.equal primitive Type.Object) || Access.show name = "object" ->
-          let annotated = Annotated.Class.create definition_node in
-
-          (* Register protocols. *)
-          if Annotated.Class.is_protocol annotated then
-            add_protocol primitive;
 
           (* Register normal annotations. *)
           let register_supertype { Argument.value; _ } =
@@ -159,6 +155,7 @@ let connect_definition
             | _ ->
                 ()
           in
+          let annotated = Annotated.Class.create definition_node in
           let inferred_base = Annotated.Class.inferred_generic_base annotated ~resolution in
           inferred_base @ bases
           (* Don't register metaclass=abc.ABCMeta, etc. superclasses. *)
@@ -250,7 +247,6 @@ let handler
       connect_definition
         ~order:(TypeOrder.handler order)
         ~aliases:(Hashtbl.find aliases)
-        ~add_protocol:(Hash_set.add protocols)
 
 
     let refine_class_definition annotation =
@@ -333,6 +329,9 @@ let handler
 
     let class_definition =
       Hashtbl.find class_definitions
+
+    let register_protocol protocol =
+      Hash_set.add protocols protocol
 
     let protocols () =
       Hash_set.to_list protocols
@@ -449,6 +448,11 @@ let register_class_definitions (module Handler: Handler) source =
               |> Type.split
             in
             Handler.DependencyHandler.add_class_key ~path primitive;
+            let annotated = Annotated.Class.create { Node.location; value = definition } in
+
+            if Annotated.Class.is_protocol annotated then
+              Handler.register_protocol primitive;
+
             Handler.set_class_definition
               ~primitive
               ~definition:{ Node.location; value = definition };

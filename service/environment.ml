@@ -192,6 +192,12 @@ let handler
       let class_definition =
         ClassDefinitions.get
 
+      let register_protocol protocol =
+        let protocols = Protocols.get "Protocols" |> Option.value ~default:[] in
+        Protocols.remove_batch (Protocols.KeySet.singleton "Protocols");
+        Protocols.add "Protocols" (protocol :: protocols)
+
+
       let protocols () =
         Protocols.get "Protocols"
         |> Option.value ~default:[]
@@ -438,10 +444,6 @@ let handler
         Environment.connect_definition
           ~order:(module TypeOrderHandler: TypeOrder.Handler)
           ~aliases:Aliases.get
-          ~add_protocol:(fun protocol ->
-              let protocols = Protocols.get "Protocols" |> Option.value ~default:[] in
-              Protocols.remove_batch (Protocols.KeySet.singleton "Protocols");
-              Protocols.add "Protocols" (protocol :: protocols))
 
       let register_alias ~path ~key ~data =
         DependencyHandler.add_alias_key ~path key;

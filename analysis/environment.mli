@@ -51,6 +51,8 @@ module type Handler = sig
 
   val function_definitions: Access.t -> (Define.t Node.t) list option
   val class_definition: Type.t -> class_representation option
+
+  val register_protocol: Type.t -> unit
   val protocols: unit -> Type.t list
 
   val register_module
@@ -91,7 +93,6 @@ val dependencies: (module Handler) -> Access.t -> string list option
 val connect_definition
   :  order: (module TypeOrder.Handler)
   -> aliases: (Type.t -> Type.t option)
-  -> add_protocol: (Type.t -> unit)
   -> (resolution: Resolution.t
       -> predecessor: Type.t
       -> name: Access.t
