@@ -8,4 +8,9 @@ open Analysis
 
 val register_ignores: configuration: Configuration.t -> Scheduler.t -> File.Handle.t list -> unit
 
-val ignore: File.Handle.t list -> Error.t list -> Error.t list
+val ignore
+  :  configuration: Configuration.t
+  -> Scheduler.t
+  -> File.Handle.t list
+  -> Error.t list
+  -> Error.t list

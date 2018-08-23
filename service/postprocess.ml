@@ -59,18 +59,14 @@ let register_ignores ~configuration scheduler handles =
   Statistics.performance ~name:"registered ignores" ~timer ()
 
 
-let ignore handles errors =
-  let error_lookup = Location.Reference.Table.create () in
-  let errors_with_ignore_suppression =
-    let add_to_lookup ~key ~code =
-      match Hashtbl.find error_lookup key with
-      | Some codes -> Hashtbl.set ~key ~data:(code :: codes) error_lookup
-      | _ -> Hashtbl.set ~key ~data:[code] error_lookup
+let ignore ~configuration scheduler handles errors =
+  let error_lookup =
+    let add_to_lookup lookup error =
+      Map.add_multi ~key:(Error.key error) ~data:(Error.code error) lookup
     in
+    List.fold errors ~init:Location.Reference.Map.empty ~f:add_to_lookup in
+  let errors =
     let not_ignored error =
-      add_to_lookup
-        ~key:(Error.key error)
-        ~code:(Error.code error);
       IgnoreLines.get (Error.key error)
       >>| (fun ignore_instance ->
           not (List.is_empty (Ignore.codes ignore_instance) ||
@@ -88,7 +84,7 @@ let ignore handles errors =
       in
       List.fold ~init:[] ~f:get_path
     in
-    let get_unused_ignores sofar path =
+    let get_unused_ignores path =
       let ignores =
         let key_to_ignores sofar key =
           IgnoreLines.get key
@@ -97,32 +93,38 @@ let ignore handles errors =
         in
         List.fold ~init:[] ~f:key_to_ignores (IgnoreKeys.get path |> Option.value ~default:[])
       in
-      let unused_ignores =
-        let filter_active_ignores sofar ignore =
-          match Ignore.kind ignore with
-          | Ignore.TypeIgnore -> sofar
-          | _ ->
-              begin
-                match Hashtbl.find error_lookup (Ignore.key ignore) with
-                | Some codes ->
-                    let unused_codes =
-                      let find_unused sofar code =
-                        if List.mem ~equal:(=) codes code then sofar else code :: sofar
-                      in
-                      List.fold ~init:[] ~f:find_unused (Ignore.codes ignore)
+      let filter_active_ignores sofar ignore =
+        match Ignore.kind ignore with
+        | Ignore.TypeIgnore -> sofar
+        | _ ->
+            begin
+              match Map.find error_lookup (Ignore.key ignore) with
+              | Some codes ->
+                  let unused_codes =
+                    let find_unused sofar code =
+                      if List.mem ~equal:(=) codes code then sofar else code :: sofar
                     in
-                    if List.is_empty (Ignore.codes ignore) || List.is_empty unused_codes then
-                      sofar
-                    else
-                      { ignore with Ignore.codes = unused_codes } :: sofar
-                | _ -> ignore :: sofar
-              end
-        in
-        List.fold ~init:[] ~f:filter_active_ignores ignores
+                    List.fold ~init:[] ~f:find_unused (Ignore.codes ignore)
+                  in
+                  if List.is_empty (Ignore.codes ignore) || List.is_empty unused_codes then
+                    sofar
+                  else
+                    { ignore with Ignore.codes = unused_codes } :: sofar
+              | _ -> ignore :: sofar
+            end
       in
-      sofar @ unused_ignores
+      List.fold ~init:[] ~f:filter_active_ignores ignores
     in
-    List.fold ~init:[] ~f:get_unused_ignores (paths_from_handles handles)
+    if Scheduler.is_parallel scheduler then
+      let map _ handles =
+        paths_from_handles handles
+        |> List.concat_map ~f:get_unused_ignores
+      in
+      Scheduler.map_reduce ~configuration scheduler ~map ~reduce:List.append ~init:[] handles
+    else
+      handles
+      |> paths_from_handles
+      |> List.concat_map ~f:get_unused_ignores
   in
   let create_unused_ignore_error errors unused_ignore =
     let error =
@@ -140,4 +142,4 @@ let ignore handles errors =
     in
     error :: errors
   in
-  List.fold ~init:errors_with_ignore_suppression ~f:create_unused_ignore_error unused_ignores
+  List.fold ~init:errors ~f:create_unused_ignore_error unused_ignores

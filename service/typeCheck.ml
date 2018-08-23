@@ -150,7 +150,7 @@ let analyze_sources_parallel scheduler configuration environment handles =
   in
   Statistics.performance ~name:"analyzed sources" ~timer ();
   let timer = Timer.start () in
-  let errors = Postprocess.ignore handles errors in
+  let errors = Postprocess.ignore ~configuration scheduler handles errors in
   Statistics.performance ~name:"postprocessed" ~timer ();
   errors, coverage
 
@@ -218,7 +218,7 @@ let analyze_sources
     in
     let errors =
       List.concat errors
-      |> Postprocess.ignore handles
+      |> Postprocess.ignore ~configuration scheduler handles
     in
     errors, coverage
 
