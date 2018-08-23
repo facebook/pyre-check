@@ -209,7 +209,7 @@ let create
   }
 
 
-let binary_interface_hash { metadata; path; qualifier; statements; _ } =
+let signature_hash { metadata; path; qualifier; statements; _ } =
   let rec statement_hashes statements =
     let statement_hash { Node.value; _ } =
       let open Statement in

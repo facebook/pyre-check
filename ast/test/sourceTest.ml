@@ -199,7 +199,7 @@ let test_expand_relative_import _ =
   assert_export ~path:"module/__init__.py" ~from:"." ~expected:"module"
 
 
-let test_binary_interface_hash _ =
+let test_signature_hash _ =
   let assert_hash_equal ?(equal = true) left right =
     let parse source =
       let { Source.statements; _ } = parse source in
@@ -212,8 +212,8 @@ let test_binary_interface_hash _ =
     let equal = if equal then (=) else (<>) in
     assert_equal
       ~cmp:equal
-      (Source.binary_interface_hash (parse left))
-      (Source.binary_interface_hash (parse right))
+      (Source.signature_hash (parse left))
+      (Source.signature_hash (parse right))
   in
   let assert_hash_unequal = assert_hash_equal ~equal:false in
 
@@ -369,6 +369,6 @@ let () =
   "source">:::[
     "qualifier">::test_qualifier;
     "expand_relative_import">::test_expand_relative_import;
-    "binary_interface_hash">::test_binary_interface_hash;
+    "signature_hash">::test_signature_hash;
   ]
   |> run_test_tt_main
