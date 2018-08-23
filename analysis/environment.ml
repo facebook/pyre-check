@@ -485,16 +485,21 @@ let register_aliases (module Handler: Handler) sources =
             in
             { target with Node.value = Access access }
           in
-          let value = Expression.delocalize value in
-
-          let value_annotation = Type.create ~aliases:Handler.aliases value in
-          let target_annotation = Type.create ~aliases:Handler.aliases target in
-          if not (Type.equal target_annotation Type.Top ||
-                  Type.equal value_annotation Type.Top ||
-                  Type.equal value_annotation target_annotation) then
-            (path, target, value) :: aliases
-          else
-            aliases
+          begin
+            match Node.value value with
+            | Expression.Access _ ->
+                let value = Expression.delocalize value in
+                let value_annotation = Type.create ~aliases:Handler.aliases value in
+                let target_annotation = Type.create ~aliases:Handler.aliases target in
+                if not (Type.equal target_annotation Type.Top ||
+                        Type.equal value_annotation Type.Top ||
+                        Type.equal value_annotation target_annotation) then
+                  (path, target, value) :: aliases
+                else
+                  aliases
+            | _ ->
+                aliases
+          end
       | Class { Class.name; body; _ } ->
           List.fold body ~init:aliases ~f:(visit_statement ~qualifier:name ~in_class_body:true)
       | Import { Import.from = Some from; imports = [{ Import.name; _ }]  }
@@ -536,86 +541,83 @@ let register_aliases (module Handler: Handler) sources =
     in
     List.fold ~init:[] ~f:(visit_statement ~qualifier) statements
   in
+  let rec tracked annotation =
+    match annotation with
+    | Type.Primitive _
+    | Type.Parametric _ ->
+        let primitive, _ = Type.split annotation in
+        let access =
+          Type.expression primitive
+          |> Expression.access
+        in
+        if Module.from_empty_stub ~access ~module_definition:Handler.module_definition then
+          Some Type.Object
+        else if TypeOrder.contains order primitive then
+          Some annotation
+        else
+          None
+
+    | Type.Callable _ ->
+        Some annotation
+
+    | Type.Tuple (Type.Bounded annotations) ->
+        let tracked = List.filter_map annotations ~f:tracked in
+        if List.length tracked = List.length annotations then
+          Some (Type.Tuple (Type.Bounded tracked))
+        else
+          None
+    | Type.Tuple (Type.Unbounded annotation) ->
+        tracked annotation
+        >>| fun annotation -> Type.Tuple (Type.Unbounded annotation)
+
+    | Type.Union annotations ->
+        let tracked = List.filter_map annotations ~f:tracked in
+        if List.length tracked = List.length annotations then
+          Some (Type.union tracked)
+        else
+          None
+
+    | Type.Optional Type.Bottom ->
+        Some annotation
+    | Type.Optional annotation ->
+        tracked annotation
+        >>| Type.optional
+
+    | Type.Object
+    | Type.Variable _ ->
+        Some annotation
+
+    | Type.Top
+    | Type.Deleted
+    | Type.Bottom ->
+        None
+  in
+  let register_alias (any_changed, unresolved) (path, target, value) =
+    let target_annotation = Type.create ~aliases:Handler.aliases target in
+    let value_annotation =
+      match Type.create ~aliases:Handler.aliases value with
+      | Type.Variable variable ->
+          let name =
+            Expression.access target
+            |> Access.show
+            |> Identifier.create
+          in
+          Type.Variable { variable with Type.variable = name }
+      | annotation ->
+          annotation
+    in
+    let target_primitive, _ = Type.split target_annotation in
+    match not (TypeOrder.contains order target_primitive), tracked value_annotation with
+    | true, Some value_annotation ->
+        Handler.register_alias ~path ~key:target_annotation ~data:value_annotation;
+        (true, unresolved)
+    | _ ->
+        (any_changed, (path, target, value) :: unresolved)
+  in
   let rec resolve_aliases unresolved =
     if List.is_empty unresolved then
       ()
     else
-      let register_alias (any_changed, unresolved) (path, target, value) =
-        let target_annotation = Type.create ~aliases:Handler.aliases target in
-        let value_annotation =
-          match Type.create ~aliases:Handler.aliases value with
-          | Type.Variable variable ->
-              let name =
-                Expression.access target
-                |> Access.show
-                |> Identifier.create
-              in
-              Type.Variable { variable with Type.variable = name }
-          | annotation ->
-              annotation
-        in
-
-        let rec tracked annotation =
-          match annotation with
-          | Type.Primitive _
-          | Type.Parametric _ ->
-              let primitive, _ = Type.split annotation in
-              let access =
-                Type.expression primitive
-                |> Expression.access
-              in
-              if Module.from_empty_stub ~access ~module_definition:Handler.module_definition then
-                Some Type.Object
-              else if TypeOrder.contains order primitive then
-                Some annotation
-              else
-                None
-
-          | Type.Callable _ ->
-              Some annotation
-
-
-          | Type.Tuple (Type.Bounded annotations) ->
-              let tracked = List.filter_map annotations ~f:tracked in
-              if List.length tracked = List.length annotations then
-                Some (Type.Tuple (Type.Bounded tracked))
-              else
-                None
-          | Type.Tuple (Type.Unbounded annotation) ->
-              tracked annotation
-              >>| fun annotation -> Type.Tuple (Type.Unbounded annotation)
-
-          | Type.Union annotations ->
-              let tracked = List.filter_map annotations ~f:tracked in
-              if List.length tracked = List.length annotations then
-                Some (Type.union tracked)
-              else
-                None
-
-          | Type.Optional Type.Bottom ->
-              Some annotation
-          | Type.Optional annotation ->
-              tracked annotation
-              >>| Type.optional
-
-          | Type.Object
-          | Type.Variable _ ->
-              Some annotation
-
-          | Type.Top
-          | Type.Deleted
-          | Type.Bottom ->
-              None
-        in
-
-        let target_primitive, _ = Type.split target_annotation in
-        match not (TypeOrder.contains order target_primitive), tracked value_annotation with
-        | true, Some value_annotation ->
-            Handler.register_alias ~path ~key:target_annotation ~data:value_annotation;
-            (true, unresolved)
-        | _ ->
-            (any_changed, (path, target, value) :: unresolved)
-      in
       let (any_changed, unresolved) = List.fold ~init:(false, []) ~f:register_alias unresolved in
       if any_changed then
         resolve_aliases unresolved
