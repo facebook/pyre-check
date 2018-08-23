@@ -288,6 +288,52 @@ let test_binary_interface_hash _ =
       class A: ...
     |};
 
+  (* If. *)
+  assert_hash_equal
+    {|
+      if test:
+        attribute = 1
+      else:
+        attribute = 2
+    |}
+    {|
+      if test:
+        attribute = 1
+      else:
+        attribute = 2
+    |};
+  assert_hash_unequal
+    {|
+      if test:
+        attribute = 1
+    |}
+    {|
+      if other_test:
+        attribute = 1
+    |};
+  assert_hash_unequal
+    {|
+      if test:
+        attribute = 1
+    |}
+    {|
+      if test:
+        attribute = 2
+    |};
+  assert_hash_unequal
+    {|
+      if test:
+        attribute = 1
+      else:
+        attribute = 2
+    |}
+    {|
+      if test:
+        attribute = 1
+      else:
+        attribute = 3
+    |};
+
   (* Imports. *)
   assert_hash_equal "from a import b" "from a import b";
   assert_hash_equal "import a" "import a";

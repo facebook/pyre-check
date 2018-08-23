@@ -229,6 +229,9 @@ let binary_interface_hash { metadata; path; qualifier; statements; _ } =
       | Class { Class.name; bases; body; decorators; _ } ->
           [%hash: Access.t * (Argument.t list) * (int list) * (Expression.t list)]
             (name, bases, (statement_hashes body), decorators)
+      | If { If.test; body; orelse } ->
+          [%hash: Expression.t * (int list) * (int list)]
+            (test, statement_hashes body, statement_hashes orelse)
       | Import import ->
           [%hash: Import.t] import
       | Assert _
@@ -238,7 +241,6 @@ let binary_interface_hash { metadata; path; qualifier; statements; _ } =
       | Expression _
       | For _
       | Global _
-      | If _
       | Nonlocal _
       | Pass
       | Raise _
