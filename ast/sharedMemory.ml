@@ -74,7 +74,7 @@ module Modules = SharedMemory.WithCache (AccessKey) (ModuleValue)
 
 
 let add_module access ast_module =
-  Modules.add access ast_module
+  Modules.write_through access ast_module
 
 
 let remove_modules accesses =
