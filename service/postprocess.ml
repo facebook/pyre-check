@@ -52,10 +52,7 @@ let register_ignores ~configuration scheduler handles =
     List.iter handles ~f:register_ignores_for_handle;
     List.iter handles ~f:(register_mode ~configuration);
   in
-  if Scheduler.is_parallel scheduler then
-    Scheduler.iter scheduler ~configuration ~f:register handles
-  else
-    register handles;
+  Scheduler.iter scheduler ~configuration ~f:register handles;
   Statistics.performance ~name:"registered ignores" ~timer ()
 
 
@@ -115,16 +112,11 @@ let ignore ~configuration scheduler handles errors =
       in
       List.fold ~init:[] ~f:filter_active_ignores ignores
     in
-    if Scheduler.is_parallel scheduler then
-      let map _ handles =
-        paths_from_handles handles
-        |> List.concat_map ~f:get_unused_ignores
-      in
-      Scheduler.map_reduce ~configuration scheduler ~map ~reduce:List.append ~init:[] handles
-    else
-      handles
-      |> paths_from_handles
+    let map _ handles =
+      paths_from_handles handles
       |> List.concat_map ~f:get_unused_ignores
+    in
+    Scheduler.map_reduce ~configuration scheduler ~map ~reduce:List.append ~init:[] handles
   in
   let create_unused_ignore_error errors unused_ignore =
     let error =

@@ -183,44 +183,17 @@ let analyze_sources
       | _ ->
           false
     in
-    if Scheduler.is_parallel scheduler then
-      Scheduler.map_reduce
-        scheduler
-        ~configuration
-        ~map:(fun _ handles -> List.filter handles ~f:filter_by_root)
-        ~reduce:(fun handles new_handles -> List.rev_append new_handles handles)
-        ~init:[]
-        handles
-    else
-      List.filter handles ~f:filter_by_root
+    Scheduler.map_reduce
+      scheduler
+      ~configuration
+      ~map:(fun _ handles -> List.filter handles ~f:filter_by_root)
+      ~reduce:(fun handles new_handles -> List.rev_append new_handles handles)
+      ~init:[]
+      handles
   in
   Statistics.performance ~name:"filtered directories" ~timer ();
   Log.info "Checking %d sources..." (List.length handles);
-  if Scheduler.is_parallel scheduler then
-    analyze_sources_parallel scheduler configuration environment handles
-  else
-    let sources = List.filter_map ~f:Ast.SharedMemory.get_source handles in
-    let analyze_and_postprocess
-        configuration
-        (current_errors, total_coverage)
-        source =
-      let { TypeCheck.Result.errors; coverage; _ } =
-        analyze_source configuration environment source
-      in
-      errors :: current_errors,
-      Coverage.sum total_coverage coverage
-    in
-    let errors, coverage =
-      List.fold
-        ~init:([], Coverage.create ())
-        ~f:(analyze_and_postprocess configuration)
-        sources
-    in
-    let errors =
-      List.concat errors
-      |> Postprocess.ignore ~configuration scheduler handles
-    in
-    errors, coverage
+  analyze_sources_parallel scheduler configuration environment handles
 
 
 let check

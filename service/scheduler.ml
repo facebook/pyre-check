@@ -44,31 +44,35 @@ let initialize_process ~configuration:({ Configuration.verbose; sections; _ } as
 
 
 let map_reduce
-    { workers; bucket_multiplier; number_of_workers; _ }
+    { workers; bucket_multiplier; number_of_workers; is_parallel; _ }
     ?bucket_size
     ~configuration
     ~init
     ~map
     ~reduce
     work =
-  let number_of_workers =
-    match bucket_size with
-    | Some exact_size when exact_size > 0 ->
-        (List.length work / exact_size) + 1
-    | _ ->
-        let bucket_multiplier = Core.Int.min bucket_multiplier (1 + (List.length work / 400)) in
-        number_of_workers * bucket_multiplier
-  in
-  let map accumulator inputs =
-    initialize_process ~configuration;
-    map accumulator inputs
-  in
-  MultiWorker.call
-    (Some workers)
-    ~job:map
-    ~merge:reduce
-    ~neutral:init
-    ~next:(Bucket.make ~num_workers:number_of_workers work)
+  if is_parallel then
+    let number_of_workers =
+      match bucket_size with
+      | Some exact_size when exact_size > 0 ->
+          (List.length work / exact_size) + 1
+      | _ ->
+          let bucket_multiplier = Core.Int.min bucket_multiplier (1 + (List.length work / 400)) in
+          number_of_workers * bucket_multiplier
+    in
+    let map accumulator inputs =
+      initialize_process ~configuration;
+      map accumulator inputs
+    in
+    MultiWorker.call
+      (Some workers)
+      ~job:map
+      ~merge:reduce
+      ~neutral:init
+      ~next:(Bucket.make ~num_workers:number_of_workers work)
+  else
+    map init work
+    |> fun mapped -> reduce mapped init
 
 
 let iter scheduler ~configuration ~f work =
