@@ -217,6 +217,8 @@ let binary_interface_hash { metadata; path; qualifier; statements; _ } =
       | Assign { Assign.target; annotation; value; parent } ->
           [%hash: Expression.t * (Expression.t option) * Expression.t * (Access.t option)]
             (target, annotation, value, parent)
+      | Import import ->
+          [%hash: Import.t] import
       | Assert _
       | Break
       | Class _
@@ -227,7 +229,6 @@ let binary_interface_hash { metadata; path; qualifier; statements; _ } =
       | For _
       | Global _
       | If _
-      | Import _
       | Nonlocal _
       | Pass
       | Raise _
