@@ -209,8 +209,39 @@ let create
   }
 
 
-let binary_interface_hash { metadata; _ } =
-  [%hash: Metadata.t] (metadata)
+let binary_interface_hash { metadata; path; qualifier; statements; _ } =
+  let statement_hashes =
+    let statement_hash { Node.value; _ } =
+      let open Statement in
+      match value with
+      | Assign { Assign.target; annotation; value; parent } ->
+          [%hash: Expression.t * (Expression.t option) * Expression.t * (Access.t option)]
+            (target, annotation, value, parent)
+      | Assert _
+      | Break
+      | Class _
+      | Continue
+      | Define _
+      | Delete _
+      | Expression _
+      | For _
+      | Global _
+      | If _
+      | Import _
+      | Nonlocal _
+      | Pass
+      | Raise _
+      | Return _
+      | Try _
+      | With _
+      | While _
+      | Yield _
+      | YieldFrom _ ->
+          0
+    in
+    List.map statements ~f:statement_hash
+  in
+  [%hash: Metadata.t * string * Access.t * (int list)] (metadata, path, qualifier, statement_hashes)
 
 
 let ignore_lines { metadata = { Metadata.ignore_lines; _ }; _ } =

@@ -218,26 +218,14 @@ let test_binary_interface_hash _ =
   let assert_hash_unequal = assert_hash_equal ~equal:false in
 
   (* Metadata. *)
-  assert_hash_equal
-    {|
-      # pyre-strict
-    |}
-    {|
-      # pyre-strict
-    |};
-  assert_hash_unequal
-    {|
-      # pyre-strict
-    |}
-    {|
-    |};
-  assert_hash_unequal
-    {|
-      # pyre-strict
-    |}
-    {|
-      # pyre-declare-but-dont-check
-    |}
+  assert_hash_equal "# pyre-strict" "# pyre-strict";
+  assert_hash_unequal "# pyre-strict" "";
+  assert_hash_unequal "# pyre-strict" "# pyre-declare-but-dont-check";
+
+  assert_hash_equal "a = 1" "a = 1";
+  assert_hash_equal "a: int = 1" "a: int = 1";
+  assert_hash_unequal "a: str = 1" "a: int = 1";
+  assert_hash_unequal "a = 2" "a = 1"
 
 
 let () =
