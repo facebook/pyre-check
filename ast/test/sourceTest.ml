@@ -338,7 +338,27 @@ let test_binary_interface_hash _ =
   assert_hash_equal "from a import b" "from a import b";
   assert_hash_equal "import a" "import a";
   assert_hash_unequal "from a import b" "from a import c";
-  assert_hash_unequal "import a" "import b"
+  assert_hash_unequal "import a" "import b";
+
+  (* With. *)
+  assert_hash_equal
+    {|
+      with resource:
+        attribute = 1
+    |}
+    {|
+      with resource:
+        attribute = 1
+    |};
+  assert_hash_unequal
+    {|
+      with resource:
+        attribute = 1
+    |}
+    {|
+      with resource:
+        attribute = 2
+    |}
 
 
 let () =

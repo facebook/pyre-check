@@ -234,6 +234,8 @@ let binary_interface_hash { metadata; path; qualifier; statements; _ } =
             (test, statement_hashes body, statement_hashes orelse)
       | Import import ->
           [%hash: Import.t] import
+      | With { With.body; _ } ->
+          [%hash: (int list)] (statement_hashes body)
       | Assert _
       | Break
       | Continue
@@ -246,7 +248,6 @@ let binary_interface_hash { metadata; path; qualifier; statements; _ } =
       | Raise _
       | Return _
       | Try _
-      | With _
       | While _
       | Yield _
       | YieldFrom _ ->
