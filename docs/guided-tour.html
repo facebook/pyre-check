@@ -14,6 +14,10 @@
                 var toggler = document.querySelector(togglerSelector);
                 var target = document.querySelector(targetSelector);
 
+                if (!toggler) {
+                  return;
+                }
+
                 toggler.onclick = function(event) {
                   event.preventDefault();
 
@@ -25,17 +29,17 @@
 <p>Assuming you have completed your setup (see <a href="/docs/installation.html">Installation</a>), you're now ready to
 use Pyre. The following will give a short overview of the basic workflows that we recommend.</p>
 <p>In the most basic case you have a <code>test</code> directory containing a <code>test.py</code> file.</p>
-<pre><code class="hljs css languages- bash">$ cat <span class="hljs-built_in">test</span>/test.py
+<pre><code class="hljs css language-bash">$ cat <span class="hljs-built_in">test</span>/test.py
 def foo() -&gt; int:
   <span class="hljs-built_in">return</span> <span class="hljs-string">'string'</span>  <span class="hljs-comment"># whoops</span>
 </code></pre>
 <p>You can run pyre as follows</p>
-<pre><code class="hljs css languages- bash">$ pyre --<span class="hljs-built_in">source</span>-directory <span class="hljs-built_in">test</span> check
+<pre><code class="hljs css language-bash">$ pyre --<span class="hljs-built_in">source</span>-directory <span class="hljs-built_in">test</span> check
  ƛ Found 1 <span class="hljs-built_in">type</span> error!
  <span class="hljs-built_in">test</span>/test.py:2:4 Incompatible <span class="hljs-built_in">return</span> <span class="hljs-built_in">type</span> [7]: Expected `int` but got `str`.
 </code></pre>
 <p>The default for <code>--source-directory</code> is the current directory. In most cases you will simply</p>
-<pre><code class="hljs css languages- bash">$ <span class="hljs-built_in">cd</span> <span class="hljs-built_in">test</span>
+<pre><code class="hljs css language-bash">$ <span class="hljs-built_in">cd</span> <span class="hljs-built_in">test</span>
 $ pyre check
  ƛ Found 1 <span class="hljs-built_in">type</span> error!
  test.py:2:4 Incompatible <span class="hljs-built_in">return</span> <span class="hljs-built_in">type</span> [7]: Expected `int` but got `str`.
@@ -49,7 +53,7 @@ to get notifications about changes on the filesystem. Without watchman, or an ed
 you cannot use Pyre's incremental mode.</p>
 <p>If you have <em>Watchman</em> installed and assuming the scenario from the previous section, you can start
 a server with</p>
-<pre><code class="hljs css languages- bash">$ <span class="hljs-built_in">cd</span> <span class="hljs-built_in">test</span>
+<pre><code class="hljs css language-bash">$ <span class="hljs-built_in">cd</span> <span class="hljs-built_in">test</span>
 $ pyre
  ƛ Found 1 <span class="hljs-built_in">type</span> error!
  test.py:2:4 Incompatible <span class="hljs-built_in">return</span> <span class="hljs-built_in">type</span> [7]: Expected `int` but got `str`.
@@ -61,13 +65,13 @@ changes and will be much faster than the initial request. The server can be stop
 <p>Pyre's configuration typically sits at the root of the repository in <code>.pyre_configuration</code>.
 You can override that configuration locally to set up your own default target to check.</p>
 <p>Running</p>
-<pre><code class="hljs css languages- bash">$ pyre init
+<pre><code class="hljs css language-bash">$ pyre init
 </code></pre>
 <p>from your project root will set up your <code>.pyre_configuration</code>, but you may want to override
 the source-directories field in projects within that root, so you can easily run pyre on
 different sets of default paths. Once you have a configuration file, you can run pyre with
 no extra parameters:</p>
-<pre><code class="hljs css languages- bash">$ pyre check
+<pre><code class="hljs css language-bash">$ pyre check
 </code></pre>
 <p>See <a href="/docs/configuration.html">Configuring Pyre</a> for examples and
 additional configuration settings.</p>
