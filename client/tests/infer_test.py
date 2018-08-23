@@ -10,6 +10,7 @@ from unittest.mock import MagicMock, patch
 
 from .. import commands, configuration, log
 from ..error import Error
+from ..filesystem import AnalysisDirectory
 from ..infer import (
     FieldStub,
     FunctionStub,
@@ -530,7 +531,7 @@ class InferTest(unittest.TestCase):
         configuration.get_search_path.return_value = ["path1", "path2"]
 
         with patch.object(commands.Command, "_call_client") as call_client:
-            command = Infer(arguments, configuration, analysis_directory=".")
+            command = Infer(arguments, configuration, AnalysisDirectory("."))
             self.assertEquals(
                 command._flags(),
                 [
@@ -550,7 +551,7 @@ class InferTest(unittest.TestCase):
         with patch.object(commands.Command, "_call_client") as call_client:
             arguments.recursive = True
 
-            command = Infer(arguments, configuration, analysis_directory=".")
+            command = Infer(arguments, configuration, AnalysisDirectory("."))
             self.assertEquals(
                 command._flags(),
                 [

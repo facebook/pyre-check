@@ -4,9 +4,10 @@
 # LICENSE file in the root directory of this source tree.
 
 import unittest
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from ... import commands  # noqa
+from ...filesystem import AnalysisDirectory
 from .command_test import mock_arguments, mock_configuration
 
 
@@ -26,7 +27,7 @@ class CheckTest(unittest.TestCase):
         with patch.object(commands.Command, "_call_client") as call_client, patch(
             "json.loads", return_value=[]
         ):
-            command = commands.Check(arguments, configuration, analysis_directory=".")
+            command = commands.Check(arguments, configuration, AnalysisDirectory("."))
             self.assertEquals(
                 command._flags(),
                 [
@@ -42,6 +43,18 @@ class CheckTest(unittest.TestCase):
             )
             command.run()
             call_client.assert_called_once_with(command=commands.Check.NAME)
+
+        shared_analysis_directory = MagicMock()
+        shared_analysis_directory.get_root = lambda: "."
+        with patch.object(commands.Command, "_call_client") as call_client, patch(
+            "json.loads", return_value=[]
+        ), patch.object(shared_analysis_directory, "prepare") as prepare:
+            command = commands.Check(
+                arguments, configuration, shared_analysis_directory
+            )
+            command.run()
+            call_client.assert_called_once_with(command=commands.Check.NAME)
+            prepare.assert_called_once_with()
 
     @patch("subprocess.check_output")
     @patch("os.path.realpath")
@@ -61,7 +74,7 @@ class CheckTest(unittest.TestCase):
         with patch.object(commands.Command, "_call_client") as call_client, patch(
             "json.loads", return_value=[]
         ):
-            command = commands.Check(arguments, configuration, analysis_directory=".")
+            command = commands.Check(arguments, configuration, AnalysisDirectory("."))
             self.assertEquals(
                 command._flags(),
                 [
@@ -97,7 +110,7 @@ class CheckTest(unittest.TestCase):
         with patch.object(commands.Command, "_call_client") as call_client, patch(
             "json.loads", return_value=[]
         ):
-            command = commands.Check(arguments, configuration, analysis_directory=".")
+            command = commands.Check(arguments, configuration, AnalysisDirectory("."))
             self.assertEquals(
                 command._flags(),
                 [
@@ -135,7 +148,7 @@ class CheckTest(unittest.TestCase):
         with patch.object(commands.Command, "_call_client") as call_client, patch(
             "json.loads", return_value=[]
         ):
-            command = commands.Check(arguments, configuration, analysis_directory=".")
+            command = commands.Check(arguments, configuration, AnalysisDirectory("."))
             self.assertEquals(
                 command._flags(),
                 [

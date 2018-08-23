@@ -9,6 +9,7 @@ from unittest.mock import call, patch
 
 from ... import EnvironmentException, commands, log
 from ...commands import initialize
+from ...filesystem import AnalysisDirectory
 from .command_test import mock_arguments, mock_configuration
 
 
@@ -41,7 +42,7 @@ class InitializeTest(unittest.TestCase):
         which.side_effect = [True, True]
         with patch.object(commands.Command, "_call_client"):
             initialize.Initialize(
-                arguments, configuration, analysis_directory="."
+                arguments, configuration, AnalysisDirectory(".")
             ).run()
             subprocess_call.assert_has_calls([call(["watchman", "watch-project", "."])])
             mock_open.assert_any_call(os.path.abspath(".watchmanconfig"), "w+")
@@ -54,7 +55,7 @@ class InitializeTest(unittest.TestCase):
         isfile.side_effect = exists
         with patch.object(commands.Command, "_call_client"):
             initialize.Initialize(
-                arguments, configuration, analysis_directory="."
+                arguments, configuration, AnalysisDirectory(".")
             ).run()
 
         def exists(path):
@@ -66,5 +67,5 @@ class InitializeTest(unittest.TestCase):
         with patch.object(commands.Command, "_call_client"):
             with self.assertRaises(EnvironmentException):
                 initialize.Initialize(
-                    arguments, configuration, analysis_directory="."
+                    arguments, configuration, AnalysisDirectory(".")
                 ).run()

@@ -30,7 +30,7 @@ class AnalyzeTest(unittest.TestCase):
             result.output = ""
             call_client.return_value = result
 
-            command = commands.Analyze(arguments, configuration, analysis_directory=".")
+            command = commands.Analyze(arguments, configuration, ".")
             self.assertEquals(
                 command._flags(),
                 [

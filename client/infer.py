@@ -25,12 +25,12 @@ from . import (
     is_capable_terminal,
     log,
     log_statistics,
-    merge_analysis_directories,
     resolve_analysis_directories,
     switch_root,
 )
 from .commands import ExitCode
 from .configuration import Configuration
+from .filesystem import AnalysisDirectory, SharedAnalysisDirectory
 
 
 LOG = logging.getLogger(__name__)
@@ -532,7 +532,7 @@ def main():
             arguments, configuration, prompt=False
         )
         if len(analysis_directories) == 1:
-            analysis_directory_path = analysis_directories.pop()
+            analysis_directory = AnalysisDirectory(analysis_directories.pop())
         else:
             local_configuration_path = configuration.get_local_configuration()
             if local_configuration_path:
@@ -543,11 +543,11 @@ def main():
                 )
             else:
                 local_root = None
-            shared_analysis_directory = merge_analysis_directories(
+            shared_analysis_directory = SharedAnalysisDirectory(
                 analysis_directories, local_root
             )
-            analysis_directory_path = shared_analysis_directory.get_root()
-        Infer(arguments, configuration, analysis_directory_path).run()
+            analysis_directory = shared_analysis_directory
+        Infer(arguments, configuration, analysis_directory).run()
     except (
         buck.BuckException,
         commands.ClientException,

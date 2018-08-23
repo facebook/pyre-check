@@ -7,6 +7,7 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 from ... import commands  # noqa
+from ...filesystem import AnalysisDirectory
 from .command_test import mock_arguments, mock_configuration
 
 
@@ -20,5 +21,5 @@ class QueryTest(unittest.TestCase):
             result.output = "{}"
             call_client.return_value = result
 
-            commands.Query(arguments, configuration, analysis_directory=".").run()
+            commands.Query(arguments, configuration, AnalysisDirectory(".")).run()
             call_client.assert_called_once_with(command=commands.Query.NAME)

@@ -10,6 +10,7 @@ from unittest.mock import call, patch
 from .. import monitor  # noqa
 from ... import EnvironmentException  # noqa
 from ... import commands  # noqa
+from ...filesystem import AnalysisDirectory
 from .command_test import mock_arguments, mock_configuration
 
 
@@ -29,7 +30,7 @@ class PersistentTest(unittest.TestCase):
         with patch.object(commands.Command, "_call_client") as call_client:
             arguments.no_watchman = True
             command = commands.Persistent(
-                arguments, configuration, analysis_directory="."
+                arguments, configuration, AnalysisDirectory(".")
             )
             self.assertEquals(
                 command._flags(),
@@ -44,7 +45,7 @@ class PersistentTest(unittest.TestCase):
             )
 
         # Check null server initialize output
-        command = commands.Persistent(arguments, configuration, analysis_directory=".")
+        command = commands.Persistent(arguments, configuration, AnalysisDirectory("."))
         self.assertEqual(
             command._initialize_response(5),
             "Content-Length: 59\r\n\r\n"

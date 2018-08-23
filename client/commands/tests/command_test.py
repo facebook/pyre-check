@@ -9,6 +9,7 @@ from unittest.mock import MagicMock, mock_open, patch
 
 from ... import EnvironmentException  # noqa
 from ... import commands  # noqa
+from ...filesystem import AnalysisDirectory
 
 
 def mock_arguments() -> MagicMock:
@@ -45,17 +46,17 @@ class CommandTest(unittest.TestCase):
     def test_relative_path(self) -> None:
         arguments = mock_arguments()
         configuration = mock_configuration()
-
+        analysis_directory = AnalysisDirectory(".")
         self.assertEqual(
-            commands.Command(arguments, configuration, [])._relative_path(
-                "/original/directory/path"
-            ),
+            commands.Command(
+                arguments, configuration, analysis_directory
+            )._relative_path("/original/directory/path"),
             "path",
         )
         self.assertEqual(
-            commands.Command(arguments, configuration, [])._relative_path(
-                "/original/directory/"
-            ),
+            commands.Command(
+                arguments, configuration, analysis_directory
+            )._relative_path("/original/directory/"),
             ".",
         )
 
@@ -68,7 +69,7 @@ class CommandTest(unittest.TestCase):
             open.side_effect = [io.StringIO("1")]
             self.assertEqual(
                 commands.Command(
-                    arguments, configuration, analysis_directory="."
+                    arguments, configuration, AnalysisDirectory(".")
                 )._state(),
                 commands.command.State.RUNNING,
             )
@@ -77,7 +78,7 @@ class CommandTest(unittest.TestCase):
             open.side_effect = [io.StringIO("derp")]
             self.assertEqual(
                 commands.Command(
-                    arguments, configuration, analysis_directory="."
+                    arguments, configuration, AnalysisDirectory(".")
                 )._state(),
                 commands.command.State.DEAD,
             )

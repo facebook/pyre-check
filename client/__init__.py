@@ -150,19 +150,6 @@ def number_of_workers() -> int:
         return 4
 
 
-def merge_analysis_directories(
-    analysis_directories: Sized, local_root: Optional[str], isolate: bool = False
-) -> SharedAnalysisDirectory:
-    if len(analysis_directories) == 0:
-        raise EnvironmentException("No analysis directory found.")
-
-    shared_analysis_directory = SharedAnalysisDirectory(
-        analysis_directories, local_root, isolate
-    )
-    shared_analysis_directory.prepare()
-    return shared_analysis_directory
-
-
 def log_statistics(
     category: str,
     arguments: Namespace,

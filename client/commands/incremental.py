@@ -25,7 +25,7 @@ class Incremental(Reporting):
 
     def _run(self) -> None:
         if self._state() == State.DEAD:
-            LOG.warning("Starting server at `%s`.", self._analysis_directory)
+            LOG.warning("Starting server at `%s`.", self._analysis_directory.get_root())
             arguments = self._arguments
             arguments.terminal = False
             arguments.no_watchman = False

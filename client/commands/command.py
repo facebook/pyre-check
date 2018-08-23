@@ -14,6 +14,7 @@ from abc import abstractmethod
 from typing import List, Set  # noqa
 
 from .. import EnvironmentException, log
+from ..filesystem import AnalysisDirectory
 
 
 LOG = logging.getLogger(__name__)
@@ -53,7 +54,9 @@ class Command:
 
     _exit_code = ExitCode.SUCCESS  # type: ExitCode
 
-    def __init__(self, arguments, configuration, analysis_directory) -> None:
+    def __init__(
+        self, arguments, configuration, analysis_directory: AnalysisDirectory
+    ) -> None:
         self._arguments = arguments
         self._configuration = configuration
 
@@ -148,14 +151,14 @@ class Command:
             pass
 
     def _call_client(self, command, capture_output: bool = True) -> Result:
-        if not os.path.isdir(self._analysis_directory):
+        if not os.path.isdir(self._analysis_directory.get_root()):
             raise EnvironmentException(
-                "`{}` is not a link tree.".format(self._analysis_directory)
+                "`{}` is not a link tree.".format(self._analysis_directory.get_root())
             )
 
         client_command = [self._configuration.get_binary(), command]
         client_command.extend(self._flags())
-        client_command.append(self._analysis_directory)
+        client_command.append(self._analysis_directory.get_root())
 
         def limit_memory_usage():
             try:
@@ -185,7 +188,7 @@ class Command:
             self._call_client_terminated = False
             stderr_reader = threading.Thread(
                 target=self._read_stderr,
-                args=(process.stderr, self._analysis_directory),
+                args=(process.stderr, self._analysis_directory.get_root()),
             )
             stderr_reader.daemon = True
             stderr_reader.start()
@@ -209,7 +212,9 @@ class Command:
         return os.path.relpath(path, self._original_directory)
 
     def _state(self) -> State:
-        pid_path = os.path.join(self._analysis_directory, ".pyre/server/server.pid")
+        pid_path = os.path.join(
+            self._analysis_directory.get_root(), ".pyre/server/server.pid"
+        )
         try:
             with open(pid_path) as file:
                 pid = int(file.read())
@@ -220,8 +225,8 @@ class Command:
 
     def _server_string(self, analysis_directory=None) -> str:
         if not analysis_directory:
-            analysis_directory = self._analysis_directory
+            analysis_directory = self._analysis_directory.get_root()
         return "server{}".format("" if len(analysis_directory) < 2 else "s")
 
     def _analysis_directory_string(self) -> str:
-        return "`{}`".format(self._analysis_directory)
+        return "`{}`".format(self._analysis_directory.get_root())

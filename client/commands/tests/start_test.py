@@ -4,10 +4,11 @@
 # LICENSE file in the root directory of this source tree.
 
 import unittest
-from unittest.mock import call, patch
+from unittest.mock import MagicMock, call, patch
 
 from .. import monitor  # noqa
 from ... import commands  # noqa
+from ...filesystem import AnalysisDirectory  # noqa
 from .command_test import mock_arguments, mock_configuration
 
 
@@ -25,10 +26,11 @@ class StartTest(unittest.TestCase):
         configuration.get_version_hash.return_value = "hash"
         configuration.number_of_workers = 5
 
+        analysis_directory = AnalysisDirectory(".")
         # Check start without watchman.
         with patch.object(commands.Command, "_call_client") as call_client:
             arguments.no_watchman = True
-            command = commands.Start(arguments, configuration, analysis_directory=".")
+            command = commands.Start(arguments, configuration, analysis_directory)
             self.assertEquals(
                 command._flags(),
                 [
@@ -50,7 +52,7 @@ class StartTest(unittest.TestCase):
         # Check start with watchman.
         with patch.object(commands.Command, "_call_client") as call_client:
             arguments.no_watchman = False
-            command = commands.Start(arguments, configuration, analysis_directory=".")
+            command = commands.Start(arguments, configuration, analysis_directory)
             self.assertEquals(
                 command._flags(),
                 [
@@ -75,7 +77,7 @@ class StartTest(unittest.TestCase):
             arguments.no_watchman = True
             arguments.terminal = True
 
-            command = commands.Start(arguments, configuration, analysis_directory=".")
+            command = commands.Start(arguments, configuration, analysis_directory)
             self.assertEquals(
                 command._flags(),
                 [
@@ -94,3 +96,33 @@ class StartTest(unittest.TestCase):
             )
             command.run()
             call_client.assert_called_once_with(command=commands.Start.NAME)
+
+        # Shared analysis directories are prepared when starting.
+        shared_analysis_directory = MagicMock()
+        shared_analysis_directory.get_root = lambda: "."
+        with patch.object(
+            commands.Command, "_call_client"
+        ) as call_client, patch.object(shared_analysis_directory, "prepare") as prepare:
+            arguments.no_watchman = True
+            arguments.terminal = False
+            command = commands.Start(
+                arguments, configuration, shared_analysis_directory
+            )
+            self.assertEquals(
+                command._flags(),
+                [
+                    "-project-root",
+                    ".",
+                    "-workers",
+                    "5",
+                    "-typeshed",
+                    "stub",
+                    "-expected-binary-version",
+                    "hash",
+                    "-search-path",
+                    "path1,path2",
+                ],
+            )
+            command.run()
+            call_client.assert_called_once_with(command=commands.Start.NAME)
+            prepare.assert_called_once_with()
