@@ -66,7 +66,8 @@ let populate
   (* TODO(T30713406): Merge with class registration. *)
   List.iter ~f:Handler.refine_class_definition all_annotations;
 
-  List.iter ~f:(Plugin.apply_to_environment (module Handler)) sources
+  List.iter ~f:(Plugin.apply_to_environment (module Handler)) sources;
+  Environment.infer_protocols ~handler:(module Handler) ()
 
 
 let build
@@ -504,8 +505,5 @@ let handler
     ~name:"shared memory size"
     ~integers:["size", EnvironmentSharedMemory.heap_size ()]
     ();
-
-  Environment.infer_protocols ~handler:shared_handler ();
   TypeOrder.check_integrity (module Handler.TypeOrderHandler);
-
   shared_handler
