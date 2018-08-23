@@ -3,6 +3,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+from typing import List
+
 from .command import ExitCode
 from .reporting import Reporting
 
@@ -16,7 +18,7 @@ class Check(Reporting):
         self._number_of_workers = configuration.number_of_workers
         self._logger = arguments.logger or configuration.logger
 
-    def _flags(self):
+    def _flags(self) -> List[str]:
         flags = super()._flags()
         filter_directories = self._get_directories_to_analyze()
         if len(filter_directories):

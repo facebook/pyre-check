@@ -3,6 +3,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+from typing import List
+
 from .. import log
 from .check import Check
 
@@ -14,7 +16,7 @@ class Analyze(Check):
         super(Analyze, self).__init__(arguments, configuration, analysis_directory)
         self._taint_models_path = arguments.taint_models_path
 
-    def _flags(self):
+    def _flags(self) -> List[str]:
         flags = super()._flags()
         if self._taint_models_path:
             flags.extend(["-taint-models", self._taint_models_path])

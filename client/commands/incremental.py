@@ -8,6 +8,7 @@ import logging
 import os
 import subprocess
 import sys
+from typing import List
 
 from .command import ClientException, ExitCode, State
 from .reporting import Reporting
@@ -45,7 +46,7 @@ class Incremental(Reporting):
             LOG.error("Run `%s restart` in order to restart the server.", sys.argv[0])
             self._exit_code = ExitCode.FAILURE
 
-    def _flags(self):
+    def _flags(self) -> List[str]:
         flags = super()._flags()
         flags.extend(
             [
