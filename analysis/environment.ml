@@ -39,12 +39,6 @@ module type Handler = sig
   val register_dependency: path: string -> dependency: Access.t -> unit
   val register_global: path: string -> access: Access.t -> global: Resolution.global -> unit
   val set_class_definition: primitive: Type.t -> definition: Class.t Node.t -> unit
-  val connect_definition
-    :  resolution: Resolution.t
-    -> predecessor: Type.t
-    -> name: Access.t
-    -> definition: (Class.t Node.t) option
-    -> (Type.t * Type.t list)
   val refine_class_definition: Type.t -> unit
   val register_alias: path: string -> key: Type.t -> data: Type.t -> unit
   val purge: File.Handle.t list -> unit
@@ -80,92 +74,70 @@ end
 
 
 let connect_definition
-    ~order
-    ~aliases =
-  let rec connect_definition ~resolution ~predecessor ~name ~definition =
-    let connect ~predecessor ~successor ~parameters =
-      let annotations_tracked =
-        let (module Handler: TypeOrder.Handler) = order in
-        Handler.contains (Handler.indices ()) predecessor &&
-        Handler.contains (Handler.indices ()) successor
-      in
-      let primitive_cycle =
-        (* Primitive cycles can be introduced by meta-programming. *)
-        Type.equal predecessor successor
-      in
-      let cycle_with_top =
-        match predecessor, successor with
-        | Type.Top, _ -> true
-        | Type.Object, successor when not (Type.equal successor Type.Top) -> true
-        | _ -> false
-      in
-      if annotations_tracked && not primitive_cycle && not cycle_with_top then
-        TypeOrder.connect order ~predecessor ~successor ~parameters
+    ~resolution
+    ~definition:({ Node.value = { Class.name; bases; _ }; _ } as definition) =
+  let (module Handler: TypeOrder.Handler) = Resolution.order resolution in
+  let annotated = Annotated.Class.create definition in
+  (* We have to split the type here due to our built-in aliasing. Namely, the "list" and "dict"
+     classes get expanded into parametric types of List[Any] and Dict[Any, Any]. *)
+  let connect ~predecessor ~successor ~parameters =
+    let annotations_tracked =
+      Handler.contains (Handler.indices ()) predecessor &&
+      Handler.contains (Handler.indices ()) successor
     in
-
-    let annotation =
-      Resolution.parse_annotation
-        resolution
-        (Node.create_with_default_location (Access name))
+    let primitive_cycle =
+      (* Primitive cycles can be introduced by meta-programming. *)
+      Type.equal predecessor successor
     in
-    let primitive, parameters = Type.split annotation in
-    connect ~predecessor ~successor:primitive ~parameters;
-
-    (* Handle definition. *)
-    begin
-      match definition with
-      | Some ({ Node.value = { Class.name; bases; _ }; _ } as definition_node)
-        when not (Type.equal primitive Type.Object) || Access.show name = "object" ->
-
-          (* Register normal annotations. *)
-          let register_supertype { Argument.value; _ } =
-            let value = Expression.delocalize value in
-            match Node.value value with
-            | Access name ->
-                let supertype, _ =
-                  Type.create ~aliases value
-                  |> Type.split
-                in
-                if not (TypeOrder.contains order supertype) &&
-                   not (Type.equal supertype Type.Top) then
-                  begin
-                    Log.log
-                      ~section:`Environment
-                      "Superclass annotation %a is missing"
-                      Type.pp
-                      supertype
-                  end
-                else if Type.equal supertype Type.Top then
-                  begin
-                    Statistics.event
-                      ~name:"superclass of top"
-                      ~section:`Environment
-                      ~normals:["unresolved name", Access.show name]
-                      ()
-                  end
-                else
-                  let super_annotation, parameters =
-                    connect_definition
-                      ~resolution
-                      ~predecessor:annotation
-                      ~name
-                      ~definition:None
-                  in
-                  connect ~predecessor:primitive ~successor:super_annotation ~parameters
-            | _ ->
-                ()
+    let cycle_with_top =
+      match predecessor, successor with
+      | Type.Top, _ -> true
+      | Type.Object, successor when not (Type.equal successor Type.Top) -> true
+      | _ -> false
+    in
+    if annotations_tracked && not primitive_cycle && not cycle_with_top then
+      TypeOrder.connect (module Handler) ~predecessor ~successor ~parameters
+  in
+  let primitive, _ =
+    Annotated.Class.annotation ~resolution annotated
+    |> Type.split
+  in
+  connect ~predecessor:Type.Bottom ~successor:primitive ~parameters:[];
+  if not (Type.equal primitive Type.Object) or Access.show name = "object" then
+    (* Register normal annotations. *)
+    let register_supertype { Argument.value; _ } =
+      let value = Expression.delocalize value in
+      match Node.value value with
+      | Access name ->
+          let supertype, parameters =
+            Resolution.parse_annotation resolution value
+            |> Type.split
           in
-          let annotated = Annotated.Class.create definition_node in
-          let inferred_base = Annotated.Class.inferred_generic_base annotated ~resolution in
-          inferred_base @ bases
-          (* Don't register metaclass=abc.ABCMeta, etc. superclasses. *)
-          |> List.filter ~f:(fun { Argument.name; _ } -> Option.is_none name)
-          |> List.iter ~f:register_supertype
+          if not (TypeOrder.contains (module Handler) supertype) &&
+             not (Type.equal supertype Type.Top) then
+            Log.log
+              ~section:`Environment
+              "Superclass annotation %a is missing"
+              Type.pp
+              supertype
+          else if Type.equal supertype Type.Top then
+            Statistics.event
+              ~name:"superclass of top"
+              ~section:`Environment
+              ~normals:["unresolved name", Access.show name]
+              ()
+          else
+            connect ~predecessor:primitive ~successor:supertype ~parameters
       | _ ->
           ()
-    end;
-    primitive, parameters
-  in connect_definition
+    in
+    let inferred_base = Annotated.Class.inferred_generic_base annotated ~resolution in
+    inferred_base @ bases
+    (* Don't register metaclass=abc.ABCMeta, etc. superclasses. *)
+    |> List.filter ~f:(fun { Argument.name; _ } -> Option.is_none name)
+    |> List.iter ~f:register_supertype
+  else
+    ()
 
 
 let handler
@@ -241,12 +213,6 @@ let handler
             }
       in
       Hashtbl.set class_definitions ~key:primitive ~data:definition
-
-
-    let connect_definition =
-      connect_definition
-        ~order:(TypeOrder.handler order)
-        ~aliases:(Hashtbl.find aliases)
 
 
     let refine_class_definition annotation =
@@ -759,13 +725,10 @@ let connect_type_order (module Handler: Handler) source =
       let statement_keep_recursing _ = Transform.Recurse
 
       let statement _ _ = function
-        | { Node.location; value = Class ({ Class.name; _ } as definition) } ->
-            Handler.connect_definition
+        | { Node.location; value = Class definition } ->
+            connect_definition
               ~resolution
-              ~predecessor:Type.Bottom
-              ~name
-              ~definition:(Some (Node.create ~location definition))
-            |> ignore;
+              ~definition:(Node.create ~location definition)
         | _ ->
             ()
     end)

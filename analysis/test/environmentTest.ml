@@ -358,11 +358,38 @@ let test_connect_definition _ =
   let environment = Environment.Builder.create () in
   let (module Handler: Environment.Handler) = Environment.handler ~configuration environment in
   let resolution = Environment.resolution (module Handler) () in
-  let c_primitive = Type.primitive "C" in
 
   let (module TypeOrderHandler: TypeOrder.Handler) = (module Handler.TypeOrderHandler) in
-  TypeOrder.insert (module TypeOrderHandler) c_primitive;
+  TypeOrder.insert (module TypeOrderHandler) (Type.primitive "C");
+  TypeOrder.insert (module TypeOrderHandler) (Type.primitive "D");
 
+  let assert_edge ~predecessor ~successor =
+    let predecessor_index =
+      TypeOrderHandler.find_unsafe
+        (TypeOrderHandler.indices ())
+        predecessor
+    in
+    let successor_index =
+      TypeOrderHandler.find_unsafe
+        (TypeOrderHandler.indices ())
+        successor
+    in
+    assert_true
+      (List.mem
+         ~equal:TypeOrder.Target.equal
+         (TypeOrderHandler.find_unsafe
+            (TypeOrderHandler.edges ())
+            predecessor_index)
+         { TypeOrder.Target.target = successor_index; parameters = [] });
+
+    assert_true
+      (List.mem
+         ~equal:TypeOrder.Target.equal
+         (TypeOrderHandler.find_unsafe
+            (TypeOrderHandler.backedges ())
+            successor_index)
+         { TypeOrder.Target.target = predecessor_index; parameters = [] })
+  in
   let class_definition =
     +{
       Class.name = Access.create "C";
@@ -372,31 +399,19 @@ let test_connect_definition _ =
       docstring = None
     }
   in
+  Environment.connect_definition ~resolution ~definition:class_definition;
+  assert_edge ~predecessor:Type.Bottom ~successor:(Type.primitive "C");
 
-  let primitive, parameters =
-    Handler.connect_definition
-      ~resolution
-      ~predecessor:Type.Bottom
-      ~name:(Access.create "C")
-      ~definition:(Some class_definition)
+  let definition =
+    +(Test.parse_single_class {|
+       class D(int, float):
+         ...
+     |})
   in
-  assert_equal primitive c_primitive;
-  assert_equal parameters [];
-  let c_index = TypeOrderHandler.find_unsafe (TypeOrderHandler.indices ()) c_primitive in
-  let bottom_index = TypeOrderHandler.find_unsafe (TypeOrderHandler.indices ()) Type.Bottom in
-
-  assert_true
-    (List.mem
-       ~equal:TypeOrder.Target.equal
-       (TypeOrderHandler.find_unsafe (TypeOrderHandler.edges ()) bottom_index)
-       { TypeOrder.Target.target = c_index; parameters = [] });
-
-  assert_true
-    (List.mem
-       ~equal:TypeOrder.Target.equal
-       (TypeOrderHandler.find_unsafe (TypeOrderHandler.backedges ()) c_index)
-       { TypeOrder.Target.target = bottom_index; parameters = []})
-
+  Environment.connect_definition ~resolution ~definition;
+  assert_edge ~predecessor:Type.Bottom ~successor:(Type.primitive "D");
+  assert_edge ~predecessor:(Type.primitive "D") ~successor:Type.integer;
+  assert_edge ~predecessor:(Type.primitive "D") ~successor:Type.float
 
 
 let test_register_globals _ =

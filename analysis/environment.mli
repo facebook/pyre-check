@@ -39,12 +39,6 @@ module type Handler = sig
   val register_dependency: path: string -> dependency: Access.t -> unit
   val register_global: path: string -> access: Access.t -> global: Resolution.global -> unit
   val set_class_definition: primitive: Type.t -> definition: Class.t Node.t -> unit
-  val connect_definition
-    :  resolution: Resolution.t
-    -> predecessor: Type.t
-    -> name: Access.t
-    -> definition: (Class.t Node.t) option
-    -> (Type.t * Type.t list)
   val refine_class_definition: Type.t -> unit
   val register_alias: path: string -> key: Type.t -> data: Type.t -> unit
   val purge: File.Handle.t list -> unit
@@ -91,13 +85,9 @@ val resolution
 val dependencies: (module Handler) -> Access.t -> string list option
 
 val connect_definition
-  :  order: (module TypeOrder.Handler)
-  -> aliases: (Type.t -> Type.t option)
-  -> (resolution: Resolution.t
-      -> predecessor: Type.t
-      -> name: Access.t
-      -> definition: (Class.t Node.t) option
-      -> (Type.t * Type.t list))
+  :  resolution: Resolution.t
+  -> definition: Class.t Node.t
+  -> unit
 
 val register_module
   :  (module Handler)

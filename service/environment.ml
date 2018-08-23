@@ -439,12 +439,6 @@ let handler
         ClassDefinitions.remove_batch (ClassDefinitions.KeySet.singleton primitive);
         ClassDefinitions.add primitive definition
 
-
-      let connect_definition =
-        Environment.connect_definition
-          ~order:(module TypeOrderHandler: TypeOrder.Handler)
-          ~aliases:Aliases.get
-
       let register_alias ~path ~key ~data =
         DependencyHandler.add_alias_key ~path key;
         Aliases.remove_batch (Aliases.KeySet.singleton key);
