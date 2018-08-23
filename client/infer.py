@@ -518,7 +518,7 @@ def main():
         switch_root(arguments)
 
         configuration = Configuration(
-            original_directory=arguments.original_directory,
+            local_configuration_directory=arguments.local_configuration_directory,
             local_configuration=arguments.local_configuration,
         )
 

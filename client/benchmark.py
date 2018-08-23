@@ -98,7 +98,7 @@ if __name__ == "__main__":
     try:
         exit_code = SUCCESS
         switch_root(arguments)
-        configuration = Configuration(original_directory=arguments.original_directory)
+        configuration = Configuration(local_root=arguments.local_root)
         configuration.validate()
         _compare_parallel_check(arguments, configuration)
     except Exception as error:

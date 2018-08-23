@@ -193,7 +193,7 @@ class ConfigurationTest(unittest.TestCase):
             self.assertEqual(configuration.get_local_configuration(), None)
 
         with patch.object(Configuration, "_read") as Configuration_read:
-            configuration = Configuration(original_directory="original")
+            configuration = Configuration(local_configuration_directory="original")
             Configuration_read.assert_has_calls(
                 [
                     call(
@@ -225,7 +225,7 @@ class ConfigurationTest(unittest.TestCase):
             )
         with patch.object(Configuration, "_read") as Configuration_read:
             configuration = Configuration(
-                original_directory="original", local_configuration="local"
+                local_configuration_directory="original", local_configuration="local"
             )
             Configuration_read.assert_has_calls(
                 [
@@ -273,7 +273,9 @@ class ConfigurationTest(unittest.TestCase):
             Configuration(local_configuration="local")
 
         with self.assertRaises(EnvironmentException):
-            Configuration(original_directory="original", local_configuration="local")
+            Configuration(
+                local_configuration_directory="original", local_configuration="local"
+            )
 
         # Test that a non-existing local configuration file was provided.
         os_path_exists.return_value = False
@@ -284,7 +286,7 @@ class ConfigurationTest(unittest.TestCase):
 
         with self.assertRaises(EnvironmentException):
             Configuration(
-                original_directory="original",
+                local_configuration_directory="original",
                 local_configuration="local/.some_configuration",
             )
 
@@ -296,7 +298,9 @@ class ConfigurationTest(unittest.TestCase):
             Configuration(local_configuration="localdir")
 
         with self.assertRaises(EnvironmentException):
-            Configuration(original_directory="original", local_configuration="localdir")
+            Configuration(
+                local_configuration_directory="original", local_configuration="localdir"
+            )
 
     @patch("os.path.isdir")
     def test_empty_configuration(self, os_path_isdir) -> None:

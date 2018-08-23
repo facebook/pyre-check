@@ -66,7 +66,7 @@ class Configuration:
 
     def __init__(
         self,
-        original_directory=None,
+        local_configuration_directory=None,
         local_configuration=None,
         search_path=None,
         typeshed=None,
@@ -109,15 +109,18 @@ class Configuration:
             self._check_read_local_configuration(
                 local_configuration, fail_on_error=True
             )
-        elif original_directory and original_directory != os.getcwd():
+        elif (
+            local_configuration_directory
+            and local_configuration_directory != os.getcwd()
+        ):
             # If `pyre` was run from a directory below the project
             # root, and no local configuration was explictly provided
             # on the commandline, look for a local configuration from
             # the original directory, but don't fail if it does not
             # exist.
-            assert_readable_directory(original_directory)
+            assert_readable_directory(local_configuration_directory)
             self._check_read_local_configuration(
-                original_directory, fail_on_error=False
+                local_configuration_directory, fail_on_error=False
             )
 
         # Order matters. The values will only be updated if a field is None.

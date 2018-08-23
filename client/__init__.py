@@ -56,24 +56,30 @@ def get_binary_version(configuration) -> str:
     return "No version set"
 
 
-def find_global_root(original_directory=None) -> str:
-    if not original_directory:
-        original_directory = os.getcwd()
-
+def _find_configuration_root(
+    original_directory: str, configuration_file: str
+) -> Optional[str]:
     current_directory = original_directory
     while current_directory != "/":
-        absolute = os.path.join(current_directory, CONFIGURATION_FILE)
+        absolute = os.path.join(current_directory, configuration_file)
         if os.path.isfile(absolute):
             return current_directory
         current_directory = os.path.dirname(current_directory)
-    return original_directory
+    return None
 
 
 def switch_root(arguments) -> None:
     if arguments.local_configuration is not None:
         arguments.local_configuration = os.path.realpath(arguments.local_configuration)
+
     arguments.original_directory = os.getcwd()
-    root = find_global_root()
+    arguments.local_configuration_directory = _find_configuration_root(
+        arguments.original_directory, CONFIGURATION_FILE + ".local"
+    )
+    global_root = _find_configuration_root(
+        arguments.original_directory, CONFIGURATION_FILE
+    )
+    root = global_root or arguments.original_directory
     os.chdir(root)
     arguments.current_directory = root
 

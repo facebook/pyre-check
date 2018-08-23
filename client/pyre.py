@@ -269,7 +269,7 @@ def main() -> int:
 
         if arguments.command not in [commands.Initialize]:
             configuration = Configuration(
-                original_directory=arguments.original_directory,
+                local_configuration_directory=arguments.local_configuration_directory,
                 local_configuration=arguments.local_configuration,
                 search_path=arguments.search_path,
                 typeshed=arguments.typeshed,
