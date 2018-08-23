@@ -497,13 +497,15 @@ let handler
       let mode path = ErrorModes.get path
     end: Environment.Handler)
   in
-  let handler = Environment.handler ~configuration environment in
+  let ((module InProcessHandler: Environment.Handler) as handler) =
+    Environment.handler ~configuration environment
+  in
   build handler ~configuration ~stubs ~sources;
+  TypeOrder.check_integrity (module InProcessHandler.TypeOrderHandler);
   add_to_shared_memory environment;
   Statistics.event
     ~section:`Memory
     ~name:"shared memory size"
     ~integers:["size", EnvironmentSharedMemory.heap_size ()]
     ();
-  TypeOrder.check_integrity (module Handler.TypeOrderHandler);
   shared_handler
