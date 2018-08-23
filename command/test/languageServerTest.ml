@@ -599,9 +599,7 @@ let test_request_parser context =
       ~cmp:(Option.equal Protocol.Request.equal)
       ~printer:(function | Some request -> Protocol.Request.show request | _ -> "None")
       request
-      (Request.parse
-         ~root:(PyrePath.create_absolute Filename.temp_dir_name)
-         message);
+      (Request.parse ~root:(PyrePath.create_absolute Filename.temp_dir_name) ~request:message)
   in
 
   assert_parsed_request_equals

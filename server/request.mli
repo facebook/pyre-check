@@ -10,12 +10,12 @@ exception InvalidRequest
 
 val parse
   :  root: Pyre.Path.t
-  -> Yojson.Safe.json
+  -> request: Yojson.Safe.json
   -> Protocol.Request.t option
 
 val process_request
-  :  Unix.File_descr.t
-  -> State.t
-  -> ServerConfiguration.t
-  -> Protocol.Request.t
+  :  new_socket: Unix.File_descr.t
+  -> state: State.t
+  -> configuration: ServerConfiguration.t
+  -> request: Protocol.Request.t
   -> State.t * (Protocol.response option)

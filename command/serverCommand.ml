@@ -82,7 +82,7 @@ let computation_thread request_queue configuration state =
       let process_request socket state configuration request =
         try
           Log.log ~section:`Server "Processing request %a" Server.Protocol.Request.pp request;
-          Server.Request.process_request socket state configuration request
+          Server.Request.process_request ~new_socket:socket ~state ~configuration ~request
         with
         | Server.Request.InvalidRequest ->
             Log.error "Exiting due to invalid request";

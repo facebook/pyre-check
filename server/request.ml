@@ -22,7 +22,7 @@ exception InvalidRequest
 
 
 
-let parse ~root request =
+let parse ~root ~request =
   let open LanguageServer.Types in
   let log_method_error method_name =
     Log.error
@@ -289,10 +289,13 @@ end
 
 
 let rec process_request
-    new_socket
-    state
-    ({ configuration = { local_root; _ } as configuration; _ } as server_configuration)
-    request =
+    ~new_socket
+    ~state
+    ~configuration:({
+        configuration = { local_root; _ } as configuration;
+        _;
+      } as server_configuration)
+    ~request =
   let timer = Timer.start () in
   let (module Handler: Environment.Handler) = state.environment in
   let build_file_to_error_map ?(checked_files = None) error_list =
@@ -328,7 +331,13 @@ let rec process_request
         let deferred_requests = Request.flatten state.deferred_requests in
         let state = { state with deferred_requests = [] } in
         let update_state state request =
-          let state, _ = process_request new_socket state server_configuration request in
+          let state, _ =
+            process_request
+              ~new_socket
+              ~state
+              ~configuration:server_configuration
+              ~request
+          in
           state
         in
         List.fold ~init:state ~f:update_state deferred_requests
@@ -805,7 +814,7 @@ let rec process_request
         in
         parse
           ~root:configuration.local_root
-          (Yojson.Safe.from_string request)
+          ~request:(Yojson.Safe.from_string request)
         >>= handle_lsp_request ~check_on_save
         |> Option.value ~default:(state, None)
 

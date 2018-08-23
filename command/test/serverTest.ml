@@ -256,10 +256,10 @@ let assert_response
   in
   let _, response =
     Request.process_request
-      mock_client_socket
-      mock_server_state
-      (CommandTest.mock_server_configuration ~local_root ())
-      request
+      ~new_socket: mock_client_socket
+      ~state: mock_server_state
+      ~configuration: (CommandTest.mock_server_configuration ~local_root ())
+      ~request
   in
   CommandTest.clean_environment ();
   let printer = function
@@ -660,10 +660,10 @@ let test_protocol_language_server_protocol _ =
   let server_state = mock_server_state (File.Handle.Table.create ()) in
   let _, response =
     Request.process_request
-      mock_client_socket
-      server_state
-      (CommandTest.mock_server_configuration ())
-      (Protocol.Request.LanguageServerProtocolRequest "{\"method\":\"\"}")
+      ~new_socket: mock_client_socket
+      ~state: server_state
+      ~configuration: (CommandTest.mock_server_configuration ())
+      ~request: (Protocol.Request.LanguageServerProtocolRequest "{\"method\":\"\"}")
   in
   let cleanup () =
     CommandTest.clean_environment ()
@@ -714,10 +714,10 @@ let test_protocol_persistent _ =
     Request.InvalidRequest
     (fun () ->
        Request.process_request
-         mock_client_socket
-         server_state
-         (CommandTest.mock_server_configuration ())
-         (Protocol.Request.ClientConnectionRequest Protocol.Persistent));
+         ~new_socket: mock_client_socket
+         ~state: server_state
+         ~configuration: (CommandTest.mock_server_configuration ())
+         ~request: (Protocol.Request.ClientConnectionRequest Protocol.Persistent));
   CommandTest.clean_environment ()
 
 
@@ -764,10 +764,10 @@ let test_incremental_dependencies _ =
     in
     let process_request request =
       Request.process_request
-        mock_client_socket
-        initial_state
-        (CommandTest.mock_server_configuration ())
-        request
+        ~new_socket: mock_client_socket
+        ~state: initial_state
+        ~configuration: (CommandTest.mock_server_configuration ())
+        ~request
     in
     let state, response =
       process_request (check_request ~update:[file "b.py"] ~check:[file "b.py"] ())
@@ -849,10 +849,10 @@ let test_incremental_lookups _ =
   in
   let state, _ =
     Request.process_request
-      mock_client_socket
-      initial_state
-      (CommandTest.mock_server_configuration ())
-      request
+      ~new_socket: mock_client_socket
+      ~state: initial_state
+      ~configuration: (CommandTest.mock_server_configuration ())
+      ~request
   in
   CommandTest.clean_environment ();
   let annotations =
@@ -927,10 +927,10 @@ let test_incremental_repopulate _ =
   Out_channel.write_all ~data:source "test.py";
   let _, _ =
     Request.process_request
-      mock_client_socket
-      initial_state
-      (CommandTest.mock_server_configuration ())
-      (Protocol.Request.TypeCheckRequest
+      ~new_socket: mock_client_socket
+      ~state: initial_state
+      ~configuration: (CommandTest.mock_server_configuration ())
+      ~request: (Protocol.Request.TypeCheckRequest
          (Protocol.TypeCheckRequest.create
             ~update_environment_with:[file "test.py"]
             ~check:[file "test.py"]
@@ -1015,10 +1015,10 @@ let test_incremental_attribute_caching context =
   in
   let request_typecheck state =
     Request.process_request
-      Unix.stdout
-      state
-      server_configuration
-      (Protocol.Request.TypeCheckRequest
+      ~new_socket: Unix.stdout
+      ~state
+      ~configuration: server_configuration
+      ~request: (Protocol.Request.TypeCheckRequest
          (Protocol.TypeCheckRequest.create
             ~update_environment_with:[File.create source_path]
             ~check:[File.create source_path]
