@@ -210,7 +210,7 @@ let create
 
 
 let binary_interface_hash { metadata; path; qualifier; statements; _ } =
-  let statement_hashes =
+  let rec statement_hashes statements =
     let statement_hash { Node.value; _ } =
       let open Statement in
       match value with
@@ -226,11 +226,13 @@ let binary_interface_hash { metadata; path; qualifier; statements; _ } =
             bool *
             (Access.t option)]
             (name, parameters, decorators, return_annotation, async, parent)
+      | Class { Class.name; bases; body; decorators; _ } ->
+          [%hash: Access.t * (Argument.t list) * (int list) * (Expression.t list)]
+            (name, bases, (statement_hashes body), decorators)
       | Import import ->
           [%hash: Import.t] import
       | Assert _
       | Break
-      | Class _
       | Continue
       | Delete _
       | Expression _
@@ -250,7 +252,8 @@ let binary_interface_hash { metadata; path; qualifier; statements; _ } =
     in
     List.map statements ~f:statement_hash
   in
-  [%hash: Metadata.t * string * Access.t * (int list)] (metadata, path, qualifier, statement_hashes)
+  [%hash: Metadata.t * string * Access.t * (int list)]
+    (metadata, path, qualifier, (statement_hashes statements))
 
 
 let ignore_lines { metadata = { Metadata.ignore_lines; _ }; _ } =

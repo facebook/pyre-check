@@ -222,11 +222,13 @@ let test_binary_interface_hash _ =
   assert_hash_unequal "# pyre-strict" "";
   assert_hash_unequal "# pyre-strict" "# pyre-declare-but-dont-check";
 
+  (* Assignments. *)
   assert_hash_equal "a = 1" "a = 1";
   assert_hash_equal "a: int = 1" "a: int = 1";
   assert_hash_unequal "a: str = 1" "a: int = 1";
   assert_hash_unequal "a = 2" "a = 1";
 
+  (* Defines. *)
   assert_hash_equal
     {|
       @decorator
@@ -253,6 +255,40 @@ let test_binary_interface_hash _ =
   assert_hash_unequal "def foo() -> int: ..." "def foo() -> str: ...";
   assert_hash_unequal "def foo(): ..." "async def foo(): ...";
 
+  (* Classes. *)
+  assert_hash_equal
+    {|
+      @decorator
+      class B(A):
+        attribute: int = 1
+    |}
+    {|
+      @decorator
+      class B(A):
+        attribute: int = 1
+    |};
+  assert_hash_unequal "class A: ..." "class B: ...";
+  assert_hash_unequal "class A(B): ..." "class A(C): ...";
+  assert_hash_unequal
+    {|
+      class A:
+        attribute: int = 1
+    |}
+    {|
+      class A:
+        attribute: str = 1
+    |};
+  assert_hash_unequal
+    {|
+      @decorator
+      class A: ...
+    |}
+    {|
+      @other_decorator
+      class A: ...
+    |};
+
+  (* Imports. *)
   assert_hash_equal "from a import b" "from a import b";
   assert_hash_equal "import a" "import a";
   assert_hash_unequal "from a import b" "from a import c";
