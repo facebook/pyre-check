@@ -36,27 +36,26 @@ let initialize
   in
   SharedMem.collect `aggressive;
   let timer = Timer.start () in
-  let { TypeCheck.handles; environment; errors = initial_errors } =
+  let { TypeCheck.handles; environment; errors } =
     TypeCheck.check configuration (Some scheduler) () in
   Statistics.performance ~name:"initialization" ~timer ~normals:[] ();
   Log.log ~section:`Server "Server initialized";
   let handles = File.Handle.Set.of_list handles in
   let errors =
-    let errors = File.Handle.Table.create () in
+    let table = File.Handle.Table.create () in
     List.iter
-      initial_errors
+      errors
       ~f:(fun error ->
           let path = Error.path error in
           Hashtbl.add_multi
-            errors
+            table
             ~key:(File.Handle.create path)
             ~data:error);
-    errors
+    table
   in
   {
     deferred_requests = [];
     environment;
-    initial_errors = Error.Hash_set.of_list initial_errors;
     errors;
     handles;
     scheduler;

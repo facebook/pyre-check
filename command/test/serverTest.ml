@@ -202,7 +202,6 @@ let make_errors ?(path = "test.py") ?(qualifier = []) source =
   (TypeCheck.check configuration environment_handler source).TypeCheck.Result.errors
 
 let mock_server_state
-    ?(initial_errors = Error.Hash_set.create ())
     ?(initial_environment = environment ())
     errors =
   let environment = Environment.handler ~configuration initial_environment in
@@ -210,7 +209,6 @@ let mock_server_state
   {
     State.deferred_requests = [];
     environment;
-    initial_errors;
     errors;
     handles = File.Handle.Set.empty;
     last_request_time = Unix.time ();
@@ -229,7 +227,6 @@ let mock_server_state
 let mock_client_socket = Unix.openfile ~mode:[Unix.O_RDONLY] "/dev/null"
 
 let assert_response
-    ?(initial_errors = Error.Hash_set.create ())
     ?(local_root = Path.current_working_directory ())
     ?state
     ?(path = "test.py")
@@ -255,7 +252,7 @@ let assert_response
   let mock_server_state =
     match state with
     | Some state -> state
-    | None -> mock_server_state ~initial_environment ~initial_errors errors
+    | None -> mock_server_state ~initial_environment errors
   in
   let _, response =
     Request.process_request
@@ -322,7 +319,6 @@ let test_protocol_type_check _ =
     (Some (Protocol.TypeCheckResponse (associate_errors_and_filenames errors)));
 
   assert_response
-    ~initial_errors:(Error.Hash_set.of_list errors)
     ~source
     ~request:Protocol.Request.FlushTypeErrorsRequest
     (Some (Protocol.TypeCheckResponse (associate_errors_and_filenames errors)))
