@@ -160,6 +160,7 @@ let analyze_sources
   let open Analysis in
 
   Annotated.Class.AttributesCache.clear ();
+  let timer = Timer.start () in
   let handles =
     let filter_by_directories path =
       match filter_directories with
@@ -179,8 +180,18 @@ let analyze_sources
       | _ ->
           false
     in
-    List.filter handles ~f:filter_by_root
+    if Scheduler.is_parallel scheduler then
+      Scheduler.map_reduce
+        scheduler
+        ~configuration
+        ~map:(fun _ handles -> List.filter handles ~f:filter_by_root)
+        ~reduce:(fun handles new_handles -> List.rev_append new_handles handles)
+        ~init:[]
+        handles
+    else
+      List.filter handles ~f:filter_by_root
   in
+  Statistics.performance ~name:"filtered directories" ~timer ();
   Log.info "Checking %d sources..." (List.length handles);
   if Scheduler.is_parallel scheduler then
     analyze_sources_parallel scheduler configuration environment handles
@@ -303,7 +314,6 @@ let check
   let environment =
     Environment.handler ~configuration ~stubs ~sources
   in
-
   let errors, { Analysis.Coverage.full; partial; untyped; ignore; crashes } =
     analyze_sources scheduler configuration environment sources
   in
