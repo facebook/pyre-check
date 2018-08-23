@@ -217,13 +217,21 @@ let binary_interface_hash { metadata; path; qualifier; statements; _ } =
       | Assign { Assign.target; annotation; value; parent } ->
           [%hash: Expression.t * (Expression.t option) * Expression.t * (Access.t option)]
             (target, annotation, value, parent)
+      | Define { Define.name; parameters; decorators; return_annotation; async; parent; _ } ->
+          [%hash:
+            Access.t *
+            ((Expression.t Parameter.t) list) *
+            (Expression.t list) *
+            (Expression.t option) *
+            bool *
+            (Access.t option)]
+            (name, parameters, decorators, return_annotation, async, parent)
       | Import import ->
           [%hash: Import.t] import
       | Assert _
       | Break
       | Class _
       | Continue
-      | Define _
       | Delete _
       | Expression _
       | For _

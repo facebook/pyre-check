@@ -227,6 +227,32 @@ let test_binary_interface_hash _ =
   assert_hash_unequal "a: str = 1" "a: int = 1";
   assert_hash_unequal "a = 2" "a = 1";
 
+  assert_hash_equal
+    {|
+      @decorator
+      def define(parameter: int) -> str:
+        1
+    |}
+    {|
+      @decorator
+      def define(parameter: int) -> str:
+        2  # Body does not matter.
+    |};
+  assert_hash_unequal "def foo(): ..." "def bar(): ...";
+  assert_hash_unequal "def foo(a: int): ..." "def foo(a: str): ...";
+  assert_hash_unequal "def foo(a: int = 1): ..." "def foo(a: int = 2): ..."; (* Yerps... :( *)
+  assert_hash_unequal
+    {|
+      @decorator
+      def foo(): ...
+    |}
+    {|
+      @other_decorator
+      def foo(): ...
+    |};
+  assert_hash_unequal "def foo() -> int: ..." "def foo() -> str: ...";
+  assert_hash_unequal "def foo(): ..." "async def foo(): ...";
+
   assert_hash_equal "from a import b" "from a import b";
   assert_hash_equal "import a" "import a";
   assert_hash_unequal "from a import b" "from a import c";
