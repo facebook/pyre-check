@@ -6,6 +6,7 @@
 open Core
 open OUnit2
 
+open Ast
 open Pyre
 open Server
 open Test
@@ -93,11 +94,75 @@ let test_handle_type_query_request _ =
     {|{"error":"Type `yerp` was not found in the type order."}|}
 
 
+let test_handle_display_type_errors_request _ =
+  let assert_response ~paths ~errors ~expected_errors =
+    let error_map errors =
+      let entry (path, errors) =
+        let errors =
+          let error identifier =
+            let location = { Location.Instantiated.any with Location.path } in
+            {
+              Analysis.Error.location;
+              kind = Analysis.Error.UndefinedName (Expression.Access.create identifier);
+              define = +empty_define;
+            }
+          in
+          List.map errors ~f:error
+        in
+        File.Handle.create path, errors
+      in
+      List.map errors ~f:entry
+    in
+    let state = mock_server_state ~errors:(error_map errors |> File.Handle.Table.of_alist_exn) () in
+    let actual_errors =
+      let local_root = Path.current_working_directory () in
+      let files = List.map paths ~f:(fun path -> mock_path path |> File.create) in
+      Request.handle_display_type_errors_request ~state ~local_root ~files
+      |> snd
+      |> function
+      | Some (Protocol.TypeCheckResponse response) -> response
+      | _ -> failwith "Unexpected response."
+    in
+    let expected_errors = error_map expected_errors in
+    let equal =
+      let equal left right =
+        File.Handle.equal (fst left) (fst right) &&
+        List.equal (snd left) (snd right) ~equal:Analysis.Error.equal
+      in
+      List.equal ~equal
+    in
+    let printer errors =
+      let show (handle, errors) =
+        let errors =
+          List.map errors ~f:Analysis.Error.show
+          |> String.concat ~sep:", "
+        in
+        Format.asprintf "%a: [%s]" File.Handle.pp handle errors
+      in
+      List.map errors ~f:show
+      |> String.concat ~sep:"\n"
+    in
+    assert_equal ~cmp:equal ~printer expected_errors actual_errors
+  in
+
+  assert_response ~paths:[] ~errors:[] ~expected_errors:[];
+  (* Empty request returns all errors. *)
+  assert_response
+    ~paths:[]
+    ~errors:["one.py", ["one"]; "two.py", ["two"]]
+    ~expected_errors:["one.py", ["one"]; "two.py", ["two"]];
+  assert_response
+    ~paths:["one.py"]
+    ~errors:["one.py", ["one"]; "two.py", ["two"]]
+    ~expected_errors:["one.py", ["one"]; "two.py", []]
+
+
 let () =
   Log.initialize_for_tests ();
   "request">:::
   [
     "test_handle_client_shutdown_request">::test_handle_client_shutdown_request;
     "test_handle_type_query_request">::test_handle_type_query_request;
+    "test_handle_display_type_errors_request">::test_handle_display_type_errors_request;
   ]
   |> run_test_tt_main

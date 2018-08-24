@@ -21,6 +21,11 @@ val handle_type_query_request
   -> local_root: Path.t
   -> request: Protocol.TypeQuery.request
   -> Protocol.response
+val handle_display_type_errors_request
+  :  state: State.t
+  -> local_root: Path.t
+  -> files: File.t list
+  -> State.t * (Protocol.response option)
 
 val process_request
   :  new_socket: Unix.File_descr.t

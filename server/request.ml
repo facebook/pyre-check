@@ -495,6 +495,35 @@ let handle_type_query_request ~state:({ State.environment; _ } as state) ~local_
   TypeQueryResponse response
 
 
+let build_file_to_error_map ?(checked_files = None) ~state error_list =
+  let initial_files = Option.value ~default:(Hashtbl.keys state.errors) checked_files in
+  let error_file error = File.Handle.create (Error.path error) in
+  List.fold
+    ~init:File.Handle.Map.empty
+    ~f:(fun map key -> Map.set map ~key ~data:[])
+    initial_files
+  |> (fun map ->
+      List.fold
+        ~init:map
+        ~f:(fun map error -> Map.add_multi map ~key:(error_file error) ~data:error)
+        error_list)
+  |> Map.to_alist
+
+
+let handle_display_type_errors_request ~state ~local_root ~files =
+  let errors =
+    match files with
+    | [] ->
+        Hashtbl.data state.errors
+        |> List.concat
+    | _ ->
+        List.filter_map ~f:(File.handle ~root:local_root) files
+        |> List.filter_map ~f:(Hashtbl.find state.errors)
+        |> List.concat
+  in
+  state, Some (TypeCheckResponse (build_file_to_error_map ~state errors))
+
+
 let rec process_request
     ~new_socket
     ~state
@@ -505,33 +534,6 @@ let rec process_request
     ~request =
   let timer = Timer.start () in
   let (module Handler: Environment.Handler) = state.environment in
-  let build_file_to_error_map ?(checked_files = None) error_list =
-    let initial_files = Option.value ~default:(Hashtbl.keys state.errors) checked_files in
-    let error_file error = File.Handle.create (Error.path error) in
-    List.fold
-      ~init:File.Handle.Map.empty
-      ~f:(fun map key -> Map.set map ~key ~data:[])
-      initial_files
-    |> (fun map ->
-        List.fold
-          ~init:map
-          ~f:(fun map error -> Map.add_multi map ~key:(error_file error) ~data:error)
-          error_list)
-    |> Map.to_alist
-  in
-  let display_cached_type_errors state files =
-    let errors =
-      match files with
-      | [] ->
-          Hashtbl.data state.errors
-          |> List.concat
-      | _ ->
-          List.filter_map ~f:(File.handle ~root:local_root) files
-          |> List.filter_map ~f:(Hashtbl.find state.errors)
-          |> List.concat
-    in
-    state, Some (TypeCheckResponse (build_file_to_error_map errors))
-  in
   let flush_type_errors state =
     begin
       let state =
@@ -553,7 +555,7 @@ let rec process_request
         Hashtbl.data state.errors
         |> List.concat
       in
-      state, Some (TypeCheckResponse (build_file_to_error_map errors))
+      state, Some (TypeCheckResponse (build_file_to_error_map ~state errors))
     end
   in
   let handle_type_check state { TypeCheckRequest.update_environment_with; check} =
@@ -691,7 +693,7 @@ let rec process_request
       |> fun handles -> Some handles
     in
     { state with handles = Set.union state.handles new_files; deferred_requests },
-    Some (TypeCheckResponse (build_file_to_error_map ~checked_files new_errors))
+    Some (TypeCheckResponse (build_file_to_error_map ~checked_files ~state new_errors))
   in
   let handle_lsp_request ~check_on_save lsp_request =
     match lsp_request with
@@ -786,8 +788,8 @@ let rec process_request
         handle_type_check state request
     | TypeQueryRequest request ->
         state, Some (handle_type_query_request ~state ~local_root ~request)
-    | DisplayTypeErrors request ->
-        display_cached_type_errors state request
+    | DisplayTypeErrors files ->
+        handle_display_type_errors_request ~state ~local_root ~files
     | FlushTypeErrorsRequest ->
         flush_type_errors state
     | StopRequest ->
