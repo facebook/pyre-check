@@ -5,15 +5,22 @@
 
 open Core
 
+open Pyre
+
 
 exception InvalidRequest
 
 val parse
-  :  root: Pyre.Path.t
+  :  root: Path.t
   -> request: Yojson.Safe.json
   -> Protocol.Request.t option
 
 val handle_client_shutdown_request: state: State.t -> id: int -> State.t * Protocol.response option
+val handle_type_query_request
+  :  state: State.t
+  -> local_root: Path.t
+  -> request: Protocol.TypeQuery.request
+  -> Protocol.response
 
 val process_request
   :  new_socket: Unix.File_descr.t
