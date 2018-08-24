@@ -310,189 +310,189 @@ let handle_type_query_request ~state:({ State.environment; _ } as state) ~local_
       else
         raise (TypeOrder.Untracked annotation)
     in
-    let response =
-      match request with
-      | TypeQuery.Attributes annotation ->
-          let to_attribute {
-              Node.value = { Annotated.Class.Attribute.name; annotation; _ };
-              _;
-            } =
-            let annotation = Annotation.annotation annotation in
-            {
-              TypeQuery.name = Expression.show (Node.create_with_default_location name);
-              annotation;
-            }
-          in
-          parse_and_validate annotation
-          |> Handler.class_definition
-          >>| (fun { Analysis.Environment.class_definition; _ } -> class_definition)
-          >>| Annotated.Class.create
-          >>| (fun annotated_class -> Annotated.Class.attributes ~resolution annotated_class)
-          >>| List.map ~f:to_attribute
-          >>| (fun attributes -> TypeQuery.Response (TypeQuery.FoundAttributes attributes))
+    match request with
+    | TypeQuery.Attributes annotation ->
+        let to_attribute {
+            Node.value = { Annotated.Class.Attribute.name; annotation; _ };
+            _;
+          } =
+          let annotation = Annotation.annotation annotation in
+          {
+            TypeQuery.name = Expression.show (Node.create_with_default_location name);
+            annotation;
+          }
+        in
+        parse_and_validate annotation
+        |> Handler.class_definition
+        >>| (fun { Analysis.Environment.class_definition; _ } -> class_definition)
+        >>| Annotated.Class.create
+        >>| (fun annotated_class -> Annotated.Class.attributes ~resolution annotated_class)
+        >>| List.map ~f:to_attribute
+        >>| (fun attributes -> TypeQuery.Response (TypeQuery.FoundAttributes attributes))
 
-          |> Option.value
-            ~default:(
-              TypeQuery.Error (
-                Format.sprintf
-                  "No class definition found for %s"
-                  (Expression.show annotation)))
-
-      | TypeQuery.Join (left, right) ->
-          let left = parse_and_validate left in
-          let right = parse_and_validate right in
-          TypeOrder.join order left right
-          |> (fun annotation -> TypeQuery.Response (TypeQuery.Type annotation))
-
-      | TypeQuery.LessOrEqual (left, right) ->
-          let left = parse_and_validate left in
-          let right = parse_and_validate right in
-          TypeOrder.less_or_equal order ~left ~right
-          |> (fun response -> TypeQuery.Response (TypeQuery.Boolean response))
-
-      | TypeQuery.Meet (left, right) ->
-          let left = parse_and_validate left in
-          let right = parse_and_validate right in
-          TypeOrder.meet order left right
-          |> (fun annotation -> TypeQuery.Response (TypeQuery.Type annotation))
-
-      | TypeQuery.Methods annotation ->
-          let to_method annotated_method =
-            let open Annotated.Class.Method in
-            let name =
-              name annotated_method
-              |> List.last
-              >>| (fun name -> Expression.Access.show [name])
-              |> Option.value ~default:""
-            in
-            let annotations = parameter_annotations_positional ~resolution annotated_method in
-            let parameters =
-              Map.keys annotations
-              |> List.sort ~compare:Int.compare
-              |> Fn.flip List.drop 1 (* Drop the self argument *)
-              |> List.map ~f:(Map.find_exn annotations)
-              |> fun parameters -> (Type.primitive "self") :: parameters
-            in
-            let return_annotation = return_annotation ~resolution annotated_method in
-            { TypeQuery.name; parameters; return_annotation }
-          in
-          parse_and_validate annotation
-          |> Handler.class_definition
-          >>| (fun { Analysis.Environment.class_definition; _ } -> class_definition)
-          >>| Annotated.Class.create
-          >>| Annotated.Class.methods
-          >>| List.map ~f:to_method
-          >>| (fun methods -> TypeQuery.Response (TypeQuery.FoundMethods methods))
-          |> Option.value
-            ~default:(
-              TypeQuery.Error
-                (Format.sprintf
-                   "No class definition found for %s"
-                   (Expression.show annotation)))
-      | TypeQuery.NormalizeType expression ->
-          parse_and_validate expression
-          |> (fun annotation -> TypeQuery.Response (TypeQuery.Type annotation))
-
-      | TypeQuery.Signature function_name ->
-          let keep_known_annotation annotation =
-            match annotation with
-            | Type.Top ->
-                None
-            | _ ->
-                Some annotation
-          in
-          begin
-            match Resolution.global resolution function_name with
-            | Some { Node.value; _ } ->
-                begin
-                  match Annotation.annotation value with
-                  | Type.Callable { Type.Callable.overloads; _ } ->
-                      let overload_signature { Type.Callable.annotation; parameters } =
-                        match parameters with
-                        | Type.Callable.Defined parameters ->
-                            let format parameter =
-                              match parameter with
-                              | Type.Callable.Parameter.Named
-                                  { Type.Callable.Parameter.name; annotation; _ } ->
-                                  let name = Expression.Access.sanitized name in
-                                  Some {
-                                    TypeQuery.parameter_name = Expression.Access.show name;
-                                    annotation = keep_known_annotation annotation;
-                                  }
-                              | _ ->
-                                  None
-                            in
-                            let parameters = List.filter_map ~f:format parameters in
-                            Some {
-                              TypeQuery.return_type = keep_known_annotation annotation;
-                              parameters;
-                            }
-                        | _ ->
-                            None
-                      in
-                      TypeQuery.Response
-                        (TypeQuery.FoundSignature
-                           (List.filter_map overloads ~f:overload_signature))
-                  | _ ->
-                      TypeQuery.Error
-                        (Format.sprintf
-                           "%s is not a callable"
-                           (Expression.Access.show function_name))
-                end
-
-            | None ->
-                TypeQuery.Error
-                  (Format.sprintf
-                     "No signature found for %s"
-                     (Expression.Access.show function_name))
-          end
-      | TypeQuery.Superclasses annotation ->
-          parse_and_validate annotation
-          |> Handler.class_definition
-          >>| (fun { Analysis.Environment.class_definition; _ } -> class_definition)
-          >>| Annotated.Class.create
-          >>| Annotated.Class.superclasses ~resolution
-          >>| List.map ~f:(Annotated.Class.annotation ~resolution)
-          >>| (fun classes -> TypeQuery.Response (TypeQuery.Superclasses classes))
-          |> Option.value
-            ~default:(
-              TypeQuery.Error
-                (Format.sprintf "No class definition found for %s" (Expression.show annotation)))
-      | TypeQuery.TypeAtLocation {
-          Ast.Location.path;
-          start = ({ Ast.Location.line; column} as start);
-          _;
-        } ->
-          let source_text =
-            Path.create_relative
-              ~root:local_root
-              ~relative:path
-            |> File.create
-            |> File.content
-            |> Option.value ~default:""
-          in
-          File.Handle.create path
-          |> Ast.SharedMemory.get_source
-          >>| Lookup.create_of_source state.environment
-          >>= Lookup.get_annotation ~position:start ~source_text
-          >>| (fun (_, annotation) -> TypeQuery.Response (TypeQuery.Type annotation))
-          |> Option.value ~default:(
+        |> Option.value
+          ~default:(
             TypeQuery.Error (
               Format.sprintf
-                "Not able to get lookup at %s:%d:%d"
-                path
-                line
-                column))
-    in
-    TypeQueryResponse response
+                "No class definition found for %s"
+                (Expression.show annotation)))
+
+    | TypeQuery.Join (left, right) ->
+        let left = parse_and_validate left in
+        let right = parse_and_validate right in
+        TypeOrder.join order left right
+        |> (fun annotation -> TypeQuery.Response (TypeQuery.Type annotation))
+
+    | TypeQuery.LessOrEqual (left, right) ->
+        let left = parse_and_validate left in
+        let right = parse_and_validate right in
+        TypeOrder.less_or_equal order ~left ~right
+        |> (fun response -> TypeQuery.Response (TypeQuery.Boolean response))
+
+    | TypeQuery.Meet (left, right) ->
+        let left = parse_and_validate left in
+        let right = parse_and_validate right in
+        TypeOrder.meet order left right
+        |> (fun annotation -> TypeQuery.Response (TypeQuery.Type annotation))
+
+    | TypeQuery.Methods annotation ->
+        let to_method annotated_method =
+          let open Annotated.Class.Method in
+          let name =
+            name annotated_method
+            |> List.last
+            >>| (fun name -> Expression.Access.show [name])
+            |> Option.value ~default:""
+          in
+          let annotations = parameter_annotations_positional ~resolution annotated_method in
+          let parameters =
+            Map.keys annotations
+            |> List.sort ~compare:Int.compare
+            |> Fn.flip List.drop 1 (* Drop the self argument *)
+            |> List.map ~f:(Map.find_exn annotations)
+            |> fun parameters -> (Type.primitive "self") :: parameters
+          in
+          let return_annotation = return_annotation ~resolution annotated_method in
+          { TypeQuery.name; parameters; return_annotation }
+        in
+        parse_and_validate annotation
+        |> Handler.class_definition
+        >>| (fun { Analysis.Environment.class_definition; _ } -> class_definition)
+        >>| Annotated.Class.create
+        >>| Annotated.Class.methods
+        >>| List.map ~f:to_method
+        >>| (fun methods -> TypeQuery.Response (TypeQuery.FoundMethods methods))
+        |> Option.value
+          ~default:(
+            TypeQuery.Error
+              (Format.sprintf
+                 "No class definition found for %s"
+                 (Expression.show annotation)))
+    | TypeQuery.NormalizeType expression ->
+        parse_and_validate expression
+        |> (fun annotation -> TypeQuery.Response (TypeQuery.Type annotation))
+
+    | TypeQuery.Signature function_name ->
+        let keep_known_annotation annotation =
+          match annotation with
+          | Type.Top ->
+              None
+          | _ ->
+              Some annotation
+        in
+        begin
+          match Resolution.global resolution function_name with
+          | Some { Node.value; _ } ->
+              begin
+                match Annotation.annotation value with
+                | Type.Callable { Type.Callable.overloads; _ } ->
+                    let overload_signature { Type.Callable.annotation; parameters } =
+                      match parameters with
+                      | Type.Callable.Defined parameters ->
+                          let format parameter =
+                            match parameter with
+                            | Type.Callable.Parameter.Named
+                                { Type.Callable.Parameter.name; annotation; _ } ->
+                                let name = Expression.Access.sanitized name in
+                                Some {
+                                  TypeQuery.parameter_name = Expression.Access.show name;
+                                  annotation = keep_known_annotation annotation;
+                                }
+                            | _ ->
+                                None
+                          in
+                          let parameters = List.filter_map ~f:format parameters in
+                          Some {
+                            TypeQuery.return_type = keep_known_annotation annotation;
+                            parameters;
+                          }
+                      | _ ->
+                          None
+                    in
+                    TypeQuery.Response
+                      (TypeQuery.FoundSignature
+                         (List.filter_map overloads ~f:overload_signature))
+                | _ ->
+                    TypeQuery.Error
+                      (Format.sprintf
+                         "%s is not a callable"
+                         (Expression.Access.show function_name))
+              end
+
+          | None ->
+              TypeQuery.Error
+                (Format.sprintf
+                   "No signature found for %s"
+                   (Expression.Access.show function_name))
+        end
+    | TypeQuery.Superclasses annotation ->
+        parse_and_validate annotation
+        |> Handler.class_definition
+        >>| (fun { Analysis.Environment.class_definition; _ } -> class_definition)
+        >>| Annotated.Class.create
+        >>| Annotated.Class.superclasses ~resolution
+        >>| List.map ~f:(Annotated.Class.annotation ~resolution)
+        >>| (fun classes -> TypeQuery.Response (TypeQuery.Superclasses classes))
+        |> Option.value
+          ~default:(
+            TypeQuery.Error
+              (Format.sprintf "No class definition found for %s" (Expression.show annotation)))
+    | TypeQuery.TypeAtLocation {
+        Ast.Location.path;
+        start = ({ Ast.Location.line; column} as start);
+        _;
+      } ->
+        let source_text =
+          Path.create_relative
+            ~root:local_root
+            ~relative:path
+          |> File.create
+          |> File.content
+          |> Option.value ~default:""
+        in
+        File.Handle.create path
+        |> Ast.SharedMemory.get_source
+        >>| Lookup.create_of_source state.environment
+        >>= Lookup.get_annotation ~position:start ~source_text
+        >>| (fun (_, annotation) -> TypeQuery.Response (TypeQuery.Type annotation))
+        |> Option.value ~default:(
+          TypeQuery.Error (
+            Format.sprintf
+              "Not able to get lookup at %s:%d:%d"
+              path
+              line
+              column))
   in
-  try
-    handle_request ()
-  with TypeOrder.Untracked untracked ->
-    let untracked_response =
-      Format.asprintf "Type `%a` was not found in the type order." Type.pp untracked
-    in
-    TypeQueryResponse (TypeQuery.Error untracked_response)
+  let response =
+    try
+      handle_request ()
+    with TypeOrder.Untracked untracked ->
+      let untracked_response =
+        Format.asprintf "Type `%a` was not found in the type order." Type.pp untracked
+      in
+      TypeQuery.Error untracked_response
+  in
+  TypeQueryResponse response
 
 
 let rec process_request
