@@ -556,16 +556,6 @@ let rec process_request
       state, Some (TypeCheckResponse (build_file_to_error_map errors))
     end
   in
-  let compact_shared_memory () =
-    if Memory.heap_use_ratio () > 0.5 then
-      let previous_use_ratio = Memory.heap_use_ratio () in
-      SharedMem.collect `aggressive;
-      Log.log
-        ~section:`Server
-        "Garbage collected due to a previous heap use ratio of %f. New ratio is %f."
-        previous_use_ratio
-        (Memory.heap_use_ratio ())
-  in
   let handle_type_check state { TypeCheckRequest.update_environment_with; check} =
     let deferred_requests =
       if not (List.is_empty update_environment_with) then
@@ -783,7 +773,16 @@ let rec process_request
   let result =
     match request with
     | TypeCheckRequest request ->
-        compact_shared_memory ();
+        if Memory.heap_use_ratio () > 0.5 then
+          begin
+            let previous_use_ratio = Memory.heap_use_ratio () in
+            SharedMem.collect `aggressive;
+            Log.log
+              ~section:`Server
+              "Garbage collected due to a previous heap use ratio of %f. New ratio is %f."
+              previous_use_ratio
+              (Memory.heap_use_ratio ())
+          end;
         handle_type_check state request
     | TypeQueryRequest request ->
         state, Some (handle_type_query_request ~state ~local_root ~request)
