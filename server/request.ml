@@ -288,6 +288,16 @@ module LookupCache = struct
 end
 
 
+let handle_client_shutdown_request ~state ~id =
+  let open LanguageServer.Protocol in
+  let response =
+    ShutdownResponse.default id
+    |> ShutdownResponse.to_yojson
+    |> Yojson.Safe.to_string
+  in
+  state, Some (LanguageServerProtocolResponse response)
+
+
 let rec process_request
     ~new_socket
     ~state
@@ -700,16 +710,10 @@ let rec process_request
       in
       TypeQueryResponse (TypeQuery.Error untracked_response)
   in
-  let handle_client_shutdown_request id =
-    let response = LanguageServer.Protocol.ShutdownResponse.default id in
-    state,
-    Some (LanguageServerProtocolResponse (
-        Yojson.Safe.to_string (LanguageServer.Protocol.ShutdownResponse.to_yojson response)))
-  in
   let handle_lsp_request ~check_on_save lsp_request =
     match lsp_request with
     | TypeCheckRequest files -> Some (handle_type_check state files)
-    | ClientShutdownRequest id -> Some (handle_client_shutdown_request id)
+    | ClientShutdownRequest id -> Some (handle_client_shutdown_request ~state ~id)
     | ClientExitRequest Persistent ->
         Log.log ~section:`Server "Stopping persistent client";
         Some (state, Some (ClientExitResponse Persistent))
@@ -818,7 +822,7 @@ let rec process_request
         >>= handle_lsp_request ~check_on_save
         |> Option.value ~default:(state, None)
 
-    | ClientShutdownRequest id -> handle_client_shutdown_request id
+    | ClientShutdownRequest id -> handle_client_shutdown_request ~state ~id
 
     | ClientExitRequest client ->
         Log.log ~section:`Server "Stopping %s client" (show_client client);

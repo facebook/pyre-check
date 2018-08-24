@@ -1,0 +1,10 @@
+(tests
+ (names
+  requestTest)
+ (libraries
+  oUnit
+  pyrelib.test
+  pyrelib.languageServer
+  pyrelib.network
+  pyrelib.server
+  pyrelib.ast))
