@@ -18,7 +18,7 @@ RELEASE_COMPILER="4.06.0+flambda"
 
 # Compatibility settings with MacOS.
 if [[ "${MACHTYPE}" = *apple* ]]; then
-  export MACOSX_DEPLOYMENT_TARGET=10.11
+  export MACOSX_DEPLOYMENT_TARGET="$(sw_vers -productVersion | cut -d '.' -f 1,2)"
 fi
 
 # Switch to pyre directory.
