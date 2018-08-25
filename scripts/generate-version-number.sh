@@ -9,6 +9,10 @@ set -e
 
 # Compatibility settings with MacOS.
 if [[ "${MACHTYPE}" = *apple* ]]; then
+  if ! [ -x "$(command -v greadlink)" ]; then
+    echo 'Error: greadlink is not installed. Please install coreutils.' >&2
+    exit 1
+  fi
   READLINK=greadlink
 else
   READLINK=readlink
