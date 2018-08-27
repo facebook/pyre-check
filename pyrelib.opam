@@ -10,7 +10,6 @@ build: [["jbuilder" "build" "-p" name "-j" jobs "@install"]]
 build-test: [["jbuilder" "runtest" "-p" name "-j" jobs]]
 depends: [
   "core"
-  "sedlex"
   "yojson"
   "ppxlib"
   "ppx_deriving"

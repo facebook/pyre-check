@@ -156,7 +156,6 @@ opam install --yes \
   ppx_hash \
   ounit \
   menhir \
-  sedlex \
   utop \
   && opam_install_dependencies_succeeded=1
 test "$opam_install_dependencies_succeeded" = 1 \
