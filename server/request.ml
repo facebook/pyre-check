@@ -534,30 +534,6 @@ let rec process_request
     ~request =
   let timer = Timer.start () in
   let (module Handler: Environment.Handler) = state.environment in
-  let flush_type_errors state =
-    begin
-      let state =
-        let deferred_requests = Request.flatten state.deferred_requests in
-        let state = { state with deferred_requests = [] } in
-        let update_state state request =
-          let state, _ =
-            process_request
-              ~new_socket
-              ~state
-              ~configuration:server_configuration
-              ~request
-          in
-          state
-        in
-        List.fold ~init:state ~f:update_state deferred_requests
-      in
-      let errors =
-        Hashtbl.data state.errors
-        |> List.concat
-      in
-      state, Some (TypeCheckResponse (build_file_to_error_map ~state errors))
-    end
-  in
   let handle_type_check state { TypeCheckRequest.update_environment_with; check} =
     let deferred_requests =
       if not (List.is_empty update_environment_with) then
@@ -791,7 +767,26 @@ let rec process_request
     | DisplayTypeErrors files ->
         handle_display_type_errors_request ~state ~local_root ~files
     | FlushTypeErrorsRequest ->
-        flush_type_errors state
+        let state =
+          let deferred_requests = Request.flatten state.deferred_requests in
+          let state = { state with deferred_requests = [] } in
+          let update_state state request =
+            let state, _ =
+              process_request
+                ~new_socket
+                ~state
+                ~configuration:server_configuration
+                ~request
+            in
+            state
+          in
+          List.fold ~init:state ~f:update_state deferred_requests
+        in
+        let errors =
+          Hashtbl.data state.errors
+          |> List.concat
+        in
+        state, Some (TypeCheckResponse (build_file_to_error_map ~state errors))
     | StopRequest ->
         Socket.write new_socket StopResponse;
         Mutex.critical_section
