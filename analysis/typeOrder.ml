@@ -13,6 +13,7 @@ module Callable = Type.Callable
 exception Cyclic
 exception Incomplete
 exception Untracked of Type.t
+exception InconsistentMethodResolutionOrder of Type.t
 
 
 module Target = struct
@@ -288,6 +289,95 @@ let raise_if_untracked order annotation =
     raise (Untracked annotation)
 
 
+let method_resolution_order_linearize
+    ((module Handler: Handler) as order)
+    ~get_successors
+    annotation =
+  let rec merge = function
+    | [] ->
+        []
+    | single_linearized_parent :: [] ->
+        single_linearized_parent
+    | linearized_successors ->
+        let find_valid_head linearizations =
+          let is_valid_head head =
+            let not_in_tail target = function
+              | [] -> true
+              | _ :: tail -> not (List.exists ~f:(fun element -> element = target) tail)
+            in
+            List.for_all ~f:(not_in_tail head) linearizations
+          in
+          linearizations
+          |> List.filter_map ~f:List.hd
+          |> List.find ~f:(is_valid_head)
+          |> (function
+              | Some head -> head
+              | None -> raise (InconsistentMethodResolutionOrder annotation))
+        in
+        let strip_head head = function
+          | [] -> None
+          | successor_head :: [] when successor_head = head -> None
+          | successor_head :: tail when successor_head = head -> Some tail
+          | successor -> Some successor
+        in
+        let head = find_valid_head linearized_successors in
+        let linearized_successors = List.filter_map ~f:(strip_head head) linearized_successors in
+        head :: merge linearized_successors
+  in
+  let rec linearize annotation =
+    let primitive, actual_parameters = Type.split annotation in
+    let linearized_successors =
+      let create_annotation { Target.target = index; parameters } =
+        let annotation = Handler.find_unsafe (Handler.annotations ()) index in
+        let parameters =
+          (* We currently ignore the actual type variable mapping. *)
+          if List.length parameters = List.length actual_parameters then
+            actual_parameters
+          else
+            []
+        in
+        match annotation, parameters with
+        | _, [] ->
+            annotation
+        | Type.Primitive name, _ ->
+            Type.Parametric { Type.name; parameters }
+        | _ ->
+            failwith (Format.asprintf "Unexpected type %a" Type.pp annotation)
+      in
+      index_of order primitive
+      |> get_successors
+      |> Option.value ~default:[]
+      |> List.map ~f:create_annotation
+      |> List.map ~f:linearize
+    in
+    annotation :: merge linearized_successors
+  in
+  linearize annotation
+
+
+let successors_fold ((module Handler: Handler) as order) ~initial ~f annotation =
+  let linearization =
+    method_resolution_order_linearize
+      ~get_successors:(Handler.find (Handler.edges ()))
+      order
+      annotation
+  in
+  match linearization with
+  | _ :: successors ->
+      List.fold ~init:initial ~f successors
+  | _ ->
+      initial
+
+
+let successors ((module Handler: Handler) as order) annotation =
+  successors_fold
+    order
+    ~initial:[]
+    ~f:(fun successors successor -> (successor :: successors))
+    annotation
+  |> List.rev
+
+
 let breadth_first_fold
     ((module Handler: Handler) as order)
     ~initial
@@ -330,24 +420,6 @@ let breadth_first_fold
   in
 
   iterate ~worklist ~visited ~accumulator:initial
-
-
-let successors_fold ((module Handler: Handler) as order) ~initial ~f annotation =
-  breadth_first_fold
-    order
-    ~initial
-    ~f:(fun sofar annotation visited -> f sofar annotation, visited)
-    ~successor_indices:(Handler.find (Handler.edges ()))
-    annotation
-
-
-let successors ((module Handler: Handler) as order) annotation =
-  successors_fold
-    order
-    ~initial:[]
-    ~f:(fun successors successor -> (successor :: successors))
-    annotation
-  |> List.rev
 
 
 let predecessors ((module Handler: Handler) as order) annotation =

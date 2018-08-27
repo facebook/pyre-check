@@ -109,7 +109,7 @@ let test_superclasses _ =
     ([!"SubFooBar"; !"Foo"; !"Bar"; !"object"]);
   assert_superclasses
     (Class.superclasses ~resolution:(Environment.resolution environment ()) !"SubRedundant")
-    ([!"Foo"; !"SubFooBar"; !"object"; !"Bar"])
+    ([!"SubFooBar"; !"Foo"; !"Bar"; !"object"])
 
 
 type constructor = {

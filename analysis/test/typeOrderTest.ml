@@ -227,6 +227,21 @@ let test_default _ =
   assert_equal (meet order Type.float Type.complex) Type.float
 
 
+let test_method_resolution_order_linearize _ =
+  let assert_method_resolution_order ((module Handler: Handler) as order) annotation expected =
+    assert_equal
+      ~printer:(List.fold ~init:"" ~f:(fun sofar next -> sofar ^ (Type.show next) ^ " "))
+      expected
+      (method_resolution_order_linearize
+         order
+         annotation
+         ~get_successors:(Handler.find (Handler.edges ())))
+  in
+  assert_method_resolution_order butterfly !"3" [!"3"; Type.Top];
+  assert_method_resolution_order butterfly !"0" [!"0"; !"3"; !"2"; Type.Top];
+  assert_method_resolution_order diamond_order !"D" [!"D"; !"C"; !"B"; !"A"; Type.Top]
+
+
 let test_successors_fold _ =
   let collect sofar annotation = annotation :: sofar in
   assert_equal (successors_fold ~initial:[] ~f:collect butterfly !"3") [Type.Top];
@@ -255,8 +270,8 @@ let test_successors _ =
       !"2";
       !"1";
       !"0";
-      Type.Top;
       !"3";
+      Type.Top;
     ];
 
   (*  BOTTOM - Iterator[_T] - Iterable[_T] - Generic[_T] - Object
@@ -313,11 +328,11 @@ let test_successors _ =
          }))
     [
       Type.Parametric {
-        Type.name = ~~"typing.Generic";
+        Type.name = ~~"typing.Iterable";
         parameters = [Type.integer];
       };
       Type.Parametric {
-        Type.name = ~~"typing.Iterable";
+        Type.name = ~~"typing.Generic";
         parameters = [Type.integer];
       };
       Type.Object;
@@ -1088,6 +1103,7 @@ let () =
   ]
   |> run_test_tt_main;
   "order">:::[
+    "method_resolution_order_linearize">::test_method_resolution_order_linearize;
     "successors_fold">::test_successors_fold;
     "successors">::test_successors;
     "predecessors">::test_predecessors;

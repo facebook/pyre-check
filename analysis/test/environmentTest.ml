@@ -1128,11 +1128,11 @@ let test_supertypes _ =
   let module Handler = (val environment) in
   let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
   assert_equal
-    (TypeOrder.successors order (Type.primitive "foo"))
-    [Type.Object; Type.Deleted; Type.Top];
+    [Type.Object; Type.Deleted; Type.Top]
+    (TypeOrder.successors order (Type.primitive "foo"));
   assert_equal
-    (TypeOrder.successors order (Type.primitive "bar"))
-    [Type.primitive "foo"; Type.Object; Type.Deleted; Type.Top];
+    [Type.primitive "foo"; Type.Object; Type.Deleted; Type.Top]
+    (TypeOrder.successors order (Type.primitive "bar"));
 
   let environment =
     populate {|
@@ -1144,12 +1144,6 @@ let test_supertypes _ =
   let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
   assert_equal
     ~printer:(List.to_string ~f:Type.show)
-    (TypeOrder.successors
-       order
-       (Type.Parametric {
-           Type.name = ~~"typing.Iterable";
-           parameters = [Type.integer];
-         }))
     [
       Type.Parametric {
         Type.name = ~~"typing.Generic";
@@ -1159,6 +1153,12 @@ let test_supertypes _ =
       Type.Deleted;
       Type.Top;
     ]
+    (TypeOrder.successors
+       order
+       (Type.Parametric {
+           Type.name = ~~"typing.Iterable";
+           parameters = [Type.integer];
+         }))
 
 
 let test_class_definition _ =
