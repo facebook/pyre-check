@@ -519,6 +519,11 @@ module Access = struct
         >>| fun name ->
         (create_from_expression value) @ (call ~arguments:[] ~location ~name ())
     | _ -> None
+
+  let is_assert_function access =
+    List.take_while access ~f:(function | Identifier _ -> true | _ -> false)
+    |> show
+    |> Core.Set.mem Recognized.assert_functions
 end
 
 

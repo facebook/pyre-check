@@ -230,6 +230,8 @@ module Access : sig
   (* Some calls are redirected to method calls, e.g. `repr(x)` will call
      `x.__repr__()`. *)
   val redirect: arguments: Argument.t list -> location: Location.t -> name: t -> t option
+
+  val is_assert_function: t -> bool
 end
 
 val access: t -> Access.t

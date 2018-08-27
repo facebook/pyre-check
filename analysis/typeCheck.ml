@@ -1115,11 +1115,6 @@ module State = struct
     let instantiate location =
       Location.instantiate ~lookup:(fun hash -> Ast.SharedMemory.get_path ~hash) location
     in
-    let is_assert_function access =
-      List.take_while access ~f:(function | Access.Identifier _ -> true | _ -> false)
-      |> Access.show
-      |> Set.mem Recognized.assert_functions
-    in
     let expected =
       let annotation =
         Annotated.Callable.return_annotation ~define:define_without_location ~resolution
@@ -1639,7 +1634,7 @@ module State = struct
               resolution
         in
         { state with resolution }
-    | Expression { Node.value = Access access; _; } when is_assert_function access ->
+    | Expression { Node.value = Access access; _; } when Access.is_assert_function access ->
         let find_assert_test access =
           match access with
           | Expression.Record.Access.Call {

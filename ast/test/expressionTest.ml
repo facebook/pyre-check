@@ -399,6 +399,16 @@ let test_name_and_arguments _ =
     "foo.bar"
 
 
+let test_is_assert_function _ =
+  let is_assert name =
+    Access.create name
+    |> Access.is_assert_function
+  in
+  assert_true (is_assert "pyretestassert");
+  assert_false (is_assert "pyretestassert()");
+  assert_false (is_assert "notAssert")
+
+
 let () =
   "expression">:::[
     "negate">::test_negate;
@@ -409,5 +419,6 @@ let () =
     "delocalize">::test_delocalize;
     "comparison_operator_override">::test_comparison_operator_override;
     "name_and_arguments">::test_name_and_arguments;
+    "is_assert_function">::test_is_assert_function;
   ]
   |> run_test_tt_main
