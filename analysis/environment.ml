@@ -424,10 +424,7 @@ let register_class_definitions (module Handler: Handler) source =
               ~definition:{ Node.location; value = definition };
             if not (TypeOrder.contains order primitive) then
               TypeOrder.insert order primitive;
-            if not (Set.mem TypeOrder.Builder.builtin_types primitive) then
-              Set.add new_annotations primitive
-            else
-              new_annotations
+            Set.add new_annotations primitive
         | _ ->
             new_annotations
     end)

@@ -101,8 +101,11 @@ let test_register_class_definitions _ =
            ...
        |})
   in
-  assert_equal ~cmp:Type.Set.equal new_annotations (Type.Set.singleton (Type.primitive "C"));
-  (* Builtins can't be overridden. *)
+  assert_equal
+    ~cmp:Type.Set.equal
+    ~printer:(Set.fold ~init:"" ~f:(fun sofar next -> sofar ^ " " ^ (Type.show next)))
+    (Type.Set.singleton (Type.primitive "C"))
+    new_annotations;
   let new_annotations =
     Environment.register_class_definitions
       (module Handler)
@@ -111,7 +114,11 @@ let test_register_class_definitions _ =
            pass
        |})
   in
-  assert_equal ~cmp:Type.Set.equal new_annotations Type.Set.empty
+  assert_equal
+    ~cmp:Type.Set.equal
+    ~printer:(Set.fold ~init:"" ~f:(fun sofar next -> sofar ^ " " ^ (Type.show next)))
+    (Type.Set.singleton (Type.integer))
+    new_annotations
 
 
 let test_refine_class_definitions _ =
