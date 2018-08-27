@@ -433,13 +433,15 @@ let test_forward_expression _ =
   (* Lambda. *)
   let callable ~parameters ~annotation =
     let parameters =
+      let open Type.Callable in
       let rec anonymous_parameters = function
         | count when count > 0 ->
-            Type.Callable.Parameter.Anonymous Type.Object :: anonymous_parameters (count - 1)
+            Parameter.Anonymous { Parameter.index = (count - 1); annotation = Type.Object }
+            :: anonymous_parameters (count - 1)
         | _ ->
             []
       in
-      Type.Callable.Defined (anonymous_parameters parameters)
+      Defined (List.rev (anonymous_parameters parameters))
     in
     Type.callable ~parameters ~annotation ()
   in

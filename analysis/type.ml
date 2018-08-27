@@ -22,6 +22,13 @@ module Record = struct
       [@@deriving compare, sexp, show, hash]
 
 
+      type 'annotation anonymous = {
+        index: int;
+        annotation: 'annotation;
+      }
+      [@@deriving compare, eq, sexp, show, hash]
+
+
       let equal_named equal_annotation left right =
         left.default = right.default &&
         Access.equal (Access.sanitized left.name) (Access.sanitized right.name) &&
@@ -29,7 +36,7 @@ module Record = struct
 
 
       type 'annotation t =
-        | Anonymous of 'annotation
+        | Anonymous of 'annotation anonymous
         | Named of 'annotation named
         | Variable of 'annotation named
         | Keywords of 'annotation named
@@ -222,8 +229,11 @@ let rec pp format annotation =
                 "..."
             | Defined parameters ->
                 let parameter = function
-                  | Parameter.Anonymous annotation ->
-                      show annotation
+                  | Parameter.Anonymous { Parameter.index; annotation } ->
+                      Format.asprintf
+                        "Anonymous(%d, %s)"
+                        index
+                        (show annotation)
                   | Parameter.Named { Parameter.name; annotation; default } ->
                       Format.asprintf
                         "Named(%a, %s%s)"
@@ -415,8 +425,9 @@ let lambda ~parameters ~return_annotation =
         annotation = return_annotation;
         parameters =
           Defined
-            (List.map
-               ~f:(fun parameter -> Parameter.Anonymous parameter)
+            (List.mapi
+               ~f:(fun index parameter ->
+                   Parameter.Anonymous { Parameter.index; annotation = parameter })
                parameters);
       };
     ];
@@ -773,7 +784,7 @@ let rec create ~aliases { Node.value = expression; _ } =
                       match Node.value argument with
                       | Expression.Tuple [parameters; annotation] ->
                           let parameters =
-                            let extract_parameter parameter =
+                            let extract_parameter index parameter =
                               match Node.value parameter with
                               | Access [
                                   Access.Identifier name;
@@ -822,14 +833,17 @@ let rec create ~aliases { Node.value = expression; _ } =
                                           default = false;
                                         }
                                     | _ ->
-                                        Parameter.Anonymous Top
+                                        Parameter.Anonymous { Parameter.index; annotation = Top }
                                   end
                               | _ ->
-                                  Parameter.Anonymous (create ~aliases parameter)
+                                  Parameter.Anonymous {
+                                    Parameter.index;
+                                    annotation = (create ~aliases parameter)
+                                  }
                             in
                             match Node.value parameters with
                             | List parameters ->
-                                Defined (List.map ~f:extract_parameter parameters)
+                                Defined (List.mapi ~f:extract_parameter parameters)
                             | _ ->
                                 Undefined
                           in
@@ -1018,7 +1032,7 @@ let rec expression annotation =
                       |> Node.create_with_default_location
                     in
                     match parameter with
-                    | Parameter.Anonymous annotation ->
+                    | Parameter.Anonymous { Parameter.annotation; _ } ->
                         expression annotation
                     | Parameter.Keywords { Parameter.name; annotation; _ } ->
                         call "Keywords" name (Some annotation)
@@ -1088,7 +1102,7 @@ let rec exists annotation ~predicate =
             match parameters with
             | Defined parameters ->
                 let parameter = function
-                  | Parameter.Anonymous annotation
+                  | Parameter.Anonymous { Parameter.annotation; _ }
                   | Parameter.Named { Parameter.annotation; _ } ->
                       exists annotation ~predicate
                   | Parameter.Variable _
@@ -1234,7 +1248,7 @@ let rec variables = function
           match parameters with
           | Defined parameters ->
               let variables = function
-                | Parameter.Anonymous annotation
+                | Parameter.Anonymous { Parameter.annotation; _ }
                 | Parameter.Named { Parameter.annotation; _ } ->
                     variables annotation
                 | Parameter.Variable _
@@ -1466,8 +1480,11 @@ let instantiate ?(widen = false) annotation ~constraints =
                   | Defined parameters ->
                       let parameter parameter =
                         match parameter with
-                        | Parameter.Anonymous annotation ->
-                            Parameter.Anonymous (instantiate annotation)
+                        | Parameter.Anonymous { Parameter.index; annotation } ->
+                            Parameter.Anonymous {
+                              Parameter.index;
+                              annotation = (instantiate annotation)
+                            }
                         | Parameter.Named ({ Parameter.annotation; _ } as named) ->
                             Parameter.Named {
                               named with

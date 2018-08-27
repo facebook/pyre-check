@@ -1000,8 +1000,14 @@ module State = struct
             ~state:{ state with resolution = resolution_with_parameters }
             ~expression:body
         in
+        let create_anonymous index _ =
+          Type.Callable.Parameter.Anonymous {
+            Type.Callable.Parameter.index;
+            annotation = Type.Object;
+          }
+        in
         let parameters =
-          List.map parameters ~f:(fun _ -> Type.Callable.Parameter.Anonymous Type.Object)
+          List.mapi parameters ~f:create_anonymous
           |> fun parameters -> Type.Callable.Defined parameters
         in
         {

@@ -107,7 +107,7 @@ let select ~arguments ~resolution ~callable:({ Type.Callable.overloads; _ } as c
             ~remaining_arguments =
           let expected =
             match parameter with
-            | Parameter.Anonymous annotation
+            | Parameter.Anonymous { Parameter.annotation; _ }
             | Parameter.Named { Parameter.annotation; _ }
             | Parameter.Variable { Parameter.annotation; _ }
             | Parameter.Keywords { Parameter.annotation; _ } ->

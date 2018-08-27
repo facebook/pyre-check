@@ -18,8 +18,13 @@ module Record : sig
         default: bool;
       }
 
+      type 'annotation anonymous = {
+        index: int;
+        annotation: 'annotation;
+      }
+
       and 'annotation t =
-        | Anonymous of 'annotation
+        | Anonymous of 'annotation anonymous
         | Named of 'annotation named
         | Variable of 'annotation named
         | Keywords of 'annotation named

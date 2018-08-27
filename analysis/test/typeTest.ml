@@ -194,8 +194,8 @@ let test_create _ =
           {
             annotation = Type.integer;
             parameters = Defined [
-                Parameter.Anonymous Type.integer;
-                Parameter.Anonymous Type.string;
+                Parameter.Anonymous { Parameter.index = 0; annotation = Type.integer};
+                Parameter.Anonymous { Parameter.index = 1; annotation = Type.string};
               ];
           };
         ];
@@ -209,7 +209,7 @@ let test_create _ =
           {
             annotation = Type.integer;
             parameters = Defined [
-                Parameter.Anonymous Type.integer;
+                Parameter.Anonymous { Parameter.index = 0; annotation = Type.integer};
                 Parameter.Named {
                   Parameter.name = Access.create "a";
                   annotation = Type.integer;
@@ -238,7 +238,7 @@ let test_create _ =
           {
             annotation = Type.integer;
             parameters = Defined [
-                Parameter.Anonymous Type.integer;
+                Parameter.Anonymous { Parameter.index = 0; annotation = Type.integer};
                 Parameter.Variable {
                   Parameter.name = Access.create "variable";
                   annotation = Type.integer;
@@ -352,8 +352,8 @@ let test_expression _ =
   assert_expression
     (Type.callable
        ~parameters:(Type.Callable.Defined [
-           Parameter.Anonymous Type.integer;
-           Parameter.Anonymous Type.string;
+           Parameter.Anonymous { Parameter.index = 0; annotation = Type.integer};
+           Parameter.Anonymous { Parameter.index = 1; annotation = Type.string};
          ])
        ~annotation:Type.integer
        ())
@@ -390,7 +390,7 @@ let test_expression _ =
   assert_expression
     (Type.callable
        ~parameters:(Defined [
-           Parameter.Anonymous Type.integer;
+           Parameter.Anonymous { Parameter.index = 1; annotation = Type.integer};
            Parameter.Variable {
              Parameter.name = Access.create "variable";
              annotation = Type.integer;

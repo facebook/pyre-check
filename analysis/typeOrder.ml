@@ -578,7 +578,10 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
                   match left, right with
                   | Parameter.Anonymous left, Parameter.Anonymous right ->
                       (* The inversion here follows from the substitution principle. *)
-                      less_or_equal order ~left:right ~right:left
+                      less_or_equal
+                        order
+                        ~left:right.Parameter.annotation
+                        ~right:left.Parameter.annotation
                   | Parameter.Named left, Parameter.Named right
                   | Parameter.Keywords left, Parameter.Keywords right
                   | Parameter.Variable left, Parameter.Variable right
@@ -737,8 +740,17 @@ and join_overloads ~parameter_join ~return_join order left right =
               | Some sofar ->
                   let joined =
                     match left, right with
-                    | Parameter.Anonymous left, Parameter.Anonymous right ->
-                        Some (Parameter.Anonymous (parameter_join order left right))
+                    | Parameter.Anonymous left, Parameter.Anonymous right
+                      when left.Parameter.index = right.Parameter.index ->
+                        Some
+                          (Parameter.Anonymous {
+                              left with
+                              Parameter.annotation =
+                                parameter_join
+                                  order
+                                  left.Parameter.annotation
+                                  right.Parameter.annotation;
+                            })
                     | Parameter.Named left, Parameter.Named right
                       when Expression.Access.equal left.Parameter.name right.Parameter.name &&
                            left.Parameter.default = right.Parameter.default ->
