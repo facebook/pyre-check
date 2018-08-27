@@ -190,6 +190,7 @@ let analyze_sources
       ~reduce:(fun handles new_handles -> List.rev_append new_handles handles)
       ~init:[]
       handles
+    |> List.sort ~compare:File.Handle.compare
   in
   Statistics.performance ~name:"filtered directories" ~timer ();
   Log.info "Checking %d sources..." (List.length handles);
