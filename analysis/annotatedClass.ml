@@ -77,6 +77,20 @@ let annotation { Node.value = { Class.name; _ }; location } ~resolution =
   Resolution.parse_annotation resolution (Node.create ~location (Access name))
 
 
+let successors class_node ~resolution =
+  annotation class_node ~resolution
+  |> Type.split
+  |> (fun (primitive, _ ) -> primitive)
+  |> Resolution.class_representation resolution
+  >>| (fun { Resolution.successors; _ } -> successors)
+  |> Option.value ~default:[]
+
+
+let successors_fold class_node ~resolution ~f ~initial =
+  successors class_node ~resolution
+  |> List.fold ~init:initial ~f
+
+
 module Method = struct
   type t = {
     define: Define.t;
@@ -176,12 +190,11 @@ module Method = struct
               >>| fun define ->
               create ~define ~parent:(create_parent parent))
     in
-    TypeOrder.successors_fold
-      (Resolution.order resolution)
+    successors_fold
+      parent
+      ~resolution
       ~initial:None
       ~f:find_overrides
-      (annotation parent ~resolution)
-
 
   let implements
       { define; _ }
@@ -321,7 +334,7 @@ let constraints ?target ?parameters definition ~instantiated ~resolution =
 
 
 let superclasses definition ~resolution =
-  TypeOrder.successors (Resolution.order resolution) (annotation definition ~resolution)
+  successors ~resolution definition
   |> List.filter_map ~f:(Resolution.class_definition resolution)
   |> List.map ~f:create
 

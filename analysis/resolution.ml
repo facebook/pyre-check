@@ -15,6 +15,16 @@ type global = Annotation.t Node.t
 [@@deriving eq, show]
 
 
+type class_representation = {
+  class_definition: Class.t Node.t;
+  successors: Type.t list;
+  explicit_attributes: Attribute.t Access.SerializableMap.t;
+  implicit_attributes: Attribute.t Access.SerializableMap.t;
+  is_test: bool;
+  methods: Type.t list;
+}
+
+
 type t = {
   annotations: Annotation.t Access.Map.t;
   order: (module TypeOrder.Handler);
@@ -26,6 +36,7 @@ type t = {
   global: Access.t -> global option;
   module_definition: Access.t -> Module.t option;
   class_definition: Type.t -> (Class.t Node.t) option;
+  class_representation: Type.t -> class_representation option;
 
   parent: Access.t option;
 }
@@ -40,6 +51,7 @@ let create
     ~global
     ~module_definition
     ~class_definition
+    ~class_representation
     ?parent
     () =
   {
@@ -51,6 +63,7 @@ let create
     global;
     module_definition;
     class_definition;
+    class_representation;
     parent;
   }
 
@@ -144,6 +157,10 @@ let module_definition { module_definition; _ } =
 
 let class_definition { class_definition; _ } =
   class_definition
+
+
+let class_representation { class_representation; _ } =
+  class_representation
 
 
 let less_or_equal { order; _ } =

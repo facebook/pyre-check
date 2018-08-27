@@ -324,7 +324,7 @@ let handle_type_query_request ~state:({ State.environment; _ } as state) ~local_
         in
         parse_and_validate annotation
         |> Handler.class_definition
-        >>| (fun { Analysis.Environment.class_definition; _ } -> class_definition)
+        >>| (fun { Analysis.Resolution.class_definition; _ } -> class_definition)
         >>| Annotated.Class.create
         >>| (fun annotated_class -> Annotated.Class.attributes ~resolution annotated_class)
         >>| List.map ~f:to_attribute
@@ -377,7 +377,7 @@ let handle_type_query_request ~state:({ State.environment; _ } as state) ~local_
         in
         parse_and_validate annotation
         |> Handler.class_definition
-        >>| (fun { Analysis.Environment.class_definition; _ } -> class_definition)
+        >>| (fun { Analysis.Resolution.class_definition; _ } -> class_definition)
         >>| Annotated.Class.create
         >>| Annotated.Class.methods
         >>| List.map ~f:to_method
@@ -448,7 +448,7 @@ let handle_type_query_request ~state:({ State.environment; _ } as state) ~local_
     | TypeQuery.Superclasses annotation ->
         parse_and_validate annotation
         |> Handler.class_definition
-        >>| (fun { Analysis.Environment.class_definition; _ } -> class_definition)
+        >>| (fun { Analysis.Resolution.class_definition; _ } -> class_definition)
         >>| Annotated.Class.create
         >>| Annotated.Class.superclasses ~resolution
         >>| List.map ~f:(Annotated.Class.annotation ~resolution)

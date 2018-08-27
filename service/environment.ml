@@ -396,7 +396,39 @@ let handler
             FunctionDefinitions.add name definitions
           end
 
-      let refine_class_definition _ = ()
+      let refine_class_definition annotation =
+        let open Statement in
+        let refine
+            { Resolution.class_definition = { Node.location; value = class_definition }; _ } =
+          let successors = TypeOrder.successors (module TypeOrderHandler) annotation in
+          let in_test =
+            let is_unit_test
+                { Resolution.class_definition = { Node.value = { Class.name; _ }; _ }; _ } =
+              Access.equal name (Access.create "unittest.TestCase")
+            in
+            let successor_classes =
+              successors
+              |> List.filter_map ~f:ClassDefinitions.get
+            in
+            List.exists ~f:is_unit_test successor_classes
+          in
+          let explicit_attributes = Class.explicitly_assigned_attributes class_definition in
+          let implicit_attributes = Class.implicit_attributes ~in_test class_definition in
+          ClassDefinitions.remove_batch (ClassDefinitions.KeySet.singleton annotation);
+          ClassDefinitions.add
+            annotation
+            {
+              class_definition = { Node.location; value = class_definition };
+              is_test = in_test;
+              successors;
+              explicit_attributes;
+              implicit_attributes;
+              methods = [];
+            };
+        in
+        ClassDefinitions.get annotation
+        >>| refine
+        |> ignore
 
       let register_dependency ~path ~dependency =
         Log.log
@@ -417,20 +449,21 @@ let handler
         let definition =
           match ClassDefinitions.get primitive with
           | Some ({
-              Environment.class_definition = { Node.location; value = preexisting };
+              Resolution.class_definition = { Node.location; value = preexisting };
               _;
             } as representation) ->
               {
                 representation with
-                Environment.class_definition = {
+                Resolution.class_definition = {
                   Node.location;
                   value = Statement.Class.update preexisting ~definition:(Node.value definition);
                 };
               }
           | _ ->
               {
-                Environment.class_definition = definition;
+                Resolution.class_definition = definition;
                 methods = [];
+                successors = [];
                 explicit_attributes = Statement.Access.SerializableMap.empty;
                 implicit_attributes = Statement.Access.SerializableMap.empty;
                 is_test = false;

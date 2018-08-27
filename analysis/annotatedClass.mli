@@ -31,6 +31,7 @@ val body: t -> Statement.t list
 val get_decorator: t -> decorator: string -> decorator list
 
 val annotation: t -> resolution: Resolution.t -> Type.t
+val successors: t -> resolution: Resolution.t -> Type.t list
 val metaclass: t -> resolution: Resolution.t -> Type.t
 
 module Method : sig

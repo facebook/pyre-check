@@ -127,6 +127,8 @@ let test_refine_class_definitions _ =
   let source =
     parse
       {|
+       class A: pass
+       class B(A): pass
        class C:
          def __init__(self):
            self.x = 3
@@ -134,14 +136,30 @@ let test_refine_class_definitions _ =
          def __init__(self):
            self.y = 4
          D.z = 5
+       class E(D, A): pass
       |}
   in
-  Environment.register_class_definitions (module Handler) source
-  |> ignore;
+  let all_annotations =
+    Environment.register_class_definitions (module Handler) source
+    |> Set.to_list
+  in
   Environment.connect_type_order (module Handler) source;
+  TypeOrder.deduplicate (module Handler.TypeOrderHandler) ~annotations:all_annotations;
+  TypeOrder.connect_annotations_to_top
+    (module Handler.TypeOrderHandler)
+    ~top:Type.Object
+    all_annotations;
+  TypeOrder.remove_extra_edges
+    (module Handler.TypeOrderHandler)
+    ~bottom:Type.Bottom
+    ~top:Type.Object
+    all_annotations;
 
+  Handler.refine_class_definition (Type.primitive "A");
+  Handler.refine_class_definition (Type.primitive "B");
   Handler.refine_class_definition (Type.primitive "C");
   Handler.refine_class_definition (Type.primitive "D");
+  Handler.refine_class_definition (Type.primitive "E");
   let attribute_equal
       (expected_target, expected_value)
       { Node.value = { Statement.Attribute.target; value; _ }; _ } =
@@ -149,7 +167,7 @@ let test_refine_class_definitions _ =
     Option.equal Expression.equal expected_value value
   in
   let assert_attribute ~implicit class_name attribute_name expected =
-    let { Environment.explicit_attributes; implicit_attributes; _ } =
+    let { Resolution.explicit_attributes; implicit_attributes; _ } =
       Option.value_exn (Handler.class_definition (Type.primitive class_name))
     in
     let map =
@@ -171,6 +189,25 @@ let test_refine_class_definitions _ =
   assert_attribute ~implicit:true "C" "x" (Some (!"x", Some ~+(Expression.Integer 3)));
   assert_attribute ~implicit:true "D" "y" (Some (!"y", Some ~+(Expression.Integer 4)));
   assert_attribute ~implicit:false "D" "z" (Some (!"z", Some ~+(Expression.Integer 5)));
+
+  let assert_successors class_name expected =
+    let { Resolution.successors; _ } =
+      Option.value_exn (Handler.class_definition (Type.primitive class_name))
+    in
+    let expected =
+      List.map ~f:Type.primitive expected
+      |> (fun expected -> expected @ [Type.Object; Type.Deleted; Type.Top])
+    in
+    assert_equal
+      ~printer:(List.fold ~init:"" ~f:(fun sofar next -> sofar ^ (Type.show next) ^ " "))
+      ~cmp:(List.equal ~equal:Type.equal)
+      expected
+      successors
+  in
+  assert_successors "C" [];
+  assert_successors "D" ["C"];
+  assert_successors "B" ["A"];
+  assert_successors "E" ["D"; "C"; "A"];
   ()
 
 

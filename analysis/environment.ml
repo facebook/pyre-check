@@ -11,17 +11,9 @@ open Pyre
 open Statement
 
 
-type class_representation = {
-  class_definition: Class.t Node.t;
-  explicit_attributes: Attribute.t Access.SerializableMap.t;
-  implicit_attributes: Attribute.t Access.SerializableMap.t;
-  is_test: bool;
-  methods: Type.t list;
-}
-
 type t = {
   function_definitions: ((Define.t Node.t) list) Access.Table.t;
-  class_definitions: class_representation Type.Table.t;
+  class_definitions: Resolution.class_representation Type.Table.t;
   protocols: Type.Hash_set.t;
   modules: Module.t Access.Table.t;
   order: TypeOrder.t;
@@ -44,7 +36,7 @@ module type Handler = sig
   val purge: File.Handle.t list -> unit
 
   val function_definitions: Access.t -> (Define.t Node.t) list option
-  val class_definition: Type.t -> class_representation option
+  val class_definition: Type.t -> Resolution.class_representation option
 
   val register_protocol: Type.t -> unit
   val protocols: unit -> Type.t list
@@ -207,6 +199,7 @@ let handler
             {
               class_definition = definition;
               methods = [];
+              successors = [];
               explicit_attributes = Access.SerializableMap.empty;
               implicit_attributes = Access.SerializableMap.empty;
               is_test = false;
@@ -216,16 +209,18 @@ let handler
 
 
     let refine_class_definition annotation =
-      let refine { class_definition = { Node.location; value = class_definition }; _ } =
+      let refine { Resolution.class_definition = { Node.location; value = class_definition }; _ } =
+        let successors = TypeOrder.successors (module TypeOrderHandler) annotation in
         let in_test =
-          let is_unit_test { class_definition = { Node.value = { Class.name; _ }; _ }; _ } =
+          let is_unit_test
+              { Resolution.class_definition = { Node.value = { Class.name; _ }; _ }; _ } =
             Access.equal name (Access.create "unittest.TestCase")
           in
-          let successors =
-            TypeOrder.successors (module TypeOrderHandler) annotation
+          let successor_classes =
+            successors
             |> List.filter_map ~f:(Hashtbl.find class_definitions)
           in
-          List.exists ~f:is_unit_test successors
+          List.exists ~f:is_unit_test successor_classes
         in
         let explicit_attributes = Class.explicitly_assigned_attributes class_definition in
         let implicit_attributes = Class.implicit_attributes ~in_test class_definition in
@@ -235,6 +230,7 @@ let handler
           ~data:{
             class_definition = { Node.location; value = class_definition };
             is_test = in_test;
+            successors;
             explicit_attributes;
             implicit_attributes;
             methods = [];
@@ -348,9 +344,13 @@ let handler
 let resolution (module Handler: Handler) ?(annotations = Access.Map.empty) () =
   let parse_annotation = Type.create ~aliases:Handler.aliases in
 
-  let class_definition annotation =
+  let class_representation annotation =
     let primitive, _ = Type.split annotation in
-    match Handler.class_definition primitive with
+    Handler.class_definition primitive
+  in
+
+  let class_definition annotation =
+    match class_representation annotation with
     | Some { class_definition; _ } ->
         Some class_definition
     | None ->
@@ -371,6 +371,7 @@ let resolution (module Handler: Handler) ?(annotations = Access.Map.empty) () =
     ~global:Handler.globals
     ~module_definition:Handler.module_definition
     ~class_definition
+    ~class_representation
     ()
 
 
@@ -1024,8 +1025,9 @@ module Builder = struct
       Hashtbl.set
         ~key:(Type.primitive name)
         ~data:{
-          class_definition = Node.create_with_default_location definition;
+          Resolution.class_definition = Node.create_with_default_location definition;
           methods = [];
+          successors = [];
           explicit_attributes = Access.SerializableMap.empty;
           implicit_attributes = Access.SerializableMap.empty;
           is_test = false;

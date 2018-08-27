@@ -67,12 +67,6 @@ let test_generics _ =
 
 
 let test_superclasses _ =
-  let assert_superclasses result expected =
-    let equal left right = Access.equal (Class.name left) (Class.name right) in
-    assert_equal
-      ~printer:(fun classes -> Format.asprintf "%a" Sexp.pp [%message (classes: Class.t list)])
-      ~cmp:(List.equal ~equal) expected result
-  in
   let environment =
     populate {|
       class object: pass
@@ -94,22 +88,39 @@ let test_superclasses _ =
     |> Node.create_with_default_location
     |> Class.create
   in
+  let resolution = Environment.resolution environment () in
+  let assert_successors target expected =
+    let actual = Class.successors ~resolution target in
+    assert_equal
+      ~printer:(List.fold ~init:"" ~f:(fun sofar next -> sofar ^ (Type.show next) ^ " "))
+      ~cmp:(List.equal ~equal:Type.equal)
+      expected
+      actual
+  in
+  let assert_superclasses target expected =
+    let actual = Class.superclasses ~resolution target in
+    let equal left right = Access.equal (Class.name left) (Class.name right) in
+    assert_equal
+      ~printer:(fun classes -> Format.asprintf "%a" Sexp.pp [%message (classes: Class.t list)])
+      ~cmp:(List.equal ~equal) expected actual
+  in
 
-  assert_superclasses
-    (Class.superclasses ~resolution:(Environment.resolution environment ()) !"Foo")
-    ([!"object"]);
-  assert_superclasses
-    (Class.superclasses ~resolution:(Environment.resolution environment ()) !"SubFoo")
-    ([!"Foo"; !"object"]);
-  assert_superclasses
-    (Class.superclasses ~resolution:(Environment.resolution environment ()) !"SubFooBar")
-    ([!"Foo"; !"Bar"; !"object"]);
-  assert_superclasses
-    (Class.superclasses ~resolution:(Environment.resolution environment ()) !"SubRecurse")
-    ([!"SubFooBar"; !"Foo"; !"Bar"; !"object"]);
-  assert_superclasses
-    (Class.superclasses ~resolution:(Environment.resolution environment ()) !"SubRedundant")
-    ([!"SubFooBar"; !"Foo"; !"Bar"; !"object"])
+  assert_successors !"Foo" [Type.Object; Type.Deleted; Type.Top];
+  assert_successors
+    !"SubRedundant"
+    [
+      Type.primitive "SubFooBar";
+      Type.primitive "Foo";
+      Type.primitive "Bar";
+      Type.Object;
+      Type.Deleted;
+      Type.Top;
+    ];
+  assert_superclasses !"Foo" [!"object"];
+  assert_superclasses !"SubFoo" [!"Foo"; !"object"];
+  assert_superclasses !"SubFooBar" [!"Foo"; !"Bar"; !"object"];
+  assert_superclasses !"SubRecurse" [!"SubFooBar"; !"Foo"; !"Bar"; !"object"];
+  assert_superclasses !"SubRedundant" [!"SubFooBar"; !"Foo"; !"Bar"; !"object"]
 
 
 type constructor = {
