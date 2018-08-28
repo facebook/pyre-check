@@ -231,6 +231,12 @@ let parse ~root ~request =
   with Yojson.Safe.Util.Type_error _ -> None
 
 
+type response = {
+  state: State.t;
+  response: Protocol.response option;
+}
+
+
 module LookupCache = struct
   let relative_path file =
     File.path file
@@ -295,10 +301,10 @@ let process_client_shutdown_request ~state ~id =
     |> ShutdownResponse.to_yojson
     |> Yojson.Safe.to_string
   in
-  state, Some (LanguageServerProtocolResponse response)
+  { state; response = Some (LanguageServerProtocolResponse response) }
 
 
-let process_type_query_request ~state:{ State.environment; _ } ~local_root ~request =
+let process_type_query_request ~state:({ State.environment; _ } as state) ~local_root ~request =
   let (module Handler: Environment.Handler) = environment in
   let process_request () =
     let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
@@ -492,7 +498,7 @@ let process_type_query_request ~state:{ State.environment; _ } ~local_root ~requ
       in
       TypeQuery.Error untracked_response
   in
-  TypeQueryResponse response
+  { state; response = Some (TypeQueryResponse response) }
 
 
 let build_file_to_error_map ?(checked_files = None) ~state:{ State.errors; _ } error_list =
@@ -521,7 +527,7 @@ let process_display_type_errors_request ~state:({ State.errors; _ } as state) ~l
         |> List.filter_map ~f:(Hashtbl.find errors)
         |> List.concat
   in
-  state, Some (TypeCheckResponse (build_file_to_error_map ~state errors))
+  { state; response = Some (TypeCheckResponse (build_file_to_error_map ~state errors)) }
 
 
 let process_type_check_request
@@ -661,8 +667,10 @@ let process_type_check_request
       check
     |> fun handles -> Some handles
   in
-  { state with handles = Set.union handles new_files; deferred_requests },
-  Some (TypeCheckResponse (build_file_to_error_map ~checked_files ~state new_errors))
+  {
+    state = { state with handles = Set.union handles new_files; deferred_requests };
+    response = Some (TypeCheckResponse (build_file_to_error_map ~checked_files ~state new_errors));
+  }
 
 
 let rec process
@@ -691,7 +699,7 @@ let rec process
         process_type_check_request ~state ~configuration ~request
 
     | TypeQueryRequest request ->
-        state, Some (process_type_query_request ~state ~local_root ~request)
+        process_type_query_request ~state ~local_root ~request
 
     | DisplayTypeErrors files ->
         process_display_type_errors_request ~state ~local_root ~files
@@ -701,7 +709,7 @@ let rec process
           let deferred_requests = Request.flatten deferred_requests in
           let state = { state with deferred_requests = [] } in
           let update_state state request =
-            let state, _ =
+            let { state; _ } =
               process
                 ~socket
                 ~state
@@ -716,7 +724,7 @@ let rec process
           Hashtbl.data errors
           |> List.concat
         in
-        state, Some (TypeCheckResponse (build_file_to_error_map ~state errors))
+        { state; response = Some (TypeCheckResponse (build_file_to_error_map ~state errors)) }
 
     | StopRequest ->
         Socket.write socket StopResponse;
@@ -727,21 +735,21 @@ let rec process
                 ~reason:"explicit request"
                 server_configuration
                 !connections.socket);
-        state, None
+        { state; response = None }
 
     | LanguageServerProtocolRequest request ->
         parse
           ~root:configuration.local_root
           ~request:(Yojson.Safe.from_string request)
         >>| (fun request -> process ~state ~socket ~configuration:server_configuration ~request)
-        |> Option.value ~default:(state, None)
+        |> Option.value ~default:{ state; response = None }
 
     | ClientShutdownRequest id ->
         process_client_shutdown_request ~state ~id
 
     | ClientExitRequest client ->
         Log.log ~section:`Server "Stopping %s client" (show_client client);
-        state, Some (ClientExitResponse client)
+        { state; response = Some (ClientExitResponse client) }
 
     | RageRequest id ->
         let response =
@@ -752,7 +760,7 @@ let rec process
           |> (fun response -> LanguageServerProtocolResponse response)
           |> Option.some
         in
-        state, response
+        { state; response }
 
     | GetDefinitionRequest { DefinitionRequest.id; file; position } ->
         let response =
@@ -767,7 +775,7 @@ let rec process
           |> (fun response -> LanguageServerProtocolResponse response)
           |> Option.some
         in
-        state, response
+        { state; response }
 
     | HoverRequest { DefinitionRequest.id; file; position } ->
         let response =
@@ -786,18 +794,19 @@ let rec process
           |> (fun response -> LanguageServerProtocolResponse response)
           |> Option.some
         in
-        state, response
+        { state; response }
 
     | OpenDocument file ->
         (* Make sure cache is fresh. We might not have received a close notification. *)
         LookupCache.evict ~state file;
         LookupCache.get ~state ~configuration file
         |> ignore;
-        state, None
+        { state; response = None }
 
     | CloseDocument file ->
         LookupCache.evict ~state file;
-        state, None
+        { state; response = None }
+
     | SaveDocument file ->
         (* On save, evict entries from the lookup cache. The updated
            source will be picked up at the next lookup (if any). *)
@@ -817,7 +826,7 @@ let rec process
         else
           begin
             Log.log ~section:`Server "Explicitly ignoring didSave request";
-            state, None
+            { state; response = None }
           end
 
     (* Requests that cannot be fulfilled here. *)

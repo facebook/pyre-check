@@ -254,7 +254,7 @@ let assert_response
     | Some state -> state
     | None -> mock_server_state ~initial_environment errors
   in
-  let _, response =
+  let { Request.response; _ } =
     Request.process
       ~socket:mock_client_socket
       ~state:mock_server_state
@@ -658,7 +658,7 @@ let test_incremental_typecheck _ =
 
 let test_protocol_language_server_protocol _ =
   let server_state = mock_server_state (File.Handle.Table.create ()) in
-  let _, response =
+  let { Request.response; _ } =
     Request.process
       ~socket:mock_client_socket
       ~state:server_state
@@ -769,12 +769,12 @@ let test_incremental_dependencies _ =
         ~configuration:(CommandTest.mock_server_configuration ())
         ~request
     in
-    let state, response =
+    let { Request.state; response } =
       process (check_request ~update:[file "b.py"] ~check:[file "b.py"] ())
     in
     assert_equal (Some (Protocol.TypeCheckResponse expected_errors)) response;
     assert_equal state.State.deferred_requests [check_request ~check:[file "a.py"] ()];
-    let state, response =
+    let { Request.state; response } =
       process (check_request ~update:[file "b.py"] ~check:[file "a.py"; file "b.py"] ())
     in
     let printer = function
@@ -847,7 +847,7 @@ let test_incremental_lookups _ =
       ~initial_environment:environment
       errors
   in
-  let state, _ =
+  let { Request.state; _ } =
     Request.process
       ~socket:mock_client_socket
       ~state:initial_state
@@ -925,7 +925,7 @@ let test_incremental_repopulate _ =
     |> trim_extra_indentation
   in
   Out_channel.write_all ~data:source "test.py";
-  let _, _ =
+  let _ =
     Request.process
       ~socket:mock_client_socket
       ~state:initial_state
@@ -1023,7 +1023,7 @@ let test_incremental_attribute_caching context =
             ~update_environment_with:[File.create source_path]
             ~check:[File.create source_path]
             ()))
-    |> fst
+    |> fun { Request.state; _ } -> state
   in
   let get_errors { State.errors; _ } = Hashtbl.to_alist errors in
   let state = request_typecheck initial_state in

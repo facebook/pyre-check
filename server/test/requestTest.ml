@@ -49,10 +49,11 @@ let test_process_client_shutdown_request _ =
     let state = mock_server_state () in
     let actual_response =
       Request.process_client_shutdown_request ~state ~id
-      |> snd
       |> function
-      | Some (Protocol.LanguageServerProtocolResponse response) -> response
-      | _ -> failwith "Unexpected response."
+      | { Request.response = Some (Protocol.LanguageServerProtocolResponse response); _ } ->
+          response
+      | _ ->
+          failwith "Unexpected response."
     in
     let expected_response =
       expected_response
@@ -72,7 +73,7 @@ let test_process_type_query_request _ =
       let local_root = Path.current_working_directory () in
       Request.process_type_query_request ~state ~local_root ~request
       |> function
-      | Protocol.TypeQueryResponse response ->
+      | { Request.response = Some (Protocol.TypeQueryResponse response); _ } ->
           Protocol.TypeQuery.response_to_yojson response
           |> Yojson.Safe.to_string
       | _ ->
@@ -148,9 +149,8 @@ let test_process_display_type_errors_request _ =
       let local_root = Path.current_working_directory () in
       let files = List.map paths ~f:(fun path -> mock_path path |> File.create) in
       Request.process_display_type_errors_request ~state ~local_root ~files
-      |> snd
       |> function
-      | Some (Protocol.TypeCheckResponse response) -> response
+      | { Request.response = Some (Protocol.TypeCheckResponse response); _ } -> response
       | _ -> failwith "Unexpected response."
     in
     let expected_errors =
@@ -199,9 +199,8 @@ let test_process_type_check_request context =
           Configuration.create ~project_root:(Path.current_working_directory ()) ()
         in
         Request.process_type_check_request ~state ~configuration ~request
-        |> snd
         |> function
-        | Some (Protocol.TypeCheckResponse response) -> response
+        | { Request.response = Some (Protocol.TypeCheckResponse response); _ } -> response
         | _ -> failwith "Unexpected response."
       in
       assert_errors_equal ~actual_errors ~expected_errors
