@@ -528,7 +528,11 @@ let process_type_check_request
     ~state:({ State.environment; errors; scheduler; deferred_requests; handles; _ } as state)
     ~configuration:({ local_root; _ } as configuration)
     ~request:{ TypeCheckRequest.update_environment_with; check} =
+  Annotated.Class.AttributesCache.clear ();
   let (module Handler: Environment.Handler) = environment in
+  let scheduler = Scheduler.with_parallel scheduler ~is_parallel:(List.length check > 5) in
+
+  (* Compute requests we do not serve immediately. *)
   let deferred_requests =
     if not (List.is_empty update_environment_with) then
       let files =
@@ -573,25 +577,25 @@ let process_type_check_request
     else
       deferred_requests
   in
-  let scheduler = Scheduler.with_parallel scheduler ~is_parallel:(List.length check > 5) in
+
+  (* Repopulate the environment. *)
   let repopulate_handles =
-    let is_stub file =
-      file
-      |> File.path
-      |> Path.absolute
-      |> String.is_suffix ~suffix:".pyi"
+    (* Clean up all data related to updated files. *)
+    let handles = List.filter_map update_environment_with ~f:(File.handle ~root:local_root) in
+    Ast.SharedMemory.remove_paths handles;
+    Handler.purge handles;
+    update_environment_with
+    |> List.iter ~f:(LookupCache.evict ~state);
+
+    let stubs, sources =
+      let is_stub file =
+        file
+        |> File.path
+        |> Path.absolute
+        |> String.is_suffix ~suffix:".pyi"
+      in
+      List.partition_tf ~f:is_stub update_environment_with
     in
-    let () =
-      (* Clean up all data related to updated files. *)
-      let handles = List.filter_map update_environment_with ~f:(File.handle ~root:local_root) in
-      Ast.SharedMemory.remove_paths handles;
-      Handler.purge handles;
-      (* Evict entries from the lookup cache. The next lookup (if
-         any) will freshen the cache. *)
-      update_environment_with
-      |> List.iter ~f:(LookupCache.evict ~state)
-    in
-    let stubs, sources = List.partition_tf ~f:is_stub update_environment_with in
     let stubs = Service.Parser.parse_sources ~configuration ~scheduler ~files:stubs in
     let sources =
       let keep file =
@@ -607,30 +611,28 @@ let process_type_check_request
     let sources = Service.Parser.parse_sources ~configuration ~scheduler ~files:sources in
     stubs @ sources
   in
-  let new_source_handles = List.filter_map ~f:(File.handle ~root:local_root) check in
-  Annotated.Class.AttributesCache.clear ();
-  let () =
-    Log.log
-      ~section:`Debug
-      "Repopulating the environment with %a"
-      Sexp.pp [%message (repopulate_handles: File.Handle.t list)];
-
-    List.filter_map ~f:Ast.SharedMemory.get_source repopulate_handles
-    |> Service.Environment.populate environment;
-    let classes_to_infer =
-      let get_class_keys handle =
-        Handler.DependencyHandler.get_class_keys ~path:(File.Handle.show handle)
-      in
-      List.concat_map repopulate_handles ~f:get_class_keys
+  Log.log
+    ~section:`Debug
+    "Repopulating the environment with %a"
+    Sexp.pp [%message (repopulate_handles: File.Handle.t list)];
+  List.filter_map ~f:Ast.SharedMemory.get_source repopulate_handles
+  |> Service.Environment.populate environment;
+  let classes_to_infer =
+    let get_class_keys handle =
+      Handler.DependencyHandler.get_class_keys ~path:(File.Handle.show handle)
     in
-    Analysis.Environment.infer_protocols ~handler:environment ~classes_to_infer ();
-    Statistics.event
-      ~section:`Memory
-      ~name:"shared memory size"
-      ~integers:["size", Service.EnvironmentSharedMemory.heap_size ()]
-      ();
+    List.concat_map repopulate_handles ~f:get_class_keys
   in
+  Analysis.Environment.infer_protocols ~handler:environment ~classes_to_infer ();
+  Statistics.event
+    ~section:`Memory
+    ~name:"shared memory size"
+    ~integers:["size", Service.EnvironmentSharedMemory.heap_size ()]
+    ();
   Service.Postprocess.register_ignores ~configuration scheduler repopulate_handles;
+
+  (* Compute new set of errors. *)
+  let new_source_handles = List.filter_map ~f:(File.handle ~root:local_root) check in
 
   (* Clear all type resolution info from shared memory for all affected sources. *)
   List.filter_map ~f:Ast.SharedMemory.get_source new_source_handles
