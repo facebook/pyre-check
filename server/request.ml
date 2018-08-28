@@ -677,8 +677,10 @@ let rec process
   let (module Handler: Environment.Handler) = environment in
   let process_lsp_request ~check_on_save lsp_request =
     match lsp_request with
-    | TypeCheckRequest request -> Some (process_type_check_request ~state ~configuration ~request)
-    | ClientShutdownRequest id -> Some (process_client_shutdown_request ~state ~id)
+    | TypeCheckRequest request ->
+        Some (process_type_check_request ~state ~configuration ~request)
+    | ClientShutdownRequest id ->
+        Some (process_client_shutdown_request ~state ~id)
     | ClientExitRequest Persistent ->
         Log.log ~section:`Server "Stopping persistent client";
         Some (state, Some (ClientExitResponse Persistent))
@@ -816,7 +818,8 @@ let rec process
         >>= process_lsp_request ~check_on_save
         |> Option.value ~default:(state, None)
 
-    | ClientShutdownRequest id -> process_client_shutdown_request ~state ~id
+    | ClientShutdownRequest id ->
+        process_client_shutdown_request ~state ~id
 
     | ClientExitRequest client ->
         Log.log ~section:`Server "Stopping %s client" (show_client client);
