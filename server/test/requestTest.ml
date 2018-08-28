@@ -226,9 +226,9 @@ let () =
   Scheduler.mock () |> ignore;
   "request">:::
   [
-    "test_process_client_shutdown_request">::test_process_client_shutdown_request;
-    "test_process_type_query_request">::test_process_type_query_request;
-    "test_process_display_type_errors_request">::test_process_display_type_errors_request;
-    "test_process_type_check_request">::test_process_type_check_request;
+    "process_client_shutdown_request">::test_process_client_shutdown_request;
+    "process_type_query_request">::test_process_type_query_request;
+    "process_display_type_errors_request">::test_process_display_type_errors_request;
+    "process_type_check_request">::test_process_type_check_request;
   ]
   |> run_test_tt_main
