@@ -675,8 +675,8 @@ let rec process
     ~request =
   let timer = Timer.start () in
   let (module Handler: Environment.Handler) = environment in
-  let process_lsp_request ~check_on_save lsp_request =
-    match lsp_request with
+  let process_lsp_request ~check_on_save ~request =
+    match request with
     | TypeCheckRequest request ->
         Some (process_type_check_request ~state ~configuration ~request)
     | ClientShutdownRequest id ->
@@ -685,44 +685,47 @@ let rec process
         Log.log ~section:`Server "Stopping persistent client";
         Some (state, Some (ClientExitResponse Persistent))
     | GetDefinitionRequest { DefinitionRequest.id; file; position } ->
-        let open LanguageServer.Protocol in
-        let definition = LookupCache.find_definition ~state ~configuration file position in
-        Some
-          (state,
-           Some
-             (LanguageServerProtocolResponse
-                (TextDocumentDefinitionResponse.create
-                   ~root:local_root
-                   ~id
-                   ~location:definition
-                 |> TextDocumentDefinitionResponse.to_yojson
-                 |> Yojson.Safe.to_string)))
-    | HoverRequest { DefinitionRequest.id; file; position } ->
-        let open LanguageServer.Protocol in
-        let result =
-          LookupCache.find_annotation ~state ~configuration file position
-          >>| fun (location, annotation) ->
-          {
-            HoverResponse.location;
-            contents = Type.show annotation;
-          }
+        let response =
+          let open LanguageServer.Protocol in
+          let definition = LookupCache.find_definition ~state ~configuration file position in
+          TextDocumentDefinitionResponse.create
+            ~root:local_root
+            ~id
+            ~location:definition
+          |> TextDocumentDefinitionResponse.to_yojson
+          |> Yojson.Safe.to_string
+          |> (fun response -> LanguageServerProtocolResponse response)
+          |> Option.some
         in
-        Some
-          (state,
-           Some
-             (LanguageServerProtocolResponse
-                (HoverResponse.create ~id ~result
-                 |> HoverResponse.to_yojson
-                 |> Yojson.Safe.to_string)))
+        Some (state, response)
+    | HoverRequest { DefinitionRequest.id; file; position } ->
+        let response =
+          let open LanguageServer.Protocol in
+          let result =
+            LookupCache.find_annotation ~state ~configuration file position
+            >>| fun (location, annotation) ->
+            {
+              HoverResponse.location;
+              contents = Type.show annotation;
+            }
+          in
+          HoverResponse.create ~id ~result
+          |> HoverResponse.to_yojson
+          |> Yojson.Safe.to_string
+          |> (fun response -> LanguageServerProtocolResponse response)
+          |> Option.some
+        in
+        Some (state, response)
     | RageRequest id ->
-        let items = Service.Rage.get_logs configuration in
-        Some
-          (state,
-           Some (LanguageServerProtocolResponse
-                   (LanguageServer.Protocol.RageResponse.create ~items ~id
-                    |> LanguageServer.Protocol.RageResponse.to_yojson
-                    |> Yojson.Safe.to_string)))
-
+        let response =
+          let items = Service.Rage.get_logs configuration in
+          LanguageServer.Protocol.RageResponse.create ~items ~id
+          |> LanguageServer.Protocol.RageResponse.to_yojson
+          |> Yojson.Safe.to_string
+          |> (fun response -> LanguageServerProtocolResponse response)
+          |> Option.some
+        in
+        Some (state, response)
     | OpenDocument file ->
         (* Make sure cache is fresh. We might not have received a close notification. *)
         LookupCache.evict ~state file;
@@ -737,11 +740,11 @@ let rec process
            source will be picked up at the next lookup (if any). *)
         LookupCache.evict ~state file;
         if check_on_save then
-          Some
-            (process_type_check_request
-               ~state
-               ~configuration
-               ~request:{ TypeCheckRequest.update_environment_with = [file]; check = [file]; })
+          process_type_check_request
+            ~state
+            ~configuration
+            ~request:{ TypeCheckRequest.update_environment_with = [file]; check = [file]; }
+          |> Option.some
         else
           begin
             Log.log ~section:`Server "Explicitly ignoring didSave request";
@@ -752,7 +755,7 @@ let rec process
         Log.log
           ~section:`Server
           "Ignoring request of type `%s` wrapped inside LSP request"
-          (name lsp_request);
+          (name request);
         None
   in
   let result =
@@ -815,7 +818,7 @@ let rec process
         parse
           ~root:configuration.local_root
           ~request:(Yojson.Safe.from_string request)
-        >>= process_lsp_request ~check_on_save
+        >>= (fun request -> process_lsp_request ~check_on_save ~request)
         |> Option.value ~default:(state, None)
 
     | ClientShutdownRequest id ->
