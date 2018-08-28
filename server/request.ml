@@ -664,7 +664,7 @@ let handle_type_check_request
 
 
 let rec process_request
-    ~new_socket
+    ~socket
     ~state:({ State.environment; deferred_requests; errors; lock; connections; _ } as state)
     ~configuration:({
         configuration = { local_root; _ } as configuration;
@@ -776,7 +776,7 @@ let rec process_request
           let update_state state request =
             let state, _ =
               process_request
-                ~new_socket
+                ~socket
                 ~state
                 ~configuration:server_configuration
                 ~request
@@ -791,7 +791,7 @@ let rec process_request
         in
         state, Some (TypeCheckResponse (build_file_to_error_map ~state errors))
     | StopRequest ->
-        Socket.write new_socket StopResponse;
+        Socket.write socket StopResponse;
         Mutex.critical_section
           lock
           ~f:(fun () ->

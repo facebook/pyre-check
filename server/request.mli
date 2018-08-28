@@ -33,7 +33,7 @@ val handle_type_check_request
   -> State.t * (Protocol.response option)
 
 val process_request
-  :  new_socket: Unix.File_descr.t
+  :  socket: Unix.File_descr.t
   -> state: State.t
   -> configuration: ServerConfiguration.t
   -> request: Protocol.Request.t
