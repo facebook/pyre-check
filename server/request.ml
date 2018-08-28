@@ -43,7 +43,7 @@ let parse ~root ~request =
           None)
     |> Option.value ~default:uri
   in
-  let handle_request request_method =
+  let process_request request_method =
     match request_method with
     | "textDocument/definition" ->
         begin
@@ -227,7 +227,7 @@ let parse ~root ~request =
   in
   try
     let request_method = Yojson.Safe.Util.member "method" request in
-    handle_request (Yojson.Safe.Util.to_string request_method)
+    process_request (Yojson.Safe.Util.to_string request_method)
   with Yojson.Safe.Util.Type_error _ -> None
 
 
@@ -288,7 +288,7 @@ module LookupCache = struct
 end
 
 
-let handle_client_shutdown_request ~state ~id =
+let process_client_shutdown_request ~state ~id =
   let open LanguageServer.Protocol in
   let response =
     ShutdownResponse.default id
@@ -298,9 +298,9 @@ let handle_client_shutdown_request ~state ~id =
   state, Some (LanguageServerProtocolResponse response)
 
 
-let handle_type_query_request ~state:{ State.environment; _ } ~local_root ~request =
+let process_type_query_request ~state:{ State.environment; _ } ~local_root ~request =
   let (module Handler: Environment.Handler) = environment in
-  let handle_request () =
+  let process_request () =
     let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
     let resolution = Environment.resolution environment () in
     let parse_and_validate unparsed_annotation =
@@ -485,7 +485,7 @@ let handle_type_query_request ~state:{ State.environment; _ } ~local_root ~reque
   in
   let response =
     try
-      handle_request ()
+      process_request ()
     with TypeOrder.Untracked untracked ->
       let untracked_response =
         Format.asprintf "Type `%a` was not found in the type order." Type.pp untracked
@@ -510,7 +510,7 @@ let build_file_to_error_map ?(checked_files = None) ~state:{ State.errors; _ } e
   |> Map.to_alist
 
 
-let handle_display_type_errors_request ~state:({ State.errors; _ } as state) ~local_root ~files =
+let process_display_type_errors_request ~state:({ State.errors; _ } as state) ~local_root ~files =
   let errors =
     match files with
     | [] ->
@@ -524,7 +524,7 @@ let handle_display_type_errors_request ~state:({ State.errors; _ } as state) ~lo
   state, Some (TypeCheckResponse (build_file_to_error_map ~state errors))
 
 
-let handle_type_check_request
+let process_type_check_request
     ~state:({ State.environment; errors; scheduler; deferred_requests; handles; _ } as state)
     ~configuration:({ local_root; _ } as configuration)
     ~request:{ TypeCheckRequest.update_environment_with; check} =
@@ -663,7 +663,7 @@ let handle_type_check_request
   Some (TypeCheckResponse (build_file_to_error_map ~checked_files ~state new_errors))
 
 
-let rec process_request
+let rec process
     ~socket
     ~state:({ State.environment; deferred_requests; errors; lock; connections; _ } as state)
     ~configuration:({
@@ -673,10 +673,10 @@ let rec process_request
     ~request =
   let timer = Timer.start () in
   let (module Handler: Environment.Handler) = environment in
-  let handle_lsp_request ~check_on_save lsp_request =
+  let process_lsp_request ~check_on_save lsp_request =
     match lsp_request with
-    | TypeCheckRequest request -> Some (handle_type_check_request ~state ~configuration ~request)
-    | ClientShutdownRequest id -> Some (handle_client_shutdown_request ~state ~id)
+    | TypeCheckRequest request -> Some (process_type_check_request ~state ~configuration ~request)
+    | ClientShutdownRequest id -> Some (process_client_shutdown_request ~state ~id)
     | ClientExitRequest Persistent ->
         Log.log ~section:`Server "Stopping persistent client";
         Some (state, Some (ClientExitResponse Persistent))
@@ -734,7 +734,7 @@ let rec process_request
         LookupCache.evict ~state file;
         if check_on_save then
           Some
-            (handle_type_check_request
+            (process_type_check_request
                ~state
                ~configuration
                ~request:{ TypeCheckRequest.update_environment_with = [file]; check = [file]; })
@@ -764,18 +764,18 @@ let rec process_request
               previous_use_ratio
               (Memory.heap_use_ratio ())
           end;
-        handle_type_check_request ~state ~configuration ~request
+        process_type_check_request ~state ~configuration ~request
     | TypeQueryRequest request ->
-        state, Some (handle_type_query_request ~state ~local_root ~request)
+        state, Some (process_type_query_request ~state ~local_root ~request)
     | DisplayTypeErrors files ->
-        handle_display_type_errors_request ~state ~local_root ~files
+        process_display_type_errors_request ~state ~local_root ~files
     | FlushTypeErrorsRequest ->
         let state =
           let deferred_requests = Request.flatten deferred_requests in
           let state = { state with deferred_requests = [] } in
           let update_state state request =
             let state, _ =
-              process_request
+              process
                 ~socket
                 ~state
                 ~configuration:server_configuration
@@ -811,10 +811,10 @@ let rec process_request
         parse
           ~root:configuration.local_root
           ~request:(Yojson.Safe.from_string request)
-        >>= handle_lsp_request ~check_on_save
+        >>= process_lsp_request ~check_on_save
         |> Option.value ~default:(state, None)
 
-    | ClientShutdownRequest id -> handle_client_shutdown_request ~state ~id
+    | ClientShutdownRequest id -> process_client_shutdown_request ~state ~id
 
     | ClientExitRequest client ->
         Log.log ~section:`Server "Stopping %s client" (show_client client);

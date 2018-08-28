@@ -79,10 +79,10 @@ let computation_thread request_queue configuration state =
       | _ -> ()
     in
     let handle_request state ~request:(origin, request) =
-      let process_request socket state configuration request =
+      let process socket state configuration request =
         try
           Log.log ~section:`Server "Processing request %a" Server.Protocol.Request.pp request;
-          Server.Request.process_request ~socket ~state ~configuration ~request
+          Server.Request.process ~socket ~state ~configuration ~request
         with
         | Server.Request.InvalidRequest ->
             Log.error "Exiting due to invalid request";
@@ -123,7 +123,7 @@ let computation_thread request_queue configuration state =
                       ()
                 end
           in
-          let state, response = process_request socket state configuration request in
+          let state, response = process socket state configuration request in
           begin
             match response with
             | Some (LanguageServerProtocolResponse _)
@@ -143,7 +143,7 @@ let computation_thread request_queue configuration state =
           let { socket; persistent_clients; _ } =
             Mutex.critical_section state.lock ~f:(fun () -> !(state.connections))
           in
-          let state, response = process_request socket state configuration request in
+          let state, response = process socket state configuration request in
           begin
             match response with
             | Some response ->
@@ -156,7 +156,7 @@ let computation_thread request_queue configuration state =
           let { persistent_clients; _ } =
             Mutex.critical_section state.lock ~f:(fun () -> !(state.connections))
           in
-          let state, response = process_request socket state configuration request in
+          let state, response = process socket state configuration request in
           begin
             match response with
             | Some response ->

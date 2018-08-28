@@ -15,24 +15,24 @@ val parse
   -> request: Yojson.Safe.json
   -> Protocol.Request.t option
 
-val handle_client_shutdown_request: state: State.t -> id: int -> State.t * Protocol.response option
-val handle_type_query_request
+val process_client_shutdown_request: state: State.t -> id: int -> State.t * Protocol.response option
+val process_type_query_request
   :  state: State.t
   -> local_root: Path.t
   -> request: Protocol.TypeQuery.request
   -> Protocol.response
-val handle_display_type_errors_request
+val process_display_type_errors_request
   :  state: State.t
   -> local_root: Path.t
   -> files: File.t list
   -> State.t * (Protocol.response option)
-val handle_type_check_request
+val process_type_check_request
   :  state: State.t
   -> configuration: Configuration.t
   -> request: Protocol.TypeCheckRequest.t
   -> State.t * (Protocol.response option)
 
-val process_request
+val process
   :  socket: Unix.File_descr.t
   -> state: State.t
   -> configuration: ServerConfiguration.t

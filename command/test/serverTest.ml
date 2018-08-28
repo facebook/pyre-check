@@ -255,7 +255,7 @@ let assert_response
     | None -> mock_server_state ~initial_environment errors
   in
   let _, response =
-    Request.process_request
+    Request.process
       ~socket:mock_client_socket
       ~state:mock_server_state
       ~configuration:(CommandTest.mock_server_configuration ~local_root ())
@@ -659,7 +659,7 @@ let test_incremental_typecheck _ =
 let test_protocol_language_server_protocol _ =
   let server_state = mock_server_state (File.Handle.Table.create ()) in
   let _, response =
-    Request.process_request
+    Request.process
       ~socket:mock_client_socket
       ~state:server_state
       ~configuration:(CommandTest.mock_server_configuration ())
@@ -713,7 +713,7 @@ let test_protocol_persistent _ =
   assert_raises
     Request.InvalidRequest
     (fun () ->
-       Request.process_request
+       Request.process
          ~socket:mock_client_socket
          ~state:server_state
          ~configuration:(CommandTest.mock_server_configuration ())
@@ -762,20 +762,20 @@ let test_incremental_dependencies _ =
            ?check
            ())
     in
-    let process_request request =
-      Request.process_request
+    let process request =
+      Request.process
         ~socket:mock_client_socket
         ~state:initial_state
         ~configuration:(CommandTest.mock_server_configuration ())
         ~request
     in
     let state, response =
-      process_request (check_request ~update:[file "b.py"] ~check:[file "b.py"] ())
+      process (check_request ~update:[file "b.py"] ~check:[file "b.py"] ())
     in
     assert_equal (Some (Protocol.TypeCheckResponse expected_errors)) response;
     assert_equal state.State.deferred_requests [check_request ~check:[file "a.py"] ()];
     let state, response =
-      process_request (check_request ~update:[file "b.py"] ~check:[file "a.py"; file "b.py"] ())
+      process (check_request ~update:[file "b.py"] ~check:[file "a.py"; file "b.py"] ())
     in
     let printer = function
       | None -> "None"
@@ -848,7 +848,7 @@ let test_incremental_lookups _ =
       errors
   in
   let state, _ =
-    Request.process_request
+    Request.process
       ~socket:mock_client_socket
       ~state:initial_state
       ~configuration:(CommandTest.mock_server_configuration ())
@@ -926,7 +926,7 @@ let test_incremental_repopulate _ =
   in
   Out_channel.write_all ~data:source "test.py";
   let _, _ =
-    Request.process_request
+    Request.process
       ~socket:mock_client_socket
       ~state:initial_state
       ~configuration:(CommandTest.mock_server_configuration ())
@@ -1014,7 +1014,7 @@ let test_incremental_attribute_caching context =
     Server.Operations.initialize ~old_state server_lock connections server_configuration
   in
   let request_typecheck state =
-    Request.process_request
+    Request.process
       ~socket:Unix.stdout
       ~state
       ~configuration:server_configuration

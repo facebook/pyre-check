@@ -44,11 +44,11 @@ let mock_server_state ?(errors = File.Handle.Table.create ()) () =
   }
 
 
-let test_handle_client_shutdown_request _ =
+let test_process_client_shutdown_request _ =
   let assert_response id expected_response =
     let state = mock_server_state () in
     let actual_response =
-      Request.handle_client_shutdown_request ~state ~id
+      Request.process_client_shutdown_request ~state ~id
       |> snd
       |> function
       | Some (Protocol.LanguageServerProtocolResponse response) -> response
@@ -65,12 +65,12 @@ let test_handle_client_shutdown_request _ =
   assert_response 2 {|{"jsonrpc":"2.0","id":2,"result":null}|}
 
 
-let test_handle_type_query_request _ =
+let test_process_type_query_request _ =
   let assert_response request expected_response =
     let state = mock_server_state () in
     let actual_response =
       let local_root = Path.current_working_directory () in
-      Request.handle_type_query_request ~state ~local_root ~request
+      Request.process_type_query_request ~state ~local_root ~request
       |> function
       | Protocol.TypeQueryResponse response ->
           Protocol.TypeQuery.response_to_yojson response
@@ -120,7 +120,7 @@ let assert_errors_equal ~actual_errors ~expected_errors =
   assert_equal ~cmp:equal ~printer expected_errors actual_errors
 
 
-let test_handle_display_type_errors_request _ =
+let test_process_display_type_errors_request _ =
   let assert_response ~paths ~errors ~expected_errors =
     let actual_errors =
       let state =
@@ -147,7 +147,7 @@ let test_handle_display_type_errors_request _ =
       in
       let local_root = Path.current_working_directory () in
       let files = List.map paths ~f:(fun path -> mock_path path |> File.create) in
-      Request.handle_display_type_errors_request ~state ~local_root ~files
+      Request.process_display_type_errors_request ~state ~local_root ~files
       |> snd
       |> function
       | Some (Protocol.TypeCheckResponse response) -> response
@@ -180,7 +180,7 @@ let test_handle_display_type_errors_request _ =
     ~expected_errors:["one.py", ["one"]; "two.py", []]
 
 
-let test_handle_type_check_request context =
+let test_process_type_check_request context =
   let assert_response ~check ~expected_errors =
     let assert_response _ =
       let actual_errors =
@@ -198,7 +198,7 @@ let test_handle_type_check_request context =
         let configuration =
           Configuration.create ~project_root:(Path.current_working_directory ()) ()
         in
-        Request.handle_type_check_request ~state ~configuration ~request
+        Request.process_type_check_request ~state ~configuration ~request
         |> snd
         |> function
         | Some (Protocol.TypeCheckResponse response) -> response
@@ -226,9 +226,9 @@ let () =
   Scheduler.mock () |> ignore;
   "request">:::
   [
-    "test_handle_client_shutdown_request">::test_handle_client_shutdown_request;
-    "test_handle_type_query_request">::test_handle_type_query_request;
-    "test_handle_display_type_errors_request">::test_handle_display_type_errors_request;
-    "test_handle_type_check_request">::test_handle_type_check_request;
+    "test_process_client_shutdown_request">::test_process_client_shutdown_request;
+    "test_process_type_query_request">::test_process_type_query_request;
+    "test_process_display_type_errors_request">::test_process_display_type_errors_request;
+    "test_process_type_check_request">::test_process_type_check_request;
   ]
   |> run_test_tt_main
