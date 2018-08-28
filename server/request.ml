@@ -298,11 +298,11 @@ let handle_client_shutdown_request ~state ~id =
   state, Some (LanguageServerProtocolResponse response)
 
 
-let handle_type_query_request ~state:({ State.environment; _ } as state) ~local_root ~request =
+let handle_type_query_request ~state:{ State.environment; _ } ~local_root ~request =
   let (module Handler: Environment.Handler) = environment in
   let handle_request () =
     let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
-    let resolution = Environment.resolution state.environment () in
+    let resolution = Environment.resolution environment () in
     let parse_and_validate unparsed_annotation =
       let annotation = Resolution.parse_annotation resolution unparsed_annotation in
       if TypeOrder.is_instantiated order annotation then
@@ -472,7 +472,7 @@ let handle_type_query_request ~state:({ State.environment; _ } as state) ~local_
         in
         File.Handle.create path
         |> Ast.SharedMemory.get_source
-        >>| Lookup.create_of_source state.environment
+        >>| Lookup.create_of_source environment
         >>= Lookup.get_annotation ~position:start ~source_text
         >>| (fun (_, annotation) -> TypeQuery.Response (TypeQuery.Type annotation))
         |> Option.value ~default:(
@@ -495,8 +495,8 @@ let handle_type_query_request ~state:({ State.environment; _ } as state) ~local_
   TypeQueryResponse response
 
 
-let build_file_to_error_map ?(checked_files = None) ~state error_list =
-  let initial_files = Option.value ~default:(Hashtbl.keys state.errors) checked_files in
+let build_file_to_error_map ?(checked_files = None) ~state:{ State.errors; _ } error_list =
+  let initial_files = Option.value ~default:(Hashtbl.keys errors) checked_files in
   let error_file error = File.Handle.create (Error.path error) in
   List.fold
     ~init:File.Handle.Map.empty
@@ -510,25 +510,25 @@ let build_file_to_error_map ?(checked_files = None) ~state error_list =
   |> Map.to_alist
 
 
-let handle_display_type_errors_request ~state ~local_root ~files =
+let handle_display_type_errors_request ~state:({ State.errors; _ } as state) ~local_root ~files =
   let errors =
     match files with
     | [] ->
-        Hashtbl.data state.errors
+        Hashtbl.data errors
         |> List.concat
     | _ ->
         List.filter_map ~f:(File.handle ~root:local_root) files
-        |> List.filter_map ~f:(Hashtbl.find state.errors)
+        |> List.filter_map ~f:(Hashtbl.find errors)
         |> List.concat
   in
   state, Some (TypeCheckResponse (build_file_to_error_map ~state errors))
 
 
 let handle_type_check_request
-    ~state
+    ~state:({ State.environment; errors; scheduler; deferred_requests; handles; _ } as state)
     ~configuration:({ local_root; _ } as configuration)
     ~request:{ TypeCheckRequest.update_environment_with; check} =
-  let (module Handler: Environment.Handler) = state.environment in
+  let (module Handler: Environment.Handler) = environment in
   let deferred_requests =
     if not (List.is_empty update_environment_with) then
       let files =
@@ -567,14 +567,13 @@ let handle_type_check_request
       in
 
       if List.is_empty files then
-        state.deferred_requests
+        deferred_requests
       else
-        (TypeCheckRequest (TypeCheckRequest.create ~check:files ()))
-        :: state.deferred_requests
+        (TypeCheckRequest (TypeCheckRequest.create ~check:files ())) :: deferred_requests
     else
-      state.deferred_requests
+      deferred_requests
   in
-  let scheduler = Scheduler.with_parallel state.scheduler ~is_parallel:(List.length check > 5) in
+  let scheduler = Scheduler.with_parallel scheduler ~is_parallel:(List.length check > 5) in
   let repopulate_handles =
     let is_stub file =
       file
@@ -617,14 +616,14 @@ let handle_type_check_request
       Sexp.pp [%message (repopulate_handles: File.Handle.t list)];
 
     List.filter_map ~f:Ast.SharedMemory.get_source repopulate_handles
-    |> Service.Environment.populate state.environment;
+    |> Service.Environment.populate environment;
     let classes_to_infer =
       let get_class_keys handle =
         Handler.DependencyHandler.get_class_keys ~path:(File.Handle.show handle)
       in
       List.concat_map repopulate_handles ~f:get_class_keys
     in
-    Analysis.Environment.infer_protocols ~handler:state.environment ~classes_to_infer ();
+    Analysis.Environment.infer_protocols ~handler:environment ~classes_to_infer ();
     Statistics.event
       ~section:`Memory
       ~name:"shared memory size"
@@ -643,16 +642,16 @@ let handle_type_check_request
     Service.TypeCheck.analyze_sources
       scheduler
       configuration
-      state.environment
+      environment
       new_source_handles
   in
   (* Kill all previous errors for new files we just checked *)
-  List.iter ~f:(Hashtbl.remove state.errors) new_source_handles;
+  List.iter ~f:(Hashtbl.remove errors) new_source_handles;
   (* Associate the new errors with new files *)
   List.iter
     new_errors
     ~f:(fun error ->
-        Hashtbl.add_multi state.errors ~key:(File.Handle.create (Error.path error)) ~data:error);
+        Hashtbl.add_multi errors ~key:(File.Handle.create (Error.path error)) ~data:error);
   let new_files = File.Handle.Set.of_list new_source_handles in
   let checked_files =
     List.filter_map
@@ -660,20 +659,20 @@ let handle_type_check_request
       check
     |> fun handles -> Some handles
   in
-  { state with handles = Set.union state.handles new_files; deferred_requests },
+  { state with handles = Set.union handles new_files; deferred_requests },
   Some (TypeCheckResponse (build_file_to_error_map ~checked_files ~state new_errors))
 
 
 let rec process_request
     ~new_socket
-    ~state
+    ~state:({ State.environment; deferred_requests; errors; lock; connections; _ } as state)
     ~configuration:({
         configuration = { local_root; _ } as configuration;
         _;
       } as server_configuration)
     ~request =
   let timer = Timer.start () in
-  let (module Handler: Environment.Handler) = state.environment in
+  let (module Handler: Environment.Handler) = environment in
   let handle_lsp_request ~check_on_save lsp_request =
     match lsp_request with
     | TypeCheckRequest request -> Some (handle_type_check_request ~state ~configuration ~request)
@@ -772,7 +771,7 @@ let rec process_request
         handle_display_type_errors_request ~state ~local_root ~files
     | FlushTypeErrorsRequest ->
         let state =
-          let deferred_requests = Request.flatten state.deferred_requests in
+          let deferred_requests = Request.flatten deferred_requests in
           let state = { state with deferred_requests = [] } in
           let update_state state request =
             let state, _ =
@@ -787,26 +786,26 @@ let rec process_request
           List.fold ~init:state ~f:update_state deferred_requests
         in
         let errors =
-          Hashtbl.data state.errors
+          Hashtbl.data errors
           |> List.concat
         in
         state, Some (TypeCheckResponse (build_file_to_error_map ~state errors))
     | StopRequest ->
         Socket.write new_socket StopResponse;
         Mutex.critical_section
-          state.lock
+          lock
           ~f:(fun () ->
               Operations.stop_server
                 ~reason:"explicit request"
                 server_configuration
-                !(state.connections).socket);
+                !connections.socket);
         state, None
     | LanguageServerProtocolRequest request ->
         let check_on_save =
           Mutex.critical_section
-            state.lock
+            lock
             ~f:(fun () ->
-                let { file_notifiers; _ } = !(state.connections) in
+                let { file_notifiers; _ } = !connections in
                 List.is_empty file_notifiers)
         in
         parse
