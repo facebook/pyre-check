@@ -120,11 +120,8 @@ let log_parse_errors_count ~not_parsed ~description =
       hint
 
 
-let parse_stubs
-    scheduler
-    ~configuration:({ Configuration.local_root; typeshed; search_path; _ } as configuration) =
-  let timer = Timer.start () in
-
+let find_stubs
+    ~configuration:{ Configuration.local_root; typeshed; search_path; _ } =
   let paths =
     let stubs =
       let typeshed_directories =
@@ -174,14 +171,9 @@ let parse_stubs
       in
       List.map ~f:modules search_path
     in
+
     stubs @ modules
   in
-
-  let source_count =
-    let count sofar paths = sofar + (List.length paths) in
-    List.fold paths ~init:0 ~f:count
-  in
-  Log.info "Parsing %d stubs and external sources..." source_count;
   let _, paths =
     (* If two stub directories contain the same stub, prefer the one that
        appears earlier in the search path. *)
@@ -201,15 +193,7 @@ let parse_stubs
     in
     List.fold ~f:filter_interfering_stubs ~init:(Access.Set.empty, []) paths
   in
-  let handles =
-    (* The filtering ensures the order of parsing is deterministic. *)
-    parse_sources ~configuration ~scheduler ~files:(List.map ~f:File.create paths)
-  in
-
-  Statistics.performance ~name:"stubs parsed" ~timer ();
-  let not_parsed = (List.length paths) - (List.length handles) in
-  log_parse_errors_count ~not_parsed ~description:"external file";
-  handles
+  paths
 
 
 let find_sources ?(filter = fun _ -> true) { Configuration.local_root; _ } =
@@ -224,7 +208,18 @@ type result = {
 
 
 let parse_all scheduler ~configuration:({ Configuration.local_root; _ } as configuration) =
-  let stubs = parse_stubs scheduler ~configuration in
+  let stubs =
+    let timer = Timer.start () in
+    let stub_paths = find_stubs ~configuration in
+    Log.info "Parsing %d stubs and external sources..." (List.length stub_paths);
+    let handles =
+      parse_sources ~configuration ~scheduler ~files:(List.map ~f:File.create stub_paths)
+    in
+    let not_parsed = (List.length stub_paths) - (List.length handles) in
+    log_parse_errors_count ~not_parsed ~description:"external file";
+    Statistics.performance ~name:"stubs parsed" ~timer ();
+    handles
+  in
   let known_stubs =
     let add_to_known_stubs sofar handle =
       match Ast.SharedMemory.get_source handle with

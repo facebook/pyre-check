@@ -88,11 +88,10 @@ let test_parse_stubs_modules_list _ =
   assert_module_matches_name ~handle:7 "2and3.modd.f"
 
 
-let test_parse_stubs context =
+let test_find_stubs context =
   let handles =
     let local_root = Path.create_absolute (bracket_tmpdir context) in
     let module_root = Path.create_absolute (bracket_tmpdir context) in
-
     let write_file root relative =
       File.create ~content:(Some "def foo() -> int: ...") (Path.create_relative ~root ~relative)
       |> File.write
@@ -105,10 +104,9 @@ let test_parse_stubs context =
     write_file local_root "ttypes.py";
     write_file local_root "ttypes.pyi";
 
-    Service.Parser.parse_stubs
-      (Scheduler.mock ())
+    Service.Parser.find_stubs
       ~configuration:(Configuration.create ~local_root ~search_path:[module_root] ())
-    |> List.map ~f:File.Handle.show
+    |> List.filter_map ~f:Path.relative
     |> List.sort ~compare:String.compare
   in
   assert_equal
@@ -119,10 +117,9 @@ let test_parse_stubs context =
 
 
 let test_parse_typeshed context =
+  let typeshed_root = Path.create_absolute (bracket_tmpdir context) in
   let handles =
     let local_root = Path.create_absolute (bracket_tmpdir context) in
-    let typeshed_root = Path.create_absolute (bracket_tmpdir context) in
-
     let write_file root relative =
       File.create ~content:(Some "def foo() -> int: ...") (Path.create_relative ~root ~relative)
       |> File.write
@@ -133,10 +130,9 @@ let test_parse_typeshed context =
     write_file typeshed_root "tests/d.pyi";
     write_file typeshed_root ".skipme/e.pyi";
 
-    Service.Parser.parse_stubs
-      (Scheduler.mock ())
+    Service.Parser.find_stubs
       ~configuration:(Configuration.create ~local_root ~typeshed:typeshed_root ())
-    |> List.map ~f:File.Handle.show
+    |> List.filter_map ~f:Path.relative
     |> List.sort ~compare:String.compare
   in
   assert_equal
@@ -313,7 +309,7 @@ let test_register_modules _ =
 let () =
   "parser">:::[
     "parse_stubs_modules_list">::test_parse_stubs_modules_list;
-    "parse_stubs">::test_parse_stubs;
+    "find_stubs">::test_find_stubs;
     "parse_typeshed">::test_parse_typeshed;
     "parse_source">::test_parse_source;
     "parse_sources">::test_parse_sources;
