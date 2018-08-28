@@ -26,6 +26,11 @@ val handle_display_type_errors_request
   -> local_root: Path.t
   -> files: File.t list
   -> State.t * (Protocol.response option)
+val handle_type_check_request
+  :  state: State.t
+  -> configuration: Configuration.t
+  -> request: Protocol.TypeCheckRequest.t
+  -> State.t * (Protocol.response option)
 
 val process_request
   :  new_socket: Unix.File_descr.t

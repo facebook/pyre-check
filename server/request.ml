@@ -524,6 +524,146 @@ let handle_display_type_errors_request ~state ~local_root ~files =
   state, Some (TypeCheckResponse (build_file_to_error_map ~state errors))
 
 
+let handle_type_check_request
+    ~state
+    ~configuration:({ local_root; _ } as configuration)
+    ~request:{ TypeCheckRequest.update_environment_with; check} =
+  let (module Handler: Environment.Handler) = state.environment in
+  let deferred_requests =
+    if not (List.is_empty update_environment_with) then
+      let files =
+        let dependents =
+          let relative_path file =
+            Path.get_relative_to_root ~root:local_root ~path:(File.path file)
+          in
+          let update_environment_with =
+            List.filter_map update_environment_with ~f:relative_path
+          in
+          let check = List.filter_map check ~f:relative_path in
+          Log.log
+            ~section:`Server
+            "Handling type check request for files %a"
+            Sexp.pp [%message (update_environment_with: string list)];
+          let get_dependencies path =
+            let qualifier = Ast.Source.qualifier ~path in
+            Handler.dependencies qualifier
+          in
+          Dependencies.of_list
+            ~get_dependencies
+            ~paths:update_environment_with
+          |> Fn.flip Set.diff (String.Set.of_list check)
+          |> Set.to_list
+        in
+
+        Log.log
+          ~section:`Server
+          "Inferred affected files: %a"
+          Sexp.pp [%message (dependents: string list)];
+        List.map
+          ~f:(fun path ->
+              Path.create_relative ~root:local_root ~relative:path
+              |> File.create)
+          dependents
+      in
+
+      if List.is_empty files then
+        state.deferred_requests
+      else
+        (TypeCheckRequest (TypeCheckRequest.create ~check:files ()))
+        :: state.deferred_requests
+    else
+      state.deferred_requests
+  in
+  let scheduler = Scheduler.with_parallel state.scheduler ~is_parallel:(List.length check > 5) in
+  let repopulate_handles =
+    let is_stub file =
+      file
+      |> File.path
+      |> Path.absolute
+      |> String.is_suffix ~suffix:".pyi"
+    in
+    let () =
+      (* Clean up all data related to updated files. *)
+      let handles = List.filter_map update_environment_with ~f:(File.handle ~root:local_root) in
+      Ast.SharedMemory.remove_paths handles;
+      Handler.purge handles;
+      (* Evict entries from the lookup cache. The next lookup (if
+         any) will freshen the cache. *)
+      update_environment_with
+      |> List.iter ~f:(LookupCache.evict ~state)
+    in
+    let stubs, sources = List.partition_tf ~f:is_stub update_environment_with in
+    let stubs = Service.Parser.parse_sources ~configuration ~scheduler ~files:stubs in
+    let sources =
+      let keep file =
+        (File.handle ~root:local_root file
+         >>= fun path -> Some (Source.qualifier ~path:(File.Handle.show path))
+         >>= Handler.module_definition
+         >>= Module.path
+         >>| (fun existing_path -> File.Handle.show path = existing_path))
+        |> Option.value ~default:true
+      in
+      List.filter ~f:keep sources
+    in
+    let sources = Service.Parser.parse_sources ~configuration ~scheduler ~files:sources in
+    stubs @ sources
+  in
+  let new_source_handles = List.filter_map ~f:(File.handle ~root:local_root) check in
+  Annotated.Class.AttributesCache.clear ();
+  let () =
+    Log.log
+      ~section:`Debug
+      "Repopulating the environment with %a"
+      Sexp.pp [%message (repopulate_handles: File.Handle.t list)];
+
+    List.filter_map ~f:Ast.SharedMemory.get_source repopulate_handles
+    |> Service.Environment.populate state.environment;
+    let classes_to_infer =
+      let get_class_keys handle =
+        Handler.DependencyHandler.get_class_keys ~path:(File.Handle.show handle)
+      in
+      List.concat_map repopulate_handles ~f:get_class_keys
+    in
+    Analysis.Environment.infer_protocols ~handler:state.environment ~classes_to_infer ();
+    Statistics.event
+      ~section:`Memory
+      ~name:"shared memory size"
+      ~integers:["size", Service.EnvironmentSharedMemory.heap_size ()]
+      ();
+  in
+  Service.Postprocess.register_ignores ~configuration scheduler repopulate_handles;
+
+  (* Clear all type resolution info from shared memory for all affected sources. *)
+  List.filter_map ~f:Ast.SharedMemory.get_source new_source_handles
+  |> List.concat_map ~f:(Preprocessing.defines ~extract_into_toplevel:true)
+  |> List.map ~f:(fun { Node.value = { Statement.Define.name; _ }; _ } -> name)
+  |> TypeResolutionSharedMemory.remove;
+
+  let new_errors, _ =
+    Service.TypeCheck.analyze_sources
+      scheduler
+      configuration
+      state.environment
+      new_source_handles
+  in
+  (* Kill all previous errors for new files we just checked *)
+  List.iter ~f:(Hashtbl.remove state.errors) new_source_handles;
+  (* Associate the new errors with new files *)
+  List.iter
+    new_errors
+    ~f:(fun error ->
+        Hashtbl.add_multi state.errors ~key:(File.Handle.create (Error.path error)) ~data:error);
+  let new_files = File.Handle.Set.of_list new_source_handles in
+  let checked_files =
+    List.filter_map
+      ~f:(fun file -> File.path file |> Path.relative >>| File.Handle.create)
+      check
+    |> fun handles -> Some handles
+  in
+  { state with handles = Set.union state.handles new_files; deferred_requests },
+  Some (TypeCheckResponse (build_file_to_error_map ~checked_files ~state new_errors))
+
+
 let rec process_request
     ~new_socket
     ~state
@@ -534,146 +674,9 @@ let rec process_request
     ~request =
   let timer = Timer.start () in
   let (module Handler: Environment.Handler) = state.environment in
-  let handle_type_check state { TypeCheckRequest.update_environment_with; check} =
-    let deferred_requests =
-      if not (List.is_empty update_environment_with) then
-        let files =
-          let dependents =
-            let relative_path file =
-              Path.get_relative_to_root ~root:local_root ~path:(File.path file)
-            in
-            let update_environment_with =
-              List.filter_map update_environment_with ~f:relative_path
-            in
-            let check = List.filter_map check ~f:relative_path in
-            Log.log
-              ~section:`Server
-              "Handling type check request for files %a"
-              Sexp.pp [%message (update_environment_with: string list)];
-            let get_dependencies path =
-              let qualifier = Ast.Source.qualifier ~path in
-              Handler.dependencies qualifier
-            in
-            Dependencies.of_list
-              ~get_dependencies
-              ~paths:update_environment_with
-            |> Fn.flip Set.diff (String.Set.of_list check)
-            |> Set.to_list
-          in
-
-          Log.log
-            ~section:`Server
-            "Inferred affected files: %a"
-            Sexp.pp [%message (dependents: string list)];
-          List.map
-            ~f:(fun path ->
-                Path.create_relative ~root:local_root ~relative:path
-                |> File.create)
-            dependents
-        in
-
-        if List.is_empty files then
-          state.deferred_requests
-        else
-          (TypeCheckRequest (TypeCheckRequest.create ~check:files ()))
-          :: state.deferred_requests
-      else
-        state.deferred_requests
-    in
-    let scheduler = Scheduler.with_parallel state.scheduler ~is_parallel:(List.length check > 5) in
-    let repopulate_handles =
-      let is_stub file =
-        file
-        |> File.path
-        |> Path.absolute
-        |> String.is_suffix ~suffix:".pyi"
-      in
-      let () =
-        (* Clean up all data related to updated files. *)
-        let handles =
-          List.filter_map ~f:(File.handle ~root:local_root) update_environment_with
-        in
-        Ast.SharedMemory.remove_paths handles;
-        Handler.purge handles;
-        (* Evict entries from the lookup cache. The next lookup (if
-           any) will freshen the cache. *)
-        update_environment_with
-        |> List.iter ~f:(LookupCache.evict ~state)
-      in
-      let stubs, sources = List.partition_tf ~f:is_stub update_environment_with in
-      let stubs = Service.Parser.parse_sources ~configuration ~scheduler ~files:stubs in
-      let sources =
-        let keep file =
-          (File.handle ~root:local_root file
-           >>= fun path -> Some (Source.qualifier ~path:(File.Handle.show path))
-           >>= Handler.module_definition
-           >>= Module.path
-           >>| (fun existing_path -> File.Handle.show path = existing_path))
-          |> Option.value ~default:true
-        in
-        List.filter ~f:keep sources
-      in
-      let sources = Service.Parser.parse_sources ~configuration ~scheduler ~files:sources in
-      stubs @ sources
-    in
-    let new_source_handles = List.filter_map ~f:(File.handle ~root:local_root) check in
-    Annotated.Class.AttributesCache.clear ();
-    let () =
-      Log.log
-        ~section:`Debug
-        "Repopulating the environment with %a"
-        Sexp.pp [%message (repopulate_handles: File.Handle.t list)];
-
-      List.filter_map ~f:Ast.SharedMemory.get_source repopulate_handles
-      |> Service.Environment.populate state.environment;
-      let classes_to_infer =
-        let get_class_keys handle =
-          Handler.DependencyHandler.get_class_keys ~path:(File.Handle.show handle)
-        in
-        List.concat_map repopulate_handles ~f:get_class_keys
-      in
-      Analysis.Environment.infer_protocols ~handler:state.environment ~classes_to_infer ();
-      Statistics.event
-        ~section:`Memory
-        ~name:"shared memory size"
-        ~integers:["size", Service.EnvironmentSharedMemory.heap_size ()]
-        ();
-    in
-    Service.Postprocess.register_ignores ~configuration scheduler repopulate_handles;
-
-    (* Clear all type resolution info from shared memory for all affected sources. *)
-    List.filter_map ~f:Ast.SharedMemory.get_source new_source_handles
-    |> List.concat_map ~f:(Preprocessing.defines ~extract_into_toplevel:true)
-    |> List.map ~f:(fun { Node.value = { Statement.Define.name; _ }; _ } -> name)
-    |> TypeResolutionSharedMemory.remove;
-
-    let new_errors, _ =
-      Service.TypeCheck.analyze_sources
-        scheduler
-        configuration
-        state.environment
-        new_source_handles
-    in
-    (* Kill all previous errors for new files we just checked *)
-    List.iter ~f:(Hashtbl.remove state.errors) new_source_handles;
-    (* Associate the new errors with new files *)
-    List.iter
-      new_errors
-      ~f:(fun error ->
-          Hashtbl.add_multi state.errors ~key:(File.Handle.create (Error.path error)) ~data:error);
-    let new_files = File.Handle.Set.of_list new_source_handles in
-    let checked_files =
-      List.filter_map
-        ~f:(fun file -> File.path file |> Path.relative >>| File.Handle.create)
-        check
-      |> fun handles -> Some handles
-    in
-    { state with handles = Set.union state.handles new_files; deferred_requests },
-    Some (TypeCheckResponse (build_file_to_error_map ~checked_files ~state new_errors))
-  in
   let handle_lsp_request ~check_on_save lsp_request =
     match lsp_request with
-    | TypeCheckRequest files -> Some (handle_type_check state files)
+    | TypeCheckRequest request -> Some (handle_type_check_request ~state ~configuration ~request)
     | ClientShutdownRequest id -> Some (handle_client_shutdown_request ~state ~id)
     | ClientExitRequest Persistent ->
         Log.log ~section:`Server "Stopping persistent client";
@@ -732,9 +735,10 @@ let rec process_request
         LookupCache.evict ~state file;
         if check_on_save then
           Some
-            (handle_type_check
-               state
-               { TypeCheckRequest.update_environment_with = [file]; check = [file]; })
+            (handle_type_check_request
+               ~state
+               ~configuration
+               ~request:{ TypeCheckRequest.update_environment_with = [file]; check = [file]; })
         else
           begin
             Log.log ~section:`Server "Explicitly ignoring didSave request";
@@ -761,7 +765,7 @@ let rec process_request
               previous_use_ratio
               (Memory.heap_use_ratio ())
           end;
-        handle_type_check state request
+        handle_type_check_request ~state ~configuration ~request
     | TypeQueryRequest request ->
         state, Some (handle_type_query_request ~state ~local_root ~request)
     | DisplayTypeErrors files ->

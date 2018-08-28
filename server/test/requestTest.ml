@@ -19,7 +19,7 @@ let mock_server_state ?(errors = File.Handle.Table.create ()) () =
       let environment = Analysis.Environment.Builder.create () in
       Service.Environment.populate
         (Analysis.Environment.handler ~configuration environment)
-        [];
+        typeshed_stubs;
       environment
     in
     Analysis.Environment.handler ~configuration environment
@@ -94,27 +94,57 @@ let test_handle_type_query_request _ =
     {|{"error":"Type `yerp` was not found in the type order."}|}
 
 
+let assert_errors_equal ~actual_errors ~expected_errors =
+  let actual_errors =
+    let errors (handle, errors) =
+      File.Handle.show handle,
+      List.map errors ~f:(Analysis.Error.description ~detailed:false)
+    in
+    List.map actual_errors ~f:errors
+  in
+  let equal =
+    let equal left right =
+      String.equal (fst left) (fst right) &&
+      List.equal
+        (snd left |> List.sort ~compare:String.compare)
+        (snd right |> List.sort ~compare:String.compare)
+        ~equal:String.equal
+    in
+    List.equal ~equal
+  in
+  let printer errors =
+    let show (path, errors) = Format.asprintf "%s: [%s]" path (String.concat errors ~sep:", ") in
+    List.map errors ~f:show
+    |> String.concat ~sep:"\n"
+  in
+  assert_equal ~cmp:equal ~printer expected_errors actual_errors
+
+
 let test_handle_display_type_errors_request _ =
   let assert_response ~paths ~errors ~expected_errors =
-    let error_map errors =
-      let entry (path, errors) =
-        let errors =
-          let error identifier =
-            let location = { Location.Instantiated.any with Location.path } in
-            {
-              Analysis.Error.location;
-              kind = Analysis.Error.UndefinedName (Expression.Access.create identifier);
-              define = +empty_define;
-            }
-          in
-          List.map errors ~f:error
-        in
-        File.Handle.create path, errors
-      in
-      List.map errors ~f:entry
-    in
-    let state = mock_server_state ~errors:(error_map errors |> File.Handle.Table.of_alist_exn) () in
     let actual_errors =
+      let state =
+        let serialized_errors errors =
+          let entry (path, errors) =
+            let errors =
+              let error undefined =
+                let location = { Location.Instantiated.any with Location.path } in
+                {
+                  Analysis.Error.location;
+                  kind = Analysis.Error.UndefinedName (Expression.Access.create undefined);
+                  define = +empty_define;
+                }
+              in
+              List.map errors ~f:error
+            in
+            File.Handle.create path, errors
+          in
+          List.map errors ~f:entry
+        in
+        mock_server_state
+          ~errors:(serialized_errors errors |> File.Handle.Table.of_alist_exn)
+          ()
+      in
       let local_root = Path.current_working_directory () in
       let files = List.map paths ~f:(fun path -> mock_path path |> File.create) in
       Request.handle_display_type_errors_request ~state ~local_root ~files
@@ -123,26 +153,19 @@ let test_handle_display_type_errors_request _ =
       | Some (Protocol.TypeCheckResponse response) -> response
       | _ -> failwith "Unexpected response."
     in
-    let expected_errors = error_map expected_errors in
-    let equal =
-      let equal left right =
-        File.Handle.equal (fst left) (fst right) &&
-        List.equal (snd left) (snd right) ~equal:Analysis.Error.equal
-      in
-      List.equal ~equal
-    in
-    let printer errors =
-      let show (handle, errors) =
-        let errors =
-          List.map errors ~f:Analysis.Error.show
-          |> String.concat ~sep:", "
+    let expected_errors =
+      let expected_error (path, undefined_globals) =
+        let undefined_global global =
+          Format.asprintf
+            "Undefined name [18]: Global name `%s` is undefined."
+            global
         in
-        Format.asprintf "%a: [%s]" File.Handle.pp handle errors
+        path,
+        List.map undefined_globals ~f:undefined_global
       in
-      List.map errors ~f:show
-      |> String.concat ~sep:"\n"
+      List.map expected_errors ~f:expected_error
     in
-    assert_equal ~cmp:equal ~printer expected_errors actual_errors
+    assert_errors_equal ~actual_errors ~expected_errors
   in
 
   assert_response ~paths:[] ~errors:[] ~expected_errors:[];
@@ -157,12 +180,55 @@ let test_handle_display_type_errors_request _ =
     ~expected_errors:["one.py", ["one"]; "two.py", []]
 
 
+let test_handle_type_check_request context =
+  let assert_response ~check ~expected_errors =
+    let assert_response _ =
+      let actual_errors =
+        let check =
+          let file (path, content) =
+            let content = trim_extra_indentation content in
+            let file = File.create ~content:(Some content) (mock_path path) in
+            File.write file;
+            file
+          in
+          List.map check ~f:file
+        in
+        let request = { Protocol.TypeCheckRequest.update_environment_with = check; check } in
+        let state = mock_server_state () in
+        let configuration =
+          Configuration.create ~project_root:(Path.current_working_directory ()) ()
+        in
+        Request.handle_type_check_request ~state ~configuration ~request
+        |> snd
+        |> function
+        | Some (Protocol.TypeCheckResponse response) -> response
+        | _ -> failwith "Unexpected response."
+      in
+      assert_errors_equal ~actual_errors ~expected_errors
+    in
+    OUnit2.with_bracket_chdir context (OUnit2.bracket_tmpdir context) assert_response
+  in
+
+  assert_response ~check:[] ~expected_errors:[];
+  assert_response
+    ~check:[
+      "test.py",
+      {|
+        def foo() -> int:
+          return 'asdf'
+      |};
+    ]
+    ~expected_errors:["test.py", ["Incompatible return type [7]: Expected `int` but got `str`."]]
+
+
 let () =
   Log.initialize_for_tests ();
+  Scheduler.mock () |> ignore;
   "request">:::
   [
     "test_handle_client_shutdown_request">::test_handle_client_shutdown_request;
     "test_handle_type_query_request">::test_handle_type_query_request;
     "test_handle_display_type_errors_request">::test_handle_display_type_errors_request;
+    "test_handle_type_check_request">::test_handle_type_check_request;
   ]
   |> run_test_tt_main
