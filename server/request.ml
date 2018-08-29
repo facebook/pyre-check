@@ -665,7 +665,7 @@ let process_type_check_request
     List.filter_map
       ~f:(fun file -> File.path file |> Path.relative >>| File.Handle.create)
       check
-    |> fun handles -> Some handles
+    |> Option.some
   in
   {
     state = { state with handles = Set.union handles new_files; deferred_requests };
