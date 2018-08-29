@@ -16,9 +16,22 @@ die() {
 DEVELOPMENT_COMPILER="4.06.0"
 RELEASE_COMPILER="4.06.0+flambda"
 
+version_less_than() {
+  if [ "$1" = "$2" ]; then
+    return 1
+  else
+    if ! [ -x "$(command -v gsort)" ]; then
+      die 'Error: gsort is not installed. Please install coreutils.'
+    fi
+    [ "$1" = "`echo -e "$1\n$2" | gsort -V | head -n1`" ]
+  fi
+}
+
 # Compatibility settings with MacOS.
 if [[ "${MACHTYPE}" = *apple* ]]; then
   export MACOSX_DEPLOYMENT_TARGET="$(sw_vers -productVersion | cut -d '.' -f 1,2)"
+  version_less_than $MACOSX_DEPLOYMENT_TARGET 10.11 \
+    && die 'Error: The minimum OSX version supported is 10.11, please update.'
 fi
 
 # Switch to pyre directory.
