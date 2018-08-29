@@ -21,7 +21,7 @@ let parse_source ?(qualifier=[]) source =
 
 let create_call_graph source =
   let source = parse_source source in
-  let configuration = Test.configuration in
+  let configuration = Test.mock_configuration in
   let environment = Test.environment ~configuration () in
   Service.Environment.populate environment [source];
   check configuration environment source |> ignore;
@@ -159,7 +159,7 @@ let test_construction_reverse _ =
 let test_type_collection _ =
   let assert_type_collection source ~qualifier ~expected =
     let source = parse_source ~qualifier source in
-    let configuration = Test.configuration in
+    let configuration = Test.mock_configuration in
     let environment = Test.environment ~configuration () in
     Service.Environment.populate environment [source];
     check configuration environment source |> ignore;
@@ -262,7 +262,7 @@ let test_method_overrides _ =
       List.map expected ~f:create_accesses
     in
     let source = parse_source source in
-    let configuration = Test.configuration in
+    let configuration = Test.mock_configuration in
     let environment = Test.environment ~configuration () in
     Service.Environment.populate environment [source];
     let overrides_map = Service.StaticAnalysis.overrides_of_source ~environment ~source in
@@ -297,7 +297,7 @@ let test_strongly_connected_components _ =
     let qualifier = Access.create qualifier in
     let expected = List.map expected ~f:(List.map ~f:Access.create) in
     let source = parse_source ~qualifier source in
-    let configuration = Test.configuration in
+    let configuration = Test.mock_configuration in
     let environment = Test.environment ~configuration () in
     Service.Environment.populate environment [source];
     check configuration environment source |> ignore;

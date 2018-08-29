@@ -281,7 +281,7 @@ let bracket_tmpfile ?suffix context =
 
 
 (* Common type checking and analysis setup functions. *)
-let configuration =
+let mock_configuration =
   Configuration.create ()
 
 
@@ -525,7 +525,7 @@ let typeshed_stubs = (* Yo dawg... *)
   ]
 
 
-let environment ?(sources = typeshed_stubs) ?(configuration = configuration) () =
+let environment ?(sources = typeshed_stubs) ?(configuration = mock_configuration) () =
   let environment = Environment.Builder.create () in
   Service.Environment.populate (Environment.handler ~configuration environment) sources;
   Environment.handler ~configuration environment
@@ -603,7 +603,7 @@ let assert_type_errors
         |> Plugin.apply_to_ast
       in
       let environment =
-        let environment = environment ~configuration () in
+        let environment = environment ~configuration:mock_configuration () in
         Service.Environment.populate environment [source];
         environment
       in

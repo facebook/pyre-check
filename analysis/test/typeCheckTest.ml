@@ -1187,7 +1187,7 @@ let test_coverage _ =
     let { Result.coverage; _ } =
       let environment = Test.environment () in
       Analysis.TypeCheck.check
-        Test.configuration
+        Test.mock_configuration
         environment
         (parse source)
     in

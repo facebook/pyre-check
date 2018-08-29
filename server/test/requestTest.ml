@@ -14,8 +14,8 @@ open Test
 
 let mock_server_state ?(errors = File.Handle.Table.create ()) () =
   let environment =
+    let configuration = Test.mock_configuration in
     let environment =
-      let configuration = Configuration.create () in
       let environment = Analysis.Environment.Builder.create () in
       Service.Environment.populate
         (Analysis.Environment.handler ~configuration environment)
