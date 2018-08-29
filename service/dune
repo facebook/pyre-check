@@ -42,6 +42,7 @@
   ppxlib
   pyrelib.configuration
   pyrelib.memory
+  pyrelib.statistics
   hack_parallel))
 
 (library

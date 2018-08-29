@@ -65,34 +65,34 @@ let run
         ~local_root:(Path.create_absolute local_root)
         ()
     in
-    Scheduler.initialize_process ~configuration;
+    let process () =
+      let socket =
+        try
+          Server.Operations.connect ~retries:3 ~configuration
+        with Server.Operations.ConnectionFailure ->
+          raise ServerConfiguration.ServerNotRunning
+      in
 
-    let socket =
-      try
-        Server.Operations.connect ~retries:3 ~configuration
-      with Server.Operations.ConnectionFailure ->
-        raise ServerConfiguration.ServerNotRunning
+      Socket.write
+        socket
+        Server.Protocol.Request.FlushTypeErrorsRequest;
+
+      let response_json =
+        match Socket.read socket with
+        | Server.Protocol.TypeCheckResponse errors ->
+            errors
+            |> List.map ~f:snd
+            |> List.concat
+            |> (fun errors ->
+                `List
+                  (List.map
+                     ~f:(fun error -> Analysis.Error.to_json ~detailed:show_error_traces error)
+                     errors))
+        | _ -> failwith "Unexpected response in incremental check."
+      in
+      Log.print "%s" (Yojson.Safe.to_string response_json);
     in
-
-    Socket.write
-      socket
-      Server.Protocol.Request.FlushTypeErrorsRequest;
-
-    let response_json =
-      match Socket.read socket with
-      | Server.Protocol.TypeCheckResponse errors ->
-          errors
-          |> List.map ~f:snd
-          |> List.concat
-          |> (fun errors ->
-              `List
-                (List.map
-                   ~f:(fun error -> Analysis.Error.to_json ~detailed:show_error_traces error)
-                   errors))
-      | _ -> failwith "Unexpected response in incremental check."
-    in
-    Log.print "%s" (Yojson.Safe.to_string response_json);
-    Statistics.flush ()
+    Scheduler.run ~configuration ~process
   with
   | ServerConfiguration.ServerNotRunning ->
       Log.print "Server is not running.\n";

@@ -67,26 +67,27 @@ let run_check
       ~local_root:(Path.create_absolute local_root)
       ()
   in
-
-  let timer = Timer.start () in
-  let { TypeCheck.errors; _ } = TypeCheck.check ~scheduler:None ~configuration in
-  let { Caml.Gc.minor_collections; major_collections; compactions; _ } = Caml.Gc.stat () in
-  Statistics.performance
-    ~name:"check"
-    ~timer
-    ~integers:[
-      "gc_minor_collections", minor_collections;
-      "gc_major_collections", major_collections;
-      "gc_compactions", compactions;
-    ]
-    ~normals:["request kind", "FullCheck"]
-    ();
-  (* Print results. *)
-  Yojson.Safe.to_string
-    (`List
-       (List.map ~f:(fun error -> Error.to_json ~detailed:show_error_traces error) errors))
-  |> Log.print "%s";
-  Statistics.flush ()
+  let process () =
+    let timer = Timer.start () in
+    let { TypeCheck.errors; _ } = TypeCheck.check ~scheduler:None ~configuration in
+    let { Caml.Gc.minor_collections; major_collections; compactions; _ } = Caml.Gc.stat () in
+    Statistics.performance
+      ~name:"check"
+      ~timer
+      ~integers:[
+        "gc_minor_collections", minor_collections;
+        "gc_major_collections", major_collections;
+        "gc_compactions", compactions;
+      ]
+      ~normals:["request kind", "FullCheck"]
+      ();
+    (* Print results. *)
+    Yojson.Safe.to_string
+      (`List
+         (List.map ~f:(fun error -> Error.to_json ~detailed:show_error_traces error) errors))
+    |> Log.print "%s"
+  in
+  Scheduler.run ~configuration ~process
 
 
 let check_command =

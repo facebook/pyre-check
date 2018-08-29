@@ -93,31 +93,27 @@ let analyze_sources_parallel scheduler configuration environment handles =
   let { errors; coverage; _ } =
     let map _ handles =
       Annotated.Class.AttributesCache.clear ();
-      let result =
-        let analyze_source { errors; number_files; coverage = total_coverage } handle =
-          match Ast.SharedMemory.get_source handle with
-          | Some source ->
-              let { TypeCheck.Result.errors = new_errors; coverage; _; } =
-                analyze_source
-                  ~configuration
-                  ~environment
-                  ~source
-              in
-              {
-                errors = List.append new_errors errors;
-                number_files = number_files + 1;
-                coverage = Coverage.sum total_coverage coverage;
-              }
-          | None -> {
-              errors;
+      let analyze_source { errors; number_files; coverage = total_coverage } handle =
+        match Ast.SharedMemory.get_source handle with
+        | Some source ->
+            let { TypeCheck.Result.errors = new_errors; coverage; _; } =
+              analyze_source
+                ~configuration
+                ~environment
+                ~source
+            in
+            {
+              errors = List.append new_errors errors;
               number_files = number_files + 1;
-              coverage = total_coverage;
+              coverage = Coverage.sum total_coverage coverage;
             }
-        in
-        List.fold handles ~init:empty_result ~f:analyze_source
+        | None -> {
+            errors;
+            number_files = number_files + 1;
+            coverage = total_coverage;
+          }
       in
-      Statistics.flush ();
-      result
+      List.fold handles ~init:empty_result ~f:analyze_source
     in
     let reduce left right =
       let number_files = left.number_files + right.number_files in
@@ -237,8 +233,6 @@ let check
       ?logger
       ()
   in
-  Scheduler.initialize_process ~configuration;
-
   let check_directory_exists directory =
     if not (Path.is_directory directory) then
       raise (Invalid_argument (Format.asprintf "`%a` is not a directory" Path.pp directory));

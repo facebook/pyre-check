@@ -12,7 +12,8 @@ module Daemon = Daemon
 type t
 
 val create: configuration: Configuration.t -> ?bucket_multiplier: int -> unit -> t
-val initialize_process: configuration: Configuration.t -> unit
+
+val run: configuration: Configuration.t -> process: (unit -> 'result) -> 'result
 
 val map_reduce
   :  t

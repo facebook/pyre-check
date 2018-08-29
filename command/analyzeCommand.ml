@@ -65,42 +65,44 @@ let run_analysis
       ~local_root:(Path.create_absolute local_root)
       ()
   in
-  let timer = Timer.start () in
-  let bucket_multiplier =
-    try Int.of_string (Sys.getenv "BUCKET_MULTIPLIER" |> (fun value -> Option.value_exn value))
-    with _ -> 10
+  let process () =
+    let timer = Timer.start () in
+    let bucket_multiplier =
+      try Int.of_string (Sys.getenv "BUCKET_MULTIPLIER" |> (fun value -> Option.value_exn value))
+      with _ -> 10
+    in
+    let scheduler = Scheduler.create ~configuration ~bucket_multiplier () in
+    let errors =
+      Service.TypeCheck.check ~scheduler:(Some scheduler) ~configuration
+      |> fun { handles; environment; _ } ->
+      Service.StaticAnalysis.analyze
+        ?taint_models_directory
+        ~scheduler
+        ~configuration
+        ~environment
+        ~handles
+        ()
+    in
+    let { Caml.Gc.minor_collections; major_collections; compactions; _ } = Caml.Gc.stat () in
+    Statistics.performance
+      ~name:"analyze"
+      ~timer
+      ~integers:[
+        "gc_minor_collections", minor_collections;
+        "gc_major_collections", major_collections;
+        "gc_compactions", compactions;
+      ]
+      ~normals:["request kind", "FullCheck"]
+      ();
+    (* Print results. *)
+    List.map
+      errors
+      ~f:(fun error -> Interprocedural.Error.to_json ~detailed:show_error_traces error)
+    |> (fun result -> Yojson.Safe.pretty_to_string (`List result))
+    |> Log.print "%s";
+    Scheduler.destroy scheduler
   in
-  let scheduler = Scheduler.create ~configuration ~bucket_multiplier () in
-  let errors =
-    Service.TypeCheck.check ~scheduler:(Some scheduler) ~configuration
-    |> fun { handles; environment; _ } ->
-    Service.StaticAnalysis.analyze
-      ?taint_models_directory
-      ~scheduler
-      ~configuration
-      ~environment
-      ~handles
-      ()
-  in
-  let { Caml.Gc.minor_collections; major_collections; compactions; _ } = Caml.Gc.stat () in
-  Statistics.performance
-    ~name:"analyze"
-    ~timer
-    ~integers:[
-      "gc_minor_collections", minor_collections;
-      "gc_major_collections", major_collections;
-      "gc_compactions", compactions;
-    ]
-    ~normals:["request kind", "FullCheck"]
-    ();
-  (* Print results. *)
-  Yojson.Safe.pretty_to_string
-    (`List
-       (List.map
-          ~f:(fun error -> Interprocedural.Error.to_json ~detailed:show_error_traces error) errors))
-  |> Log.print "%s";
-  Statistics.flush ();
-  Scheduler.destroy scheduler
+  Scheduler.run ~configuration ~process
 
 
 let command =

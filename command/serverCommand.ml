@@ -423,42 +423,43 @@ let request_handler_thread
 let serve (socket, server_configuration, watchman_pid) =
   Version.log_version_banner ();
   let configuration = server_configuration.configuration in
-  Scheduler.initialize_process ~configuration;
+  let process () =
+    Log.log ~section:`Server "Starting daemon server loop...";
+    let request_queue = Squeue.create 25 in
+    let lock = Mutex.create () in
+    let connections = ref {
+        socket;
+        persistent_clients = Unix.File_descr.Table.create ();
+        file_notifiers = [];
+        watchman_pid;
+      }
+    in
+    register_signal_handlers server_configuration socket;
+    Thread.create
+      request_handler_thread
+      (server_configuration, lock, connections, request_queue)
+    |> ignore;
 
-  Log.log ~section:`Server "Starting daemon server loop...";
-  let request_queue = Squeue.create 25 in
-  let lock = Mutex.create () in
-  let connections = ref {
-      socket;
-      persistent_clients = Unix.File_descr.Table.create ();
-      file_notifiers = [];
-      watchman_pid;
-    }
+    let state =
+      Server.Operations.initialize lock connections server_configuration
+    in
+    try
+      computation_thread request_queue server_configuration state
+    with uncaught_exception ->
+      Statistics.event
+        ~section:`Error
+        ~flush:true
+        ~name:"uncaught exception"
+        ~integers:[]
+        ~normals:[
+          "exception", Exn.to_string uncaught_exception;
+          "exception backtrace", Printexc.get_backtrace ();
+          "exception origin", "server";
+        ]
+        ();
+      Server.Operations.stop_server ~reason:"exception" server_configuration socket
   in
-  register_signal_handlers server_configuration socket;
-  Thread.create
-    request_handler_thread
-    (server_configuration, lock, connections, request_queue)
-  |> ignore;
-
-  let state =
-    Server.Operations.initialize lock connections server_configuration
-  in
-  try
-    computation_thread request_queue server_configuration state
-  with uncaught_exception ->
-    Statistics.event
-      ~section:`Error
-      ~flush:true
-      ~name:"uncaught exception"
-      ~integers:[]
-      ~normals:[
-        "exception", Exn.to_string uncaught_exception;
-        "exception backtrace", Printexc.get_backtrace ();
-        "exception origin", "server";
-      ]
-      ();
-    Server.Operations.stop_server ~reason:"exception" server_configuration socket
+  Scheduler.run ~configuration ~process
 
 
 (* Create lock file and pid file. Used for both daemon mode and in-terminal *)
@@ -503,51 +504,53 @@ let start ({
     use_watchman;
     _;
   } as server_configuration) =
-  try
-    Scheduler.initialize_process ~configuration;
-    Log.info "Starting up server...";
-    Version.log_version_banner ();
+  let process () =
+    try
+      Log.info "Starting up server...";
+      Version.log_version_banner ();
 
-    if not (Lock.check (Path.absolute lock_path)) then
-      raise AlreadyRunning;
+      if not (Lock.check (Path.absolute lock_path)) then
+        raise AlreadyRunning;
 
-    Log.log ~section:`Server "Creating server socket at `%a`" Path.pp socket_path;
-    let socket = Socket.initialize_unix_socket socket_path in
+      Log.log ~section:`Server "Creating server socket at `%a`" Path.pp socket_path;
+      let socket = Socket.initialize_unix_socket socket_path in
 
-    let watchman_pid =
-      if use_watchman then
-        let pid = spawn_watchman_client server_configuration in
-        (* If the server is being run as a daemon, the watchman pid will be detached from
-           the server pid and shouldn't be waited on. *)
-        if not daemonize then
-          Some pid
+      let watchman_pid =
+        if use_watchman then
+          let pid = spawn_watchman_client server_configuration in
+          (* If the server is being run as a daemon, the watchman pid will be detached from
+             the server pid and shouldn't be waited on. *)
+          if not daemonize then
+            Some pid
+          else
+            None
         else
           None
-      else
-        None
-    in
-    if daemonize then
-      let stdin = Daemon.null_fd () in
-      let log_path = Log.rotate (Path.absolute log_path) in
-      let stdout = Daemon.fd_of_path log_path in
-      Log.log ~section:`Server "Spawning the daemon now.";
-      let { Daemon.pid; _ } as handle =
-        Daemon.spawn
-          (stdin, stdout, stdout)
-          run_server_daemon_entry (socket, server_configuration, watchman_pid)
       in
-      Daemon.close handle;
-      Log.log ~section:`Server "Forked off daemon with pid %d" pid;
-      Log.info "Server starting in background";
-      pid
-    else begin
-      setup server_configuration;
-      serve (socket, server_configuration, watchman_pid);
+      if daemonize then
+        let stdin = Daemon.null_fd () in
+        let log_path = Log.rotate (Path.absolute log_path) in
+        let stdout = Daemon.fd_of_path log_path in
+        Log.log ~section:`Server "Spawning the daemon now.";
+        let { Daemon.pid; _ } as handle =
+          Daemon.spawn
+            (stdin, stdout, stdout)
+            run_server_daemon_entry (socket, server_configuration, watchman_pid)
+        in
+        Daemon.close handle;
+        Log.log ~section:`Server "Forked off daemon with pid %d" pid;
+        Log.info "Server starting in background";
+        pid
+      else begin
+        setup server_configuration;
+        serve (socket, server_configuration, watchman_pid);
+        0
+      end
+    with AlreadyRunning ->
+      Log.info "Server is already running";
       0
-    end
-  with AlreadyRunning ->
-    Log.info "Server is already running";
-    0
+  in
+  Scheduler.run ~configuration ~process
 
 
 (** Default configuration when run from command line *)
