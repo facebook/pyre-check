@@ -841,7 +841,7 @@ let test_expand_wildcard_imports _ =
   let assert_expanded environment_sources check_source expected =
     let create_file (name, source) =
       File.create
-        ~content:(Some (trim_extra_indentation source))
+        ~content:(trim_extra_indentation source)
         (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:name)
     in
     let clear_memory files =

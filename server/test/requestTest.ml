@@ -187,7 +187,7 @@ let test_process_type_check_request context =
         let check =
           let file (path, content) =
             let content = trim_extra_indentation content in
-            let file = File.create ~content:(Some content) (mock_path path) in
+            let file = File.create ~content (mock_path path) in
             File.write file;
             file
           in

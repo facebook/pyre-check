@@ -161,7 +161,7 @@ let parse ~root ~request =
                   ~uri
                 |> fun relative ->
                 Path.create_relative ~root ~relative
-                |> File.create ~content:text
+                |> File.create ?content:text
               in
               Some (SaveDocument file)
           | Ok _ ->

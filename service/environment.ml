@@ -114,7 +114,7 @@ let build
       let (module Handler: Environment.Handler) = handler in
       Log.info "Emitting type order dotty file to %s" (Path.absolute type_order_file);
       File.create
-        ~content:(Some (TypeOrder.to_dot (module Handler.TypeOrderHandler)))
+        ~content:(TypeOrder.to_dot (module Handler.TypeOrderHandler))
         type_order_file
       |> File.write
     end

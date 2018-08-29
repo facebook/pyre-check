@@ -63,7 +63,7 @@ let type_check_sources_list_test context =
     let path, _ = Filename.open_temp_file ~in_dir:(Path.absolute root) "test" ".py" in
     [
       File.create
-        ~content:(Some (default_content ^ "\n" ^ (content |> trim_extra_indentation)))
+        ~content:(default_content ^ "\n" ^ (content |> trim_extra_indentation))
         (Path.create_relative ~root ~relative:path);
     ]
   in
@@ -96,7 +96,6 @@ let test_filter_directories context =
         return D()
     |}
     |> Test.trim_extra_indentation
-    |> (fun x -> Some x)
   in
   let files = [File.create ~content check_path; File.create ~content ignore_path] in
   assert_errors

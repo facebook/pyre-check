@@ -11,7 +11,7 @@ open Pyre
 type t
 [@@deriving eq, show, hash]
 
-val create: ?content: string option -> Path.t -> t
+val create: ?content: string -> Path.t -> t
 
 val path: t -> Path.t
 

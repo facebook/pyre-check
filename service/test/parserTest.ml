@@ -17,12 +17,10 @@ let test_parse_stubs_modules_list _ =
   let files =
     let root = Path.current_working_directory () in
     let create_stub_with_relative relative =
-      let content = Some "def f()->int: ...\n" in
-      File.create ~content (Path.create_relative ~root ~relative)
+      File.create ~content:"def f()->int: ...\n" (Path.create_relative ~root ~relative)
     in
     let create_module_with_relative relative =
-      let content = Some "def f()->int:\n    return 1\n" in
-      File.create ~content (Path.create_relative ~root ~relative)
+      File.create ~content:"def f()->int:\n    return 1\n" (Path.create_relative ~root ~relative)
     in
     [
       create_stub_with_relative "a.pyi";
@@ -93,7 +91,7 @@ let test_find_stubs context =
     let local_root = Path.create_absolute (bracket_tmpdir context) in
     let module_root = Path.create_absolute (bracket_tmpdir context) in
     let write_file root relative =
-      File.create ~content:(Some "def foo() -> int: ...") (Path.create_relative ~root ~relative)
+      File.create ~content:"def foo() -> int: ..." (Path.create_relative ~root ~relative)
       |> File.write
     in
     write_file local_root "a.pyi";
@@ -121,7 +119,7 @@ let test_parse_typeshed context =
   let handles =
     let local_root = Path.create_absolute (bracket_tmpdir context) in
     let write_file root relative =
-      File.create ~content:(Some "def foo() -> int: ...") (Path.create_relative ~root ~relative)
+      File.create ~content:"def foo() -> int: ..." (Path.create_relative ~root ~relative)
       |> File.write
     in
     write_file typeshed_root "folder/a.pyi";
@@ -145,7 +143,7 @@ let test_parse_typeshed context =
 let test_parse_source _ =
   let file =
     File.create
-      ~content:(Some "def foo()->int:\n    return 1\n")
+      ~content:"def foo()->int:\n    return 1\n"
       (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:"a.py")
   in
   let handles =
@@ -184,7 +182,7 @@ let test_parse_sources context =
     let link_root = Path.create_absolute (bracket_tmpdir context) in
 
     let write_file root relative =
-      File.create ~content:(Some "def foo() -> int: ...") (Path.create_relative ~root ~relative)
+      File.create ~content:"def foo() -> int: ..." (Path.create_relative ~root ~relative)
       |> File.write
     in
     write_file local_root "a.pyi";
@@ -241,7 +239,7 @@ let test_register_modules _ =
     in
     let file =
       File.create
-        ~content:(Some (trim_extra_indentation raw_source))
+        ~content:(trim_extra_indentation raw_source)
         (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:"a.py")
     in
 

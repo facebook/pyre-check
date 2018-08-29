@@ -19,7 +19,7 @@ let test_content context =
   let path = Path.create_absolute path in
 
   assert_equal (File.create path |> File.content) (Some data);
-  assert_equal (File.create ~content:(Some "content") path |> File.content) (Some "content");
+  assert_equal (File.create ~content:"content" path |> File.content) (Some "content");
   assert_is_none
     (File.create (Path.create_relative ~root:path ~relative:"derp") |> File.content)
 
@@ -28,7 +28,7 @@ let test_lines context =
   let path, _ = bracket_tmpfile context in
   assert_equal
     ~cmp:(List.equal ~equal:String.equal)
-    (File.create ~content:(Some "foo\nbar") (Path.create_absolute path)
+    (File.create ~content:"foo\nbar" (Path.create_absolute path)
      |> File.lines
      |> (fun lines -> Option.value_exn lines))
     ["foo"; "bar"]

@@ -1957,7 +1957,7 @@ let check
           Path.create_relative
             ~root:(Configuration.pyre_root configuration)
             ~relative:(Format.asprintf "cfgs%a.dot" Access.pp name)
-          |> File.create ~content:(Some (Cfg.to_dot ~precondition:(precondition fixpoint) cfg))
+          |> File.create ~content:(Cfg.to_dot ~precondition:(precondition fixpoint) cfg)
           |> File.write
         end;
       fixpoint

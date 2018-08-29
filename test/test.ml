@@ -135,7 +135,7 @@ let parse
 let parse_list named_sources =
   let create_file (name, source) =
     File.create
-      ~content:(Some (trim_extra_indentation source))
+      ~content:(trim_extra_indentation source)
       (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:name)
   in
   Service.Parser.parse_sources

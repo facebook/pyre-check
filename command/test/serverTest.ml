@@ -18,9 +18,9 @@ open Test
 exception Timeout
 
 
-let file ?(content = None) relative =
+let file ?content relative =
   let root = Path.current_working_directory () in
-  File.create ~content (Path.create_relative ~root ~relative)
+  File.create ?content (Path.create_relative ~root ~relative)
 
 
 let poll_for_deletion lock_path =
@@ -603,7 +603,7 @@ let test_incremental_typecheck _ =
                    ~check:[file path]
                    ()))
     (Protocol.TypeCheckResponse [(File.Handle.create relative_path), []]);
-  let files = [file ~content:(Some source) path] in
+  let files = [file ~content:source path] in
   let request_with_content =
     (Protocol.Request.TypeCheckRequest
        (Protocol.TypeCheckRequest.create ~update_environment_with:files ~check:files ()))
@@ -623,10 +623,10 @@ let test_incremental_typecheck _ =
          ())
   in
   assert_response
-    ~request:(check_request ~check:[file ~content:(Some "def foo() -> int: return 1") path] ())
+    ~request:(check_request ~check:[file ~content:"def foo() -> int: return 1" path] ())
     (Protocol.TypeCheckResponse errors);
   let () =
-    let stub_file = file ~content:(Some "") (stub_path ^ "i") in
+    let stub_file = file ~content:"" (stub_path ^ "i") in
     assert_response
       ~request:(check_request ~update_environment_with:[stub_file] ())
       (Protocol.TypeCheckResponse [])
@@ -634,12 +634,12 @@ let test_incremental_typecheck _ =
   assert_response
     ~request:(
       check_request
-        ~check:[file ~content:(Some "def foo() -> int: return \"\"") stub_path]
+        ~check:[file ~content:"def foo() -> int: return \"\"" stub_path]
         ())
     (Protocol.TypeCheckResponse [File.Handle.create relative_stub_path, []]);
 
   let () =
-    let file = file ~content:(Some "def foo() -> int: return 1") path in
+    let file = file ~content:"def foo() -> int: return 1" path in
     assert_response
       ~request:(check_request ~update_environment_with:[file] ~check:[file] ())
       (Protocol.TypeCheckResponse [File.Handle.create relative_path, []])
@@ -837,8 +837,8 @@ let test_incremental_lookups _ =
   let request =
     Protocol.Request.TypeCheckRequest
       (Protocol.TypeCheckRequest.create
-         ~update_environment_with:[file ~content:(Some source) path]
-         ~check:[file ~content:(Some source) path]
+         ~update_environment_with:[file ~content:source path]
+         ~check:[file ~content:source path]
          ())
   in
   let errors = File.Handle.Table.create () in

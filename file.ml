@@ -15,7 +15,7 @@ type t = {
 [@@deriving eq, show, sexp, hash]
 
 
-let create ?(content = None) path =
+let create ?content path =
   { path; content }
 
 
