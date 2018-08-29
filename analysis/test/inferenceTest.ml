@@ -122,7 +122,7 @@ let test_backward _ =
   assert_backward ["x", Type.float] "x = int_to_str(x)" ["x", Type.integer];
   assert_backward ["y", Type.float] "y = int_to_str(x)" ["y", Type.float; "x", Type.integer];
   assert_backward ["y", Type.integer] "y = int_to_str(x)" ["y", Type.integer; "x", Type.integer];
-  assert_backward [] "str_float_to_int(x)" ["x", Type.string];
+  assert_backward [] "str_float_to_int(x)" [];
   assert_backward [] "str_float_to_int(x, 1.0)" ["x", Type.string];
   assert_backward [] "'a'.substr(x)" ["x", Type.integer];
   assert_backward

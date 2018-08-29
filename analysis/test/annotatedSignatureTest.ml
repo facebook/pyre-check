@@ -86,24 +86,21 @@ let test_select _ =
       | `Found expected ->
           Found { callable = parse_callable expected; constraints = Type.Map.empty }
       | `NotFoundNoReason ->
-          NotFound { rank = 0; callable; reason = None }
+          NotFound { callable; reason = None }
       | `NotFoundMissingArgument name ->
-          NotFound { rank = 0; callable; reason = Some (MissingArgument (Access.create name)) }
+          NotFound { callable; reason = Some (MissingArgument (Access.create name)) }
       | `NotFoundMissingArgumentWithClosest (closest, name) ->
           NotFound {
-            rank = 0;
             callable = parse_callable closest;
             reason = Some (MissingArgument (Access.create name));
           }
       | `NotFoundTooManyArguments (expected, provided) ->
           NotFound {
-            rank = 0;
             callable;
             reason = Some (TooManyArguments { expected; provided });
           }
       | `NotFoundTooManyArgumentsWithClosest (closest, expected, provided) ->
           NotFound {
-            rank = 0;
             callable = parse_callable closest;
             reason = Some (TooManyArguments { expected; provided });
           }
@@ -113,16 +110,16 @@ let test_select _ =
             |> Node.create_with_default_location
             |> fun mismatch -> Some (Mismatch mismatch)
           in
-          NotFound { rank = 0; callable; reason }
+          NotFound { callable; reason }
       | `NotFoundMismatchWithClosest (closest, actual, expected, name, position) ->
           let reason =
             { actual; expected; name = name >>| Identifier.create; position }
             |> Node.create_with_default_location
             |> fun mismatch -> Some (Mismatch mismatch)
           in
-          NotFound { rank = 0; callable = parse_callable closest; reason }
+          NotFound { callable = parse_callable closest; reason }
       | `NotFound (closest, reason) ->
-          NotFound { rank = 0; callable = parse_callable closest; reason }
+          NotFound { callable = parse_callable closest; reason }
     in
     assert_equal
       ~printer:Signature.show
@@ -160,7 +157,7 @@ let test_select _ =
 
   assert_select "[[int], int]" "(*[1])" (`Found "[[int], int]");
   assert_select "[[str], int]" "(*[1])" (`NotFoundMismatch (Type.integer, Type.string, None, 1));
-  assert_select "[[int, str], int]" "(*[1], 'asdf')" (`Found "[[int, str], int]");
+  assert_select "[[int, str], int]" "(*[1], 'asdf')" (`NotFoundTooManyArguments (2, 3));
 
   assert_select "[[object], None]" "(union)" (`Found "[[object], None]");
   assert_select "[[int], None]" "(union)" (`NotFoundMismatch (Type.string, Type.integer, None, 1));
@@ -226,10 +223,10 @@ let test_select _ =
   assert_select
     "[[Named(i, int), Named(j, int)], int]"
     "(**{'j': 'string', 'i': 'string'})"
-    (`NotFoundMismatch (Type.string, Type.integer, None, 0));
+    (`NotFoundMismatch (Type.string, Type.integer, None, 1));
   assert_select
     "[[int], int]" "(**a)"
-    (`NotFoundMissingArgument "anonymous");
+    (`NotFoundMismatch (Type.Top, Type.integer, None, 1));
   assert_select
     "[[int, Named(i, int)], int]"
     "(1, **{'a': 1})"
@@ -345,9 +342,9 @@ let test_select _ =
 
   assert_select
     "[[str, Keywords(keywords)], int][[Keywords(keywords)], int]"
-    "(1)" (* Prefer anonymous unmatched parameters over keywords. *)
-    (`NotFoundTooManyArgumentsWithClosest
-       ("[[Keywords(keywords)], int]", 0, 1));
+    "(1)" (* Prefer arity matches. *)
+    (`NotFoundMismatchWithClosest
+       ("[[str, Keywords(keywords)], int]", Type.integer, Type.string, None, 1));
 
   assert_select
     "[[int, int, str], int][[int, str, str], int]"
@@ -383,7 +380,7 @@ let test_determine _ =
       if found then
         Found { callable; constraints = Type.Map.of_alist_exn constraints }
       else
-        NotFound { rank = 0; callable; reason = None }
+        NotFound { callable; reason = None }
     in
     assert_equal
       ~cmp:(Option.equal Type.equal)

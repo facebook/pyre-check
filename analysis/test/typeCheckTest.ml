@@ -2557,10 +2557,10 @@ let test_check_variable_arguments _ =
       def foo(a: int, b: int) -> int:
         return 1
       def bar(b: typing.List[str]) -> None:
-        foo ( *b, 'asdf' )  # assuming b = []
+        foo ( *b, 'asdf' )
     |}
     [
-      "Incompatible parameter type [6]: Expected `int` but got `str`.";
+      "Too many arguments [19]: Call `foo` expects 2 positional arguments, 3 were provided.";
     ];
 
   assert_type_errors
@@ -2570,26 +2570,26 @@ let test_check_variable_arguments _ =
       def bar(b: typing.List[str]) -> None:
         foo ( *b, 1, 'asdf' )
     |}
-    ["Incompatible parameter type [6]: Expected `int` but got `str`."];
+    ["Too many arguments [19]: Call `foo` expects 2 positional arguments, 4 were provided."];
 
   assert_type_errors
     {|
       def foo(a: int, b: str) -> int:
         return 1
       def bar(b: typing.List[int]) -> None:
-        foo ( *b, 'asdf' )  # assuming b = [_]
+        foo ( *b, 'asdf' )
     |}
-    [];
+    ["Too many arguments [19]: Call `foo` expects 2 positional arguments, 3 were provided."];
 
   assert_type_errors
     {|
       def durp(a: int, b: str) -> int:
         return 1
       def bar(b: typing.List[int]) -> None:
-        durp ( *b, 1.0 )  # assuming b = [_]
+        durp( *b, 1.0 )
     |}
     [
-      "Incompatible parameter type [6]: Expected `str` but got `float`.";
+      "Too many arguments [19]: Call `durp` expects 2 positional arguments, 3 were provided.";
     ];
 
   assert_type_errors
