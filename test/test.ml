@@ -13,6 +13,7 @@ open PyreParser
 open Statement
 open TypeCheck
 
+
 let () =
   Log.initialize_for_tests ();
   Statistics.disable ();
@@ -130,6 +131,7 @@ let parse
   | _ ->
       source
 
+
 let parse_list named_sources =
   let create_file (name, source) =
     File.create
@@ -140,6 +142,7 @@ let parse_list named_sources =
     ~configuration:(Configuration.create ~local_root:(Path.current_working_directory ()) ())
     ~scheduler:(Scheduler.mock ())
     ~files:(List.map ~f:create_file named_sources)
+
 
 let parse_single_statement source =
   match parse source with
@@ -228,7 +231,8 @@ let (~+) value =
   Node.create_with_default_location value
 
 
-let (~~) = Identifier.create
+let (~~) =
+  Identifier.create
 
 
 let (!) name =
@@ -277,7 +281,8 @@ let bracket_tmpfile ?suffix context =
 
 
 (* Common type checking and analysis setup functions. *)
-let configuration = Configuration.create ()
+let configuration =
+  Configuration.create ()
 
 
 let typeshed_stubs = (* Yo dawg... *)
