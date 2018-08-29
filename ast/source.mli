@@ -8,6 +8,7 @@ open Expression
 
 type mode =
   | Default
+  | DefaultButDontCheck of int list
   | Declare
   | Strict
   | Infer

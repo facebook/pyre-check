@@ -1317,10 +1317,17 @@ let suppress ~mode error =
   in
 
   match mode with
-  | Source.Infer -> suppress_in_infer error
-  | Source.Strict -> suppress_in_strict error
-  | Source.Declare -> true
-  | _ -> suppress_in_default error
+  | Source.Infer ->
+      suppress_in_infer error
+  | Source.Strict ->
+      suppress_in_strict error
+  | Source.Declare ->
+      true
+  | Source.DefaultButDontCheck suppressed_codes
+    when List.exists suppressed_codes ~f:((=) (code error)) ->
+      true
+  | _ ->
+      suppress_in_default error
 
 
 let dequalify

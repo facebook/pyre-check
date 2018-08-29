@@ -10,6 +10,7 @@ open Expression
 
 type mode =
   | Default
+  | DefaultButDontCheck of int list
   | Declare
   | Strict
   | Infer
@@ -66,7 +67,13 @@ module Metadata = struct
     in
     let is_debug = is_pyre_comment "pyre-debug" in
     let is_strict = is_pyre_comment "pyre-strict" in
-    let is_declare = is_pyre_comment "pyre-do-not-check" in
+    (* We do not fall back to declarative mode on a typo when attempting to only
+       suppress certain errors. *)
+    let is_declare line = Str.string_match (Str.regexp "^[ \t]*# *pyre-do-not-check *$") line 0 in
+    let default_with_suppress_regex =
+      Str.regexp "^[ \t]*# *pyre-do-not-check\\[\\([0-9]+, *\\)*\\([0-9]+\\)\\] *$"
+    in
+    let is_default_with_suppress line = Str.string_match default_with_suppress_regex line 0 in
     let is_placeholder_stub = is_pyre_comment "pyre-placeholder-stub" in
     let parse_ignore index line ignored_lines =
       let create_ignore ~index ~line ~kind =
@@ -129,7 +136,14 @@ module Metadata = struct
         | Some _ ->
             local_mode
         | None ->
-            if is_declare line then
+            if is_default_with_suppress line then
+              let suppressed_codes =
+                Str.global_substitute (Str.regexp "[^,0-9]+") (fun _ -> "") line
+                |> String.split_on_chars ~on:[',']
+                |> List.map ~f:int_of_string
+              in
+              Some (DefaultButDontCheck suppressed_codes)
+            else if is_declare line then
               Some Declare
             else if is_strict line then
               Some Strict
@@ -189,6 +203,9 @@ let mode source ~configuration =
   | { Configuration.declare = true; _ }, _
   | _, { metadata = { Metadata.local_mode = Declare; _ }; _ } ->
       Declare
+
+  | _, { metadata = { Metadata.local_mode = DefaultButDontCheck suppressed_codes; _ }; _ } ->
+      DefaultButDontCheck suppressed_codes
 
   | _ ->
       Default
