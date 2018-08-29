@@ -648,10 +648,10 @@ let process_type_check_request
 
   let new_errors, _ =
     Service.TypeCheck.analyze_sources
-      scheduler
-      configuration
-      environment
-      new_source_handles
+      ~scheduler
+      ~configuration
+      ~environment
+      ~handles:new_source_handles
   in
   (* Kill all previous errors for new files we just checked *)
   List.iter ~f:(Hashtbl.remove errors) new_source_handles;

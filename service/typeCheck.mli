@@ -13,10 +13,14 @@ type result = {
 }
 
 val analyze_sources
-  :  Scheduler.t
-  -> Configuration.t
-  -> (module Environment.Handler)
-  -> File.Handle.t list
+  :  scheduler: Scheduler.t
+  -> configuration: Configuration.t
+  -> environment: (module Environment.Handler)
+  -> handles: File.Handle.t list
   -> Error.t list * Coverage.t
 
-val check: Configuration.t -> Scheduler.t option -> unit -> result
+val check
+  :  scheduler: Scheduler.t option
+  -> configuration: Configuration.t
+  -> unit
+  -> result

@@ -156,10 +156,15 @@ let analyze_sources_parallel scheduler configuration environment handles =
 
 
 let analyze_sources
-    scheduler
-    ({ Configuration.local_root; project_root; filter_directories; _ } as configuration)
-    environment
-    handles =
+    ~scheduler
+    ~configuration:({
+        Configuration.local_root;
+        project_root;
+        filter_directories;
+        _;
+      } as configuration)
+    ~environment
+    ~handles =
   let open Analysis in
 
   Annotated.Class.AttributesCache.clear ();
@@ -198,7 +203,8 @@ let analyze_sources
 
 
 let check
-    {
+    ~scheduler:original_scheduler
+    ~configuration:{
       start_time = _;
       verbose;
       expected_version = _;
@@ -219,7 +225,6 @@ let check
       local_root;
       logger;
     }
-    original_scheduler
     () =
   let configuration =
     Configuration.create
@@ -292,7 +297,7 @@ let check
     Environment.handler ~configuration ~stubs ~sources
   in
   let errors, { Analysis.Coverage.full; partial; untyped; ignore; crashes } =
-    analyze_sources scheduler configuration environment sources
+    analyze_sources ~scheduler ~configuration ~environment ~handles:sources
   in
   (* Log coverage results *)
   let path_to_files =

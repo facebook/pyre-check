@@ -32,7 +32,7 @@ let assert_errors ?filter_directories ~root ~files errors =
     Service.Environment.handler ~configuration ~stubs:[] ~sources:handles
   in
   let actual_errors =
-    Service.TypeCheck.analyze_sources scheduler configuration environment handles
+    Service.TypeCheck.analyze_sources ~scheduler ~configuration ~environment ~handles
     |> fst
     |> List.map ~f:(Analysis.Error.description ~detailed:false)
   in
