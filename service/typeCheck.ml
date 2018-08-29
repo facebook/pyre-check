@@ -84,68 +84,57 @@ let analyze_source
 let analyze_sources_parallel scheduler configuration environment handles =
   let open Analysis in
   let timer = Timer.start () in
-  let init = {
+  let empty_result = {
     errors = [];
     number_files = 0;
     coverage = Coverage.create ();
   }
   in
   let { errors; coverage; _ } =
+    let map _ handles =
+      Annotated.Class.AttributesCache.clear ();
+      let result =
+        let analyze_source { errors; number_files; coverage = total_coverage } handle =
+          match Ast.SharedMemory.get_source handle with
+          | Some source ->
+              let { TypeCheck.Result.errors = new_errors; coverage; _; } =
+                analyze_source
+                  ~configuration
+                  ~environment
+                  ~source
+              in
+              {
+                errors = List.append new_errors errors;
+                number_files = number_files + 1;
+                coverage = Coverage.sum total_coverage coverage;
+              }
+          | None -> {
+              errors;
+              number_files = number_files + 1;
+              coverage = total_coverage;
+            }
+        in
+        List.fold handles ~init:empty_result ~f:analyze_source
+      in
+      Statistics.flush ();
+      result
+    in
+    let reduce left right =
+      let number_files = left.number_files + right.number_files in
+      Log.log ~section:`Progress "Processed %d of %d sources" number_files (List.length handles);
+      {
+        errors = List.append left.errors right.errors;
+        number_files;
+        coverage = Coverage.sum left.coverage right.coverage;
+      }
+    in
     Scheduler.map_reduce
       scheduler
       ~configuration
       ~bucket_size:75
-      ~initial:
-        {
-          errors = [];
-          number_files = 0;
-          coverage = Coverage.create ();
-        }
-      ~map:(fun _ handles ->
-          Annotated.Class.AttributesCache.clear ();
-          let result =
-            List.fold ~init ~f:(
-              fun {
-                errors;
-                number_files;
-                coverage = total_coverage;
-              }
-                handle ->
-                match Ast.SharedMemory.get_source handle with
-                | Some source ->
-                    let {
-                      TypeCheck.Result.errors = new_errors;
-                      coverage;
-                      _;
-                    } =
-                      analyze_source ~configuration ~environment ~source
-                    in
-                    {
-                      errors = List.append new_errors errors;
-                      number_files = number_files + 1;
-                      coverage = Coverage.sum total_coverage coverage;
-                    }
-                | None -> {
-                    errors;
-                    number_files = number_files + 1;
-                    coverage = total_coverage;
-                  })
-              handles
-          in
-          Statistics.flush ();
-          result)
-      ~reduce:(fun left right ->
-          let number_files = left.number_files + right.number_files in
-          Log.log
-            ~section:`Progress
-            "Processed %d of %d sources"
-            number_files
-            (List.length handles);
-          {
-            errors = List.append left.errors right.errors;
-            number_files;
-            coverage = Coverage.sum left.coverage right.coverage;
-          })
+      ~initial:empty_result
+      ~map
+      ~reduce
       ~inputs:handles
       ()
   in
