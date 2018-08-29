@@ -84,14 +84,19 @@ let parse_sources_job ~files =
 
 let parse_sources ~configuration ~scheduler ~files =
   let handles =
-    Scheduler.iter scheduler ~configuration ~f:(fun files -> parse_modules_job ~files) files;
+    Scheduler.iter
+      scheduler
+      ~configuration
+      ~f:(fun files -> parse_modules_job ~files)
+      ~inputs:files;
     Scheduler.map_reduce
       scheduler
       ~configuration
-      ~init:[]
+      ~initial:[]
       ~map:(fun _ files -> parse_sources_job ~files)
       ~reduce:(fun new_handles processed_handles -> processed_handles @ new_handles)
-      files
+      ~inputs:files
+      ()
   in
   let () =
     let get_qualifier file =

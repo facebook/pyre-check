@@ -52,7 +52,7 @@ let register_ignores ~configuration scheduler handles =
     List.iter handles ~f:register_ignores_for_handle;
     List.iter handles ~f:(register_mode ~configuration);
   in
-  Scheduler.iter scheduler ~configuration ~f:register handles;
+  Scheduler.iter scheduler ~configuration ~f:register ~inputs:handles;
   Statistics.performance ~name:"registered ignores" ~timer ()
 
 
@@ -116,7 +116,14 @@ let ignore ~configuration scheduler handles errors =
       paths_from_handles handles
       |> List.concat_map ~f:get_unused_ignores
     in
-    Scheduler.map_reduce ~configuration scheduler ~map ~reduce:List.append ~init:[] handles
+    Scheduler.map_reduce
+      scheduler
+      ~configuration
+      ~map
+      ~reduce:List.append
+      ~initial:[]
+      ~inputs:handles
+      ()
   in
   let create_unused_ignore_error errors unused_ignore =
     let error =

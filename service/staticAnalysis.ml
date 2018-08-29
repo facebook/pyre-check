@@ -132,10 +132,11 @@ let analyze ?taint_models_directory ~scheduler ~configuration ~environment ~hand
     Scheduler.map_reduce
       scheduler
       ~configuration
-      ~init:Access.Map.empty
+      ~initial:Access.Map.empty
       ~map:(fun _ paths -> List.fold paths ~init:Access.Map.empty ~f:build_call_graph)
       ~reduce:(Map.merge_skewed ~combine:(fun ~key:_ left _ -> left))
-      paths
+      ~inputs:paths
+      ()
   in
   Statistics.performance ~name:"Call graph built" ~timer ();
   Log.info "Call graph edges: %d" (Access.Map.length call_graph);

@@ -94,9 +94,8 @@ let analyze_sources_parallel scheduler configuration environment handles =
     Scheduler.map_reduce
       scheduler
       ~configuration
-      handles
       ~bucket_size:75
-      ~init:
+      ~initial:
         {
           errors = [];
           number_files = 0;
@@ -147,6 +146,8 @@ let analyze_sources_parallel scheduler configuration environment handles =
             number_files;
             coverage = Coverage.sum left.coverage right.coverage;
           })
+      ~inputs:handles
+      ()
   in
   Statistics.performance ~name:"analyzed sources" ~timer ();
   let timer = Timer.start () in
@@ -193,8 +194,9 @@ let analyze_sources
       ~configuration
       ~map:(fun _ handles -> List.filter handles ~f:filter_by_root)
       ~reduce:(fun handles new_handles -> List.rev_append new_handles handles)
-      ~init:[]
-      handles
+      ~initial:[]
+      ~inputs:handles
+      ()
     |> List.sort ~compare:File.Handle.compare
   in
   Statistics.performance ~name:"filtered directories" ~timer ();
