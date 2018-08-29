@@ -25,7 +25,7 @@ let resolution = Test.resolution ()
 
 let create
     ?(bottom = false)
-    ?(define = Test.empty_define)
+    ?(define = Test.mock_define)
     ?(expected_return = Type.Top)
     ?(immutables = [])
     annotations =

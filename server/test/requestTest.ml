@@ -133,7 +133,7 @@ let test_process_display_type_errors_request _ =
                 {
                   Analysis.Error.location;
                   kind = Analysis.Error.UndefinedName (Expression.Access.create undefined);
-                  define = +empty_define;
+                  define = +mock_define;
                 }
               in
               List.map errors ~f:error

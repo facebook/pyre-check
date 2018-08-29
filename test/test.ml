@@ -531,7 +531,7 @@ let environment ?(sources = typeshed_stubs) ?(configuration = mock_configuration
   Environment.handler ~configuration environment
 
 
-let empty_define = {
+let mock_define = {
   Define.name = Access.create "$empty";
   parameters = [];
   body = [];

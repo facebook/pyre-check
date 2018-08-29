@@ -18,7 +18,7 @@ let configuration = Configuration.create ~infer:true ()
 
 
 let create
-    ?(define = Test.empty_define)
+    ?(define = Test.mock_define)
     ?(expected_return = Type.Top)
     ?(immutables = [])
     annotations =
