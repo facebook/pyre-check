@@ -6,7 +6,6 @@
 open Core
 
 open Ast
-open Configuration
 open Pyre
 
 
@@ -191,48 +190,13 @@ let analyze_sources
 
 let check
     ~scheduler:original_scheduler
-    ~configuration:{
-      start_time = _;
-      verbose;
-      expected_version = _;
-      sections;
-      debug;
-      infer;
-      recursive_infer;
-      strict;
-      declare;
-      show_error_traces;
-      log_identifier;
-      parallel;
-      filter_directories;
-      number_of_workers;
-      project_root;
-      search_path;
-      typeshed;
-      local_root;
-      logger;
-    } =
-  let configuration =
-    Configuration.create
-      ~verbose
-      ~sections
-      ~local_root
-      ~debug
-      ~strict
-      ~declare
-      ~show_error_traces
-      ~log_identifier
-      ~project_root
-      ~parallel
-      ?filter_directories
-      ~number_of_workers
-      ~search_path
-      ?typeshed
-      ~infer
-      ~recursive_infer
-      ?logger
-      ()
-  in
+    ~configuration:({
+        Configuration.project_root;
+        local_root;
+        search_path;
+        typeshed;
+        _;
+      } as configuration) =
   let check_directory_exists directory =
     if not (Path.is_directory directory) then
       raise (Invalid_argument (Format.asprintf "`%a` is not a directory" Path.pp directory));
