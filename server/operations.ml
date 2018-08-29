@@ -43,6 +43,7 @@ let initialize
   in
   Statistics.performance ~name:"initialization" ~timer ~normals:[] ();
   Log.log ~section:`Server "Server initialized";
+  Memory.init_done ();
   let handles = File.Handle.Set.of_list handles in
   let errors =
     let table = File.Handle.Table.create () in
