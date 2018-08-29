@@ -22,5 +22,4 @@ val analyze_sources
 val check
   :  scheduler: Scheduler.t option
   -> configuration: Configuration.t
-  -> unit
   -> result

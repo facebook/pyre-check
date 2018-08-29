@@ -72,7 +72,7 @@ let run_analysis
   in
   let scheduler = Scheduler.create ~configuration ~bucket_multiplier () in
   let errors =
-    Service.TypeCheck.check ~scheduler:(Some scheduler) ~configuration ()
+    Service.TypeCheck.check ~scheduler:(Some scheduler) ~configuration
     |> fun { handles; environment; _ } ->
     Service.StaticAnalysis.analyze
       ?taint_models_directory

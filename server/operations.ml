@@ -37,7 +37,10 @@ let initialize
   SharedMem.collect `aggressive;
   let timer = Timer.start () in
   let { TypeCheck.handles; environment; errors } =
-    TypeCheck.check ~scheduler:(Some scheduler) ~configuration () in
+    TypeCheck.check
+      ~scheduler:(Some scheduler)
+      ~configuration
+  in
   Statistics.performance ~name:"initialization" ~timer ~normals:[] ();
   Log.log ~section:`Server "Server initialized";
   let handles = File.Handle.Set.of_list handles in

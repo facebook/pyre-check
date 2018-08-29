@@ -224,8 +224,7 @@ let check
       typeshed;
       local_root;
       logger;
-    }
-    () =
+    } =
   let configuration =
     Configuration.create
       ~verbose
