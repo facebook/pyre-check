@@ -29,12 +29,14 @@ let initialize
     connections
     { configuration; _ } =
   Log.log ~section:`Server  "Initializing server...";
+
   let scheduler =
     match old_state with
     | Some { scheduler; _ } -> scheduler
     | None -> Scheduler.create ~configuration ()
   in
   SharedMem.collect `aggressive;
+
   let timer = Timer.start () in
   let { TypeCheck.handles; environment; errors } =
     TypeCheck.check
@@ -44,17 +46,17 @@ let initialize
   Statistics.performance ~name:"initialization" ~timer ~normals:[] ();
   Log.log ~section:`Server "Server initialized";
   Memory.init_done ();
+
   let handles = File.Handle.Set.of_list handles in
   let errors =
     let table = File.Handle.Table.create () in
-    List.iter
-      errors
-      ~f:(fun error ->
-          let path = Error.path error in
-          Hashtbl.add_multi
-            table
-            ~key:(File.Handle.create path)
-            ~data:error);
+    let add_error error =
+      Hashtbl.add_multi
+        table
+        ~key:(File.Handle.create (Error.path error))
+        ~data:error
+    in
+    List.iter errors ~f:add_error;
     table
   in
   {
