@@ -4,15 +4,11 @@
     LICENSE file in the root directory of this source tree. *)
 
 
-type recursion_behavior =
-  | Recurse
-  | Stop
-
 module type Transformer = sig
   type t
 
   val expression: t -> Expression.t -> Expression.t
-  val keep_recursing: t -> Statement.t -> recursion_behavior
+  val transform_children: t -> Statement.t -> bool
   val statement: t -> Statement.t -> t * Statement.t list
 end
 
@@ -23,7 +19,7 @@ end
 
 module Identity : sig
   val expression: 't -> Expression.t -> Expression.t
-  val keep_recursing: 't -> Statement.t -> recursion_behavior
+  val transform_children: 't -> Statement.t -> bool
   val statement: 't -> Statement.t -> 't * Statement.t list
 end
 

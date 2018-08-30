@@ -40,8 +40,8 @@ end = struct
   include Transform.Identity
   include ModifyingTransformer
 
-  let keep_recursing _state _statement =
-    Transform.Stop
+  let transform_children _ _ =
+    false
 end
 
 
@@ -150,8 +150,9 @@ module ShallowExpandingTransformer : sig
 end = struct
   include Transform.Identity
   include ExpandingTransformer
-  let keep_recursing _state _statement =
-    Transform.Stop
+
+  let transform_children _ _ =
+    false
 end
 
 module ExpandingTransform = Transform.Make(ExpandingTransformer)
@@ -254,8 +255,8 @@ let test_expansion_with_stop _ =
   end = struct
     include ExpandingTransformer
 
-    let keep_recursing _ _ =
-      Transform.Stop
+    let transform_children _ _ =
+      false
   end
   in
 
@@ -334,8 +335,8 @@ let test_double_count _ =
     include Transform.Identity
     include DoubleCounterTransformer
 
-    let keep_recursing _state _statement =
-      Transform.Stop
+    let transform_children _ _ =
+      false
   end
   in
 

@@ -23,8 +23,9 @@ let test_collect _ =
       end in
       let module StatementPredicate = struct
         type t = Statement.t
-        let keep_recursing _ =
-          Transform.Recurse
+
+        let visit_children _ =
+          true
 
         let predicate statement =
           Some statement
@@ -178,8 +179,8 @@ let test_statement_visitor _ =
   struct
     type t = int String.Table.t
 
-    let keep_recursing _ =
-      Transform.Recurse
+    let visit_children _ =
+      true
 
     let statement _ visited statement =
       let increment hash_table key =
@@ -235,8 +236,8 @@ let test_statement_visitor_source _ =
   struct
     type t = string (* Last source *)
 
-    let keep_recursing _ =
-      Transform.Recurse
+    let visit_children _ =
+      true
 
     let statement { Source.path; _ } _ _ =
       path

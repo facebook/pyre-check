@@ -15,7 +15,7 @@ end
 
 module type StatementVisitor = sig
   type t
-  val keep_recursing: Statement.t -> Transform.recursion_behavior
+  val visit_children: Statement.t -> bool
   val statement: Source.t -> t -> Statement.t -> t
 end
 
@@ -34,7 +34,7 @@ end
 
 module type StatementPredicate = sig
   type t
-  val keep_recursing: Statement.t -> Transform.recursion_behavior
+  val visit_children: Statement.t -> bool
   val predicate: Statement.t -> t option
 end
 

@@ -11,15 +11,10 @@ open Expression
 open Statement
 
 
-type recursion_behavior =
-  | Recurse
-  | Stop
-
-
 module type Transformer = sig
   type t
   val expression: t -> Expression.t -> Expression.t
-  val keep_recursing: t -> Statement.t -> recursion_behavior
+  val transform_children: t -> Statement.t -> bool
   val statement: t -> Statement.t -> t * Statement.t list
 end
 
@@ -32,14 +27,14 @@ end
 
 module Identity : sig
   val expression: 't -> Expression.t -> Expression.t
-  val keep_recursing: 't -> Statement.t -> recursion_behavior
+  val transform_children: 't -> Statement.t -> bool
   val statement: 't -> Statement.t -> 't * Statement.t list
 end = struct
   let expression _ expression =
     expression
 
-  let keep_recursing _state _statement =
-    Recurse
+  let transform_children _ _ =
+    true
 
   let statement state statement =
     state, [statement]
@@ -353,11 +348,10 @@ module Make (Transformer : Transformer) = struct
       in
 
       let statement =
-        match Transformer.keep_recursing !state statement with
-        | Recurse ->
-            { statement with Node.value = transform_children (Node.value statement) }
-        | Stop ->
-            statement
+        if Transformer.transform_children !state statement then
+          { statement with Node.value = transform_children (Node.value statement) }
+        else
+          statement
       in
 
       let new_state, statements =

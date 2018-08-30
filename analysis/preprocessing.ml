@@ -1158,11 +1158,10 @@ let defines
 
   let module Collector = Visit.StatementCollector(struct
       type t = Define.t Node.t
-      let keep_recursing =
-        function
-        | { Node.value = Define _; _ } -> Transform.Stop
-        | _ -> Transform.Recurse
 
+      let visit_children = function
+        | { Node.value = Define _; _ } -> false
+        | _ -> true
 
       let predicate = function
         | { Node.location; value = Define define } when Define.is_stub define && include_stubs ->
@@ -1186,7 +1185,9 @@ let defines
 let classes source =
   let module Collector = Visit.StatementCollector(struct
       type t = Statement.Class.t Node.t
-      let keep_recursing _ = Transform.Recurse
+
+      let visit_children _ =
+        true
 
       let predicate = function
         | { Node.location; value = Class class_define } ->
