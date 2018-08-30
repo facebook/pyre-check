@@ -190,6 +190,7 @@ let computation_thread request_queue configuration state =
                       ~configuration
                       ~socket:!(state.connections).socket)
             end;
+
           (* Stop if there's any inconsistencies in the .pyre directory. *)
           let last_integrity_check =
             if current_time -. state.last_integrity_check > State.integrity_check_every then
@@ -242,10 +243,6 @@ let request_handler_thread
       lock,
       connections,
       request_queue) =
-
-  let get_readable_sockets () =
-    Mutex.critical_section lock ~f:(fun () -> !connections)
-  in
   let queue_request ~origin request =
     match request, origin with
     | Protocol.Request.StopRequest, Protocol.Request.NewConnectionSocket socket ->
@@ -348,7 +345,7 @@ let request_handler_thread
   let last_watchman_created = ref 0.0 in
   let rec loop () =
     let { socket = server_socket; persistent_clients; file_notifiers; _ } =
-      get_readable_sockets ()
+      Mutex.critical_section lock ~f:(fun () -> !connections)
     in
     if not (PyrePath.is_directory local_root) then
       begin
