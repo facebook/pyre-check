@@ -13,7 +13,7 @@ type t
 
 val create: configuration: Configuration.t -> ?bucket_multiplier: int -> unit -> t
 
-val run: configuration: Configuration.t -> process: (unit -> 'result) -> 'result
+val run_process: configuration: Configuration.t -> (unit -> 'result) -> 'result
 
 val map_reduce
   :  t

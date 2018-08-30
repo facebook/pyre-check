@@ -111,7 +111,7 @@ let run_command expected_version log_identifier local_root () =
       ?expected_version
       ()
   in
-  let process () =
+  (fun () ->
     (* Log stderr to file *)
     let log_path =
       let persistent_client_directory =
@@ -179,9 +179,8 @@ let run_command expected_version log_identifier local_root () =
             "exception origin", "persistent";
           ]
           ();
-        raise uncaught_exception
-  in
-  Scheduler.run ~configuration ~process
+        raise uncaught_exception)
+  |> Scheduler.run_process ~configuration
 
 
 let command =
