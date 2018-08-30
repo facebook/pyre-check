@@ -56,12 +56,12 @@ let computation_thread request_queue configuration state =
       | TypeCheckResponse error_map ->
           let responses = errors_to_lsp_responses error_map in
           let write_or_mark_failure responses ~key:socket ~data:{ failures } =
-            match List.iter ~f:(Socket.write socket) responses with
-            | () ->
-                { failures }
-            | exception (Unix.Unix_error (Unix.EPIPE, _, _)) ->
-                Log.warning "Got an EPIPE while broadcasting to a persistent client";
-                { failures = failures + 1 }
+            try
+              List.iter ~f:(Socket.write socket) responses;
+              { failures }
+            with Unix.Unix_error (Unix.EPIPE, _, _) ->
+              Log.warning "Got an EPIPE while broadcasting to a persistent client";
+              { failures = failures + 1 }
           in
           Mutex.critical_section lock ~f:(fun () ->
               Hashtbl.mapi_inplace ~f:(write_or_mark_failure responses) persistent_clients;
