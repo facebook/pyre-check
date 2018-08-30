@@ -23,15 +23,6 @@ exception AlreadyRunning
 exception NotRunning
 
 
-let register_signal_handlers server_configuration socket =
-  Signal.Expert.handle
-    Signal.int
-    (fun _ -> Operations.stop ~reason:"interrupt" ~configuration:server_configuration ~socket);
-  Signal.Expert.handle
-    Signal.pipe
-    (fun _ -> ())
-
-
 let spawn_watchman_client { configuration = { sections; project_root; local_root; _ }; _ } =
   WatchmanCommand.run_command
     ~daemonize:true
@@ -77,7 +68,8 @@ let computation_thread request_queue configuration state =
               Hashtbl.filter_inplace
                 ~f:(fun { failures } -> failures < State.failure_threshold)
                 persistent_clients)
-      | _ -> ()
+      | _ ->
+          ()
     in
     let handle_request state ~request:(origin, request) =
       let process socket state configuration request =
@@ -441,7 +433,15 @@ let serve
          watchman_pid;
        }
      in
-     register_signal_handlers server_configuration socket;
+
+     (* Register signal handlers. *)
+     Signal.Expert.handle
+       Signal.int
+       (fun _ -> Operations.stop ~reason:"interrupt" ~configuration:server_configuration ~socket);
+     Signal.Expert.handle
+       Signal.pipe
+       (fun _ -> ());
+
      Thread.create
        request_handler_thread
        (server_configuration, lock, connections, request_queue)
