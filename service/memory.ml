@@ -64,13 +64,3 @@ let initialize () =
 let get_heap_handle () =
   let { heap_handle; _ } = initialize () in
   heap_handle
-
-
-let heap_use_ratio () =
-  Core.Float.of_int (SharedMem.heap_size ()) /.
-  Core.Float.of_int initial_heap_size
-
-
-let slot_use_ratio () =
-  let { SharedMem.used_slots; slots; _ } = SharedMem.hash_stats () in
-  Core.Float.of_int used_slots /. Core.Float.of_int slots
