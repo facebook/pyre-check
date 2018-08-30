@@ -11,11 +11,12 @@ open Pyre
 open PyreParser
 
 
-let parse_source ?(show_parser_errors = true) file =
-  File.path file |> Path.relative
-  >>= fun path ->
+let parse_source ~configuration ?(show_parser_errors = true) file =
+  File.handle ~configuration file
+  >>= fun handle ->
   File.lines file
   >>= fun lines ->
+  let path = File.Handle.show handle in
   let metadata = Source.Metadata.parse path lines in
   try
     let statements = Parser.parse ~path lines in
@@ -36,10 +37,10 @@ let parse_source ?(show_parser_errors = true) file =
       None
 
 
-let parse_modules_job ~files =
+let parse_modules_job ~configuration ~files =
   let parse file =
     file
-    |> parse_source ~show_parser_errors:false
+    |> parse_source ~configuration ~show_parser_errors:false
     >>| (fun source ->
         let add_module_from_source
             {
@@ -63,15 +64,14 @@ let parse_modules_job ~files =
   List.iter files ~f:parse
 
 
-let parse_sources_job ~files =
+let parse_sources_job ~configuration ~files =
   let parse handles file =
     (file
-     |> parse_source
+     |> parse_source ~configuration
      >>= fun source ->
-     Path.relative (File.path file)
-     >>| fun relative ->
-     Ast.SharedMemory.add_path_hash ~path:relative;
-     let handle = File.Handle.create relative in
+     File.handle ~configuration file
+     >>| fun handle ->
+     Ast.SharedMemory.add_path_hash ~path:(File.Handle.show handle);
      source
      |> Analysis.Preprocessing.preprocess
      |> Plugin.apply_to_ast
@@ -87,13 +87,13 @@ let parse_sources ~configuration ~scheduler ~files =
     Scheduler.iter
       scheduler
       ~configuration
-      ~f:(fun files -> parse_modules_job ~files)
+      ~f:(fun files -> parse_modules_job ~configuration ~files)
       ~inputs:files;
     Scheduler.map_reduce
       scheduler
       ~configuration
       ~initial:[]
-      ~map:(fun _ files -> parse_sources_job ~files)
+      ~map:(fun _ files -> parse_sources_job ~configuration ~files)
       ~reduce:(fun new_handles processed_handles -> processed_handles @ new_handles)
       ~inputs:files
       ()

@@ -179,6 +179,7 @@ let test_parse_source _ =
 
 
 let test_parse_sources context =
+  let scheduler = Scheduler.mock () in
   let stub_handles, source_handles =
     let local_root = Path.create_absolute (bracket_tmpdir context) in
     let module_root = Path.create_absolute (bracket_tmpdir context) in
@@ -207,7 +208,6 @@ let test_parse_sources context =
       ~dst:((Path.absolute local_root) ^/ "d.pyi");
 
     let configuration = Configuration.create ~local_root ~search_path:[module_root] () in
-    let scheduler = Scheduler.mock () in
     let { Service.Parser.stubs; sources } = Service.Parser.parse_all scheduler ~configuration in
     let stubs =
       stubs
@@ -230,7 +230,27 @@ let test_parse_sources context =
     ~cmp:(List.equal ~equal:String.equal)
     ~printer:(String.concat ~sep:", ")
     ["c.py"]
-    source_handles
+    source_handles;
+  let stub_handles, source_handles =
+    let local_root = Path.create_absolute (bracket_tmpdir context) in
+    let stub_root = Path.create_relative ~root:local_root ~relative:"stubs" in
+    let configuration = Configuration.create ~local_root ~search_path:[stub_root] () in
+
+    let write_file root relative =
+      File.create ~content:"def foo() -> int: ..." (Path.create_relative ~root ~relative)
+      |> File.write
+    in
+    write_file local_root "a.py";
+    write_file stub_root "stub.pyi";
+    let { Service.Parser.stubs; sources } = Service.Parser.parse_all scheduler ~configuration in
+    stubs, sources
+  in
+  (* Note that the stub gets parsed twice due to appearing both in the local root and stubs, but
+     consistently gets mapped to the correct handle. *)
+  assert_equal
+    stub_handles
+    [File.Handle.create "stub.pyi"; File.Handle.create "stub.pyi"];
+  assert_equal source_handles [File.Handle.create "a.py"]
 
 
 let test_register_modules _ =
