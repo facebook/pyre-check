@@ -33,6 +33,10 @@ trap error_trap ERR
 
 # Compatibility settings with MacOS.
 if [[ "${MACHTYPE}" = *apple* ]]; then
+  if ! [ -x "$(command -v greadlink)" ]; then
+    echo 'Error: greadlink is not installed. Please install coreutils.' >&2
+    exit 1
+  fi
   READLINK=greadlink
   HAS_PIP_GREATER_THAN_1_5=no
   WHEEL_DISTRIBUTION_PLATFORM=macosx_10_11_x86_64
