@@ -23,9 +23,8 @@ exception NotRunning
 
 
 let register_signal_handlers server_configuration socket =
-  Signal.Expert.handle
-    Signal.int
-    (fun _ -> Server.Operations.stop ~reason:"interrupt" server_configuration socket);
+  (fun _ -> Server.Operations.stop ~reason:"interrupt" ~configuration:server_configuration ~socket)
+  |> Signal.Expert.handle Signal.int;
   Signal.Expert.handle
     Signal.pipe
     (fun _ -> ())
@@ -91,8 +90,8 @@ let computation_thread request_queue configuration state =
               ~f:(fun () ->
                   Server.Operations.stop
                     ~reason:"malformed request"
-                    configuration
-                    !(state.connections).socket);
+                    ~configuration
+                    ~socket:!(state.connections).socket);
             { Server.Request.state; response = None }
       in
       match origin with
@@ -194,8 +193,8 @@ let computation_thread request_queue configuration state =
                 ~f:(fun () ->
                     Server.Operations.stop
                       ~reason:"idle"
-                      configuration
-                      !(state.connections).socket)
+                      ~configuration
+                      ~socket:!(state.connections).socket)
             end;
           (* Stop if there's any inconsistencies in the .pyre directory. *)
           let last_integrity_check =
@@ -220,8 +219,8 @@ let computation_thread request_queue configuration state =
                           (Pid.to_string (Unix.getpid ()));
                         Server.Operations.stop
                           ~reason:"failed integrity check"
-                          configuration
-                          !(state.connections).socket);
+                          ~configuration
+                          ~socket:!(state.connections).socket);
                 current_time
               end
             else
@@ -259,13 +258,13 @@ let request_handler_thread
         Socket.write socket StopResponse;
         Server.Operations.stop
           ~reason:"explicit request"
-          server_configuration
-          !(connections).socket
+          ~configuration:server_configuration
+          ~socket:!(connections).socket
     | Server.Protocol.Request.StopRequest, _ ->
         Server.Operations.stop
           ~reason:"explicit request"
-          server_configuration
-          !(connections).socket
+          ~configuration:server_configuration
+          ~socket:!(connections).socket
     | Server.Protocol.Request.ClientConnectionRequest client,
       Server.Protocol.Request.NewConnectionSocket socket ->
         Log.log ~section:`Server "Adding %s client" (show_client client);
@@ -362,8 +361,8 @@ let request_handler_thread
         Log.error "Stopping server due to missing source root.";
         Server.Operations.stop
           ~reason:"missing source root"
-          server_configuration
-          !(connections).socket
+          ~configuration:server_configuration
+          ~socket:!(connections).socket
       end;
     let readable =
       Unix.select
@@ -416,7 +415,10 @@ let request_handler_thread
         "exception origin", "server";
       ]
       ();
-    Server.Operations.stop ~reason:"exception" server_configuration (!connections).socket
+    Server.Operations.stop
+      ~reason:"exception"
+      ~configuration:server_configuration
+      ~socket:(!connections).socket
 
 
 (** Main server either as a daemon or in terminal *)
@@ -440,7 +442,13 @@ let serve (socket, server_configuration, watchman_pid) =
        (server_configuration, lock, connections, request_queue)
      |> ignore;
 
-     let state = Server.Operations.start lock connections server_configuration in
+     let state =
+       Server.Operations.start
+         ~lock
+         ~connections
+         ~configuration:server_configuration
+         ()
+     in
      try
        computation_thread request_queue server_configuration state
      with uncaught_exception ->
@@ -455,7 +463,7 @@ let serve (socket, server_configuration, watchman_pid) =
            "exception origin", "server";
          ]
          ();
-       Server.Operations.stop ~reason:"exception" server_configuration socket)
+       Server.Operations.stop ~reason:"exception" ~configuration:server_configuration ~socket)
   |> Scheduler.run_process ~configuration
 
 

@@ -26,9 +26,10 @@ exception VersionMismatch of version_mismatch
 
 let start
     ?old_state
-    lock
-    connections
-    { configuration; _ } =
+    ~lock
+    ~connections
+    ~configuration:{ configuration; _ }
+    () =
   Log.log ~section:`Server  "Initializing server...";
 
   let scheduler =
@@ -76,8 +77,8 @@ let start
 
 let stop
     ~reason
-    { configuration; lock_path; socket_path; pid_path; socket_link; _ }
-    socket =
+    ~configuration:{ configuration; lock_path; socket_path; pid_path; socket_link; _ }
+    ~socket =
   Statistics.event ~flush:true ~name:"stop server" ~normals:["reason", reason] ();
   let watchman_pid =
     try

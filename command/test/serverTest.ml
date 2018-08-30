@@ -1013,9 +1013,10 @@ let test_incremental_attribute_caching context =
   let initial_state =
     Server.Operations.start
       ~old_state
-      server_lock
-      connections
-      server_configuration
+      ~lock:server_lock
+      ~connections
+      ~configuration:server_configuration
+      ()
   in
   let request_typecheck state =
     Request.process

@@ -724,8 +724,8 @@ let rec process
           ~f:(fun () ->
               Operations.stop
                 ~reason:"explicit request"
-                server_configuration
-                !connections.socket);
+                ~configuration:server_configuration
+                ~socket:!connections.socket);
         { state; response = None }
 
     | LanguageServerProtocolRequest request ->
