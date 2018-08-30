@@ -38,9 +38,3 @@ type t = {
   last_request_time: float;
   connections: connections ref;
 }
-
-val failure_threshold: int
-
-val stop_after_idle_for: float
-
-val integrity_check_every: float

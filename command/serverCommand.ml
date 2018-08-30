@@ -33,6 +33,7 @@ let spawn_watchman_client { configuration = { sections; project_root; local_root
 
 
 let computation_thread request_queue configuration state =
+  let failure_threshold = 5 in
   let rec loop ({ configuration = { local_root; _ }; pid_path; _ } as configuration) state =
     let errors_to_lsp_responses error_map =
       let diagnostic_to_response = function
@@ -68,7 +69,7 @@ let computation_thread request_queue configuration state =
           Mutex.critical_section lock ~f:(fun () ->
               Hashtbl.mapi_inplace ~f:(write_or_mark_failure responses) persistent_clients;
               Hashtbl.filter_inplace
-                ~f:(fun { failures } -> failures < State.failure_threshold)
+                ~f:(fun { failures } -> failures < failure_threshold)
                 persistent_clients)
       | _ ->
           ()
@@ -105,7 +106,7 @@ let computation_thread request_queue configuration state =
                           let { persistent_clients; _ } = !(state.connections) in
                           match Hashtbl.find persistent_clients socket with
                           | Some { failures } ->
-                              if failures < State.failure_threshold then
+                              if failures < failure_threshold then
                                 Hashtbl.set
                                   persistent_clients
                                   ~key:socket
@@ -182,7 +183,8 @@ let computation_thread request_queue configuration state =
       | 0, true ->
           (* Stop if the server is idle. *)
           let current_time = Unix.time () in
-          if current_time -. state.last_request_time > State.stop_after_idle_for then
+          let stop_after_idle_for = 24.0 *. 60.0 *. 60.0 (* 1 day *) in
+          if current_time -. state.last_request_time > stop_after_idle_for then
             begin
               Mutex.critical_section
                 state.lock
@@ -195,7 +197,8 @@ let computation_thread request_queue configuration state =
 
           (* Stop if there's any inconsistencies in the .pyre directory. *)
           let last_integrity_check =
-            if current_time -. state.last_integrity_check > State.integrity_check_every then
+            let integrity_check_every = 60.0 (* 1 minute *) in
+            if current_time -. state.last_integrity_check > integrity_check_every then
               begin
                 let pid_file =
                   Path.absolute pid_path
