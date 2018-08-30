@@ -16,22 +16,6 @@ open PostprocessSharedMemory
 let populate
     (module Handler: Environment.Handler)
     sources =
-  (* Yikes... *)
-  Handler.register_alias
-    ~path:"typing.py"
-    ~key:(Type.primitive "typing.DefaultDict")
-    ~data:(Type.primitive "collections.defaultdict");
-  Handler.register_alias
-    ~path:"builtins.py"
-    ~key:(Type.primitive "None")
-    ~data:(Type.Optional Type.Bottom);
-  (* This is broken in typeshed:
-     https://github.com/python/typeshed/pull/991#issuecomment-288160993 *)
-  Handler.register_alias
-    ~path:"builtins.py"
-    ~key:(Type.primitive "PathLike")
-    ~data:(Type.primitive "_PathLike");
-
   List.iter ~f:(Environment.register_module (module Handler)) sources;
 
   let all_annotations =

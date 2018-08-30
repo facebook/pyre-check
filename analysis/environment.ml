@@ -1073,6 +1073,22 @@ module Builder = struct
           |> Node.create_with_default_location
         ];
       ];
+    (* Register hardcoded aliases. *)
+    Hashtbl.set
+      aliases
+      ~key:(Type.primitive "typing.DefaultDict")
+      ~data:(Type.primitive "collections.defaultdict");
+    Hashtbl.set
+      aliases
+      ~key:(Type.primitive "None")
+      ~data:(Type.Optional Type.Bottom);
+    (* This is broken in typeshed:
+       https://github.com/python/typeshed/pull/991#issuecomment-288160993 *)
+    Hashtbl.set
+      aliases
+      ~key:(Type.primitive "PathLike")
+      ~data:(Type.primitive "_PathLike");
+
 
     {
       function_definitions;
