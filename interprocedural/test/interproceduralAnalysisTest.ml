@@ -18,16 +18,15 @@ let configuration = Configuration.create ()
 let environment ?(sources = []) ?(configuration = configuration) () =
   let _ = Test.parse "" in  (* Make sure Test module is loaded. *)
   let environment = Environment.Builder.create () in
-  Service.Environment.populate (Environment.handler ~configuration environment) sources;
-  Environment.handler ~configuration environment
+  let handler = Environment.handler ~configuration environment in
+  Service.Environment.populate handler sources;
+  handler
 
 
 let setup_environment ?(sources = []) () =
   let () = Scheduler.Daemon.check_entry_point () in
-  let environment = environment ~configuration () in
-  Service.Environment.populate environment sources;
-  let environment = Environment.Builder.create () in
-  Service.Environment.populate (Environment.handler ~configuration environment) sources
+  let environment = environment ~sources ~configuration () in
+  Service.Environment.populate environment sources
 
 
 module ResultA = Interprocedural.Result.Make(struct

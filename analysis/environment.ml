@@ -1022,12 +1022,16 @@ module Builder = struct
           docstring = None;
         }
       in
+      let successors =
+        let successor { Argument.value; _ } = Type.create value ~aliases:(fun _ -> None) in
+        (List.map bases ~f:successor) @ [Type.Object]
+      in
       Hashtbl.set
         ~key:(Type.primitive name)
         ~data:{
           Resolution.class_definition = Node.create_with_default_location definition;
           methods = [];
-          successors = [];
+          successors;
           explicit_attributes = Access.SerializableMap.empty;
           implicit_attributes = Access.SerializableMap.empty;
           is_test = false;
@@ -1037,6 +1041,7 @@ module Builder = struct
     List.iter
       ~f:(fun (name, bases, body) -> add_special_class ~name ~bases ~body)
       [
+        "None", [], [];
         "typing.Optional", [], [];
         "typing.Undeclared", [], [];
         "typing.NoReturn", [], [];

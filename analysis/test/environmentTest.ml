@@ -31,9 +31,8 @@ let configuration = Configuration.create ~infer:true ()
 
 let plain_populate sources =
   let environment = Environment.Builder.create () in
-  Service.Environment.populate
-    (Environment.handler ~configuration environment)
-    sources;
+  let handler = Environment.handler ~configuration environment in
+  Service.Environment.populate handler sources;
   environment
 
 
@@ -616,7 +615,7 @@ let test_register_functions _ =
 
 let test_populate _ =
   (* Test type resolution. *)
-  let environment =
+  let ((module Handler: Environment.Handler) as environment) =
     populate {|
       class foo.foo(): ...
       class bar(): ...
@@ -634,6 +633,10 @@ let test_populate _ =
   assert_equal
     (parse_annotation environment !"typing.DefaultDict")
     (Type.primitive "collections.defaultdict");
+
+  (* Check custom class definitions. *)
+  assert_is_some (Handler.class_definition (Type.primitive "None"));
+  assert_is_some (Handler.class_definition (Type.primitive "typing.Optional"));
 
   (* Check type aliases. *)
   let environment =

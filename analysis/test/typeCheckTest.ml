@@ -1833,7 +1833,18 @@ let test_check _ =
       def f(meta: type) -> typing.Type[int]:
         return meta
     |}
-    ["Incompatible return type [7]: Expected `typing.Type[int]` but got `typing.Type[typing.Any]`."]
+    [
+      "Incompatible return type [7]: Expected `typing.Type[int]` but got " ^
+      "`typing.Type[typing.Any]`.";
+    ];
+
+  (* object methods are picked up for optionals. *)
+  assert_type_errors
+    {|
+      def f() -> int:
+        return None.__sizeof__()
+    |}
+    []
 
 
 let test_check_assign _ =
