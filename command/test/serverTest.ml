@@ -1011,7 +1011,11 @@ let test_incremental_attribute_caching context =
   in
   write_to_file ~content:content_with_annotation;
   let initial_state =
-    Server.Operations.initialize ~old_state server_lock connections server_configuration
+    Server.Operations.start
+      ~old_state
+      server_lock
+      connections
+      server_configuration
   in
   let request_typecheck state =
     Request.process

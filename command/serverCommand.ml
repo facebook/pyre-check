@@ -25,7 +25,7 @@ exception NotRunning
 let register_signal_handlers server_configuration socket =
   Signal.Expert.handle
     Signal.int
-    (fun _ -> Server.Operations.stop_server ~reason:"interrupt" server_configuration socket);
+    (fun _ -> Server.Operations.stop ~reason:"interrupt" server_configuration socket);
   Signal.Expert.handle
     Signal.pipe
     (fun _ -> ())
@@ -89,7 +89,7 @@ let computation_thread request_queue configuration state =
             Mutex.critical_section
               state.lock
               ~f:(fun () ->
-                  Server.Operations.stop_server
+                  Server.Operations.stop
                     ~reason:"malformed request"
                     configuration
                     !(state.connections).socket);
@@ -192,7 +192,7 @@ let computation_thread request_queue configuration state =
               Mutex.critical_section
                 state.lock
                 ~f:(fun () ->
-                    Server.Operations.stop_server
+                    Server.Operations.stop
                       ~reason:"idle"
                       configuration
                       !(state.connections).socket)
@@ -218,7 +218,7 @@ let computation_thread request_queue configuration state =
                           "Stopping server in integrity check. Got %s in the pid file, expected %s."
                           pid
                           (Pid.to_string (Unix.getpid ()));
-                        Server.Operations.stop_server
+                        Server.Operations.stop
                           ~reason:"failed integrity check"
                           configuration
                           !(state.connections).socket);
@@ -257,12 +257,12 @@ let request_handler_thread
     match request, origin with
     | Server.Protocol.Request.StopRequest, Server.Protocol.Request.NewConnectionSocket socket ->
         Socket.write socket StopResponse;
-        Server.Operations.stop_server
+        Server.Operations.stop
           ~reason:"explicit request"
           server_configuration
           !(connections).socket
     | Server.Protocol.Request.StopRequest, _ ->
-        Server.Operations.stop_server
+        Server.Operations.stop
           ~reason:"explicit request"
           server_configuration
           !(connections).socket
@@ -360,7 +360,7 @@ let request_handler_thread
     if not (PyrePath.is_directory local_root) then
       begin
         Log.error "Stopping server due to missing source root.";
-        Server.Operations.stop_server
+        Server.Operations.stop
           ~reason:"missing source root"
           server_configuration
           !(connections).socket
@@ -416,7 +416,7 @@ let request_handler_thread
         "exception origin", "server";
       ]
       ();
-    Server.Operations.stop_server ~reason:"exception" server_configuration (!connections).socket
+    Server.Operations.stop ~reason:"exception" server_configuration (!connections).socket
 
 
 (** Main server either as a daemon or in terminal *)
@@ -440,9 +440,7 @@ let serve (socket, server_configuration, watchman_pid) =
        (server_configuration, lock, connections, request_queue)
      |> ignore;
 
-     let state =
-       Server.Operations.initialize lock connections server_configuration
-     in
+     let state = Server.Operations.start lock connections server_configuration in
      try
        computation_thread request_queue server_configuration state
      with uncaught_exception ->
@@ -457,7 +455,7 @@ let serve (socket, server_configuration, watchman_pid) =
            "exception origin", "server";
          ]
          ();
-       Server.Operations.stop_server ~reason:"exception" server_configuration socket)
+       Server.Operations.stop ~reason:"exception" server_configuration socket)
   |> Scheduler.run_process ~configuration
 
 

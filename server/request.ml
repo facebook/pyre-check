@@ -722,7 +722,7 @@ let rec process
         Mutex.critical_section
           lock
           ~f:(fun () ->
-              Operations.stop_server
+              Operations.stop
                 ~reason:"explicit request"
                 server_configuration
                 !connections.socket);

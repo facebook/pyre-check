@@ -19,11 +19,12 @@ type version_mismatch = {
 }
 [@@deriving show]
 
+
 exception ConnectionFailure
 exception VersionMismatch of version_mismatch
 
 
-let initialize
+let start
     ?old_state
     lock
     connections
@@ -73,14 +74,10 @@ let initialize
   }
 
 
-let remove_server_files { lock_path; socket_path; pid_path; socket_link; _ } =
-  Path.remove lock_path;
-  Path.remove socket_path;
-  Path.remove socket_link;
-  Path.remove pid_path
-
-
-let stop_server ~reason ({ configuration; _ } as server_configuration) socket =
+let stop
+    ~reason
+    { configuration; lock_path; socket_path; pid_path; socket_link; _ }
+    socket =
   Statistics.event ~flush:true ~name:"stop server" ~normals:["reason", reason] ();
   let watchman_pid =
     try
@@ -94,7 +91,13 @@ let stop_server ~reason ({ configuration; _ } as server_configuration) socket =
       None
   in
   watchman_pid >>| Signal.send_i Signal.int  |> ignore;
-  remove_server_files server_configuration;
+
+  (* Cleanup server files. *)
+  Path.remove lock_path;
+  Path.remove socket_path;
+  Path.remove socket_link;
+  Path.remove pid_path;
+
   Unix.close socket;
   Worker.killall ();
   exit 0
