@@ -58,18 +58,18 @@ let computation_thread request_queue configuration state =
       match response with
       | TypeCheckResponse error_map ->
           let responses = errors_to_lsp_responses error_map in
-          let write_or_mark_failure responses ~key:socket ~data:{ failures } =
+          let write_or_mark_failure responses ~key:socket ~data:failures =
             try
               List.iter ~f:(Socket.write socket) responses;
-              { failures }
+              failures
             with Unix.Unix_error (Unix.EPIPE, _, _) ->
               Log.warning "Got an EPIPE while broadcasting to a persistent client";
-              { failures = failures + 1 }
+              failures + 1
           in
           Mutex.critical_section lock ~f:(fun () ->
               Hashtbl.mapi_inplace ~f:(write_or_mark_failure responses) persistent_clients;
               Hashtbl.filter_inplace
-                ~f:(fun { failures } -> failures < failure_threshold)
+                ~f:(fun failures -> failures < failure_threshold)
                 persistent_clients)
       | _ ->
           ()
@@ -105,12 +105,12 @@ let computation_thread request_queue configuration state =
                       Mutex.critical_section state.lock ~f:(fun () ->
                           let { persistent_clients; _ } = !(state.connections) in
                           match Hashtbl.find persistent_clients socket with
-                          | Some { failures } ->
+                          | Some failures ->
                               if failures < failure_threshold then
                                 Hashtbl.set
                                   persistent_clients
                                   ~key:socket
-                                  ~data:{ failures = failures + 1 }
+                                  ~data:(failures + 1)
                               else
                                 Hashtbl.remove persistent_clients socket
                           | None ->
@@ -273,7 +273,7 @@ let request_handler_thread
                 begin
                   match client with
                   | Persistent ->
-                      Hashtbl.set persistent_clients ~key:socket ~data:{ failures = 0 };
+                      Hashtbl.set persistent_clients ~key:socket ~data:0;
                       !connections
                   | FileNotifier ->
                       { !connections with file_notifiers = socket::file_notifiers }
