@@ -433,7 +433,8 @@ let serve
      Log.log ~section:`Server "Starting daemon server loop...";
      let request_queue = Squeue.create 25 in
      let lock = Mutex.create () in
-     let connections = ref {
+     let connections =
+       ref {
          socket;
          persistent_clients = Unix.File_descr.Table.create ();
          file_notifiers = [];
