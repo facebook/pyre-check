@@ -424,9 +424,11 @@ let request_handler_thread
 
 
 (** Main server either as a daemon or in terminal *)
-let serve (socket, server_configuration, watchman_pid) =
+let serve
+    ~socket
+    ~server_configuration:({ configuration; _ } as server_configuration)
+    ~watchman_pid =
   Version.log_version_banner ();
-  let configuration = server_configuration.configuration in
   (fun () ->
      Log.log ~section:`Server "Starting daemon server loop...";
      let request_queue = Squeue.create 25 in
@@ -464,15 +466,14 @@ let serve (socket, server_configuration, watchman_pid) =
 
 
 (* Create lock file and pid file. Used for both daemon mode and in-terminal *)
-let setup { lock_path; pid_path; _ } =
+let acquire_lock ~server_configuration:{ lock_path; pid_path; _ } =
   let pid = Unix.getpid () |> Pid.to_int in
   if not (Lock.grab (Path.absolute lock_path)) then
     raise AlreadyRunning;
-
   Out_channel.with_file
     (Path.absolute pid_path)
-    ~f:(fun out_channel ->
-        Format.fprintf (Format.formatter_of_out_channel out_channel) "%d%!" pid)
+    ~f:(fun out_channel -> Format.fprintf (Format.formatter_of_out_channel out_channel) "%d%!" pid)
+
 
 (** Daemon forking code *)
 type run_server_daemon_entry =
@@ -492,8 +493,8 @@ let run_server_daemon_entry : run_server_daemon_entry =
        Daemon.close_out parent_out_channel;
        (* Detach the from a controlling terminal *)
        Unix.Terminal_io.setsid () |> ignore;
-       setup server_configuration;
-       serve (socket, server_configuration, watchman_pid))
+       acquire_lock ~server_configuration;
+       serve ~socket ~server_configuration ~watchman_pid)
 
 
 let start ({
@@ -542,11 +543,12 @@ let start ({
          Log.log ~section:`Server "Forked off daemon with pid %d" pid;
          Log.info "Server starting in background";
          pid
-       else begin
-         setup server_configuration;
-         serve (socket, server_configuration, watchman_pid);
-         0
-       end
+       else
+         begin
+           acquire_lock ~server_configuration;
+           serve ~socket ~server_configuration ~watchman_pid;
+           0
+         end
      with AlreadyRunning ->
        Log.info "Server is already running";
        0)
