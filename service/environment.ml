@@ -66,8 +66,7 @@ let populate
   (* TODO(T30713406): Merge with class registration. *)
   List.iter ~f:Handler.refine_class_definition all_annotations;
 
-  List.iter ~f:(Plugin.apply_to_environment (module Handler)) sources;
-  Environment.infer_protocols ~handler:(module Handler) ()
+  List.iter ~f:(Plugin.apply_to_environment (module Handler)) sources
 
 
 let build
@@ -530,6 +529,9 @@ let handler
     Environment.handler ~configuration environment
   in
   build handler ~configuration ~stubs ~sources;
+
+  Environment.infer_protocols ~handler:(module InProcessHandler) ();
+
   TypeOrder.check_integrity (module InProcessHandler.TypeOrderHandler);
   add_to_shared_memory environment;
   Statistics.event
