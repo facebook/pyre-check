@@ -36,13 +36,15 @@ let computation_thread request_queue configuration state =
   let rec loop ({ configuration = { local_root; _ }; pid_path; _ } as configuration) state =
     let errors_to_lsp_responses error_map =
       let diagnostic_to_response = function
-        | Ok diagnostic_error -> [
-            diagnostic_error
-            |> LanguageServer.Protocol.PublishDiagnostics.to_yojson
-            |> Yojson.Safe.to_string
-            |> fun serialized_diagnostic -> LanguageServerProtocolResponse serialized_diagnostic
-          ]
-        | Error _ -> []
+        | Ok diagnostic_error ->
+            [
+              diagnostic_error
+              |> LanguageServer.Protocol.PublishDiagnostics.to_yojson
+              |> Yojson.Safe.to_string
+              |> fun serialized_diagnostic -> LanguageServerProtocolResponse serialized_diagnostic;
+            ]
+        | Error _ ->
+            []
       in
       error_map
       |> List.map
