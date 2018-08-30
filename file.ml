@@ -133,5 +133,19 @@ module Set = Set.Make(struct
   end)
 
 
-let handle ?(root = Path.current_working_directory ()) { path; _ } =
-  Path.get_relative_to_root ~root ~path >>| Handle.create
+let handle ~configuration:{ Configuration.local_root; search_path; typeshed; _ } { path; _ } =
+  (* Have an ordering of search_path > typeshed > local_root with the parser. search_path precedes
+   * local_root due to the possibility of having a subdirectory of the root in the search path. *)
+  let possible_roots =
+    match typeshed with
+    | None ->
+        search_path @ [local_root]
+    | Some typeshed ->
+        search_path @ [
+          Path.create_relative ~root:typeshed ~relative:"stdlib";
+          Path.create_relative ~root:typeshed ~relative:"third_party";
+          local_root;
+        ]
+  in
+  List.find_map possible_roots ~f:(fun root -> Path.get_relative_to_root ~root ~path)
+  >>| Handle.create

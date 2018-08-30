@@ -28,7 +28,7 @@ val process_type_query_request
   -> response
 val process_display_type_errors_request
   :  state: State.t
-  -> local_root: Path.t
+  -> configuration: Configuration.t
   -> files: File.t list
   -> response
 val process_type_check_request

@@ -97,6 +97,7 @@
   ppxlib
   ppx_deriving
   hack_parallel
+  pyrelib.configuration
   pyrelib.pyre
   pyrelib.path))
 

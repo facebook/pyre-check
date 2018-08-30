@@ -146,9 +146,9 @@ let test_process_display_type_errors_request _ =
           ~errors:(serialized_errors errors |> File.Handle.Table.of_alist_exn)
           ()
       in
-      let local_root = Path.current_working_directory () in
+      let configuration = Configuration.create ~local_root:(Path.current_working_directory ()) () in
       let files = List.map paths ~f:(fun path -> mock_path path |> File.create) in
-      Request.process_display_type_errors_request ~state ~local_root ~files
+      Request.process_display_type_errors_request ~state ~configuration ~files
       |> function
       | { Request.response = Some (Protocol.TypeCheckResponse response); _ } -> response
       | _ -> failwith "Unexpected response."

@@ -516,14 +516,17 @@ let build_file_to_error_map ?(checked_files = None) ~state:{ State.errors; _ } e
   |> Map.to_alist
 
 
-let process_display_type_errors_request ~state:({ State.errors; _ } as state) ~local_root ~files =
+let process_display_type_errors_request
+    ~state:({ State.errors; _ } as state)
+    ~configuration
+    ~files =
   let errors =
     match files with
     | [] ->
         Hashtbl.data errors
         |> List.concat
     | _ ->
-        List.filter_map ~f:(File.handle ~root:local_root) files
+        List.filter_map ~f:(File.handle ~configuration) files
         |> List.filter_map ~f:(Hashtbl.find errors)
         |> List.concat
   in
@@ -543,13 +546,12 @@ let process_type_check_request
     if not (List.is_empty update_environment_with) then
       let files =
         let dependents =
-          let relative_path file =
-            Path.get_relative_to_root ~root:local_root ~path:(File.path file)
+          let handle file =
+            File.handle file ~configuration
+            >>| File.Handle.show
           in
-          let update_environment_with =
-            List.filter_map update_environment_with ~f:relative_path
-          in
-          let check = List.filter_map check ~f:relative_path in
+          let update_environment_with = List.filter_map update_environment_with ~f:handle in
+          let check = List.filter_map check ~f:handle in
           Log.log
             ~section:`Server
             "Handling type check request for files %a"
@@ -587,7 +589,7 @@ let process_type_check_request
   (* Repopulate the environment. *)
   let repopulate_handles =
     (* Clean up all data related to updated files. *)
-    let handles = List.filter_map update_environment_with ~f:(File.handle ~root:local_root) in
+    let handles = List.filter_map update_environment_with ~f:(File.handle ~configuration) in
     Ast.SharedMemory.remove_paths handles;
     Handler.purge handles;
     update_environment_with
@@ -605,7 +607,7 @@ let process_type_check_request
     let stubs = Service.Parser.parse_sources ~configuration ~scheduler ~files:stubs in
     let sources =
       let keep file =
-        (File.handle ~root:local_root file
+        (File.handle ~configuration file
          >>= fun path -> Some (Source.qualifier ~path:(File.Handle.show path))
          >>= Handler.module_definition
          >>= Module.path
@@ -638,7 +640,7 @@ let process_type_check_request
   Service.Postprocess.register_ignores ~configuration scheduler repopulate_handles;
 
   (* Compute new set of errors. *)
-  let new_source_handles = List.filter_map ~f:(File.handle ~root:local_root) check in
+  let new_source_handles = List.filter_map ~f:(File.handle ~configuration) check in
 
   (* Clear all type resolution info from shared memory for all affected sources. *)
   List.filter_map ~f:Ast.SharedMemory.get_source new_source_handles
@@ -693,7 +695,7 @@ let rec process
         process_type_query_request ~state ~local_root ~request
 
     | DisplayTypeErrors files ->
-        process_display_type_errors_request ~state ~local_root ~files
+        process_display_type_errors_request ~state ~configuration ~files
 
     | FlushTypeErrorsRequest ->
         let state =

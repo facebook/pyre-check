@@ -34,9 +34,38 @@ let test_lines context =
     ["foo"; "bar"]
 
 
+let test_handle _ =
+  let assert_handle ~absolute ~handle =
+    let path = Path.create_absolute ~follow_symbolic_links:false in
+    let configuration =
+      Configuration.create
+        ~local_root:(path "/root")
+        ~search_path:[path "/root/stubs"; path "/external"]
+        ~typeshed:(path "/typeshed")
+        ()
+    in
+    let expected =
+      File.handle ~configuration (File.create (path absolute))
+      >>| File.Handle.show
+    in
+    assert_equal expected handle
+  in
+  assert_handle ~absolute:"/root/a.py" ~handle:(Some "a.py");
+
+  assert_handle ~absolute:"/external/b/c.py" ~handle:(Some "b/c.py");
+  assert_handle ~absolute:"/root/stubs/stub.pyi" ~handle:(Some "stub.pyi");
+
+  assert_handle ~absolute:"/typeshed/stdlib/3/builtins.pyi" ~handle:(Some "3/builtins.pyi");
+  assert_handle ~absolute:"/typeshed/third_party/3/django.pyi" ~handle:(Some "3/django.pyi");
+  assert_handle ~absolute:"/typeshed/3/whoops.pyi" ~handle:None;
+
+  assert_handle ~absolute:"/untracked/a.py" ~handle:None
+
+
 let () =
   "file">:::[
     "content">::test_content;
     "lines">::test_lines;
+    "handle">::test_handle;
   ]
   |> run_test_tt_main

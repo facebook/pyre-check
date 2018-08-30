@@ -14,8 +14,9 @@ open Pyre
 
 
 let test_parse_stubs_modules_list _ =
+  let root = Path.current_working_directory () in
+  let configuration = Configuration.create ~local_root:root () in
   let files =
-    let root = Path.current_working_directory () in
     let create_stub_with_relative relative =
       File.create ~content:"def f()->int: ...\n" (Path.create_relative ~root ~relative)
     in
@@ -41,7 +42,7 @@ let test_parse_stubs_modules_list _ =
   in
   assert_equal (List.length files) (List.length handles);
   let get_handle_at position =
-    File.handle (List.nth_exn files position)
+    File.handle ~configuration (List.nth_exn files position)
     |> Option.value ~default:(File.Handle.create "")
   in
   let assert_stub_matches_name ~handle define =
@@ -141,10 +142,12 @@ let test_parse_typeshed context =
 
 
 let test_parse_source _ =
+  let root = Path.current_working_directory () in
+  let configuration = Configuration.create ~local_root:root () in
   let file =
     File.create
       ~content:"def foo()->int:\n    return 1\n"
-      (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:"a.py")
+      (Path.create_relative ~root ~relative:"a.py")
   in
   let handles =
     Service.Parser.parse_sources
@@ -152,7 +155,7 @@ let test_parse_source _ =
       ~scheduler:(Scheduler.mock ())
       ~files:[file]
   in
-  let handle = Option.value_exn (File.handle file) in
+  let handle = Option.value_exn (File.handle ~configuration file) in
   assert_equal handles [handle];
 
   let source = Ast.SharedMemory.get_source handle in
@@ -231,9 +234,10 @@ let test_parse_sources context =
 
 
 let test_register_modules _ =
+  let configuration = Configuration.create ~local_root:(Path.current_working_directory ()) () in
   let assert_module_exports raw_source expected_exports =
     let get_qualifier file =
-      File.handle file
+      File.handle ~configuration file
       >>= Ast.SharedMemory.get_source
       >>| (fun { Source.qualifier; _ } -> qualifier)
     in
@@ -245,7 +249,7 @@ let test_register_modules _ =
 
     (* Build environment *)
     Ast.SharedMemory.remove_modules (List.filter_map ~f:get_qualifier [file]);
-    Ast.SharedMemory.remove_paths (List.filter_map ~f:(fun file -> File.handle file) [file]);
+    Ast.SharedMemory.remove_paths (List.filter_map ~f:(File.handle ~configuration) [file]);
     let configuration = Configuration.create ~local_root:(Path.current_working_directory ()) () in
     let sources =
       Service.Parser.parse_sources

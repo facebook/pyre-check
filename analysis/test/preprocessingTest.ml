@@ -838,6 +838,7 @@ let test_expand_type_checking_imports _ =
 
 
 let test_expand_wildcard_imports _ =
+  let configuration = Configuration.create ~local_root:(Path.current_working_directory ()) () in
   let assert_expanded environment_sources check_source expected =
     let create_file (name, source) =
       File.create
@@ -846,12 +847,12 @@ let test_expand_wildcard_imports _ =
     in
     let clear_memory files =
       let get_qualifier file =
-        File.handle file
+        File.handle ~configuration file
         >>= Ast.SharedMemory.get_source
         >>| (fun { Source.qualifier; _ } -> qualifier)
       in
       Ast.SharedMemory.remove_modules (List.filter_map ~f:get_qualifier files);
-      Ast.SharedMemory.remove_paths (List.filter_map ~f:File.handle files);
+      Ast.SharedMemory.remove_paths (List.filter_map ~f:(File.handle ~configuration) files);
     in
     let files = List.map ~f:create_file environment_sources in
     let file_to_check = create_file ("test.py", check_source) in
