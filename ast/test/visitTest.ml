@@ -178,7 +178,7 @@ let test_statement_visitor _ =
   struct
     type t = int String.Table.t
 
-    let statement_keep_recursing _ =
+    let keep_recursing _ =
       Transform.Recurse
 
     let statement _ visited statement =
@@ -235,7 +235,7 @@ let test_statement_visitor_source _ =
   struct
     type t = string (* Last source *)
 
-    let statement_keep_recursing _ =
+    let keep_recursing _ =
       Transform.Recurse
 
     let statement { Source.path; _ } _ _ =

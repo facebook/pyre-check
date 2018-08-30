@@ -20,7 +20,7 @@ end
 
 module type StatementVisitor = sig
   type t
-  val statement_keep_recursing: Statement.t -> Transform.recursion_behavior
+  val keep_recursing: Statement.t -> Transform.recursion_behavior
   val statement: Source.t -> t -> Statement.t -> t
 end
 
@@ -201,7 +201,7 @@ module MakeStatementVisitor (Visitor: StatementVisitor) = struct
     let open Statement in
     let rec visit_statement { Node.location; value } =
       begin
-        match Visitor.statement_keep_recursing { Node.location; value } with
+        match Visitor.keep_recursing { Node.location; value } with
         | Transform.Stop ->
             ()
         | Transform.Recurse ->
@@ -305,7 +305,7 @@ module StatementCollector (Predicate: StatementPredicate) = struct
   module CollectingVisit = MakeStatementVisitor(struct
       type t = Predicate.t list
 
-      let statement_keep_recursing = Predicate.keep_recursing
+      let keep_recursing = Predicate.keep_recursing
 
       let statement _ statements statement =
         match Predicate.predicate statement with

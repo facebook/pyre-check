@@ -16,7 +16,7 @@ let expand_relative_imports ({ Source.path; qualifier; _ } as source) =
   let module Transform = Transform.MakeStatementTransformer(struct
       type t = Access.t
 
-      let statement_postorder qualifier { Node.location; value } =
+      let statement qualifier { Node.location; value } =
         let value =
           match value with
           | Import { Import.from = Some from; imports }
@@ -39,7 +39,7 @@ let expand_string_annotations ({ Source.path; _ } as source) =
   let module Transform = Transform.MakeStatementTransformer(struct
       type t = unit
 
-      let statement_postorder _ ({ Node.value; _ } as statement) =
+      let statement _ ({ Node.value; _ } as statement) =
         let rec transform_expression
             ({
               Node.location = {
@@ -144,7 +144,7 @@ let expand_format_string ({ Source.path; _ } as source) =
       include Transform.Identity
       type t = unit
 
-      let expression_postorder _ expression =
+      let expression _ expression =
         match expression with
         | {
           Node.location = ({ Location.start = { Location.line; column }; _ } as location);
@@ -899,7 +899,7 @@ let replace_version_specific_code source =
         | Comparison of Expression.t * Expression.t
         | Neither
 
-      let statement_postorder _ ({ Node.location; value } as statement) =
+      let statement _ ({ Node.location; value } as statement) =
         match value with
         | If { If.test; body; orelse } ->
             (* Normalizes a comparison of a < b, a <= b, b >= a or b > a to Some (a, b). *)
@@ -975,7 +975,7 @@ let expand_type_checking_imports source =
       include Transform.Identity
       type t = unit
 
-      let statement_postorder _ ({ Node.value; _ } as statement) =
+      let statement _ ({ Node.value; _ } as statement) =
         let is_type_checking { Node.value; _ } =
           match value with
           | Access [Access.Identifier typing; Access.Identifier type_checking]
@@ -1004,7 +1004,7 @@ let expand_wildcard_imports source =
       include Transform.Identity
       type t = unit
 
-      let statement_postorder state ({ Node.value; _ } as statement) =
+      let statement state ({ Node.value; _ } as statement) =
         match value with
         | Import { Import.from = Some from; imports }
           when List.exists ~f:(fun { Import.name; _ } -> Access.show name = "*") imports ->
@@ -1032,7 +1032,7 @@ let expand_returns source =
       include Transform.Identity
       type t = unit
 
-      let statement_postorder state statement =
+      let statement state statement =
         match statement with
         (* Expand returns to make them more amenable for analyses. E.g:
            `return x` -> `$return = x; return $return` *)
@@ -1116,7 +1116,7 @@ let expand_ternary_assign source =
   let module ExpandingTransform = Transform.MakeStatementTransformer(struct
       type t = unit
 
-      let statement_postorder state statement =
+      let statement state statement =
         match statement with
         | {
           Node.location;
@@ -1203,7 +1203,7 @@ let dequalify_map source =
       include Transform.Identity
       type t = Access.t Access.Map.t
 
-      let statement_postorder map ({ Node.value; _ } as statement) =
+      let statement map ({ Node.value; _ } as statement) =
         match value with
         | Import { Import.from = None; imports } ->
             let add_import map { Import.name; alias } =

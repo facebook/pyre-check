@@ -406,7 +406,7 @@ let register_class_definitions (module Handler: Handler) source =
   let module Visit = Visit.MakeStatementVisitor(struct
       type t = Type.Set.t
 
-      let statement_keep_recursing _ = Transform.Recurse
+      let keep_recursing _ = Transform.Recurse
 
       let statement { Source.path; _ } new_annotations = function
         | { Node.location; value = Class ({ Class.name; _ } as definition); } ->
@@ -622,7 +622,7 @@ let register_globals
   let module Visit = Visit.MakeStatementVisitor(struct
       type t = unit
 
-      let statement_keep_recursing _ = Transform.Recurse
+      let keep_recursing _ = Transform.Recurse
 
       let statement { Source.path; _ } _ = function
         | { Node.location; value = Class { Class.name; _ } } ->
@@ -720,7 +720,7 @@ let connect_type_order (module Handler: Handler) source =
   let module Visit = Visit.MakeStatementVisitor(struct
       type t = unit
 
-      let statement_keep_recursing _ = Transform.Recurse
+      let keep_recursing _ = Transform.Recurse
 
       let statement _ _ = function
         | { Node.location; value = Class definition } ->
@@ -739,7 +739,7 @@ let register_dependencies (module Handler: Handler) source =
   let module Visit = Visit.MakeStatementVisitor(struct
       type t = unit
 
-      let statement_keep_recursing _ = Transform.Recurse
+      let keep_recursing _ = Transform.Recurse
 
       let statement { Source.path; _ } _ = function
         | { Node.value = Import { Import.from; imports }; _ } ->
@@ -765,7 +765,7 @@ let register_functions (module Handler: Handler) ({ Source.path; _ } as source) 
   let module CollectCallables = Visit.MakeStatementVisitor(struct
       type t = ((Type.Callable.t Node.t) list) Access.Map.t
 
-      let statement_keep_recursing _ =
+      let keep_recursing _ =
         Transform.Recurse
 
       let statement { Source.path; _ } callables statement =

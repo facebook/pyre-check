@@ -15,7 +15,7 @@ end
 
 module type StatementVisitor = sig
   type t
-  val statement_keep_recursing: Statement.t -> Transform.recursion_behavior
+  val keep_recursing: Statement.t -> Transform.recursion_behavior
   val statement: Source.t -> t -> Statement.t -> t
 end
 
