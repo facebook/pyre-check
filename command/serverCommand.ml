@@ -17,14 +17,16 @@ open State
 open Protocol
 
 module Time = Core_kernel.Time_ns.Span
+module Request = Server.Request
 
 exception AlreadyRunning
 exception NotRunning
 
 
 let register_signal_handlers server_configuration socket =
-  (fun _ -> Server.Operations.stop ~reason:"interrupt" ~configuration:server_configuration ~socket)
-  |> Signal.Expert.handle Signal.int;
+  Signal.Expert.handle
+    Signal.int
+    (fun _ -> Operations.stop ~reason:"interrupt" ~configuration:server_configuration ~socket);
   Signal.Expert.handle
     Signal.pipe
     (fun _ -> ())
@@ -80,22 +82,22 @@ let computation_thread request_queue configuration state =
     let handle_request state ~request:(origin, request) =
       let process socket state configuration request =
         try
-          Log.log ~section:`Server "Processing request %a" Server.Protocol.Request.pp request;
-          Server.Request.process ~socket ~state ~configuration ~request
+          Log.log ~section:`Server "Processing request %a" Protocol.Request.pp request;
+          Request.process ~socket ~state ~configuration ~request
         with
-        | Server.Request.InvalidRequest ->
+        | Request.InvalidRequest ->
             Log.error "Exiting due to invalid request";
             Mutex.critical_section
               state.lock
               ~f:(fun () ->
-                  Server.Operations.stop
+                  Operations.stop
                     ~reason:"malformed request"
                     ~configuration
                     ~socket:!(state.connections).socket);
-            { Server.Request.state; response = None }
+            { Request.state; response = None }
       in
       match origin with
-      | Server.Protocol.Request.PersistentSocket socket ->
+      | Protocol.Request.PersistentSocket socket ->
           let write_or_forget socket responses =
             try
               List.iter ~f:(Socket.write socket) responses
@@ -122,7 +124,7 @@ let computation_thread request_queue configuration state =
                       ()
                 end
           in
-          let { Server.Request.state; response } = process socket state configuration request in
+          let { Request.state; response } = process socket state configuration request in
           begin
             match response with
             | Some (LanguageServerProtocolResponse _)
@@ -137,12 +139,12 @@ let computation_thread request_queue configuration state =
             | None -> ()
           end;
           state
-      | Server.Protocol.Request.FileNotifier
-      | Server.Protocol.Request.Background ->
+      | Protocol.Request.FileNotifier
+      | Protocol.Request.Background ->
           let { socket; persistent_clients; _ } =
             Mutex.critical_section state.lock ~f:(fun () -> !(state.connections))
           in
-          let { Server.Request.state; response } = process socket state configuration request in
+          let { Request.state; response } = process socket state configuration request in
           begin
             match response with
             | Some response ->
@@ -151,11 +153,11 @@ let computation_thread request_queue configuration state =
                 ()
           end;
           state
-      | Server.Protocol.Request.NewConnectionSocket socket ->
+      | Protocol.Request.NewConnectionSocket socket ->
           let { persistent_clients; _ } =
             Mutex.critical_section state.lock ~f:(fun () -> !(state.connections))
           in
-          let { Server.Request.state; response } = process socket state configuration request in
+          let { Request.state; response } = process socket state configuration request in
           begin
             match response with
             | Some response ->
@@ -171,7 +173,7 @@ let computation_thread request_queue configuration state =
           let state =
             {
               state with
-              deferred_requests = Server.Protocol.Request.flatten state.deferred_requests;
+              deferred_requests = Protocol.Request.flatten state.deferred_requests;
               last_request_time = Unix.time ();
             }
           in
@@ -181,7 +183,7 @@ let computation_thread request_queue configuration state =
                 state
             | request :: requests ->
                 let state = { state with deferred_requests = requests } in
-                handle_request state ~request:(Server.Protocol.Request.Background, request)
+                handle_request state ~request:(Protocol.Request.Background, request)
           end
       | 0, true ->
           (* Stop if the server is idle. *)
@@ -191,7 +193,7 @@ let computation_thread request_queue configuration state =
               Mutex.critical_section
                 state.lock
                 ~f:(fun () ->
-                    Server.Operations.stop
+                    Operations.stop
                       ~reason:"idle"
                       ~configuration
                       ~socket:!(state.connections).socket)
@@ -217,7 +219,7 @@ let computation_thread request_queue configuration state =
                           "Stopping server in integrity check. Got %s in the pid file, expected %s."
                           pid
                           (Pid.to_string (Unix.getpid ()));
-                        Server.Operations.stop
+                        Operations.stop
                           ~reason:"failed integrity check"
                           ~configuration
                           ~socket:!(state.connections).socket);
@@ -254,19 +256,19 @@ let request_handler_thread
   in
   let queue_request ~origin request =
     match request, origin with
-    | Server.Protocol.Request.StopRequest, Server.Protocol.Request.NewConnectionSocket socket ->
+    | Protocol.Request.StopRequest, Protocol.Request.NewConnectionSocket socket ->
         Socket.write socket StopResponse;
-        Server.Operations.stop
+        Operations.stop
           ~reason:"explicit request"
           ~configuration:server_configuration
           ~socket:!(connections).socket
-    | Server.Protocol.Request.StopRequest, _ ->
-        Server.Operations.stop
+    | Protocol.Request.StopRequest, _ ->
+        Operations.stop
           ~reason:"explicit request"
           ~configuration:server_configuration
           ~socket:!(connections).socket
-    | Server.Protocol.Request.ClientConnectionRequest client,
-      Server.Protocol.Request.NewConnectionSocket socket ->
+    | Protocol.Request.ClientConnectionRequest client,
+      Protocol.Request.NewConnectionSocket socket ->
         Log.log ~section:`Server "Adding %s client" (show_client client);
         Mutex.critical_section
           lock
@@ -282,10 +284,10 @@ let request_handler_thread
                   | FileNotifier ->
                       { !connections with file_notifiers = socket::file_notifiers }
                 end)
-    | Server.Protocol.Request.ClientConnectionRequest _, _ ->
+    | Protocol.Request.ClientConnectionRequest _, _ ->
         Log.error
           "Unexpected request origin %s for connection request"
-          (Server.Protocol.Request.origin_name origin)
+          (Protocol.Request.origin_name origin)
     | _ ->
         Squeue.push_or_drop request_queue (origin, request) |> ignore;
   in
@@ -293,7 +295,7 @@ let request_handler_thread
     try
       Log.log ~section:`Server "A persistent client socket is readable.";
       let request = Socket.read socket in
-      queue_request ~origin:(Server.Protocol.Request.PersistentSocket socket) request
+      queue_request ~origin:(Protocol.Request.PersistentSocket socket) request
     with
     | End_of_file ->
         Log.log ~section:`Server "Persistent client disconnected";
@@ -306,7 +308,7 @@ let request_handler_thread
     try
       Log.log ~section:`Server "A file notifier is readable.";
       let request = Socket.read socket in
-      queue_request ~origin:Server.Protocol.Request.FileNotifier request
+      queue_request ~origin:Protocol.Request.FileNotifier request
     with
     | End_of_file ->
         Log.log ~section:`Server "File notifier disconnected";
@@ -359,7 +361,7 @@ let request_handler_thread
     if not (PyrePath.is_directory local_root) then
       begin
         Log.error "Stopping server due to missing source root.";
-        Server.Operations.stop
+        Operations.stop
           ~reason:"missing source root"
           ~configuration:server_configuration
           ~socket:!(connections).socket
@@ -388,7 +390,7 @@ let request_handler_thread
             Socket.read new_socket
             |> fun Handshake.ClientConnected ->
             let request = Socket.read new_socket in
-            queue_request ~origin:(Server.Protocol.Request.NewConnectionSocket new_socket) request
+            queue_request ~origin:(Protocol.Request.NewConnectionSocket new_socket) request
           with
           | End_of_file ->
               Log.warning "New client socket unreadable"
@@ -415,7 +417,7 @@ let request_handler_thread
         "exception origin", "server";
       ]
       ();
-    Server.Operations.stop
+    Operations.stop
       ~reason:"exception"
       ~configuration:server_configuration
       ~socket:(!connections).socket
@@ -442,13 +444,7 @@ let serve (socket, server_configuration, watchman_pid) =
        (server_configuration, lock, connections, request_queue)
      |> ignore;
 
-     let state =
-       Server.Operations.start
-         ~lock
-         ~connections
-         ~configuration:server_configuration
-         ()
-     in
+     let state = Operations.start ~lock ~connections ~configuration:server_configuration () in
      try
        computation_thread request_queue server_configuration state
      with uncaught_exception ->
@@ -463,7 +459,7 @@ let serve (socket, server_configuration, watchman_pid) =
            "exception origin", "server";
          ]
          ();
-       Server.Operations.stop ~reason:"exception" ~configuration:server_configuration ~socket)
+       Operations.stop ~reason:"exception" ~configuration:server_configuration ~socket)
   |> Scheduler.run_process ~configuration
 
 
@@ -671,7 +667,7 @@ let run_stop graceful local_root () =
     Socket.read socket
     |> fun (Handshake.ServerConnected _) ->
     Socket.write socket Handshake.ClientConnected;
-    Socket.write socket Server.Protocol.Request.StopRequest;
+    Socket.write socket Protocol.Request.StopRequest;
     begin
       match Socket.read socket with
       | StopResponse -> Log.info "Server stopped, polling for deletion of socket."
