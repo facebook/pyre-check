@@ -121,9 +121,11 @@ let fold ~resolution ~initial ~f access =
              Resolution.parse_annotation
                resolution
                (Node.create_with_default_location (Access parent)))
-         >>= Resolution.class_definition resolution
-         >>| Class.create
-         >>| Class.immediate_superclasses ~resolution
+         >>= Resolution.class_representation resolution
+         >>| (fun { Resolution.successors; _ } -> successors)
+         >>|  List.filter
+           ~f:(fun definition -> Option.is_some (Resolution.class_definition resolution definition))
+         >>| List.hd
          >>| function
          | Some superclass ->
              let super = Access.Identifier (Identifier.create "$super") in
@@ -131,7 +133,7 @@ let fold ~resolution ~initial ~f access =
                Resolution.set_local
                  resolution
                  ~access:[super]
-                 ~annotation:(Class.annotation ~resolution superclass |> Annotation.create)
+                 ~annotation:(Annotation.create superclass)
              in
              super :: tail, resolution
          | None ->

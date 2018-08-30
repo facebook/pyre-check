@@ -5613,6 +5613,8 @@ let test_check_constructors _ =
     |}
     ["Incompatible parameter type [6]: Expected `int` but got `str`."];
 
+  (* The MRO of inheriting both a class and its direct parent will result in super() evaluating
+     to the subclass, regardless of order. *)
   assert_type_errors
     {|
       class Subclass(A, B):
@@ -5621,7 +5623,7 @@ let test_check_constructors _ =
         def wrong(self)->B:
           return super()
     |}
-    ["Incompatible return type [7]: Expected `B` but got `A`."];
+    [];
 
   (* Overloaded constructors. *)
   assert_type_errors

@@ -109,6 +109,31 @@ let disconnected_order =
   insert order !"B";
   order
 
+(*
+   TOP
+    |
+    A
+   /|
+  B |
+   \|
+    C
+    |
+ BOTTOM
+*)
+let triangle_order =
+  let order = Builder.create () |> TypeOrder.handler in
+  insert order Type.Bottom;
+  insert order Type.Top;
+  insert order !"A";
+  insert order !"B";
+  insert order !"C";
+  connect order ~predecessor:Type.Bottom ~successor:!"B";
+  connect order ~predecessor:!"B" ~successor:!"A";
+  connect order ~predecessor:!"A" ~successor:Type.Top;
+  connect order ~predecessor:!"C" ~successor:!"B";
+  connect order ~predecessor:!"C" ~successor:!"A";
+  order
+
 
 let default =
   let order = Builder.default () |> TypeOrder.handler in
@@ -239,7 +264,9 @@ let test_method_resolution_order_linearize _ =
   in
   assert_method_resolution_order butterfly !"3" [!"3"; Type.Top];
   assert_method_resolution_order butterfly !"0" [!"0"; !"3"; !"2"; Type.Top];
-  assert_method_resolution_order diamond_order !"D" [!"D"; !"C"; !"B"; !"A"; Type.Top]
+  assert_method_resolution_order diamond_order !"D" [!"D"; !"C"; !"B"; !"A"; Type.Top];
+  (* The subclass gets chosen first even if after the superclass when both are inherited. *)
+  assert_method_resolution_order triangle_order !"C" [!"C"; !"B"; !"A"; Type.Top]
 
 
 let test_successors_fold _ =
