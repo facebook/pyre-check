@@ -269,12 +269,6 @@ let test_method_resolution_order_linearize _ =
   assert_method_resolution_order triangle_order !"C" [!"C"; !"B"; !"A"; Type.Top]
 
 
-let test_successors_fold _ =
-  let collect sofar annotation = annotation :: sofar in
-  assert_equal (successors_fold ~initial:[] ~f:collect butterfly !"3") [Type.Top];
-  assert_equal (successors_fold ~initial:[] ~f:collect butterfly !"0") [Type.Top; !"2"; !"3"]
-
-
 let test_successors _ =
   (* Butterfly:
       0 - 2
@@ -1131,7 +1125,6 @@ let () =
   |> run_test_tt_main;
   "order">:::[
     "method_resolution_order_linearize">::test_method_resolution_order_linearize;
-    "successors_fold">::test_successors_fold;
     "successors">::test_successors;
     "predecessors">::test_predecessors;
     "greatest">::test_greatest;

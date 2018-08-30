@@ -355,7 +355,7 @@ let method_resolution_order_linearize
   linearize annotation
 
 
-let successors_fold ((module Handler: Handler) as order) ~initial ~f annotation =
+let successors ((module Handler: Handler) as order) annotation =
   let linearization =
     method_resolution_order_linearize
       ~get_successors:(Handler.find (Handler.edges ()))
@@ -363,19 +363,8 @@ let successors_fold ((module Handler: Handler) as order) ~initial ~f annotation 
       annotation
   in
   match linearization with
-  | _ :: successors ->
-      List.fold ~init:initial ~f successors
-  | _ ->
-      initial
-
-
-let successors ((module Handler: Handler) as order) annotation =
-  successors_fold
-    order
-    ~initial:[]
-    ~f:(fun successors successor -> (successor :: successors))
-    annotation
-  |> List.rev
+  | _ :: successors -> successors
+  | [] -> []
 
 
 let breadth_first_fold

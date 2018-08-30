@@ -95,12 +95,6 @@ val method_resolution_order_linearize
   -> get_successors:(int -> Target.t list option)
   -> Type.t
   -> Type.t list
-val successors_fold
-  :  (module Handler)
-  -> initial: 'accumulator
-  -> f: ('accumulator -> Type.t -> 'accumulator)
-  -> Type.t
-  -> 'accumulator
 val successors: (module Handler) -> Type.t -> Type.t list
 val predecessors: (module Handler) -> Type.t -> Type.t list
 val greatest: (module Handler) -> matches:(Type.t -> bool) -> Type.t list
