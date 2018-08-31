@@ -151,8 +151,8 @@ let test_expand_format_string _ =
 
 
 let test_qualify _ =
-  let assert_qualify ?(path = "qualifier.py") source expected =
-    let parse = parse ~qualifier:(Source.qualifier ~handle:path) ~path in
+  let assert_qualify ?(handle = "qualifier.py") source expected =
+    let parse = parse ~qualifier:(Source.qualifier ~handle) ~path:handle in
     assert_source_equal (parse expected) (Preprocessing.qualify (parse source))
   in
 
@@ -375,7 +375,7 @@ let test_qualify _ =
 
   (* Treat special forms like class definitions. *)
   assert_qualify
-    ~path:"typing.pyi"
+    ~handle:"typing.pyi"
     {|
       Type: _SpecialForm = ...
       def foo(l: Type[int]): ...
