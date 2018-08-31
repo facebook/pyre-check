@@ -89,8 +89,6 @@ let analyze_sources
           ();
         result
       end
-
-
   in
 
   Annotated.Class.AttributesCache.clear ();
