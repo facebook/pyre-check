@@ -176,8 +176,8 @@ let test_qualifier _ =
 
 
 let test_expand_relative_import _ =
-  let assert_export ~path ~from ~expected =
-    let qualifier = Source.qualifier ~handle:path in
+  let assert_export ~handle ~from ~expected =
+    let qualifier = Source.qualifier ~handle in
     let from =
       match parse_single_statement ("from " ^ from ^ " import something") with
       | { Node.value = Import { Import.from = Some from; _ }; _ } -> from
@@ -187,20 +187,20 @@ let test_expand_relative_import _ =
       ~cmp:Access.equal
       ~printer:Access.show
       (parse_single_access expected)
-      (Source.expand_relative_import ~qualifier ~path ~from)
+      (Source.expand_relative_import ~qualifier ~handle ~from)
   in
 
-  assert_export ~path:"module/qualifier.py" ~from:"." ~expected:"module";
+  assert_export ~handle:"module/qualifier.py" ~from:"." ~expected:"module";
   assert_export
-    ~path:"module/submodule/qualifier.py"
+    ~handle:"module/submodule/qualifier.py"
     ~from:".other"
     ~expected:"module.submodule.other";
   assert_export
-    ~path:"module/submodule/qualifier.py"
+    ~handle:"module/submodule/qualifier.py"
     ~from:"..other"
     ~expected:"module.other";
   (* `__init__` modules are special. *)
-  assert_export ~path:"module/__init__.py" ~from:"." ~expected:"module"
+  assert_export ~handle:"module/__init__.py" ~from:"." ~expected:"module"
 
 
 let test_signature_hash _ =

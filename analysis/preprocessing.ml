@@ -22,7 +22,7 @@ let expand_relative_imports ({ Source.path; qualifier; _ } as source) =
           | Import { Import.from = Some from; imports }
             when Access.show from <> "builtins" ->
               Import {
-                Import.from = Some (Source.expand_relative_import ~path ~qualifier ~from);
+                Import.from = Some (Source.expand_relative_import ~handle:path ~qualifier ~from);
                 imports;
               }
           | _ ->
