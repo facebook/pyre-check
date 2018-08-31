@@ -83,19 +83,19 @@ let test_dependent_of_list _ =
   assert_equal
     ~cmp:String.Set.equal
     (String.Set.of_list ["a.py"])
-    (Dependencies.of_list ~paths:["b.py"; "c.py"] ~get_dependencies);
+    (Dependencies.of_list ~handles:["b.py"; "c.py"] ~get_dependencies);
   assert_equal
     ~cmp:String.Set.equal
     (String.Set.of_list ["test.py"])
-    (Dependencies.of_list ~paths:["a.py"] ~get_dependencies);
+    (Dependencies.of_list ~handles:["a.py"] ~get_dependencies);
   assert_equal
     ~cmp:String.Set.equal
     (String.Set.of_list ["a.py"; "b.py"])
-    (Dependencies.of_list ~paths:["c.py"] ~get_dependencies);
+    (Dependencies.of_list ~handles:["c.py"] ~get_dependencies);
   assert_equal
     ~cmp:String.Set.equal
     (String.Set.of_list [])
-    (Dependencies.of_list ~paths:["test.py"] ~get_dependencies)
+    (Dependencies.of_list ~handles:["test.py"] ~get_dependencies)
 
 
 let test_transitive_dependent_of_list _ =
@@ -114,16 +114,16 @@ let test_transitive_dependent_of_list _ =
     ~cmp:String.Set.equal
     (String.Set.of_list ["a.py"; "test.py"])
     (Dependencies.transitive_of_list
-       ~paths:["b.py"; "c.py"]
+       ~handles:["b.py"; "c.py"]
        ~get_dependencies);
   assert_equal
     ~cmp:String.Set.equal
     (String.Set.of_list ["a.py"; "b.py"; "test.py"])
-    (Dependencies.transitive_of_list ~paths:["c.py"] ~get_dependencies);
+    (Dependencies.transitive_of_list ~handles:["c.py"] ~get_dependencies);
   assert_equal
     ~cmp:String.Set.equal
     (String.Set.of_list [])
-    (Dependencies.transitive_of_list ~paths:["test.py"] ~get_dependencies)
+    (Dependencies.transitive_of_list ~handles:["test.py"] ~get_dependencies)
 
 
 let test_transitive_dependents _ =
@@ -142,7 +142,7 @@ let test_transitive_dependents _ =
     ~cmp:String.Set.equal
     ~printer:(fun set -> Set.to_list set |> String.concat ~sep:",")
     (String.Set.of_list ["a.py"; "b.py"; "test.py"])
-    (Dependencies.transitive ~get_dependencies ~path:"c.py")
+    (Dependencies.transitive ~get_dependencies ~handle:"c.py")
 
 
 let () =

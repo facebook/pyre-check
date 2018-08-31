@@ -562,7 +562,7 @@ let process_type_check_request
           in
           Dependencies.of_list
             ~get_dependencies
-            ~paths:update_environment_with
+            ~handles:update_environment_with
           |> Fn.flip Set.diff (String.Set.of_list check)
           |> Set.to_list
         in
@@ -627,7 +627,7 @@ let process_type_check_request
   |> Service.Environment.populate environment;
   let classes_to_infer =
     let get_class_keys handle =
-      Handler.DependencyHandler.get_class_keys ~path:(File.Handle.show handle)
+      Handler.DependencyHandler.get_class_keys ~handle:(File.Handle.show handle)
     in
     List.concat_map repopulate_handles ~f:get_class_keys
   in

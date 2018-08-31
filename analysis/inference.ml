@@ -448,7 +448,7 @@ let infer configuration environment ?mode_override ({ Source.path; _ } as source
                 Annotation.create_immutable ~global:true ~original:(Some Type.Top) annotation
                 |> Node.create ~location
               in
-              Handler.register_global ~path ~access ~global;
+              Handler.register_global ~handle:path ~access ~global;
               true, error :: globals_added_sofar
         in
         match error with
@@ -474,7 +474,7 @@ let infer configuration environment ?mode_override ({ Source.path; _ } as source
                     }
                   in
                   Handler.register_definition
-                    ~path
+                    ~handle:path
                     { define_node with Node.value = define };
                   true, globals_added_sofar
             end
@@ -524,7 +524,7 @@ let infer configuration environment ?mode_override ({ Source.path; _ } as source
                     }
                   in
                   Handler.register_definition
-                    ~path
+                    ~handle:path
                     { define_node with Node.value = define };
                   true, globals_added_sofar
             end

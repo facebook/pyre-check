@@ -26,20 +26,20 @@ type t = {
 
 
 module type Handler = sig
-  val add_function_key: path: string -> Access.t -> unit
-  val add_class_key: path: string -> Type.t -> unit
-  val add_alias_key: path: string -> Type.t -> unit
-  val add_global_key: path: string -> Access.t -> unit
-  val add_dependent_key: path: string -> Access.t -> unit
+  val add_function_key: handle: string -> Access.t -> unit
+  val add_class_key: handle: string -> Type.t -> unit
+  val add_alias_key: handle: string -> Type.t -> unit
+  val add_global_key: handle: string -> Access.t -> unit
+  val add_dependent_key: handle: string -> Access.t -> unit
 
-  val add_dependent: path: string -> Access.t -> unit
+  val add_dependent: handle: string -> Access.t -> unit
   val dependents: Access.t -> (string list) option
 
-  val get_function_keys: path: string -> Access.t list
-  val get_class_keys: path: string -> Type.t list
-  val get_alias_keys: path: string -> Type.t list
-  val get_global_keys: path: string -> Access.t list
-  val get_dependent_keys: path: string -> Access.t list
+  val get_function_keys: handle: string -> Access.t list
+  val get_class_keys: handle: string -> Type.t list
+  val get_alias_keys: handle: string -> Type.t list
+  val get_global_keys: handle: string -> Access.t list
+  val get_dependent_keys: handle: string -> Access.t list
 
   val clear_keys_batch: string list -> unit
 end
@@ -50,105 +50,105 @@ let handler {
     dependents;
   } =
   (module struct
-    let add_function_key ~path name =
-      match Hashtbl.find function_keys path with
+    let add_function_key ~handle name =
+      match Hashtbl.find function_keys handle with
       | None ->
           Hashtbl.set
             function_keys
-            ~key:path
+            ~key:handle
             ~data:(Access.Hash_set.of_list [name])
       | Some hash_set ->
           Hash_set.add hash_set name
 
 
-    let add_class_key ~path class_type =
-      match Hashtbl.find class_keys path with
+    let add_class_key ~handle class_type =
+      match Hashtbl.find class_keys handle with
       | None ->
           Hashtbl.set
             class_keys
-            ~key:path
+            ~key:handle
             ~data:(Type.Hash_set.of_list [class_type])
       | Some hash_set ->
           Hash_set.add hash_set class_type
 
 
-    let add_alias_key ~path alias =
-      match Hashtbl.find alias_keys path with
+    let add_alias_key ~handle alias =
+      match Hashtbl.find alias_keys handle with
       | None ->
           Hashtbl.set
             alias_keys
-            ~key:path
+            ~key:handle
             ~data:(Type.Hash_set.of_list [alias])
       | Some hash_set ->
           Hash_set.add hash_set alias
 
 
-    let add_global_key ~path global =
-      match Hashtbl.find global_keys path with
+    let add_global_key ~handle global =
+      match Hashtbl.find global_keys handle with
       | None ->
           Hashtbl.set
             global_keys
-            ~key:path
+            ~key:handle
             ~data:(Access.Hash_set.of_list [global])
       | Some hash_set ->
           Hash_set.add hash_set global
 
 
-    let add_dependent_key ~path dependent =
-      match Hashtbl.find dependent_keys path with
+    let add_dependent_key ~handle dependent =
+      match Hashtbl.find dependent_keys handle with
       | None ->
           Hashtbl.set
             dependent_keys
-            ~key:path
+            ~key:handle
             ~data:(Access.Hash_set.of_list [dependent])
       | Some hash_set ->
           Hash_set.add hash_set dependent
 
 
-    let add_dependent ~path dependent =
-      add_dependent_key ~path dependent;
-      Hashtbl.add_multi ~key:dependent ~data:path dependents
+    let add_dependent ~handle dependent =
+      add_dependent_key ~handle dependent;
+      Hashtbl.add_multi ~key:dependent ~data:handle dependents
 
 
     let dependents = Hashtbl.find dependents
 
 
-    let get_function_keys ~path =
-      Hashtbl.find function_keys path
+    let get_function_keys ~handle =
+      Hashtbl.find function_keys handle
       >>| Hash_set.to_list
       |> Option.value ~default:[]
 
 
-    let get_class_keys ~path =
-      Hashtbl.find class_keys path
+    let get_class_keys ~handle =
+      Hashtbl.find class_keys handle
       >>| Hash_set.to_list
       |> Option.value ~default:[]
 
 
-    let get_alias_keys ~path =
-      Hashtbl.find alias_keys path
+    let get_alias_keys ~handle =
+      Hashtbl.find alias_keys handle
       >>| Hash_set.to_list
       |> Option.value ~default:[]
 
 
-    let get_global_keys ~path =
-      Hashtbl.find global_keys path
+    let get_global_keys ~handle =
+      Hashtbl.find global_keys handle
       >>| Hash_set.to_list
       |> Option.value ~default:[]
 
 
-    let get_dependent_keys ~path =
-      Hashtbl.find dependent_keys path
+    let get_dependent_keys ~handle =
+      Hashtbl.find dependent_keys handle
       >>| Hash_set.to_list
       |> Option.value ~default:[]
 
 
-    let clear_keys_batch paths =
-      List.iter ~f:(Hashtbl.remove function_keys) paths;
-      List.iter ~f:(Hashtbl.remove class_keys) paths;
-      List.iter ~f:(Hashtbl.remove alias_keys) paths;
-      List.iter ~f:(Hashtbl.remove global_keys) paths;
-      List.iter ~f:(Hashtbl.remove dependent_keys) paths
+    let clear_keys_batch handles =
+      List.iter ~f:(Hashtbl.remove function_keys) handles;
+      List.iter ~f:(Hashtbl.remove class_keys) handles;
+      List.iter ~f:(Hashtbl.remove alias_keys) handles;
+      List.iter ~f:(Hashtbl.remove global_keys) handles;
+      List.iter ~f:(Hashtbl.remove dependent_keys) handles
   end: Handler)
 
 
@@ -179,8 +179,8 @@ let copy {
   }
 
 
-let transitive ~get_dependencies ~path =
-  let transitive_closure path =
+let transitive ~get_dependencies ~handle =
+  let transitive_closure handle =
     let rec closure ~visited node =
       if Set.mem visited node then
         visited
@@ -195,23 +195,23 @@ let transitive ~get_dependencies ~path =
                   closure ~visited neighbor)
               neighbors
     in
-    closure ~visited:String.Set.empty path
-    |> fun paths -> Set.remove paths path
+    closure ~visited:String.Set.empty handle
+    |> fun handles -> Set.remove handles handle
   in
-  transitive_closure path
+  transitive_closure handle
 
 
-let transitive_of_list ~get_dependencies ~paths =
-  paths
-  |> List.map ~f:(fun path -> transitive ~get_dependencies ~path)
+let transitive_of_list ~get_dependencies ~handles =
+  handles
+  |> List.map ~f:(fun handle -> transitive ~get_dependencies ~handle)
   |> List.fold ~init:String.Set.empty ~f:Set.union
   (* Ensure no file gets double-checked. *)
-  |> (fun dependents -> Set.diff dependents (String.Set.of_list paths))
+  |> (fun dependents -> Set.diff dependents (String.Set.of_list handles))
 
 
-let of_list ~get_dependencies ~paths =
-  let fold_dependents dependents path =
-    get_dependencies path
+let of_list ~get_dependencies ~handles =
+  let fold_dependents dependents handle =
+    get_dependencies handle
     >>| String.Set.of_list
     >>| Set.union dependents
     |> Option.value ~default:dependents
@@ -219,5 +219,5 @@ let of_list ~get_dependencies ~paths =
   List.fold
     ~init:String.Set.empty
     ~f:fold_dependents
-    paths
-  |> (fun dependents -> Set.diff dependents (String.Set.of_list paths))
+    handles
+  |> (fun dependents -> Set.diff dependents (String.Set.of_list handles))

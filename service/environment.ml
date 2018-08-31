@@ -185,7 +185,7 @@ let handler
         Protocols.get "Protocols"
         |> Option.value ~default:[]
 
-      let register_module ~qualifier ~local_mode ~path ~stub ~statements =
+      let register_module ~qualifier ~local_mode ~handle ~stub ~statements =
         let is_registered_empty_stub =
           Ast.SharedMemory.get_module qualifier
           >>| Module.empty_stub
@@ -196,7 +196,7 @@ let handler
             Ast.SharedMemory.remove_modules [qualifier];
             Ast.SharedMemory.add_module
               qualifier
-              (Module.create ~qualifier ~local_mode ?path ~stub statements)
+              (Module.create ~qualifier ~local_mode ?path:handle ~stub statements)
           end
 
       let is_module access =
@@ -218,37 +218,37 @@ let handler
         Dependents.get
 
       module DependencyHandler = (struct
-        let add_new_key ~get ~add ~path ~key =
-          match get path with
-          | None -> add path [key]
-          | Some keys -> add path (key :: keys)
+        let add_new_key ~get ~add ~handle ~key =
+          match get handle with
+          | None -> add handle [key]
+          | Some keys -> add handle (key :: keys)
 
-        let add_function_key ~path access =
-          add_new_key ~path ~key:access ~get:FunctionKeys.get ~add:FunctionKeys.add
+        let add_function_key ~handle access =
+          add_new_key ~handle ~key:access ~get:FunctionKeys.get ~add:FunctionKeys.add
 
-        let add_class_key ~path class_type =
-          add_new_key ~path ~key:class_type ~get:ClassKeys.get ~add:ClassKeys.add
+        let add_class_key ~handle class_type =
+          add_new_key ~handle ~key:class_type ~get:ClassKeys.get ~add:ClassKeys.add
 
-        let add_alias_key ~path alias =
-          add_new_key ~path ~key:alias ~get:AliasKeys.get ~add:AliasKeys.add
+        let add_alias_key ~handle alias =
+          add_new_key ~handle ~key:alias ~get:AliasKeys.get ~add:AliasKeys.add
 
-        let add_global_key ~path global =
-          add_new_key ~path ~key:global ~get:GlobalKeys.get ~add:GlobalKeys.add
+        let add_global_key ~handle global =
+          add_new_key ~handle ~key:global ~get:GlobalKeys.get ~add:GlobalKeys.add
 
-        let add_dependent_key ~path dependent =
-          add_new_key ~path ~key:dependent ~get:DependentKeys.get ~add:DependentKeys.add
+        let add_dependent_key ~handle dependent =
+          add_new_key ~handle ~key:dependent ~get:DependentKeys.get ~add:DependentKeys.add
 
-        let add_dependent ~path dependent =
-          add_dependent_key ~path dependent;
+        let add_dependent ~handle dependent =
+          add_dependent_key ~handle dependent;
           match Dependents.get dependent with
-          | None -> Dependents.add dependent [path]
-          | Some dependencies -> Dependents.add dependent (path :: dependencies)
+          | None -> Dependents.add dependent [handle]
+          | Some dependencies -> Dependents.add dependent (handle :: dependencies)
 
-        let get_function_keys ~path = FunctionKeys.get path |> Option.value ~default:[]
-        let get_class_keys ~path = ClassKeys.get path |> Option.value ~default:[]
-        let get_alias_keys ~path = AliasKeys.get path |> Option.value ~default:[]
-        let get_global_keys ~path = GlobalKeys.get path |> Option.value ~default:[]
-        let get_dependent_keys ~path = DependentKeys.get path |> Option.value ~default:[]
+        let get_function_keys ~handle = FunctionKeys.get handle |> Option.value ~default:[]
+        let get_class_keys ~handle = ClassKeys.get handle |> Option.value ~default:[]
+        let get_alias_keys ~handle = AliasKeys.get handle |> Option.value ~default:[]
+        let get_global_keys ~handle = GlobalKeys.get handle |> Option.value ~default:[]
+        let get_dependent_keys ~handle = DependentKeys.get handle |> Option.value ~default:[]
 
         let clear_keys_batch paths =
           FunctionKeys.remove_batch (FunctionKeys.KeySet.of_list paths);
@@ -354,11 +354,11 @@ let handler
       end
 
       let register_definition
-          ~path
+          ~handle
           ?name_override
           ({ Node.location; value = { Statement.Define.name; _ }; _ } as definition) =
         let name = Option.value ~default:name name_override in
-        DependencyHandler.add_function_key ~path name;
+        DependencyHandler.add_function_key ~handle name;
         let annotation =
           Annotation.create_immutable ~global:true Type.Top
           |> Node.create ~location
@@ -413,17 +413,17 @@ let handler
         >>| refine
         |> ignore
 
-      let register_dependency ~path ~dependency =
+      let register_dependency ~handle ~dependency =
         Log.log
           ~section:`Dependencies
           "Adding dependency from %a to %s"
           Expression.Access.pp dependency
-          path;
-        DependencyHandler.add_dependent ~path dependency
+          handle;
+        DependencyHandler.add_dependent ~handle dependency
 
 
-      let register_global ~path ~access ~global =
-        DependencyHandler.add_global_key ~path access;
+      let register_global ~handle ~access ~global =
+        DependencyHandler.add_global_key ~handle access;
         Globals.remove_batch (Globals.KeySet.singleton access);
         Globals.add access global
 
@@ -455,8 +455,8 @@ let handler
         ClassDefinitions.remove_batch (ClassDefinitions.KeySet.singleton primitive);
         ClassDefinitions.add primitive definition
 
-      let register_alias ~path ~key ~data =
-        DependencyHandler.add_alias_key ~path key;
+      let register_alias ~handle ~key ~data =
+        DependencyHandler.add_alias_key ~handle key;
         Aliases.remove_batch (Aliases.KeySet.singleton key);
         Aliases.add key data
 
@@ -473,7 +473,7 @@ let handler
             keys;
           DependentKeys.remove_batch (DependentKeys.KeySet.of_list paths)
         in
-        List.concat_map ~f:(fun path -> DependencyHandler.get_function_keys ~path) paths
+        List.concat_map ~f:(fun handle -> DependencyHandler.get_function_keys ~handle) paths
         |> fun keys ->
         begin
           FunctionDefinitions.remove_batch (FunctionDefinitions.KeySet.of_list keys);
@@ -483,19 +483,19 @@ let handler
 
         (* Remove the connection to the parent (if any) for all
            classes defined in the updated paths. *)
-        List.concat_map ~f:(fun path -> DependencyHandler.get_class_keys ~path) paths
+        List.concat_map ~f:(fun handle -> DependencyHandler.get_class_keys ~handle) paths
         |> List.iter ~f:(TypeOrder.disconnect_successors (module TypeOrderHandler));
 
-        List.concat_map ~f:(fun path -> DependencyHandler.get_class_keys ~path) paths
+        List.concat_map ~f:(fun handle -> DependencyHandler.get_class_keys ~handle) paths
         |> fun keys -> ClassDefinitions.remove_batch (ClassDefinitions.KeySet.of_list keys);
 
-        List.concat_map ~f:(fun path -> DependencyHandler.get_alias_keys ~path) paths
+        List.concat_map ~f:(fun handle -> DependencyHandler.get_alias_keys ~handle) paths
         |> fun keys -> Aliases.remove_batch (Aliases.KeySet.of_list keys);
 
-        List.concat_map ~f:(fun path -> DependencyHandler.get_global_keys ~path) paths
+        List.concat_map ~f:(fun handle -> DependencyHandler.get_global_keys ~handle) paths
         |> fun keys -> Globals.remove_batch (Globals.KeySet.of_list keys);
 
-        List.concat_map ~f:(fun path -> DependencyHandler.get_dependent_keys ~path) paths
+        List.concat_map ~f:(fun handle -> DependencyHandler.get_dependent_keys ~handle) paths
         |> purge_dependents;
 
         DependencyHandler.clear_keys_batch paths;

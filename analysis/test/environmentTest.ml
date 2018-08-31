@@ -228,7 +228,7 @@ let test_register_aliases _ =
         Handler.register_module
           ~qualifier
           ~local_mode
-          ~path:(Some path)
+          ~handle:(Some path)
           ~stub
           ~statements;
         Environment.register_class_definitions (module Handler) source |> ignore;

@@ -24,15 +24,15 @@ type t = {
     lookups. *)
 module type Handler = sig
   val register_definition
-    :  path: string
+    :  handle: string
     -> ?name_override: Access.t
     -> (Define.t Node.t)
     -> unit
-  val register_dependency: path: string -> dependency: Access.t -> unit
-  val register_global: path: string -> access: Access.t -> global: Resolution.global -> unit
+  val register_dependency: handle: string -> dependency: Access.t -> unit
+  val register_global: handle: string -> access: Access.t -> global: Resolution.global -> unit
   val set_class_definition: primitive: Type.t -> definition: Class.t Node.t -> unit
   val refine_class_definition: Type.t -> unit
-  val register_alias: path: string -> key: Type.t -> data: Type.t -> unit
+  val register_alias: handle: string -> key: Type.t -> data: Type.t -> unit
   val purge: File.Handle.t list -> unit
 
   val function_definitions: Access.t -> (Define.t Node.t) list option
@@ -44,7 +44,7 @@ module type Handler = sig
   val register_module
     :  qualifier: Access.t
     -> local_mode: Source.mode
-    -> path: string option
+    -> handle: string option
     -> stub: bool
     -> statements: Statement.t list
     -> unit

@@ -24,15 +24,15 @@ type t = {
 
 module type Handler = sig
   val register_definition
-    :  path: string
+    :  handle: string
     -> ?name_override: Access.t
     -> (Define.t Node.t)
     -> unit
-  val register_dependency: path: string -> dependency: Access.t -> unit
-  val register_global: path: string -> access: Access.t -> global: Resolution.global -> unit
+  val register_dependency: handle: string -> dependency: Access.t -> unit
+  val register_global: handle: string -> access: Access.t -> global: Resolution.global -> unit
   val set_class_definition: primitive: Type.t -> definition: Class.t Node.t -> unit
   val refine_class_definition: Type.t -> unit
-  val register_alias: path: string -> key: Type.t -> data: Type.t -> unit
+  val register_alias: handle: string -> key: Type.t -> data: Type.t -> unit
   val purge: File.Handle.t list -> unit
 
   val function_definitions: Access.t -> (Define.t Node.t) list option
@@ -44,7 +44,7 @@ module type Handler = sig
   val register_module
     :  qualifier: Access.t
     -> local_mode: Source.mode
-    -> path: string option
+    -> handle: string option
     -> stub: bool
     -> statements: Statement.t list
     -> unit
@@ -151,11 +151,11 @@ let handler
     module DependencyHandler = DependencyHandler
 
     let register_definition
-        ~path
+        ~handle
         ?name_override
         ({ Node.value = { Define.name; _  }; _ } as definition) =
       let name = Option.value ~default:name name_override in
-      DependencyHandler.add_function_key ~path name;
+      DependencyHandler.add_function_key ~handle name;
       if infer then
         let definitions =
           match Hashtbl.find function_definitions name with
@@ -167,17 +167,17 @@ let handler
         Hashtbl.set ~key:name ~data:definitions function_definitions
 
 
-    let register_dependency ~path ~dependency =
+    let register_dependency ~handle ~dependency =
       Log.log
         ~section:`Dependencies
         "Adding dependency from %a to %s"
         Access.pp dependency
-        path;
-      DependencyHandler.add_dependent ~path dependency
+        handle;
+      DependencyHandler.add_dependent ~handle dependency
 
 
-    let register_global ~path ~access ~global =
-      DependencyHandler.add_global_key ~path access;
+    let register_global ~handle ~access ~global =
+      DependencyHandler.add_global_key ~handle access;
       Hashtbl.set ~key:access ~data:global globals
 
 
@@ -241,8 +241,8 @@ let handler
       |> ignore
 
 
-    let register_alias ~path ~key ~data =
-      DependencyHandler.add_alias_key ~path key;
+    let register_alias ~handle ~key ~data =
+      DependencyHandler.add_alias_key ~handle key;
       Hashtbl.set ~key ~data aliases
 
 
@@ -271,15 +271,15 @@ let handler
               |> ignore)
           keys
       in
-      List.concat_map ~f:(fun path -> DependencyHandler.get_function_keys ~path) paths
+      List.concat_map ~f:(fun handle -> DependencyHandler.get_function_keys ~handle) paths
       |> purge_table_given_keys function_definitions;
-      List.concat_map ~f:(fun path -> DependencyHandler.get_class_keys ~path) paths
+      List.concat_map ~f:(fun handle -> DependencyHandler.get_class_keys ~handle) paths
       |> purge_table_given_keys class_definitions;
-      List.concat_map ~f:(fun path -> DependencyHandler.get_alias_keys ~path) paths
+      List.concat_map ~f:(fun handle -> DependencyHandler.get_alias_keys ~handle) paths
       |> purge_table_given_keys aliases;
-      List.concat_map ~f:(fun path -> DependencyHandler.get_global_keys ~path) paths
+      List.concat_map ~f:(fun handle -> DependencyHandler.get_global_keys ~handle) paths
       |> purge_table_given_keys globals;
-      List.concat_map ~f:(fun path -> DependencyHandler.get_dependent_keys ~path) paths
+      List.concat_map ~f:(fun handle -> DependencyHandler.get_dependent_keys ~handle) paths
       |> purge_dependents;
       DependencyHandler.clear_keys_batch paths;
       List.map ~f:(fun path -> Source.qualifier ~path) paths
@@ -298,7 +298,7 @@ let handler
     let protocols () =
       Hash_set.to_list protocols
 
-    let register_module ~qualifier ~local_mode ~path ~stub ~statements =
+    let register_module ~qualifier ~local_mode ~handle ~stub ~statements =
       let is_registered_empty_stub =
         Hashtbl.find modules qualifier
         >>| Module.empty_stub
@@ -315,7 +315,7 @@ let handler
       if not is_registered_empty_stub then
         Hashtbl.set
           ~key:qualifier
-          ~data:(Module.create ~qualifier ~local_mode ?path ~stub statements)
+          ~data:(Module.create ~qualifier ~local_mode ?path:handle ~stub statements)
           modules
 
     let is_module access =
@@ -388,13 +388,13 @@ let register_module
     | (_ :: tail) as reversed ->
         let qualifier = List.rev reversed in
         if not (Handler.is_module qualifier) then
-          Handler.register_module ~path:None ~qualifier ~local_mode ~stub:false ~statements:[];
+          Handler.register_module ~handle:None ~qualifier ~local_mode ~stub:false ~statements:[];
         register_submodules tail
   in
   Handler.register_module
     ~qualifier
     ~local_mode
-    ~path:(Some path)
+    ~handle:(Some path)
     ~stub:(String.is_suffix path ~suffix:".pyi")
     ~statements;
   if List.length qualifier > 1 then
@@ -415,7 +415,7 @@ let register_class_definitions (module Handler: Handler) source =
               Type.create ~aliases:Handler.aliases (Node.create_with_default_location (Access name))
               |> Type.split
             in
-            Handler.DependencyHandler.add_class_key ~path primitive;
+            Handler.DependencyHandler.add_class_key ~handle:path primitive;
             let annotated = Annotated.Class.create { Node.location; value = definition } in
 
             if Annotated.Class.is_protocol annotated then
@@ -561,7 +561,7 @@ let register_aliases (module Handler: Handler) sources =
     | Type.Bottom ->
         None
   in
-  let register_alias (any_changed, unresolved) (path, target, value) =
+  let register_alias (any_changed, unresolved) (handle, target, value) =
     let target_annotation = Type.create ~aliases:Handler.aliases target in
     let value_annotation =
       match Type.create ~aliases:Handler.aliases value with
@@ -578,10 +578,10 @@ let register_aliases (module Handler: Handler) sources =
     let target_primitive, _ = Type.split target_annotation in
     match not (TypeOrder.contains order target_primitive), tracked value_annotation with
     | true, Some value_annotation ->
-        Handler.register_alias ~path ~key:target_annotation ~data:value_annotation;
+        Handler.register_alias ~handle ~key:target_annotation ~data:value_annotation;
         (true, unresolved)
     | _ ->
-        (any_changed, (path, target, value) :: unresolved)
+        (any_changed, (handle, target, value) :: unresolved)
   in
   let rec resolve_aliases unresolved =
     if List.is_empty unresolved then
@@ -641,7 +641,7 @@ let register_globals
                 (Type.meta primitive)
               |> Node.create ~location
             in
-            Handler.register_global ~path ~access:(qualified_access name) ~global
+            Handler.register_global ~handle:path ~access:(qualified_access name) ~global
         | _ ->
             ()
     end)
@@ -710,7 +710,7 @@ let register_globals
         global
         >>| (fun (access, global) ->
             let access = qualified_access (qualifier @ access) in
-            Handler.register_global ~path ~access ~global)
+            Handler.register_global ~handle:path ~access ~global)
         |> ignore
   in
   List.iter ~f:visit statements
@@ -755,7 +755,7 @@ let register_dependencies (module Handler: Handler) source =
               | Some base_module -> [base_module]
             in
             List.iter
-              ~f:(fun dependency -> Handler.register_dependency ~path ~dependency)
+              ~f:(fun dependency -> Handler.register_dependency ~handle:path ~dependency)
               imports
         | _ ->
             ()
@@ -778,7 +778,10 @@ let register_functions (module Handler: Handler) ({ Source.path; _ } as source) 
             callables
             ({ Define.name; _ } as define) =
 
-          Handler.register_definition ~path ~name_override:name (Node.create ~location define);
+          Handler.register_definition
+            ~handle:path
+            ~name_override:name
+            (Node.create ~location define);
 
           (* Register callable global. *)
           let callable =
@@ -808,7 +811,7 @@ let register_functions (module Handler: Handler) ({ Source.path; _ } as source) 
     end)
   in
 
-  let register_callables path ~key ~data =
+  let register_callables handle ~key ~data =
     assert (not (List.is_empty data));
     let location =
       List.hd_exn data
@@ -818,7 +821,7 @@ let register_functions (module Handler: Handler) ({ Source.path; _ } as source) 
     >>| (fun callable -> Type.Callable callable)
     >>| Annotation.create_immutable ~global:true
     >>| Node.create ~location
-    >>| (fun global -> Handler.register_global ~path ~access:key ~global)
+    >>| (fun global -> Handler.register_global ~handle ~access:key ~global)
     |> ignore
   in
   CollectCallables.visit Access.Map.empty source
