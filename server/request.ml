@@ -21,7 +21,6 @@ open Pyre
 exception InvalidRequest
 
 
-
 let parse ~root ~request =
   let open LanguageServer.Types in
   let log_method_error method_name =
@@ -545,6 +544,36 @@ let process_type_check_request
   let deferred_requests =
     if not (List.is_empty update_environment_with) then
       let files =
+        let old_signature_hashes, new_signature_hashes =
+          let signature_hashes ~default =
+            let table = String.Table.create () in
+            let add_signature_hash file =
+              let handle =
+                File.handle file ~configuration
+                |> (fun value -> Option.value_exn value)
+              in
+              let signature_hash =
+                Ast.SharedMemory.get_source handle
+                >>| Source.signature_hash
+                |> Option.value ~default
+              in
+              Hashtbl.set table ~key:(File.Handle.show handle) ~data:signature_hash
+            in
+            List.iter update_environment_with ~f:add_signature_hash;
+            table
+          in
+          let old_signature_hashes = signature_hashes ~default:0 in
+
+          (* Clear and re-populate ASTs in shared memory. *)
+          let handles = List.filter_map update_environment_with ~f:(File.handle ~configuration) in
+          Ast.SharedMemory.remove_paths handles;
+          Service.Parser.parse_sources ~configuration ~scheduler ~files:update_environment_with
+          |> ignore;
+
+          let new_signature_hashes = signature_hashes ~default:(-1) in
+          old_signature_hashes, new_signature_hashes
+        in
+
         let dependents =
           let handle file =
             File.handle file ~configuration
@@ -557,8 +586,16 @@ let process_type_check_request
             "Handling type check request for files %a"
             Sexp.pp [%message (update_environment_with: string list)];
           let get_dependencies handle =
-            let qualifier = Ast.Source.qualifier ~handle in
-            Handler.dependencies qualifier
+            let signature_hash_changed =
+              let old_signature_hash = Hashtbl.find_exn old_signature_hashes handle in
+              let new_signature_hash = Hashtbl.find_exn new_signature_hashes handle in
+              new_signature_hash <> old_signature_hash
+            in
+            if signature_hash_changed then
+              let qualifier = Ast.Source.qualifier ~handle in
+              Handler.dependencies qualifier
+            else
+              None
           in
           Dependencies.of_list
             ~get_dependencies

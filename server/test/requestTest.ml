@@ -12,14 +12,14 @@ open Server
 open Test
 
 
-let mock_server_state ?(errors = File.Handle.Table.create ()) () =
+let mock_server_state ?(sources = []) ?(errors = File.Handle.Table.create ()) () =
   let environment =
     let configuration = Test.mock_configuration in
     let environment =
       let environment = Analysis.Environment.Builder.create () in
       Service.Environment.populate
         (Analysis.Environment.handler ~configuration environment)
-        typeshed_stubs;
+        (typeshed_stubs @ sources);
       environment
     in
     Analysis.Environment.handler ~configuration environment
@@ -181,34 +181,85 @@ let test_process_display_type_errors_request _ =
 
 
 let test_process_type_check_request context =
-  let assert_response ~check ~expected_errors =
+  let assert_response
+      ?(sources = [])
+      ~check
+      ~expected_errors
+      ?(expected_deferred_requests = [])
+      () =
     let assert_response _ =
-      let actual_errors =
-        let check =
-          let file (path, content) =
-            let content = trim_extra_indentation content in
-            let file = File.create ~content (mock_path path) in
-            File.write file;
-            file
-          in
-          List.map check ~f:file
+      let actual_errors, actual_deferred_requests =
+        let write_file (path, content) =
+          let content = trim_extra_indentation content in
+          let file = File.create ~content (mock_path path) in
+          File.write file;
+          file
         in
-        let request = { Protocol.TypeCheckRequest.update_environment_with = check; check } in
-        let state = mock_server_state () in
         let configuration =
-          Configuration.create ~project_root:(Path.current_working_directory ()) ()
+          Configuration.create
+            ~project_root:(Path.current_working_directory ())
+            ()
         in
+        let state =
+          let files = List.map sources ~f:write_file in
+          let scheduler = Scheduler.mock () in
+
+          (* Clear and re-populate ASTs in shared memory. *)
+          let handles = List.filter_map files ~f:(File.handle ~configuration) in
+          Ast.SharedMemory.remove_paths handles;
+          Service.Parser.parse_sources ~configuration ~scheduler ~files
+          |> ignore;
+
+          (* Initialize dependency map. *)
+          let source (path, content) =
+            parse ~qualifier:(Source.qualifier ~handle:path) ~path content
+            |> Analysis.Preprocessing.qualify
+          in
+          mock_server_state ~sources:(List.map sources ~f:source) ()
+        in
+        let check = List.map check ~f:write_file in
+        let request = { Protocol.TypeCheckRequest.update_environment_with = check; check } in
         Request.process_type_check_request ~state ~configuration ~request
         |> function
-        | { Request.response = Some (Protocol.TypeCheckResponse response); _ } -> response
-        | _ -> failwith "Unexpected response."
+        | {
+          Request.response = Some (Protocol.TypeCheckResponse response);
+          state = { State.deferred_requests; _ };
+        } ->
+            let actual_deferred_requests =
+              let deferred_request request =
+                let open Protocol in
+                match request with
+                | Request.TypeCheckRequest {
+                    TypeCheckRequest.check;
+                    update_environment_with = [];
+                  } ->
+                    let path file =
+                      File.handle file ~configuration
+                      |> (fun value -> Option.value_exn value)
+                      |> File.Handle.show
+                    in
+                    List.map check ~f:path
+                | _ ->
+                    failwith "Unable to extract deferred type-check request"
+              in
+              List.map deferred_requests ~f:deferred_request
+              |> List.concat
+            in
+            response, actual_deferred_requests
+        | _ ->
+            failwith "Unexpected response."
       in
-      assert_errors_equal ~actual_errors ~expected_errors
+      assert_errors_equal ~actual_errors ~expected_errors;
+      assert_equal
+        ~cmp:(List.equal ~equal:String.equal)
+        ~printer:(String.concat ~sep:"\n")
+        expected_deferred_requests
+        actual_deferred_requests
     in
     OUnit2.with_bracket_chdir context (OUnit2.bracket_tmpdir context) assert_response
   in
 
-  assert_response ~check:[] ~expected_errors:[];
+  assert_response ~check:[] ~expected_errors:[] ();
   assert_response
     ~check:[
       "test.py",
@@ -218,6 +269,54 @@ let test_process_type_check_request context =
       |};
     ]
     ~expected_errors:["test.py", ["Incompatible return type [7]: Expected `int` but got `str`."]]
+    ();
+
+  (* Check deferred requests for dependencies. *)
+  assert_response
+    ~sources:[
+      "library.py", "def function() -> int: ...";
+      "client.py", "from library import function";
+    ]
+    ~check:["library.py", "def function() -> int: ..."]  (* Unchanged. *)
+    ~expected_errors:["library.py", []]
+    ~expected_deferred_requests:[]
+    ();
+  (* Single dependency. *)
+  assert_response
+    ~sources:[
+      "library.py", "def function() -> int: ...";
+      "client.py", "from library import function";
+    ]
+    ~check:["library.py", "def function() -> str: ..."]
+    ~expected_errors:["library.py", []]
+    ~expected_deferred_requests:["client.py"]
+    ();
+  (* Multiple depedencies. *)
+  assert_response
+    ~sources:[
+      "library.py", "def function() -> int: ...";
+      "client.py", "from library import function";
+      "other.py", "from library import function";
+    ]
+    ~check:["library.py", "def function() -> str: ..."]
+    ~expected_errors:["library.py", []]
+    ~expected_deferred_requests:["client.py"; "other.py"]
+    ();
+  (* Indirect dependency. *)
+  assert_response
+    ~sources:[
+      "library.py", "def function() -> int: ...";
+      "client.py",
+      {|
+        from library import function
+        def function() -> int: ...
+      |};
+      "indirect.py", "from client import function"
+    ]
+    ~check:["library.py", "def function() -> str: ..."]
+    ~expected_errors:["library.py", []]
+    ~expected_deferred_requests:["client.py"]
+    ()
 
 
 let () =
