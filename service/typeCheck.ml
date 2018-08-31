@@ -193,6 +193,7 @@ let check
         typeshed;
         _;
       } as configuration) =
+  (* Sanity check environment. *)
   let check_directory_exists directory =
     if not (Path.is_directory directory) then
       raise (Invalid_argument (Format.asprintf "`%a` is not a directory" Path.pp directory));
@@ -202,61 +203,52 @@ let check
   List.iter ~f:check_directory_exists search_path;
   Option.iter typeshed ~f:check_directory_exists;
 
-  let bucket_multiplier =
-    try Int.of_string (Sys.getenv "BUCKET_MULTIPLIER" |> (fun value -> Option.value_exn value))
-    with _ -> 10
-  in
   let scheduler =
+    let bucket_multiplier =
+      try Int.of_string (Sys.getenv "BUCKET_MULTIPLIER" |> (fun value -> Option.value_exn value))
+      with _ -> 10
+    in
     match original_scheduler with
     | None -> Scheduler.create ~configuration ~bucket_multiplier ()
     | Some scheduler -> scheduler
   in
-  (* Parsing. *)
+
+  (* Parse sources. *)
   let { Parser.stubs; sources } = Parser.parse_all scheduler ~configuration in
-  (* Coverage. *)
-  let () =
-    let number_of_files = List.length sources in
-    let { Coverage.strict_coverage; declare_coverage; default_coverage; source_files } =
-      Coverage.coverage ~sources ~number_of_files
-    in
-    let path_to_files =
-      Path.get_relative_to_root ~root:project_root ~path:local_root
-      |> Option.value ~default:(Path.absolute local_root)
-    in
-
-    Statistics.coverage
-      ~path:path_to_files
-      ~coverage:[
-        "strict_coverage", strict_coverage;
-        "declare_coverage", declare_coverage;
-        "default_coverage", default_coverage;
-        "source_files", source_files;
-      ]
-      ()
-  in
-
-  (* Build environment. *)
   Postprocess.register_ignores ~configuration scheduler sources;
-  let environment =
-    Environment.handler ~configuration ~stubs ~sources
-  in
+
+  (* Build environment and check files. *)
+  let environment = Environment.handler ~configuration ~stubs ~sources in
   let errors, { Analysis.Coverage.full; partial; untyped; ignore; crashes } =
-    analyze_sources ~scheduler ~configuration ~environment ~handles:sources
+    analyze_sources
+      ~scheduler
+      ~configuration
+      ~environment
+      ~handles:sources
   in
+
   (* Log coverage results *)
   let path_to_files =
     Path.get_relative_to_root ~root:project_root ~path:local_root
     |> Option.value ~default:(Path.absolute local_root)
   in
+  let { Coverage.strict_coverage; declare_coverage; default_coverage; source_files } =
+    let number_of_files = List.length sources in
+    Coverage.coverage ~sources ~number_of_files
+  in
   Statistics.coverage
     ~path:path_to_files
     ~coverage:[
-      "full_type_coverage", full;
-      "partial_type_coverage", partial;
-      "no_type_coverage", untyped;
-      "ignore_coverage", ignore;
-      "total_errors", List.length errors;
       "crashes", crashes;
+      "declare_coverage", declare_coverage;
+      "default_coverage", default_coverage;
+      "full_type_coverage", full;
+      "ignore_coverage", ignore;
+      "no_type_coverage", untyped;
+      "partial_type_coverage", partial;
+      "source_files", source_files;
+      "strict_coverage", strict_coverage;
+      "total_errors", List.length errors;
     ]
     ();
 
@@ -266,4 +258,5 @@ let check
     | None -> Scheduler.destroy scheduler
     | Some _ -> ()
   end;
+
   { handles = stubs @ sources; environment; errors }
