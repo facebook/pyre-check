@@ -28,7 +28,7 @@ class CheckTest(unittest.TestCase):
             "json.loads", return_value=[]
         ):
             command = commands.Check(arguments, configuration, AnalysisDirectory("."))
-            self.assertEquals(
+            self.assertEqual(
                 command._flags(),
                 [
                     "-project-root",
@@ -75,7 +75,7 @@ class CheckTest(unittest.TestCase):
             "json.loads", return_value=[]
         ):
             command = commands.Check(arguments, configuration, AnalysisDirectory("."))
-            self.assertEquals(
+            self.assertEqual(
                 command._flags(),
                 [
                     "-sequential",
@@ -111,7 +111,7 @@ class CheckTest(unittest.TestCase):
             "json.loads", return_value=[]
         ):
             command = commands.Check(arguments, configuration, AnalysisDirectory("."))
-            self.assertEquals(
+            self.assertEqual(
                 command._flags(),
                 [
                     "-logging-sections",
@@ -149,7 +149,7 @@ class CheckTest(unittest.TestCase):
             "json.loads", return_value=[]
         ):
             command = commands.Check(arguments, configuration, AnalysisDirectory("."))
-            self.assertEquals(
+            self.assertEqual(
                 command._flags(),
                 [
                     "-logging-sections",

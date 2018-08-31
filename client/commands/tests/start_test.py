@@ -31,7 +31,7 @@ class StartTest(unittest.TestCase):
         with patch.object(commands.Command, "_call_client") as call_client:
             arguments.no_watchman = True
             command = commands.Start(arguments, configuration, analysis_directory)
-            self.assertEquals(
+            self.assertEqual(
                 command._flags(),
                 [
                     "-project-root",
@@ -53,7 +53,7 @@ class StartTest(unittest.TestCase):
         with patch.object(commands.Command, "_call_client") as call_client:
             arguments.no_watchman = False
             command = commands.Start(arguments, configuration, analysis_directory)
-            self.assertEquals(
+            self.assertEqual(
                 command._flags(),
                 [
                     "-project-root",
@@ -78,7 +78,7 @@ class StartTest(unittest.TestCase):
             arguments.terminal = True
 
             command = commands.Start(arguments, configuration, analysis_directory)
-            self.assertEquals(
+            self.assertEqual(
                 command._flags(),
                 [
                     "-project-root",
@@ -108,7 +108,7 @@ class StartTest(unittest.TestCase):
             command = commands.Start(
                 arguments, configuration, shared_analysis_directory
             )
-            self.assertEquals(
+            self.assertEqual(
                 command._flags(),
                 [
                     "-project-root",

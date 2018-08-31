@@ -39,7 +39,7 @@ class IncrementalTest(unittest.TestCase):
             command = incremental.Incremental(
                 arguments, configuration, analysis_directory
             )
-            self.assertEquals(
+            self.assertEqual(
                 command._flags(),
                 [
                     "-project-root",
@@ -61,7 +61,7 @@ class IncrementalTest(unittest.TestCase):
             "json.loads", return_value=[]
         ):
             command = commands.Incremental(arguments, configuration, analysis_directory)
-            self.assertEquals(
+            self.assertEqual(
                 command._flags(),
                 [
                     "-project-root",
@@ -89,7 +89,7 @@ class IncrementalTest(unittest.TestCase):
             command = incremental.Incremental(
                 arguments, configuration, analysis_directory
             )
-            self.assertEquals(
+            self.assertEqual(
                 command._flags(),
                 [
                     "-project-root",

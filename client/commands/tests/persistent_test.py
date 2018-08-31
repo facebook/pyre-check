@@ -32,7 +32,7 @@ class PersistentTest(unittest.TestCase):
             command = commands.Persistent(
                 arguments, configuration, AnalysisDirectory(".")
             )
-            self.assertEquals(
+            self.assertEqual(
                 command._flags(),
                 ["-log-identifier", '"."', "-expected-binary-version", "hash"],
             )

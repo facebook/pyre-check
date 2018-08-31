@@ -532,7 +532,7 @@ class InferTest(unittest.TestCase):
 
         with patch.object(commands.Command, "_call_client") as call_client:
             command = Infer(arguments, configuration, AnalysisDirectory("."))
-            self.assertEquals(
+            self.assertEqual(
                 command._flags(),
                 [
                     "-show-error-traces",
@@ -552,7 +552,7 @@ class InferTest(unittest.TestCase):
             arguments.recursive = True
 
             command = Infer(arguments, configuration, AnalysisDirectory("."))
-            self.assertEquals(
+            self.assertEqual(
                 command._flags(),
                 [
                     "-show-error-traces",

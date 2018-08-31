@@ -31,7 +31,7 @@ class AnalyzeTest(unittest.TestCase):
             call_client.return_value = result
 
             command = commands.Analyze(arguments, configuration, ".")
-            self.assertEquals(
+            self.assertEqual(
                 command._flags(),
                 [
                     "-project-root",
