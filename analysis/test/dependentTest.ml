@@ -57,15 +57,15 @@ let test_index _ =
   assert_table_contains_key alias_keys (primitive "_T")
 
 
-let add_dependent table path dependent =
-  let source = Source.qualifier ~path in
+let add_dependent table handle dependent =
+  let source = Source.qualifier ~handle in
   match Hashtbl.find table source with
   | None -> Hashtbl.set table ~key:source ~data:[dependent]
   | Some dependents -> Hashtbl.set table ~key:source ~data:(dependent :: dependents)
 
 
-let get_dependencies (module Handler: Environment.Handler) path =
-  Handler.dependencies (Source.qualifier ~path)
+let get_dependencies (module Handler: Environment.Handler) handle =
+  Handler.dependencies (Source.qualifier ~handle)
 
 
 let test_dependent_of_list _ =

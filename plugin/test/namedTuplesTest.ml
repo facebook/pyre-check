@@ -15,7 +15,7 @@ open Test
 let test_transform_ast _ =
   let assert_expand ?(qualifier = "qualifier") source expected =
     let parse =
-      parse ~qualifier:(Source.qualifier ~path:qualifier)
+      parse ~qualifier:(Source.qualifier ~handle:qualifier)
     in
     assert_source_equal
       (parse expected)

@@ -16,14 +16,14 @@ open Test
 
 
 let test_expand_relative_imports _ =
-  let assert_expand ~path source expected =
-    let parse = parse ~qualifier:(Source.qualifier ~path) in
+  let assert_expand ~handle source expected =
+    let parse = parse ~qualifier:(Source.qualifier ~handle) in
     assert_source_equal
       (parse expected)
       (Preprocessing.expand_relative_imports (parse source))
   in
   assert_expand
-    ~path:"module/submodule/test.py"
+    ~handle:"module/submodule/test.py"
     {|
       from builtins import str
       from . import a
@@ -39,7 +39,7 @@ let test_expand_relative_imports _ =
       from module.relative import d
     |};
   assert_expand
-    ~path:"module/submodule/test/__init__.py"
+    ~handle:"module/submodule/test/__init__.py"
     {|
       from . import a
       from .relative import b
@@ -57,7 +57,7 @@ let test_expand_relative_imports _ =
 let test_expand_string_annotations _ =
   let assert_expand ?(qualifier = "qualifier") source expected =
     let parse =
-      parse ~qualifier:(Source.qualifier ~path:qualifier) in
+      parse ~qualifier:(Source.qualifier ~handle:qualifier) in
     assert_source_equal
       (parse expected)
       (Preprocessing.expand_string_annotations (parse source))
@@ -152,7 +152,7 @@ let test_expand_format_string _ =
 
 let test_qualify _ =
   let assert_qualify ?(path = "qualifier.py") source expected =
-    let parse = parse ~qualifier:(Source.qualifier ~path) ~path in
+    let parse = parse ~qualifier:(Source.qualifier ~handle:path) ~path in
     assert_source_equal (parse expected) (Preprocessing.qualify (parse source))
   in
 

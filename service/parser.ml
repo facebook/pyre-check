@@ -25,7 +25,7 @@ let parse_source ~configuration ?(show_parser_errors = true) file =
         ~docstring:(Statement.extract_docstring statements)
         ~metadata
         ~path
-        ~qualifier:(Source.qualifier ~path)
+        ~qualifier:(Source.qualifier ~handle:path)
         statements)
   with
   | Parser.Error error ->
@@ -102,7 +102,7 @@ let parse_sources ~configuration ~scheduler ~files =
     let get_qualifier file =
       File.path file
       |> Path.relative
-      >>| (fun path -> Source.qualifier ~path)
+      >>| (fun handle -> Source.qualifier ~handle)
     in
     List.filter_map files ~f:get_qualifier
     |> Ast.SharedMemory.remove_modules
@@ -186,7 +186,7 @@ let find_stubs
       let add (qualifiers, all_paths) path =
         match Path.relative path with
         | Some relative ->
-            let qualifier = Ast.Source.qualifier ~path:relative in
+            let qualifier = Ast.Source.qualifier ~handle:relative in
             if Set.mem qualifiers qualifier then
               qualifiers, all_paths
             else
@@ -247,9 +247,9 @@ let parse_all scheduler ~configuration:({ Configuration.local_root; _ } as confi
           ~path:(Path.create_absolute ~follow_symbolic_links:false path)
       in
       match relative with
-      | Some path ->
-          path = "__init__.py" ||  (* Analyze top-level `__init__.py`. *)
-          not (Set.mem known_stubs (Source.qualifier ~path))
+      | Some handle ->
+          handle = "__init__.py" ||  (* Analyze top-level `__init__.py`. *)
+          not (Set.mem known_stubs (Source.qualifier ~handle))
       | _ ->
           true
     in

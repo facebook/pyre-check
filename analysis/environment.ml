@@ -282,7 +282,7 @@ let handler
       List.concat_map ~f:(fun handle -> DependencyHandler.get_dependent_keys ~handle) paths
       |> purge_dependents;
       DependencyHandler.clear_keys_batch paths;
-      List.map ~f:(fun path -> Source.qualifier ~path) paths
+      List.map ~f:(fun handle -> Source.qualifier ~handle) paths
       |> List.iter ~f:(Hashtbl.remove modules)
 
 

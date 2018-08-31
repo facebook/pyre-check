@@ -610,7 +610,7 @@ let test_incremental_typecheck _ =
   in
   let errors =
     associate_errors_and_filenames
-      (make_errors ~path:relative_path ~qualifier:(Source.qualifier ~path:relative_path) source)
+      (make_errors ~path:relative_path ~qualifier:(Source.qualifier ~handle:relative_path) source)
   in
   assert_response ~request:request_with_content (Protocol.TypeCheckResponse errors);
   (* Assert that only files getting used to update the environment get parsed. *)
@@ -815,7 +815,7 @@ let test_incremental_lookups _ =
   let parse content =
     Source.create
       ~path
-      ~qualifier:(Source.qualifier ~path)
+      ~qualifier:(Source.qualifier ~handle:path)
       (Parser.parse ~path (String.split_lines (content ^ "\n")))
     |> Analysis.Preprocessing.preprocess
   in
@@ -883,7 +883,7 @@ let test_incremental_repopulate _ =
   let parse content =
     Source.create
       ~path:"test.py"
-      ~qualifier:(Source.qualifier ~path:"test.py")
+      ~qualifier:(Source.qualifier ~handle:"test.py")
       (Parser.parse ~path:"test.py" (String.split_lines (content ^ "\n")))
     |> Analysis.Preprocessing.preprocess
   in

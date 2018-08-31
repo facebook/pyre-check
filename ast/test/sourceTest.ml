@@ -155,29 +155,29 @@ let test_qualifier _ =
   in
 
   assert_equal
-    (Source.qualifier ~path:"module.py")
+    (Source.qualifier ~handle:"module.py")
     (qualifier ["module"]);
 
   assert_equal
-    (Source.qualifier ~path:"module/submodule.py")
+    (Source.qualifier ~handle:"module/submodule.py")
     (qualifier ["module"; "submodule"]);
 
   assert_equal
-    (Source.qualifier ~path:"builtins.pyi")
+    (Source.qualifier ~handle:"builtins.pyi")
     (qualifier []);
 
   assert_equal
-    (Source.qualifier ~path:"module/builtins.pyi")
+    (Source.qualifier ~handle:"module/builtins.pyi")
     (qualifier ["module"]);
 
   assert_equal
-    (Source.qualifier ~path:"module/__init__.pyi")
+    (Source.qualifier ~handle:"module/__init__.pyi")
     (qualifier ["module"])
 
 
 let test_expand_relative_import _ =
   let assert_export ~path ~from ~expected =
-    let qualifier = Source.qualifier ~path in
+    let qualifier = Source.qualifier ~handle:path in
     let from =
       match parse_single_statement ("from " ^ from ^ " import something") with
       | { Node.value = Import { Import.from = Some from; _ }; _ } -> from

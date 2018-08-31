@@ -499,7 +499,7 @@ let handler
         |> purge_dependents;
 
         DependencyHandler.clear_keys_batch paths;
-        List.map ~f:(fun path -> Ast.Source.qualifier ~path) paths
+        List.map ~f:(fun handle -> Ast.Source.qualifier ~handle) paths
         |> Ast.SharedMemory.remove_modules;
 
         if debug then

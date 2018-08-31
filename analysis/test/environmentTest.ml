@@ -1304,7 +1304,7 @@ let test_import_dependencies context =
           parse ~path:"subdirectory/b.py" ~qualifier:(Access.create "subdirectory.b") "";
         ]
     in
-    let dependencies path = Environment.dependencies environment (Source.qualifier ~path) in
+    let dependencies handle = Environment.dependencies environment (Source.qualifier ~handle) in
     assert_equal ~printer:(fun lo -> lo >>| List.to_string ~f:ident |> Option.value ~default:"nun")
       (dependencies "subdirectory/b.py")
       (Some ["test.py"]);
@@ -1326,7 +1326,7 @@ let test_register_dependencies _ =
   Environment.register_dependencies
     (module Handler)
     (parse ~path:"test.py" source);
-  let dependencies path = Environment.dependencies (module Handler) (Source.qualifier ~path) in
+  let dependencies handle = Environment.dependencies (module Handler) (Source.qualifier ~handle) in
   assert_equal
     (dependencies "subdirectory/b.py")
     (Some ["test.py"]);
@@ -1354,14 +1354,14 @@ let test_purge _ =
   assert_is_some (Handler.class_definition (Type.primitive "baz.baz"));
   assert_is_some (Handler.function_definitions (Access.create "foo"));
   assert_is_some (Handler.aliases (Type.primitive "_T"));
-  assert_equal (Handler.dependencies (Source.qualifier ~path:"a.py")) (Some ["test.py"]);
+  assert_equal (Handler.dependencies (Source.qualifier ~handle:"a.py")) (Some ["test.py"]);
 
   Handler.purge [File.Handle.create "test.py"];
 
   assert_is_none (Handler.class_definition (Type.primitive "baz.baz"));
   assert_is_none (Handler.function_definitions (Access.create "foo"));
   assert_is_none (Handler.aliases (Type.primitive "_T"));
-  assert_equal (Handler.dependencies (Source.qualifier ~path:"a.py")) (Some [])
+  assert_equal (Handler.dependencies (Source.qualifier ~handle:"a.py")) (Some [])
 
 
 let test_infer_protocols _ =

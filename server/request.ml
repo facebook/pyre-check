@@ -556,8 +556,8 @@ let process_type_check_request
             ~section:`Server
             "Handling type check request for files %a"
             Sexp.pp [%message (update_environment_with: string list)];
-          let get_dependencies path =
-            let qualifier = Ast.Source.qualifier ~path in
+          let get_dependencies handle =
+            let qualifier = Ast.Source.qualifier ~handle in
             Handler.dependencies qualifier
           in
           Dependencies.of_list
@@ -608,7 +608,7 @@ let process_type_check_request
     let sources =
       let keep file =
         (File.handle ~configuration file
-         >>= fun path -> Some (Source.qualifier ~path:(File.Handle.show path))
+         >>= fun path -> Some (Source.qualifier ~handle:(File.Handle.show path))
          >>= Handler.module_definition
          >>= Module.path
          >>| (fun existing_path -> File.Handle.show path = existing_path))
