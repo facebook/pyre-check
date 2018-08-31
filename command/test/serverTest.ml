@@ -539,7 +539,47 @@ let test_query _ =
   assert_type_query_response
     ~source:""
     ~query:"signature(unknown)"
-    (Protocol.TypeQuery.Error "No signature found for unknown")
+    (Protocol.TypeQuery.Error "No signature found for unknown");
+
+  assert_type_query_response
+    ~source:{|
+      foo: str = "bar"
+    |}
+    ~query:"type(foo)"
+    (Protocol.TypeQuery.Response (Protocol.TypeQuery.Type Type.string));
+
+  assert_type_query_response
+    ~source:{|
+      foo = 7
+    |}
+    ~query:"type(foo)"
+  (Protocol.TypeQuery.Response (Protocol.TypeQuery.Type Type.integer));
+
+  assert_type_query_response
+    ~source:{|
+    |}
+    ~query:"type(8)"
+  (Protocol.TypeQuery.Response (Protocol.TypeQuery.Type Type.integer));
+
+  assert_type_query_response
+    ~source:{|
+      def foo(a: str) -> str:
+        return a
+      bar: str = "baz"
+    |}
+    ~query:"type(foo(bar))"
+  (Protocol.TypeQuery.Response (Protocol.TypeQuery.Type Type.string));
+
+  assert_type_query_response
+    ~source:{|
+      def foo(a: str) -> str:
+        return a
+      bar: int = 7
+    |}
+    ~query:"type(foo(bar))"
+  (Protocol.TypeQuery.Error
+    "Expression had errors: Incompatible parameter type [6]: Expected `str` but got `int`."
+  )
 
 
 let test_connect _ =

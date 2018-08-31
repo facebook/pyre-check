@@ -11,6 +11,7 @@ open Analysis
 open Server
 open Protocol
 open Pyre
+open Test
 
 let fake_root = Path.create_absolute "/tmp"
 
@@ -79,6 +80,10 @@ let test_parse_query _ =
                 ]
                 ()
              )));
+
+  assert_parses "type(C)" (Type (!"C"));
+  assert_parses "type((C,B))" (Type (+(Ast.Expression.Tuple [!"C"; !"B"])));
+  assert_fails_to_parse "type(a.b, c.d)";
 
   assert_fails_to_parse "typecheck(1+2)";
 

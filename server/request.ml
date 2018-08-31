@@ -462,6 +462,32 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~local
           ~default:(
             TypeQuery.Error
               (Format.sprintf "No class definition found for %s" (Expression.show annotation)))
+    | TypeQuery.Type expression ->
+        begin
+          let state =
+            let define =
+              Statement.Define.create_toplevel
+                ~qualifier:[]
+                ~statements:[]
+              |> Node.create_with_default_location
+            in
+            TypeCheck.State.create ~resolution ~define ()
+          in
+          let { TypeCheck.State.state; resolved = annotation; } =
+            TypeCheck.State.forward_expression
+              ~state
+              ~expression
+          in
+          match TypeCheck.State.errors state with
+          | [] ->
+              TypeQuery.Response (TypeQuery.Type annotation)
+          | errors ->
+              let descriptions =
+                List.map errors ~f:(Analysis.Error.description ~detailed:false)
+                |> String.concat ~sep:", "
+              in
+              TypeQuery.Error (Format.sprintf "Expression had errors: %s" descriptions)
+        end
     | TypeQuery.TypeAtLocation {
         Ast.Location.path;
         start = ({ Ast.Location.line; column} as start);

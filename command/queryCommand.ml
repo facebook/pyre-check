@@ -51,6 +51,8 @@ let parse_query ~root query =
             Some (Request.TypeQueryRequest (Signature function_name))
         | "superclasses", [class_name] ->
             Some (Request.TypeQueryRequest (Superclasses class_name))
+        | "type", [argument] ->
+            Some (Request.TypeQueryRequest (Type argument))
         | "type_at_location",
           [
             { Node.value = Expression.Access path; _ };

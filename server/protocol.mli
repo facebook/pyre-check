@@ -35,6 +35,7 @@ module TypeQuery: sig
     | NormalizeType of Expression.t
     | Signature of Expression.Access.t
     | Superclasses of Expression.t
+    | Type of Expression.t
     | TypeAtLocation of Location.Instantiated.t
   [@@deriving eq, show]
 
