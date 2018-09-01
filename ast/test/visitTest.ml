@@ -239,16 +239,16 @@ let test_statement_visitor_source _ =
     let visit_children _ =
       true
 
-    let statement { Source.path; _ } _ _ =
-      path
+    let statement { Source.handle; _ } _ _ =
+      handle
   end
   in
   let module Visit = Visit.MakeStatementVisitor(StatementVisitor) in
-  let path = Visit.visit "" (parse ~path:"test.py" "a = 1") in
-  assert_equal "test.py" path;
+  let handle = Visit.visit "" (parse ~handle:"test.py" "a = 1") in
+  assert_equal "test.py" handle;
 
-  let path = Visit.visit "" (parse ~path:"test2.py" "b = 2") in
-  assert_equal "test2.py" path;
+  let handle = Visit.visit "" (parse ~handle:"test2.py" "b = 2") in
+  assert_equal "test2.py" handle;
   ()
 
 let () =

@@ -32,7 +32,7 @@ let generate_lookup source =
   let parsed =
     parse
       ~qualifier:(Source.qualifier ~handle:"test.py")
-      ~path:"test.py" source
+      ~handle:"test.py" source
     |> Preprocessing.preprocess
   in
   let configuration = Configuration.create ~debug:true ~infer:false () in

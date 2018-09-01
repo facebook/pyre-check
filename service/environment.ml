@@ -74,11 +74,11 @@ let build
   let stubs = get_sources stubs in
   List.iter ~f:(Environment.register_module (module Handler)) stubs;
   let sources =
-    (* If a stub matching a path's qualifier already exists, we shouldn't override. *)
-    let should_keep { Source.path; qualifier; _ } =
+    (* If a stub matching a handle's qualifier already exists, we shouldn't override. *)
+    let should_keep { Source.handle; qualifier; _ } =
       Handler.module_definition qualifier
       >>= Module.path
-      >>| String.equal path
+      >>| String.equal handle
       |> Option.value ~default:true
     in
     let sources = get_sources sources in

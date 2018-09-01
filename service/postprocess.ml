@@ -76,7 +76,7 @@ let ignore ~configuration scheduler handles errors =
     let paths_from_handles =
       let get_path paths handle =
         Ast.SharedMemory.get_source handle
-        >>| (fun { Source.path; _ } -> path :: paths)
+        >>| (fun { Source.handle; _ } -> handle :: paths)
         |> Option.value ~default:paths
       in
       List.fold ~init:[] ~f:get_path
@@ -131,7 +131,7 @@ let ignore ~configuration scheduler handles errors =
         Error.location =
           Location.instantiate
             (Ignore.location unused_ignore)
-            ~lookup:(fun hash -> Ast.SharedMemory.get_path ~hash);
+            ~lookup:(fun hash -> Ast.SharedMemory.get_handle ~hash);
         kind = Error.UnusedIgnore (Ignore.codes unused_ignore);
         define = {
           Node.location = Ignore.location unused_ignore;

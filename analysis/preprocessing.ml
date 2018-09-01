@@ -12,7 +12,7 @@ open PyreParser
 open Statement
 
 
-let expand_relative_imports ({ Source.path; qualifier; _ } as source) =
+let expand_relative_imports ({ Source.handle; qualifier; _ } as source) =
   let module Transform = Transform.MakeStatementTransformer(struct
       type t = Access.t
 
@@ -22,7 +22,7 @@ let expand_relative_imports ({ Source.path; qualifier; _ } as source) =
           | Import { Import.from = Some from; imports }
             when Access.show from <> "builtins" ->
               Import {
-                Import.from = Some (Source.expand_relative_import ~handle:path ~qualifier ~from);
+                Import.from = Some (Source.expand_relative_import ~handle ~qualifier ~from);
                 imports;
               }
           | _ ->
@@ -35,7 +35,7 @@ let expand_relative_imports ({ Source.path; qualifier; _ } as source) =
   |> snd
 
 
-let expand_string_annotations ({ Source.path; _ } as source) =
+let expand_string_annotations ({ Source.handle; _ } as source) =
   let module Transform = Transform.MakeStatementTransformer(struct
       type t = unit
 
@@ -76,7 +76,7 @@ let expand_string_annotations ({ Source.path; _ } as source) =
                         ~start_line
                         ~start_column:(start_column + 1)
                         [value ^ "\n"]
-                        ~path
+                        ~handle
                     with
                     | [{ Node.value = Expression { Node.value = Access access; _ } ; _ }] ->
                         Some access
@@ -139,7 +139,7 @@ let expand_string_annotations ({ Source.path; _ } as source) =
   |> snd
 
 
-let expand_format_string ({ Source.path; _ } as source) =
+let expand_format_string ({ Source.handle; _ } as source) =
   let module Transform = Transform.Make(struct
       include Transform.Identity
       type t = unit
@@ -167,7 +167,7 @@ let expand_format_string ({ Source.path; _ } as source) =
                   |> String.slice input_string 1
                   |> fun processed_input -> processed_input ^ "\n"
                 in
-                match Parser.parse [string ^ "\n"] ~start_line:line ~start_column ~path with
+                match Parser.parse [string ^ "\n"] ~start_line:line ~start_column ~handle with
                 | [{ Node.value = Expression expression; _ }] -> [expression]
                 | _ -> failwith "Not an expression"
               with
@@ -215,7 +215,7 @@ type scope = {
 }
 
 
-let qualify ({ Source.path; qualifier = source_qualifier; statements; _ } as source) =
+let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as source) =
   let prefix_identifier ~scope:({ aliases; immutables; _ } as scope) ~prefix name =
     let stars, name =
       let name = Identifier.show name in
@@ -834,7 +834,7 @@ let qualify ({ Source.path; qualifier = source_qualifier; statements; _ } as sou
                   kind
             in
             try
-              match Parser.parse [value ^ "\n"] ~path with
+              match Parser.parse [value ^ "\n"] ~handle with
               | [{ Node.value = Expression expression; _ }] ->
                   qualify_expression ~scope expression
                   |> Expression.show

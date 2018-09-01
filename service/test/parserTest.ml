@@ -161,10 +161,10 @@ let test_parse_source _ =
   let source = Ast.SharedMemory.get_source handle in
   assert_equal (Option.is_some source) true;
 
-  let { Source.path; statements; metadata = { Source.Metadata.number_of_lines; _ }; _ } =
+  let { Source.handle; statements; metadata = { Source.Metadata.number_of_lines; _ }; _ } =
     Option.value_exn source
   in
-  assert_equal path "a.py";
+  assert_equal handle "a.py";
   assert_equal number_of_lines 3;
   begin
     match statements with

@@ -43,11 +43,11 @@ let test_fold _ =
       parse
         ~qualifier:(Access.create "empty.stub")
         ~local_mode:Source.PlaceholderStub
-        ~path:"empty/stub.pyi"
+        ~handle:"empty/stub.pyi"
         "";
       parse
         ~qualifier:(Access.create "empty.stub.submodule")
-        ~path:"empty/stub/submodule.py"
+        ~handle:"empty/stub/submodule.py"
         "class Suppressed: ...";
       parse
         ~qualifier:[]

@@ -44,7 +44,7 @@ end
 type t = {
   docstring: string option;
   metadata: Metadata.t;
-  path: string;
+  handle: string;
   qualifier: Access.t;
   statements: Statement.t list;
 }
@@ -56,7 +56,7 @@ val mode: t -> configuration:Configuration.t -> mode
 val create
   :  ?docstring: string option
   -> ?metadata: Metadata.t
-  -> ?path: string
+  -> ?handle: string
   -> ?qualifier: Access.t
   -> Statement.t list
   -> t

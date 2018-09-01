@@ -41,7 +41,7 @@ let test_index _ =
   in
   Service.Environment.populate
     (Environment.handler ~configuration environment)
-    [parse ~path:"test.py" source];
+    [parse ~handle:"test.py" source];
   let {
     Dependencies.class_keys;
     function_keys;

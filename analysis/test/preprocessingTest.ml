@@ -99,7 +99,7 @@ let test_expand_format_string _ =
     assert_source_equal
       (Preprocessing.expand_format_string (parse_untrimmed source))
       (Source.create
-         ~path:"test.py"
+         ~handle:"test.py"
          [+Expression (+String (StringLiteral.create ~expressions value))])
   in
 
@@ -152,7 +152,7 @@ let test_expand_format_string _ =
 
 let test_qualify _ =
   let assert_qualify ?(handle = "qualifier.py") source expected =
-    let parse = parse ~qualifier:(Source.qualifier ~handle) ~path:handle in
+    let parse = parse ~qualifier:(Source.qualifier ~handle) ~handle:handle in
     assert_source_equal (parse expected) (Preprocessing.qualify (parse source))
   in
 
@@ -623,10 +623,10 @@ let test_qualify _ =
 
 
 let test_replace_version_specific_code _ =
-  let assert_preprocessed ?(path="stub.pyi") source expected =
+  let assert_preprocessed ?(handle="stub.pyi") source expected =
     assert_source_equal
-      (parse ~path expected)
-      (Preprocessing.replace_version_specific_code (parse ~path source))
+      (parse ~handle expected)
+      (Preprocessing.replace_version_specific_code (parse ~handle source))
   in
   assert_preprocessed
     {|
@@ -755,7 +755,7 @@ let test_replace_version_specific_code _ =
          def compatible()->str:
            ...
     |};
-  assert_preprocessed ~path:"file.py"
+  assert_preprocessed ~handle:"file.py"
     {|
       if sys.version_info >= (3, 5):
         from A import B
@@ -944,7 +944,7 @@ let test_expand_returns _ =
   let assert_expand_implicit_returns source expected_body =
     assert_source_equal
       (Preprocessing.expand_returns (parse source))
-      (Source.create ~path:"test.py"
+      (Source.create ~handle:"test.py"
          [
            +Define {
              Define.name = Access.create "foo";

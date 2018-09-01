@@ -212,7 +212,7 @@ let test_process_type_check_request context =
 
           (* Initialize dependency map. *)
           let source (path, content) =
-            parse ~qualifier:(Source.qualifier ~handle:path) ~path content
+            parse ~qualifier:(Source.qualifier ~handle:path) ~handle:path content
             |> Analysis.Preprocessing.qualify
           in
           mock_server_state ~sources:(List.map sources ~f:source) ()

@@ -193,9 +193,9 @@ let associate_errors_and_filenames error_list =
   |> Map.to_alist
 
 
-let make_errors ?(path = "test.py") ?(qualifier = []) source =
+let make_errors ?(handle = "test.py") ?(qualifier = []) source =
   let configuration = CommandTest.mock_analysis_configuration () in
-  let source = Preprocessing.preprocess (parse ~path ~qualifier source) in
+  let source = Preprocessing.preprocess (parse ~handle ~qualifier source) in
   let environment_handler = Environment.handler ~configuration (environment ()) in
   add_defaults_to_environment environment_handler;
   Service.Environment.populate (environment_handler) [source];
@@ -229,17 +229,17 @@ let mock_client_socket = Unix.openfile ~mode:[Unix.O_RDONLY] "/dev/null"
 let assert_response
     ?(local_root = Path.current_working_directory ())
     ?state
-    ?(path = "test.py")
+    ?(handle = "test.py")
     ~source
     ~request
     expected_response =
-  Ast.SharedMemory.remove_paths [File.Handle.create path];
-  let parsed = parse ~path source in
-  Ast.SharedMemory.add_source (File.Handle.create path) parsed;
+  Ast.SharedMemory.remove_paths [File.Handle.create handle];
+  let parsed = parse ~handle source in
+  Ast.SharedMemory.add_source (File.Handle.create handle) parsed;
   let errors =
     let errors = File.Handle.Table.create () in
     List.iter
-      (make_errors ~path source)
+      (make_errors ~handle source)
       ~f:(fun error ->
           Hashtbl.add_multi errors ~key:(File.Handle.create (Error.path error)) ~data:error);
     errors
@@ -624,8 +624,8 @@ let test_incremental_typecheck _ =
     |> Path.relative
     |> Option.value ~default:path
   in
-  let relative_path = relativize path in
-  let relative_stub_path = relativize stub_path in
+  let handle = relativize path in
+  let stub_handle = relativize stub_path in
   let source =
     {|
         def foo() -> None:
@@ -634,7 +634,7 @@ let test_incremental_typecheck _ =
     |> trim_extra_indentation
   in
   let assert_response ?state ~request response =
-    assert_response ~path ~source ?state ~request (Some response)
+    assert_response ~handle:path ~source ?state ~request (Some response)
   in
   assert_response
     ~request:(Protocol.Request.TypeCheckRequest
@@ -642,7 +642,7 @@ let test_incremental_typecheck _ =
                    ~update_environment_with:[file path]
                    ~check:[file path]
                    ()))
-    (Protocol.TypeCheckResponse [(File.Handle.create relative_path), []]);
+    (Protocol.TypeCheckResponse [(File.Handle.create handle), []]);
   let files = [file ~content:source path] in
   let request_with_content =
     (Protocol.Request.TypeCheckRequest
@@ -650,7 +650,7 @@ let test_incremental_typecheck _ =
   in
   let errors =
     associate_errors_and_filenames
-      (make_errors ~path:relative_path ~qualifier:(Source.qualifier ~handle:relative_path) source)
+      (make_errors ~handle ~qualifier:(Source.qualifier ~handle) source)
   in
   assert_response ~request:request_with_content (Protocol.TypeCheckResponse errors);
   (* Assert that only files getting used to update the environment get parsed. *)
@@ -676,13 +676,13 @@ let test_incremental_typecheck _ =
       check_request
         ~check:[file ~content:"def foo() -> int: return \"\"" stub_path]
         ())
-    (Protocol.TypeCheckResponse [File.Handle.create relative_stub_path, []]);
+    (Protocol.TypeCheckResponse [File.Handle.create stub_handle, []]);
 
   let () =
     let file = file ~content:"def foo() -> int: return 1" path in
     assert_response
       ~request:(check_request ~update_environment_with:[file] ~check:[file] ())
-      (Protocol.TypeCheckResponse [File.Handle.create relative_path, []])
+      (Protocol.TypeCheckResponse [File.Handle.create handle, []])
   in
 
   let state = mock_server_state (File.Handle.Table.create ()) in
@@ -734,7 +734,7 @@ let test_did_save_with_content context =
     String.chop_suffix_exn ~suffix:".py" filename
     |> Access.create
   in
-  let errors = make_errors ~path:filename ~qualifier source in
+  let errors = make_errors ~handle:filename ~qualifier source in
   let request =
     LanguageServer.Protocol.DidSaveTextDocument.create ~root filename (Some source)
     |> Or_error.ok_exn
@@ -786,8 +786,8 @@ let test_incremental_dependencies _ =
     Service.Environment.populate
       environment_handler
       [
-        parse ~path:"a.py" ~qualifier:(Access.create "a") a_source;
-        parse ~path:"b.py" ~qualifier:(Access.create "b") b_source;
+        parse ~handle:"a.py" ~qualifier:(Access.create "a") a_source;
+        parse ~handle:"b.py" ~qualifier:(Access.create "b") b_source;
       ];
     let expected_errors = [
       File.Handle.create "b.py", [];
@@ -847,16 +847,16 @@ let test_incremental_lookups _ =
       ~in_dir:(Path.current_working_directory () |> Path.absolute)
       "test" ".py"
   in
-  let relative_path =
+  let handle =
     Path.create_relative ~root:(Path.current_working_directory ()) ~relative:path
     |> Path.relative
     |> Option.value ~default:path
   in
   let parse content =
     Source.create
-      ~path
-      ~qualifier:(Source.qualifier ~handle:path)
-      (Parser.parse ~path (String.split_lines (content ^ "\n")))
+      ~handle
+      ~qualifier:(Source.qualifier ~handle)
+      (Parser.parse ~handle (String.split_lines (content ^ "\n")))
     |> Analysis.Preprocessing.preprocess
   in
   let source =
@@ -896,14 +896,14 @@ let test_incremental_lookups _ =
   in
   CommandTest.clean_environment ();
   let annotations =
-    File.Handle.create relative_path
+    File.Handle.create handle
     |> Ast.SharedMemory.get_source
     |> (fun value -> Option.value_exn value)
     |> Lookup.create_of_source state.State.environment
     |> Lookup.get_all_annotations
     |> List.map ~f:(fun (key, data) ->
         Format.asprintf "%s/%a" (Location.Reference.to_string key) Type.pp data
-        |> String.chop_prefix_exn ~prefix:(Int.to_string (String.hash relative_path)))
+        |> String.chop_prefix_exn ~prefix:(Int.to_string (String.hash handle)))
     |> List.sort ~compare:String.compare
   in
   assert_equal
@@ -922,9 +922,9 @@ let test_incremental_lookups _ =
 let test_incremental_repopulate _ =
   let parse content =
     Source.create
-      ~path:"test.py"
+      ~handle:"test.py"
       ~qualifier:(Source.qualifier ~handle:"test.py")
-      (Parser.parse ~path:"test.py" (String.split_lines (content ^ "\n")))
+      (Parser.parse ~handle:"test.py" (String.split_lines (content ^ "\n")))
     |> Analysis.Preprocessing.preprocess
   in
   let source =

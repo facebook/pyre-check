@@ -76,7 +76,7 @@ module State = struct
         Format.asprintf
           "    %a -> %s"
           Location.Instantiated.pp
-          (Location.instantiate ~lookup:(fun hash -> Ast.SharedMemory.get_path ~hash) location)
+          (Location.instantiate ~lookup:(fun hash -> Ast.SharedMemory.get_handle ~hash) location)
           (Error.description error ~detailed:true)
       in
       List.map (Map.to_alist errors) ~f:error_to_string
@@ -211,7 +211,10 @@ module State = struct
     Map.data errors
     |> Error.join_at_define
       ~resolution
-      ~location:(Location.instantiate ~lookup:(fun hash -> Ast.SharedMemory.get_path ~hash) location)
+      ~location:(
+        Location.instantiate
+          location
+          ~lookup:(fun hash -> Ast.SharedMemory.get_handle ~hash))
     |> class_initialization_errors
     |> constructor_errors
     |> Error.filter ~configuration ~resolution
@@ -1113,7 +1116,7 @@ module State = struct
         } as state)
       ~statement:{ Node.location; value } =
     let instantiate location =
-      Location.instantiate ~lookup:(fun hash -> Ast.SharedMemory.get_path ~hash) location
+      Location.instantiate ~lookup:(fun hash -> Ast.SharedMemory.get_handle ~hash) location
     in
     let expected =
       let annotation =
@@ -1913,8 +1916,8 @@ let check
     configuration
     environment
     ?mode_override
-    ({ Source.path; qualifier; statements; _ } as source) =
-  Log.debug "Checking %s..." path;
+    ({ Source.handle; qualifier; statements; _ } as source) =
+  Log.debug "Checking %s..." handle;
 
   let resolution = Environment.resolution environment () in
 
@@ -2013,7 +2016,7 @@ let check
           ~name:"undefined type"
           ~integers:[]
           ~normals:[
-            "path", path;
+            "handle", handle;
             "define", Access.show name;
             "type", Type.show annotation;
           ]
@@ -2036,7 +2039,7 @@ let check
       let toplevel =
         let location =
           {
-            Location.path = path;
+            Location.path = handle;
             start = { Location.line = 0; column = 0 };
             stop = { Location.line = 0; column = 0 };
           }
@@ -2096,6 +2099,6 @@ let check
     List.map ~f:SingleSourceResult.coverage results
     |> Coverage.aggregate_over_source ~source
   in
-  Coverage.log coverage ~total_errors:(List.length errors) ~path;
+  Coverage.log coverage ~total_errors:(List.length errors) ~path:handle;
 
   { Result.errors; coverage }

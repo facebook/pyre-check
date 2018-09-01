@@ -218,17 +218,17 @@ let test_register_aliases _ =
       let sources = List.map sources ~f:Preprocessing.preprocess in
       let register
           ({
-            Source.path;
+            Source.handle;
             qualifier;
             statements;
             metadata = { Source.Metadata.local_mode; _ };
             _;
           } as source) =
-        let stub = String.is_suffix path ~suffix:".pyi" in
+        let stub = String.is_suffix handle ~suffix:".pyi" in
         Handler.register_module
           ~qualifier
           ~local_mode
-          ~handle:(Some path)
+          ~handle:(Some handle)
           ~stub
           ~statements;
         Environment.register_class_definitions (module Handler) source |> ignore;
@@ -383,7 +383,7 @@ let test_register_aliases _ =
       parse
         ~qualifier:(Access.create "stubbed")
         ~local_mode:Source.PlaceholderStub
-        ~path:"stubbed.pyi"
+        ~handle:"stubbed.pyi"
         "";
       parse
         ~qualifier:(Access.create "qualifier")
@@ -1299,9 +1299,9 @@ let test_import_dependencies context =
     let environment =
       populate_with_sources
         [
-          parse ~path:"test.py" ~qualifier:(Access.create "test") source;
-          parse ~path:"a.py" ~qualifier:(Access.create "a") "";
-          parse ~path:"subdirectory/b.py" ~qualifier:(Access.create "subdirectory.b") "";
+          parse ~handle:"test.py" ~qualifier:(Access.create "test") source;
+          parse ~handle:"a.py" ~qualifier:(Access.create "a") "";
+          parse ~handle:"subdirectory/b.py" ~qualifier:(Access.create "subdirectory.b") "";
         ]
     in
     let dependencies handle = Environment.dependencies environment (Source.qualifier ~handle) in
@@ -1325,7 +1325,7 @@ let test_register_dependencies _ =
   in
   Environment.register_dependencies
     (module Handler)
-    (parse ~path:"test.py" source);
+    (parse ~handle:"test.py" source);
   let dependencies handle = Environment.dependencies (module Handler) (Source.qualifier ~handle) in
   assert_equal
     (dependencies "subdirectory/b.py")
@@ -1350,7 +1350,7 @@ let test_purge _ =
   in
   Service.Environment.populate
     handler
-    [parse ~path:"test.py" source];
+    [parse ~handle:"test.py" source];
   assert_is_some (Handler.class_definition (Type.primitive "baz.baz"));
   assert_is_some (Handler.function_definitions (Access.create "foo"));
   assert_is_some (Handler.aliases (Type.primitive "_T"));

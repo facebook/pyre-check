@@ -16,16 +16,16 @@ let parse_source ~configuration ?(show_parser_errors = true) file =
   >>= fun handle ->
   File.lines file
   >>= fun lines ->
-  let path = File.Handle.show handle in
-  let metadata = Source.Metadata.parse path lines in
+  let handle = File.Handle.show handle in
+  let metadata = Source.Metadata.parse handle lines in
   try
-    let statements = Parser.parse ~path lines in
+    let statements = Parser.parse ~handle lines in
     Some (
       Source.create
         ~docstring:(Statement.extract_docstring statements)
         ~metadata
-        ~path
-        ~qualifier:(Source.qualifier ~handle:path)
+        ~handle
+        ~qualifier:(Source.qualifier ~handle)
         statements)
   with
   | Parser.Error error ->
@@ -45,7 +45,7 @@ let parse_modules_job ~configuration ~files =
         let add_module_from_source
             {
               Source.qualifier;
-              path;
+              handle;
               statements;
               metadata = { Source.Metadata.local_mode; _ };
               _;
@@ -53,8 +53,8 @@ let parse_modules_job ~configuration ~files =
           Module.create
             ~qualifier
             ~local_mode
-            ~path
-            ~stub:(String.is_suffix path ~suffix:".pyi")
+            ~path:handle
+            ~stub:(String.is_suffix handle ~suffix:".pyi")
             statements
           |> Ast.SharedMemory.add_module qualifier
         in
@@ -71,7 +71,7 @@ let parse_sources_job ~configuration ~files =
      >>= fun source ->
      File.handle ~configuration file
      >>| fun handle ->
-     Ast.SharedMemory.add_path_hash ~path:(File.Handle.show handle);
+     Ast.SharedMemory.add_handle_hash ~handle:(File.Handle.show handle);
      source
      |> Analysis.Preprocessing.preprocess
      |> Plugin.apply_to_ast
@@ -228,9 +228,9 @@ let parse_all scheduler ~configuration:({ Configuration.local_root; _ } as confi
   let known_stubs =
     let add_to_known_stubs sofar handle =
       match Ast.SharedMemory.get_source handle with
-      | Some { Ast.Source.qualifier; path; _ } ->
+      | Some { Ast.Source.qualifier; handle; _ } ->
           if Set.mem sofar qualifier then
-            Statistics.event ~name:"interfering stub" ~normals:["path", path] ();
+            Statistics.event ~name:"interfering stub" ~normals:["handle", handle] ();
           Set.add sofar qualifier
       | _ ->
           sofar

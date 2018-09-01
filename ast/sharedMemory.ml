@@ -95,9 +95,9 @@ let in_modules access =
   Modules.mem access
 
 
-let get_path ~hash =
+let get_handle ~hash =
   Paths.get hash
 
 
-let add_path_hash ~path =
-  Paths.write_through (String.hash path) path
+let add_handle_hash ~handle =
+  Paths.write_through (String.hash handle) handle

@@ -22,7 +22,7 @@ let () =
 
 
 let parse_untrimmed
-    ?(path = "test.py")
+    ?(handle = "test.py")
     ?(qualifier = [])
     ?(debug = true)
     ?(strict = false)
@@ -36,7 +36,7 @@ let parse_untrimmed
   let buffer = Lexing.from_string (source ^ "\n") in
   buffer.Lexing.lex_curr_p <- {
     buffer.Lexing.lex_curr_p with
-    Lexing.pos_fname = path;
+    Lexing.pos_fname = handle;
   };
   try
     let source =
@@ -55,7 +55,7 @@ let parse_untrimmed
       Source.create
         ~docstring
         ~metadata
-        ~path
+        ~handle
         ~qualifier
         (Generator.parse (Lexer.read state) buffer)
     in
@@ -113,17 +113,17 @@ let trim_extra_indentation source =
 
 
 let parse
-    ?(path = "test.py")
+    ?(handle = "test.py")
     ?(qualifier = [])
     ?(debug = true)
     ?(version = 3)
     ?(docstring = None)
     ?local_mode
     source =
-  Ast.SharedMemory.add_path_hash ~path;
+  Ast.SharedMemory.add_handle_hash ~handle;
   let ({ Source.metadata; _ } as source) =
     trim_extra_indentation source
-    |> parse_untrimmed ~path ~qualifier ~debug ~version ~docstring
+    |> parse_untrimmed ~handle ~qualifier ~debug ~version ~docstring
   in
   match local_mode with
   | Some local_mode ->
@@ -290,7 +290,7 @@ let typeshed_stubs = (* Yo dawg... *)
     Source.create ~qualifier:(Access.create "sys") [];
     parse
       ~qualifier:(Access.create "hashlib")
-      ~path:"hashlib.pyi"
+      ~handle:"hashlib.pyi"
       {|
         _DataType = typing.Union[int, str]
         class _Hash:
@@ -300,7 +300,7 @@ let typeshed_stubs = (* Yo dawg... *)
     |> Preprocessing.qualify;
     parse
       ~qualifier:(Access.create "typing")
-      ~path:"typing.pyi"
+      ~handle:"typing.pyi"
       {|
         class _SpecialForm: ...
 
@@ -344,7 +344,7 @@ let typeshed_stubs = (* Yo dawg... *)
     Source.create ~qualifier:(Access.create "unittest.mock") [];
     parse
       ~qualifier:[]
-      ~path:"builtins.pyi"
+      ~handle:"builtins.pyi"
       {|
         import typing
 
@@ -558,7 +558,7 @@ let assert_type_errors
     ?(infer = false)
     ?(show_error_traces = false)
     ?(qualifier = [])
-    ?(path = "test.py")
+    ?(handle = "test.py")
     source
     errors =
   Annotated.Class.AttributesCache.clear ();
@@ -597,7 +597,7 @@ let assert_type_errors
             ~number_of_lines:(-1)
             ()
         in
-        parse ~path ~qualifier source
+        parse ~handle ~qualifier source
         |> (fun source -> { source with Source.metadata })
         |> Preprocessing.preprocess
         |> Plugin.apply_to_ast

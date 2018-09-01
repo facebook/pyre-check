@@ -338,8 +338,8 @@ module SingleSourceResult = struct
 end
 
 
-let infer configuration environment ?mode_override ({ Source.path; _ } as source) =
-  Log.debug "Checking %s..." path;
+let infer configuration environment ?mode_override ({ Source.handle; _ } as source) =
+  Log.debug "Checking %s..." handle;
   let resolution = Environment.resolution environment () in
 
   let dequalify_map = Preprocessing.dequalify_map source in
@@ -414,7 +414,7 @@ let infer configuration environment ?mode_override ({ Source.path; _ } as source
           ~name:"undefined type"
           ~integers:[]
           ~normals:[
-            "path", path;
+            "handle", handle;
             "define", Access.show name;
             "type", Type.show annotation;
           ]
@@ -448,7 +448,7 @@ let infer configuration environment ?mode_override ({ Source.path; _ } as source
                 Annotation.create_immutable ~global:true ~original:(Some Type.Top) annotation
                 |> Node.create ~location
               in
-              Handler.register_global ~handle:path ~access ~global;
+              Handler.register_global ~handle ~access ~global;
               true, error :: globals_added_sofar
         in
         match error with
@@ -474,7 +474,7 @@ let infer configuration environment ?mode_override ({ Source.path; _ } as source
                     }
                   in
                   Handler.register_definition
-                    ~handle:path
+                    ~handle
                     { define_node with Node.value = define };
                   true, globals_added_sofar
             end
@@ -524,7 +524,7 @@ let infer configuration environment ?mode_override ({ Source.path; _ } as source
                     }
                   in
                   Handler.register_definition
-                    ~handle:path
+                    ~handle
                     { define_node with Node.value = define };
                   true, globals_added_sofar
             end
@@ -592,7 +592,7 @@ let infer configuration environment ?mode_override ({ Source.path; _ } as source
       List.map ~f:SingleSourceResult.coverage results
       |> Coverage.aggregate_over_source ~source
     in
-    Coverage.log coverage ~total_errors:(List.length errors) ~path;
+    Coverage.log coverage ~total_errors:(List.length errors) ~path:handle;
 
     {
       TypeCheck.Result.errors;

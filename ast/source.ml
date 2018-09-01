@@ -184,7 +184,7 @@ end
 type t = {
   docstring: string option;
   metadata: Metadata.t;
-  path: string;
+  handle: string;
   qualifier: Access.t;
   statements: Statement.t list;
 }
@@ -214,19 +214,19 @@ let mode source ~configuration =
 let create
     ?(docstring = None)
     ?(metadata = Metadata.create ~number_of_lines:(-1) ())
-    ?(path = "")
+    ?(handle = "")
     ?(qualifier = [])
     statements =
   {
     docstring;
     metadata;
-    path;
+    handle;
     qualifier;
     statements;
   }
 
 
-let signature_hash { metadata; path; qualifier; statements; _ } =
+let signature_hash { metadata; handle; qualifier; statements; _ } =
   let rec statement_hashes statements =
     let statement_hash { Node.value; _ } =
       let open Statement in
@@ -273,7 +273,7 @@ let signature_hash { metadata; path; qualifier; statements; _ } =
     List.map statements ~f:statement_hash
   in
   [%hash: Metadata.t * string * Access.t * (int list)]
-    (metadata, path, qualifier, (statement_hashes statements))
+    (metadata, handle, qualifier, (statement_hashes statements))
 
 
 let ignore_lines { metadata = { Metadata.ignore_lines; _ }; _ } =

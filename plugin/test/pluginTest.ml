@@ -46,7 +46,7 @@ let assert_environment_contains source expected =
     assert_source_equal
       (Analysis.Preprocessing.preprocess (parse expected))
       (Source.create
-         ~path:"test.py"
+         ~handle:"test.py"
          [+Statement.Class (Node.value class_definition)]
       )
   in

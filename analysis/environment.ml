@@ -381,7 +381,7 @@ let dependencies (module Handler: Handler) =
 
 let register_module
     (module Handler: Handler)
-    { Source.qualifier; path; statements; metadata = { Source.Metadata.local_mode; _ }; _ } =
+    { Source.qualifier; handle; statements; metadata = { Source.Metadata.local_mode; _ }; _ } =
   let rec register_submodules = function
     | [] ->
         ()
@@ -394,8 +394,8 @@ let register_module
   Handler.register_module
     ~qualifier
     ~local_mode
-    ~handle:(Some path)
-    ~stub:(String.is_suffix path ~suffix:".pyi")
+    ~handle:(Some handle)
+    ~stub:(String.is_suffix handle ~suffix:".pyi")
     ~statements;
   if List.length qualifier > 1 then
     register_submodules (List.rev qualifier |> List.tl_exn)
@@ -409,13 +409,13 @@ let register_class_definitions (module Handler: Handler) source =
       let visit_children _ =
         true
 
-      let statement { Source.path; _ } new_annotations = function
+      let statement { Source.handle; _ } new_annotations = function
         | { Node.location; value = Class ({ Class.name; _ } as definition); } ->
             let primitive, _ =
               Type.create ~aliases:Handler.aliases (Node.create_with_default_location (Access name))
               |> Type.split
             in
-            Handler.DependencyHandler.add_class_key ~handle:path primitive;
+            Handler.DependencyHandler.add_class_key ~handle:handle primitive;
             let annotated = Annotated.Class.create { Node.location; value = definition } in
 
             if Annotated.Class.is_protocol annotated then
@@ -437,7 +437,7 @@ let register_class_definitions (module Handler: Handler) source =
 let register_aliases (module Handler: Handler) sources =
   Type.Cache.disable ();
   let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
-  let collect_aliases { Source.path; statements; qualifier; _ } =
+  let collect_aliases { Source.handle; statements; qualifier; _ } =
     let rec visit_statement ~qualifier ?(in_class_body = false) aliases { Node.value; _ } =
       match value with
       | Assign { Assign.target; annotation = None; value; _ } ->
@@ -463,7 +463,7 @@ let register_aliases (module Handler: Handler) sources =
                 if not (Type.equal target_annotation Type.Top ||
                         Type.equal value_annotation Type.Top ||
                         Type.equal value_annotation target_annotation) then
-                  (path, target, value) :: aliases
+                  (handle, target, value) :: aliases
                 else
                   aliases
             | _ ->
@@ -481,7 +481,7 @@ let register_aliases (module Handler: Handler) sources =
           let add_alias aliases export =
             let value = Node.create_with_default_location (Access (from @ export)) in
             let alias = Node.create_with_default_location (Access (qualifier @ export)) in
-            (path, alias, value) :: aliases
+            (handle, alias, value) :: aliases
           in
           List.fold exports ~init:aliases ~f:add_alias
       | Import { Import.from = Some from; imports } ->
@@ -499,7 +499,7 @@ let register_aliases (module Handler: Handler) sources =
                   Node.create_with_default_location (Access (qualifier @ alias))
             in
             [
-              path,
+              handle,
               qualified_name,
               Node.create_with_default_location (Access (from @ name));
             ]
@@ -591,10 +591,10 @@ let register_aliases (module Handler: Handler) sources =
       if any_changed then
         resolve_aliases unresolved
       else
-        let show_unresolved (path, target, value) =
+        let show_unresolved (handle, target, value) =
           Log.debug
             "Unresolved alias %s:%a <- %a"
-            path
+            handle
             Expression.pp target
             Expression.pp value
         in
@@ -607,7 +607,7 @@ let register_aliases (module Handler: Handler) sources =
 
 let register_globals
     (module Handler: Handler)
-    ({ Source.path; qualifier; statements; _ } as source) =
+    ({ Source.handle; qualifier; statements; _ } as source) =
   let resolution = resolution (module Handler: Handler) ~annotations:Access.Map.empty () in
 
   let qualified_access access =
@@ -626,7 +626,7 @@ let register_globals
       let visit_children _ =
         true
 
-      let statement { Source.path; _ } _ = function
+      let statement { Source.handle; _ } _ = function
         | { Node.location; value = Class { Class.name; _ } } ->
             (* Register meta annotation. *)
             let primitive, _ =
@@ -641,7 +641,7 @@ let register_globals
                 (Type.meta primitive)
               |> Node.create ~location
             in
-            Handler.register_global ~handle:path ~access:(qualified_access name) ~global
+            Handler.register_global ~handle:handle ~access:(qualified_access name) ~global
         | _ ->
             ()
     end)
@@ -710,7 +710,7 @@ let register_globals
         global
         >>| (fun (access, global) ->
             let access = qualified_access (qualifier @ access) in
-            Handler.register_global ~handle:path ~access ~global)
+            Handler.register_global ~handle:handle ~access ~global)
         |> ignore
   in
   List.iter ~f:visit statements
@@ -745,7 +745,7 @@ let register_dependencies (module Handler: Handler) source =
       let visit_children _ =
         true
 
-      let statement { Source.path; _ } _ = function
+      let statement { Source.handle; _ } _ = function
         | { Node.value = Import { Import.from; imports }; _ } ->
             let imports =
               match from with
@@ -755,7 +755,7 @@ let register_dependencies (module Handler: Handler) source =
               | Some base_module -> [base_module]
             in
             List.iter
-              ~f:(fun dependency -> Handler.register_dependency ~handle:path ~dependency)
+              ~f:(fun dependency -> Handler.register_dependency ~handle:handle ~dependency)
               imports
         | _ ->
             ()
@@ -764,7 +764,7 @@ let register_dependencies (module Handler: Handler) source =
   Visit.visit () source
 
 
-let register_functions (module Handler: Handler) ({ Source.path; _ } as source) =
+let register_functions (module Handler: Handler) ({ Source.handle; _ } as source) =
   let resolution = resolution (module Handler: Handler) ~annotations:Access.Map.empty () in
   let module CollectCallables = Visit.MakeStatementVisitor(struct
       type t = ((Type.Callable.t Node.t) list) Access.Map.t
@@ -772,14 +772,14 @@ let register_functions (module Handler: Handler) ({ Source.path; _ } as source) 
       let visit_children _ =
         true
 
-      let statement { Source.path; _ } callables statement =
+      let statement { Source.handle; _ } callables statement =
         let collect_callable
             ~location
             callables
             ({ Define.name; _ } as define) =
 
           Handler.register_definition
-            ~handle:path
+            ~handle:handle
             ~name_override:name
             (Node.create ~location define);
 
@@ -825,7 +825,7 @@ let register_functions (module Handler: Handler) ({ Source.path; _ } as source) 
     |> ignore
   in
   CollectCallables.visit Access.Map.empty source
-  |> Map.iteri ~f:(register_callables path)
+  |> Map.iteri ~f:(register_callables handle)
 
 
 let infer_implementations (module Handler: Handler) ~implementing_classes ~protocol =

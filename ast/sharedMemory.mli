@@ -14,5 +14,5 @@ val get_module: Expression.Access.t -> Module.t option
 val get_module_exports: Expression.Access.t -> (Expression.Access.t list) option
 val in_modules: Expression.Access.t -> bool
 
-val get_path: hash: int -> string option
-val add_path_hash: path: string -> unit
+val get_handle: hash: int -> string option
+val add_handle_hash: handle: string -> unit
