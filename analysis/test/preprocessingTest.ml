@@ -152,7 +152,7 @@ let test_expand_format_string _ =
 
 let test_qualify _ =
   let assert_qualify ?(handle = "qualifier.py") source expected =
-    let parse = parse ~qualifier:(Source.qualifier ~handle) ~handle:handle in
+    let parse = parse ~qualifier:(Source.qualifier ~handle) ~handle in
     assert_source_equal (parse expected) (Preprocessing.qualify (parse source))
   in
 

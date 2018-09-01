@@ -415,7 +415,7 @@ let register_class_definitions (module Handler: Handler) source =
               Type.create ~aliases:Handler.aliases (Node.create_with_default_location (Access name))
               |> Type.split
             in
-            Handler.DependencyHandler.add_class_key ~handle:handle primitive;
+            Handler.DependencyHandler.add_class_key ~handle primitive;
             let annotated = Annotated.Class.create { Node.location; value = definition } in
 
             if Annotated.Class.is_protocol annotated then
@@ -641,7 +641,7 @@ let register_globals
                 (Type.meta primitive)
               |> Node.create ~location
             in
-            Handler.register_global ~handle:handle ~access:(qualified_access name) ~global
+            Handler.register_global ~handle ~access:(qualified_access name) ~global
         | _ ->
             ()
     end)
@@ -710,7 +710,7 @@ let register_globals
         global
         >>| (fun (access, global) ->
             let access = qualified_access (qualifier @ access) in
-            Handler.register_global ~handle:handle ~access ~global)
+            Handler.register_global ~handle ~access ~global)
         |> ignore
   in
   List.iter ~f:visit statements
@@ -755,7 +755,7 @@ let register_dependencies (module Handler: Handler) source =
               | Some base_module -> [base_module]
             in
             List.iter
-              ~f:(fun dependency -> Handler.register_dependency ~handle:handle ~dependency)
+              ~f:(fun dependency -> Handler.register_dependency ~handle ~dependency)
               imports
         | _ ->
             ()
@@ -779,7 +779,7 @@ let register_functions (module Handler: Handler) ({ Source.handle; _ } as source
             ({ Define.name; _ } as define) =
 
           Handler.register_definition
-            ~handle:handle
+            ~handle
             ~name_override:name
             (Node.create ~location define);
 
