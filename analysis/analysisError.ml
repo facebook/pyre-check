@@ -616,7 +616,7 @@ let messages ~detailed:_ ~define location kind =
   | UnusedIgnore codes ->
       let string_from_codes codes =
         if List.length codes > 0 then
-          List.map ~f:Int.to_string codes
+          List.map codes ~f:Int.to_string
           |> String.concat ~sep:", "
           |> Format.asprintf "[%s] "
         else
@@ -664,11 +664,11 @@ let inference_information ~define:{ Node.value = define; _ } kind =
         "value", value
       ]
     in
-    List.map ~f:to_json define.Define.parameters
+    List.map define.Define.parameters ~f:to_json
   in
   let decorators =
     let decorator_to_json decorator = `String (Expression.show decorator) in
-    List.map ~f:decorator_to_json define.Define.decorators
+    List.map define.Define.decorators ~f:decorator_to_json
   in
   let print_parent parent =
     parent
@@ -1463,7 +1463,7 @@ let dequalify
       |> fun annotation ->
       { parameter with Node.value = { value with Parameter.annotation }}
     in
-    let parameters = List.map ~f:dequalify_parameter define.Define.parameters in
+    let parameters = List.map define.Define.parameters ~f:dequalify_parameter in
     let return_annotation =
       define.Define.return_annotation
       >>| Resolution.parse_annotation resolution

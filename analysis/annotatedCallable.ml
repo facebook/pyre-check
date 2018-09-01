@@ -95,11 +95,11 @@ let create defines ~resolution =
   let to_overload ({ Define.parameters; _ } as define) =
     {
       annotation = return_annotation ~define ~resolution;
-      parameters = Defined (List.map ~f:parameter parameters);
+      parameters = Defined (List.map parameters ~f:parameter);
     }
   in
   {
     kind = Named name;
-    overloads = List.map ~f:to_overload defines;
+    overloads = List.map defines ~f:to_overload;
     implicit;
   }
