@@ -632,7 +632,20 @@ let messages ~detailed:_ ~define location kind =
       ]
 
 
-let inference_information ~define:{ Node.value = define; _ } kind =
+let inference_information
+    ~define:
+    {
+      Node.value = {
+        Define.name;
+        parameters;
+        return_annotation;
+        decorators;
+        parent;
+        async;
+        _ };
+      _;
+    }
+    kind =
   let print_annotation annotation =
     Format.asprintf "`%a`" Type.pp annotation
     |> String.strip ~drop:((=) '`')
@@ -664,11 +677,11 @@ let inference_information ~define:{ Node.value = define; _ } kind =
         "value", value
       ]
     in
-    List.map define.Define.parameters ~f:to_json
+    List.map parameters ~f:to_json
   in
   let decorators =
     let decorator_to_json decorator = `String (Expression.show decorator) in
-    List.map define.Define.decorators ~f:decorator_to_json
+    List.map decorators ~f:decorator_to_json
   in
   let print_parent parent =
     parent
@@ -676,31 +689,31 @@ let inference_information ~define:{ Node.value = define; _ } kind =
     >>| (fun string -> `String string)
     |> Option.value ~default:`Null
   in
-  let function_name = Access.show_sanitized define.Define.name in
+  let function_name = Access.show_sanitized name in
   match kind with
   | MissingReturnAnnotation { annotation; _ } ->
       `Assoc [
         "annotation", `String (print_annotation annotation);
-        "parent", print_parent define.Define.parent;
+        "parent", print_parent parent;
         "function_name", `String function_name;
         "parameters", `List parameters;
         "decorators", `List decorators;
-        "async", `Bool define.Define.async;
+        "async", `Bool async;
       ]
   | MissingParameterAnnotation _ ->
       let return_annotation =
-        define.Define.return_annotation
+        return_annotation
         >>| Format.asprintf "%a" Expression.pp
         >>| (fun string -> `String string)
         |> Option.value ~default:`Null
       in
       `Assoc [
         "annotation", return_annotation;
-        "parent", print_parent define.Define.parent;
+        "parent", print_parent parent;
         "function_name", `String function_name;
         "parameters", `List parameters;
         "decorators", `List decorators;
-        "async", `Bool define.Define.async;
+        "async", `Bool async;
       ]
   | MissingAttributeAnnotation { parent; missing_annotation = { name; annotation; _ } } ->
       `Assoc [
@@ -1333,7 +1346,11 @@ let suppress ~mode error =
 let dequalify
     dequalify_map
     environment
-    ({kind; define = { Node.location; value = define }; _ } as error) =
+    ({
+      kind;
+      define = { Node.location; value = ({ Define.parameters; return_annotation; _ } as define) };
+      _;
+    } as error) =
   let resolution = Environment.resolution environment () in
   let dequalify = Type.dequalify dequalify_map in
   let kind =
@@ -1463,9 +1480,9 @@ let dequalify
       |> fun annotation ->
       { parameter with Node.value = { value with Parameter.annotation }}
     in
-    let parameters = List.map define.Define.parameters ~f:dequalify_parameter in
+    let parameters = List.map parameters ~f:dequalify_parameter in
     let return_annotation =
-      define.Define.return_annotation
+      return_annotation
       >>| Resolution.parse_annotation resolution
       >>| dequalify
       >>| Type.expression
