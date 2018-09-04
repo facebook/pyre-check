@@ -155,6 +155,16 @@ external save_dep_table_sqlite: string -> int = "hh_save_dep_table_sqlite"
 external load_dep_table_sqlite: string -> int = "hh_load_dep_table_sqlite"
 
 (*****************************************************************************)
+(* Serializes & loads the hash table directly into memory *)
+(*****************************************************************************)
+
+external hh_save_table: string -> unit = "hh_save_table"
+let save_table = hh_save_table
+
+external hh_load_table: string -> unit = "hh_load_table"
+let load_table = hh_load_table
+
+(*****************************************************************************)
 (* Serializes the hash table to sqlite *)
 (*****************************************************************************)
 

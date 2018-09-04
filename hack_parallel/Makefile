@@ -58,7 +58,9 @@ MODULES=\
 NATIVE_C_FILES=\
   $(INOTIFY_STUBS)\
   $(FSNOTIFY_STUBS)\
+  hack_parallel/heap/hh_assert.c\
   hack_parallel/heap/hh_shared.c\
+  hack_parallel/heap/hh_shared_sqlite.c\
   hack_parallel/utils/get_build_id.c\
   hack_parallel/utils/files.c\
   hack_parallel/utils/handle_stubs.c\
