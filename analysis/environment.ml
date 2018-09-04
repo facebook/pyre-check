@@ -24,15 +24,19 @@ type t = {
 
 module type Handler = sig
   val register_definition
-    :  handle: string
+    :  handle: File.Handle.t
     -> ?name_override: Access.t
     -> (Define.t Node.t)
     -> unit
-  val register_dependency: handle: string -> dependency: Access.t -> unit
-  val register_global: handle: string -> access: Access.t -> global: Resolution.global -> unit
+  val register_dependency: handle: File.Handle.t -> dependency: Access.t -> unit
+  val register_global
+    :  handle: File.Handle.t
+    -> access: Access.t
+    -> global: Resolution.global
+    -> unit
   val set_class_definition: primitive: Type.t -> definition: Class.t Node.t -> unit
   val refine_class_definition: Type.t -> unit
-  val register_alias: handle: string -> key: Type.t -> data: Type.t -> unit
+  val register_alias: handle: File.Handle.t -> key: Type.t -> data: Type.t -> unit
   val purge: File.Handle.t list -> unit
 
   val function_definitions: Access.t -> (Define.t Node.t) list option
@@ -44,7 +48,7 @@ module type Handler = sig
   val register_module
     :  qualifier: Access.t
     -> local_mode: Source.mode
-    -> handle: string option
+    -> handle: File.Handle.t option
     -> stub: bool
     -> statements: Statement.t list
     -> unit
@@ -55,9 +59,9 @@ module type Handler = sig
   val in_class_definition_keys: Type.t -> bool
   val aliases: Type.t -> Type.t option
   val globals: Access.t -> Resolution.global option
-  val dependencies: Access.t -> string list option
+  val dependencies: Access.t -> File.Handle.t list option
 
-  val mode: string -> Source.mode option
+  val mode: File.Handle.t -> Source.mode option
 
   module DependencyHandler: Dependencies.Handler
 
@@ -170,9 +174,9 @@ let handler
     let register_dependency ~handle ~dependency =
       Log.log
         ~section:`Dependencies
-        "Adding dependency from %a to %s"
+        "Adding dependency from %a to %a"
         Access.pp dependency
-        handle;
+        File.Handle.pp handle;
       DependencyHandler.add_dependent ~handle dependency
 
 
@@ -247,8 +251,6 @@ let handler
 
 
     let purge handles =
-      let paths = List.map ~f:File.Handle.show handles in
-
       let purge_table_given_keys table keys =
         List.iter ~f:(fun key -> Hashtbl.remove table key) keys
       in
@@ -259,7 +261,7 @@ let handler
       let purge_dependents keys =
         let remove_path dependents =
           List.filter
-            ~f:(fun dependent -> not (List.mem paths dependent ~equal:String.equal))
+            ~f:(fun dependent -> not (List.mem handles dependent ~equal:File.Handle.equal))
             dependents
         in
         let dependents = dependencies.Dependencies.dependents in
@@ -271,18 +273,18 @@ let handler
               |> ignore)
           keys
       in
-      List.concat_map ~f:(fun handle -> DependencyHandler.get_function_keys ~handle) paths
+      List.concat_map ~f:(fun handle -> DependencyHandler.get_function_keys ~handle) handles
       |> purge_table_given_keys function_definitions;
-      List.concat_map ~f:(fun handle -> DependencyHandler.get_class_keys ~handle) paths
+      List.concat_map ~f:(fun handle -> DependencyHandler.get_class_keys ~handle) handles
       |> purge_table_given_keys class_definitions;
-      List.concat_map ~f:(fun handle -> DependencyHandler.get_alias_keys ~handle) paths
+      List.concat_map ~f:(fun handle -> DependencyHandler.get_alias_keys ~handle) handles
       |> purge_table_given_keys aliases;
-      List.concat_map ~f:(fun handle -> DependencyHandler.get_global_keys ~handle) paths
+      List.concat_map ~f:(fun handle -> DependencyHandler.get_global_keys ~handle) handles
       |> purge_table_given_keys globals;
-      List.concat_map ~f:(fun handle -> DependencyHandler.get_dependent_keys ~handle) paths
+      List.concat_map ~f:(fun handle -> DependencyHandler.get_dependent_keys ~handle) handles
       |> purge_dependents;
-      DependencyHandler.clear_keys_batch paths;
-      List.map ~f:(fun handle -> Source.qualifier ~handle) paths
+      DependencyHandler.clear_keys_batch handles;
+      List.map ~f:(fun handle -> Source.qualifier ~handle) handles
       |> List.iter ~f:(Hashtbl.remove modules)
 
 
@@ -315,7 +317,13 @@ let handler
       if not is_registered_empty_stub then
         Hashtbl.set
           ~key:qualifier
-          ~data:(Module.create ~qualifier ~local_mode ?path:handle ~stub statements)
+          ~data:(
+            Module.create
+              ~qualifier
+              ~local_mode
+              ?path:(handle >>| File.Handle.show)
+              ~stub
+              statements)
           modules
 
     let is_module access =
@@ -395,7 +403,7 @@ let register_module
     ~qualifier
     ~local_mode
     ~handle:(Some handle)
-    ~stub:(String.is_suffix handle ~suffix:".pyi")
+    ~stub:(String.is_suffix (File.Handle.show handle) ~suffix:".pyi")
     ~statements;
   if List.length qualifier > 1 then
     register_submodules (List.rev qualifier |> List.tl_exn)
@@ -593,8 +601,8 @@ let register_aliases (module Handler: Handler) sources =
       else
         let show_unresolved (handle, target, value) =
           Log.debug
-            "Unresolved alias %s:%a <- %a"
-            handle
+            "Unresolved alias %a:%a <- %a"
+            File.Handle.pp handle
             Expression.pp target
             Expression.pp value
         in

@@ -1918,7 +1918,7 @@ let check
     environment
     ?mode_override
     ({ Source.handle; qualifier; statements; _ } as source) =
-  Log.debug "Checking %s..." handle;
+  Log.debug "Checking %s..." (File.Handle.show handle);
 
   let resolution = Environment.resolution environment () in
 
@@ -2017,7 +2017,7 @@ let check
           ~name:"undefined type"
           ~integers:[]
           ~normals:[
-            "handle", handle;
+            "handle", (File.Handle.show handle);
             "define", Access.show name;
             "type", Type.show annotation;
           ]
@@ -2040,7 +2040,7 @@ let check
       let toplevel =
         let location =
           {
-            Location.path = handle;
+            Location.path = File.Handle.show handle;
             start = { Location.line = 0; column = 0 };
             stop = { Location.line = 0; column = 0 };
           }
@@ -2081,7 +2081,9 @@ let check
                 mode
             | None ->
                 let (module Handler: Environment.Handler) = environment in
-                Handler.mode (Error.path error)
+                Handler.mode
+                  (Error.path error
+                   |> File.Handle.create)
                 |> Option.value ~default:Source.Default
           in
           not (Error.suppress ~mode error)
@@ -2100,6 +2102,6 @@ let check
     List.map ~f:SingleSourceResult.coverage results
     |> Coverage.aggregate_over_source ~source
   in
-  Coverage.log coverage ~total_errors:(List.length errors) ~path:handle;
+  Coverage.log coverage ~total_errors:(List.length errors) ~path:(File.Handle.show handle);
 
   { Result.errors; coverage }

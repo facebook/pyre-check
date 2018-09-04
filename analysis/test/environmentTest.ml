@@ -224,7 +224,7 @@ let test_register_aliases _ =
             metadata = { Source.Metadata.local_mode; _ };
             _;
           } as source) =
-        let stub = String.is_suffix handle ~suffix:".pyi" in
+        let stub = String.is_suffix (File.Handle.show handle) ~suffix:".pyi" in
         Handler.register_module
           ~qualifier
           ~local_mode
@@ -1304,7 +1304,11 @@ let test_import_dependencies context =
           parse ~handle:"subdirectory/b.py" ~qualifier:(Access.create "subdirectory.b") "";
         ]
     in
-    let dependencies handle = Environment.dependencies environment (Source.qualifier ~handle) in
+    let dependencies handle =
+      let handle = File.Handle.create handle in
+      Environment.dependencies environment (Source.qualifier ~handle)
+      >>| List.map ~f:File.Handle.show
+    in
     assert_equal ~printer:(fun lo -> lo >>| List.to_string ~f:ident |> Option.value ~default:"nun")
       (dependencies "subdirectory/b.py")
       (Some ["test.py"]);
@@ -1326,7 +1330,11 @@ let test_register_dependencies _ =
   Environment.register_dependencies
     (module Handler)
     (parse ~handle:"test.py" source);
-  let dependencies handle = Environment.dependencies (module Handler) (Source.qualifier ~handle) in
+  let dependencies handle =
+    let handle = File.Handle.create handle in
+    Environment.dependencies (module Handler) (Source.qualifier ~handle)
+    >>| List.map ~f:File.Handle.show
+  in
   assert_equal
     (dependencies "subdirectory/b.py")
     (Some ["test.py"]);
@@ -1354,14 +1362,18 @@ let test_purge _ =
   assert_is_some (Handler.class_definition (Type.primitive "baz.baz"));
   assert_is_some (Handler.function_definitions (Access.create "foo"));
   assert_is_some (Handler.aliases (Type.primitive "_T"));
-  assert_equal (Handler.dependencies (Source.qualifier ~handle:"a.py")) (Some ["test.py"]);
+  assert_equal
+    (Handler.dependencies (Source.qualifier ~handle:(File.Handle.create "a.py")))
+    (Some [File.Handle.create "test.py"]);
 
   Handler.purge [File.Handle.create "test.py"];
 
   assert_is_none (Handler.class_definition (Type.primitive "baz.baz"));
   assert_is_none (Handler.function_definitions (Access.create "foo"));
   assert_is_none (Handler.aliases (Type.primitive "_T"));
-  assert_equal (Handler.dependencies (Source.qualifier ~handle:"a.py")) (Some [])
+  assert_equal
+    (Handler.dependencies (Source.qualifier ~handle:(File.Handle.create"a.py")))
+    (Some [])
 
 
 let test_infer_protocols _ =

@@ -78,7 +78,7 @@ let build
     let should_keep { Source.handle; qualifier; _ } =
       Handler.module_definition qualifier
       >>= Module.path
-      >>| String.equal handle
+      >>| String.equal (File.Handle.show handle)
       |> Option.value ~default:true
     in
     let sources = get_sources sources in
@@ -196,7 +196,12 @@ let handler
             Ast.SharedMemory.remove_modules [qualifier];
             Ast.SharedMemory.add_module
               qualifier
-              (Module.create ~qualifier ~local_mode ?path:handle ~stub statements)
+              (Module.create
+                 ~qualifier
+                 ~local_mode
+                 ?path:(handle >>| File.Handle.show)
+                 ~stub
+                 statements)
           end
 
       let is_module access =
@@ -416,9 +421,9 @@ let handler
       let register_dependency ~handle ~dependency =
         Log.log
           ~section:`Dependencies
-          "Adding dependency from %a to %s"
+          "Adding dependency from %a to %a"
           Expression.Access.pp dependency
-          handle;
+          File.Handle.pp handle;
         DependencyHandler.add_dependent ~handle dependency
 
 
@@ -461,19 +466,18 @@ let handler
         Aliases.add key data
 
       let purge handles =
-        let paths = List.map ~f:File.Handle.show handles in
         let purge_dependents keys =
           let remove_path dependents =
             List.filter
-              ~f:(fun dependent -> not (List.mem paths dependent ~equal:String.equal))
+              ~f:(fun dependent -> not (List.mem handles dependent ~equal:File.Handle.equal))
               dependents
           in
           List.iter
             ~f:(fun key -> Dependents.get key >>| remove_path >>| Dependents.add key |> ignore)
             keys;
-          DependentKeys.remove_batch (DependentKeys.KeySet.of_list paths)
+          DependentKeys.remove_batch (DependentKeys.KeySet.of_list handles)
         in
-        List.concat_map ~f:(fun handle -> DependencyHandler.get_function_keys ~handle) paths
+        List.concat_map ~f:(fun handle -> DependencyHandler.get_function_keys ~handle) handles
         |> fun keys ->
         begin
           FunctionDefinitions.remove_batch (FunctionDefinitions.KeySet.of_list keys);
@@ -483,23 +487,23 @@ let handler
 
         (* Remove the connection to the parent (if any) for all
            classes defined in the updated paths. *)
-        List.concat_map ~f:(fun handle -> DependencyHandler.get_class_keys ~handle) paths
+        List.concat_map ~f:(fun handle -> DependencyHandler.get_class_keys ~handle) handles
         |> List.iter ~f:(TypeOrder.disconnect_successors (module TypeOrderHandler));
 
-        List.concat_map ~f:(fun handle -> DependencyHandler.get_class_keys ~handle) paths
+        List.concat_map ~f:(fun handle -> DependencyHandler.get_class_keys ~handle) handles
         |> fun keys -> ClassDefinitions.remove_batch (ClassDefinitions.KeySet.of_list keys);
 
-        List.concat_map ~f:(fun handle -> DependencyHandler.get_alias_keys ~handle) paths
+        List.concat_map ~f:(fun handle -> DependencyHandler.get_alias_keys ~handle) handles
         |> fun keys -> Aliases.remove_batch (Aliases.KeySet.of_list keys);
 
-        List.concat_map ~f:(fun handle -> DependencyHandler.get_global_keys ~handle) paths
+        List.concat_map ~f:(fun handle -> DependencyHandler.get_global_keys ~handle) handles
         |> fun keys -> Globals.remove_batch (Globals.KeySet.of_list keys);
 
-        List.concat_map ~f:(fun handle -> DependencyHandler.get_dependent_keys ~handle) paths
+        List.concat_map ~f:(fun handle -> DependencyHandler.get_dependent_keys ~handle) handles
         |> purge_dependents;
 
-        DependencyHandler.clear_keys_batch paths;
-        List.map ~f:(fun handle -> Ast.Source.qualifier ~handle) paths
+        DependencyHandler.clear_keys_batch handles;
+        List.map ~f:(fun handle -> Ast.Source.qualifier ~handle) handles
         |> Ast.SharedMemory.remove_modules;
 
         if debug then

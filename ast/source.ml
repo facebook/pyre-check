@@ -184,7 +184,7 @@ end
 type t = {
   docstring: string option;
   metadata: Metadata.t;
-  handle: string;
+  handle: File.Handle.t;
   qualifier: Access.t;
   statements: Statement.t list;
 }
@@ -214,7 +214,7 @@ let mode source ~configuration =
 let create
     ?(docstring = None)
     ?(metadata = Metadata.create ~number_of_lines:(-1) ())
-    ?(handle = "")
+    ?(handle = File.Handle.create "")
     ?(qualifier = [])
     statements =
   {
@@ -272,7 +272,7 @@ let signature_hash { metadata; handle; qualifier; statements; _ } =
     in
     List.map statements ~f:statement_hash
   in
-  [%hash: Metadata.t * string * Access.t * (int list)]
+  [%hash: Metadata.t * File.Handle.t * Access.t * (int list)]
     (metadata, handle, qualifier, (statement_hashes statements))
 
 
@@ -285,6 +285,7 @@ let statements { statements; _ } =
 
 
 let qualifier ~handle =
+  let handle = File.Handle.show handle in
   let qualifier =
     let reversed_elements =
       Filename.parts handle
@@ -354,11 +355,12 @@ let expand_relative_import ?handle ~qualifier ~from =
           let initializer_module_offset =
             match handle with
             | Some handle ->
+                let path = File.Handle.show handle in
                 (* `.` corresponds to the directory containing the module. For non-init modules, the
                    qualifier matches the path, so we drop exactly the number of dots. However, for
                    __init__ modules, the directory containing it represented by the qualifier. *)
-                if String.is_suffix handle ~suffix:"/__init__.py"
-                || String.is_suffix handle ~suffix:"/__init__.pyi" then
+                if String.is_suffix path ~suffix:"/__init__.py"
+                || String.is_suffix path ~suffix:"/__init__.pyi" then
                   1
                 else
                   0

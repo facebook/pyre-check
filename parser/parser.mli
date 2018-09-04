@@ -11,6 +11,6 @@ exception Error of string
 val parse
   :  ?start_line: int
   -> ?start_column: int
-  -> ?handle: string
+  -> ?handle: File.Handle.t
   -> string list
   -> Statement.t list

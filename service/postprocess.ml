@@ -35,13 +35,12 @@ let register_ignores_for_handle handle =
 
 
 let register_mode ~configuration handle =
-  let key = File.Handle.show handle in
   let mode =
     match Ast.SharedMemory.get_source handle with
     | Some source -> Source.mode source ~configuration
     | _ -> Source.Default
   in
-  ErrorModes.add key mode
+  ErrorModes.add handle mode
 
 
 let register_ignores ~configuration scheduler handles =
@@ -88,7 +87,10 @@ let ignore ~configuration scheduler handles errors =
           >>| (fun ignore -> ignore :: sofar)
           |> Option.value ~default:sofar
         in
-        List.fold ~init:[] ~f:key_to_ignores (IgnoreKeys.get path |> Option.value ~default:[])
+        List.fold
+          (IgnoreKeys.get (File.Handle.show path) |> Option.value ~default:[])
+          ~init:[]
+          ~f:key_to_ignores
       in
       let filter_active_ignores sofar ignore =
         match Ignore.kind ignore with

@@ -572,7 +572,7 @@ let process_type_check_request
       let files =
         let old_signature_hashes, new_signature_hashes =
           let signature_hashes ~default =
-            let table = String.Table.create () in
+            let table = File.Handle.Table.create () in
             let add_signature_hash file =
               let handle =
                 File.handle file ~configuration
@@ -583,7 +583,7 @@ let process_type_check_request
                 >>| Source.signature_hash
                 |> Option.value ~default
               in
-              Hashtbl.set table ~key:(File.Handle.show handle) ~data:signature_hash
+              Hashtbl.set table ~key:handle ~data:signature_hash
             in
             List.iter update_environment_with ~f:add_signature_hash;
             table
@@ -603,14 +603,13 @@ let process_type_check_request
         let dependents =
           let handle file =
             File.handle file ~configuration
-            >>| File.Handle.show
           in
           let update_environment_with = List.filter_map update_environment_with ~f:handle in
           let check = List.filter_map check ~f:handle in
           Log.log
             ~section:`Server
             "Handling type check request for files %a"
-            Sexp.pp [%message (update_environment_with: string list)];
+            Sexp.pp [%message (update_environment_with: File.Handle.t list)];
           let get_dependencies handle =
             let signature_hash_changed =
               let old_signature_hash = Hashtbl.find_exn old_signature_hashes handle in
@@ -626,17 +625,18 @@ let process_type_check_request
           Dependencies.of_list
             ~get_dependencies
             ~handles:update_environment_with
-          |> Fn.flip Set.diff (String.Set.of_list check)
+          |> Fn.flip Set.diff (File.Handle.Set.of_list check)
           |> Set.to_list
         in
 
         Log.log
           ~section:`Server
           "Inferred affected files: %a"
-          Sexp.pp [%message (dependents: string list)];
+          Sexp.pp [%message (dependents: File.Handle.t list)];
         List.map
-          ~f:(fun path ->
-              Path.create_relative ~root:local_root ~relative:path
+          ~f:(fun handle ->
+              (* TODO(T33409564): We should be searching the sources for their actual paths here. *)
+              Path.create_relative ~root:local_root ~relative:(File.Handle.show handle)
               |> File.create)
           dependents
       in
@@ -671,10 +671,10 @@ let process_type_check_request
     let sources =
       let keep file =
         (File.handle ~configuration file
-         >>= fun path -> Some (Source.qualifier ~handle:(File.Handle.show path))
+         >>= fun handle -> Some (Source.qualifier ~handle)
          >>= Handler.module_definition
          >>= Module.path
-         >>| (fun existing_path -> File.Handle.show path = existing_path))
+         >>| (fun existing_path -> File.Handle.show handle = existing_path))
         |> Option.value ~default:true
       in
       List.filter ~f:keep sources
@@ -690,7 +690,7 @@ let process_type_check_request
   |> Service.Environment.populate environment;
   let classes_to_infer =
     let get_class_keys handle =
-      Handler.DependencyHandler.get_class_keys ~handle:(File.Handle.show handle)
+      Handler.DependencyHandler.get_class_keys ~handle
     in
     List.concat_map repopulate_handles ~f:get_class_keys
   in

@@ -36,6 +36,12 @@ module StringKey = struct
   let compare = String.compare
 end
 
+module FileHandleKey = struct
+  type t = File.Handle.t
+  let to_string = File.Handle.show
+  let compare = File.Handle.compare
+end
+
 module LocationKey = struct
   type t = Location.t
   let to_string = Location.Reference.to_string
@@ -105,7 +111,7 @@ module GlobalValue = struct
 end
 
 module DependentValue = struct
-  type t = string list
+  type t = File.Handle.t list
   let prefix = Prefix.make ()
   let description = "Dependent"
 end
@@ -154,15 +160,15 @@ module Dependents = SharedMemory.WithCache (AccessKey) (DependentValue)
 module Protocols = SharedMemory.WithCache (StringKey) (ProtocolValue)
 
 (** Keys *)
-module FunctionKeys = SharedMemory.WithCache (StringKey) (FunctionKeyValue)
+module FunctionKeys = SharedMemory.WithCache (FileHandleKey) (FunctionKeyValue)
 
-module ClassKeys = SharedMemory.WithCache (StringKey) (ClassKeyValue)
+module ClassKeys = SharedMemory.WithCache (FileHandleKey) (ClassKeyValue)
 
-module GlobalKeys = SharedMemory.WithCache (StringKey) (GlobalKeyValue)
+module GlobalKeys = SharedMemory.WithCache (FileHandleKey) (GlobalKeyValue)
 
-module AliasKeys = SharedMemory.WithCache (StringKey) (AliasKeyValue)
+module AliasKeys = SharedMemory.WithCache (FileHandleKey) (AliasKeyValue)
 
-module DependentKeys = SharedMemory.WithCache (StringKey) (DependentKeyValue)
+module DependentKeys = SharedMemory.WithCache (FileHandleKey) (DependentKeyValue)
 
 (** Type order maps *)
 module OrderIndices = SharedMemory.WithCache (TypeKey) (OrderIndexValue)

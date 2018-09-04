@@ -240,7 +240,7 @@ let test_statement_visitor_source _ =
       true
 
     let statement { Source.handle; _ } _ _ =
-      handle
+      File.Handle.show handle
   end
   in
   let module Visit = Visit.MakeStatementVisitor(StatementVisitor) in

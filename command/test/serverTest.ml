@@ -650,7 +650,7 @@ let test_incremental_typecheck _ =
   in
   let errors =
     associate_errors_and_filenames
-      (make_errors ~handle ~qualifier:(Source.qualifier ~handle) source)
+      (make_errors ~handle ~qualifier:(Source.qualifier ~handle:(File.Handle.create handle)) source)
   in
   assert_response ~request:request_with_content (Protocol.TypeCheckResponse errors);
   (* Assert that only files getting used to update the environment get parsed. *)
@@ -851,6 +851,7 @@ let test_incremental_lookups _ =
     Path.create_relative ~root:(Path.current_working_directory ()) ~relative:path
     |> Path.relative
     |> Option.value ~default:path
+    |> File.Handle.create
   in
   let parse content =
     Source.create
@@ -896,14 +897,14 @@ let test_incremental_lookups _ =
   in
   CommandTest.clean_environment ();
   let annotations =
-    File.Handle.create handle
+    handle
     |> Ast.SharedMemory.get_source
     |> (fun value -> Option.value_exn value)
     |> Lookup.create_of_source state.State.environment
     |> Lookup.get_all_annotations
     |> List.map ~f:(fun (key, data) ->
         Format.asprintf "%s/%a" (Location.Reference.to_string key) Type.pp data
-        |> String.chop_prefix_exn ~prefix:(Int.to_string (String.hash handle)))
+        |> String.chop_prefix_exn ~prefix:(Int.to_string (String.hash (File.Handle.show handle))))
     |> List.sort ~compare:String.compare
   in
   assert_equal
@@ -921,10 +922,11 @@ let test_incremental_lookups _ =
 
 let test_incremental_repopulate _ =
   let parse content =
+    let handle = File.Handle.create "test.py" in
     Source.create
-      ~handle:"test.py"
-      ~qualifier:(Source.qualifier ~handle:"test.py")
-      (Parser.parse ~handle:"test.py" (String.split_lines (content ^ "\n")))
+      ~handle
+      ~qualifier:(Source.qualifier ~handle)
+      (Parser.parse ~handle (String.split_lines (content ^ "\n")))
     |> Analysis.Preprocessing.preprocess
   in
   let source =

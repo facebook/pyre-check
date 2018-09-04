@@ -33,10 +33,11 @@ let parse_untrimmed
     ?(docstring = None)
     ?(ignore_lines = [])
     source =
+  let handle = File.Handle.create handle in
   let buffer = Lexing.from_string (source ^ "\n") in
   buffer.Lexing.lex_curr_p <- {
     buffer.Lexing.lex_curr_p with
-    Lexing.pos_fname = handle;
+    Lexing.pos_fname = File.Handle.show handle;
   };
   try
     let source =

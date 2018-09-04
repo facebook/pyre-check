@@ -279,15 +279,16 @@ let rec source_statement_codex_representation
 
 
 let source_to_codex_representation local_root { Source.handle; statements; docstring; _ } =
+  (* TODO(T33409564): This assumes that the handle is under our local root.. *)
+  let path = File.Handle.show handle in
   let filename =
     try
-      (* TODO(T33409564): This assumes that the handle is under our local root.. *)
-      Filename.realpath (local_root ^/ handle)
+      Filename.realpath (local_root ^/ path)
     with
-      Unix.Unix_error _ -> local_root ^/ handle
+      Unix.Unix_error _ -> local_root ^/ path
   in
   {
-    PythonModule.name = Filename.chop_suffix (Filename.basename handle) ".py";
+    PythonModule.name = Filename.chop_suffix (Filename.basename path) ".py";
     docstring;
     rank = 0;
     filename;

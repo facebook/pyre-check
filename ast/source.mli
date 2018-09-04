@@ -44,7 +44,7 @@ end
 type t = {
   docstring: string option;
   metadata: Metadata.t;
-  handle: string;
+  handle: File.Handle.t;
   qualifier: Access.t;
   statements: Statement.t list;
 }
@@ -56,7 +56,7 @@ val mode: t -> configuration:Configuration.t -> mode
 val create
   :  ?docstring: string option
   -> ?metadata: Metadata.t
-  -> ?handle: string
+  -> ?handle: File.Handle.t
   -> ?qualifier: Access.t
   -> Statement.t list
   -> t
@@ -67,5 +67,9 @@ val ignore_lines: t -> Ignore.t list
 
 val statements: t -> Statement.t list
 
-val qualifier: handle:string -> Access.t
-val expand_relative_import: ?handle: string -> qualifier: Access.t -> from: Access.t -> Access.t
+val qualifier: handle: File.Handle.t -> Access.t
+val expand_relative_import
+  :  ?handle: File.Handle.t
+  -> qualifier: Access.t
+  -> from: Access.t
+  -> Access.t

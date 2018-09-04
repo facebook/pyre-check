@@ -15,7 +15,7 @@ open Test
 
 let assert_parsed_equal source statements =
   assert_source_equal
-    (Source.create ~handle:"test.py" statements)
+    (Source.create ~handle:(File.Handle.create "test.py") statements)
     (parse_untrimmed source)
 
 

@@ -17,6 +17,7 @@ open Test
 
 let test_expand_relative_imports _ =
   let assert_expand ~handle source expected =
+    let handle = File.Handle.create handle in
     let parse = parse ~qualifier:(Source.qualifier ~handle) in
     assert_source_equal
       (parse expected)
@@ -57,7 +58,7 @@ let test_expand_relative_imports _ =
 let test_expand_string_annotations _ =
   let assert_expand ?(qualifier = "qualifier") source expected =
     let parse =
-      parse ~qualifier:(Source.qualifier ~handle:qualifier) in
+      parse ~qualifier:(Source.qualifier ~handle:(File.Handle.create qualifier)) in
     assert_source_equal
       (parse expected)
       (Preprocessing.expand_string_annotations (parse source))
@@ -99,7 +100,7 @@ let test_expand_format_string _ =
     assert_source_equal
       (Preprocessing.expand_format_string (parse_untrimmed source))
       (Source.create
-         ~handle:"test.py"
+         ~handle:(File.Handle.create "test.py")
          [+Expression (+String (StringLiteral.create ~expressions value))])
   in
 
@@ -152,7 +153,7 @@ let test_expand_format_string _ =
 
 let test_qualify _ =
   let assert_qualify ?(handle = "qualifier.py") source expected =
-    let parse = parse ~qualifier:(Source.qualifier ~handle) ~handle in
+    let parse = parse ~qualifier:(Source.qualifier ~handle:(File.Handle.create handle)) ~handle in
     assert_source_equal (parse expected) (Preprocessing.qualify (parse source))
   in
 
@@ -944,7 +945,7 @@ let test_expand_returns _ =
   let assert_expand_implicit_returns source expected_body =
     assert_source_equal
       (Preprocessing.expand_returns (parse source))
-      (Source.create ~handle:"test.py"
+      (Source.create ~handle:(File.Handle.create "test.py")
          [
            +Define {
              Define.name = Access.create "foo";
@@ -957,7 +958,7 @@ let test_expand_returns _ =
              generated = false;
              parent = None;
            };
-         ];)
+         ])
   in
   assert_expand
     "return None"

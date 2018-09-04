@@ -24,15 +24,19 @@ type t = {
     lookups. *)
 module type Handler = sig
   val register_definition
-    :  handle: string
+    :  handle: File.Handle.t
     -> ?name_override: Access.t
     -> (Define.t Node.t)
     -> unit
-  val register_dependency: handle: string -> dependency: Access.t -> unit
-  val register_global: handle: string -> access: Access.t -> global: Resolution.global -> unit
+  val register_dependency: handle: File.Handle.t -> dependency: Access.t -> unit
+  val register_global
+    :  handle: File.Handle.t
+    -> access: Access.t
+    -> global: Resolution.global
+    -> unit
   val set_class_definition: primitive: Type.t -> definition: Class.t Node.t -> unit
   val refine_class_definition: Type.t -> unit
-  val register_alias: handle: string -> key: Type.t -> data: Type.t -> unit
+  val register_alias: handle: File.Handle.t -> key: Type.t -> data: Type.t -> unit
   val purge: File.Handle.t list -> unit
 
   val function_definitions: Access.t -> (Define.t Node.t) list option
@@ -44,7 +48,7 @@ module type Handler = sig
   val register_module
     :  qualifier: Access.t
     -> local_mode: Source.mode
-    -> handle: string option
+    -> handle: File.Handle.t option
     -> stub: bool
     -> statements: Statement.t list
     -> unit
@@ -55,9 +59,9 @@ module type Handler = sig
   val in_class_definition_keys: Type.t -> bool
   val aliases: Type.t -> Type.t option
   val globals: Access.t -> Resolution.global option
-  val dependencies: Access.t -> string list option
+  val dependencies: Access.t -> File.Handle.t list option
 
-  val mode: string -> Source.mode option
+  val mode: File.Handle.t -> Source.mode option
 
   module DependencyHandler: Dependencies.Handler
   module TypeOrderHandler: TypeOrder.Handler
@@ -74,7 +78,7 @@ val resolution
   -> unit
   -> Resolution.t
 
-val dependencies: (module Handler) -> Access.t -> string list option
+val dependencies: (module Handler) -> Access.t -> File.Handle.t list option
 
 val connect_definition
   :  resolution: Resolution.t

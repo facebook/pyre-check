@@ -339,7 +339,7 @@ end
 
 
 let infer configuration environment ?mode_override ({ Source.handle; _ } as source) =
-  Log.debug "Checking %s..." handle;
+  Log.debug "Checking %s..." (File.Handle.show handle);
   let resolution = Environment.resolution environment () in
 
   let dequalify_map = Preprocessing.dequalify_map source in
@@ -395,7 +395,7 @@ let infer configuration environment ?mode_override ({ Source.handle; _ } as sour
               | Some mode ->
                   mode
               | None ->
-                  Handler.mode (Error.path error)
+                  Handler.mode (Error.path error |> File.Handle.create)
                   |> Option.value ~default:Source.Default
             in
             not (Error.suppress ~mode error)
@@ -414,7 +414,7 @@ let infer configuration environment ?mode_override ({ Source.handle; _ } as sour
           ~name:"undefined type"
           ~integers:[]
           ~normals:[
-            "handle", handle;
+            "handle", (File.Handle.show handle);
             "define", Access.show name;
             "type", Type.show annotation;
           ]
@@ -592,7 +592,7 @@ let infer configuration environment ?mode_override ({ Source.handle; _ } as sour
       List.map ~f:SingleSourceResult.coverage results
       |> Coverage.aggregate_over_source ~source
     in
-    Coverage.log coverage ~total_errors:(List.length errors) ~path:handle;
+    Coverage.log coverage ~total_errors:(List.length errors) ~path:(File.Handle.show handle);
 
     {
       TypeCheck.Result.errors;

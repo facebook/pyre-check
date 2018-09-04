@@ -11,37 +11,37 @@ open Pyre
 
 
 type index = {
-  function_keys: (Access.t Hash_set.t) String.Table.t;
-  class_keys: (Type.t Hash_set.t) String.Table.t;
-  alias_keys: (Type.t Hash_set.t) String.Table.t;
-  global_keys: (Access.t Hash_set.t) String.Table.t;
-  dependent_keys: (Access.t Hash_set.t) String.Table.t;
+  function_keys: (Access.t Hash_set.t) File.Handle.Table.t;
+  class_keys: (Type.t Hash_set.t) File.Handle.Table.t;
+  alias_keys: (Type.t Hash_set.t) File.Handle.Table.t;
+  global_keys: (Access.t Hash_set.t) File.Handle.Table.t;
+  dependent_keys: (Access.t Hash_set.t) File.Handle.Table.t;
 }
 
 
 type t = {
   index: index;
-  dependents: (Path.path list) Access.Table.t;
+  dependents: (File.Handle.t list) Access.Table.t;
 }
 
 
 module type Handler = sig
-  val add_function_key: handle: string -> Access.t -> unit
-  val add_class_key: handle: string -> Type.t -> unit
-  val add_alias_key: handle: string -> Type.t -> unit
-  val add_global_key: handle: string -> Access.t -> unit
-  val add_dependent_key: handle: string -> Access.t -> unit
+  val add_function_key: handle: File.Handle.t -> Access.t -> unit
+  val add_class_key: handle: File.Handle.t -> Type.t -> unit
+  val add_alias_key: handle: File.Handle.t -> Type.t -> unit
+  val add_global_key: handle: File.Handle.t -> Access.t -> unit
+  val add_dependent_key: handle: File.Handle.t -> Access.t -> unit
 
-  val add_dependent: handle: string -> Access.t -> unit
-  val dependents: Access.t -> (string list) option
+  val add_dependent: handle: File.Handle.t -> Access.t -> unit
+  val dependents: Access.t -> (File.Handle.t list) option
 
-  val get_function_keys: handle: string -> Access.t list
-  val get_class_keys: handle: string -> Type.t list
-  val get_alias_keys: handle: string -> Type.t list
-  val get_global_keys: handle: string -> Access.t list
-  val get_dependent_keys: handle: string -> Access.t list
+  val get_function_keys: handle: File.Handle.t -> Access.t list
+  val get_class_keys: handle: File.Handle.t -> Type.t list
+  val get_alias_keys: handle: File.Handle.t -> Type.t list
+  val get_global_keys: handle: File.Handle.t -> Access.t list
+  val get_dependent_keys: handle: File.Handle.t -> Access.t list
 
-  val clear_keys_batch: string list -> unit
+  val clear_keys_batch: File.Handle.t list -> unit
 end
 
 
@@ -154,11 +154,11 @@ let handler {
 
 let create () =
   let index = {
-    function_keys = String.Table.create ();
-    class_keys = String.Table.create ();
-    alias_keys = String.Table.create ();
-    global_keys = String.Table.create ();
-    dependent_keys = String.Table.create ();
+    function_keys = File.Handle.Table.create ();
+    class_keys = File.Handle.Table.create ();
+    alias_keys = File.Handle.Table.create ();
+    global_keys = File.Handle.Table.create ();
+    dependent_keys = File.Handle.Table.create ();
   }
   in
   { index = index; dependents = Access.Table.create () }
@@ -195,7 +195,7 @@ let transitive ~get_dependencies ~handle =
                   closure ~visited neighbor)
               neighbors
     in
-    closure ~visited:String.Set.empty handle
+    closure ~visited:File.Handle.Set.empty handle
     |> fun handles -> Set.remove handles handle
   in
   transitive_closure handle
@@ -204,20 +204,20 @@ let transitive ~get_dependencies ~handle =
 let transitive_of_list ~get_dependencies ~handles =
   handles
   |> List.map ~f:(fun handle -> transitive ~get_dependencies ~handle)
-  |> List.fold ~init:String.Set.empty ~f:Set.union
+  |> List.fold ~init:File.Handle.Set.empty ~f:Set.union
   (* Ensure no file gets double-checked. *)
-  |> (fun dependents -> Set.diff dependents (String.Set.of_list handles))
+  |> (fun dependents -> Set.diff dependents (File.Handle.Set.of_list handles))
 
 
 let of_list ~get_dependencies ~handles =
   let fold_dependents dependents handle =
     get_dependencies handle
-    >>| String.Set.of_list
+    >>| File.Handle.Set.of_list
     >>| Set.union dependents
     |> Option.value ~default:dependents
   in
   List.fold
-    ~init:String.Set.empty
+    ~init:File.Handle.Set.empty
     ~f:fold_dependents
     handles
-  |> (fun dependents -> Set.diff dependents (String.Set.of_list handles))
+  |> (fun dependents -> Set.diff dependents (File.Handle.Set.of_list handles))

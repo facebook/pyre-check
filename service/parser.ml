@@ -16,8 +16,7 @@ let parse_source ~configuration ?(show_parser_errors = true) file =
   >>= fun handle ->
   File.lines file
   >>= fun lines ->
-  let handle = File.Handle.show handle in
-  let metadata = Source.Metadata.parse handle lines in
+  let metadata = Source.Metadata.parse (File.Handle.show handle) lines in
   try
     let statements = Parser.parse ~handle lines in
     Some (
@@ -53,8 +52,8 @@ let parse_modules_job ~configuration ~files =
           Module.create
             ~qualifier
             ~local_mode
-            ~path:handle
-            ~stub:(String.is_suffix handle ~suffix:".pyi")
+            ~path:(File.Handle.show handle)
+            ~stub:(String.is_suffix (File.Handle.show handle) ~suffix:".pyi")
             statements
           |> Ast.SharedMemory.add_module qualifier
         in
@@ -100,8 +99,7 @@ let parse_sources ~configuration ~scheduler ~files =
   in
   let () =
     let get_qualifier file =
-      File.path file
-      |> Path.relative
+      File.handle ~configuration file
       >>| (fun handle -> Source.qualifier ~handle)
     in
     List.filter_map files ~f:get_qualifier
@@ -186,7 +184,8 @@ let find_stubs
       let add (qualifiers, all_paths) path =
         match Path.relative path with
         | Some relative ->
-            let qualifier = Ast.Source.qualifier ~handle:relative in
+            (* TODO(T33409564): We should consider using File.handle here. *)
+            let qualifier = Ast.Source.qualifier ~handle:(File.Handle.create relative) in
             if Set.mem qualifiers qualifier then
               qualifiers, all_paths
             else
@@ -230,7 +229,10 @@ let parse_all scheduler ~configuration:({ Configuration.local_root; _ } as confi
       match Ast.SharedMemory.get_source handle with
       | Some { Ast.Source.qualifier; handle; _ } ->
           if Set.mem sofar qualifier then
-            Statistics.event ~name:"interfering stub" ~normals:["handle", handle] ();
+            Statistics.event
+              ~name:"interfering stub"
+              ~normals:["handle", File.Handle.show handle]
+              ();
           Set.add sofar qualifier
       | _ ->
           sofar
@@ -249,7 +251,7 @@ let parse_all scheduler ~configuration:({ Configuration.local_root; _ } as confi
       match relative with
       | Some handle ->
           handle = "__init__.py" ||  (* Analyze top-level `__init__.py`. *)
-          not (Set.mem known_stubs (Source.qualifier ~handle))
+          not (Set.mem known_stubs (Source.qualifier ~handle:(File.Handle.create handle)))
       | _ ->
           true
     in
