@@ -4334,6 +4334,16 @@ let test_check_yield _ =
       "but got `typing.Generator[str, None, None]`."
     ];
 
+
+  assert_type_errors
+    {|
+      def generator() -> typing.Generator[int, None, None]:
+        yield 1
+      def wrapper() -> typing.Generator[int, None, None]:
+        yield from generator()
+    |}
+    [];
+
   assert_type_errors
     {|
       def foo() -> typing.Generator[None, None, None]:

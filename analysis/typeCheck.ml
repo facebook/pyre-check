@@ -1789,11 +1789,12 @@ module State = struct
     | YieldFrom { Node.value = Expression.Yield (Some return); _ } ->
         let { state; resolved } = forward_expression ~state ~expression:return in
         let actual =
-          match resolved with
+          match Resolution.join resolution resolved (Type.iterator Type.Bottom) with
           | Type.Parametric { Type.name; parameters = [parameter] }
             when Identifier.show name = "typing.Iterator" ->
               Type.generator parameter
-          | annotation -> Type.generator annotation
+          | annotation ->
+              Type.generator annotation
         in
         if not (Resolution.less_or_equal resolution ~left:actual ~right:expected) then
           Error.create
