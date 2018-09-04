@@ -336,8 +336,8 @@ let test_query _ =
   let parse_annotation serialized =
     serialized
     |> fun literal -> String (StringLiteral.create literal)
-    |> Node.create_with_default_location
-    |> Type.create ~aliases:(fun _ -> None)
+                      |> Node.create_with_default_location
+                      |> Type.create ~aliases:(fun _ -> None)
   in
   assert_type_query_response
     ~source:""
@@ -553,13 +553,13 @@ let test_query _ =
       foo = 7
     |}
     ~query:"type(foo)"
-  (Protocol.TypeQuery.Response (Protocol.TypeQuery.Type Type.integer));
+    (Protocol.TypeQuery.Response (Protocol.TypeQuery.Type Type.integer));
 
   assert_type_query_response
     ~source:{|
     |}
     ~query:"type(8)"
-  (Protocol.TypeQuery.Response (Protocol.TypeQuery.Type Type.integer));
+    (Protocol.TypeQuery.Response (Protocol.TypeQuery.Type Type.integer));
 
   assert_type_query_response
     ~source:{|
@@ -568,7 +568,7 @@ let test_query _ =
       bar: str = "baz"
     |}
     ~query:"type(foo(bar))"
-  (Protocol.TypeQuery.Response (Protocol.TypeQuery.Type Type.string));
+    (Protocol.TypeQuery.Response (Protocol.TypeQuery.Type Type.string));
 
   assert_type_query_response
     ~source:{|
@@ -577,9 +577,9 @@ let test_query _ =
       bar: int = 7
     |}
     ~query:"type(foo(bar))"
-  (Protocol.TypeQuery.Error
-    "Expression had errors: Incompatible parameter type [6]: Expected `str` but got `int`."
-  )
+    (Protocol.TypeQuery.Error
+       "Expression had errors: Incompatible parameter type [6]: Expected `str` but got `int`."
+    )
 
 
 let test_connect _ =
@@ -973,10 +973,10 @@ let test_incremental_repopulate _ =
       ~state:initial_state
       ~configuration:(CommandTest.mock_server_configuration ())
       ~request:(Protocol.Request.TypeCheckRequest
-         (Protocol.TypeCheckRequest.create
-            ~update_environment_with:[file "test.py"]
-            ~check:[file "test.py"]
-            ()))
+                  (Protocol.TypeCheckRequest.create
+                     ~update_environment_with:[file "test.py"]
+                     ~check:[file "test.py"]
+                     ()))
   in
   Sys.remove "test.py";
   begin match (get_annotation "test.foo") with
@@ -1066,10 +1066,10 @@ let test_incremental_attribute_caching context =
       ~state
       ~configuration:server_configuration
       ~request:(Protocol.Request.TypeCheckRequest
-         (Protocol.TypeCheckRequest.create
-            ~update_environment_with:[File.create source_path]
-            ~check:[File.create source_path]
-            ()))
+                  (Protocol.TypeCheckRequest.create
+                     ~update_environment_with:[File.create source_path]
+                     ~check:[File.create source_path]
+                     ()))
     |> fun { Request.state; _ } -> state
   in
   let get_errors { State.errors; _ } = Hashtbl.to_alist errors in
