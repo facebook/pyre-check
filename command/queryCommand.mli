@@ -7,6 +7,8 @@ open Core
 
 open Server
 
-val parse_query: root: Pyre.Path.t -> string -> Protocol.Request.t option
+exception InvalidQuery
+
+val parse_query: root: Pyre.Path.t -> string -> Protocol.Request.t
 
 val command: Command.t

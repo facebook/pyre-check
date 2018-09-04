@@ -327,11 +327,7 @@ let test_protocol_type_check _ =
 let test_query _ =
   let assert_type_query_response ~source ~query response =
     let query = Commands.Query.parse_query ~root:(Path.current_working_directory ()) query in
-    match query with
-    | None ->
-        assert_unreached ()
-    | Some request ->
-        assert_response ~source ~request (Some (Protocol.TypeQueryResponse response))
+    assert_response ~source ~request:query (Some (Protocol.TypeQueryResponse response))
   in
   let parse_annotation serialized =
     serialized

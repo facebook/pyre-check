@@ -14,14 +14,11 @@ open Protocol
 open TypeQuery
 
 
+exception InvalidQuery
+
+
 let parse_query ~root query =
-  let query =
-    try
-      Parser.parse [query]
-    with _ ->
-      []
-  in
-  match query with
+  match (Parser.parse [query]) with
   | [{
       Node.value = Statement.Expression {
           Node.value = Expression.Access [
@@ -36,33 +33,35 @@ let parse_query ~root query =
       begin
         match String.lowercase (Identifier.show name), arguments with
         | "attributes", [class_name] ->
-            Some (Request.TypeQueryRequest (Attributes class_name))
+            Request.TypeQueryRequest (Attributes class_name)
         | "join", [left; right] ->
-            Some (Request.TypeQueryRequest (Join (left, right)))
+            Request.TypeQueryRequest (Join (left, right))
         | "less_or_equal", [left; right] ->
-            Some (Request.TypeQueryRequest (LessOrEqual (left, right)))
+            Request.TypeQueryRequest (LessOrEqual (left, right))
         | "meet", [left; right] ->
-            Some (Request.TypeQueryRequest (Meet (left, right)))
+            Request.TypeQueryRequest (Meet (left, right))
         | "methods", [class_name] ->
-            Some (Request.TypeQueryRequest (Methods class_name))
+            Request.TypeQueryRequest (Methods class_name)
         | "normalizetype", [argument] ->
-            Some (Request.TypeQueryRequest (NormalizeType argument))
+            Request.TypeQueryRequest (NormalizeType argument)
         | "signature", [{ Node.value = Expression.Access function_name; _ }] ->
-            Some (Request.TypeQueryRequest (Signature function_name))
+            Request.TypeQueryRequest (Signature function_name)
         | "superclasses", [class_name] ->
-            Some (Request.TypeQueryRequest (Superclasses class_name))
+            Request.TypeQueryRequest (Superclasses class_name)
         | "type", [argument] ->
-            Some (Request.TypeQueryRequest (Type argument))
+            Request.TypeQueryRequest (Type argument)
         | "type_at_location",
           [
             { Node.value = Expression.Access path; _ };
             { Node.value = Expression.Integer line; _ };
             { Node.value = Expression.Integer column; _ };
           ] ->
-            let path = Expression.Access.show path in
-            let position = { Location.line; column } in
-            let location = { Location.path; start = position; stop = position } in
-            Some (Request.TypeQueryRequest (TypeAtLocation location))
+            let location =
+              let path = Expression.Access.show path in
+              let position = { Location.line; column } in
+              { Location.path; start = position; stop = position }
+            in
+            Request.TypeQueryRequest (TypeAtLocation location)
         | "typecheckpath", arguments ->
             let files =
               arguments
@@ -70,10 +69,12 @@ let parse_query ~root query =
               |> List.map ~f:(fun relative -> Path.create_relative ~root ~relative)
               |> List.map ~f:File.create
             in
-            Some (Request.TypeCheckRequest (TypeCheckRequest.create ~check:files ()))
-        | _ -> None
+            Request.TypeCheckRequest (TypeCheckRequest.create ~check:files ())
+        | _ ->
+            raise InvalidQuery
       end
-  | _ -> None
+  | _ ->
+      raise InvalidQuery
 
 
 let run_query serialized local_root () =
@@ -81,15 +82,6 @@ let run_query serialized local_root () =
   let configuration = Configuration.create ~local_root () in
   (fun () ->
      let query = parse_query ~root:local_root serialized in
-     begin
-       match query with
-       | Some _ ->
-           ()
-       | None ->
-           Log.error "Could not parse query %s; exiting.\n" serialized;
-           exit 1
-     end;
-     let query = Option.value_exn query in
      let socket = Server.Operations.connect ~retries:3 ~configuration in
      Socket.write socket query;
      match Socket.read socket with

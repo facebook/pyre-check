@@ -13,23 +13,24 @@ open Protocol
 open Pyre
 open Test
 
-let fake_root = Path.create_absolute "/tmp"
-
-
-let assert_parses serialized query =
-  assert_equal
-    ~cmp:(fun left right -> Option.equal Request.equal left right)
-    (Some (Request.TypeQueryRequest query))
-    (Commands.Query.parse_query ~root:fake_root serialized)
-
-
-let assert_fails_to_parse serialized =
-  assert_equal
-    None
-    (Commands.Query.parse_query ~root:fake_root serialized)
-
 
 let test_parse_query _ =
+  let assert_parses serialized query =
+    assert_equal
+      ~cmp:Request.equal
+      (Request.TypeQueryRequest query)
+      (Commands.Query.parse_query ~root:(mock_path "") serialized)
+  in
+
+  let assert_fails_to_parse serialized =
+    try
+      Commands.Query.parse_query ~root:(mock_path "") serialized
+      |> ignore;
+      assert_unreached ()
+    with _ ->
+      ()
+  in
+
   assert_parses
     "less_or_equal(int, bool)"
     (LessOrEqual (Type.expression Type.integer, Type.expression Type.bool));
@@ -72,14 +73,14 @@ let test_parse_query _ =
   assert_fails_to_parse "normalizeType(int, str)";
 
   assert_equal
-    (Commands.Query.parse_query ~root:fake_root "typecheckPath(fiddle.py)")
-    (Some (Request.TypeCheckRequest
-             (TypeCheckRequest.create
-                ~check:[
-                  File.create (Path.create_relative ~root:fake_root ~relative:"fiddle.py");
-                ]
-                ()
-             )));
+    (Commands.Query.parse_query ~root:(mock_path "") "typecheckPath(fiddle.py)")
+    (Request.TypeCheckRequest
+       (TypeCheckRequest.create
+          ~check:[
+            File.create (Path.create_relative ~root:(mock_path "") ~relative:"fiddle.py");
+          ]
+          ()
+       ));
 
   assert_parses "type(C)" (Type (!"C"));
   assert_parses "type((C,B))" (Type (+(Ast.Expression.Tuple [!"C"; !"B"])));
