@@ -108,9 +108,7 @@ def translate_arguments(commands, arguments):
         arguments.logger = translate_path(root, arguments.logger)
 
 
-def resolve_analysis_directories(
-    arguments, configuration, prompt: bool = True, use_buck_cache: bool = False
-):
+def resolve_analysis_directories(arguments, configuration, prompt: bool = True):
     analysis_directories = set(arguments.analysis_directory or [])
     targets = set(arguments.target or [])
 
@@ -123,7 +121,7 @@ def resolve_analysis_directories(
 
     analysis_directories.update(
         buck.generate_analysis_directories(
-            targets, build=arguments.build, prompt=prompt, use_cache=use_buck_cache
+            targets, build=arguments.build, prompt=prompt
         )
     )
     if os.path.isfile(CONFIGURATION_FILE):

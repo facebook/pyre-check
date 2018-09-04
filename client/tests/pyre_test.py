@@ -49,7 +49,7 @@ class PyreTest(unittest.TestCase):
             with patch.object(sys, "argv", ["pyre", "check"]):
                 self.assertEqual(pyre.main(), 0)
                 generate_analysis_directories.assert_called_with(
-                    set(), build=False, prompt=False, use_cache=False
+                    set(), build=False, prompt=False
                 )
         with patch.object(commands.Incremental, "run", return_value=mock_success):
             with patch.object(sys, "argv", ["pyre"]):
@@ -58,11 +58,11 @@ class PyreTest(unittest.TestCase):
                 with patch.object(shutil, "which", side_effect=[True, True]):
                     self.assertEqual(pyre.main(), 0)
                     generate_analysis_directories.assert_called_with(
-                        set(), build=False, prompt=False, use_cache=True
+                        set(), build=False, prompt=False
                     )
         with patch.object(commands.Persistent, "run", return_value=mock_success):
             with patch.object(sys, "argv", ["pyre", "persistent"]):
                 self.assertEqual(pyre.main(), 0)
                 generate_analysis_directories.assert_called_with(
-                    set(), build=False, prompt=True, use_cache=True
+                    set(), build=False, prompt=True
                 )

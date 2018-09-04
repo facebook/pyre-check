@@ -64,25 +64,12 @@ def _find_analysis_directories(targets_map) -> BuckOut:
     return BuckOut(analysis_directories, targets_not_found)
 
 
-def _normalize(targets: List[str], use_cache: bool = False) -> List[str]:
+def _normalize(targets: List[str]) -> List[str]:
     LOG.info(
         "Normalizing target%s `%s`",
         "s:" if len(targets) > 1 else "",
         "`, `".join(targets),
     )
-    cache = {}  # type: Dict[str, List[str]]
-    serialized_targets = ",".join(targets)
-    try:
-        with open(CACHE_PATH) as cache_file:
-            cache = json.load(cache_file)
-            if use_cache:
-                LOG.info("Using cached targets.")
-                return cache[serialized_targets]
-    except (IOError, json.JSONDecodeError):
-        pass
-    except KeyError:
-        # Cache miss, shell out to buck.
-        pass
     try:
         command = (
             ["buck", "targets", "--show-output"]
@@ -106,13 +93,6 @@ def _normalize(targets: List[str], use_cache: bool = False) -> List[str]:
                 len(targets_to_destinations),
                 "s" if len(targets_to_destinations) > 1 else "",
             )
-        cache[serialized_targets] = targets_to_destinations
-        try:
-            with open(CACHE_PATH, "w+") as cache_file:
-                json.dump(cache, cache_file)
-        except IOError:
-            # Don't block returning the mapping on successfully writing to the cache.
-            pass
         return targets_to_destinations
     except subprocess.TimeoutExpired:
         raise BuckException(
@@ -146,15 +126,13 @@ def _build_targets(targets: List[str]) -> None:
         )
 
 
-def generate_analysis_directories(
-    original_targets, build, prompt: bool = True, use_cache: bool = False
-):
+def generate_analysis_directories(original_targets, build, prompt: bool = True):
     buck_out = _find_analysis_directories({target: None for target in original_targets})
     analysis_directories = buck_out.analysis_directories
 
     full_targets_map = {}
     if buck_out.targets_not_found:
-        targets_to_destinations = _normalize(buck_out.targets_not_found, use_cache)
+        targets_to_destinations = _normalize(buck_out.targets_not_found)
 
         for original_target in buck_out.targets_not_found:
             normalized_targets_map = {}

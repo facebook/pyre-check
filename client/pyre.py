@@ -287,20 +287,12 @@ def main() -> int:
 
             configuration.validate()
 
-            use_buck_cache = (
-                arguments.command
-                not in [commands.Check, commands.Start, commands.Restart]
-                or arguments.use_global_shared_analysis_directory
-            )
             if arguments.command in [commands.Kill]:
                 analysis_directories = ["."]
             else:
                 prompt = arguments.command not in [commands.Incremental, commands.Check]
                 analysis_directories = resolve_analysis_directories(
-                    arguments,
-                    configuration,
-                    prompt=prompt,
-                    use_buck_cache=use_buck_cache,
+                    arguments, configuration, prompt=prompt
                 )
 
             if len(analysis_directories) == 1:
