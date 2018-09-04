@@ -555,7 +555,7 @@ let process_display_type_errors_request
         Hashtbl.data errors
         |> List.concat
     | _ ->
-        List.filter_map ~f:(File.handle ~configuration) files
+        List.map ~f:(File.handle ~configuration) files
         |> List.filter_map ~f:(Hashtbl.find errors)
         |> List.concat
   in
@@ -578,10 +578,7 @@ let process_type_check_request
           let signature_hashes ~default =
             let table = File.Handle.Table.create () in
             let add_signature_hash file =
-              let handle =
-                File.handle file ~configuration
-                |> (fun value -> Option.value_exn value)
-              in
+              let handle = File.handle file ~configuration in
               let signature_hash =
                 Ast.SharedMemory.get_source handle
                 >>| Source.signature_hash
@@ -595,7 +592,7 @@ let process_type_check_request
           let old_signature_hashes = signature_hashes ~default:0 in
 
           (* Clear and re-populate ASTs in shared memory. *)
-          let handles = List.filter_map update_environment_with ~f:(File.handle ~configuration) in
+          let handles = List.map update_environment_with ~f:(File.handle ~configuration) in
           Ast.SharedMemory.remove_paths handles;
           Service.Parser.parse_sources ~configuration ~scheduler ~files:update_environment_with
           |> ignore;
@@ -605,11 +602,9 @@ let process_type_check_request
         in
 
         let dependents =
-          let handle file =
-            File.handle file ~configuration
-          in
-          let update_environment_with = List.filter_map update_environment_with ~f:handle in
-          let check = List.filter_map check ~f:handle in
+          let handle file = File.handle file ~configuration in
+          let update_environment_with = List.map update_environment_with ~f:handle in
+          let check = List.map check ~f:handle in
           Log.log
             ~section:`Server
             "Handling type check request for files %a"
@@ -656,7 +651,7 @@ let process_type_check_request
   (* Repopulate the environment. *)
   let repopulate_handles =
     (* Clean up all data related to updated files. *)
-    let handles = List.filter_map update_environment_with ~f:(File.handle ~configuration) in
+    let handles = List.map update_environment_with ~f:(File.handle ~configuration) in
     Ast.SharedMemory.remove_paths handles;
     Handler.purge handles;
     update_environment_with
@@ -675,7 +670,7 @@ let process_type_check_request
     let sources =
       let keep file =
         (File.handle ~configuration file
-         >>= fun handle -> Some (Source.qualifier ~handle)
+         |> fun handle -> Some (Source.qualifier ~handle)
          >>= Handler.module_definition
          >>= Module.path
          >>| (fun existing_path -> File.Handle.show handle = existing_path))
@@ -707,7 +702,7 @@ let process_type_check_request
   Service.Postprocess.register_ignores ~configuration scheduler repopulate_handles;
 
   (* Compute new set of errors. *)
-  let new_source_handles = List.filter_map ~f:(File.handle ~configuration) check in
+  let new_source_handles = List.map ~f:(File.handle ~configuration) check in
 
   (* Clear all type resolution info from shared memory for all affected sources. *)
   List.filter_map ~f:Ast.SharedMemory.get_source new_source_handles

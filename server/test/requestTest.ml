@@ -205,7 +205,7 @@ let test_process_type_check_request context =
           let scheduler = Scheduler.mock () in
 
           (* Clear and re-populate ASTs in shared memory. *)
-          let handles = List.filter_map files ~f:(File.handle ~configuration) in
+          let handles = List.map files ~f:(File.handle ~configuration) in
           Ast.SharedMemory.remove_paths handles;
           Service.Parser.parse_sources ~configuration ~scheduler ~files
           |> ignore;
@@ -236,7 +236,6 @@ let test_process_type_check_request context =
                   } ->
                     let path file =
                       File.handle file ~configuration
-                      |> (fun value -> Option.value_exn value)
                       |> File.Handle.show
                     in
                     List.map check ~f:path

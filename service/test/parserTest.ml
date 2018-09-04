@@ -43,7 +43,6 @@ let test_parse_stubs_modules_list _ =
   assert_equal (List.length files) (List.length handles);
   let get_handle_at position =
     File.handle ~configuration (List.nth_exn files position)
-    |> Option.value ~default:(File.Handle.create "")
   in
   let assert_stub_matches_name ~handle define =
     let name =
@@ -155,7 +154,7 @@ let test_parse_source _ =
       ~scheduler:(Scheduler.mock ())
       ~files:[file]
   in
-  let handle = Option.value_exn (File.handle ~configuration file) in
+  let handle = File.handle ~configuration file in
   assert_equal handles [handle];
 
   let source = Ast.SharedMemory.get_source handle in
@@ -258,7 +257,7 @@ let test_register_modules _ =
   let assert_module_exports raw_source expected_exports =
     let get_qualifier file =
       File.handle ~configuration file
-      >>= Ast.SharedMemory.get_source
+      |> Ast.SharedMemory.get_source
       >>| (fun { Source.qualifier; _ } -> qualifier)
     in
     let file =
@@ -269,7 +268,7 @@ let test_register_modules _ =
 
     (* Build environment *)
     Ast.SharedMemory.remove_modules (List.filter_map ~f:get_qualifier [file]);
-    Ast.SharedMemory.remove_paths (List.filter_map ~f:(File.handle ~configuration) [file]);
+    Ast.SharedMemory.remove_paths (List.map ~f:(File.handle ~configuration) [file]);
     let configuration = Configuration.create ~local_root:(Path.current_working_directory ()) () in
     let sources =
       Service.Parser.parse_sources

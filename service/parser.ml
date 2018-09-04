@@ -13,7 +13,7 @@ open PyreParser
 
 let parse_source ~configuration ?(show_parser_errors = true) file =
   File.handle ~configuration file
-  >>= fun handle ->
+  |> fun handle ->
   File.lines file
   >>= fun lines ->
   let metadata = Source.Metadata.parse (File.Handle.show handle) lines in
@@ -67,9 +67,9 @@ let parse_sources_job ~configuration ~files =
   let parse handles file =
     (file
      |> parse_source ~configuration
-     >>= fun source ->
+     >>| fun source ->
      File.handle ~configuration file
-     >>| fun handle ->
+     |> fun handle ->
      Ast.SharedMemory.add_handle_hash ~handle:(File.Handle.show handle);
      source
      |> Analysis.Preprocessing.preprocess
@@ -100,9 +100,9 @@ let parse_sources ~configuration ~scheduler ~files =
   let () =
     let get_qualifier file =
       File.handle ~configuration file
-      >>| (fun handle -> Source.qualifier ~handle)
+      |> (fun handle -> Source.qualifier ~handle)
     in
-    List.filter_map files ~f:get_qualifier
+    List.map files ~f:get_qualifier
     |> Ast.SharedMemory.remove_modules
   in
   handles

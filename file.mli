@@ -38,4 +38,5 @@ end
 
 module Set: Set.S with type Elt.t = t
 
-val handle: configuration: Configuration.t -> t -> Handle.t option
+exception NonexistentHandle of string
+val handle: configuration: Configuration.t -> t -> Handle.t

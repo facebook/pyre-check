@@ -44,11 +44,24 @@ let test_handle _ =
         ~typeshed:(path "/typeshed")
         ()
     in
-    let expected =
-      File.handle ~configuration (File.create (path absolute))
-      >>| File.Handle.show
-    in
-    assert_equal expected handle
+    match handle with
+    | None ->
+        let message =
+          let roots =
+            List.to_string
+              ["/root/stubs"; "/external"; "/typeshed/stdlib"; "/typeshed/third_party"; "/root"]
+              ~f:ident
+          in
+          Format.sprintf "Unable to construct handle for %s. Possible roots: %s" absolute roots
+        in
+        assert_raises (File.NonexistentHandle message)
+          (fun () -> File.handle ~configuration (File.create (path absolute)))
+    | Some handle ->
+        let expected =
+          File.handle ~configuration (File.create (path absolute))
+          |> File.Handle.show
+        in
+        assert_equal expected handle
   in
   assert_handle ~absolute:"/root/a.py" ~handle:(Some "a.py");
 
