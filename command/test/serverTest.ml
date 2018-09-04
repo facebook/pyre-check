@@ -331,9 +331,9 @@ let test_query _ =
   in
   let parse_annotation serialized =
     serialized
-    |> fun literal -> String (StringLiteral.create literal)
-                      |> Node.create_with_default_location
-                      |> Type.create ~aliases:(fun _ -> None)
+    |> (fun literal -> String (StringLiteral.create literal))
+    |> Node.create_with_default_location
+    |> Type.create ~aliases:(fun _ -> None)
   in
   assert_type_query_response
     ~source:""
@@ -574,8 +574,7 @@ let test_query _ =
     |}
     ~query:"type(foo(bar))"
     (Protocol.TypeQuery.Error
-       "Expression had errors: Incompatible parameter type [6]: Expected `str` but got `int`."
-    )
+       "Expression had errors: Incompatible parameter type [6]: Expected `str` but got `int`.")
 
 
 let test_connect _ =
