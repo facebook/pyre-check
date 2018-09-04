@@ -393,6 +393,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~local
               (Format.sprintf
                  "No class definition found for %s"
                  (Expression.show annotation)))
+
     | TypeQuery.NormalizeType expression ->
         parse_and_validate expression
         |> (fun annotation -> TypeQuery.Response (TypeQuery.Type annotation))
@@ -450,6 +451,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~local
                    "No signature found for %s"
                    (Expression.Access.show function_name))
         end
+
     | TypeQuery.Superclasses annotation ->
         parse_and_validate annotation
         |> Handler.class_definition
@@ -462,6 +464,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~local
           ~default:(
             TypeQuery.Error
               (Format.sprintf "No class definition found for %s" (Expression.show annotation)))
+
     | TypeQuery.Type expression ->
         begin
           let state =
@@ -488,6 +491,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~local
               in
               TypeQuery.Error (Format.sprintf "Expression had errors: %s" descriptions)
         end
+
     | TypeQuery.TypeAtLocation {
         Ast.Location.path;
         start = ({ Ast.Location.line; column} as start);
