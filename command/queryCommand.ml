@@ -15,7 +15,7 @@ open Protocol
 open TypeQuery
 
 
-exception InvalidQuery
+exception InvalidQuery of string
 
 
 let parse_query ~root query =
@@ -33,7 +33,7 @@ let parse_query ~root query =
       let expression { Argument.value; _ } = value in
       let access = function
         | { Argument.value = { Node.value = Access access; _ }; _ } -> access
-        | _ -> raise InvalidQuery
+        | _ -> raise (InvalidQuery "expected access")
       in
       begin
         match String.lowercase (Identifier.show name), arguments with
@@ -77,10 +77,10 @@ let parse_query ~root query =
             in
             Request.TypeCheckRequest (TypeCheckRequest.create ~check:files ())
         | _ ->
-            raise InvalidQuery
+            raise (InvalidQuery "unexpected query call")
       end
   | _ ->
-      raise InvalidQuery
+      raise (InvalidQuery "unexpected query")
 
 
 let run_query serialized local_root () =
@@ -99,8 +99,8 @@ let run_query serialized local_root () =
        | response ->
            Log.error "Unexpected response %s from server\n" (Server.Protocol.show_response response)
      with
-     | InvalidQuery ->
-         Log.error "Unable to parse query \"%s\"" serialized;
+     | InvalidQuery reason ->
+         Log.error "Unable to parse query \"%s\": %s." serialized reason;
          exit 1
      | Parser.Error error ->
          let error =
