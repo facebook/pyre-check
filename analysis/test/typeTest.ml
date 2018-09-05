@@ -504,6 +504,11 @@ let test_is_none _ =
   assert_true (Type.is_none (Type.Optional Type.Bottom))
 
 
+
+let test_is_type_alias _ =
+  assert_true (Type.is_type_alias (Type.primitive "typing.TypeAlias"));
+  assert_false (Type.is_type_alias (Type.parametric "typing.TypeAlias" [Type.Top]))
+
 let test_is_unknown _ =
   assert_false (Type.is_unknown Type.Bottom);
   assert_false (Type.is_unknown Type.Object);
@@ -863,6 +868,7 @@ let () =
     "is_not_instantiated">::test_is_not_instantiated;
     "is_meta">::test_is_meta;
     "is_none">::test_is_none;
+    "is_type_alias">::test_is_type_alias;
     "is_unknown">::test_is_unknown;
     "is_resolved">::test_is_resolved;
     "is_iterator">::test_is_iterator;

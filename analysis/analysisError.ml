@@ -763,7 +763,8 @@ let due_to_analysis_limitations { kind; _ } =
   | MissingReturnAnnotation { annotation = actual; _ }
   | RedundantCast actual
   | UninitializedAttribute { mismatch = {actual; _ }; _ }->
-      Type.is_unknown actual
+      Type.is_unknown actual ||
+      Type.is_type_alias actual
   | Top -> true
   | UndefinedAttribute { origin = Class { annotation; _ }; _ }
   | UndefinedType annotation ->

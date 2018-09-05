@@ -1232,6 +1232,9 @@ let is_unknown annotation =
   exists annotation ~predicate:(function | Top | Deleted -> true | _ -> false)
 
 
+let is_type_alias annotation = equal annotation (primitive "typing.TypeAlias")
+
+
 let is_not_instantiated annotation =
   let predicate = function
     | Bottom -> true

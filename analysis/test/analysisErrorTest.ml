@@ -266,6 +266,19 @@ let test_due_to_analysis_limitations _ =
               };
             })));
 
+  assert_true
+    (Error.due_to_analysis_limitations
+       (error
+          (Error.IncompatibleParameterType {
+              Error.name = Some ((Access.create ""));
+              position = 1;
+              callee = Some (Access.create "callee");
+              mismatch = {
+                Error.actual = Type.primitive "typing.TypeAlias";
+                expected = Type.Top;
+              };
+            })));
+
   (* Return. *)
   assert_true
     (Error.due_to_analysis_limitations

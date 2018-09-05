@@ -1418,6 +1418,17 @@ let test_check _ =
 
   assert_type_errors
     {|
+      _T = typing.TypeVar("_T")
+      def meta(x: typing.Type[_T]) -> None: ...
+      meta(typing.Dict)
+    |}
+    [
+      "Incompatible parameter type [6]: Expected `typing.Type[Variable[_T]]` but got " ^
+      "`typing.TypeAlias`.";
+    ];
+
+  assert_type_errors
+    {|
       x: typing.Generator[int, int, int]
       def foo() -> typing.Generator:
         return x
