@@ -42,7 +42,7 @@ let parse_query ~root query =
             Request.TypeQueryRequest (Meet (left, right))
         | "methods", [class_name] ->
             Request.TypeQueryRequest (Methods class_name)
-        | "normalizetype", [argument] ->
+        | "normalize_type", [argument] ->
             Request.TypeQueryRequest (NormalizeType argument)
         | "signature", [{ Node.value = Expression.Access function_name; _ }] ->
             Request.TypeQueryRequest (Signature function_name)
@@ -62,7 +62,7 @@ let parse_query ~root query =
               { Location.path; start = position; stop = position }
             in
             Request.TypeQueryRequest (TypeAtLocation location)
-        | "typecheckpath", arguments ->
+        | "type_check_path", arguments ->
             let files =
               arguments
               |> List.map ~f:Expression.show

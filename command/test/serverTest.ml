@@ -382,7 +382,7 @@ let test_query _ =
 
   assert_type_query_response
     ~source:"A = int"
-    ~query:"normalizeType(A)"
+    ~query:"normalize_type(A)"
     (Protocol.TypeQuery.Response (Protocol.TypeQuery.Type Type.integer));
 
   assert_type_query_response

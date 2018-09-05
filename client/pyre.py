@@ -222,11 +222,11 @@ def main() -> int:
     query = parsed_commands.add_parser(commands.Query.NAME)
     query_message = """One of:
     `help`,
-    `typecheckPath(file1, file2, ..., fileN)`,
+    `type_check_path(file1, file2, ..., fileN)`,
     `less_or_equal(left, right)`,
     `meet(left, right)`,
     `join(left, right)`,
-    `normalizeType(type)`,
+    `normalize_type(type)`,
     `superclasses(type)`
     """
     query.add_argument("query", help=query_message)
