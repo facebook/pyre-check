@@ -79,7 +79,7 @@ let parse_query ~root query =
               { Location.path; start = position; stop = position }
             in
             Request.TypeQueryRequest (TypeAtLocation location)
-        | "type_check_path", arguments ->
+        | "type_check", arguments ->
             let files =
               arguments
               |> List.map ~f:string

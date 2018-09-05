@@ -68,7 +68,7 @@ let test_parse_query _ =
   assert_fails_to_parse "normalizeType(int, str)";
 
   assert_equal
-    (Commands.Query.parse_query ~root:(mock_path "") "type_check_path('derp/fiddle.py')")
+    (Commands.Query.parse_query ~root:(mock_path "") "type_check('derp/fiddle.py')")
     (Request.TypeCheckRequest
        (TypeCheckRequest.create
           ~check:[
