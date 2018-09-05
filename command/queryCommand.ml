@@ -29,32 +29,35 @@ let parse_query ~root query =
         };
       _;
     }] ->
-      let arguments = List.map ~f:(fun { Expression.Argument.value; _ } -> value) arguments in
+      let expression { Expression.Argument.value; _ } = value in
       begin
         match String.lowercase (Identifier.show name), arguments with
         | "attributes", [class_name] ->
-            Request.TypeQueryRequest (Attributes class_name)
+            Request.TypeQueryRequest (Attributes (expression class_name))
         | "join", [left; right] ->
-            Request.TypeQueryRequest (Join (left, right))
+            Request.TypeQueryRequest (Join (expression left, expression right))
         | "less_or_equal", [left; right] ->
-            Request.TypeQueryRequest (LessOrEqual (left, right))
+            Request.TypeQueryRequest (LessOrEqual (expression left, expression right))
         | "meet", [left; right] ->
-            Request.TypeQueryRequest (Meet (left, right))
+            Request.TypeQueryRequest (Meet (expression left, expression right))
         | "methods", [class_name] ->
-            Request.TypeQueryRequest (Methods class_name)
+            Request.TypeQueryRequest (Methods (expression class_name))
         | "normalize_type", [argument] ->
-            Request.TypeQueryRequest (NormalizeType argument)
-        | "signature", [{ Node.value = Expression.Access function_name; _ }] ->
+            Request.TypeQueryRequest (NormalizeType (expression argument))
+        | "signature",
+          [
+            { Expression.Argument.value = { Node.value = Expression.Access function_name; _ }; _ };
+          ] ->
             Request.TypeQueryRequest (Signature function_name)
         | "superclasses", [class_name] ->
-            Request.TypeQueryRequest (Superclasses class_name)
+            Request.TypeQueryRequest (Superclasses (expression class_name))
         | "type", [argument] ->
-            Request.TypeQueryRequest (Type argument)
+            Request.TypeQueryRequest (Type (expression argument))
         | "type_at_location",
           [
-            { Node.value = Expression.Access path; _ };
-            { Node.value = Expression.Integer line; _ };
-            { Node.value = Expression.Integer column; _ };
+            { Expression.Argument.value = { Node.value = Expression.Access path; _ }; _ };
+            { Expression.Argument.value = { Node.value = Expression.Integer line; _ }; _ };
+            { Expression.Argument.value = { Node.value = Expression.Integer column; _ }; _ };
           ] ->
             let location =
               let path = Expression.Access.show path in
@@ -65,6 +68,7 @@ let parse_query ~root query =
         | "type_check_path", arguments ->
             let files =
               arguments
+              |> List.map ~f:expression
               |> List.map ~f:Expression.show
               |> List.map ~f:(fun relative -> Path.create_relative ~root ~relative)
               |> List.map ~f:File.create
