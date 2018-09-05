@@ -6,6 +6,7 @@
 open Core
 
 open Ast
+open Expression
 open Network
 open Pyre
 open PyreParser
@@ -21,15 +22,15 @@ let parse_query ~root query =
   match (Parser.parse [query]) with
   | [{
       Node.value = Statement.Expression {
-          Node.value = Expression.Access [
-              Expression.Access.Identifier name;
-              Expression.Access.Call { Node.value = arguments; _ };
+          Node.value = Access [
+              Access.Identifier name;
+              Access.Call { Node.value = arguments; _ };
             ];
           _;
         };
       _;
     }] ->
-      let expression { Expression.Argument.value; _ } = value in
+      let expression { Argument.value; _ } = value in
       begin
         match String.lowercase (Identifier.show name), arguments with
         | "attributes", [class_name] ->
@@ -45,9 +46,7 @@ let parse_query ~root query =
         | "normalize_type", [argument] ->
             Request.TypeQueryRequest (NormalizeType (expression argument))
         | "signature",
-          [
-            { Expression.Argument.value = { Node.value = Expression.Access function_name; _ }; _ };
-          ] ->
+          [{ Argument.value = { Node.value = Access function_name; _ }; _ }] ->
             Request.TypeQueryRequest (Signature function_name)
         | "superclasses", [class_name] ->
             Request.TypeQueryRequest (Superclasses (expression class_name))
@@ -55,12 +54,12 @@ let parse_query ~root query =
             Request.TypeQueryRequest (Type (expression argument))
         | "type_at_location",
           [
-            { Expression.Argument.value = { Node.value = Expression.Access path; _ }; _ };
-            { Expression.Argument.value = { Node.value = Expression.Integer line; _ }; _ };
-            { Expression.Argument.value = { Node.value = Expression.Integer column; _ }; _ };
+            { Argument.value = { Node.value = Access path; _ }; _ };
+            { Argument.value = { Node.value = Integer line; _ }; _ };
+            { Argument.value = { Node.value = Integer column; _ }; _ };
           ] ->
             let location =
-              let path = Expression.Access.show path in
+              let path = Access.show path in
               let position = { Location.line; column } in
               { Location.path; start = position; stop = position }
             in
