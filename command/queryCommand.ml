@@ -35,6 +35,18 @@ let parse_query ~root query =
         | { Argument.value = { Node.value = Access access; _ }; _ } -> access
         | _ -> raise (InvalidQuery "expected access")
       in
+      let string = function
+        | {
+          Argument.value = {
+            Node.value = String { StringLiteral.value; kind = StringLiteral.String };
+            _;
+          };
+          _;
+        } ->
+            value
+        | _ ->
+            raise (InvalidQuery "expected string")
+      in
       begin
         match String.lowercase (Identifier.show name), arguments with
         | "attributes", [name] ->
@@ -62,7 +74,7 @@ let parse_query ~root query =
             { Argument.value = { Node.value = Integer column; _ }; _ };
           ] ->
             let location =
-              let path = Access.show (access path) in
+              let path = string path in
               let position = { Location.line; column } in
               { Location.path; start = position; stop = position }
             in
@@ -70,8 +82,7 @@ let parse_query ~root query =
         | "type_check_path", arguments ->
             let files =
               arguments
-              |> List.map ~f:expression
-              |> List.map ~f:Expression.show
+              |> List.map ~f:string
               |> List.map ~f:(fun relative -> Path.create_relative ~root ~relative)
               |> List.map ~f:File.create
             in

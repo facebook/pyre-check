@@ -413,11 +413,11 @@ let test_query _ =
 
   assert_type_query_response
     ~source:"a = 2"
-    ~query:"type_at_location(test.py, 1, 4)"
+    ~query:"type_at_location('test.py', 1, 4)"
     (Protocol.TypeQuery.Response (Protocol.TypeQuery.Type Type.integer));
   assert_type_query_response
     ~source:"a = 2"
-    ~query:"type_at_location(test.py, 1, 3)"
+    ~query:"type_at_location('test.py', 1, 3)"
     (Protocol.TypeQuery.Error "Not able to get lookup at test.py:1:3");
 
   assert_type_query_response

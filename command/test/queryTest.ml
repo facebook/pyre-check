@@ -68,11 +68,11 @@ let test_parse_query _ =
   assert_fails_to_parse "normalizeType(int, str)";
 
   assert_equal
-    (Commands.Query.parse_query ~root:(mock_path "") "type_check_path(fiddle.py)")
+    (Commands.Query.parse_query ~root:(mock_path "") "type_check_path('derp/fiddle.py')")
     (Request.TypeCheckRequest
        (TypeCheckRequest.create
           ~check:[
-            File.create (Path.create_relative ~root:(mock_path "") ~relative:"fiddle.py");
+            File.create (Path.create_relative ~root:(mock_path "") ~relative:"derp/fiddle.py");
           ]
           ()
        ));
@@ -84,7 +84,7 @@ let test_parse_query _ =
   assert_fails_to_parse "typecheck(1+2)";
 
   assert_parses
-    "type_at_location(a.py, 1, 2)"
+    "type_at_location('a.py', 1, 2)"
     (TypeAtLocation {
         Ast.Location.path = "a.py";
         start = { Ast.Location.line = 1; column = 2 };
