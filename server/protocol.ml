@@ -7,6 +7,7 @@ open Core
 
 open Ast
 open Analysis
+open Expression
 
 
 module DefinitionRequest = struct
@@ -40,14 +41,14 @@ end
 
 module TypeQuery = struct
   type request =
-    | Attributes of Expression.t
-    | Join of Expression.t * Expression.t
-    | LessOrEqual of Expression.t * Expression.t
-    | Meet of Expression.t * Expression.t
-    | Methods of Expression.t
-    | NormalizeType of Expression.t
-    | Signature of Expression.Access.t
-    | Superclasses of Expression.t
+    | Attributes of Access.t
+    | Join of Access.t * Access.t
+    | LessOrEqual of Access.t * Access.t
+    | Meet of Access.t * Access.t
+    | Methods of Access.t
+    | NormalizeType of Access.t
+    | Signature of Access.t
+    | Superclasses of Access.t
     | Type of Expression.t
     | TypeAtLocation of Location.Instantiated.t
   [@@deriving eq, show]

@@ -31,35 +31,38 @@ let parse_query ~root query =
       _;
     }] ->
       let expression { Argument.value; _ } = value in
+      let access = function
+        | { Argument.value = { Node.value = Access access; _ }; _ } -> access
+        | _ -> raise InvalidQuery
+      in
       begin
         match String.lowercase (Identifier.show name), arguments with
-        | "attributes", [class_name] ->
-            Request.TypeQueryRequest (Attributes (expression class_name))
+        | "attributes", [name] ->
+            Request.TypeQueryRequest (Attributes (access name))
         | "join", [left; right] ->
-            Request.TypeQueryRequest (Join (expression left, expression right))
+            Request.TypeQueryRequest (Join (access left, access right))
         | "less_or_equal", [left; right] ->
-            Request.TypeQueryRequest (LessOrEqual (expression left, expression right))
+            Request.TypeQueryRequest (LessOrEqual (access left, access right))
         | "meet", [left; right] ->
-            Request.TypeQueryRequest (Meet (expression left, expression right))
-        | "methods", [class_name] ->
-            Request.TypeQueryRequest (Methods (expression class_name))
-        | "normalize_type", [argument] ->
-            Request.TypeQueryRequest (NormalizeType (expression argument))
-        | "signature",
-          [{ Argument.value = { Node.value = Access function_name; _ }; _ }] ->
-            Request.TypeQueryRequest (Signature function_name)
-        | "superclasses", [class_name] ->
-            Request.TypeQueryRequest (Superclasses (expression class_name))
+            Request.TypeQueryRequest (Meet (access left, access right))
+        | "methods", [name] ->
+            Request.TypeQueryRequest (Methods (access name))
+        | "normalize_type", [name] ->
+            Request.TypeQueryRequest (NormalizeType (access name))
+        | "signature", [name] ->
+            Request.TypeQueryRequest (Signature (access name))
+        | "superclasses", [name] ->
+            Request.TypeQueryRequest (Superclasses (access name))
         | "type", [argument] ->
             Request.TypeQueryRequest (Type (expression argument))
         | "type_at_location",
           [
-            { Argument.value = { Node.value = Access path; _ }; _ };
+            path;
             { Argument.value = { Node.value = Integer line; _ }; _ };
             { Argument.value = { Node.value = Integer column; _ }; _ };
           ] ->
             let location =
-              let path = Access.show path in
+              let path = Access.show (access path) in
               let position = { Location.line; column } in
               { Location.path; start = position; stop = position }
             in

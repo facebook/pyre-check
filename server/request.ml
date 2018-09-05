@@ -308,8 +308,12 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~local
   let process_request () =
     let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
     let resolution = Environment.resolution environment () in
-    let parse_and_validate unparsed_annotation =
-      let annotation = Resolution.parse_annotation resolution unparsed_annotation in
+    let parse_and_validate access =
+      let annotation =
+        Expression.Access access
+        |> Node.create_with_default_location
+        |> Resolution.parse_annotation resolution
+      in
       if TypeOrder.is_instantiated order annotation then
         annotation
       else
@@ -340,7 +344,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~local
             TypeQuery.Error (
               Format.sprintf
                 "No class definition found for %s"
-                (Expression.show annotation)))
+                (Expression.Access.show annotation)))
 
     | TypeQuery.Join (left, right) ->
         let left = parse_and_validate left in
@@ -392,7 +396,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~local
             TypeQuery.Error
               (Format.sprintf
                  "No class definition found for %s"
-                 (Expression.show annotation)))
+                 (Expression.Access.show annotation)))
 
     | TypeQuery.NormalizeType expression ->
         parse_and_validate expression
@@ -463,7 +467,9 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~local
         |> Option.value
           ~default:(
             TypeQuery.Error
-              (Format.sprintf "No class definition found for %s" (Expression.show annotation)))
+              (Format.sprintf
+                 "No class definition found for %s"
+                 (Expression.Access.show annotation)))
 
     | TypeQuery.Type expression ->
         begin

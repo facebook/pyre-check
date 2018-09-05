@@ -378,7 +378,7 @@ let test_query _ =
   assert_type_query_response
     ~source:""
     ~query:"superclasses(Unknown[int])"
-    (Protocol.TypeQuery.Error "No class definition found for Unknown[int]");
+    (Protocol.TypeQuery.Error "No class definition found for Unknown.__getitem__.(...)");
 
   assert_type_query_response
     ~source:"A = int"

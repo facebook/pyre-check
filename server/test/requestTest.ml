@@ -88,10 +88,10 @@ let test_process_type_query_request _ =
   in
 
   assert_response
-    (Protocol.TypeQuery.Join ((parse_single_expression "int"), (parse_single_expression "float")))
+    (Protocol.TypeQuery.Join (parse_single_access "int", parse_single_access "float"))
     {|{"response":{"type":"float"}}|};
   assert_response
-    (Protocol.TypeQuery.NormalizeType (parse_single_expression "yerp"))
+    (Protocol.TypeQuery.NormalizeType (parse_single_access "yerp"))
     {|{"error":"Type `yerp` was not found in the type order."}|}
 
 
