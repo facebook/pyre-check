@@ -24,6 +24,7 @@ let parse_source ~configuration ?(show_parser_errors = true) file =
         ~docstring:(Statement.extract_docstring statements)
         ~metadata
         ~handle
+        ~path:(File.path file)
         ~qualifier:(Source.qualifier ~handle)
         statements)
   with

@@ -230,9 +230,9 @@ let test_parse_sources context =
     ~printer:(String.concat ~sep:", ")
     ["c.py"]
     source_handles;
+  let local_root = Path.create_absolute (bracket_tmpdir context) in
+  let stub_root = Path.create_relative ~root:local_root ~relative:"stubs" in
   let stub_handles, source_handles =
-    let local_root = Path.create_absolute (bracket_tmpdir context) in
-    let stub_root = Path.create_relative ~root:local_root ~relative:"stubs" in
     let configuration = Configuration.create ~local_root ~search_path:[stub_root] () in
 
     let write_file root relative =
@@ -241,6 +241,7 @@ let test_parse_sources context =
     in
     write_file local_root "a.py";
     write_file stub_root "stub.pyi";
+    Ast.SharedMemory.remove_paths [File.Handle.create "a.py"; File.Handle.create "stub.pyi"];
     let { Service.Parser.stubs; sources } = Service.Parser.parse_all scheduler ~configuration in
     stubs, sources
   in
@@ -249,7 +250,17 @@ let test_parse_sources context =
   assert_equal
     stub_handles
     [File.Handle.create "stub.pyi"; File.Handle.create "stub.pyi"];
-  assert_equal source_handles [File.Handle.create "a.py"]
+  assert_equal source_handles [File.Handle.create "a.py"];
+
+  let assert_handle_path ~handle ~path =
+    let handle = File.Handle.create handle in
+    let { Source.path = actual; _ } = Option.value_exn (Ast.SharedMemory.get_source handle) in
+    assert_equal ~cmp:(Option.equal Path.equal) (Some path) actual
+  in
+  assert_handle_path
+    ~handle:"stub.pyi"
+    ~path:(Path.create_relative ~root:stub_root ~relative:"stub.pyi");
+  assert_handle_path ~handle:"a.py" ~path:(Path.create_relative ~root:local_root ~relative:"a.py")
 
 
 let test_register_modules _ =

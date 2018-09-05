@@ -5,6 +5,7 @@
 
 open Expression
 
+open Pyre
 
 type mode =
   | Default
@@ -45,6 +46,7 @@ type t = {
   docstring: string option;
   metadata: Metadata.t;
   handle: File.Handle.t;
+  path: Path.t option;
   qualifier: Access.t;
   statements: Statement.t list;
 }
@@ -57,6 +59,7 @@ val create
   :  ?docstring: string option
   -> ?metadata: Metadata.t
   -> ?handle: File.Handle.t
+  -> ?path: Path.t
   -> ?qualifier: Access.t
   -> Statement.t list
   -> t
