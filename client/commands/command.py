@@ -69,6 +69,8 @@ class Command:
         self._show_parse_errors = arguments.show_parse_errors
         self._logging_sections = arguments.logging_sections
         self._capable_terminal = arguments.capable_terminal
+        self._log_identifier = arguments.log_identifier
+        self._logger = arguments.logger or configuration.logger
 
         self._original_directory = arguments.original_directory
         self._current_directory = arguments.current_directory
@@ -121,6 +123,10 @@ class Command:
             flags.extend(["-logging-sections", self._logging_sections])
         if self._current_directory:
             flags.extend(["-project-root", self._current_directory])
+        if self._log_identifier:
+            flags.extend(["-log-identifier", self._log_identifier])
+        if self._logger:
+            flags.extend(["-logger", self._logger])
         return flags
 
     def _read_stdout(self, stdout) -> None:

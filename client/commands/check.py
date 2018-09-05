@@ -14,9 +14,7 @@ class Check(Reporting):
 
     def __init__(self, arguments, configuration, analysis_directory) -> None:
         super(Check, self).__init__(arguments, configuration, analysis_directory)
-        self._log_identifier = arguments.log_identifier
         self._number_of_workers = configuration.number_of_workers
-        self._logger = arguments.logger or configuration.logger
 
     def _flags(self) -> List[str]:
         flags = super()._flags()
@@ -36,10 +34,6 @@ class Check(Reporting):
         search_path = self._configuration.get_search_path()
         if search_path:
             flags.extend(["-search-path", ",".join(search_path)])
-        if self._log_identifier:
-            flags.extend(["-log-identifier", self._log_identifier])
-        if self._logger:
-            flags.extend(["-logger", self._logger])
         return flags
 
     def _run(self, retries: int = 1) -> None:

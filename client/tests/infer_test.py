@@ -506,6 +506,8 @@ def mock_arguments() -> MagicMock:
     arguments.show_parse_errors = False
     arguments.local_configuration = None
     arguments.logging_sections = None
+    arguments.logger = None
+    arguments.log_identifier = None
     arguments.current_directory = "."
 
     return arguments
@@ -515,6 +517,7 @@ def mock_configuration() -> MagicMock:
     configuration = MagicMock()
     configuration.get_search_path = MagicMock()
     configuration.get_typeshed = MagicMock()
+    configuration.logger = None
     return configuration
 
 

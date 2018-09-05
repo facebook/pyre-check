@@ -82,3 +82,17 @@ class CommandTest(unittest.TestCase):
                 )._state(),
                 commands.command.State.DEAD,
             )
+
+    def test_logger(self) -> None:
+        arguments = mock_arguments()
+        configuration = mock_configuration()
+        analysis_directory = AnalysisDirectory(".")
+
+        command = commands.Command(arguments, configuration, analysis_directory)
+        self.assertEqual(command._flags(), ["-project-root", "."])
+
+        configuration.logger = "/foo/bar"
+        command = commands.Command(arguments, configuration, analysis_directory)
+        self.assertEqual(
+            command._flags(), ["-project-root", ".", "-logger", "/foo/bar"]
+        )
