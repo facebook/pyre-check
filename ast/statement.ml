@@ -1054,12 +1054,18 @@ module For = struct
             [Access.Expression (Node.create_with_default_location expression)] @ next
       end
     in
+    let value =
+      if async then
+        { Node.location; value = Await (Node.create (Access value) ~location) }
+      else
+        { Node.location; value = Access value }
+    in
     {
       Node.location;
       value = Assign {
           Assign.target;
           annotation = None;
-          value = { Node.location; value = Access value };
+          value;
           parent = None;
         }
     }

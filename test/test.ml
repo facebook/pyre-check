@@ -337,7 +337,9 @@ let typeshed_stubs = (* Yo dawg... *)
           pass
 
         class Awaitable: pass
-        class AsyncGenerator: pass
+        class AsyncGenerator(Generic[_T, _S]):
+          def __aiter__(self) -> 'AsyncGenerator[_T, _S]': ...
+          def __anext__(self) -> Awaitable[_T]: ...
 
         def cast(tp: Type[_T], o: Any) -> _T: ...
       |}

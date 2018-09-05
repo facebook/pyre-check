@@ -661,7 +661,7 @@ let test_preamble _ =
   assert_preamble "for a in b: pass" "a = b.__iter__().__next__()";
   assert_preamble "for a, b in c: pass" "a, b = c.__iter__().__next__()";
   assert_preamble "for a in [1, 2, 3]: pass" "a = [1, 2, 3].__iter__().__next__()";
-  assert_preamble "async for a in b: pass" "a = b.__aiter__().__anext__()";
+  assert_preamble "async for a in b: pass" "a = await b.__aiter__().__anext__()";
 
   let assert_preamble block preambles =
     let handlers =
