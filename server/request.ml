@@ -748,145 +748,159 @@ let rec process
   let timer = Timer.start () in
   let (module Handler: Environment.Handler) = environment in
   let result =
-    match request with
-    | TypeCheckRequest request ->
-        SharedMem.collect `aggressive;
-        process_type_check_request ~state ~configuration ~request
+    try
+      match request with
+      | TypeCheckRequest request ->
+          SharedMem.collect `aggressive;
+          process_type_check_request ~state ~configuration ~request
 
-    | TypeQueryRequest request ->
-        process_type_query_request ~state ~local_root ~request
+      | TypeQueryRequest request ->
+          process_type_query_request ~state ~local_root ~request
 
-    | DisplayTypeErrors files ->
-        process_display_type_errors_request ~state ~configuration ~files
+      | DisplayTypeErrors files ->
+          process_display_type_errors_request ~state ~configuration ~files
 
-    | FlushTypeErrorsRequest ->
-        let state =
-          let deferred_requests = Request.flatten deferred_requests in
-          let state = { state with deferred_requests = [] } in
-          let update_state state request =
-            let { state; _ } =
-              process
-                ~socket
-                ~state
-                ~configuration:server_configuration
-                ~request
+      | FlushTypeErrorsRequest ->
+          let state =
+            let deferred_requests = Request.flatten deferred_requests in
+            let state = { state with deferred_requests = [] } in
+            let update_state state request =
+              let { state; _ } =
+                process
+                  ~socket
+                  ~state
+                  ~configuration:server_configuration
+                  ~request
+              in
+              state
             in
-            state
+            List.fold ~init:state ~f:update_state deferred_requests
           in
-          List.fold ~init:state ~f:update_state deferred_requests
-        in
-        let errors =
-          Hashtbl.data errors
-          |> List.concat
-        in
-        { state; response = Some (TypeCheckResponse (build_file_to_error_map ~state errors)) }
-
-    | StopRequest ->
-        Socket.write socket StopResponse;
-        Mutex.critical_section
-          lock
-          ~f:(fun () ->
-              Operations.stop
-                ~reason:"explicit request"
-                ~configuration:server_configuration
-                ~socket:!connections.socket);
-        { state; response = None }
-
-    | LanguageServerProtocolRequest request ->
-        parse
-          ~root:configuration.local_root
-          ~request:(Yojson.Safe.from_string request)
-        >>| (fun request -> process ~state ~socket ~configuration:server_configuration ~request)
-        |> Option.value ~default:{ state; response = None }
-
-    | ClientShutdownRequest id ->
-        process_client_shutdown_request ~state ~id
-
-    | ClientExitRequest client ->
-        Log.log ~section:`Server "Stopping %s client" (show_client client);
-        { state; response = Some (ClientExitResponse client) }
-
-    | RageRequest id ->
-        let response =
-          let items = Service.Rage.get_logs configuration in
-          LanguageServer.Protocol.RageResponse.create ~items ~id
-          |> LanguageServer.Protocol.RageResponse.to_yojson
-          |> Yojson.Safe.to_string
-          |> (fun response -> LanguageServerProtocolResponse response)
-          |> Option.some
-        in
-        { state; response }
-
-    | GetDefinitionRequest { DefinitionRequest.id; file; position } ->
-        let response =
-          let open LanguageServer.Protocol in
-          let definition = LookupCache.find_definition ~state ~configuration file position in
-          TextDocumentDefinitionResponse.create
-            ~root:local_root
-            ~id
-            ~location:definition
-          |> TextDocumentDefinitionResponse.to_yojson
-          |> Yojson.Safe.to_string
-          |> (fun response -> LanguageServerProtocolResponse response)
-          |> Option.some
-        in
-        { state; response }
-
-    | HoverRequest { DefinitionRequest.id; file; position } ->
-        let response =
-          let open LanguageServer.Protocol in
-          let result =
-            LookupCache.find_annotation ~state ~configuration file position
-            >>| fun (location, annotation) ->
-            {
-              HoverResponse.location;
-              contents = Type.show annotation;
-            }
+          let errors =
+            Hashtbl.data errors
+            |> List.concat
           in
-          HoverResponse.create ~id ~result
-          |> HoverResponse.to_yojson
-          |> Yojson.Safe.to_string
-          |> (fun response -> LanguageServerProtocolResponse response)
-          |> Option.some
-        in
-        { state; response }
+          { state; response = Some (TypeCheckResponse (build_file_to_error_map ~state errors)) }
 
-    | OpenDocument file ->
-        (* Make sure cache is fresh. We might not have received a close notification. *)
-        LookupCache.evict ~state file;
-        LookupCache.get ~state ~configuration file
-        |> ignore;
-        { state; response = None }
-
-    | CloseDocument file ->
-        LookupCache.evict ~state file;
-        { state; response = None }
-
-    | SaveDocument file ->
-        (* On save, evict entries from the lookup cache. The updated
-           source will be picked up at the next lookup (if any). *)
-        LookupCache.evict ~state file;
-        let check_on_save =
+      | StopRequest ->
+          Socket.write socket StopResponse;
           Mutex.critical_section
             lock
             ~f:(fun () ->
-                let { file_notifiers; _ } = !connections in
-                List.is_empty file_notifiers)
-        in
-        if check_on_save then
-          process_type_check_request
-            ~state
-            ~configuration
-            ~request:{ TypeCheckRequest.update_environment_with = [file]; check = [file]; }
-        else
-          begin
-            Log.log ~section:`Server "Explicitly ignoring didSave request";
-            { state; response = None }
-          end
+                Operations.stop
+                  ~reason:"explicit request"
+                  ~configuration:server_configuration
+                  ~socket:!connections.socket);
+          { state; response = None }
 
-    (* Requests that cannot be fulfilled here. *)
-    | ClientConnectionRequest _ ->
-        raise InvalidRequest
+      | LanguageServerProtocolRequest request ->
+          parse
+            ~root:configuration.local_root
+            ~request:(Yojson.Safe.from_string request)
+          >>| (fun request -> process ~state ~socket ~configuration:server_configuration ~request)
+          |> Option.value ~default:{ state; response = None }
+
+      | ClientShutdownRequest id ->
+          process_client_shutdown_request ~state ~id
+
+      | ClientExitRequest client ->
+          Log.log ~section:`Server "Stopping %s client" (show_client client);
+          { state; response = Some (ClientExitResponse client) }
+
+      | RageRequest id ->
+          let response =
+            let items = Service.Rage.get_logs configuration in
+            LanguageServer.Protocol.RageResponse.create ~items ~id
+            |> LanguageServer.Protocol.RageResponse.to_yojson
+            |> Yojson.Safe.to_string
+            |> (fun response -> LanguageServerProtocolResponse response)
+            |> Option.some
+          in
+          { state; response }
+
+      | GetDefinitionRequest { DefinitionRequest.id; file; position } ->
+          let response =
+            let open LanguageServer.Protocol in
+            let definition = LookupCache.find_definition ~state ~configuration file position in
+            TextDocumentDefinitionResponse.create
+              ~root:local_root
+              ~id
+              ~location:definition
+            |> TextDocumentDefinitionResponse.to_yojson
+            |> Yojson.Safe.to_string
+            |> (fun response -> LanguageServerProtocolResponse response)
+            |> Option.some
+          in
+          { state; response }
+
+      | HoverRequest { DefinitionRequest.id; file; position } ->
+          let response =
+            let open LanguageServer.Protocol in
+            let result =
+              LookupCache.find_annotation ~state ~configuration file position
+              >>| fun (location, annotation) ->
+              {
+                HoverResponse.location;
+                contents = Type.show annotation;
+              }
+            in
+            HoverResponse.create ~id ~result
+            |> HoverResponse.to_yojson
+            |> Yojson.Safe.to_string
+            |> (fun response -> LanguageServerProtocolResponse response)
+            |> Option.some
+          in
+          { state; response }
+
+      | OpenDocument file ->
+          (* Make sure cache is fresh. We might not have received a close notification. *)
+          LookupCache.evict ~state file;
+          LookupCache.get ~state ~configuration file
+          |> ignore;
+          { state; response = None }
+
+      | CloseDocument file ->
+          LookupCache.evict ~state file;
+          { state; response = None }
+
+      | SaveDocument file ->
+          (* On save, evict entries from the lookup cache. The updated
+             source will be picked up at the next lookup (if any). *)
+          LookupCache.evict ~state file;
+          let check_on_save =
+            Mutex.critical_section
+              lock
+              ~f:(fun () ->
+                  let { file_notifiers; _ } = !connections in
+                  List.is_empty file_notifiers)
+          in
+          if check_on_save then
+            process_type_check_request
+              ~state
+              ~configuration
+              ~request:{ TypeCheckRequest.update_environment_with = [file]; check = [file]; }
+          else
+            begin
+              Log.log ~section:`Server "Explicitly ignoring didSave request";
+              { state; response = None }
+            end
+
+      (* Requests that cannot be fulfilled here. *)
+      | ClientConnectionRequest _ ->
+          raise InvalidRequest
+    with Unix.Unix_error (kind, name, parameters) ->
+      Log.log_unix_error (kind, name, parameters);
+      Statistics.event
+        ~name:"unix error on request"
+        ~normals:[
+          "request", Request.show request;
+          "error kind", Unix.error_message kind;
+          "error name", name;
+          "parameters", parameters;
+        ]
+        ~flush:true
+        ();
+      { state; response = None }
   in
   Statistics.performance
     ~name:"server request"
