@@ -102,7 +102,7 @@ module TypeQuery = struct
     | Type annotation ->
         `Assoc ["type", Type.to_yojson annotation]
 
-   type response =
+  type response =
     | Response of base_response
     | Error of string
   [@@deriving eq, show]

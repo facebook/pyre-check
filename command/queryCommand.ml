@@ -105,8 +105,17 @@ let run_query serialized local_root () =
        match Socket.read socket with
        | TypeQueryResponse response ->
            Log.print "%s" (Yojson.Safe.pretty_to_string (response_to_yojson response))
-       | (TypeCheckResponse _) as response ->
-           Log.print "%s" (Server.Protocol.show_response response)
+       | TypeCheckResponse errors ->
+           let response_json =
+             errors
+             |> List.concat_map ~f:snd
+             |> (fun errors ->
+                 `Assoc [
+                   "response",
+                   `List (List.map ~f:(Analysis.Error.to_json ~detailed:false) errors);
+                 ])
+           in
+           Log.print "%s" (Yojson.Safe.to_string response_json)
        | response ->
            Log.error "Unexpected response %s from server\n" (Server.Protocol.show_response response)
      with
