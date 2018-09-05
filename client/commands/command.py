@@ -42,9 +42,9 @@ class Result:
 
     def check(self) -> None:
         if self.code != ExitCode.SUCCESS:
+            description = ":\n{}".format(self.output) if self.output else ""
             raise ClientException(
-                "Client exited with error code {}:"
-                "\n{}".format(self.code, self.output)
+                "Client exited with error code {}{}".format(self.code, description)
             )
 
 
