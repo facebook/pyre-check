@@ -87,16 +87,29 @@ let run_query serialized local_root () =
   let local_root = Path.create_absolute local_root in
   let configuration = Configuration.create ~local_root () in
   (fun () ->
-     let query = parse_query ~root:local_root serialized in
-     let socket = Server.Operations.connect ~retries:3 ~configuration in
-     Socket.write socket query;
-     match Socket.read socket with
-     | TypeQueryResponse response ->
-         Log.print "%s\n" (Yojson.Safe.pretty_to_string (response_to_yojson response))
-     | (TypeCheckResponse _) as response ->
-         Log.print "%s\n" (Server.Protocol.show_response response)
-     | response ->
-         Log.error "Unexpected response %s from server\n" (Server.Protocol.show_response response))
+     try
+       let query = parse_query ~root:local_root serialized in
+       let socket = Server.Operations.connect ~retries:3 ~configuration in
+       Socket.write socket query;
+       match Socket.read socket with
+       | TypeQueryResponse response ->
+           Log.print "%s\n" (Yojson.Safe.pretty_to_string (response_to_yojson response))
+       | (TypeCheckResponse _) as response ->
+           Log.print "%s\n" (Server.Protocol.show_response response)
+       | response ->
+           Log.error "Unexpected response %s from server\n" (Server.Protocol.show_response response)
+     with
+     | InvalidQuery ->
+         Log.error "Unable to parse query \"%s\"" serialized;
+         exit 1
+     | Parser.Error error ->
+         let error =
+           String.split ~on:'\n' error
+           |> (fun lines -> List.drop lines 1)
+           |> String.concat ~sep:"\n"
+         in
+         Log.error "Unable to parse query:\n%s" error;
+         exit 1)
   |> Scheduler.run_process ~configuration
 
 
