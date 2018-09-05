@@ -89,7 +89,10 @@ let log ?(flush = false) ?(randomly_log_every = 1) category sample =
       | Some samples -> Hashtbl.set ~key:category ~data:(sample :: samples) cache
       | _ -> Hashtbl.set ~key:category ~data:[sample] cache
     end;
-  if flush || Hashtbl.length cache >= size then
+  let samples_count () =
+    Hashtbl.fold cache ~init:0 ~f:(fun ~key:_ ~data count -> count + List.length data)
+  in
+  if flush || (samples_count () >= size) then
     flush_cache ()
 
 
