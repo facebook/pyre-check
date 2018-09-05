@@ -98,15 +98,15 @@ let run_query serialized local_root () =
   let local_root = Path.create_absolute local_root in
   let configuration = Configuration.create ~local_root () in
   (fun () ->
-     try
-       let query = parse_query ~root:local_root serialized in
-       let socket = Server.Operations.connect ~retries:3 ~configuration in
-       Socket.write socket query;
-       match Socket.read socket with
-       | TypeQueryResponse response ->
-           Log.print "%s" (Yojson.Safe.pretty_to_string (response_to_yojson response))
-       | TypeCheckResponse errors ->
-           let response_json =
+     let response =
+       try
+         let query = parse_query ~root:local_root serialized in
+         let socket = Server.Operations.connect ~retries:3 ~configuration in
+         Socket.write socket query;
+         match Socket.read socket with
+         | TypeQueryResponse response ->
+             response_to_yojson response
+         | TypeCheckResponse errors ->
              errors
              |> List.concat_map ~f:snd
              |> (fun errors ->
@@ -114,22 +114,33 @@ let run_query serialized local_root () =
                    "response",
                    `List (List.map ~f:(Analysis.Error.to_json ~detailed:false) errors);
                  ])
+         | response ->
+             `Assoc [
+               "response",
+               `String
+                 (Format.sprintf
+                    "Unexpected response %s from server"
+                    (Server.Protocol.show_response response))
+             ]
+       with
+       | InvalidQuery reason ->
+           `Assoc [
+             "error",
+             `String (Format.sprintf "Unable to parse query \"%s\": %s." serialized reason);
+           ]
+       | Parser.Error error ->
+           let error =
+             String.split ~on:'\n' error
+             |> (fun lines -> List.drop lines 1)
+             |> String.concat ~sep:"\n"
            in
-           Log.print "%s" (Yojson.Safe.to_string response_json)
-       | response ->
-           Log.error "Unexpected response %s from server\n" (Server.Protocol.show_response response)
-     with
-     | InvalidQuery reason ->
-         Log.error "Unable to parse query \"%s\": %s." serialized reason;
-         exit 1
-     | Parser.Error error ->
-         let error =
-           String.split ~on:'\n' error
-           |> (fun lines -> List.drop lines 1)
-           |> String.concat ~sep:"\n"
-         in
-         Log.error "Unable to parse query:\n%s" error;
-         exit 1)
+           `Assoc [
+             "error",
+             `String (Format.sprintf "Unable to parse query \"%s\": %s." serialized error);
+           ]
+     in
+     Yojson.Safe.to_string response
+     |> Log.print "%s")
   |> Scheduler.run_process ~configuration
 
 

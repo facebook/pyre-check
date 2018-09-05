@@ -85,10 +85,12 @@ let test_type_query_json _ =
        }
       }
     |};
-  assert_serializes (Response (Type Analysis.Type.integer)) {|{"response": {"type": "int"}}|};
+  assert_serializes
+    (Response (Type Analysis.Type.integer))
+    {|{"response": {"type": "int"}}|};
   assert_serializes
     (Response (Superclasses [Analysis.Type.integer; Analysis.Type.string]))
-    {| {"response": {"superclasses": ["int", "str"]}} |}
+    {|{"response": {"superclasses": ["int", "str"]}}|}
 
 
 let () =
