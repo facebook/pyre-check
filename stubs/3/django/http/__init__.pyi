@@ -1,16 +1,12 @@
-from django.http.request import (
-    build_request_repr,
-    HttpRequest,
-    QueryDict,
-)
+from django.http.request import HttpRequest, QueryDict, build_request_repr
 from django.http.response import (
     Http404,
     HttpResponse,
-    HttpResponseRedirect,
-    HttpResponsePermanentRedirect,
+    HttpResponseBadRequest,
+    HttpResponseForbidden,
     HttpResponseNotAllowed,
     HttpResponseNotFound,
-    HttpResponseForbidden,
-    HttpResponseBadRequest,
+    HttpResponsePermanentRedirect,
+    HttpResponseRedirect,
     StreamingHttpResponse,
 )

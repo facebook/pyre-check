@@ -1,7 +1,4 @@
-from typing import (
-    Any,
-    Tuple,
-)
+from typing import Any, Tuple
 
 
 color_names: Tuple[str, ...]

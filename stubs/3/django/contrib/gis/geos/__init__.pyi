@@ -1,5 +1,6 @@
 from typing import Optional
 
+
 class GEOSBase:
     pass
 
@@ -10,18 +11,22 @@ class ListMixin:
 
 class GEOSGeometry(GEOSBase, ListMixin):
     @property
-    def empty()->bool: ...
+    def empty() -> bool:
+        ...
 
 
 class Point(GEOSGeometry):
     @property
-    def x()->int: ...
+    def x() -> int:
+        ...
 
     @property
-    def y()->int: ...
+    def y() -> int:
+        ...
 
     @property
-    def z()->Optional[int]: ...
+    def z() -> Optional[int]:
+        ...
 
 
 class Polygon(GEOSGeometry):
