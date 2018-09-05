@@ -1279,6 +1279,21 @@ let test_boolean_operator _ =
            operator = BooleanOperator.Or;
            right = +Integer 1;
          });
+    ];
+  assert_parsed_equal
+    "1 and 2 or 3"
+    [
+      +Expression
+        (+BooleanOperator {
+           BooleanOperator.left =
+             (+BooleanOperator {
+                BooleanOperator.left = +Integer 1;
+                operator = BooleanOperator.And;
+                right = +Integer 2;
+              });
+           operator = BooleanOperator.Or;
+           right = +Integer 3;
+         });
     ]
 
 
