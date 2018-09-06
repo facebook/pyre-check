@@ -50,7 +50,7 @@ def _compare_parallel_check(arguments, configuration) -> None:
         "-project-root",
         arguments.current_directory,
     ]
-    search_path = configuration.get_search_path()
+    search_path = configuration.search_path
     if search_path:
         flags.extend(["-search-path", ",".join(search_path)])
     client_command = [configuration.binary, "check"]

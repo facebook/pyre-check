@@ -19,7 +19,7 @@ class AnalyzeTest(unittest.TestCase):
         arguments = mock_arguments()
 
         configuration = mock_configuration()
-        configuration.get_search_path.return_value = ["path1", "path2"]
+        configuration.search_path = ["path1", "path2"]
         configuration.number_of_workers = 5
 
         with patch.object(commands.Command, "_call_client") as call_client, patch(

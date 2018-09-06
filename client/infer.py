@@ -408,7 +408,7 @@ class Infer(commands.Reporting):
     def _flags(self) -> List[str]:
         flags = super()._flags()
         flags.extend(["-infer", "-typeshed", self._configuration.typeshed])
-        search_path = self._configuration.get_search_path()
+        search_path = self._configuration.search_path
         if search_path:
             flags.extend(["-search-path", ",".join(search_path)])
         if self._recursive:

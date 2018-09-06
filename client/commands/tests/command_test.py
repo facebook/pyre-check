@@ -36,7 +36,7 @@ def mock_arguments() -> MagicMock:
 def mock_configuration() -> MagicMock:
     configuration = MagicMock()
     configuration.analysis_directories = ["."]
-    configuration.get_search_path = MagicMock()
+    configuration.search_path = ["path1", "path2"]
     configuration.typeshed = "stub"
     configuration.logger = None
     return configuration

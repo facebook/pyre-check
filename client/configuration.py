@@ -67,7 +67,7 @@ class Configuration:
         self,
         local_configuration_directory=None,
         local_configuration: Optional[str] = None,
-        search_path=None,
+        search_path: Optional[List[str]] = None,
         typeshed: Optional[str] = None,
         preserve_pythonpath=False,
     ) -> None:
@@ -83,19 +83,19 @@ class Configuration:
         self._typeshed = None  # type: Optional[str]
 
         # Handle search path from multiple sources
-        self._search_directories = []
+        self.search_path = []
         pythonpath = os.getenv("PYTHONPATH")
         if preserve_pythonpath and pythonpath:
             for path in pythonpath.split(":"):
                 if os.path.isdir(path):
-                    self._search_directories.append(path)
+                    self.search_path.append(path)
                 else:
                     LOG.warning(
                         "`{}` is not a valid directory, dropping it "
                         "from PYTHONPATH".format(path)
                     )
         if search_path:
-            self._search_directories.extend(search_path)
+            self.search_path.extend(search_path)
         # We will extend the search path further, with the config file
         # items, inside _read().
 
@@ -204,7 +204,7 @@ class Configuration:
                     assert_readable_directory(typeshed_version_directory)
 
             # Validate elements of the search path.
-            for path in self.get_search_path():
+            for path in self.search_path:
                 assert_readable_directory(path)
         except InvalidConfiguration as error:
             raise EnvironmentException("Invalid configuration: {}".format(str(error)))
@@ -224,9 +224,6 @@ class Configuration:
         if not self._typeshed:
             raise InvalidConfiguration("Configuration invalid: no typeshed specified")
         return self._typeshed
-
-    def get_search_path(self) -> List[str]:
-        return self._search_directories
 
     def _check_read_local_configuration(self, path: str, fail_on_error: bool) -> None:
         if fail_on_error and not os.path.exists(path):
@@ -308,9 +305,9 @@ class Configuration:
                     "search_path", default=[]
                 )
                 if isinstance(additional_search_path, list):
-                    self._search_directories.extend(additional_search_path)
+                    self.search_path.extend(additional_search_path)
                 else:
-                    self._search_directories.append(additional_search_path)
+                    self.search_path.append(additional_search_path)
 
                 self._version_hash = configuration.consume(
                     "version", current=self._version_hash

@@ -31,7 +31,7 @@ class Check(Reporting):
                 self._configuration.typeshed,
             ]
         )
-        search_path = self._configuration.get_search_path()
+        search_path = self._configuration.search_path
         if search_path:
             flags.extend(["-search-path", ",".join(search_path)])
         return flags

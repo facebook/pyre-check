@@ -21,7 +21,6 @@ class StartTest(unittest.TestCase):
         arguments.terminal = False
 
         configuration = mock_configuration()
-        configuration.get_search_path.return_value = ["path1", "path2"]
         configuration.version_hash = "hash"
         configuration.number_of_workers = 5
 

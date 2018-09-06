@@ -516,7 +516,7 @@ def mock_arguments() -> MagicMock:
 def mock_configuration() -> MagicMock:
     configuration = MagicMock()
     configuration.typeshed = "stub"
-    configuration.get_search_path = MagicMock()
+    configuration.search_path = ["path1", "path2"]
     configuration.get_typeshed = MagicMock()
     configuration.logger = None
     return configuration
@@ -532,7 +532,6 @@ class InferTest(unittest.TestCase):
 
         configuration = mock_configuration()
         configuration.get_typeshed.return_value = "stub"
-        configuration.get_search_path.return_value = ["path1", "path2"]
 
         with patch.object(commands.Command, "_call_client") as call_client:
             command = Infer(arguments, configuration, AnalysisDirectory("."))

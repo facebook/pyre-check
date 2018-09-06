@@ -23,7 +23,6 @@ class RestartTest(unittest.TestCase):
         arguments.terminal = False
 
         configuration = mock_configuration()
-        configuration.get_search_path.return_value = ["path1", "path2"]
 
         analysis_directory = "."
 

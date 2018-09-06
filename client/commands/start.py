@@ -85,7 +85,7 @@ class Start(Reporting):
                 self._configuration.version_hash,
             ]
         )
-        search_path = self._configuration.get_search_path()
+        search_path = self._configuration.search_path
         if search_path:
             flags.extend(["-search-path", ",".join(search_path)])
 
