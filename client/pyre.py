@@ -275,7 +275,7 @@ def main() -> int:
                 typeshed=arguments.typeshed,
                 preserve_pythonpath=arguments.preserve_pythonpath,
             )
-            if configuration.disabled():
+            if configuration.disabled:
                 LOG.log(
                     log.SUCCESS, "Pyre will not run due to being explicitly disabled"
                 )

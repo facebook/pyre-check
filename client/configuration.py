@@ -61,7 +61,7 @@ class _ConfigurationFile:
 
 
 class Configuration:
-    _disabled = False  # type: bool
+    disabled = False  # type: bool
 
     def __init__(
         self,
@@ -228,9 +228,6 @@ class Configuration:
     def get_search_path(self) -> List[str]:
         return self._search_directories
 
-    def disabled(self) -> bool:
-        return self._disabled
-
     def _check_read_local_configuration(self, path: str, fail_on_error: bool) -> None:
         if fail_on_error and not os.path.exists(path):
             raise EnvironmentException(
@@ -288,7 +285,7 @@ class Configuration:
                 )
 
                 if configuration.consume("disabled", default=False):
-                    self._disabled = True
+                    self.disabled = True
 
                 self.logger = configuration.consume("logger", current=self.logger)
 

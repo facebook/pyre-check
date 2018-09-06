@@ -54,8 +54,7 @@ class ConfigurationTest(unittest.TestCase):
         self.assertEqual(configuration.version_hash, "unversioned")
         self.assertEqual(configuration.logger, None)
         self.assertEqual(configuration.do_not_check, [])
-        self.assertTrue(configuration.disabled())
-        self.assertTrue(configuration._disabled)
+        self.assertTrue(configuration.disabled)
 
         json_load.side_effect = [{"typeshed": "TYPESHED/"}, {}]
         configuration = Configuration()
@@ -336,6 +335,5 @@ class ConfigurationTest(unittest.TestCase):
             self.assertEqual(configuration.version_hash, "unversioned")
             self.assertEqual(configuration.logger, None)
             self.assertEqual(configuration.do_not_check, [])
-            self.assertFalse(configuration.disabled())
-            self.assertFalse(configuration._disabled)
+            self.assertFalse(configuration.disabled)
             self.assertEqual(configuration._typeshed, None)
