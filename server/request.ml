@@ -237,47 +237,32 @@ type response = {
 
 
 module LookupCache = struct
-  let relative_path file =
-    File.path file
-    |> Path.relative
-
-
-  let get ~state:{ lookups; environment; _ } ~configuration:{ local_root; _ } file =
-    let find_or_add path =
-      let construct_lookup path =
-        let add_source table =
-          let source =
-            Path.create_relative ~root:local_root ~relative:path
-            |> File.create
-            |> File.content
+  let get ~state:{ lookups; environment; _ } ~configuration file =
+    let handle = File.handle ~configuration file in
+    let cache_read = String.Table.find lookups (File.Handle.show handle) in
+    match cache_read with
+    | Some _ ->
+        cache_read
+    | None ->
+        let lookup =
+          let content =
+            File.content file
             |> Option.value ~default:""
           in
-          { table; source }
+          Ast.SharedMemory.get_source handle
+          >>| Lookup.create_of_source environment
+          >>| fun table -> { table; source = content }
         in
-        File.Handle.create path
-        |> Ast.SharedMemory.get_source
-        >>| Lookup.create_of_source environment
-        >>| add_source
-      in
-      let cache_read = String.Table.find lookups path in
-      match cache_read with
-      | Some _ ->
-          cache_read
-      | None ->
-          let lookup = construct_lookup path in
-          lookup
-          >>| (fun data -> String.Table.set lookups ~key:path ~data)
-          |> ignore;
-          lookup
-    in
-    relative_path file
-    >>= find_or_add
+        lookup
+        >>| (fun lookup -> String.Table.set lookups ~key:(File.Handle.show handle) ~data:lookup)
+        |> ignore;
+        lookup
 
 
-  let evict ~state:{ lookups; _ } file =
-    relative_path file
-    >>| String.Table.remove lookups
-    |> ignore
+  let evict ~state:{ lookups; _ } ~configuration file =
+    File.handle ~configuration file
+    |> File.Handle.show
+    |> String.Table.remove lookups
 
 
   let find_annotation ~state ~configuration file position =
@@ -661,7 +646,7 @@ let process_type_check_request
     Ast.SharedMemory.remove_paths handles;
     Handler.purge handles;
     update_environment_with
-    |> List.iter ~f:(LookupCache.evict ~state);
+    |> List.iter ~f:(LookupCache.evict ~state ~configuration);
 
     let stubs, sources =
       let is_stub file =
@@ -857,19 +842,19 @@ let rec process
 
       | OpenDocument file ->
           (* Make sure cache is fresh. We might not have received a close notification. *)
-          LookupCache.evict ~state file;
+          LookupCache.evict ~state ~configuration file;
           LookupCache.get ~state ~configuration file
           |> ignore;
           { state; response = None }
 
       | CloseDocument file ->
-          LookupCache.evict ~state file;
+          LookupCache.evict ~state ~configuration file;
           { state; response = None }
 
       | SaveDocument file ->
           (* On save, evict entries from the lookup cache. The updated
              source will be picked up at the next lookup (if any). *)
-          LookupCache.evict ~state file;
+          LookupCache.evict ~state ~configuration file;
           let check_on_save =
             Mutex.critical_section
               lock
