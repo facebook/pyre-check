@@ -23,7 +23,6 @@ type response = {
 val process_client_shutdown_request: state: State.t -> id: int -> response
 val process_type_query_request
   :  state: State.t
-  -> local_root: Path.t
   -> request: Protocol.TypeQuery.request
   -> response
 val process_display_type_errors_request

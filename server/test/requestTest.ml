@@ -70,8 +70,7 @@ let test_process_type_query_request _ =
   let assert_response request expected_response =
     let state = mock_server_state () in
     let actual_response =
-      let local_root = Path.current_working_directory () in
-      Request.process_type_query_request ~state ~local_root ~request
+      Request.process_type_query_request ~state ~request
       |> function
       | { Request.response = Some (Protocol.TypeQueryResponse response); _ } ->
           Protocol.TypeQuery.response_to_yojson response

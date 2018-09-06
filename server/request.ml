@@ -288,7 +288,7 @@ let process_client_shutdown_request ~state ~id =
   { state; response = Some (LanguageServerProtocolResponse response) }
 
 
-let process_type_query_request ~state:({ State.environment; _ } as state) ~local_root ~request =
+let process_type_query_request ~state:({ State.environment; _ } as state) ~request =
   let (module Handler: Environment.Handler) = environment in
   let process_request () =
     let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
@@ -489,11 +489,10 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~local
         _;
       } ->
         let source_text =
-          Path.create_relative
-            ~root:local_root
-            ~relative:path
-          |> File.create
-          |> File.content
+          Ast.SharedMemory.get_source (File.Handle.create path)
+          >>= (fun { Ast.Source.path; _ } -> path)
+          >>| File.create
+          >>= File.content
           |> Option.value ~default:""
         in
         File.Handle.create path
@@ -732,7 +731,7 @@ let rec process
     ~socket
     ~state:({ State.environment; deferred_requests; errors; lock; connections; _ } as state)
     ~configuration:({
-        configuration = { local_root; _ } as configuration;
+        configuration;
         _;
       } as server_configuration)
     ~request =
@@ -746,7 +745,7 @@ let rec process
           process_type_check_request ~state ~configuration ~request
 
       | TypeQueryRequest request ->
-          process_type_query_request ~state ~local_root ~request
+          process_type_query_request ~state ~request
 
       | DisplayTypeErrors files ->
           process_display_type_errors_request ~state ~configuration ~files
