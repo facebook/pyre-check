@@ -27,8 +27,7 @@ type analyze_source_results = {
 let analyze_sources
     ~scheduler
     ~configuration:({
-        Configuration.local_root;
-        project_root;
+        Configuration.project_root;
         filter_directories;
         _;
       } as configuration)
@@ -105,15 +104,9 @@ let analyze_sources
     in
     let filter_by_root handle =
       match Ast.SharedMemory.get_source handle with
-      | Some { Source.handle; _ } ->
-          (* TODO(T33409564): This is not great - it would be better to have a real path. *)
-          let relative =
-            Path.create_relative
-              ~root:local_root
-              ~relative:(File.Handle.show handle)
-          in
-          Path.directory_contains relative ~follow_symlinks:true ~directory:project_root &&
-          filter_by_directories relative
+      | Some { Source.path = Some path; _ } ->
+          Path.directory_contains path ~follow_symlinks:true ~directory:project_root &&
+          filter_by_directories path
       | _ ->
           false
     in
