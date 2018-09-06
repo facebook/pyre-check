@@ -25,7 +25,6 @@ class ConfigurationTest(unittest.TestCase):
             },
             {},
         ]
-
         configuration = Configuration()
         self.assertEqual(configuration.analysis_directories, ["a"])
         self.assertEqual(configuration.targets, [])
@@ -40,7 +39,6 @@ class ConfigurationTest(unittest.TestCase):
             },
             {},
         ]
-
         configuration = Configuration()
         self.assertEqual(configuration.analysis_directories, ["a"])
         self.assertEqual(configuration.targets, [])
