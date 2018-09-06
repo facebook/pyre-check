@@ -15,6 +15,10 @@ let cache = String.Table.create ()
 let size = 500
 
 
+let username = Option.value (Sys.getenv "USER") ~default:(Unix.getlogin ())
+let hostname = Option.value (Sys.getenv "HOSTNAME") ~default:(Unix.gethostname ())
+
+
 let disable () =
   enabled := false
 
@@ -37,8 +41,8 @@ let sample
       [
         "binary", Sys.argv.(0);
         "root", local_root;
-        "username", Option.value ~default:"" (Sys.getenv "USER");
-        "hostname", Option.value ~default:"" (Sys.getenv "HOSTNAME");
+        "username", username;
+        "hostname", hostname;
         "identifier", log_identifier;
       ] @ normals
     else
