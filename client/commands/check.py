@@ -28,7 +28,7 @@ class Check(Reporting):
                 "-workers",
                 str(self._number_of_workers),
                 "-typeshed",
-                str(self._configuration.get_typeshed()),
+                self._configuration.typeshed,
             ]
         )
         search_path = self._configuration.get_search_path()

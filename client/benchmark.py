@@ -46,7 +46,7 @@ def _compare_parallel_check(arguments, configuration) -> None:
         )
     flags = [
         "-typeshed",
-        str(configuration.get_typeshed()),
+        configuration.typeshed,
         "-project-root",
         arguments.current_directory,
     ]

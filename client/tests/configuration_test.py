@@ -59,7 +59,7 @@ class ConfigurationTest(unittest.TestCase):
 
         json_load.side_effect = [{"typeshed": "TYPESHED/"}, {}]
         configuration = Configuration()
-        self.assertEqual(configuration.get_typeshed(), "TYPESHED/")
+        self.assertEqual(configuration.typeshed, "TYPESHED/")
         self.assertEqual(configuration.number_of_workers, number_of_workers())
 
         json_load.side_effect = [
@@ -72,7 +72,7 @@ class ConfigurationTest(unittest.TestCase):
             {},
         ]
         configuration = Configuration()
-        self.assertEqual(configuration.get_typeshed(), "TYPE/VERSION/SHED/")
+        self.assertEqual(configuration.typeshed, "TYPE/VERSION/SHED/")
         self.assertEqual(configuration.get_search_path(), ["additional/"])
         self.assertEqual(configuration.number_of_workers, 20)
 
@@ -85,7 +85,7 @@ class ConfigurationTest(unittest.TestCase):
             {},
         ]
         configuration = Configuration()
-        self.assertEqual(configuration.get_typeshed(), "TYPE/VERSION/SHED/")
+        self.assertEqual(configuration.typeshed, "TYPE/VERSION/SHED/")
         self.assertEqual(configuration.get_search_path(), ["simple_string/"])
 
         # Test loading of additional directories in the search path
@@ -99,7 +99,7 @@ class ConfigurationTest(unittest.TestCase):
                 configuration = Configuration(
                     search_path=["command/", "line/"], preserve_pythonpath=True
                 )
-                self.assertEqual(configuration.get_typeshed(), "TYPESHED/")
+                self.assertEqual(configuration.typeshed, "TYPESHED/")
                 self.assertEqual(
                     configuration.get_search_path(),
                     [
@@ -122,7 +122,7 @@ class ConfigurationTest(unittest.TestCase):
                 configuration = Configuration(
                     search_path=["command/", "line/"], preserve_pythonpath=False
                 )
-                self.assertEqual(configuration.get_typeshed(), "TYPESHED/")
+                self.assertEqual(configuration.typeshed, "TYPESHED/")
                 self.assertEqual(
                     configuration.get_search_path(),
                     ["command/", "line/", "json/", "file/"],
@@ -131,7 +131,7 @@ class ConfigurationTest(unittest.TestCase):
         # Test manual loading of typeshed directory.
         json_load.side_effect = [{}, {}]
         configuration = Configuration(typeshed="some/directory/path/")
-        self.assertEqual(configuration.get_typeshed(), "some/directory/path/")
+        self.assertEqual(configuration.typeshed, "some/directory/path/")
 
         json_load.side_effect = [{"binary": "/binary"}, {}]
         configuration = Configuration()
@@ -159,7 +159,7 @@ class ConfigurationTest(unittest.TestCase):
         # Normalize number of workers if zero.
         json_load.side_effect = [{"typeshed": "TYPESHED/", "workers": 0}, {}]
         configuration = Configuration()
-        self.assertEqual(configuration.get_typeshed(), "TYPESHED/")
+        self.assertEqual(configuration.typeshed, "TYPESHED/")
         self.assertEqual(configuration.number_of_workers, number_of_workers())
 
     @patch("os.path.isfile")

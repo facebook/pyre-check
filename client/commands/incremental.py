@@ -51,7 +51,7 @@ class Incremental(Reporting):
         flags.extend(
             [
                 "-typeshed",
-                str(self._configuration.get_typeshed()),
+                self._configuration.typeshed,
                 "-expected-binary-version",
                 self._configuration.version_hash,
             ]

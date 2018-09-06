@@ -515,6 +515,7 @@ def mock_arguments() -> MagicMock:
 
 def mock_configuration() -> MagicMock:
     configuration = MagicMock()
+    configuration.typeshed = "stub"
     configuration.get_search_path = MagicMock()
     configuration.get_typeshed = MagicMock()
     configuration.logger = None

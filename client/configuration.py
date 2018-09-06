@@ -68,7 +68,7 @@ class Configuration:
         local_configuration_directory=None,
         local_configuration: Optional[str] = None,
         search_path=None,
-        typeshed=None,
+        typeshed: Optional[str] = None,
         preserve_pythonpath=False,
     ) -> None:
         self.analysis_directories = []
@@ -80,7 +80,7 @@ class Configuration:
 
         self._version_hash = None
         self._binary = None  # type: Optional[str]
-        self._typeshed = None
+        self._typeshed = None  # type: Optional[str]
 
         # Handle search path from multiple sources
         self._search_directories = []
@@ -160,19 +160,17 @@ class Configuration:
                 raise InvalidConfiguration("Number of workers must be greater than 0.")
 
             # Validate typeshed path and sub-elements.
-            if not self._typeshed:
-                raise InvalidConfiguration("`typeshed` location must be defined.")
-            assert_readable_directory(self._typeshed)
+            assert_readable_directory(self.typeshed)
 
             # A courtesy warning since we have changed default behaviour.
             if self._typeshed_has_obsolete_value():
                 LOG.warning(
                     "It appears that `{}` points at a `stdlib` directory. "
                     "Please note that the `typeshed` configuration must point at "
-                    "the root of the `typeshed` directory.".format(self._typeshed)
+                    "the root of the `typeshed` directory.".format(self.typeshed)
                 )
 
-            typeshed_subdirectories = os.listdir(self._typeshed)
+            typeshed_subdirectories = os.listdir(self.typeshed)
             if "stdlib" not in typeshed_subdirectories:
                 raise InvalidConfiguration(
                     "`typeshed` location must contain a `stdlib` directory."
@@ -180,7 +178,7 @@ class Configuration:
 
             for typeshed_subdirectory_name in typeshed_subdirectories:
                 typeshed_subdirectory = os.path.join(
-                    self._typeshed, typeshed_subdirectory_name
+                    self.typeshed, typeshed_subdirectory_name
                 )
                 if (
                     not os.path.isdir(typeshed_subdirectory)
@@ -221,10 +219,10 @@ class Configuration:
             raise InvalidConfiguration("Configuration was not validated")
         return self._binary
 
-    def get_typeshed(self) -> str:
+    @property
+    def typeshed(self) -> str:
         if not self._typeshed:
-            raise InvalidConfiguration("Configuration was not validated")
-
+            raise InvalidConfiguration("Configuration invalid: no typeshed specified")
         return self._typeshed
 
     def get_search_path(self) -> List[str]:
@@ -321,9 +319,9 @@ class Configuration:
                     "version", current=self._version_hash
                 )
 
-                self._typeshed = configuration.consume(
-                    "typeshed", current=self._typeshed
-                )
+                typeshed = configuration.consume("typeshed", current=self._typeshed)
+                assert typeshed is None or isinstance(typeshed, str)
+                self._typeshed = typeshed
 
                 unused_keys = configuration.unused_keys()
                 if unused_keys:
@@ -347,8 +345,9 @@ class Configuration:
         binary = self._binary
         if binary:
             self._binary = binary.replace("%V", version_hash)
-        if self._typeshed:
-            self._typeshed = self._typeshed.replace("%V", version_hash)
+        typeshed = self._typeshed
+        if typeshed:
+            self._typeshed = typeshed.replace("%V", version_hash)
 
     def _apply_defaults(self) -> None:
         overriding_binary = os.getenv("PYRE_BINARY")
@@ -382,7 +381,7 @@ class Configuration:
                 LOG.info("Found: `%s`", self._typeshed)
 
     def _typeshed_has_obsolete_value(self) -> bool:
-        (head, tail) = os.path.split(self._typeshed)
+        (head, tail) = os.path.split(self.typeshed)
         if tail == "stdlib":
             return True
         if tail != "":

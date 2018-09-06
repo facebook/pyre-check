@@ -28,7 +28,6 @@ class IncrementalTest(unittest.TestCase):
         arguments = mock_arguments()
 
         configuration = mock_configuration()
-        configuration.get_typeshed.return_value = "stub"
         configuration.get_search_path.return_value = ["path1", "path2"]
         configuration.version_hash = "hash"
         analysis_directory = AnalysisDirectory(".")
