@@ -33,7 +33,7 @@ let transform_environment ((module Handler: Handler) as order) { Source.statemen
     | { Node.value = Class ({ Class.name = parent;  _ } as ast_class); location }
       when not (List.is_empty (get_dataclass_decorator { Node.location; value = ast_class })) ->
         let annotated_class = Annotated.Class.create { Node.location; value = ast_class } in
-        let dataclass_options =
+        let { init; repr; eq; _ } =
           let default =
             {
               init = true;
@@ -89,7 +89,7 @@ let transform_environment ((module Handler: Handler) as order) { Source.statemen
               parent = Some parent;
             }
           in
-          let add_init { init; _ } methods =
+          let methods =
             if init && not (Annotated.Class.has_method annotated_class ~name:"__init__") then
               let parameters =
                 let collect_parameters parameters { Node.value; _ } =
@@ -140,18 +140,17 @@ let transform_environment ((module Handler: Handler) as order) { Source.statemen
                   ~init:[]
                   ~f:(fun parameters -> List.fold ~init:parameters ~f:collect_parameters)
               in
-              create_method ~name:"__init__" ~parameters ~return_annotation:"None"
-              :: methods
+              [create_method ~name:"__init__" ~parameters ~return_annotation:"None"]
             else
-              methods
+              []
           in
-          let add_repr { repr; _ } methods =
+          let methods =
             if repr && not (Annotated.Class.has_method annotated_class ~name:"__repr__") then
               create_method ~name:"__repr__" ~parameters:[] ~return_annotation:"str" :: methods
             else
               methods
           in
-          let add_eq { eq; _ } methods =
+          let methods =
             if eq && not (Annotated.Class.has_method annotated_class ~name:"__eq__") then
               create_method
                 ~name:"__eq__"
@@ -161,19 +160,12 @@ let transform_environment ((module Handler: Handler) as order) { Source.statemen
             else
               methods
           in
-          let preprocess methods =
-            methods
-            |> List.map ~f:(fun define -> Node.create ~location (Define define))
-            |> List.rev
-            |> Source.create
-            |> Analysis.Preprocessing.preprocess
-            |> fun { Source.statements; _ } -> statements
-          in
-          []
-          |> add_init dataclass_options
-          |> add_repr dataclass_options
-          |> add_eq dataclass_options
-          |> preprocess
+          methods
+          |> List.map ~f:(fun define -> Node.create ~location (Define define))
+          |> List.rev
+          |> Source.create
+          |> Analysis.Preprocessing.preprocess
+          |> fun { Source.statements; _ } -> statements
         in
         Handler.set_class_definition
           ~primitive:class_type
