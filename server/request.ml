@@ -554,7 +554,7 @@ let process_display_type_errors_request
 
 let process_type_check_request
     ~state:({ State.environment; errors; scheduler; deferred_requests; handles; _ } as state)
-    ~configuration:({ local_root; _ } as configuration)
+    ~configuration
     ~request:{ TypeCheckRequest.update_environment_with; check} =
   Annotated.Class.AttributesCache.clear ();
   let (module Handler: Environment.Handler) = environment in
@@ -622,12 +622,12 @@ let process_type_check_request
           ~section:`Server
           "Inferred affected files: %a"
           Sexp.pp [%message (dependents: File.Handle.t list)];
-        List.map
-          ~f:(fun handle ->
-              (* TODO(T33409564): We should be searching the sources for their actual paths here. *)
-              Path.create_relative ~root:local_root ~relative:(File.Handle.show handle)
-              |> File.create)
-          dependents
+        let to_file handle =
+          Ast.SharedMemory.get_source handle
+          >>= fun { Ast.Source.path; _ } -> path
+          >>| File.create
+        in
+        List.filter_map dependents ~f:to_file
       in
 
       if List.is_empty files then

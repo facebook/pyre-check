@@ -785,15 +785,25 @@ let test_incremental_dependencies _ =
   Out_channel.write_all "a.py" ~data:a_source;
   Out_channel.write_all "b.py" ~data:b_source;
   let assert_dependencies_analyzed () =
+    let handles =
+      [
+        File.Handle.create "a.py";
+        File.Handle.create "b.py";
+      ]
+    in
+    let sources =
+      [
+        parse ~handle:"a.py" ~path:(mock_path "a.py") ~qualifier:(Access.create "a") a_source;
+        parse ~handle:"b.py" ~path:(mock_path "b.py") ~qualifier:(Access.create "b") b_source;
+      ]
+    in
+    List.zip_exn handles sources
+    |> List.iter ~f:(fun (handle, source) -> Ast.SharedMemory.add_source handle source);
+
     let environment = Environment.Builder.create () in
     let environment_handler = Environment.handler ~configuration environment in
     add_defaults_to_environment environment_handler;
-    Service.Environment.populate
-      environment_handler
-      [
-        parse ~handle:"a.py" ~qualifier:(Access.create "a") a_source;
-        parse ~handle:"b.py" ~qualifier:(Access.create "b") b_source;
-      ];
+    Service.Environment.populate environment_handler sources;
     let expected_errors = [
       File.Handle.create "b.py", [];
     ]
@@ -841,7 +851,8 @@ let test_incremental_dependencies _ =
   let finally () =
     CommandTest.clean_environment ();
     Sys.remove "a.py";
-    Sys.remove "b.py"
+    Sys.remove "b.py";
+    Ast.SharedMemory.remove_paths [File.Handle.create "a.py"; File.Handle.create "b.py"]
   in
   Exn.protect ~f:assert_dependencies_analyzed ~finally
 
