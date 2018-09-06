@@ -50,6 +50,16 @@ module ExpressionVisitor = struct
     definitions_lookup: definition_lookup;
   }
 
+  let resolve ~resolution ~expression =
+    try
+      let annotation = Annotated.resolve ~resolution expression in
+      if not (Type.is_unknown annotation) then
+        Some annotation
+      else
+        None
+    with TypeOrder.Untracked _ ->
+      None
+
   let expression
       ({ resolution; annotations_lookup; definitions_lookup } as state)
       ({ Node.location = expression_location; value = expression_value} as expression) =
@@ -70,19 +80,15 @@ module ExpressionVisitor = struct
                     | None ->
                         value_location
                   in
-                  try
-                    let annotation = Annotated.resolve ~resolution value in
-                    if not (Type.is_unknown annotation) then
-                      Location.Reference.Table.set
-                        annotations_lookup
-                        ~key:location
-                        ~data:(Precise annotation)
-                  with TypeOrder.Untracked _ ->
-                    (* If we cannot resolve the type of this
-                       expression, ignore it silently. The
-                       construction of the lookup table is not
-                       critical. *)
-                    ()
+                  let store_annotation annotation =
+                    Location.Reference.Table.set
+                      annotations_lookup
+                      ~key:location
+                      ~data:(Precise annotation)
+                  in
+                  resolve ~resolution ~expression:value
+                  >>| store_annotation
+                  |> ignore
                 in
                 List.iter ~f:check_argument arguments
             | _ ->
@@ -139,31 +145,22 @@ module ExpressionVisitor = struct
           (* Annotations. *)
           let filter_annotation ~prefix ~element =
             let access = prefix @ [element] in
-            let annotation =
-              Annotated.resolve
-                ~resolution
-                (Node.create ~location:expression_location (Expression.Access access))
-            in
-            if Type.is_unknown annotation then
-              None
-            else
-              Some annotation
+            resolve
+              ~resolution
+              ~expression:(Node.create ~location:expression_location (Expression.Access access))
           in
           collect_and_store ~access ~lookup_table:annotations_lookup ~filter:filter_annotation
 
       | _ ->
-          try
-            let annotation = Annotated.resolve ~resolution expression in
-            if not (Type.is_unknown annotation) then
-              Location.Reference.Table.set
-                annotations_lookup
-                ~key:expression_location
-                ~data:(Precise annotation)
-          with TypeOrder.Untracked _ ->
-            (* If we cannot resolve the type of this expression, ignore it
-               silently. The construction of the lookup table is not
-               critical. *)
-            ()
+          let store_annotation annotation =
+            Location.Reference.Table.set
+              annotations_lookup
+              ~key:expression_location
+              ~data:(Precise annotation)
+          in
+          resolve ~resolution ~expression
+          >>| store_annotation
+          |> ignore
     in
     state
 
