@@ -8,7 +8,7 @@ open Core
 open Ast
 open Pyre
 
-let to_json ~root handles =
+let to_json handles =
   let get_sources =
     List.fold
       ~init:[]
@@ -18,7 +18,7 @@ let to_json ~root handles =
           | None -> sources)
   in
   let sources = get_sources handles in
-  `Assoc (List.map sources ~f:(Codex.source_to_json root))
+  `Assoc (List.map sources ~f:Codex.source_to_json)
 
 let run is_parallel local_root () =
   if Sys.is_directory local_root <> `Yes then
@@ -31,13 +31,12 @@ let run is_parallel local_root () =
       ()
   in
   let scheduler = Scheduler.create ~configuration () in
-  let root = Path.create_absolute local_root in
 
   Log.info "Parsing...";
   let { Service.Parser.sources; _ } = Service.Parser.parse_all scheduler ~configuration in
 
   Log.info "Generating JSON for Codex...";
-  to_json ~root:(Path.absolute root) sources
+  to_json sources
   |> Yojson.Safe.to_string
   |> Log.print "%s"
 

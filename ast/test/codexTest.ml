@@ -8,10 +8,16 @@ open OUnit2
 
 open Test
 
+open Pyre
 open Ast
 
 let assert_python_module_equal expected source =
-  let actual = Codex.source_to_codex_representation "/tmp" (parse source) in
+  let actual =
+    Codex.source_to_codex_representation
+      (parse
+         ~path:(Path.create_relative ~root:(Path.create_absolute "/tmp") ~relative:"test.py")
+         source)
+  in
   assert_equal
     ~cmp:Codex.PythonModule.equal
     ~printer:(
@@ -194,8 +200,8 @@ let test_source context =
    * to contain the source. *)
   let codex_representation =
     source
-    |> parse_untrimmed
-    |> Codex.source_to_codex_representation directory in
+    |> parse_untrimmed ~path:(Path.create_absolute file)
+    |> Codex.source_to_codex_representation in
   assert_equal
     ~cmp:Codex.PythonModule.equal
     ~printer:Codex.PythonModule.show
