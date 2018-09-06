@@ -72,18 +72,21 @@ class ConfigurationTest(unittest.TestCase):
         self.assertEqual(configuration.typeshed, "TYPE/VERSION/SHED/")
         self.assertEqual(configuration.search_path, ["additional/"])
         self.assertEqual(configuration.number_of_workers, 20)
+        self.assertEqual(configuration.taint_models_path, None)
 
         json_load.side_effect = [
             {
                 "search_path": "simple_string/",
                 "version": "VERSION",
                 "typeshed": "TYPE/%V/SHED/",
+                "taint_models_path": ".pyre/taint_models",
             },
             {},
         ]
         configuration = Configuration()
         self.assertEqual(configuration.typeshed, "TYPE/VERSION/SHED/")
         self.assertEqual(configuration.search_path, ["simple_string/"])
+        self.assertEqual(configuration.taint_models_path, ".pyre/taint_models")
 
         # Test loading of additional directories in the search path
         # via environment.

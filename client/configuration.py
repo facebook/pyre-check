@@ -57,6 +57,7 @@ class _ConfigurationFile:
             "coverage",
             "differential",
             "push_blocking",
+            "taint_models_path",
         }
 
 
@@ -77,6 +78,7 @@ class Configuration:
         self.do_not_check = []
         self.number_of_workers = None
         self.local_configuration = None  # type: Optional[str]
+        self.taint_models_path = None
 
         self._version_hash = None  # type: Optional[str]
         self._binary = None  # type: Optional[str]
@@ -318,6 +320,12 @@ class Configuration:
                 typeshed = configuration.consume("typeshed", current=self._typeshed)
                 assert typeshed is None or isinstance(typeshed, str)
                 self._typeshed = typeshed
+
+                taint_models_path = configuration.consume(
+                    "taint_models_path", current=self.taint_models_path
+                )
+                assert taint_models_path is None or isinstance(taint_models_path, str)
+                self.taint_models_path = taint_models_path
 
                 unused_keys = configuration.unused_keys()
                 if unused_keys:

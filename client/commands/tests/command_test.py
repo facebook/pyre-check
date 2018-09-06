@@ -14,7 +14,6 @@ from ...filesystem import AnalysisDirectory
 
 def mock_arguments() -> MagicMock:
     arguments = MagicMock()
-
     arguments.debug = False
     arguments.sequential = False
     arguments.strict = False
@@ -36,9 +35,11 @@ def mock_arguments() -> MagicMock:
 def mock_configuration() -> MagicMock:
     configuration = MagicMock()
     configuration.analysis_directories = ["."]
+    configuration.number_of_workers = 5
     configuration.search_path = ["path1", "path2"]
     configuration.typeshed = "stub"
     configuration.logger = None
+    configuration.taint_models_path = None
     return configuration
 
 

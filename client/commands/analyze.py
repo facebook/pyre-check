@@ -14,7 +14,9 @@ class Analyze(Check):
 
     def __init__(self, arguments, configuration, analysis_directory) -> None:
         super(Analyze, self).__init__(arguments, configuration, analysis_directory)
-        self._taint_models_path = arguments.taint_models_path
+        self._taint_models_path = (
+            arguments.taint_models_path or configuration.taint_models_path
+        )
 
     def _flags(self) -> List[str]:
         flags = super()._flags()
