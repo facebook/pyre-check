@@ -892,6 +892,6 @@ let rec process
   Statistics.performance
     ~name:"server request"
     ~timer
-    ~normals:["request_kind", Request.name request]
+    ~normals:["request kind", Request.name request]
     ();
   result
