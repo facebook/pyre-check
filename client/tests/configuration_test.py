@@ -135,11 +135,11 @@ class ConfigurationTest(unittest.TestCase):
 
         json_load.side_effect = [{"binary": "/binary"}, {}]
         configuration = Configuration()
-        self.assertEqual(configuration.get_binary(), "/binary")
+        self.assertEqual(configuration.binary, "/binary")
 
         json_load.side_effect = [{"version": "VERSION", "binary": "/%V/binary"}, {}]
         configuration = Configuration()
-        self.assertEqual(configuration.get_binary(), "/VERSION/binary")
+        self.assertEqual(configuration.binary, "/VERSION/binary")
 
         with patch.object(os, "getenv", return_value="VERSION_HASH"):
             json_load.side_effect = [{}, {}]

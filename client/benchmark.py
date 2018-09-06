@@ -53,7 +53,7 @@ def _compare_parallel_check(arguments, configuration) -> None:
     search_path = configuration.get_search_path()
     if search_path:
         flags.extend(["-search-path", ",".join(search_path)])
-    client_command = [configuration.get_binary(), "check"]
+    client_command = [configuration.binary, "check"]
     client_command.extend(flags)
     client_command.append(arguments.analysis_directory)
 

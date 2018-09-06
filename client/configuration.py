@@ -79,7 +79,7 @@ class Configuration:
         self.local_configuration = None  # type: Optional[str]
 
         self._version_hash = None
-        self._binary = None
+        self._binary = None  # type: Optional[str]
         self._typeshed = None
 
         # Handle search path from multiple sources
@@ -151,11 +151,9 @@ class Configuration:
                     "`do_not_check` field must be a list of strings."
                 )
 
-            if not self._binary:
-                raise InvalidConfiguration("`binary` location must be defined.")
-            if not os.path.exists(self.get_binary()):
+            if not os.path.exists(self.binary):
                 raise InvalidConfiguration(
-                    "Binary at `{}` does not exist.".format(self._binary)
+                    "Binary at `{}` does not exist.".format(self.binary)
                 )
 
             if self.number_of_workers < 1:
@@ -217,7 +215,8 @@ class Configuration:
     def version_hash(self) -> str:
         return self._version_hash or "unversioned"
 
-    def get_binary(self) -> str:
+    @property
+    def binary(self) -> str:
         if not self._binary:
             raise InvalidConfiguration("Configuration was not validated")
         return self._binary
@@ -306,7 +305,9 @@ class Configuration:
                     )
                 )
 
-                self._binary = configuration.consume("binary", current=self._binary)
+                binary = configuration.consume("binary", current=self._binary)
+                assert binary is None or isinstance(binary, str)
+                self._binary = binary
 
                 additional_search_path = configuration.consume(
                     "search_path", default=[]

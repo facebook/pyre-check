@@ -162,7 +162,7 @@ class Command:
                 "`{}` is not a link tree.".format(self._analysis_directory.get_root())
             )
 
-        client_command = [self._configuration.get_binary(), command]
+        client_command = [self._configuration.binary, command]
         client_command.extend(self._flags())
         client_command.append(self._analysis_directory.get_root())
 
