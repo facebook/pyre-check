@@ -3,7 +3,6 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import functools
 import json
 import logging
 import os
@@ -217,21 +216,17 @@ class Configuration:
     def get_version_hash(self):
         return self._version_hash
 
-    @functools.lru_cache(1)
     def get_binary(self) -> str:
         if not self._binary:
             raise InvalidConfiguration("Configuration was not validated")
-
         return self._binary
 
-    @functools.lru_cache(1)
     def get_typeshed(self) -> str:
         if not self._typeshed:
             raise InvalidConfiguration("Configuration was not validated")
 
         return self._typeshed
 
-    @functools.lru_cache(1)
     def get_search_path(self) -> List[str]:
         return self._search_directories
 
