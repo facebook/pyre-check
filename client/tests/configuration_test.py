@@ -16,7 +16,10 @@ class ConfigurationTest(unittest.TestCase):
     @patch("builtins.open")
     @patch("json.load")
     @patch.object(os, "getenv", return_value=None)
-    def test_init(self, os_environ, json_load, builtins_open) -> None:
+    @patch.object(Configuration, "_validate")
+    def test_init(
+        self, configuration_validate, os_environ, json_load, builtins_open
+    ) -> None:
         json_load.side_effect = [
             {
                 "analysis_directories": ["a"],
@@ -170,8 +173,15 @@ class ConfigurationTest(unittest.TestCase):
     # applied, _apply_defaults goes crazy; hence mock it so it doesn't
     # run - it's not important for this test anyway.
     @patch.object(Configuration, "_apply_defaults")
+    @patch.object(Configuration, "_validate")
     def test_configurations(
-        self, config_defaults, os_access, os_path_exists, os_path_isdir, os_path_isfile
+        self,
+        configuration_validate,
+        configuration_defaults,
+        os_access,
+        os_path_exists,
+        os_path_isdir,
+        os_path_isfile,
     ) -> None:
         # Assume all paths are valid.
         os_access.return_value = True
@@ -261,8 +271,9 @@ class ConfigurationTest(unittest.TestCase):
     @patch("os.path.isfile")
     @patch("os.path.isdir")
     @patch("os.path.exists")
+    @patch.object(Configuration, "_validate")
     def test_nonexisting_local_configuration(
-        self, os_path_exists, os_path_isdir, os_path_isfile
+        self, configuration_validate, os_path_exists, os_path_isdir, os_path_isfile
     ) -> None:
         # Test that a non-existing local configuration directory was provided.
         os_path_exists.return_value = False
@@ -302,7 +313,8 @@ class ConfigurationTest(unittest.TestCase):
             )
 
     @patch("os.path.isdir")
-    def test_empty_configuration(self, os_path_isdir) -> None:
+    @patch.object(Configuration, "_validate")
+    def test_empty_configuration(self, configuration_validate, os_path_isdir) -> None:
         os_path_isdir.return_value = False
         # If typeshed is importable, find_typeshed() will behave
         # differently because its 'import typeshed' will

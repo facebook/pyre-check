@@ -99,7 +99,6 @@ if __name__ == "__main__":
         exit_code = SUCCESS
         switch_root(arguments)
         configuration = Configuration(local_root=arguments.local_root)
-        configuration.validate()
         _compare_parallel_check(arguments, configuration)
     except Exception as error:
         LOG.error(str(error))

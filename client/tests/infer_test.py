@@ -575,7 +575,7 @@ class InferTest(unittest.TestCase):
     @patch.object(log, "initialize")
     @patch.object(log, "cleanup")
     @patch.object(configuration.Configuration, "_read")
-    @patch.object(configuration.Configuration, "validate")
+    @patch.object(configuration.Configuration, "_validate")
     def test_main(self, validate, read, log_cleanup, log_initialize) -> None:
         with patch.object(sys, "argv", ["infer", "--target", "."]), patch.object(
             Infer, "run"

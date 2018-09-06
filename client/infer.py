@@ -534,8 +534,6 @@ def main():
             sys.stdout.write(get_binary_version(configuration) + "\n")
             return ExitCode.SUCCESS
 
-        configuration.validate()
-
         analysis_directories = resolve_analysis_directories(
             arguments, configuration, prompt=False
         )

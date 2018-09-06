@@ -285,8 +285,6 @@ def main() -> int:
                 log.stdout.write(get_binary_version(configuration))
                 return ExitCode.SUCCESS
 
-            configuration.validate()
-
             if arguments.command in [commands.Kill]:
                 analysis_directories = ["."]
             else:

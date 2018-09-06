@@ -129,8 +129,9 @@ class Configuration:
         self._read(CONFIGURATION_FILE, path_from_root="")
         self._resolve_versioned_paths()
         self._apply_defaults()
+        self._validate()
 
-    def validate(self) -> None:
+    def _validate(self) -> None:
         try:
 
             def is_list_of_strings(list):
