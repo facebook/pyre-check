@@ -131,14 +131,28 @@ module ExpressionVisitor = struct
 
           (* Definitions. *)
           let filter_definition ~prefix ~element =
-            let access = prefix @ [element] in
-            Resolution.global resolution access
-            >>| Node.location
-            >>= fun location ->
-            if Location.equal location Location.Reference.any then
-              None
-            else
-              Some location
+            let find_definition access =
+              Resolution.global resolution access
+              >>| Node.location
+              >>= fun location ->
+              if Location.equal location Location.Reference.any then
+                None
+              else
+                Some location
+            in
+
+            match find_definition (prefix @ [element]) with
+            | Some definition ->
+                Some definition
+            | None ->
+                (* Try and resolve the type of the prefix separately,
+                   to see if this is a method in an access chain. *)
+                resolve
+                  ~resolution
+                  ~expression:(Node.create_with_default_location (Expression.Access prefix))
+                >>| Type.class_name
+                >>| (fun resolved_prefix -> resolved_prefix @ [element])
+                >>= find_definition
           in
           collect_and_store ~access ~lookup_table:definitions_lookup ~filter:filter_definition;
 
@@ -206,7 +220,7 @@ let create_of_source environment source =
   { annotations_lookup; definitions_lookup }
 
 
-let refine ~position ~source (location, entry) =
+let refine ~position ~source ?(take_default_on_miss = true) (location, entry) =
   let refine_approximate location entries =
     let find_word_at_position ~position:{ Location.line; column } =
       let word_delimiter _index character =
@@ -270,13 +284,22 @@ let refine ~position ~source (location, entry) =
       |> fun { entry; _ } -> (location, entry)
     in
 
-    find_word_at_position ~position
-    >>= find_match entries
-    |> Option.value ~default:(take_longest_access entries)
+    let refined =
+      find_word_at_position ~position
+      >>= find_match entries
+    in
+    match refined with
+    | Some _ ->
+        refined
+    | None ->
+        if take_default_on_miss then
+          Some (take_longest_access entries)
+        else
+          None
   in
   match entry with
   | Precise entry ->
-      (location, entry)
+      Some (location, entry)
   | Approximate entries ->
       refine_approximate location entries
 
@@ -313,13 +336,13 @@ let get_annotation { annotations_lookup; _ } ~position ~source =
     annotation
   in
   get_best_location annotations_lookup ~position
-  >>| refine ~position ~source
+  >>= refine ~position ~source
   >>| instantiate_location
 
 
 let get_definition { definitions_lookup; _ } ~position ~source =
   get_best_location definitions_lookup ~position
-  >>| refine ~position ~source
+  >>= refine ~position ~source ~take_default_on_miss:false
   >>| snd
   >>| Location.instantiate ~lookup:(fun hash -> Ast.SharedMemory.get_handle ~hash)
 

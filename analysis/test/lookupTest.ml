@@ -562,6 +562,22 @@ let test_lookup_union_type_resolution _ =
     ~annotation:(Some "test.py:19:11-19:12/typing.Union[test.A, test.B, test.C]")
 
 
+let assert_definition_list ~lookup expected =
+  let list_diff format list =
+    Format.fprintf format "%s\n" (String.concat ~sep:"\n" list)
+  in
+  assert_equal
+    ~printer:(String.concat ~sep:", ")
+    ~pp_diff:(diff ~print:list_diff)
+    expected
+    (Lookup.get_all_definitions lookup
+     |> List.map ~f:(fun (key, data) ->
+         Format.asprintf "%s -> %s"
+           (show_location (instantiate key))
+           (show_location (instantiate data)))
+     |> List.sort ~compare:String.compare)
+
+
 let assert_definition ~lookup ~source ~position ~definition =
   assert_equal
     ~printer:(Option.value ~default:"(none)")
@@ -589,8 +605,8 @@ let test_lookup_definitions _ =
   in
   let lookup, source = generate_lookup source in
 
-  assert_equal
-    ~printer:(String.concat ~sep:"\n")
+  assert_definition_list
+    ~lookup
     [
       "test.py:12:10-12:16 -> test.py:2:0-3:13";
       "test.py:12:4-12:7 -> test.py:8:0-9:8";
@@ -600,13 +616,7 @@ let test_lookup_definitions _ =
       "test.py:5:14-5:17 -> builtins.pyi:54:0-68:34";
       "test.py:8:10-8:13 -> builtins.pyi:54:0-68:34";
       "test.py:8:17-8:20 -> builtins.pyi:73:0-88:49";
-    ]
-    (Lookup.get_all_definitions lookup
-     |> List.map ~f:(fun (key, data) ->
-         Format.asprintf "%s -> %s"
-           (show_location (instantiate key))
-           (show_location (instantiate data)))
-     |> List.sort ~compare:String.compare);
+    ];
   assert_definition
     ~lookup
     ~source
@@ -624,6 +634,100 @@ let test_lookup_definitions _ =
     ~definition:None
 
 
+let test_lookup_definitions_instances _ =
+  let source =
+    {|
+      class X:
+          def bar(self) -> None:
+              pass
+
+      class Y:
+          x: X = X()
+          def foo(self) -> X:
+              return X()
+
+      def test() -> None:
+          x = X()
+          x.bar()
+          X().bar()
+          y = Y()
+          y.foo().bar()
+          Y().foo().bar()
+          y.x.bar()
+          Y().x.bar()
+    |}
+  in
+  let lookup, source = generate_lookup source in
+
+  assert_definition_list
+    ~lookup
+    [
+      "test.py:12:8-12:9 -> test.py:2:0-4:12";
+      "test.py:13:4-13:9 -> test.py:3:4-4:12";
+      "test.py:14:4-14:11 -> test.py:2:0-4:12";
+      "test.py:14:4-14:11 -> test.py:3:4-4:12";
+      "test.py:15:8-15:9 -> test.py:6:0-9:16";
+      "test.py:16:4-16:15 -> test.py:3:4-4:12";
+      "test.py:16:4-16:15 -> test.py:8:4-9:16";
+      "test.py:17:4-17:17 -> test.py:3:4-4:12";
+      "test.py:17:4-17:17 -> test.py:6:0-9:16";
+      "test.py:17:4-17:17 -> test.py:8:4-9:16";
+      "test.py:18:4-18:11 -> test.py:3:4-4:12";
+      "test.py:19:4-19:13 -> test.py:3:4-4:12";
+      "test.py:19:4-19:13 -> test.py:6:0-9:16";
+      "test.py:7:11-7:12 -> test.py:2:0-4:12";
+      "test.py:7:4-7:5 -> test.py:6:0-9:16";
+      "test.py:7:7-7:8 -> test.py:2:0-4:12";
+      "test.py:8:21-8:22 -> test.py:2:0-4:12";
+      "test.py:9:15-9:16 -> test.py:2:0-4:12";
+    ];
+  assert_definition
+    ~lookup
+    ~source
+    ~position:{ Location.line = 16; column = 4 }
+    ~definition:None;
+  assert_definition
+    ~lookup
+    ~source
+    ~position:{ Location.line = 16; column = 5 }
+    ~definition:None;
+  assert_definition
+    ~lookup
+    ~source
+    ~position:{ Location.line = 16; column = 6 }
+    ~definition:(Some "test.py:8:4-9:16");
+  assert_definition
+    ~lookup
+    ~source
+    ~position:{ Location.line = 16; column = 8 }
+    ~definition:(Some "test.py:8:4-9:16");
+  assert_definition
+    ~lookup
+    ~source
+    ~position:{ Location.line = 16; column = 9 }
+    ~definition:None;
+  assert_definition
+    ~lookup
+    ~source
+    ~position:{ Location.line = 16; column = 11 }
+    ~definition:None;
+  assert_definition
+    ~lookup
+    ~source
+    ~position:{ Location.line = 16; column = 12 }
+    ~definition:(Some "test.py:3:4-4:12");
+  assert_definition
+    ~lookup
+    ~source
+    ~position:{ Location.line = 16; column = 14 }
+    ~definition:(Some "test.py:3:4-4:12");
+  assert_definition
+    ~lookup
+    ~source
+    ~position:{ Location.line = 16; column = 15 }
+    ~definition:None
+
+
 let () =
   "lookup">:::[
     "lookup">::test_lookup;
@@ -637,5 +741,6 @@ let () =
     "lookup_string_annotations">::test_lookup_string_annotations;
     "lookup_union_type_resolution">::test_lookup_union_type_resolution;
     "lookup_definitions">::test_lookup_definitions;
+    "lookup_definitions_instances">::test_lookup_definitions_instances;
   ]
   |> run_test_tt_main
