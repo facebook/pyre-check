@@ -54,6 +54,20 @@ let test_lookup _ =
   generate_lookup source |> ignore
 
 
+let assert_annotation_list ~lookup expected =
+  let list_diff format list =
+    Format.fprintf format "%s\n" (String.concat ~sep:"\n" list)
+  in
+  assert_equal
+    ~printer:(String.concat ~sep:", ")
+    ~pp_diff:(diff ~print:list_diff)
+    expected
+    (Lookup.get_all_annotations lookup
+     |> List.map ~f:(fun (key, data) ->
+         Format.asprintf "%s/%a" (show_location (instantiate key)) Type.pp data)
+     |> List.sort ~compare:String.compare)
+
+
 let assert_annotation ~lookup ~source ~position ~annotation =
   assert_equal
     ~printer:(Option.value ~default:"(none)")
@@ -74,19 +88,15 @@ let test_lookup_call_arguments _ =
   in
   let (lookup, source) = generate_lookup source in
 
-  assert_equal
-    ~printer:(String.concat ~sep:", ")
+  assert_annotation_list
+    ~lookup
     [
       "test.py:2:4-2:6/int";
       "test.py:3:12-3:20/str";
       "test.py:3:4-3:20/str";
       "test.py:4:4-5:14/str";
       "test.py:5:4-5:14/str";
-    ]
-    (Lookup.get_all_annotations lookup
-     |> List.map ~f:(fun (key, data) ->
-         Format.asprintf "%s/%a" (show_location (instantiate key)) Type.pp data)
-     |> List.sort ~compare:String.compare);
+    ];
   assert_annotation
     ~lookup
     ~source
@@ -169,19 +179,15 @@ let test_lookup_pick_narrowest _ =
   in
   let (lookup, source) = generate_lookup source in
 
-  assert_equal
-    ~printer:(String.concat ~sep:"\n")
+  assert_annotation_list
+    ~lookup
     [
       "test.py:2:14-2:18/typing.Type[bool]";
       "test.py:2:37-2:40/typing.Type[int]";
       "test.py:2:46-2:50/None";
       "test.py:3:17-3:27/bool";
       "test.py:3:7-3:11/bool";
-    ]
-    (Lookup.get_all_annotations lookup
-     |> List.map ~f:(fun (key, data) ->
-         Format.asprintf "%s/%a" (show_location (instantiate key)) Type.pp data)
-     |> List.sort ~compare:String.compare);
+    ];
   assert_annotation
     ~lookup
     ~source
@@ -218,18 +224,14 @@ let test_lookup_class_attributes _ =
   in
   let (lookup, source) = generate_lookup source in
 
-  assert_equal
-    ~printer:(String.concat ~sep:", ")
+  assert_annotation_list
+    ~lookup
     [
       "*:-1:-1--1:-1/ellipses";
       "test.py:3:4-3:5/bool";
       "test.py:3:4-3:5/typing.Type[test.Foo]";
       "test.py:3:7-3:11/typing.Type[bool]";
-    ]
-    (Lookup.get_all_annotations lookup
-     |> List.map ~f:(fun (key, data) ->
-         Format.asprintf "%s/%a" (show_location (instantiate key)) Type.pp data)
-     |> List.sort ~compare:String.compare);
+    ];
   assert_annotation
     ~lookup
     ~source
@@ -262,8 +264,8 @@ let test_lookup_identifier_accesses _ =
   in
   let (lookup, source) = generate_lookup source in
 
-  assert_equal
-    ~printer:(String.concat ~sep:"\n")
+  assert_annotation_list
+    ~lookup
     [
       "test.py:3:13-3:15/int";
       "test.py:3:4-3:5/int";
@@ -284,11 +286,7 @@ let test_lookup_identifier_accesses _ =
       "test.py:9:11-9:14/int";
       "test.py:9:11-9:14/test.A";
       "test.py:9:4-9:14/int";
-    ]
-    (Lookup.get_all_annotations lookup
-     |> List.map ~f:(fun (key, data) ->
-         Format.asprintf "%s/%a" (show_location (instantiate key)) Type.pp data)
-     |> List.sort ~compare:String.compare);
+    ];
   assert_annotation
     ~lookup
     ~source
@@ -335,16 +333,12 @@ let test_lookup_unknown_accesses _ =
   in
   let (lookup, source) = generate_lookup source in
 
-  assert_equal
-    ~printer:(String.concat ~sep:", ")
+  assert_annotation_list
+    ~lookup
     [
       "test.py:2:13-2:17/None";
       "test.py:3:14-3:19/str";
-    ]
-    (Lookup.get_all_annotations lookup
-     |> List.map ~f:(fun (key, data) ->
-         Format.asprintf "%s/%a" (show_location (instantiate key)) Type.pp data)
-     |> List.sort ~compare:String.compare);
+    ];
   assert_annotation
     ~lookup
     ~source
@@ -378,8 +372,8 @@ let test_lookup_multiline_accesses _ =
   in
   let (lookup, source) = generate_lookup source in
 
-  assert_equal
-    ~printer:(String.concat ~sep:"\n")
+  assert_annotation_list
+    ~lookup
     [
       "test.py:11:13-11:16/typing.Type[int]";
       "test.py:12:8-12:9/test.A";
@@ -393,11 +387,7 @@ let test_lookup_multiline_accesses _ =
       "test.py:9:4-9:5/int";
       "test.py:9:4-9:5/typing.Type[test.A]";
       "test.py:9:7-9:10/typing.Type[int]";
-    ]
-    (Lookup.get_all_annotations lookup
-     |> List.map ~f:(fun (key, data) ->
-         Format.asprintf "%s/%a" (show_location (instantiate key)) Type.pp data)
-     |> List.sort ~compare:String.compare);
+    ];
   assert_annotation
     ~lookup
     ~source
@@ -493,17 +483,13 @@ let test_lookup_string_annotations _ =
   in
   let (lookup, source) = generate_lookup source in
 
-  assert_equal
-    ~printer:(String.concat ~sep:", ")
+  assert_annotation_list
+    ~lookup
     [
       "test.py:3:6-3:11/typing.Type[int]";
       "test.py:4:6-4:11/typing.Type[str]";
       "test.py:5:5-5:9/None";
-    ]
-    (Lookup.get_all_annotations lookup
-     |> List.map ~f:(fun (key, data) ->
-         Format.asprintf "%s/%a" (show_location (instantiate key)) Type.pp data)
-     |> List.sort ~compare:String.compare);
+    ];
   assert_annotation
     ~lookup
     ~source
