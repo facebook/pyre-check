@@ -7,7 +7,7 @@ import json
 import logging
 import os
 import shutil
-from typing import List
+from typing import List, Optional
 
 from . import (
     BINARY_NAME,
@@ -66,7 +66,7 @@ class Configuration:
     def __init__(
         self,
         local_configuration_directory=None,
-        local_configuration=None,
+        local_configuration: Optional[str] = None,
         search_path=None,
         typeshed=None,
         preserve_pythonpath=False,
@@ -76,11 +76,11 @@ class Configuration:
         self.logger = None
         self.do_not_check = []
         self.number_of_workers = None
+        self.local_configuration = None  # type: Optional[str]
 
         self._version_hash = None
         self._binary = None
         self._typeshed = None
-        self._local_configuration = None
 
         # Handle search path from multiple sources
         self._search_directories = []
@@ -230,9 +230,6 @@ class Configuration:
     def get_search_path(self) -> List[str]:
         return self._search_directories
 
-    def get_local_configuration(self) -> str:
-        return self._local_configuration
-
     def disabled(self) -> bool:
         return self._disabled
 
@@ -260,11 +257,11 @@ class Configuration:
                         "`{}`".format(os.getcwd())
                     )
             else:
-                self._local_configuration = local_configuration
+                self.local_configuration = local_configuration
         else:
             path_from_root = os.path.dirname(path)
             local_configuration = path
-            self._local_configuration = local_configuration
+            self.local_configuration = local_configuration
         self._read(local_configuration, path_from_root=path_from_root)
 
     def _read(self, path, path_from_root) -> None:

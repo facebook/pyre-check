@@ -542,7 +542,7 @@ def main():
         if len(analysis_directories) == 1:
             analysis_directory = AnalysisDirectory(analysis_directories.pop())
         else:
-            local_configuration_path = configuration.get_local_configuration()
+            local_configuration_path = configuration.local_configuration
             if local_configuration_path:
                 local_root = os.path.dirname(
                     os.path.relpath(

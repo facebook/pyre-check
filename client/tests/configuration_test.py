@@ -190,7 +190,7 @@ class ConfigurationTest(unittest.TestCase):
                     call(CONFIGURATION_FILE, path_from_root=""),
                 ]
             )
-            self.assertEqual(configuration.get_local_configuration(), None)
+            self.assertEqual(configuration.local_configuration, None)
 
         with patch.object(Configuration, "_read") as Configuration_read:
             configuration = Configuration(local_configuration_directory="original")
@@ -205,7 +205,7 @@ class ConfigurationTest(unittest.TestCase):
                 ]
             )
             self.assertEqual(
-                configuration.get_local_configuration(),
+                configuration.local_configuration,
                 "original/" + CONFIGURATION_FILE + ".local",
             )
         with patch.object(Configuration, "_read") as Configuration_read:
@@ -220,7 +220,7 @@ class ConfigurationTest(unittest.TestCase):
                 ]
             )
             self.assertEqual(
-                configuration.get_local_configuration(),
+                configuration.local_configuration,
                 "local/" + CONFIGURATION_FILE + ".local",
             )
         with patch.object(Configuration, "_read") as Configuration_read:
@@ -237,7 +237,7 @@ class ConfigurationTest(unittest.TestCase):
                 ]
             )
             self.assertEqual(
-                configuration.get_local_configuration(),
+                configuration.local_configuration,
                 "local/" + CONFIGURATION_FILE + ".local",
             )
 
@@ -256,7 +256,7 @@ class ConfigurationTest(unittest.TestCase):
                 ]
             )
             self.assertEqual(
-                configuration.get_local_configuration(), "local/.some_configuration"
+                configuration.local_configuration, "local/.some_configuration"
             )
 
     @patch("os.path.isfile")
