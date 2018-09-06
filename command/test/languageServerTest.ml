@@ -438,25 +438,95 @@ let test_did_save_notification context =
   assert_equal ~printer:ident link_message expected_message
 
 
-let test_language_server_definition_response _ =
-  let message =
-    TextDocumentDefinitionResponse.create
-      ~root:(Path.current_working_directory ())
-      ~id:1
-      ~location:None
+let test_language_server_definition_response context =
+  let open Ast.Location in
+  let assert_response ~id ~location ~expected =
+    let message =
+      TextDocumentDefinitionResponse.create
+        ~id
+        ~location
     |> TextDocumentDefinitionResponse.to_yojson
     |> Yojson.Safe.sort
-    |> Yojson.Safe.pretty_to_string
+    in
+    let expected = Yojson.Safe.sort expected in
+    assert_equal ~printer:Yojson.Safe.pretty_to_string expected message
   in
-  let expected_message =
-    `Assoc [
-      "id", `Int 1;
-      "jsonrpc", `String "2.0";
-      "result", `List [];
+  assert_response
+    ~id:1
+    ~location:None
+    ~expected:(
+      `Assoc [
+        "id", `Int 1;
+        "jsonrpc", `String "2.0";
+        "result", `List [];
+      ]);
+
+  let add_paths handles_to_paths =
+    List.map handles_to_paths ~f:fst
+    |> Ast.SharedMemory.remove_paths;
+
+    let add_source (handle, path) =
+      let source = Ast.Source.create ~handle ~path [] in
+      Ast.SharedMemory.add_source handle source
+    in
+    List.iter handles_to_paths ~f:add_source
+  in
+  let filename, _ = bracket_tmpfile ~suffix:".py" context in
+  let stub, _ = bracket_tmpfile ~suffix:".pyi" context in
+  let handles_to_paths =
+    [
+      File.Handle.create "a.py", Path.create_absolute filename;
+      File.Handle.create "b.pyi", Path.create_absolute stub;
     ]
-    |> Yojson.Safe.pretty_to_string
   in
-  assert_equal ~printer:ident expected_message message
+  add_paths handles_to_paths;
+
+  assert_response
+    ~id:1
+    ~location:(
+      Some
+        {
+          path = "a.py";
+          start = { line = 1; column = 0 };
+          stop = { line = 2; column = 0 };
+        })
+    ~expected:(
+      `Assoc [
+        "jsonrpc", `String "2.0";
+        "id", `Int 1;
+        "result", `List [
+          `Assoc [
+            "uri", `String (Format.sprintf "file://%s" filename);
+            "range", `Assoc [
+              "start", `Assoc ["line", `Int 0; "character", `Int 0];
+              "end", `Assoc ["line", `Int 1; "character", `Int 0];
+            ];
+          ];
+        ];
+      ]);
+  assert_response
+    ~id:1
+    ~location:(
+      Some
+        {
+          path = "b.pyi";
+          start = { line = 1; column = 0 };
+          stop = { line = 2; column = 0 };
+        })
+    ~expected:(
+      `Assoc [
+        "jsonrpc", `String "2.0";
+        "id", `Int 1;
+        "result", `List [
+          `Assoc [
+            "uri", `String (Format.sprintf "file://%s" stub);
+            "range", `Assoc [
+              "start", `Assoc ["line", `Int 0; "character", `Int 0];
+              "end", `Assoc ["line", `Int 1; "character", `Int 0];
+            ];
+          ];
+        ];
+      ])
 
 
 let test_language_server_hover_request _ =

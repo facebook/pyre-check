@@ -1014,7 +1014,6 @@ let test_language_scheduler_definition context =
   in
   let expected_response =
     LanguageServer.Protocol.TextDocumentDefinitionResponse.create
-      ~root:(Path.current_working_directory ())
       ~id:3
       ~location:None
     |> LanguageServer.Protocol.TextDocumentDefinitionResponse.to_yojson

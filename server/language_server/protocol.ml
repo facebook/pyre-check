@@ -175,21 +175,22 @@ end
 module TextDocumentDefinitionResponse = struct
   include Types.TextDocumentDefinitionResponse
 
-  let create ~root ~id ~location =
+  let create ~id ~location =
+    let uri ~path =
+      File.Handle.create path
+      |> Ast.SharedMemory.get_source
+      >>= fun { Ast.Source.path; _ } -> path
+      >>| Path.real_path
+      >>| Path.uri
+    in
     {
       jsonrpc = "2.0";
       id;
       result =
         Some
           (location
-           >>| (fun { Ast.Location.start; stop; path } ->
-               {
-                 Location.uri =
-                   Path.create_relative ~root ~relative:path
-                   |> Path.real_path
-                   |> Path.uri;
-                 Location.range = Range.create ~start ~stop;
-               })
+           >>= (fun { Ast.Location.start; stop; path } -> uri ~path
+               >>| fun uri -> { Location.uri; range = Range.create ~start ~stop })
            |> Option.to_list);
       error = None;
     }
