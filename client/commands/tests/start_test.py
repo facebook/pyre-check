@@ -23,7 +23,7 @@ class StartTest(unittest.TestCase):
         configuration = mock_configuration()
         configuration.get_typeshed.return_value = "stub"
         configuration.get_search_path.return_value = ["path1", "path2"]
-        configuration.get_version_hash.return_value = "hash"
+        configuration.version_hash = "hash"
         configuration.number_of_workers = 5
 
         analysis_directory = AnalysisDirectory(".")

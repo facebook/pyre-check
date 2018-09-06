@@ -32,7 +32,7 @@ class Persistent(Command):
             "-log-identifier",
             '"{}"'.format(self._analysis_directory.get_root()),
             "-expected-binary-version",
-            str(self._configuration.get_version_hash()),
+            self._configuration.version_hash,
         ]
 
     @classmethod

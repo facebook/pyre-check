@@ -213,8 +213,9 @@ class Configuration:
         except InvalidConfiguration as error:
             raise EnvironmentException("Invalid configuration: {}".format(str(error)))
 
-    def get_version_hash(self):
-        return self._version_hash
+    @property
+    def version_hash(self) -> str:
+        return self._version_hash or "unversioned"
 
     def get_binary(self) -> str:
         if not self._binary:
@@ -338,11 +339,14 @@ class Configuration:
             )
 
     def _resolve_versioned_paths(self) -> None:
-        version_hash = self.get_version_hash()
+        version_hash = self.version_hash
+        if not version_hash:
+            return
+
         binary = self._binary
-        if version_hash and binary:
+        if binary:
             self._binary = binary.replace("%V", version_hash)
-        if version_hash and self._typeshed:
+        if self._typeshed:
             self._typeshed = self._typeshed.replace("%V", version_hash)
 
     def _apply_defaults(self) -> None:

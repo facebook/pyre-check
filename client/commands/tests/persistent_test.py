@@ -23,7 +23,7 @@ class PersistentTest(unittest.TestCase):
     ) -> None:
         arguments = mock_arguments()
         configuration = mock_configuration()
-        configuration.get_version_hash.return_value = "hash"
+        configuration.version_hash = "hash"
         configuration.number_of_workers = 42
 
         # Check start without watchman.

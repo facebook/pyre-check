@@ -51,7 +51,7 @@ class ConfigurationTest(unittest.TestCase):
         configuration = Configuration()
         self.assertEqual(configuration.targets, ["//a/b/c"])
         self.assertEqual(configuration.analysis_directories, [])
-        self.assertEqual(configuration.get_version_hash(), None)
+        self.assertEqual(configuration.version_hash, "unversioned")
         self.assertEqual(configuration.logger, None)
         self.assertEqual(configuration.do_not_check, [])
         self.assertTrue(configuration.disabled())
@@ -144,7 +144,7 @@ class ConfigurationTest(unittest.TestCase):
         with patch.object(os, "getenv", return_value="VERSION_HASH"):
             json_load.side_effect = [{}, {}]
             configuration = Configuration()
-            self.assertEqual(configuration.get_version_hash(), "VERSION_HASH")
+            self.assertEqual(configuration.version_hash, "VERSION_HASH")
 
         # Test multiple definitions of the do_not_check files.
         json_load.side_effect = [
@@ -333,7 +333,7 @@ class ConfigurationTest(unittest.TestCase):
             os_path_isdir.assert_has_calls(calls)
             self.assertEqual(configuration.analysis_directories, [])
             self.assertEqual(configuration.targets, [])
-            self.assertEqual(configuration.get_version_hash(), None)
+            self.assertEqual(configuration.version_hash, "unversioned")
             self.assertEqual(configuration.logger, None)
             self.assertEqual(configuration.do_not_check, [])
             self.assertFalse(configuration.disabled())

@@ -49,7 +49,7 @@ def get_binary_version(configuration) -> str:
     if override:
         return "override: {}".format(override)
 
-    configured = configuration.get_version_hash()
+    configured = configuration.version_hash
     if configured:
         return configured
 
@@ -175,7 +175,7 @@ def log_statistics(
                 "analysis_directory": str(arguments.analysis_directory or []),
                 "target": str(arguments.target or []),
                 "user": os.getenv("USER") or "",
-                "version": str(configuration.get_version_hash()),
+                "version": configuration.version_hash,
             },
         }
         subprocess.run(

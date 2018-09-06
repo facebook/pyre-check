@@ -82,7 +82,7 @@ class Start(Reporting):
                 "-typeshed",
                 str(self._configuration.get_typeshed()),
                 "-expected-binary-version",
-                str(self._configuration.get_version_hash()),
+                self._configuration.version_hash,
             ]
         )
         search_path = self._configuration.get_search_path()
