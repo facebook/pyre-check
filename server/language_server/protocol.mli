@@ -20,7 +20,7 @@ module PublishDiagnostics : sig
   [@@deriving to_yojson]
 
   (** Turn a type check error into a PublishDiagnostics notification *)
-  val of_errors: ?root: Path.t -> File.Handle.t -> TypeCheck.Error.t list -> t Or_error.t
+  val of_errors: File.Handle.t -> TypeCheck.Error.t list -> t Or_error.t
 end
 
 (** DidSaveTextDocument notification, method="textDocument/didSave" *)

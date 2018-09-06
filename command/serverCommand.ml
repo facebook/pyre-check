@@ -34,7 +34,7 @@ let spawn_watchman_client { configuration = { sections; project_root; local_root
 
 let computation_thread request_queue configuration state =
   let failure_threshold = 5 in
-  let rec loop ({ configuration = { local_root; _ }; pid_path; _ } as configuration) state =
+  let rec loop ({ pid_path; _ } as configuration) state =
     let errors_to_lsp_responses error_map =
       let diagnostic_to_response = function
         | Ok diagnostic_error ->
@@ -50,7 +50,7 @@ let computation_thread request_queue configuration state =
       error_map
       |> List.map
         ~f:(fun (handle, errors) ->
-            LanguageServer.Protocol.PublishDiagnostics.of_errors ~root:local_root handle errors)
+            LanguageServer.Protocol.PublishDiagnostics.of_errors handle errors)
       |> List.concat_map ~f:diagnostic_to_response
     in
     (* Decides what to broadcast to persistent clients after a request is processed. *)

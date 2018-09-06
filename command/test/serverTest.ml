@@ -36,6 +36,10 @@ let poll_for_deletion lock_path =
 let test_language_server_protocol_json_format context =
   let open TypeCheck.Error in
   let filename, _ = bracket_tmpfile ~suffix:".py" context in
+  let handle = File.Handle.create filename in
+  Ast.SharedMemory.add_source
+    handle
+    (Source.create ~handle ~path:(Path.create_absolute filename) []);
   let ({ Error.location; _ } as type_error) =
     CommandTest.make_errors
       {|
@@ -58,7 +62,6 @@ let test_language_server_protocol_json_format context =
   in
   let json_error =
     LanguageServer.Protocol.PublishDiagnostics.of_errors
-      ~root:(Path.create_absolute Filename.temp_dir_name)
       (File.Handle.create filename)
       [type_error]
     |> Or_error.ok_exn
@@ -95,7 +98,14 @@ let test_language_server_protocol_json_format context =
     |> Test.trim_extra_indentation
     |> normalize
   in
-  assert_equal ~printer:ident ~cmp:String.equal json_error_expect json_error
+  assert_equal ~printer:ident ~cmp:String.equal json_error_expect json_error;
+
+  let malformed_response =
+    LanguageServer.Protocol.PublishDiagnostics.of_errors
+      (File.Handle.create "nonexistent_file")
+      [type_error]
+  in
+  assert_true (Or_error.is_error malformed_response)
 
 
 let with_timeout ~seconds f x =
