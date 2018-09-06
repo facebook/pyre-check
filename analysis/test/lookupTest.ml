@@ -72,7 +72,7 @@ let assert_annotation ~lookup ~source ~position ~annotation =
   assert_equal
     ~printer:(Option.value ~default:"(none)")
     annotation
-    (Lookup.get_annotation lookup ~source_text:source ~position
+    (Lookup.get_annotation lookup ~source ~position
      >>| (fun (location, annotation) ->
          Format.asprintf "%s/%a" (show_location location) Type.pp annotation))
 
@@ -464,7 +464,7 @@ let test_lookup_out_of_bounds_accesses _ =
   let test_one (line, column) =
     Lookup.get_annotation
       lookup
-      ~source_text:source
+      ~source
       ~position:{ Location.line; column }
     |> ignore
   in
@@ -562,11 +562,11 @@ let test_lookup_union_type_resolution _ =
     ~annotation:(Some "test.py:19:11-19:12/typing.Union[test.A, test.B, test.C]")
 
 
-let assert_definition ~lookup ~position ~definition =
+let assert_definition ~lookup ~source ~position ~definition =
   assert_equal
     ~printer:(Option.value ~default:"(none)")
     definition
-    (Lookup.get_definition lookup ~position
+    (Lookup.get_definition lookup ~source ~position
      >>| show_location)
 
 
@@ -587,7 +587,7 @@ let test_lookup_definitions _ =
           takeint(getint())
     |}
   in
-  let lookup, _ = generate_lookup source in
+  let lookup, source = generate_lookup source in
 
   assert_equal
     ~printer:(String.concat ~sep:"\n")
@@ -609,14 +609,17 @@ let test_lookup_definitions _ =
      |> List.sort ~compare:String.compare);
   assert_definition
     ~lookup
+    ~source
     ~position:{ Location.line = 12; column = 0 }
     ~definition:None;
   assert_definition
     ~lookup
+    ~source
     ~position:{ Location.line = 12; column = 4 }
     ~definition:(Some "test.py:8:0-9:8");
   assert_definition
     ~lookup
+    ~source
     ~position:{ Location.line = 12; column = 7 }
     ~definition:None
 

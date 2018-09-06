@@ -268,13 +268,13 @@ module LookupCache = struct
   let find_annotation ~state ~configuration file position =
     get ~state ~configuration file
     >>= fun { table; source } ->
-    Lookup.get_annotation table ~position ~source_text:source
+    Lookup.get_annotation table ~position ~source
 
 
   let find_definition ~state ~configuration file position =
     get ~state ~configuration file
-    >>= fun { table; _ } ->
-    Lookup.get_definition table ~position
+    >>= fun { table; source } ->
+    Lookup.get_definition table ~position ~source
 end
 
 
@@ -488,7 +488,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~reque
         start = ({ Ast.Location.line; column} as start);
         _;
       } ->
-        let source_text =
+        let source =
           Ast.SharedMemory.get_source (File.Handle.create path)
           >>= (fun { Ast.Source.path; _ } -> path)
           >>| File.create
@@ -498,7 +498,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~reque
         File.Handle.create path
         |> Ast.SharedMemory.get_source
         >>| Lookup.create_of_source environment
-        >>= Lookup.get_annotation ~position:start ~source_text
+        >>= Lookup.get_annotation ~position:start ~source
         >>| (fun (_, annotation) -> TypeQuery.Response (TypeQuery.Type annotation))
         |> Option.value ~default:(
           TypeQuery.Error (

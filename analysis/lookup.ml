@@ -11,24 +11,30 @@ open Ast
 open Statement
 
 
-type approximate_annotation = {
+type 'entry approximate_entry = {
   (* Each prefix is stored with the order of its elements reversed to
      reduce the lookup complexity. *)
   reversed_prefix: Access.t;
-  annotation: Type.t;
+  entry: 'entry;
 }
 
 
-type annotation_information =
-  | Precise of Type.t
-  (* This lists all approximate annotations living at this
-     location, in decreasing order of prefix length. *)
-  | Approximate of approximate_annotation list
+type 'entry complex_entry =
+  | Precise of 'entry
+  (* This lists all approximate entries living at this location, in
+     decreasing order of prefix length. *)
+  | Approximate of 'entry approximate_entry list
+
+
+type annotation_lookup = (Type.t complex_entry) Location.Reference.Table.t
+
+
+type definition_lookup = (Location.Reference.t complex_entry) Location.Reference.Table.t
 
 
 type t = {
-  annotations_lookup: annotation_information Location.Reference.Table.t;
-  definitions_lookup: Location.Reference.t Location.Reference.Table.t;
+  annotations_lookup: annotation_lookup;
+  definitions_lookup: definition_lookup;
 }
 
 
@@ -40,8 +46,8 @@ module ExpressionVisitor = struct
 
   type t = {
     resolution: Resolution.t;
-    annotations_lookup: annotation_information Location.Reference.Table.t;
-    definitions_lookup: Location.Reference.t Location.Reference.Table.t;
+    annotations_lookup: annotation_lookup;
+    definitions_lookup: definition_lookup;
   }
 
   let expression
@@ -92,52 +98,59 @@ module ExpressionVisitor = struct
     let () =
       match expression_value with
       | Expression.Access access ->
-          (* Definitions. *)
-          let not_a_call = function
-            | Access.Call _ -> false
-            | _ -> true
-          in
-          let store_definition definition_location =
-            if not (Location.equal definition_location Location.Reference.any) then
+          (* `filter` receives the prefix and current element, should return `Some entry` if one
+             should be added for the current prefix+entry, `None` otherwise. *)
+          let collect_and_store ~access ~lookup_table ~filter =
+            let _, entries =
+              let fold_callback (prefix, entries_sofar) element =
+                let access = prefix @ [element] in
+                let entries_sofar =
+                  let add_entry entry =
+                    { reversed_prefix = List.rev access; entry } :: entries_sofar
+                  in
+                  filter ~prefix ~element
+                  >>| add_entry
+                  |> Option.value ~default:entries_sofar
+                in
+                access, entries_sofar
+              in
+              List.fold access ~init:([], []) ~f:fold_callback
+            in
+            if not (List.is_empty entries) then
               Location.Reference.Table.set
-                definitions_lookup
+                lookup_table
                 ~key:expression_location
-                ~data:definition_location
+                ~data:(Approximate entries);
           in
-          List.take_while access ~f:not_a_call
-          |> Resolution.global resolution
-          >>| Node.location
-          >>| store_definition
-          |> ignore;
 
-          (* Annotations - enumerate all prefixes of this access and resolve them separately. *)
-          let register_prefix (prefix, prefixes_sofar) element =
+          (* Definitions. *)
+          let filter_definition ~prefix ~element =
+            let access = prefix @ [element] in
+            Resolution.global resolution access
+            >>| Node.location
+            >>= fun location ->
+            if Location.equal location Location.Reference.any then
+              None
+            else
+              Some location
+          in
+          collect_and_store ~access ~lookup_table:definitions_lookup ~filter:filter_definition;
+
+          (* Annotations. *)
+          let filter_annotation ~prefix ~element =
             let access = prefix @ [element] in
             let annotation =
               Annotated.resolve
                 ~resolution
                 (Node.create ~location:expression_location (Expression.Access access))
             in
-            let prefixes_sofar =
-              if not (Type.is_unknown annotation) then
-                (* Optimization: reversing the access makes lookups easier. *)
-                { reversed_prefix = List.rev access; annotation } :: prefixes_sofar
-              else
-                prefixes_sofar
-            in
-            access, prefixes_sofar
+            if Type.is_unknown annotation then
+              None
+            else
+              Some annotation
           in
-          let _ , prefixes =
-            List.fold
-              access
-              ~init:([], [])
-              ~f:register_prefix
-          in
-          if (List.length prefixes) > 0 then
-            Location.Reference.Table.set
-              annotations_lookup
-              ~key:expression_location
-              ~data:(Approximate prefixes)
+          collect_and_store ~access ~lookup_table:annotations_lookup ~filter:filter_annotation
+
       | _ ->
           try
             let annotation = Annotated.resolve ~resolution expression in
@@ -196,7 +209,7 @@ let create_of_source environment source =
   { annotations_lookup; definitions_lookup }
 
 
-let refine ~position ~source_text (location, entry) =
+let refine ~position ~source (location, entry) =
   let refine_approximate location entries =
     let find_word_at_position ~position:{ Location.line; column } =
       let word_delimiter _index character =
@@ -228,12 +241,12 @@ let refine ~position ~source_text (location, entry) =
         )
       in
 
-      let lines = String.split_lines source_text in
+      let lines = String.split_lines source in
       List.nth lines (line - 1)
       >>| find_word_range ~column
     in
     let find_match entries ({ Location.stop = word_stop; _ }, word) =
-      let match_reverse_prefix { reversed_prefix; annotation } =
+      let match_reverse_prefix { reversed_prefix; entry } =
         (* Heuristic: find the access that ends with the word we
            found. However, since we reversed the order of each prefix,
            we look at the first element of the Access.t instead. *)
@@ -241,7 +254,7 @@ let refine ~position ~source_text (location, entry) =
           if String.equal (Access.show_sanitized [first_element]) word then
             (* We keep the start position of the Access unmodified
                because we are matching with a prefix. *)
-            Some ({ location with Location.stop = word_stop }, annotation)
+            Some ({ location with Location.stop = word_stop }, entry)
           else
             None
         in
@@ -257,7 +270,7 @@ let refine ~position ~source_text (location, entry) =
          that corresponds to the whole access. The longest prefix is
          at the front, and it is guarenteed to exist. *)
       List.hd_exn entries
-      |> fun { annotation; _ } -> (location, annotation)
+      |> fun { entry; _ } -> (location, entry)
     in
 
     find_word_at_position ~position
@@ -265,8 +278,8 @@ let refine ~position ~source_text (location, entry) =
     |> Option.value ~default:(take_longest_access entries)
   in
   match entry with
-  | Precise annotation ->
-      (location, annotation)
+  | Precise entry ->
+      (location, entry)
   | Approximate entries ->
       refine_approximate location entries
 
@@ -297,35 +310,38 @@ let get_best_location lookup_table ~position =
       (weight location_left) - (weight location_right))
 
 
-let get_annotation { annotations_lookup; _ } ~position ~source_text =
+let get_annotation { annotations_lookup; _ } ~position ~source =
   let instantiate_location (location, annotation) =
     Location.instantiate ~lookup:(fun hash -> Ast.SharedMemory.get_handle ~hash) location,
     annotation
   in
   get_best_location annotations_lookup ~position
-  >>| refine ~position ~source_text
+  >>| refine ~position ~source
   >>| instantiate_location
 
 
-let get_all_annotations { annotations_lookup; _ } =
-  let expand_approximate (location, entry) =
-    match entry with
-    | Precise annotation ->
-        [(location, annotation)]
-    | Approximate entries ->
-        (* Do not bother with refining locations. This function is
-           mostly used for testing. *)
-        List.map entries ~f:(fun { annotation; _ } -> (location, annotation))
-  in
-  Location.Reference.Table.to_alist annotations_lookup
-  |> List.concat_map ~f:expand_approximate
-
-
-let get_definition { definitions_lookup; _ } ~position =
+let get_definition { definitions_lookup; _ } ~position ~source =
   get_best_location definitions_lookup ~position
+  >>| refine ~position ~source
   >>| snd
   >>| Location.instantiate ~lookup:(fun hash -> Ast.SharedMemory.get_handle ~hash)
 
 
+let expand_approximate (location, entry) =
+  match entry with
+  | Precise annotation ->
+      [(location, annotation)]
+  | Approximate entries ->
+      (* Do not bother with refining locations. This function is
+         mostly used for testing. *)
+      List.map entries ~f:(fun { entry; _ } -> (location, entry))
+
+
+let get_all_annotations { annotations_lookup; _ } =
+  Location.Reference.Table.to_alist annotations_lookup
+  |> List.concat_map ~f:expand_approximate
+
+
 let get_all_definitions { definitions_lookup; _ } =
   Location.Reference.Table.to_alist definitions_lookup
+  |> List.concat_map ~f:expand_approximate
