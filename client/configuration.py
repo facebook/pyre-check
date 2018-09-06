@@ -78,7 +78,7 @@ class Configuration:
         self.number_of_workers = None
         self.local_configuration = None  # type: Optional[str]
 
-        self._version_hash = None
+        self._version_hash = None  # type: Optional[str]
         self._binary = None  # type: Optional[str]
         self._typeshed = None  # type: Optional[str]
 
@@ -309,9 +309,11 @@ class Configuration:
                 else:
                     self.search_path.append(additional_search_path)
 
-                self._version_hash = configuration.consume(
+                version_hash = configuration.consume(
                     "version", current=self._version_hash
                 )
+                assert version_hash is None or isinstance(version_hash, str)
+                self._version_hash = version_hash
 
                 typeshed = configuration.consume("typeshed", current=self._typeshed)
                 assert typeshed is None or isinstance(typeshed, str)
