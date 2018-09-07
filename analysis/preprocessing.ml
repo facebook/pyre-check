@@ -119,7 +119,7 @@ let expand_string_annotations ({ Source.handle; _ } as source) =
           in
           {
             define with
-            Define.parameters = List.map ~f:parameter parameters;
+            Define.parameters = List.map parameters ~f:parameter;
             return_annotation = return_annotation >>| transform_expression;
           }
         in
