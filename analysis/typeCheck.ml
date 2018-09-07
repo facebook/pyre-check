@@ -1406,7 +1406,24 @@ module State = struct
                 | _ ->
                     List.map elements ~f:(fun _ -> Type.Top)
               in
-              List.zip_exn (left @ starred @ right) annotations
+              let assignees = left @ starred @ right in
+              let state, annotations =
+                if List.length annotations <> List.length assignees then
+                  let state =
+                    Error.create
+                      ~location
+                      ~kind:(Error.Unpack {
+                          expected_count = List.length assignees;
+                          actual_count = List.length annotations;
+                        })
+                      ~define
+                    |> add_error ~state
+                  in
+                  state, List.map assignees ~f:(fun _ -> Type.Top)
+                else
+                  state, annotations
+              in
+              List.zip_exn assignees annotations
               |> List.zip_exn resolved
               |> List.fold
                 ~init:state
@@ -1417,10 +1434,9 @@ module State = struct
               let state =
                 Error.create
                   ~location
-                  ~kind:(Error.IncompatibleVariableType {
-                      Error.name = Expression.access { Node.location; value };
-                      mismatch = { Error.expected = Type.tuple []; actual = guide };
-                      declare_location = instantiate location;
+                  ~kind:(Error.Unpack {
+                      Error.expected_count = List.length elements;
+                      actual_count = 1;
                     })
                   ~define
                 |> add_error ~state

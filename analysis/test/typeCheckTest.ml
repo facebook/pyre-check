@@ -572,10 +572,17 @@ let test_forward_statement _ =
     ["a", Type.integer; "b", Type.Top; "c", Type.integer; "d", Type.Top];
   assert_forward
     ~errors:
-      (`Specific ["Incompatible variable type [9]: Unable to unpack `int`, expected a `Tuple`."])
+      (`Specific ["Unable to unpack [23]: Unable to unpack single value, 2 were expected."])
     ["z", Type.integer]
     "x, y = z"
     ["x", Type.Top; "y", Type.Top; "z", Type.integer];
+
+  assert_forward
+    ~errors:
+      (`Specific ["Unable to unpack [23]: Unable to unpack 3 values, 2 were expected."])
+    ["z", Type.tuple [Type.integer; Type.string; Type.string]]
+    "x, y = z"
+    ["x", Type.Top; "y", Type.Top; "z", Type.tuple [Type.integer; Type.string; Type.string]];
 
   assert_forward
     ["y", Type.integer; "z", Type.Top]
@@ -592,7 +599,7 @@ let test_forward_statement _ =
   assert_forward
     ~errors:
       (`Specific [
-          "Incompatible variable type [9]: Unable to unpack `unknown`, expected a `Tuple`.";
+          "Unable to unpack [23]: Unable to unpack single value, 2 were expected.";
         ])
     []
     "(x, y), z = 1"
@@ -1499,7 +1506,7 @@ let test_check _ =
         return x + y + z
     |}
     [
-      "Incompatible variable type [9]: Unable to unpack `unknown`, expected a `Tuple`.";
+      "Unable to unpack [23]: Unable to unpack single value, 2 were expected.";
       "Incompatible return type [7]: Expected `int` but got `unknown`.";
     ];
 
@@ -1887,7 +1894,7 @@ let test_check_assign _ =
       def foo(input: int) -> None:
         x, y = input
     |}
-    ["Incompatible variable type [9]: Unable to unpack `int`, expected a `Tuple`."];
+    ["Unable to unpack [23]: Unable to unpack single value, 2 were expected."];
 
 
   assert_type_errors
@@ -2117,7 +2124,7 @@ let test_check_comprehensions _ =
     [
       "Incompatible return type [7]: Expected `typing.Dict[int, str]` but got " ^
       "`typing.Dict[unknown, unknown]`.";
-      "Incompatible variable type [9]: Unable to unpack `int`, expected a `Tuple`.";
+      "Unable to unpack [23]: Unable to unpack single value, 2 were expected.";
     ];
 
   assert_type_errors

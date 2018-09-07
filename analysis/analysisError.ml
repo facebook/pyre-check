@@ -150,6 +150,13 @@ type revealed_type = {
 [@@deriving compare, eq, sexp, show, hash]
 
 
+type unpack = {
+  expected_count: int;
+  actual_count: int;
+}
+[@@deriving compare, eq, sexp, show, hash]
+
+
 type kind =
   | IncompatibleAwaitableType of Type.t
   | IncompatibleParameterType of parameter_mismatch
@@ -166,6 +173,7 @@ type kind =
   | RedundantCast of Type.t
   | RevealedType of revealed_type
   | TooManyArguments of too_many_arguments
+  | Unpack of unpack
   | Top
   | UndefinedAttribute of undefined_attribute
   | UndefinedImport of Access.t
@@ -204,6 +212,7 @@ let code = function
   | MissingArgument _ -> 20
   | UndefinedImport _ -> 21
   | RedundantCast _ -> 22
+  | Unpack _ -> 23
 
 
 let name = function
@@ -229,6 +238,7 @@ let name = function
   | UndefinedImport _ -> "Undefined import"
   | UninitializedAttribute _ -> "Uninitialized attribute"
   | UnusedIgnore _ -> "Unused ignore"
+  | Unpack _ -> "Unable to unpack"
 
 
 let messages ~detailed:_ ~define location kind =
@@ -535,6 +545,14 @@ let messages ~detailed:_ ~define location kind =
           provided
           (if provided > 1 then "were" else "was");
       ]
+  | Unpack { expected_count; actual_count } ->
+      let value_message =
+        if actual_count = 1 then
+          "single value"
+        else
+          Format.sprintf "%d values" actual_count
+      in
+      [Format.sprintf "Unable to unpack %s, %d were expected." value_message expected_count]
   | RedundantCast annotation ->
       [
         Format.asprintf
@@ -773,6 +791,7 @@ let due_to_analysis_limitations { kind; _ } =
   | InconsistentOverride { override = StrengthenedPrecondition (NotFound _); _ }
   | MissingArgument _
   | TooManyArguments _
+  | Unpack _
   | RevealedType _
   | UndefinedAttribute _
   | UndefinedName _
@@ -816,6 +835,7 @@ let due_to_mismatch_with_any { kind; _ } =
   | UninitializedAttribute { mismatch = { actual; expected }; _ } ->
       Type.mismatch_with_any actual expected
   | TooManyArguments _
+  | Unpack _
   | MissingAttributeAnnotation _
   | MissingGlobalAnnotation _
   | MissingParameterAnnotation _
@@ -1260,6 +1280,7 @@ let suppress ~mode error =
     if due_to_analysis_limitations error then
       match kind with
       | TooManyArguments _
+      | Unpack _
       | IncompatibleParameterType _
       | IncompatibleReturnType _
       | IncompatibleConstructorAnnotation _
@@ -1471,6 +1492,8 @@ let dequalify
         MissingArgument missing_argument
     | UnusedIgnore codes ->
         UnusedIgnore codes
+    | Unpack unpack ->
+        Unpack unpack
   in
   let define =
     let dequalify_parameter ({ Node.value; _ } as parameter) =
