@@ -248,7 +248,7 @@ module State = struct
                   | Type.Tuple (Type.Bounded parameters) ->
                       parameters
                   | Type.Tuple (Type.Unbounded parameter) ->
-                      List.map ~f:(fun _ -> parameter) values
+                      List.map values ~f:(fun _ -> parameter)
                   | _ ->
                       []
                 in
@@ -581,7 +581,7 @@ let infer configuration environment ?mode_override ({ Source.handle; _ } as sour
     let results = Preprocessing.defines source |> List.map ~f:check in
 
     let errors =
-      List.map ~f:SingleSourceResult.errors results
+      List.map results ~f:SingleSourceResult.errors
       |> List.concat
       |> Error.join_at_source ~resolution
       |> List.map ~f:(Error.dequalify dequalify_map environment)
@@ -589,7 +589,7 @@ let infer configuration environment ?mode_override ({ Source.handle; _ } as sour
     in
 
     let coverage =
-      List.map ~f:SingleSourceResult.coverage results
+      List.map results ~f:SingleSourceResult.coverage
       |> Coverage.aggregate_over_source ~source
     in
     Coverage.log coverage ~total_errors:(List.length errors) ~path:(File.Handle.show handle);
