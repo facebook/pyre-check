@@ -37,7 +37,7 @@ let test_language_server_protocol_json_format context =
   let open TypeCheck.Error in
   let filename, _ = bracket_tmpfile ~suffix:".py" context in
   let handle = File.Handle.create filename in
-  Ast.SharedMemory.add_source
+  Ast.SharedMemory.Sources.add
     handle
     (Source.create ~handle ~path:(Path.create_absolute filename) []);
   let ({ Error.location; _ } as type_error) =
@@ -243,9 +243,9 @@ let assert_response
     ~request
     expected_response =
   Ast.SharedMemory.HandleKeys.clear ();
-  Ast.SharedMemory.remove_paths [File.Handle.create handle];
+  Ast.SharedMemory.Sources.remove ~handles:[File.Handle.create handle];
   let parsed = parse ~handle source in
-  Ast.SharedMemory.add_source (File.Handle.create handle) parsed;
+  Ast.SharedMemory.Sources.add (File.Handle.create handle) parsed;
   let errors =
     let errors = File.Handle.Table.create () in
     List.iter
@@ -809,7 +809,7 @@ let test_incremental_dependencies _ =
       ]
     in
     List.zip_exn handles sources
-    |> List.iter ~f:(fun (handle, source) -> Ast.SharedMemory.add_source handle source);
+    |> List.iter ~f:(fun (handle, source) -> Ast.SharedMemory.Sources.add handle source);
 
     let environment = Environment.Builder.create () in
     let environment_handler = Environment.handler ~configuration environment in
@@ -863,7 +863,7 @@ let test_incremental_dependencies _ =
     CommandTest.clean_environment ();
     Sys.remove "a.py";
     Sys.remove "b.py";
-    Ast.SharedMemory.remove_paths [File.Handle.create "a.py"; File.Handle.create "b.py"]
+    Ast.SharedMemory.Sources.remove ~handles:[File.Handle.create "a.py"; File.Handle.create "b.py"]
   in
   Exn.protect ~f:assert_dependencies_analyzed ~finally
 
@@ -925,7 +925,7 @@ let test_incremental_lookups _ =
   CommandTest.clean_environment ();
   let annotations =
     handle
-    |> Ast.SharedMemory.get_source
+    |> Ast.SharedMemory.Sources.get
     |> (fun value -> Option.value_exn value)
     |> Lookup.create_of_source state.State.environment
     |> Lookup.get_all_annotations

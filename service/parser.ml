@@ -77,7 +77,7 @@ let parse_sources_job ~configuration ~files =
      source
      |> Analysis.Preprocessing.preprocess
      |> Plugin.apply_to_ast
-     |> Ast.SharedMemory.add_source handle;
+     |> Ast.SharedMemory.Sources.add handle;
      handle :: handles)
     |> Option.value ~default:handles
   in
@@ -229,7 +229,7 @@ let parse_all scheduler ~configuration:({ Configuration.local_root; _ } as confi
   in
   let known_stubs =
     let add_to_known_stubs sofar handle =
-      match Ast.SharedMemory.get_source handle with
+      match Ast.SharedMemory.Sources.get handle with
       | Some { Ast.Source.qualifier; handle; _ } ->
           if Set.mem sofar qualifier then
             Statistics.event

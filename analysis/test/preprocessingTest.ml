@@ -849,11 +849,11 @@ let test_expand_wildcard_imports _ =
     let clear_memory files =
       let get_qualifier file =
         File.handle ~configuration file
-        |> Ast.SharedMemory.get_source
+        |> Ast.SharedMemory.Sources.get
         >>| (fun { Source.qualifier; _ } -> qualifier)
       in
       Ast.SharedMemory.remove_modules (List.filter_map ~f:get_qualifier files);
-      Ast.SharedMemory.remove_paths (List.map ~f:(File.handle ~configuration) files);
+      Ast.SharedMemory.Sources.remove ~handles:(List.map ~f:(File.handle ~configuration) files);
     in
     let files = List.map ~f:create_file environment_sources in
     let file_to_check = create_file ("test.py", check_source) in
@@ -871,7 +871,7 @@ let test_expand_wildcard_imports _ =
           List.map ~f:(Statement.show) statement_list
           |> String.concat ~sep:", ")
       (Source.statements (parse expected))
-      (Source.statements (Option.value_exn (Ast.SharedMemory.get_source file_to_check_handle)))
+      (Source.statements (Option.value_exn (Ast.SharedMemory.Sources.get file_to_check_handle)))
   in
   assert_expanded
     ["a.py", "def foo(): pass"]

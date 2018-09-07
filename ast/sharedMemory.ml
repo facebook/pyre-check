@@ -41,19 +41,18 @@ module HandleKeysValue = struct
   let description = "All handles"
 end
 
-module Sources = SharedMemory.NoCache (HandleKey) (SourceValue)
+module Sources = struct
+  include SharedMemory.NoCache (HandleKey) (SourceValue)
+
+  let remove ~handles =
+    List.filter ~f:mem handles
+    |> KeySet.of_list
+    |> remove_batch
+end
+
 
 module Paths = SharedMemory.WithCache (IntKey) (PathValue)
 
-
-
-let get_source path =
-  Sources.get path
-
-
-(* The sources must be removed by remove_paths beforehand. *)
-let add_source path source =
-  Sources.add path source
 
 
 module HandleKeys = struct
@@ -72,13 +71,6 @@ module HandleKeys = struct
     clear ();
     add 0 (new_keys @ handles)
 end
-
-
-(* The way hack_parallel works, only the master thread is allowed to remove items from shared
-   memory. *)
-let remove_paths paths =
-  let paths = List.filter ~f:Sources.mem paths in
-  Sources.remove_batch (Sources.KeySet.of_list paths)
 
 
 module AccessKey = struct

@@ -222,7 +222,7 @@ let test_module_exports _ =
       |};
     ]
     |> parse_list
-    |> List.map ~f:(fun handle -> Option.value_exn (Ast.SharedMemory.get_source handle))
+    |> List.map ~f:(fun handle -> Option.value_exn (Ast.SharedMemory.Sources.get handle))
     |> (fun sources -> assert_resolved sources access expected)
   in
 

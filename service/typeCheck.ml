@@ -103,7 +103,7 @@ let analyze_sources
             ~f:(fun directory -> Path.directory_contains ~follow_symlinks:true ~directory handle)
     in
     let filter_by_root handle =
-      match Ast.SharedMemory.get_source handle with
+      match Ast.SharedMemory.Sources.get handle with
       | Some { Source.path = Some path; _ } ->
           Path.directory_contains path ~follow_symlinks:true ~directory:project_root &&
           filter_by_directories path
@@ -133,7 +133,7 @@ let analyze_sources
     let map _ handles =
       Annotated.Class.AttributesCache.clear ();
       let analyze_source { errors; number_files; coverage = total_coverage } handle =
-        match Ast.SharedMemory.get_source handle with
+        match Ast.SharedMemory.Sources.get handle with
         | Some source ->
             let { TypeCheck.Result.errors = new_errors; coverage; _; } =
               analyze_source

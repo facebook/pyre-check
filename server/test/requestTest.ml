@@ -204,7 +204,7 @@ let test_process_type_check_request context =
 
           (* Clear and re-populate ASTs in shared memory. *)
           let handles = List.map files ~f:(File.handle ~configuration) in
-          Ast.SharedMemory.remove_paths handles;
+          Ast.SharedMemory.Sources.remove ~handles;
           Service.Parser.parse_sources ~configuration ~scheduler ~files
           |> ignore;
 

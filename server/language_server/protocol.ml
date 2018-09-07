@@ -47,7 +47,7 @@ module PublishDiagnostics = struct
     in
     try
       let path =
-        Ast.SharedMemory.get_source handle
+        Ast.SharedMemory.Sources.get handle
         >>= (fun { Ast.Source.path; _ } -> path)
       in
       match path with
@@ -178,7 +178,7 @@ module TextDocumentDefinitionResponse = struct
   let create ~id ~location =
     let uri ~path =
       File.Handle.create path
-      |> Ast.SharedMemory.get_source
+      |> Ast.SharedMemory.Sources.get
       >>= fun { Ast.Source.path; _ } -> path
       >>| Path.real_path
       >>| Path.uri

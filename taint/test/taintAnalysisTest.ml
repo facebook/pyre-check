@@ -52,7 +52,7 @@ let create_call_graph ?(test_file = "test_file") source =
     Test.parse source
     |> Preprocessing.preprocess
   in
-  let () = Ast.SharedMemory.add_source handle source in
+  let () = Ast.SharedMemory.Sources.add handle source in
   let environment = Test.environment () in
   Service.Environment.populate environment [source];
   let configuration = Configuration.create () in

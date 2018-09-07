@@ -23,7 +23,7 @@ let test_codex_format _ =
     |}
     |> Test.trim_extra_indentation in
   let parsed = parse_untrimmed ~path:(mock_path "test.py") source in
-  Ast.SharedMemory.add_source (File.Handle.create "test.py") parsed;
+  Ast.SharedMemory.Sources.add (File.Handle.create "test.py") parsed;
   let (name, json) = Codex.source_to_json parsed in
   let expected_json_string =
     Format.sprintf

@@ -23,7 +23,7 @@ let remove_ignores handles =
 let register_ignores_for_handle handle =
   let key = File.Handle.show handle in
   (* Register new ignores. *)
-  match Ast.SharedMemory.get_source handle with
+  match Ast.SharedMemory.Sources.get handle with
   | Some source ->
       let ignore_lines = Source.ignore_lines source in
       List.iter
@@ -36,7 +36,7 @@ let register_ignores_for_handle handle =
 
 let register_mode ~configuration handle =
   let mode =
-    match Ast.SharedMemory.get_source handle with
+    match Ast.SharedMemory.Sources.get handle with
     | Some source -> Source.mode source ~configuration
     | _ -> Source.Default
   in
@@ -74,7 +74,7 @@ let ignore ~configuration scheduler handles errors =
   let unused_ignores =
     let paths_from_handles =
       let get_path paths handle =
-        Ast.SharedMemory.get_source handle
+        Ast.SharedMemory.Sources.get handle
         >>| (fun { Source.handle; _ } -> handle :: paths)
         |> Option.value ~default:paths
       in

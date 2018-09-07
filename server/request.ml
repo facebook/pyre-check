@@ -249,7 +249,7 @@ module LookupCache = struct
             File.content file
             |> Option.value ~default:""
           in
-          Ast.SharedMemory.get_source handle
+          Ast.SharedMemory.Sources.get handle
           >>| Lookup.create_of_source environment
           >>| fun table -> { table; source = content }
         in
@@ -489,14 +489,14 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~reque
         _;
       } ->
         let source =
-          Ast.SharedMemory.get_source (File.Handle.create path)
+          Ast.SharedMemory.Sources.get (File.Handle.create path)
           >>= (fun { Ast.Source.path; _ } -> path)
           >>| File.create
           >>= File.content
           |> Option.value ~default:""
         in
         File.Handle.create path
-        |> Ast.SharedMemory.get_source
+        |> Ast.SharedMemory.Sources.get
         >>| Lookup.create_of_source environment
         >>= Lookup.get_annotation ~position:start ~source
         >>| (fun (_, annotation) -> TypeQuery.Response (TypeQuery.Type annotation))
@@ -570,7 +570,7 @@ let process_type_check_request
             let add_signature_hash file =
               let handle = File.handle file ~configuration in
               let signature_hash =
-                Ast.SharedMemory.get_source handle
+                Ast.SharedMemory.Sources.get handle
                 >>| Source.signature_hash
                 |> Option.value ~default
               in
@@ -587,11 +587,11 @@ let process_type_check_request
           let newly_introduced_handles =
             List.filter
               handles
-              ~f:(fun handle -> Option.is_none (Ast.SharedMemory.get_source handle))
+              ~f:(fun handle -> Option.is_none (Ast.SharedMemory.Sources.get handle))
           in
           if not (List.is_empty newly_introduced_handles) then
             Ast.SharedMemory.HandleKeys.add ~handles:newly_introduced_handles;
-          Ast.SharedMemory.remove_paths handles;
+          Ast.SharedMemory.Sources.remove ~handles;
           Service.Parser.parse_sources ~configuration ~scheduler ~files:update_environment_with
           |> ignore;
 
@@ -631,7 +631,7 @@ let process_type_check_request
           "Inferred affected files: %a"
           Sexp.pp [%message (dependents: File.Handle.t list)];
         let to_file handle =
-          Ast.SharedMemory.get_source handle
+          Ast.SharedMemory.Sources.get handle
           >>= fun { Ast.Source.path; _ } -> path
           >>| File.create
         in
@@ -650,7 +650,7 @@ let process_type_check_request
   let repopulate_handles =
     (* Clean up all data related to updated files. *)
     let handles = List.map update_environment_with ~f:(File.handle ~configuration) in
-    Ast.SharedMemory.remove_paths handles;
+    Ast.SharedMemory.Sources.remove ~handles;
     Handler.purge ~debug handles;
     update_environment_with
     |> List.iter ~f:(LookupCache.evict ~state ~configuration);
@@ -683,7 +683,7 @@ let process_type_check_request
     ~section:`Debug
     "Repopulating the environment with %a"
     Sexp.pp [%message (repopulate_handles: File.Handle.t list)];
-  List.filter_map ~f:Ast.SharedMemory.get_source repopulate_handles
+  List.filter_map ~f:Ast.SharedMemory.Sources.get repopulate_handles
   |> Service.Environment.populate environment;
   let classes_to_infer =
     let get_class_keys handle =
@@ -703,7 +703,7 @@ let process_type_check_request
   let new_source_handles = List.map ~f:(File.handle ~configuration) check in
 
   (* Clear all type resolution info from shared memory for all affected sources. *)
-  List.filter_map ~f:Ast.SharedMemory.get_source new_source_handles
+  List.filter_map ~f:Ast.SharedMemory.Sources.get new_source_handles
   |> List.concat_map ~f:(Preprocessing.defines ~extract_into_toplevel:true)
   |> List.map ~f:(fun { Node.value = { Statement.Define.name; _ }; _ } -> name)
   |> TypeResolutionSharedMemory.remove;

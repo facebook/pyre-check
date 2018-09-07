@@ -463,11 +463,11 @@ let test_language_server_definition_response context =
 
   let add_paths handles_to_paths =
     List.map handles_to_paths ~f:fst
-    |> Ast.SharedMemory.remove_paths;
+    |> fun handles -> Ast.SharedMemory.Sources.remove ~handles;
 
     let add_source (handle, path) =
       let source = Ast.Source.create ~handle ~path [] in
-      Ast.SharedMemory.add_source handle source
+      Ast.SharedMemory.Sources.add handle source
     in
     List.iter handles_to_paths ~f:add_source
   in

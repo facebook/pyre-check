@@ -66,7 +66,7 @@ let build
     List.fold
       ~init:[]
       ~f:(fun handles path ->
-          match Ast.SharedMemory.get_source path with
+          match Ast.SharedMemory.Sources.get path with
           | Some handle -> handle :: handles
           | None -> handles)
   in

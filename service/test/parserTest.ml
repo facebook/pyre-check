@@ -46,7 +46,7 @@ let test_parse_stubs_modules_list _ =
   in
   let assert_stub_matches_name ~handle define =
     let name =
-      match Ast.SharedMemory.get_source (get_handle_at handle) with
+      match Ast.SharedMemory.Sources.get (get_handle_at handle) with
       | Some {
           Source.statements = [
             {
@@ -62,7 +62,7 @@ let test_parse_stubs_modules_list _ =
   in
   let assert_module_matches_name ~handle define =
     let name =
-      match Ast.SharedMemory.get_source (get_handle_at handle) with
+      match Ast.SharedMemory.Sources.get (get_handle_at handle) with
       | Some {
           Source.statements = [
             {
@@ -157,7 +157,7 @@ let test_parse_source _ =
   let handle = File.handle ~configuration file in
   assert_equal handles [handle];
 
-  let source = Ast.SharedMemory.get_source handle in
+  let source = Ast.SharedMemory.Sources.get handle in
   assert_equal (Option.is_some source) true;
 
   let { Source.handle; statements; metadata = { Source.Metadata.number_of_lines; _ }; _ } =
@@ -242,7 +242,8 @@ let test_parse_sources context =
     in
     write_file local_root "a.py";
     write_file stub_root "stub.pyi";
-    Ast.SharedMemory.remove_paths [File.Handle.create "a.py"; File.Handle.create "stub.pyi"];
+    Ast.SharedMemory.Sources.remove
+      ~handles:[File.Handle.create "a.py"; File.Handle.create "stub.pyi"];
     let { Service.Parser.stubs; sources } = Service.Parser.parse_all scheduler ~configuration in
     stubs, sources
   in
@@ -255,7 +256,7 @@ let test_parse_sources context =
 
   let assert_handle_path ~handle ~path =
     let handle = File.Handle.create handle in
-    let { Source.path = actual; _ } = Option.value_exn (Ast.SharedMemory.get_source handle) in
+    let { Source.path = actual; _ } = Option.value_exn (Ast.SharedMemory.Sources.get handle) in
     assert_equal ~cmp:(Option.equal Path.equal) (Some path) actual
   in
   assert_handle_path
@@ -263,7 +264,7 @@ let test_parse_sources context =
     ~path:(Path.create_relative ~root:stub_root ~relative:"stub.pyi");
   assert_handle_path ~handle:"a.py" ~path:(Path.create_relative ~root:local_root ~relative:"a.py");
   begin
-    match Ast.SharedMemory.get_source (File.Handle.create "c.py") with
+    match Ast.SharedMemory.Sources.get (File.Handle.create "c.py") with
     | Some { Source.hash; _ } ->
         assert_equal hash ([%hash: string list] (String.split ~on:'\n' content))
     | None ->
@@ -276,7 +277,7 @@ let test_register_modules _ =
   let assert_module_exports raw_source expected_exports =
     let get_qualifier file =
       File.handle ~configuration file
-      |> Ast.SharedMemory.get_source
+      |> Ast.SharedMemory.Sources.get
       >>| (fun { Source.qualifier; _ } -> qualifier)
     in
     let file =
@@ -287,7 +288,7 @@ let test_register_modules _ =
 
     (* Build environment *)
     Ast.SharedMemory.remove_modules (List.filter_map ~f:get_qualifier [file]);
-    Ast.SharedMemory.remove_paths (List.map ~f:(File.handle ~configuration) [file]);
+    Ast.SharedMemory.Sources.remove ~handles:(List.map ~f:(File.handle ~configuration) [file]);
     let configuration = Configuration.create ~local_root:(Path.current_working_directory ()) () in
     let sources =
       Service.Parser.parse_sources

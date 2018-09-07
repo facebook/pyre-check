@@ -4,9 +4,13 @@
     LICENSE file in the root directory of this source tree. *)
 
 
-val get_source: File.Handle.t -> Source.t option
-val add_source: File.Handle.t -> Source.t -> unit
-val remove_paths: File.Handle.t list -> unit
+module Sources: sig
+  val get: File.Handle.t -> Source.t option
+
+  val add: File.Handle.t -> Source.t -> unit
+
+  val remove: handles: File.Handle.t list -> unit
+end
 
 module HandleKeys: sig
   val get: unit -> File.Handle.t list
