@@ -251,13 +251,13 @@ let rec pp format annotation =
                         Access.pp_sanitized name
                         (show annotation)
                 in
-                List.map ~f:parameter parameters
+                List.map parameters ~f:parameter
                 |> String.concat ~sep:", "
                 |> fun parameters -> Format.asprintf "[%s]" parameters
           in
           Format.asprintf "%s, %s" parameters (show annotation)
         in
-        List.map ~f:overload overloads
+        List.map overloads ~f:overload
         |> String.concat ~sep:"]["
       in
       Format.fprintf format "typing.Callable%s[%s]" kind overloads
@@ -278,7 +278,7 @@ let rec pp format annotation =
       Format.fprintf format
         "%s[%s]"
         (Identifier.show (reverse_substitute name))
-        (List.map ~f:show parameters
+        (List.map parameters ~f:show
          |> String.concat ~sep:", ")
   | Primitive name ->
       Format.fprintf format "%a" Identifier.pp name
@@ -288,7 +288,7 @@ let rec pp format annotation =
       let parameters =
         match tuple with
         | Bounded parameters ->
-            (List.map ~f:show parameters
+            (List.map parameters ~f:show
              |> String.concat ~sep:", ")
         | Unbounded parameter  ->
             (show parameter) ^ ", ..."
@@ -297,7 +297,7 @@ let rec pp format annotation =
   | Union parameters ->
       Format.fprintf format
         "typing.Union[%s]"
-        (List.map ~f:show parameters
+        (List.map parameters ~f:show
          |> String.concat ~sep:", ")
   | Variable { variable; constraints } ->
       let constraints =
@@ -665,7 +665,7 @@ let rec create ~aliases { Node.value = expression; _ } =
                     | Optional annotation ->
                         Optional (resolve visited annotation)
                     | Tuple (Bounded elements) ->
-                        Tuple (Bounded (List.map ~f:(resolve visited) elements))
+                        Tuple (Bounded (List.map elements ~f:(resolve visited)))
                     | Tuple (Unbounded annotation) ->
                         Tuple (Unbounded (resolve visited annotation))
                     | Parametric { name; parameters } ->
@@ -673,7 +673,7 @@ let rec create ~aliases { Node.value = expression; _ } =
                           let parametric name =
                             Parametric {
                               name;
-                              parameters = List.map ~f:(resolve visited) parameters;
+                              parameters = List.map parameters ~f:(resolve visited);
                             }
                           in
                           match aliases (Primitive name) with
@@ -703,7 +703,7 @@ let rec create ~aliases { Node.value = expression; _ } =
                         in
                         Variable { variable with constraints }
                     | Union elements ->
-                        Union (List.map ~f:(resolve visited) elements)
+                        Union (List.map elements ~f:(resolve visited))
                     | Bottom
                     | Callable _
                     | Deleted
@@ -1041,7 +1041,7 @@ let rec expression annotation =
                     | Parameter.Variable { Parameter.name; annotation; _ } ->
                         call "Variable" name (Some annotation)
                   in
-                  List (List.map ~f:parameter parameters)
+                  List (List.map parameters ~f:parameter)
                   |> Node.create_with_default_location
               | Undefined ->
                   Node.create_with_default_location Ellipses
@@ -1504,29 +1504,29 @@ let instantiate ?(widen = false) annotation ~constraints =
                               Parameter.annotation = instantiate annotation;
                             }
                       in
-                      Defined (List.map ~f:parameter parameters)
+                      Defined (List.map parameters ~f:parameter)
                   | Undefined ->
                       Undefined
                 in
                 { annotation = instantiate annotation; parameters }
               in
-              Callable { kind; overloads = List.map ~f:instantiate overloads; implicit }
+              Callable { kind; overloads = List.map overloads ~f:instantiate; implicit }
           | Parametric ({ parameters; _ } as parametric) ->
               Parametric {
                 parametric with
-                parameters = List.map ~f:instantiate parameters;
+                parameters = List.map parameters ~f:instantiate;
               }
           | Tuple tuple ->
               let tuple =
                 match tuple with
                 | Bounded parameters ->
-                    Bounded (List.map ~f:instantiate parameters)
+                    Bounded (List.map parameters ~f:instantiate)
                 | Unbounded parameter ->
                     Unbounded (instantiate parameter)
               in
               Tuple tuple
           | Union parameters ->
-              List.map ~f:instantiate parameters
+              List.map parameters ~f:instantiate
               |> union
           | _ ->
               annotation
@@ -1573,12 +1573,12 @@ let rec dequalify map annotation =
   | Parametric { name; parameters } ->
       Parametric {
         name = dequalify_identifier (reverse_substitute name);
-        parameters = List.map ~f:(dequalify map) parameters;
+        parameters = List.map parameters ~f:(dequalify map);
       }
   | Union parameters ->
       Parametric {
         name = dequalify_string "typing.Union";
-        parameters = List.map ~f:(dequalify map) parameters;
+        parameters = List.map parameters ~f:(dequalify map);
       }
   | Primitive name -> Primitive (dequalify_identifier name)
   | Variable { variable = name; constraints } ->
