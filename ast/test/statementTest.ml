@@ -368,10 +368,10 @@ let test_attributes _ =
         in
         create_attribute ~target ~annotation ?defines ~value ~setter ()
       in
-      List.map ~f:attribute expected
+      List.map expected ~f:attribute
     in
     let printer attributes =
-      List.map ~f:(fun node -> Attribute.show node) attributes
+      List.map attributes ~f:Attribute.show
       |> String.concat ~sep:"\n\n"
     in
     let equal { Node.value = left; _ } { Node.value = right; _ } =

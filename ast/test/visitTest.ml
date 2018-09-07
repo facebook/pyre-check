@@ -134,7 +134,8 @@ let test_collect_accesses_in_position _ =
     assert_equal
       ~printer:(String.concat ~sep:", ")
       expected_accesses
-      (List.map ~f:Node.value (Visit.collect_accesses_in_position source position)
+      (Visit.collect_accesses_in_position source position
+       |> List.map ~f:Node.value
        |> List.map ~f:Access.show)
   in
   assert_collected_accesses source 2 0 ["s"];
