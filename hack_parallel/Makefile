@@ -94,7 +94,7 @@ INCLUDE_OPTS=$(foreach dir,$(MODULES),-I $(dir))
 
 BUILT_C_DIRS=$(addprefix _build/,$(NATIVE_C_DIRS))
 BUILT_C_FILES=$(addprefix _build/,$(NATIVE_C_FILES))
-CC_FLAGS=-DNO_SQLITE3
+CC_FLAGS=-DNO_SQLITE3 -O2
 CC_OPTS=$(foreach flag, $(CC_FLAGS), -ccopt $(flag))
 
 ALL_INCLUDE_PATHS=$(sort $(realpath $(BUILT_C_DIRS)))
