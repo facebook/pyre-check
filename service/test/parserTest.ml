@@ -179,13 +179,14 @@ let test_parse_source _ =
 
 let test_parse_sources context =
   let scheduler = Scheduler.mock () in
+  let content = "def foo() -> int: ..." in
   let stub_handles, source_handles =
     let local_root = Path.create_absolute (bracket_tmpdir context) in
     let module_root = Path.create_absolute (bracket_tmpdir context) in
     let link_root = Path.create_absolute (bracket_tmpdir context) in
 
     let write_file root relative =
-      File.create ~content:"def foo() -> int: ..." (Path.create_relative ~root ~relative)
+      File.create ~content (Path.create_relative ~root ~relative)
       |> File.write
     in
     write_file local_root "a.pyi";
@@ -260,7 +261,14 @@ let test_parse_sources context =
   assert_handle_path
     ~handle:"stub.pyi"
     ~path:(Path.create_relative ~root:stub_root ~relative:"stub.pyi");
-  assert_handle_path ~handle:"a.py" ~path:(Path.create_relative ~root:local_root ~relative:"a.py")
+  assert_handle_path ~handle:"a.py" ~path:(Path.create_relative ~root:local_root ~relative:"a.py");
+  begin
+    match Ast.SharedMemory.get_source (File.Handle.create "c.py") with
+    | Some { Source.hash; _ } ->
+        assert_equal hash ([%hash: string list] (String.split ~on:'\n' content))
+    | None ->
+        assert_unreached ()
+  end
 
 
 let test_register_modules _ =

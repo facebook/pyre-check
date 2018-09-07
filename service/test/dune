@@ -4,7 +4,7 @@
   parserTest
   typeCheckTest)
  (preprocess
-  (pps ppx_sexp_message))
+  (pps ppx_sexp_message ppx_hash))
  (libraries
   oUnit
   pyrelib.analysis

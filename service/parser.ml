@@ -19,9 +19,11 @@ let parse_source ~configuration ?(show_parser_errors = true) file =
   let metadata = Source.Metadata.parse (File.Handle.show handle) lines in
   try
     let statements = Parser.parse ~handle lines in
+    let hash = [%hash: string list] lines in
     Some (
       Source.create
         ~docstring:(Statement.extract_docstring statements)
+        ~hash
         ~metadata
         ~handle
         ~path:(File.path file)

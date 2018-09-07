@@ -184,6 +184,7 @@ end
 
 type t = {
   docstring: string option;
+  hash: int;
   metadata: Metadata.t;
   handle: File.Handle.t;
   path: Path.t option;
@@ -219,15 +220,20 @@ let create
     ?(handle = File.Handle.create "")
     ?path
     ?(qualifier = [])
+    ?(hash = -1)
     statements =
   {
     docstring;
+    hash;
     metadata;
     handle;
     path;
     qualifier;
     statements;
   }
+
+let hash { hash; _ } =
+  hash
 
 
 let signature_hash { metadata; handle; qualifier; statements; _ } =
