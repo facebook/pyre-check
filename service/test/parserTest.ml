@@ -291,8 +291,7 @@ let test_register_modules _ =
     let qualifier = Option.value_exn (get_qualifier file) in
     (* The modules get removed after preprocessing. *)
     assert_is_none (Ast.SharedMemory.get_module qualifier);
-
-    Service.Environment.handler ~configuration ~stubs:[] ~sources |> ignore;
+    Service.Environment.populate_shared_memory ~configuration ~stubs:[] ~sources;
     assert_is_some (Ast.SharedMemory.get_module qualifier);
 
     assert_equal

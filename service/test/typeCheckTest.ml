@@ -29,8 +29,9 @@ let assert_errors ?filter_directories ~root ~files errors =
   List.iter ~f:add_file files;
   let handles = Service.Parser.parse_sources ~configuration ~scheduler ~files in
   let ((module Handler: Analysis.Environment.Handler) as environment) =
-    Service.Environment.handler ~configuration ~stubs:[] ~sources:handles
+    (module Service.Environment.SharedHandler: Analysis.Environment.Handler)
   in
+  Service.Environment.populate_shared_memory ~configuration ~stubs:[] ~sources:handles;
   let actual_errors =
     Service.TypeCheck.analyze_sources ~scheduler ~configuration ~environment ~handles
     |> fst

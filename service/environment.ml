@@ -439,7 +439,7 @@ end
 
 (** First dumps environment to shared memory, then exposes through
     Environment_handler *)
-let handler
+let populate_shared_memory
     ~configuration
     ~stubs
     ~sources =
@@ -499,7 +499,6 @@ let handler
     add_table Ast.SharedMemory.add_module modules;
     Statistics.performance ~name:"added environment to shared memory" ~timer ()
   in
-
   let environment = Environment.Builder.create () in
   let ((module InProcessHandler: Environment.Handler) as handler) =
     Environment.handler ~configuration environment
@@ -514,5 +513,4 @@ let handler
     ~section:`Memory
     ~name:"shared memory size"
     ~integers:["size", EnvironmentSharedMemory.heap_size ()]
-    ();
-  (module SharedHandler: Environment.Handler)
+    ()
