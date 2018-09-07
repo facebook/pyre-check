@@ -19,10 +19,9 @@ module SharedMemory = Memory
 
 module Epoch : sig
   type t = int
+  [@@deriving show]
 
   val initial: t
-  val show: t -> string
-  val pp: Format.formatter -> t -> unit
 end
 
 type step = {
