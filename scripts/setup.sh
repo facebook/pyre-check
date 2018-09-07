@@ -149,6 +149,7 @@ test "$ocaml_succeeded" = 1 \
 
 opam install --yes \
   core \
+  dune \
   yojson \
   ppx_deriving \
   ppx_deriving_yojson \
