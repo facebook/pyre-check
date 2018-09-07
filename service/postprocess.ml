@@ -133,7 +133,7 @@ let ignore ~configuration scheduler handles errors =
         Error.location =
           Location.instantiate
             (Ignore.location unused_ignore)
-            ~lookup:(fun hash -> Ast.SharedMemory.get_handle ~hash);
+            ~lookup:(fun hash -> Ast.SharedMemory.Handles.get ~hash);
         kind = Error.UnusedIgnore (Ignore.codes unused_ignore);
         define = {
           Node.location = Ignore.location unused_ignore;

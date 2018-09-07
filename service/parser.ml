@@ -73,7 +73,7 @@ let parse_sources_job ~configuration ~files =
      >>| fun source ->
      File.handle ~configuration file
      |> fun handle ->
-     Ast.SharedMemory.add_handle_hash ~handle:(File.Handle.show handle);
+     Ast.SharedMemory.Handles.add_handle_hash ~handle:(File.Handle.show handle);
      source
      |> Analysis.Preprocessing.preprocess
      |> Plugin.apply_to_ast

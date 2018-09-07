@@ -76,7 +76,7 @@ module State = struct
         Format.asprintf
           "    %a -> %s"
           Location.Instantiated.pp
-          (Location.instantiate ~lookup:(fun hash -> Ast.SharedMemory.get_handle ~hash) location)
+          (Location.instantiate ~lookup:(fun hash -> Ast.SharedMemory.Handles.get ~hash) location)
           (Error.description error ~detailed:true)
       in
       List.map (Map.to_alist errors) ~f:error_to_string
@@ -214,7 +214,7 @@ module State = struct
       ~location:(
         Location.instantiate
           location
-          ~lookup:(fun hash -> Ast.SharedMemory.get_handle ~hash))
+          ~lookup:(fun hash -> Ast.SharedMemory.Handles.get ~hash))
     |> class_initialization_errors
     |> constructor_errors
     |> Error.filter ~configuration ~resolution
@@ -1116,7 +1116,7 @@ module State = struct
         } as state)
       ~statement:{ Node.location; value } =
     let instantiate location =
-      Location.instantiate ~lookup:(fun hash -> Ast.SharedMemory.get_handle ~hash) location
+      Location.instantiate ~lookup:(fun hash -> Ast.SharedMemory.Handles.get ~hash) location
     in
     let expected =
       let annotation =

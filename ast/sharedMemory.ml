@@ -51,8 +51,15 @@ module Sources = struct
 end
 
 
-module Paths = SharedMemory.WithCache (IntKey) (PathValue)
+module Handles = struct
+  include SharedMemory.WithCache (IntKey) (PathValue)
 
+  let get ~hash =
+    get hash
+
+  let add_handle_hash ~handle =
+    write_through (String.hash handle) handle
+end
 
 
 module HandleKeys = struct
@@ -110,11 +117,3 @@ let get_module_exports access =
 
 let in_modules access =
   Modules.mem access
-
-
-let get_handle ~hash =
-  Paths.get hash
-
-
-let add_handle_hash ~handle =
-  Paths.write_through (String.hash handle) handle

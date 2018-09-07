@@ -332,7 +332,7 @@ let get_best_location lookup_table ~position =
 
 let get_annotation { annotations_lookup; _ } ~position ~source =
   let instantiate_location (location, annotation) =
-    Location.instantiate ~lookup:(fun hash -> Ast.SharedMemory.get_handle ~hash) location,
+    Location.instantiate ~lookup:(fun hash -> Ast.SharedMemory.Handles.get ~hash) location,
     annotation
   in
   get_best_location annotations_lookup ~position
@@ -344,7 +344,7 @@ let get_definition { definitions_lookup; _ } ~position ~source =
   get_best_location definitions_lookup ~position
   >>= refine ~position ~source ~take_default_on_miss:false
   >>| snd
-  >>| Location.instantiate ~lookup:(fun hash -> Ast.SharedMemory.get_handle ~hash)
+  >>| Location.instantiate ~lookup:(fun hash -> Ast.SharedMemory.Handles.get ~hash)
 
 
 let expand_approximate (location, entry) =
