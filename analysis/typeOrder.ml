@@ -839,7 +839,7 @@ and join ((module Handler: Handler) as order) left right =
             | Type.Optional element ->
                 Type.Optional (Type.union (element :: elements))
             | _ ->
-                List.map ~f:(join order other) elements
+                List.map elements ~f:(join order other)
                 |> List.fold ~f:(join order) ~init:Type.Bottom
           end
 
@@ -1011,7 +1011,7 @@ and meet order left right =
         if less_or_equal order ~left:other ~right:union then
           other
         else
-          List.map ~f:(meet order other) elements
+          List.map elements ~f:(meet order other)
           |> List.fold ~f:(meet order) ~init:Type.Top
 
     | Type.Parametric _, Type.Parametric _ ->
@@ -1138,10 +1138,10 @@ and instantiate_parameters
           let instantiate_parameters { Target.target; parameters } =
             {
               Target.target;
-              parameters = List.map ~f:(Type.instantiate ~constraints) parameters;
+              parameters = List.map parameters ~f:(Type.instantiate ~constraints);
             }
           in
-          List.map ~f:instantiate_parameters successors
+          List.map successors ~f:instantiate_parameters
         else
           successors)
     |> Option.value ~default:successors
@@ -1273,7 +1273,7 @@ let remove_extra_edges (module Handler: Handler) ~bottom ~top annotations =
   let edges = Handler.edges () in
   let backedges = Handler.backedges () in
   let index_of annotation = Handler.find_unsafe (Handler.indices ()) annotation in
-  let keys = List.map ~f:index_of annotations in
+  let keys = List.map annotations ~f:index_of in
   disconnect keys ~edges ~backedges (index_of top);
   disconnect
     keys
@@ -1288,7 +1288,7 @@ let connect_annotations_to_top
     annotations =
   let indices =
     let index_of annotation = Handler.find_unsafe (Handler.indices ()) annotation in
-    List.map ~f:index_of annotations
+    List.map annotations ~f:index_of
   in
   let connect_to_top index =
     let annotation = Handler.find_unsafe (Handler.annotations ()) index in
@@ -1402,7 +1402,7 @@ let check_integrity (module Handler: Handler) =
 let to_dot (module Handler: Handler) =
   let indices = List.sort ~compare (Handler.keys ()) in
   let nodes =
-    List.map ~f:(fun index -> (index, Handler.find_unsafe (Handler.annotations ()) index)) indices
+    List.map indices ~f:(fun index -> (index, Handler.find_unsafe (Handler.annotations ()) index))
   in
   let buffer = Buffer.create 10000 in
   Buffer.add_string buffer "digraph {\n";
