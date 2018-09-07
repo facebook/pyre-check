@@ -19,11 +19,17 @@ module HandleKeys: sig
   val add: handles: File.Handle.t list -> unit
 end
 
-val add_module: Expression.Access.t -> Module.t -> unit
-val remove_modules: Expression.Access.t list -> unit
-val get_module: Expression.Access.t -> Module.t option
-val get_module_exports: Expression.Access.t -> (Expression.Access.t list) option
-val in_modules: Expression.Access.t -> bool
+module Modules: sig
+  val add: qualifier: Expression.Access.t -> ast_module: Module.t -> unit
+
+  val remove: qualifiers: Expression.Access.t list -> unit
+
+  val get: qualifier: Expression.Access.t -> Module.t option
+
+  val get_exports: qualifier: Expression.Access.t -> (Expression.Access.t list) option
+
+  val exists: qualifier: Expression.Access.t -> bool
+end
 
 module Handles: sig
   val get: hash: int -> string option

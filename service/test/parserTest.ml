@@ -287,7 +287,7 @@ let test_register_modules _ =
     in
 
     (* Build environment. *)
-    Ast.SharedMemory.remove_modules (List.filter_map ~f:get_qualifier [file]);
+    Ast.SharedMemory.Modules.remove ~qualifiers:(List.filter_map ~f:get_qualifier [file]);
     Ast.SharedMemory.Sources.remove ~handles:(List.map ~f:(File.handle ~configuration) [file]);
     let configuration = Configuration.create ~local_root:(Path.current_working_directory ()) () in
     let sources =
@@ -299,9 +299,9 @@ let test_register_modules _ =
     (* Check specific file. *)
     let qualifier = Option.value_exn (get_qualifier file) in
     (* The modules get removed after preprocessing. *)
-    assert_is_none (Ast.SharedMemory.get_module qualifier);
+    assert_is_none (Ast.SharedMemory.Modules.get ~qualifier);
     Service.Environment.populate_shared_memory ~configuration ~stubs:[] ~sources;
-    assert_is_some (Ast.SharedMemory.get_module qualifier);
+    assert_is_some (Ast.SharedMemory.Modules.get ~qualifier);
 
     assert_equal
       ~cmp:(List.equal ~equal:Access.equal)
@@ -309,7 +309,7 @@ let test_register_modules _ =
           List.map ~f:(Access.show) expression_list
           |> String.concat ~sep:", ")
       (List.map ~f:Access.create expected_exports)
-      (Option.value_exn (Ast.SharedMemory.get_module_exports qualifier))
+      (Option.value_exn (Ast.SharedMemory.Modules.get_exports ~qualifier))
   in
   assert_module_exports
     {|

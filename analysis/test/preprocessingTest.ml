@@ -852,7 +852,7 @@ let test_expand_wildcard_imports _ =
         |> Ast.SharedMemory.Sources.get
         >>| (fun { Source.qualifier; _ } -> qualifier)
       in
-      Ast.SharedMemory.remove_modules (List.filter_map ~f:get_qualifier files);
+      Ast.SharedMemory.Modules.remove ~qualifiers:(List.filter_map ~f:get_qualifier files);
       Ast.SharedMemory.Sources.remove ~handles:(List.map ~f:(File.handle ~configuration) files);
     in
     let files = List.map ~f:create_file environment_sources in

@@ -58,7 +58,7 @@ let parse_modules_job ~configuration ~files =
             ~path:(File.Handle.show handle)
             ~stub:(String.is_suffix (File.Handle.show handle) ~suffix:".pyi")
             statements
-          |> Ast.SharedMemory.add_module qualifier
+          |> fun ast_module -> Ast.SharedMemory.Modules.add ~qualifier ~ast_module
         in
         add_module_from_source source)
     |> ignore
@@ -106,7 +106,7 @@ let parse_sources ~configuration ~scheduler ~files =
       |> (fun handle -> Source.qualifier ~handle)
     in
     List.map files ~f:get_qualifier
-    |> Ast.SharedMemory.remove_modules
+    |> fun qualifiers -> Ast.SharedMemory.Modules.remove ~qualifiers
   in
   handles
 

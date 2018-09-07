@@ -1009,7 +1009,7 @@ let expand_wildcard_imports source =
         | Import { Import.from = Some from; imports }
           when List.exists ~f:(fun { Import.name; _ } -> Access.show name = "*") imports ->
             let expanded_import =
-              Ast.SharedMemory.get_module_exports from
+              Ast.SharedMemory.Modules.get_exports ~qualifier:from
               >>| List.map ~f:(fun name -> { Import.name; alias = None })
               >>| (fun expanded -> Import { Import.from = Some from; imports = expanded })
               >>| (fun value -> { statement with Node.value })

@@ -94,26 +94,23 @@ module ModuleValue = struct
 end
 
 
-module Modules = SharedMemory.WithCache (AccessKey) (ModuleValue)
+module Modules = struct
+  include SharedMemory.WithCache (AccessKey) (ModuleValue)
 
+  let add ~qualifier ~ast_module =
+    write_through qualifier ast_module
 
-let add_module access ast_module =
-  Modules.write_through access ast_module
+  let remove ~qualifiers =
+    let accesses = List.filter ~f:mem qualifiers in
+    remove_batch (KeySet.of_list accesses)
 
+  let get ~qualifier =
+    get qualifier
 
-let remove_modules accesses =
-  let accesses = List.filter ~f:Modules.mem accesses in
-  Modules.remove_batch (Modules.KeySet.of_list accesses)
+  let get_exports ~qualifier =
+    get ~qualifier
+    >>| Module.wildcard_exports
 
-
-let get_module access =
-  Modules.get access
-
-
-let get_module_exports access =
-  Modules.get access
-  >>| Module.wildcard_exports
-
-
-let in_modules access =
-  Modules.mem access
+  let exists ~qualifier =
+    mem qualifier
+end

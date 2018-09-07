@@ -122,16 +122,16 @@ module SharedHandler: Analysis.Environment.Handler = struct
 
   let register_module ~qualifier ~local_mode ~handle ~stub ~statements =
     let is_registered_empty_stub =
-      Ast.SharedMemory.get_module qualifier
+      Ast.SharedMemory.Modules.get ~qualifier
       >>| Module.empty_stub
       |> Option.value ~default:false
     in
     if not is_registered_empty_stub then
       begin
-        Ast.SharedMemory.remove_modules [qualifier];
-        Ast.SharedMemory.add_module
-          qualifier
-          (Module.create
+        Ast.SharedMemory.Modules.remove ~qualifiers:[qualifier];
+        Ast.SharedMemory.Modules.add
+          ~qualifier
+          ~ast_module:(Module.create
              ~qualifier
              ~local_mode
              ?path:(handle >>| File.Handle.show)
@@ -139,11 +139,11 @@ module SharedHandler: Analysis.Environment.Handler = struct
              statements)
       end
 
-  let is_module access =
-    Ast.SharedMemory.in_modules access
+  let is_module qualifier =
+    Ast.SharedMemory.Modules.exists ~qualifier
 
-  let module_definition access =
-    Ast.SharedMemory.get_module access
+  let module_definition qualifier =
+    Ast.SharedMemory.Modules.get ~qualifier
 
   let in_class_definition_keys annotation =
     ClassDefinitions.mem annotation
@@ -427,7 +427,7 @@ module SharedHandler: Analysis.Environment.Handler = struct
 
     DependencyHandler.clear_keys_batch handles;
     List.map ~f:(fun handle -> Ast.Source.qualifier ~handle) handles
-    |> Ast.SharedMemory.remove_modules;
+    |> fun qualifiers -> Ast.SharedMemory.Modules.remove ~qualifiers;
 
     if debug then
       (* If in debug mode, make sure the TypeOrder is still consistent. *)
@@ -496,7 +496,9 @@ let populate_shared_memory
     add_table DependentKeys.write_through (Hashtbl.map ~f:Hash_set.to_list dependent_keys);
 
     Protocols.write_through "Protocols" (Hash_set.to_list protocols);
-    add_table Ast.SharedMemory.add_module modules;
+    add_table
+      (fun qualifier ast_module -> Ast.SharedMemory.Modules.add ~qualifier ~ast_module)
+      modules;
     Statistics.performance ~name:"added environment to shared memory" ~timer ()
   in
   let environment = Environment.Builder.create () in
