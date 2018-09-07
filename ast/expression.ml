@@ -325,7 +325,7 @@ module Access = struct
 
 
   let create_from_identifiers identifiers =
-    List.map ~f:(fun identifier -> Identifier identifier) identifiers
+    List.map identifiers ~f:(fun identifier -> Identifier identifier)
 
 
   let create_from_expression ({ Node.value; _ } as expression) =
@@ -356,7 +356,7 @@ module Access = struct
       | _ ->
           "?"
     in
-    List.map ~f:identifier access
+    List.map access ~f:identifier
     |> String.concat ~sep:"."
     |> Format.fprintf format "%s"
 
