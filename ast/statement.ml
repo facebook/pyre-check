@@ -1113,7 +1113,7 @@ module With = struct
        Node.create ~location (Assign assign))
       |> Option.value ~default:(Node.create ~location (Expression expression))
     in
-    List.map ~f:preamble items
+    List.map items ~f:preamble
 end
 
 
@@ -1183,9 +1183,11 @@ let extract_docstring statements =
     match String.split ~on:'\n' docstring with
     | [] -> docstring
     | first :: rest ->
-        let indentations = List.map ~f:indentation rest in
-        let difference = List.fold ~init:Int.max_value ~f:Int.min indentations in
-        let rest = List.map ~f:(fun s -> String.drop_prefix s difference) rest in
+        let difference =
+          List.map rest ~f:indentation
+          |> List.fold ~init:Int.max_value ~f:Int.min
+        in
+        let rest = List.map rest ~f:(fun s -> String.drop_prefix s difference) in
         String.concat ~sep:"\n" (first::rest)
   in
   match statements with
