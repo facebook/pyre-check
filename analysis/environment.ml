@@ -284,7 +284,7 @@ let handler
       List.concat_map ~f:(fun handle -> DependencyHandler.get_dependent_keys ~handle) handles
       |> purge_dependents;
       DependencyHandler.clear_keys_batch handles;
-      List.map ~f:(fun handle -> Source.qualifier ~handle) handles
+      List.map handles ~f:(fun handle -> Source.qualifier ~handle)
       |> List.iter ~f:(Hashtbl.remove modules);
 
       if debug then
@@ -828,7 +828,9 @@ let register_functions (module Handler: Handler) ({ Source.handle; _ } as source
       List.hd_exn data
       |> Node.location
     in
-    Type.Callable.from_overloads (List.map ~f:Node.value data)
+    data
+    |> List.map ~f:Node.value
+    |> Type.Callable.from_overloads
     >>| (fun callable -> Type.Callable callable)
     >>| Annotation.create_immutable ~global:true
     >>| Node.create ~location
