@@ -26,7 +26,6 @@ type t = {
   deferred_requests: Protocol.Request.t list;
   environment: (module Analysis.Environment.Handler);
   errors: (Error.t list) File.Handle.Table.t;
-  handles: File.Handle.Set.t;
   lookups: lookups_cache_entry String.Table.t;
   scheduler: Scheduler.t;
   lock: Mutex.t;

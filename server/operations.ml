@@ -49,7 +49,7 @@ let start
   Log.log ~section:`Server "Server initialized";
   Memory.init_done ();
 
-  let handles = File.Handle.Set.of_list handles in
+  Ast.SharedMemory.HandleKeys.add ~handles;
   let errors =
     let table = File.Handle.Table.create () in
     let add_error error =
@@ -65,7 +65,6 @@ let start
     deferred_requests = [];
     environment;
     errors;
-    handles;
     scheduler;
     lock;
     last_request_time = Unix.time ();

@@ -220,7 +220,6 @@ let mock_server_state
     State.deferred_requests = [];
     environment;
     errors;
-    handles = File.Handle.Set.empty;
     last_request_time = Unix.time ();
     last_integrity_check = Unix.time ();
     lookups = String.Table.create ();
@@ -243,6 +242,7 @@ let assert_response
     ~source
     ~request
     expected_response =
+  Ast.SharedMemory.HandleKeys.clear ();
   Ast.SharedMemory.remove_paths [File.Handle.create handle];
   let parsed = parse ~handle source in
   Ast.SharedMemory.add_source (File.Handle.create handle) parsed;
@@ -648,6 +648,12 @@ let test_incremental_typecheck _ =
                    ~check:[file path]
                    ()))
     (Protocol.TypeCheckResponse [(File.Handle.create handle), []]);
+  (* The handles get updated in shared memory. *)
+  assert_equal
+    ~printer:(List.to_string ~f:File.Handle.show)
+    (Ast.SharedMemory.HandleKeys.get ())
+    [File.Handle.create handle];
+
   let files = [file ~content:source path] in
   let request_with_content =
     (Protocol.Request.TypeCheckRequest
@@ -674,7 +680,12 @@ let test_incremental_typecheck _ =
     let stub_file = file ~content:"" (stub_path ^ "i") in
     assert_response
       ~request:(check_request ~update_environment_with:[stub_file] ())
-      (Protocol.TypeCheckResponse [])
+      (Protocol.TypeCheckResponse []);
+    assert_equal
+      ~printer:(List.to_string ~f:File.Handle.show)
+      (Ast.SharedMemory.HandleKeys.get ())
+      [File.Handle.create (relativize stub_path ^ "i")];
+
   in
   assert_response
     ~request:(

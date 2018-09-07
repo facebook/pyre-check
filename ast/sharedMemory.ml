@@ -35,9 +35,16 @@ module PathValue = struct
   let description = "Path"
 end
 
+module HandleKeysValue = struct
+  type t = File.Handle.t list
+  let prefix = Prefix.make ()
+  let description = "All handles"
+end
+
 module Sources = SharedMemory.NoCache (HandleKey) (SourceValue)
 
 module Paths = SharedMemory.WithCache (IntKey) (PathValue)
+
 
 
 let get_source path =
@@ -47,6 +54,24 @@ let get_source path =
 (* The sources must be removed by remove_paths beforehand. *)
 let add_source path source =
   Sources.add path source
+
+
+module HandleKeys = struct
+  include SharedMemory.WithCache (IntKey) (HandleKeysValue)
+
+  let get () =
+    get 0
+    |> Option.value ~default:[]
+
+  let clear () =
+    remove_batch (KeySet.singleton 0)
+
+
+  let add ~handles:new_keys =
+    let handles = get () in
+    clear ();
+    add 0 (new_keys @ handles)
+end
 
 
 (* The way hack_parallel works, only the master thread is allowed to remove items from shared

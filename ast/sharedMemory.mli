@@ -8,6 +8,13 @@ val get_source: File.Handle.t -> Source.t option
 val add_source: File.Handle.t -> Source.t -> unit
 val remove_paths: File.Handle.t list -> unit
 
+module HandleKeys: sig
+  val get: unit -> File.Handle.t list
+  (* Can only be called from the master process. *)
+  val clear: unit -> unit
+  val add: handles: File.Handle.t list -> unit
+end
+
 val add_module: Expression.Access.t -> Module.t -> unit
 val remove_modules: Expression.Access.t list -> unit
 val get_module: Expression.Access.t -> Module.t option

@@ -553,7 +553,7 @@ let process_display_type_errors_request
 
 
 let process_type_check_request
-    ~state:({ State.environment; errors; scheduler; deferred_requests; handles; _ } as state)
+    ~state:({ State.environment; errors; scheduler; deferred_requests; _ } as state)
     ~configuration
     ~request:{ TypeCheckRequest.update_environment_with; check} =
   Annotated.Class.AttributesCache.clear ();
@@ -583,6 +583,14 @@ let process_type_check_request
 
           (* Clear and re-populate ASTs in shared memory. *)
           let handles = List.map update_environment_with ~f:(File.handle ~configuration) in
+          (* Update the tracked handles, if necessary. *)
+          let newly_introduced_handles =
+            List.filter
+              handles
+              ~f:(fun handle -> Option.is_none (Ast.SharedMemory.get_source handle))
+          in
+          if not (List.is_empty newly_introduced_handles) then
+            Ast.SharedMemory.HandleKeys.add ~handles:newly_introduced_handles;
           Ast.SharedMemory.remove_paths handles;
           Service.Parser.parse_sources ~configuration ~scheduler ~files:update_environment_with
           |> ignore;
@@ -714,7 +722,6 @@ let process_type_check_request
     new_errors
     ~f:(fun error ->
         Hashtbl.add_multi errors ~key:(File.Handle.create (Error.path error)) ~data:error);
-  let new_files = File.Handle.Set.of_list new_source_handles in
   let checked_files =
     List.filter_map
       ~f:(fun file -> File.path file |> Path.relative >>| File.Handle.create)
@@ -722,7 +729,7 @@ let process_type_check_request
     |> Option.some
   in
   {
-    state = { state with handles = Set.union handles new_files; deferred_requests };
+    state = { state with deferred_requests };
     response = Some (TypeCheckResponse (build_file_to_error_map ~checked_files ~state new_errors));
   }
 

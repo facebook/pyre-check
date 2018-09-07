@@ -29,7 +29,6 @@ let mock_server_state ?(sources = []) ?(errors = File.Handle.Table.create ()) ()
     State.deferred_requests = [];
     environment;
     errors;
-    handles = File.Handle.Set.empty;
     last_request_time = Unix.time ();
     last_integrity_check = Unix.time ();
     lookups = String.Table.create ();
