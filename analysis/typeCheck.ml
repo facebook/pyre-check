@@ -1151,6 +1151,9 @@ module State = struct
             match annotation with
             | Type.Tuple (Type.Unbounded _) ->
                 true
+            (* Bounded tuples subclass iterable, but should be handled in the nonuniform case. *)
+            | Type.Tuple (Type.Bounded _) ->
+                false
             | _ ->
                 Resolution.less_or_equal
                   resolution
