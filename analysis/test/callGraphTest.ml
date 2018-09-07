@@ -31,7 +31,7 @@ let create_call_graph source =
 let compare_call_graph call_graph ~expected =
   let expected =
     let map_callee_callers (callee, callers) =
-      Access.create callee, List.map ~f:Access.create callers in
+      Access.create callee, List.map callers ~f:Access.create in
     List.map expected ~f:map_callee_callers
   in
   let printer call_graph =

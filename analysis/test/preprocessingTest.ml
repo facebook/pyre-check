@@ -138,7 +138,7 @@ let test_expand_format_string _ =
         Node.value = String { StringLiteral.kind = StringLiteral.Format expression_list; _ }; _ };
         _;
       }] ->
-        let actual_locations = List.map ~f:Node.location expression_list in
+        let actual_locations = List.map expression_list ~f:Node.location in
         assert_equal
           ~cmp:(fun left right -> List.equal ~equal:Location.Reference.equal left right)
           ~printer:(List.to_string ~f:Location.Reference.show)
@@ -855,7 +855,7 @@ let test_expand_wildcard_imports _ =
       Ast.SharedMemory.Modules.remove ~qualifiers:(List.filter_map ~f:get_qualifier files);
       Ast.SharedMemory.Sources.remove ~handles:(List.map ~f:(File.handle ~configuration) files);
     in
-    let files = List.map ~f:create_file environment_sources in
+    let files = List.map environment_sources ~f:create_file in
     let file_to_check = create_file ("test.py", check_source) in
     clear_memory (file_to_check :: files);
     let file_to_check_handle =
@@ -868,7 +868,7 @@ let test_expand_wildcard_imports _ =
     assert_equal
       ~cmp:(List.equal ~equal:Statement.equal)
       ~printer:(fun statement_list ->
-          List.map ~f:(Statement.show) statement_list
+          List.map statement_list ~f:Statement.show
           |> String.concat ~sep:", ")
       (Source.statements (parse expected))
       (Source.statements (Option.value_exn (Ast.SharedMemory.Sources.get file_to_check_handle)))

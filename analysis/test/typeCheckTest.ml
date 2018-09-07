@@ -43,7 +43,7 @@ let create
         in
         Access.create name, annotation
       in
-      List.map ~f:annotify annotations
+      List.map annotations ~f:annotify
       |> Access.Map.of_alist_exn
     in
     Resolution.with_annotations resolution ~annotations
@@ -74,7 +74,7 @@ let assert_initial
     expected =
   let define = {
     Define.name = Access.create "foo";
-    parameters = List.map ~f:(~+) parameters;
+    parameters = List.map parameters ~f:(~+);
     body = [];
     decorators;
     docstring = None;

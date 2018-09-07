@@ -36,7 +36,7 @@ let create
         in
         Access.create name, annotation
       in
-      List.map ~f:annotify annotations
+      List.map annotations ~f:annotify
       |> Access.Map.of_alist_exn
     in
     Resolution.with_annotations (Test.resolution ()) ~annotations
@@ -364,7 +364,7 @@ let assert_infer
         ~init:(Error.to_json ~detailed:show_error_traces error)
         ~f:access_field (String.split ~on:'.' field)
     in
-    List.map ~f:field_of_error fields
+    List.map fields ~f:field_of_error
   in
   let source =
     parse source

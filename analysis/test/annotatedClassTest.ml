@@ -551,7 +551,7 @@ let test_class_attributes _ =
       let print_attribute { Node.value = { Annotated.Attribute.name; _ }; _ } =
         Format.asprintf "%a" Expression.pp_expression name
       in
-      List.map ~f:print_attribute attributes
+      List.map attributes ~f:print_attribute
       |> String.concat ~sep:", "
     in
     assert_equal

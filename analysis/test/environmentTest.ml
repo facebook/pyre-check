@@ -194,7 +194,7 @@ let test_refine_class_definitions _ =
       Option.value_exn (Handler.class_definition (Type.primitive class_name))
     in
     let expected =
-      List.map ~f:Type.primitive expected
+      List.map expected ~f:Type.primitive
       |> (fun expected -> expected @ [Type.Object; Type.Deleted; Type.Top])
     in
     assert_equal
@@ -664,7 +664,7 @@ let test_populate _ =
          (index (Type.primitive base)))
     in
     let to_target annotation = { TypeOrder.Target.target = index annotation; parameters = [] } in
-    assert_equal targets (Some (List.map ~f:to_target superclasses))
+    assert_equal targets (Some (List.map superclasses ~f:to_target))
   in
   (* Metaclasses aren't superclasses. *)
   let environment =
@@ -833,7 +833,7 @@ let test_infer_protocols _ =
         Map.set
           map
           ~key:(Access.create key)
-          ~data:(List.map ~f:Access.create values)
+          ~data:(List.map values ~f:Access.create)
       in
       Access.Map.empty
       |> add "__hash__" ["object"; "SuperObject"]
@@ -1389,7 +1389,7 @@ let test_infer_protocols _ =
           target = Type.primitive target
         }
       in
-      List.map ~f:to_edge expected_edges
+      List.map expected_edges ~f:to_edge
     in
     let open TypeOrder in
     let source =
