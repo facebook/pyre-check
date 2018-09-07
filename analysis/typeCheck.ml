@@ -668,7 +668,7 @@ module State = struct
         |> Node.create ~location
       in
       let state = forward_statement ~state ~statement:iterator in
-      List.map ~f:Statement.assume conditions
+      List.map conditions ~f:Statement.assume
       |> List.fold ~init:state ~f:(fun state statement -> forward_statement ~state ~statement)
     in
     let forward_comprehension ~element ~generators =
@@ -1455,7 +1455,7 @@ module State = struct
               let annotation =
                 match annotation with
                 | { Node.value = Tuple elements; _ } ->
-                    Type.Union (List.map ~f:(Resolution.parse_annotation resolution) elements)
+                    Type.Union (List.map elements ~f:(Resolution.parse_annotation resolution))
                 | _ ->
                     Resolution.parse_annotation resolution annotation
               in
@@ -2090,7 +2090,7 @@ let check
         in
         List.filter ~f:keep_error errors
     in
-    List.map ~f:SingleSourceResult.errors results
+    List.map results ~f:SingleSourceResult.errors
     |> List.map ~f:filter
     |> List.concat
     |> Error.join_at_source ~resolution
@@ -2099,7 +2099,7 @@ let check
   in
 
   let coverage =
-    List.map ~f:SingleSourceResult.coverage results
+    List.map results ~f:SingleSourceResult.coverage
     |> Coverage.aggregate_over_source ~source
   in
   Coverage.log coverage ~total_errors:(List.length errors) ~path:(File.Handle.show handle);
