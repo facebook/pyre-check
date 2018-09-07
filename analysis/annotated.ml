@@ -87,10 +87,10 @@ let rec resolve ~resolution expression =
               ~annotation:(Annotation.create annotation)
         | Tuple accesses, Type.Tuple (Type.Bounded parameters)
           when List.length accesses = List.length parameters ->
-            List.fold2_exn ~init:resolution ~f:add accesses parameters
+            List.fold2_exn accesses parameters ~init:resolution ~f:add
         | Tuple accesses, Type.Tuple (Type.Unbounded parameter) ->
-            let parameters = List.map ~f:(fun _ -> parameter) accesses in
-            List.fold2_exn ~init:resolution ~f:add accesses parameters
+            let parameters = List.map accesses ~f:(fun _ -> parameter) in
+            List.fold2_exn accesses parameters ~init:resolution ~f:add
         | _ ->
             resolution
       in
@@ -169,11 +169,11 @@ let rec resolve ~resolution expression =
 
   | Lambda { Lambda.body; Lambda.parameters; _ } ->
       Type.lambda
-        ~parameters:(List.map ~f:(fun _ -> Type.Object) parameters)
+        ~parameters:(List.map parameters ~f:(fun _ -> Type.Object))
         ~return_annotation:(resolve ~resolution body)
 
   | List elements ->
-      List.map ~f:(resolve ~resolution) elements
+      List.map elements ~f:(resolve ~resolution)
       |> List.fold ~init:Type.Bottom ~f:(Resolution.join resolution)
       |> Type.list
 
@@ -182,7 +182,7 @@ let rec resolve ~resolution expression =
       Type.list (resolve ~resolution element)
 
   | Set elements ->
-      List.map ~f:(resolve ~resolution) elements
+      List.map elements ~f:(resolve ~resolution)
       |> List.fold ~init:Type.Bottom ~f:(Resolution.join resolution)
       |> Type.set
 
