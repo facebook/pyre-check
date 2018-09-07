@@ -37,7 +37,7 @@ module type Handler = sig
   val set_class_definition: primitive: Type.t -> definition: Class.t Node.t -> unit
   val refine_class_definition: Type.t -> unit
   val register_alias: handle: File.Handle.t -> key: Type.t -> data: Type.t -> unit
-  val purge: File.Handle.t list -> unit
+  val purge: ?debug: bool -> File.Handle.t list -> unit
 
   val function_definitions: Access.t -> (Define.t Node.t) list option
   val class_definition: Type.t -> Resolution.class_representation option
@@ -250,7 +250,7 @@ let handler
       Hashtbl.set ~key ~data aliases
 
 
-    let purge handles =
+    let purge ?(debug = false) handles =
       let purge_table_given_keys table keys =
         List.iter ~f:(fun key -> Hashtbl.remove table key) keys
       in
@@ -285,7 +285,10 @@ let handler
       |> purge_dependents;
       DependencyHandler.clear_keys_batch handles;
       List.map ~f:(fun handle -> Source.qualifier ~handle) handles
-      |> List.iter ~f:(Hashtbl.remove modules)
+      |> List.iter ~f:(Hashtbl.remove modules);
+
+      if debug then
+        TypeOrder.check_integrity (TypeOrder.handler order)
 
 
     let function_definitions =

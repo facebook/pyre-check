@@ -554,7 +554,7 @@ let process_display_type_errors_request
 
 let process_type_check_request
     ~state:({ State.environment; errors; scheduler; deferred_requests; _ } as state)
-    ~configuration
+    ~configuration:({ debug; _ } as configuration)
     ~request:{ TypeCheckRequest.update_environment_with; check} =
   Annotated.Class.AttributesCache.clear ();
   let (module Handler: Environment.Handler) = environment in
@@ -651,7 +651,7 @@ let process_type_check_request
     (* Clean up all data related to updated files. *)
     let handles = List.map update_environment_with ~f:(File.handle ~configuration) in
     Ast.SharedMemory.remove_paths handles;
-    Handler.purge handles;
+    Handler.purge ~debug handles;
     update_environment_with
     |> List.iter ~f:(LookupCache.evict ~state ~configuration);
 

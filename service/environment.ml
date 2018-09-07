@@ -103,10 +103,344 @@ let build
     end
 
 
+module SharedHandler: Analysis.Environment.Handler = struct
+  let function_definitions =
+    FunctionDefinitions.get
+
+  let class_definition =
+    ClassDefinitions.get
+
+  let register_protocol protocol =
+    let protocols = Protocols.get "Protocols" |> Option.value ~default:[] in
+    Protocols.remove_batch (Protocols.KeySet.singleton "Protocols");
+    Protocols.add "Protocols" (protocol :: protocols)
+
+
+  let protocols () =
+    Protocols.get "Protocols"
+    |> Option.value ~default:[]
+
+  let register_module ~qualifier ~local_mode ~handle ~stub ~statements =
+    let is_registered_empty_stub =
+      Ast.SharedMemory.get_module qualifier
+      >>| Module.empty_stub
+      |> Option.value ~default:false
+    in
+    if not is_registered_empty_stub then
+      begin
+        Ast.SharedMemory.remove_modules [qualifier];
+        Ast.SharedMemory.add_module
+          qualifier
+          (Module.create
+             ~qualifier
+             ~local_mode
+             ?path:(handle >>| File.Handle.show)
+             ~stub
+             statements)
+      end
+
+  let is_module access =
+    Ast.SharedMemory.in_modules access
+
+  let module_definition access =
+    Ast.SharedMemory.get_module access
+
+  let in_class_definition_keys annotation =
+    ClassDefinitions.mem annotation
+
+  let aliases =
+    Aliases.get
+
+  let globals =
+    Globals.get
+
+  let dependencies =
+    Dependents.get
+
+  module DependencyHandler = (struct
+    let add_new_key ~get ~add ~handle ~key =
+      match get handle with
+      | None -> add handle [key]
+      | Some keys -> add handle (key :: keys)
+
+    let add_function_key ~handle access =
+      add_new_key ~handle ~key:access ~get:FunctionKeys.get ~add:FunctionKeys.add
+
+    let add_class_key ~handle class_type =
+      add_new_key ~handle ~key:class_type ~get:ClassKeys.get ~add:ClassKeys.add
+
+    let add_alias_key ~handle alias =
+      add_new_key ~handle ~key:alias ~get:AliasKeys.get ~add:AliasKeys.add
+
+    let add_global_key ~handle global =
+      add_new_key ~handle ~key:global ~get:GlobalKeys.get ~add:GlobalKeys.add
+
+    let add_dependent_key ~handle dependent =
+      add_new_key ~handle ~key:dependent ~get:DependentKeys.get ~add:DependentKeys.add
+
+    let add_dependent ~handle dependent =
+      add_dependent_key ~handle dependent;
+      match Dependents.get dependent with
+      | None -> Dependents.add dependent [handle]
+      | Some dependencies -> Dependents.add dependent (handle :: dependencies)
+
+    let get_function_keys ~handle = FunctionKeys.get handle |> Option.value ~default:[]
+    let get_class_keys ~handle = ClassKeys.get handle |> Option.value ~default:[]
+    let get_alias_keys ~handle = AliasKeys.get handle |> Option.value ~default:[]
+    let get_global_keys ~handle = GlobalKeys.get handle |> Option.value ~default:[]
+    let get_dependent_keys ~handle = DependentKeys.get handle |> Option.value ~default:[]
+
+    let clear_keys_batch paths =
+      FunctionKeys.remove_batch (FunctionKeys.KeySet.of_list paths);
+      ClassKeys.remove_batch (ClassKeys.KeySet.of_list paths);
+      AliasKeys.remove_batch (AliasKeys.KeySet.of_list paths);
+      GlobalKeys.remove_batch (GlobalKeys.KeySet.of_list paths);
+      DependentKeys.remove_batch (DependentKeys.KeySet.of_list paths)
+
+    let dependents = Dependents.get
+  end: Dependencies.Handler)
+
+  module TypeOrderHandler = struct
+    type ('key, 'value) lookup = {
+      get: 'key -> 'value option;
+      set: 'key -> 'value -> unit;
+    }
+
+    let edges () = {
+      get = OrderEdges.get;
+      set = (fun key value ->
+          OrderEdges.remove_batch (OrderEdges.KeySet.singleton key);
+          OrderEdges.add key value);
+    }
+
+    let backedges () = {
+      get = OrderBackedges.get;
+      set =
+        (fun key value ->
+           OrderBackedges.remove_batch (OrderBackedges.KeySet.singleton key);
+           OrderBackedges.add key value);
+    }
+
+    let indices () = {
+      get = OrderIndices.get;
+      set =
+        (fun key value ->
+           OrderIndices.remove_batch (OrderIndices.KeySet.singleton key);
+           OrderIndices.add key value);
+    }
+
+    let annotations () = {
+      get = OrderAnnotations.get;
+      set =
+        (fun key value ->
+           OrderAnnotations.remove_batch (OrderAnnotations.KeySet.singleton key);
+           OrderAnnotations.add key value);
+    }
+
+    let find { get; _ } key = get key
+
+    let find_unsafe { get; _ } key = Option.value_exn (get key)
+
+    let contains { get; _ } key = Option.is_some (get key)
+
+    let set { set; _ } ~key ~data =
+      set key data
+
+    let length _ =
+      (OrderKeys.get "Order"
+       >>| List.length)
+      |> Option.value ~default:0
+
+    let add_key key =
+      match OrderKeys.get "Order" with
+      | None -> OrderKeys.add "Order" [key]
+      | Some keys ->
+          OrderKeys.remove_batch (OrderKeys.KeySet.singleton "Order");
+          OrderKeys.add "Order" (key :: keys)
+
+    let keys () =
+      Option.value ~default:[] (OrderKeys.get "Order")
+
+    let show () =
+      let keys =
+        keys ()
+        |> List.sort ~compare:Int.compare
+      in
+      let serialized_keys = List.to_string ~f:Int.to_string keys in
+      let serialized_annotations =
+        let serialize_annotation key =
+          find (annotations ()) key
+          >>| (fun annotation -> Format.asprintf "%d->%a\n" key Type.pp annotation)
+        in
+        List.filter_map ~f:serialize_annotation keys
+        |> String.concat
+      in
+      let serialized_edges edges =
+        let edges_of_key key =
+          let show_successor { TypeOrder.Target.target = successor; _ } =
+            Option.value_exn (find (annotations ()) successor)
+            |> Type.show
+          in
+          Option.value ~default:[] (find edges key)
+          |> List.to_string ~f:show_successor
+        in
+        List.to_string ~f:(fun key -> Format.asprintf "%d -> %s\n" key (edges_of_key key)) keys
+      in
+      Format.asprintf "Keys:\n%s\nAnnotations:\n%s\nEdges:\n%s\nBackedges:\n%s\n"
+        serialized_keys
+        serialized_annotations
+        (serialized_edges (edges ()))
+        (serialized_edges (backedges ()))
+  end
+
+  let register_definition
+      ~handle
+      ?name_override
+      ({ Node.location; value = { Statement.Define.name; _ }; _ }) =
+    let name = Option.value ~default:name name_override in
+    DependencyHandler.add_function_key ~handle name;
+    let annotation =
+      Annotation.create_immutable ~global:true Type.Top
+      |> Node.create ~location
+    in
+    Globals.remove_batch (Globals.KeySet.singleton name);
+    Globals.add name annotation
+
+
+  let refine_class_definition annotation =
+    let open Statement in
+    let refine
+        { Resolution.class_definition = { Node.location; value = class_definition }; _ } =
+      let successors = TypeOrder.successors (module TypeOrderHandler) annotation in
+      let in_test =
+        let is_unit_test
+            { Resolution.class_definition = { Node.value = { Class.name; _ }; _ }; _ } =
+          Access.equal name (Access.create "unittest.TestCase")
+        in
+        let successor_classes =
+          successors
+          |> List.filter_map ~f:ClassDefinitions.get
+        in
+        List.exists ~f:is_unit_test successor_classes
+      in
+      let explicit_attributes = Class.explicitly_assigned_attributes class_definition in
+      let implicit_attributes = Class.implicit_attributes ~in_test class_definition in
+      ClassDefinitions.remove_batch (ClassDefinitions.KeySet.singleton annotation);
+      ClassDefinitions.add
+        annotation
+        {
+          class_definition = { Node.location; value = class_definition };
+          is_test = in_test;
+          successors;
+          explicit_attributes;
+          implicit_attributes;
+          methods = [];
+        };
+    in
+    ClassDefinitions.get annotation
+    >>| refine
+    |> ignore
+
+  let register_dependency ~handle ~dependency =
+    Log.log
+      ~section:`Dependencies
+      "Adding dependency from %a to %a"
+      Expression.Access.pp dependency
+      File.Handle.pp handle;
+    DependencyHandler.add_dependent ~handle dependency
+
+
+  let register_global ~handle ~access ~global =
+    DependencyHandler.add_global_key ~handle access;
+    Globals.remove_batch (Globals.KeySet.singleton access);
+    Globals.add access global
+
+
+  let set_class_definition ~primitive ~definition =
+    let definition =
+      match ClassDefinitions.get primitive with
+      | Some ({
+          Resolution.class_definition = { Node.location; value = preexisting };
+          _;
+        } as representation) ->
+          {
+            representation with
+            Resolution.class_definition = {
+              Node.location;
+              value = Statement.Class.update preexisting ~definition:(Node.value definition);
+            };
+          }
+      | _ ->
+          {
+            Resolution.class_definition = definition;
+            methods = [];
+            successors = [];
+            explicit_attributes = Statement.Access.SerializableMap.empty;
+            implicit_attributes = Statement.Access.SerializableMap.empty;
+            is_test = false;
+          }
+    in
+    ClassDefinitions.remove_batch (ClassDefinitions.KeySet.singleton primitive);
+    ClassDefinitions.add primitive definition
+
+  let register_alias ~handle ~key ~data =
+    DependencyHandler.add_alias_key ~handle key;
+    Aliases.remove_batch (Aliases.KeySet.singleton key);
+    Aliases.add key data
+
+  let purge ?(debug = false) handles =
+    let purge_dependents keys =
+      let remove_path dependents =
+        List.filter
+          ~f:(fun dependent -> not (List.mem handles dependent ~equal:File.Handle.equal))
+          dependents
+      in
+      List.iter
+        ~f:(fun key -> Dependents.get key >>| remove_path >>| Dependents.add key |> ignore)
+        keys;
+      DependentKeys.remove_batch (DependentKeys.KeySet.of_list handles)
+    in
+    List.concat_map ~f:(fun handle -> DependencyHandler.get_function_keys ~handle) handles
+    |> fun keys ->
+    begin
+      FunctionDefinitions.remove_batch (FunctionDefinitions.KeySet.of_list keys);
+      (* We add a global name for each function definition as well. *)
+      Globals.remove_batch (Globals.KeySet.of_list keys);
+    end;
+
+    (* Remove the connection to the parent (if any) for all
+       classes defined in the updated paths. *)
+    List.concat_map ~f:(fun handle -> DependencyHandler.get_class_keys ~handle) handles
+    |> List.iter ~f:(TypeOrder.disconnect_successors (module TypeOrderHandler));
+
+    List.concat_map ~f:(fun handle -> DependencyHandler.get_class_keys ~handle) handles
+    |> fun keys -> ClassDefinitions.remove_batch (ClassDefinitions.KeySet.of_list keys);
+
+    List.concat_map ~f:(fun handle -> DependencyHandler.get_alias_keys ~handle) handles
+    |> fun keys -> Aliases.remove_batch (Aliases.KeySet.of_list keys);
+
+    List.concat_map ~f:(fun handle -> DependencyHandler.get_global_keys ~handle) handles
+    |> fun keys -> Globals.remove_batch (Globals.KeySet.of_list keys);
+
+    List.concat_map ~f:(fun handle -> DependencyHandler.get_dependent_keys ~handle) handles
+    |> purge_dependents;
+
+    DependencyHandler.clear_keys_batch handles;
+    List.map ~f:(fun handle -> Ast.Source.qualifier ~handle) handles
+    |> Ast.SharedMemory.remove_modules;
+
+    if debug then
+      (* If in debug mode, make sure the TypeOrder is still consistent. *)
+      TypeOrder.check_integrity (module TypeOrderHandler)
+
+  let mode path = ErrorModes.get path
+end
+
+
 (** First dumps environment to shared memory, then exposes through
     Environment_handler *)
 let handler
-    ~configuration:({ Configuration.infer; debug; _ } as configuration)
+    ~configuration
     ~stubs
     ~sources =
   let add_to_shared_memory
@@ -167,352 +501,6 @@ let handler
   in
 
   let environment = Environment.Builder.create () in
-  let ((module Handler: Environment.Handler) as shared_handler) =
-    (module struct
-      let function_definitions =
-        FunctionDefinitions.get
-
-      let class_definition =
-        ClassDefinitions.get
-
-      let register_protocol protocol =
-        let protocols = Protocols.get "Protocols" |> Option.value ~default:[] in
-        Protocols.remove_batch (Protocols.KeySet.singleton "Protocols");
-        Protocols.add "Protocols" (protocol :: protocols)
-
-
-      let protocols () =
-        Protocols.get "Protocols"
-        |> Option.value ~default:[]
-
-      let register_module ~qualifier ~local_mode ~handle ~stub ~statements =
-        let is_registered_empty_stub =
-          Ast.SharedMemory.get_module qualifier
-          >>| Module.empty_stub
-          |> Option.value ~default:false
-        in
-        if not is_registered_empty_stub then
-          begin
-            Ast.SharedMemory.remove_modules [qualifier];
-            Ast.SharedMemory.add_module
-              qualifier
-              (Module.create
-                 ~qualifier
-                 ~local_mode
-                 ?path:(handle >>| File.Handle.show)
-                 ~stub
-                 statements)
-          end
-
-      let is_module access =
-        Ast.SharedMemory.in_modules access
-
-      let module_definition access =
-        Ast.SharedMemory.get_module access
-
-      let in_class_definition_keys annotation =
-        ClassDefinitions.mem annotation
-
-      let aliases =
-        Aliases.get
-
-      let globals =
-        Globals.get
-
-      let dependencies =
-        Dependents.get
-
-      module DependencyHandler = (struct
-        let add_new_key ~get ~add ~handle ~key =
-          match get handle with
-          | None -> add handle [key]
-          | Some keys -> add handle (key :: keys)
-
-        let add_function_key ~handle access =
-          add_new_key ~handle ~key:access ~get:FunctionKeys.get ~add:FunctionKeys.add
-
-        let add_class_key ~handle class_type =
-          add_new_key ~handle ~key:class_type ~get:ClassKeys.get ~add:ClassKeys.add
-
-        let add_alias_key ~handle alias =
-          add_new_key ~handle ~key:alias ~get:AliasKeys.get ~add:AliasKeys.add
-
-        let add_global_key ~handle global =
-          add_new_key ~handle ~key:global ~get:GlobalKeys.get ~add:GlobalKeys.add
-
-        let add_dependent_key ~handle dependent =
-          add_new_key ~handle ~key:dependent ~get:DependentKeys.get ~add:DependentKeys.add
-
-        let add_dependent ~handle dependent =
-          add_dependent_key ~handle dependent;
-          match Dependents.get dependent with
-          | None -> Dependents.add dependent [handle]
-          | Some dependencies -> Dependents.add dependent (handle :: dependencies)
-
-        let get_function_keys ~handle = FunctionKeys.get handle |> Option.value ~default:[]
-        let get_class_keys ~handle = ClassKeys.get handle |> Option.value ~default:[]
-        let get_alias_keys ~handle = AliasKeys.get handle |> Option.value ~default:[]
-        let get_global_keys ~handle = GlobalKeys.get handle |> Option.value ~default:[]
-        let get_dependent_keys ~handle = DependentKeys.get handle |> Option.value ~default:[]
-
-        let clear_keys_batch paths =
-          FunctionKeys.remove_batch (FunctionKeys.KeySet.of_list paths);
-          ClassKeys.remove_batch (ClassKeys.KeySet.of_list paths);
-          AliasKeys.remove_batch (AliasKeys.KeySet.of_list paths);
-          GlobalKeys.remove_batch (GlobalKeys.KeySet.of_list paths);
-          DependentKeys.remove_batch (DependentKeys.KeySet.of_list paths)
-
-        let dependents = Dependents.get
-      end: Dependencies.Handler)
-
-      module TypeOrderHandler = struct
-        type ('key, 'value) lookup = {
-          get: 'key -> 'value option;
-          set: 'key -> 'value -> unit;
-        }
-
-        let edges () = {
-          get = OrderEdges.get;
-          set = (fun key value ->
-              OrderEdges.remove_batch (OrderEdges.KeySet.singleton key);
-              OrderEdges.add key value);
-        }
-
-        let backedges () = {
-          get = OrderBackedges.get;
-          set =
-            (fun key value ->
-               OrderBackedges.remove_batch (OrderBackedges.KeySet.singleton key);
-               OrderBackedges.add key value);
-        }
-
-        let indices () = {
-          get = OrderIndices.get;
-          set =
-            (fun key value ->
-               OrderIndices.remove_batch (OrderIndices.KeySet.singleton key);
-               OrderIndices.add key value);
-        }
-
-        let annotations () = {
-          get = OrderAnnotations.get;
-          set =
-            (fun key value ->
-               OrderAnnotations.remove_batch (OrderAnnotations.KeySet.singleton key);
-               OrderAnnotations.add key value);
-        }
-
-        let find { get; _ } key = get key
-
-        let find_unsafe { get; _ } key = Option.value_exn (get key)
-
-        let contains { get; _ } key = Option.is_some (get key)
-
-        let set { set; _ } ~key ~data =
-          set key data
-
-        let length _ =
-          (OrderKeys.get "Order"
-           >>| List.length)
-          |> Option.value ~default:0
-
-        let add_key key =
-          match OrderKeys.get "Order" with
-          | None -> OrderKeys.add "Order" [key]
-          | Some keys ->
-              OrderKeys.remove_batch (OrderKeys.KeySet.singleton "Order");
-              OrderKeys.add "Order" (key :: keys)
-
-        let keys () =
-          Option.value ~default:[] (OrderKeys.get "Order")
-
-        let show () =
-          let keys =
-            keys ()
-            |> List.sort ~compare:Int.compare
-          in
-          let serialized_keys = List.to_string ~f:Int.to_string keys in
-          let serialized_annotations =
-            let serialize_annotation key =
-              find (annotations ()) key
-              >>| (fun annotation -> Format.asprintf "%d->%a\n" key Type.pp annotation)
-            in
-            List.filter_map ~f:serialize_annotation keys
-            |> String.concat
-          in
-          let serialized_edges edges =
-            let edges_of_key key =
-              let show_successor { TypeOrder.Target.target = successor; _ } =
-                Option.value_exn (find (annotations ()) successor)
-                |> Type.show
-              in
-              Option.value ~default:[] (find edges key)
-              |> List.to_string ~f:show_successor
-            in
-            List.to_string ~f:(fun key -> Format.asprintf "%d -> %s\n" key (edges_of_key key)) keys
-          in
-          Format.asprintf "Keys:\n%s\nAnnotations:\n%s\nEdges:\n%s\nBackedges:\n%s\n"
-            serialized_keys
-            serialized_annotations
-            (serialized_edges (edges ()))
-            (serialized_edges (backedges ()))
-      end
-
-      let register_definition
-          ~handle
-          ?name_override
-          ({ Node.location; value = { Statement.Define.name; _ }; _ } as definition) =
-        let name = Option.value ~default:name name_override in
-        DependencyHandler.add_function_key ~handle name;
-        let annotation =
-          Annotation.create_immutable ~global:true Type.Top
-          |> Node.create ~location
-        in
-        Globals.remove_batch (Globals.KeySet.singleton name);
-        Globals.add name annotation;
-
-        if infer then
-          begin
-            let definitions =
-              match FunctionDefinitions.get name with
-              | Some definitions ->
-                  definition :: definitions
-              | None ->
-                  [definition]
-            in
-            FunctionDefinitions.remove_batch (FunctionDefinitions.KeySet.singleton name);
-            FunctionDefinitions.add name definitions
-          end
-
-      let refine_class_definition annotation =
-        let open Statement in
-        let refine
-            { Resolution.class_definition = { Node.location; value = class_definition }; _ } =
-          let successors = TypeOrder.successors (module TypeOrderHandler) annotation in
-          let in_test =
-            let is_unit_test
-                { Resolution.class_definition = { Node.value = { Class.name; _ }; _ }; _ } =
-              Access.equal name (Access.create "unittest.TestCase")
-            in
-            let successor_classes =
-              successors
-              |> List.filter_map ~f:ClassDefinitions.get
-            in
-            List.exists ~f:is_unit_test successor_classes
-          in
-          let explicit_attributes = Class.explicitly_assigned_attributes class_definition in
-          let implicit_attributes = Class.implicit_attributes ~in_test class_definition in
-          ClassDefinitions.remove_batch (ClassDefinitions.KeySet.singleton annotation);
-          ClassDefinitions.add
-            annotation
-            {
-              class_definition = { Node.location; value = class_definition };
-              is_test = in_test;
-              successors;
-              explicit_attributes;
-              implicit_attributes;
-              methods = [];
-            };
-        in
-        ClassDefinitions.get annotation
-        >>| refine
-        |> ignore
-
-      let register_dependency ~handle ~dependency =
-        Log.log
-          ~section:`Dependencies
-          "Adding dependency from %a to %a"
-          Expression.Access.pp dependency
-          File.Handle.pp handle;
-        DependencyHandler.add_dependent ~handle dependency
-
-
-      let register_global ~handle ~access ~global =
-        DependencyHandler.add_global_key ~handle access;
-        Globals.remove_batch (Globals.KeySet.singleton access);
-        Globals.add access global
-
-
-      let set_class_definition ~primitive ~definition =
-        let definition =
-          match ClassDefinitions.get primitive with
-          | Some ({
-              Resolution.class_definition = { Node.location; value = preexisting };
-              _;
-            } as representation) ->
-              {
-                representation with
-                Resolution.class_definition = {
-                  Node.location;
-                  value = Statement.Class.update preexisting ~definition:(Node.value definition);
-                };
-              }
-          | _ ->
-              {
-                Resolution.class_definition = definition;
-                methods = [];
-                successors = [];
-                explicit_attributes = Statement.Access.SerializableMap.empty;
-                implicit_attributes = Statement.Access.SerializableMap.empty;
-                is_test = false;
-              }
-        in
-        ClassDefinitions.remove_batch (ClassDefinitions.KeySet.singleton primitive);
-        ClassDefinitions.add primitive definition
-
-      let register_alias ~handle ~key ~data =
-        DependencyHandler.add_alias_key ~handle key;
-        Aliases.remove_batch (Aliases.KeySet.singleton key);
-        Aliases.add key data
-
-      let purge handles =
-        let purge_dependents keys =
-          let remove_path dependents =
-            List.filter
-              ~f:(fun dependent -> not (List.mem handles dependent ~equal:File.Handle.equal))
-              dependents
-          in
-          List.iter
-            ~f:(fun key -> Dependents.get key >>| remove_path >>| Dependents.add key |> ignore)
-            keys;
-          DependentKeys.remove_batch (DependentKeys.KeySet.of_list handles)
-        in
-        List.concat_map ~f:(fun handle -> DependencyHandler.get_function_keys ~handle) handles
-        |> fun keys ->
-        begin
-          FunctionDefinitions.remove_batch (FunctionDefinitions.KeySet.of_list keys);
-          (* We add a global name for each function definition as well. *)
-          Globals.remove_batch (Globals.KeySet.of_list keys);
-        end;
-
-        (* Remove the connection to the parent (if any) for all
-           classes defined in the updated paths. *)
-        List.concat_map ~f:(fun handle -> DependencyHandler.get_class_keys ~handle) handles
-        |> List.iter ~f:(TypeOrder.disconnect_successors (module TypeOrderHandler));
-
-        List.concat_map ~f:(fun handle -> DependencyHandler.get_class_keys ~handle) handles
-        |> fun keys -> ClassDefinitions.remove_batch (ClassDefinitions.KeySet.of_list keys);
-
-        List.concat_map ~f:(fun handle -> DependencyHandler.get_alias_keys ~handle) handles
-        |> fun keys -> Aliases.remove_batch (Aliases.KeySet.of_list keys);
-
-        List.concat_map ~f:(fun handle -> DependencyHandler.get_global_keys ~handle) handles
-        |> fun keys -> Globals.remove_batch (Globals.KeySet.of_list keys);
-
-        List.concat_map ~f:(fun handle -> DependencyHandler.get_dependent_keys ~handle) handles
-        |> purge_dependents;
-
-        DependencyHandler.clear_keys_batch handles;
-        List.map ~f:(fun handle -> Ast.Source.qualifier ~handle) handles
-        |> Ast.SharedMemory.remove_modules;
-
-        if debug then
-          (* If in debug mode, make sure the TypeOrder is still consistent. *)
-          TypeOrder.check_integrity (module TypeOrderHandler)
-
-      let mode path = ErrorModes.get path
-    end: Environment.Handler)
-  in
   let ((module InProcessHandler: Environment.Handler) as handler) =
     Environment.handler ~configuration environment
   in
@@ -527,4 +515,4 @@ let handler
     ~name:"shared memory size"
     ~integers:["size", EnvironmentSharedMemory.heap_size ()]
     ();
-  shared_handler
+  (module SharedHandler: Environment.Handler)

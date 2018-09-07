@@ -37,7 +37,7 @@ module type Handler = sig
   val set_class_definition: primitive: Type.t -> definition: Class.t Node.t -> unit
   val refine_class_definition: Type.t -> unit
   val register_alias: handle: File.Handle.t -> key: Type.t -> data: Type.t -> unit
-  val purge: File.Handle.t list -> unit
+  val purge: ?debug: bool -> File.Handle.t list -> unit
 
   val function_definitions: Access.t -> (Define.t Node.t) list option
   val class_definition: Type.t -> Resolution.class_representation option
