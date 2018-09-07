@@ -10,3 +10,6 @@ include module type of Hack_parallel.Std.SharedMem
 val get_heap_handle: unit -> handle
 
 val worker_garbage_control: Gc.control
+
+val save_shared_memory: filename: string -> unit
+val load_shared_memory: filename: string -> unit

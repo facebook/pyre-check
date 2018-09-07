@@ -64,3 +64,11 @@ let initialize () =
 let get_heap_handle () =
   let { heap_handle; _ } = initialize () in
   heap_handle
+
+
+let save_shared_memory ~filename =
+  SharedMem.save_table filename
+
+
+let load_shared_memory ~filename =
+  SharedMem.load_table filename
