@@ -124,7 +124,7 @@ module Method = struct
       in
       name, annotation
     in
-    List.map ~f:element parameters
+    List.map parameters ~f:element
     |> Identifier.Map.of_alist_exn
 
 
@@ -483,7 +483,7 @@ module Attribute = struct
     let annotation =
       match defines with
       | Some defines ->
-          List.map ~f:(fun define -> Callable.apply_decorators ~define ~resolution) defines
+          List.map defines ~f:(fun define -> Callable.apply_decorators ~define ~resolution)
           |> Callable.create ~resolution
           |> (fun callable -> Some (Type.Callable callable))
       | _ ->
@@ -920,7 +920,7 @@ let constructor definition ~resolution =
             | _ ->
                 overload
           in
-          let overloads = List.map ~f:unannotate_first_parameter overloads in
+          let overloads = List.map overloads ~f:unannotate_first_parameter in
           Type.Callable { callable with Type.Callable.overloads }
       | annotation ->
           annotation
