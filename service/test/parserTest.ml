@@ -286,7 +286,7 @@ let test_register_modules _ =
         (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:"a.py")
     in
 
-    (* Build environment *)
+    (* Build environment. *)
     Ast.SharedMemory.remove_modules (List.filter_map ~f:get_qualifier [file]);
     Ast.SharedMemory.Sources.remove ~handles:(List.map ~f:(File.handle ~configuration) [file]);
     let configuration = Configuration.create ~local_root:(Path.current_working_directory ()) () in
@@ -296,7 +296,7 @@ let test_register_modules _ =
         ~scheduler:(Scheduler.mock ())
         ~files:[file]
     in
-    (* Check specific testing file *)
+    (* Check specific file. *)
     let qualifier = Option.value_exn (get_qualifier file) in
     (* The modules get removed after preprocessing. *)
     assert_is_none (Ast.SharedMemory.get_module qualifier);
