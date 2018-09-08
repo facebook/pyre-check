@@ -33,7 +33,7 @@ let default_python_module members = {
   Codex.PythonModule.name = "test";
   docstring = None;
   rank = 0;
-  filename = "/tmp/test.py";
+  filename = (Filename.realpath "/tmp") ^ "/test.py";
   members;
 }
 

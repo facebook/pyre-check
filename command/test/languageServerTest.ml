@@ -445,8 +445,8 @@ let test_language_server_definition_response context =
       TextDocumentDefinitionResponse.create
         ~id
         ~location
-    |> TextDocumentDefinitionResponse.to_yojson
-    |> Yojson.Safe.sort
+      |> TextDocumentDefinitionResponse.to_yojson
+      |> Yojson.Safe.sort
     in
     let expected = Yojson.Safe.sort expected in
     assert_equal ~printer:Yojson.Safe.pretty_to_string expected message
@@ -471,12 +471,14 @@ let test_language_server_definition_response context =
     in
     List.iter handles_to_paths ~f:add_source
   in
-  let filename, _ = bracket_tmpfile ~suffix:".py" context in
-  let stub, _ = bracket_tmpfile ~suffix:".pyi" context in
+  let symlink_filename, _ = bracket_tmpfile ~suffix:".py" context in
+  let filename = Path.create_absolute symlink_filename in
+  let symlink_stub, _ = bracket_tmpfile ~suffix:".pyi" context in
+  let stub = Path.create_absolute symlink_stub in
   let handles_to_paths =
     [
-      File.Handle.create "a.py", Path.create_absolute filename;
-      File.Handle.create "b.pyi", Path.create_absolute stub;
+      File.Handle.create "a.py", filename;
+      File.Handle.create "b.pyi", stub;
     ]
   in
   add_paths handles_to_paths;
@@ -496,7 +498,7 @@ let test_language_server_definition_response context =
         "id", `Int 1;
         "result", `List [
           `Assoc [
-            "uri", `String (Format.sprintf "file://%s" filename);
+            "uri", `String (Format.sprintf "file://%s" (Path.absolute filename));
             "range", `Assoc [
               "start", `Assoc ["line", `Int 0; "character", `Int 0];
               "end", `Assoc ["line", `Int 1; "character", `Int 0];
@@ -519,7 +521,7 @@ let test_language_server_definition_response context =
         "id", `Int 1;
         "result", `List [
           `Assoc [
-            "uri", `String (Format.sprintf "file://%s" stub);
+            "uri", `String (Format.sprintf "file://%s" (Path.absolute stub));
             "range", `Assoc [
               "start", `Assoc ["line", `Int 0; "character", `Int 0];
               "end", `Assoc ["line", `Int 1; "character", `Int 0];
