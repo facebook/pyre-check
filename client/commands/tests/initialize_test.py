@@ -25,7 +25,9 @@ class InitializeTest(unittest.TestCase):
     ):
         get_yes_no_input.return_value = True
         arguments = mock_arguments()
-        configuration = mock_configuration()
+        # pyre.py does not provide a Configuration instance to
+        # Initialize - this test should do the same
+        configuration = None
 
         def exists(path):
             if path.endswith(".watchmanconfig"):

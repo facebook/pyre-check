@@ -70,7 +70,7 @@ class Command:
         self._logging_sections = arguments.logging_sections
         self._capable_terminal = arguments.capable_terminal
         self._log_identifier = arguments.log_identifier
-        self._logger = arguments.logger or configuration.logger
+        self._logger = arguments.logger or (configuration and configuration.logger)
 
         self._original_directory = arguments.original_directory
         self._current_directory = arguments.current_directory
