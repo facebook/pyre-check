@@ -15,6 +15,13 @@ open Service.Constants.Watchman
 module Time = Core_kernel.Time_ns.Span
 
 
+type state = {
+  configuration: Configuration.t;
+  watchman_directory: Path.t;
+  symlinks: Path.t Path.Map.t;
+}
+
+
 let subscription watchman_directory =
   let constraints =
     `List [
@@ -78,27 +85,32 @@ let build_symlink_map files =
   List.fold ~init:Path.Map.empty ~f:add_symlink files
 
 
-let set_symlink ~root ~search_path ~symlinks ~path =
-  try
-    let tracked path =
-      List.exists
-        (root :: search_path)
-        ~f:(fun directory -> Path.directory_contains ~directory path)
-    in
-    if not (Path.Map.mem symlinks path) && tracked path then
-      Map.set symlinks ~key:(Path.real_path path) ~data:path
-    else
+let set_symlink ({ configuration = { local_root; search_path; _ }; symlinks; _ } as state) ~path =
+  let symlinks =
+    try
+      let tracked path =
+        List.exists
+          (local_root :: search_path)
+          ~f:(fun directory -> Path.directory_contains ~directory path)
+      in
+      if not (Path.Map.mem symlinks path) && tracked path then
+        Map.set symlinks ~key:(Path.real_path path) ~data:path
+      else
+        symlinks
+    with Unix.Unix_error (error, name, parameters) ->
+      (* Ensure that removed file notifications don't crash the watchman client. *)
+      Log.log_unix_error ~section:`Warning (error, name, parameters);
       symlinks
-  with Unix.Unix_error (error, name, parameters) ->
-    (* Ensure that removed file notifications don't crash the watchman client. *)
-    Log.log_unix_error ~section:`Warning (error, name, parameters);
-    symlinks
+  in
+  { state with symlinks }
 
 
 let process_response
-    ~configuration:{ Configuration.local_root = root; search_path; _ }
-    ~watchman_directory
-    ~symlinks
+    ({
+      configuration = { Configuration.local_root = root; _ };
+      watchman_directory;
+      _;
+    } as state)
     serialized_response =
   let open Yojson.Safe in
   let response = from_string serialized_response in
@@ -124,11 +136,11 @@ let process_response
           files
         |> List.map ~f:relativize_to_root
       in
-      let symlinks =
+      let ({ symlinks; _ } as state) =
         List.fold
           paths
-          ~init:symlinks
-          ~f:(fun symlinks path -> set_symlink ~symlinks ~root ~search_path ~path)
+          ~init:state
+          ~f:(fun state path -> set_symlink state ~path)
       in
       let files =
         List.filter_map
@@ -139,7 +151,7 @@ let process_response
       in
       let is_stub file = String.is_suffix ~suffix:"pyi" (File.path file |> Path.absolute) in
       Some
-        (symlinks,
+        (state,
          Protocol.Request.TypeCheckRequest
            (Protocol.TypeCheckRequest.create
               ~update_environment_with:files
@@ -172,7 +184,7 @@ let listen_for_changed_files
     [Yojson.to_string (subscription watchman_directory)];
   Out_channel.flush out_channel;
   let watchman_socket = Unix.descr_of_in_channel in_channel in
-  let rec loop symlinks =
+  let rec loop state =
     try
       let ready =
         Unix.select
@@ -183,28 +195,28 @@ let listen_for_changed_files
           ()
         |> fun { Unix.Select_fds.read; _ } -> read
       in
-      let handle_socket symlinks socket =
-        let handle_watchman symlinks socket =
+      let handle_socket state socket =
+        let handle_watchman state socket =
           let in_channel = Unix.in_channel_of_descr socket in
           In_channel.input_line in_channel
-          >>= process_response ~configuration ~watchman_directory ~symlinks
-          >>| (fun (symlinks, response) ->
+          >>= process_response state
+          >>| (fun (state, response) ->
               Log.info "Writing response %s" (Protocol.Request.show response);
               Socket.write server_socket response;
-              symlinks)
-          |> Option.value ~default:symlinks
+              state)
+          |> Option.value ~default:state
         in
 
         if socket = watchman_socket then
-          handle_watchman symlinks socket
+          handle_watchman state socket
         else
           begin
             Socket.read server_socket |> ignore;
-            symlinks
+            state
           end
       in
-      List.fold ~init:symlinks ~f:handle_socket ready
-      |> loop
+      let state = List.fold ~init:state ~f:handle_socket ready in
+      loop state
     with
     | End_of_file ->
         Log.info "A socket was closed.";
@@ -217,7 +229,7 @@ let listen_for_changed_files
     (* Throw away the the first update that includes all the files *)
     In_channel.input_line in_channel
     >>= fun _ ->
-    loop symlinks
+    loop { configuration; watchman_directory; symlinks }
   end
   |> ignore
 

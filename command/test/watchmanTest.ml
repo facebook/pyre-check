@@ -112,13 +112,17 @@ let test_watchman_client context =
       ~local_root:root
       ()
   in
+  let watchman_state = {
+    Commands.Watchman.configuration;
+    watchman_directory = root;
+    symlinks;
+  }
+  in
   CommandTest.protect
     ~f:(fun () ->
         match
           Commands.Watchman.process_response
-            ~configuration
-            ~watchman_directory:root
-            ~symlinks
+            watchman_state
             (create_mock_watchman_response "tmp/a.py")
         with
         | Some (
@@ -136,9 +140,7 @@ let test_watchman_client context =
     ~f:(fun () ->
         match
           Commands.Watchman.process_response
-            ~configuration
-            ~watchman_directory:root
-            ~symlinks
+            watchman_state
             (create_mock_watchman_response "test.py")
         with
         | Some
@@ -197,9 +199,7 @@ let test_different_root context =
     in
     match
       Commands.Watchman.process_response
-        ~configuration
-        ~watchman_directory
-        ~symlinks
+        { Commands.Watchman.configuration; watchman_directory; symlinks }
         mock_watchman_response
     with
     | Some (
