@@ -24,7 +24,7 @@ server_integration_test: all
 
 .PHONY: analysis_integration_test
 analysis_integration_test: all
-	PYRE_BINARY="$(shell pwd)/_build/default/main.exe" ./scripts/run_analysis_integration_test.py 
+	PYRE_BINARY="$(shell pwd)/_build/default/main.exe" ./scripts/run_analysis_integration_test.py
 
 .PHONY: release
 release: hack_parallel
