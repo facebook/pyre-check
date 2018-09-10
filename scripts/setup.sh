@@ -13,8 +13,9 @@ die() {
   exit 1
 }
 
-DEVELOPMENT_COMPILER="4.06.0"
-RELEASE_COMPILER="4.06.0+flambda"
+COMPILER_VERSION="4.06.0"
+DEVELOPMENT_COMPILER="${COMPILER_VERSION}"
+RELEASE_COMPILER="${COMPILER_VERSION}+flambda"
 
 # Compatibility settings with MacOS.
 if [[ "${MACHTYPE}" = *apple* ]]; then
@@ -130,10 +131,10 @@ if [ ${OPAM_REPOSITORY: -7} == ".tar.gz" ]; then
   tar xf "${OPAM_REPOSITORY}" -C "$temporary_repository" --strip-components=1
 
   # Get compiler if available.
-  compiler="${OPAM_REPOSITORY%/*}/$COMPILER.tar.gz"
+  compiler="${OPAM_REPOSITORY%/*}/$COMPILER_VERSION.tar.gz"
   if [ -e "$compiler" ]; then
     cp "$compiler" .
-    trap 'rm -rf ./$COMPILER.tar.gz' EXIT
+    trap 'rm -rf ./$COMPILER_VERSION.tar.gz' EXIT
   fi
 
   OPAM_REPOSITORY=$temporary_repository
