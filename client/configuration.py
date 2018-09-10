@@ -127,6 +127,7 @@ class Configuration:
         # Order matters. The values will only be updated if a field is None.
         self._read(CONFIGURATION_FILE + ".local", path_from_root="")
         self._read(CONFIGURATION_FILE, path_from_root="")
+        self._override_version_hash()
         self._resolve_versioned_paths()
         self._apply_defaults()
         self._validate()
@@ -354,6 +355,12 @@ class Configuration:
         if typeshed:
             self._typeshed = typeshed.replace("%V", version_hash)
 
+    def _override_version_hash(self) -> None:
+        overriding_version_hash = os.getenv("PYRE_VERSION_HASH")
+        if overriding_version_hash:
+            self._version_hash = overriding_version_hash
+            LOG.warning("Version hash overridden with `%s`", self._version_hash)
+
     def _apply_defaults(self) -> None:
         overriding_binary = os.getenv("PYRE_BINARY")
         if overriding_binary:
@@ -368,11 +375,6 @@ class Configuration:
                 LOG.warning("Could not find `{}` in PATH".format(BINARY_NAME))
             else:
                 LOG.info("Found: `%s`", self._binary)
-
-        overriding_version_hash = os.getenv("PYRE_VERSION_HASH")
-        if overriding_version_hash:
-            self._version_hash = overriding_version_hash
-            LOG.warning("Version hash overridden with `%s`", self._version_hash)
 
         if not self.number_of_workers:
             self.number_of_workers = number_of_workers()

@@ -143,10 +143,19 @@ class ConfigurationTest(unittest.TestCase):
         configuration = Configuration()
         self.assertEqual(configuration.binary, "/VERSION/binary")
 
+        # Test version override
         with patch.object(os, "getenv", return_value="VERSION_HASH"):
             json_load.side_effect = [{}, {}]
             configuration = Configuration()
             self.assertEqual(configuration.version_hash, "VERSION_HASH")
+
+        with patch.object(os, "getenv", return_value="VERSION_HASH"):
+            json_load.side_effect = [
+                {"version": "NOT_THIS_VERSION", "typeshed": "TYPE/%V/SHED/"},
+                {},
+            ]
+            configuration = Configuration()
+            self.assertEqual(configuration.typeshed, "TYPE/VERSION_HASH/SHED/")
 
         # Test multiple definitions of the do_not_check files.
         json_load.side_effect = [
