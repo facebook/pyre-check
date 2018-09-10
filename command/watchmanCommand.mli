@@ -11,7 +11,7 @@ open Pyre
 (* Exposed for testing. *)
 val build_symlink_map: PyrePath.t list -> PyrePath.t Path.Map.t
 val process_response
-  :  root: Path.t
+  :  configuration: Configuration.t
   -> watchman_directory:Path.t
   -> symlinks: Path.t Path.Map.t
   -> string
@@ -22,6 +22,7 @@ val run_command
   -> verbose: bool
   -> sections: string list
   -> local_root: string
+  -> search_path: Path.t list
   -> project_root: string option
   -> Pid.t
 

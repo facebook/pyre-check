@@ -78,10 +78,14 @@ let build_symlink_map files =
   List.fold ~init:Path.Map.empty ~f:add_symlink files
 
 
-let set_symlink ~root ~symlinks ~path =
+let set_symlink ~root ~search_path ~symlinks ~path =
   try
-    if not (Path.Map.mem symlinks path) &&
-       Path.directory_contains ~directory:root path then
+    let tracked path =
+      List.exists
+        (root :: search_path)
+        ~f:(fun directory -> Path.directory_contains ~directory path)
+    in
+    if not (Path.Map.mem symlinks path) && tracked path then
       Map.set symlinks ~key:(Path.real_path path) ~data:path
     else
       symlinks
@@ -91,7 +95,11 @@ let set_symlink ~root ~symlinks ~path =
     symlinks
 
 
-let process_response ~root ~watchman_directory ~symlinks serialized_response =
+let process_response
+    ~configuration:{ Configuration.local_root = root; search_path; _ }
+    ~watchman_directory
+    ~symlinks
+    serialized_response =
   let open Yojson.Safe in
   let response = from_string serialized_response in
   let keys = Util.keys response in
@@ -117,7 +125,10 @@ let process_response ~root ~watchman_directory ~symlinks serialized_response =
         |> List.map ~f:relativize_to_root
       in
       let symlinks =
-        List.fold ~init:symlinks ~f:(fun symlinks path -> set_symlink ~symlinks ~root ~path) paths
+        List.fold
+          paths
+          ~init:symlinks
+          ~f:(fun symlinks path -> set_symlink ~symlinks ~root ~search_path ~path)
       in
       let files =
         List.filter_map
@@ -176,7 +187,7 @@ let listen_for_changed_files
         let handle_watchman symlinks socket =
           let in_channel = Unix.in_channel_of_descr socket in
           In_channel.input_line in_channel
-          >>= process_response ~root:local_root ~watchman_directory ~symlinks
+          >>= process_response ~configuration ~watchman_directory ~symlinks
           >>| (fun (symlinks, response) ->
               Log.info "Writing response %s" (Protocol.Request.show response);
               Socket.write server_socket response;
@@ -274,7 +285,7 @@ let run_watchman_daemon_entry : run_watchman_daemon_entry =
            let server_socket = initialize watchman_directory configuration in
            listen_for_changed_files server_socket watchman_directory configuration)
 
-let run_command ~daemonize ~verbose ~sections ~local_root ~project_root =
+let run_command ~daemonize ~verbose ~sections ~local_root ~search_path ~project_root =
   try
     let local_root = Path.create_absolute local_root in
     let project_root =
@@ -287,6 +298,7 @@ let run_command ~daemonize ~verbose ~sections ~local_root ~project_root =
         ~verbose
         ~sections
         ~local_root
+        ~search_path
         ~project_root
         ()
     in
@@ -370,8 +382,14 @@ let run_command ~daemonize ~verbose ~sections ~local_root ~project_root =
     raise uncaught_exception
 
 
-let run daemonize verbose sections project_root local_root () =
-  run_command ~daemonize ~verbose ~sections ~local_root ~project_root
+let run daemonize verbose sections search_path project_root local_root () =
+  run_command
+    ~daemonize
+    ~verbose
+    ~sections
+    ~local_root
+    ~project_root
+    ~search_path:(List.map ~f:Path.create_absolute search_path)
   |> ignore
 
 
@@ -387,6 +405,10 @@ let command =
         "-logging-sections"
         (optional_with_default [] (Arg_type.comma_separated string))
         ~doc:"SECTION1,... Comma-separated list of logging sections."
+      +> flag
+        "-search-path"
+        (optional_with_default [] (Arg_type.comma_separated string))
+        ~doc:"DIRECTORY1,... Directories containing external modules to include."
       +> flag
         "-project-root"
         (optional string)
