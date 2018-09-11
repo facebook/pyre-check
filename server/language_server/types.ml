@@ -852,9 +852,7 @@ module ShutdownRequest = struct
 end
 
 
-module TextDocumentDefinitionRequest = struct
-  include RequestMessage.Make(TextDocumentPositionParams)
-end
+module TextDocumentDefinitionRequest = RequestMessage.Make(TextDocumentPositionParams)
 
 
 module RageRequest = struct
@@ -863,52 +861,24 @@ module RageRequest = struct
 end
 
 
-module HoverRequest = struct
-  include RequestMessage.Make(struct
-      type t = TextDocumentPositionParams.t
-      [@@deriving yojson]
-    end)
-end
+module HoverRequest = RequestMessage.Make(TextDocumentPositionParams)
 
 
-module DidCloseTextDocument = struct
-  include NotificationMessage.Make(struct
-      type t = DidCloseTextDocumentParams.t
-      [@@deriving yojson]
-    end)
-end
+module DidCloseTextDocument = NotificationMessage.Make(DidCloseTextDocumentParams)
 
 
-module DidSaveTextDocument = struct
-  include NotificationMessage.Make(struct
-      type t = DidSaveTextDocumentParams.t
-      [@@deriving yojson]
-    end)
-end
+module DidSaveTextDocument = NotificationMessage.Make(DidSaveTextDocumentParams)
 
 
-module DidOpenTextDocument = struct
-  include NotificationMessage.Make(struct
-      type t = DidOpenTextDocumentParams.t
-      [@@deriving yojson]
-    end)
-end
+module DidOpenTextDocument =NotificationMessage.Make(DidOpenTextDocumentParams)
 
 
-module DidChangeTextDocument = struct
-  include NotificationMessage.Make(struct
-      type t = DidChangeTextDocumentParams.t
-      [@@deriving yojson, of_yojson]
-    end)
-end
+module DidChangeTextDocument = NotificationMessage.Make(DidChangeTextDocumentParams)
 
 
-module ShowMessage = struct
-  include NotificationMessage.Make(struct
-      type t = ShowMessageParams.t
-      [@@deriving yojson]
-    end)
-end
+module ShowMessage = NotificationMessage.Make(ShowMessageParams)
+
+
 (** Responses *)
 
 
@@ -993,16 +963,7 @@ end
 
 
 (** A PublishDiagnostics Notification *)
-module PublishDiagnostics = struct
-  (* Example: A notification message requires a concrete type for "any" in the
-     parameters. For PublishDiagnostics notifications, this is
-     PublishDiagnosticsParams.t
-     cf. https://github.com/Microsoft/language-server-protocol/blob/master/protocol.md#publishdiagnostics-notification *)
-  include NotificationMessage.Make(struct
-      type t = PublishDiagnosticsParams.t
-      [@@deriving yojson]
-    end)
-end
+module PublishDiagnostics = NotificationMessage.Make(PublishDiagnosticsParams)
 
 
 (** Namespaces *)
