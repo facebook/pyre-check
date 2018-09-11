@@ -21,7 +21,7 @@ class Initialize(Command):
     NAME = "initialize"
 
     def __init__(self, arguments, configuration, analysis_directory) -> None:
-        self._local: bool = arguments.local
+        self._local = arguments.local  # type: bool
         super(Initialize, self).__init__(arguments, configuration, analysis_directory)
 
     def _get_configuration(self) -> Dict[str, Any]:
