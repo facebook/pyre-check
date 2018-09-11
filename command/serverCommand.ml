@@ -568,6 +568,8 @@ let run_start_command
     log_path
     terminal
     use_watchman
+    load_state_from
+    save_state_to
     verbose
     expected_version
     sections
@@ -623,7 +625,14 @@ let run_start_command
       ()
   in
   let log_path = log_path >>| Path.create_absolute in
-  start (ServerConfiguration.create ~daemonize:(not terminal) ~use_watchman ?log_path configuration)
+  start
+    (ServerConfiguration.create
+       ~daemonize:(not terminal)
+       ~use_watchman
+       ?log_path
+       ?save_state_to
+       ?load_state_from
+       configuration)
   |> ignore
 
 
@@ -644,6 +653,14 @@ let start_command =
         "-use-watchman"
         no_arg
         ~doc:"Subscribe to watchman for file changes."
+      +> flag
+        "-load-state-from"
+        (optional string)
+        ~doc:"The Pyre server will start from the specified path if one is passed in."
+      +> flag
+        "-save-initial-state-to"
+        (optional string)
+        ~doc:"The Pyre server will save its initial state to the path passed in by this argument."
       ++ Specification.base_command_line_arguments)
     run_start_command
 

@@ -17,6 +17,8 @@ type t = {
   daemonize: bool;
   use_watchman: bool;
   watchman_creation_timeout: float;
+  save_state_to: string option;
+  load_state_from: string option;
   (* Analysis configuration *)
   configuration: Configuration.t
 }
@@ -28,5 +30,7 @@ val create
   :  ?daemonize: bool
   -> ?log_path: Path.t
   -> ?use_watchman: bool
+  -> ?save_state_to: string
+  -> ?load_state_from: string
   -> Configuration.t
   -> t

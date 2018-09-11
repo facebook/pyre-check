@@ -20,6 +20,8 @@ type t = {
   daemonize: bool;
   use_watchman: bool;
   watchman_creation_timeout: float;
+  save_state_to: string option;
+  load_state_from: string option;
   (* Analysis configuration *)
   configuration: Configuration.t;
 }
@@ -53,6 +55,8 @@ let create
     ?(daemonize = true)
     ?log_path
     ?(use_watchman = false)
+    ?save_state_to
+    ?load_state_from
     configuration =
   let server_root = Service.Constants.Server.root configuration in
   (* Allow absolute log_path path (e.g., for /dev/null) *)
@@ -68,5 +72,7 @@ let create
     daemonize;
     use_watchman;
     watchman_creation_timeout = 5.0 (* Seconds. *);
+    save_state_to;
+    load_state_from;
     configuration;
   }
