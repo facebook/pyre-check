@@ -1562,7 +1562,6 @@ CAMLprim value hh_collect(value aggressive_val) {
   if (!should_collect(aggressive)) {
     return Val_unit;
   }
-  printf("Starting shared memory collection\n");
 
   tmp_heap = temp_memory_map();
   dest = tmp_heap;
