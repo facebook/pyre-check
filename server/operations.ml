@@ -92,8 +92,11 @@ let stop
   in
   watchman_pid >>| Signal.send_i Signal.int  |> ignore;
 
+  Path.absolute lock_path
+  |> Lock.release
+  |> ignore;
+
   (* Cleanup server files. *)
-  Path.remove lock_path;
   Path.remove socket_path;
   Path.remove socket_link;
   Path.remove pid_path;

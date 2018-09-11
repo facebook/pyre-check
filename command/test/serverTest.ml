@@ -131,10 +131,9 @@ let with_timeout ~seconds f x =
 let test_server_stops _ =
   let pid = Pid.of_int (CommandTest.start_server ()) in
   Command.run ~argv:["_"; "-graceful"] Commands.Server.stop_command;
-  let { ServerConfiguration.lock_path; socket_path; _ } =
+  let { ServerConfiguration.socket_path; _ } =
     ServerConfiguration.create (Configuration.create ())
   in
-  with_timeout ~seconds:3 poll_for_deletion lock_path;
   with_timeout ~seconds:3 poll_for_deletion socket_path;
   Exn.protect
     ~f:(fun () ->
@@ -589,7 +588,7 @@ let test_query _ =
 
 let test_connect _ =
   CommandTest.start_server ~expected_version:"A" () |> ignore;
-  let { ServerConfiguration.configuration; lock_path; _ } =
+  let { ServerConfiguration.configuration; socket_path; _ } =
     CommandTest.mock_server_configuration ~expected_version:"B" ()
   in
   (* This sleep ensures that the server doesn't receive an EPIPE while the Hack_parallel library is
@@ -599,7 +598,7 @@ let test_connect _ =
   |> ignore;
   let cleanup () =
     Commands.Server.stop ~graceful:true "." ();
-    with_timeout ~seconds:3 poll_for_deletion lock_path;
+    with_timeout ~seconds:3 poll_for_deletion socket_path;
     CommandTest.clean_environment ()
   in
   Exn.protect
