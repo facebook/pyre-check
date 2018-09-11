@@ -199,7 +199,6 @@ let arguments_codex_representation parameters =
 
 
 let rec source_statement_codex_representation
-    local_root
     path
     {
       Node.location = {
@@ -218,7 +217,7 @@ let rec source_statement_codex_representation
         comments = None;
         location = [start_line; column];
         members =
-          List.concat_map ~f:(source_statement_codex_representation local_root path) body;
+          List.concat_map ~f:(source_statement_codex_representation path) body;
         supers = [];
         mro = [];
         ty = "class";
@@ -278,25 +277,23 @@ let rec source_statement_codex_representation
   | _ -> []
 
 
-let source_to_codex_representation local_root { Source.path; statements; docstring; _ } =
-  let filename =
-    try
-      Filename.realpath (local_root ^/ path)
-    with
-      Unix.Unix_error _ -> local_root ^/ path
+let source_to_codex_representation { Source.path; statements; docstring; _ } =
+  let path =
+    Option.value_exn path
+    |> Path.absolute
   in
   {
     PythonModule.name = Filename.chop_suffix (Filename.basename path) ".py";
     docstring;
     rank = 0;
-    filename;
+    filename = path;
     members =
       List.concat_map
-        ~f:(source_statement_codex_representation local_root filename)
-        statements;
+        statements
+        ~f:(source_statement_codex_representation path);
   }
 
 
-let source_to_json local_root source =
-  let representation = source_to_codex_representation local_root source in
+let source_to_json source =
+  let representation = source_to_codex_representation source in
   (get_access_basename representation.PythonModule.name, PythonModule.to_yojson representation)

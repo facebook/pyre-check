@@ -108,7 +108,7 @@ let analyze ?taint_models_directory ~scheduler ~configuration ~environment ~hand
   Log.info "Recording overrides...";
   let timer = Timer.start () in
   let record_overrides path =
-    Ast.SharedMemory.get_source path
+    Ast.SharedMemory.Sources.get path
     >>| (fun source -> record_overrides ~environment ~source)
     |> ignore
   in
@@ -120,7 +120,7 @@ let analyze ?taint_models_directory ~scheduler ~configuration ~environment ~hand
   let call_graph =
     let build_call_graph map path =
       try
-        Ast.SharedMemory.get_source path
+        Ast.SharedMemory.Sources.get path
         >>| (fun source -> record_and_merge_call_graph ~environment ~call_graph:map ~path ~source)
         |> Option.value ~default:map
       with TypeOrder.Untracked untracked_type ->
@@ -132,10 +132,11 @@ let analyze ?taint_models_directory ~scheduler ~configuration ~environment ~hand
     Scheduler.map_reduce
       scheduler
       ~configuration
-      ~init:Access.Map.empty
+      ~initial:Access.Map.empty
       ~map:(fun _ paths -> List.fold paths ~init:Access.Map.empty ~f:build_call_graph)
       ~reduce:(Map.merge_skewed ~combine:(fun ~key:_ left _ -> left))
-      paths
+      ~inputs:paths
+      ()
   in
   Statistics.performance ~name:"Call graph built" ~timer ();
   Log.info "Call graph edges: %d" (Access.Map.length call_graph);
@@ -144,7 +145,7 @@ let analyze ?taint_models_directory ~scheduler ~configuration ~environment ~hand
 
   let all_callables =
     let make_callables path =
-      Ast.SharedMemory.get_source path
+      Ast.SharedMemory.Sources.get path
       >>| fun source ->
       record_path_of_definitions ~path ~source
       |> List.map ~f:Interprocedural.Callable.make

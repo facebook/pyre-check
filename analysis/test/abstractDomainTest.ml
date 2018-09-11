@@ -106,7 +106,7 @@ module TestAbstractDomain(Domain: AbstractDomainUnderTest) = struct
   (* The test suite created by this functor. *)
   let suite () =
     let create_test value ~f = (Domain.show value) >:: (f value) in
-    let test_basic_values = List.map ~f:(create_test ~f:test_basic) values in
+    let test_basic_values = List.map values ~f:(create_test ~f:test_basic) in
     let test_joins = test_cartesian ~title:"join" ~f:test_join_conformance values in
 
     test_basic_values
@@ -127,7 +127,7 @@ module StringSet: AbstractDomainUnderTest = struct
     None
 
   let unrelated =
-    List.map ~f:singleton ["a"; "b"]
+    List.map ["a"; "b"] ~f:singleton
 
   let values =
     List.cartesian_product unrelated unrelated

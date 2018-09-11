@@ -17,6 +17,13 @@ type t = Class.t Node.t
 [@@deriving compare, eq, sexp, show, hash]
 
 
+type decorator = {
+  access: string;
+  arguments: (Argument.t list) option
+}
+[@@deriving compare, eq, sexp, show, hash]
+
+
 let name_equal
     { Node.value = { Class.name = left; _ }; _ }
     { Node.value = { Class.name = right; _ }; _ } =
@@ -47,12 +54,41 @@ let body { Node.value = { Class.body; _ }; _ } =
   body
 
 
-let has_decorator { Node.value = { Class.decorators; _ }; _ } =
-  Expression.exists_in_list ~expression_list:decorators
+let get_decorator { Node.value = { Class.decorators; _ }; _ } ~decorator =
+  let matches target decorator =
+    match decorator with
+    | { Node.value = Access access; _ } ->
+        begin
+          match Expression.Access.name_and_arguments ~call:access with
+          | Some { callee = name; arguments } when name = target ->
+              Some { access = name; arguments = Some arguments }
+          | None when Access.show access = target ->
+              Some { access = Access.show access; arguments = None }
+          | _ ->
+              None
+        end
+    | _ ->
+        None
+  in
+  List.filter_map ~f:(matches decorator) decorators
 
 
 let annotation { Node.value = { Class.name; _ }; location } ~resolution =
   Resolution.parse_annotation resolution (Node.create ~location (Access name))
+
+
+let successors class_node ~resolution =
+  annotation class_node ~resolution
+  |> Type.split
+  |> (fun (primitive, _ ) -> primitive)
+  |> Resolution.class_representation resolution
+  >>| (fun { Resolution.successors; _ } -> successors)
+  |> Option.value ~default:[]
+
+
+let successors_fold class_node ~resolution ~f ~initial =
+  successors class_node ~resolution
+  |> List.fold ~init:initial ~f
 
 
 module Method = struct
@@ -88,7 +124,7 @@ module Method = struct
       in
       name, annotation
     in
-    List.map ~f:element parameters
+    List.map parameters ~f:element
     |> Identifier.Map.of_alist_exn
 
 
@@ -154,12 +190,11 @@ module Method = struct
               >>| fun define ->
               create ~define ~parent:(create_parent parent))
     in
-    TypeOrder.successors_fold
-      (Resolution.order resolution)
+    successors_fold
+      parent
+      ~resolution
       ~initial:None
       ~f:find_overrides
-      (annotation parent ~resolution)
-
 
   let implements
       { define; _ }
@@ -299,7 +334,7 @@ let constraints ?target ?parameters definition ~instantiated ~resolution =
 
 
 let superclasses definition ~resolution =
-  TypeOrder.successors (Resolution.order resolution) (annotation definition ~resolution)
+  successors ~resolution definition
   |> List.filter_map ~f:(Resolution.class_definition resolution)
   |> List.map ~f:create
 
@@ -448,7 +483,7 @@ module Attribute = struct
     let annotation =
       match defines with
       | Some defines ->
-          List.map ~f:(fun define -> Callable.apply_decorators ~define ~resolution) defines
+          List.map defines ~f:(fun define -> Callable.apply_decorators ~define ~resolution)
           |> Callable.create ~resolution
           |> (fun callable -> Some (Type.Callable callable))
       | _ ->
@@ -885,7 +920,7 @@ let constructor definition ~resolution =
             | _ ->
                 overload
           in
-          let overloads = List.map ~f:unannotate_first_parameter overloads in
+          let overloads = List.map overloads ~f:unannotate_first_parameter in
           Type.Callable { callable with Type.Callable.overloads }
       | annotation ->
           annotation

@@ -1,4 +1,11 @@
+(** Copyright (c) 2016-present, Facebook, Inc.
+
+    This source code is licensed under the MIT license found in the
+    LICENSE file in the root directory of this source tree. *)
+
+
 open Core
+
 open OUnit2
 
 open Pyre
@@ -12,13 +19,13 @@ let test_coverage _ =
         ~scheduler:(Scheduler.mock ())
         ~files:[
           File.create
-            ~content:(Some "#pyre-strict\ndef foo()->int:\n    return 1\n")
+            ~content:"#pyre-strict\ndef foo()->int:\n    return 1\n"
             (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:"a.py");
           File.create
-            ~content:(Some "#pyre-strict\ndef foo()->int:\n    return 1\n")
+            ~content:"#pyre-strict\ndef foo()->int:\n    return 1\n"
             (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:"b.py");
           File.create
-            ~content:(Some "#pyre-do-not-check\ndef foo()->int:\n    return 1\n")
+            ~content:"#pyre-do-not-check\ndef foo()->int:\n    return 1\n"
             (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:"c.py");
         ]
     in

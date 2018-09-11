@@ -7,8 +7,7 @@
 val disable: unit -> unit
 
 val sample
-  :  ?system_time: float
-  -> ?integers: (string * int) list
+  :  ?integers: (string * int) list
   -> ?normals: (string * string) list
   -> ?metadata: bool
   -> unit
@@ -19,7 +18,7 @@ val flush: unit -> unit
 val performance
   :  ?flush: bool
   -> ?randomly_log_every: int
-  -> ?section: Log.section
+  -> ?section:Log.section
   -> name: string
   -> timer: Timer.t
   -> ?integers: (string * int) list
@@ -29,8 +28,8 @@ val performance
 
 val coverage
   :  ?flush: bool
+  -> path: string
   -> coverage: (string * int) list
-  -> ?normals: (string * string) list
   -> unit
   -> unit
 

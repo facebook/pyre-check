@@ -16,14 +16,15 @@ open Test
 
 
 let test_expand_relative_imports _ =
-  let assert_expand ~path source expected =
-    let parse = parse ~qualifier:(Source.qualifier ~path) in
+  let assert_expand ~handle source expected =
+    let handle = File.Handle.create handle in
+    let parse = parse ~qualifier:(Source.qualifier ~handle) in
     assert_source_equal
       (parse expected)
       (Preprocessing.expand_relative_imports (parse source))
   in
   assert_expand
-    ~path:"module/submodule/test.py"
+    ~handle:"module/submodule/test.py"
     {|
       from builtins import str
       from . import a
@@ -39,7 +40,7 @@ let test_expand_relative_imports _ =
       from module.relative import d
     |};
   assert_expand
-    ~path:"module/submodule/test/__init__.py"
+    ~handle:"module/submodule/test/__init__.py"
     {|
       from . import a
       from .relative import b
@@ -57,7 +58,7 @@ let test_expand_relative_imports _ =
 let test_expand_string_annotations _ =
   let assert_expand ?(qualifier = "qualifier") source expected =
     let parse =
-      parse ~qualifier:(Source.qualifier ~path:qualifier) in
+      parse ~qualifier:(Source.qualifier ~handle:(File.Handle.create qualifier)) in
     assert_source_equal
       (parse expected)
       (Preprocessing.expand_string_annotations (parse source))
@@ -99,7 +100,7 @@ let test_expand_format_string _ =
     assert_source_equal
       (Preprocessing.expand_format_string (parse_untrimmed source))
       (Source.create
-         ~path:"test.py"
+         ~handle:(File.Handle.create "test.py")
          [+Expression (+String (StringLiteral.create ~expressions value))])
   in
 
@@ -137,7 +138,7 @@ let test_expand_format_string _ =
         Node.value = String { StringLiteral.kind = StringLiteral.Format expression_list; _ }; _ };
         _;
       }] ->
-        let actual_locations = List.map ~f:Node.location expression_list in
+        let actual_locations = List.map expression_list ~f:Node.location in
         assert_equal
           ~cmp:(fun left right -> List.equal ~equal:Location.Reference.equal left right)
           ~printer:(List.to_string ~f:Location.Reference.show)
@@ -151,8 +152,8 @@ let test_expand_format_string _ =
 
 
 let test_qualify _ =
-  let assert_qualify ?(path = "qualifier.py") source expected =
-    let parse = parse ~qualifier:(Source.qualifier ~path) ~path in
+  let assert_qualify ?(handle = "qualifier.py") source expected =
+    let parse = parse ~qualifier:(Source.qualifier ~handle:(File.Handle.create handle)) ~handle in
     assert_source_equal (parse expected) (Preprocessing.qualify (parse source))
   in
 
@@ -375,7 +376,7 @@ let test_qualify _ =
 
   (* Treat special forms like class definitions. *)
   assert_qualify
-    ~path:"typing.pyi"
+    ~handle:"typing.pyi"
     {|
       Type: _SpecialForm = ...
       def foo(l: Type[int]): ...
@@ -623,10 +624,10 @@ let test_qualify _ =
 
 
 let test_replace_version_specific_code _ =
-  let assert_preprocessed ?(path="stub.pyi") source expected =
+  let assert_preprocessed ?(handle="stub.pyi") source expected =
     assert_source_equal
-      (parse ~path expected)
-      (Preprocessing.replace_version_specific_code (parse ~path source))
+      (parse ~handle expected)
+      (Preprocessing.replace_version_specific_code (parse ~handle source))
   in
   assert_preprocessed
     {|
@@ -755,7 +756,7 @@ let test_replace_version_specific_code _ =
          def compatible()->str:
            ...
     |};
-  assert_preprocessed ~path:"file.py"
+  assert_preprocessed ~handle:"file.py"
     {|
       if sys.version_info >= (3, 5):
         from A import B
@@ -838,22 +839,23 @@ let test_expand_type_checking_imports _ =
 
 
 let test_expand_wildcard_imports _ =
+  let configuration = Configuration.create ~local_root:(Path.current_working_directory ()) () in
   let assert_expanded environment_sources check_source expected =
     let create_file (name, source) =
       File.create
-        ~content:(Some (trim_extra_indentation source))
+        ~content:(trim_extra_indentation source)
         (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:name)
     in
     let clear_memory files =
       let get_qualifier file =
-        File.handle file
-        >>= Ast.SharedMemory.get_source
+        File.handle ~configuration file
+        |> Ast.SharedMemory.Sources.get
         >>| (fun { Source.qualifier; _ } -> qualifier)
       in
-      Ast.SharedMemory.remove_modules (List.filter_map ~f:get_qualifier files);
-      Ast.SharedMemory.remove_paths (List.filter_map ~f:File.handle files);
+      Ast.SharedMemory.Modules.remove ~qualifiers:(List.filter_map ~f:get_qualifier files);
+      Ast.SharedMemory.Sources.remove ~handles:(List.map ~f:(File.handle ~configuration) files);
     in
-    let files = List.map ~f:create_file environment_sources in
+    let files = List.map environment_sources ~f:create_file in
     let file_to_check = create_file ("test.py", check_source) in
     clear_memory (file_to_check :: files);
     let file_to_check_handle =
@@ -866,10 +868,10 @@ let test_expand_wildcard_imports _ =
     assert_equal
       ~cmp:(List.equal ~equal:Statement.equal)
       ~printer:(fun statement_list ->
-          List.map ~f:(Statement.show) statement_list
+          List.map statement_list ~f:Statement.show
           |> String.concat ~sep:", ")
       (Source.statements (parse expected))
-      (Source.statements (Option.value_exn (Ast.SharedMemory.get_source file_to_check_handle)))
+      (Source.statements (Option.value_exn (Ast.SharedMemory.Sources.get file_to_check_handle)))
   in
   assert_expanded
     ["a.py", "def foo(): pass"]
@@ -943,7 +945,7 @@ let test_expand_returns _ =
   let assert_expand_implicit_returns source expected_body =
     assert_source_equal
       (Preprocessing.expand_returns (parse source))
-      (Source.create ~path:"test.py"
+      (Source.create ~handle:(File.Handle.create "test.py")
          [
            +Define {
              Define.name = Access.create "foo";
@@ -956,7 +958,7 @@ let test_expand_returns _ =
              generated = false;
              parent = None;
            };
-         ];)
+         ])
   in
   assert_expand
     "return None"

@@ -7,17 +7,9 @@ open Ast
 open Statement
 
 
-type class_representation = {
-  class_definition: Class.t Node.t;
-  explicit_attributes: Attribute.t Access.SerializableMap.t;
-  implicit_attributes: Attribute.t Access.SerializableMap.t;
-  is_test: bool;
-  methods: Type.t list;
-}
-
 type t = {
   function_definitions: ((Define.t Node.t) list) Access.Table.t;
-  class_definitions: class_representation Type.Table.t;
+  class_definitions: Resolution.class_representation Type.Table.t;
   protocols: Type.Hash_set.t;
   modules: Module.t Access.Table.t;
   order: TypeOrder.t;
@@ -32,31 +24,31 @@ type t = {
     lookups. *)
 module type Handler = sig
   val register_definition
-    :  path: string
+    :  handle: File.Handle.t
     -> ?name_override: Access.t
     -> (Define.t Node.t)
     -> unit
-  val register_dependency: path: string -> dependency: Access.t -> unit
-  val register_global: path: string -> access: Access.t -> global: Resolution.global -> unit
-  val update_class_definition: primitive: Type.t -> definition: Class.t -> unit
-  val connect_definition
-    :  resolution: Resolution.t
-    -> predecessor: Type.t
-    -> name: Access.t
-    -> definition: (Class.t Node.t) option
-    -> (Type.t * Type.t list)
+  val register_dependency: handle: File.Handle.t -> dependency: Access.t -> unit
+  val register_global
+    :  handle: File.Handle.t
+    -> access: Access.t
+    -> global: Resolution.global
+    -> unit
+  val set_class_definition: primitive: Type.t -> definition: Class.t Node.t -> unit
   val refine_class_definition: Type.t -> unit
-  val register_alias: path: string -> key: Type.t -> data: Type.t -> unit
-  val purge: File.Handle.t list -> unit
+  val register_alias: handle: File.Handle.t -> key: Type.t -> data: Type.t -> unit
+  val purge: ?debug: bool -> File.Handle.t list -> unit
 
   val function_definitions: Access.t -> (Define.t Node.t) list option
-  val class_definition: Type.t -> class_representation option
+  val class_definition: Type.t -> Resolution.class_representation option
+
+  val register_protocol: Type.t -> unit
   val protocols: unit -> Type.t list
 
   val register_module
     :  qualifier: Access.t
     -> local_mode: Source.mode
-    -> path: string option
+    -> handle: File.Handle.t option
     -> stub: bool
     -> statements: Statement.t list
     -> unit
@@ -67,9 +59,9 @@ module type Handler = sig
   val in_class_definition_keys: Type.t -> bool
   val aliases: Type.t -> Type.t option
   val globals: Access.t -> Resolution.global option
-  val dependencies: Access.t -> string list option
+  val dependencies: Access.t -> File.Handle.t list option
 
-  val mode: string -> Source.mode option
+  val mode: File.Handle.t -> Source.mode option
 
   module DependencyHandler: Dependencies.Handler
   module TypeOrderHandler: TypeOrder.Handler
@@ -86,18 +78,12 @@ val resolution
   -> unit
   -> Resolution.t
 
-val dependencies: (module Handler) -> Access.t -> string list option
+val dependencies: (module Handler) -> Access.t -> File.Handle.t list option
 
 val connect_definition
-  :  order: (module TypeOrder.Handler)
-  -> aliases: (Type.t -> Type.t option)
-  -> add_class_definition: (primitive: Type.t -> definition: Class.t Node.t -> unit)
-  -> add_protocol: (Type.t -> unit)
-  -> (resolution: Resolution.t
-      -> predecessor: Type.t
-      -> name: Access.t
-      -> definition: (Class.t Node.t) option
-      -> (Type.t * Type.t list))
+  :  resolution: Resolution.t
+  -> definition: Class.t Node.t
+  -> unit
 
 val register_module
   :  (module Handler)

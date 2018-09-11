@@ -8,8 +8,8 @@ from unittest.mock import MagicMock, patch
 
 from .. import (
     EnvironmentException,
+    _find_configuration_root,
     buck,
-    find_global_root,
     resolve_analysis_directories,
     switch_root,
 )
@@ -19,11 +19,11 @@ class InitTest(unittest.TestCase):
     @patch("os.path.isfile")
     def test_find_configuration(self, os_mock_isfile) -> None:
         os_mock_isfile.side_effect = [False, False, False, True]
-        self.assertEqual(find_global_root("/a/b/c/d"), "/a")
+        self.assertEqual(_find_configuration_root("/a/b/c/d", "configuration"), "/a")
         os_mock_isfile.side_effect = [True]
-        self.assertEqual(find_global_root("/a"), "/a")
+        self.assertEqual(_find_configuration_root("/a", "configuration"), "/a")
         os_mock_isfile.side_effect = [False, False]
-        self.assertEqual(find_global_root("/a/b"), "/a/b")
+        self.assertEqual(_find_configuration_root("/a/b", "configuration"), None)
 
     @patch("os.path.realpath", side_effect=lambda path: "realpath({})".format(path))
     @patch("os.getcwd", return_value="/")
@@ -32,7 +32,6 @@ class InitTest(unittest.TestCase):
         arguments = MagicMock()
         arguments.analysis_directory = []
         arguments.original_directory = "/root"
-        arguments.use_buck_cache = False
         arguments.build = False
         configuration = MagicMock()
         configuration.analysis_directories = []
@@ -51,7 +50,7 @@ class InitTest(unittest.TestCase):
                 arguments, configuration
             )
             buck_analysis_directories.assert_called_with(
-                set(), build=False, prompt=True, use_cache=False
+                set(), build=False, prompt=True
             )
             self.assertEqual(
                 analysis_directories, {"realpath(root/arguments_analysis_directory)"}
@@ -68,7 +67,7 @@ class InitTest(unittest.TestCase):
                 arguments, configuration
             )
             buck_analysis_directories.assert_called_with(
-                {"arguments_target"}, build=False, prompt=True, use_cache=False
+                {"arguments_target"}, build=False, prompt=True
             )
             self.assertEqual(analysis_directories, {"realpath(root/arguments_target)"})
 
@@ -86,7 +85,7 @@ class InitTest(unittest.TestCase):
                 arguments, configuration
             )
             buck_analysis_directories.assert_called_with(
-                {"configuration_target"}, build=True, prompt=True, use_cache=False
+                {"configuration_target"}, build=True, prompt=True
             )
             self.assertEqual(
                 analysis_directories,
@@ -117,3 +116,12 @@ class InitTest(unittest.TestCase):
         arguments.local_configuration = "fakepath"
         switch_root(arguments)
         self.assertEqual(arguments.local_configuration, "realpath")
+
+        arguments.local_configuration = None
+        with patch("os.getcwd", return_value="/a/b/c"):
+            isfile.side_effect = (
+                lambda directory: directory == "/a/b/.pyre_configuration.local"
+            )
+            switch_root(arguments)
+            self.assertEqual(arguments.original_directory, "/a/b/c")
+            self.assertEqual(arguments.local_configuration_directory, "/a/b")

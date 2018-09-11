@@ -3,12 +3,16 @@
     This source code is licensed under the MIT license found in the
     LICENSE file in the root directory of this source tree. *)
 
+open Core
 open Hack_parallel.Std
 
 open Pyre
 
 
-type t = Unix.file_descr
+type t = Unix.File_descr.t
+
+
+module Table = Unix.File_descr.Table
 
 
 let initialize_unix_socket path =

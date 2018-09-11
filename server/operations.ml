@@ -19,46 +19,52 @@ type version_mismatch = {
 }
 [@@deriving show]
 
+
 exception ConnectionFailure
 exception VersionMismatch of version_mismatch
 
 
-let initialize
+let start
     ?old_state
-    lock
-    connections
-    { configuration; _ } =
+    ~lock
+    ~connections
+    ~configuration:{ configuration; _ }
+    () =
   Log.log ~section:`Server  "Initializing server...";
+
   let scheduler =
     match old_state with
     | Some { scheduler; _ } -> scheduler
     | None -> Scheduler.create ~configuration ()
   in
   SharedMem.collect `aggressive;
+
   let timer = Timer.start () in
-  let { TypeCheck.handles; environment; errors = initial_errors } =
-    TypeCheck.check configuration (Some scheduler) () in
+  let { TypeCheck.handles; environment; errors } =
+    TypeCheck.check
+      ~scheduler:(Some scheduler)
+      ~configuration
+  in
   Statistics.performance ~name:"initialization" ~timer ~normals:[] ();
   Log.log ~section:`Server "Server initialized";
-  let handles = File.Handle.Set.of_list handles in
+  Memory.init_done ();
+
+  Ast.SharedMemory.HandleKeys.add ~handles;
   let errors =
-    let errors = File.Handle.Table.create () in
-    List.iter
-      initial_errors
-      ~f:(fun error ->
-          let path = Error.path error in
-          Hashtbl.add_multi
-            errors
-            ~key:(File.Handle.create path)
-            ~data:error);
-    errors
+    let table = File.Handle.Table.create () in
+    let add_error error =
+      Hashtbl.add_multi
+        table
+        ~key:(File.Handle.create (Error.path error))
+        ~data:error
+    in
+    List.iter errors ~f:add_error;
+    table
   in
   {
     deferred_requests = [];
     environment;
-    initial_errors = Error.Hash_set.of_list initial_errors;
     errors;
-    handles;
     scheduler;
     lock;
     last_request_time = Unix.time ();
@@ -68,14 +74,10 @@ let initialize
   }
 
 
-let remove_server_files { lock_path; socket_path; pid_path; socket_link; _ } =
-  Path.remove lock_path;
-  Path.remove socket_path;
-  Path.remove socket_link;
-  Path.remove pid_path
-
-
-let stop_server ~reason ({ configuration; _ } as server_configuration) socket =
+let stop
+    ~reason
+    ~configuration:{ configuration; lock_path; socket_path; pid_path; socket_link; _ }
+    ~socket =
   Statistics.event ~flush:true ~name:"stop server" ~normals:["reason", reason] ();
   let watchman_pid =
     try
@@ -89,7 +91,13 @@ let stop_server ~reason ({ configuration; _ } as server_configuration) socket =
       None
   in
   watchman_pid >>| Signal.send_i Signal.int  |> ignore;
-  remove_server_files server_configuration;
+
+  (* Cleanup server files. *)
+  Path.remove lock_path;
+  Path.remove socket_path;
+  Path.remove socket_link;
+  Path.remove pid_path;
+
   Unix.close socket;
   Worker.killall ();
   exit 0

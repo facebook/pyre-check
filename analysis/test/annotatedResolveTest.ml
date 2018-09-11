@@ -16,6 +16,9 @@ open AnnotatedTest
 let test_resolve_literal _ =
   let resolution =
     populate {|
+      class C:
+        def __init__(self) -> None:
+          pass
       def foo()->int:
         ...
       i = 1
@@ -41,7 +44,8 @@ let test_resolve_literal _ =
   assert_resolve_literal "1" Type.integer;
   assert_resolve_literal "1+1" Type.Top;
   assert_resolve_literal "j" Type.Top;
-  assert_resolve_literal "foo()" Type.Top
+  assert_resolve_literal "foo()" Type.Top;
+  assert_resolve_literal "C()" (Type.primitive "C")
 
 
 let () =

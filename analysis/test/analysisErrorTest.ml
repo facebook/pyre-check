@@ -266,6 +266,19 @@ let test_due_to_analysis_limitations _ =
               };
             })));
 
+  assert_true
+    (Error.due_to_analysis_limitations
+       (error
+          (Error.IncompatibleParameterType {
+              Error.name = Some ((Access.create ""));
+              position = 1;
+              callee = Some (Access.create "callee");
+              mismatch = {
+                Error.actual = Type.primitive "typing.TypeAlias";
+                expected = Type.Top;
+              };
+            })));
+
   (* Return. *)
   assert_true
     (Error.due_to_analysis_limitations
@@ -517,7 +530,16 @@ let test_suppress _ =
   assert_suppressed Source.Default (incompatible_return_type Type.integer Type.Object);
   assert_not_suppressed Source.Default (revealed_type "a" Type.integer);
   assert_not_suppressed ~define:untyped_define Source.Default (revealed_type "a" Type.integer);
-  assert_suppressed Source.Default (Error.UndefinedName (Access.create "reveal_type"))
+  assert_suppressed Source.Default (Error.UndefinedName (Access.create "reveal_type"));
+
+  let suppress_missing_return =
+    Source.DefaultButDontCheck [Error.code (error (missing_return Type.Object))]
+  in
+  assert_suppressed suppress_missing_return (missing_return Type.integer);
+  assert_suppressed suppress_missing_return (missing_return Type.Object);
+  (* Defer to Default policy if not specifically suppressed *)
+  assert_not_suppressed suppress_missing_return (incompatible_return_type Type.integer Type.float);
+  assert_suppressed suppress_missing_return (Error.UndefinedName (Access.create "reveal_type"))
 
 
 let () =

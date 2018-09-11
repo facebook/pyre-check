@@ -23,7 +23,7 @@ class Rage(Command):
     def _run(self) -> None:
         # Do not use logging. Logging goes to stderr.
         print("Client version:", __version__, flush=True)
-        print("Binary path:", self._configuration.get_binary(), flush=True)
+        print("Binary path:", self._configuration.binary, flush=True)
         print(
             "Configured binary version:",
             get_binary_version(self._configuration),

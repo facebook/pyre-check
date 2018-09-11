@@ -8,7 +8,7 @@ import re
 import select
 import sys
 import time
-from typing import Optional, List
+from typing import List, Optional
 
 from .command import Command
 from .start import Start
@@ -30,9 +30,9 @@ class Persistent(Command):
     def _flags(self) -> List[str]:
         return [
             "-log-identifier",
-            '"{}"'.format(self._analysis_directory),
+            '"{}"'.format(self._analysis_directory.get_root()),
             "-expected-binary-version",
-            str(self._configuration.get_version_hash()),
+            self._configuration.version_hash,
         ]
 
     @classmethod

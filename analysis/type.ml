@@ -13,13 +13,20 @@ open PyreParser
 
 module Record = struct
   module Callable = struct
-    module Parameter = struct
+    module RecordParameter = struct
       type 'annotation named = {
         name: Access.t;
         annotation: 'annotation;
         default: bool;
       }
       [@@deriving compare, sexp, show, hash]
+
+
+      type 'annotation anonymous = {
+        index: int;
+        annotation: 'annotation;
+      }
+      [@@deriving compare, eq, sexp, show, hash]
 
 
       let equal_named equal_annotation left right =
@@ -29,7 +36,7 @@ module Record = struct
 
 
       type 'annotation t =
-        | Anonymous of 'annotation
+        | Anonymous of 'annotation anonymous
         | Named of 'annotation named
         | Variable of 'annotation named
         | Keywords of 'annotation named
@@ -43,7 +50,7 @@ module Record = struct
 
 
     and 'annotation parameters =
-      | Defined of ('annotation Parameter.t) list
+      | Defined of ('annotation RecordParameter.t) list
       | Undefined
 
 
@@ -76,6 +83,9 @@ end
 
 
 open Record.Callable
+
+
+module Parameter = Record.Callable.RecordParameter
 
 
 type parametric = {
@@ -118,6 +128,9 @@ and t =
 
 type type_t = t
 [@@deriving compare, eq, sexp, show, hash]
+let type_compare = compare
+let type_sexp_of_t = sexp_of_t
+let type_t_of_sexp = t_of_sexp
 
 
 module Map = Map.Make(struct
@@ -216,8 +229,11 @@ let rec pp format annotation =
                 "..."
             | Defined parameters ->
                 let parameter = function
-                  | Parameter.Anonymous annotation ->
-                      show annotation
+                  | Parameter.Anonymous { Parameter.index; annotation } ->
+                      Format.asprintf
+                        "Anonymous(%d, %s)"
+                        index
+                        (show annotation)
                   | Parameter.Named { Parameter.name; annotation; default } ->
                       Format.asprintf
                         "Named(%a, %s%s)"
@@ -235,13 +251,13 @@ let rec pp format annotation =
                         Access.pp_sanitized name
                         (show annotation)
                 in
-                List.map ~f:parameter parameters
+                List.map parameters ~f:parameter
                 |> String.concat ~sep:", "
                 |> fun parameters -> Format.asprintf "[%s]" parameters
           in
           Format.asprintf "%s, %s" parameters (show annotation)
         in
-        List.map ~f:overload overloads
+        List.map overloads ~f:overload
         |> String.concat ~sep:"]["
       in
       Format.fprintf format "typing.Callable%s[%s]" kind overloads
@@ -262,7 +278,7 @@ let rec pp format annotation =
       Format.fprintf format
         "%s[%s]"
         (Identifier.show (reverse_substitute name))
-        (List.map ~f:show parameters
+        (List.map parameters ~f:show
          |> String.concat ~sep:", ")
   | Primitive name ->
       Format.fprintf format "%a" Identifier.pp name
@@ -272,7 +288,7 @@ let rec pp format annotation =
       let parameters =
         match tuple with
         | Bounded parameters ->
-            (List.map ~f:show parameters
+            (List.map parameters ~f:show
              |> String.concat ~sep:", ")
         | Unbounded parameter  ->
             (show parameter) ^ ", ..."
@@ -281,7 +297,7 @@ let rec pp format annotation =
   | Union parameters ->
       Format.fprintf format
         "typing.Union[%s]"
-        (List.map ~f:show parameters
+        (List.map parameters ~f:show
          |> String.concat ~sep:", ")
   | Variable { variable; constraints } ->
       let constraints =
@@ -409,8 +425,9 @@ let lambda ~parameters ~return_annotation =
         annotation = return_annotation;
         parameters =
           Defined
-            (List.map
-               ~f:(fun parameter -> Parameter.Anonymous parameter)
+            (List.mapi
+               ~f:(fun index parameter ->
+                   Parameter.Anonymous { Parameter.index; annotation = parameter })
                parameters);
       };
     ];
@@ -648,7 +665,7 @@ let rec create ~aliases { Node.value = expression; _ } =
                     | Optional annotation ->
                         Optional (resolve visited annotation)
                     | Tuple (Bounded elements) ->
-                        Tuple (Bounded (List.map ~f:(resolve visited) elements))
+                        Tuple (Bounded (List.map elements ~f:(resolve visited)))
                     | Tuple (Unbounded annotation) ->
                         Tuple (Unbounded (resolve visited annotation))
                     | Parametric { name; parameters } ->
@@ -656,7 +673,7 @@ let rec create ~aliases { Node.value = expression; _ } =
                           let parametric name =
                             Parametric {
                               name;
-                              parameters = List.map ~f:(resolve visited) parameters;
+                              parameters = List.map parameters ~f:(resolve visited);
                             }
                           in
                           match aliases (Primitive name) with
@@ -686,7 +703,7 @@ let rec create ~aliases { Node.value = expression; _ } =
                         in
                         Variable { variable with constraints }
                     | Union elements ->
-                        Union (List.map ~f:(resolve visited) elements)
+                        Union (List.map elements ~f:(resolve visited))
                     | Bottom
                     | Callable _
                     | Deleted
@@ -767,7 +784,7 @@ let rec create ~aliases { Node.value = expression; _ } =
                       match Node.value argument with
                       | Expression.Tuple [parameters; annotation] ->
                           let parameters =
-                            let extract_parameter parameter =
+                            let extract_parameter index parameter =
                               match Node.value parameter with
                               | Access [
                                   Access.Identifier name;
@@ -816,14 +833,17 @@ let rec create ~aliases { Node.value = expression; _ } =
                                           default = false;
                                         }
                                     | _ ->
-                                        Parameter.Anonymous Top
+                                        Parameter.Anonymous { Parameter.index; annotation = Top }
                                   end
                               | _ ->
-                                  Parameter.Anonymous (create ~aliases parameter)
+                                  Parameter.Anonymous {
+                                    Parameter.index;
+                                    annotation = (create ~aliases parameter)
+                                  }
                             in
                             match Node.value parameters with
                             | List parameters ->
-                                Defined (List.map ~f:extract_parameter parameters)
+                                Defined (List.mapi ~f:extract_parameter parameters)
                             | _ ->
                                 Undefined
                           in
@@ -1012,7 +1032,7 @@ let rec expression annotation =
                       |> Node.create_with_default_location
                     in
                     match parameter with
-                    | Parameter.Anonymous annotation ->
+                    | Parameter.Anonymous { Parameter.annotation; _ } ->
                         expression annotation
                     | Parameter.Keywords { Parameter.name; annotation; _ } ->
                         call "Keywords" name (Some annotation)
@@ -1021,7 +1041,7 @@ let rec expression annotation =
                     | Parameter.Variable { Parameter.name; annotation; _ } ->
                         call "Variable" name (Some annotation)
                   in
-                  List (List.map ~f:parameter parameters)
+                  List (List.map parameters ~f:parameter)
                   |> Node.create_with_default_location
               | Undefined ->
                   Node.create_with_default_location Ellipses
@@ -1082,7 +1102,7 @@ let rec exists annotation ~predicate =
             match parameters with
             | Defined parameters ->
                 let parameter = function
-                  | Parameter.Anonymous annotation
+                  | Parameter.Anonymous { Parameter.annotation; _ }
                   | Parameter.Named { Parameter.annotation; _ } ->
                       exists annotation ~predicate
                   | Parameter.Variable _
@@ -1212,6 +1232,9 @@ let is_unknown annotation =
   exists annotation ~predicate:(function | Top | Deleted -> true | _ -> false)
 
 
+let is_type_alias annotation = equal annotation (primitive "typing.TypeAlias")
+
+
 let is_not_instantiated annotation =
   let predicate = function
     | Bottom -> true
@@ -1228,7 +1251,7 @@ let rec variables = function
           match parameters with
           | Defined parameters ->
               let variables = function
-                | Parameter.Anonymous annotation
+                | Parameter.Anonymous { Parameter.annotation; _ }
                 | Parameter.Named { Parameter.annotation; _ } ->
                     variables annotation
                 | Parameter.Variable _
@@ -1460,8 +1483,11 @@ let instantiate ?(widen = false) annotation ~constraints =
                   | Defined parameters ->
                       let parameter parameter =
                         match parameter with
-                        | Parameter.Anonymous annotation ->
-                            Parameter.Anonymous (instantiate annotation)
+                        | Parameter.Anonymous { Parameter.index; annotation } ->
+                            Parameter.Anonymous {
+                              Parameter.index;
+                              annotation = (instantiate annotation)
+                            }
                         | Parameter.Named ({ Parameter.annotation; _ } as named) ->
                             Parameter.Named {
                               named with
@@ -1478,29 +1504,29 @@ let instantiate ?(widen = false) annotation ~constraints =
                               Parameter.annotation = instantiate annotation;
                             }
                       in
-                      Defined (List.map ~f:parameter parameters)
+                      Defined (List.map parameters ~f:parameter)
                   | Undefined ->
                       Undefined
                 in
                 { annotation = instantiate annotation; parameters }
               in
-              Callable { kind; overloads = List.map ~f:instantiate overloads; implicit }
+              Callable { kind; overloads = List.map overloads ~f:instantiate; implicit }
           | Parametric ({ parameters; _ } as parametric) ->
               Parametric {
                 parametric with
-                parameters = List.map ~f:instantiate parameters;
+                parameters = List.map parameters ~f:instantiate;
               }
           | Tuple tuple ->
               let tuple =
                 match tuple with
                 | Bounded parameters ->
-                    Bounded (List.map ~f:instantiate parameters)
+                    Bounded (List.map parameters ~f:instantiate)
                 | Unbounded parameter ->
                     Unbounded (instantiate parameter)
               in
               Tuple tuple
           | Union parameters ->
-              List.map ~f:instantiate parameters
+              List.map parameters ~f:instantiate
               |> union
           | _ ->
               annotation
@@ -1547,12 +1573,12 @@ let rec dequalify map annotation =
   | Parametric { name; parameters } ->
       Parametric {
         name = dequalify_identifier (reverse_substitute name);
-        parameters = List.map ~f:(dequalify map) parameters;
+        parameters = List.map parameters ~f:(dequalify map);
       }
   | Union parameters ->
       Parametric {
         name = dequalify_string "typing.Union";
-        parameters = List.map ~f:(dequalify map) parameters;
+        parameters = List.map parameters ~f:(dequalify map);
       }
   | Primitive name -> Primitive (dequalify_identifier name)
   | Variable { variable = name; constraints } ->
@@ -1567,8 +1593,21 @@ let rec dequalify map annotation =
 
 
 module Callable = struct
-  include Record.Callable
+  module Parameter = struct
+    include Record.Callable.RecordParameter
 
+    type parameter = type_t t
+    [@@deriving compare, eq, sexp, show, hash]
+
+    module Map = Core.Map.Make(struct
+        type nonrec t = parameter
+        let compare = compare type_compare
+        let sexp_of_t = sexp_of_t type_sexp_of_t
+        let t_of_sexp = t_of_sexp type_t_of_sexp
+      end)
+  end
+
+  include Record.Callable
 
   type t = type_t Record.Callable.record
   [@@deriving compare, eq, sexp, show, hash]

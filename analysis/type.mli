@@ -11,15 +11,20 @@ open Expression
 
 module Record : sig
   module Callable : sig
-    module Parameter : sig
+    module RecordParameter : sig
       type 'annotation named = {
         name: Access.t;
         annotation: 'annotation;
         default: bool;
       }
 
+      type 'annotation anonymous = {
+        index: int;
+        annotation: 'annotation;
+      }
+
       and 'annotation t =
-        | Anonymous of 'annotation
+        | Anonymous of 'annotation anonymous
         | Named of 'annotation named
         | Variable of 'annotation named
         | Keywords of 'annotation named
@@ -31,7 +36,7 @@ module Record : sig
       | Named of Access.t
 
     and 'annotation parameters =
-      | Defined of ('annotation Parameter.t) list
+      | Defined of ('annotation RecordParameter.t) list
       | Undefined
 
     and 'annotation overload = {
@@ -165,6 +170,7 @@ val is_primitive: t -> bool
 val is_protocol: t -> bool
 val is_tuple: t -> bool
 val is_unknown: t -> bool
+val is_type_alias: t -> bool
 
 (* Contains `Bottom` or variables. *)
 val is_not_instantiated: t -> bool
@@ -198,6 +204,15 @@ val instantiate_variables: t -> t
 val dequalify: Access.t Access.Map.t -> t -> t
 
 module Callable : sig
+  module Parameter: sig
+    include module type of struct include Record.Callable.RecordParameter end
+
+    type parameter = type_t t
+    [@@deriving compare, eq, sexp, show, hash]
+
+    module Map : Core.Map.S with type Key.t = parameter
+  end
+
   include module type of struct include Record.Callable end
 
   type t = type_t Record.Callable.record

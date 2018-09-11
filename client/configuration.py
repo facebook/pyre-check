@@ -3,12 +3,11 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import functools
 import json
 import logging
 import os
 import shutil
-from typing import List
+from typing import List, Optional
 
 from . import (
     BINARY_NAME,
@@ -58,18 +57,19 @@ class _ConfigurationFile:
             "coverage",
             "differential",
             "push_blocking",
+            "taint_models_path",
         }
 
 
 class Configuration:
-    _disabled = False  # type: bool
+    disabled = False  # type: bool
 
     def __init__(
         self,
-        original_directory=None,
-        local_configuration=None,
-        search_path=None,
-        typeshed=None,
+        local_configuration_directory=None,
+        local_configuration: Optional[str] = None,
+        search_path: Optional[List[str]] = None,
+        typeshed: Optional[str] = None,
         preserve_pythonpath=False,
     ) -> None:
         self.analysis_directories = []
@@ -77,26 +77,27 @@ class Configuration:
         self.logger = None
         self.do_not_check = []
         self.number_of_workers = None
+        self.local_configuration = None  # type: Optional[str]
+        self.taint_models_path = None
 
-        self._version_hash = None
-        self._binary = None
-        self._typeshed = None
-        self._local_configuration = None
+        self._version_hash = None  # type: Optional[str]
+        self._binary = None  # type: Optional[str]
+        self._typeshed = None  # type: Optional[str]
 
         # Handle search path from multiple sources
-        self._search_directories = []
+        self.search_path = []
         pythonpath = os.getenv("PYTHONPATH")
         if preserve_pythonpath and pythonpath:
             for path in pythonpath.split(":"):
                 if os.path.isdir(path):
-                    self._search_directories.append(path)
+                    self.search_path.append(path)
                 else:
                     LOG.warning(
                         "`{}` is not a valid directory, dropping it "
                         "from PYTHONPATH".format(path)
                     )
         if search_path:
-            self._search_directories.extend(search_path)
+            self.search_path.extend(search_path)
         # We will extend the search path further, with the config file
         # items, inside _read().
 
@@ -109,24 +110,29 @@ class Configuration:
             self._check_read_local_configuration(
                 local_configuration, fail_on_error=True
             )
-        elif original_directory and original_directory != os.getcwd():
+        elif (
+            local_configuration_directory
+            and local_configuration_directory != os.getcwd()
+        ):
             # If `pyre` was run from a directory below the project
             # root, and no local configuration was explictly provided
             # on the commandline, look for a local configuration from
             # the original directory, but don't fail if it does not
             # exist.
-            assert_readable_directory(original_directory)
+            assert_readable_directory(local_configuration_directory)
             self._check_read_local_configuration(
-                original_directory, fail_on_error=False
+                local_configuration_directory, fail_on_error=False
             )
 
         # Order matters. The values will only be updated if a field is None.
         self._read(CONFIGURATION_FILE + ".local", path_from_root="")
         self._read(CONFIGURATION_FILE, path_from_root="")
+        self._override_version_hash()
         self._resolve_versioned_paths()
         self._apply_defaults()
+        self._validate()
 
-    def validate(self) -> None:
+    def _validate(self) -> None:
         try:
 
             def is_list_of_strings(list):
@@ -149,30 +155,26 @@ class Configuration:
                     "`do_not_check` field must be a list of strings."
                 )
 
-            if not self._binary:
-                raise InvalidConfiguration("`binary` location must be defined.")
-            if not os.path.exists(self.get_binary()):
+            if not os.path.exists(self.binary):
                 raise InvalidConfiguration(
-                    "Binary at `{}` does not exist.".format(self._binary)
+                    "Binary at `{}` does not exist.".format(self.binary)
                 )
 
             if self.number_of_workers < 1:
                 raise InvalidConfiguration("Number of workers must be greater than 0.")
 
             # Validate typeshed path and sub-elements.
-            if not self._typeshed:
-                raise InvalidConfiguration("`typeshed` location must be defined.")
-            assert_readable_directory(self._typeshed)
+            assert_readable_directory(self.typeshed)
 
             # A courtesy warning since we have changed default behaviour.
             if self._typeshed_has_obsolete_value():
                 LOG.warning(
                     "It appears that `{}` points at a `stdlib` directory. "
                     "Please note that the `typeshed` configuration must point at "
-                    "the root of the `typeshed` directory.".format(self._typeshed)
+                    "the root of the `typeshed` directory.".format(self.typeshed)
                 )
 
-            typeshed_subdirectories = os.listdir(self._typeshed)
+            typeshed_subdirectories = os.listdir(self.typeshed)
             if "stdlib" not in typeshed_subdirectories:
                 raise InvalidConfiguration(
                     "`typeshed` location must contain a `stdlib` directory."
@@ -180,7 +182,7 @@ class Configuration:
 
             for typeshed_subdirectory_name in typeshed_subdirectories:
                 typeshed_subdirectory = os.path.join(
-                    self._typeshed, typeshed_subdirectory_name
+                    self.typeshed, typeshed_subdirectory_name
                 )
                 if (
                     not os.path.isdir(typeshed_subdirectory)
@@ -206,37 +208,26 @@ class Configuration:
                     assert_readable_directory(typeshed_version_directory)
 
             # Validate elements of the search path.
-            for path in self.get_search_path():
+            for path in self.search_path:
                 assert_readable_directory(path)
         except InvalidConfiguration as error:
             raise EnvironmentException("Invalid configuration: {}".format(str(error)))
 
-    def get_version_hash(self):
-        return self._version_hash
+    @property
+    def version_hash(self) -> str:
+        return self._version_hash or "unversioned"
 
-    @functools.lru_cache(1)
-    def get_binary(self) -> str:
+    @property
+    def binary(self) -> str:
         if not self._binary:
             raise InvalidConfiguration("Configuration was not validated")
-
         return self._binary
 
-    @functools.lru_cache(1)
-    def get_typeshed(self) -> str:
+    @property
+    def typeshed(self) -> str:
         if not self._typeshed:
-            raise InvalidConfiguration("Configuration was not validated")
-
+            raise InvalidConfiguration("Configuration invalid: no typeshed specified")
         return self._typeshed
-
-    @functools.lru_cache(1)
-    def get_search_path(self) -> List[str]:
-        return self._search_directories
-
-    def get_local_configuration(self) -> str:
-        return self._local_configuration
-
-    def disabled(self) -> bool:
-        return self._disabled
 
     def _check_read_local_configuration(self, path: str, fail_on_error: bool) -> None:
         if fail_on_error and not os.path.exists(path):
@@ -262,11 +253,11 @@ class Configuration:
                         "`{}`".format(os.getcwd())
                     )
             else:
-                self._local_configuration = local_configuration
+                self.local_configuration = local_configuration
         else:
             path_from_root = os.path.dirname(path)
             local_configuration = path
-            self._local_configuration = local_configuration
+            self.local_configuration = local_configuration
         self._read(local_configuration, path_from_root=path_from_root)
 
     def _read(self, path, path_from_root) -> None:
@@ -295,7 +286,7 @@ class Configuration:
                 )
 
                 if configuration.consume("disabled", default=False):
-                    self._disabled = True
+                    self.disabled = True
 
                 self.logger = configuration.consume("logger", current=self.logger)
 
@@ -310,23 +301,33 @@ class Configuration:
                     )
                 )
 
-                self._binary = configuration.consume("binary", current=self._binary)
+                binary = configuration.consume("binary", current=self._binary)
+                assert binary is None or isinstance(binary, str)
+                self._binary = binary
 
                 additional_search_path = configuration.consume(
                     "search_path", default=[]
                 )
                 if isinstance(additional_search_path, list):
-                    self._search_directories.extend(additional_search_path)
+                    self.search_path.extend(additional_search_path)
                 else:
-                    self._search_directories.append(additional_search_path)
+                    self.search_path.append(additional_search_path)
 
-                self._version_hash = configuration.consume(
+                version_hash = configuration.consume(
                     "version", current=self._version_hash
                 )
+                assert version_hash is None or isinstance(version_hash, str)
+                self._version_hash = version_hash
 
-                self._typeshed = configuration.consume(
-                    "typeshed", current=self._typeshed
+                typeshed = configuration.consume("typeshed", current=self._typeshed)
+                assert typeshed is None or isinstance(typeshed, str)
+                self._typeshed = typeshed
+
+                taint_models_path = configuration.consume(
+                    "taint_models_path", current=self.taint_models_path
                 )
+                assert taint_models_path is None or isinstance(taint_models_path, str)
+                self.taint_models_path = taint_models_path
 
                 unused_keys = configuration.unused_keys()
                 if unused_keys:
@@ -343,12 +344,22 @@ class Configuration:
             )
 
     def _resolve_versioned_paths(self) -> None:
-        version_hash = self.get_version_hash()
+        version_hash = self.version_hash
+        if not version_hash:
+            return
+
         binary = self._binary
-        if version_hash and binary:
+        if binary:
             self._binary = binary.replace("%V", version_hash)
-        if version_hash and self._typeshed:
-            self._typeshed = self._typeshed.replace("%V", version_hash)
+        typeshed = self._typeshed
+        if typeshed:
+            self._typeshed = typeshed.replace("%V", version_hash)
+
+    def _override_version_hash(self) -> None:
+        overriding_version_hash = os.getenv("PYRE_VERSION_HASH")
+        if overriding_version_hash:
+            self._version_hash = overriding_version_hash
+            LOG.warning("Version hash overridden with `%s`", self._version_hash)
 
     def _apply_defaults(self) -> None:
         overriding_binary = os.getenv("PYRE_BINARY")
@@ -365,11 +376,6 @@ class Configuration:
             else:
                 LOG.info("Found: `%s`", self._binary)
 
-        overriding_version_hash = os.getenv("PYRE_VERSION_HASH")
-        if overriding_version_hash:
-            self._version_hash = overriding_version_hash
-            LOG.warning("Version hash overridden with `%s`", self._version_hash)
-
         if not self.number_of_workers:
             self.number_of_workers = number_of_workers()
 
@@ -382,7 +388,7 @@ class Configuration:
                 LOG.info("Found: `%s`", self._typeshed)
 
     def _typeshed_has_obsolete_value(self) -> bool:
-        (head, tail) = os.path.split(self._typeshed)
+        (head, tail) = os.path.split(self.typeshed)
         if tail == "stdlib":
             return True
         if tail != "":

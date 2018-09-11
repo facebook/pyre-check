@@ -356,6 +356,59 @@ let test_comparison_operator_override _ =
   assert_override "a is not b" None
 
 
+let test_name_and_arguments _ =
+  let assert_call ~call ?(expected_arguments = []) expected_name =
+    let { Expression.Access.callee = name; arguments } =
+      match parse_single_expression call with
+      | { Node.value = Access call; _ } ->
+          Option.value_exn (Expression.Access.name_and_arguments ~call)
+      | _ -> failwith "Unable to parse access"
+    in
+    assert_equal ~printer:ident expected_name name;
+    assert_equal
+      ~cmp:(List.equal ~equal:Argument.equal)
+      ~printer:(List.to_string ~f:Argument.show)
+      expected_arguments
+      arguments
+  in
+  let assert_not_call ~call =
+    match parse_single_expression call with
+    | { Node.value = Access call; _ } ->
+        assert_equal (Expression.Access.name_and_arguments ~call) None
+    | _ ->
+        failwith "Unable to parse access"
+  in
+  let argument ?name value =
+    let name =
+      name
+      >>| Identifier.create
+      >>| Ast.Node.create_with_default_location
+    in
+    { Argument.name; value }
+  in
+  assert_call ~call:"foo.bar()" "foo.bar";
+  assert_call ~call:"f(1)" ~expected_arguments:[argument (+Integer 1)] "f";
+
+  assert_not_call ~call:"foo.bar";
+  assert_not_call ~call:"foo.bar().baz";
+  assert_not_call ~call:"foo.bar().baz()";
+
+  assert_call
+    ~call:"foo.bar(1, x=2)"
+    ~expected_arguments:[argument (+Integer 1); argument ~name:"x" (+Integer 2)]
+    "foo.bar"
+
+
+let test_is_assert_function _ =
+  let is_assert name =
+    Access.create name
+    |> Access.is_assert_function
+  in
+  assert_true (is_assert "pyretestassert");
+  assert_false (is_assert "pyretestassert()");
+  assert_false (is_assert "notAssert")
+
+
 let () =
   "expression">:::[
     "negate">::test_negate;
@@ -365,5 +418,7 @@ let () =
     "equality">::test_equality;
     "delocalize">::test_delocalize;
     "comparison_operator_override">::test_comparison_operator_override;
+    "name_and_arguments">::test_name_and_arguments;
+    "is_assert_function">::test_is_assert_function;
   ]
   |> run_test_tt_main

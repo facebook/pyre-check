@@ -9,11 +9,11 @@ from unittest.mock import MagicMock, mock_open, patch
 
 from ... import EnvironmentException  # noqa
 from ... import commands  # noqa
+from ...filesystem import AnalysisDirectory
 
 
 def mock_arguments() -> MagicMock:
     arguments = MagicMock()
-
     arguments.debug = False
     arguments.sequential = False
     arguments.strict = False
@@ -35,9 +35,11 @@ def mock_arguments() -> MagicMock:
 def mock_configuration() -> MagicMock:
     configuration = MagicMock()
     configuration.analysis_directories = ["."]
-    configuration.get_search_path = MagicMock()
-    configuration.get_typeshed = MagicMock()
+    configuration.number_of_workers = 5
+    configuration.search_path = ["path1", "path2"]
+    configuration.typeshed = "stub"
     configuration.logger = None
+    configuration.taint_models_path = None
     return configuration
 
 
@@ -45,17 +47,17 @@ class CommandTest(unittest.TestCase):
     def test_relative_path(self) -> None:
         arguments = mock_arguments()
         configuration = mock_configuration()
-
+        analysis_directory = AnalysisDirectory(".")
         self.assertEqual(
-            commands.Command(arguments, configuration, [])._relative_path(
-                "/original/directory/path"
-            ),
+            commands.Command(
+                arguments, configuration, analysis_directory
+            )._relative_path("/original/directory/path"),
             "path",
         )
         self.assertEqual(
-            commands.Command(arguments, configuration, [])._relative_path(
-                "/original/directory/"
-            ),
+            commands.Command(
+                arguments, configuration, analysis_directory
+            )._relative_path("/original/directory/"),
             ".",
         )
 
@@ -68,7 +70,7 @@ class CommandTest(unittest.TestCase):
             open.side_effect = [io.StringIO("1")]
             self.assertEqual(
                 commands.Command(
-                    arguments, configuration, analysis_directory="."
+                    arguments, configuration, AnalysisDirectory(".")
                 )._state(),
                 commands.command.State.RUNNING,
             )
@@ -77,7 +79,21 @@ class CommandTest(unittest.TestCase):
             open.side_effect = [io.StringIO("derp")]
             self.assertEqual(
                 commands.Command(
-                    arguments, configuration, analysis_directory="."
+                    arguments, configuration, AnalysisDirectory(".")
                 )._state(),
                 commands.command.State.DEAD,
             )
+
+    def test_logger(self) -> None:
+        arguments = mock_arguments()
+        configuration = mock_configuration()
+        analysis_directory = AnalysisDirectory(".")
+
+        command = commands.Command(arguments, configuration, analysis_directory)
+        self.assertEqual(command._flags(), ["-project-root", "."])
+
+        configuration.logger = "/foo/bar"
+        command = commands.Command(arguments, configuration, analysis_directory)
+        self.assertEqual(
+            command._flags(), ["-project-root", ".", "-logger", "/foo/bar"]
+        )

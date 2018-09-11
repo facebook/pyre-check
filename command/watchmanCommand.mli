@@ -8,20 +8,22 @@ open Core
 open Pyre
 
 
+type state = {
+  configuration: Configuration.t;
+  watchman_directory: Path.t;
+  symlinks: Path.t Path.Map.t;
+}
+
 (* Exposed for testing. *)
 val build_symlink_map: PyrePath.t list -> PyrePath.t Path.Map.t
-val process_response
-  :  root: Path.t
-  -> watchman_directory:Path.t
-  -> symlinks: Path.t Path.Map.t
-  -> string
-  -> (Path.t Path.Map.t * Server.Protocol.Request.t) Option.t
+val process_response: state -> string -> (state * Server.Protocol.Request.t) Option.t
 
 val run_command
   :  daemonize: bool
   -> verbose: bool
   -> sections: string list
   -> local_root: string
+  -> search_path: Path.t list
   -> project_root: string option
   -> Pid.t
 

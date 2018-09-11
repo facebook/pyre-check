@@ -10,6 +10,7 @@ from unittest.mock import MagicMock, patch
 
 from .. import commands, configuration, log
 from ..error import Error
+from ..filesystem import AnalysisDirectory
 from ..infer import (
     FieldStub,
     FunctionStub,
@@ -505,6 +506,8 @@ def mock_arguments() -> MagicMock:
     arguments.show_parse_errors = False
     arguments.local_configuration = None
     arguments.logging_sections = None
+    arguments.logger = None
+    arguments.log_identifier = None
     arguments.current_directory = "."
 
     return arguments
@@ -512,8 +515,10 @@ def mock_arguments() -> MagicMock:
 
 def mock_configuration() -> MagicMock:
     configuration = MagicMock()
-    configuration.get_search_path = MagicMock()
+    configuration.typeshed = "stub"
+    configuration.search_path = ["path1", "path2"]
     configuration.get_typeshed = MagicMock()
+    configuration.logger = None
     return configuration
 
 
@@ -527,11 +532,10 @@ class InferTest(unittest.TestCase):
 
         configuration = mock_configuration()
         configuration.get_typeshed.return_value = "stub"
-        configuration.get_search_path.return_value = ["path1", "path2"]
 
         with patch.object(commands.Command, "_call_client") as call_client:
-            command = Infer(arguments, configuration, analysis_directory=".")
-            self.assertEquals(
+            command = Infer(arguments, configuration, AnalysisDirectory("."))
+            self.assertEqual(
                 command._flags(),
                 [
                     "-show-error-traces",
@@ -550,8 +554,8 @@ class InferTest(unittest.TestCase):
         with patch.object(commands.Command, "_call_client") as call_client:
             arguments.recursive = True
 
-            command = Infer(arguments, configuration, analysis_directory=".")
-            self.assertEquals(
+            command = Infer(arguments, configuration, AnalysisDirectory("."))
+            self.assertEqual(
                 command._flags(),
                 [
                     "-show-error-traces",
@@ -571,7 +575,7 @@ class InferTest(unittest.TestCase):
     @patch.object(log, "initialize")
     @patch.object(log, "cleanup")
     @patch.object(configuration.Configuration, "_read")
-    @patch.object(configuration.Configuration, "validate")
+    @patch.object(configuration.Configuration, "_validate")
     def test_main(self, validate, read, log_cleanup, log_initialize) -> None:
         with patch.object(sys, "argv", ["infer", "--target", "."]), patch.object(
             Infer, "run"

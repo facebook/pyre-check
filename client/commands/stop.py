@@ -28,7 +28,7 @@ class Stop(Command):
         else:
             try:
                 self._call_client(command=self.NAME).check()
-                LOG.info("Stopped server at `%s`", self._analysis_directory)
+                LOG.info("Stopped server at `%s`", self._analysis_directory.get_root())
             except ClientException:
                 LOG.info("Could not stop server, attempting to kill.")
                 arguments = self._arguments

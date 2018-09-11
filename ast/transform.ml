@@ -11,47 +11,32 @@ open Expression
 open Statement
 
 
-type recursion_behavior =
-  | Recurse
-  | Stop
-
-
 module type Transformer = sig
   type t
-  val expression_preorder: t -> Expression.t -> t * Expression.t
-  val expression_postorder: t -> Expression.t -> Expression.t
-  val statement_preorder: t -> Statement.t -> t * Statement.t
-  val statement_keep_recursing: t -> Statement.t -> recursion_behavior
-  val statement_postorder: t -> Statement.t -> t * Statement.t list
+  val expression: t -> Expression.t -> Expression.t
+  val transform_children: t -> Statement.t -> bool
+  val statement: t -> Statement.t -> t * Statement.t list
 end
 
 
 module type StatementTransformer = sig
   type t
-  val statement_postorder: t -> Statement.t -> t * Statement.t list
+  val statement: t -> Statement.t -> t * Statement.t list
 end
 
 
 module Identity : sig
-  val expression_preorder: 't -> Expression.t -> 't * Expression.t
-  val expression_postorder: 't -> Expression.t -> Expression.t
-  val statement_preorder: 't -> Statement.t -> 't * Statement.t
-  val statement_keep_recursing: 't -> Statement.t -> recursion_behavior
-  val statement_postorder: 't -> Statement.t -> 't * Statement.t list
+  val expression: 't -> Expression.t -> Expression.t
+  val transform_children: 't -> Statement.t -> bool
+  val statement: 't -> Statement.t -> 't * Statement.t list
 end = struct
-  let expression_preorder state expression =
-    state, expression
-
-  let expression_postorder _ expression =
+  let expression _ expression =
     expression
 
-  let statement_preorder state statement =
-    state, statement
+  let transform_children _ _ =
+    true
 
-  let statement_keep_recursing _state _statement =
-    Recurse
-
-  let statement_postorder state statement =
+  let statement state statement =
     state, [statement]
 end
 
@@ -222,15 +207,13 @@ module Make (Transformer : Transformer) = struct
       in
 
       let initial_state = !state in
-      let new_state, expression = Transformer.expression_preorder !state expression in
-      state := new_state;
       let expression =
         {
           expression with
           Node.value = transform_children (Node.value expression)
         }
       in
-      let expression = Transformer.expression_postorder !state expression in
+      let expression = Transformer.expression !state expression in
       state := initial_state;
       expression
     in
@@ -364,21 +347,15 @@ module Make (Transformer : Transformer) = struct
             Statement.YieldFrom (transform_expression expression)
       in
 
-      let new_state, statement =
-        Transformer.statement_preorder !state statement
-      in
-      state := new_state;
-
       let statement =
-        match Transformer.statement_keep_recursing !state statement with
-        | Recurse ->
-            { statement with Node.value = transform_children (Node.value statement) }
-        | Stop ->
-            statement
+        if Transformer.transform_children !state statement then
+          { statement with Node.value = transform_children (Node.value statement) }
+        else
+          statement
       in
 
       let new_state, statements =
-        Transformer.statement_postorder
+        Transformer.statement
           !state
           statement
       in
@@ -475,7 +452,7 @@ module MakeStatementTransformer (Transformer: StatementTransformer) = struct
               finally;
             }
       in
-      let new_state, statements = Transformer.statement_postorder !state { Node.location; value } in
+      let new_state, statements = Transformer.statement !state { Node.location; value } in
       state := new_state;
       statements
     in

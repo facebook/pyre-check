@@ -11,20 +11,23 @@ open Pyre
 open PyreParser
 
 
-let parse_source ?(show_parser_errors = true) file =
-  File.path file |> Path.relative
-  >>= fun path ->
+let parse_source ~configuration ?(show_parser_errors = true) file =
+  File.handle ~configuration file
+  |> fun handle ->
   File.lines file
   >>= fun lines ->
-  let metadata = Source.Metadata.parse path lines in
+  let metadata = Source.Metadata.parse (File.Handle.show handle) lines in
   try
-    let statements = Parser.parse ~path lines in
+    let statements = Parser.parse ~handle lines in
+    let hash = [%hash: string list] lines in
     Some (
       Source.create
         ~docstring:(Statement.extract_docstring statements)
+        ~hash
         ~metadata
-        ~path
-        ~qualifier:(Source.qualifier ~path)
+        ~handle
+        ~path:(File.path file)
+        ~qualifier:(Source.qualifier ~handle)
         statements)
   with
   | Parser.Error error ->
@@ -36,15 +39,15 @@ let parse_source ?(show_parser_errors = true) file =
       None
 
 
-let parse_modules_job ~files =
+let parse_modules_job ~configuration ~files =
   let parse file =
     file
-    |> parse_source ~show_parser_errors:false
+    |> parse_source ~configuration ~show_parser_errors:false
     >>| (fun source ->
         let add_module_from_source
             {
               Source.qualifier;
-              path;
+              handle;
               statements;
               metadata = { Source.Metadata.local_mode; _ };
               _;
@@ -52,10 +55,10 @@ let parse_modules_job ~files =
           Module.create
             ~qualifier
             ~local_mode
-            ~path
-            ~stub:(String.is_suffix path ~suffix:".pyi")
+            ~path:(File.Handle.show handle)
+            ~stub:(String.is_suffix (File.Handle.show handle) ~suffix:".pyi")
             statements
-          |> Ast.SharedMemory.add_module qualifier
+          |> fun ast_module -> Ast.SharedMemory.Modules.add ~qualifier ~ast_module
         in
         add_module_from_source source)
     |> ignore
@@ -63,19 +66,18 @@ let parse_modules_job ~files =
   List.iter files ~f:parse
 
 
-let parse_sources_job ~files =
+let parse_sources_job ~configuration ~files =
   let parse handles file =
     (file
-     |> parse_source
-     >>= fun source ->
-     Path.relative (File.path file)
-     >>| fun relative ->
-     Ast.SharedMemory.add_path_hash ~path:relative;
-     let handle = File.Handle.create relative in
+     |> parse_source ~configuration
+     >>| fun source ->
+     File.handle ~configuration file
+     |> fun handle ->
+     Ast.SharedMemory.Handles.add_handle_hash ~handle:(File.Handle.show handle);
      source
      |> Analysis.Preprocessing.preprocess
      |> Plugin.apply_to_ast
-     |> Ast.SharedMemory.add_source handle;
+     |> Ast.SharedMemory.Sources.add handle;
      handle :: handles)
     |> Option.value ~default:handles
   in
@@ -84,31 +86,27 @@ let parse_sources_job ~files =
 
 let parse_sources ~configuration ~scheduler ~files =
   let handles =
-    if Scheduler.is_parallel scheduler then
-      begin
-        Scheduler.iter scheduler ~configuration ~f:(fun files -> parse_modules_job ~files) files;
-        Scheduler.map_reduce
-          scheduler
-          ~configuration
-          ~init:[]
-          ~map:(fun _ files -> parse_sources_job ~files)
-          ~reduce:(fun new_handles processed_handles -> processed_handles @ new_handles)
-          files
-      end
-    else
-      begin
-        parse_modules_job ~files;
-        parse_sources_job ~files
-      end
+    Scheduler.iter
+      scheduler
+      ~configuration
+      ~f:(fun files -> parse_modules_job ~configuration ~files)
+      ~inputs:files;
+    Scheduler.map_reduce
+      scheduler
+      ~configuration
+      ~initial:[]
+      ~map:(fun _ files -> parse_sources_job ~configuration ~files)
+      ~reduce:(fun new_handles processed_handles -> processed_handles @ new_handles)
+      ~inputs:files
+      ()
   in
   let () =
     let get_qualifier file =
-      File.path file
-      |> Path.relative
-      >>| (fun path -> Source.qualifier ~path)
+      File.handle ~configuration file
+      |> (fun handle -> Source.qualifier ~handle)
     in
-    List.filter_map files ~f:get_qualifier
-    |> Ast.SharedMemory.remove_modules
+    List.map files ~f:get_qualifier
+    |> fun qualifiers -> Ast.SharedMemory.Modules.remove ~qualifiers
   in
   handles
 
@@ -128,11 +126,8 @@ let log_parse_errors_count ~not_parsed ~description =
       hint
 
 
-let parse_stubs
-    scheduler
-    ~configuration:({ Configuration.local_root; typeshed; search_path; _ } as configuration) =
-  let timer = Timer.start () in
-
+let find_stubs
+    ~configuration:{ Configuration.local_root; typeshed; search_path; _ } =
   let paths =
     let stubs =
       let typeshed_directories =
@@ -182,14 +177,9 @@ let parse_stubs
       in
       List.map ~f:modules search_path
     in
+
     stubs @ modules
   in
-
-  let source_count =
-    let count sofar paths = sofar + (List.length paths) in
-    List.fold paths ~init:0 ~f:count
-  in
-  Log.info "Parsing %d stubs and external sources..." source_count;
   let _, paths =
     (* If two stub directories contain the same stub, prefer the one that
        appears earlier in the search path. *)
@@ -197,7 +187,8 @@ let parse_stubs
       let add (qualifiers, all_paths) path =
         match Path.relative path with
         | Some relative ->
-            let qualifier = Ast.Source.qualifier ~path:relative in
+            (* TODO(T33409564): We should consider using File.handle here. *)
+            let qualifier = Ast.Source.qualifier ~handle:(File.Handle.create relative) in
             if Set.mem qualifiers qualifier then
               qualifiers, all_paths
             else
@@ -209,15 +200,7 @@ let parse_stubs
     in
     List.fold ~f:filter_interfering_stubs ~init:(Access.Set.empty, []) paths
   in
-  let handles =
-    (* The filtering ensures the order of parsing is deterministic. *)
-    parse_sources ~configuration ~scheduler ~files:(List.map ~f:File.create paths)
-  in
-
-  Statistics.performance ~name:"stubs parsed" ~timer ();
-  let not_parsed = (List.length paths) - (List.length handles) in
-  log_parse_errors_count ~not_parsed ~description:"external file";
-  handles
+  paths
 
 
 let find_sources ?(filter = fun _ -> true) { Configuration.local_root; _ } =
@@ -232,13 +215,27 @@ type result = {
 
 
 let parse_all scheduler ~configuration:({ Configuration.local_root; _ } as configuration) =
-  let stubs = parse_stubs scheduler ~configuration in
+  let stubs =
+    let timer = Timer.start () in
+    let stub_paths = find_stubs ~configuration in
+    Log.info "Parsing %d stubs and external sources..." (List.length stub_paths);
+    let handles =
+      parse_sources ~configuration ~scheduler ~files:(List.map ~f:File.create stub_paths)
+    in
+    let not_parsed = (List.length stub_paths) - (List.length handles) in
+    log_parse_errors_count ~not_parsed ~description:"external file";
+    Statistics.performance ~name:"stubs parsed" ~timer ();
+    handles
+  in
   let known_stubs =
     let add_to_known_stubs sofar handle =
-      match Ast.SharedMemory.get_source handle with
-      | Some { Ast.Source.qualifier; path; _ } ->
+      match Ast.SharedMemory.Sources.get handle with
+      | Some { Ast.Source.qualifier; handle; _ } ->
           if Set.mem sofar qualifier then
-            Statistics.event ~name:"interfering stub" ~normals:["path", path] ();
+            Statistics.event
+              ~name:"interfering stub"
+              ~normals:["handle", File.Handle.show handle]
+              ();
           Set.add sofar qualifier
       | _ ->
           sofar
@@ -255,9 +252,9 @@ let parse_all scheduler ~configuration:({ Configuration.local_root; _ } as confi
           ~path:(Path.create_absolute ~follow_symbolic_links:false path)
       in
       match relative with
-      | Some path ->
-          path = "__init__.py" ||  (* Analyze top-level `__init__.py`. *)
-          not (Set.mem known_stubs (Source.qualifier ~path))
+      | Some handle ->
+          handle = "__init__.py" ||  (* Analyze top-level `__init__.py`. *)
+          not (Set.mem known_stubs (Source.qualifier ~handle:(File.Handle.create handle)))
       | _ ->
           true
     in

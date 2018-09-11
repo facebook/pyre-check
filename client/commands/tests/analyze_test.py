@@ -17,21 +17,19 @@ class AnalyzeTest(unittest.TestCase):
     def test_analyze(self, directories_to_analyze, realpath, check_output) -> None:
         realpath.side_effect = lambda x: x
         arguments = mock_arguments()
+        arguments.taint_models_path = None
 
         configuration = mock_configuration()
-        configuration.get_typeshed.return_value = "stub"
-        configuration.get_search_path.return_value = ["path1", "path2"]
-        configuration.number_of_workers = 5
+        configuration.taint_models_path = None
 
-        with patch.object(commands.Command, "_call_client") as call_client, patch(
-            "json.loads", return_value=[]
-        ):
-            result = MagicMock()
-            result.output = ""
-            call_client.return_value = result
+        result = MagicMock()
+        result.output = ""
 
-            command = commands.Analyze(arguments, configuration, analysis_directory=".")
-            self.assertEquals(
+        with patch.object(
+            commands.Command, "_call_client", return_value=result
+        ) as call_client, patch("json.loads", return_value=[]):
+            command = commands.Analyze(arguments, configuration, ".")
+            self.assertEqual(
                 command._flags(),
                 [
                     "-project-root",
@@ -42,6 +40,53 @@ class AnalyzeTest(unittest.TestCase):
                     "stub",
                     "-search-path",
                     "path1,path2",
+                ],
+            )
+            command.run()
+            call_client.assert_called_once_with(command=commands.Analyze.NAME)
+
+        with patch.object(
+            commands.Command, "_call_client", return_value=result
+        ) as call_client, patch("json.loads", return_value=[]):
+            configuration.taint_models_path = "taint_models"
+            command = commands.Analyze(arguments, configuration, ".")
+            self.assertEqual(
+                command._flags(),
+                [
+                    "-project-root",
+                    ".",
+                    "-workers",
+                    "5",
+                    "-typeshed",
+                    "stub",
+                    "-search-path",
+                    "path1,path2",
+                    "-taint-models",
+                    "taint_models",
+                ],
+            )
+            command.run()
+            call_client.assert_called_once_with(command=commands.Analyze.NAME)
+
+        with patch.object(
+            commands.Command, "_call_client", return_value=result
+        ) as call_client, patch("json.loads", return_value=[]):
+            configuration.taint_models_path = "taint_models"
+            arguments.taint_models_path = "overriding_models"
+            command = commands.Analyze(arguments, configuration, ".")
+            self.assertEqual(
+                command._flags(),
+                [
+                    "-project-root",
+                    ".",
+                    "-workers",
+                    "5",
+                    "-typeshed",
+                    "stub",
+                    "-search-path",
+                    "path1,path2",
+                    "-taint-models",
+                    "overriding_models",
                 ],
             )
             command.run()

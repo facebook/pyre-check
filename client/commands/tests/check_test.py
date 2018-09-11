@@ -4,9 +4,10 @@
 # LICENSE file in the root directory of this source tree.
 
 import unittest
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from ... import commands  # noqa
+from ...filesystem import AnalysisDirectory
 from .command_test import mock_arguments, mock_configuration
 
 
@@ -16,18 +17,15 @@ class CheckTest(unittest.TestCase):
     @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
     def test_check(self, get_directories_to_analyze, realpath, check_output) -> None:
         realpath.side_effect = lambda x: x
-        arguments = mock_arguments()
 
+        arguments = mock_arguments()
         configuration = mock_configuration()
-        configuration.get_typeshed.return_value = "stub"
-        configuration.get_search_path.return_value = ["path1", "path2"]
-        configuration.number_of_workers = 5
 
         with patch.object(commands.Command, "_call_client") as call_client, patch(
             "json.loads", return_value=[]
         ):
-            command = commands.Check(arguments, configuration, analysis_directory=".")
-            self.assertEquals(
+            command = commands.Check(arguments, configuration, AnalysisDirectory("."))
+            self.assertEqual(
                 command._flags(),
                 [
                     "-project-root",
@@ -43,6 +41,18 @@ class CheckTest(unittest.TestCase):
             command.run()
             call_client.assert_called_once_with(command=commands.Check.NAME)
 
+        shared_analysis_directory = MagicMock()
+        shared_analysis_directory.get_root = lambda: "."
+        with patch.object(commands.Command, "_call_client") as call_client, patch(
+            "json.loads", return_value=[]
+        ), patch.object(shared_analysis_directory, "prepare") as prepare:
+            command = commands.Check(
+                arguments, configuration, shared_analysis_directory
+            )
+            command.run()
+            call_client.assert_called_once_with(command=commands.Check.NAME)
+            prepare.assert_called_once_with()
+
     @patch("subprocess.check_output")
     @patch("os.path.realpath")
     @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
@@ -50,19 +60,16 @@ class CheckTest(unittest.TestCase):
         self, directories_to_analyze, realpath, check_output
     ) -> None:
         realpath.side_effect = lambda x: x
+
         arguments = mock_arguments()
         arguments.sequential = True
-
         configuration = mock_configuration()
-        configuration.get_typeshed.return_value = "stub"
-        configuration.get_search_path.return_value = ["path1", "path2"]
-        configuration.number_of_workers = 5
 
         with patch.object(commands.Command, "_call_client") as call_client, patch(
             "json.loads", return_value=[]
         ):
-            command = commands.Check(arguments, configuration, analysis_directory=".")
-            self.assertEquals(
+            command = commands.Check(arguments, configuration, AnalysisDirectory("."))
+            self.assertEqual(
                 command._flags(),
                 [
                     "-sequential",
@@ -86,19 +93,16 @@ class CheckTest(unittest.TestCase):
         self, directories_to_analyze, realpath, check_output
     ) -> None:
         realpath.side_effect = lambda x: x
+
         arguments = mock_arguments()
         arguments.capable_terminal = False
-
         configuration = mock_configuration()
-        configuration.get_typeshed.return_value = "stub"
-        configuration.get_search_path.return_value = ["path1", "path2"]
-        configuration.number_of_workers = 5
 
         with patch.object(commands.Command, "_call_client") as call_client, patch(
             "json.loads", return_value=[]
         ):
-            command = commands.Check(arguments, configuration, analysis_directory=".")
-            self.assertEquals(
+            command = commands.Check(arguments, configuration, AnalysisDirectory("."))
+            self.assertEqual(
                 command._flags(),
                 [
                     "-logging-sections",
@@ -124,19 +128,16 @@ class CheckTest(unittest.TestCase):
         self, directories_to_analyze, realpath, check_output
     ) -> None:
         realpath.side_effect = lambda x: x
+
         arguments = mock_arguments()
         arguments.show_parse_errors = True
-
         configuration = mock_configuration()
-        configuration.get_typeshed.return_value = "stub"
-        configuration.get_search_path.return_value = ["path1", "path2"]
-        configuration.number_of_workers = 5
 
         with patch.object(commands.Command, "_call_client") as call_client, patch(
             "json.loads", return_value=[]
         ):
-            command = commands.Check(arguments, configuration, analysis_directory=".")
-            self.assertEquals(
+            command = commands.Check(arguments, configuration, AnalysisDirectory("."))
+            self.assertEqual(
                 command._flags(),
                 [
                     "-logging-sections",

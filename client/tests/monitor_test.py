@@ -10,6 +10,7 @@ from contextlib import contextmanager
 from unittest.mock import call, patch
 
 from ..commands import monitor  # noqa
+from ..filesystem import AnalysisDirectory
 from .infer_test import mock_arguments, mock_configuration
 
 
@@ -21,21 +22,21 @@ class MonitorTest(unittest.TestCase):
     def test_daemonize(self, run, _exit, _close, fork) -> None:
         arguments = mock_arguments()
         configuration = mock_configuration()
-
+        analysis_directory = AnalysisDirectory("/tmp")
         # Ensure that run() only gets called from the child.
         fork.return_value = 1
-        monitor.Monitor(arguments, configuration, "/tmp").daemonize()
+        monitor.Monitor(arguments, configuration, analysis_directory).daemonize()
         run.assert_not_called()
         fork.assert_has_calls([call()])
 
         fork.return_value = 0
-        monitor.Monitor(arguments, configuration, "/tmp").daemonize()
+        monitor.Monitor(arguments, configuration, analysis_directory).daemonize()
         fork.assert_has_calls([call(), call()])
         run.assert_has_calls([call()])
         _exit.assert_has_calls([call(0)])
 
         run.side_effect = OSError
-        monitor.Monitor(arguments, configuration, "/tmp").daemonize()
+        monitor.Monitor(arguments, configuration, analysis_directory).daemonize()
         _exit.assert_has_calls([call(0), call(1)])
 
     @patch("os.makedirs")
@@ -48,6 +49,7 @@ class MonitorTest(unittest.TestCase):
         _lock.side_effect = yield_once
         arguments = mock_arguments()
         configuration = mock_configuration()
+        analysis_directory = AnalysisDirectory("/tmp")
         try:
             import pywatchman  # noqa
 
@@ -55,6 +57,8 @@ class MonitorTest(unittest.TestCase):
                 pywatchman_client.side_effect = Exception
                 with self.assertRaises(Exception):
                     with patch("builtins.open"):
-                        monitor.Monitor(arguments, configuration, "/tmp")._run()
+                        monitor.Monitor(
+                            arguments, configuration, analysis_directory
+                        )._run()
         except ImportError:
             pass

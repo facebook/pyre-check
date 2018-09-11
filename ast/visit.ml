@@ -20,7 +20,7 @@ end
 
 module type StatementVisitor = sig
   type t
-  val statement_keep_recursing: Statement.t -> Transform.recursion_behavior
+  val visit_children: Statement.t -> bool
   val statement: Source.t -> t -> Statement.t -> t
 end
 
@@ -201,46 +201,45 @@ module MakeStatementVisitor (Visitor: StatementVisitor) = struct
     let open Statement in
     let rec visit_statement { Node.location; value } =
       begin
-        match Visitor.statement_keep_recursing { Node.location; value } with
-        | Transform.Stop ->
-            ()
-        | Transform.Recurse ->
-            match value with
-            | Assign _
-            | Assert _
-            | Break
-            | Continue
-            | Delete _
-            | Expression _
-            | Global _
-            | Import _
-            | Pass
-            | Raise _
-            | Return _
-            | Nonlocal _
-            | Yield _
-            | YieldFrom _ ->
-                ()
+        if Visitor.visit_children { Node.location; value } then
+          match value with
+          | Assign _
+          | Assert _
+          | Break
+          | Continue
+          | Delete _
+          | Expression _
+          | Global _
+          | Import _
+          | Pass
+          | Raise _
+          | Return _
+          | Nonlocal _
+          | Yield _
+          | YieldFrom _ ->
+              ()
 
-            | Class { Class.body; _ }
-            | Define { Define.body; _ }
-            | With { With.body; _ } ->
-                List.iter ~f:visit_statement body
+          | Class { Class.body; _ }
+          | Define { Define.body; _ }
+          | With { With.body; _ } ->
+              List.iter ~f:visit_statement body
 
-            | For { For.body; orelse; _ }
-            | If { If.body; orelse; _ }
-            | While { While.body; orelse; _ } ->
-                List.iter ~f:visit_statement body;
-                List.iter ~f:visit_statement orelse
+          | For { For.body; orelse; _ }
+          | If { If.body; orelse; _ }
+          | While { While.body; orelse; _ } ->
+              List.iter ~f:visit_statement body;
+              List.iter ~f:visit_statement orelse
 
-            | Try { Try.body; handlers; orelse; finally } ->
-                let visit_handler { Try.handler_body; _ } =
-                  List.iter ~f:visit_statement handler_body
-                in
-                List.iter ~f:visit_statement body;
-                List.iter ~f:visit_handler handlers;
-                List.iter ~f:visit_statement orelse;
-                List.iter ~f:visit_statement finally;
+          | Try { Try.body; handlers; orelse; finally } ->
+              let visit_handler { Try.handler_body; _ } =
+                List.iter ~f:visit_statement handler_body
+              in
+              List.iter ~f:visit_statement body;
+              List.iter ~f:visit_handler handlers;
+              List.iter ~f:visit_statement orelse;
+              List.iter ~f:visit_statement finally;
+        else
+          ()
       end;
       state := Visitor.statement source !state { Node.location; value }
     in
@@ -256,7 +255,7 @@ end
 
 module type StatementPredicate = sig
   type t
-  val keep_recursing: Statement.t -> Transform.recursion_behavior
+  val visit_children: Statement.t -> bool
   val predicate: Statement.t -> t option
 end
 
@@ -288,7 +287,8 @@ end
 module UnitPredicate = struct
   type t = unit
 
-  let keep_recursing _ = Transform.Recurse
+  let visit_children _ =
+    true
 
   let predicate _ = None
 end
@@ -305,7 +305,8 @@ module StatementCollector (Predicate: StatementPredicate) = struct
   module CollectingVisit = MakeStatementVisitor(struct
       type t = Predicate.t list
 
-      let statement_keep_recursing = Predicate.keep_recursing
+      let visit_children =
+        Predicate.visit_children
 
       let statement _ statements statement =
         match Predicate.predicate statement with

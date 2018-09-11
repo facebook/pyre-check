@@ -29,8 +29,7 @@ module TextDocumentDefinitionRequest = Types.TextDocumentDefinitionRequest
 module PublishDiagnostics = struct
   include Types.PublishDiagnostics
 
-  let of_errors ?(root = Path.current_working_directory ()) handle errors =
-    let path = File.Handle.show handle in
+  let of_errors handle errors =
     let diagnostic_of_error error =
       let { Ast.Location.start; stop; _ } =
         TypeCheck.Error.location error in
@@ -42,22 +41,33 @@ module PublishDiagnostics = struct
           message = TypeCheck.Error.description error ~detailed:true;
         })
     in
+    let failed_response =
+        Format.asprintf "Valid path does not exist for %s." (File.Handle.show handle)
+        |> Or_error.error_string
+    in
     try
-      Ok {
-        jsonrpc = "2.0";
-        method_ = "textDocument/publishDiagnostics";
-        parameters = Some {
-            PublishDiagnosticsParams.uri =
-              Path.create_relative ~root ~relative:path
-              |> Path.real_path
-              |> Path.uri;
-            diagnostics = List.map ~f:diagnostic_of_error errors;
-          };
-      }
+      let path =
+        Ast.SharedMemory.Sources.get handle
+        >>= (fun { Ast.Source.path; _ } -> path)
+      in
+      match path with
+      | Some path ->
+          Ok {
+            jsonrpc = "2.0";
+            method_ = "textDocument/publishDiagnostics";
+            parameters = Some {
+                PublishDiagnosticsParams.uri =
+                  path
+                  |> Path.real_path
+                  |> Path.uri;
+                diagnostics = List.map ~f:diagnostic_of_error errors;
+              };
+          }
+      | None ->
+          failed_response
     with
     | Unix.Unix_error _ ->
-        Format.asprintf "Valid path does not exist for %s." path
-        |> Or_error.error_string
+        failed_response
 end
 
 
@@ -165,21 +175,22 @@ end
 module TextDocumentDefinitionResponse = struct
   include Types.TextDocumentDefinitionResponse
 
-  let create ~root ~id ~location =
+  let create ~id ~location =
+    let uri ~path =
+      File.Handle.create path
+      |> Ast.SharedMemory.Sources.get
+      >>= fun { Ast.Source.path; _ } -> path
+      >>| Path.real_path
+      >>| Path.uri
+    in
     {
       jsonrpc = "2.0";
       id;
       result =
         Some
           (location
-           >>| (fun { Ast.Location.start; stop; path } ->
-               {
-                 Location.uri =
-                   Path.create_relative ~root ~relative:path
-                   |> Path.real_path
-                   |> Path.uri;
-                 Location.range = Range.create ~start ~stop;
-               })
+           >>= (fun { Ast.Location.start; stop; path } -> uri ~path
+               >>| fun uri -> { Location.uri; range = Range.create ~start ~stop })
            |> Option.to_list);
       error = None;
     }

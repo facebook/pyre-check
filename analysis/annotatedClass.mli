@@ -12,6 +12,12 @@ open Statement
 type t
 [@@deriving compare, eq, sexp, show, hash]
 
+type decorator = {
+  access: string;
+  arguments: (Argument.t list) option
+}
+[@@deriving compare, eq, sexp, show, hash]
+
 val name_equal: t -> t -> bool
 
 type class_t = t
@@ -22,9 +28,10 @@ val create: Class.t Node.t -> t
 val name: t -> Access.t
 val bases: t -> Argument.t list
 val body: t -> Statement.t list
-val has_decorator: t -> string -> bool
+val get_decorator: t -> decorator: string -> decorator list
 
 val annotation: t -> resolution: Resolution.t -> Type.t
+val successors: t -> resolution: Resolution.t -> Type.t list
 val metaclass: t -> resolution: Resolution.t -> Type.t
 
 module Method : sig

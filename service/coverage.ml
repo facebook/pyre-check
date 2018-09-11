@@ -22,7 +22,7 @@ let coverage ~number_of_files ~sources =
     List.fold
       ~init:(0, 0)
       ~f:(fun (prev_strict, prev_declare) handle ->
-          match Ast.SharedMemory.get_source handle with
+          match Ast.SharedMemory.Sources.get handle with
           | Some { Source.metadata = { Source.Metadata.local_mode; _ }; _ } ->
               (
                 prev_strict + (if local_mode = Source.Strict then 1 else 0),

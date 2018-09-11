@@ -3,6 +3,8 @@
     This source code is licensed under the MIT license found in the
     LICENSE file in the root directory of this source tree. *)
 
+open Pyre
+
 open Core
 open Ast
 
@@ -14,12 +16,13 @@ let sanitize_input lines =
   |> String.concat ~sep:"\n"
   |> fun input -> input ^ "\n"
 
-let parse ?start_line ?start_column ?path lines =
+let parse ?start_line ?start_column ?handle lines =
   let input = sanitize_input lines in
   let buffer =
     let buffer = Lexing.from_string input in
+    let relative_path = handle >>| File.Handle.show in
     buffer.Lexing.lex_curr_p <- {
-      Lexing.pos_fname = Option.value path ~default:"$invalid_path";
+      Lexing.pos_fname = Option.value relative_path ~default:"$invalid_path";
       pos_lnum = Option.value start_line ~default:1;
       pos_bol = -(Option.value start_column ~default:0);
       pos_cnum = 0;

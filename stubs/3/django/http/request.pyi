@@ -1,14 +1,9 @@
-from typing import (
-    Any,
-    BinaryIO,
-    Dict,
-    List,
-    Optional,
-    Tuple,
-)
+from typing import Any, BinaryIO, Dict, List, Optional, Tuple
+
 
 # TODO(T22838703): currently this is just shutting up pyre. Properly typing
 # this will be low hanging fruit later on.
+
 
 class HttpRequest(BinaryIO):
     COOKIES: Any = ...
@@ -86,36 +81,43 @@ class HttpRequest(BinaryIO):
     view_module: Any = ...
     view_name: Any = ...
 
-    def build_absolute_uri(self, location: Optional[str] = ...) -> str: ...
-
-    def get_full_path(self) -> str: ...
-
-    def get_host(self) -> str: ...
-
-    def get_signed_cookie(self, key: str, default: Any = ..., salt: str = ..., max_age: Any = ...) -> str:
+    def build_absolute_uri(self, location: Optional[str] = ...) -> str:
         ...
 
-    def is_ajax(self) -> bool: ...
+    def get_full_path(self) -> str:
+        ...
+
+    def get_host(self) -> str:
+        ...
+
+    def get_signed_cookie(
+        self, key: str, default: Any = ..., salt: str = ..., max_age: Any = ...
+    ) -> str:
+        ...
+
+    def is_ajax(self) -> bool:
+        ...
 
 
 class QueryDict(Dict[str, Any]):
     def __init__(
-            self,
-            query_string: Optional[str] = ...,
-            mutable: bool = ...,
-            encoding: Any = ...,
+        self,
+        query_string: Optional[str] = ...,
+        mutable: bool = ...,
+        encoding: Any = ...,
     ) -> None:
         ...
 
     def lists(self) -> List[Tuple[str, Any]]:
         ...
 
+
 def build_request_repr(
-        request: HttpRequest,
-        path_override: Any = ...,
-        GET_override: Any = ...,
-        POST_override: Any = ...,
-        COOKIES_override: Any = ...,
-        META_override: Any = ...,
+    request: HttpRequest,
+    path_override: Any = ...,
+    GET_override: Any = ...,
+    POST_override: Any = ...,
+    COOKIES_override: Any = ...,
+    META_override: Any = ...,
 ) -> str:
     ...

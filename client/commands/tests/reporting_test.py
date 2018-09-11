@@ -12,6 +12,7 @@ from unittest.mock import MagicMock, call, mock_open, patch
 
 from ... import commands  # noqa
 from ...error import Error  # noqa
+from ...filesystem import AnalysisDirectory
 from .command_test import mock_arguments, mock_configuration
 
 
@@ -32,7 +33,7 @@ class ReportingTest(unittest.TestCase):
         error.__getitem__.side_effect = error_dictionary.__getitem__
 
         handler = commands.Reporting(
-            arguments, configuration, analysis_directory="/test/f/g"
+            arguments, configuration, AnalysisDirectory("/test/f/g")
         )
         with patch.object(json, "loads", return_value=[error]):
             handler._get_errors(result)
@@ -42,7 +43,7 @@ class ReportingTest(unittest.TestCase):
         arguments.target = ["//f/g:target"]
         configuration.targets = []
         handler = commands.Reporting(
-            arguments, configuration, analysis_directory="/test/f/g"
+            arguments, configuration, AnalysisDirectory("/test/f/g")
         )
         with patch.object(json, "loads", return_value=[error]):
             handler._get_errors(result)
@@ -52,7 +53,7 @@ class ReportingTest(unittest.TestCase):
         arguments.target = []
         configuration.do_not_check = ["auto/gen"]
         handler = commands.Reporting(
-            arguments, configuration, analysis_directory="/test/auto/gen"
+            arguments, configuration, AnalysisDirectory("/test/auto/gen")
         )
         with patch.object(json, "loads", return_value=[error]):
             handler._get_errors(result)
@@ -63,7 +64,7 @@ class ReportingTest(unittest.TestCase):
         arguments.target = ["//f/g:target"]
         configuration.targets = []
         handler = commands.Reporting(
-            arguments, configuration, analysis_directory="/test/h/i"
+            arguments, configuration, AnalysisDirectory("/test/h/i")
         )
         with patch.object(json, "loads", return_value=[error]):
             handler._get_errors(result)
@@ -75,7 +76,7 @@ class ReportingTest(unittest.TestCase):
         arguments.current_directory = "/"  # project root
         arguments.local_configuration = "/test"
         handler = commands.Reporting(
-            arguments, configuration, analysis_directory="/shared"
+            arguments, configuration, AnalysisDirectory("/shared")
         )
         with patch.object(json, "loads", return_value=[error]):
             handler._get_errors(result)
@@ -89,7 +90,7 @@ class ReportingTest(unittest.TestCase):
         error_dictionary = {"path": "b/c"}
         error.__getitem__.side_effect = error_dictionary.__getitem__
         configuration.do_not_check = ["*/b"]
-        handler = commands.Reporting(arguments, configuration, analysis_directory="/a")
+        handler = commands.Reporting(arguments, configuration, AnalysisDirectory("/a"))
         with patch.object(json, "loads", return_value=[error]):
             handler._get_errors(result)
             create_error.assert_has_calls([call(True, False)])
@@ -102,7 +103,7 @@ class ReportingTest(unittest.TestCase):
         arguments.original_directory = "base"
         configuration = mock_configuration()
         handler = commands.Reporting(
-            arguments, configuration, analysis_directory="base"
+            arguments, configuration, AnalysisDirectory("base")
         )
         check_output.return_value = "\n".join(
             [

@@ -194,8 +194,8 @@ let test_create _ =
           {
             annotation = Type.integer;
             parameters = Defined [
-                Parameter.Anonymous Type.integer;
-                Parameter.Anonymous Type.string;
+                Parameter.Anonymous { Parameter.index = 0; annotation = Type.integer};
+                Parameter.Anonymous { Parameter.index = 1; annotation = Type.string};
               ];
           };
         ];
@@ -209,7 +209,7 @@ let test_create _ =
           {
             annotation = Type.integer;
             parameters = Defined [
-                Parameter.Anonymous Type.integer;
+                Parameter.Anonymous { Parameter.index = 0; annotation = Type.integer};
                 Parameter.Named {
                   Parameter.name = Access.create "a";
                   annotation = Type.integer;
@@ -238,7 +238,7 @@ let test_create _ =
           {
             annotation = Type.integer;
             parameters = Defined [
-                Parameter.Anonymous Type.integer;
+                Parameter.Anonymous { Parameter.index = 0; annotation = Type.integer};
                 Parameter.Variable {
                   Parameter.name = Access.create "variable";
                   annotation = Type.integer;
@@ -352,8 +352,8 @@ let test_expression _ =
   assert_expression
     (Type.callable
        ~parameters:(Type.Callable.Defined [
-           Parameter.Anonymous Type.integer;
-           Parameter.Anonymous Type.string;
+           Parameter.Anonymous { Parameter.index = 0; annotation = Type.integer};
+           Parameter.Anonymous { Parameter.index = 1; annotation = Type.string};
          ])
        ~annotation:Type.integer
        ())
@@ -390,7 +390,7 @@ let test_expression _ =
   assert_expression
     (Type.callable
        ~parameters:(Defined [
-           Parameter.Anonymous Type.integer;
+           Parameter.Anonymous { Parameter.index = 1; annotation = Type.integer};
            Parameter.Variable {
              Parameter.name = Access.create "variable";
              annotation = Type.integer;
@@ -503,6 +503,11 @@ let test_is_none _ =
   assert_false (Type.is_none (Type.primitive "foo"));
   assert_true (Type.is_none (Type.Optional Type.Bottom))
 
+
+
+let test_is_type_alias _ =
+  assert_true (Type.is_type_alias (Type.primitive "typing.TypeAlias"));
+  assert_false (Type.is_type_alias (Type.parametric "typing.TypeAlias" [Type.Top]))
 
 let test_is_unknown _ =
   assert_false (Type.is_unknown Type.Bottom);
@@ -863,6 +868,7 @@ let () =
     "is_not_instantiated">::test_is_not_instantiated;
     "is_meta">::test_is_meta;
     "is_none">::test_is_none;
+    "is_type_alias">::test_is_type_alias;
     "is_unknown">::test_is_unknown;
     "is_resolved">::test_is_resolved;
     "is_iterator">::test_is_iterator;

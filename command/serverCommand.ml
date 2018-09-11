@@ -17,45 +17,45 @@ open State
 open Protocol
 
 module Time = Core_kernel.Time_ns.Span
+module Request = Server.Request
 
 exception AlreadyRunning
 exception NotRunning
 
 
-let register_signal_handlers server_configuration socket =
-  Signal.Expert.handle
-    Signal.int
-    (fun _ -> Server.Operations.stop_server ~reason:"interrupt" server_configuration socket);
-  Signal.Expert.handle
-    Signal.pipe
-    (fun _ -> ())
-
-
-let spawn_watchman_client { configuration = { sections; project_root; local_root; _ }; _ } =
+let spawn_watchman_client
+    {
+      configuration = { sections; project_root; local_root; search_path; _ };
+      _;
+    } =
   WatchmanCommand.run_command
     ~daemonize:true
     ~verbose:false
     ~sections
     ~local_root:(Path.absolute local_root)
+    ~search_path
     ~project_root:(Some (Path.absolute project_root))
 
 
 let computation_thread request_queue configuration state =
-  let rec loop ({ configuration = { local_root; _ }; pid_path; _ } as configuration) state =
+  let failure_threshold = 5 in
+  let rec loop ({ pid_path; _ } as configuration) state =
     let errors_to_lsp_responses error_map =
       let diagnostic_to_response = function
-        | Ok diagnostic_error -> [
-            diagnostic_error
-            |> LanguageServer.Protocol.PublishDiagnostics.to_yojson
-            |> Yojson.Safe.to_string
-            |> fun serialized_diagnostic -> LanguageServerProtocolResponse serialized_diagnostic
-          ]
-        | Error _ -> []
+        | Ok diagnostic_error ->
+            [
+              diagnostic_error
+              |> LanguageServer.Protocol.PublishDiagnostics.to_yojson
+              |> Yojson.Safe.to_string
+              |> fun serialized_diagnostic -> LanguageServerProtocolResponse serialized_diagnostic;
+            ]
+        | Error _ ->
+            []
       in
       error_map
       |> List.map
         ~f:(fun (handle, errors) ->
-            LanguageServer.Protocol.PublishDiagnostics.of_errors ~root:local_root handle errors)
+            LanguageServer.Protocol.PublishDiagnostics.of_errors handle errors)
       |> List.concat_map ~f:diagnostic_to_response
     in
     (* Decides what to broadcast to persistent clients after a request is processed. *)
@@ -63,40 +63,41 @@ let computation_thread request_queue configuration state =
       match response with
       | TypeCheckResponse error_map ->
           let responses = errors_to_lsp_responses error_map in
-          let write_or_mark_failure responses ~key:socket ~data:{ failures } =
-            match List.iter ~f:(Socket.write socket) responses with
-            | () ->
-                { failures }
-            | exception (Unix.Unix_error (Unix.EPIPE, _, _)) ->
-                Log.warning "Got an EPIPE while broadcasting to a persistent client";
-                { failures = failures + 1 }
+          let write_or_mark_failure responses ~key:socket ~data:failures =
+            try
+              List.iter ~f:(Socket.write socket) responses;
+              failures
+            with Unix.Unix_error (Unix.EPIPE, _, _) ->
+              Log.warning "Got an EPIPE while broadcasting to a persistent client";
+              failures + 1
           in
           Mutex.critical_section lock ~f:(fun () ->
               Hashtbl.mapi_inplace ~f:(write_or_mark_failure responses) persistent_clients;
               Hashtbl.filter_inplace
-                ~f:(fun { failures } -> failures < State.failure_threshold)
+                ~f:(fun failures -> failures < failure_threshold)
                 persistent_clients)
-      | _ -> ()
+      | _ ->
+          ()
     in
     let handle_request state ~request:(origin, request) =
-      let process_request socket state configuration request =
+      let process socket state configuration request =
         try
-          Log.log ~section:`Server "Processing request %a" Server.Protocol.Request.pp request;
-          Server.Request.process_request socket state configuration request
+          Log.log ~section:`Server "Processing request %a" Protocol.Request.pp request;
+          Request.process ~socket ~state ~configuration ~request
         with
-        | Server.Request.InvalidRequest ->
+        | Request.InvalidRequest ->
             Log.error "Exiting due to invalid request";
             Mutex.critical_section
               state.lock
               ~f:(fun () ->
-                  Server.Operations.stop_server
+                  Operations.stop
                     ~reason:"malformed request"
-                    configuration
-                    !(state.connections).socket);
-            state, None
+                    ~configuration
+                    ~socket:!(state.connections).socket);
+            { Request.state; response = None }
       in
       match origin with
-      | Server.Protocol.Request.PersistentSocket socket ->
+      | Protocol.Request.PersistentSocket socket ->
           let write_or_forget socket responses =
             try
               List.iter ~f:(Socket.write socket) responses
@@ -109,12 +110,12 @@ let computation_thread request_queue configuration state =
                       Mutex.critical_section state.lock ~f:(fun () ->
                           let { persistent_clients; _ } = !(state.connections) in
                           match Hashtbl.find persistent_clients socket with
-                          | Some { failures } ->
-                              if failures < State.failure_threshold then
+                          | Some failures ->
+                              if failures < failure_threshold then
                                 Hashtbl.set
                                   persistent_clients
                                   ~key:socket
-                                  ~data:{ failures = failures + 1 }
+                                  ~data:(failures + 1)
                               else
                                 Hashtbl.remove persistent_clients socket
                           | None ->
@@ -123,7 +124,7 @@ let computation_thread request_queue configuration state =
                       ()
                 end
           in
-          let state, response = process_request socket state configuration request in
+          let { Request.state; response } = process socket state configuration request in
           begin
             match response with
             | Some (LanguageServerProtocolResponse _)
@@ -138,12 +139,12 @@ let computation_thread request_queue configuration state =
             | None -> ()
           end;
           state
-      | Server.Protocol.Request.FileNotifier
-      | Server.Protocol.Request.Background ->
+      | Protocol.Request.FileNotifier
+      | Protocol.Request.Background ->
           let { socket; persistent_clients; _ } =
             Mutex.critical_section state.lock ~f:(fun () -> !(state.connections))
           in
-          let state, response = process_request socket state configuration request in
+          let { Request.state; response } = process socket state configuration request in
           begin
             match response with
             | Some response ->
@@ -152,11 +153,11 @@ let computation_thread request_queue configuration state =
                 ()
           end;
           state
-      | Server.Protocol.Request.NewConnectionSocket socket ->
+      | Protocol.Request.NewConnectionSocket socket ->
           let { persistent_clients; _ } =
             Mutex.critical_section state.lock ~f:(fun () -> !(state.connections))
           in
-          let state, response = process_request socket state configuration request in
+          let { Request.state; response } = process socket state configuration request in
           begin
             match response with
             | Some response ->
@@ -172,7 +173,7 @@ let computation_thread request_queue configuration state =
           let state =
             {
               state with
-              deferred_requests = Server.Protocol.Request.flatten state.deferred_requests;
+              deferred_requests = Protocol.Request.flatten state.deferred_requests;
               last_request_time = Unix.time ();
             }
           in
@@ -182,24 +183,27 @@ let computation_thread request_queue configuration state =
                 state
             | request :: requests ->
                 let state = { state with deferred_requests = requests } in
-                handle_request state ~request:(Server.Protocol.Request.Background, request)
+                handle_request state ~request:(Protocol.Request.Background, request)
           end
       | 0, true ->
           (* Stop if the server is idle. *)
           let current_time = Unix.time () in
-          if current_time -. state.last_request_time > State.stop_after_idle_for then
+          let stop_after_idle_for = 24.0 *. 60.0 *. 60.0 (* 1 day *) in
+          if current_time -. state.last_request_time > stop_after_idle_for then
             begin
               Mutex.critical_section
                 state.lock
                 ~f:(fun () ->
-                    Server.Operations.stop_server
+                    Operations.stop
                       ~reason:"idle"
-                      configuration
-                      !(state.connections).socket)
+                      ~configuration
+                      ~socket:!(state.connections).socket)
             end;
+
           (* Stop if there's any inconsistencies in the .pyre directory. *)
           let last_integrity_check =
-            if current_time -. state.last_integrity_check > State.integrity_check_every then
+            let integrity_check_every = 60.0 (* 1 minute *) in
+            if current_time -. state.last_integrity_check > integrity_check_every then
               begin
                 let pid_file =
                   Path.absolute pid_path
@@ -218,10 +222,10 @@ let computation_thread request_queue configuration state =
                           "Stopping server in integrity check. Got %s in the pid file, expected %s."
                           pid
                           (Pid.to_string (Unix.getpid ()));
-                        Server.Operations.stop_server
+                        Operations.stop
                           ~reason:"failed integrity check"
-                          configuration
-                          !(state.connections).socket);
+                          ~configuration
+                          ~socket:!(state.connections).socket);
                 current_time
               end
             else
@@ -249,25 +253,21 @@ let request_handler_thread
       lock,
       connections,
       request_queue) =
-
-  let get_readable_sockets () =
-    Mutex.critical_section lock ~f:(fun () -> !connections)
-  in
   let queue_request ~origin request =
     match request, origin with
-    | Server.Protocol.Request.StopRequest, Server.Protocol.Request.NewConnectionSocket socket ->
+    | Protocol.Request.StopRequest, Protocol.Request.NewConnectionSocket socket ->
         Socket.write socket StopResponse;
-        Server.Operations.stop_server
+        Operations.stop
           ~reason:"explicit request"
-          server_configuration
-          !(connections).socket
-    | Server.Protocol.Request.StopRequest, _ ->
-        Server.Operations.stop_server
+          ~configuration:server_configuration
+          ~socket:!(connections).socket
+    | Protocol.Request.StopRequest, _ ->
+        Operations.stop
           ~reason:"explicit request"
-          server_configuration
-          !(connections).socket
-    | Server.Protocol.Request.ClientConnectionRequest client,
-      Server.Protocol.Request.NewConnectionSocket socket ->
+          ~configuration:server_configuration
+          ~socket:!(connections).socket
+    | Protocol.Request.ClientConnectionRequest client,
+      Protocol.Request.NewConnectionSocket socket ->
         Log.log ~section:`Server "Adding %s client" (show_client client);
         Mutex.critical_section
           lock
@@ -278,15 +278,15 @@ let request_handler_thread
                 begin
                   match client with
                   | Persistent ->
-                      Hashtbl.set persistent_clients ~key:socket ~data:{ failures = 0 };
+                      Hashtbl.set persistent_clients ~key:socket ~data:0;
                       !connections
                   | FileNotifier ->
                       { !connections with file_notifiers = socket::file_notifiers }
                 end)
-    | Server.Protocol.Request.ClientConnectionRequest _, _ ->
+    | Protocol.Request.ClientConnectionRequest _, _ ->
         Log.error
           "Unexpected request origin %s for connection request"
-          (Server.Protocol.Request.origin_name origin)
+          (Protocol.Request.origin_name origin)
     | _ ->
         Squeue.push_or_drop request_queue (origin, request) |> ignore;
   in
@@ -294,7 +294,7 @@ let request_handler_thread
     try
       Log.log ~section:`Server "A persistent client socket is readable.";
       let request = Socket.read socket in
-      queue_request ~origin:(Server.Protocol.Request.PersistentSocket socket) request
+      queue_request ~origin:(Protocol.Request.PersistentSocket socket) request
     with
     | End_of_file ->
         Log.log ~section:`Server "Persistent client disconnected";
@@ -307,7 +307,7 @@ let request_handler_thread
     try
       Log.log ~section:`Server "A file notifier is readable.";
       let request = Socket.read socket in
-      queue_request ~origin:Server.Protocol.Request.FileNotifier request
+      queue_request ~origin:Protocol.Request.FileNotifier request
     with
     | End_of_file ->
         Log.log ~section:`Server "File notifier disconnected";
@@ -355,15 +355,15 @@ let request_handler_thread
   let last_watchman_created = ref 0.0 in
   let rec loop () =
     let { socket = server_socket; persistent_clients; file_notifiers; _ } =
-      get_readable_sockets ()
+      Mutex.critical_section lock ~f:(fun () -> !connections)
     in
     if not (PyrePath.is_directory local_root) then
       begin
         Log.error "Stopping server due to missing source root.";
-        Server.Operations.stop_server
+        Operations.stop
           ~reason:"missing source root"
-          server_configuration
-          !(connections).socket
+          ~configuration:server_configuration
+          ~socket:!(connections).socket
       end;
     let readable =
       Unix.select
@@ -389,7 +389,7 @@ let request_handler_thread
             Socket.read new_socket
             |> fun Handshake.ClientConnected ->
             let request = Socket.read new_socket in
-            queue_request ~origin:(Server.Protocol.Request.NewConnectionSocket new_socket) request
+            queue_request ~origin:(Protocol.Request.NewConnectionSocket new_socket) request
           with
           | End_of_file ->
               Log.warning "New client socket unreadable"
@@ -416,61 +416,72 @@ let request_handler_thread
         "exception origin", "server";
       ]
       ();
-    Server.Operations.stop_server ~reason:"exception" server_configuration (!connections).socket
+    Operations.stop
+      ~reason:"exception"
+      ~configuration:server_configuration
+      ~socket:(!connections).socket
 
 
 (** Main server either as a daemon or in terminal *)
-let serve (socket, server_configuration, watchman_pid) =
+let serve
+    ~socket
+    ~server_configuration:({ configuration; _ } as server_configuration)
+    ~watchman_pid =
   Version.log_version_banner ();
-  let configuration = server_configuration.configuration in
-  Scheduler.initialize_process ~configuration;
+  (fun () ->
+     Log.log ~section:`Server "Starting daemon server loop...";
+     let request_queue = Squeue.create 25 in
+     let lock = Mutex.create () in
+     let connections =
+       ref {
+         socket;
+         persistent_clients = Unix.File_descr.Table.create ();
+         file_notifiers = [];
+         watchman_pid;
+       }
+     in
 
-  Log.log ~section:`Server "Starting daemon server loop...";
-  let request_queue = Squeue.create 25 in
-  let lock = Mutex.create () in
-  let connections = ref {
-      socket;
-      persistent_clients = Unix.File_descr.Table.create ();
-      file_notifiers = [];
-      watchman_pid;
-    }
-  in
-  register_signal_handlers server_configuration socket;
-  Thread.create
-    request_handler_thread
-    (server_configuration, lock, connections, request_queue)
-  |> ignore;
+     (* Register signal handlers. *)
+     Signal.Expert.handle
+       Signal.int
+       (fun _ -> Operations.stop ~reason:"interrupt" ~configuration:server_configuration ~socket);
+     Signal.Expert.handle
+       Signal.pipe
+       (fun _ -> ());
 
-  let state =
-    Server.Operations.initialize lock connections server_configuration
-  in
-  try
-    computation_thread request_queue server_configuration state
-  with uncaught_exception ->
-    Statistics.event
-      ~section:`Error
-      ~flush:true
-      ~name:"uncaught exception"
-      ~integers:[]
-      ~normals:[
-        "exception", Exn.to_string uncaught_exception;
-        "exception backtrace", Printexc.get_backtrace ();
-        "exception origin", "server";
-      ]
-      ();
-    Server.Operations.stop_server ~reason:"exception" server_configuration socket
+     Thread.create
+       request_handler_thread
+       (server_configuration, lock, connections, request_queue)
+     |> ignore;
+
+     let state = Operations.start ~lock ~connections ~configuration:server_configuration () in
+     try
+       computation_thread request_queue server_configuration state
+     with uncaught_exception ->
+       Statistics.event
+         ~section:`Error
+         ~flush:true
+         ~name:"uncaught exception"
+         ~integers:[]
+         ~normals:[
+           "exception", Exn.to_string uncaught_exception;
+           "exception backtrace", Printexc.get_backtrace ();
+           "exception origin", "server";
+         ]
+         ();
+       Operations.stop ~reason:"exception" ~configuration:server_configuration ~socket)
+  |> Scheduler.run_process ~configuration
 
 
 (* Create lock file and pid file. Used for both daemon mode and in-terminal *)
-let setup { lock_path; pid_path; _ } =
+let acquire_lock ~server_configuration:{ lock_path; pid_path; _ } =
   let pid = Unix.getpid () |> Pid.to_int in
   if not (Lock.grab (Path.absolute lock_path)) then
     raise AlreadyRunning;
-
   Out_channel.with_file
     (Path.absolute pid_path)
-    ~f:(fun out_channel ->
-        Format.fprintf (Format.formatter_of_out_channel out_channel) "%d%!" pid)
+    ~f:(fun out_channel -> Format.fprintf (Format.formatter_of_out_channel out_channel) "%d%!" pid)
+
 
 (** Daemon forking code *)
 type run_server_daemon_entry =
@@ -490,8 +501,8 @@ let run_server_daemon_entry : run_server_daemon_entry =
        Daemon.close_out parent_out_channel;
        (* Detach the from a controlling terminal *)
        Unix.Terminal_io.setsid () |> ignore;
-       setup server_configuration;
-       serve (socket, server_configuration, watchman_pid))
+       acquire_lock ~server_configuration;
+       serve ~socket ~server_configuration ~watchman_pid)
 
 
 let start ({
@@ -503,51 +514,53 @@ let start ({
     use_watchman;
     _;
   } as server_configuration) =
-  try
-    Scheduler.initialize_process ~configuration;
-    Log.info "Starting up server...";
-    Version.log_version_banner ();
+  (fun () ->
+     try
+       Log.info "Starting up server...";
+       Version.log_version_banner ();
 
-    if not (Lock.check (Path.absolute lock_path)) then
-      raise AlreadyRunning;
+       if not (Lock.check (Path.absolute lock_path)) then
+         raise AlreadyRunning;
 
-    Log.log ~section:`Server "Creating server socket at `%a`" Path.pp socket_path;
-    let socket = Socket.initialize_unix_socket socket_path in
+       Log.log ~section:`Server "Creating server socket at `%a`" Path.pp socket_path;
+       let socket = Socket.initialize_unix_socket socket_path in
 
-    let watchman_pid =
-      if use_watchman then
-        let pid = spawn_watchman_client server_configuration in
-        (* If the server is being run as a daemon, the watchman pid will be detached from
-           the server pid and shouldn't be waited on. *)
-        if not daemonize then
-          Some pid
-        else
-          None
-      else
-        None
-    in
-    if daemonize then
-      let stdin = Daemon.null_fd () in
-      let log_path = Log.rotate (Path.absolute log_path) in
-      let stdout = Daemon.fd_of_path log_path in
-      Log.log ~section:`Server "Spawning the daemon now.";
-      let { Daemon.pid; _ } as handle =
-        Daemon.spawn
-          (stdin, stdout, stdout)
-          run_server_daemon_entry (socket, server_configuration, watchman_pid)
-      in
-      Daemon.close handle;
-      Log.log ~section:`Server "Forked off daemon with pid %d" pid;
-      Log.info "Server starting in background";
-      pid
-    else begin
-      setup server_configuration;
-      serve (socket, server_configuration, watchman_pid);
-      0
-    end
-  with AlreadyRunning ->
-    Log.info "Server is already running";
-    0
+       let watchman_pid =
+         if use_watchman then
+           let pid = spawn_watchman_client server_configuration in
+           (* If the server is being run as a daemon, the watchman pid will be detached from
+              the server pid and shouldn't be waited on. *)
+           if not daemonize then
+             Some pid
+           else
+             None
+         else
+           None
+       in
+       if daemonize then
+         let stdin = Daemon.null_fd () in
+         let log_path = Log.rotate (Path.absolute log_path) in
+         let stdout = Daemon.fd_of_path log_path in
+         Log.log ~section:`Server "Spawning the daemon now.";
+         let { Daemon.pid; _ } as handle =
+           Daemon.spawn
+             (stdin, stdout, stdout)
+             run_server_daemon_entry (socket, server_configuration, watchman_pid)
+         in
+         Daemon.close handle;
+         Log.log ~section:`Server "Forked off daemon with pid %d" pid;
+         Log.info "Server starting in background";
+         pid
+       else
+         begin
+           acquire_lock ~server_configuration;
+           serve ~socket ~server_configuration ~watchman_pid;
+           0
+         end
+     with AlreadyRunning ->
+       Log.info "Server is already running";
+       0)
+  |> Scheduler.run_process ~configuration
 
 
 (** Default configuration when run from command line *)
@@ -664,7 +677,7 @@ let run_stop graceful local_root () =
     Socket.read socket
     |> fun (Handshake.ServerConnected _) ->
     Socket.write socket Handshake.ClientConnected;
-    Socket.write socket Server.Protocol.Request.StopRequest;
+    Socket.write socket Protocol.Request.StopRequest;
     begin
       match Socket.read socket with
       | StopResponse -> Log.info "Server stopped, polling for deletion of socket."

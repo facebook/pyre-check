@@ -13,6 +13,7 @@ import traceback
 
 from . import (
     EnvironmentException,
+    SharedAnalysisDirectory,
     assert_readable_directory,
     buck,
     commands,
@@ -20,13 +21,13 @@ from . import (
     is_capable_terminal,
     log,
     log_statistics,
-    merge_analysis_directories,
     resolve_analysis_directories,
     switch_root,
     translate_arguments,
 )
 from .commands import ExitCode
 from .configuration import Configuration
+from .filesystem import AnalysisDirectory
 from .version import __version__
 
 
@@ -221,11 +222,11 @@ def main() -> int:
     query = parsed_commands.add_parser(commands.Query.NAME)
     query_message = """One of:
     `help`,
-    `typecheckPath(file1, file2, ..., fileN)`,
+    `type_check(path, ...)`,
     `less_or_equal(left, right)`,
     `meet(left, right)`,
     `join(left, right)`,
-    `normalizeType(type)`,
+    `normalize_type(type)`,
     `superclasses(type)`
     """
     query.add_argument("query", help=query_message)
@@ -252,7 +253,6 @@ def main() -> int:
     configuration = None
     analysis_directories = []
     shared_analysis_directory = None
-    analysis_directory_path = None
     # Having this as a fails-by-default helps flag unexpected exit
     # from exception flows.
     exit_code = ExitCode.FAILURE
@@ -269,13 +269,13 @@ def main() -> int:
 
         if arguments.command not in [commands.Initialize]:
             configuration = Configuration(
-                original_directory=arguments.original_directory,
+                local_configuration_directory=arguments.local_configuration_directory,
                 local_configuration=arguments.local_configuration,
                 search_path=arguments.search_path,
                 typeshed=arguments.typeshed,
                 preserve_pythonpath=arguments.preserve_pythonpath,
             )
-            if configuration.disabled():
+            if configuration.disabled:
                 LOG.log(
                     log.SUCCESS, "Pyre will not run due to being explicitly disabled"
                 )
@@ -285,28 +285,18 @@ def main() -> int:
                 log.stdout.write(get_binary_version(configuration))
                 return ExitCode.SUCCESS
 
-            configuration.validate()
-
-            use_buck_cache = (
-                arguments.command
-                not in [commands.Check, commands.Start, commands.Restart]
-                or arguments.use_global_shared_analysis_directory
-            )
             if arguments.command in [commands.Kill]:
                 analysis_directories = ["."]
             else:
                 prompt = arguments.command not in [commands.Incremental, commands.Check]
                 analysis_directories = resolve_analysis_directories(
-                    arguments,
-                    configuration,
-                    prompt=prompt,
-                    use_buck_cache=use_buck_cache,
+                    arguments, configuration, prompt=prompt
                 )
 
             if len(analysis_directories) == 1:
-                analysis_directory_path = analysis_directories.pop()
+                analysis_directory = AnalysisDirectory(analysis_directories.pop())
             else:
-                local_configuration_path = configuration.get_local_configuration()
+                local_configuration_path = configuration.local_configuration
                 if local_configuration_path:
                     local_root = os.path.dirname(
                         os.path.relpath(
@@ -319,13 +309,13 @@ def main() -> int:
                     arguments.command in [commands.Check]
                     and not arguments.use_global_shared_analysis_directory
                 )
-                shared_analysis_directory = merge_analysis_directories(
+                shared_analysis_directory = SharedAnalysisDirectory(
                     analysis_directories, local_root, isolate
                 )
-                analysis_directory_path = shared_analysis_directory.get_root()
+                analysis_directory = shared_analysis_directory
 
         exit_code = (
-            arguments.command(arguments, configuration, analysis_directory_path)
+            arguments.command(arguments, configuration, analysis_directory)
             .run()
             .exit_code()
         )

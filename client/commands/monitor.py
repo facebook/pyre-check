@@ -7,17 +7,19 @@ import os
 import sys
 
 from . import stop
-from ..filesystem import acquire_lock
+from ..filesystem import AnalysisDirectory, acquire_lock
 
 
 LOG = logging.getLogger(__name__)
 
 
 class Monitor:
-    def __init__(self, arguments, configuration, analysis_directory) -> None:
+    def __init__(
+        self, arguments, configuration, analysis_directory: AnalysisDirectory
+    ) -> None:
         self.arguments = arguments
         self.configuration = configuration
-        self.analysis_directory = analysis_directory
+        self.analysis_directory = analysis_directory.get_root()
         self.watchman_client = None
 
     def _subscribe_to_watchman(self, root: str) -> None:

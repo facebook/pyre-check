@@ -137,9 +137,9 @@ let test_wildcard_exports _ =
     assert_equal
       ~cmp:(List.equal ~equal:Access.equal)
       ~printer:(fun expression_list ->
-          List.map ~f:(Access.show) expression_list
+          List.map expression_list ~f:(Access.show)
           |> String.concat ~sep:", ")
-      (List.map ~f:(Access.create) expected)
+      (List.map expected ~f:Access.create)
       (module_from_source ~source ~qualifier |> Module.wildcard_exports)
   in
   let assert_in_wildcard_exports ?(qualifier = []) source access expected_bool =

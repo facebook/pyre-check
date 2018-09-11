@@ -19,7 +19,7 @@ let test_content context =
   let path = Path.create_absolute path in
 
   assert_equal (File.create path |> File.content) (Some data);
-  assert_equal (File.create ~content:(Some "content") path |> File.content) (Some "content");
+  assert_equal (File.create ~content:"content" path |> File.content) (Some "content");
   assert_is_none
     (File.create (Path.create_relative ~root:path ~relative:"derp") |> File.content)
 
@@ -28,15 +28,57 @@ let test_lines context =
   let path, _ = bracket_tmpfile context in
   assert_equal
     ~cmp:(List.equal ~equal:String.equal)
-    (File.create ~content:(Some "foo\nbar") (Path.create_absolute path)
+    (File.create ~content:"foo\nbar" (Path.create_absolute path)
      |> File.lines
      |> (fun lines -> Option.value_exn lines))
     ["foo"; "bar"]
+
+
+let test_handle _ =
+  let assert_handle ~absolute ~handle =
+    let path = Path.create_absolute ~follow_symbolic_links:false in
+    let configuration =
+      Configuration.create
+        ~local_root:(path "/root")
+        ~search_path:[path "/root/stubs"; path "/external"]
+        ~typeshed:(path "/typeshed")
+        ()
+    in
+    match handle with
+    | None ->
+        let message =
+          let roots =
+            List.to_string
+              ["/root/stubs"; "/external"; "/typeshed/stdlib"; "/typeshed/third_party"; "/root"]
+              ~f:ident
+          in
+          Format.sprintf "Unable to construct handle for %s. Possible roots: %s" absolute roots
+        in
+        assert_raises (File.NonexistentHandle message)
+          (fun () -> File.handle ~configuration (File.create (path absolute)))
+    | Some handle ->
+        let expected =
+          File.handle ~configuration (File.create (path absolute))
+          |> File.Handle.show
+        in
+        assert_equal expected handle
+  in
+  assert_handle ~absolute:"/root/a.py" ~handle:(Some "a.py");
+
+  assert_handle ~absolute:"/external/b/c.py" ~handle:(Some "b/c.py");
+  assert_handle ~absolute:"/root/stubs/stub.pyi" ~handle:(Some "stub.pyi");
+
+  assert_handle ~absolute:"/typeshed/stdlib/3/builtins.pyi" ~handle:(Some "3/builtins.pyi");
+  assert_handle ~absolute:"/typeshed/third_party/3/django.pyi" ~handle:(Some "3/django.pyi");
+  assert_handle ~absolute:"/typeshed/3/whoops.pyi" ~handle:None;
+
+  assert_handle ~absolute:"/untracked/a.py" ~handle:None
 
 
 let () =
   "file">:::[
     "content">::test_content;
     "lines">::test_lines;
+    "handle">::test_handle;
   ]
   |> run_test_tt_main

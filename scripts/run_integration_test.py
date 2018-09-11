@@ -111,8 +111,19 @@ def poor_mans_rsync(source_directory, destination_directory):
         for entry in os.listdir(destination_directory)
         if os.path.isfile(os.path.join(destination_directory, entry))
     ]
+    source_directories = [
+        entry
+        for entry in os.listdir(source_directory)
+        if os.path.isdir(os.path.join(source_directory, entry))
+    ]
+    # Copy all directories over blindly.
+    for directory in source_directories:
+        source = os.path.join(source_directory, directory)
+        destination = os.path.join(destination_directory, directory)
+        if os.path.isdir(destination):
+            shutil.rmtree(destination)
+        shutil.copytree(source, destination)
 
-    # First remove all destination files that are missing in the source.
     for filename in destination_files:
         if filename not in source_files:
             LOG.info("Removing file '%s' from destination" % filename)

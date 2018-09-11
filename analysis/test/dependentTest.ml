@@ -41,7 +41,7 @@ let test_index _ =
   in
   Service.Environment.populate
     (Environment.handler ~configuration environment)
-    [parse ~path:"test.py" source];
+    [parse ~handle:"test.py" source];
   let {
     Dependencies.class_keys;
     function_keys;
@@ -49,7 +49,7 @@ let test_index _ =
     _;
   } = environment.Environment.dependencies.Dependencies.index in
   let assert_table_contains_key table key =
-    let keyset = Hashtbl.find_exn table "test.py" in
+    let keyset = Hashtbl.find_exn table (File.Handle.create "test.py") in
     assert_true (Hash_set.mem keyset key)
   in
   assert_table_contains_key class_keys (primitive "baz.baz");
@@ -57,15 +57,17 @@ let test_index _ =
   assert_table_contains_key alias_keys (primitive "_T")
 
 
-let add_dependent table path dependent =
-  let source = Source.qualifier ~path in
+let add_dependent table handle dependent =
+  let handle = File.Handle.create handle in
+  let source = Source.qualifier ~handle in
+  let dependent = File.Handle.create dependent in
   match Hashtbl.find table source with
   | None -> Hashtbl.set table ~key:source ~data:[dependent]
   | Some dependents -> Hashtbl.set table ~key:source ~data:(dependent :: dependents)
 
 
-let get_dependencies (module Handler: Environment.Handler) path =
-  Handler.dependencies (Source.qualifier ~path)
+let get_dependencies (module Handler: Environment.Handler) handle =
+  Handler.dependencies (Source.qualifier ~handle)
 
 
 let test_dependent_of_list _ =
@@ -75,27 +77,33 @@ let test_dependent_of_list _ =
     { environment.Environment.dependencies with Dependencies.dependents = table }
   in
   let environment = { environment with Environment.dependencies } in
-  let get_dependencies = get_dependencies (Environment.handler ~configuration environment) in
   add_dependent table "b.py" "a.py";
   add_dependent table "c.py" "a.py";
   add_dependent table "c.py" "b.py";
   add_dependent table "a.py" "test.py";
-  assert_equal
-    ~cmp:String.Set.equal
-    (String.Set.of_list ["a.py"])
-    (Dependencies.of_list ~paths:["b.py"; "c.py"] ~get_dependencies);
-  assert_equal
-    ~cmp:String.Set.equal
-    (String.Set.of_list ["test.py"])
-    (Dependencies.of_list ~paths:["a.py"] ~get_dependencies);
-  assert_equal
-    ~cmp:String.Set.equal
-    (String.Set.of_list ["a.py"; "b.py"])
-    (Dependencies.of_list ~paths:["c.py"] ~get_dependencies);
-  assert_equal
-    ~cmp:String.Set.equal
-    (String.Set.of_list [])
-    (Dependencies.of_list ~paths:["test.py"] ~get_dependencies)
+  let assert_dependencies ~handles ~expected =
+    let get_dependencies = get_dependencies (Environment.handler ~configuration environment) in
+    let dependencies =
+      Dependencies.of_list ~handles:(List.map handles ~f:File.Handle.create) ~get_dependencies
+      |> Set.to_list
+      |> List.map ~f:File.Handle.show
+      |> List.sort ~compare:String.compare
+    in
+    let expected = List.sort ~compare:String.compare expected in
+    assert_equal expected dependencies
+  in
+  assert_dependencies
+    ~handles:["b.py"; "c.py"]
+    ~expected:["a.py"];
+  assert_dependencies
+    ~handles:["a.py"]
+    ~expected:["test.py"];
+  assert_dependencies
+    ~handles:["c.py"]
+    ~expected:["a.py"; "b.py"];
+  assert_dependencies
+    ~handles:["test.py"]
+    ~expected:[]
 
 
 let test_transitive_dependent_of_list _ =
@@ -105,25 +113,32 @@ let test_transitive_dependent_of_list _ =
     { environment.Environment.dependencies with Dependencies.dependents = table }
   in
   let environment = { environment with Environment.dependencies } in
-  let get_dependencies = get_dependencies (Environment.handler ~configuration environment) in
   add_dependent table "b.py" "a.py";
   add_dependent table "c.py" "a.py";
   add_dependent table "c.py" "b.py";
   add_dependent table "a.py" "test.py";
-  assert_equal
-    ~cmp:String.Set.equal
-    (String.Set.of_list ["a.py"; "test.py"])
-    (Dependencies.transitive_of_list
-       ~paths:["b.py"; "c.py"]
-       ~get_dependencies);
-  assert_equal
-    ~cmp:String.Set.equal
-    (String.Set.of_list ["a.py"; "b.py"; "test.py"])
-    (Dependencies.transitive_of_list ~paths:["c.py"] ~get_dependencies);
-  assert_equal
-    ~cmp:String.Set.equal
-    (String.Set.of_list [])
-    (Dependencies.transitive_of_list ~paths:["test.py"] ~get_dependencies)
+  let assert_dependencies ~handles ~expected =
+    let get_dependencies = get_dependencies (Environment.handler ~configuration environment) in
+    let dependencies =
+      Dependencies.transitive_of_list
+        ~handles:(List.map handles ~f:File.Handle.create)
+        ~get_dependencies
+      |> Set.to_list
+      |> List.map ~f:File.Handle.show
+      |> List.sort ~compare:String.compare
+    in
+    let expected = List.sort ~compare:String.compare expected in
+    assert_equal expected dependencies
+  in
+  assert_dependencies
+    ~handles:["b.py"; "c.py"]
+    ~expected:["a.py"; "test.py"];
+  assert_dependencies
+    ~handles:["c.py"]
+    ~expected:["a.py"; "b.py"; "test.py"];
+  assert_dependencies
+     ~handles:["test.py"]
+     ~expected:[]
 
 
 let test_transitive_dependents _ =
@@ -137,12 +152,22 @@ let test_transitive_dependents _ =
   add_dependent table "c.py" "a.py";
   add_dependent table "c.py" "b.py";
   add_dependent table "a.py" "test.py";
-  let get_dependencies = get_dependencies (Environment.handler ~configuration environment) in
-  assert_equal
-    ~cmp:String.Set.equal
-    ~printer:(fun set -> Set.to_list set |> String.concat ~sep:",")
-    (String.Set.of_list ["a.py"; "b.py"; "test.py"])
-    (Dependencies.transitive ~get_dependencies ~path:"c.py")
+  let assert_dependents ~handle ~expected =
+    let get_dependencies = get_dependencies (Environment.handler ~configuration environment) in
+    let dependencies =
+      Dependencies.transitive
+        ~handle:(File.Handle.create handle)
+        ~get_dependencies
+      |> Set.to_list
+      |> List.map ~f:File.Handle.show
+      |> List.sort ~compare:String.compare
+    in
+    let expected = List.sort ~compare:String.compare expected in
+    assert_equal expected dependencies
+  in
+  assert_dependents
+    ~handle:"c.py"
+    ~expected:["a.py"; "b.py"; "test.py"]
 
 
 let () =

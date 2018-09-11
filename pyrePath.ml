@@ -48,6 +48,10 @@ let equal left right =
   String.equal (absolute left) (absolute right)
 
 
+let compare left right =
+  String.compare (absolute left) (absolute right)
+
+
 let pp format path =
   Format.fprintf format "%s" (absolute path)
 

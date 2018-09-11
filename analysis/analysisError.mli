@@ -127,6 +127,13 @@ type revealed_type = {
 }
 [@@deriving compare, eq, sexp, show, hash]
 
+
+type unpack = {
+  expected_count: int;
+  actual_count: int;
+}
+[@@deriving compare, eq, sexp, show, hash]
+
 type kind =
   | IncompatibleAwaitableType of Type.t
   | IncompatibleParameterType of parameter_mismatch
@@ -143,6 +150,7 @@ type kind =
   | RedundantCast of Type.t
   | RevealedType of revealed_type
   | TooManyArguments of too_many_arguments
+  | Unpack of unpack
   | Top
   | UndefinedAttribute of undefined_attribute
   | UndefinedImport of Access.t

@@ -1,9 +1,4 @@
-from typing import (
-    Any,
-    Dict,
-    Iterator,
-    Optional,
-)
+from typing import Any, Dict, Iterator, Optional
 
 
 class HttpResponse(Iterator[bytes]):
@@ -15,31 +10,38 @@ class HttpResponse(Iterator[bytes]):
     streaming_content: Any = ...
     streaming: Any = ...
 
-    def get(self, header: str, alternate: Any = ...): ...
+    def get(self, header: str, alternate: Any = ...):
+        ...
 
-    def __getitem__(self, header: str) -> Any: ...
+    def __getitem__(self, header: str) -> Any:
+        ...
 
     def set_cookie(
-            self,
-            key: str,
-            value: str = ...,
-            max_age: Any = ...,
-            expires: Any = ...,
-            path: str = ...,
-            domain: Any = ...,
-            secure: bool = ...,
-            httponly: bool = ...,
+        self,
+        key: str,
+        value: str = ...,
+        max_age: Any = ...,
+        expires: Any = ...,
+        path: str = ...,
+        domain: Any = ...,
+        secure: bool = ...,
+        httponly: bool = ...,
     ) -> None:
         ...
 
-    def set_signed_cookie(self, key: str, value: Any, salt: str = ..., **kwargs) -> None:
+    def set_signed_cookie(
+        self, key: str, value: Any, salt: str = ..., **kwargs
+    ) -> None:
         ...
 
-    def delete_cookie(self, key: str, path: Optional[str] = ..., domain: Any = ...): ...
+    def delete_cookie(self, key: str, path: Optional[str] = ..., domain: Any = ...):
+        ...
 
-    def has_header(self, header: str) -> bool: ...
+    def has_header(self, header: str) -> bool:
+        ...
 
-    def __getitem__(self, header: str) -> Any: ...
+    def __getitem__(self, header: str) -> Any:
+        ...
 
 
 class HttpResponseRedirect(HttpResponse):

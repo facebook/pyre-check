@@ -1007,7 +1007,11 @@ module Class = struct
         | _ ->
             statement :: updated, undefined
       in
-      List.fold ~init:([], stub) ~f:update body
+      let stub = match stub with
+        | [{ Node.value = Expression { Node.value = Ellipses; _ }; _ }] -> []
+        | _ -> stub
+      in
+      List.fold ~init:([], stub) ~f:update (List.rev body)
     in
     { definition with Record.Class.body = undefined @ updated }
 
@@ -1050,12 +1054,18 @@ module For = struct
             [Access.Expression (Node.create_with_default_location expression)] @ next
       end
     in
+    let value =
+      if async then
+        { Node.location; value = Await (Node.create (Access value) ~location) }
+      else
+        { Node.location; value = Access value }
+    in
     {
       Node.location;
       value = Assign {
           Assign.target;
           annotation = None;
-          value = { Node.location; value = Access value };
+          value;
           parent = None;
         }
     }
@@ -1103,7 +1113,7 @@ module With = struct
        Node.create ~location (Assign assign))
       |> Option.value ~default:(Node.create ~location (Expression expression))
     in
-    List.map ~f:preamble items
+    List.map items ~f:preamble
 end
 
 
@@ -1173,9 +1183,11 @@ let extract_docstring statements =
     match String.split ~on:'\n' docstring with
     | [] -> docstring
     | first :: rest ->
-        let indentations = List.map ~f:indentation rest in
-        let difference = List.fold ~init:Int.max_value ~f:Int.min indentations in
-        let rest = List.map ~f:(fun s -> String.drop_prefix s difference) rest in
+        let difference =
+          List.map rest ~f:indentation
+          |> List.fold ~init:Int.max_value ~f:Int.min
+        in
+        let rest = List.map rest ~f:(fun s -> String.drop_prefix s difference) in
         String.concat ~sep:"\n" (first::rest)
   in
   match statements with

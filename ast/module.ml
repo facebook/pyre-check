@@ -69,12 +69,18 @@ let wildcard_exports { wildcard_exports; _ } =
   wildcard_exports
 
 
+(* TODO(T33409564): Modules have handles, not paths. *)
 let create ~qualifier ~local_mode ?path ~stub statements =
   let aliased_exports =
     let aliased_exports { Node.value; _ } =
       match value with
       | Import { Import.from = Some from; imports } ->
-          let from = Source.expand_relative_import ?path ~qualifier ~from in
+          let from =
+            Source.expand_relative_import
+              ?handle:(path >>| File.Handle.create)
+              ~qualifier
+              ~from
+          in
           let export { Import.name; alias } =
             let alias = Option.value ~default:name alias in
             let name = if Access.show alias = "*" then from else from @ name in
@@ -87,7 +93,7 @@ let create ~qualifier ~local_mode ?path ~stub statements =
             else
               alias, name
           in
-          List.map ~f:export imports
+          List.map imports ~f:export
       | Import { Import.from = None; imports } ->
           let export { Import.name; alias } =
             let alias = Option.value ~default:name alias in
@@ -96,7 +102,7 @@ let create ~qualifier ~local_mode ?path ~stub statements =
             else
               alias, name
           in
-          List.map ~f:export imports
+          List.map imports ~f:export
       | _ ->
           []
     in
@@ -145,7 +151,7 @@ let create ~qualifier ~local_mode ?path ~stub statements =
           public_values @ (filter_private [name]), dunder_all
       | Import { Import.imports; _ } ->
           let get_import_name { Import.alias; name } = Option.value alias ~default:name in
-          public_values @ (filter_private (List.map ~f:get_import_name imports)), dunder_all
+          public_values @ (filter_private (List.map imports ~f:get_import_name)), dunder_all
       | _ ->
           public_values, dunder_all
     in

@@ -46,14 +46,14 @@ def _compare_parallel_check(arguments, configuration) -> None:
         )
     flags = [
         "-typeshed",
-        str(configuration.get_typeshed()),
+        configuration.typeshed,
         "-project-root",
         arguments.current_directory,
     ]
-    search_path = configuration.get_search_path()
+    search_path = configuration.search_path
     if search_path:
         flags.extend(["-search-path", ",".join(search_path)])
-    client_command = [configuration.get_binary(), "check"]
+    client_command = [configuration.binary, "check"]
     client_command.extend(flags)
     client_command.append(arguments.analysis_directory)
 
@@ -98,8 +98,7 @@ if __name__ == "__main__":
     try:
         exit_code = SUCCESS
         switch_root(arguments)
-        configuration = Configuration(original_directory=arguments.original_directory)
-        configuration.validate()
+        configuration = Configuration(local_root=arguments.local_root)
         _compare_parallel_check(arguments, configuration)
     except Exception as error:
         LOG.error(str(error))

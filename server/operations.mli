@@ -7,6 +7,7 @@ open Core
 
 open Network
 
+
 type version_mismatch = {
   server_version: string;
   expected_version: string;
@@ -16,15 +17,17 @@ type version_mismatch = {
 exception ConnectionFailure
 exception VersionMismatch of version_mismatch
 
-val connect: retries: int -> configuration: Configuration.t -> Socket.t
-
-val initialize
+val start
   :  ?old_state: State.t
-  -> Mutex.t
-  -> State.connections ref
-  -> ServerConfiguration.t
+  -> lock: Mutex.t
+  -> connections: State.connections ref
+  -> configuration: ServerConfiguration.t
+  -> unit
   -> State.t
+val stop
+  :  reason: string
+  -> configuration: ServerConfiguration.t
+  -> socket: Unix.File_descr.t
+  -> unit
 
-val stop_server: reason: string -> ServerConfiguration.t -> Unix.File_descr.t -> unit
-
-val remove_server_files: ServerConfiguration.t -> unit
+val connect: retries: int -> configuration: Configuration.t -> Socket.t

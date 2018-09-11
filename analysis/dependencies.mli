@@ -5,43 +5,41 @@
 
 open Core
 
-open Pyre
-
 open Ast
 open Expression
 
 
 type index = {
-  function_keys: (Access.t Hash_set.t) String.Table.t;
-  class_keys: (Type.t Hash_set.t) String.Table.t;
-  alias_keys: (Type.t Hash_set.t) String.Table.t;
-  global_keys: (Access.t Hash_set.t) String.Table.t;
-  dependent_keys: (Access.t Hash_set.t) String.Table.t;
+  function_keys: (Access.t Hash_set.t) File.Handle.Table.t;
+  class_keys: (Type.t Hash_set.t) File.Handle.Table.t;
+  alias_keys: (Type.t Hash_set.t) File.Handle.Table.t;
+  global_keys: (Access.t Hash_set.t) File.Handle.Table.t;
+  dependent_keys: (Access.t Hash_set.t) File.Handle.Table.t;
 }
 
 type t = {
   index: index;
-  dependents: (Path.path list) Access.Table.t;
+  dependents: (File.Handle.t list) Access.Table.t;
 }
 
 module type Handler = sig
-  val add_function_key: path: string -> Access.t -> unit
-  val add_class_key: path: string -> Type.t -> unit
-  val add_alias_key: path: string -> Type.t -> unit
-  val add_global_key: path: string -> Access.t -> unit
-  val add_dependent_key: path: string -> Access.t -> unit
+  val add_function_key: handle: File.Handle.t -> Access.t -> unit
+  val add_class_key: handle: File.Handle.t -> Type.t -> unit
+  val add_alias_key: handle: File.Handle.t -> Type.t -> unit
+  val add_global_key: handle: File.Handle.t -> Access.t -> unit
+  val add_dependent_key: handle: File.Handle.t -> Access.t -> unit
 
-  val add_dependent: path: string -> Access.t -> unit
+  val add_dependent: handle: File.Handle.t -> Access.t -> unit
 
-  val dependents: Access.t -> (Path.path list) option
+  val dependents: Access.t -> (File.Handle.t list) option
 
-  val get_function_keys: path: string -> Access.t list
-  val get_class_keys: path: string -> Type.t list
-  val get_alias_keys: path: string -> Type.t list
-  val get_global_keys: path: string -> Access.t list
-  val get_dependent_keys: path: string -> Access.t list
+  val get_function_keys: handle: File.Handle.t -> Access.t list
+  val get_class_keys: handle: File.Handle.t -> Type.t list
+  val get_alias_keys: handle: File.Handle.t -> Type.t list
+  val get_global_keys: handle: File.Handle.t -> Access.t list
+  val get_dependent_keys: handle: File.Handle.t -> Access.t list
 
-  val clear_keys_batch: string list -> unit
+  val clear_keys_batch: File.Handle.t list -> unit
 
 end
 
@@ -52,16 +50,16 @@ val copy: t -> t
 val handler: t -> (module Handler)
 
 val transitive
-  :  get_dependencies: (string -> (string list) option)
-  -> path: string
-  -> String.Set.t
+  :  get_dependencies: (File.Handle.t -> (File.Handle.t list) option)
+  -> handle: File.Handle.t
+  -> File.Handle.Set.t
 
 val transitive_of_list
-  :  get_dependencies: (string -> (string list) option)
-  -> paths: string list
-  -> String.Set.t
+  :  get_dependencies: (File.Handle.t -> (File.Handle.t list) option)
+  -> handles: File.Handle.t list
+  -> File.Handle.Set.t
 
 val of_list
-  :  get_dependencies: (string -> (string list) option)
-  -> paths: string list
-  -> String.Set.t
+  :  get_dependencies: (File.Handle.t -> (File.Handle.t list) option)
+  -> handles: File.Handle.t list
+  -> File.Handle.Set.t

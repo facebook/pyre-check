@@ -248,7 +248,7 @@ module State = struct
                   | Type.Tuple (Type.Bounded parameters) ->
                       parameters
                   | Type.Tuple (Type.Unbounded parameter) ->
-                      List.map ~f:(fun _ -> parameter) values
+                      List.map values ~f:(fun _ -> parameter)
                   | _ ->
                       []
                 in
@@ -338,8 +338,8 @@ module SingleSourceResult = struct
 end
 
 
-let infer configuration environment ?mode_override ({ Source.path; _ } as source) =
-  Log.debug "Checking %s..." path;
+let infer configuration environment ?mode_override ({ Source.handle; _ } as source) =
+  Log.debug "Checking %s..." (File.Handle.show handle);
   let resolution = Environment.resolution environment () in
 
   let dequalify_map = Preprocessing.dequalify_map source in
@@ -395,7 +395,7 @@ let infer configuration environment ?mode_override ({ Source.path; _ } as source
               | Some mode ->
                   mode
               | None ->
-                  Handler.mode (Error.path error)
+                  Handler.mode (Error.path error |> File.Handle.create)
                   |> Option.value ~default:Source.Default
             in
             not (Error.suppress ~mode error)
@@ -414,7 +414,7 @@ let infer configuration environment ?mode_override ({ Source.path; _ } as source
           ~name:"undefined type"
           ~integers:[]
           ~normals:[
-            "path", path;
+            "handle", (File.Handle.show handle);
             "define", Access.show name;
             "type", Type.show annotation;
           ]
@@ -448,7 +448,7 @@ let infer configuration environment ?mode_override ({ Source.path; _ } as source
                 Annotation.create_immutable ~global:true ~original:(Some Type.Top) annotation
                 |> Node.create ~location
               in
-              Handler.register_global ~path ~access ~global;
+              Handler.register_global ~handle ~access ~global;
               true, error :: globals_added_sofar
         in
         match error with
@@ -474,7 +474,7 @@ let infer configuration environment ?mode_override ({ Source.path; _ } as source
                     }
                   in
                   Handler.register_definition
-                    ~path
+                    ~handle
                     { define_node with Node.value = define };
                   true, globals_added_sofar
             end
@@ -524,7 +524,7 @@ let infer configuration environment ?mode_override ({ Source.path; _ } as source
                     }
                   in
                   Handler.register_definition
-                    ~path
+                    ~handle
                     { define_node with Node.value = define };
                   true, globals_added_sofar
             end
@@ -581,7 +581,7 @@ let infer configuration environment ?mode_override ({ Source.path; _ } as source
     let results = Preprocessing.defines source |> List.map ~f:check in
 
     let errors =
-      List.map ~f:SingleSourceResult.errors results
+      List.map results ~f:SingleSourceResult.errors
       |> List.concat
       |> Error.join_at_source ~resolution
       |> List.map ~f:(Error.dequalify dequalify_map environment)
@@ -589,10 +589,10 @@ let infer configuration environment ?mode_override ({ Source.path; _ } as source
     in
 
     let coverage =
-      List.map ~f:SingleSourceResult.coverage results
+      List.map results ~f:SingleSourceResult.coverage
       |> Coverage.aggregate_over_source ~source
     in
-    Coverage.log coverage ~total_errors:(List.length errors) ~path;
+    Coverage.log coverage ~total_errors:(List.length errors) ~path:(File.Handle.show handle);
 
     {
       TypeCheck.Result.errors;

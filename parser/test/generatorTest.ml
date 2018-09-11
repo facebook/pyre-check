@@ -15,7 +15,7 @@ open Test
 
 let assert_parsed_equal source statements =
   assert_source_equal
-    (Source.create ~path:"test.py" statements)
+    (Source.create ~handle:(File.Handle.create "test.py") statements)
     (parse_untrimmed source)
 
 
@@ -613,6 +613,36 @@ let test_define _ =
         ];
         body = [+Expression (+Integer 1)];
         decorators = [!"decorator"];
+        docstring = None;
+        return_annotation = None;
+        async = false;
+        generated = false;
+        parent = None;
+      };
+    ];
+  assert_parsed_equal
+    "@decorator(a=b, c=d)\ndef foo(a):\n  1"
+    [
+      +Define {
+        Define.name = Access.create "foo";
+        parameters = [
+          +{
+            Parameter.name = ~~"a";
+            value = None;
+            annotation = None;
+          };
+        ];
+        body = [+Expression (+Integer 1)];
+        decorators = [
+          (+Access [
+             Access.Identifier ~~"decorator";
+             Access.Call
+               (+[
+                  { Argument.name = Some ~+(~~"a"); value = !"b" };
+                  { Argument.name = Some ~+(~~"c"); value = !"d" };
+                ]);
+           ]);
+        ];
         docstring = None;
         return_annotation = None;
         async = false;
@@ -1248,6 +1278,21 @@ let test_boolean_operator _ =
            BooleanOperator.left = +True;
            operator = BooleanOperator.Or;
            right = +Integer 1;
+         });
+    ];
+  assert_parsed_equal
+    "1 and 2 or 3"
+    [
+      +Expression
+        (+BooleanOperator {
+           BooleanOperator.left =
+             (+BooleanOperator {
+                BooleanOperator.left = +Integer 1;
+                operator = BooleanOperator.And;
+                right = +Integer 2;
+              });
+           operator = BooleanOperator.Or;
+           right = +Integer 3;
          });
     ]
 

@@ -17,7 +17,7 @@ type relative
 type t =
   | Absolute of absolute
   | Relative of relative
-[@@deriving eq, show, sexp, hash]
+[@@deriving compare, eq, show, sexp, hash]
 
 val absolute: t -> path
 val relative: t -> path option

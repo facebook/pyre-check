@@ -6,6 +6,7 @@
 open Core
 
 open Ast
+open Expression
 open Network
 open Pyre
 open PyreParser
@@ -14,90 +15,133 @@ open Protocol
 open TypeQuery
 
 
+exception InvalidQuery of string
+
+
 let parse_query ~root query =
-  let query =
-    try
-      Parser.parse [query]
-    with _ ->
-      []
-  in
-  match query with
+  match (Parser.parse [query]) with
   | [{
       Node.value = Statement.Expression {
-          Node.value = Expression.Access [
-              Expression.Access.Identifier name;
-              Expression.Access.Call { Node.value = arguments; _ };
+          Node.value = Access [
+              Access.Identifier name;
+              Access.Call { Node.value = arguments; _ };
             ];
           _;
         };
       _;
     }] ->
-      let arguments = List.map ~f:(fun { Expression.Argument.value; _ } -> value) arguments in
+      let expression { Argument.value; _ } = value in
+      let access = function
+        | { Argument.value = { Node.value = Access access; _ }; _ } -> access
+        | _ -> raise (InvalidQuery "expected access")
+      in
+      let string = function
+        | {
+          Argument.value = {
+            Node.value = String { StringLiteral.value; kind = StringLiteral.String };
+            _;
+          };
+          _;
+        } ->
+            value
+        | _ ->
+            raise (InvalidQuery "expected string")
+      in
       begin
         match String.lowercase (Identifier.show name), arguments with
-        | "attributes", [class_name] ->
-            Some (Request.TypeQueryRequest (Attributes class_name))
+        | "attributes", [name] ->
+            Request.TypeQueryRequest (Attributes (access name))
         | "join", [left; right] ->
-            Some (Request.TypeQueryRequest (Join (left, right)))
+            Request.TypeQueryRequest (Join (access left, access right))
         | "less_or_equal", [left; right] ->
-            Some (Request.TypeQueryRequest (LessOrEqual (left, right)))
+            Request.TypeQueryRequest (LessOrEqual (access left, access right))
         | "meet", [left; right] ->
-            Some (Request.TypeQueryRequest (Meet (left, right)))
-        | "methods", [class_name] ->
-            Some (Request.TypeQueryRequest (Methods class_name))
-        | "normalizetype", [argument] ->
-            Some (Request.TypeQueryRequest (NormalizeType argument))
-        | "signature", [{ Node.value = Expression.Access function_name; _ }] ->
-            Some (Request.TypeQueryRequest (Signature function_name))
-        | "superclasses", [class_name] ->
-            Some (Request.TypeQueryRequest (Superclasses class_name))
+            Request.TypeQueryRequest (Meet (access left, access right))
+        | "methods", [name] ->
+            Request.TypeQueryRequest (Methods (access name))
+        | "normalize_type", [name] ->
+            Request.TypeQueryRequest (NormalizeType (access name))
+        | "signature", [name] ->
+            Request.TypeQueryRequest (Signature (access name))
+        | "superclasses", [name] ->
+            Request.TypeQueryRequest (Superclasses (access name))
+        | "type", [argument] ->
+            Request.TypeQueryRequest (Type (expression argument))
         | "type_at_location",
           [
-            { Node.value = Expression.Access path; _ };
-            { Node.value = Expression.Integer line; _ };
-            { Node.value = Expression.Integer column; _ };
+            path;
+            { Argument.value = { Node.value = Integer line; _ }; _ };
+            { Argument.value = { Node.value = Integer column; _ }; _ };
           ] ->
-            let path = Expression.Access.show path in
-            let position = { Location.line; column } in
-            let location = { Location.path; start = position; stop = position } in
-            Some (Request.TypeQueryRequest (TypeAtLocation location))
-        | "typecheckpath", arguments ->
+            let location =
+              let path = string path in
+              let position = { Location.line; column } in
+              { Location.path; start = position; stop = position }
+            in
+            Request.TypeQueryRequest (TypeAtLocation location)
+        | "type_check", arguments ->
             let files =
               arguments
-              |> List.map ~f:Expression.show
+              |> List.map ~f:string
               |> List.map ~f:(fun relative -> Path.create_relative ~root ~relative)
               |> List.map ~f:File.create
             in
-            Some (Request.TypeCheckRequest (TypeCheckRequest.create ~check:files ()))
-        | _ -> None
+            Request.TypeCheckRequest (TypeCheckRequest.create ~check:files ())
+        | _ ->
+            raise (InvalidQuery "unexpected query call")
       end
-  | _ -> None
+  | _ ->
+      raise (InvalidQuery "unexpected query")
 
 
 let run_query serialized local_root () =
   let local_root = Path.create_absolute local_root in
   let configuration = Configuration.create ~local_root () in
-  Scheduler.initialize_process ~configuration;
-
-  let query = parse_query ~root:local_root serialized in
-  begin
-    match query with
-    | Some _ ->
-        ()
-    | None ->
-        Log.error "Could not parse query %s; exiting.\n" serialized;
-        exit 1
-  end;
-  let query = Option.value_exn query in
-  let socket = Server.Operations.connect ~retries:3 ~configuration in
-  Socket.write socket query;
-  match Socket.read socket with
-  | TypeQueryResponse response ->
-      Log.print "%s\n" (Yojson.Safe.pretty_to_string (response_to_yojson response))
-  | (TypeCheckResponse _) as response ->
-      Log.print "%s\n" (Server.Protocol.show_response response)
-  | response ->
-      Log.error "Unexpected response %s from server\n" (Server.Protocol.show_response response)
+  (fun () ->
+     let response =
+       try
+         let query = parse_query ~root:local_root serialized in
+         let socket = Server.Operations.connect ~retries:3 ~configuration in
+         Socket.write socket query;
+         match Socket.read socket with
+         | TypeQueryResponse response ->
+             response_to_yojson response
+         | TypeCheckResponse errors ->
+             errors
+             |> List.concat_map ~f:snd
+             |> (fun errors ->
+                 `Assoc [
+                   "response",
+                   `List (List.map ~f:(Analysis.Error.to_json ~detailed:false) errors);
+                 ])
+         | response ->
+             `Assoc [
+               "response",
+               `String
+                 (Format.sprintf
+                    "Unexpected response %s from server"
+                    (Server.Protocol.show_response response))
+             ]
+       with
+       | InvalidQuery reason ->
+           `Assoc [
+             "error",
+             `String (Format.sprintf "Unable to parse query \"%s\": %s." serialized reason);
+           ]
+       | Parser.Error error ->
+           let error =
+             String.split ~on:'\n' error
+             |> (fun lines -> List.drop lines 1)
+             |> String.concat ~sep:"\n"
+           in
+           `Assoc [
+             "error",
+             `String (Format.sprintf "Unable to parse query \"%s\": %s." serialized error);
+           ]
+     in
+     Yojson.Safe.to_string response
+     |> Log.print "%s")
+  |> Scheduler.run_process ~configuration
 
 
 let command =

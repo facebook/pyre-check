@@ -5,8 +5,7 @@
 
 
 val find_sources: ?filter: (string -> bool) -> Configuration.t -> Pyre.Path.t list
-
-val parse_stubs: Scheduler.t -> configuration: Configuration.t -> File.Handle.t list
+val find_stubs: configuration: Configuration.t -> Pyre.Path.t list
 
 val parse_sources
   :  configuration: Configuration.t

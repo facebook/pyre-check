@@ -35,7 +35,6 @@ type found = {
 [@@deriving eq, show]
 
 type closest = {
-  rank: int;
   callable: Type.Callable.t;
   reason: reason option;
 }
@@ -47,8 +46,8 @@ type t =
 [@@deriving eq, show]
 
 val select
-  :  arguments: Argument.t list
-  -> resolution: Resolution.t
+  :  resolution: Resolution.t
+  -> arguments: Argument.t list
   -> callable: Type.Callable.t
   -> t
 

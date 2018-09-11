@@ -38,47 +38,59 @@ let create
   { workers; number_of_workers; bucket_multiplier; is_parallel = parallel }
 
 
-let initialize_process ~configuration:({ Configuration.verbose; sections; _ } as configuration) =
+let run_process ~configuration:({ Configuration.verbose; sections; _ } as configuration) process =
   Log.initialize ~verbose ~sections;
-  Configuration.set_global configuration
+  Configuration.set_global configuration;
+  try
+    let result = process () in
+    Statistics.flush ();
+    result
+  with error ->
+    raise error
 
 
 let map_reduce
-    { workers; bucket_multiplier; number_of_workers; _ }
+    { workers; bucket_multiplier; number_of_workers; is_parallel; _ }
     ?bucket_size
     ~configuration
-    ~init
+    ~initial
     ~map
     ~reduce
-    work =
-  let number_of_workers =
-    match bucket_size with
-    | Some exact_size when exact_size > 0 ->
-        (List.length work / exact_size) + 1
-    | _ ->
-        let bucket_multiplier = Core.Int.min bucket_multiplier (1 + (List.length work / 400)) in
-        number_of_workers * bucket_multiplier
-  in
-  let map accumulator inputs =
-    initialize_process ~configuration;
-    map accumulator inputs
-  in
-  MultiWorker.call
-    (Some workers)
-    ~job:map
-    ~merge:reduce
-    ~neutral:init
-    ~next:(Bucket.make ~num_workers:number_of_workers work)
+    ~inputs
+    () =
+  if is_parallel then
+    let number_of_workers =
+      match bucket_size with
+      | Some exact_size when exact_size > 0 ->
+          (List.length inputs / exact_size) + 1
+      | _ ->
+          let bucket_multiplier = Core.Int.min bucket_multiplier (1 + (List.length inputs / 400)) in
+          number_of_workers * bucket_multiplier
+    in
+    let map accumulator inputs =
+      (fun () -> map accumulator inputs)
+      |> run_process ~configuration
+    in
+    MultiWorker.call
+      (Some workers)
+      ~job:map
+      ~merge:reduce
+      ~neutral:initial
+      ~next:(Bucket.make ~num_workers:number_of_workers inputs)
+  else
+    map initial inputs
+    |> fun mapped -> reduce mapped initial
 
 
-let iter scheduler ~configuration ~f work =
+let iter scheduler ~configuration ~f ~inputs =
   map_reduce
     scheduler
     ~configuration
-    ~init:()
-    ~map:(fun _ work -> f work)
+    ~initial:()
+    ~map:(fun _ inputs -> f inputs)
     ~reduce:(fun _ _ -> ())
-    work
+    ~inputs
+    ()
 
 
 let single_job { workers; _ } ~f work =

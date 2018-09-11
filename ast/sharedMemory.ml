@@ -35,25 +35,49 @@ module PathValue = struct
   let description = "Path"
 end
 
-module Sources = SharedMemory.NoCache (HandleKey) (SourceValue)
+module HandleKeysValue = struct
+  type t = File.Handle.t list
+  let prefix = Prefix.make ()
+  let description = "All handles"
+end
 
-module Paths = SharedMemory.WithCache (IntKey) (PathValue)
+module Sources = struct
+  include SharedMemory.NoCache (HandleKey) (SourceValue)
+
+  let remove ~handles =
+    List.filter ~f:mem handles
+    |> KeySet.of_list
+    |> remove_batch
+end
 
 
-let get_source path =
-  Sources.get path
+module Handles = struct
+  include SharedMemory.WithCache (IntKey) (PathValue)
+
+  let get ~hash =
+    get hash
+
+  let add_handle_hash ~handle =
+    write_through (String.hash handle) handle
+end
 
 
-(* The sources must be removed by remove_paths beforehand. *)
-let add_source path source =
-  Sources.add path source
+module HandleKeys = struct
+  include SharedMemory.WithCache (IntKey) (HandleKeysValue)
+
+  let get () =
+    get 0
+    |> Option.value ~default:[]
+
+  let clear () =
+    remove_batch (KeySet.singleton 0)
 
 
-(* The way hack_parallel works, only the master thread is allowed to remove items from shared
-   memory. *)
-let remove_paths paths =
-  let paths = List.filter ~f:Sources.mem paths in
-  Sources.remove_batch (Sources.KeySet.of_list paths)
+  let add ~handles:new_keys =
+    let handles = get () in
+    clear ();
+    add 0 (new_keys @ handles)
+end
 
 
 module AccessKey = struct
@@ -70,34 +94,23 @@ module ModuleValue = struct
 end
 
 
-module Modules = SharedMemory.WithCache (AccessKey) (ModuleValue)
+module Modules = struct
+  include SharedMemory.WithCache (AccessKey) (ModuleValue)
 
+  let add ~qualifier ~ast_module =
+    write_through qualifier ast_module
 
-let add_module access ast_module =
-  Modules.add access ast_module
+  let remove ~qualifiers =
+    let accesses = List.filter ~f:mem qualifiers in
+    remove_batch (KeySet.of_list accesses)
 
+  let get ~qualifier =
+    get qualifier
 
-let remove_modules accesses =
-  let accesses = List.filter ~f:Modules.mem accesses in
-  Modules.remove_batch (Modules.KeySet.of_list accesses)
+  let get_exports ~qualifier =
+    get ~qualifier
+    >>| Module.wildcard_exports
 
-
-let get_module access =
-  Modules.get access
-
-
-let get_module_exports access =
-  Modules.get access
-  >>| Module.wildcard_exports
-
-
-let in_modules access =
-  Modules.mem access
-
-
-let get_path ~hash =
-  Paths.get hash
-
-
-let add_path_hash ~path =
-  Paths.write_through (String.hash path) path
+  let exists ~qualifier =
+    mem qualifier
+end

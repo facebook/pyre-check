@@ -16,7 +16,10 @@ class ConfigurationTest(unittest.TestCase):
     @patch("builtins.open")
     @patch("json.load")
     @patch.object(os, "getenv", return_value=None)
-    def test_init(self, os_environ, json_load, builtins_open) -> None:
+    @patch.object(Configuration, "_validate")
+    def test_init(
+        self, configuration_validate, os_environ, json_load, builtins_open
+    ) -> None:
         json_load.side_effect = [
             {
                 "analysis_directories": ["a"],
@@ -25,7 +28,6 @@ class ConfigurationTest(unittest.TestCase):
             },
             {},
         ]
-
         configuration = Configuration()
         self.assertEqual(configuration.analysis_directories, ["a"])
         self.assertEqual(configuration.targets, [])
@@ -40,7 +42,6 @@ class ConfigurationTest(unittest.TestCase):
             },
             {},
         ]
-
         configuration = Configuration()
         self.assertEqual(configuration.analysis_directories, ["a"])
         self.assertEqual(configuration.targets, [])
@@ -51,15 +52,14 @@ class ConfigurationTest(unittest.TestCase):
         configuration = Configuration()
         self.assertEqual(configuration.targets, ["//a/b/c"])
         self.assertEqual(configuration.analysis_directories, [])
-        self.assertEqual(configuration.get_version_hash(), None)
+        self.assertEqual(configuration.version_hash, "unversioned")
         self.assertEqual(configuration.logger, None)
         self.assertEqual(configuration.do_not_check, [])
-        self.assertTrue(configuration.disabled())
-        self.assertTrue(configuration._disabled)
+        self.assertTrue(configuration.disabled)
 
         json_load.side_effect = [{"typeshed": "TYPESHED/"}, {}]
         configuration = Configuration()
-        self.assertEqual(configuration.get_typeshed(), "TYPESHED/")
+        self.assertEqual(configuration.typeshed, "TYPESHED/")
         self.assertEqual(configuration.number_of_workers, number_of_workers())
 
         json_load.side_effect = [
@@ -72,21 +72,24 @@ class ConfigurationTest(unittest.TestCase):
             {},
         ]
         configuration = Configuration()
-        self.assertEqual(configuration.get_typeshed(), "TYPE/VERSION/SHED/")
-        self.assertEqual(configuration.get_search_path(), ["additional/"])
+        self.assertEqual(configuration.typeshed, "TYPE/VERSION/SHED/")
+        self.assertEqual(configuration.search_path, ["additional/"])
         self.assertEqual(configuration.number_of_workers, 20)
+        self.assertEqual(configuration.taint_models_path, None)
 
         json_load.side_effect = [
             {
                 "search_path": "simple_string/",
                 "version": "VERSION",
                 "typeshed": "TYPE/%V/SHED/",
+                "taint_models_path": ".pyre/taint_models",
             },
             {},
         ]
         configuration = Configuration()
-        self.assertEqual(configuration.get_typeshed(), "TYPE/VERSION/SHED/")
-        self.assertEqual(configuration.get_search_path(), ["simple_string/"])
+        self.assertEqual(configuration.typeshed, "TYPE/VERSION/SHED/")
+        self.assertEqual(configuration.search_path, ["simple_string/"])
+        self.assertEqual(configuration.taint_models_path, ".pyre/taint_models")
 
         # Test loading of additional directories in the search path
         # via environment.
@@ -99,9 +102,9 @@ class ConfigurationTest(unittest.TestCase):
                 configuration = Configuration(
                     search_path=["command/", "line/"], preserve_pythonpath=True
                 )
-                self.assertEqual(configuration.get_typeshed(), "TYPESHED/")
+                self.assertEqual(configuration.typeshed, "TYPESHED/")
                 self.assertEqual(
-                    configuration.get_search_path(),
+                    configuration.search_path,
                     [
                         "additional/",
                         "directories/",
@@ -122,29 +125,37 @@ class ConfigurationTest(unittest.TestCase):
                 configuration = Configuration(
                     search_path=["command/", "line/"], preserve_pythonpath=False
                 )
-                self.assertEqual(configuration.get_typeshed(), "TYPESHED/")
+                self.assertEqual(configuration.typeshed, "TYPESHED/")
                 self.assertEqual(
-                    configuration.get_search_path(),
-                    ["command/", "line/", "json/", "file/"],
+                    configuration.search_path, ["command/", "line/", "json/", "file/"]
                 )
 
         # Test manual loading of typeshed directory.
         json_load.side_effect = [{}, {}]
         configuration = Configuration(typeshed="some/directory/path/")
-        self.assertEqual(configuration.get_typeshed(), "some/directory/path/")
+        self.assertEqual(configuration.typeshed, "some/directory/path/")
 
         json_load.side_effect = [{"binary": "/binary"}, {}]
         configuration = Configuration()
-        self.assertEqual(configuration.get_binary(), "/binary")
+        self.assertEqual(configuration.binary, "/binary")
 
         json_load.side_effect = [{"version": "VERSION", "binary": "/%V/binary"}, {}]
         configuration = Configuration()
-        self.assertEqual(configuration.get_binary(), "/VERSION/binary")
+        self.assertEqual(configuration.binary, "/VERSION/binary")
 
+        # Test version override
         with patch.object(os, "getenv", return_value="VERSION_HASH"):
             json_load.side_effect = [{}, {}]
             configuration = Configuration()
-            self.assertEqual(configuration.get_version_hash(), "VERSION_HASH")
+            self.assertEqual(configuration.version_hash, "VERSION_HASH")
+
+        with patch.object(os, "getenv", return_value="VERSION_HASH"):
+            json_load.side_effect = [
+                {"version": "NOT_THIS_VERSION", "typeshed": "TYPE/%V/SHED/"},
+                {},
+            ]
+            configuration = Configuration()
+            self.assertEqual(configuration.typeshed, "TYPE/VERSION_HASH/SHED/")
 
         # Test multiple definitions of the do_not_check files.
         json_load.side_effect = [
@@ -159,7 +170,7 @@ class ConfigurationTest(unittest.TestCase):
         # Normalize number of workers if zero.
         json_load.side_effect = [{"typeshed": "TYPESHED/", "workers": 0}, {}]
         configuration = Configuration()
-        self.assertEqual(configuration.get_typeshed(), "TYPESHED/")
+        self.assertEqual(configuration.typeshed, "TYPESHED/")
         self.assertEqual(configuration.number_of_workers, number_of_workers())
 
     @patch("os.path.isfile")
@@ -171,8 +182,15 @@ class ConfigurationTest(unittest.TestCase):
     # applied, _apply_defaults goes crazy; hence mock it so it doesn't
     # run - it's not important for this test anyway.
     @patch.object(Configuration, "_apply_defaults")
+    @patch.object(Configuration, "_validate")
     def test_configurations(
-        self, config_defaults, os_access, os_path_exists, os_path_isdir, os_path_isfile
+        self,
+        configuration_validate,
+        configuration_defaults,
+        os_access,
+        os_path_exists,
+        os_path_isdir,
+        os_path_isfile,
     ) -> None:
         # Assume all paths are valid.
         os_access.return_value = True
@@ -190,10 +208,10 @@ class ConfigurationTest(unittest.TestCase):
                     call(CONFIGURATION_FILE, path_from_root=""),
                 ]
             )
-            self.assertEqual(configuration.get_local_configuration(), None)
+            self.assertEqual(configuration.local_configuration, None)
 
         with patch.object(Configuration, "_read") as Configuration_read:
-            configuration = Configuration(original_directory="original")
+            configuration = Configuration(local_configuration_directory="original")
             Configuration_read.assert_has_calls(
                 [
                     call(
@@ -205,7 +223,7 @@ class ConfigurationTest(unittest.TestCase):
                 ]
             )
             self.assertEqual(
-                configuration.get_local_configuration(),
+                configuration.local_configuration,
                 "original/" + CONFIGURATION_FILE + ".local",
             )
         with patch.object(Configuration, "_read") as Configuration_read:
@@ -220,12 +238,12 @@ class ConfigurationTest(unittest.TestCase):
                 ]
             )
             self.assertEqual(
-                configuration.get_local_configuration(),
+                configuration.local_configuration,
                 "local/" + CONFIGURATION_FILE + ".local",
             )
         with patch.object(Configuration, "_read") as Configuration_read:
             configuration = Configuration(
-                original_directory="original", local_configuration="local"
+                local_configuration_directory="original", local_configuration="local"
             )
             Configuration_read.assert_has_calls(
                 [
@@ -237,7 +255,7 @@ class ConfigurationTest(unittest.TestCase):
                 ]
             )
             self.assertEqual(
-                configuration.get_local_configuration(),
+                configuration.local_configuration,
                 "local/" + CONFIGURATION_FILE + ".local",
             )
 
@@ -256,14 +274,15 @@ class ConfigurationTest(unittest.TestCase):
                 ]
             )
             self.assertEqual(
-                configuration.get_local_configuration(), "local/.some_configuration"
+                configuration.local_configuration, "local/.some_configuration"
             )
 
     @patch("os.path.isfile")
     @patch("os.path.isdir")
     @patch("os.path.exists")
+    @patch.object(Configuration, "_validate")
     def test_nonexisting_local_configuration(
-        self, os_path_exists, os_path_isdir, os_path_isfile
+        self, configuration_validate, os_path_exists, os_path_isdir, os_path_isfile
     ) -> None:
         # Test that a non-existing local configuration directory was provided.
         os_path_exists.return_value = False
@@ -273,7 +292,9 @@ class ConfigurationTest(unittest.TestCase):
             Configuration(local_configuration="local")
 
         with self.assertRaises(EnvironmentException):
-            Configuration(original_directory="original", local_configuration="local")
+            Configuration(
+                local_configuration_directory="original", local_configuration="local"
+            )
 
         # Test that a non-existing local configuration file was provided.
         os_path_exists.return_value = False
@@ -284,7 +305,7 @@ class ConfigurationTest(unittest.TestCase):
 
         with self.assertRaises(EnvironmentException):
             Configuration(
-                original_directory="original",
+                local_configuration_directory="original",
                 local_configuration="local/.some_configuration",
             )
 
@@ -296,10 +317,13 @@ class ConfigurationTest(unittest.TestCase):
             Configuration(local_configuration="localdir")
 
         with self.assertRaises(EnvironmentException):
-            Configuration(original_directory="original", local_configuration="localdir")
+            Configuration(
+                local_configuration_directory="original", local_configuration="localdir"
+            )
 
     @patch("os.path.isdir")
-    def test_empty_configuration(self, os_path_isdir) -> None:
+    @patch.object(Configuration, "_validate")
+    def test_empty_configuration(self, configuration_validate, os_path_isdir) -> None:
         os_path_isdir.return_value = False
         # If typeshed is importable, find_typeshed() will behave
         # differently because its 'import typeshed' will
@@ -329,9 +353,8 @@ class ConfigurationTest(unittest.TestCase):
             os_path_isdir.assert_has_calls(calls)
             self.assertEqual(configuration.analysis_directories, [])
             self.assertEqual(configuration.targets, [])
-            self.assertEqual(configuration.get_version_hash(), None)
+            self.assertEqual(configuration.version_hash, "unversioned")
             self.assertEqual(configuration.logger, None)
             self.assertEqual(configuration.do_not_check, [])
-            self.assertFalse(configuration.disabled())
-            self.assertFalse(configuration._disabled)
+            self.assertFalse(configuration.disabled)
             self.assertEqual(configuration._typeshed, None)

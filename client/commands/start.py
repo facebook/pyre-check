@@ -41,7 +41,7 @@ class Start(Reporting):
                     try:
                         with filesystem.acquire_lock(
                             os.path.join(
-                                self._analysis_directory,
+                                self._analysis_directory.get_root(),
                                 ".pyre",
                                 "server",
                                 "server.lock",
@@ -51,11 +51,13 @@ class Start(Reporting):
                             pass
                     except OSError:
                         LOG.warning(
-                            "Server at `%s` exists, skipping.", self._analysis_directory
+                            "Server at `%s` exists, skipping.",
+                            self._analysis_directory.get_root(),
                         )
                         self._exit_code = ExitCode.FAILURE
                         return
 
+                    self._analysis_directory.prepare()
                     self._call_client(command=self.NAME).check()
                     return
             except OSError:
@@ -78,12 +80,12 @@ class Start(Reporting):
                 "-workers",
                 str(self._number_of_workers),
                 "-typeshed",
-                str(self._configuration.get_typeshed()),
+                self._configuration.typeshed,
                 "-expected-binary-version",
-                str(self._configuration.get_version_hash()),
+                self._configuration.version_hash,
             ]
         )
-        search_path = self._configuration.get_search_path()
+        search_path = self._configuration.search_path
         if search_path:
             flags.extend(["-search-path", ",".join(search_path)])
 

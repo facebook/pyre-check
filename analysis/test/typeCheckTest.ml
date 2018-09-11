@@ -25,7 +25,7 @@ let resolution = Test.resolution ()
 
 let create
     ?(bottom = false)
-    ?(define = Test.empty_define)
+    ?(define = Test.mock_define)
     ?(expected_return = Type.Top)
     ?(immutables = [])
     annotations =
@@ -43,7 +43,7 @@ let create
         in
         Access.create name, annotation
       in
-      List.map ~f:annotify annotations
+      List.map annotations ~f:annotify
       |> Access.Map.of_alist_exn
     in
     Resolution.with_annotations resolution ~annotations
@@ -74,7 +74,7 @@ let assert_initial
     expected =
   let define = {
     Define.name = Access.create "foo";
-    parameters = List.map ~f:(~+) parameters;
+    parameters = List.map parameters ~f:(~+);
     body = [];
     decorators;
     docstring = None;
@@ -433,13 +433,15 @@ let test_forward_expression _ =
   (* Lambda. *)
   let callable ~parameters ~annotation =
     let parameters =
+      let open Type.Callable in
       let rec anonymous_parameters = function
         | count when count > 0 ->
-            Type.Callable.Parameter.Anonymous Type.Object :: anonymous_parameters (count - 1)
+            Parameter.Anonymous { Parameter.index = (count - 1); annotation = Type.Object }
+            :: anonymous_parameters (count - 1)
         | _ ->
             []
       in
-      Type.Callable.Defined (anonymous_parameters parameters)
+      Defined (List.rev (anonymous_parameters parameters))
     in
     Type.callable ~parameters ~annotation ()
   in
@@ -514,6 +516,7 @@ let test_forward_statement _ =
       ?(postcondition_immutables = [])
       ?expected_return
       ?(errors = `Undefined 0)
+      ?(bottom = false)
       precondition
       statement
       postcondition =
@@ -529,7 +532,9 @@ let test_forward_statement _ =
         ~init:(create ?expected_return ~immutables:precondition_immutables precondition)
         parsed
     in
-    assert_state_equal (create ~immutables:postcondition_immutables postcondition) forwarded;
+    assert_state_equal
+      (create ~bottom ~immutables:postcondition_immutables postcondition)
+      forwarded;
     let errors =
       match errors with
       | `Specific errors ->
@@ -570,10 +575,17 @@ let test_forward_statement _ =
     ["a", Type.integer; "b", Type.Top; "c", Type.integer; "d", Type.Top];
   assert_forward
     ~errors:
-      (`Specific ["Incompatible variable type [9]: Unable to unpack `int`, expected a `Tuple`."])
+      (`Specific ["Unable to unpack [23]: Unable to unpack single value, 2 were expected."])
     ["z", Type.integer]
     "x, y = z"
     ["x", Type.Top; "y", Type.Top; "z", Type.integer];
+
+  assert_forward
+    ~errors:
+      (`Specific ["Unable to unpack [23]: Unable to unpack 3 values, 2 were expected."])
+    ["z", Type.tuple [Type.integer; Type.string; Type.string]]
+    "x, y = z"
+    ["x", Type.Top; "y", Type.Top; "z", Type.tuple [Type.integer; Type.string; Type.string]];
 
   assert_forward
     ["y", Type.integer; "z", Type.Top]
@@ -590,7 +602,7 @@ let test_forward_statement _ =
   assert_forward
     ~errors:
       (`Specific [
-          "Incompatible variable type [9]: Unable to unpack `unknown`, expected a `Tuple`.";
+          "Unable to unpack [23]: Unable to unpack single value, 2 were expected.";
         ])
     []
     "(x, y), z = 1"
@@ -722,6 +734,12 @@ let test_forward_statement _ =
   assert_forward
     ["x", Type.integer]
     "assert isinstance(x, (int, str))"
+    ["x", Type.integer];
+
+  assert_forward
+    ~bottom:true
+    ["x", Type.integer]
+    "assert isinstance(x, str)"
     ["x", Type.integer];
 
   (* Raise. *)
@@ -1185,7 +1203,7 @@ let test_coverage _ =
     let { Result.coverage; _ } =
       let environment = Test.environment () in
       Analysis.TypeCheck.check
-        Test.configuration
+        Test.mock_configuration
         environment
         (parse source)
     in
@@ -1416,6 +1434,17 @@ let test_check _ =
 
   assert_type_errors
     {|
+      _T = typing.TypeVar("_T")
+      def meta(x: typing.Type[_T]) -> None: ...
+      meta(typing.Dict)
+    |}
+    [
+      "Incompatible parameter type [6]: Expected `typing.Type[Variable[_T]]` but got " ^
+      "`typing.TypeAlias`.";
+    ];
+
+  assert_type_errors
+    {|
       x: typing.Generator[int, int, int]
       def foo() -> typing.Generator:
         return x
@@ -1486,7 +1515,7 @@ let test_check _ =
         return x + y + z
     |}
     [
-      "Incompatible variable type [9]: Unable to unpack `unknown`, expected a `Tuple`.";
+      "Unable to unpack [23]: Unable to unpack single value, 2 were expected.";
       "Incompatible return type [7]: Expected `int` but got `unknown`.";
     ];
 
@@ -1831,7 +1860,18 @@ let test_check _ =
       def f(meta: type) -> typing.Type[int]:
         return meta
     |}
-    ["Incompatible return type [7]: Expected `typing.Type[int]` but got `typing.Type[typing.Any]`."]
+    [
+      "Incompatible return type [7]: Expected `typing.Type[int]` but got " ^
+      "`typing.Type[typing.Any]`.";
+    ];
+
+  (* object methods are picked up for optionals. *)
+  assert_type_errors
+    {|
+      def f() -> int:
+        return None.__sizeof__()
+    |}
+    []
 
 
 let test_check_assign _ =
@@ -1863,7 +1903,7 @@ let test_check_assign _ =
       def foo(input: int) -> None:
         x, y = input
     |}
-    ["Incompatible variable type [9]: Unable to unpack `int`, expected a `Tuple`."];
+    ["Unable to unpack [23]: Unable to unpack single value, 2 were expected."];
 
 
   assert_type_errors
@@ -2093,7 +2133,7 @@ let test_check_comprehensions _ =
     [
       "Incompatible return type [7]: Expected `typing.Dict[int, str]` but got " ^
       "`typing.Dict[unknown, unknown]`.";
-      "Incompatible variable type [9]: Unable to unpack `int`, expected a `Tuple`.";
+      "Unable to unpack [23]: Unable to unpack single value, 2 were expected.";
     ];
 
   assert_type_errors
@@ -2555,10 +2595,10 @@ let test_check_variable_arguments _ =
       def foo(a: int, b: int) -> int:
         return 1
       def bar(b: typing.List[str]) -> None:
-        foo ( *b, 'asdf' )  # assuming b = []
+        foo ( *b, 'asdf' )
     |}
     [
-      "Incompatible parameter type [6]: Expected `int` but got `str`.";
+      "Too many arguments [19]: Call `foo` expects 2 positional arguments, 3 were provided.";
     ];
 
   assert_type_errors
@@ -2568,26 +2608,26 @@ let test_check_variable_arguments _ =
       def bar(b: typing.List[str]) -> None:
         foo ( *b, 1, 'asdf' )
     |}
-    ["Incompatible parameter type [6]: Expected `int` but got `str`."];
+    ["Too many arguments [19]: Call `foo` expects 2 positional arguments, 4 were provided."];
 
   assert_type_errors
     {|
       def foo(a: int, b: str) -> int:
         return 1
       def bar(b: typing.List[int]) -> None:
-        foo ( *b, 'asdf' )  # assuming b = [_]
+        foo ( *b, 'asdf' )
     |}
-    [];
+    ["Too many arguments [19]: Call `foo` expects 2 positional arguments, 3 were provided."];
 
   assert_type_errors
     {|
       def durp(a: int, b: str) -> int:
         return 1
       def bar(b: typing.List[int]) -> None:
-        durp ( *b, 1.0 )  # assuming b = [_]
+        durp( *b, 1.0 )
     |}
     [
-      "Incompatible parameter type [6]: Expected `str` but got `float`.";
+      "Too many arguments [19]: Call `durp` expects 2 positional arguments, 3 were provided.";
     ];
 
   assert_type_errors
@@ -3716,7 +3756,42 @@ let test_check_attributes _ =
         foo = Foo()
         return foo.y
     |}
-    []
+    [];
+
+  (* We infer basic constructors. *)
+  assert_type_errors
+    {|
+      class C:
+        pass
+      class D:
+        def __init__(self) -> None:
+          self.x = C()
+        def foo(self) -> int:
+          return self.x
+    |}
+    [
+      "Missing attribute annotation [4]: Attribute `x` of class `D` has type `C` but no type is" ^
+      " specified.";
+      "Incompatible return type [7]: Expected `int` but got `C`.";
+    ];
+
+  assert_type_errors
+    {|
+      class C:
+        pass
+      class D:
+        def __init__(self) -> None:
+          # We trust the callee blindly without examining the arguments for inference.
+          self.x = C(1,2,3,4)
+        def foo(self) -> int:
+          return self.x
+    |}
+    [
+      "Missing attribute annotation [4]: Attribute `x` of class `D` has type `C` but no type is" ^
+      " specified.";
+      "Too many arguments [19]: Call `object.__init__` expects 1 positional argument, 5 were" ^
+      " provided.";
+      "Incompatible return type [7]: Expected `int` but got `C`."]
 
 
 let test_check_globals _ =
@@ -4285,6 +4360,16 @@ let test_check_yield _ =
       "Incompatible return type [7]: Expected `typing.Generator[int, None, None]` " ^
       "but got `typing.Generator[str, None, None]`."
     ];
+
+
+  assert_type_errors
+    {|
+      def generator() -> typing.Generator[int, None, None]:
+        yield 1
+      def wrapper() -> typing.Generator[int, None, None]:
+        yield from generator()
+    |}
+    [];
 
   assert_type_errors
     {|
@@ -5172,7 +5257,17 @@ let test_check_async _ =
       async def foo() -> typing.AsyncGenerator[int, None]:
         yield 1
     |}
-    []
+    [];
+
+  assert_type_errors
+  {|
+    def takes_int(x: int) -> int:
+      return x
+    async def loop(g: typing.AsyncGenerator[str, None]) -> typing.AsyncGenerator[int, None]:
+      async for item in g:
+        yield takes_int(item)
+  |}
+  []
 
 
 let test_check_behavioral_subtyping _ =
@@ -5565,6 +5660,8 @@ let test_check_constructors _ =
     |}
     ["Incompatible parameter type [6]: Expected `int` but got `str`."];
 
+  (* The MRO of inheriting both a class and its direct parent will result in super() evaluating
+     to the subclass, regardless of order. *)
   assert_type_errors
     {|
       class Subclass(A, B):
@@ -5573,7 +5670,7 @@ let test_check_constructors _ =
         def wrong(self)->B:
           return super()
     |}
-    ["Incompatible return type [7]: Expected `B` but got `A`."];
+    [];
 
   (* Overloaded constructors. *)
   assert_type_errors

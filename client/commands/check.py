@@ -3,6 +3,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+from typing import List
+
 from .command import ExitCode
 from .reporting import Reporting
 
@@ -12,11 +14,9 @@ class Check(Reporting):
 
     def __init__(self, arguments, configuration, analysis_directory) -> None:
         super(Check, self).__init__(arguments, configuration, analysis_directory)
-        self._log_identifier = arguments.log_identifier
         self._number_of_workers = configuration.number_of_workers
-        self._logger = arguments.logger or configuration.logger
 
-    def _flags(self):
+    def _flags(self) -> List[str]:
         flags = super()._flags()
         filter_directories = self._get_directories_to_analyze()
         if len(filter_directories):
@@ -28,19 +28,17 @@ class Check(Reporting):
                 "-workers",
                 str(self._number_of_workers),
                 "-typeshed",
-                str(self._configuration.get_typeshed()),
+                self._configuration.typeshed,
             ]
         )
-        search_path = self._configuration.get_search_path()
+        search_path = self._configuration.search_path
         if search_path:
             flags.extend(["-search-path", ",".join(search_path)])
-        if self._log_identifier:
-            flags.extend(["-log-identifier", self._log_identifier])
-        if self._logger:
-            flags.extend(["-logger", self._logger])
         return flags
 
     def _run(self, retries: int = 1) -> None:
+        self._analysis_directory.prepare()
+
         result = self._call_client(command=self.NAME)
         errors = self._get_errors(result)
         self._print(errors)

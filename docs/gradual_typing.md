@@ -58,6 +58,28 @@ Pyre solves this problem with a per-file declarative mode:
 This tells Pyre to take all annotations at face value (so dependencies type check),
 but allows us to deal with internal type correctness later.
 
+## Suppressing Specific Errors
+
+In some cases we may have a file that will almost meet type-checking save for a few specific kinds
+of dynamic behavior.
+If we have a file with several of these above kind of incompatible return type errors, we could
+suppress all of them, but no other kinds of errors with:
+
+```
+  # pyre-do-not-check[7]
+
+  def unannotated_library_function_A() -> int:
+    return sometimes_returns_a_string(return_string=False)  # this is fine
+
+  def unannotated_library_function_B() -> str:
+    return sometimes_returns_a_string(return_string=True)  # this is also fine (in the same file)
+```
+
+This gives you access to as much static typing as you can handle at a given point.
+
+However, this should be a stopgap solution, and not a permanent fix.  Suppressing an entire class
+of errors is still pretty dangerous, and over time you should try to converge to full compliance.
+
 ## Stubs
 
 You might have some highly dynamic code that Pyre is having trouble analyzing and

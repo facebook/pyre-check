@@ -325,7 +325,7 @@ module Access = struct
 
 
   let create_from_identifiers identifiers =
-    List.map ~f:(fun identifier -> Identifier identifier) identifiers
+    List.map identifiers ~f:(fun identifier -> Identifier identifier)
 
 
   let create_from_expression ({ Node.value; _ } as expression) =
@@ -356,7 +356,7 @@ module Access = struct
       | _ ->
           "?"
     in
-    List.map ~f:identifier access
+    List.map access ~f:identifier
     |> String.concat ~sep:"."
     |> Format.fprintf format "%s"
 
@@ -460,6 +460,24 @@ module Access = struct
   let call ?(arguments = []) ~location ~name () =
     [Identifier (Identifier.create name); Call { Node.location; value = arguments }]
 
+  type call = {
+    callee: string;
+    arguments: Argument.t list;
+  }
+
+  let name_and_arguments ~call =
+    let is_identifier = function
+      | Identifier _ ->
+          true
+      | _ ->
+          false
+    in
+    match List.split_while ~f:is_identifier call with
+    | identifiers, [Call { Node.value = arguments; _ }] ->
+        Some { callee = show identifiers; arguments }
+    | _ ->
+        None
+
 
   let backup ~arguments ~name =
     match List.rev name with
@@ -501,6 +519,11 @@ module Access = struct
         >>| fun name ->
         (create_from_expression value) @ (call ~arguments:[] ~location ~name ())
     | _ -> None
+
+  let is_assert_function access =
+    List.take_while access ~f:(function | Identifier _ -> true | _ -> false)
+    |> show
+    |> Core.Set.mem Recognized.assert_functions
 end
 
 

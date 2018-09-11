@@ -14,15 +14,14 @@ open Pyre
 
 
 let test_parse_stubs_modules_list _ =
+  let root = Path.current_working_directory () in
+  let configuration = Configuration.create ~local_root:root () in
   let files =
-    let root = Path.current_working_directory () in
     let create_stub_with_relative relative =
-      let content = Some "def f()->int: ...\n" in
-      File.create ~content (Path.create_relative ~root ~relative)
+      File.create ~content:"def f()->int: ...\n" (Path.create_relative ~root ~relative)
     in
     let create_module_with_relative relative =
-      let content = Some "def f()->int:\n    return 1\n" in
-      File.create ~content (Path.create_relative ~root ~relative)
+      File.create ~content:"def f()->int:\n    return 1\n" (Path.create_relative ~root ~relative)
     in
     [
       create_stub_with_relative "a.pyi";
@@ -43,12 +42,11 @@ let test_parse_stubs_modules_list _ =
   in
   assert_equal (List.length files) (List.length handles);
   let get_handle_at position =
-    File.handle (List.nth_exn files position)
-    |> Option.value ~default:(File.Handle.create "")
+    File.handle ~configuration (List.nth_exn files position)
   in
   let assert_stub_matches_name ~handle define =
     let name =
-      match Ast.SharedMemory.get_source (get_handle_at handle) with
+      match Ast.SharedMemory.Sources.get (get_handle_at handle) with
       | Some {
           Source.statements = [
             {
@@ -64,7 +62,7 @@ let test_parse_stubs_modules_list _ =
   in
   let assert_module_matches_name ~handle define =
     let name =
-      match Ast.SharedMemory.get_source (get_handle_at handle) with
+      match Ast.SharedMemory.Sources.get (get_handle_at handle) with
       | Some {
           Source.statements = [
             {
@@ -88,13 +86,12 @@ let test_parse_stubs_modules_list _ =
   assert_module_matches_name ~handle:7 "2and3.modd.f"
 
 
-let test_parse_stubs context =
+let test_find_stubs context =
   let handles =
     let local_root = Path.create_absolute (bracket_tmpdir context) in
     let module_root = Path.create_absolute (bracket_tmpdir context) in
-
     let write_file root relative =
-      File.create ~content:(Some "def foo() -> int: ...") (Path.create_relative ~root ~relative)
+      File.create ~content:"def foo() -> int: ..." (Path.create_relative ~root ~relative)
       |> File.write
     in
     write_file local_root "a.pyi";
@@ -105,10 +102,9 @@ let test_parse_stubs context =
     write_file local_root "ttypes.py";
     write_file local_root "ttypes.pyi";
 
-    Service.Parser.parse_stubs
-      (Scheduler.mock ())
+    Service.Parser.find_stubs
       ~configuration:(Configuration.create ~local_root ~search_path:[module_root] ())
-    |> List.map ~f:File.Handle.show
+    |> List.filter_map ~f:Path.relative
     |> List.sort ~compare:String.compare
   in
   assert_equal
@@ -119,12 +115,11 @@ let test_parse_stubs context =
 
 
 let test_parse_typeshed context =
+  let typeshed_root = Path.create_absolute (bracket_tmpdir context) in
   let handles =
     let local_root = Path.create_absolute (bracket_tmpdir context) in
-    let typeshed_root = Path.create_absolute (bracket_tmpdir context) in
-
     let write_file root relative =
-      File.create ~content:(Some "def foo() -> int: ...") (Path.create_relative ~root ~relative)
+      File.create ~content:"def foo() -> int: ..." (Path.create_relative ~root ~relative)
       |> File.write
     in
     write_file typeshed_root "folder/a.pyi";
@@ -133,10 +128,9 @@ let test_parse_typeshed context =
     write_file typeshed_root "tests/d.pyi";
     write_file typeshed_root ".skipme/e.pyi";
 
-    Service.Parser.parse_stubs
-      (Scheduler.mock ())
+    Service.Parser.find_stubs
       ~configuration:(Configuration.create ~local_root ~typeshed:typeshed_root ())
-    |> List.map ~f:File.Handle.show
+    |> List.filter_map ~f:Path.relative
     |> List.sort ~compare:String.compare
   in
   assert_equal
@@ -147,10 +141,12 @@ let test_parse_typeshed context =
 
 
 let test_parse_source _ =
+  let root = Path.current_working_directory () in
+  let configuration = Configuration.create ~local_root:root () in
   let file =
     File.create
-      ~content:(Some "def foo()->int:\n    return 1\n")
-      (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:"a.py")
+      ~content:"def foo()->int:\n    return 1\n"
+      (Path.create_relative ~root ~relative:"a.py")
   in
   let handles =
     Service.Parser.parse_sources
@@ -158,16 +154,16 @@ let test_parse_source _ =
       ~scheduler:(Scheduler.mock ())
       ~files:[file]
   in
-  let handle = Option.value_exn (File.handle file) in
+  let handle = File.handle ~configuration file in
   assert_equal handles [handle];
 
-  let source = Ast.SharedMemory.get_source handle in
+  let source = Ast.SharedMemory.Sources.get handle in
   assert_equal (Option.is_some source) true;
 
-  let { Source.path; statements; metadata = { Source.Metadata.number_of_lines; _ }; _ } =
+  let { Source.handle; statements; metadata = { Source.Metadata.number_of_lines; _ }; _ } =
     Option.value_exn source
   in
-  assert_equal path "a.py";
+  assert_equal handle (File.Handle.create "a.py");
   assert_equal number_of_lines 3;
   begin
     match statements with
@@ -182,13 +178,15 @@ let test_parse_source _ =
 
 
 let test_parse_sources context =
+  let scheduler = Scheduler.mock () in
+  let content = "def foo() -> int: ..." in
   let stub_handles, source_handles =
     let local_root = Path.create_absolute (bracket_tmpdir context) in
     let module_root = Path.create_absolute (bracket_tmpdir context) in
     let link_root = Path.create_absolute (bracket_tmpdir context) in
 
     let write_file root relative =
-      File.create ~content:(Some "def foo() -> int: ...") (Path.create_relative ~root ~relative)
+      File.create ~content (Path.create_relative ~root ~relative)
       |> File.write
     in
     write_file local_root "a.pyi";
@@ -210,7 +208,6 @@ let test_parse_sources context =
       ~dst:((Path.absolute local_root) ^/ "d.pyi");
 
     let configuration = Configuration.create ~local_root ~search_path:[module_root] () in
-    let scheduler = Scheduler.mock () in
     let { Service.Parser.stubs; sources } = Service.Parser.parse_all scheduler ~configuration in
     let stubs =
       stubs
@@ -233,25 +230,65 @@ let test_parse_sources context =
     ~cmp:(List.equal ~equal:String.equal)
     ~printer:(String.concat ~sep:", ")
     ["c.py"]
-    source_handles
+    source_handles;
+  let local_root = Path.create_absolute (bracket_tmpdir context) in
+  let stub_root = Path.create_relative ~root:local_root ~relative:"stubs" in
+  let stub_handles, source_handles =
+    let configuration = Configuration.create ~local_root ~search_path:[stub_root] () in
+
+    let write_file root relative =
+      File.create ~content:"def foo() -> int: ..." (Path.create_relative ~root ~relative)
+      |> File.write
+    in
+    write_file local_root "a.py";
+    write_file stub_root "stub.pyi";
+    Ast.SharedMemory.Sources.remove
+      ~handles:[File.Handle.create "a.py"; File.Handle.create "stub.pyi"];
+    let { Service.Parser.stubs; sources } = Service.Parser.parse_all scheduler ~configuration in
+    stubs, sources
+  in
+  (* Note that the stub gets parsed twice due to appearing both in the local root and stubs, but
+     consistently gets mapped to the correct handle. *)
+  assert_equal
+    stub_handles
+    [File.Handle.create "stub.pyi"; File.Handle.create "stub.pyi"];
+  assert_equal source_handles [File.Handle.create "a.py"];
+
+  let assert_handle_path ~handle ~path =
+    let handle = File.Handle.create handle in
+    let { Source.path = actual; _ } = Option.value_exn (Ast.SharedMemory.Sources.get handle) in
+    assert_equal ~cmp:(Option.equal Path.equal) (Some path) actual
+  in
+  assert_handle_path
+    ~handle:"stub.pyi"
+    ~path:(Path.create_relative ~root:stub_root ~relative:"stub.pyi");
+  assert_handle_path ~handle:"a.py" ~path:(Path.create_relative ~root:local_root ~relative:"a.py");
+  begin
+    match Ast.SharedMemory.Sources.get (File.Handle.create "c.py") with
+    | Some { Source.hash; _ } ->
+        assert_equal hash ([%hash: string list] (String.split ~on:'\n' content))
+    | None ->
+        assert_unreached ()
+  end
 
 
 let test_register_modules _ =
+  let configuration = Configuration.create ~local_root:(Path.current_working_directory ()) () in
   let assert_module_exports raw_source expected_exports =
     let get_qualifier file =
-      File.handle file
-      >>= Ast.SharedMemory.get_source
+      File.handle ~configuration file
+      |> Ast.SharedMemory.Sources.get
       >>| (fun { Source.qualifier; _ } -> qualifier)
     in
     let file =
       File.create
-        ~content:(Some (trim_extra_indentation raw_source))
+        ~content:(trim_extra_indentation raw_source)
         (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:"a.py")
     in
 
-    (* Build environment *)
-    Ast.SharedMemory.remove_modules (List.filter_map ~f:get_qualifier [file]);
-    Ast.SharedMemory.remove_paths (List.filter_map ~f:(fun file -> File.handle file) [file]);
+    (* Build environment. *)
+    Ast.SharedMemory.Modules.remove ~qualifiers:(List.filter_map ~f:get_qualifier [file]);
+    Ast.SharedMemory.Sources.remove ~handles:(List.map ~f:(File.handle ~configuration) [file]);
     let configuration = Configuration.create ~local_root:(Path.current_working_directory ()) () in
     let sources =
       Service.Parser.parse_sources
@@ -259,13 +296,12 @@ let test_register_modules _ =
         ~scheduler:(Scheduler.mock ())
         ~files:[file]
     in
-    (* Check specific testing file *)
+    (* Check specific file. *)
     let qualifier = Option.value_exn (get_qualifier file) in
     (* The modules get removed after preprocessing. *)
-    assert_is_none (Ast.SharedMemory.get_module qualifier);
-
-    Service.Environment.handler ~configuration ~stubs:[] ~sources |> ignore;
-    assert_is_some (Ast.SharedMemory.get_module qualifier);
+    assert_is_none (Ast.SharedMemory.Modules.get ~qualifier);
+    Service.Environment.populate_shared_memory ~configuration ~stubs:[] ~sources;
+    assert_is_some (Ast.SharedMemory.Modules.get ~qualifier);
 
     assert_equal
       ~cmp:(List.equal ~equal:Access.equal)
@@ -273,7 +309,7 @@ let test_register_modules _ =
           List.map ~f:(Access.show) expression_list
           |> String.concat ~sep:", ")
       (List.map ~f:Access.create expected_exports)
-      (Option.value_exn (Ast.SharedMemory.get_module_exports qualifier))
+      (Option.value_exn (Ast.SharedMemory.Modules.get_exports ~qualifier))
   in
   assert_module_exports
     {|
@@ -313,7 +349,7 @@ let test_register_modules _ =
 let () =
   "parser">:::[
     "parse_stubs_modules_list">::test_parse_stubs_modules_list;
-    "parse_stubs">::test_parse_stubs;
+    "find_stubs">::test_find_stubs;
     "parse_typeshed">::test_parse_typeshed;
     "parse_source">::test_parse_source;
     "parse_sources">::test_parse_sources;

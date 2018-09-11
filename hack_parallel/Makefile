@@ -58,7 +58,10 @@ MODULES=\
 NATIVE_C_FILES=\
   $(INOTIFY_STUBS)\
   $(FSNOTIFY_STUBS)\
+  hack_parallel/heap/hh_assert.c\
   hack_parallel/heap/hh_shared.c\
+  hack_parallel/heap/hh_shared_sqlite.c\
+  hack_parallel/utils/get_build_id.c\
   hack_parallel/utils/files.c\
   hack_parallel/utils/handle_stubs.c\
   hack_parallel/utils/nproc.c\
@@ -91,7 +94,7 @@ INCLUDE_OPTS=$(foreach dir,$(MODULES),-I $(dir))
 
 BUILT_C_DIRS=$(addprefix _build/,$(NATIVE_C_DIRS))
 BUILT_C_FILES=$(addprefix _build/,$(NATIVE_C_FILES))
-CC_FLAGS=-DNO_SQLITE3
+CC_FLAGS=-DNO_SQLITE3 -O2
 CC_OPTS=$(foreach flag, $(CC_FLAGS), -ccopt $(flag))
 
 ALL_INCLUDE_PATHS=$(sort $(realpath $(BUILT_C_DIRS)))
@@ -144,12 +147,17 @@ remove:
 clean:
 	ocamlbuild -clean
 
+FORCE:
+
 $(BUILT_C_FILES): _build/%.c: %.c
 	mkdir -p $(dir $@)
 	cp $< $@
 
 $(BUILT_OBJECT_FILES): %.o: %.c $(ALL_HEADER_FILES)
 	cd $(dir $@) && ocamlopt $(EXTRA_INCLUDE_OPTS) $(CC_OPTS) -c $(notdir $<)
+
+hack_parallel/utils/get_build_id.c: FORCE scripts/script_utils.ml scripts/gen_build_id.ml
+	ocaml -safe-string -I scripts -w -3 unix.cma scripts/gen_build_id.ml $@
 
 libhp.a: $(BUILT_OBJECT_FILES)
 	ar -cvq libhp.a $(BUILT_OBJECT_FILES)

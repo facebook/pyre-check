@@ -24,6 +24,13 @@ module LocationKey = struct
 end
 
 
+module FileHandleKey = struct
+  type t = File.Handle.t
+  let to_string = File.Handle.show
+  let compare = File.Handle.compare
+end
+
+
 module IgnoreValue = struct
   type t = Ast.Ignore.t
   let prefix = Prefix.make ()
@@ -47,4 +54,4 @@ end
 
 module IgnoreLines = SharedMemory.WithCache (LocationKey) (IgnoreValue)
 module IgnoreKeys = SharedMemory.WithCache (StringKey) (LocationListValue)
-module ErrorModes = SharedMemory.WithCache (StringKey) (ModeValue)
+module ErrorModes = SharedMemory.WithCache (FileHandleKey) (ModeValue)

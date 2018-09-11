@@ -104,78 +104,83 @@ let communicate server_socket =
 
 let run_command expected_version log_identifier local_root () =
   let local_root = Path.create_absolute local_root in
-  let configuration = Configuration.create
+  let configuration =
+    Configuration.create
       ~local_root
       ~log_identifier
       ?expected_version
       ()
   in
-  Scheduler.initialize_process ~configuration;
-  (* Log stderr to file *)
-  let log_path =
-    let persistent_client_directory =
-      Configuration.pyre_root configuration
-      |> Path.append ~element:"persistent"
-      |> Path.absolute
-    in
-    persistent_client_directory ^/ "client.log"
-  in
-  Unix.handle_unix_error (fun () -> Unix.mkdir_p (Filename.dirname log_path));
-  let log_path = Log.rotate log_path in
-  Format.pp_set_formatter_out_channel Format.err_formatter (Out_channel.create log_path);
-  Version.log_version_banner ();
-
-  try
-    let server_socket =
-      let server_socket =
-        try
-          Server.Operations.connect
-            ~retries:3
-            ~configuration
-        with
-        | Server.Operations.ConnectionFailure ->
-            raise (ClientExit ("connection failure", 1))
-        | Server.Operations.VersionMismatch { Server.Operations.server_version; expected_version } ->
-            Log.error
-              "Exiting due to version mismatch. \
-               The server version is %s, but the client was called with %s"
-              server_version
-              expected_version;
-            raise (ClientExit ("version mismatch", 1))
+  (fun () ->
+    (* Log stderr to file *)
+    let log_path =
+      let persistent_client_directory =
+        Configuration.pyre_root configuration
+        |> Path.append ~element:"persistent"
+        |> Path.absolute
       in
-      Socket.write server_socket (Protocol.Request.ClientConnectionRequest Protocol.Persistent);
-      begin
-        match Socket.read server_socket with
-        | (Protocol.ClientConnectionResponse Protocol.Persistent) -> ()
-        | _ ->
-            let message = "Unexpected json response when attempting persistent connection" in
-            Log.info "%s" message;
-            raise (ClientExit ("unexpected json response", 1))
-      end;
-      server_socket
+      persistent_client_directory ^/ "client.log"
     in
-    communicate server_socket
-  with
-  | ClientExit (reason, exit_code) ->
-      Statistics.event
-        ~flush:true
-        ~name:"client exit"
-        ~integers:["exit code", exit_code]
-        ~normals:["reason", reason]
-        ();
-      exit exit_code
-  | uncaught_exception ->
-      Statistics.event
-        ~section:`Error
-        ~flush:true
-        ~name:"uncaught exception"
-        ~normals:[
-          "exception", Exn.to_string uncaught_exception;
-          "exception backtrace", Printexc.get_backtrace ();
-          "exception origin", "persistent";
-        ]
-        ();
-      raise uncaught_exception
+    Unix.handle_unix_error (fun () -> Unix.mkdir_p (Filename.dirname log_path));
+    let log_path = Log.rotate log_path in
+    Format.pp_set_formatter_out_channel Format.err_formatter (Out_channel.create log_path);
+    Version.log_version_banner ();
+
+    try
+      let server_socket =
+        let server_socket =
+          try
+            Server.Operations.connect
+              ~retries:3
+              ~configuration
+          with
+          | Server.Operations.ConnectionFailure ->
+              raise (ClientExit ("connection failure", 1))
+          | Server.Operations.VersionMismatch {
+              Server.Operations.server_version;
+              expected_version;
+            } ->
+              Log.error
+                "Exiting due to version mismatch. \
+                 The server version is %s, but the client was called with %s"
+                server_version
+                expected_version;
+              raise (ClientExit ("version mismatch", 1))
+        in
+        Socket.write server_socket (Protocol.Request.ClientConnectionRequest Protocol.Persistent);
+        begin
+          match Socket.read server_socket with
+          | (Protocol.ClientConnectionResponse Protocol.Persistent) -> ()
+          | _ ->
+              let message = "Unexpected json response when attempting persistent connection" in
+              Log.info "%s" message;
+              raise (ClientExit ("unexpected json response", 1))
+        end;
+        server_socket
+      in
+      communicate server_socket
+    with
+    | ClientExit (reason, exit_code) ->
+        Statistics.event
+          ~flush:true
+          ~name:"client exit"
+          ~integers:["exit code", exit_code]
+          ~normals:["reason", reason]
+          ();
+        exit exit_code
+    | uncaught_exception ->
+        Statistics.event
+          ~section:`Error
+          ~flush:true
+          ~name:"uncaught exception"
+          ~normals:[
+            "exception", Exn.to_string uncaught_exception;
+            "exception backtrace", Printexc.get_backtrace ();
+            "exception origin", "persistent";
+          ]
+          ();
+        raise uncaught_exception)
+  |> Scheduler.run_process ~configuration
 
 
 let command =

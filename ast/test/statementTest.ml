@@ -368,10 +368,10 @@ let test_attributes _ =
         in
         create_attribute ~target ~annotation ?defines ~value ~setter ()
       in
-      List.map ~f:attribute expected
+      List.map expected ~f:attribute
     in
     let printer attributes =
-      List.map ~f:(fun node -> Attribute.show node) attributes
+      List.map attributes ~f:Attribute.show
       |> String.concat ~sep:"\n\n"
     in
     let equal { Node.value = left; _ } { Node.value = right; _ } =
@@ -661,7 +661,7 @@ let test_preamble _ =
   assert_preamble "for a in b: pass" "a = b.__iter__().__next__()";
   assert_preamble "for a, b in c: pass" "a, b = c.__iter__().__next__()";
   assert_preamble "for a in [1, 2, 3]: pass" "a = [1, 2, 3].__iter__().__next__()";
-  assert_preamble "async for a in b: pass" "a = b.__aiter__().__anext__()";
+  assert_preamble "async for a in b: pass" "a = await b.__aiter__().__anext__()";
 
   let assert_preamble block preambles =
     let handlers =

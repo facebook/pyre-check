@@ -13,6 +13,7 @@ open PyreParser
 open Statement
 open TypeCheck
 
+
 let () =
   Log.initialize_for_tests ();
   Statistics.disable ();
@@ -21,7 +22,8 @@ let () =
 
 
 let parse_untrimmed
-    ?(path = "test.py")
+    ?(handle = "test.py")
+    ?path
     ?(qualifier = [])
     ?(debug = true)
     ?(strict = false)
@@ -32,10 +34,11 @@ let parse_untrimmed
     ?(docstring = None)
     ?(ignore_lines = [])
     source =
+  let handle = File.Handle.create handle in
   let buffer = Lexing.from_string (source ^ "\n") in
   buffer.Lexing.lex_curr_p <- {
     buffer.Lexing.lex_curr_p with
-    Lexing.pos_fname = path;
+    Lexing.pos_fname = File.Handle.show handle;
   };
   try
     let source =
@@ -54,7 +57,8 @@ let parse_untrimmed
       Source.create
         ~docstring
         ~metadata
-        ~path
+        ~handle
+        ?path
         ~qualifier
         (Generator.parse (Lexer.read state) buffer)
     in
@@ -112,17 +116,18 @@ let trim_extra_indentation source =
 
 
 let parse
-    ?(path = "test.py")
+    ?(handle = "test.py")
+    ?path
     ?(qualifier = [])
     ?(debug = true)
     ?(version = 3)
     ?(docstring = None)
     ?local_mode
     source =
-  Ast.SharedMemory.add_path_hash ~path;
+  Ast.SharedMemory.Handles.add_handle_hash ~handle;
   let ({ Source.metadata; _ } as source) =
     trim_extra_indentation source
-    |> parse_untrimmed ~path ~qualifier ~debug ~version ~docstring
+    |> parse_untrimmed ~handle ?path ~qualifier ~debug ~version ~docstring
   in
   match local_mode with
   | Some local_mode ->
@@ -130,16 +135,18 @@ let parse
   | _ ->
       source
 
+
 let parse_list named_sources =
   let create_file (name, source) =
     File.create
-      ~content:(Some (trim_extra_indentation source))
+      ~content:(trim_extra_indentation source)
       (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:name)
   in
   Service.Parser.parse_sources
     ~configuration:(Configuration.create ~local_root:(Path.current_working_directory ()) ())
     ~scheduler:(Scheduler.mock ())
     ~files:(List.map ~f:create_file named_sources)
+
 
 let parse_single_statement source =
   match parse source with
@@ -228,7 +235,8 @@ let (~+) value =
   Node.create_with_default_location value
 
 
-let (~~) = Identifier.create
+let (~~) =
+  Identifier.create
 
 
 let (!) name =
@@ -277,7 +285,8 @@ let bracket_tmpfile ?suffix context =
 
 
 (* Common type checking and analysis setup functions. *)
-let configuration = Configuration.create ()
+let mock_configuration =
+  Configuration.create ()
 
 
 let typeshed_stubs = (* Yo dawg... *)
@@ -285,7 +294,7 @@ let typeshed_stubs = (* Yo dawg... *)
     Source.create ~qualifier:(Access.create "sys") [];
     parse
       ~qualifier:(Access.create "hashlib")
-      ~path:"hashlib.pyi"
+      ~handle:"hashlib.pyi"
       {|
         _DataType = typing.Union[int, str]
         class _Hash:
@@ -295,12 +304,14 @@ let typeshed_stubs = (* Yo dawg... *)
     |> Preprocessing.qualify;
     parse
       ~qualifier:(Access.create "typing")
-      ~path:"typing.pyi"
+      ~handle:"typing.pyi"
       {|
         class _SpecialForm: ...
+        class TypeAlias: ...
 
         TypeVar = object()
         List = TypeAlias(object)
+        Dict = TypeAlias(object)
         Type: _SpecialForm = ...
 
         class Sized: ...
@@ -331,7 +342,9 @@ let typeshed_stubs = (* Yo dawg... *)
           pass
 
         class Awaitable: pass
-        class AsyncGenerator: pass
+        class AsyncGenerator(Generic[_T, _S]):
+          def __aiter__(self) -> 'AsyncGenerator[_T, _S]': ...
+          def __anext__(self) -> Awaitable[_T]: ...
 
         def cast(tp: Type[_T], o: Any) -> _T: ...
       |}
@@ -339,7 +352,7 @@ let typeshed_stubs = (* Yo dawg... *)
     Source.create ~qualifier:(Access.create "unittest.mock") [];
     parse
       ~qualifier:[]
-      ~path:"builtins.pyi"
+      ~handle:"builtins.pyi"
       {|
         import typing
 
@@ -429,7 +442,7 @@ let typeshed_stubs = (* Yo dawg... *)
           def __getitem__(self, i: typing.Union[int, slice]) -> str: ...
           def __iter__(self) -> typing.Iterator[str]: ...
 
-        class tuple(typing.Sized, typing.Generic[_T]):
+        class tuple(typing.Sequence[_T], typing.Sized, typing.Generic[_T]):
           def __init__(self, a: typing.List[_T]): ...
           def tuple_method(self, a: int): ...
 
@@ -520,13 +533,13 @@ let typeshed_stubs = (* Yo dawg... *)
   ]
 
 
-let environment ?(sources = typeshed_stubs) ?(configuration = configuration) () =
+let environment ?(sources = typeshed_stubs) ?(configuration = mock_configuration) () =
   let environment = Environment.Builder.create () in
   Service.Environment.populate (Environment.handler ~configuration environment) sources;
   Environment.handler ~configuration environment
 
 
-let empty_define = {
+let mock_define = {
   Define.name = Access.create "$empty";
   parameters = [];
   body = [];
@@ -553,7 +566,7 @@ let assert_type_errors
     ?(infer = false)
     ?(show_error_traces = false)
     ?(qualifier = [])
-    ?(path = "test.py")
+    ?(handle = "test.py")
     source
     errors =
   Annotated.Class.AttributesCache.clear ();
@@ -592,13 +605,13 @@ let assert_type_errors
             ~number_of_lines:(-1)
             ()
         in
-        parse ~path ~qualifier source
+        parse ~handle ~qualifier source
         |> (fun source -> { source with Source.metadata })
         |> Preprocessing.preprocess
         |> Plugin.apply_to_ast
       in
       let environment =
-        let environment = environment ~configuration () in
+        let environment = environment ~configuration:mock_configuration () in
         Service.Environment.populate environment [source];
         environment
       in

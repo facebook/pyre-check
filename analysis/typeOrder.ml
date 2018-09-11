@@ -13,6 +13,7 @@ module Callable = Type.Callable
 exception Cyclic
 exception Incomplete
 exception Untracked of Type.t
+exception InconsistentMethodResolutionOrder of Type.t
 
 
 module Target = struct
@@ -288,6 +289,84 @@ let raise_if_untracked order annotation =
     raise (Untracked annotation)
 
 
+let method_resolution_order_linearize
+    ((module Handler: Handler) as order)
+    ~get_successors
+    annotation =
+  let rec merge = function
+    | [] ->
+        []
+    | single_linearized_parent :: [] ->
+        single_linearized_parent
+    | linearized_successors ->
+        let find_valid_head linearizations =
+          let is_valid_head head =
+            let not_in_tail target = function
+              | [] -> true
+              | _ :: tail -> not (List.exists ~f:(fun element -> element = target) tail)
+            in
+            List.for_all ~f:(not_in_tail head) linearizations
+          in
+          linearizations
+          |> List.filter_map ~f:List.hd
+          |> List.find ~f:(is_valid_head)
+          |> (function
+              | Some head -> head
+              | None -> raise (InconsistentMethodResolutionOrder annotation))
+        in
+        let strip_head head = function
+          | [] -> None
+          | successor_head :: [] when successor_head = head -> None
+          | successor_head :: tail when successor_head = head -> Some tail
+          | successor -> Some successor
+        in
+        let head = find_valid_head linearized_successors in
+        let linearized_successors = List.filter_map ~f:(strip_head head) linearized_successors in
+        head :: merge linearized_successors
+  in
+  let rec linearize annotation =
+    let primitive, actual_parameters = Type.split annotation in
+    let linearized_successors =
+      let create_annotation { Target.target = index; parameters } =
+        let annotation = Handler.find_unsafe (Handler.annotations ()) index in
+        let parameters =
+          (* We currently ignore the actual type variable mapping. *)
+          if List.length parameters = List.length actual_parameters then
+            actual_parameters
+          else
+            []
+        in
+        match annotation, parameters with
+        | _, [] ->
+            annotation
+        | Type.Primitive name, _ ->
+            Type.Parametric { Type.name; parameters }
+        | _ ->
+            failwith (Format.asprintf "Unexpected type %a" Type.pp annotation)
+      in
+      index_of order primitive
+      |> get_successors
+      |> Option.value ~default:[]
+      |> List.map ~f:create_annotation
+      |> List.map ~f:linearize
+    in
+    annotation :: merge linearized_successors
+  in
+  linearize annotation
+
+
+let successors ((module Handler: Handler) as order) annotation =
+  let linearization =
+    method_resolution_order_linearize
+      ~get_successors:(Handler.find (Handler.edges ()))
+      order
+      annotation
+  in
+  match linearization with
+  | _ :: successors -> successors
+  | [] -> []
+
+
 let breadth_first_fold
     ((module Handler: Handler) as order)
     ~initial
@@ -330,24 +409,6 @@ let breadth_first_fold
   in
 
   iterate ~worklist ~visited ~accumulator:initial
-
-
-let successors_fold ((module Handler: Handler) as order) ~initial ~f annotation =
-  breadth_first_fold
-    order
-    ~initial
-    ~f:(fun sofar annotation visited -> f sofar annotation, visited)
-    ~successor_indices:(Handler.find (Handler.edges ()))
-    annotation
-
-
-let successors ((module Handler: Handler) as order) annotation =
-  successors_fold
-    order
-    ~initial:[]
-    ~f:(fun successors successor -> (successor :: successors))
-    annotation
-  |> List.rev
 
 
 let predecessors ((module Handler: Handler) as order) annotation =
@@ -506,7 +567,10 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
                   match left, right with
                   | Parameter.Anonymous left, Parameter.Anonymous right ->
                       (* The inversion here follows from the substitution principle. *)
-                      less_or_equal order ~left:right ~right:left
+                      less_or_equal
+                        order
+                        ~left:right.Parameter.annotation
+                        ~right:left.Parameter.annotation
                   | Parameter.Named left, Parameter.Named right
                   | Parameter.Keywords left, Parameter.Keywords right
                   | Parameter.Variable left, Parameter.Variable right
@@ -665,8 +729,17 @@ and join_overloads ~parameter_join ~return_join order left right =
               | Some sofar ->
                   let joined =
                     match left, right with
-                    | Parameter.Anonymous left, Parameter.Anonymous right ->
-                        Some (Parameter.Anonymous (parameter_join order left right))
+                    | Parameter.Anonymous left, Parameter.Anonymous right
+                      when left.Parameter.index = right.Parameter.index ->
+                        Some
+                          (Parameter.Anonymous {
+                              left with
+                              Parameter.annotation =
+                                parameter_join
+                                  order
+                                  left.Parameter.annotation
+                                  right.Parameter.annotation;
+                            })
                     | Parameter.Named left, Parameter.Named right
                       when Expression.Access.equal left.Parameter.name right.Parameter.name &&
                            left.Parameter.default = right.Parameter.default ->
@@ -766,7 +839,7 @@ and join ((module Handler: Handler) as order) left right =
             | Type.Optional element ->
                 Type.Optional (Type.union (element :: elements))
             | _ ->
-                List.map ~f:(join order other) elements
+                List.map elements ~f:(join order other)
                 |> List.fold ~f:(join order) ~init:Type.Bottom
           end
 
@@ -938,7 +1011,7 @@ and meet order left right =
         if less_or_equal order ~left:other ~right:union then
           other
         else
-          List.map ~f:(meet order other) elements
+          List.map elements ~f:(meet order other)
           |> List.fold ~f:(meet order) ~init:Type.Top
 
     | Type.Parametric _, Type.Parametric _ ->
@@ -1065,10 +1138,10 @@ and instantiate_parameters
           let instantiate_parameters { Target.target; parameters } =
             {
               Target.target;
-              parameters = List.map ~f:(Type.instantiate ~constraints) parameters;
+              parameters = List.map parameters ~f:(Type.instantiate ~constraints);
             }
           in
-          List.map ~f:instantiate_parameters successors
+          List.map successors ~f:instantiate_parameters
         else
           successors)
     |> Option.value ~default:successors
@@ -1200,7 +1273,7 @@ let remove_extra_edges (module Handler: Handler) ~bottom ~top annotations =
   let edges = Handler.edges () in
   let backedges = Handler.backedges () in
   let index_of annotation = Handler.find_unsafe (Handler.indices ()) annotation in
-  let keys = List.map ~f:index_of annotations in
+  let keys = List.map annotations ~f:index_of in
   disconnect keys ~edges ~backedges (index_of top);
   disconnect
     keys
@@ -1215,7 +1288,7 @@ let connect_annotations_to_top
     annotations =
   let indices =
     let index_of annotation = Handler.find_unsafe (Handler.indices ()) annotation in
-    List.map ~f:index_of annotations
+    List.map annotations ~f:index_of
   in
   let connect_to_top index =
     let annotation = Handler.find_unsafe (Handler.annotations ()) index in
@@ -1329,7 +1402,7 @@ let check_integrity (module Handler: Handler) =
 let to_dot (module Handler: Handler) =
   let indices = List.sort ~compare (Handler.keys ()) in
   let nodes =
-    List.map ~f:(fun index -> (index, Handler.find_unsafe (Handler.annotations ()) index)) indices
+    List.map indices ~f:(fun index -> (index, Handler.find_unsafe (Handler.annotations ()) index))
   in
   let buffer = Buffer.create 10000 in
   Buffer.add_string buffer "digraph {\n";

@@ -90,12 +90,11 @@ val contains: (module Handler) -> Type.t -> bool
    `is_instantiated order typing.List[str]` will evaluate to false. *)
 val is_instantiated: (module Handler) -> Type.t -> bool
 
-val successors_fold
+val method_resolution_order_linearize
   :  (module Handler)
-  -> initial: 'accumulator
-  -> f: ('accumulator -> Type.t -> 'accumulator)
+  -> get_successors:(int -> Target.t list option)
   -> Type.t
-  -> 'accumulator
+  -> Type.t list
 val successors: (module Handler) -> Type.t -> Type.t list
 val predecessors: (module Handler) -> Type.t -> Type.t list
 val greatest: (module Handler) -> matches:(Type.t -> bool) -> Type.t list

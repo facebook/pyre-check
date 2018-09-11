@@ -53,11 +53,11 @@ let test_parse_annotation _ =
   let resolution =
     Test.resolution
       ~sources:[
-        parse ~qualifier:(Access.create "empty") ~path:"empty.pyi" "class Empty: ...";
+        parse ~qualifier:(Access.create "empty") ~handle:"empty.pyi" "class Empty: ...";
         parse
           ~qualifier:(Access.create "empty.stub")
           ~local_mode:Source.PlaceholderStub
-          ~path:"empty/stub.pyi"
+          ~handle:"empty/stub.pyi"
           "";
       ]
       ()

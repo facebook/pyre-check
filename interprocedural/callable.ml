@@ -80,7 +80,7 @@ let define_matches access { Node.value = { Define.name; _ } ; _ } =
 
 let get_definition (`RealTarget access as callable) =
   FileOfDefinition.get callable
-  >>= Ast.SharedMemory.get_source
+  >>= Ast.SharedMemory.Sources.get
   >>| Preprocessing.defines
   >>= List.find ~f:(define_matches access)
 

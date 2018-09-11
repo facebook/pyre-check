@@ -108,38 +108,26 @@ class BuckTest(unittest.TestCase):
 
     @patch("%s.open" % buck.__name__, new_callable=mock_open, read_data="")
     def test_normalize(self, mock_open) -> None:
-        with patch.object(json, "load", return_value={"target_path": ["a", "b"]}):
-            with patch.object(json, "dump") as json_dump:
-                with patch.object(subprocess, "check_output") as buck_targets:
-                    buck_targets.return_value = "a\nb".encode("utf-8")
-                    buck._normalize(["target_path"], use_cache=False)
-                    buck._normalize(["target_path"], use_cache=True)
-                    buck_targets.assert_has_calls(
+        with patch.object(subprocess, "check_output") as buck_targets:
+            buck_targets.return_value = "a\nb".encode("utf-8")
+            buck._normalize(["target_path"])
+            buck_targets.assert_has_calls(
+                [
+                    call(
                         [
-                            call(
-                                [
-                                    "buck",
-                                    "targets",
-                                    "--show-output",
-                                    "target_path",
-                                    "--type",
-                                    "python_binary",
-                                    "python_test",
-                                ],
-                                stderr=subprocess.PIPE,
-                                timeout=200,
-                            )
-                        ]
+                            "buck",
+                            "targets",
+                            "--show-output",
+                            "target_path",
+                            "--type",
+                            "python_binary",
+                            "python_test",
+                        ],
+                        stderr=subprocess.PIPE,
+                        timeout=200,
                     )
-
-                    class Wildcard:
-                        def __eq__(self, other):
-                            return True
-
-                    # Ignore the stream being written to.
-                    json_dump.assert_has_calls(
-                        [call({"target_path": ["a", "b"]}, Wildcard())]
-                    )
+                ]
+            )
 
     def test_build_targets(self) -> None:
         with patch.object(subprocess, "check_output") as buck_build:

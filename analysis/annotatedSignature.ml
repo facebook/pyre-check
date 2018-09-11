@@ -57,7 +57,6 @@ let equal_found (left: found) (right: found) =
 
 
 type closest = {
-  rank: int;
   callable: Type.Callable.t;
   reason: reason option;
 }
@@ -76,492 +75,505 @@ type t =
 [@@deriving eq, show]
 
 
-type resolution_state = {
-  arguments: Argument.t list;
-  parameters: (Type.t Type.Callable.Parameter.t) list;
-  constraints: Type.t Type.Map.t;
-  reason: reason option;
+type argument =
+  | Argument of { argument: Argument.t; position: int }
+  | Default
+[@@deriving eq, show]
+
+
+type ranks = {
+  arity: int;
+  annotation: int;
 }
 
 
-let select ~arguments ~resolution ~callable:({ Type.Callable.overloads; _ } as callable) =
-  (* Assuming calls have the following format:
-     `[argument,]* [\*variable,]* [keyword=value,]* [\*\*keywords]*` *)
+type reasons = {
+  arity: reason list;
+  annotation: reason list;
+}
+
+
+type signature_match = {
+  callable: Type.Callable.t;
+  argument_mapping: (argument list) Type.Callable.Parameter.Map.t;
+  constraints: Type.t Type.Map.t;
+  ranks: ranks;
+  reasons: reasons;
+}
+
+
+let select ~resolution ~arguments ~callable:({ Type.Callable.overloads; _ } as callable) =
   let open Type.Callable in
-  let ranked ({ Type.Callable.parameters; _ } as overload) =
-    let callable = { callable with Type.Callable.overloads = [overload] } in
-    match parameters with
-    | Defined parameters ->
-        let rec check_parameter
-            ~resolution
-            ~constraints
-            ~reason
-            ~argument:({ Argument.name; value = { Node.location; _ } as expression } as argument)
-            ~parameter
-            ~remaining_arguments =
-          let expected =
-            match parameter with
-            | Parameter.Anonymous annotation
-            | Parameter.Named { Parameter.annotation; _ }
-            | Parameter.Variable { Parameter.annotation; _ }
-            | Parameter.Keywords { Parameter.annotation; _ } ->
-                annotation
-          in
-          let actual =
-            match Node.value expression with
-            | Starred (Starred.Once expression) ->
-                let sequence_parameter annotation =
-                  let sequence = Type.parametric "typing.Sequence" [Type.Object] in
-                  if Resolution.less_or_equal resolution ~left:annotation ~right:sequence then
-                    (* Try to extract first parameter. *)
-                    Type.parameters annotation
-                    |> List.hd
-                    |> Option.value ~default:Type.Top
-                  else
-                    annotation
-                in
-                Resolution.resolve resolution expression
-                |> sequence_parameter
-            | Starred (Starred.Twice expression) ->
-                let mapping_value_parameter annotation =
-                  let mapping = Type.parametric "typing.Mapping" [Type.string; Type.Object] in
-                  if Resolution.less_or_equal resolution ~left:annotation ~right:mapping then
-                    (* Try to extract second parameter. *)
-                    Type.parameters annotation
-                    |> (fun parameters -> List.nth parameters 1)
-                    |> Option.value ~default:Type.Top
-                  else
-                    annotation
-                in
-                Resolution.resolve resolution expression
-                |> mapping_value_parameter
-            | _ ->
-                let actual = Resolution.resolve resolution expression in
-                if Type.is_meta expected && Type.equal actual Type.Top then
-                  Resolution.parse_annotation resolution expression
-                  |> Type.meta
-                else
-                  actual
-          in
-          let mismatch =
-            let position = List.length arguments - remaining_arguments in
-            { actual; expected; name = Option.map name ~f:Node.value; position }
-            |> Node.create ~location
-            |> fun mismatch -> Some (Mismatch mismatch)
-          in
-
-          let less_or_equal =
-            try
-              (Type.equal actual Type.Top && Type.equal expected Type.Object) ||
-              Resolution.less_or_equal resolution ~left:actual ~right:expected
-            with TypeOrder.Untracked _ ->
-              false
-          in
-          match actual with
-          | Type.Union elements
-            when not less_or_equal ->
-              let rec check_elements ~constraints = function
-                | element :: elements ->
-                    let constraints, reason =
-                      let access = Access.create "$argument" in
-                      let expression = { expression with Node.value = Access access } in
-                      let resolution =
-                        Resolution.set_local
-                          resolution
-                          ~access
-                          ~annotation:(Annotation.create element)
-                      in
-                      check_parameter
-                        ~resolution
-                        ~constraints
-                        ~reason
-                        ~argument:{ argument with Argument.value = expression }
-                        ~parameter
-                        ~remaining_arguments
-                    in
-                    if Option.is_some reason then
-                      constraints, reason
-                    else
-                      check_elements ~constraints elements
-                | _ ->
-                    constraints, reason
-              in
-              check_elements ~constraints elements
-          | _ ->
-              let parameters_to_infer = Type.variables expected |> List.length in
-              if parameters_to_infer > 0 then
-                let updated_constraints =
-                  let rec update expected constraints =
-                    let update_constraints ~constraints ~variable ~resolved =
-                      let resolved =
-                        Map.find constraints variable
-                        >>| (fun existing -> Resolution.join resolution existing resolved)
-                        |> Option.value ~default:resolved
-                      in
-                      let in_constraints =
-                        match variable with
-                        | Type.Variable { Type.constraints = Type.Explicit constraints; _ } ->
-                            let in_constraint bound =
-                              Resolution.less_or_equal resolution ~left:resolved ~right:bound
-                            in
-                            List.exists ~f:in_constraint constraints
-                        | _ ->
-                            true
-                      in
-                      if in_constraints then
-                        Some (Map.set ~key:variable ~data:resolved constraints)
-                      else if less_or_equal then
-                        Some constraints
-                      else
-                        None
-                    in
-                    match actual, expected with
-                    | Type.Bottom, _ ->
-                        Some constraints
-                    | _, (Type.Variable _ as variable) ->
-                        update_constraints ~constraints ~variable ~resolved:actual
-                    | _, Type.Parametric _ ->
-                        let primitive, parameters = Type.split expected in
-                        Resolution.class_definition resolution primitive
-                        >>| Class.create
-                        >>= fun target ->
-                        let primitive, _ = Type.split actual in
-                        Resolution.class_definition resolution primitive
-                        >>| Class.create
-                        >>| Class.constraints ~target ~parameters ~instantiated:actual ~resolution
-                        >>= fun inferred ->
-                        if Map.length inferred < parameters_to_infer && not less_or_equal then
-                          None
-                        else
-                          let update_constraints ~key ~data constraints =
-                            constraints
-                            >>= fun constraints ->
-                            update_constraints ~constraints ~variable:key ~resolved:data
-                          in
-                          Map.fold ~init:(Some constraints) ~f:update_constraints inferred
-                    | _, Type.Union annotations ->
-                        List.fold
-                          ~init:(Some constraints)
-                          ~f:(fun constraints annotation -> constraints >>= update annotation)
-                          annotations
-                    | _ ->
-                        Some constraints
-                  in
-                  update expected constraints
-                in
-                updated_constraints
-                >>| (fun constraints -> constraints, reason)
-                |> Option.value ~default:(constraints, mismatch)
-              else if less_or_equal then
-                constraints, reason
-              else
-                constraints, mismatch
-        in
-
-        let rec consume_anonymous ({ arguments; parameters; constraints; reason } as state) =
-          let starred_twice { Argument.value = { Node.value; _ }; _ } =
-            match value with
-            | Starred (Starred.Twice _) -> true
-            | _ -> false
-          in
-          match arguments, parameters with
-          | ({ Argument.name = None; _ } as argument) :: arguments,
-            ((Parameter.Anonymous _) as parameter) :: parameters
-          | ({ Argument.name = None; _ } as argument) :: arguments,
-            ((Parameter.Named _) as parameter) :: parameters
-            when not (starred_twice argument)->
-              begin
-                let constraints, reason =
-                  check_parameter
-                    ~resolution
-                    ~constraints
-                    ~reason
-                    ~argument
-                    ~parameter
-                    ~remaining_arguments:(List.length arguments)
-                in
-                match reason with
-                | None -> consume_anonymous { state with arguments; parameters; constraints }
-                | Some _ -> { state with reason }
-              end
-
-          (* Eagerly consume arguments when types of variable parameters match. *)
-          | ({
-              Argument.value = { Node.value = Starred (Starred.Once _); _ };
-              _;
-            } as argument) :: arguments,
-            ((Parameter.Variable _) as parameter) :: _
-          | ({ Argument.name = None; _ } as argument) :: arguments,
-            ((Parameter.Variable _) as parameter) :: _ ->
-              begin
-                let constraints, reason =
-                  check_parameter
-                    ~resolution
-                    ~constraints
-                    ~reason
-                    ~argument
-                    ~parameter
-                    ~remaining_arguments:(List.length arguments)
-                in
-                match reason with
-                | None -> consume_anonymous { state with arguments; parameters; constraints }
-                | _ -> { state with reason }
-              end
-
-          (* Cleanup variable arguments. *)
-          | _, (Parameter.Variable _) :: parameters ->
-              consume_anonymous { state with parameters; reason }
-          | { Argument.value = { Node.value = Starred (Starred.Once _); _ }; _ } :: arguments,
-            parameters ->
-              consume_anonymous { state with arguments; parameters; reason }
-
-          | _ ->
-              state
-        in
-
-        let rec consume_named ({ arguments; parameters; constraints; reason } as state) =
-          match arguments, parameters with
-          | ({ Argument.name = Some argument_name; _ } as argument) :: arguments, _ ->
-              begin
-                let parameter, parameters =
-                  let matching_parameter = function
-                    | Parameter.Named { Parameter.name = [Access.Identifier parameter_name]; _ }
-                      when Identifier.equal (Node.value argument_name) parameter_name -> true
-                    | _ -> false
-                  in
-                  List.find ~f:matching_parameter parameters,
-                  List.filter ~f:(fun parameter -> not (matching_parameter parameter)) parameters
-                in
-                match parameter with
-                | Some parameter ->
-                    begin
-                      let constraints, reason =
-                        check_parameter
-                          ~resolution
-                          ~constraints
-                          ~reason
-                          ~argument
-                          ~parameter
-                          ~remaining_arguments:(List.length arguments)
-                      in
-                      match reason with
-                      | None -> consume_named { state with arguments; parameters; constraints }
-                      | _ -> { state with reason }
-                    end
-                | None ->
-                    (* Extraneous arguments. Not yet handled. *)
-                    state
-              end
-
-          | ({
-              Argument.value = { Node.value = Starred (Starred.Twice _); _ };
-              _;
-            } as argument) :: _,
-            ((Parameter.Named _) as parameter) :: parameters ->
-              begin
-                let constraints, reason =
-                  check_parameter
-                    ~resolution
-                    ~constraints
-                    ~reason
-                    ~argument
-                    ~parameter
-                    ~remaining_arguments:(List.length arguments)
-                in
-                match reason with
-                | None -> consume_named { state with arguments; parameters; constraints }
-                | _ -> { state with reason }
-              end
-          | { Argument.value = { Node.value = Starred (Starred.Twice _); _ }; _ } :: arguments,
-            parameters ->
-              consume_named { state with arguments; parameters; reason }
-
-          | _ ->
-              state
-        in
-
-        let consume_named_with_defaults ({ arguments = _; parameters; _ } as state) =
-          let parameters =
-            let has_default = function
-              | Parameter.Named { Parameter.default; _ } -> default
-              | _ -> false
-            in
-            List.filter ~f:(fun parameter -> not (has_default parameter)) parameters
-          in
-          { state with parameters }
-        in
-
-        let rec consume_keywords ({ arguments; parameters; constraints; reason } as state) =
-          match arguments, parameters with
-          | ({ Argument.name = Some _; _ } as argument) :: arguments,
-            ((Parameter.Keywords _) as parameter) :: _ ->
-              begin
-                let constraints, reason =
-                  check_parameter
-                    ~resolution
-                    ~constraints
-                    ~reason
-                    ~argument
-                    ~parameter
-                    ~remaining_arguments:(List.length arguments)
-                in
-                match reason with
-                | None -> consume_keywords { state with arguments; parameters; constraints }
-                | _ -> { state with reason }
-              end
-          | _, (Parameter.Keywords _) :: parameters ->
-              consume_keywords { state with parameters; reason }
-
-          | _ ->
-              state
-        in
-
-        let number_of_arguments = List.length arguments in
-        let { arguments; parameters; constraints; reason } =
-          {
-            arguments;
-            parameters;
-            constraints = Type.Map.empty;
-            reason = None;
-          }
-          |> consume_anonymous
-          |> consume_named
-          |> consume_named_with_defaults
-          |> consume_keywords
-        in
-
-        let rank =
-          let base_rank =
-            if List.is_empty parameters && List.is_empty arguments then
-              0
-            else
-              1
-          in
-          (* We might have stopped consuming parameters prematurely due to having a
-             type mismatch - if so, we still want to prefer that overload over ones
-             where the arity is wrong for the purposes of ranking. *)
-          let rec remaining_unmatched arguments parameters =
-            match arguments, parameters with
-            | [], arguments ->
-                3 * List.length arguments
-            | parameters, [] ->
-                3 * List.length parameters
-            | { Argument.name = None; _ } :: arguments,
-              (Parameter.Anonymous _) :: parameters
-            | { Argument.name = None; _ } :: arguments,
-              (Parameter.Named _) :: parameters ->
-                1 + remaining_unmatched arguments parameters
-            | _ ->
-                3 * (List.length parameters + List.length arguments)
-          in
-          base_rank + (remaining_unmatched arguments parameters)
-        in
-
-        (* Map unresolved and unbound constraints to `Bottom`. *)
-        let constraints =
-          let unbound_variables =
-            let is_unbound = function
-              | Type.Variable { Type.constraints = Type.Explicit _; _ } -> false
-              | _ -> true
-            in
-            Type.Callable {
-              Type.Callable.kind = Anonymous;
-              overloads = [overload];
-              implicit = Function;
-            }
-            |> Type.variables
-            |> List.filter ~f:is_unbound
-          in
-          let remaining_to_bottom constraints variable =
-            let update = function
-              | None -> Some Type.Bottom
-              | value -> value
-            in
-            Map.change constraints variable ~f:update
-          in
-          List.fold unbound_variables ~f:remaining_to_bottom ~init:constraints
-        in
-
-        if List.is_empty arguments && List.is_empty parameters then
-          begin
-            match reason with
-            | None ->
+  let match_arity ({ parameters = all_parameters; _ } as overload) =
+    let base_signature_match =
+      {
+        callable = { callable with Type.Callable.overloads = [overload] };
+        argument_mapping = Parameter.Map.empty;
+        constraints = Type.Map.empty;
+        ranks = {
+          arity = 0;
+          annotation = 0;
+        };
+        reasons = {
+          arity = [];
+          annotation = [];
+        };
+      }
+    in
+    let rec consume
+        ({ argument_mapping; reasons = ({ arity; _ } as reasons); _; } as signature_match)
+        ~position
+        ~arguments
+        ~parameters =
+      let update_mapping parameter argument =
+        Map.add_multi argument_mapping ~key:parameter ~data:argument
+      in
+      match arguments, parameters with
+      | [], [] ->
+          (* Both empty *)
+          Some signature_match
+      | { Argument.value = { Node.value = Starred (Starred.Once _); _ }; _ } :: arguments_tail,
+        []
+      | { Argument.value = { Node.value = Starred (Starred.Twice _); _ }; _ } :: arguments_tail,
+        [] ->
+          (* Starred or double starred arguments; parameters empty *)
+          consume ~position:(position + 1) ~arguments:arguments_tail ~parameters signature_match
+      | _, [] ->
+          (* Arguments; parameters empty *)
+          let reasons =
+            match all_parameters with
+            | Defined parameters ->
+                let expected = List.length parameters in
+                let provided = expected + List.length arguments in
                 {
-                  Type.Callable.kind = Anonymous;
-                  overloads = [overload];
-                  implicit = Function;
+                  reasons with
+                  arity = TooManyArguments { expected; provided } :: arity
                 }
-                |> Type.Callable.map
-                  ~f:(Type.instantiate ~widen:false ~constraints:(Map.find constraints))
-                |> (function
-                    | Some { overloads = [instantiated]; _  } ->
-                        Found {
-                          callable = { callable with Type.Callable.overloads = [instantiated] };
-                          constraints;
-                        }
-                    | _ ->
-                        failwith "Instantiate did not return a callable")
             | _ ->
-                NotFound { rank = 1; callable; reason }
-          end
-        else
-          let reason =
-            match reason with
-            | None ->
-                begin
-                  match List.hd arguments, List.hd parameters with
-                  | Some _, None ->
-                      let consumed = number_of_arguments - List.length arguments in
-                      Some
-                        (TooManyArguments {
-                            expected = consumed;
-                            provided = number_of_arguments;
-                          })
-                  | None, Some parameter ->
-                      begin
-                        match parameter with
-                        | Parameter.Anonymous _ ->
-                            Some (MissingArgument (Access.create "anonymous"))
-                        | Parameter.Named { Parameter.name; _ } ->
-                            Some (MissingArgument name)
-                        | Parameter.Variable _
-                        | Parameter.Keywords _ ->
-                            None
-                      end
-                  | _ ->
-                      None
-                end
-            | _ ->
-                reason
+                reasons
           in
-          NotFound { rank; callable; reason }
+          Some { signature_match with reasons }
+      | [], (Parameter.Named { Parameter.default = true; _ } as parameter) :: parameters_tail ->
+          (* Arguments empty, default parameter *)
+          let argument_mapping = update_mapping parameter Default in
+          consume
+            ~position
+            ~arguments
+            ~parameters:parameters_tail
+            { signature_match with argument_mapping }
+      | [], parameter :: parameters_tail ->
+          (* Arguments empty, parameter *)
+          let argument_mapping =
+            match Map.find argument_mapping parameter with
+            | Some _ -> argument_mapping
+            | None -> Map.set ~key:parameter ~data:[] argument_mapping
+          in
+          consume
+            ~position
+            ~arguments
+            ~parameters:parameters_tail
+            { signature_match with argument_mapping }
+      | ({ Argument.name = Some _; _ } as argument) :: arguments_tail,
+        ((Parameter.Keywords _) as parameter) :: _ ->
+          (* Labeled argument, keywords parameter *)
+          let argument_mapping = update_mapping parameter (Argument {argument; position}) in
+          consume
+            ~position:(position + 1)
+            ~arguments:arguments_tail
+            ~parameters
+            { signature_match with argument_mapping }
+      | ({ Argument.name = Some { Node.value = name; _ }; _ } as argument) :: arguments_tail,
+        parameters ->
+          (* Labeled argument *)
+          let rec extract_matching_name searched to_search =
+            match to_search with
+            | [] ->
+                None, (List.rev searched)
+            | (Parameter.Named { Parameter.name = [Access.Identifier parameter_name]; _ } as head)
+              :: tail
+              when Identifier.equal parameter_name name ->
+                Some head, (List.rev searched) @ tail
+            | head :: tail ->
+                extract_matching_name (head :: searched) tail
+          in
+          let matching_parameter, remaining_parameters = extract_matching_name [] parameters in
+          matching_parameter
+          >>| (fun parameter -> update_mapping parameter (Argument {argument; position}))
+          >>= (fun argument_mapping ->
+              (* Ignore signatures where this isn't found;
+                 should throw new class of arity error instead *)
+              consume
+                ~position:(position + 1)
+                ~arguments:arguments_tail
+                ~parameters:remaining_parameters
+                { signature_match with argument_mapping })
+      | ({ Argument.value = { Node.value = Starred (Starred.Twice _); _ }; _ } as argument)
+        :: arguments_tail,
+        (Parameter.Keywords _ as parameter) :: _
+      | ({ Argument.value = { Node.value = Starred (Starred.Once _); _ }; _ } as argument)
+        :: arguments_tail,
+        (Parameter.Variable _ as parameter) :: _ ->
+          (* (Double) starred argument, (double) starred parameter *)
+          let argument_mapping = update_mapping parameter (Argument {argument; position}) in
+          consume
+            ~position:(position + 1)
+            ~arguments:arguments_tail
+            ~parameters
+            { signature_match with argument_mapping }
+      | { Argument.value = { Node.value = Starred (Starred.Once _); _ }; _ } :: _,
+        Parameter.Keywords _ :: parameters_tail ->
+          (* Starred argument, double starred parameter *)
+          consume
+            ~position
+            ~arguments
+            ~parameters:parameters_tail
+            { signature_match with argument_mapping }
+      | { Argument.name = None; _ } :: _, Parameter.Keywords _ :: parameters_tail ->
+          (* Unlabeled argument, double starred parameter *)
+          consume
+            ~position
+            ~arguments
+            ~parameters:parameters_tail
+            { signature_match with argument_mapping }
+      | { Argument.value = { Node.value = Starred (Starred.Twice _); _ }; _ } :: _,
+        Parameter.Variable _ :: parameters_tail ->
+          (* Double starred argument, starred parameter *)
+          consume
+            ~position
+            ~arguments
+            ~parameters:parameters_tail
+            { signature_match with argument_mapping }
+      | ({ Argument.name = None; _ } as argument):: arguments_tail,
+        (Parameter.Variable _ as parameter) :: _ ->
+          (* Unlabeled argument, starred parameter *)
+          let argument_mapping = update_mapping parameter (Argument {argument; position}) in
+          consume
+            ~position:(position + 1)
+            ~arguments:arguments_tail
+            ~parameters
+            { signature_match with argument_mapping }
+      | ({ Argument.value = { Node.value = Starred (Starred.Twice _); _ }; _ } as argument) :: _,
+        parameter :: parameters_tail
+      | ({ Argument.value = { Node.value = Starred (Starred.Once _); _ }; _ } as argument) :: _,
+        parameter :: parameters_tail ->
+          (* Double starred or starred argument, parameter *)
+          let argument_mapping = update_mapping parameter (Argument {argument; position}) in
+          consume
+            ~position
+            ~arguments
+            ~parameters:parameters_tail
+            { signature_match with argument_mapping }
+      | ({ Argument.name = None; _ } as argument) :: arguments_tail, parameter :: parameters_tail ->
+          (* Unlabeled argument, parameter *)
+          let argument_mapping = update_mapping parameter (Argument {argument; position}) in
+          consume
+            ~position:(position + 1)
+            ~arguments:arguments_tail
+            ~parameters:parameters_tail
+            { signature_match with argument_mapping }
+    in
+    match all_parameters with
+    | Defined parameters ->
+        consume base_signature_match ~position:1 ~arguments ~parameters
     | Undefined ->
-        Found { callable; constraints = Type.Map.empty }
+        Some base_signature_match
   in
-
-  let rec find ~overloads ~closest =
-    match overloads with
-    | overload :: overloads ->
-        begin
-          match ranked overload with
-          | Found callable ->
-              Found callable
-          | NotFound candidate ->
-              let closest = if candidate.rank < closest.rank then candidate else closest in
-              find ~overloads ~closest
-        end
-    | [] ->
-        NotFound closest
+  let check_annotations ({ argument_mapping; _ } as signature_match) =
+    let update ~key ~data ({ reasons = { arity; _ } as reasons; _; } as signature_match) =
+      let (parameter_name, parameter_annotation) =
+        match key with
+        | Parameter.Anonymous { Parameter.annotation; _ } ->
+            (Access.create "anonymous"), annotation
+        | Parameter.Named { Parameter.name; annotation; _ }
+        | Parameter.Variable { Parameter.name; annotation; _ }
+        | Parameter.Keywords { Parameter.name; annotation; _ } ->
+            name, annotation
+      in
+      match key, data with
+      | Parameter.Variable _, []
+      | Parameter.Keywords _, [] ->
+          (* Parameter was not matched, but empty is acceptable for variable arguments and
+             keyword arguments. *)
+          signature_match
+      | _, [] ->
+          (* Parameter was not matched *)
+          let reasons =
+            {
+              reasons with
+              arity =  arity @ [(MissingArgument parameter_name)]
+            }
+          in
+          { signature_match with reasons }
+      | _, arguments ->
+          let rec set_constraints_and_reasons
+              ~resolution
+              ~position
+              ~argument:({ Argument.name; value = { Node.location; _ } } as argument)
+              ~argument_annotation
+              ({ constraints; reasons = { annotation; _ }; _; } as signature_match) =
+            let reasons =
+              let mismatch =
+                {
+                  actual = argument_annotation;
+                  expected = parameter_annotation;
+                  name = Option.map name ~f:Node.value; position;
+                }
+                |> Node.create ~location
+                |> fun mismatch -> Mismatch mismatch
+              in
+              { reasons with annotation = mismatch :: annotation }
+            in
+            let less_or_equal =
+              try
+                (Type.equal argument_annotation Type.Top &&
+                 Type.equal parameter_annotation Type.Object) ||
+                Resolution.less_or_equal
+                  resolution
+                  ~left:argument_annotation
+                  ~right:parameter_annotation
+              with TypeOrder.Untracked _ ->
+                false
+            in
+            match argument_annotation with
+            | Type.Union elements when not less_or_equal ->
+                let rec check_elements ~signature_match = function
+                  | element :: elements ->
+                      let access = Access.create "$argument" in
+                      let annotation = Annotation.create element in
+                      let resolution = Resolution.set_local resolution ~access ~annotation in
+                      set_constraints_and_reasons
+                        ~resolution
+                        ~position
+                        ~argument
+                        ~argument_annotation:(Annotation.annotation annotation)
+                        signature_match
+                      |> (fun signature_match -> check_elements ~signature_match elements)
+                  | _ ->
+                      signature_match
+                in
+                check_elements ~signature_match elements
+            | _ ->
+                let parameters_to_infer = Type.variables parameter_annotation |> List.length in
+                if parameters_to_infer > 0 then
+                  let updated_constraints =
+                    let rec update parameter_annotation constraints =
+                      let update_constraints ~constraints ~variable ~resolved =
+                        let resolved =
+                          Map.find constraints variable
+                          >>| (fun existing -> Resolution.join resolution existing resolved)
+                          |> Option.value ~default:resolved
+                        in
+                        let in_constraints =
+                          match variable with
+                          | Type.Variable { Type.constraints = Type.Explicit constraints; _ } ->
+                              let in_constraint bound =
+                                Resolution.less_or_equal resolution ~left:resolved ~right:bound
+                              in
+                              List.exists ~f:in_constraint constraints
+                          | _ ->
+                              true
+                        in
+                        if in_constraints then
+                          Some (Map.set ~key:variable ~data:resolved constraints)
+                        else if less_or_equal then
+                          Some constraints
+                        else
+                          None
+                      in
+                      match argument_annotation, parameter_annotation with
+                      | Type.Bottom, _ ->
+                          Some constraints
+                      | _, (Type.Variable _ as variable) ->
+                          update_constraints ~constraints ~variable ~resolved:argument_annotation
+                      | _, Type.Parametric _ ->
+                          let primitive, parameters = Type.split parameter_annotation in
+                          Resolution.class_definition resolution primitive
+                          >>| Class.create
+                          >>= fun target ->
+                          let primitive, _ = Type.split argument_annotation in
+                          Resolution.class_definition resolution primitive
+                          >>| Class.create
+                          >>| Class.constraints
+                            ~target
+                            ~parameters
+                            ~instantiated:argument_annotation
+                            ~resolution
+                          >>= fun inferred ->
+                          if Map.length inferred < parameters_to_infer && not less_or_equal then
+                            None
+                          else
+                            let update_constraints ~key ~data constraints =
+                              constraints
+                              >>= fun constraints ->
+                              update_constraints ~constraints ~variable:key ~resolved:data
+                            in
+                            Map.fold ~init:(Some constraints) ~f:update_constraints inferred
+                      | _, Type.Union annotations ->
+                          List.fold
+                            ~init:(Some constraints)
+                            ~f:(fun constraints annotation -> constraints >>= update annotation)
+                            annotations
+                      | _ ->
+                          Some constraints
+                    in
+                    update parameter_annotation constraints
+                  in
+                  updated_constraints
+                  >>| (fun updated_constraints ->
+                      { signature_match with constraints = updated_constraints })
+                  |> Option.value ~default:{ signature_match with constraints; reasons }
+                else if less_or_equal then
+                  signature_match
+                else
+                  { signature_match with reasons }
+          in
+          let rec check signature_match = function
+            | [] ->
+                signature_match
+            | Default :: tail ->
+                (* Parameter default value was used. Assume it is correct. *)
+                check signature_match tail
+            | Argument { argument; position } :: tail ->
+                let get_argument_annotation = function
+                  | {
+                    Argument.value = { Node.value = Starred (Starred.Twice expression); _ };
+                    _;
+                  } ->
+                      let mapping_value_parameter annotation =
+                        let mapping = Type.parametric "typing.Mapping" [Type.string; Type.Object] in
+                        if Resolution.less_or_equal resolution ~left:annotation ~right:mapping then
+                          (* Try to extract second parameter. *)
+                          Type.parameters annotation
+                          |> (fun parameters -> List.nth parameters 1)
+                          |> Option.value ~default:Type.Top
+                        else
+                          annotation
+                      in
+                      Resolution.resolve resolution expression
+                      |> mapping_value_parameter
+                  | { Argument.value = { Node.value = Starred (Starred.Once expression); _ }; _ } ->
+                      let sequence_parameter annotation =
+                        let sequence = Type.parametric "typing.Sequence" [Type.Object] in
+                        if Resolution.less_or_equal resolution ~left:annotation ~right:sequence then
+                          (* Try to extract first parameter. *)
+                          Type.parameters annotation
+                          |> List.hd
+                          |> Option.value ~default:Type.Top
+                        else
+                          annotation
+                      in
+                      Resolution.resolve resolution expression
+                      |> sequence_parameter
+                  | { Argument.value = expression; _ } ->
+                      let argument_annotation = Resolution.resolve resolution expression in
+                      if Type.is_meta parameter_annotation &&
+                         Type.equal argument_annotation Type.Top then
+                        Resolution.parse_annotation resolution expression
+                        |> Type.meta
+                      else
+                        argument_annotation
+                in
+                set_constraints_and_reasons
+                  ~resolution
+                  ~position
+                  ~argument
+                  ~argument_annotation:(get_argument_annotation argument)
+                  signature_match
+                |> (fun signature_match -> check signature_match tail)
+          in
+          let instantiate_unbound_constraints
+              ({ callable = { Type.Callable.overloads; _ }; constraints; _ } as signature_match) =
+            (* Map unresolved and unbound constraints to `Bottom`. *)
+            let unbound_variables =
+              let is_unbound = function
+                | Type.Variable { Type.constraints = Type.Explicit _; _ } -> false
+                | _ -> true
+              in
+              Type.Callable {
+                Type.Callable.kind = Anonymous;
+                overloads;
+                implicit = Function;
+              }
+              |> Type.variables
+              |> List.filter ~f:is_unbound
+            in
+            let remaining_to_bottom constraints variable =
+              let update = function
+                | None -> Some Type.Bottom
+                | value -> value
+              in
+              Map.change constraints variable ~f:update
+            in
+            List.fold unbound_variables ~f:remaining_to_bottom ~init:constraints
+            |> (fun constraints -> { signature_match with constraints })
+          in
+          check signature_match arguments
+          |> instantiate_unbound_constraints
+    in
+    Map.fold ~init:signature_match ~f:update argument_mapping
   in
-  let closest =
-    assert (List.length overloads > 0);
-    {
-      rank = Int.max_value;
-      callable = { callable with Type.Callable.overloads = [List.hd_exn overloads] };
-      reason = None;
-    }
+  let calculate_rank
+      ({ reasons = { arity; annotation; _ }; _ } as signature_match) =
+    let arity_rank = List.length arity in
+    let (_, annotation_rank) =
+      let count_unique (positions, count) = function
+        | Mismatch { Node.value = { position; _ }; _ } when not (Set.mem positions position) ->
+            (Set.add positions position, count + 1)
+        | Mismatch _ ->
+            (positions, count)
+        | _ ->
+            (positions, count + 1)
+      in
+      List.fold ~init:(Int.Set.empty, 0) ~f:(count_unique) annotation
+    in
+    { signature_match with ranks = { arity = arity_rank; annotation = annotation_rank }}
   in
-  find ~overloads ~closest
+  let find_closest signature_matches =
+    let get_arity_rank { ranks = { arity; _ }; _ } =
+      arity
+    in
+    let get_annotation_rank { ranks = { annotation; _ }; _ } =
+      annotation
+    in
+    let rec get_best_rank ~best_matches ~best_rank ~getter = function
+      | [] ->
+          best_matches
+      | head :: tail ->
+          let rank = getter head in
+          if rank < best_rank then
+            get_best_rank ~best_matches:[head] ~best_rank:rank ~getter tail
+          else if rank = best_rank then
+            get_best_rank ~best_matches:(head :: best_matches) ~best_rank ~getter tail
+          else
+            get_best_rank ~best_matches ~best_rank ~getter tail
+    in
+    let determine_reason
+        { callable; constraints; reasons = { arity; annotation; _ }; _ } =
+      match arity, annotation with
+      | [], [] ->
+          Type.Callable.map
+            ~f:(Type.instantiate ~widen:false ~constraints:(Map.find constraints))
+            callable
+          |> (function
+              | Some callable ->
+                  Found { callable; constraints }
+              | _ ->
+                  failwith "Instantiate did not return a callable")
+      | reason :: _, _
+      | [], reason :: _ ->
+          NotFound { callable; reason = Some reason }
+    in
+    signature_matches
+    |> get_best_rank ~best_matches:[] ~best_rank:Int.max_value ~getter:get_arity_rank
+    |> get_best_rank ~best_matches:[] ~best_rank:Int.max_value ~getter:get_annotation_rank
+    |> List.hd
+    >>| determine_reason
+    |> Option.value ~default:(NotFound { callable; reason = None })
+  in
+  List.filter_map ~f:match_arity overloads
+  |> List.map ~f:check_annotations
+  |> List.map ~f:calculate_rank
+  |> find_closest
 
 
 let determine signature ~resolution ~annotation =

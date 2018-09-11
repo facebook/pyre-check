@@ -76,7 +76,7 @@ module State = struct
         Format.asprintf
           "    %a -> %s"
           Location.Instantiated.pp
-          (Location.instantiate ~lookup:(fun hash -> Ast.SharedMemory.get_path ~hash) location)
+          (Location.instantiate ~lookup:(fun hash -> Ast.SharedMemory.Handles.get ~hash) location)
           (Error.description error ~detailed:true)
       in
       List.map (Map.to_alist errors) ~f:error_to_string
@@ -106,7 +106,8 @@ module State = struct
     Map.equal
       Annotation.equal
       (Resolution.annotations left.resolution)
-      (Resolution.annotations right.resolution)
+      (Resolution.annotations right.resolution) &&
+    left.bottom = right.bottom
 
 
   let create
@@ -211,7 +212,10 @@ module State = struct
     Map.data errors
     |> Error.join_at_define
       ~resolution
-      ~location:(Location.instantiate ~lookup:(fun hash -> Ast.SharedMemory.get_path ~hash) location)
+      ~location:(
+        Location.instantiate
+          location
+          ~lookup:(fun hash -> Ast.SharedMemory.Handles.get ~hash))
     |> class_initialization_errors
     |> constructor_errors
     |> Error.filter ~configuration ~resolution
@@ -665,7 +669,7 @@ module State = struct
         |> Node.create ~location
       in
       let state = forward_statement ~state ~statement:iterator in
-      List.map ~f:Statement.assume conditions
+      List.map conditions ~f:Statement.assume
       |> List.fold ~init:state ~f:(fun state statement -> forward_statement ~state ~statement)
     in
     let forward_comprehension ~element ~generators =
@@ -1000,8 +1004,14 @@ module State = struct
             ~state:{ state with resolution = resolution_with_parameters }
             ~expression:body
         in
+        let create_anonymous index _ =
+          Type.Callable.Parameter.Anonymous {
+            Type.Callable.Parameter.index;
+            annotation = Type.Object;
+          }
+        in
         let parameters =
-          List.map parameters ~f:(fun _ -> Type.Callable.Parameter.Anonymous Type.Object)
+          List.mapi parameters ~f:create_anonymous
           |> fun parameters -> Type.Callable.Defined parameters
         in
         {
@@ -1107,12 +1117,7 @@ module State = struct
         } as state)
       ~statement:{ Node.location; value } =
     let instantiate location =
-      Location.instantiate ~lookup:(fun hash -> Ast.SharedMemory.get_path ~hash) location
-    in
-    let is_assert_function access =
-      List.take_while access ~f:(function | Access.Identifier _ -> true | _ -> false)
-      |> Access.show
-      |> Set.mem Recognized.assert_functions
+      Location.instantiate ~lookup:(fun hash -> Ast.SharedMemory.Handles.get ~hash) location
     in
     let expected =
       let annotation =
@@ -1147,6 +1152,9 @@ module State = struct
             match annotation with
             | Type.Tuple (Type.Unbounded _) ->
                 true
+            (* Bounded tuples subclass iterable, but should be handled in the nonuniform case. *)
+            | Type.Tuple (Type.Bounded _) ->
+                false
             | _ ->
                 Resolution.less_or_equal
                   resolution
@@ -1402,7 +1410,24 @@ module State = struct
                 | _ ->
                     List.map elements ~f:(fun _ -> Type.Top)
               in
-              List.zip_exn (left @ starred @ right) annotations
+              let assignees = left @ starred @ right in
+              let state, annotations =
+                if List.length annotations <> List.length assignees then
+                  let state =
+                    Error.create
+                      ~location
+                      ~kind:(Error.Unpack {
+                          expected_count = List.length assignees;
+                          actual_count = List.length annotations;
+                        })
+                      ~define
+                    |> add_error ~state
+                  in
+                  state, List.map assignees ~f:(fun _ -> Type.Top)
+                else
+                  state, annotations
+              in
+              List.zip_exn assignees annotations
               |> List.zip_exn resolved
               |> List.fold
                 ~init:state
@@ -1413,10 +1438,9 @@ module State = struct
               let state =
                 Error.create
                   ~location
-                  ~kind:(Error.IncompatibleVariableType {
-                      Error.name = Expression.access { Node.location; value };
-                      mismatch = { Error.expected = Type.tuple []; actual = guide };
-                      declare_location = instantiate location;
+                  ~kind:(Error.Unpack {
+                      Error.expected_count = List.length elements;
+                      actual_count = 1;
                     })
                   ~define
                 |> add_error ~state
@@ -1436,6 +1460,29 @@ module State = struct
           forward_expression ~state ~expression:test
           |> fun { state; _ } -> state
         in
+        let contradiction =
+          match Node.value test with
+          | Access [
+              Access.Identifier name;
+              Access.Call {
+                Node.value = [
+                  { Argument.name = None; value = { Node.value = Access access; _ } };
+                  { Argument.name = None; value = { Node.value = Access _; _ } as annotation };
+                ];
+                _;
+              }
+            ] when Identifier.show name = "isinstance" ->
+              let compatible ~existing =
+                let annotation = Resolution.parse_annotation resolution annotation in
+                Resolution.less_or_equal resolution ~left:annotation ~right:existing
+              in
+              Resolution.get_local resolution ~access
+              >>| Annotation.annotation
+              >>| (fun existing -> not (compatible ~existing))
+              |> Option.value ~default:false
+          | _ ->
+              false
+        in
         let resolution =
           match Node.value test with
           | Access [
@@ -1451,7 +1498,7 @@ module State = struct
               let annotation =
                 match annotation with
                 | { Node.value = Tuple elements; _ } ->
-                    Type.Union (List.map ~f:(Resolution.parse_annotation resolution) elements)
+                    Type.Union (List.map elements ~f:(Resolution.parse_annotation resolution))
                 | _ ->
                     Resolution.parse_annotation resolution annotation
               in
@@ -1632,8 +1679,12 @@ module State = struct
           | _ ->
               resolution
         in
-        { state with resolution }
-    | Expression { Node.value = Access access; _; } when is_assert_function access ->
+        if contradiction then
+          { state with bottom = true }
+        else
+          { state with resolution }
+
+    | Expression { Node.value = Access access; _; } when Access.is_assert_function access ->
         let find_assert_test access =
           match access with
           | Expression.Record.Access.Call {
@@ -1785,11 +1836,12 @@ module State = struct
     | YieldFrom { Node.value = Expression.Yield (Some return); _ } ->
         let { state; resolved } = forward_expression ~state ~expression:return in
         let actual =
-          match resolved with
+          match Resolution.join resolution resolved (Type.iterator Type.Bottom) with
           | Type.Parametric { Type.name; parameters = [parameter] }
             when Identifier.show name = "typing.Iterator" ->
               Type.generator parameter
-          | annotation -> Type.generator annotation
+          | annotation ->
+              Type.generator annotation
         in
         if not (Resolution.less_or_equal resolution ~left:actual ~right:expected) then
           Error.create
@@ -1912,8 +1964,8 @@ let check
     configuration
     environment
     ?mode_override
-    ({ Source.path; qualifier; statements; _ } as source) =
-  Log.debug "Checking %s..." path;
+    ({ Source.handle; qualifier; statements; _ } as source) =
+  Log.debug "Checking %s..." (File.Handle.show handle);
 
   let resolution = Environment.resolution environment () in
 
@@ -1956,7 +2008,7 @@ let check
           Path.create_relative
             ~root:(Configuration.pyre_root configuration)
             ~relative:(Format.asprintf "cfgs%a.dot" Access.pp name)
-          |> File.create ~content:(Some (Cfg.to_dot ~precondition:(precondition fixpoint) cfg))
+          |> File.create ~content:(Cfg.to_dot ~precondition:(precondition fixpoint) cfg)
           |> File.write
         end;
       fixpoint
@@ -2012,7 +2064,7 @@ let check
           ~name:"undefined type"
           ~integers:[]
           ~normals:[
-            "path", path;
+            "handle", (File.Handle.show handle);
             "define", Access.show name;
             "type", Type.show annotation;
           ]
@@ -2035,7 +2087,7 @@ let check
       let toplevel =
         let location =
           {
-            Location.path = path;
+            Location.path = File.Handle.show handle;
             start = { Location.line = 0; column = 0 };
             stop = { Location.line = 0; column = 0 };
           }
@@ -2076,14 +2128,16 @@ let check
                 mode
             | None ->
                 let (module Handler: Environment.Handler) = environment in
-                Handler.mode (Error.path error)
+                Handler.mode
+                  (Error.path error
+                   |> File.Handle.create)
                 |> Option.value ~default:Source.Default
           in
           not (Error.suppress ~mode error)
         in
         List.filter ~f:keep_error errors
     in
-    List.map ~f:SingleSourceResult.errors results
+    List.map results ~f:SingleSourceResult.errors
     |> List.map ~f:filter
     |> List.concat
     |> Error.join_at_source ~resolution
@@ -2092,9 +2146,9 @@ let check
   in
 
   let coverage =
-    List.map ~f:SingleSourceResult.coverage results
+    List.map results ~f:SingleSourceResult.coverage
     |> Coverage.aggregate_over_source ~source
   in
-  Coverage.log coverage ~total_errors:(List.length errors) ~path;
+  Coverage.log coverage ~total_errors:(List.length errors) ~path:(File.Handle.show handle);
 
   { Result.errors; coverage }

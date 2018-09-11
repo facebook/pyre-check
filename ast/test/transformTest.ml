@@ -24,7 +24,7 @@ end = struct
   let final count =
     count
 
-  let expression_postorder _ = function
+  let expression _ = function
     | { Node.location; value = Integer number } ->
         { Node.location; value = Integer (number + 1) }
     | expression ->
@@ -40,8 +40,8 @@ end = struct
   include Transform.Identity
   include ModifyingTransformer
 
-  let statement_keep_recursing _state _statement =
-    Transform.Stop
+  let transform_children _ _ =
+    false
 end
 
 
@@ -140,7 +140,7 @@ end = struct
   include Transform.Identity
   type t = unit
 
-  let statement_postorder state statement =
+  let statement state statement =
     state, [statement; statement]
 end
 
@@ -150,8 +150,9 @@ module ShallowExpandingTransformer : sig
 end = struct
   include Transform.Identity
   include ExpandingTransformer
-  let statement_keep_recursing _state _statement =
-    Transform.Stop
+
+  let transform_children _ _ =
+    false
 end
 
 module ExpandingTransform = Transform.Make(ExpandingTransformer)
@@ -254,8 +255,8 @@ let test_expansion_with_stop _ =
   end = struct
     include ExpandingTransformer
 
-    let statement_keep_recursing _ _ =
-      Transform.Stop
+    let transform_children _ _ =
+      false
   end
   in
 
@@ -321,7 +322,7 @@ let test_double_count _ =
     let statement_preorder count statement =
       count + 1, statement
 
-    let statement_postorder count statement =
+    let statement count statement =
       count + 1, [statement]
   end
   in
@@ -334,8 +335,8 @@ let test_double_count _ =
     include Transform.Identity
     include DoubleCounterTransformer
 
-    let statement_keep_recursing _state _statement =
-      Transform.Stop
+    let transform_children _ _ =
+      false
   end
   in
 
@@ -365,34 +366,34 @@ let test_double_count _ =
       1.0
       2.0
     |}
-    4;
+    2;
   assert_double_count
     ~shallow:true
     {|
       1.0
       2.0
     |}
-    4;
-  assert_double_count
-    {|
-      if (1):
-        3
-      else:
-        5
-    |}
-    6;
-  assert_double_count
-    ~shallow:true
-    {|
-      if (1):
-        3
-      else:
-        5
-    |}
     2;
   assert_double_count
     {|
       if (1):
+        3
+      else:
+        5
+    |}
+    3;
+  assert_double_count
+    ~shallow:true
+    {|
+      if (1):
+        3
+      else:
+        5
+    |}
+    1;
+  assert_double_count
+    {|
+      if (1):
         if (2):
           3
         else:
@@ -403,7 +404,7 @@ let test_double_count _ =
         else:
           7
     |}
-    14;
+    7;
   assert_double_count
     ~shallow:true
     {|
@@ -418,7 +419,7 @@ let test_double_count _ =
         else:
           7
     |}
-    2
+    1
 
 
 
@@ -433,7 +434,7 @@ let test_statement_transformer _ =
     let final count =
       count
 
-    let statement_postorder count { Node.location; value } =
+    let statement count { Node.location; value } =
       let count, value =
         match value with
         | Statement.Assign

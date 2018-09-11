@@ -22,7 +22,18 @@ from .exceptions import EnvironmentException
 LOG = logging.getLogger(__name__)
 
 
-class SharedAnalysisDirectory:
+class AnalysisDirectory:
+    def __init__(self, path: str) -> None:
+        self._path = path
+
+    def get_root(self) -> str:
+        return self._path
+
+    def prepare(self) -> None:
+        pass
+
+
+class SharedAnalysisDirectory(AnalysisDirectory):
     def __init__(
         self,
         analysis_directories,

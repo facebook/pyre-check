@@ -150,6 +150,13 @@ type revealed_type = {
 [@@deriving compare, eq, sexp, show, hash]
 
 
+type unpack = {
+  expected_count: int;
+  actual_count: int;
+}
+[@@deriving compare, eq, sexp, show, hash]
+
+
 type kind =
   | IncompatibleAwaitableType of Type.t
   | IncompatibleParameterType of parameter_mismatch
@@ -166,6 +173,7 @@ type kind =
   | RedundantCast of Type.t
   | RevealedType of revealed_type
   | TooManyArguments of too_many_arguments
+  | Unpack of unpack
   | Top
   | UndefinedAttribute of undefined_attribute
   | UndefinedImport of Access.t
@@ -204,6 +212,7 @@ let code = function
   | MissingArgument _ -> 20
   | UndefinedImport _ -> 21
   | RedundantCast _ -> 22
+  | Unpack _ -> 23
 
 
 let name = function
@@ -229,6 +238,7 @@ let name = function
   | UndefinedImport _ -> "Undefined import"
   | UninitializedAttribute _ -> "Uninitialized attribute"
   | UnusedIgnore _ -> "Unused ignore"
+  | Unpack _ -> "Unable to unpack"
 
 
 let messages ~detailed:_ ~define location kind =
@@ -535,6 +545,14 @@ let messages ~detailed:_ ~define location kind =
           provided
           (if provided > 1 then "were" else "was");
       ]
+  | Unpack { expected_count; actual_count } ->
+      let value_message =
+        if actual_count = 1 then
+          "single value"
+        else
+          Format.sprintf "%d values" actual_count
+      in
+      [Format.sprintf "Unable to unpack %s, %d were expected." value_message expected_count]
   | RedundantCast annotation ->
       [
         Format.asprintf
@@ -616,7 +634,7 @@ let messages ~detailed:_ ~define location kind =
   | UnusedIgnore codes ->
       let string_from_codes codes =
         if List.length codes > 0 then
-          List.map ~f:Int.to_string codes
+          List.map codes ~f:Int.to_string
           |> String.concat ~sep:", "
           |> Format.asprintf "[%s] "
         else
@@ -632,7 +650,20 @@ let messages ~detailed:_ ~define location kind =
       ]
 
 
-let inference_information ~define:{ Node.value = define; _ } kind =
+let inference_information
+    ~define:
+    {
+      Node.value = {
+        Define.name;
+        parameters;
+        return_annotation;
+        decorators;
+        parent;
+        async;
+        _ };
+      _;
+    }
+    kind =
   let print_annotation annotation =
     Format.asprintf "`%a`" Type.pp annotation
     |> String.strip ~drop:((=) '`')
@@ -664,11 +695,11 @@ let inference_information ~define:{ Node.value = define; _ } kind =
         "value", value
       ]
     in
-    List.map ~f:to_json define.Define.parameters
+    List.map parameters ~f:to_json
   in
   let decorators =
     let decorator_to_json decorator = `String (Expression.show decorator) in
-    List.map ~f:decorator_to_json define.Define.decorators
+    List.map decorators ~f:decorator_to_json
   in
   let print_parent parent =
     parent
@@ -676,31 +707,31 @@ let inference_information ~define:{ Node.value = define; _ } kind =
     >>| (fun string -> `String string)
     |> Option.value ~default:`Null
   in
-  let function_name = Access.show_sanitized define.Define.name in
+  let function_name = Access.show_sanitized name in
   match kind with
   | MissingReturnAnnotation { annotation; _ } ->
       `Assoc [
         "annotation", `String (print_annotation annotation);
-        "parent", print_parent define.Define.parent;
+        "parent", print_parent parent;
         "function_name", `String function_name;
         "parameters", `List parameters;
         "decorators", `List decorators;
-        "async", `Bool define.Define.async;
+        "async", `Bool async;
       ]
   | MissingParameterAnnotation _ ->
       let return_annotation =
-        define.Define.return_annotation
+        return_annotation
         >>| Format.asprintf "%a" Expression.pp
         >>| (fun string -> `String string)
         |> Option.value ~default:`Null
       in
       `Assoc [
         "annotation", return_annotation;
-        "parent", print_parent define.Define.parent;
+        "parent", print_parent parent;
         "function_name", `String function_name;
         "parameters", `List parameters;
         "decorators", `List decorators;
-        "async", `Bool define.Define.async;
+        "async", `Bool async;
       ]
   | MissingAttributeAnnotation { parent; missing_annotation = { name; annotation; _ } } ->
       `Assoc [
@@ -750,7 +781,8 @@ let due_to_analysis_limitations { kind; _ } =
   | MissingReturnAnnotation { annotation = actual; _ }
   | RedundantCast actual
   | UninitializedAttribute { mismatch = {actual; _ }; _ }->
-      Type.is_unknown actual
+      Type.is_unknown actual ||
+      Type.is_type_alias actual
   | Top -> true
   | UndefinedAttribute { origin = Class { annotation; _ }; _ }
   | UndefinedType annotation ->
@@ -759,6 +791,7 @@ let due_to_analysis_limitations { kind; _ } =
   | InconsistentOverride { override = StrengthenedPrecondition (NotFound _); _ }
   | MissingArgument _
   | TooManyArguments _
+  | Unpack _
   | RevealedType _
   | UndefinedAttribute _
   | UndefinedName _
@@ -802,6 +835,7 @@ let due_to_mismatch_with_any { kind; _ } =
   | UninitializedAttribute { mismatch = { actual; expected }; _ } ->
       Type.mismatch_with_any actual expected
   | TooManyArguments _
+  | Unpack _
   | MissingAttributeAnnotation _
   | MissingGlobalAnnotation _
   | MissingParameterAnnotation _
@@ -1246,6 +1280,7 @@ let suppress ~mode error =
     if due_to_analysis_limitations error then
       match kind with
       | TooManyArguments _
+      | Unpack _
       | IncompatibleParameterType _
       | IncompatibleReturnType _
       | IncompatibleConstructorAnnotation _
@@ -1317,16 +1352,27 @@ let suppress ~mode error =
   in
 
   match mode with
-  | Source.Infer -> suppress_in_infer error
-  | Source.Strict -> suppress_in_strict error
-  | Source.Declare -> true
-  | _ -> suppress_in_default error
+  | Source.Infer ->
+      suppress_in_infer error
+  | Source.Strict ->
+      suppress_in_strict error
+  | Source.Declare ->
+      true
+  | Source.DefaultButDontCheck suppressed_codes
+    when List.exists suppressed_codes ~f:((=) (code error)) ->
+      true
+  | _ ->
+      suppress_in_default error
 
 
 let dequalify
     dequalify_map
     environment
-    ({kind; define = { Node.location; value = define }; _ } as error) =
+    ({
+      kind;
+      define = { Node.location; value = ({ Define.parameters; return_annotation; _ } as define) };
+      _;
+    } as error) =
   let resolution = Environment.resolution environment () in
   let dequalify = Type.dequalify dequalify_map in
   let kind =
@@ -1446,6 +1492,8 @@ let dequalify
         MissingArgument missing_argument
     | UnusedIgnore codes ->
         UnusedIgnore codes
+    | Unpack unpack ->
+        Unpack unpack
   in
   let define =
     let dequalify_parameter ({ Node.value; _ } as parameter) =
@@ -1456,9 +1504,9 @@ let dequalify
       |> fun annotation ->
       { parameter with Node.value = { value with Parameter.annotation }}
     in
-    let parameters = List.map ~f:dequalify_parameter define.Define.parameters in
+    let parameters = List.map parameters ~f:dequalify_parameter in
     let return_annotation =
-      define.Define.return_annotation
+      return_annotation
       >>| Resolution.parse_annotation resolution
       >>| dequalify
       >>| Type.expression

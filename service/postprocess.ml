@@ -23,7 +23,7 @@ let remove_ignores handles =
 let register_ignores_for_handle handle =
   let key = File.Handle.show handle in
   (* Register new ignores. *)
-  match Ast.SharedMemory.get_source handle with
+  match Ast.SharedMemory.Sources.get handle with
   | Some source ->
       let ignore_lines = Source.ignore_lines source in
       List.iter
@@ -35,13 +35,12 @@ let register_ignores_for_handle handle =
 
 
 let register_mode ~configuration handle =
-  let key = File.Handle.show handle in
   let mode =
-    match Ast.SharedMemory.get_source handle with
+    match Ast.SharedMemory.Sources.get handle with
     | Some source -> Source.mode source ~configuration
     | _ -> Source.Default
   in
-  ErrorModes.add key mode
+  ErrorModes.add handle mode
 
 
 let register_ignores ~configuration scheduler handles =
@@ -52,25 +51,18 @@ let register_ignores ~configuration scheduler handles =
     List.iter handles ~f:register_ignores_for_handle;
     List.iter handles ~f:(register_mode ~configuration);
   in
-  if Scheduler.is_parallel scheduler then
-    Scheduler.iter scheduler ~configuration ~f:register handles
-  else
-    register handles;
+  Scheduler.iter scheduler ~configuration ~f:register ~inputs:handles;
   Statistics.performance ~name:"registered ignores" ~timer ()
 
 
-let ignore handles errors =
-  let error_lookup = Location.Reference.Table.create () in
-  let errors_with_ignore_suppression =
-    let add_to_lookup ~key ~code =
-      match Hashtbl.find error_lookup key with
-      | Some codes -> Hashtbl.set ~key ~data:(code :: codes) error_lookup
-      | _ -> Hashtbl.set ~key ~data:[code] error_lookup
+let ignore ~configuration scheduler handles errors =
+  let error_lookup =
+    let add_to_lookup lookup error =
+      Map.add_multi ~key:(Error.key error) ~data:(Error.code error) lookup
     in
+    List.fold errors ~init:Location.Reference.Map.empty ~f:add_to_lookup in
+  let errors =
     let not_ignored error =
-      add_to_lookup
-        ~key:(Error.key error)
-        ~code:(Error.code error);
       IgnoreLines.get (Error.key error)
       >>| (fun ignore_instance ->
           not (List.is_empty (Ignore.codes ignore_instance) ||
@@ -82,47 +74,58 @@ let ignore handles errors =
   let unused_ignores =
     let paths_from_handles =
       let get_path paths handle =
-        Ast.SharedMemory.get_source handle
-        >>| (fun { Source.path; _ } -> path :: paths)
+        Ast.SharedMemory.Sources.get handle
+        >>| (fun { Source.handle; _ } -> handle :: paths)
         |> Option.value ~default:paths
       in
       List.fold ~init:[] ~f:get_path
     in
-    let get_unused_ignores sofar path =
+    let get_unused_ignores path =
       let ignores =
         let key_to_ignores sofar key =
           IgnoreLines.get key
           >>| (fun ignore -> ignore :: sofar)
           |> Option.value ~default:sofar
         in
-        List.fold ~init:[] ~f:key_to_ignores (IgnoreKeys.get path |> Option.value ~default:[])
+        List.fold
+          (IgnoreKeys.get (File.Handle.show path) |> Option.value ~default:[])
+          ~init:[]
+          ~f:key_to_ignores
       in
-      let unused_ignores =
-        let filter_active_ignores sofar ignore =
-          match Ignore.kind ignore with
-          | Ignore.TypeIgnore -> sofar
-          | _ ->
-              begin
-                match Hashtbl.find error_lookup (Ignore.key ignore) with
-                | Some codes ->
-                    let unused_codes =
-                      let find_unused sofar code =
-                        if List.mem ~equal:(=) codes code then sofar else code :: sofar
-                      in
-                      List.fold ~init:[] ~f:find_unused (Ignore.codes ignore)
+      let filter_active_ignores sofar ignore =
+        match Ignore.kind ignore with
+        | Ignore.TypeIgnore -> sofar
+        | _ ->
+            begin
+              match Map.find error_lookup (Ignore.key ignore) with
+              | Some codes ->
+                  let unused_codes =
+                    let find_unused sofar code =
+                      if List.mem ~equal:(=) codes code then sofar else code :: sofar
                     in
-                    if List.is_empty (Ignore.codes ignore) || List.is_empty unused_codes then
-                      sofar
-                    else
-                      { ignore with Ignore.codes = unused_codes } :: sofar
-                | _ -> ignore :: sofar
-              end
-        in
-        List.fold ~init:[] ~f:filter_active_ignores ignores
+                    List.fold ~init:[] ~f:find_unused (Ignore.codes ignore)
+                  in
+                  if List.is_empty (Ignore.codes ignore) || List.is_empty unused_codes then
+                    sofar
+                  else
+                    { ignore with Ignore.codes = unused_codes } :: sofar
+              | _ -> ignore :: sofar
+            end
       in
-      sofar @ unused_ignores
+      List.fold ~init:[] ~f:filter_active_ignores ignores
     in
-    List.fold ~init:[] ~f:get_unused_ignores (paths_from_handles handles)
+    let map _ handles =
+      paths_from_handles handles
+      |> List.concat_map ~f:get_unused_ignores
+    in
+    Scheduler.map_reduce
+      scheduler
+      ~configuration
+      ~map
+      ~reduce:List.append
+      ~initial:[]
+      ~inputs:handles
+      ()
   in
   let create_unused_ignore_error errors unused_ignore =
     let error =
@@ -130,7 +133,7 @@ let ignore handles errors =
         Error.location =
           Location.instantiate
             (Ignore.location unused_ignore)
-            ~lookup:(fun hash -> Ast.SharedMemory.get_path ~hash);
+            ~lookup:(fun hash -> Ast.SharedMemory.Handles.get ~hash);
         kind = Error.UnusedIgnore (Ignore.codes unused_ignore);
         define = {
           Node.location = Ignore.location unused_ignore;
@@ -140,4 +143,4 @@ let ignore handles errors =
     in
     error :: errors
   in
-  List.fold ~init:errors_with_ignore_suppression ~f:create_unused_ignore_error unused_ignores
+  List.fold ~init:errors ~f:create_unused_ignore_error unused_ignores

@@ -67,12 +67,6 @@ let test_generics _ =
 
 
 let test_superclasses _ =
-  let assert_superclasses result expected =
-    let equal left right = Access.equal (Class.name left) (Class.name right) in
-    assert_equal
-      ~printer:(fun classes -> Format.asprintf "%a" Sexp.pp [%message (classes: Class.t list)])
-      ~cmp:(List.equal ~equal) expected result
-  in
   let environment =
     populate {|
       class object: pass
@@ -94,28 +88,141 @@ let test_superclasses _ =
     |> Node.create_with_default_location
     |> Class.create
   in
+  let resolution = Environment.resolution environment () in
+  let assert_successors target expected =
+    let actual = Class.successors ~resolution target in
+    assert_equal
+      ~printer:(List.fold ~init:"" ~f:(fun sofar next -> sofar ^ (Type.show next) ^ " "))
+      ~cmp:(List.equal ~equal:Type.equal)
+      expected
+      actual
+  in
+  let assert_superclasses target expected =
+    let actual = Class.superclasses ~resolution target in
+    let equal left right = Access.equal (Class.name left) (Class.name right) in
+    assert_equal
+      ~printer:(fun classes -> Format.asprintf "%a" Sexp.pp [%message (classes: Class.t list)])
+      ~cmp:(List.equal ~equal) expected actual
+  in
 
-  assert_superclasses
-    (Class.superclasses ~resolution:(Environment.resolution environment ()) !"Foo")
-    ([!"object"]);
-  assert_superclasses
-    (Class.superclasses ~resolution:(Environment.resolution environment ()) !"SubFoo")
-    ([!"Foo"; !"object"]);
-  assert_superclasses
-    (Class.superclasses ~resolution:(Environment.resolution environment ()) !"SubFooBar")
-    ([!"Foo"; !"Bar"; !"object"]);
-  assert_superclasses
-    (Class.superclasses ~resolution:(Environment.resolution environment ()) !"SubRecurse")
-    ([!"SubFooBar"; !"Foo"; !"Bar"; !"object"]);
-  assert_superclasses
-    (Class.superclasses ~resolution:(Environment.resolution environment ()) !"SubRedundant")
-    ([!"Foo"; !"SubFooBar"; !"object"; !"Bar"])
+  assert_successors !"Foo" [Type.Object; Type.Deleted; Type.Top];
+  assert_successors
+    !"SubRedundant"
+    [
+      Type.primitive "SubFooBar";
+      Type.primitive "Foo";
+      Type.primitive "Bar";
+      Type.Object;
+      Type.Deleted;
+      Type.Top;
+    ];
+  assert_superclasses !"Foo" [!"object"];
+  assert_superclasses !"SubFoo" [!"Foo"; !"object"];
+  assert_superclasses !"SubFooBar" [!"Foo"; !"Bar"; !"object"];
+  assert_superclasses !"SubRecurse" [!"SubFooBar"; !"Foo"; !"Bar"; !"object"];
+  assert_superclasses !"SubRedundant" [!"SubFooBar"; !"Foo"; !"Bar"; !"object"]
 
 
 type constructor = {
   parameters: (Expression.t Parameter.t) list;
   annotation: Type.t option;
 }
+
+
+let test_get_decorator _ =
+  let assert_get_decorator source decorator expected =
+    match parse_last_statement source with
+    | { Node.value = Statement.Class definition; _ } ->
+        let actual =
+          Node.create_with_default_location definition
+          |> Class.create
+          |> Class.get_decorator ~decorator
+        in
+        assert_equal ~cmp:(List.equal ~equal:Class.equal_decorator) expected actual
+    | _ ->
+        assert_true (List.is_empty expected)
+  in
+  assert_get_decorator "class A: pass" "decorator" [];
+  assert_get_decorator
+    {|
+      @decorator
+      class A:
+        pass
+    |}
+    "decorator"
+    [{ access = "decorator"; arguments = None }];
+  assert_get_decorator
+    {|
+      @decorator.a.b
+      class A:
+        pass
+    |}
+    "decorator.a"
+    [];
+  assert_get_decorator
+    {|
+      @decorator
+      class A:
+        pass
+    |}
+    "decorator.a"
+    [];
+  assert_get_decorator
+    {|
+      @decorator.a.b
+      class A:
+        pass
+    |}
+    "decorator.a.b"
+    [{ access = "decorator.a.b"; arguments = None }];
+  assert_get_decorator
+    {|
+      @decorator(a=b, c=d)
+      class A:
+        pass
+    |}
+    "decorator.a.b"
+    [];
+  assert_get_decorator
+    {|
+      @other.decorator
+      @decorator(a=b, c=d)
+      class A:
+        pass
+    |}
+    "decorator"
+    [
+      {
+        access = "decorator";
+        arguments = Some [
+            { Argument.name = Some ~+(~~"a"); value = !"b"};
+            { Argument.name = Some ~+(~~"c"); value = !"d"}
+          ];
+      };
+    ];
+  assert_get_decorator
+    {|
+      @decorator(a=b)
+      @decorator(a=b, c=d)
+      class A:
+        pass
+    |}
+    "decorator"
+    [
+      {
+        access = "decorator";
+        arguments = Some [
+            { Argument.name = Some ~+(~~"a"); value = !"b"};
+          ];
+      };
+      {
+        access = "decorator";
+        arguments = Some [
+            { Argument.name = Some ~+(~~"a"); value = !"b"};
+            { Argument.name = Some ~+(~~"c"); value = !"d"}
+          ];
+      };
+    ]
 
 
 let test_constructors _ =
@@ -444,7 +551,7 @@ let test_class_attributes _ =
       let print_attribute { Node.value = { Annotated.Attribute.name; _ }; _ } =
         Format.asprintf "%a" Expression.pp_expression name
       in
-      List.map ~f:print_attribute attributes
+      List.map attributes ~f:print_attribute
       |> String.concat ~sep:", "
     in
     assert_equal
@@ -1124,6 +1231,7 @@ let () =
   "class">:::[
     "generics">::test_generics;
     "superclasses">::test_superclasses;
+    "get_decorator">::test_get_decorator;
     "constructors">::test_constructors;
     "metaclasses">::test_metaclasses;
     "methods">::test_methods;

@@ -23,8 +23,9 @@ let test_collect _ =
       end in
       let module StatementPredicate = struct
         type t = Statement.t
-        let keep_recursing _ =
-          Transform.Recurse
+
+        let visit_children _ =
+          true
 
         let predicate statement =
           Some statement
@@ -133,7 +134,8 @@ let test_collect_accesses_in_position _ =
     assert_equal
       ~printer:(String.concat ~sep:", ")
       expected_accesses
-      (List.map ~f:Node.value (Visit.collect_accesses_in_position source position)
+      (Visit.collect_accesses_in_position source position
+       |> List.map ~f:Node.value
        |> List.map ~f:Access.show)
   in
   assert_collected_accesses source 2 0 ["s"];
@@ -178,8 +180,8 @@ let test_statement_visitor _ =
   struct
     type t = int String.Table.t
 
-    let statement_keep_recursing _ =
-      Transform.Recurse
+    let visit_children _ =
+      true
 
     let statement _ visited statement =
       let increment hash_table key =
@@ -235,19 +237,19 @@ let test_statement_visitor_source _ =
   struct
     type t = string (* Last source *)
 
-    let statement_keep_recursing _ =
-      Transform.Recurse
+    let visit_children _ =
+      true
 
-    let statement { Source.path; _ } _ _ =
-      path
+    let statement { Source.handle; _ } _ _ =
+      File.Handle.show handle
   end
   in
   let module Visit = Visit.MakeStatementVisitor(StatementVisitor) in
-  let path = Visit.visit "" (parse ~path:"test.py" "a = 1") in
-  assert_equal "test.py" path;
+  let handle = Visit.visit "" (parse ~handle:"test.py" "a = 1") in
+  assert_equal "test.py" handle;
 
-  let path = Visit.visit "" (parse ~path:"test2.py" "b = 2") in
-  assert_equal "test2.py" path;
+  let handle = Visit.visit "" (parse ~handle:"test2.py" "b = 2") in
+  assert_equal "test2.py" handle;
   ()
 
 let () =

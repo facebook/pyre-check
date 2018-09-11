@@ -31,9 +31,8 @@ let configuration = Configuration.create ~infer:true ()
 
 let plain_populate sources =
   let environment = Environment.Builder.create () in
-  Service.Environment.populate
-    (Environment.handler ~configuration environment)
-    sources;
+  let handler = Environment.handler ~configuration environment in
+  Service.Environment.populate handler sources;
   environment
 
 
@@ -101,8 +100,11 @@ let test_register_class_definitions _ =
            ...
        |})
   in
-  assert_equal ~cmp:Type.Set.equal new_annotations (Type.Set.singleton (Type.primitive "C"));
-  (* Builtins can't be overridden. *)
+  assert_equal
+    ~cmp:Type.Set.equal
+    ~printer:(Set.fold ~init:"" ~f:(fun sofar next -> sofar ^ " " ^ (Type.show next)))
+    (Type.Set.singleton (Type.primitive "C"))
+    new_annotations;
   let new_annotations =
     Environment.register_class_definitions
       (module Handler)
@@ -111,7 +113,11 @@ let test_register_class_definitions _ =
            pass
        |})
   in
-  assert_equal ~cmp:Type.Set.equal new_annotations Type.Set.empty
+  assert_equal
+    ~cmp:Type.Set.equal
+    ~printer:(Set.fold ~init:"" ~f:(fun sofar next -> sofar ^ " " ^ (Type.show next)))
+    (Type.Set.singleton (Type.integer))
+    new_annotations
 
 
 let test_refine_class_definitions _ =
@@ -120,6 +126,8 @@ let test_refine_class_definitions _ =
   let source =
     parse
       {|
+       class A: pass
+       class B(A): pass
        class C:
          def __init__(self):
            self.x = 3
@@ -127,14 +135,30 @@ let test_refine_class_definitions _ =
          def __init__(self):
            self.y = 4
          D.z = 5
+       class E(D, A): pass
       |}
   in
-  Environment.register_class_definitions (module Handler) source
-  |> ignore;
+  let all_annotations =
+    Environment.register_class_definitions (module Handler) source
+    |> Set.to_list
+  in
   Environment.connect_type_order (module Handler) source;
+  TypeOrder.deduplicate (module Handler.TypeOrderHandler) ~annotations:all_annotations;
+  TypeOrder.connect_annotations_to_top
+    (module Handler.TypeOrderHandler)
+    ~top:Type.Object
+    all_annotations;
+  TypeOrder.remove_extra_edges
+    (module Handler.TypeOrderHandler)
+    ~bottom:Type.Bottom
+    ~top:Type.Object
+    all_annotations;
 
+  Handler.refine_class_definition (Type.primitive "A");
+  Handler.refine_class_definition (Type.primitive "B");
   Handler.refine_class_definition (Type.primitive "C");
   Handler.refine_class_definition (Type.primitive "D");
+  Handler.refine_class_definition (Type.primitive "E");
   let attribute_equal
       (expected_target, expected_value)
       { Node.value = { Statement.Attribute.target; value; _ }; _ } =
@@ -142,7 +166,7 @@ let test_refine_class_definitions _ =
     Option.equal Expression.equal expected_value value
   in
   let assert_attribute ~implicit class_name attribute_name expected =
-    let { Environment.explicit_attributes; implicit_attributes; _ } =
+    let { Resolution.explicit_attributes; implicit_attributes; _ } =
       Option.value_exn (Handler.class_definition (Type.primitive class_name))
     in
     let map =
@@ -164,6 +188,25 @@ let test_refine_class_definitions _ =
   assert_attribute ~implicit:true "C" "x" (Some (!"x", Some ~+(Expression.Integer 3)));
   assert_attribute ~implicit:true "D" "y" (Some (!"y", Some ~+(Expression.Integer 4)));
   assert_attribute ~implicit:false "D" "z" (Some (!"z", Some ~+(Expression.Integer 5)));
+
+  let assert_successors class_name expected =
+    let { Resolution.successors; _ } =
+      Option.value_exn (Handler.class_definition (Type.primitive class_name))
+    in
+    let expected =
+      List.map expected ~f:Type.primitive
+      |> (fun expected -> expected @ [Type.Object; Type.Deleted; Type.Top])
+    in
+    assert_equal
+      ~printer:(List.fold ~init:"" ~f:(fun sofar next -> sofar ^ (Type.show next) ^ " "))
+      ~cmp:(List.equal ~equal:Type.equal)
+      expected
+      successors
+  in
+  assert_successors "C" [];
+  assert_successors "D" ["C"];
+  assert_successors "B" ["A"];
+  assert_successors "E" ["D"; "C"; "A"];
   ()
 
 
@@ -175,17 +218,17 @@ let test_register_aliases _ =
       let sources = List.map sources ~f:Preprocessing.preprocess in
       let register
           ({
-            Source.path;
+            Source.handle;
             qualifier;
             statements;
             metadata = { Source.Metadata.local_mode; _ };
             _;
           } as source) =
-        let stub = String.is_suffix path ~suffix:".pyi" in
+        let stub = String.is_suffix (File.Handle.show handle) ~suffix:".pyi" in
         Handler.register_module
           ~qualifier
           ~local_mode
-          ~path:(Some path)
+          ~handle:(Some handle)
           ~stub
           ~statements;
         Environment.register_class_definitions (module Handler) source |> ignore;
@@ -340,7 +383,7 @@ let test_register_aliases _ =
       parse
         ~qualifier:(Access.create "stubbed")
         ~local_mode:Source.PlaceholderStub
-        ~path:"stubbed.pyi"
+        ~handle:"stubbed.pyi"
         "";
       parse
         ~qualifier:(Access.create "qualifier")
@@ -358,11 +401,38 @@ let test_connect_definition _ =
   let environment = Environment.Builder.create () in
   let (module Handler: Environment.Handler) = Environment.handler ~configuration environment in
   let resolution = Environment.resolution (module Handler) () in
-  let c_primitive = Type.primitive "C" in
 
   let (module TypeOrderHandler: TypeOrder.Handler) = (module Handler.TypeOrderHandler) in
-  TypeOrder.insert (module TypeOrderHandler) c_primitive;
+  TypeOrder.insert (module TypeOrderHandler) (Type.primitive "C");
+  TypeOrder.insert (module TypeOrderHandler) (Type.primitive "D");
 
+  let assert_edge ~predecessor ~successor =
+    let predecessor_index =
+      TypeOrderHandler.find_unsafe
+        (TypeOrderHandler.indices ())
+        predecessor
+    in
+    let successor_index =
+      TypeOrderHandler.find_unsafe
+        (TypeOrderHandler.indices ())
+        successor
+    in
+    assert_true
+      (List.mem
+         ~equal:TypeOrder.Target.equal
+         (TypeOrderHandler.find_unsafe
+            (TypeOrderHandler.edges ())
+            predecessor_index)
+         { TypeOrder.Target.target = successor_index; parameters = [] });
+
+    assert_true
+      (List.mem
+         ~equal:TypeOrder.Target.equal
+         (TypeOrderHandler.find_unsafe
+            (TypeOrderHandler.backedges ())
+            successor_index)
+         { TypeOrder.Target.target = predecessor_index; parameters = [] })
+  in
   let class_definition =
     +{
       Class.name = Access.create "C";
@@ -372,31 +442,19 @@ let test_connect_definition _ =
       docstring = None
     }
   in
+  Environment.connect_definition ~resolution ~definition:class_definition;
+  assert_edge ~predecessor:Type.Bottom ~successor:(Type.primitive "C");
 
-  let primitive, parameters =
-    Handler.connect_definition
-      ~resolution
-      ~predecessor:Type.Bottom
-      ~name:(Access.create "C")
-      ~definition:(Some class_definition)
+  let definition =
+    +(Test.parse_single_class {|
+       class D(int, float):
+         ...
+     |})
   in
-  assert_equal primitive c_primitive;
-  assert_equal parameters [];
-  let c_index = TypeOrderHandler.find_unsafe (TypeOrderHandler.indices ()) c_primitive in
-  let bottom_index = TypeOrderHandler.find_unsafe (TypeOrderHandler.indices ()) Type.Bottom in
-
-  assert_true
-    (List.mem
-       ~equal:TypeOrder.Target.equal
-       (TypeOrderHandler.find_unsafe (TypeOrderHandler.edges ()) bottom_index)
-       { TypeOrder.Target.target = c_index; parameters = [] });
-
-  assert_true
-    (List.mem
-       ~equal:TypeOrder.Target.equal
-       (TypeOrderHandler.find_unsafe (TypeOrderHandler.backedges ()) c_index)
-       { TypeOrder.Target.target = bottom_index; parameters = []})
-
+  Environment.connect_definition ~resolution ~definition;
+  assert_edge ~predecessor:Type.Bottom ~successor:(Type.primitive "D");
+  assert_edge ~predecessor:(Type.primitive "D") ~successor:Type.integer;
+  assert_edge ~predecessor:(Type.primitive "D") ~successor:Type.float
 
 
 let test_register_globals _ =
@@ -557,7 +615,7 @@ let test_register_functions _ =
 
 let test_populate _ =
   (* Test type resolution. *)
-  let environment =
+  let ((module Handler: Environment.Handler) as environment) =
     populate {|
       class foo.foo(): ...
       class bar(): ...
@@ -575,6 +633,10 @@ let test_populate _ =
   assert_equal
     (parse_annotation environment !"typing.DefaultDict")
     (Type.primitive "collections.defaultdict");
+
+  (* Check custom class definitions. *)
+  assert_is_some (Handler.class_definition (Type.primitive "None"));
+  assert_is_some (Handler.class_definition (Type.primitive "typing.Optional"));
 
   (* Check type aliases. *)
   let environment =
@@ -602,7 +664,7 @@ let test_populate _ =
          (index (Type.primitive base)))
     in
     let to_target annotation = { TypeOrder.Target.target = index annotation; parameters = [] } in
-    assert_equal targets (Some (List.map ~f:to_target superclasses))
+    assert_equal targets (Some (List.map superclasses ~f:to_target))
   in
   (* Metaclasses aren't superclasses. *)
   let environment =
@@ -771,7 +833,7 @@ let test_infer_protocols _ =
         Map.set
           map
           ~key:(Access.create key)
-          ~data:(List.map ~f:Access.create values)
+          ~data:(List.map values ~f:Access.create)
       in
       Access.Map.empty
       |> add "__hash__" ["object"; "SuperObject"]
@@ -1106,11 +1168,11 @@ let test_supertypes _ =
   let module Handler = (val environment) in
   let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
   assert_equal
-    (TypeOrder.successors order (Type.primitive "foo"))
-    [Type.Object; Type.Deleted; Type.Top];
+    [Type.Object; Type.Deleted; Type.Top]
+    (TypeOrder.successors order (Type.primitive "foo"));
   assert_equal
-    (TypeOrder.successors order (Type.primitive "bar"))
-    [Type.primitive "foo"; Type.Object; Type.Deleted; Type.Top];
+    [Type.primitive "foo"; Type.Object; Type.Deleted; Type.Top]
+    (TypeOrder.successors order (Type.primitive "bar"));
 
   let environment =
     populate {|
@@ -1122,12 +1184,6 @@ let test_supertypes _ =
   let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
   assert_equal
     ~printer:(List.to_string ~f:Type.show)
-    (TypeOrder.successors
-       order
-       (Type.Parametric {
-           Type.name = ~~"typing.Iterable";
-           parameters = [Type.integer];
-         }))
     [
       Type.Parametric {
         Type.name = ~~"typing.Generic";
@@ -1137,6 +1193,12 @@ let test_supertypes _ =
       Type.Deleted;
       Type.Top;
     ]
+    (TypeOrder.successors
+       order
+       (Type.Parametric {
+           Type.name = ~~"typing.Iterable";
+           parameters = [Type.integer];
+         }))
 
 
 let test_class_definition _ =
@@ -1237,12 +1299,16 @@ let test_import_dependencies context =
     let environment =
       populate_with_sources
         [
-          parse ~path:"test.py" ~qualifier:(Access.create "test") source;
-          parse ~path:"a.py" ~qualifier:(Access.create "a") "";
-          parse ~path:"subdirectory/b.py" ~qualifier:(Access.create "subdirectory.b") "";
+          parse ~handle:"test.py" ~qualifier:(Access.create "test") source;
+          parse ~handle:"a.py" ~qualifier:(Access.create "a") "";
+          parse ~handle:"subdirectory/b.py" ~qualifier:(Access.create "subdirectory.b") "";
         ]
     in
-    let dependencies path = Environment.dependencies environment (Source.qualifier ~path) in
+    let dependencies handle =
+      let handle = File.Handle.create handle in
+      Environment.dependencies environment (Source.qualifier ~handle)
+      >>| List.map ~f:File.Handle.show
+    in
     assert_equal ~printer:(fun lo -> lo >>| List.to_string ~f:ident |> Option.value ~default:"nun")
       (dependencies "subdirectory/b.py")
       (Some ["test.py"]);
@@ -1263,8 +1329,12 @@ let test_register_dependencies _ =
   in
   Environment.register_dependencies
     (module Handler)
-    (parse ~path:"test.py" source);
-  let dependencies path = Environment.dependencies (module Handler) (Source.qualifier ~path) in
+    (parse ~handle:"test.py" source);
+  let dependencies handle =
+    let handle = File.Handle.create handle in
+    Environment.dependencies (module Handler) (Source.qualifier ~handle)
+    >>| List.map ~f:File.Handle.show
+  in
   assert_equal
     (dependencies "subdirectory/b.py")
     (Some ["test.py"]);
@@ -1288,18 +1358,22 @@ let test_purge _ =
   in
   Service.Environment.populate
     handler
-    [parse ~path:"test.py" source];
+    [parse ~handle:"test.py" source];
   assert_is_some (Handler.class_definition (Type.primitive "baz.baz"));
   assert_is_some (Handler.function_definitions (Access.create "foo"));
   assert_is_some (Handler.aliases (Type.primitive "_T"));
-  assert_equal (Handler.dependencies (Source.qualifier ~path:"a.py")) (Some ["test.py"]);
+  assert_equal
+    (Handler.dependencies (Source.qualifier ~handle:(File.Handle.create "a.py")))
+    (Some [File.Handle.create "test.py"]);
 
   Handler.purge [File.Handle.create "test.py"];
 
   assert_is_none (Handler.class_definition (Type.primitive "baz.baz"));
   assert_is_none (Handler.function_definitions (Access.create "foo"));
   assert_is_none (Handler.aliases (Type.primitive "_T"));
-  assert_equal (Handler.dependencies (Source.qualifier ~path:"a.py")) (Some [])
+  assert_equal
+    (Handler.dependencies (Source.qualifier ~handle:(File.Handle.create"a.py")))
+    (Some [])
 
 
 let test_infer_protocols _ =
@@ -1315,7 +1389,7 @@ let test_infer_protocols _ =
           target = Type.primitive target
         }
       in
-      List.map ~f:to_edge expected_edges
+      List.map expected_edges ~f:to_edge
     in
     let open TypeOrder in
     let source =

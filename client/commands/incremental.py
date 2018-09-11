@@ -8,6 +8,7 @@ import logging
 import os
 import subprocess
 import sys
+from typing import List
 
 from .command import ClientException, ExitCode, State
 from .reporting import Reporting
@@ -25,7 +26,7 @@ class Incremental(Reporting):
 
     def _run(self) -> None:
         if self._state() == State.DEAD:
-            LOG.warning("Starting server at `%s`.", self._analysis_directory)
+            LOG.warning("Starting server at `%s`.", self._analysis_directory.get_root())
             arguments = self._arguments
             arguments.terminal = False
             arguments.no_watchman = False
@@ -45,18 +46,18 @@ class Incremental(Reporting):
             LOG.error("Run `%s restart` in order to restart the server.", sys.argv[0])
             self._exit_code = ExitCode.FAILURE
 
-    def _flags(self):
+    def _flags(self) -> List[str]:
         flags = super()._flags()
         flags.extend(
             [
                 "-typeshed",
-                str(self._configuration.get_typeshed()),
+                self._configuration.typeshed,
                 "-expected-binary-version",
-                str(self._configuration.get_version_hash()),
+                self._configuration.version_hash,
             ]
         )
 
-        search_path = self._configuration.get_search_path()
+        search_path = self._configuration.search_path
         if search_path:
             flags.extend(["-search-path", ",".join(search_path)])
 

@@ -87,10 +87,10 @@ let rec resolve ~resolution expression =
               ~annotation:(Annotation.create annotation)
         | Tuple accesses, Type.Tuple (Type.Bounded parameters)
           when List.length accesses = List.length parameters ->
-            List.fold2_exn ~init:resolution ~f:add accesses parameters
+            List.fold2_exn accesses parameters ~init:resolution ~f:add
         | Tuple accesses, Type.Tuple (Type.Unbounded parameter) ->
-            let parameters = List.map ~f:(fun _ -> parameter) accesses in
-            List.fold2_exn ~init:resolution ~f:add accesses parameters
+            let parameters = List.map accesses ~f:(fun _ -> parameter) in
+            List.fold2_exn accesses parameters ~init:resolution ~f:add
         | _ ->
             resolution
       in
@@ -169,11 +169,11 @@ let rec resolve ~resolution expression =
 
   | Lambda { Lambda.body; Lambda.parameters; _ } ->
       Type.lambda
-        ~parameters:(List.map ~f:(fun _ -> Type.Object) parameters)
+        ~parameters:(List.map parameters ~f:(fun _ -> Type.Object))
         ~return_annotation:(resolve ~resolution body)
 
   | List elements ->
-      List.map ~f:(resolve ~resolution) elements
+      List.map elements ~f:(resolve ~resolution)
       |> List.fold ~init:Type.Bottom ~f:(Resolution.join resolution)
       |> Type.list
 
@@ -182,7 +182,7 @@ let rec resolve ~resolution expression =
       Type.list (resolve ~resolution element)
 
   | Set elements ->
-      List.map ~f:(resolve ~resolution) elements
+      List.map elements ~f:(resolve ~resolution)
       |> List.fold ~init:Type.Bottom ~f:(Resolution.join resolution)
       |> Type.set
 
@@ -279,6 +279,26 @@ let rec resolve ~resolution expression =
    literals and annotations found in the resolution map, without any resolutions/joins. *)
 let rec resolve_literal ~resolution expression =
   match Node.value expression with
+  | Access access ->
+      begin
+        match Expression.Access.name_and_arguments ~call:access with
+        | Some { Expression.Access.callee; _ } ->
+            let class_name =
+              Expression.Access (Expression.Access.create callee)
+              |> Ast.Node.create_with_default_location
+              |> Resolution.parse_annotation resolution
+            in
+            let is_defined =
+              Resolution.class_definition resolution class_name
+              |> Option.is_some
+            in
+            if is_defined then
+              class_name
+            else
+              Type.Top
+        | None ->
+            Type.Top
+      end
   | Await expression ->
       resolve_literal ~resolution expression
       |> Type.awaitable_value

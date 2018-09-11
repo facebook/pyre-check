@@ -435,9 +435,10 @@ let compute_fixpoint ~configuration ~scheduler ~analyses ~caller_map ~all_callab
           scheduler
           ~configuration
           ~map:(fun _ callables -> one_analysis_pass ~analyses step ~callables)
-          ~init:()
+          ~initial:()
           ~reduce:(fun _ _ -> ())
-          callables_to_analyze;
+          ~inputs:callables_to_analyze
+          ();
         Fixpoint.remove_old old_batch
       in
       let callables_to_analyze =
@@ -466,8 +467,9 @@ let extract_errors scheduler ~configuration all_callables =
   Scheduler.map_reduce
     scheduler
     ~configuration
-    ~init:[]
+    ~initial:[]
     ~map:(fun _ callables -> extract_errors callables)
     ~reduce:List.cons
-    all_callables
+    ~inputs:all_callables
+    ()
   |> List.concat_no_order

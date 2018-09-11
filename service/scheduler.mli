@@ -12,19 +12,26 @@ module Daemon = Daemon
 type t
 
 val create: configuration: Configuration.t -> ?bucket_multiplier: int -> unit -> t
-val initialize_process: configuration: Configuration.t -> unit
+
+val run_process: configuration: Configuration.t -> (unit -> 'result) -> 'result
 
 val map_reduce
   :  t
   -> ?bucket_size: int
   -> configuration: Configuration.t
-  -> init:'a
-  -> map:('a -> 'b list -> 'c)
-  -> reduce:('c -> 'a -> 'a)
-  -> 'b list
-  -> 'a
+  -> initial: 'state
+  -> map: ('state -> 'input list -> 'intermediate)
+  -> reduce: ('intermediate -> 'state -> 'state)
+  -> inputs: 'input list
+  -> unit
+  -> 'state
 
-val iter: t -> configuration: Configuration.t -> f: ('a list -> unit) -> 'a list -> unit
+val iter
+  :  t
+  -> configuration: Configuration.t
+  -> f: ('input list -> unit)
+  -> inputs: 'input list
+  -> unit
 
 val single_job : t -> f:('a -> 'b) -> 'a -> 'b
 

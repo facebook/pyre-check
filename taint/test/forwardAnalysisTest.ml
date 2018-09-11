@@ -29,7 +29,7 @@ let assert_taint ?qualifier ~source ~expect =
     parse ?qualifier source
     |> Preprocessing.preprocess
   in
-  let configuration = Test.configuration in
+  let configuration = Test.mock_configuration in
   let environment = Test.environment ~configuration () in
   Service.Environment.populate environment [source];
   TypeCheck.check configuration environment source |> ignore;

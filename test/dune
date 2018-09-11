@@ -11,7 +11,8 @@
  (names
   fileTest
   logTest
-  pathTest)
+  pathTest
+  statisticsTest)
  (modules :standard \ test)
  (libraries
   oUnit

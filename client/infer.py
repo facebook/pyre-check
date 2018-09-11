@@ -25,12 +25,12 @@ from . import (
     is_capable_terminal,
     log,
     log_statistics,
-    merge_analysis_directories,
     resolve_analysis_directories,
     switch_root,
 )
 from .commands import ExitCode
 from .configuration import Configuration
+from .filesystem import AnalysisDirectory, SharedAnalysisDirectory
 
 
 LOG = logging.getLogger(__name__)
@@ -407,8 +407,8 @@ class Infer(commands.Reporting):
 
     def _flags(self) -> List[str]:
         flags = super()._flags()
-        flags.extend(["-infer", "-typeshed", str(self._configuration.get_typeshed())])
-        search_path = self._configuration.get_search_path()
+        flags.extend(["-infer", "-typeshed", self._configuration.typeshed])
+        search_path = self._configuration.search_path
         if search_path:
             flags.extend(["-search-path", ",".join(search_path)])
         if self._recursive:
@@ -446,6 +446,14 @@ def main():
     )
 
     parser.add_argument("--logging-sections", help="Enable sectional logging")
+    parser.add_argument(
+        "--log-identifier",
+        default="",
+        help=argparse.SUPPRESS,  # Add given identifier to logged samples.
+    )
+    parser.add_argument(
+        "--logger", help=argparse.SUPPRESS  # Specify custom logging binary.
+    )
 
     parser.add_argument(
         "--binary-version",
@@ -518,7 +526,7 @@ def main():
         switch_root(arguments)
 
         configuration = Configuration(
-            original_directory=arguments.original_directory,
+            local_configuration_directory=arguments.local_configuration_directory,
             local_configuration=arguments.local_configuration,
         )
 
@@ -526,15 +534,13 @@ def main():
             sys.stdout.write(get_binary_version(configuration) + "\n")
             return ExitCode.SUCCESS
 
-        configuration.validate()
-
         analysis_directories = resolve_analysis_directories(
             arguments, configuration, prompt=False
         )
         if len(analysis_directories) == 1:
-            analysis_directory_path = analysis_directories.pop()
+            analysis_directory = AnalysisDirectory(analysis_directories.pop())
         else:
-            local_configuration_path = configuration.get_local_configuration()
+            local_configuration_path = configuration.local_configuration
             if local_configuration_path:
                 local_root = os.path.dirname(
                     os.path.relpath(
@@ -543,11 +549,11 @@ def main():
                 )
             else:
                 local_root = None
-            shared_analysis_directory = merge_analysis_directories(
+            shared_analysis_directory = SharedAnalysisDirectory(
                 analysis_directories, local_root
             )
-            analysis_directory_path = shared_analysis_directory.get_root()
-        Infer(arguments, configuration, analysis_directory_path).run()
+            analysis_directory = shared_analysis_directory
+        Infer(arguments, configuration, analysis_directory).run()
     except (
         buck.BuckException,
         commands.ClientException,

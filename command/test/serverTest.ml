@@ -18,9 +18,9 @@ open Test
 exception Timeout
 
 
-let file ?(content = None) relative =
+let file ?content relative =
   let root = Path.current_working_directory () in
-  File.create ~content (Path.create_relative ~root ~relative)
+  File.create ?content (Path.create_relative ~root ~relative)
 
 
 let poll_for_deletion lock_path =
@@ -36,6 +36,10 @@ let poll_for_deletion lock_path =
 let test_language_server_protocol_json_format context =
   let open TypeCheck.Error in
   let filename, _ = bracket_tmpfile ~suffix:".py" context in
+  let handle = File.Handle.create filename in
+  Ast.SharedMemory.Sources.add
+    handle
+    (Source.create ~handle ~path:(Path.create_absolute filename) []);
   let ({ Error.location; _ } as type_error) =
     CommandTest.make_errors
       {|
@@ -58,7 +62,6 @@ let test_language_server_protocol_json_format context =
   in
   let json_error =
     LanguageServer.Protocol.PublishDiagnostics.of_errors
-      ~root:(Path.create_absolute Filename.temp_dir_name)
       (File.Handle.create filename)
       [type_error]
     |> Or_error.ok_exn
@@ -95,7 +98,14 @@ let test_language_server_protocol_json_format context =
     |> Test.trim_extra_indentation
     |> normalize
   in
-  assert_equal ~printer:ident ~cmp:String.equal json_error_expect json_error
+  assert_equal ~printer:ident ~cmp:String.equal json_error_expect json_error;
+
+  let malformed_response =
+    LanguageServer.Protocol.PublishDiagnostics.of_errors
+      (File.Handle.create "nonexistent_file")
+      [type_error]
+  in
+  assert_true (Or_error.is_error malformed_response)
 
 
 let with_timeout ~seconds f x =
@@ -193,16 +203,15 @@ let associate_errors_and_filenames error_list =
   |> Map.to_alist
 
 
-let make_errors ?(path = "test.py") ?(qualifier = []) source =
+let make_errors ?(handle = "test.py") ?(qualifier = []) source =
   let configuration = CommandTest.mock_analysis_configuration () in
-  let source = Preprocessing.preprocess (parse ~path ~qualifier source) in
+  let source = Preprocessing.preprocess (parse ~handle ~qualifier source) in
   let environment_handler = Environment.handler ~configuration (environment ()) in
   add_defaults_to_environment environment_handler;
   Service.Environment.populate (environment_handler) [source];
   (TypeCheck.check configuration environment_handler source).TypeCheck.Result.errors
 
 let mock_server_state
-    ?(initial_errors = Error.Hash_set.create ())
     ?(initial_environment = environment ())
     errors =
   let environment = Environment.handler ~configuration initial_environment in
@@ -210,9 +219,7 @@ let mock_server_state
   {
     State.deferred_requests = [];
     environment;
-    initial_errors;
     errors;
-    handles = File.Handle.Set.empty;
     last_request_time = Unix.time ();
     last_integrity_check = Unix.time ();
     lookups = String.Table.create ();
@@ -229,20 +236,20 @@ let mock_server_state
 let mock_client_socket = Unix.openfile ~mode:[Unix.O_RDONLY] "/dev/null"
 
 let assert_response
-    ?(initial_errors = Error.Hash_set.create ())
     ?(local_root = Path.current_working_directory ())
     ?state
-    ?(path = "test.py")
+    ?(handle = "test.py")
     ~source
     ~request
     expected_response =
-  Ast.SharedMemory.remove_paths [File.Handle.create path];
-  let parsed = parse ~path source in
-  Ast.SharedMemory.add_source (File.Handle.create path) parsed;
+  Ast.SharedMemory.HandleKeys.clear ();
+  Ast.SharedMemory.Sources.remove ~handles:[File.Handle.create handle];
+  let parsed = parse ~handle source in
+  Ast.SharedMemory.Sources.add (File.Handle.create handle) parsed;
   let errors =
     let errors = File.Handle.Table.create () in
     List.iter
-      (make_errors ~path source)
+      (make_errors ~handle source)
       ~f:(fun error ->
           Hashtbl.add_multi errors ~key:(File.Handle.create (Error.path error)) ~data:error);
     errors
@@ -255,14 +262,14 @@ let assert_response
   let mock_server_state =
     match state with
     | Some state -> state
-    | None -> mock_server_state ~initial_environment ~initial_errors errors
+    | None -> mock_server_state ~initial_environment errors
   in
-  let _, response =
-    Request.process_request
-      mock_client_socket
-      mock_server_state
-      (CommandTest.mock_server_configuration ~local_root ())
-      request
+  let { Request.response; _ } =
+    Request.process
+      ~socket:mock_client_socket
+      ~state:mock_server_state
+      ~configuration:(CommandTest.mock_server_configuration ~local_root ())
+      ~request
   in
   CommandTest.clean_environment ();
   let printer = function
@@ -322,7 +329,6 @@ let test_protocol_type_check _ =
     (Some (Protocol.TypeCheckResponse (associate_errors_and_filenames errors)));
 
   assert_response
-    ~initial_errors:(Error.Hash_set.of_list errors)
     ~source
     ~request:Protocol.Request.FlushTypeErrorsRequest
     (Some (Protocol.TypeCheckResponse (associate_errors_and_filenames errors)))
@@ -331,15 +337,11 @@ let test_protocol_type_check _ =
 let test_query _ =
   let assert_type_query_response ~source ~query response =
     let query = Commands.Query.parse_query ~root:(Path.current_working_directory ()) query in
-    match query with
-    | None ->
-        assert_unreached ()
-    | Some request ->
-        assert_response ~source ~request (Some (Protocol.TypeQueryResponse response))
+    assert_response ~source ~request:query (Some (Protocol.TypeQueryResponse response))
   in
   let parse_annotation serialized =
     serialized
-    |> fun literal -> String (StringLiteral.create literal)
+    |> (fun literal -> String (StringLiteral.create literal))
     |> Node.create_with_default_location
     |> Type.create ~aliases:(fun _ -> None)
   in
@@ -386,11 +388,11 @@ let test_query _ =
   assert_type_query_response
     ~source:""
     ~query:"superclasses(Unknown[int])"
-    (Protocol.TypeQuery.Error "No class definition found for Unknown[int]");
+    (Protocol.TypeQuery.Error "No class definition found for Unknown.__getitem__.(...)");
 
   assert_type_query_response
     ~source:"A = int"
-    ~query:"normalizeType(A)"
+    ~query:"normalize_type(A)"
     (Protocol.TypeQuery.Response (Protocol.TypeQuery.Type Type.integer));
 
   assert_type_query_response
@@ -421,11 +423,11 @@ let test_query _ =
 
   assert_type_query_response
     ~source:"a = 2"
-    ~query:"type_at_location(test.py, 1, 4)"
+    ~query:"type_at_location('test.py', 1, 4)"
     (Protocol.TypeQuery.Response (Protocol.TypeQuery.Type Type.integer));
   assert_type_query_response
     ~source:"a = 2"
-    ~query:"type_at_location(test.py, 1, 3)"
+    ~query:"type_at_location('test.py', 1, 3)"
     (Protocol.TypeQuery.Error "Not able to get lookup at test.py:1:3");
 
   assert_type_query_response
@@ -543,7 +545,46 @@ let test_query _ =
   assert_type_query_response
     ~source:""
     ~query:"signature(unknown)"
-    (Protocol.TypeQuery.Error "No signature found for unknown")
+    (Protocol.TypeQuery.Error "No signature found for unknown");
+
+  assert_type_query_response
+    ~source:{|
+      foo: str = "bar"
+    |}
+    ~query:"type(foo)"
+    (Protocol.TypeQuery.Response (Protocol.TypeQuery.Type Type.string));
+
+  assert_type_query_response
+    ~source:{|
+      foo = 7
+    |}
+    ~query:"type(foo)"
+    (Protocol.TypeQuery.Response (Protocol.TypeQuery.Type Type.integer));
+
+  assert_type_query_response
+    ~source:{|
+    |}
+    ~query:"type(8)"
+    (Protocol.TypeQuery.Response (Protocol.TypeQuery.Type Type.integer));
+
+  assert_type_query_response
+    ~source:{|
+      def foo(a: str) -> str:
+        return a
+      bar: str = "baz"
+    |}
+    ~query:"type(foo(bar))"
+    (Protocol.TypeQuery.Response (Protocol.TypeQuery.Type Type.string));
+
+  assert_type_query_response
+    ~source:{|
+      def foo(a: str) -> str:
+        return a
+      bar: int = 7
+    |}
+    ~query:"type(foo(bar))"
+    (Protocol.TypeQuery.Error
+       "Expression had errors: Incompatible parameter type [6]: Expected `str` but got `int`.")
 
 
 let test_connect _ =
@@ -588,8 +629,8 @@ let test_incremental_typecheck _ =
     |> Path.relative
     |> Option.value ~default:path
   in
-  let relative_path = relativize path in
-  let relative_stub_path = relativize stub_path in
+  let handle = relativize path in
+  let stub_handle = relativize stub_path in
   let source =
     {|
         def foo() -> None:
@@ -598,7 +639,7 @@ let test_incremental_typecheck _ =
     |> trim_extra_indentation
   in
   let assert_response ?state ~request response =
-    assert_response ~path ~source ?state ~request (Some response)
+    assert_response ~handle:path ~source ?state ~request (Some response)
   in
   assert_response
     ~request:(Protocol.Request.TypeCheckRequest
@@ -606,15 +647,21 @@ let test_incremental_typecheck _ =
                    ~update_environment_with:[file path]
                    ~check:[file path]
                    ()))
-    (Protocol.TypeCheckResponse [(File.Handle.create relative_path), []]);
-  let files = [file ~content:(Some source) path] in
+    (Protocol.TypeCheckResponse [(File.Handle.create handle), []]);
+  (* The handles get updated in shared memory. *)
+  assert_equal
+    ~printer:(List.to_string ~f:File.Handle.show)
+    (Ast.SharedMemory.HandleKeys.get ())
+    [File.Handle.create handle];
+
+  let files = [file ~content:source path] in
   let request_with_content =
     (Protocol.Request.TypeCheckRequest
        (Protocol.TypeCheckRequest.create ~update_environment_with:files ~check:files ()))
   in
   let errors =
     associate_errors_and_filenames
-      (make_errors ~path:relative_path ~qualifier:(Source.qualifier ~path:relative_path) source)
+      (make_errors ~handle ~qualifier:(Source.qualifier ~handle:(File.Handle.create handle)) source)
   in
   assert_response ~request:request_with_content (Protocol.TypeCheckResponse errors);
   (* Assert that only files getting used to update the environment get parsed. *)
@@ -627,26 +674,31 @@ let test_incremental_typecheck _ =
          ())
   in
   assert_response
-    ~request:(check_request ~check:[file ~content:(Some "def foo() -> int: return 1") path] ())
+    ~request:(check_request ~check:[file ~content:"def foo() -> int: return 1" path] ())
     (Protocol.TypeCheckResponse errors);
   let () =
-    let stub_file = file ~content:(Some "") (stub_path ^ "i") in
+    let stub_file = file ~content:"" (stub_path ^ "i") in
     assert_response
       ~request:(check_request ~update_environment_with:[stub_file] ())
-      (Protocol.TypeCheckResponse [])
+      (Protocol.TypeCheckResponse []);
+    assert_equal
+      ~printer:(List.to_string ~f:File.Handle.show)
+      (Ast.SharedMemory.HandleKeys.get ())
+      [File.Handle.create (relativize stub_path ^ "i")];
+
   in
   assert_response
     ~request:(
       check_request
-        ~check:[file ~content:(Some "def foo() -> int: return \"\"") stub_path]
+        ~check:[file ~content:"def foo() -> int: return \"\"" stub_path]
         ())
-    (Protocol.TypeCheckResponse [File.Handle.create relative_stub_path, []]);
+    (Protocol.TypeCheckResponse [File.Handle.create stub_handle, []]);
 
   let () =
-    let file = file ~content:(Some "def foo() -> int: return 1") path in
+    let file = file ~content:"def foo() -> int: return 1" path in
     assert_response
       ~request:(check_request ~update_environment_with:[file] ~check:[file] ())
-      (Protocol.TypeCheckResponse [File.Handle.create relative_path, []])
+      (Protocol.TypeCheckResponse [File.Handle.create handle, []])
   in
 
   let state = mock_server_state (File.Handle.Table.create ()) in
@@ -662,12 +714,12 @@ let test_incremental_typecheck _ =
 
 let test_protocol_language_server_protocol _ =
   let server_state = mock_server_state (File.Handle.Table.create ()) in
-  let _, response =
-    Request.process_request
-      mock_client_socket
-      server_state
-      (CommandTest.mock_server_configuration ())
-      (Protocol.Request.LanguageServerProtocolRequest "{\"method\":\"\"}")
+  let { Request.response; _ } =
+    Request.process
+      ~socket:mock_client_socket
+      ~state:server_state
+      ~configuration:(CommandTest.mock_server_configuration ())
+      ~request:(Protocol.Request.LanguageServerProtocolRequest "{\"method\":\"\"}")
   in
   let cleanup () =
     CommandTest.clean_environment ()
@@ -698,7 +750,7 @@ let test_did_save_with_content context =
     String.chop_suffix_exn ~suffix:".py" filename
     |> Access.create
   in
-  let errors = make_errors ~path:filename ~qualifier source in
+  let errors = make_errors ~handle:filename ~qualifier source in
   let request =
     LanguageServer.Protocol.DidSaveTextDocument.create ~root filename (Some source)
     |> Or_error.ok_exn
@@ -717,11 +769,11 @@ let test_protocol_persistent _ =
   assert_raises
     Request.InvalidRequest
     (fun () ->
-       Request.process_request
-         mock_client_socket
-         server_state
-         (CommandTest.mock_server_configuration ())
-         (Protocol.Request.ClientConnectionRequest Protocol.Persistent));
+       Request.process
+         ~socket:mock_client_socket
+         ~state:server_state
+         ~configuration:(CommandTest.mock_server_configuration ())
+         ~request:(Protocol.Request.ClientConnectionRequest Protocol.Persistent));
   CommandTest.clean_environment ()
 
 
@@ -744,15 +796,25 @@ let test_incremental_dependencies _ =
   Out_channel.write_all "a.py" ~data:a_source;
   Out_channel.write_all "b.py" ~data:b_source;
   let assert_dependencies_analyzed () =
+    let handles =
+      [
+        File.Handle.create "a.py";
+        File.Handle.create "b.py";
+      ]
+    in
+    let sources =
+      [
+        parse ~handle:"a.py" ~path:(mock_path "a.py") ~qualifier:(Access.create "a") a_source;
+        parse ~handle:"b.py" ~path:(mock_path "b.py") ~qualifier:(Access.create "b") b_source;
+      ]
+    in
+    List.zip_exn handles sources
+    |> List.iter ~f:(fun (handle, source) -> Ast.SharedMemory.Sources.add handle source);
+
     let environment = Environment.Builder.create () in
     let environment_handler = Environment.handler ~configuration environment in
     add_defaults_to_environment environment_handler;
-    Service.Environment.populate
-      environment_handler
-      [
-        parse ~path:"a.py" ~qualifier:(Access.create "a") a_source;
-        parse ~path:"b.py" ~qualifier:(Access.create "b") b_source;
-      ];
+    Service.Environment.populate environment_handler sources;
     let expected_errors = [
       File.Handle.create "b.py", [];
     ]
@@ -766,20 +828,20 @@ let test_incremental_dependencies _ =
            ?check
            ())
     in
-    let process_request request =
-      Request.process_request
-        mock_client_socket
-        initial_state
-        (CommandTest.mock_server_configuration ())
-        request
+    let process request =
+      Request.process
+        ~socket:mock_client_socket
+        ~state:initial_state
+        ~configuration:(CommandTest.mock_server_configuration ())
+        ~request
     in
-    let state, response =
-      process_request (check_request ~update:[file "b.py"] ~check:[file "b.py"] ())
+    let { Request.state; response } =
+      process (check_request ~update:[file "b.py"] ~check:[file "b.py"] ())
     in
     assert_equal (Some (Protocol.TypeCheckResponse expected_errors)) response;
     assert_equal state.State.deferred_requests [check_request ~check:[file "a.py"] ()];
-    let state, response =
-      process_request (check_request ~update:[file "b.py"] ~check:[file "a.py"; file "b.py"] ())
+    let { Request.state; response } =
+      process (check_request ~update:[file "b.py"] ~check:[file "a.py"; file "b.py"] ())
     in
     let printer = function
       | None -> "None"
@@ -800,7 +862,8 @@ let test_incremental_dependencies _ =
   let finally () =
     CommandTest.clean_environment ();
     Sys.remove "a.py";
-    Sys.remove "b.py"
+    Sys.remove "b.py";
+    Ast.SharedMemory.Sources.remove ~handles:[File.Handle.create "a.py"; File.Handle.create "b.py"]
   in
   Exn.protect ~f:assert_dependencies_analyzed ~finally
 
@@ -811,16 +874,17 @@ let test_incremental_lookups _ =
       ~in_dir:(Path.current_working_directory () |> Path.absolute)
       "test" ".py"
   in
-  let relative_path =
+  let handle =
     Path.create_relative ~root:(Path.current_working_directory ()) ~relative:path
     |> Path.relative
     |> Option.value ~default:path
+    |> File.Handle.create
   in
   let parse content =
     Source.create
-      ~path
-      ~qualifier:(Source.qualifier ~path)
-      (Parser.parse ~path (String.split_lines (content ^ "\n")))
+      ~handle
+      ~qualifier:(Source.qualifier ~handle)
+      (Parser.parse ~handle (String.split_lines (content ^ "\n")))
     |> Analysis.Preprocessing.preprocess
   in
   let source =
@@ -841,8 +905,8 @@ let test_incremental_lookups _ =
   let request =
     Protocol.Request.TypeCheckRequest
       (Protocol.TypeCheckRequest.create
-         ~update_environment_with:[file ~content:(Some source) path]
-         ~check:[file ~content:(Some source) path]
+         ~update_environment_with:[file ~content:source path]
+         ~check:[file ~content:source path]
          ())
   in
   let errors = File.Handle.Table.create () in
@@ -851,23 +915,23 @@ let test_incremental_lookups _ =
       ~initial_environment:environment
       errors
   in
-  let state, _ =
-    Request.process_request
-      mock_client_socket
-      initial_state
-      (CommandTest.mock_server_configuration ())
-      request
+  let { Request.state; _ } =
+    Request.process
+      ~socket:mock_client_socket
+      ~state:initial_state
+      ~configuration:(CommandTest.mock_server_configuration ())
+      ~request
   in
   CommandTest.clean_environment ();
   let annotations =
-    File.Handle.create relative_path
-    |> Ast.SharedMemory.get_source
+    handle
+    |> Ast.SharedMemory.Sources.get
     |> (fun value -> Option.value_exn value)
     |> Lookup.create_of_source state.State.environment
     |> Lookup.get_all_annotations
     |> List.map ~f:(fun (key, data) ->
         Format.asprintf "%s/%a" (Location.Reference.to_string key) Type.pp data
-        |> String.chop_prefix_exn ~prefix:(Int.to_string (String.hash relative_path)))
+        |> String.chop_prefix_exn ~prefix:(Int.to_string (String.hash (File.Handle.show handle))))
     |> List.sort ~compare:String.compare
   in
   assert_equal
@@ -885,10 +949,11 @@ let test_incremental_lookups _ =
 
 let test_incremental_repopulate _ =
   let parse content =
+    let handle = File.Handle.create "test.py" in
     Source.create
-      ~path:"test.py"
-      ~qualifier:(Source.qualifier ~path:"test.py")
-      (Parser.parse ~path:"test.py" (String.split_lines (content ^ "\n")))
+      ~handle
+      ~qualifier:(Source.qualifier ~handle)
+      (Parser.parse ~handle (String.split_lines (content ^ "\n")))
     |> Analysis.Preprocessing.preprocess
   in
   let source =
@@ -929,16 +994,16 @@ let test_incremental_repopulate _ =
     |> trim_extra_indentation
   in
   Out_channel.write_all ~data:source "test.py";
-  let _, _ =
-    Request.process_request
-      mock_client_socket
-      initial_state
-      (CommandTest.mock_server_configuration ())
-      (Protocol.Request.TypeCheckRequest
-         (Protocol.TypeCheckRequest.create
-            ~update_environment_with:[file "test.py"]
-            ~check:[file "test.py"]
-            ()))
+  let _ =
+    Request.process
+      ~socket:mock_client_socket
+      ~state:initial_state
+      ~configuration:(CommandTest.mock_server_configuration ())
+      ~request:(Protocol.Request.TypeCheckRequest
+                  (Protocol.TypeCheckRequest.create
+                     ~update_environment_with:[file "test.py"]
+                     ~check:[file "test.py"]
+                     ()))
   in
   Sys.remove "test.py";
   begin match (get_annotation "test.foo") with
@@ -971,7 +1036,6 @@ let test_language_scheduler_definition context =
   in
   let expected_response =
     LanguageServer.Protocol.TextDocumentDefinitionResponse.create
-      ~root:(Path.current_working_directory ())
       ~id:3
       ~location:None
     |> LanguageServer.Protocol.TextDocumentDefinitionResponse.to_yojson
@@ -1015,19 +1079,24 @@ let test_incremental_attribute_caching context =
   in
   write_to_file ~content:content_with_annotation;
   let initial_state =
-    Server.Operations.initialize ~old_state server_lock connections server_configuration
+    Server.Operations.start
+      ~old_state
+      ~lock:server_lock
+      ~connections
+      ~configuration:server_configuration
+      ()
   in
   let request_typecheck state =
-    Request.process_request
-      Unix.stdout
-      state
-      server_configuration
-      (Protocol.Request.TypeCheckRequest
-         (Protocol.TypeCheckRequest.create
-            ~update_environment_with:[File.create source_path]
-            ~check:[File.create source_path]
-            ()))
-    |> fst
+    Request.process
+      ~socket:Unix.stdout
+      ~state
+      ~configuration:server_configuration
+      ~request:(Protocol.Request.TypeCheckRequest
+                  (Protocol.TypeCheckRequest.create
+                     ~update_environment_with:[File.create source_path]
+                     ~check:[File.create source_path]
+                     ()))
+    |> fun { Request.state; _ } -> state
   in
   let get_errors { State.errors; _ } = Hashtbl.to_alist errors in
   let state = request_typecheck initial_state in

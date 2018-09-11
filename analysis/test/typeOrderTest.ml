@@ -109,6 +109,31 @@ let disconnected_order =
   insert order !"B";
   order
 
+(*
+   TOP
+    |
+    A
+   /|
+  B |
+   \|
+    C
+    |
+ BOTTOM
+*)
+let triangle_order =
+  let order = Builder.create () |> TypeOrder.handler in
+  insert order Type.Bottom;
+  insert order Type.Top;
+  insert order !"A";
+  insert order !"B";
+  insert order !"C";
+  connect order ~predecessor:Type.Bottom ~successor:!"B";
+  connect order ~predecessor:!"B" ~successor:!"A";
+  connect order ~predecessor:!"A" ~successor:Type.Top;
+  connect order ~predecessor:!"C" ~successor:!"B";
+  connect order ~predecessor:!"C" ~successor:!"A";
+  order
+
 
 let default =
   let order = Builder.default () |> TypeOrder.handler in
@@ -227,10 +252,21 @@ let test_default _ =
   assert_equal (meet order Type.float Type.complex) Type.float
 
 
-let test_successors_fold _ =
-  let collect sofar annotation = annotation :: sofar in
-  assert_equal (successors_fold ~initial:[] ~f:collect butterfly !"3") [Type.Top];
-  assert_equal (successors_fold ~initial:[] ~f:collect butterfly !"0") [Type.Top; !"2"; !"3"]
+let test_method_resolution_order_linearize _ =
+  let assert_method_resolution_order ((module Handler: Handler) as order) annotation expected =
+    assert_equal
+      ~printer:(List.fold ~init:"" ~f:(fun sofar next -> sofar ^ (Type.show next) ^ " "))
+      expected
+      (method_resolution_order_linearize
+         order
+         annotation
+         ~get_successors:(Handler.find (Handler.edges ())))
+  in
+  assert_method_resolution_order butterfly !"3" [!"3"; Type.Top];
+  assert_method_resolution_order butterfly !"0" [!"0"; !"3"; !"2"; Type.Top];
+  assert_method_resolution_order diamond_order !"D" [!"D"; !"C"; !"B"; !"A"; Type.Top];
+  (* The subclass gets chosen first even if after the superclass when both are inherited. *)
+  assert_method_resolution_order triangle_order !"C" [!"C"; !"B"; !"A"; Type.Top]
 
 
 let test_successors _ =
@@ -255,8 +291,8 @@ let test_successors _ =
       !"2";
       !"1";
       !"0";
-      Type.Top;
       !"3";
+      Type.Top;
     ];
 
   (*  BOTTOM - Iterator[_T] - Iterable[_T] - Generic[_T] - Object
@@ -313,11 +349,11 @@ let test_successors _ =
          }))
     [
       Type.Parametric {
-        Type.name = ~~"typing.Generic";
+        Type.name = ~~"typing.Iterable";
         parameters = [Type.integer];
       };
       Type.Parametric {
-        Type.name = ~~"typing.Iterable";
+        Type.name = ~~"typing.Generic";
         parameters = [Type.integer];
       };
       Type.Object;
@@ -1088,7 +1124,7 @@ let () =
   ]
   |> run_test_tt_main;
   "order">:::[
-    "successors_fold">::test_successors_fold;
+    "method_resolution_order_linearize">::test_method_resolution_order_linearize;
     "successors">::test_successors;
     "predecessors">::test_predecessors;
     "greatest">::test_greatest;

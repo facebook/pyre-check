@@ -20,9 +20,13 @@ let test_parse _ =
     assert_equal local_mode expected_mode
   in
   assert_mode " # pyre-placeholder-stub" Source.PlaceholderStub;
-  assert_mode " # pyre-do-not-check" Source.Declare;
+  assert_mode "  # pyre-do-not-check " Source.Declare;
+  assert_mode "\t# pyre-do-not-check" Source.Declare;
   assert_mode " # pyre-strict" Source.Strict;
   assert_mode " # pyre-durp" Source.Default;
+  assert_mode " # pyre-do-not-check[42, 7,   15] " (Source.DefaultButDontCheck [42; 7; 15]);
+  (* prevent typos from being hidden as do-not-checks *)
+  assert_mode " # pyre-do-not-check[42, 7,   15" Source.Default;
 
   let assert_ignore lines expected_ignore_lines =
     let { Source.Metadata.ignore_lines; _ } = Source.Metadata.parse test_path lines in
@@ -151,29 +155,30 @@ let test_qualifier _ =
   in
 
   assert_equal
-    (Source.qualifier ~path:"module.py")
+    (Source.qualifier ~handle: (File.Handle.create "module.py"))
     (qualifier ["module"]);
 
   assert_equal
-    (Source.qualifier ~path:"module/submodule.py")
+    (Source.qualifier ~handle: (File.Handle.create "module/submodule.py"))
     (qualifier ["module"; "submodule"]);
 
   assert_equal
-    (Source.qualifier ~path:"builtins.pyi")
+    (Source.qualifier ~handle: (File.Handle.create "builtins.pyi"))
     (qualifier []);
 
   assert_equal
-    (Source.qualifier ~path:"module/builtins.pyi")
+    (Source.qualifier ~handle: (File.Handle.create "module/builtins.pyi"))
     (qualifier ["module"]);
 
   assert_equal
-    (Source.qualifier ~path:"module/__init__.pyi")
+    (Source.qualifier ~handle: (File.Handle.create "module/__init__.pyi"))
     (qualifier ["module"])
 
 
 let test_expand_relative_import _ =
-  let assert_export ~path ~from ~expected =
-    let qualifier = Source.qualifier ~path in
+  let assert_export ~handle ~from ~expected =
+    let handle = File.Handle.create handle in
+    let qualifier = Source.qualifier ~handle in
     let from =
       match parse_single_statement ("from " ^ from ^ " import something") with
       | { Node.value = Import { Import.from = Some from; _ }; _ } -> from
@@ -183,20 +188,182 @@ let test_expand_relative_import _ =
       ~cmp:Access.equal
       ~printer:Access.show
       (parse_single_access expected)
-      (Source.expand_relative_import ~qualifier ~path ~from)
+      (Source.expand_relative_import ~qualifier ~handle ~from)
   in
 
-  assert_export ~path:"module/qualifier.py" ~from:"." ~expected:"module";
+  assert_export ~handle:"module/qualifier.py" ~from:"." ~expected:"module";
   assert_export
-    ~path:"module/submodule/qualifier.py"
+    ~handle:"module/submodule/qualifier.py"
     ~from:".other"
     ~expected:"module.submodule.other";
   assert_export
-    ~path:"module/submodule/qualifier.py"
+    ~handle:"module/submodule/qualifier.py"
     ~from:"..other"
     ~expected:"module.other";
   (* `__init__` modules are special. *)
-  assert_export ~path:"module/__init__.py" ~from:"." ~expected:"module"
+  assert_export ~handle:"module/__init__.py" ~from:"." ~expected:"module"
+
+
+let test_signature_hash _ =
+  let assert_hash_equal ?(equal = true) left right =
+    let parse source =
+      let { Source.statements; _ } = parse source in
+      let metadata =
+        String.split ~on:'\n' source
+        |> Source.Metadata.parse "test.py"
+      in
+      Source.create ~metadata statements
+    in
+    let equal = if equal then (=) else (<>) in
+    assert_equal
+      ~cmp:equal
+      (Source.signature_hash (parse left))
+      (Source.signature_hash (parse right))
+  in
+  let assert_hash_unequal = assert_hash_equal ~equal:false in
+
+  (* Metadata. *)
+  assert_hash_equal "# pyre-strict" "# pyre-strict";
+  assert_hash_unequal "# pyre-strict" "";
+  assert_hash_unequal "# pyre-strict" "# pyre-declare-but-dont-check";
+
+  (* Assignments. *)
+  assert_hash_equal "a = 1" "a = 1";
+  assert_hash_equal "a: int = 1" "a: int = 1";
+  assert_hash_unequal "a: str = 1" "a: int = 1";
+  assert_hash_unequal "a = 2" "a = 1";
+
+  (* Defines. *)
+  assert_hash_equal
+    {|
+      @decorator
+      def define(parameter: int) -> str:
+        1
+    |}
+    {|
+      @decorator
+      def define(parameter: int) -> str:
+        2  # Body does not matter.
+    |};
+  assert_hash_unequal "def foo(): ..." "def bar(): ...";
+  assert_hash_unequal "def foo(a: int): ..." "def foo(a: str): ...";
+  assert_hash_unequal "def foo(a: int = 1): ..." "def foo(a: int = 2): ..."; (* Yerps... :( *)
+  assert_hash_unequal
+    {|
+      @decorator
+      def foo(): ...
+    |}
+    {|
+      @other_decorator
+      def foo(): ...
+    |};
+  assert_hash_unequal "def foo() -> int: ..." "def foo() -> str: ...";
+  assert_hash_unequal "def foo(): ..." "async def foo(): ...";
+
+  (* Classes. *)
+  assert_hash_equal
+    {|
+      @decorator
+      class B(A):
+        attribute: int = 1
+    |}
+    {|
+      @decorator
+      class B(A):
+        attribute: int = 1
+    |};
+  assert_hash_unequal "class A: ..." "class B: ...";
+  assert_hash_unequal "class A(B): ..." "class A(C): ...";
+  assert_hash_unequal
+    {|
+      class A:
+        attribute: int = 1
+    |}
+    {|
+      class A:
+        attribute: str = 1
+    |};
+  assert_hash_unequal
+    {|
+      @decorator
+      class A: ...
+    |}
+    {|
+      @other_decorator
+      class A: ...
+    |};
+
+  (* If. *)
+  assert_hash_equal
+    {|
+      if test:
+        attribute = 1
+      else:
+        attribute = 2
+    |}
+    {|
+      if test:
+        attribute = 1
+      else:
+        attribute = 2
+    |};
+  assert_hash_unequal
+    {|
+      if test:
+        attribute = 1
+    |}
+    {|
+      if other_test:
+        attribute = 1
+    |};
+  assert_hash_unequal
+    {|
+      if test:
+        attribute = 1
+    |}
+    {|
+      if test:
+        attribute = 2
+    |};
+  assert_hash_unequal
+    {|
+      if test:
+        attribute = 1
+      else:
+        attribute = 2
+    |}
+    {|
+      if test:
+        attribute = 1
+      else:
+        attribute = 3
+    |};
+
+  (* Imports. *)
+  assert_hash_equal "from a import b" "from a import b";
+  assert_hash_equal "import a" "import a";
+  assert_hash_unequal "from a import b" "from a import c";
+  assert_hash_unequal "import a" "import b";
+
+  (* With. *)
+  assert_hash_equal
+    {|
+      with resource:
+        attribute = 1
+    |}
+    {|
+      with resource:
+        attribute = 1
+    |};
+  assert_hash_unequal
+    {|
+      with resource:
+        attribute = 1
+    |}
+    {|
+      with resource:
+        attribute = 2
+    |}
 
 
 let () =
@@ -207,5 +374,6 @@ let () =
   "source">:::[
     "qualifier">::test_qualifier;
     "expand_relative_import">::test_expand_relative_import;
+    "signature_hash">::test_signature_hash;
   ]
   |> run_test_tt_main

@@ -14,6 +14,7 @@ from abc import abstractmethod
 from typing import List, Set  # noqa
 
 from .. import EnvironmentException, log
+from ..filesystem import AnalysisDirectory
 
 
 LOG = logging.getLogger(__name__)
@@ -41,9 +42,9 @@ class Result:
 
     def check(self) -> None:
         if self.code != ExitCode.SUCCESS:
+            description = ":\n{}".format(self.output) if self.output else ""
             raise ClientException(
-                "Client exited with error code {}:"
-                "\n{}".format(self.code, self.output)
+                "Client exited with error code {}{}".format(self.code, description)
             )
 
 
@@ -53,7 +54,9 @@ class Command:
 
     _exit_code = ExitCode.SUCCESS  # type: ExitCode
 
-    def __init__(self, arguments, configuration, analysis_directory) -> None:
+    def __init__(
+        self, arguments, configuration, analysis_directory: AnalysisDirectory
+    ) -> None:
         self._arguments = arguments
         self._configuration = configuration
 
@@ -66,6 +69,8 @@ class Command:
         self._show_parse_errors = arguments.show_parse_errors
         self._logging_sections = arguments.logging_sections
         self._capable_terminal = arguments.capable_terminal
+        self._log_identifier = arguments.log_identifier
+        self._logger = arguments.logger or (configuration and configuration.logger)
 
         self._original_directory = arguments.original_directory
         self._current_directory = arguments.current_directory
@@ -118,6 +123,10 @@ class Command:
             flags.extend(["-logging-sections", self._logging_sections])
         if self._current_directory:
             flags.extend(["-project-root", self._current_directory])
+        if self._log_identifier:
+            flags.extend(["-log-identifier", self._log_identifier])
+        if self._logger:
+            flags.extend(["-logger", self._logger])
         return flags
 
     def _read_stdout(self, stdout) -> None:
@@ -148,14 +157,14 @@ class Command:
             pass
 
     def _call_client(self, command, capture_output: bool = True) -> Result:
-        if not os.path.isdir(self._analysis_directory):
+        if not os.path.isdir(self._analysis_directory.get_root()):
             raise EnvironmentException(
-                "`{}` is not a link tree.".format(self._analysis_directory)
+                "`{}` is not a link tree.".format(self._analysis_directory.get_root())
             )
 
-        client_command = [self._configuration.get_binary(), command]
+        client_command = [self._configuration.binary, command]
         client_command.extend(self._flags())
-        client_command.append(self._analysis_directory)
+        client_command.append(self._analysis_directory.get_root())
 
         def limit_memory_usage():
             try:
@@ -185,7 +194,7 @@ class Command:
             self._call_client_terminated = False
             stderr_reader = threading.Thread(
                 target=self._read_stderr,
-                args=(process.stderr, self._analysis_directory),
+                args=(process.stderr, self._analysis_directory.get_root()),
             )
             stderr_reader.daemon = True
             stderr_reader.start()
@@ -209,7 +218,9 @@ class Command:
         return os.path.relpath(path, self._original_directory)
 
     def _state(self) -> State:
-        pid_path = os.path.join(self._analysis_directory, ".pyre/server/server.pid")
+        pid_path = os.path.join(
+            self._analysis_directory.get_root(), ".pyre/server/server.pid"
+        )
         try:
             with open(pid_path) as file:
                 pid = int(file.read())
@@ -220,8 +231,8 @@ class Command:
 
     def _server_string(self, analysis_directory=None) -> str:
         if not analysis_directory:
-            analysis_directory = self._analysis_directory
+            analysis_directory = self._analysis_directory.get_root()
         return "server{}".format("" if len(analysis_directory) < 2 else "s")
 
     def _analysis_directory_string(self) -> str:
-        return "`{}`".format(self._analysis_directory)
+        return "`{}`".format(self._analysis_directory.get_root())

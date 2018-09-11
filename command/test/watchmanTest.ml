@@ -17,6 +17,7 @@ let start_watchman pid_path () =
     ~verbose:false
     ~sections:[]
     ~local_root:"."
+    ~search_path:[]
     ~project_root:(Some ".")
   |> ignore;
   let rec poll () =
@@ -67,6 +68,7 @@ let test_watchman_exists context =
          ~verbose:false
          ~sections:[]
          ~local_root:"."
+         ~search_path:[]
          ~project_root:(Some "."));
   CommandTest.clean_environment ()
 
@@ -105,13 +107,22 @@ let test_watchman_client context =
     Commands.Server.stop ~graceful:true "." ();
     CommandTest.clean_environment ()
   in
+  let configuration =
+    Configuration.create
+      ~local_root:root
+      ()
+  in
+  let watchman_state = {
+    Commands.Watchman.configuration;
+    watchman_directory = root;
+    symlinks;
+  }
+  in
   CommandTest.protect
     ~f:(fun () ->
         match
           Commands.Watchman.process_response
-            ~root
-            ~watchman_directory:root
-            ~symlinks
+            watchman_state
             (create_mock_watchman_response "tmp/a.py")
         with
         | Some (
@@ -129,9 +140,7 @@ let test_watchman_client context =
     ~f:(fun () ->
         match
           Commands.Watchman.process_response
-            ~root
-            ~watchman_directory:root
-            ~symlinks
+            watchman_state
             (create_mock_watchman_response "test.py")
         with
         | Some
@@ -152,7 +161,16 @@ let test_different_root context =
   let root = bracket_tmpdir context in
   let watchman_directory = Path.create_absolute root in
   Unix.mkdir (root ^ "/files");
-  let root = Path.create_absolute (root ^ "/files") in
+  Unix.mkdir (root ^ "/search");
+  Out_channel.write_all ~data:"" (root ^ "/search/stub.py");
+  let local_root = Path.create_absolute (root ^ "/files") in
+  let configuration =
+    Configuration.create
+      ~local_root
+      ~search_path:[Path.create_absolute (root ^ "/search")]
+      ()
+  in
+
   let a = Path.create_relative ~root:watchman_directory ~relative:"files/a.py" in
   let test = Path.create_relative ~root:watchman_directory ~relative:"files/tmp/test.py" in
   let symlinks = Path.Map.of_alist_exn
@@ -181,9 +199,7 @@ let test_different_root context =
     in
     match
       Commands.Watchman.process_response
-        ~root
-        ~watchman_directory
-        ~symlinks
+        { Commands.Watchman.configuration; watchman_directory; symlinks }
         mock_watchman_response
     with
     | Some (
@@ -212,6 +228,11 @@ let test_different_root context =
     ~f:(fun () ->
         assert_watchman_response_ok "files/tmp/test.py" "files/tmp/test.py")
     ~cleanup;
+  CommandTest.protect
+    ~f:(fun () ->
+        assert_watchman_response_ok "search/stub.py" "search/stub.py")
+    ~cleanup;
+
   cleanup ()
 
 

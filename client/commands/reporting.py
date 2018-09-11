@@ -80,7 +80,7 @@ class Reporting(Command):
 
         for error in results:
             full_path = os.path.realpath(
-                os.path.join(self._analysis_directory, error["path"])
+                os.path.join(self._analysis_directory.get_root(), error["path"])
             )
             # Relativize path to user's cwd.
             relative_path = self._relative_path(full_path)
