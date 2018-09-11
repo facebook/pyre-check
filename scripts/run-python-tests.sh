@@ -7,12 +7,17 @@
 
 set -e
 
-if ! which python3 &>/dev/null; then
-   echo 'Could not find a python3 interpreter to run tests'
-   exit 2
+# Prefer a python3.5 interpreter to maintain full backward compatibility.
+if command -v python3.5 &>/dev/null; then
+  PYTHON_INTERPRETER=$(command -v python3.5)
+elif command -v python3 &>/dev/null; then
+  PYTHON_INTERPRETER=$(command -v python3)
+else
+  echo 'Could not find a suitable python interpreter to run tests.'
+  exit 2
 fi
 
-echo "  Using interpreter at $(which python3) with version: $(python3 --version)"
+echo "  Using interpreter at ${PYTHON_INTERPRETER} with version: $(${PYTHON_INTERPRETER} --version)"
 
 echo '  Enumerating test files:'
 files=$(find client -name '*_test.py')
@@ -23,4 +28,4 @@ if [[ -z "${files}" ]]; then
 fi
 
 echo '  Running all tests:'
-echo "${files}" | sed 's/.py$//' | sed 's:/:.:g' | xargs python3 -m unittest -v
+echo "${files}" | sed 's/.py$//' | sed 's:/:.:g' | xargs "${PYTHON_INTERPRETER}" -m unittest -v

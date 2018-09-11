@@ -76,7 +76,7 @@ def run_missing_overridden_return_annotations(
     arugments, errors: List[Tuple[str, List[Any]]]
 ) -> None:
     for path, errors in result:
-        LOG.info(f"Patching errors in `{path}`.")
+        LOG.info("Patching errors in `%s`.", path)
         errors = reversed(sorted(errors, key=lambda error: error["line"]))
 
         path = pathlib.Path(path)
@@ -99,16 +99,16 @@ def run_missing_overridden_return_annotations(
                 annotation = "None"
 
             # Find last closing parenthesis in after line.
-            LOG.info(f"Looking at {line}: {lines[line]}")
+            LOG.info("Looking at %d: %s", line, lines[line])
             while True:
                 if "):" in lines[line]:
-                    lines[line] = lines[line].replace("):", f") -> {annotation}:")
-                    LOG.info(f"{line}: {lines[line]}")
+                    lines[line] = lines[line].replace("):", ") -> %s:" % annotation)
+                    LOG.info("%d: %s", line, lines[line])
                     break
                 else:
                     line = line + 1
 
-        LOG.warn(f"Writing patched {str(path)}")
+        LOG.warn("Writing patched %s", str(path))
         path.write_text("\n".join(lines))
 
 

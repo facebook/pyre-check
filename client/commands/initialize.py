@@ -25,7 +25,7 @@ class Initialize(Command):
         super(Initialize, self).__init__(arguments, configuration, analysis_directory)
 
     def _get_configuration(self) -> Dict[str, Any]:
-        configuration: Dict[str, Any] = {}
+        configuration = {}  # type: Dict[str, Any]
 
         watchman_configuration_path = os.path.abspath(".watchmanconfig")
         if shutil.which("watchman") is not None and log.get_yes_no_input(
