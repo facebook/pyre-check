@@ -34,11 +34,8 @@ release: hack_parallel
 .PHONY: clean
 clean:
 	dune clean
+	@make -C hack_parallel clean && make -C hack_parallel remove
 
 .PHONY: hack_parallel
 hack_parallel:
 	@if [ ! -d hack_parallel/_build ]; then echo 'Hack_parallel is not installed...'; make -C hack_parallel; make install -C hack_parallel; fi
-
-.PHONY: remove_hack_parallel
-remove_hack_parallel:
-	@make -C hack_parallel clean && make -C hack_parallel remove
