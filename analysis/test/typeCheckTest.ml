@@ -516,6 +516,7 @@ let test_forward_statement _ =
       ?(postcondition_immutables = [])
       ?expected_return
       ?(errors = `Undefined 0)
+      ?(bottom = false)
       precondition
       statement
       postcondition =
@@ -531,7 +532,9 @@ let test_forward_statement _ =
         ~init:(create ?expected_return ~immutables:precondition_immutables precondition)
         parsed
     in
-    assert_state_equal (create ~immutables:postcondition_immutables postcondition) forwarded;
+    assert_state_equal
+      (create ~bottom ~immutables:postcondition_immutables postcondition)
+      forwarded;
     let errors =
       match errors with
       | `Specific errors ->
@@ -731,6 +734,12 @@ let test_forward_statement _ =
   assert_forward
     ["x", Type.integer]
     "assert isinstance(x, (int, str))"
+    ["x", Type.integer];
+
+  assert_forward
+    ~bottom:true
+    ["x", Type.integer]
+    "assert isinstance(x, str)"
     ["x", Type.integer];
 
   (* Raise. *)

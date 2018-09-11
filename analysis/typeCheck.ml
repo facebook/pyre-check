@@ -106,7 +106,8 @@ module State = struct
     Map.equal
       Annotation.equal
       (Resolution.annotations left.resolution)
-      (Resolution.annotations right.resolution)
+      (Resolution.annotations right.resolution) &&
+    left.bottom = right.bottom
 
 
   let create
@@ -1459,6 +1460,29 @@ module State = struct
           forward_expression ~state ~expression:test
           |> fun { state; _ } -> state
         in
+        let contradiction =
+          match Node.value test with
+          | Access [
+              Access.Identifier name;
+              Access.Call {
+                Node.value = [
+                  { Argument.name = None; value = { Node.value = Access access; _ } };
+                  { Argument.name = None; value = { Node.value = Access _; _ } as annotation };
+                ];
+                _;
+              }
+            ] when Identifier.show name = "isinstance" ->
+              let compatible ~existing =
+                let annotation = Resolution.parse_annotation resolution annotation in
+                Resolution.less_or_equal resolution ~left:annotation ~right:existing
+              in
+              Resolution.get_local resolution ~access
+              >>| Annotation.annotation
+              >>| (fun existing -> not (compatible ~existing))
+              |> Option.value ~default:false
+          | _ ->
+              false
+        in
         let resolution =
           match Node.value test with
           | Access [
@@ -1655,7 +1679,11 @@ module State = struct
           | _ ->
               resolution
         in
-        { state with resolution }
+        if contradiction then
+          { state with bottom = true }
+        else
+          { state with resolution }
+
     | Expression { Node.value = Access access; _; } when Access.is_assert_function access ->
         let find_assert_test access =
           match access with
