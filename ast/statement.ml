@@ -355,7 +355,10 @@ module Define = struct
     else
       name = "__init__" ||
       (in_test &&
-       List.mem ~equal:String.equal ["setUp"; "_setup"; "_async_setup"; "with_context"] name)
+       List.mem
+         ~equal:String.equal
+         ["async_setUp"; "setUp"; "_setup"; "_async_setup"; "with_context"]
+         name)
 
 
   let is_generated_constructor { generated; _ } = generated
