@@ -720,6 +720,10 @@ let test_forward_statement _ =
     ["x", Type.optional Type.integer]
     "assert x is None"
     ["x", Type.optional Type.Bottom];
+  assert_forward
+    ["x", Type.optional Type.integer]
+    "assert (not x) or 1"
+    ["x", Type.optional Type.integer];
 
   assert_forward ["x", Type.Object] "assert isinstance(x, int)" ["x", Type.integer];
   assert_forward

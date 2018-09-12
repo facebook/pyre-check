@@ -306,28 +306,30 @@ module State = struct
     else if right.bottom then
       right
     else
-      let merge meet ~key:_ = function
-        | `Both (left, right) ->
-            Some (meet left right)
-        | `Left _
-        | `Right _ ->
-            None
-      in
       let annotations =
+        let merge meet ~key:_ = function
+          | `Both (left, right) ->
+              Some (meet left right)
+          | `Left _
+          | `Right _ ->
+              None
+        in
         Map.merge
-          ~f:(merge (Refinement.meet ~resolution))
           (Resolution.annotations left.resolution)
-          (Resolution.annotations right.resolution);
+          (Resolution.annotations right.resolution)
+          ~f:(merge (Refinement.meet ~resolution));
       in
-      {
-        left with
-        errors =
-          Map.merge
-            ~f:(merge (Error.meet ~resolution))
-            left.errors
-            right.errors;
-        resolution = Resolution.with_annotations resolution ~annotations;
-      }
+      let errors =
+        let merge ~key:_ = function
+          | `Both (left, right) ->
+              Some (Error.join ~resolution left right)
+          | `Left state
+          | `Right state ->
+              Some state
+        in
+        Map.merge left.errors right.errors ~f:merge;
+      in
+      { left with errors; resolution = Resolution.with_annotations resolution ~annotations }
 
 
   let widen ~previous:({ resolution; _ } as previous) ~next ~iteration =
@@ -906,11 +908,18 @@ module State = struct
           in
           Statement.assume assume
         in
-        let { state; resolved = resolved_left } = forward_expression ~state ~expression:left in
-        let { state; resolved = resolved_right } =
+        let { state = state_left; resolved = resolved_left } =
+          forward_expression ~state ~expression:left
+        in
+        let { state = state_right; resolved = resolved_right } =
           forward_expression
             ~state:(forward_statement ~state ~statement:assume)
             ~expression:right
+        in
+        let state =
+          match operator with
+          | BooleanOperator.And -> meet state_left state_right;
+          | BooleanOperator.Or -> join state_left state_right;
         in
         let resolved =
           match resolved_left, resolved_right, operator with
