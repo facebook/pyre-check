@@ -313,6 +313,11 @@ let select ~resolution ~arguments ~callable:({ Type.Callable.overloads; _ } as c
               ({ constraints; reasons = { annotation; _ }; _; } as signature_match) =
             let reasons =
               let mismatch =
+                let location =
+                  name
+                  >>| Node.location
+                  |> Option.value ~default:location
+                in
                 {
                   actual = argument_annotation;
                   expected = parameter_annotation;
