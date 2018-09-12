@@ -32,16 +32,16 @@ let run
     () =
   try
     let filter_directories =
-      let deprecated_directories =
-        filter_directories
-        >>| List.map ~f:Path.create_absolute
+      let filter_directories =
+        if Option.is_some filter_directories then
+          filter_directories
+        else
+          filter_directories_semicolon
       in
-      filter_directories_semicolon
+      filter_directories
       >>| String.split_on_chars ~on:[';']
       >>| List.map ~f:String.strip
       >>| List.map ~f:Path.create_absolute
-      |> (fun directories ->
-          if Option.is_some directories then directories else deprecated_directories)
     in
     let configuration =
       Configuration.create

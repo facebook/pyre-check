@@ -31,7 +31,7 @@ let base_command_line_arguments =
     (* Delete -filter-directories once there are no callers *)
     +> flag
       "-filter-directories"
-      (optional (Arg_type.comma_separated string))
+      (optional string)
       ~doc:"Only report errors for files originating from one of the filter directories."
     +> flag
       "-filter-directories-semicolon"
