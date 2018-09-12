@@ -21,7 +21,7 @@ open Pyre
 exception InvalidRequest
 
 
-let parse ~root ~request =
+let parse_lsp ~root ~request =
   let open LanguageServer.Types in
   let log_method_error method_name =
     Log.error
@@ -791,7 +791,7 @@ let rec process
           { state; response = None }
 
       | LanguageServerProtocolRequest request ->
-          parse
+          parse_lsp
             ~root:configuration.local_root
             ~request:(Yojson.Safe.from_string request)
           >>| (fun request -> process ~state ~socket ~configuration:server_configuration ~request)

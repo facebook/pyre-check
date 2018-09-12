@@ -10,7 +10,7 @@ open Pyre
 
 exception InvalidRequest
 
-val parse
+val parse_lsp
   :  root: Path.t
   -> request: Yojson.Safe.json
   -> Protocol.Request.t option
