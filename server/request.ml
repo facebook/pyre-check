@@ -882,19 +882,32 @@ let rec process
       (* Requests that cannot be fulfilled here. *)
       | ClientConnectionRequest _ ->
           raise InvalidRequest
-    with Unix.Unix_error (kind, name, parameters) ->
-      Log.log_unix_error (kind, name, parameters);
-      Statistics.event
-        ~name:"unix error on request"
-        ~normals:[
-          "request", Request.show request;
-          "error kind", Unix.error_message kind;
-          "error name", name;
-          "parameters", parameters;
-        ]
-        ~flush:true
-        ();
-      { state; response = None }
+    with
+    | Unix.Unix_error (kind, name, parameters) ->
+        Log.log_unix_error (kind, name, parameters);
+        Statistics.event
+          ~section:`Error
+          ~name:"request error"
+          ~normals:[
+            "request", Request.show request;
+            "error",
+            Format.sprintf
+              "Unix error %s: %s(%s)"
+              (Unix.error_message kind)
+              name
+              parameters;
+          ]
+          ~flush:true
+          ();
+        { state; response = None }
+    | Analysis.TypeOrder.Untracked annotation ->
+        Statistics.event
+          ~section:`Error
+          ~name:"request error"
+          ~normals:["error", Format.sprintf "Untracked %s" (Type.show annotation)]
+          ~flush:true
+          ();
+        { state; response = None }
   in
   Statistics.performance
     ~name:"server request"
