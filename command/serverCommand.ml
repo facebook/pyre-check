@@ -382,15 +382,17 @@ let request_handler_thread
             Log.log ~section:`Server "New client connection";
             Unix.accept server_socket
           in
-          Socket.write
-            new_socket
-            (Handshake.ServerConnected (Option.value ~default:"-1" expected_version));
           try
+            Socket.write
+              new_socket
+              (Handshake.ServerConnected (Option.value ~default:"-1" expected_version));
             Socket.read new_socket
             |> fun Handshake.ClientConnected ->
             let request = Socket.read new_socket in
             queue_request ~origin:(Protocol.Request.NewConnectionSocket new_socket) request
           with
+          | Unix.Unix_error (Unix.EPIPE, _, _) ->
+              Log.warning "EPIPE while writing to socket."
           | End_of_file ->
               Log.warning "New client socket unreadable"
         end
