@@ -575,7 +575,7 @@ let test_forward_statement _ =
     ["a", Type.integer; "b", Type.Top; "c", Type.integer; "d", Type.Top];
   assert_forward
     ~errors:
-      (`Specific ["Unable to unpack [23]: Unable to unpack single value, 2 were expected."])
+      (`Specific ["Unable to unpack [23]: Unable to unpack `int` into 2 values."])
     ["z", Type.integer]
     "x, y = z"
     ["x", Type.Top; "y", Type.Top; "z", Type.integer];
@@ -602,7 +602,7 @@ let test_forward_statement _ =
   assert_forward
     ~errors:
       (`Specific [
-          "Unable to unpack [23]: Unable to unpack single value, 2 were expected.";
+          "Unable to unpack [23]: Unable to unpack `unknown` into 2 values.";
         ])
     []
     "(x, y), z = 1"
@@ -1515,7 +1515,7 @@ let test_check _ =
         return x + y + z
     |}
     [
-      "Unable to unpack [23]: Unable to unpack single value, 2 were expected.";
+      "Unable to unpack [23]: Unable to unpack `unknown` into 2 values.";
       "Incompatible return type [7]: Expected `int` but got `unknown`.";
     ];
 
@@ -1903,7 +1903,7 @@ let test_check_assign _ =
       def foo(input: int) -> None:
         x, y = input
     |}
-    ["Unable to unpack [23]: Unable to unpack single value, 2 were expected."];
+    ["Unable to unpack [23]: Unable to unpack `int` into 2 values."];
 
 
   assert_type_errors
@@ -2133,7 +2133,7 @@ let test_check_comprehensions _ =
     [
       "Incompatible return type [7]: Expected `typing.Dict[int, str]` but got " ^
       "`typing.Dict[unknown, unknown]`.";
-      "Unable to unpack [23]: Unable to unpack single value, 2 were expected.";
+      "Unable to unpack [23]: Unable to unpack `int` into 2 values.";
     ];
 
   assert_type_errors

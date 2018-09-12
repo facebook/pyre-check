@@ -128,11 +128,18 @@ type revealed_type = {
 [@@deriving compare, eq, sexp, show, hash]
 
 
+type unpack_problem =
+  | UnacceptableType of Type.t
+  | CountMismatch of int
+[@@deriving compare, eq, sexp, show, hash]
+
+
 type unpack = {
   expected_count: int;
-  actual_count: int;
+  unpack_problem: unpack_problem;
 }
 [@@deriving compare, eq, sexp, show, hash]
+
 
 type kind =
   | IncompatibleAwaitableType of Type.t

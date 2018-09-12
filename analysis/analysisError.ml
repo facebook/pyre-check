@@ -150,9 +150,15 @@ type revealed_type = {
 [@@deriving compare, eq, sexp, show, hash]
 
 
+type unpack_problem =
+  | UnacceptableType of Type.t
+  | CountMismatch of int
+[@@deriving compare, eq, sexp, show, hash]
+
+
 type unpack = {
   expected_count: int;
-  actual_count: int;
+  unpack_problem: unpack_problem;
 }
 [@@deriving compare, eq, sexp, show, hash]
 
@@ -545,14 +551,24 @@ let messages ~detailed:_ ~define location kind =
           provided
           (if provided > 1 then "were" else "was");
       ]
-  | Unpack { expected_count; actual_count } ->
-      let value_message =
-        if actual_count = 1 then
-          "single value"
-        else
-          Format.sprintf "%d values" actual_count
-      in
-      [Format.sprintf "Unable to unpack %s, %d were expected." value_message expected_count]
+  | Unpack { expected_count; unpack_problem } ->
+      begin
+        match unpack_problem with
+        | UnacceptableType bad_type ->
+            [Format.asprintf
+               "Unable to unpack `%a` into %d values."
+               Type.pp
+               bad_type
+               expected_count]
+        | CountMismatch actual_count ->
+            let value_message =
+              if actual_count = 1 then
+                "single value"
+              else
+                Format.sprintf "%d values" actual_count
+            in
+            [Format.sprintf "Unable to unpack %s, %d were expected." value_message expected_count]
+      end
   | RedundantCast annotation ->
       [
         Format.asprintf
@@ -1324,6 +1340,8 @@ let suppress ~mode error =
     | MissingParameterAnnotation _
     | MissingAttributeAnnotation _
     | MissingGlobalAnnotation _
+    | Unpack { unpack_problem = UnacceptableType Type.Object; _ }
+    | Unpack { unpack_problem = UnacceptableType Type.Top; _ }
     | UndefinedType _ ->
         true
     | UndefinedImport _ ->

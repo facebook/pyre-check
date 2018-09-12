@@ -1159,7 +1159,7 @@ module State = struct
                 Resolution.less_or_equal
                   resolution
                   ~left:annotation
-                  ~right:(Type.iterable Type.Object) ||
+                  ~right:(Type.iterable Type.Top) ||
                 Resolution.less_or_equal
                   resolution
                   ~left:annotation
@@ -1418,7 +1418,7 @@ module State = struct
                       ~location
                       ~kind:(Error.Unpack {
                           expected_count = List.length assignees;
-                          actual_count = List.length annotations;
+                          unpack_problem = CountMismatch (List.length annotations);
                         })
                       ~define
                     |> add_error ~state
@@ -1433,15 +1433,25 @@ module State = struct
                 ~init:state
                 ~f:(fun state (resolved, (target, guide)) ->
                     forward_assign ~state ~target ~guide ~resolved)
-          | List elements, _
-          | Tuple elements, _ ->
+          | List elements, guide
+          | Tuple elements, guide ->
+              let kind =
+                match guide with
+                | Type.Tuple (Type.Bounded parameters) ->
+                    (Error.Unpack {
+                        Error.expected_count = List.length elements;
+                        unpack_problem = CountMismatch (List.length parameters);
+                      })
+                | _ ->
+                    (Error.Unpack {
+                        Error.expected_count = List.length elements;
+                        unpack_problem = UnacceptableType guide;
+                      })
+              in
               let state =
                 Error.create
                   ~location
-                  ~kind:(Error.Unpack {
-                      Error.expected_count = List.length elements;
-                      actual_count = 1;
-                    })
+                  ~kind
                   ~define
                 |> add_error ~state
               in
