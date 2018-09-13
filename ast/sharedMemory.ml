@@ -15,68 +15,11 @@ module HandleKey = struct
   let compare = File.Handle.compare
 end
 
+
 module IntKey = struct
   type t = int
   let to_string = Int.to_string
   let compare = Int.compare
-end
-
-
-module SourceValue = struct
-  type t = Source.t
-  let prefix = Prefix.make ()
-  let description = "AST"
-end
-
-
-module PathValue = struct
-  type t = string
-  let prefix = Prefix.make ()
-  let description = "Path"
-end
-
-module HandleKeysValue = struct
-  type t = File.Handle.t list
-  let prefix = Prefix.make ()
-  let description = "All handles"
-end
-
-module Sources = struct
-  include SharedMemory.NoCache (HandleKey) (SourceValue)
-
-  let remove ~handles =
-    List.filter ~f:mem handles
-    |> KeySet.of_list
-    |> remove_batch
-end
-
-
-module Handles = struct
-  include SharedMemory.WithCache (IntKey) (PathValue)
-
-  let get ~hash =
-    get hash
-
-  let add_handle_hash ~handle =
-    write_through (String.hash handle) handle
-end
-
-
-module HandleKeys = struct
-  include SharedMemory.WithCache (IntKey) (HandleKeysValue)
-
-  let get () =
-    get 0
-    |> Option.value ~default:[]
-
-  let clear () =
-    remove_batch (KeySet.singleton 0)
-
-
-  let add ~handles:new_keys =
-    let handles = get () in
-    clear ();
-    add 0 (new_keys @ handles)
 end
 
 
@@ -87,30 +30,90 @@ module AccessKey = struct
 end
 
 
-module ModuleValue = struct
-  type t = Module.t
-  let prefix = Prefix.make ()
-  let description = "Module"
+module Sources = struct
+  module SourceValue = struct
+    type t = Source.t
+    let prefix = Prefix.make ()
+    let description = "AST"
+  end
+  module Sources = SharedMemory.NoCache (HandleKey) (SourceValue)
+
+  let get handle =
+    Sources.get handle
+
+  let add handle =
+    Sources.add handle
+
+  let remove ~handles =
+    List.filter ~f:Sources.mem handles
+    |> Sources.KeySet.of_list
+    |> Sources.remove_batch
+end
+
+
+module Handles = struct
+  module PathValue = struct
+    type t = string
+    let prefix = Prefix.make ()
+    let description = "Path"
+  end
+
+  module Paths = SharedMemory.WithCache (IntKey) (PathValue)
+
+  let get ~hash =
+    Paths.get hash
+
+  let add_handle_hash ~handle =
+    Paths.write_through (String.hash handle) handle
+end
+
+
+module HandleKeys = struct
+  module HandleKeysValue = struct
+    type t = File.Handle.t list
+    let prefix = Prefix.make ()
+    let description = "All handles"
+  end
+
+  module HandleKeys = SharedMemory.WithCache (IntKey) (HandleKeysValue)
+
+  let get () =
+    HandleKeys.get 0
+    |> Option.value ~default:[]
+
+  let clear () =
+    HandleKeys.remove_batch (HandleKeys.KeySet.singleton 0)
+
+  let add ~handles:new_keys =
+    let handles = get () in
+    clear ();
+    HandleKeys.add 0 (new_keys @ handles)
 end
 
 
 module Modules = struct
-  include SharedMemory.WithCache (AccessKey) (ModuleValue)
+  module ModuleValue = struct
+    type t = Module.t
+    let prefix = Prefix.make ()
+    let description = "Module"
+  end
+
+  module Modules = SharedMemory.WithCache (AccessKey) (ModuleValue)
 
   let add ~qualifier ~ast_module =
-    write_through qualifier ast_module
+    Modules.write_through qualifier ast_module
 
   let remove ~qualifiers =
-    let accesses = List.filter ~f:mem qualifiers in
-    remove_batch (KeySet.of_list accesses)
+    let accesses = List.filter ~f:Modules.mem qualifiers in
+    Modules.remove_batch (Modules.KeySet.of_list accesses)
 
   let get ~qualifier =
-    get qualifier
+    Modules.get qualifier
 
   let get_exports ~qualifier =
     get ~qualifier
     >>| Module.wildcard_exports
 
   let exists ~qualifier =
-    mem qualifier
+    Modules.mem qualifier
 end
