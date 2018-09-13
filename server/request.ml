@@ -744,6 +744,17 @@ let rec process
     ~request =
   let timer = Timer.start () in
   let (module Handler: Environment.Handler) = environment in
+  let log_request_error ~error =
+    Statistics.event
+      ~section:`Error
+      ~name:"request error"
+      ~normals:[
+        "request", Request.show request;
+        "error", error;
+      ]
+      ~flush:true
+      ()
+  in
   let result =
     try
       match request with
@@ -885,28 +896,11 @@ let rec process
     with
     | Unix.Unix_error (kind, name, parameters) ->
         Log.log_unix_error (kind, name, parameters);
-        Statistics.event
-          ~section:`Error
-          ~name:"request error"
-          ~normals:[
-            "request", Request.show request;
-            "error",
-            Format.sprintf
-              "Unix error %s: %s(%s)"
-              (Unix.error_message kind)
-              name
-              parameters;
-          ]
-          ~flush:true
-          ();
+        log_request_error
+          ~error:(Format.sprintf "Unix error %s: %s(%s)" (Unix.error_message kind) name parameters);
         { state; response = None }
     | Analysis.TypeOrder.Untracked annotation ->
-        Statistics.event
-          ~section:`Error
-          ~name:"request error"
-          ~normals:["error", Format.sprintf "Untracked %s" (Type.show annotation)]
-          ~flush:true
-          ();
+        log_request_error ~error:(Format.sprintf "Untracked %s" (Type.show annotation));
         { state; response = None }
   in
   Statistics.performance
