@@ -404,4 +404,4 @@ let () =
     "filter_defines">::test_filter_defines;
     "filter_assign">::test_filter_assigns;
   ]
-  |> run_test_tt_main
+  |> Test.run_tests

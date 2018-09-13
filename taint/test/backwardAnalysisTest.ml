@@ -495,4 +495,4 @@ let () =
     "test_tito_sink">::test_tito_sink;
     "test_apply_method_model_at_call_site">::test_apply_method_model_at_call_site;
   ]
-  |> run_test_tt_main
+  |> Test.run_tests

@@ -405,4 +405,4 @@ let () =
     "overrides">::test_method_overrides;
     "strongly_connected_components">::test_strongly_connected_components;
   ]
-  |> run_test_tt_main
+  |> Test.run_tests

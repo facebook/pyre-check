@@ -52,4 +52,4 @@ let () =
   "resolve">:::[
     "resolve_literal">::test_resolve_literal;
   ]
-  |> run_test_tt_main;
+  |> Test.run_tests;

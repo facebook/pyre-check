@@ -355,4 +355,4 @@ let () =
     "parse_sources">::test_parse_sources;
     "register_modules">::test_register_modules;
   ]
-  |> run_test_tt_main
+  |> Test.run_tests

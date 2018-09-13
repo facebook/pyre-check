@@ -6217,4 +6217,4 @@ let () =
     "check_format_string">::test_format_string;
     "check_dataclass">::test_check_data_class;
   ]
-  |> run_test_tt_main
+  |> Test.run_tests

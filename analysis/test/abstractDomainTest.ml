@@ -237,4 +237,4 @@ let () =
     "string_x_maps_int_to_flat_string">:::(TestPair.suite ());
     "int_set">:::(TestIntSet.suite ());
   ]
-  |> run_test_tt_main
+  |> Test.run_tests

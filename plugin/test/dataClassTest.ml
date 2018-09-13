@@ -579,4 +579,4 @@ let () =
   "plugin_data_class">:::[
     "transform_environment">::test_transform_environment;
   ]
-  |> run_test_tt_main
+  |> Test.run_tests

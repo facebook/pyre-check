@@ -69,8 +69,7 @@ let test_watchman_exists context =
          ~sections:[]
          ~local_root:"."
          ~search_path:[]
-         ~project_root:(Some "."));
-  CommandTest.clean_environment ()
+         ~project_root:(Some "."))
 
 
 let test_watchman_client context =
@@ -105,7 +104,6 @@ let test_watchman_client context =
   in
   let cleanup () =
     Commands.Server.stop ~graceful:true "." ();
-    CommandTest.clean_environment ()
   in
   let configuration =
     Configuration.create
@@ -219,7 +217,6 @@ let test_different_root context =
   let cleanup () =
     Command.run ~argv:["_"; "-graceful"] Commands.Server.stop_command;
     Commands.Server.stop ~graceful:true "." ();
-    CommandTest.clean_environment ()
   in
   CommandTest.protect
     ~f:(fun () -> assert_watchman_response_ok "files/a.py" "files/other/c.py")

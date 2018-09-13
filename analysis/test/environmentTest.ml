@@ -1378,7 +1378,6 @@ let test_purge _ =
 
 let test_infer_protocols _ =
   let open Analysis in
-  Scheduler.mock () |> ignore;
   let configuration = Configuration.create () in
   let type_sources = Test.typeshed_stubs in
   let assert_protocols ?classes_to_infer source expected_edges =
@@ -1507,7 +1506,7 @@ let () =
     "meet">::test_meet;
     "supertypes">::test_supertypes;
   ]
-  |> run_test_tt_main;
+  |> Test.run_tests;
   "environment">:::[
     "class_definition">::test_class_definition;
     "connect_definition">::test_connect_definition;
@@ -1525,4 +1524,4 @@ let () =
     "register_functions">::test_register_functions;
     "register_globals">::test_register_globals;
   ]
-  |> run_test_tt_main
+  |> Test.run_tests

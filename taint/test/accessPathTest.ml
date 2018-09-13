@@ -46,4 +46,4 @@ let () =
   "taintaccesspath">:::[
     "normalize">::test_normalize_access;
   ]
-  |> run_test_tt_main
+  |> Test.run_tests

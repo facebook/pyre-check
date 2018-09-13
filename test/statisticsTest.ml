@@ -92,4 +92,4 @@ let () =
     "end_to_end_format">::test_end_to_end_format;
     "coverage_sample_format">::test_coverage_sample_format;
   ]
-  |> run_test_tt_main
+  |> Test.run_tests

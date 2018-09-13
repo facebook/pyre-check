@@ -725,4 +725,4 @@ let () =
     "infer_backward">::test_infer_backward;
     "recursive_infer">::test_recursive_infer;
   ]
-  |> run_test_tt_main
+  |> Test.run_tests

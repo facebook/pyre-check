@@ -1242,9 +1242,9 @@ let () =
     "constraints">::test_constraints;
     "inferred_generic_base">::test_inferred_generic_base;
   ]
-  |> run_test_tt_main;
+  |> Test.run_tests;
   "method">:::[
     "overloads">::test_method_overloads;
     "implements">::test_method_implements;
   ]
-  |> run_test_tt_main
+  |> Test.run_tests

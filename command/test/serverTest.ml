@@ -105,16 +105,12 @@ let test_server_stops _ =
     ServerConfiguration.create (Configuration.create ())
   in
   CommandTest.with_timeout ~seconds:3 CommandTest.poll_for_deletion socket_path;
-  Exn.protect
-    ~f:(fun () ->
-        CommandTest.with_timeout
-          ~seconds:1
-          (fun pid ->
-             match Unix.waitpid pid with
-             | Ok _ -> assert true
-             | Error _ -> assert false)
-          pid)
-    ~finally:CommandTest.clean_environment
+  CommandTest.with_timeout
+    ~seconds:1
+    (fun () -> (match Unix.waitpid pid with
+         | Ok _ -> assert true
+         | Error _ -> assert false))
+    ()
 
 
 let test_server_exits_on_directory_removal context =
@@ -123,19 +119,16 @@ let test_server_exits_on_directory_removal context =
     Pid.of_int (CommandTest.start_server ~local_root:(Path.create_absolute directory) ())
   in
   Sys_utils.rm_dir_tree directory;
-  Exn.protect
-    ~f:(fun () ->
-        CommandTest.with_timeout
-          ~seconds:6
-          (fun () ->
-             match Unix.waitpid pid with
-             | Ok _
-             (* I was only able to get non-zero exits in the OUnit test environment,
-                doing the equivalent calls in the command line always resulted in an exit of 0. *)
-             | Error (`Exit_non_zero 2) -> assert true
-             | _ -> assert false
-          ))
-    ~finally:CommandTest.clean_environment
+  CommandTest.with_timeout
+    ~seconds:6
+    (fun () ->
+       match Unix.waitpid pid with
+       | Ok _
+       (* I was only able to get non-zero exits in the OUnit test environment,
+             doing the equivalent calls in the command line always resulted in an exit of 0. *)
+       | Error (`Exit_non_zero 2) -> assert true
+       | _ -> assert false
+    )
     ()
 
 
@@ -242,7 +235,6 @@ let assert_response
       ~configuration:(CommandTest.mock_server_configuration ~local_root ())
       ~request
   in
-  CommandTest.clean_environment ();
   let printer = function
     | None -> "None"
     | Some response -> Protocol.show_response response
@@ -571,7 +563,6 @@ let test_connect _ =
   let cleanup () =
     Commands.Server.stop ~graceful:true "." ();
     CommandTest.with_timeout CommandTest.poll_for_deletion socket_path ~seconds:3;
-    CommandTest.clean_environment ()
   in
   Exn.protect
     ~f:(fun () ->
@@ -692,10 +683,7 @@ let test_protocol_language_server_protocol _ =
       ~configuration:(CommandTest.mock_server_configuration ())
       ~request:(Protocol.Request.LanguageServerProtocolRequest "{\"method\":\"\"}")
   in
-  let cleanup () =
-    CommandTest.clean_environment ()
-  in
-  Exn.protect ~f:(fun () -> assert_is_none response) ~finally:cleanup
+  assert_is_none response
 
 
 let test_did_save_with_content context =
@@ -744,8 +732,7 @@ let test_protocol_persistent _ =
          ~socket:mock_client_socket
          ~state:server_state
          ~configuration:(CommandTest.mock_server_configuration ())
-         ~request:(Protocol.Request.ClientConnectionRequest Protocol.Persistent));
-  CommandTest.clean_environment ()
+         ~request:(Protocol.Request.ClientConnectionRequest Protocol.Persistent))
 
 
 let test_incremental_dependencies _ =
@@ -831,7 +818,6 @@ let test_incremental_dependencies _ =
       []
   in
   let finally () =
-    CommandTest.clean_environment ();
     Sys.remove "a.py";
     Sys.remove "b.py";
     Ast.SharedMemory.Sources.remove ~handles:[File.Handle.create "a.py"; File.Handle.create "b.py"]
@@ -893,7 +879,6 @@ let test_incremental_lookups _ =
       ~configuration:(CommandTest.mock_server_configuration ())
       ~request
   in
-  CommandTest.clean_environment ();
   let annotations =
     handle
     |> Ast.SharedMemory.Sources.get
@@ -980,8 +965,7 @@ let test_incremental_repopulate _ =
   begin match (get_annotation "test.foo") with
     | Some expression -> assert_equal (Expression.show expression) "str"
     | None -> assert_unreached ()
-  end;
-  CommandTest.clean_environment ()
+  end
 
 
 let test_language_scheduler_definition context =

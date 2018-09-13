@@ -78,4 +78,4 @@ let () =
     "set_local">::test_set_local;
     "parse_annotation">::test_parse_annotation;
   ]
-  |> run_test_tt_main
+  |> Test.run_tests

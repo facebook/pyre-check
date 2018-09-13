@@ -658,4 +658,4 @@ let () =
     "while">::test_while;
     "yield">::test_yield;
   ]
-  |> run_test_tt_main
+  |> Test.run_tests

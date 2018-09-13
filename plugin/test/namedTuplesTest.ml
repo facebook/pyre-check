@@ -142,4 +142,4 @@ let () =
   "plugin_named_tuples">:::[
     "transform_ast">::test_transform_ast;
   ]
-  |> run_test_tt_main
+  |> Test.run_tests

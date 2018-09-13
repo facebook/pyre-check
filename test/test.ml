@@ -14,11 +14,37 @@ open Statement
 open TypeCheck
 
 
-let () =
+let initialize () =
+  Memory.get_heap_handle ()
+  |> ignore;
   Log.initialize_for_tests ();
   Statistics.disable ();
-  Type.Cache.disable ();
-  Scheduler.mock () |> ignore
+  Type.Cache.disable ()
+
+
+let () =
+  initialize ()
+
+
+let run_tests tests =
+  let rec bracket test =
+    let bracket_test test context =
+      initialize ();
+      test context;
+      Unix.unsetenv "HH_SERVER_DAEMON_PARAM";
+      Unix.unsetenv "HH_SERVER_DAEMON"
+    in
+    match test with
+    | OUnitTest.TestLabel (name, test) ->
+        OUnitTest.TestLabel (name, bracket test)
+    | OUnitTest.TestList tests ->
+        OUnitTest.TestList (List.map tests ~f:bracket)
+    | OUnitTest.TestCase (length, f) ->
+        OUnitTest.TestCase (length, bracket_test f)
+  in
+  tests
+  |> bracket
+  |> run_test_tt_main
 
 
 let parse_untrimmed

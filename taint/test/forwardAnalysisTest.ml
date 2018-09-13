@@ -377,4 +377,4 @@ let () =
     "test_taint_in_taint_out_application">::test_taint_in_taint_out_application;
     "test_union">::test_taint_in_taint_out_application;
   ]
-  |> run_test_tt_main
+  |> Test.run_tests

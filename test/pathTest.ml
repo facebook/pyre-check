@@ -213,4 +213,4 @@ let () =
     "link">::test_link;
     "remove">::test_remove;
   ]
-  |> run_test_tt_main
+  |> Test.run_tests

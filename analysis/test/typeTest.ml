@@ -878,9 +878,9 @@ let () =
     "async_generator_value">::test_async_generator_value;
     "dequalify">::test_dequalify;
   ]
-  |> run_test_tt_main;
+  |> Test.run_tests;
   "callable">:::[
     "from_overloads">::test_from_overloads;
     "with_return_annotation">::test_with_return_annotation;
   ]
-  |> run_test_tt_main
+  |> Test.run_tests

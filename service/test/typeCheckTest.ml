@@ -119,4 +119,4 @@ let () =
     "type_check_sources_list">::type_check_sources_list_test;
     "filter_directories">::test_filter_directories;
   ]
-  |> run_test_tt_main
+  |> Test.run_tests

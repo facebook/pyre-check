@@ -30,4 +30,4 @@ let () =
   "identifier">:::[
     "remove_leading_underscores">::test_remove_leading_underscores;
   ]
-  |> run_test_tt_main
+  |> Test.run_tests

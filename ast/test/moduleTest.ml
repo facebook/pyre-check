@@ -231,4 +231,4 @@ let () =
     "aliased_export">::test_aliased_export;
     "wildcard_exports">::test_wildcard_exports;
   ]
-  |> run_test_tt_main
+  |> Test.run_tests

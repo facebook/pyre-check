@@ -695,7 +695,6 @@ let test_request_parser context =
 
 
 let () =
-  Log.initialize_for_tests ();
   "language_server">:::
   [
     "language_server_protocol_message_format">::test_language_server_protocol_message_format;
@@ -711,4 +710,4 @@ let () =
     "did_save_notification">::test_did_save_notification;
     "request_parser">::test_request_parser;
   ]
-  |> run_test_tt_main
+  |> Test.run_tests

@@ -206,4 +206,4 @@ let () =
     "apply_decorators">::test_apply_decorators;
     "create">::test_create;
   ]
-  |> run_test_tt_main;
+  |> Test.run_tests;

@@ -45,4 +45,4 @@ let () =
   "plugin_new_type">:::[
     "transform_ast">::test_transform_ast;
   ]
-  |> run_test_tt_main
+  |> Test.run_tests

@@ -104,4 +104,4 @@ let () =
   "query">:::[
     "parse_query">::test_parse_query;
   ]
-  |> run_test_tt_main
+  |> Test.run_tests

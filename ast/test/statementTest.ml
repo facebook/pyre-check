@@ -992,17 +992,17 @@ let () =
     "is_constructor">::test_is_constructor;
     "dump">::test_dump;
   ]
-  |> run_test_tt_main;
+  |> Test.run_tests;
   "class">:::[
     "constructor">::test_constructor;
     "attributes">::test_attributes;
     "update">::test_update;
   ]
-  |> run_test_tt_main;
+  |> Test.run_tests;
   "statement">:::[
     "assume">::test_assume;
     "preamble">::test_preamble;
     "terminates">::test_terminates;
     "pp">::test_pp;
   ]
-  |> run_test_tt_main
+  |> Test.run_tests
