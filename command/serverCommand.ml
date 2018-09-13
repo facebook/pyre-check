@@ -79,7 +79,7 @@ let computation_thread request_queue configuration state =
       | _ ->
           ()
     in
-    let handle_request state ~request:(origin, request) =
+    let rec handle_request ?(retries = 2) state ~request:(origin, request) =
       let process socket state configuration request =
         try
           Log.log ~section:`Server "Processing request %a" Protocol.Request.pp request;
@@ -96,8 +96,9 @@ let computation_thread request_queue configuration state =
                     ~socket:!(state.connections).socket);
             { Request.state; response = None }
       in
-      match origin with
-      | Protocol.Request.PersistentSocket socket ->
+      try
+        match origin with
+        | Protocol.Request.PersistentSocket socket ->
           let write_or_forget socket responses =
             try
               List.iter ~f:(Socket.write socket) responses
@@ -139,8 +140,8 @@ let computation_thread request_queue configuration state =
             | None -> ()
           end;
           state
-      | Protocol.Request.FileNotifier
-      | Protocol.Request.Background ->
+        | Protocol.Request.FileNotifier
+        | Protocol.Request.Background ->
           let { socket; persistent_clients; _ } =
             Mutex.critical_section state.lock ~f:(fun () -> !(state.connections))
           in
@@ -153,7 +154,7 @@ let computation_thread request_queue configuration state =
                 ()
           end;
           state
-      | Protocol.Request.NewConnectionSocket socket ->
+        | Protocol.Request.NewConnectionSocket socket ->
           let { persistent_clients; _ } =
             Mutex.critical_section state.lock ~f:(fun () -> !(state.connections))
           in
@@ -166,6 +167,11 @@ let computation_thread request_queue configuration state =
             | None -> ()
           end;
           state
+      with uncaught_exception ->
+        if retries > 0 then
+          handle_request ~retries:(retries - 1) state ~request:(origin, request)
+        else
+          raise uncaught_exception
     in
     let state =
       match Squeue.length request_queue, List.is_empty state.deferred_requests with
