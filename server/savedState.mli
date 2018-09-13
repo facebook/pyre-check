@@ -10,4 +10,5 @@ val load
   -> connections: State.connections ref
   -> State.t
 
-val save: saved_state_path: string -> unit
+exception IncompatibleState
+val save: configuration: Configuration.t -> saved_state_path: string -> unit

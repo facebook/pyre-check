@@ -10,18 +10,24 @@ open Pyre
 open Service
 
 
+exception IncompatibleState
+
+
 let load
     ~server_configuration:{ ServerConfiguration.configuration; load_state_from; _ }
     ~lock
     ~connections =
   let saved_state_path = Option.value_exn load_state_from in
   Log.info "Initializing server from saved state at %s" saved_state_path;
-  (* TODO(T33300184): We need to validate the configuration against the passed in config. *)
+
   let scheduler = Scheduler.create ~configuration () in
 
   let environment = (module Environment.SharedHandler: Analysis.Environment.Handler) in
 
   Memory.load_shared_memory ~path:saved_state_path;
+  let old_configuration = EnvironmentSharedMemory.StoredConfiguration.find_unsafe "configuration" in
+  if not (Configuration.equal old_configuration configuration) then
+    raise IncompatibleState;
 
   (* TODO(T33300361): We need to invalidate changed/removed files and reanalyze them here. *)
   let files =
@@ -54,7 +60,8 @@ let load
 
 
 
-let save ~saved_state_path =
+let save ~configuration ~saved_state_path =
   Log.info "Saving server state to %s" saved_state_path;
   Memory.collect `aggressive;
+  EnvironmentSharedMemory.StoredConfiguration.add "configuration" configuration;
   Memory.save_shared_memory ~path:saved_state_path

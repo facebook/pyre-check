@@ -146,6 +146,12 @@ module OrderKeyValue = struct
   let description = "Order keys"
 end
 
+module ConfigurationValue = struct
+  type t = Configuration.t
+  let prefix = Prefix.make ()
+  let description = "Configuration"
+end
+
 (** Shared memory maps *)
 module FunctionDefinitions = SharedMemory.WithCache (AccessKey) (FunctionValue)
 
@@ -180,6 +186,8 @@ module OrderEdges = SharedMemory.WithCache (IntKey) (EdgeValue)
 module OrderBackedges = SharedMemory.WithCache (IntKey) (BackedgeValue)
 
 module OrderKeys = SharedMemory.WithCache (StringKey) (OrderKeyValue)
+
+module StoredConfiguration = SharedMemory.NoCache (StringKey) (ConfigurationValue)
 
 let heap_size () =
   SharedMemory.heap_size ()

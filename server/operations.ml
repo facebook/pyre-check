@@ -86,7 +86,7 @@ let start
   begin
     match save_state_to with
     | Some saved_state_path ->
-        SavedState.save ~saved_state_path
+        SavedState.save ~configuration ~saved_state_path
     | _ ->
         ()
   end;

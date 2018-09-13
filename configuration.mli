@@ -27,7 +27,7 @@ type t = {
   log_identifier: string;
   logger: string option;
 }
-[@@deriving show]
+[@@deriving show, eq]
 
 val create
   :  ?start_time: float

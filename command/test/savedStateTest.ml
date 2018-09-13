@@ -10,6 +10,12 @@ open Pyre
 open Server
 
 
+let write_content ~root ~filename content =
+  Path.create_relative ~root ~relative:filename
+  |> File.create ~content:(Test.trim_extra_indentation content)
+  |> File.write
+
+
 let test_saved_state context =
   let open Server.Protocol in
   (* Set up a directory for the server to run in. *)
@@ -17,13 +23,8 @@ let test_saved_state context =
     bracket_tmpdir context
     |> Path.create_absolute
   in
-  let write_content ~filename content =
-    Out_channel.write_all
-      (Path.create_relative ~root:local_root ~relative:filename
-       |> Path.absolute)
-      ~data:(Test.trim_extra_indentation content)
-  in
   write_content
+    ~root:local_root
     ~filename:"a.py"
     {|
       class C:
@@ -80,9 +81,72 @@ let test_saved_state context =
   (* The server loaded from a saved state has the information we expect. *)
   assert_equal expected_response response
 
+
+let test_invalid_configuration context =
+  (* Setup two incompatible roots. *)
+  let local_root =
+    bracket_tmpdir context
+    |> Path.create_absolute
+  in
+  (* Create an incompatible directory. *)
+  let other_root =
+    bracket_tmpdir context
+    |> Path.create_absolute
+  in
+
+  let saved_state_path =
+    Path.create_relative ~root:local_root ~relative:"saved_state"
+    |> Path.absolute
+  in
+  let configuration = Configuration.create ~local_root () in
+  let incompatible_configuration = Configuration.create ~local_root:other_root () in
+  let connect () =
+    let socket = Operations.connect ~retries:3 ~configuration in
+    Network.Socket.write socket Server.Protocol.Request.FlushTypeErrorsRequest;
+    let _ = Network.Socket.read socket in
+    ()
+  in
+  (* Generate a saved state. *)
+  let server_configuration =
+    ServerConfiguration.create ~save_state_to:saved_state_path configuration
+  in
+  let _ = Commands.Server.start server_configuration in
+  connect ();
+  CommandTest.stop_server server_configuration;
+
+  (* We built the saved state. *)
+  assert_equal `Yes (Sys.file_exists saved_state_path);
+  (* No server is running. *)
+  assert_raises Operations.ConnectionFailure connect;
+
+  let socket =
+    let path = ServerConfiguration.socket_path ~create:true configuration in
+    Network.Socket.initialize_unix_socket path
+  in
+  let connections = ref {
+      State.socket;
+      persistent_clients = Network.Socket.Table.create ();
+      file_notifiers = [];
+      watchman_pid = None;
+    }
+  in
+  (* Trying to load from an incompatible configuration raises an exception. *)
+  assert_raises
+    Server.SavedState.IncompatibleState
+    (fun () ->
+       Server.SavedState.load
+         ~server_configuration:(
+           ServerConfiguration.create
+             ~load_state_from:saved_state_path
+             incompatible_configuration)
+         ~lock:(Mutex.create ())
+         ~connections)
+
+
 let () =
   CommandTest.run_command_tests
     "saved_state"
     [
       "saved_state", test_saved_state;
+      "invalid_configuration", test_invalid_configuration;
     ]

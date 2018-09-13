@@ -128,7 +128,8 @@
  (modules configuration)
  (preprocess
   (pps
-   ppx_deriving.show))
+   ppx_deriving.show
+   ppx_deriving.eq))
  (libraries
   core
   ppx_deriving

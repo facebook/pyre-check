@@ -9,6 +9,7 @@
 
 (tests
  (names
+  configurationTest
   fileTest
   logTest
   pathTest
