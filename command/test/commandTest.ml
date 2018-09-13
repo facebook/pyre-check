@@ -82,3 +82,48 @@ let protect ~f ~cleanup =
   with caught_exception ->
     cleanup ();
     raise caught_exception
+
+
+exception Timeout
+
+let with_timeout ~seconds f x =
+  let timeout_option ~seconds f x =
+    let signal = Signal.Expert.signal Signal.alrm (`Handle (fun _ -> raise Timeout)) in
+    let cleanup () =
+      let _ = Unix.alarm 0 in
+      Signal.Expert.set Signal.alrm signal
+    in
+    try
+      let _ = Unix.alarm seconds in
+      let result = f x in
+      cleanup ();
+      Some result
+    with
+    | Timeout -> cleanup (); None
+    | _ -> cleanup (); failwith "Timeout function failed" in
+  match timeout_option ~seconds f x with
+  | Some x -> x
+  | None -> raise Timeout
+
+
+let poll_for_deletion path =
+  let rec poll () =
+    if Path.file_exists path then
+      (Unix.nanosleep 0.1 |> ignore; poll ())
+    else
+      ()
+  in
+  poll ()
+
+
+let stop_server {
+    Server.ServerConfiguration.configuration = {
+      Configuration.local_root;
+      _;
+    };
+    socket_path;
+    _;
+  } =
+  Command.run ~argv:["_"; "-graceful"; Path.absolute local_root] Commands.Server.stop_command;
+  with_timeout ~seconds:3 poll_for_deletion socket_path;
+  clean_environment ()

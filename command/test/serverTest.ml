@@ -23,16 +23,6 @@ let file ?content relative =
   File.create ?content (Path.create_relative ~root ~relative)
 
 
-let poll_for_deletion lock_path =
-  let rec poll () =
-    if Path.file_exists lock_path then
-      (Unix.nanosleep 0.1 |> ignore; poll ())
-    else
-      ()
-  in
-  poll ()
-
-
 let test_language_server_protocol_json_format context =
   let open TypeCheck.Error in
   let filename, _ = bracket_tmpfile ~suffix:".py" context in
@@ -108,36 +98,16 @@ let test_language_server_protocol_json_format context =
   assert_true (Or_error.is_error malformed_response)
 
 
-let with_timeout ~seconds f x =
-  let timeout_option ~seconds f x =
-    let signal = Signal.Expert.signal Signal.alrm (`Handle (fun _ -> raise Timeout)) in
-    let cleanup () =
-      let _ = Unix.alarm 0 in
-      Signal.Expert.set Signal.alrm signal
-    in
-    try
-      let _ = Unix.alarm seconds in
-      let result = f x in
-      cleanup ();
-      Some result
-    with
-    | Timeout -> cleanup (); None
-    | _ -> cleanup (); failwith "Timeout function failed" in
-  match timeout_option ~seconds f x with
-  | Some x -> x
-  | None -> raise Timeout
-
-
 let test_server_stops _ =
   let pid = Pid.of_int (CommandTest.start_server ()) in
   Command.run ~argv:["_"; "-graceful"] Commands.Server.stop_command;
   let { ServerConfiguration.socket_path; _ } =
     ServerConfiguration.create (Configuration.create ())
   in
-  with_timeout ~seconds:3 poll_for_deletion socket_path;
+  CommandTest.with_timeout ~seconds:3 CommandTest.poll_for_deletion socket_path;
   Exn.protect
     ~f:(fun () ->
-        with_timeout
+        CommandTest.with_timeout
           ~seconds:1
           (fun pid ->
              match Unix.waitpid pid with
@@ -155,13 +125,15 @@ let test_server_exits_on_directory_removal context =
   Sys_utils.rm_dir_tree directory;
   Exn.protect
     ~f:(fun () ->
-        with_timeout ~seconds:6 (fun () ->
-            match Unix.waitpid pid with
-            | Ok _
-            (* I was only able to get non-zero exits in the OUnit test environment,
+        CommandTest.with_timeout
+          ~seconds:6
+          (fun () ->
+             match Unix.waitpid pid with
+             | Ok _
+             (* I was only able to get non-zero exits in the OUnit test environment,
                 doing the equivalent calls in the command line always resulted in an exit of 0. *)
-            | Error (`Exit_non_zero 2) -> assert true
-            | _ -> assert false
+             | Error (`Exit_non_zero 2) -> assert true
+             | _ -> assert false
           ))
     ~finally:CommandTest.clean_environment
     ()
@@ -598,7 +570,7 @@ let test_connect _ =
   |> ignore;
   let cleanup () =
     Commands.Server.stop ~graceful:true "." ();
-    with_timeout ~seconds:3 poll_for_deletion socket_path;
+    CommandTest.with_timeout CommandTest.poll_for_deletion socket_path ~seconds:3;
     CommandTest.clean_environment ()
   in
   Exn.protect

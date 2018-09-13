@@ -24,12 +24,7 @@ exception ConnectionFailure
 exception VersionMismatch of version_mismatch
 
 
-let start
-    ?old_state
-    ~lock
-    ~connections
-    ~configuration:{ configuration; _ }
-    () =
+let start_from_scratch ?old_state ~lock ~connections ~configuration () =
   Log.log ~section:`Server  "Initializing server...";
 
   let scheduler =
@@ -45,11 +40,11 @@ let start
       ~scheduler:(Some scheduler)
       ~configuration
   in
+  Ast.SharedMemory.HandleKeys.add ~handles;
   Statistics.performance ~name:"initialization" ~timer ~normals:[] ();
   Log.log ~section:`Server "Server initialized";
   Memory.init_done ();
 
-  Ast.SharedMemory.HandleKeys.add ~handles;
   let errors =
     let table = File.Handle.Table.create () in
     let add_error error =
@@ -72,6 +67,30 @@ let start
     connections;
     lookups = String.Table.create ();
   }
+
+
+let start
+    ?old_state
+    ~lock
+    ~connections
+    ~configuration:({ configuration; save_state_to; load_state_from; _ } as server_configuration)
+    () =
+  let state =
+    match load_state_from with
+    | Some saved_state_path ->
+        Log.info "Loading from saved state at %s" saved_state_path;
+        SavedState.load ~server_configuration ~lock ~connections
+    | _ ->
+        start_from_scratch ?old_state ~lock ~connections ~configuration ()
+  in
+  begin
+    match save_state_to with
+    | Some saved_state_path ->
+        SavedState.save ~saved_state_path
+    | _ ->
+        ()
+  end;
+  state
 
 
 let stop

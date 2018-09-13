@@ -66,9 +66,9 @@ let get_heap_handle () =
   heap_handle
 
 
-let save_shared_memory ~filename =
-  SharedMem.save_table filename
+let save_shared_memory ~path =
+  SharedMem.save_table path
 
 
-let load_shared_memory ~filename =
-  SharedMem.load_table filename
+let load_shared_memory ~path =
+  SharedMem.load_table path
