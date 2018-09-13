@@ -822,8 +822,7 @@ let due_to_unsupported_calls { kind; _ } =
   | TooManyArguments { callee = Some name; _ } ->
       List.last name
       >>| (fun name -> Access.show [name])
-      (* TODO(T28686494): unbreak `dict.update`call resolution. *)
-      >>| List.mem ~equal:String.equal ["__init__"; "__str__"; "update"]
+      >>| List.mem ~equal:String.equal ["__init__"; "__str__"]
       |> Option.value ~default:false
   | _ ->
       false
