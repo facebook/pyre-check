@@ -64,32 +64,32 @@ let assert_state_equal =
     ~pp_diff:(diff ~print:State.pp)
 
 
-let assert_initial
-    ~parameters
-    ?parent
-    ?return_annotation
-    ?(decorators = [])
-    ?(initial = (fun resolution define ->
-        State.initial ~resolution define))
-    expected =
-  let define = {
-    Define.name = Access.create "foo";
-    parameters = List.map parameters ~f:(~+);
-    body = [];
-    decorators;
-    docstring = None;
-    return_annotation;
-    async = false;
-    generated = false;
-    parent = parent >>| Access.create;
-  }
-  in
-  assert_state_equal
-    expected
-    (initial resolution (+define))
-
-
 let test_initial _ =
+  let assert_initial
+      ~parameters
+      ?parent
+      ?return_annotation
+      ?(decorators = [])
+      ?(initial = (fun resolution define ->
+          State.initial ~resolution define))
+      expected =
+    let define = {
+      Define.name = Access.create "foo";
+      parameters = List.map parameters ~f:(~+);
+      body = [];
+      decorators;
+      docstring = None;
+      return_annotation;
+      async = false;
+      generated = false;
+      parent = parent >>| Access.create;
+    }
+    in
+    assert_state_equal
+      expected
+      (initial resolution (+define))
+  in
+
   assert_initial
     ~parameters:[
       {
