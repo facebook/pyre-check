@@ -223,8 +223,10 @@ def acquire_lock(path: str, blocking: bool) -> Generator[Optional[int], None, No
 class Filesystem:
     def list(self, root: str, pattern: str) -> List[str]:
         return (
-            subprocess.check_output(["find", root, "-name", "*{}".format(pattern)])
-            .decode("utf-8")
+            subprocess.run(
+                ["find", root, "-name", "*{}".format(pattern)], stdout=subprocess.PIPE
+            )
+            .stdout.decode("utf-8")
             .split()
         )
 
@@ -233,23 +235,14 @@ class MercurialBackedFilesystem(Filesystem):
     def list(self, root: str, pattern: str) -> List[str]:
         try:
             return (
-                subprocess.check_output(
+                subprocess.run(
                     ["hg", "files", "--include", "**{}".format(pattern)],
+                    stdout=subprocess.PIPE,
                     stderr=subprocess.DEVNULL,
                 )
-                .decode("utf-8")
+                .stdout.decode("utf-8")
                 .split()
             )
-        except subprocess.CalledProcessError as exception:
-            if exception.returncode == 1:
-                # hg files exits with 1 when no matches were found.
-                return []
-            else:
-                raise EnvironmentException(
-                    "Unexpected return code {} from call to `hg files`.".format(
-                        exception.returncode
-                    )
-                )
         except FileNotFoundError:
             raise EnvironmentException("hg executable not found.")
 

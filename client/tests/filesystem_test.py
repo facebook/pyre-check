@@ -235,36 +235,57 @@ class FilesystemTest(unittest.TestCase):
         shared_analysis_directory.cleanup()
         rmtree.assert_called_with(shared_analysis_directory.get_root())
 
-    @patch.object(subprocess, "check_output")
-    def test_filesystem_list(self, check_output):
+    @patch.object(subprocess, "run")
+    def test_filesystem_list_bare(self, run):
         filesystem = Filesystem()
         filesystem.list(".", ".pyre_configuration.local")
 
+        def fail_command(arguments, **kwargs):
+            return subprocess.CompletedProcess(
+                args=[], returncode=1, stdout="".encode("utf-8")
+            )
+
+        run.side_effect = fail_command
+        self.assertEqual([], filesystem.list(".", ".pyre_configuration.local"))
+        run.assert_has_calls(
+            [
+                call(
+                    ["find", ".", "-name", "*.pyre_configuration.local"],
+                    stdout=subprocess.PIPE,
+                ),
+                call().stdout.decode("utf-8"),
+                call().stdout.decode().split(),
+                call(
+                    ["find", ".", "-name", "*.pyre_configuration.local"],
+                    stdout=subprocess.PIPE,
+                ),
+            ]
+        )
+
+    @patch.object(subprocess, "run")
+    def test_filesystem_list_mercurial(self, run):
         filesystem = MercurialBackedFilesystem()
         filesystem.list(".", ".pyre_configuration.local")
 
-        def fail_on_mercurial(arguments, **kwargs):
-            if "hg" in arguments:
-                raise FileNotFoundError
-            else:
-                return "external/a/.pyre_configuration.local".encode("utf-8")
+        def fail_command(arguments, **kwargs):
+            return subprocess.CompletedProcess(
+                args=[], returncode=1, stdout="".encode("utf-8")
+            )
 
-        check_output.side_effect = fail_on_mercurial
-        with self.assertRaises(EnvironmentException):
-            filesystem.list(".", ".pyre_configuration.local")
-        check_output.assert_has_calls(
+        run.side_effect = fail_command
+        self.assertEqual([], filesystem.list(".", ".pyre_configuration.local"))
+        run.assert_has_calls(
             [
-                call(["find", ".", "-name", "*.pyre_configuration.local"]),
-                call().decode("utf-8"),
-                call().decode().split(),
                 call(
                     ["hg", "files", "--include", "**.pyre_configuration.local"],
+                    stdout=subprocess.PIPE,
                     stderr=subprocess.DEVNULL,
                 ),
-                call().decode("utf-8"),
-                call().decode().split(),
+                call().stdout.decode("utf-8"),
+                call().stdout.decode().split(),
                 call(
                     ["hg", "files", "--include", "**.pyre_configuration.local"],
+                    stdout=subprocess.PIPE,
                     stderr=subprocess.DEVNULL,
                 ),
             ]

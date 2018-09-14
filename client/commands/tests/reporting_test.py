@@ -96,8 +96,8 @@ class ReportingTest(unittest.TestCase):
             create_error.assert_has_calls([call(True, False)])
             create_error.reset_mock()
 
-    @patch.object(subprocess, "check_output")
-    def test_get_directories_to_analyze(self, check_output) -> None:
+    @patch.object(subprocess, "run")
+    def test_get_directories_to_analyze(self, run) -> None:
         arguments = mock_arguments()
         arguments.current_directory = "base"
         arguments.original_directory = "base"
@@ -105,12 +105,16 @@ class ReportingTest(unittest.TestCase):
         handler = commands.Reporting(
             arguments, configuration, AnalysisDirectory("base")
         )
-        check_output.return_value = "\n".join(
-            [
-                "external/a/.pyre_configuration.local",
-                "external/b/c/.pyre_configuration.local",
-            ]
-        ).encode("utf-8")
+        run.return_value = subprocess.CompletedProcess(
+            args=[],
+            returncode=0,
+            stdout="\n".join(
+                [
+                    "external/a/.pyre_configuration.local",
+                    "external/b/c/.pyre_configuration.local",
+                ]
+            ).encode("utf-8"),
+        )
         with patch("builtins.open", mock_open(read_data='{"push_blocking": false}')):
             self.assertEqual(handler._get_directories_to_analyze(), {"base"})
 
