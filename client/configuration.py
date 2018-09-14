@@ -125,8 +125,8 @@ class Configuration:
             )
 
         # Order matters. The values will only be updated if a field is None.
-        self._read(CONFIGURATION_FILE + ".local", path_from_root="")
-        self._read(CONFIGURATION_FILE, path_from_root="")
+        self._read(CONFIGURATION_FILE + ".local")
+        self._read(CONFIGURATION_FILE)
         self._override_version_hash()
         self._resolve_versioned_paths()
         self._apply_defaults()
@@ -236,16 +236,13 @@ class Configuration:
             )
 
         if os.path.isdir(path):
-            path_from_root = path
             local_configuration = os.path.join(path, CONFIGURATION_FILE + ".local")
 
             if not os.path.exists(local_configuration):
                 if fail_on_error:
                     raise EnvironmentException(
                         "Local configuration directory `{}` does not contain "
-                        "a `{}` file.".format(
-                            path_from_root, CONFIGURATION_FILE + ".local"
-                        )
+                        "a `{}` file.".format(path, CONFIGURATION_FILE + ".local")
                     )
                 else:
                     LOG.debug(
@@ -255,12 +252,11 @@ class Configuration:
             else:
                 self.local_configuration = local_configuration
         else:
-            path_from_root = os.path.dirname(path)
             local_configuration = path
             self.local_configuration = local_configuration
-        self._read(local_configuration, path_from_root=path_from_root)
+        self._read(local_configuration)
 
-    def _read(self, path, path_from_root) -> None:
+    def _read(self, path) -> None:
         try:
             with open(path) as file:
                 LOG.debug("Reading configuration `%s`...", path)
@@ -291,8 +287,17 @@ class Configuration:
                 self.logger = configuration.consume("logger", current=self.logger)
 
                 do_not_check = configuration.consume("do_not_check", default=[])
+                configuration_path = os.path.dirname(os.path.realpath(path))
                 self.do_not_check.extend(
-                    map(lambda path: os.path.join(path_from_root, path), do_not_check)
+                    map(
+                        lambda do_not_check_relative_to_configuration: os.path.realpath(
+                            os.path.join(
+                                configuration_path,
+                                do_not_check_relative_to_configuration,
+                            )
+                        ),
+                        do_not_check,
+                    )
                 )
 
                 self.number_of_workers = int(

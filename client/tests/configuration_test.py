@@ -32,7 +32,9 @@ class ConfigurationTest(unittest.TestCase):
         self.assertEqual(configuration.analysis_directories, ["a"])
         self.assertEqual(configuration.targets, [])
         self.assertEqual(configuration.logger, "/usr/logger")
-        self.assertEqual(configuration.do_not_check, ["buck-out/dev/gen"])
+        self.assertEqual(
+            configuration.do_not_check, ["%s/buck-out/dev/gen" % os.getcwd()]
+        )
 
         json_load.side_effect = [
             {
@@ -46,7 +48,9 @@ class ConfigurationTest(unittest.TestCase):
         self.assertEqual(configuration.analysis_directories, ["a"])
         self.assertEqual(configuration.targets, [])
         self.assertEqual(configuration.logger, "/usr/logger")
-        self.assertEqual(configuration.do_not_check, ["buck-out/dev/gen"])
+        self.assertEqual(
+            configuration.do_not_check, ["%s/buck-out/dev/gen" % os.getcwd()]
+        )
 
         json_load.side_effect = [{"targets": ["//a/b/c"], "disabled": 1}, {}]
         configuration = Configuration()
@@ -164,7 +168,8 @@ class ConfigurationTest(unittest.TestCase):
         ]
         configuration = Configuration()
         self.assertEqual(
-            configuration.do_not_check, ["buck-out/dev/gen", "buck-out/dev/gen2"]
+            configuration.do_not_check,
+            ["%s/buck-out/dev/gen" % os.getcwd(), "%s/buck-out/dev/gen2" % os.getcwd()],
         )
 
         # Normalize number of workers if zero.
@@ -203,10 +208,7 @@ class ConfigurationTest(unittest.TestCase):
         with patch.object(Configuration, "_read") as Configuration_read:
             configuration = Configuration()
             Configuration_read.assert_has_calls(
-                [
-                    call(CONFIGURATION_FILE + ".local", path_from_root=""),
-                    call(CONFIGURATION_FILE, path_from_root=""),
-                ]
+                [call(CONFIGURATION_FILE + ".local"), call(CONFIGURATION_FILE)]
             )
             self.assertEqual(configuration.local_configuration, None)
 
@@ -214,12 +216,9 @@ class ConfigurationTest(unittest.TestCase):
             configuration = Configuration(local_configuration_directory="original")
             Configuration_read.assert_has_calls(
                 [
-                    call(
-                        "original/" + CONFIGURATION_FILE + ".local",
-                        path_from_root="original",
-                    ),
-                    call(CONFIGURATION_FILE + ".local", path_from_root=""),
-                    call(CONFIGURATION_FILE, path_from_root=""),
+                    call("original/" + CONFIGURATION_FILE + ".local"),
+                    call(CONFIGURATION_FILE + ".local"),
+                    call(CONFIGURATION_FILE),
                 ]
             )
             self.assertEqual(
@@ -230,11 +229,9 @@ class ConfigurationTest(unittest.TestCase):
             configuration = Configuration(local_configuration="local")
             Configuration_read.assert_has_calls(
                 [
-                    call(
-                        "local/" + CONFIGURATION_FILE + ".local", path_from_root="local"
-                    ),
-                    call(CONFIGURATION_FILE + ".local", path_from_root=""),
-                    call(CONFIGURATION_FILE, path_from_root=""),
+                    call("local/" + CONFIGURATION_FILE + ".local"),
+                    call(CONFIGURATION_FILE + ".local"),
+                    call(CONFIGURATION_FILE),
                 ]
             )
             self.assertEqual(
@@ -247,11 +244,9 @@ class ConfigurationTest(unittest.TestCase):
             )
             Configuration_read.assert_has_calls(
                 [
-                    call(
-                        "local/" + CONFIGURATION_FILE + ".local", path_from_root="local"
-                    ),
-                    call(CONFIGURATION_FILE + ".local", path_from_root=""),
-                    call(CONFIGURATION_FILE, path_from_root=""),
+                    call("local/" + CONFIGURATION_FILE + ".local"),
+                    call(CONFIGURATION_FILE + ".local"),
+                    call(CONFIGURATION_FILE),
                 ]
             )
             self.assertEqual(
@@ -268,9 +263,9 @@ class ConfigurationTest(unittest.TestCase):
             )
             Configuration_read.assert_has_calls(
                 [
-                    call("local/.some_configuration", path_from_root="local"),
-                    call(CONFIGURATION_FILE + ".local", path_from_root=""),
-                    call(CONFIGURATION_FILE, path_from_root=""),
+                    call("local/.some_configuration"),
+                    call(CONFIGURATION_FILE + ".local"),
+                    call(CONFIGURATION_FILE),
                 ]
             )
             self.assertEqual(

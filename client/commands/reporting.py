@@ -89,8 +89,8 @@ class Reporting(Command):
             external_to_global_root = True
             if full_path.startswith(self._current_directory):
                 external_to_global_root = False
-            for do_not_check_path in self._do_not_check_paths:
-                if fnmatch.fnmatch(relative_path, (do_not_check_path + "*")):
+            for absolute_do_not_check_path in self._do_not_check_paths:
+                if fnmatch.fnmatch(full_path, (absolute_do_not_check_path + "*")):
                     do_not_check = True
                     break
             errors.add(Error(do_not_check, external_to_global_root, **error))

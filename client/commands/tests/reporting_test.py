@@ -51,7 +51,7 @@ class ReportingTest(unittest.TestCase):
             create_error.reset_mock()
 
         arguments.target = []
-        configuration.do_not_check = ["auto/gen"]
+        configuration.do_not_check = ["/test/auto/gen"]
         handler = commands.Reporting(
             arguments, configuration, AnalysisDirectory("/test/auto/gen")
         )
