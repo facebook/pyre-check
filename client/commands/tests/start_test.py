@@ -124,3 +124,30 @@ class StartTest(unittest.TestCase):
             command.run()
             call_client.assert_called_once_with(command=commands.Start.NAME)
             prepare.assert_called_once_with()
+
+        analysis_directory = AnalysisDirectory(".")
+        # Check filter directories.
+        with patch.object(commands.Command, "_call_client") as call_client:
+            arguments.no_watchman = True
+            command = commands.Start(arguments, configuration, analysis_directory)
+            with patch.object(
+                command, "_get_directories_to_analyze"
+            ) as get_directories:
+                get_directories.return_value = {"a", "b"}
+                self.assertEqual(
+                    command._flags(),
+                    [
+                        "-project-root",
+                        ".",
+                        "-filter-directories",
+                        "a;b",
+                        "-workers",
+                        "5",
+                        "-typeshed",
+                        "stub",
+                        "-expected-binary-version",
+                        "hash",
+                        "-search-path",
+                        "path1,path2",
+                    ],
+                )

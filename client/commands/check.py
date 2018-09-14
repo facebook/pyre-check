@@ -20,9 +20,7 @@ class Check(Reporting):
         flags = super()._flags()
         filter_directories = self._get_directories_to_analyze()
         if len(filter_directories):
-            flags.extend(
-                ["-filter-directories-semicolon", ";".join(list(filter_directories))]
-            )
+            flags.extend(["-filter-directories", ";".join(sorted(filter_directories))])
         flags.extend(
             [
                 "-workers",
