@@ -156,17 +156,6 @@ let environment () =
   environment
 
 
-let associate_errors_and_filenames error_list =
-  let error_file error =
-    File.Handle.create (Error.path error), error
-  in
-  List.map ~f:error_file error_list
-  |> (List.fold
-        ~init:File.Handle.Map.empty
-        ~f:(fun map (handle, error) -> Map.add_multi map ~key:handle ~data:error))
-  |> Map.to_alist
-
-
 let make_errors ?(handle = "test.py") ?(qualifier = []) source =
   let configuration = CommandTest.mock_analysis_configuration () in
   let source = Preprocessing.preprocess (parse ~handle ~qualifier source) in
@@ -289,12 +278,12 @@ let test_protocol_type_check _ =
   assert_response
     ~source
     ~request:Protocol.Request.FlushTypeErrorsRequest
-    (Some (Protocol.TypeCheckResponse (associate_errors_and_filenames errors)));
+    (Some (Protocol.TypeCheckResponse (CommandTest.associate_errors_and_filenames errors)));
 
   assert_response
     ~source
     ~request:Protocol.Request.FlushTypeErrorsRequest
-    (Some (Protocol.TypeCheckResponse (associate_errors_and_filenames errors)))
+    (Some (Protocol.TypeCheckResponse (CommandTest.associate_errors_and_filenames errors)))
 
 
 let test_query _ =
@@ -622,7 +611,7 @@ let test_incremental_typecheck _ =
        (Protocol.TypeCheckRequest.create ~update_environment_with:files ~check:files ()))
   in
   let errors =
-    associate_errors_and_filenames
+    CommandTest.associate_errors_and_filenames
       (make_errors ~handle ~qualifier:(Source.qualifier ~handle:(File.Handle.create handle)) source)
   in
   assert_response ~request:request_with_content (Protocol.TypeCheckResponse errors);
@@ -720,7 +709,7 @@ let test_did_save_with_content context =
     ~local_root:root
     ~source
     ~request:(Protocol.Request.LanguageServerProtocolRequest request)
-    (Some (Protocol.TypeCheckResponse (associate_errors_and_filenames errors)))
+    (Some (Protocol.TypeCheckResponse (CommandTest.associate_errors_and_filenames errors)))
 
 
 let test_protocol_persistent _ =

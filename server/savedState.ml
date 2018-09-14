@@ -46,10 +46,14 @@ let load
         (Protocol.TypeCheckRequest.create ~check:files ());
     ]
   in
+  let errors =
+    EnvironmentSharedMemory.ServerErrors.find_unsafe "errors"
+    |> File.Handle.Table.of_alist_exn
+  in
   {
     State.deferred_requests;
     environment;
-    errors = File.Handle.Table.create ();
+    errors;
     scheduler;
     lock;
     last_request_time = Unix.time ();
@@ -59,9 +63,9 @@ let load
   }
 
 
-
-let save ~configuration ~saved_state_path =
+let save ~configuration ~errors ~saved_state_path =
   Log.info "Saving server state to %s" saved_state_path;
   Memory.collect `aggressive;
   EnvironmentSharedMemory.StoredConfiguration.add "configuration" configuration;
+  EnvironmentSharedMemory.ServerErrors.add "errors" (Hashtbl.to_alist errors);
   Memory.save_shared_memory ~path:saved_state_path

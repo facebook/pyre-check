@@ -6,8 +6,9 @@
 open OUnit2
 open Core
 
-open Pyre
 open Server
+
+open Pyre
 
 
 let write_content ~root ~filename content =
@@ -23,15 +24,19 @@ let test_saved_state context =
     bracket_tmpdir context
     |> Path.create_absolute
   in
-  write_content
-    ~root:local_root
-    ~filename:"a.py"
+  let content =
     {|
       class C:
         pass
+      class D:
+        pass
+      def foo(d: D) -> C:
+        return d
       x = C()
-    |};
-
+    |}
+    |> Test.trim_extra_indentation
+  in
+  write_content ~root:local_root ~filename:"a.py" content;
   let configuration = Configuration.create ~local_root () in
   let saved_state_path =
     Path.create_relative ~root:local_root ~relative:"saved_state"
@@ -64,22 +69,38 @@ let test_saved_state context =
   let server_configuration =
     ServerConfiguration.create ~load_state_from:saved_state_path configuration
   in
-  (* Query the new server for environment information. *)
   let _ = Commands.Server.start server_configuration in
 
   let socket = Operations.connect ~retries:3 ~configuration in
+  (* Query the new server for environment information. *)
   Network.Socket.write socket (Commands.Query.parse_query ~root:local_root "type(a.x)");
-  let response = Network.Socket.read socket in
-
+  let query_response = Network.Socket.read socket in
   CommandTest.stop_server server_configuration;
 
+  (* The server loaded from a saved state has the information we expect. *)
   let expected_response =
       TypeQueryResponse
         (TypeQuery.Response
            (TypeQuery.Type (Analysis.Type.primitive "a.C")))
   in
-  (* The server loaded from a saved state has the information we expect. *)
-  assert_equal expected_response response
+  assert_equal expected_response query_response;
+  (* Errors are preserved when loading from a saved state. *)
+  let _ =
+    Commands.Server.start
+      (ServerConfiguration.create ~load_state_from:saved_state_path configuration)
+  in
+  let socket = Operations.connect ~retries:3 ~configuration in
+  Network.Socket.write socket (Request.FlushTypeErrorsRequest);
+  let errors = Network.Socket.read socket in
+  CommandTest.stop_server server_configuration;
+
+  let expected_errors =
+    CommandTest.make_errors ~handle:"a.py" ~qualifier:(Ast.Expression.Access.create "a") content
+    |> CommandTest.associate_errors_and_filenames
+    |> fun errors -> Protocol.TypeCheckResponse errors
+  in
+  assert_equal ~printer:show_response expected_errors errors
+
 
 
 let test_invalid_configuration context =

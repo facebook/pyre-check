@@ -75,7 +75,7 @@ let start
     ~connections
     ~configuration:({ configuration; save_state_to; load_state_from; _ } as server_configuration)
     () =
-  let state =
+  let ({ State.errors; _ } as state) =
     match load_state_from with
     | Some saved_state_path ->
         Log.info "Loading from saved state at %s" saved_state_path;
@@ -86,7 +86,7 @@ let start
   begin
     match save_state_to with
     | Some saved_state_path ->
-        SavedState.save ~configuration ~saved_state_path
+        SavedState.save ~configuration ~errors ~saved_state_path
     | _ ->
         ()
   end;

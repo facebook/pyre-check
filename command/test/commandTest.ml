@@ -58,13 +58,24 @@ let environment () =
   environment
 
 
-let make_errors source =
+let make_errors ?handle ?qualifier source =
   let configuration = Configuration.create () in
-  let source = Preprocessing.preprocess (parse source) in
+  let source = Preprocessing.preprocess (parse ?handle ?qualifier source) in
   let environment_handler = Environment.handler ~configuration (environment ()) in
   Service.Environment.populate environment_handler [source];
   let configuration = mock_analysis_configuration () in
   (TypeCheck.check configuration environment_handler source).TypeCheck.Result.errors
+
+
+let associate_errors_and_filenames error_list =
+  let error_file error =
+    File.Handle.create (Error.path error), error
+  in
+  List.map ~f:error_file error_list
+  |> (List.fold
+        ~init:File.Handle.Map.empty
+        ~f:(fun map (handle, error) -> Map.add_multi map ~key:handle ~data:error))
+  |> Map.to_alist
 
 
 let run_command_tests test_category tests =

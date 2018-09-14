@@ -152,6 +152,12 @@ module ConfigurationValue = struct
   let description = "Configuration"
 end
 
+module ErrorsValue = struct
+  type t = (File.Handle.t * (Analysis.Error.t list)) list
+  let prefix = Prefix.make ()
+  let description = "All errors"
+end
+
 (** Shared memory maps *)
 module FunctionDefinitions = SharedMemory.WithCache (AccessKey) (FunctionValue)
 
@@ -188,6 +194,8 @@ module OrderBackedges = SharedMemory.WithCache (IntKey) (BackedgeValue)
 module OrderKeys = SharedMemory.WithCache (StringKey) (OrderKeyValue)
 
 module StoredConfiguration = SharedMemory.NoCache (StringKey) (ConfigurationValue)
+
+module ServerErrors = Memory.NoCache (StringKey) (ErrorsValue)
 
 let heap_size () =
   SharedMemory.heap_size ()

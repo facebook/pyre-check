@@ -11,4 +11,8 @@ val load
   -> State.t
 
 exception IncompatibleState
-val save: configuration: Configuration.t -> saved_state_path: string -> unit
+val save
+  :  configuration: Configuration.t
+  -> errors: (Analysis.Error.t list) File.Handle.Table.t
+  -> saved_state_path: string
+  -> unit
