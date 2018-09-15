@@ -137,8 +137,8 @@ let test_transitive_dependent_of_list _ =
     ~handles:["c.py"]
     ~expected:["a.py"; "b.py"; "test.py"];
   assert_dependencies
-     ~handles:["test.py"]
-     ~expected:[]
+    ~handles:["test.py"]
+    ~expected:[]
 
 
 let test_transitive_dependents _ =

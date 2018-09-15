@@ -5264,14 +5264,14 @@ let test_check_async _ =
     [];
 
   assert_type_errors
-  {|
-    def takes_int(x: int) -> int:
-      return x
-    async def loop(g: typing.AsyncGenerator[str, None]) -> typing.AsyncGenerator[int, None]:
-      async for item in g:
-        yield takes_int(item)
-  |}
-  []
+    {|
+      def takes_int(x: int) -> int:
+        return x
+      async def loop(g: typing.AsyncGenerator[str, None]) -> typing.AsyncGenerator[int, None]:
+        async for item in g:
+          yield takes_int(item)
+    |}
+    []
 
 
 let test_check_behavioral_subtyping _ =

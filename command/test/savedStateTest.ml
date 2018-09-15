@@ -79,9 +79,9 @@ let test_saved_state context =
 
   (* The server loaded from a saved state has the information we expect. *)
   let expected_response =
-      TypeQueryResponse
-        (TypeQuery.Response
-           (TypeQuery.Type (Analysis.Type.primitive "a.C")))
+    TypeQueryResponse
+      (TypeQuery.Response
+         (TypeQuery.Type (Analysis.Type.primitive "a.C")))
   in
   assert_equal expected_response query_response;
   (* Errors are preserved when loading from a saved state. *)

@@ -131,12 +131,13 @@ module SharedHandler: Analysis.Environment.Handler = struct
         Ast.SharedMemory.Modules.remove ~qualifiers:[qualifier];
         Ast.SharedMemory.Modules.add
           ~qualifier
-          ~ast_module:(Module.create
-             ~qualifier
-             ~local_mode
-             ?path:(handle >>| File.Handle.show)
-             ~stub
-             statements)
+          ~ast_module:
+            (Module.create
+               ~qualifier
+               ~local_mode
+               ?path:(handle >>| File.Handle.show)
+               ~stub
+               statements)
       end
 
   let is_module qualifier =

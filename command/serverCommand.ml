@@ -99,74 +99,74 @@ let computation_thread request_queue configuration state =
       try
         match origin with
         | Protocol.Request.PersistentSocket socket ->
-          let write_or_forget socket responses =
-            try
-              List.iter ~f:(Socket.write socket) responses
-            with
-            | Unix.Unix_error (kind, _, _) ->
-                begin
-                  match kind with
-                  | Unix.EPIPE ->
-                      Log.warning "EPIPE while writing to a persistent client, removing.";
-                      Mutex.critical_section state.lock ~f:(fun () ->
-                          let { persistent_clients; _ } = !(state.connections) in
-                          match Hashtbl.find persistent_clients socket with
-                          | Some failures ->
-                              if failures < failure_threshold then
-                                Hashtbl.set
-                                  persistent_clients
-                                  ~key:socket
-                                  ~data:(failures + 1)
-                              else
-                                Hashtbl.remove persistent_clients socket
-                          | None ->
-                              ())
-                  | _ ->
-                      ()
-                end
-          in
-          let { Request.state; response } = process socket state configuration request in
-          begin
-            match response with
-            | Some (LanguageServerProtocolResponse _)
-            | Some (ClientExitResponse Persistent) ->
-                response
-                >>| (fun response -> write_or_forget socket [response])
-                |> ignore
-            | Some (TypeCheckResponse error_map) ->
-                let responses = errors_to_lsp_responses error_map in
-                write_or_forget socket responses
-            | Some _ -> Log.error "Unexpected response for persistent client request"
-            | None -> ()
-          end;
-          state
+            let write_or_forget socket responses =
+              try
+                List.iter ~f:(Socket.write socket) responses
+              with
+              | Unix.Unix_error (kind, _, _) ->
+                  begin
+                    match kind with
+                    | Unix.EPIPE ->
+                        Log.warning "EPIPE while writing to a persistent client, removing.";
+                        Mutex.critical_section state.lock ~f:(fun () ->
+                            let { persistent_clients; _ } = !(state.connections) in
+                            match Hashtbl.find persistent_clients socket with
+                            | Some failures ->
+                                if failures < failure_threshold then
+                                  Hashtbl.set
+                                    persistent_clients
+                                    ~key:socket
+                                    ~data:(failures + 1)
+                                else
+                                  Hashtbl.remove persistent_clients socket
+                            | None ->
+                                ())
+                    | _ ->
+                        ()
+                  end
+            in
+            let { Request.state; response } = process socket state configuration request in
+            begin
+              match response with
+              | Some (LanguageServerProtocolResponse _)
+              | Some (ClientExitResponse Persistent) ->
+                  response
+                  >>| (fun response -> write_or_forget socket [response])
+                  |> ignore
+              | Some (TypeCheckResponse error_map) ->
+                  let responses = errors_to_lsp_responses error_map in
+                  write_or_forget socket responses
+              | Some _ -> Log.error "Unexpected response for persistent client request"
+              | None -> ()
+            end;
+            state
         | Protocol.Request.FileNotifier
         | Protocol.Request.Background ->
-          let { socket; persistent_clients; _ } =
-            Mutex.critical_section state.lock ~f:(fun () -> !(state.connections))
-          in
-          let { Request.state; response } = process socket state configuration request in
-          begin
-            match response with
-            | Some response ->
-                broadcast_response state.lock persistent_clients response
-            | None ->
-                ()
-          end;
-          state
+            let { socket; persistent_clients; _ } =
+              Mutex.critical_section state.lock ~f:(fun () -> !(state.connections))
+            in
+            let { Request.state; response } = process socket state configuration request in
+            begin
+              match response with
+              | Some response ->
+                  broadcast_response state.lock persistent_clients response
+              | None ->
+                  ()
+            end;
+            state
         | Protocol.Request.NewConnectionSocket socket ->
-          let { persistent_clients; _ } =
-            Mutex.critical_section state.lock ~f:(fun () -> !(state.connections))
-          in
-          let { Request.state; response } = process socket state configuration request in
-          begin
-            match response with
-            | Some response ->
-                Socket.write_ignoring_epipe socket response;
-                broadcast_response state.lock persistent_clients response
-            | None -> ()
-          end;
-          state
+            let { persistent_clients; _ } =
+              Mutex.critical_section state.lock ~f:(fun () -> !(state.connections))
+            in
+            let { Request.state; response } = process socket state configuration request in
+            begin
+              match response with
+              | Some response ->
+                  Socket.write_ignoring_epipe socket response;
+                  broadcast_response state.lock persistent_clients response
+              | None -> ()
+            end;
+            state
       with uncaught_exception ->
         if retries > 0 then
           handle_request ~retries:(retries - 1) state ~request:(origin, request)

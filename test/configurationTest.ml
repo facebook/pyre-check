@@ -57,8 +57,8 @@ let test_equal _ =
        (Configuration.create ~verbose:true ())
        (Configuration.create ~verbose:false ()));
 
- assert_false
-     (Configuration.equal
+  assert_false
+    (Configuration.equal
        (Configuration.create ~expected_version:"a" ())
        (Configuration.create ~expected_version:"b" ()));
 

@@ -42,8 +42,8 @@ module PublishDiagnostics = struct
         })
     in
     let failed_response =
-        Format.asprintf "Valid path does not exist for %s." (File.Handle.show handle)
-        |> Or_error.error_string
+      Format.asprintf "Valid path does not exist for %s." (File.Handle.show handle)
+      |> Or_error.error_string
     in
     try
       let path =
@@ -190,7 +190,7 @@ module TextDocumentDefinitionResponse = struct
         Some
           (location
            >>= (fun { Ast.Location.start; stop; path } -> uri ~path
-               >>| fun uri -> { Location.uri; range = Range.create ~start ~stop })
+                 >>| fun uri -> { Location.uri; range = Range.create ~start ~stop })
            |> Option.to_list);
       error = None;
     }
