@@ -14,33 +14,33 @@ from ...filesystem import AnalysisDirectory
 
 def mock_arguments() -> MagicMock:
     arguments = MagicMock()
-    arguments.debug = False
-    arguments.sequential = False
-    arguments.strict = False
-    arguments.show_error_traces = False
-    arguments.verbose = False
-    arguments.show_parse_errors = False
-    arguments.local_configuration = None
-    arguments.logging_sections = None
-    arguments.logger = None
-    arguments.log_identifier = None
     arguments.current_directory = "."
-    arguments.original_directory = "/original/directory/"
+    arguments.debug = False
     arguments.filter_directories = ["."]
     arguments.local = False
+    arguments.local_configuration = None
+    arguments.log_identifier = None
+    arguments.logger = None
+    arguments.logging_sections = None
+    arguments.original_directory = "/original/directory/"
     arguments.save_initial_state_to = None
+    arguments.sequential = False
+    arguments.show_error_traces = False
+    arguments.show_parse_errors = False
+    arguments.strict = False
     arguments.taint_models_path = None
+    arguments.verbose = False
     return arguments
 
 
 def mock_configuration() -> MagicMock:
     configuration = MagicMock()
     configuration.analysis_directories = ["."]
+    configuration.logger = None
     configuration.number_of_workers = 5
     configuration.search_path = ["path1", "path2"]
-    configuration.typeshed = "stub"
-    configuration.logger = None
     configuration.taint_models_path = None
+    configuration.typeshed = "stub"
     return configuration
 
 
