@@ -35,6 +35,11 @@ val process_type_check_request
   -> configuration: Configuration.t
   -> request: Protocol.TypeCheckRequest.t
   -> response
+val process_get_definition_request
+  :  state: State.t
+  -> configuration: Configuration.t
+  -> request: Protocol.DefinitionRequest.t
+  -> response
 
 val process
   :  socket: Unix.File_descr.t

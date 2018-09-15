@@ -734,6 +734,22 @@ let process_type_check_request
   }
 
 
+let process_get_definition_request
+    ~state
+    ~configuration
+    ~request:{ DefinitionRequest.id; file; position } =
+  let response =
+    let open LanguageServer.Protocol in
+    let definition = LookupCache.find_definition ~state ~configuration file position in
+    TextDocumentDefinitionResponse.create ~id ~location:definition
+    |> TextDocumentDefinitionResponse.to_yojson
+    |> Yojson.Safe.to_string
+    |> (fun response -> LanguageServerProtocolResponse response)
+    |> Option.some
+  in
+  { state; response }
+
+
 let rec process
     ~socket
     ~state:({ State.environment; deferred_requests; errors; lock; connections; _ } as state)
@@ -826,17 +842,8 @@ let rec process
           in
           { state; response }
 
-      | GetDefinitionRequest { DefinitionRequest.id; file; position } ->
-          let response =
-            let open LanguageServer.Protocol in
-            let definition = LookupCache.find_definition ~state ~configuration file position in
-            TextDocumentDefinitionResponse.create ~id ~location:definition
-            |> TextDocumentDefinitionResponse.to_yojson
-            |> Yojson.Safe.to_string
-            |> (fun response -> LanguageServerProtocolResponse response)
-            |> Option.some
-          in
-          { state; response }
+      | GetDefinitionRequest request ->
+          process_get_definition_request ~state ~configuration ~request
 
       | HoverRequest { DefinitionRequest.id; file; position } ->
           let response =

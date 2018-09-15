@@ -43,6 +43,33 @@ let mock_server_state ?(sources = []) ?(errors = File.Handle.Table.create ()) ()
   }
 
 
+let initialize sources =
+  let configuration =
+    Configuration.create
+      ~project_root:(Path.current_working_directory ())
+      ()
+  in
+  let state =
+    let files = List.map sources ~f:write_file in
+    let scheduler = Scheduler.mock () in
+
+    (* Clear and re-populate ASTs in shared memory. *)
+    let handles = List.map files ~f:(File.handle ~configuration) in
+    Ast.SharedMemory.Sources.remove ~handles;
+    Service.Parser.parse_sources ~configuration ~scheduler ~files
+    |> ignore;
+
+    (* Initialize dependency map. *)
+    let source (path, content) =
+      let handle = File.Handle.create path in
+      parse ~qualifier:(Source.qualifier ~handle) ~handle:path content
+      |> Analysis.Preprocessing.qualify
+    in
+    mock_server_state ~sources:(List.map sources ~f:source) ()
+  in
+  configuration, state
+
+
 let test_process_client_shutdown_request _ =
   let assert_response id expected_response =
     let state = mock_server_state () in
@@ -187,35 +214,7 @@ let test_process_type_check_request context =
       () =
     let assert_response _ =
       let actual_errors, actual_deferred_requests =
-        let write_file (path, content) =
-          let content = trim_extra_indentation content in
-          let file = File.create ~content (mock_path path) in
-          File.write file;
-          file
-        in
-        let configuration =
-          Configuration.create
-            ~project_root:(Path.current_working_directory ())
-            ()
-        in
-        let state =
-          let files = List.map sources ~f:write_file in
-          let scheduler = Scheduler.mock () in
-
-          (* Clear and re-populate ASTs in shared memory. *)
-          let handles = List.map files ~f:(File.handle ~configuration) in
-          Ast.SharedMemory.Sources.remove ~handles;
-          Service.Parser.parse_sources ~configuration ~scheduler ~files
-          |> ignore;
-
-          (* Initialize dependency map. *)
-          let source (path, content) =
-            let handle = File.Handle.create path in
-            parse ~qualifier:(Source.qualifier ~handle) ~handle:path content
-            |> Analysis.Preprocessing.qualify
-          in
-          mock_server_state ~sources:(List.map sources ~f:source) ()
-        in
+        let configuration, state = initialize sources in
         let check = List.map check ~f:write_file in
         let request = { Protocol.TypeCheckRequest.update_environment_with = check; check } in
         Request.process_type_check_request ~state ~configuration ~request
@@ -317,6 +316,123 @@ let test_process_type_check_request context =
     ()
 
 
+let test_process_get_definition_request context =
+  let temporary_directory = OUnit2.bracket_tmpdir context in
+  let run_test _ =
+    let assert_response ~sources ?filename ~line ~column response =
+      let configuration, state = initialize sources in
+
+      let position = { Location.line; column } in
+      let request =
+        let file =
+          match filename with
+          | Some valid_filename ->
+              Path.create_relative
+                ~relative:valid_filename
+                ~root:(Path.current_working_directory ())
+              |> File.create
+          | _ ->
+              (* Create a bogus filename entry. *)
+              Path.create_relative
+                ~relative:"bogusfile.py"
+                ~root:(Path.create_absolute ~follow_symbolic_links:false "/bogus/dir")
+              |> File.create
+        in
+        { Protocol.DefinitionRequest.id = 0; file; position }
+      in
+      let actual_response =
+        let actual_response =
+          Request.process_get_definition_request
+            ~state
+            ~configuration
+            ~request
+        in
+        match actual_response with
+        | { Request.response = Some (Protocol.LanguageServerProtocolResponse response); _ } ->
+            begin
+              Yojson.Safe.from_string response
+            end
+        | _ -> failwith "Unexpected response."
+      in
+      let expected_response =
+        let open LanguageServer.Types in
+        let result =
+          let response_location
+              {
+                Ast.Location.path;
+                start = { Ast.Location.line = start_line; column = start_column };
+                stop = { Ast.Location.line = stop_line; column = stop_column };
+              } =
+            {
+              (* Temporary paths are OS-dependent. *)
+              Location.uri =
+                Path.uri
+                  (Path.create_relative
+                     ~root:(Path.create_absolute temporary_directory)
+                     ~relative:path);
+              range =
+                {
+                  start = { Position.line = start_line; character = start_column };
+                  end_ = { Position.line = stop_line; character = stop_column };
+                }
+            }
+          in
+          response
+          >>| response_location
+          |> Option.to_list
+        in
+        {
+          TextDocumentDefinitionResponse.jsonrpc = "2.0";
+          id = 0;
+          result = Some result;
+          error = None;
+        }
+        |> TextDocumentDefinitionResponse.to_yojson
+      in
+      let json_diff_printer format json =
+        Yojson.Safe.pretty_to_string json
+        |> Format.fprintf format "%s\n"
+      in
+      assert_equal
+        ~printer:Yojson.Safe.pretty_to_string
+        ~pp_diff:(diff ~print:json_diff_printer)
+        expected_response
+        actual_response
+    in
+
+    let sources =
+      [
+        "library.py", "def function() -> int: ...";
+        "client.py",
+        {|
+        from library import function
+        def foo() -> int:
+          return function()
+        |};
+      ]
+    in
+    (* Invalid request for a valid file. *)
+    assert_response
+      ~sources
+      ~filename:"client.py"
+      ~line:0
+      ~column:0
+      None;
+    (* Valid request for a valid file. *)
+    assert_response
+      ~sources
+      ~filename:"client.py"
+      ~line:4
+      ~column:9
+      (Some {
+          Location.path = "library.py";
+          start = { Location.line = 0; column = 0};
+          stop = { Location.line = 0; column = 26};
+        })
+  in
+  OUnit2.with_bracket_chdir context temporary_directory run_test
+
+
 let () =
   "request">:::
   [
@@ -324,5 +440,6 @@ let () =
     "process_type_query_request">::test_process_type_query_request;
     "process_display_type_errors_request">::test_process_display_type_errors_request;
     "process_type_check_request">::test_process_type_check_request;
+    "process_get_definition_request">::test_process_get_definition_request;
   ]
   |> Test.run_tests

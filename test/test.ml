@@ -299,6 +299,13 @@ let mock_path path =
   Path.create_relative ~root:(Path.current_working_directory ()) ~relative:path
 
 
+let write_file (path, content) =
+  let content = trim_extra_indentation content in
+  let file = File.create ~content (mock_path path) in
+  File.write file;
+  file
+
+
 (* Override `OUnit`s functions the return absolute paths. *)
 let bracket_tmpdir ?suffix context =
   bracket_tmpdir ?suffix context
