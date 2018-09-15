@@ -24,6 +24,7 @@ class Start(Reporting):
         self._terminal = arguments.terminal
         self._no_watchman = arguments.no_watchman
         self._number_of_workers = configuration.number_of_workers
+        self._save_initial_state_to = arguments.save_initial_state_to
 
     def _run(self) -> None:
         while True:
@@ -73,6 +74,10 @@ class Start(Reporting):
             flags.append("-use-watchman")
         if self._terminal:
             flags.append("-terminal")
+        if self._save_initial_state_to and os.path.isdir(
+            os.path.dirname(self._save_initial_state_to)
+        ):
+            flags.extend(["-save-initial-state-to", self._save_initial_state_to])
         flags.extend(
             [
                 "-workers",

@@ -151,3 +151,26 @@ class StartTest(unittest.TestCase):
                         "path1,path2",
                     ],
                 )
+
+        # Check save-initial-state-to.
+        arguments.no_watchman = False
+        arguments.save_initial_state_to = "/tmp"
+        command = commands.Start(arguments, configuration, analysis_directory)
+        self.assertEqual(
+            command._flags(),
+            [
+                "-project-root",
+                ".",
+                "-use-watchman",
+                "-save-initial-state-to",
+                "/tmp",
+                "-workers",
+                "5",
+                "-typeshed",
+                "stub",
+                "-expected-binary-version",
+                "hash",
+                "-search-path",
+                "path1,path2",
+            ],
+        )

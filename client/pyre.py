@@ -147,6 +147,11 @@ def main() -> int:
         type=readable_directory,
         help="Location of the typeshed stubs",
     )
+    parser.add_argument(
+        "--save-initial-state-to",
+        default=None,
+        help="Path to serialize pyre's initial state to.",
+    )
 
     # Subcommands.
     parsed_commands = parser.add_subparsers(
