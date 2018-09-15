@@ -19,6 +19,7 @@ val performance
   :  ?flush: bool
   -> ?randomly_log_every: int
   -> ?section:Log.section
+  -> ?category: string
   -> name: string
   -> timer: Timer.t
   -> ?integers: (string * int) list

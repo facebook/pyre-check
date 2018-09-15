@@ -279,18 +279,76 @@ module LookupCache = struct
     |> ignore
 
 
+  let log_lookup ~handle ~position ~timer ~name ~normals =
+    let normals =
+      let base_normals = [
+        "handle", File.Handle.show handle;
+        "position", Location.show_position position;
+      ]
+      in
+      normals
+      >>| (fun normals -> base_normals @ normals)
+      |> Option.value ~default:base_normals
+    in
+    Statistics.performance
+      ~section:`Event
+      ~category:"perfpipe_pyre_ide_integration"
+      ~name
+      ~timer
+      ~normals
+      ()
+
+
   let find_annotation ~state ~configuration file position =
+    let find_annotation_by_handle handle =
+      let timer = Timer.start () in
+      let annotation =
+        get_by_handle ~state ~file ~handle
+        >>= fun { table; source } ->
+        Lookup.get_annotation table ~position ~source
+      in
+      let normals =
+        annotation
+        >>| fun (location, annotation) ->
+        [
+          "resolved location", Location.Instantiated.to_string location;
+          "resolved annotation", Type.show annotation;
+        ]
+      in
+      log_lookup
+        ~handle
+        ~position
+        ~timer
+        ~name:"find annotation"
+        ~normals;
+      annotation
+    in
     handle ~configuration file
-    >>= fun handle -> get_by_handle ~state ~file ~handle
-    >>= fun { table; source } ->
-    Lookup.get_annotation table ~position ~source
+    >>= find_annotation_by_handle
 
 
   let find_definition ~state ~configuration file position =
+    let find_definition_by_handle handle =
+      let timer = Timer.start () in
+      let definition =
+        get_by_handle ~state ~file ~handle
+        >>= fun { table; source } ->
+        Lookup.get_definition table ~position ~source
+      in
+      let normals =
+        definition
+        >>| fun location -> ["resolved location", Location.Instantiated.to_string location]
+      in
+      log_lookup
+        ~handle
+        ~position
+        ~timer
+        ~name:"find definition"
+        ~normals;
+      definition
+    in
     handle ~configuration file
-    >>= fun handle -> get_by_handle ~state ~file ~handle
-    >>= fun { table; source } ->
-    Lookup.get_definition table ~position ~source
+    >>= find_definition_by_handle
 end
 
 

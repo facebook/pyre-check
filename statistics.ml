@@ -104,6 +104,7 @@ let performance
     ?(flush = false)
     ?(randomly_log_every = 1)
     ?(section = `Performance)
+    ?(category = "perfpipe_pyre_performance")
     ~name
     ~timer
     ?(integers = [])
@@ -115,7 +116,7 @@ let performance
     ~integers:(("elapsed_time", milliseconds) :: integers)
     ~normals:(("name", name) :: normals)
     ()
-  |> log ~flush ~randomly_log_every "perfpipe_pyre_performance"
+  |> log ~flush ~randomly_log_every category
 
 
 let coverage ?(flush = false) ~path ~coverage  () =

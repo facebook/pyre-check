@@ -14,6 +14,10 @@ type position = {
 [@@deriving compare, eq, sexp, show, hash]
 
 
+let show_position { line; column } =
+  Format.sprintf "%d:%d" line column
+
+
 type 'path location = {
   path: 'path;
   start: position;
