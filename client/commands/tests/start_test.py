@@ -47,62 +47,14 @@ class StartTest(unittest.TestCase):
             command.run()
             call_client.assert_called_once_with(command=commands.Start.NAME)
 
-        # Check start with watchman.
-        with patch.object(commands.Command, "_call_client") as call_client:
-            arguments.no_watchman = False
-            command = commands.Start(arguments, configuration, analysis_directory)
-            self.assertEqual(
-                command._flags(),
-                [
-                    "-project-root",
-                    ".",
-                    "-use-watchman",
-                    "-workers",
-                    "5",
-                    "-typeshed",
-                    "stub",
-                    "-expected-binary-version",
-                    "hash",
-                    "-search-path",
-                    "path1,path2",
-                ],
-            )
-            command.run()
-            call_client.assert_has_calls([call(command=commands.Start.NAME)])
-
-        # Check start with terminal.
-        with patch.object(commands.Command, "_call_client") as call_client:
-            arguments.no_watchman = True
-            arguments.terminal = True
-
-            command = commands.Start(arguments, configuration, analysis_directory)
-            self.assertEqual(
-                command._flags(),
-                [
-                    "-project-root",
-                    ".",
-                    "-terminal",
-                    "-workers",
-                    "5",
-                    "-typeshed",
-                    "stub",
-                    "-expected-binary-version",
-                    "hash",
-                    "-search-path",
-                    "path1,path2",
-                ],
-            )
-            command.run()
-            call_client.assert_called_once_with(command=commands.Start.NAME)
-
         # Shared analysis directories are prepared when starting.
         shared_analysis_directory = MagicMock()
         shared_analysis_directory.get_root = lambda: "."
         with patch.object(
             commands.Command, "_call_client"
         ) as call_client, patch.object(shared_analysis_directory, "prepare") as prepare:
-            arguments.no_watchman = True
-            arguments.terminal = False
+            arguments = mock_arguments(no_watchman=True)
+            configuration = mock_configuration(version_hash="hash")
             command = commands.Start(
                 arguments, configuration, shared_analysis_directory
             )
@@ -125,37 +77,76 @@ class StartTest(unittest.TestCase):
             call_client.assert_called_once_with(command=commands.Start.NAME)
             prepare.assert_called_once_with()
 
-        analysis_directory = AnalysisDirectory(".")
+    @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
+    def test_start_flags(self, get_directories_to_analyze):
+        # Check start with watchman.
+        arguments = mock_arguments()
+        configuration = mock_configuration(version_hash="hash")
+        command = commands.Start(arguments, configuration, AnalysisDirectory("."))
+        self.assertEqual(
+            command._flags(),
+            [
+                "-project-root",
+                ".",
+                "-use-watchman",
+                "-workers",
+                "5",
+                "-typeshed",
+                "stub",
+                "-expected-binary-version",
+                "hash",
+                "-search-path",
+                "path1,path2",
+            ],
+        )
+
+        arguments = mock_arguments(no_watchman=True, terminal=True)
+        configuration = mock_configuration(version_hash="hash")
+        command = commands.Start(arguments, configuration, AnalysisDirectory("."))
+        self.assertEqual(
+            command._flags(),
+            [
+                "-project-root",
+                ".",
+                "-terminal",
+                "-workers",
+                "5",
+                "-typeshed",
+                "stub",
+                "-expected-binary-version",
+                "hash",
+                "-search-path",
+                "path1,path2",
+            ],
+        )
+
         # Check filter directories.
-        with patch.object(commands.Command, "_call_client") as call_client:
-            arguments.no_watchman = True
-            command = commands.Start(arguments, configuration, analysis_directory)
-            with patch.object(
-                command, "_get_directories_to_analyze"
-            ) as get_directories:
-                get_directories.return_value = {"a", "b"}
-                self.assertEqual(
-                    command._flags(),
-                    [
-                        "-project-root",
-                        ".",
-                        "-filter-directories",
-                        "a;b",
-                        "-workers",
-                        "5",
-                        "-typeshed",
-                        "stub",
-                        "-expected-binary-version",
-                        "hash",
-                        "-search-path",
-                        "path1,path2",
-                    ],
-                )
+        arguments = mock_arguments(no_watchman=True)
+        configuration = mock_configuration(version_hash="hash")
+        command = commands.Start(arguments, configuration, AnalysisDirectory("."))
+        with patch.object(command, "_get_directories_to_analyze") as get_directories:
+            get_directories.return_value = {"a", "b"}
+            self.assertEqual(
+                command._flags(),
+                [
+                    "-project-root",
+                    ".",
+                    "-filter-directories",
+                    "a;b",
+                    "-workers",
+                    "5",
+                    "-typeshed",
+                    "stub",
+                    "-expected-binary-version",
+                    "hash",
+                    "-search-path",
+                    "path1,path2",
+                ],
+            )
 
         # Check save-initial-state-to.
-        arguments.no_watchman = False
-        arguments.save_initial_state_to = "/tmp"
-        command = commands.Start(arguments, configuration, analysis_directory)
+        arguments = mock_arguments(save_initial_state_to="/tmp")
+        command = commands.Start(arguments, configuration, AnalysisDirectory("."))
         self.assertEqual(
             command._flags(),
             [

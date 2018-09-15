@@ -12,7 +12,9 @@ from ... import commands  # noqa
 from ...filesystem import AnalysisDirectory
 
 
-def mock_arguments() -> MagicMock:
+def mock_arguments(
+    no_watchman=False, terminal=False, save_initial_state_to=None
+) -> MagicMock:
     arguments = MagicMock()
     arguments.current_directory = "."
     arguments.debug = False
@@ -22,18 +24,20 @@ def mock_arguments() -> MagicMock:
     arguments.log_identifier = None
     arguments.logger = None
     arguments.logging_sections = None
+    arguments.no_watchman = no_watchman
     arguments.original_directory = "/original/directory/"
-    arguments.save_initial_state_to = None
+    arguments.save_initial_state_to = save_initial_state_to
     arguments.sequential = False
     arguments.show_error_traces = False
     arguments.show_parse_errors = False
     arguments.strict = False
     arguments.taint_models_path = None
+    arguments.terminal = terminal
     arguments.verbose = False
     return arguments
 
 
-def mock_configuration() -> MagicMock:
+def mock_configuration(version_hash=None) -> MagicMock:
     configuration = MagicMock()
     configuration.analysis_directories = ["."]
     configuration.logger = None
@@ -41,6 +45,7 @@ def mock_configuration() -> MagicMock:
     configuration.search_path = ["path1", "path2"]
     configuration.taint_models_path = None
     configuration.typeshed = "stub"
+    configuration.version_hash = version_hash
     return configuration
 
 
