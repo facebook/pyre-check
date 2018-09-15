@@ -411,6 +411,12 @@ let test_process_get_definition_request context =
         |};
       ]
     in
+    (* Invalid request for an invalid file (no exception raised). *)
+    assert_response
+      ~sources
+      ~line:0
+      ~column:0
+      None;
     (* Invalid request for a valid file. *)
     assert_response
       ~sources

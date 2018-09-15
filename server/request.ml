@@ -237,8 +237,16 @@ type response = {
 
 
 module LookupCache = struct
-  let get ~state:{ lookups; environment; _ } ~configuration file =
-    let handle = File.handle ~configuration file in
+  let handle ~configuration file =
+    try
+      File.handle ~configuration file
+      |> Option.some
+    with File.NonexistentHandle error ->
+      Log.info "%s" error;
+      None
+
+
+  let get_by_handle ~state:{ lookups; environment; _ } ~file ~handle =
     let cache_read = String.Table.find lookups (File.Handle.show handle) in
     match cache_read with
     | Some _ ->
@@ -259,20 +267,28 @@ module LookupCache = struct
         lookup
 
 
+  let get ~state ~configuration file =
+    handle ~configuration file
+    >>= fun handle -> get_by_handle ~state ~file ~handle
+
+
   let evict ~state:{ lookups; _ } ~configuration file =
-    File.handle ~configuration file
-    |> File.Handle.show
-    |> String.Table.remove lookups
+    handle ~configuration file
+    >>| File.Handle.show
+    >>| String.Table.remove lookups
+    |> ignore
 
 
   let find_annotation ~state ~configuration file position =
-    get ~state ~configuration file
+    handle ~configuration file
+    >>= fun handle -> get_by_handle ~state ~file ~handle
     >>= fun { table; source } ->
     Lookup.get_annotation table ~position ~source
 
 
   let find_definition ~state ~configuration file position =
-    get ~state ~configuration file
+    handle ~configuration file
+    >>= fun handle -> get_by_handle ~state ~file ~handle
     >>= fun { table; source } ->
     Lookup.get_definition table ~position ~source
 end
