@@ -740,6 +740,60 @@ module State = struct
             state
         in
         { state; resolved = cast_annotation }
+    | Access [
+        Access.Identifier isinstance;
+        Access.Call {
+          Node.value = [
+            { Argument.value = expression; _ };
+            { Argument.value = annotations; _ };
+          ];
+          _;
+        }] when Identifier.show isinstance = "isinstance" ->
+        (* We special case type inference for `isinstance` in asserted, and the typeshed stubs are
+           imprecise (doesn't correctly declare the arguments as a recursive tuple. *)
+       let state =
+         let { state; _ } = forward_expression ~state ~expression in
+         let state, annotations =
+           let rec collect_types (state, collected) = function
+             | { Node.value = Tuple annotations; _ } ->
+                 let (state, new_annotations) =
+                   List.fold annotations ~init:(state, []) ~f:collect_types
+                 in
+                 state, new_annotations @ collected
+             | expression ->
+                 let { state; resolved } = forward_expression ~state ~expression in
+                 let new_annotations =
+                   match resolved with
+                   | Type.Tuple (Type.Bounded annotations) ->
+                       List.map
+                         annotations
+                         ~f:(fun annotation -> annotation, Node.location expression)
+                   | Type.Tuple (Type.Unbounded annotation)
+                   | annotation ->
+                       [annotation, Node.location expression]
+                 in
+                 state, new_annotations @ collected
+           in
+           collect_types (state, []) annotations
+         in
+         match List.find annotations ~f:(fun (annotation, _) -> not (Type.is_meta annotation)) with
+         | Some (non_meta, location) ->
+             Error.create
+               ~location
+               ~kind:(Error.IncompatibleParameterType {
+                   Error.name = None;
+                   position = 2;
+                   callee = Some [Access.Identifier isinstance];
+                   mismatch = {
+                     Error.actual = non_meta;
+                     expected = Type.meta Type.Object;
+                   }})
+               ~define
+             |> add_error ~state
+         | None ->
+             state
+       in
+       { state; resolved = Type.bool }
     | Access access ->
         (* Walk through the access. *)
         let _, state, resolved =

@@ -1436,6 +1436,15 @@ let test_check _ =
     |}
     [];
 
+  assert_type_errors "isinstance(1, (int, str))" [];
+  assert_type_errors "isinstance(1, (int, (int, str)))" [];
+  assert_type_errors
+    "isinstance(str, '')"
+    ["Incompatible parameter type [6]: Expected `typing.Type[typing.Any]` but got `str`."];
+  assert_type_errors
+    "isinstance(1, (int, ('', str)))"
+    ["Incompatible parameter type [6]: Expected `typing.Type[typing.Any]` but got `str`."];
+
   assert_type_errors
     {|
       _T = typing.TypeVar("_T")
