@@ -67,3 +67,4 @@ val widen
   -> next: Type.t
   -> iteration: int
   -> Type.t
+val is_instantiated: t -> Type.t -> bool

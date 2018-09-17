@@ -177,3 +177,7 @@ let meet { order; _ } =
 
 let widen { order; _ } =
   TypeOrder.widen order
+
+
+let is_instantiated { order; _ } =
+  TypeOrder.is_instantiated order

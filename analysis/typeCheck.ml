@@ -1271,6 +1271,13 @@ module State = struct
                       (Type.equal expected Type.Top || Type.equal expected Type.Object) &&
                       not (Type.equal resolved Type.Top || Type.equal resolved Type.ellipses)
                     in
+                    let is_type_alias access =
+                      let potential_annotation =
+                        Node.create_with_default_location (Expression.Access access)
+                      in
+                      Resolution.parse_annotation resolution potential_annotation
+                      |> Resolution.is_instantiated resolution
+                    in
                     match element with
                     | Attribute { attribute = access; origin = Module _; defined }
                       when defined && insufficiently_annotated ->
@@ -1306,7 +1313,8 @@ module State = struct
                         )
                     | Value
                       when Type.equal expected Type.Top &&
-                           not (Type.equal resolved Type.Top) ->
+                           not (Type.equal resolved Type.Top) &&
+                           not (is_type_alias access) ->
                         let global_location =
                           Resolution.global resolution (Expression.Access.delocalize access)
                           >>| Node.location

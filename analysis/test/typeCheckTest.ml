@@ -3100,6 +3100,12 @@ let test_check_init _ =
 
   assert_type_errors
     {|
+       alias = int
+    |}
+    [];
+
+  assert_type_errors
+    {|
       class Foo:
         def __new__(cls, x: int) -> None:
           pass
@@ -3232,8 +3238,6 @@ let test_check_attributes _ =
       b = 1
     |}
     [
-      "Missing global annotation [5]: Globally accessible variable `a` has type " ^
-      "`typing.Type[str]` but no type is specified.";
       "Missing global annotation [5]: Globally accessible variable `b` has type `int` but no " ^
       "type is specified.";
     ];
