@@ -104,24 +104,38 @@ class InitTest(unittest.TestCase):
             )
             self.assertEqual(analysis_directories, {"realpath(root/.)"})
 
-    @patch("os.path.realpath", return_value="realpath")
-    @patch("os.path.isfile", return_value=False)
     @patch("os.chdir")
-    def test_switch_root(self, chdir, isfile, realpath):
+    def test_switch_root(self, chdir):
         arguments = MagicMock()
-        arguments.local_configuration = None
-        switch_root(arguments)
-        self.assertEqual(arguments.local_configuration, None)
-
-        arguments.local_configuration = "fakepath"
-        switch_root(arguments)
-        self.assertEqual(arguments.local_configuration, "realpath")
-
-        arguments.local_configuration = None
-        with patch("os.getcwd", return_value="/a/b/c"):
-            isfile.side_effect = (
-                lambda directory: directory == "/a/b/.pyre_configuration.local"
-            )
+        with patch("os.path.realpath", return_value="realpath"), patch(
+            "os.path.isfile", return_value=False
+        ) as isfile, patch("os.chdir"):
+            arguments.local_configuration = None
             switch_root(arguments)
-            self.assertEqual(arguments.original_directory, "/a/b/c")
-            self.assertEqual(arguments.local_configuration_directory, "/a/b")
+            self.assertEqual(arguments.local_configuration, None)
+
+            arguments.local_configuration = "fakepath"
+            switch_root(arguments)
+            self.assertEqual(arguments.local_configuration, "realpath")
+
+            arguments.local_configuration = None
+            with patch("os.getcwd", return_value="/a/b/c"):
+                isfile.side_effect = (
+                    lambda directory: directory == "/a/b/.pyre_configuration.local"
+                )
+                switch_root(arguments)
+                self.assertEqual(arguments.original_directory, "/a/b/c")
+                self.assertEqual(arguments.local_configuration_directory, "/a/b")
+
+        with patch(
+            "tools.pyre.client._find_configuration_root"
+        ) as mock_find_configuation_root:
+            with patch("os.getcwd", return_value="/a/b"):
+                arguments.original_directory = "/a/b"
+                arguments.current_directory = "/a/b"
+                arguments.local_configuration_directory = "/a"
+                mock_find_configuation_root.side_effect = ["/a", "/a/b"]
+                switch_root(arguments)
+                self.assertEqual(arguments.original_directory, "/a/b")
+                self.assertEqual(arguments.current_directory, "/a/b")
+                self.assertEqual(arguments.local_configuration_directory, None)
