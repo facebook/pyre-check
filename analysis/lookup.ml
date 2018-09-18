@@ -231,14 +231,16 @@ let refine ~position ~source ?(take_default_on_miss = true) (location, entry) =
              || character = '_')
       in
       let find_word_range text ~column =
-        let column = Int.max 0 (Int.min column ((String.length text) - 1)) in
+        let length = String.length text in
+        let column = Int.max 0 (Int.min column (length - 1)) in
         let start_column =
           String.rfindi ~pos:(column - 1) text ~f:word_delimiter
           >>| (fun index -> index + 1)
           |> Option.value ~default:0
         in
         let stop_column =
-          String.lfindi ~pos:(column + 1) text ~f:word_delimiter
+          let search_column = Int.min (length - 1) (column + 1) in
+          String.lfindi ~pos:search_column text ~f:word_delimiter
           >>| (fun index -> index - 1)
           |> Option.value ~default:((String.length text) - 1)
         in

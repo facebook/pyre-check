@@ -422,7 +422,7 @@ let test_lookup_multiline_accesses _ =
     ~lookup
     ~source
     ~position:{ Location.line = 13; column = 13 }
-    ~annotation:(Some "test.py:13:12-14:13/int");
+    ~annotation:(Some "test.py:13:12-13:13/test.A");
   assert_annotation
     ~lookup
     ~source
@@ -443,6 +443,7 @@ let test_lookup_multiline_accesses _ =
 let test_lookup_out_of_bounds_accesses _ =
   let source =
     {|
+      1
       def foo() -> int:
           arbitrary["key"] = value
           return (
