@@ -1,5 +1,4 @@
 (copy_files# %VERSION%/*.ml{,i})
-(copy_files# %VERSION%/taint/test/*.ml{,i})
 
 
 (env
