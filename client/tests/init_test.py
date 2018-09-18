@@ -8,6 +8,7 @@ from unittest.mock import MagicMock, patch
 
 from .. import (
     EnvironmentException,
+    __name__ as client_name,
     _find_configuration_root,
     buck,
     resolve_analysis_directories,
@@ -128,7 +129,7 @@ class InitTest(unittest.TestCase):
                 self.assertEqual(arguments.local_configuration_directory, "/a/b")
 
         with patch(
-            "tools.pyre.client._find_configuration_root"
+            "{}._find_configuration_root".format(client_name)
         ) as mock_find_configuation_root:
             with patch("os.getcwd", return_value="/a/b"):
                 arguments.original_directory = "/a/b"
