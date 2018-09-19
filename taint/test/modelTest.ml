@@ -93,15 +93,6 @@ let assert_model ~model_source ~expect =
     models
 
 
-let assert_invalid_model ~model_source ~expect =
-  let error_message =
-    match Model.create ~model_source with
-    | Error error -> Base.Error.to_string_hum error
-    | _ -> failwith "Invalid model should result in error"
-  in
-  assert_equal ~printer:ident expect error_message
-
-
 let test_source_models _ =
   assert_model
     ~model_source:"def taint() -> TaintSource[TestSource]: ..."
@@ -186,6 +177,15 @@ let test_taint_in_taint_out_models _ =
 
 
 let test_invalid_models _ =
+  let assert_invalid_model ~model_source ~expect =
+    let error_message =
+      match Model.create ~model_source with
+      | Error error -> Base.Error.to_string_hum error
+      | _ -> failwith "Invalid model should result in error"
+    in
+    assert_equal ~printer:ident expect error_message
+  in
+
   assert_invalid_model
     ~model_source:"def sink(parameter: TaintSink[Unsupported]): ..."
     ~expect:"Unsupported taint sink Unsupported";
