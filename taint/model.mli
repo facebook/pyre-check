@@ -14,5 +14,4 @@ type t = {
 }
 [@@deriving show, sexp]
 
-
 val create: model_source: string -> t list Or_error.t
