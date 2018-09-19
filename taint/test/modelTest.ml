@@ -86,7 +86,11 @@ let assert_model ~model_source ~expect =
     |> (fun model -> { call_target; model })
   in
   let expect_models = List.map expect ~f:create_model in
-  let models = Model.create ~model_source |> Or_error.ok_exn in
+  let models =
+    Test.trim_extra_indentation model_source
+    |> (fun model_source -> Model.create ~model_source)
+    |> Or_error.ok_exn
+  in
   assert_equal
     ~printer:(fun models -> Sexp.to_string [%message (models: Model.t list)])
     expect_models
@@ -108,7 +112,11 @@ let test_source_models _ =
 
 let test_sink_models _ =
   assert_model
-    ~model_source:"def sink(parameter: TaintSink[TestSink]): ..."
+    ~model_source:
+      {|
+        def sink(parameter: TaintSink[TestSink]):
+          ...
+      |}
     ~expect:[
       {
         define_name = "sink";

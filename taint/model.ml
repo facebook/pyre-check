@@ -113,7 +113,6 @@ let create ~model_source =
       | { Node.value = Define define; _ } -> Some define
       | _ -> None
     in
-    (* TODO(T32372231) *)
     String.split ~on:'\n' model_source
     |> Parser.parse
     |> List.filter_map ~f:filter_define
