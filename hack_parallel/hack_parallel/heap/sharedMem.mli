@@ -71,12 +71,12 @@ val init_done: unit -> unit
 (*****************************************************************************)
 (* Serializes the dependency table and writes it to a file *)
 (*****************************************************************************)
-val save_dep_table_sqlite: string -> int
+val save_dep_table_sqlite: string -> string -> int
 
 (*****************************************************************************)
 (* Loads the dependency table by reading from a file *)
 (*****************************************************************************)
-val load_dep_table_sqlite: string -> int
+val load_dep_table_sqlite: string -> bool -> int
 
 
 (*****************************************************************************)
@@ -154,48 +154,36 @@ module type NoCache = sig
   (* Safe for concurrent writes, the first writer wins, the second write
    * is dismissed.
   *)
-  val add: key -> t -> unit
-
+  val add              : key -> t -> unit
   (* Safe for concurrent reads. Safe for interleaved reads and mutations,
    * provided the code runs on Intel architectures.
   *)
-  val get: key -> t option
-  val get_old: key -> t option
-  val get_old_batch: KeySet.t -> t option KeyMap.t
-  val remove_old_batch: KeySet.t -> unit
-  val find_unsafe: key -> t
-  val get_batch: KeySet.t -> t option KeyMap.t
-  val remove_batch: KeySet.t -> unit
-
+  val get              : key -> t option
+  val get_old          : key -> t option
+  val get_old_batch    : KeySet.t -> t option KeyMap.t
+  val remove_old_batch : KeySet.t -> unit
+  val find_unsafe      : key -> t
+  val get_batch        : KeySet.t -> t option KeyMap.t
+  val remove_batch     : KeySet.t -> unit
+  val string_of_key    : key -> string
   (* Safe for concurrent access. *)
-  val mem: key -> bool
-
+  val mem              : key -> bool
+  val mem_old          : key -> bool
   (* This function takes the elements present in the set and keep the "old"
    * version in a separate heap. This is useful when we want to compare
    * what has changed. We will be in a situation for type-checking
    * (cf typing/typing_redecl_service.ml) where we want to compare the type
    * of a class in the previous environment vs the current type.
   *)
-  val oldify_batch: KeySet.t -> unit
+  val oldify_batch     : KeySet.t -> unit
   (* Reverse operation of oldify *)
-  val revive_batch: KeySet.t -> unit
+  val revive_batch     : KeySet.t -> unit
 
-  (**
-   * When a new local change set is pushed, changes will not be reflected in
-   * the shared memory until the local changes are popped off.
-   **)
   module LocalChanges : sig
-    (** Push a new local change environment **)
+    val has_local_changes : unit -> bool
     val push_stack : unit -> unit
-    (** Pop off the last local change environment **)
     val pop_stack : unit -> unit
-    (** Reverts any changes associated with the set of keys **)
     val revert_batch : KeySet.t -> unit
-    (**
-     * Applies the current changes associated with the set of keys to the
-     * previous environment. If there are no other active local changes
-     * this will perform the actions on shared memory.
-     **)
     val commit_batch : KeySet.t -> unit
     val revert_all : unit -> unit
     val commit_all : unit -> unit
@@ -205,6 +193,7 @@ end
 module type WithCache = sig
   include NoCache
   val write_through : key -> t -> unit
+  val get_no_cache: key -> t option
 end
 
 module type UserKeyType = sig
@@ -237,6 +226,9 @@ module type CacheType = sig
   val get: key -> value option
   val remove: key -> unit
   val clear: unit -> unit
+
+  val string_of_key : key -> string
+  val get_size : unit -> int
 end
 
 module LocalCache :
