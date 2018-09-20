@@ -710,4 +710,4 @@ let () =
     "did_save_notification">::test_did_save_notification;
     "request_parser">::test_request_parser;
   ]
-  |> Test.run_tests
+  |> Test.run

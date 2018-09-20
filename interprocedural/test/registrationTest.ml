@@ -57,4 +57,4 @@ let () =
   "interproceduralRegistration">:::[
     "test_simple_analysis">::test_simple_analysis;
   ]
-  |> Test.run_tests
+  |> Test.run

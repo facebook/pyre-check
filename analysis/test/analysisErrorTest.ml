@@ -549,4 +549,4 @@ let () =
     "filter">::test_filter;
     "suppress">::test_suppress;
   ]
-  |> Test.run_tests
+  |> Test.run

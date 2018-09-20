@@ -214,4 +214,4 @@ let () =
     "test_no_errors">::test_no_errors;
     "test_errors">::test_errors;
   ]
-  |> Test.run_tests
+  |> Test.run

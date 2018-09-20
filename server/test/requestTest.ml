@@ -448,4 +448,4 @@ let () =
     "process_type_check_request">::test_process_type_check_request;
     "process_get_definition_request">::test_process_get_definition_request;
   ]
-  |> Test.run_tests
+  |> Test.run

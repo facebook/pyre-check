@@ -154,4 +154,4 @@ let () =
     "join">::test_join;
     "meet">::test_meet;
   ]
-  |> Test.run_tests
+  |> Test.run

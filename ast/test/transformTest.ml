@@ -505,4 +505,4 @@ let () =
     "statement_double_counter">::test_double_count;
     "statement_transformer">::test_statement_transformer;
   ]
-  |> Test.run_tests
+  |> Test.run

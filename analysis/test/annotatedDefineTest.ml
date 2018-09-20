@@ -108,4 +108,4 @@ let () =
     "parent_definition">::test_parent_definition;
     "method_definition">::test_method_definition;
   ]
-  |> Test.run_tests;
+  |> Test.run;

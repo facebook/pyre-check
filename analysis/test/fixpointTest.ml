@@ -188,4 +188,4 @@ let () =
     "join">::test_join;
     "widening">::test_widening;
   ]
-  |> Test.run_tests
+  |> Test.run

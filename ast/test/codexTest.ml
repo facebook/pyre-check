@@ -217,4 +217,4 @@ let () =
     "arguments">::test_arguments;
     "source">::test_source;
   ]
-  |> Test.run_tests
+  |> Test.run

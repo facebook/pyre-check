@@ -177,4 +177,4 @@ let () =
     "transitive_dependent_of_list">::test_transitive_dependent_of_list;
     "dependent_of_list">::test_dependent_of_list;
   ]
-  |> Test.run_tests
+  |> Test.run

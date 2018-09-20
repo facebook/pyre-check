@@ -370,10 +370,10 @@ let () =
   "metadata">:::[
     "parse">::test_parse;
   ]
-  |> Test.run_tests;
+  |> Test.run;
   "source">:::[
     "qualifier">::test_qualifier;
     "expand_relative_import">::test_expand_relative_import;
     "signature_hash">::test_signature_hash;
   ]
-  |> Test.run_tests
+  |> Test.run

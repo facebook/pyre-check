@@ -1264,4 +1264,4 @@ let () =
     "defines">::test_defines;
     "classes">::test_classes;
   ]
-  |> Test.run_tests
+  |> Test.run

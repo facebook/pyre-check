@@ -98,4 +98,4 @@ let () =
     "flatten">::test_flatten;
     "type_query_json">::test_type_query_json;
   ]
-  |> Test.run_tests
+  |> Test.run

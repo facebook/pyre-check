@@ -40,4 +40,4 @@ let () =
   "coverage">:::[
     "compute_coverage">::test_coverage;
   ]
-  |> Test.run_tests
+  |> Test.run

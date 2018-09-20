@@ -82,4 +82,4 @@ let () =
   "configuration">:::[
     "equal">::test_equal;
   ]
-  |> Test.run_tests
+  |> Test.run

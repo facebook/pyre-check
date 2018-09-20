@@ -195,4 +195,4 @@ let () =
     "test_obscure">::test_unknown_function_analysis;
     "test_meta_data">::test_meta_data;
   ]
-  |> Test.run_tests
+  |> Test.run

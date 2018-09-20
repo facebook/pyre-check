@@ -260,4 +260,4 @@ let () =
     "statement_visitor">::test_statement_visitor;
     "statement_visitor_source">::test_statement_visitor_source;
   ]
-  |> Test.run_tests
+  |> Test.run

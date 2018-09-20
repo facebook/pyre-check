@@ -413,4 +413,4 @@ let () =
     "select">::test_select;
     "determine">::test_determine;
   ]
-  |> Test.run_tests;
+  |> Test.run;

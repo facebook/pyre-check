@@ -54,4 +54,4 @@ let () =
   "node">:::[
     "equality">::test_equality;
   ]
-  |> Test.run_tests
+  |> Test.run

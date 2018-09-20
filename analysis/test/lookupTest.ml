@@ -744,4 +744,4 @@ let () =
     "lookup_definitions">::test_lookup_definitions;
     "lookup_definitions_instances">::test_lookup_definitions_instances;
   ]
-  |> Test.run_tests
+  |> Test.run

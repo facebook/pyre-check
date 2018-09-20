@@ -1506,7 +1506,7 @@ let () =
     "meet">::test_meet;
     "supertypes">::test_supertypes;
   ]
-  |> Test.run_tests;
+  |> Test.run;
   "environment">:::[
     "class_definition">::test_class_definition;
     "connect_definition">::test_connect_definition;
@@ -1524,4 +1524,4 @@ let () =
     "register_functions">::test_register_functions;
     "register_globals">::test_register_globals;
   ]
-  |> Test.run_tests
+  |> Test.run

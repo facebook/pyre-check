@@ -81,4 +81,4 @@ let () =
     "lines">::test_lines;
     "handle">::test_handle;
   ]
-  |> Test.run_tests
+  |> Test.run

@@ -26,7 +26,7 @@ let () =
   initialize ()
 
 
-let run_tests tests =
+let run tests =
   let rec bracket test =
     let bracket_test test context =
       initialize ();

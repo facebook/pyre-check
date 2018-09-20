@@ -421,4 +421,4 @@ let () =
     "name_and_arguments">::test_name_and_arguments;
     "is_assert_function">::test_is_assert_function;
   ]
-  |> Test.run_tests
+  |> Test.run

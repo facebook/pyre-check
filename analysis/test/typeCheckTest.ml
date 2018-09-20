@@ -6269,4 +6269,4 @@ let () =
     "check_format_string">::test_format_string;
     "check_dataclass">::test_check_data_class;
   ]
-  |> Test.run_tests
+  |> Test.run

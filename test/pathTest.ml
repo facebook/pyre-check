@@ -213,4 +213,4 @@ let () =
     "link">::test_link;
     "remove">::test_remove;
   ]
-  |> Test.run_tests
+  |> Test.run

@@ -222,4 +222,4 @@ let () =
     "taint_in_taint_out_models">::test_taint_in_taint_out_models;
     "invalid_models">::test_invalid_models;
   ]
-  |> Test.run_tests
+  |> Test.run

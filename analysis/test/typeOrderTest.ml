@@ -1122,7 +1122,7 @@ let () =
   "builder">:::[
     "default">::test_default;
   ]
-  |> Test.run_tests;
+  |> Test.run;
   "order">:::[
     "method_resolution_order_linearize">::test_method_resolution_order_linearize;
     "successors">::test_successors;
@@ -1141,4 +1141,4 @@ let () =
     "check_integrity">::test_check_integrity;
     "to_dot">::test_to_dot;
   ]
-  |> Test.run_tests
+  |> Test.run

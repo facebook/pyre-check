@@ -295,4 +295,4 @@ let () =
   "taint">:::[
     "fixpoint">::test_fixpoint;
   ]
-  |> Test.run_tests
+  |> Test.run

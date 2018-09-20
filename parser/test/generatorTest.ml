@@ -4054,4 +4054,4 @@ let () =
     "nonlocal">::test_nonlocal;
     "ellipsis">::test_ellipsis;
   ]
-  |> Test.run_tests
+  |> Test.run

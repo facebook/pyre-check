@@ -209,4 +209,4 @@ let () =
   "typeChecker">:::[
     "ignore_lines">::ignore_lines_test;
   ]
-  |> Test.run_tests
+  |> Test.run
