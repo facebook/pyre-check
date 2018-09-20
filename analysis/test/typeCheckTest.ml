@@ -5238,7 +5238,10 @@ let test_check_async _ =
       def foo(c: C) -> int:
         return (await c)
     |}
-    ["Incompatible return type [7]: Expected `int` but got `unknown`."];
+    [
+      "Missing type parameters [24]: Generic type `C` expects 1 type parameters.";
+      "Incompatible return type [7]: Expected `int` but got `unknown`.";
+    ];
 
   assert_type_errors
     {|
@@ -5994,6 +5997,33 @@ let test_check_undefined_type _ =
     ]
 
 
+let test_check_missing_type_parameters _ =
+  assert_type_errors
+    {|
+      T = typing.TypeVar("_T")
+      class C(typing.Generic[T]): ...
+      def f(c: C) -> None:
+        return None
+    |}
+    ["Missing type parameters [24]: Generic type `C` expects 1 type parameters."];
+  assert_type_errors
+    {|
+      T = typing.TypeVar("_T")
+      class C(typing.Generic[T]): ...
+      def f(c: typing.List[C]) -> None:
+        return None
+    |}
+    ["Missing type parameters [24]: Generic type `C` expects 1 type parameters."];
+  assert_type_errors
+    {|
+      T = typing.TypeVar("_T")
+      class C(typing.Generic[T]): ...
+      def f() -> typing.List[C]:
+        return []
+    |}
+    ["Missing type parameters [24]: Generic type `C` expects 1 type parameters."]
+
+
 let test_environment _ =
   (* Type aliases in signatures are resolved. *)
   assert_type_errors
@@ -6225,6 +6255,7 @@ let () =
     "check_callables">::test_check_callables;
     "check_assert_functions">::test_check_assert_functions;
     "check_undefined_type">::test_check_undefined_type;
+    "check_missing_type_parameters">::test_check_missing_type_parameters;
     "environment">::test_environment;
     "scheduling">::test_scheduling;
     "check_format_string">::test_format_string;

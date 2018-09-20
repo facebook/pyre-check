@@ -409,11 +409,47 @@ module State = struct
       ~resolution
       ({
         Node.location;
-        value = ({ Define.parent; parameters; _ } as define);
+        value = ({ Define.parent; parameters; return_annotation; _ } as define);
       } as define_node) =
     let resolution = Resolution.with_parent resolution ~parent in
     let { resolution; errors; _ } as initial =
       create ~configuration ~resolution ~define:define_node ()
+    in
+    let check_annotation errors annotation =
+      let f errors annotation =
+        match annotation with
+        | Type.Primitive _ ->
+            let generics =
+              Resolution.class_definition resolution annotation
+              >>| Annotated.Class.create
+              >>| Annotated.Class.generics ~resolution
+              |> Option.value ~default:[]
+            in
+            if not (List.is_empty generics) then
+              let error =
+                Error.create
+                  ~location
+                  ~kind:(Error.MissingTypeParameters {
+                      Error.annotation;
+                      number_of_parameters = List.length generics;
+                    })
+                  ~define:define_node
+              in
+              Map.set ~key:location ~data:error errors
+            else
+              errors
+        | _ ->
+            errors
+      in
+      let primitives = Type.primitives annotation in
+      List.fold primitives ~f ~init:errors
+    in
+    (* Check return annotation. *)
+    let errors =
+      return_annotation
+      >>| Resolution.parse_annotation resolution
+      >>| check_annotation errors
+      |> Option.value ~default:errors
     in
     (* Check parameters. *)
     let annotations, errors =
@@ -466,19 +502,27 @@ module State = struct
                   Annotation.create annotation,
                   Map.set ~key:location ~data:error errors
                 in
+                let annotation, errors =
+                  match annotation with
+                  | Some annotation ->
+                      let annotation = Resolution.parse_annotation resolution annotation in
+                      Some annotation, check_annotation errors annotation
+                  | None ->
+                      None, errors
+                in
                 begin
                   match value, annotation with
                   | Some value, Some annotation when
-                      Type.equal (Resolution.parse_annotation resolution annotation) Type.Object ->
+                      Type.equal annotation Type.Object ->
                       add_missing_parameter_error value ~due_to_any:true
                   | Some value, None ->
                       add_missing_parameter_error value ~due_to_any:false
                   | _, Some annotation ->
                       let annotation =
-                        match Resolution.parse_annotation resolution annotation with
+                        match annotation with
                         | Type.Variable { Type.constraints = Type.Explicit constraints; _ } ->
                             Type.union constraints
-                        | annotation ->
+                        | _ ->
                             annotation
                       in
                       Annotation.create_immutable ~global:false annotation,
@@ -2094,7 +2138,6 @@ let check
         end;
       fixpoint
     in
-
     try
       let exit =
         let cfg = Cfg.create define in

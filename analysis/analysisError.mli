@@ -141,6 +141,13 @@ type unpack = {
 [@@deriving compare, eq, sexp, show, hash]
 
 
+type missing_type_parameters = {
+  annotation: Type.t;
+  number_of_parameters: int;
+}
+[@@deriving compare, eq, sexp, show, hash]
+
+
 type kind =
   | IncompatibleAwaitableType of Type.t
   | IncompatibleParameterType of parameter_mismatch
@@ -154,6 +161,7 @@ type kind =
   | MissingGlobalAnnotation of missing_annotation
   | MissingParameterAnnotation of missing_parameter
   | MissingReturnAnnotation of missing_return
+  | MissingTypeParameters of missing_type_parameters
   | RedundantCast of Type.t
   | RevealedType of revealed_type
   | TooManyArguments of too_many_arguments

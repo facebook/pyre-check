@@ -176,6 +176,7 @@ val is_type_alias: t -> bool
 val is_not_instantiated: t -> bool
 
 val variables: t -> t list
+val primitives: t -> t list
 (* Does not contain `Variable`. *)
 val is_resolved: t -> bool
 

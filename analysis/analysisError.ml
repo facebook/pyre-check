@@ -163,6 +163,13 @@ type unpack = {
 [@@deriving compare, eq, sexp, show, hash]
 
 
+type missing_type_parameters = {
+  annotation: Type.t;
+  number_of_parameters: int;
+}
+[@@deriving compare, eq, sexp, show, hash]
+
+
 type kind =
   | IncompatibleAwaitableType of Type.t
   | IncompatibleParameterType of parameter_mismatch
@@ -176,6 +183,7 @@ type kind =
   | MissingGlobalAnnotation of missing_annotation
   | MissingParameterAnnotation of missing_parameter
   | MissingReturnAnnotation of missing_return
+  | MissingTypeParameters of missing_type_parameters
   | RedundantCast of Type.t
   | RevealedType of revealed_type
   | TooManyArguments of too_many_arguments
@@ -219,6 +227,7 @@ let code = function
   | UndefinedImport _ -> 21
   | RedundantCast _ -> 22
   | Unpack _ -> 23
+  | MissingTypeParameters _ -> 24
 
 
 let name = function
@@ -234,6 +243,7 @@ let name = function
   | MissingGlobalAnnotation _ -> "Missing global annotation"
   | MissingParameterAnnotation _ -> "Missing parameter annotation"
   | MissingReturnAnnotation _ -> "Missing return annotation"
+  | MissingTypeParameters _ -> "Missing type parameters"
   | RevealedType _ -> "Revealed type"
   | RedundantCast _ -> "Redundant cast"
   | TooManyArguments _ -> "Too many arguments"
@@ -404,6 +414,13 @@ let messages ~detailed:_ ~define location kind =
               evidence_string
           ]
       end
+  | MissingTypeParameters { annotation; number_of_parameters } ->
+      [
+        Format.asprintf
+          "Generic type `%a` expects %d type parameters."
+          Type.pp annotation
+          number_of_parameters;
+      ]
   | IncompatibleParameterType { name; position; callee; mismatch = { actual; expected } } ->
       let evidence =
         let parameter =
@@ -795,6 +812,7 @@ let due_to_analysis_limitations { kind; _ } =
   | MissingGlobalAnnotation { annotation = actual; _ }
   | MissingParameterAnnotation { annotation = actual; _ }
   | MissingReturnAnnotation { annotation = actual; _ }
+  | MissingTypeParameters { annotation = actual; _ }
   | RedundantCast actual
   | UninitializedAttribute { mismatch = {actual; _ }; _ }->
       Type.is_unknown actual ||
@@ -855,6 +873,7 @@ let due_to_mismatch_with_any { kind; _ } =
   | MissingGlobalAnnotation _
   | MissingParameterAnnotation _
   | MissingReturnAnnotation _
+  | MissingTypeParameters _
   | RedundantCast _
   | RevealedType _
   | IncompatibleConstructorAnnotation _
@@ -878,6 +897,10 @@ let less_or_equal ~resolution left right =
   begin
     match left.kind, right.kind with
     | IncompatibleAwaitableType left, IncompatibleAwaitableType right ->
+        Resolution.less_or_equal resolution ~left ~right
+    | MissingTypeParameters { annotation = left; number_of_parameters = left_parameters },
+      MissingTypeParameters { annotation = right; number_of_parameters = right_parameters }
+      when left_parameters = right_parameters ->
         Resolution.less_or_equal resolution ~left ~right
     | MissingArgument left, MissingArgument right ->
         equal_missing_argument left right
@@ -1003,6 +1026,13 @@ let join ~resolution left right =
     | MissingGlobalAnnotation left, MissingGlobalAnnotation right
       when Access.equal left.name right.name ->
         MissingGlobalAnnotation (join_missing_annotation left right)
+    | MissingTypeParameters { annotation = left; number_of_parameters = left_parameters },
+      MissingTypeParameters { annotation = right; number_of_parameters = right_parameters }
+      when left_parameters = right_parameters ->
+        MissingTypeParameters {
+          annotation = Resolution.join resolution left right;
+          number_of_parameters = left_parameters;
+        }
     | RedundantCast left, RedundantCast right ->
         RedundantCast (Resolution.join resolution left right)
     | RevealedType left, RevealedType right
@@ -1301,6 +1331,7 @@ let suppress ~mode error =
       | IncompatibleConstructorAnnotation _
       | MissingParameterAnnotation _
       | MissingReturnAnnotation _
+      | MissingTypeParameters _
       | UndefinedAttribute _
       | UndefinedName _
       | UndefinedImport _
@@ -1418,6 +1449,8 @@ let dequalify
         MissingGlobalAnnotation {
           immutable_type with  annotation = dequalify annotation;
         }
+    | MissingTypeParameters { annotation; number_of_parameters } ->
+        MissingTypeParameters { annotation = dequalify annotation; number_of_parameters }
     | RedundantCast annotation ->
         RedundantCast (dequalify annotation)
     | RevealedType { expression; annotation } ->

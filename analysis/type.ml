@@ -1285,6 +1285,53 @@ let rec variables = function
       []
 
 
+let rec primitives annotation =
+  match annotation with
+  | Primitive _ ->
+      [annotation]
+  | Callable { overloads; _ } ->
+      let overload_primitives { annotation; parameters } =
+        match parameters with
+        | Defined parameters ->
+            let parameter = function
+              | Parameter.Anonymous { Parameter.annotation; _ }
+              | Parameter.Named { Parameter.annotation; _ } ->
+                  primitives annotation
+              | Parameter.Variable _
+              | Parameter.Keywords _ ->
+                  []
+            in
+            (primitives annotation) @ List.concat_map ~f:parameter parameters
+        | Undefined ->
+            primitives annotation
+      in
+      List.concat_map overloads ~f:overload_primitives
+
+  | Optional annotation
+  | Tuple (Unbounded annotation) ->
+      primitives annotation
+
+  | Variable { constraints; _ } ->
+      begin
+        match constraints with
+        | Bound bound -> primitives bound
+        | Explicit constraints ->
+            List.concat_map constraints ~f:primitives
+        | Unconstrained ->
+            []
+      end
+
+  | Parametric { parameters; _ }
+  | Tuple (Bounded parameters)
+  | Union parameters ->
+      List.concat_map parameters ~f:primitives
+  | Bottom
+  | Deleted
+  | Top
+  | Object ->
+      []
+
+
 let is_resolved annotation =
   List.is_empty (variables annotation)
 

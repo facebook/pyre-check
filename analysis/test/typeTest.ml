@@ -433,6 +433,70 @@ let test_union _ =
     (Type.union [Type.float; Type.string; Type.bytes])
 
 
+let test_primitives _ =
+  assert_equal
+    []
+    (Type.primitives (Type.callable ~annotation:Type.Top ()));
+  assert_equal
+    [Type.integer]
+    (Type.primitives (Type.callable ~annotation:Type.integer ()));
+
+  assert_equal
+    []
+    (Type.primitives (Type.optional Type.Top));
+  assert_equal
+    [Type.integer]
+    (Type.primitives (Type.optional Type.integer));
+
+  assert_equal
+    []
+    (Type.primitives (Type.Tuple (Type.Unbounded Type.Top)));
+  assert_equal
+    [Type.integer]
+    (Type.primitives (Type.Tuple (Type.Unbounded Type.integer)));
+
+  assert_equal
+    []
+    (Type.primitives (Type.variable ~constraints:(Type.Explicit [Type.Top]) "T"));
+  assert_equal
+    [Type.integer]
+    (Type.primitives (Type.variable ~constraints:(Type.Explicit [Type.integer]) "T"));
+
+  assert_equal
+    [Type.integer]
+    (Type.primitives (Type.parametric "parametric" [Type.integer; Type.Top]));
+  assert_equal
+    [Type.integer; Type.string]
+    (Type.primitives (Type.parametric "parametric" [Type.integer; Type.string]));
+
+  assert_equal
+    [Type.string]
+    (Type.primitives (Type.tuple [Type.Top; Type.string]));
+  assert_equal
+    [Type.integer; Type.string]
+    (Type.primitives (Type.tuple [Type.integer; Type.string]));
+
+  assert_equal
+    [Type.integer]
+    (Type.primitives (Type.union [Type.integer; Type.Top]));
+  assert_equal
+    [Type.integer; Type.string]
+    (Type.primitives (Type.union [Type.integer; Type.string]));
+
+  assert_equal
+    []
+    (Type.primitives Type.Top);
+  assert_equal
+    []
+    (Type.primitives Type.Bottom);
+  assert_equal
+    [Type.integer]
+    (Type.primitives Type.integer);
+  assert_equal
+    []
+    (Type.primitives Type.Object)
+
+
 let test_exists _ =
   let top_exists = Type.exists ~predicate:(function | Type.Top -> true | _ -> false) in
 
@@ -862,6 +926,7 @@ let () =
     "instantiate">::test_instantiate;
     "expression">::test_expression;
     "union">::test_union;
+    "primitives">::test_primitives;
     "exists">::test_exists;
     "is_async_generator">::test_is_generator;
     "contains_callable">::test_contains_callable;
