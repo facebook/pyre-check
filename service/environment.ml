@@ -487,7 +487,7 @@ let populate_shared_memory
 
     add_table FunctionDefinitions.write_through function_definitions;
     add_table ClassDefinitions.write_through class_definitions;
-    add_table Aliases.write_through aliases;
+    add_table Aliases.add aliases;
     add_table Globals.write_through globals;
     add_table Dependents.write_through dependents;
     add_table FunctionKeys.write_through (Hashtbl.map ~f:Hash_set.to_list function_keys);

@@ -52,6 +52,6 @@ module ModeValue = struct
 end
 
 
-module IgnoreLines = SharedMemory.WithCache (LocationKey) (IgnoreValue)
-module IgnoreKeys = SharedMemory.WithCache (StringKey) (LocationListValue)
-module ErrorModes = SharedMemory.WithCache (FileHandleKey) (ModeValue)
+module IgnoreLines = SharedMemory.NoCache (LocationKey) (IgnoreValue)
+module IgnoreKeys = SharedMemory.NoCache (StringKey) (LocationListValue)
+module ErrorModes = SharedMemory.NoCache (FileHandleKey) (ModeValue)

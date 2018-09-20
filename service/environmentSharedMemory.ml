@@ -163,7 +163,7 @@ module FunctionDefinitions = SharedMemory.WithCache (AccessKey) (FunctionValue)
 
 module ClassDefinitions = SharedMemory.WithCache (TypeKey) (ClassValue)
 
-module Aliases = SharedMemory.WithCache (TypeKey) (AliasValue)
+module Aliases = SharedMemory.NoCache (TypeKey) (AliasValue)
 
 module Globals = SharedMemory.WithCache (AccessKey) (GlobalValue)
 
