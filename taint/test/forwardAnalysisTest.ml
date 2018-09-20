@@ -23,10 +23,9 @@ type source_expectation = {
 }
 
 
-let assert_taint ?qualifier ~source ~expect =
-  let qualifier = Option.map qualifier ~f:Access.create in
+let assert_taint ?(qualifier = Access.create "qualifier") ~source ~expect () =
   let source =
-    parse ?qualifier source
+    parse ~qualifier source
     |> Preprocessing.preprocess
   in
   let configuration = Test.mock_configuration in
@@ -103,6 +102,7 @@ let test_no_model _ =
           returns = [];
         };
       ]
+      ()
   in
   assert_raises
     (OUnitTest.OUnit_failure "no model for does_not_exist")
@@ -112,7 +112,6 @@ let test_no_model _ =
 let test_simple_source _ =
   Service.StaticAnalysis.add_models ~model_source:"def taint() -> TaintSource[TestSource]: ...";
   assert_taint
-    ~qualifier:"test_simple"
     ~source:
       {|
       def simple_source():
@@ -120,16 +119,16 @@ let test_simple_source _ =
       |}
     ~expect:[
       {
-        define_name = "test_simple.simple_source";
+        define_name = "qualifier.simple_source";
         returns = [Sources.TestSource];
       };
     ]
+    ()
 
 
 let test_local_copy _ =
   Service.StaticAnalysis.add_models ~model_source:"def taint() -> TaintSource[TestSource]: ...";
   assert_taint
-    ~qualifier:"test_copy"
     ~source:
       {|
       def copy_source():
@@ -138,16 +137,16 @@ let test_local_copy _ =
       |}
     ~expect:[
       {
-        define_name = "test_copy.copy_source";
+        define_name = "qualifier.copy_source";
         returns = [Sources.TestSource];
       };
     ]
+    ()
 
 
 let test_class_model _ =
   Service.StaticAnalysis.add_models ~model_source:"def taint() -> TaintSource[TestSource]: ...";
   assert_taint
-    ~qualifier:"test_class"
     ~source:
       {|
         class Foo:
@@ -156,16 +155,16 @@ let test_class_model _ =
       |}
     ~expect:[
       {
-        define_name = "test_class.Foo.bar";
+        define_name = "qualifier.Foo.bar";
         returns = [Sources.TestSource];
       };
     ]
+    ()
 
 
 let test_apply_method_model_at_call_site _ =
   Service.StaticAnalysis.add_models ~model_source:"def taint() -> TaintSource[TestSource]: ...";
   assert_taint
-    ~qualifier:"test_apply_method1"
     ~source:
       {|
         class Foo:
@@ -182,13 +181,13 @@ let test_apply_method_model_at_call_site _ =
       |}
     ~expect:[
       {
-        define_name = "test_apply_method1.taint_across_methods";
+        define_name = "qualifier.taint_across_methods";
         returns = [Sources.TestSource];
       };
-    ];
+    ]
+    ();
 
   assert_taint
-    ~qualifier:"test_apply_method2"
     ~source:
       {|
         class Foo:
@@ -205,13 +204,13 @@ let test_apply_method_model_at_call_site _ =
       |}
     ~expect:[
       {
-        define_name = "test_apply_method2.taint_across_methods";
+        define_name = "qualifier.taint_across_methods";
         returns = [];
       };
-    ];
+    ]
+    ();
 
   assert_taint
-    ~qualifier:"test_apply_method3"
     ~source:
       {|
         class Foo:
@@ -227,13 +226,13 @@ let test_apply_method_model_at_call_site _ =
       |}
     ~expect:[
       {
-        define_name = "test_apply_method3.taint_across_methods";
+        define_name = "qualifier.taint_across_methods";
         returns = [Sources.TestSource];
       }
-    ];
+    ]
+    ();
 
   assert_taint
-    ~qualifier:"test_apply_method4"
     ~source:
       {|
         class Foo:
@@ -249,13 +248,13 @@ let test_apply_method_model_at_call_site _ =
       |}
     ~expect:[
       {
-        define_name = "test_apply_method4.taint_across_methods";
+        define_name = "qualifier.taint_across_methods";
         returns = [];
       };
-    ];
+    ]
+    ();
 
   assert_taint
-    ~qualifier:"test_apply_method5"
     ~source:
       {|
         class Foo:
@@ -276,13 +275,13 @@ let test_apply_method_model_at_call_site _ =
       |}
     ~expect:[
       {
-        define_name = "test_apply_method5.taint_with_union_type";
+        define_name = "qualifier.taint_with_union_type";
         returns = [Sources.TestSource];
       };
-    ];
+    ]
+    ();
 
   assert_taint
-    ~qualifier:"test_apply_method6"
     ~source:
       {|
         class Foo:
@@ -309,10 +308,11 @@ let test_apply_method_model_at_call_site _ =
       |}
     ~expect:[
       {
-        define_name = "test_apply_method6.taint_with_union_type";
+        define_name = "qualifier.taint_with_union_type";
         returns = [Sources.TestSource];
       };
     ]
+    ()
 
 
 let test_taint_in_taint_out_application _ =
@@ -329,7 +329,6 @@ let test_taint_in_taint_out_application _ =
   Service.StaticAnalysis.add_models ~model_source;
 
   assert_taint
-    ~qualifier:"test_application1"
     ~source:
       {|
         def simple_source():
@@ -342,13 +341,13 @@ let test_taint_in_taint_out_application _ =
       |}
     ~expect:[
       {
-        define_name = "test_application1.simple_source";
+        define_name = "qualifier.simple_source";
         returns = [Sources.TestSource];
       };
-    ];
+    ]
+    ();
 
   assert_taint
-    ~qualifier:"test_application2"
     ~source:
       {|
         def simple_source():
@@ -361,10 +360,11 @@ let test_taint_in_taint_out_application _ =
       |}
     ~expect:[
       {
-        define_name = "test_application2.no_tito_taint";
+        define_name = "qualifier.no_tito_taint";
         returns = [];
       };
     ]
+    ()
 
 
 let () =
