@@ -28,10 +28,9 @@ type taint_in_taint_out_expectation = {
 }
 
 
-let assert_taint ?qualifier ~source ~expected =
-  let qualifier = Option.map qualifier ~f:Access.create in
+let assert_taint ?(qualifier = Access.create "qualifier") ~source ~expected () =
   let source =
-    parse ?qualifier source
+    parse ~qualifier source
     |> Preprocessing.preprocess
   in
   let configuration = Test.mock_configuration in
@@ -146,7 +145,6 @@ let assert_taint ?qualifier ~source ~expected =
 
 let test_plus_taint_in_taint_out _ =
   assert_taint
-    ~qualifier:"plus"
     ~source:
       {|
       def test_plus_taint_in_taint_out(tainted_parameter1, parameter2):
@@ -155,15 +153,15 @@ let test_plus_taint_in_taint_out _ =
       |}
     ~expected:[
       {
-        define_name = "plus.test_plus_taint_in_taint_out";
+        define_name = "qualifier.test_plus_taint_in_taint_out";
         taint_sink_parameters = [];
         tito_parameters = [0];
       };
     ]
+    ()
 
 let test_concatenate_taint_in_taint_out _ =
   assert_taint
-    ~qualifier:"concatenate"
     ~source:
       {|
       def test_concatenate_taint_in_taint_out(parameter0, tainted_parameter1):
@@ -173,15 +171,15 @@ let test_concatenate_taint_in_taint_out _ =
       |}
     ~expected:[
       {
-        define_name = "concatenate.test_concatenate_taint_in_taint_out";
+        define_name = "qualifier.test_concatenate_taint_in_taint_out";
         taint_sink_parameters = [];
         tito_parameters = [1];
       };
     ]
+    ()
 
 let test_call_taint_in_taint_out _ =
   assert_taint
-    ~qualifier:"call_taint"
     ~source:
       {|
       def test_base_tito(parameter0, tainted_parameter1):
@@ -192,22 +190,22 @@ let test_call_taint_in_taint_out _ =
     |}
     ~expected:[
       {
-        define_name = "call_taint.test_base_tito";
+        define_name = "qualifier.test_base_tito";
         taint_sink_parameters = [];
         tito_parameters = [1];
       };
       {
-        define_name = "call_taint.test_called_tito";
+        define_name = "qualifier.test_called_tito";
         taint_sink_parameters = [];
         tito_parameters = [0];
       };
     ]
+    ()
 
 let test_sink _ =
   Service.StaticAnalysis.add_models
     ~model_source:"def __testSink(parameter: TaintSink[TestSink]): ...";
   assert_taint
-    ~qualifier:"test_sink"
     ~source:
       {|
       def test_sink(parameter0, tainted_parameter1):
@@ -217,20 +215,20 @@ let test_sink _ =
       |}
     ~expected:[
       {
-        define_name = "test_sink.test_sink";
+        define_name = "qualifier.test_sink";
         taint_sink_parameters = [
           { position = 1; sinks = [Taint.Sinks.TestSink]; };
         ];
         tito_parameters = [];
       };
     ]
+    ()
 
 
 let test_rce_sink _ =
   Service.StaticAnalysis.add_models
     ~model_source:"def __testRCESink(parameter: TaintSink[RemoteCodeExecution]): ...";
   assert_taint
-    ~qualifier:"test_rce"
     ~source:
       {|
       def test_rce_sink(parameter0, tainted_parameter1):
@@ -240,13 +238,14 @@ let test_rce_sink _ =
       |}
     ~expected:[
       {
-        define_name = "test_rce.test_rce_sink";
+        define_name = "qualifier.test_rce_sink";
         taint_sink_parameters = [
           { position = 1; sinks = [Taint.Sinks.RemoteCodeExecution]; }
         ];
         tito_parameters = [];
       };
     ]
+    ()
 
 
 let test_rce_and_test_sink _ =
@@ -259,7 +258,6 @@ let test_rce_and_test_sink _ =
   in
   Service.StaticAnalysis.add_models ~model_source;
   assert_taint
-    ~qualifier:"test_both"
     ~source:
       {|
       def test_rce_and_test_sink(test_only, rce_only, both):
@@ -272,7 +270,7 @@ let test_rce_and_test_sink _ =
       |}
     ~expected:[
       {
-        define_name = "test_both.test_rce_and_test_sink";
+        define_name = "qualifier.test_rce_and_test_sink";
         taint_sink_parameters = [
           { position = 0; sinks = [Taint.Sinks.TestSink]; };
           { position = 1; sinks = [Taint.Sinks.RemoteCodeExecution]; };
@@ -281,11 +279,11 @@ let test_rce_and_test_sink _ =
         tito_parameters = [];
       }
     ]
+    ()
 
 
 let test_tito_sink _ =
   assert_taint
-    ~qualifier:"test_in_out_sink"
     ~source:
       {|
       def test_base_tito(parameter0, tainted_parameter1):
@@ -300,7 +298,7 @@ let test_tito_sink _ =
       |}
     ~expected:[
       {
-        define_name = "test_in_out_sink.test_tito_sink";
+        define_name = "qualifier.test_tito_sink";
         taint_sink_parameters = [
           { position = 0; sinks = []; };
           { position = 1; sinks = [Taint.Sinks.TestSink]; };
@@ -308,12 +306,12 @@ let test_tito_sink _ =
         tito_parameters = [];
       };
     ]
+    ()
 
 
 let test_apply_method_model_at_call_site _ =
   Service.StaticAnalysis.add_models ~model_source:"def __testSink(parameter: TaintSink[TestSink]): ...";
   assert_taint
-    ~qualifier:"test_apply_method"
     ~source:
       {|
         class Foo:
@@ -331,16 +329,16 @@ let test_apply_method_model_at_call_site _ =
       |}
     ~expected:[
       {
-        define_name = "test_apply_method.taint_across_methods";
+        define_name = "qualifier.taint_across_methods";
         taint_sink_parameters = [
           { position = 0; sinks = [Taint.Sinks.TestSink] };
         ];
         tito_parameters = [];
       };
-    ];
+    ]
+    ();
 
   assert_taint
-    ~qualifier:"test_apply_method2"
     ~source:
       {|
         class Foo:
@@ -358,14 +356,14 @@ let test_apply_method_model_at_call_site _ =
       |}
     ~expected:[
       {
-        define_name = "test_apply_method2.taint_across_methods";
+        define_name = "qualifier.taint_across_methods";
         taint_sink_parameters = [];
         tito_parameters = [];
       };
-    ];
+    ]
+    ();
 
   assert_taint
-    ~qualifier:"test_apply_method3"
     ~source:
       {|
         class Foo:
@@ -382,17 +380,17 @@ let test_apply_method_model_at_call_site _ =
       |}
     ~expected:[
       {
-        define_name = "test_apply_method3.taint_across_methods";
+        define_name = "qualifier.taint_across_methods";
         taint_sink_parameters = [
           { position = 0; sinks = [] };
           { position = 1; sinks = [Taint.Sinks.TestSink] };
         ];
         tito_parameters = [];
       };
-    ];
+    ]
+    ();
 
   assert_taint
-    ~qualifier:"test_apply_method4"
     ~source:
       {|
         class Foo:
@@ -409,14 +407,14 @@ let test_apply_method_model_at_call_site _ =
       |}
     ~expected:[
       {
-        define_name = "test_apply_method4.taint_across_methods";
+        define_name = "qualifier.taint_across_methods";
         taint_sink_parameters = [];
         tito_parameters = [];
       };
-    ];
+    ]
+    ();
 
   assert_taint
-    ~qualifier:"test_apply_method5"
     ~source:
       {|
         class Foo:
@@ -438,16 +436,16 @@ let test_apply_method_model_at_call_site _ =
       |}
     ~expected:[
       {
-        define_name = "test_apply_method5.taint_across_union_receiver_types";
+        define_name = "qualifier.taint_across_union_receiver_types";
         taint_sink_parameters = [
           { position = 1; sinks = [Taint.Sinks.TestSink] };
         ];
         tito_parameters = [];
       };
-    ];
+    ]
+    ();
 
   assert_taint
-    ~qualifier:"test_apply_method6"
     ~source:
       {|
         class Foo:
@@ -475,13 +473,14 @@ let test_apply_method_model_at_call_site _ =
       |}
     ~expected:[
       {
-        define_name = "test_apply_method6.taint_across_union_receiver_types";
+        define_name = "qualifier.taint_across_union_receiver_types";
         taint_sink_parameters = [
           { position = 1; sinks = [Taint.Sinks.TestSink] };
         ];
         tito_parameters = [];
       };
     ]
+    ()
 
 
 let () =
