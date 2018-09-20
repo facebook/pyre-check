@@ -21,10 +21,10 @@ let entry =
 
 
 let create
-    ~configuration:{ Configuration.parallel; number_of_workers; _ }
+    ~configuration:({ Configuration.parallel; number_of_workers; _ } as configuration)
     ?(bucket_multiplier = 10)
     () =
-  let heap_handle = Memory.get_heap_handle () in
+  let heap_handle = Memory.get_heap_handle configuration in
   let workers =
     Hack_parallel.Std.Worker.make
       ?call_wrapper:None
@@ -110,7 +110,8 @@ let single_job { workers; _ } ~f work =
 
 
 let mock () =
-  Memory.get_heap_handle () |> ignore;
+  let configuration = Configuration.create () in
+  Memory.get_heap_handle configuration |> ignore;
   { workers = []; number_of_workers = 1; bucket_multiplier = 1; is_parallel = false }
 
 

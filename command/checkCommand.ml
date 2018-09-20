@@ -81,6 +81,9 @@ let run_check
        ]
        ~normals:["request kind", "FullCheck"]
        ();
+     if debug then
+       Memory.report_statistics ();
+
      (* Print results. *)
      Yojson.Safe.to_string
        (`List

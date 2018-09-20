@@ -438,4 +438,5 @@ module Std : sig
 
   module Marshal_tools : module type of Marshal_tools
 
+  module Measure : module type of Measure
 end

@@ -15,7 +15,7 @@ open TypeCheck
 
 
 let initialize () =
-  Memory.get_heap_handle ()
+  Memory.get_heap_handle (Configuration.create ())
   |> ignore;
   Log.initialize_for_tests ();
   Statistics.disable ();

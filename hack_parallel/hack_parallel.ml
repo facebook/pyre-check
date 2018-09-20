@@ -18,4 +18,5 @@ module Std = struct
 
   module Marshal_tools = Marshal_tools
 
+  module Measure = Measure
 end
