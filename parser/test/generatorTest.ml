@@ -2278,7 +2278,7 @@ let test_call_arguments_location _ =
         (Option.map name ~f:(fun { Node.value; location } ->
              Format.asprintf "%a/%s"
                Identifier.pp value
-               (Location.Reference.to_string location))
+               (Location.Reference.show location))
          |> Option.value ~default:"(none)")
         Expression.pp value
     in

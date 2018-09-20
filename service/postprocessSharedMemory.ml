@@ -19,7 +19,7 @@ end
 
 module LocationKey = struct
   type t = Location.t
-  let to_string = Location.Reference.to_string
+  let to_string = Location.Reference.show
   let compare = Location.Reference.compare
 end
 

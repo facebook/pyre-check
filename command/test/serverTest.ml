@@ -875,7 +875,7 @@ let test_incremental_lookups _ =
     |> Lookup.create_of_source state.State.environment
     |> Lookup.get_all_annotations
     |> List.map ~f:(fun (key, data) ->
-        Format.asprintf "%s/%a" (Location.Reference.to_string key) Type.pp data
+        Format.asprintf "%s/%a" (Location.Reference.show key) Type.pp data
         |> String.chop_prefix_exn ~prefix:(Int.to_string (String.hash (File.Handle.show handle))))
     |> List.sort ~compare:String.compare
   in

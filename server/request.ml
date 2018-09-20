@@ -311,7 +311,7 @@ module LookupCache = struct
         annotation
         >>| fun (location, annotation) ->
         [
-          "resolved location", Location.Instantiated.to_string location;
+          "resolved location", Location.Instantiated.show location;
           "resolved annotation", Type.show annotation;
         ]
       in
@@ -337,7 +337,7 @@ module LookupCache = struct
       in
       let normals =
         definition
-        >>| fun location -> ["resolved location", Location.Instantiated.to_string location]
+        >>| fun location -> ["resolved location", Location.Instantiated.show location]
       in
       log_lookup
         ~handle

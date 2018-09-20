@@ -29,8 +29,6 @@ module Reference : sig
 
   val create: start:Lexing.position -> stop:Lexing.position -> t
   val any: t
-
-  val to_string: t -> string
 end
 
 module Instantiated : sig
@@ -40,7 +38,6 @@ module Instantiated : sig
   val create: start:Lexing.position -> stop:Lexing.position -> t
   val any: t
 
-  val to_string: t -> string
   val pp_start: Format.formatter -> t -> unit
 end
 

@@ -26,14 +26,22 @@ type 'path location = {
 [@@deriving compare, eq, sexp, show, hash]
 
 
-let to_string pp_path { path; start; stop } =
+let show pp_path { path; start; stop } =
   Format.asprintf "%a:%d:%d-%d:%d" pp_path path start.line start.column stop.line stop.column
 
 
 
 module Reference = struct
   type t = int location
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, eq, sexp, hash]
+
+
+  let pp format { path; start; stop } =
+    Format.fprintf format "%d:%d:%d-%d:%d" path start.line start.column stop.line stop.column
+
+
+  let show =
+    show Int.pp
 
 
   module Map = Map.Make(struct
@@ -79,20 +87,24 @@ module Reference = struct
   let any =
     let any = { line = -1; column = -1; } in
     { path = -1; start = any; stop = any }
-
-
-  let pp format { path; start; stop } =
-    Format.fprintf format "%d:%d:%d-%d:%d" path start.line start.column stop.line stop.column
-
-
-  let to_string =
-    to_string Int.pp
 end
 
 
 module Instantiated = struct
   type t = string location
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, eq, sexp, hash]
+
+
+  let pp format { path; start; stop } =
+    Format.fprintf format "%s:%d:%d-%d:%d" path start.line start.column stop.line stop.column
+
+
+  let pp_start format { path; start; _ } =
+    Format.fprintf format "%s:%d:%d" path start.line start.column
+
+
+  let show =
+    show String.pp
 
 
   let create ~start ~stop =
@@ -112,18 +124,6 @@ module Instantiated = struct
   let any =
     let any = { line = -1; column = -1; } in
     { path = "*"; start = any; stop = any }
-
-
-  let pp format { path; start; stop } =
-    Format.fprintf format "%s:%d:%d-%d:%d" path start.line start.column stop.line stop.column
-
-
-  let pp_start format { path; start; _ } =
-    Format.fprintf format "%s:%d:%d" path start.line start.column
-
-
-  let to_string =
-    to_string String.pp
 end
 
 
