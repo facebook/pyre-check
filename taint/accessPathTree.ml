@@ -14,7 +14,7 @@ let is_unit_test = true (* TODO(T31441124) make this configurable *)
 module Checks = struct
   module type S = sig
     type witness
-    val make_witness: bool -> false_witness:string -> witness
+    val create_witness: bool -> false_witness:string -> witness
     val option_construct: message:(unit -> string) -> witness -> witness
     val false_witness: message:(unit -> string) -> witness
     (* Captures true, as a witness, i.e. without extra info. *)
@@ -31,7 +31,7 @@ end
 module WithChecks: Checks.S = struct
   type witness = string option
 
-  let make_witness condition ~false_witness =
+  let create_witness condition ~false_witness =
     if not condition then Some false_witness
     else None
 
@@ -73,7 +73,7 @@ module WithoutChecks: Checks.S = struct
   type witness = bool
 
 
-  let make_witness condition ~false_witness:_ =
+  let create_witness condition ~false_witness:_ =
     condition
 
 
@@ -173,12 +173,12 @@ module Make (Checks: Checks.S) (Root: Root.S) (Element: Analysis.AbstractDomain.
     RootMap.is_empty
 
 
-  let make_leaf element =
+  let create_leaf element =
     { element; children = LabelMap.empty }
 
 
   let empty_tree =
-    make_leaf Element.bottom
+    create_leaf Element.bottom
 
 
   let is_empty_info children element =
@@ -193,22 +193,22 @@ module Make (Checks: Checks.S) (Root: Root.S) (Element: Analysis.AbstractDomain.
     not (LabelMap.is_empty children)
 
 
-  let rec make_tree_internal path tree =
+  let rec create_tree_internal path tree =
     match path with
     | [] ->
         tree
     | label_element :: rest ->
         {
           element = Element.bottom;
-          children = LabelMap.singleton label_element (make_tree_internal rest tree);
+          children = LabelMap.singleton label_element (create_tree_internal rest tree);
         }
 
 
-  let make_tree_option path tree =
+  let create_tree_option path tree =
     if is_empty_tree tree then
       None
     else
-      Some (make_tree_internal path tree)
+      Some (create_tree_internal path tree)
 
 
   (** Captures whether we need to widen and at what tree level.
@@ -291,7 +291,7 @@ module Make (Checks: Checks.S) (Root: Root.S) (Element: Analysis.AbstractDomain.
 
 
   let singleton ~root ~path tree =
-    make_tree_internal path tree
+    create_tree_internal path tree
     |> RootMap.singleton root
 
 
@@ -370,14 +370,14 @@ module Make (Checks: Checks.S) (Root: Root.S) (Element: Analysis.AbstractDomain.
     collapse_tree Element.bottom tree
 
 
-  let make_leaf_option ~path_element ~element =
+  let create_leaf_option ~path_element ~element =
     if Element.less_or_equal ~left:element ~right:path_element then
       None
     else
-      Some (make_leaf element)
+      Some (create_leaf element)
 
 
-  let make_node_option element children =
+  let create_node_option element children =
     if is_empty_info children element
     then
       None
@@ -409,7 +409,7 @@ module Make (Checks: Checks.S) (Root: Root.S) (Element: Analysis.AbstractDomain.
   let rec prune_tree path_element { element; children } =
     let { new_element; path_element } = filter_by_path_element ~path_element ~element in
     let children = LabelMap.filter_map ~f:(prune_tree path_element) children in
-    make_node_option new_element children
+    create_node_option new_element children
 
 
   let set_or_remove key value map =
@@ -432,7 +432,7 @@ module Make (Checks: Checks.S) (Root: Root.S) (Element: Analysis.AbstractDomain.
       (* Collapse left_tree and right_tree to achieve depth limit. Note that left_tree is a leaf,
          only if the widen depth was exactly the depth of left_tree.  *)
       let collapsed_left_element = collapse_tree Element.bottom left_tree in
-      make_leaf_option ~path_element ~element:(collapse_tree collapsed_left_element right_tree)
+      create_leaf_option ~path_element ~element:(collapse_tree collapsed_left_element right_tree)
     end
     else
       let joined_element = element_join ~widen_depth left_element right_element in
@@ -445,7 +445,7 @@ module Make (Checks: Checks.S) (Root: Root.S) (Element: Analysis.AbstractDomain.
           ~widen_depth:(decrement_widen widen_depth)
           left_children right_children
       in
-      make_node_option new_element children
+      create_node_option new_element children
 
   and join_option_trees path_element ~widen_depth left right =
     match left, right with
@@ -533,7 +533,7 @@ module Make (Checks: Checks.S) (Root: Root.S) (Element: Analysis.AbstractDomain.
     if is_empty_tree tree then
       (* Shortcut *)
       prune_tree path_element subtree
-      >>| make_tree_internal path
+      >>| create_tree_internal path
     else
       match path with
       | [] ->
@@ -554,7 +554,7 @@ module Make (Checks: Checks.S) (Root: Root.S) (Element: Analysis.AbstractDomain.
               let children =
                 LabelMap.filter_mapi ~f:(join_each_index ~path_element rest ~subtree) augmented
               in
-              make_node_option element children
+              create_node_option element children
           | Label.Field _ ->
               let children =
                 set_or_remove
@@ -562,7 +562,7 @@ module Make (Checks: Checks.S) (Root: Root.S) (Element: Analysis.AbstractDomain.
                   (assign_or_join_path ~do_join ~path_element ~tree:existing rest ~subtree)
                   children
               in
-              make_node_option element children
+              create_node_option element children
 
   and join_each_index ~path_element rest ~subtree ~key:element ~data:tree =
     match element with
@@ -596,7 +596,7 @@ module Make (Checks: Checks.S) (Root: Root.S) (Element: Analysis.AbstractDomain.
       in
       option_node_tree acc_opt ~message
     in
-    LabelMap.fold ~f:collapse_child ~init:(make_leaf path_element) children
+    LabelMap.fold ~f:collapse_child ~init:(create_leaf path_element) children
 
 
   let access_path_to_string ~root ~path =
@@ -616,7 +616,7 @@ module Make (Checks: Checks.S) (Root: Root.S) (Element: Analysis.AbstractDomain.
     Checks.check check;
     match RootMap.find access_path_tree root with
     | None ->
-        RootMap.set access_path_tree ~key:root ~data:(make_tree_internal path subtree)
+        RootMap.set access_path_tree ~key:root ~data:(create_tree_internal path subtree)
     | Some tree ->
         match assign_path ~path_element:Element.bottom ~tree path ~subtree with
         | None ->
@@ -656,7 +656,7 @@ module Make (Checks: Checks.S) (Root: Root.S) (Element: Analysis.AbstractDomain.
       Checks.check check;
       match RootMap.find access_path_tree root with
       | None ->
-          RootMap.set access_path_tree ~key:root ~data:(make_tree_internal path subtree)
+          RootMap.set access_path_tree ~key:root ~data:(create_tree_internal path subtree)
       | Some tree ->
           match join_path ~path_element:Element.bottom ~tree path ~subtree with
           | None ->
@@ -739,7 +739,7 @@ module Make (Checks: Checks.S) (Root: Root.S) (Element: Analysis.AbstractDomain.
       { children; element }
       ~use_precise_fields =
     match path with
-    | [] -> path_element, make_node_option element children
+    | [] -> path_element, create_node_option element children
     | label_element :: rest ->
         let path_element = Element.join path_element element in
         match label_element with
@@ -928,7 +928,7 @@ module Make (Checks: Checks.S) (Root: Root.S) (Element: Analysis.AbstractDomain.
     in
     (* Important to properly join the trees and not just join path_element and
        tree.element, as otherwise this could result in non-minimal trees. *)
-    join_trees Element.bottom ~widen_depth:None (make_leaf path_element) tree
+    join_trees Element.bottom ~widen_depth:None (create_leaf path_element) tree
     |> option_node_tree ~message
 
 
@@ -1095,7 +1095,7 @@ module Make (Checks: Checks.S) (Root: Root.S) (Element: Analysis.AbstractDomain.
 
   let join_root_element tree element =
     let message () = "join_root_element" in
-    join_path ~path_element:Element.bottom ~tree [] ~subtree:(make_leaf element)
+    join_path ~path_element:Element.bottom ~tree [] ~subtree:(create_leaf element)
     |> option_node_tree ~message
 
 
@@ -1119,7 +1119,7 @@ module Make (Checks: Checks.S) (Root: Root.S) (Element: Analysis.AbstractDomain.
       let children =
         filter_map_children path_element ~f children
       in
-      make_node_option new_element children
+      create_node_option new_element children
 
   and filter_map_children path_element ~f label_map =
     LabelMap.filter_map ~f:(filter_map_tree path_element ~f) label_map
@@ -1194,7 +1194,7 @@ module Make (Checks: Checks.S) (Root: Root.S) (Element: Analysis.AbstractDomain.
       if Element.is_bottom element then
         access_path_tree
       else
-        assign_tree_path ~tree:access_path_tree path ~subtree:(make_leaf element)
+        assign_tree_path ~tree:access_path_tree path ~subtree:(create_leaf element)
     in
     fold_tree_paths ~init:empty_tree ~f:build tree
 
@@ -1258,14 +1258,14 @@ module Make (Checks: Checks.S) (Root: Root.S) (Element: Analysis.AbstractDomain.
 
   let of_list =
     let assign_to_map rmap ((root, path), element) =
-      assign_weak ~root ~path (make_leaf element) rmap
+      assign_weak ~root ~path (create_leaf element) rmap
     in
     List.fold ~init:empty ~f:assign_to_map
 
 
-  let make_tree path element =
-    let message = fun () -> Format.sprintf "make_tree %s" (Label.show_path path) in
-    make_tree_option path element
+  let create_tree path element =
+    let message = fun () -> Format.sprintf "create_tree %s" (Label.show_path path) in
+    create_tree_option path element
     |> option_node_tree ~message
 
 

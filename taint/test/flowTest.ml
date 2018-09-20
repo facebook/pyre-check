@@ -121,23 +121,23 @@ let test_no_errors _ =
   let open Flow in
   let source_tree_a =
     ForwardTaint.singleton Sources.UserControlled
-    |> ForwardState.make_leaf
-    |> ForwardState.make_tree [AccessPathTree.Label.Field (Identifier.create "a")]
+    |> ForwardState.create_leaf
+    |> ForwardState.create_tree [AccessPathTree.Label.Field (Identifier.create "a")]
   in
   let source_tree_b =
     ForwardTaint.singleton Sources.TestSource
-    |> ForwardState.make_leaf
-    |> ForwardState.make_tree [AccessPathTree.Label.Field (Identifier.create "b")]
+    |> ForwardState.create_leaf
+    |> ForwardState.create_tree [AccessPathTree.Label.Field (Identifier.create "b")]
   in
   let sink_tree_a =
     BackwardTaint.singleton Sinks.TestSink
-    |> BackwardState.make_leaf
-    |> BackwardState.make_tree [AccessPathTree.Label.Field (Identifier.create "a")]
+    |> BackwardState.create_leaf
+    |> BackwardState.create_tree [AccessPathTree.Label.Field (Identifier.create "a")]
   in
   let sink_tree_b =
     BackwardTaint.singleton Sinks.RemoteCodeExecution
-    |> BackwardState.make_leaf
-    |> BackwardState.make_tree [AccessPathTree.Label.Field (Identifier.create "b")]
+    |> BackwardState.create_leaf
+    |> BackwardState.create_tree [AccessPathTree.Label.Field (Identifier.create "b")]
   in
   let assert_no_errors ~source_tree ~sink_tree =
     let location = Location.create ~start:Lexing.dummy_pos ~stop:Lexing.dummy_pos in
@@ -166,23 +166,23 @@ let test_errors _ =
   let open Flow in
   let source_tree_a =
     ForwardTaint.singleton Sources.UserControlled
-    |> ForwardState.make_leaf
-    |> ForwardState.make_tree [AccessPathTree.Label.Field (Identifier.create "a")]
+    |> ForwardState.create_leaf
+    |> ForwardState.create_tree [AccessPathTree.Label.Field (Identifier.create "a")]
   in
   let source_tree_b =
     ForwardTaint.singleton Sources.TestSource
-    |> ForwardState.make_leaf
-    |> ForwardState.make_tree [AccessPathTree.Label.Field (Identifier.create "b")]
+    |> ForwardState.create_leaf
+    |> ForwardState.create_tree [AccessPathTree.Label.Field (Identifier.create "b")]
   in
   let sink_tree_a =
     BackwardTaint.singleton Sinks.RemoteCodeExecution
-    |> BackwardState.make_leaf
-    |> BackwardState.make_tree [AccessPathTree.Label.Field (Identifier.create "a")]
+    |> BackwardState.create_leaf
+    |> BackwardState.create_tree [AccessPathTree.Label.Field (Identifier.create "a")]
   in
   let sink_tree_b =
     BackwardTaint.singleton Sinks.TestSink
-    |> BackwardState.make_leaf
-    |> BackwardState.make_tree [AccessPathTree.Label.Field (Identifier.create "b")]
+    |> BackwardState.create_leaf
+    |> BackwardState.create_tree [AccessPathTree.Label.Field (Identifier.create "b")]
   in
   let assert_error ~source_tree ~sink_tree code =
     let location = Location.create ~start:Lexing.dummy_pos ~stop:Lexing.dummy_pos in

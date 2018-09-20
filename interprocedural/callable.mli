@@ -27,9 +27,9 @@ val compare: ([< t ] as 'a) -> 'a -> int
 
 type target_with_stored_result = real_target
 
-val make_real: Access.t -> [> real_target ]
-val make_override: Access.t -> [> override_target ]
-val make: Define.t Node.t -> [> real_target ]
+val create_real: Access.t -> [> real_target ]
+val create_override: Access.t -> [> override_target ]
+val create: Define.t Node.t -> [> real_target ]
 
 val get_real_access: [< real_target ] -> Access.t
 val get_override_access: [< override_target ] -> Access.t

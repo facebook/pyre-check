@@ -29,12 +29,16 @@ type t = [ real_target | override_target ]
 type target_with_stored_result = real_target
 
 
-let make_real access = `RealTarget access
-let make_override access = `OverrideTarget access
+let create_real access =
+  `RealTarget access
 
 
-let make { Node.value = Define.{ name; _ }; _ } =
-  make_real name
+let create_override access =
+  `OverrideTarget access
+
+
+let create { Node.value = Define.{ name; _ }; _ } =
+  create_real name
 
 
 let get_real_access = function

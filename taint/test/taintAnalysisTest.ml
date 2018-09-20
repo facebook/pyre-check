@@ -68,7 +68,7 @@ let create_call_graph ?(test_file = "test_file") source =
     Service.StaticAnalysis.record_overrides ~environment ~source in
   let callables =
     Service.StaticAnalysis.record_path_of_definitions ~path:handle ~source
-    |> List.map ~f:Callable.make
+    |> List.map ~f:Callable.create
   in
   call_graph, callables
 
@@ -81,7 +81,7 @@ let create_model { define_name; returns; taint_sink_parameters; tito_parameters;
           ~root:Root.LocalResult
           ~path:[]
           (ForwardTaint.singleton source
-           |> ForwardState.make_leaf)
+           |> ForwardState.create_leaf)
           model.forward.source_taint
       in
       Taint.Result.Forward.{ source_taint }
@@ -96,7 +96,7 @@ let create_model { define_name; returns; taint_sink_parameters; tito_parameters;
             ~root:(Root.Parameter { position })
             ~path:[]
             (BackwardTaint.singleton taint_sink_kind
-             |> BackwardState.make_leaf)
+             |> BackwardState.create_leaf)
             model.backward.sink_taint
         in
         { model.backward with sink_taint }
@@ -112,14 +112,14 @@ let create_model { define_name; returns; taint_sink_parameters; tito_parameters;
           ~root:(Root.Parameter { position })
           ~path:[]
           (BackwardTaint.singleton LocalReturn
-           |> BackwardState.make_leaf)
+           |> BackwardState.create_leaf)
           model.backward.taint_in_taint_out
       in
       { model.backward with taint_in_taint_out }
     in
     { model with backward }
   in
-  let call_target = Callable.make_real (Access.create define_name) in
+  let call_target = Callable.create_real (Access.create define_name) in
   Taint.Result.empty_model
   |> (fun model -> List.fold returns ~init:model ~f:expect_source_taint)
   |> (fun model -> List.fold taint_sink_parameters ~init:model ~f:expect_sink_taint)
@@ -146,13 +146,13 @@ let assert_fixpoint ~source ~expect:{ iterations = expect_iterations; expect } =
       Fixpoint.Epoch.initial
   in
   let read_analysis_model { define_name; _ } =
-    let call_target = Callable.make_real (Access.create define_name) in
+    let call_target = Callable.create_real (Access.create define_name) in
     Fixpoint.get_model call_target
     >>= Result.get_model Taint.Result.kind
     >>| (fun model -> { call_target; model })
   in
   let read_analysis_result { define_name; _ } =
-    let call_target = Callable.make_real (Access.create define_name) in
+    let call_target = Callable.create_real (Access.create define_name) in
     Fixpoint.get_result call_target
     |> Result.get_result Taint.Result.kind
     >>| (fun result -> define_name, result)

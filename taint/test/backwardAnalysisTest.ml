@@ -44,12 +44,12 @@ let assert_taint ?qualifier ~source ~expected =
     |> List.rev
   in
   let () =
-    List.map ~f:Callable.make defines
+    List.map ~f:Callable.create defines
     |> Fixpoint.KeySet.of_list
     |> Fixpoint.remove_new
   in
   let analyze_and_store_in_order define =
-    let call_target = Callable.make define in
+    let call_target = Callable.create define in
     let () =
       Log.log
         ~section:`Taint
@@ -84,7 +84,7 @@ let assert_taint ?qualifier ~source ~expected =
     in
     let backward =
       let model =
-        Fixpoint.get_model (Callable.make_real (Access.create define_name))
+        Fixpoint.get_model (Callable.create_real (Access.create define_name))
         >>= Result.get_model Taint.Result.kind
       in
       match model with

@@ -29,7 +29,7 @@ let initial_taint =
   BackwardState.assign
     ~root:Root.LocalResult
     ~path:[]
-    (BackwardState.make_leaf result_taint)
+    (BackwardState.create_leaf result_taint)
     BackwardState.empty
 
 
@@ -135,7 +135,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       match callee with
       | Global access ->
           let access = Access.create_from_identifiers access in
-          let call_target = Interprocedural.Callable.make_real access in
+          let call_target = Interprocedural.Callable.create_real access in
           apply_call_targets arguments state taint [call_target]
 
       | Access { expression = receiver; member = method_name} ->
@@ -152,13 +152,13 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
             match receiver_type with
             | Some { annotation = Primitive primitive ; _ } ->
                 let access = Access.create_from_identifiers [primitive; method_name] in
-                let call_target = Interprocedural.Callable.make_real access in
+                let call_target = Interprocedural.Callable.create_real access in
                 apply_call_targets arguments state taint [call_target]
             | Some { annotation = Union annotations; _ } ->
                 let filter_receivers = function
                   | Type.Primitive receiver ->
                       Access.create_from_identifiers [receiver; method_name]
-                      |> Interprocedural.Callable.make_real
+                      |> Interprocedural.Callable.create_real
                       |> Option.some
                   | _ ->
                       None

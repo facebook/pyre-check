@@ -59,7 +59,7 @@ let record_path_of_definitions ~path ~source =
   let defines = Preprocessing.defines source in
   let record_definition definition =
     let open Interprocedural.Callable in
-    add_definition (make definition) path
+    add_definition (create definition) path
   in
   List.iter ~f:record_definition defines;
   defines
@@ -148,7 +148,7 @@ let analyze ?taint_models_directory ~scheduler ~configuration ~environment ~hand
       Ast.SharedMemory.Sources.get path
       >>| fun source ->
       record_path_of_definitions ~path ~source
-      |> List.map ~f:Interprocedural.Callable.make
+      |> List.map ~f:Interprocedural.Callable.create
     in
     List.filter_map paths ~f:make_callables
     |> List.concat

@@ -331,7 +331,7 @@ let get_callable_dependents ~caller_map = function
         match Ast.Expression.Access.Map.find caller_map (Callable.get_real_access real) with
         | None -> []
         | Some callers ->
-            List.map ~f:Callable.make_real callers
+            List.map ~f:Callable.create_real callers
       end
   | #Callable.override_target as _override ->
       (* TODO(T32010422) *)

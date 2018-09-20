@@ -34,7 +34,7 @@ open Core
 module Checks : sig
   module type S = sig
     type witness
-    val make_witness: bool -> false_witness:string -> witness
+    val create_witness: bool -> false_witness:string -> witness
     val option_construct: message:(unit -> string) -> witness -> witness
     val false_witness: message:(unit -> string) -> witness
     (* Captures true, as a witness, i.e. without extra info. *)
@@ -140,7 +140,7 @@ module Make (Checks: Checks.S) (Root: Root.S) (Element: AbstractDomain.S): sig
   val get_root_taint: access_path_tree -> Element.t
   val exists_in_tree: f: (Element.t -> bool) -> access_path_tree -> bool
   val is_empty_tree: access_path_tree -> bool
-  val make_tree: Label.path -> access_path_tree -> access_path_tree
+  val create_tree: Label.path -> access_path_tree -> access_path_tree
   val read_tree: Label.path -> access_path_tree -> access_path_tree
   val tree_has_children: access_path_tree -> bool
   val tree_to_string: access_path_tree -> string
@@ -186,7 +186,7 @@ module Make (Checks: Checks.S) (Root: Root.S) (Element: AbstractDomain.S): sig
     -> access_path_tree
   val join_trees: access_path_tree -> access_path_tree -> access_path_tree
   val join_root_element: access_path_tree -> Element.t -> access_path_tree
-  val make_leaf: Element.t -> access_path_tree
+  val create_leaf: Element.t -> access_path_tree
   val replace_root_taint: access_path_tree -> Element.t -> access_path_tree
   val iterate_tree_paths
     : f: (path:Label.path -> element: Element.t -> unit)

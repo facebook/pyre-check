@@ -150,7 +150,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       match callee with
       | Global access ->
           let access = Access.create_from_identifiers access in
-          let call_target = Interprocedural.Callable.make_real access in
+          let call_target = Interprocedural.Callable.create_real access in
           apply_call_targets arguments state [call_target]
       | Access { expression; member = method_name } ->
           let access = as_access expression in
@@ -166,13 +166,13 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
             match receiver_type with
             | Some { annotation = Primitive receiver ; _ } ->
                 let access = Access.create_from_identifiers [receiver; method_name] in
-                let call_target = Interprocedural.Callable.make_real access in
+                let call_target = Interprocedural.Callable.create_real access in
                 [call_target]
             | Some { annotation = Union annotations; _ } ->
                 let filter_receivers = function
                   | Type.Primitive receiver ->
                       Access.create_from_identifiers [receiver; method_name]
-                      |> Interprocedural.Callable.make_real
+                      |> Interprocedural.Callable.create_real
                       |> Option.some
                   | _ ->
                       None
@@ -331,7 +331,7 @@ let run ({ Node.value = { Define.parameters; _ }; _ } as define) =
   Log.log
     ~section:`Taint
     "Starting analysis of %a"
-    Interprocedural.Callable.pp (Interprocedural.Callable.make define);
+    Interprocedural.Callable.pp (Interprocedural.Callable.create define);
   let cfg = Cfg.create define.value in
   let initial = FixpointState.create () in
   let () = Log.log ~section:`Taint "Processing CFG:@.%a" Cfg.pp cfg in

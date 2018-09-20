@@ -39,7 +39,7 @@ let assert_model ~model_source ~expect =
           ~root:Root.LocalResult
           ~path:[]
           (ForwardTaint.singleton source
-           |> ForwardState.make_leaf)
+           |> ForwardState.create_leaf)
           model.forward.source_taint
       in
       Taint.Result.Forward.{ source_taint }
@@ -54,7 +54,7 @@ let assert_model ~model_source ~expect =
             ~root:(Root.Parameter { position })
             ~path:[]
             (BackwardTaint.singleton taint_sink_kind
-             |> BackwardState.make_leaf)
+             |> BackwardState.create_leaf)
             model.backward.sink_taint
         in
         { model.backward with sink_taint }
@@ -70,7 +70,7 @@ let assert_model ~model_source ~expect =
           ~root:(Root.Parameter { position })
           ~path:[]
           (BackwardTaint.singleton LocalReturn
-           |> BackwardState.make_leaf)
+           |> BackwardState.create_leaf)
           model.backward.taint_in_taint_out
       in
       { model.backward with taint_in_taint_out }
@@ -78,7 +78,7 @@ let assert_model ~model_source ~expect =
     { model with backward }
   in
   let create_model { define_name; returns; taint_sink_parameters; tito_parameters } =
-    let call_target = Callable.make_real (Access.create define_name) in
+    let call_target = Callable.create_real (Access.create define_name) in
     Taint.Result.empty_model
     |> (fun model -> List.fold returns ~init:model ~f:expect_source_taint)
     |> (fun model -> List.fold taint_sink_parameters ~init:model ~f:expect_sink_taint)

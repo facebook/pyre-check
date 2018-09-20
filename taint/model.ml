@@ -32,7 +32,7 @@ let introduce_sink_taint
         ~root
         ~path:[]
         (BackwardTaint.singleton taint_sink_kind
-         |> BackwardState.make_leaf)
+         |> BackwardState.create_leaf)
         taint
     in
     match taint_sink_kind with
@@ -52,7 +52,7 @@ let introduce_source_taint taint_source_kind =
       ~root:AccessPath.Root.LocalResult
       ~path:[]
       (ForwardTaint.singleton taint_source_kind
-       |> ForwardState.make_leaf)
+       |> ForwardState.create_leaf)
       ForwardState.empty
   in
   TaintResult.Forward.{ source_taint }
@@ -118,7 +118,7 @@ let create ~model_source =
     |> List.filter_map ~f:filter_define
   in
   let create_model { Define.name; parameters; return_annotation; _ } =
-    let call_target = Callable.make_real name in
+    let call_target = Callable.create_real name in
     List.map parameters ~f:(fun { Node.value; _ } -> value.annotation)
     |> List.foldi ~init:(Ok TaintResult.empty_model) ~f:taint_parameter
     >>= Fn.flip taint_return return_annotation
