@@ -9,7 +9,4 @@ type t =
   | UserControlled
 [@@deriving compare, sexp, show, hash]
 
-
 val create: string -> t
-
-val to_string: t -> string
