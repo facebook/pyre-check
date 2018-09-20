@@ -62,6 +62,14 @@ let test_create _ =
   assert_create "typing.Union[int, str]" (Type.union [Type.integer; Type.string]);
   assert_create "typing.Union[int, typing.Any]" Type.Object;
   assert_create "typing.Union[int, typing.Optional[$bottom]]" (Type.optional Type.integer);
+  assert_create "typing.Union[int, typing.Optional[$bottom], str, typing.Tuple[int, str]]"
+    (Type.optional
+       (Type.union [
+            Type.integer;
+            Type.string;
+            Type.tuple [Type.integer; Type.string];
+          ]
+       ));
 
   (* Nested renaming. *)
   assert_create "typing.Set[typing.Any]" (Type.set Type.Object);

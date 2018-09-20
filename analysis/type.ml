@@ -529,12 +529,20 @@ let union parameters =
   if List.mem ~equal parameters Object then
     Object
   else
-    match parameters with
-    | [] -> Bottom
-    | [parameter; Optional Bottom]
-    | [Optional Bottom; parameter] -> Optional parameter
-    | [parameter] -> parameter
-    | _ -> Union parameters
+    let normalize parameters =
+      match parameters with
+      | [] -> Bottom
+      | [parameter] -> parameter
+      | parameters -> Union parameters
+    in
+    if List.exists parameters ~f:(fun parameter -> equal parameter (Optional Bottom)) then
+      Optional
+        (normalize
+           (List.filter
+              parameters
+              ~f:(fun parameter -> not (equal parameter (Optional Bottom)))))
+    else
+      normalize parameters
 
 
 let yield parameter =

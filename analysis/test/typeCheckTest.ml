@@ -2391,6 +2391,14 @@ let test_check_function_parameters _ =
 
   assert_type_errors
     {|
+      def foo(a: typing.Union[str, None, typing.Tuple[int, str]]) -> None:
+        pass
+      foo(None)
+    |}
+    [];
+
+  assert_type_errors
+    {|
      def foo(a: typing.Optional[int]) -> int:
       return to_int(a and int_to_str(a))
     |}
