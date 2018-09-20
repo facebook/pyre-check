@@ -130,7 +130,8 @@ let create_model { define_name; returns; taint_sink_parameters; tito_parameters;
 let create_result_patterns { define_name; errors; _ } = define_name, errors
 
 
-let assert_fixpoint ~scheduler ~source ~expect:{ iterations = expect_iterations; expect } =
+let assert_fixpoint ~source ~expect:{ iterations = expect_iterations; expect } =
+  let scheduler = Scheduler.mock () in
   let call_graph, all_callables = create_call_graph source in
   let caller_map = CallGraph.reverse call_graph in
   let analyses = [Taint.Analysis.abstract_kind] in
@@ -203,8 +204,8 @@ let assert_fixpoint ~scheduler ~source ~expect:{ iterations = expect_iterations;
   List.iter2_exn expect_results results ~f:assert_errors
 
 
-let test_fixpoint ~scheduler _ =
-  assert_fixpoint ~scheduler
+let test_fixpoint _ =
+  assert_fixpoint
     ~source:
       {|
       def bar():
@@ -281,9 +282,6 @@ let test_fixpoint ~scheduler _ =
 
 
 let () =
-  let () = Scheduler.Daemon.check_entry_point () in
-  let configuration = Configuration.create ~number_of_workers:1 ~parallel:true () in
-  let scheduler = Scheduler.create ~configuration () in
   let model_source =
     {|
       def __testSink(arg: TaintSink[TestSink]): ...
@@ -295,6 +293,6 @@ let () =
   in
   Service.StaticAnalysis.add_models ~model_source;
   "taint">:::[
-    "fixpoint">::test_fixpoint ~scheduler;
+    "fixpoint">::test_fixpoint;
   ]
-  |> run_test_tt_main
+  |> Test.run_tests
