@@ -89,8 +89,7 @@ module Make (Checks: Checks.S) (Root: Root.S) (Element: AbstractDomain.S): sig
   val is_empty: t -> bool
   val less_or_equal: left: t -> right: t -> bool
   val less_or_equal_witness: left: t -> right: t -> Checks.witness
-  val to_string: t -> string
-  val to_string_just_access_path: t -> string
+  val show_just_access_path: t -> string
   val read_access_path: root: Root.t -> path: Label.path -> t -> access_path_tree
 
   (** Return the path elements joined without combining them with the element at the path tip. *)

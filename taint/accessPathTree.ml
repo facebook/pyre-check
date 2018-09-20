@@ -267,11 +267,11 @@ module Make (Checks: Checks.S) (Root: Root.S) (Element: Analysis.AbstractDomain.
     String.concat ~sep:"\n" (RootMap.fold ~f:to_string_element ~init:[] element)
 
 
-  let to_string =
+  let show =
     to_string_element ~show_element:true
 
 
-  let to_string_just_access_path =
+  let show_just_access_path =
     to_string_element ~show_element:false
 
 
@@ -711,7 +711,7 @@ module Make (Checks: Checks.S) (Root: Root.S) (Element: Analysis.AbstractDomain.
               let message () =
                 Format.sprintf "remove %s: %s"
                   (access_path_to_string ~root ~path)
-                  (to_string access_path_tree)
+                  (show access_path_tree)
               in
               check_minimal_non_empty ~message tree
             in
@@ -969,8 +969,8 @@ module Make (Checks: Checks.S) (Root: Root.S) (Element: Analysis.AbstractDomain.
           Format.sprintf "less_or_equal of %s is false: %sleft_apt:\n%s\nright_apt:\n%s\n"
             message
             witness
-            (to_string left_access_path_tree)
-            (to_string right_access_path_tree)
+            (show left_access_path_tree)
+            (show right_access_path_tree)
         in
         failwith error_message
 
@@ -986,9 +986,9 @@ module Make (Checks: Checks.S) (Root: Root.S) (Element: Analysis.AbstractDomain.
       let message () =
         Format.sprintf
           "join of left_tree:\n%s\nright_tree:\n%s\njoin:%s"
-          (to_string left_access_path_tree)
-          (to_string right_access_path_tree)
-          (to_string result)
+          (show left_access_path_tree)
+          (show right_access_path_tree)
+          (show result)
       in
       let check message tree = check_less_or_equal message tree in
       Checks.check (fun () -> check "join left_access_path" left_access_path_tree result);
@@ -1035,8 +1035,8 @@ module Make (Checks: Checks.S) (Root: Root.S) (Element: Analysis.AbstractDomain.
       let result = RootMap.merge ~f:merge previous next in
       let message () =
         Format.sprintf "widen of left_tree:\n%s\nright_tree:\n%s\n"
-          (to_string previous)
-          (to_string next)
+          (show previous)
+          (show next)
       in
       Checks.check (fun () -> check_less_or_equal "widen previous" previous result);
       Checks.check (fun () -> check_less_or_equal "widen next" next result);
@@ -1151,7 +1151,7 @@ module Make (Checks: Checks.S) (Root: Root.S) (Element: Analysis.AbstractDomain.
   let filter_map_value ~f access_path_tree =
     let filter_map_tree tree = filter_map_tree Element.bottom ~f tree in
     let result = RootMap.filter_map ~f:filter_map_tree access_path_tree in
-    let message () = "filter_map of apt:\n" ^ (to_string access_path_tree) in
+    let message () = "filter_map of apt:\n" ^ (show access_path_tree) in
     Checks.check (fun () -> check_minimal_access_path_tree ~message result);
     result
 
@@ -1267,9 +1267,6 @@ module Make (Checks: Checks.S) (Root: Root.S) (Element: Analysis.AbstractDomain.
     let message = fun () -> Format.sprintf "make_tree %s" (Label.show_path path) in
     make_tree_option path element
     |> option_node_tree ~message
-
-
-  let show = to_string
 
 
   let pp formatter access_path_tree = Format.pp_print_string formatter (show access_path_tree)
