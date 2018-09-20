@@ -110,7 +110,6 @@ let test_no_model _ =
 
 
 let test_simple_source _ =
-  Service.StaticAnalysis.add_models ~model_source:"def taint() -> TaintSource[TestSource]: ...";
   assert_taint
     ~source:
       {|
@@ -127,7 +126,6 @@ let test_simple_source _ =
 
 
 let test_local_copy _ =
-  Service.StaticAnalysis.add_models ~model_source:"def taint() -> TaintSource[TestSource]: ...";
   assert_taint
     ~source:
       {|
@@ -145,7 +143,6 @@ let test_local_copy _ =
 
 
 let test_class_model _ =
-  Service.StaticAnalysis.add_models ~model_source:"def taint() -> TaintSource[TestSource]: ...";
   assert_taint
     ~source:
       {|
@@ -163,7 +160,6 @@ let test_class_model _ =
 
 
 let test_apply_method_model_at_call_site _ =
-  Service.StaticAnalysis.add_models ~model_source:"def taint() -> TaintSource[TestSource]: ...";
   assert_taint
     ~source:
       {|
@@ -368,6 +364,7 @@ let test_taint_in_taint_out_application _ =
 
 
 let () =
+  Service.StaticAnalysis.add_models ~model_source:"def taint() -> TaintSource[TestSource]: ...";
   "taint">:::[
     "no_model">::test_no_model;
     "simple">::test_simple_source;
