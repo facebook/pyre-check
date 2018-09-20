@@ -127,9 +127,6 @@ let create_model { define_name; returns; taint_sink_parameters; tito_parameters;
   |> (fun model -> { call_target; model })
 
 
-let create_result_patterns { define_name; errors; _ } = define_name, errors
-
-
 let assert_fixpoint ~source ~expect:{ iterations = expect_iterations; expect } =
   let scheduler = Scheduler.mock () in
   let call_graph, all_callables = create_call_graph source in
@@ -189,7 +186,10 @@ let assert_fixpoint ~source ~expect:{ iterations = expect_iterations; expect } =
   let models = List.filter_map expect ~f:read_analysis_model in
   let expect_models = List.map expect ~f:create_model in
   let results = List.filter_map expect ~f:read_analysis_result in
-  let expect_results = List.map expect ~f:create_result_patterns in
+  let expect_results =
+    let create_result_patterns { define_name; errors; _ } = define_name, errors in
+    List.map expect ~f:create_result_patterns
+  in
   assert_bool "Callgraph is empty!" (Access.Map.length call_graph > 0);
   assert_equal expect_iterations iterations ~printer:Int.to_string;
   assert_equal
