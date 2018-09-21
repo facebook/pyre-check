@@ -46,7 +46,7 @@ let test_saved_state context =
   (* Spawn a server that saves its state on initialization. *)
   let server_configuration =
     ServerConfiguration.create
-      ~save_state_to:saved_state_path
+      ~saved_state:(ServerConfiguration.Save saved_state_path)
       configuration
   in
   let _ = Commands.Server.start server_configuration in
@@ -67,7 +67,17 @@ let test_saved_state context =
 
   (* A server loads from the saved state successfully. *)
   let server_configuration =
-    ServerConfiguration.create ~load_state_from:saved_state_path configuration
+    let saved_state =
+      let changed_files_path =
+        Test.write_file ("changed_files", "")
+        |> File.path
+      in
+      ServerConfiguration.Load {
+        ServerConfiguration.shared_memory_path = Path.create_absolute saved_state_path;
+        changed_files_path;
+      }
+    in
+    ServerConfiguration.create ~saved_state configuration
   in
   let _ = Commands.Server.start server_configuration in
 
@@ -86,8 +96,18 @@ let test_saved_state context =
   assert_equal expected_response query_response;
   (* Errors are preserved when loading from a saved state. *)
   let _ =
+    let saved_state =
+      let changed_files_path =
+        Test.write_file ("changed_files", "")
+        |> File.path
+      in
+      ServerConfiguration.Load {
+        ServerConfiguration.shared_memory_path = Path.create_absolute saved_state_path;
+        changed_files_path;
+      }
+    in
     Commands.Server.start
-      (ServerConfiguration.create ~load_state_from:saved_state_path configuration)
+      (ServerConfiguration.create ~saved_state configuration)
   in
   let socket = Operations.connect ~retries:3 ~configuration in
   Network.Socket.write socket (Request.FlushTypeErrorsRequest);
@@ -99,8 +119,31 @@ let test_saved_state context =
     |> CommandTest.associate_errors_and_filenames
     |> fun errors -> Protocol.TypeCheckResponse errors
   in
-  assert_equal ~printer:show_response expected_errors errors
+  assert_equal ~printer:show_response expected_errors errors;
 
+  (* The server reanalyzed changed files when they are passed in and banishes errors. *)
+  write_content ~root:local_root ~filename:"a.py" "x = 1";
+  let _ =
+    let saved_state =
+      let changed_files_path =
+        Test.write_file
+          ("changed_files",
+           Path.absolute (Path.create_relative ~root:local_root ~relative:"a.py"))
+        |> File.path
+      in
+      ServerConfiguration.Load {
+        ServerConfiguration.shared_memory_path = Path.create_absolute saved_state_path;
+        changed_files_path;
+      }
+    in
+    Commands.Server.start
+      (ServerConfiguration.create ~saved_state configuration)
+  in
+  let socket = Operations.connect ~retries:3 ~configuration in
+  Network.Socket.write socket (Request.FlushTypeErrorsRequest);
+  let errors = Network.Socket.read socket in
+  CommandTest.stop_server server_configuration;
+  assert_equal ~printer:show_response (TypeCheckResponse []) errors
 
 
 let test_invalid_configuration context =
@@ -129,7 +172,9 @@ let test_invalid_configuration context =
   in
   (* Generate a saved state. *)
   let server_configuration =
-    ServerConfiguration.create ~save_state_to:saved_state_path configuration
+    ServerConfiguration.create
+      ~saved_state:(ServerConfiguration.Save saved_state_path)
+      configuration
   in
   let _ = Commands.Server.start server_configuration in
   connect ();
@@ -152,13 +197,23 @@ let test_invalid_configuration context =
     }
   in
   (* Trying to load from an incompatible configuration raises an exception. *)
+  let saved_state =
+    let changed_files_path =
+      Test.write_file ("changed_files", "")
+      |> File.path
+    in
+    ServerConfiguration.Load {
+      ServerConfiguration.shared_memory_path = Path.create_absolute saved_state_path;
+      changed_files_path;
+    }
+  in
   assert_raises
     Server.SavedState.IncompatibleState
     (fun () ->
        Server.SavedState.load
          ~server_configuration:(
            ServerConfiguration.create
-             ~load_state_from:saved_state_path
+             ~saved_state
              incompatible_configuration)
          ~lock:(Mutex.create ())
          ~connections)

@@ -14,36 +14,46 @@ exception IncompatibleState
 
 
 let load
-    ~server_configuration:{ ServerConfiguration.configuration; load_state_from; _ }
+    ~server_configuration:{
+    ServerConfiguration.configuration;
+    saved_state;
+    _;
+  }
     ~lock
     ~connections =
-  let saved_state_path = Option.value_exn load_state_from in
-  Log.info "Initializing server from saved state at %s" saved_state_path;
+  let { ServerConfiguration.shared_memory_path; changed_files_path } =
+    match saved_state with
+    | Some (Load parameters) ->
+        parameters
+    | _ ->
+        raise IncompatibleState
+  in
+  Log.info "Initializing server from saved state at %s" (Path.absolute shared_memory_path);
 
   let scheduler = Scheduler.create ~configuration () in
 
   let environment = (module Environment.SharedHandler: Analysis.Environment.Handler) in
 
-  Memory.load_shared_memory ~path:saved_state_path;
+  Memory.load_shared_memory ~path:(Path.absolute shared_memory_path);
   let old_configuration = EnvironmentSharedMemory.StoredConfiguration.find_unsafe "configuration" in
   if not (Configuration.equal old_configuration configuration) then
     raise IncompatibleState;
 
-  (* TODO(T33300361): We need to invalidate changed/removed files and reanalyze them here. *)
   let files =
-    let handles = Ast.SharedMemory.HandleKeys.get () in
-    let file handle =
-      Ast.SharedMemory.Sources.get handle
-      >>= (fun { Ast.Source.path; _ } -> path)
-      >>| File.create
+    let to_file serialized =
+      Path.create_absolute serialized
+      |> File.create
     in
-    List.filter_map handles ~f:file
+    File.content (File.create changed_files_path)
+    >>| String.split_lines
+    >>| List.map ~f:to_file
+    |> Option.value ~default:[]
   in
   Log.info "Reanalyzing %d files which have been modified." (List.length files);
   let deferred_requests =
     [
       Protocol.Request.TypeCheckRequest
-        (Protocol.TypeCheckRequest.create ~check:files ());
+        (Protocol.TypeCheckRequest.create ~update_environment_with:files ~check:files ());
     ]
   in
   let errors =

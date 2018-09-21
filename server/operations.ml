@@ -73,19 +73,22 @@ let start
     ?old_state
     ~lock
     ~connections
-    ~configuration:({ configuration; save_state_to; load_state_from; _ } as server_configuration)
+    ~configuration:({
+        configuration;
+        saved_state;
+        _;
+      } as server_configuration)
     () =
   let ({ State.errors; _ } as state) =
-    match load_state_from with
-    | Some saved_state_path ->
-        Log.info "Loading from saved state at %s" saved_state_path;
+    match saved_state with
+    | Some (Load _) ->
         SavedState.load ~server_configuration ~lock ~connections
     | _ ->
         start_from_scratch ?old_state ~lock ~connections ~configuration ()
   in
   begin
-    match save_state_to with
-    | Some saved_state_path ->
+    match saved_state with
+    | Some (Save saved_state_path) ->
         SavedState.save ~configuration ~errors ~saved_state_path
     | _ ->
         ()

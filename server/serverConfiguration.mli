@@ -7,6 +7,16 @@ open Pyre
 
 exception ServerNotRunning
 
+
+type load = {
+  shared_memory_path: Path.t;
+  changed_files_path: Path.t;
+}
+
+type saved_state =
+  | Save of string
+  | Load of load
+
 type t = {
   (* Server-specific configuration options *)
   socket_path: Path.t;
@@ -17,8 +27,7 @@ type t = {
   daemonize: bool;
   use_watchman: bool;
   watchman_creation_timeout: float;
-  save_state_to: string option;
-  load_state_from: string option;
+  saved_state: saved_state option;
   (* Analysis configuration *)
   configuration: Configuration.t
 }
@@ -30,7 +39,6 @@ val create
   :  ?daemonize: bool
   -> ?log_path: Path.t
   -> ?use_watchman: bool
-  -> ?save_state_to: string
-  -> ?load_state_from: string
+  -> ?saved_state: saved_state
   -> Configuration.t
   -> t

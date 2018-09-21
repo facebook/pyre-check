@@ -10,6 +10,18 @@ open Path.AppendOperator
 
 exception ServerNotRunning
 
+
+type load = {
+  shared_memory_path: Path.t;
+  changed_files_path: Path.t;
+}
+
+
+type saved_state =
+  | Save of string
+  | Load of load
+
+
 type t = {
   (* Server-specific configuration options *)
   socket_path: Path.t;
@@ -20,8 +32,7 @@ type t = {
   daemonize: bool;
   use_watchman: bool;
   watchman_creation_timeout: float;
-  save_state_to: string option;
-  load_state_from: string option;
+  saved_state: saved_state option;
   (* Analysis configuration *)
   configuration: Configuration.t;
 }
@@ -55,8 +66,7 @@ let create
     ?(daemonize = true)
     ?log_path
     ?(use_watchman = false)
-    ?save_state_to
-    ?load_state_from
+    ?saved_state
     configuration =
   let server_root = Service.Constants.Server.root configuration in
   (* Allow absolute log_path path (e.g., for /dev/null) *)
@@ -72,7 +82,6 @@ let create
     daemonize;
     use_watchman;
     watchman_creation_timeout = 5.0 (* Seconds. *);
-    save_state_to;
-    load_state_from;
+    saved_state;
     configuration;
   }
