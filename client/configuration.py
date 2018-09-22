@@ -69,6 +69,7 @@ class Configuration:
         local_configuration_directory=None,
         local_configuration: Optional[str] = None,
         search_path: Optional[List[str]] = None,
+        binary: Optional[str] = None,
         typeshed: Optional[str] = None,
         preserve_pythonpath=False,
     ) -> None:
@@ -100,6 +101,9 @@ class Configuration:
             self.search_path.extend(search_path)
         # We will extend the search path further, with the config file
         # items, inside _read().
+
+        if binary:
+            self._binary = binary
 
         if typeshed:
             self._typeshed = typeshed

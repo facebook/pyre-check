@@ -134,6 +134,11 @@ class ConfigurationTest(unittest.TestCase):
                     configuration.search_path, ["command/", "line/", "json/", "file/"]
                 )
 
+        # Test manual loading of the binary
+        json_load.side_effect = [{}, {}]
+        configuration = Configuration(binary="some/file/path/")
+        self.assertEqual(configuration.binary, "some/file/path/")
+
         # Test manual loading of typeshed directory.
         json_load.side_effect = [{}, {}]
         configuration = Configuration(typeshed="some/directory/path/")

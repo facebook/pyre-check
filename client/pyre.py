@@ -39,6 +39,13 @@ def main() -> int:
         assert_readable_directory(directory)
         return directory
 
+    def executable_file(file_path: str) -> str:
+        if not os.path.isfile(file_path):
+            raise EnvironmentException(f"{file_path} is not a valid file")
+        if not os.access(file_path, os.X_OK):
+            raise EnvironmentException(f"{file_path} is not an executable file")
+        return file_path
+
     parser = argparse.ArgumentParser(
         allow_abbrev=False,
         formatter_class=argparse.RawTextHelpFormatter,
@@ -138,6 +145,13 @@ def main() -> int:
         action="store_true",
         default=False,
         help="Preserves the value of the PYTHONPATH environment variable",
+    )
+
+    parser.add_argument(
+        "--binary",
+        default=None,
+        type=executable_file,
+        help="Location of the pyre binary",
     )
 
     # Typeshed stubs location
@@ -277,6 +291,7 @@ def main() -> int:
                 local_configuration_directory=arguments.local_configuration_directory,
                 local_configuration=arguments.local_configuration,
                 search_path=arguments.search_path,
+                binary=arguments.binary,
                 typeshed=arguments.typeshed,
                 preserve_pythonpath=arguments.preserve_pythonpath,
             )
