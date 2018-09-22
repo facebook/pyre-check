@@ -56,7 +56,7 @@ def get_binary_version(configuration) -> str:
     return "No version set"
 
 
-def _find_configuration_root(
+def find_configuration_root(
     original_directory: str, configuration_file: str
 ) -> Optional[str]:
     current_directory = original_directory
@@ -73,10 +73,10 @@ def switch_root(arguments) -> None:
         arguments.local_configuration = os.path.realpath(arguments.local_configuration)
 
     arguments.original_directory = os.getcwd()
-    arguments.local_configuration_directory = _find_configuration_root(
+    arguments.local_configuration_directory = find_configuration_root(
         arguments.original_directory, CONFIGURATION_FILE + ".local"
     )
-    global_root = _find_configuration_root(
+    global_root = find_configuration_root(
         arguments.original_directory, CONFIGURATION_FILE
     )
     # Check if the configuration root is deeper than

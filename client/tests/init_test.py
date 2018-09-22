@@ -9,8 +9,8 @@ from unittest.mock import MagicMock, patch
 from .. import (
     EnvironmentException,
     __name__ as client_name,
-    _find_configuration_root,
     buck,
+    find_configuration_root,
     resolve_analysis_directories,
     switch_root,
 )
@@ -20,11 +20,11 @@ class InitTest(unittest.TestCase):
     @patch("os.path.isfile")
     def test_find_configuration(self, os_mock_isfile) -> None:
         os_mock_isfile.side_effect = [False, False, False, True]
-        self.assertEqual(_find_configuration_root("/a/b/c/d", "configuration"), "/a")
+        self.assertEqual(find_configuration_root("/a/b/c/d", "configuration"), "/a")
         os_mock_isfile.side_effect = [True]
-        self.assertEqual(_find_configuration_root("/a", "configuration"), "/a")
+        self.assertEqual(find_configuration_root("/a", "configuration"), "/a")
         os_mock_isfile.side_effect = [False, False]
-        self.assertEqual(_find_configuration_root("/a/b", "configuration"), None)
+        self.assertEqual(find_configuration_root("/a/b", "configuration"), None)
 
     @patch("os.path.realpath", side_effect=lambda path: "realpath({})".format(path))
     @patch("os.getcwd", return_value="/")
@@ -129,7 +129,7 @@ class InitTest(unittest.TestCase):
                 self.assertEqual(arguments.local_configuration_directory, "/a/b")
 
         with patch(
-            "{}._find_configuration_root".format(client_name)
+            "{}.find_configuration_root".format(client_name)
         ) as mock_find_configuation_root:
             with patch("os.getcwd", return_value="/a/b"):
                 arguments.original_directory = "/a/b"
