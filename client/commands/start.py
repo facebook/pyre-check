@@ -5,7 +5,7 @@
 
 import logging
 import os
-from typing import List
+from typing import List, Optional
 
 from .. import filesystem
 from .command import ExitCode
@@ -21,12 +21,14 @@ class Start(Reporting):
 
     def __init__(self, arguments, configuration, analysis_directory) -> None:
         super(Start, self).__init__(arguments, configuration, analysis_directory)
-        self._terminal = arguments.terminal
-        self._no_watchman = arguments.no_watchman
-        self._number_of_workers = configuration.number_of_workers
+        self._terminal = arguments.terminal  # type: bool
+        self._no_watchman = arguments.no_watchman  # type: bool
+        self._number_of_workers = configuration.number_of_workers  # type: int
         # Saved state.
+        # type: Optional[str]
         self._save_initial_state_to = arguments.save_initial_state_to
-        self._changed_files_path = arguments.changed_files_path
+        self._changed_files_path = arguments.changed_files_path  # type: Optional[str]
+        # type: Optional[str]
         self._load_initial_state_from = arguments.load_initial_state_from
 
     def _run(self) -> None:
