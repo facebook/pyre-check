@@ -29,4 +29,3 @@ val parameter_annotations
   -> Type.t Int.Map.t
 
 val parent_definition: t -> resolution: Resolution.t -> Class.t option
-val method_definition: t -> resolution: Resolution.t -> Method.t option

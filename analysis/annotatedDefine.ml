@@ -73,8 +73,3 @@ let parent_definition { Define.parent; _ } ~resolution =
       Resolution.class_definition resolution annotation
       >>| Class.create
   | _ -> None
-
-
-let method_definition define ~resolution =
-  parent_definition define ~resolution
-  >>| fun parent -> Class.Method.create ~define ~parent

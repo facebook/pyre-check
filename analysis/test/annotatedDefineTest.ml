@@ -76,36 +76,8 @@ let test_parent_definition _ =
   assert_equal base_type (Type.Primitive ~~"superfoo")
 
 
-let test_method_definition _ =
-  let parent_class_definition environment name parent =
-    {
-      Statement.Define.name = Access.create name;
-      parameters = [];
-      body = [+Pass];
-      decorators = [];
-      docstring = None;
-      return_annotation = None;
-      async = false;
-      generated = false;
-      parent = parent >>| Access.create;
-    }
-    |> Define.create
-    |> Define.method_definition ~resolution:(Environment.resolution environment ())
-  in
-  assert_is_some
-    (parent_class_definition
-       (populate {|
-        class Foo():
-          def far(): pass
-       |})
-       "foo"
-       (Some "Foo"));
-  assert_is_none (parent_class_definition (populate "") "foo" None)
-
-
 let () =
   "define">:::[
     "parent_definition">::test_parent_definition;
-    "method_definition">::test_method_definition;
   ]
   |> Test.run;
